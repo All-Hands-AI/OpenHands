@@ -4,6 +4,7 @@ from openhands.events.observation.agent import (
     AgentStateChangedObservation,
     AgentThinkObservation,
     MicroagentObservation,
+    WorkspaceContextObservation,
 )
 from openhands.events.observation.browse import BrowserOutputObservation
 from openhands.events.observation.commands import (
@@ -43,5 +44,6 @@ __all__ = [
     'UserRejectObservation',
     'AgentCondensationObservation',
     'MicroagentObservation',
+    'WorkspaceContextObservation',
     'RecallType',
 ]

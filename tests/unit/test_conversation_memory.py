@@ -23,6 +23,7 @@ from openhands.events.observation import CmdOutputObservation
 from openhands.events.observation.agent import (
     MicroagentKnowledge,
     MicroagentObservation,
+    WorkspaceContextObservation,
 )
 from openhands.events.observation.browse import BrowserOutputObservation
 from openhands.events.observation.commands import (
@@ -631,15 +632,15 @@ def test_process_events_with_knowledge_microagent_microagent_observation(
     assert 'disabled_agent' not in agent_names
 
 
-def test_process_events_with_microagent_observation_extensions_disabled(
+def test_process_events_with_microagent_observations_extensions_disabled(
     agent_config, conversation_memory
 ):
-    """Test processing a MicroagentObservation when prompt extensions are disabled."""
+    """Test processing MicroagentObservation and WorkspaceContextObservation when prompt extensions are disabled."""
     # Modify the agent config to disable prompt extensions
     agent_config.enable_prompt_extensions = False
 
-    obs = MicroagentObservation(
-        recall_type=RecallType.WORKSPACE_CONTEXT,
+    # Test with WorkspaceContextObservation
+    workspace_obs = WorkspaceContextObservation(
         repo_name='test-repo',
         repo_directory='/path/to/repo',
         content='Retrieved environment info',
@@ -649,14 +650,15 @@ def test_process_events_with_microagent_observation_extensions_disabled(
         Message(role='system', content=[TextContent(text='System message')])
     ]
 
+    # Test WorkspaceContextObservation
     messages = conversation_memory.process_events(
-        condensed_history=[obs],
-        initial_messages=initial_messages,
+        condensed_history=[workspace_obs],
+        initial_messages=initial_messages.copy(),
         max_message_chars=None,
         vision_is_active=False,
     )
 
-    # When prompt extensions are disabled, the MicroagentObservation should be ignored
+    # When prompt extensions are disabled, the WorkspaceContextObservation should be ignored
     assert len(messages) == 1  # Only the initial system message
     assert messages[0].role == 'system'
 

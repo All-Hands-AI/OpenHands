@@ -17,7 +17,7 @@ from openhands.events.action import (
     IPythonRunCellAction,
     MessageAction,
 )
-from openhands.events.event import Event, RecallType
+from openhands.events.event import Event
 from openhands.events.observation import (
     AgentCondensationObservation,
     AgentDelegateObservation,
@@ -32,6 +32,7 @@ from openhands.events.observation import (
 from openhands.events.observation.agent import (
     MicroagentKnowledge,
     MicroagentObservation,
+    WorkspaceContextObservation,
 )
 from openhands.events.observation.error import ErrorObservation
 from openhands.events.observation.observation import Observation
@@ -385,88 +386,87 @@ class ConversationMemory:
             text = truncate_content(obs.content, max_message_chars)
             message = Message(role='user', content=[TextContent(text=text)])
         elif (
-            isinstance(obs, MicroagentObservation)
+            isinstance(obs, WorkspaceContextObservation)
             and self.agent_config.enable_prompt_extensions
         ):
-            if obs.recall_type == RecallType.WORKSPACE_CONTEXT:
-                # everything is optional, check if they are present
-                repo_info = (
-                    RepositoryInfo(
-                        repo_name=obs.repo_name or '',
-                        repo_directory=obs.repo_directory or '',
-                    )
-                    if obs.repo_name or obs.repo_directory
-                    else None
+            # Handle WorkspaceContextObservation (previously MicroagentObservation with WORKSPACE_CONTEXT type)
+            # everything is optional, check if they are present
+            repo_info = (
+                RepositoryInfo(
+                    repo_name=obs.repo_name or '',
+                    repo_directory=obs.repo_directory or '',
                 )
-                if obs.runtime_hosts or obs.additional_agent_instructions:
-                    runtime_info = RuntimeInfo(
-                        available_hosts=obs.runtime_hosts,
-                        additional_agent_instructions=obs.additional_agent_instructions,
-                    )
-                else:
-                    runtime_info = None
-
-                repo_instructions = (
-                    obs.repo_instructions if obs.repo_instructions else ''
+                if obs.repo_name or obs.repo_directory
+                else None
+            )
+            if obs.runtime_hosts or obs.additional_agent_instructions:
+                runtime_info = RuntimeInfo(
+                    available_hosts=obs.runtime_hosts,
+                    additional_agent_instructions=obs.additional_agent_instructions,
                 )
+            else:
+                runtime_info = None
 
-                # Have some meaningful content before calling the template
-                has_repo_info = repo_info is not None and (
-                    repo_info.repo_name or repo_info.repo_directory
+            repo_instructions = obs.repo_instructions if obs.repo_instructions else ''
+
+            # Have some meaningful content before calling the template
+            has_repo_info = repo_info is not None and (
+                repo_info.repo_name or repo_info.repo_directory
+            )
+            has_runtime_info = runtime_info is not None and (
+                runtime_info.available_hosts
+                or runtime_info.additional_agent_instructions
+            )
+            has_repo_instructions = bool(repo_instructions.strip())
+
+            # Build additional info if we have something to render
+            if has_repo_info or has_runtime_info or has_repo_instructions:
+                # ok, now we can build the additional info
+                formatted_text = self.prompt_manager.build_additional_info(
+                    repository_info=repo_info,
+                    runtime_info=runtime_info,
+                    repo_instructions=repo_instructions,
                 )
-                has_runtime_info = runtime_info is not None and (
-                    runtime_info.available_hosts
-                    or runtime_info.additional_agent_instructions
+                message = Message(
+                    role='user', content=[TextContent(text=formatted_text)]
                 )
-                has_repo_instructions = bool(repo_instructions.strip())
-
-                # Build additional info if we have something to render
-                if has_repo_info or has_runtime_info or has_repo_instructions:
-                    # ok, now we can build the additional info
-                    formatted_text = self.prompt_manager.build_additional_info(
-                        repository_info=repo_info,
-                        runtime_info=runtime_info,
-                        repo_instructions=repo_instructions,
-                    )
-                    message = Message(
-                        role='user', content=[TextContent(text=formatted_text)]
-                    )
-                else:
-                    return []
-            elif obs.recall_type == RecallType.KNOWLEDGE:
-                # Use prompt manager to build the microagent info
-                # First, filter out agents that appear in earlier MicroagentObservations
-                filtered_agents = self._filter_agents_in_microagent_obs(
-                    obs, current_index, events or []
-                )
-
-                # Create and return a message if there is microagent knowledge to include
-                if filtered_agents:
-                    # Exclude disabled microagents
-                    filtered_agents = [
-                        agent
-                        for agent in filtered_agents
-                        if agent.name not in self.agent_config.disabled_microagents
-                    ]
-
-                    # Only proceed if we still have agents after filtering out disabled ones
-                    if filtered_agents:
-                        formatted_text = self.prompt_manager.build_microagent_info(
-                            triggered_agents=filtered_agents,
-                        )
-
-                        return [
-                            Message(
-                                role='user', content=[TextContent(text=formatted_text)]
-                            )
-                        ]
-
-                # Return empty list if no microagents to include or all were disabled
+            else:
                 return []
         elif (
             isinstance(obs, MicroagentObservation)
-            and not self.agent_config.enable_prompt_extensions
+            and self.agent_config.enable_prompt_extensions
         ):
+            # Use prompt manager to build the microagent info
+            # First, filter out agents that appear in earlier MicroagentObservations
+            filtered_agents = self._filter_agents_in_microagent_obs(
+                obs, current_index, events or []
+            )
+
+            # Create and return a message if there is microagent knowledge to include
+            if filtered_agents:
+                # Exclude disabled microagents
+                filtered_agents = [
+                    agent
+                    for agent in filtered_agents
+                    if agent.name not in self.agent_config.disabled_microagents
+                ]
+
+                # Only proceed if we still have agents after filtering out disabled ones
+                if filtered_agents:
+                    formatted_text = self.prompt_manager.build_microagent_info(
+                        triggered_agents=filtered_agents,
+                    )
+
+                    return [
+                        Message(role='user', content=[TextContent(text=formatted_text)])
+                    ]
+
+            # Return empty list if no microagents to include or all were disabled
+            return []
+        elif (
+            isinstance(obs, MicroagentObservation)
+            or isinstance(obs, WorkspaceContextObservation)
+        ) and not self.agent_config.enable_prompt_extensions:
             # If prompt extensions are disabled, we don't add any additional info
             # TODO: test this
             return []
@@ -506,7 +506,7 @@ class ConversationMemory:
     def _filter_agents_in_microagent_obs(
         self, obs: MicroagentObservation, current_index: int, events: list[Event]
     ) -> list[MicroagentKnowledge]:
-        """Filter out agents that appear in earlier MicroagentObservations.
+        """Filter out agents that appear in earlier MicroagentObservations or WorkspaceContextObservations.
 
         Args:
             obs: The current MicroagentObservation to filter
@@ -516,14 +516,12 @@ class ConversationMemory:
         Returns:
             list[MicroagentKnowledge]: The filtered list of microagent knowledge
         """
-        if obs.recall_type != RecallType.KNOWLEDGE:
-            return obs.microagent_knowledge
 
-        # For each agent in the current microagent observation, check if it appears in any earlier microagent observation
+        # For each agent in the current observation, check if it appears in any earlier observation
         filtered_agents = []
         for agent in obs.microagent_knowledge:
             # Keep this agent if it doesn't appear in any earlier observation
-            # that is, if this is the first microagent observation with this microagent
+            # that is, if this is the first observation with this microagent
             if not self._has_agent_in_earlier_events(agent.name, current_index, events):
                 filtered_agents.append(agent)
 
@@ -532,7 +530,7 @@ class ConversationMemory:
     def _has_agent_in_earlier_events(
         self, agent_name: str, current_index: int, events: list[Event]
     ) -> bool:
-        """Check if an agent appears in any earlier MicroagentObservation in the event list.
+        """Check if an agent appears in any earlier MicroagentObservation or WorkspaceContextObservation in the event list.
 
         Args:
             agent_name: The name of the agent to look for
@@ -540,12 +538,11 @@ class ConversationMemory:
             events: The list of all events
 
         Returns:
-            bool: True if the agent appears in an earlier MicroagentObservation, False otherwise
+            bool: True if the agent appears in an earlier observation with microagent_knowledge, False otherwise
         """
         for event in events[:current_index]:
-            if (
-                isinstance(event, MicroagentObservation)
-                and event.recall_type == RecallType.KNOWLEDGE
+            if isinstance(event, MicroagentObservation) or isinstance(
+                event, WorkspaceContextObservation
             ):
                 if any(
                     agent.name == agent_name for agent in event.microagent_knowledge

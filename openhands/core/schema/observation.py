@@ -52,5 +52,8 @@ class ObservationTypeSchema(BaseModel):
     MICROAGENT: str = Field(default='microagent')
     """Result of a microagent retrieval operation."""
 
+    WORKSPACE_CONTEXT: str = Field(default='workspace_context')
+    """Workspace context information such as repository details and runtime information."""
+
 
 ObservationType = ObservationTypeSchema()

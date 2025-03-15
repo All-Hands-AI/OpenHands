@@ -60,11 +60,11 @@ class MicroagentKnowledge:
 
 
 @dataclass
-class MicroagentObservation(Observation):
-    """The retrieval of content from a microagent or more microagents."""
+class WorkspaceContextObservation(Observation):
+    """Workspace context information such as repository details and runtime information."""
 
-    recall_type: RecallType
-    observation: str = ObservationType.MICROAGENT
+    recall_type: RecallType = RecallType.WORKSPACE_CONTEXT
+    observation: str = ObservationType.WORKSPACE_CONTEXT
 
     # environment
     repo_name: str = ''
@@ -72,6 +72,37 @@ class MicroagentObservation(Observation):
     repo_instructions: str = ''
     runtime_hosts: dict[str, int] = field(default_factory=dict)
     additional_agent_instructions: str = ''
+
+    # Include a microagent_knowledge list
+    microagent_knowledge: list[MicroagentKnowledge] = field(default_factory=list)
+
+    @property
+    def message(self) -> str:
+        return 'Added workspace context'
+
+    def __str__(self) -> str:
+        fields = [
+            f'recall_type={self.recall_type}',
+            f'repo_name={self.repo_name}',
+            f'repo_instructions={self.repo_instructions[:20]}...',
+            f'runtime_hosts={self.runtime_hosts}',
+            f'additional_agent_instructions={self.additional_agent_instructions[:20]}...',
+        ]
+
+        if self.microagent_knowledge:
+            fields.append(
+                f'microagent_knowledge={", ".join([m.name for m in self.microagent_knowledge])}'
+            )
+
+        return f'**WorkspaceContextObservation**\n{", ".join(fields)}'
+
+
+@dataclass
+class MicroagentObservation(Observation):
+    """The retrieval of content from a microagent or more microagents."""
+
+    recall_type: RecallType = RecallType.KNOWLEDGE
+    observation: str = ObservationType.MICROAGENT
 
     # knowledge
     microagent_knowledge: list[MicroagentKnowledge] = field(default_factory=list)
@@ -98,14 +129,7 @@ class MicroagentObservation(Observation):
         return self.__str__()
 
     def __str__(self) -> str:
-        # Build a string representation of all fields
-        fields = [
-            f'recall_type={self.recall_type}',
-            f'repo_name={self.repo_name}',
-            f'repo_instructions={self.repo_instructions[:20]}...',
-            f'runtime_hosts={self.runtime_hosts}',
-            f'additional_agent_instructions={self.additional_agent_instructions[:20]}...',
-        ]
+        fields = [f'recall_type={self.recall_type}']
 
         # Only include microagent_knowledge if it's not empty
         if self.microagent_knowledge:

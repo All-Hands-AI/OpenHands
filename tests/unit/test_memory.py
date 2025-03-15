@@ -12,10 +12,10 @@ from openhands.core.main import run_controller
 from openhands.core.schema.agent import AgentState
 from openhands.events.action.agent import RecallAction
 from openhands.events.action.message import MessageAction
-from openhands.events.event import EventSource
+from openhands.events.event import EventSource, RecallType
 from openhands.events.observation.agent import (
     MicroagentObservation,
-    RecallType,
+    WorkspaceContextObservation,
 )
 from openhands.events.stream import EventStream
 from openhands.llm import LLM
@@ -188,7 +188,7 @@ def test_memory_with_microagents():
 
 
 def test_memory_repository_info(prompt_dir):
-    """Test that Memory adds repository info to MicroagentObservations."""
+    """Test that Memory adds repository info to WorkspaceContextObservations."""
     # Create an in-memory file store and real event stream
     file_store = InMemoryFileStore()
     event_stream = EventStream(sid='test-session', file_store=file_store)
@@ -205,14 +205,13 @@ REPOSITORY INSTRUCTIONS: This is a test repository.
 """
 
     # Create a temporary repo microagent file
-    os.makedirs(os.path.join(prompt_dir, 'micro'), exist_ok=True)
+    test_microagents_dir = os.path.join(prompt_dir, 'micro')
+    os.makedirs(test_microagents_dir, exist_ok=True)
     with open(
-        os.path.join(prompt_dir, 'micro', f'{repo_microagent_name}.md'), 'w'
+        os.path.join(test_microagents_dir, f'{repo_microagent_name}.md'), 'w'
     ) as f:
         f.write(repo_microagent_content)
 
-    # Patch the global microagents directory to use our test directory
-    test_microagents_dir = os.path.join(prompt_dir, 'micro')
     with patch('openhands.memory.memory.GLOBAL_MICROAGENTS_DIR', test_microagents_dir):
         # Initialize Memory
         memory = Memory(
@@ -241,16 +240,16 @@ REPOSITORY INSTRUCTIONS: This is a test repository.
         # Get all events from the stream
         events = list(event_stream.get_events())
 
-        # Find the MicroagentObservation event
-        microagent_obs_events = [
-            event for event in events if isinstance(event, MicroagentObservation)
+        # Find the WorkspaceContextObservation event
+        workspace_context_obs_events = [
+            event for event in events if isinstance(event, WorkspaceContextObservation)
         ]
 
-        # We should have at least one MicroagentObservation
-        assert len(microagent_obs_events) > 0
+        # We should have at least one WorkspaceContextObservation
+        assert len(workspace_context_obs_events) > 0
 
-        # Get the first MicroagentObservation
-        observation = microagent_obs_events[0]
+        # Get the first WorkspaceContextObservation
+        observation = workspace_context_obs_events[0]
         assert observation.recall_type == RecallType.WORKSPACE_CONTEXT
         assert observation.repo_name == 'owner/repo'
         assert observation.repo_directory == '/workspace/repo'
