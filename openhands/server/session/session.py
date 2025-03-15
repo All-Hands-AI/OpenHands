@@ -23,6 +23,7 @@ from openhands.events.observation import (
 from openhands.events.observation.error import ErrorObservation
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.events.stream import EventStreamSubscriber
+from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.llm.llm import LLM
 from openhands.server.session.agent_session import AgentSession
 from openhands.server.session.conversation_init_data import ConversationInitData
@@ -61,7 +62,7 @@ class Session:
             sid,
             file_store,
             status_callback=self.queue_status_message,
-            github_user_id=user_id,
+            user_id=user_id,
         )
         self.agent_session.event_stream.subscribe(
             EventStreamSubscriber.SERVER, self.on_event, self.sid
@@ -127,7 +128,10 @@ class Session:
         selected_repository = None
         selected_branch = None
         if isinstance(settings, ConversationInitData):
-            github_token = settings.github_token
+            gh_client = GithubServiceImpl(
+                external_auth_id=self.user_id, external_token_manager=True
+            )
+            github_token = await gh_client.get_latest_token()
             selected_repository = settings.selected_repository
             selected_branch = settings.selected_branch
 

@@ -43,7 +43,7 @@ class Settings(BaseModel):
         if context and context.get('expose_secrets', False):
             return llm_api_key.get_secret_value()
 
-        return pydantic_encoder(llm_api_key)
+        return pydantic_encoder(llm_api_key) if llm_api_key else None
 
     @staticmethod
     def _convert_token_value(

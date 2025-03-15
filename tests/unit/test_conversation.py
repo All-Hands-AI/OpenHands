@@ -32,6 +32,7 @@ def _patch_store():
                 'selected_repository': 'foobar',
                 'conversation_id': 'some_conversation_id',
                 'github_user_id': '12345',
+                'user_id': '12345',
                 'created_at': '2025-01-01T00:00:00+00:00',
                 'last_updated_at': '2025-01-01T00:01:00+00:00',
             }

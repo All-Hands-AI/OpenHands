@@ -13,7 +13,8 @@ async def test_load_store():
     store = FileConversationStore(InMemoryFileStore({}))
     expected = ConversationMetadata(
         conversation_id='some-conversation-id',
-        github_user_id='some-user-id',
+        user_id='some-user-id',
+        github_user_id='12345',
         selected_repository='some-repo',
         title="Let's talk about trains",
     )
@@ -31,6 +32,7 @@ async def test_load_int_user_id():
                     {
                         'conversation_id': 'some-conversation-id',
                         'github_user_id': 12345,
+                        'user_id': '67890',
                         'selected_repository': 'some-repo',
                         'title': "Let's talk about trains",
                         'created_at': '2025-01-16T19:51:04.886331Z',
@@ -41,6 +43,7 @@ async def test_load_int_user_id():
     )
     found = await store.get_metadata('some-conversation-id')
     assert found.github_user_id == '12345'
+    assert found.user_id == '67890'
 
 
 @pytest.mark.asyncio
@@ -61,6 +64,7 @@ async def test_search_basic():
                     {
                         'conversation_id': 'conv1',
                         'github_user_id': '123',
+                        'user_id': '123',
                         'selected_repository': 'repo1',
                         'title': 'First conversation',
                         'created_at': '2025-01-16T19:51:04Z',
@@ -70,6 +74,7 @@ async def test_search_basic():
                     {
                         'conversation_id': 'conv2',
                         'github_user_id': '123',
+                        'user_id': '123',
                         'selected_repository': 'repo1',
                         'title': 'Second conversation',
                         'created_at': '2025-01-17T19:51:04Z',
@@ -79,6 +84,7 @@ async def test_search_basic():
                     {
                         'conversation_id': 'conv3',
                         'github_user_id': '123',
+                        'user_id': '123',
                         'selected_repository': 'repo1',
                         'title': 'Third conversation',
                         'created_at': '2025-01-15T19:51:04Z',
@@ -107,6 +113,7 @@ async def test_search_pagination():
                     {
                         'conversation_id': f'conv{i}',
                         'github_user_id': '123',
+                        'user_id': '123',
                         'selected_repository': 'repo1',
                         'title': f'Conversation {i}',
                         'created_at': f'2025-01-{15+i}T19:51:04Z',
@@ -148,6 +155,7 @@ async def test_search_with_invalid_conversation():
                     {
                         'conversation_id': 'conv1',
                         'github_user_id': '123',
+                        'user_id': '123',
                         'selected_repository': 'repo1',
                         'title': 'Valid conversation',
                         'created_at': '2025-01-16T19:51:04Z',
@@ -176,6 +184,7 @@ async def test_get_all_metadata():
                     {
                         'conversation_id': 'conv1',
                         'github_user_id': '123',
+                        'user_id': '123',
                         'selected_repository': 'repo1',
                         'title': 'First conversation',
                         'created_at': '2025-01-16T19:51:04Z',
@@ -185,6 +194,7 @@ async def test_get_all_metadata():
                     {
                         'conversation_id': 'conv2',
                         'github_user_id': '123',
+                        'user_id': '123',
                         'selected_repository': 'repo1',
                         'title': 'Second conversation',
                         'created_at': '2025-01-17T19:51:04Z',
