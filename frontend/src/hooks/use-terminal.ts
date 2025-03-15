@@ -86,6 +86,8 @@ export const useTerminal = ({
 
   const handleEnter = (command: string) => {
     terminal.current?.write("\r\n");
+    // Send the command to the backend but don't echo it back in the terminal
+    // The backend will include the command in its response
     send(getTerminalCommand(command));
   };
 
@@ -131,10 +133,26 @@ export const useTerminal = ({
           content = content.replaceAll(secret, "*".repeat(10));
         });
 
-        terminal.current?.writeln(
-          parseTerminalOutput(content.replaceAll("\n", "\r\n").trim()),
-        );
+        // Check if this is an output that starts with the previous input command
+        // This happens when the backend echoes back the command in the output
+        let shouldDisplayContent = true;
+        if (type === "output" && i > 0 && commands[i - 1].type === "input") {
+          const prevInputCommand = commands[i - 1].content.trim();
+          // If the output starts with the input command, remove it to avoid duplication
+          if (content.trim().startsWith(prevInputCommand)) {
+            // Skip displaying this part as it's a duplicate of the user's input
+            // that's already shown in the terminal
+            shouldDisplayContent = false;
+          }
+        }
 
+        if (shouldDisplayContent) {
+          terminal.current?.writeln(
+            parseTerminalOutput(content.replaceAll("\n", "\r\n").trim()),
+          );
+        }
+
+        // Add a new prompt after the output
         if (type === "output") {
           terminal.current.write(`\n$ `);
         }
