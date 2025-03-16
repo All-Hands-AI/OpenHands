@@ -34,7 +34,6 @@ UNDERSCORE_KEYS = [
 ]
 
 DELETE_FROM_TRAJECTORY_EXTRAS = {
-    'screenshot',
     'dom_object',
     'axtree_object',
     'active_page_index',
@@ -44,7 +43,13 @@ DELETE_FROM_TRAJECTORY_EXTRAS = {
     'extra_element_properties',
 }
 
-DELETE_FROM_MEMORY_EXTRAS = DELETE_FROM_TRAJECTORY_EXTRAS | {'open_pages_urls'}
+DELETE_FROM_TRAJECTORY_EXTRAS_AND_SCREENSHOTS = DELETE_FROM_TRAJECTORY_EXTRAS | {
+    'screenshot'
+}
+
+DELETE_FROM_MEMORY_EXTRAS = DELETE_FROM_TRAJECTORY_EXTRAS_AND_SCREENSHOTS | {
+    'open_pages_urls'
+}
 
 
 def event_from_dict(data) -> 'Event':
@@ -135,10 +140,15 @@ def event_to_dict(event: 'Event') -> dict:
     return d
 
 
-def event_to_trajectory(event: 'Event') -> dict:
+def event_to_trajectory(event: 'Event', include_screenshots: bool = False) -> dict:
     d = event_to_dict(event)
     if 'extras' in d:
-        remove_fields(d['extras'], DELETE_FROM_TRAJECTORY_EXTRAS)
+        remove_fields(
+            d['extras'],
+            DELETE_FROM_TRAJECTORY_EXTRAS
+            if include_screenshots
+            else DELETE_FROM_TRAJECTORY_EXTRAS_AND_SCREENSHOTS,
+        )
     return d
 
 

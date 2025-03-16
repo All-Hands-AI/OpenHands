@@ -29,6 +29,7 @@ class AppConfig(BaseModel):
         file_store: Type of file store to use.
         file_store_path: Path to the file store.
         save_trajectory_path: Either a folder path to store trajectories with auto-generated filenames, or a designated trajectory file path.
+        save_screenshots_in_trajectory: Whether to save screenshots in trajectory (in encoded image format).
         replay_trajectory_path: Path to load trajectory and replay. If provided, trajectory would be replayed first before user's instruction.
         workspace_base: Base path for the workspace. Defaults to `./workspace` as absolute path.
         workspace_mount_path: Path to mount the workspace. Defaults to `workspace_base`.
@@ -58,6 +59,7 @@ class AppConfig(BaseModel):
     file_store: str = Field(default='local')
     file_store_path: str = Field(default='/tmp/openhands_file_store')
     save_trajectory_path: str | None = Field(default=None)
+    save_screenshots_in_trajectory: bool = Field(default=False)
     replay_trajectory_path: str | None = Field(default=None)
     workspace_base: str | None = Field(default=None)
     workspace_mount_path: str | None = Field(default=None)
