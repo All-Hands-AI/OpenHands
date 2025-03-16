@@ -12,9 +12,10 @@ class CriticResult(BaseModel):
 
     score: float
 
-    def continue_execution(self) -> bool:
+    @property
+    def success(self) -> bool:
         """
-        Whether to continue execution.
+        Whether the agent is successful.
         """
         return self.score >= 0.5
 
