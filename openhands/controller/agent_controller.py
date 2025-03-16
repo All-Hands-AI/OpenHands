@@ -57,6 +57,7 @@ from openhands.events.observation import (
     NullObservation,
     Observation,
 )
+from openhands.events.observation.agent import WorkspaceContextObservation
 from openhands.events.serialization.event import event_to_trajectory, truncate_content
 from openhands.llm.llm import LLM
 from openhands.llm.metrics import Metrics, TokenUsage
@@ -220,6 +221,7 @@ class AgentController:
         e: Exception,
     ):
         """React to an exception by setting the agent state to error and sending a status message."""
+        self.log('error', f'Error: {e} ')
         await self.set_agent_state_to(AgentState.ERROR)
         if self.status_callback is not None:
             err_id = ''
@@ -302,8 +304,16 @@ class AgentController:
             if isinstance(event, AgentStateChangedObservation) or isinstance(
                 event, NullObservation
             ):
+                self.log(
+                    'info',
+                    f'Not Stepping: {event}',
+                )
                 return False
             return True
+        self.log(
+            'info',
+            f'Not Stepping: {event}',
+        )
         return False
 
     def on_event(self, event: Event) -> None:
@@ -396,6 +406,11 @@ class AgentController:
         self.log(
             log_level, str(observation_to_print), extra={'msg_type': 'OBSERVATION'}
         )
+        if isinstance(observation, WorkspaceContextObservation):
+            self.log(
+                'info',
+                f'WorkspaceContextObservation: {observation}',
+            )
 
         if observation.llm_metrics is not None:
             self.agent.llm.metrics.merge(observation.llm_metrics)
@@ -675,6 +690,11 @@ class AgentController:
         """Executes a single step of the parent or delegate agent. Detects stuck agents and limits on the number of iterations and the task budget."""
         if self.get_agent_state() != AgentState.RUNNING:
             return
+
+        self.log(
+            'info',
+            f'has pending action: {self._pending_action}',
+        )
 
         if self._pending_action:
             return
