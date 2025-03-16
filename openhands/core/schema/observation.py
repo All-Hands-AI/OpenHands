@@ -49,8 +49,5 @@ class ObservationTypeSchema(BaseModel):
     CONDENSE: str = Field(default='condense')
     """Result of a condensation operation."""
 
-    MICROAGENT: str = Field(default='microagent')
-    """Result of a microagent retrieval operation."""
-
 
 ObservationType = ObservationTypeSchema()

@@ -135,7 +135,7 @@ class StuckDetector:
         # it takes 3 actions and 3 observations to detect a loop
         # check if the last three actions are the same and result in errors
 
-        if len(last_actions) < 3 or len(last_observations) < 3:
+        if len(last_actions) < 4 or len(last_observations) < 4:
             return False
 
         # are the last three actions the "same"?

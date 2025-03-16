@@ -18,7 +18,6 @@ from openhands.core.schema import AgentState
 from openhands.core.setup import (
     create_agent,
     create_controller,
-    create_memory,
     create_runtime,
     generate_sid,
     initialize_repository_for_runtime,
@@ -30,7 +29,6 @@ from openhands.events.event import Event
 from openhands.events.observation import AgentStateChangedObservation
 from openhands.events.serialization import event_from_dict
 from openhands.io import read_input, read_task
-from openhands.memory.memory import Memory
 from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
 
@@ -53,7 +51,6 @@ async def run_controller(
     exit_on_message: bool = False,
     fake_user_response_fn: FakeUserResponseFunc | None = None,
     headless_mode: bool = True,
-    memory: Memory | None = None,
 ) -> State | None:
     """Main coroutine to run the agent controller with task input flexibility.
 
@@ -96,8 +93,6 @@ async def run_controller(
     if agent is None:
         agent = create_agent(config)
 
-    # when the runtime is created, it will be connected and clone the selected repository
-    repo_directory = None
     if runtime is None:
         runtime = create_runtime(
             config,
@@ -110,22 +105,13 @@ async def run_controller(
 
         # Initialize repository if needed
         if config.sandbox.selected_repo:
-            repo_directory = initialize_repository_for_runtime(
+            initialize_repository_for_runtime(
                 runtime,
+                agent=agent,
                 selected_repository=config.sandbox.selected_repo,
             )
 
     event_stream = runtime.event_stream
-
-    # when memory is created, it will load the microagents from the selected repository
-    if memory is None:
-        memory = create_memory(
-            runtime=runtime,
-            event_stream=event_stream,
-            sid=sid,
-            selected_repository=config.sandbox.selected_repo,
-            repo_directory=repo_directory,
-        )
 
     replay_events: list[Event] | None = None
     if config.replay_trajectory_path:
@@ -186,7 +172,7 @@ async def run_controller(
     ]
 
     try:
-        await run_agent_until_done(controller, runtime, memory, end_states)
+        await run_agent_until_done(controller, runtime, end_states)
     except Exception as e:
         logger.error(f'Exception in main loop: {e}')
 

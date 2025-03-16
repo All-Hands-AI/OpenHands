@@ -358,12 +358,12 @@ class TestStuckDetector:
         with patch('logging.Logger.warning'):
             assert stuck_detector.is_stuck(headless_mode=True) is False
 
-    def test_is_not_stuck_ipython_unterminated_string_error_only_two_incidents(
+    def test_is_not_stuck_ipython_unterminated_string_error_only_three_incidents(
         self, stuck_detector: StuckDetector
     ):
         state = stuck_detector.state
         self._impl_unterminated_string_error_events(
-            state, random_line=False, incidents=2
+            state, random_line=False, incidents=3
         )
 
         with patch('logging.Logger.warning'):
