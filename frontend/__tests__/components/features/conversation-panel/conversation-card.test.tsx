@@ -21,7 +21,11 @@ describe("ConversationCard", () => {
   const onDownloadWorkspace = vi.fn();
 
   beforeAll(() => {
-    vi.stubGlobal("window", { open: vi.fn() });
+    vi.stubGlobal("window", {
+      open: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    });
   });
 
   afterEach(() => {
@@ -292,6 +296,57 @@ describe("ConversationCard", () => {
     await user.click(downloadButton);
 
     expect(onDownloadWorkspace).toHaveBeenCalled();
+  });
+
+  it("should show display cost button even if onDisplayCost is not provided", async () => {
+    const user = userEvent.setup();
+    render(
+      <ConversationCard
+        onClick={onClick}
+        onDelete={onDelete}
+        onChangeTitle={onChangeTitle}
+        title="Conversation 1"
+        selectedRepository={null}
+        lastUpdatedAt="2021-10-01T12:00:00Z"
+      />,
+    );
+
+    // Menu button should exist
+    const ellipsisButton = screen.getByTestId("ellipsis-button");
+    await user.click(ellipsisButton);
+
+    // Menu should be visible
+    const menu = screen.getByTestId("context-menu");
+    // Display cost button should exist
+    expect(within(menu).getByTestId("display-cost-button")).toBeInTheDocument();
+    // Other buttons should exist
+    expect(within(menu).getByTestId("delete-button")).toBeInTheDocument();
+    expect(within(menu).getByTestId("edit-button")).toBeInTheDocument();
+  });
+
+  it("should show metrics modal when clicking the display cost button", async () => {
+    const user = userEvent.setup();
+    render(
+      <ConversationCard
+        onClick={onClick}
+        onDelete={onDelete}
+        onChangeTitle={onChangeTitle}
+        title="Conversation 1"
+        selectedRepository={null}
+        lastUpdatedAt="2021-10-01T12:00:00Z"
+      />,
+    );
+
+    const ellipsisButton = screen.getByTestId("ellipsis-button");
+    await user.click(ellipsisButton);
+
+    const menu = screen.getByTestId("context-menu");
+    const displayCostButton = within(menu).getByTestId("display-cost-button");
+
+    await user.click(displayCostButton);
+
+    // Verify if metrics modal is displayed by checking for the modal content
+    expect(screen.getByText("Metrics Information")).toBeInTheDocument();
   });
 
   it("should not display the edit or delete options if the handler is not provided", async () => {
