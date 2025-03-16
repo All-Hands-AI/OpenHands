@@ -226,6 +226,17 @@ jobs:
               await exec.exec("pip install -r /tmp/requirements.txt");
             }
 
+      - name: Run Identify Token py
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN || github.token }}
+          GITHUB_USERNAME: ${{ secrets.PAT_USERNAME || 'openhands-agent' }}
+          GIT_USERNAME: ${{ secrets.PAT_USERNAME || 'openhands-agent' }}
+          PYTHONPATH: ""
+        run: |
+          cd /tmp && python -m openhands.resolver.util.identify_token \
+            --repo ${{ github.repository }} \
+            --token ${{ secrets.PAT_TOKEN || github.token }}
+
       - name: Attempt to resolve issue
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN || github.token }}
