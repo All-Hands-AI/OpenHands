@@ -131,4 +131,19 @@ def observation_from_dict(observation: dict) -> Observation:
                 for item in extras['microagent_knowledge']
             ]
 
+    # Compatibility: If we're trying to deserialize a WorkspaceContextObservation as a MicroagentObservation
+    if observation_class is MicroagentObservation and any(
+        key in extras
+        for key in [
+            'repo_name',
+            'repo_directory',
+            'repo_instructions',
+            'runtime_hosts',
+            'additional_agent_instructions',
+        ]
+    ):
+        # Switch to WorkspaceContextObservation
+        observation_class = WorkspaceContextObservation
+        extras['recall_type'] = RecallType.WORKSPACE_CONTEXT
+
     return observation_class(content=content, **extras)
