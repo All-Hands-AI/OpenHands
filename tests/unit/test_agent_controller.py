@@ -19,7 +19,7 @@ from openhands.events.event import RecallType
 from openhands.events.observation import (
     ErrorObservation,
 )
-from openhands.events.observation.agent import MicroagentObservation
+from openhands.events.observation.agent import RecallObservation
 from openhands.events.serialization import event_to_dict
 from openhands.llm import LLM
 from openhands.llm.metrics import Metrics, TokenUsage
@@ -192,7 +192,7 @@ async def test_run_controller_with_fatal_error(test_event_stream, mock_memory):
 
     def on_event_memory(event: Event):
         if isinstance(event, RecallAction):
-            microagent_obs = MicroagentObservation(
+            microagent_obs = RecallObservation(
                 content='Test microagent content',
                 recall_type=RecallType.KNOWLEDGE,
             )
@@ -249,7 +249,7 @@ async def test_run_controller_stop_with_stuck(test_event_stream, mock_memory):
 
     def on_event_memory(event: Event):
         if isinstance(event, RecallAction):
-            microagent_obs = MicroagentObservation(
+            microagent_obs = RecallObservation(
                 content='Test microagent content',
                 recall_type=RecallType.KNOWLEDGE,
             )
@@ -596,7 +596,7 @@ async def test_run_controller_max_iterations_has_metrics(
 
     def on_event_memory(event: Event):
         if isinstance(event, RecallAction):
-            microagent_obs = MicroagentObservation(
+            microagent_obs = RecallObservation(
                 content='Test microagent content',
                 recall_type=RecallType.KNOWLEDGE,
             )
@@ -718,7 +718,7 @@ async def test_run_controller_with_context_window_exceeded_with_truncation(
 
     def on_event_memory(event: Event):
         if isinstance(event, RecallAction):
-            microagent_obs = MicroagentObservation(
+            microagent_obs = RecallObservation(
                 content='Test microagent content',
                 recall_type=RecallType.KNOWLEDGE,
             )
@@ -795,7 +795,7 @@ async def test_run_controller_with_context_window_exceeded_without_truncation(
 
     def on_event_memory(event: Event):
         if isinstance(event, RecallAction):
-            microagent_obs = MicroagentObservation(
+            microagent_obs = RecallObservation(
                 content='Test microagent content',
                 recall_type=RecallType.KNOWLEDGE,
             )
@@ -845,10 +845,17 @@ async def test_run_controller_with_memory_error(test_event_stream):
     config = AppConfig()
     event_stream = test_event_stream
 
+    # Create a propert agent that returns an action without an ID
     agent = MagicMock(spec=Agent)
     agent.llm = MagicMock(spec=LLM)
     agent.llm.metrics = Metrics()
     agent.llm.config = config.get_llm_config()
+
+    # Create a real action to return from the mocked step function
+    def agent_step_fn(state):
+        return MessageAction(content='Agent returned a message')
+
+    agent.step = agent_step_fn
 
     runtime = MagicMock(spec=Runtime)
     runtime.event_stream = event_stream
@@ -856,12 +863,12 @@ async def test_run_controller_with_memory_error(test_event_stream):
     # Create a real Memory instance
     memory = Memory(event_stream=event_stream, sid='test-memory')
 
-    # Patch the _on_microagent_action method to raise our test exception
-    def mock_on_microagent_action(*args, **kwargs):
+    # Patch the _on_microagent_recall method to raise our test exception
+    def mock_on_microagent_recall(*args, **kwargs):
         raise RuntimeError('Test memory error')
 
     with patch.object(
-        memory, '_on_microagent_action', side_effect=mock_on_microagent_action
+        memory, '_on_microagent_recall', side_effect=mock_on_microagent_recall
     ):
         state = await run_controller(
             config=config,
