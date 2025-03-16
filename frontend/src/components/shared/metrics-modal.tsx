@@ -18,18 +18,18 @@ export function MetricsModal({ isOpen, onClose }: MetricsModalProps) {
     } | null;
   }>({
     cost: null,
-    usage: null
+    usage: null,
   });
 
   React.useEffect(() => {
     function handleMessage(event: MessageEvent) {
-      if (event.data?.type === 'metrics_update') {
+      if (event.data?.type === "metrics_update") {
         setMetrics(event.data.metrics);
       }
     }
 
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
   }, []);
 
   if (!isOpen) return null;
@@ -42,10 +42,10 @@ export function MetricsModal({ isOpen, onClose }: MetricsModalProps) {
             Metrics Information
           </span>
           <div className="space-y-2">
-            {metrics.cost !== null && (
+            {metrics?.cost !== null && (
               <p>Total Cost: ${metrics.cost.toFixed(4)}</p>
             )}
-            {metrics.usage && (
+            {metrics?.usage !== null && (
               <>
                 <p>Tokens Used:</p>
                 <ul className="list-inside space-y-1 ml-2">
@@ -55,7 +55,7 @@ export function MetricsModal({ isOpen, onClose }: MetricsModalProps) {
                 </ul>
               </>
             )}
-            {!metrics.cost && !metrics.usage && (
+            {!metrics?.cost && !metrics?.usage && (
               <p className="text-neutral-400">No metrics data available</p>
             )}
           </div>

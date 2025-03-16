@@ -99,7 +99,12 @@ export function ConversationCard({
     }
   }, [titleMode]);
 
-  const hasContextMenu = !!(onDelete || onChangeTitle || onDownloadWorkspace || onDisplayCost);
+  const hasContextMenu = !!(
+    onDelete ||
+    onChangeTitle ||
+    onDownloadWorkspace ||
+    onDisplayCost
+  );
 
   return (
     <>

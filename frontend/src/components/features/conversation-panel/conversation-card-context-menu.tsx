@@ -48,7 +48,10 @@ export function ConversationCardContextMenu({
         </ContextMenuListItem>
       )}
       {onDisplayCost && (
-        <ContextMenuListItem testId="display-cost-button" onClick={onDisplayCost}>
+        <ContextMenuListItem
+          testId="display-cost-button"
+          onClick={onDisplayCost}
+        >
           Display Cost
         </ContextMenuListItem>
       )}
