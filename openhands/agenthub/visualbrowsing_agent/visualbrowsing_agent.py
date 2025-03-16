@@ -218,6 +218,10 @@ Note:
                 # agent has responded, task finished.
                 return AgentFinishAction(outputs={'content': event.content})
             elif isinstance(event, Observation):
+                # Only process BrowserOutputObservation and skip other observation types
+                # This handles MicroagentObservation added in PR #6909
+                if not isinstance(event, BrowserOutputObservation):
+                    continue
                 last_obs = event
 
         if len(prev_actions) >= 1:  # ignore noop()
