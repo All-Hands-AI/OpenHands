@@ -125,8 +125,12 @@ async def test_memory_on_workspace_context_action_exception_handling(
         status_callback_mock.assert_called_once()
         call_args = status_callback_mock.call_args[0]
         assert call_args[0] == 'error'  # First arg should be message type 'error'
-        assert call_args[1] == 'STATUS$ERROR_MEMORY'  # Second arg should be the message ID
-        assert 'Error: Exception' in call_args[2]  # Third arg should contain the error message
+        assert (
+            call_args[1] == 'STATUS$ERROR_MEMORY'
+        )  # Second arg should be the message ID
+        assert (
+            'Error: Exception' in call_args[2]
+        )  # Third arg should contain the error message
 
 
 @pytest.mark.asyncio
