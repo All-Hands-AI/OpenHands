@@ -23,7 +23,12 @@ def mock_event_stream():
 def mock_agent():
     agent = MagicMock()
     agent.llm = MagicMock()
-    agent.llm.config = MagicMock()
+
+    # Create a step function that returns an action without an ID
+    def step_fn(state):
+        return MessageAction(content='Agent returned a message')
+
+    agent.step = step_fn
     return agent
 
 
