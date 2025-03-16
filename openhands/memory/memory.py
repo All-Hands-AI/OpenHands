@@ -86,7 +86,7 @@ class Memory:
                     workspace_obs: (
                         WorkspaceContextObservation | NullObservation | None
                     ) = None
-                    workspace_obs = self._on_first_microagent_action(event)
+                    workspace_obs = self._on_workspace_context_action(event)
                     if workspace_obs is None:
                         workspace_obs = NullObservation(content='')
 
@@ -150,7 +150,7 @@ class Memory:
 
         return recalled_content
 
-    def _on_first_microagent_action(
+    def _on_workspace_context_action(
         self, event: RecallAction
     ) -> WorkspaceContextObservation | None:
         """Add repository and runtime information to the stream as a WorkspaceContextObservation."""

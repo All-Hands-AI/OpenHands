@@ -845,10 +845,18 @@ async def test_run_controller_with_memory_error(test_event_stream):
     config = AppConfig()
     event_stream = test_event_stream
 
+    # Create a proper agent that returns an action without an ID
     agent = MagicMock(spec=Agent)
     agent.llm = MagicMock(spec=LLM)
     agent.llm.metrics = Metrics()
     agent.llm.config = config.get_llm_config()
+
+    # Create a real action to return from the mocked step function
+    # instead of letting MagicMock create one with an ID already set
+    def agent_step_fn(state):
+        return MessageAction(content='Agent returned a message')
+
+    agent.step = agent_step_fn
 
     runtime = MagicMock(spec=Runtime)
     runtime.event_stream = event_stream
@@ -857,11 +865,13 @@ async def test_run_controller_with_memory_error(test_event_stream):
     memory = Memory(event_stream=event_stream, sid='test-memory')
 
     # Patch the _on_microagent_action method to raise our test exception
-    def mock_on_microagent_action(*args, **kwargs):
+    def mock_on_workspace_context_action(*args, **kwargs):
         raise RuntimeError('Test memory error')
 
     with patch.object(
-        memory, '_on_microagent_action', side_effect=mock_on_microagent_action
+        memory,
+        '_on_workspace_context_action',
+        side_effect=mock_on_workspace_context_action,
     ):
         state = await run_controller(
             config=config,
