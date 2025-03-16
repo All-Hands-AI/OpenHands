@@ -53,7 +53,7 @@ class AgentSession:
         sid: str,
         file_store: FileStore,
         status_callback: Callable | None = None,
-        github_user_id: str | None = None,
+        user_id: str | None = None,
     ):
         """Initializes a new instance of the Session class
 
@@ -66,9 +66,9 @@ class AgentSession:
         self.event_stream = EventStream(sid, file_store)
         self.file_store = file_store
         self._status_callback = status_callback
-        self.github_user_id = github_user_id
+        self.user_id = user_id
         self.logger = OpenHandsLoggerAdapter(
-            extra={'session_id': sid, 'user_id': github_user_id}
+            extra={'session_id': sid, 'user_id': user_id}
         )
 
     async def start(
@@ -241,7 +241,7 @@ class AgentSession:
 
         kwargs = {}
         if runtime_cls == RemoteRuntime:
-            kwargs['github_user_id'] = self.github_user_id
+            kwargs['user_id'] = self.user_id
 
         self.runtime = runtime_cls(
             config=config,
