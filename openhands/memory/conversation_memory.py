@@ -52,7 +52,6 @@ class ConversationMemory:
         initial_messages: list[Message],
         max_message_chars: int | None = None,
         vision_is_active: bool = False,
-        enable_som_visual_browsing: bool = False,
     ) -> list[Message]:
         """Process state history into a list of messages for the LLM.
 
@@ -64,7 +63,6 @@ class ConversationMemory:
             max_message_chars: The maximum number of characters in the content of an event included
                 in the prompt to the LLM. Larger observations are truncated.
             vision_is_active: Whether vision is active in the LLM. If True, image URLs will be included.
-            enable_som_visual_browsing: Whether to enable visual browsing for the SOM model.
         """
 
         events = condensed_history
