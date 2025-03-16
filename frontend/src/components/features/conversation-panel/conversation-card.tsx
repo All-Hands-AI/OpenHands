@@ -8,12 +8,14 @@ import {
 import { EllipsisButton } from "./ellipsis-button";
 import { ConversationCardContextMenu } from "./conversation-card-context-menu";
 import { cn } from "#/utils/utils";
+import { MetricsModal } from "../../shared/metrics-modal";
 
 interface ConversationCardProps {
   onClick?: () => void;
   onDelete?: () => void;
   onChangeTitle?: (title: string) => void;
   onDownloadWorkspace?: () => void;
+  onDisplayCost?: () => void;
   isActive?: boolean;
   title: string;
   selectedRepository: string | null;
@@ -27,6 +29,7 @@ export function ConversationCard({
   onDelete,
   onChangeTitle,
   onDownloadWorkspace,
+  onDisplayCost,
   isActive,
   title,
   selectedRepository,
@@ -36,6 +39,7 @@ export function ConversationCard({
 }: ConversationCardProps) {
   const [contextMenuVisible, setContextMenuVisible] = React.useState(false);
   const [titleMode, setTitleMode] = React.useState<"view" | "edit">("view");
+  const [metricsModalVisible, setMetricsModalVisible] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   const handleBlur = () => {
@@ -83,87 +87,101 @@ export function ConversationCard({
     onDownloadWorkspace?.();
   };
 
+  const handleDisplayCost = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    setMetricsModalVisible(true);
+    setContextMenuVisible(false);
+  };
+
   React.useEffect(() => {
     if (titleMode === "edit") {
       inputRef.current?.focus();
     }
   }, [titleMode]);
 
-  const hasContextMenu = !!(onDelete || onChangeTitle || onDownloadWorkspace);
+  const hasContextMenu = !!(onDelete || onChangeTitle || onDownloadWorkspace || onDisplayCost);
 
   return (
-    <div
-      data-testid="conversation-card"
-      onClick={onClick}
-      className={cn(
-        "h-[100px] w-full px-[18px] py-4 border-b border-neutral-600 cursor-pointer",
-        variant === "compact" &&
-          "h-auto w-fit rounded-xl border border-[#525252]",
-      )}
-    >
-      <div className="flex items-center justify-between w-full">
-        <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden mr-2">
-          {isActive && (
-            <span className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0" />
-          )}
-          {titleMode === "edit" && (
-            <input
-              ref={inputRef}
-              data-testid="conversation-card-title"
-              onClick={handleInputClick}
-              onBlur={handleBlur}
-              onKeyUp={handleKeyUp}
-              type="text"
-              defaultValue={title}
-              className="text-sm leading-6 font-semibold bg-transparent w-full"
-            />
-          )}
-          {titleMode === "view" && (
-            <p
-              data-testid="conversation-card-title"
-              className="text-sm leading-6 font-semibold bg-transparent truncate overflow-hidden"
-              title={title}
-            >
-              {title}
-            </p>
-          )}
-        </div>
-
-        <div className="flex items-center gap-2 relative">
-          <ConversationStateIndicator status={status} />
-          {hasContextMenu && (
-            <EllipsisButton
-              onClick={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                setContextMenuVisible((prev) => !prev);
-              }}
-            />
-          )}
-          {contextMenuVisible && (
-            <ConversationCardContextMenu
-              onClose={() => setContextMenuVisible(false)}
-              onDelete={onDelete && handleDelete}
-              onEdit={onChangeTitle && handleEdit}
-              onDownload={onDownloadWorkspace && handleDownload}
-              position={variant === "compact" ? "top" : "bottom"}
-            />
-          )}
-        </div>
-      </div>
-
+    <>
       <div
+        data-testid="conversation-card"
+        onClick={onClick}
         className={cn(
-          variant === "compact" && "flex items-center justify-between mt-1",
+          "h-[100px] w-full px-[18px] py-4 border-b border-neutral-600 cursor-pointer",
+          variant === "compact" &&
+            "h-auto w-fit rounded-xl border border-[#525252]",
         )}
       >
-        {selectedRepository && (
-          <ConversationRepoLink selectedRepository={selectedRepository} />
-        )}
-        <p className="text-xs text-neutral-400">
-          <time>{formatTimeDelta(new Date(lastUpdatedAt))} ago</time>
-        </p>
+        <div className="flex items-center justify-between w-full">
+          <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden mr-2">
+            {isActive && (
+              <span className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0" />
+            )}
+            {titleMode === "edit" && (
+              <input
+                ref={inputRef}
+                data-testid="conversation-card-title"
+                onClick={handleInputClick}
+                onBlur={handleBlur}
+                onKeyUp={handleKeyUp}
+                type="text"
+                defaultValue={title}
+                className="text-sm leading-6 font-semibold bg-transparent w-full"
+              />
+            )}
+            {titleMode === "view" && (
+              <p
+                data-testid="conversation-card-title"
+                className="text-sm leading-6 font-semibold bg-transparent truncate overflow-hidden"
+                title={title}
+              >
+                {title}
+              </p>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 relative">
+            <ConversationStateIndicator status={status} />
+            {hasContextMenu && (
+              <EllipsisButton
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  setContextMenuVisible((prev) => !prev);
+                }}
+              />
+            )}
+            {contextMenuVisible && (
+              <ConversationCardContextMenu
+                onClose={() => setContextMenuVisible(false)}
+                onDelete={onDelete && handleDelete}
+                onEdit={onChangeTitle && handleEdit}
+                onDownload={onDownloadWorkspace && handleDownload}
+                onDisplayCost={handleDisplayCost}
+                position={variant === "compact" ? "top" : "bottom"}
+              />
+            )}
+          </div>
+        </div>
+
+        <div
+          className={cn(
+            variant === "compact" && "flex items-center justify-between mt-1",
+          )}
+        >
+          {selectedRepository && (
+            <ConversationRepoLink selectedRepository={selectedRepository} />
+          )}
+          <p className="text-xs text-neutral-400">
+            <time>{formatTimeDelta(new Date(lastUpdatedAt))} ago</time>
+          </p>
+        </div>
       </div>
-    </div>
+
+      <MetricsModal
+        isOpen={metricsModalVisible}
+        onClose={() => setMetricsModalVisible(false)}
+      />
+    </>
   );
 }

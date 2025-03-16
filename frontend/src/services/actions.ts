@@ -85,6 +85,15 @@ export function handleActionMessage(message: ActionMessage) {
     return;
   }
 
+  // Update metrics if available
+  if (message.llm_metrics || message.tool_call_metadata?.model_response?.usage) {
+    const metrics = {
+      cost: message.llm_metrics?.accumulated_cost || null,
+      usage: message.tool_call_metadata?.model_response?.usage || null
+    };
+    window.postMessage({ type: 'metrics_update', metrics }, '*');
+  }
+
   if (message.action === ActionType.RUN) {
     store.dispatch(appendInput(message.args.command));
   }
