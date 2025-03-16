@@ -202,6 +202,7 @@ Note:
         tabs = ''
         last_obs = None
         last_action = None
+        set_of_marks = None  # Initialize set_of_marks to None
 
         if len(state.history) == 1:
             # for visualwebarena, webarena and miniwob++ eval, we need to retrieve the initial observation already in browser env
