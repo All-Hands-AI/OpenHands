@@ -68,7 +68,7 @@ class ConversationMemory:
         events = condensed_history
 
         # log visual browsing status
-        logger.info(f'Visual browsing: {self.agent_config.enable_som_visual_browsing}')
+        logger.debug(f'Visual browsing: {self.agent_config.enable_som_visual_browsing}')
 
         # Process special events first (system prompts, etc.)
         messages = initial_messages
