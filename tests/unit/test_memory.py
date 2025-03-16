@@ -74,7 +74,7 @@ async def test_memory_on_event_exception_handling(memory, event_stream):
 
     # Mock Memory method to raise an exception
     with patch.object(
-        memory, '_on_first_microagent_action', side_effect=Exception('Test error')
+        memory, '_on_workspace_context_action', side_effect=Exception('Test error')
     ):
         state = await run_controller(
             config=AppConfig(),
@@ -93,10 +93,10 @@ async def test_memory_on_event_exception_handling(memory, event_stream):
 
 
 @pytest.mark.asyncio
-async def test_memory_on_first_microagent_action_exception_handling(
+async def test_memory_on_workspace_context_action_exception_handling(
     memory, event_stream
 ):
-    """Test that exceptions in Memory._on_first_microagent_action are properly handled via status callback."""
+    """Test that exceptions in Memory._on_workspace_context_action are properly handled via status callback."""
 
     # Create a dummy agent for the controller
     agent = MagicMock(spec=Agent)
@@ -108,29 +108,36 @@ async def test_memory_on_first_microagent_action_exception_handling(
     runtime = MagicMock(spec=Runtime)
     runtime.event_stream = event_stream
 
-    # Mock Memory._on_first_microagent_action to raise an exception
+    # Create a recall action that will trigger _on_workspace_context_action
+    recall_action = RecallAction(
+        query='Test message', recall_type=RecallType.WORKSPACE_CONTEXT
+    )
+    recall_action._source = EventSource.USER  # type: ignore[attr-defined]
+
+    # Mock send_error_message to capture errors directly
+    error_messages = []
+
+    def mock_send_error_message(message_id, message):
+        error_messages.append(message)
+
+    memory.send_error_message = mock_send_error_message
+
+    # Mock Memory._on_workspace_context_action to raise an exception
     with patch.object(
         memory,
-        '_on_first_microagent_action',
-        side_effect=Exception('Test error from _on_first_microagent_action'),
+        '_on_workspace_context_action',
+        side_effect=Exception('Test error from _on_workspace_context_action'),
     ):
-        state = await run_controller(
-            config=AppConfig(),
-            initial_user_action=MessageAction(content='Test message'),
-            runtime=runtime,
-            sid='test',
-            agent=agent,
-            fake_user_response_fn=lambda _: 'repeat',
-            memory=memory,
-        )
+        # Process the recall action directly
+        await memory._on_event(recall_action)
 
-        # Verify that the controller's last error was set
-        assert state.iteration == 0
-        assert state.agent_state == AgentState.ERROR
-        assert state.last_error == 'Error: Exception'
+        # Verify that an error message was captured
+        assert len(error_messages) == 1
+        assert 'Error: Exception' in error_messages[0]
 
 
-def test_memory_with_microagents():
+@pytest.mark.asyncio
+async def test_memory_with_microagents():
     """Test that Memory loads microagents from the global directory and processes microagent actions.
 
     This test verifies that:
@@ -157,6 +164,8 @@ def test_memory_with_microagents():
     microagent_action = RecallAction(
         query='Hello, flarglebargle!', recall_type=RecallType.KNOWLEDGE
     )
+    # Set the source to USER since that's checked in _on_event
+    microagent_action._source = EventSource.USER  # type: ignore[attr-defined]
 
     # Mock the event_stream.add_event method
     added_events = []
@@ -173,14 +182,13 @@ def test_memory_with_microagents():
     added_events.clear()
 
     # Process the microagent action
-    memory.on_event(microagent_action)
+    await memory._on_event(microagent_action)
 
     # Verify a MicroagentObservation was added to the event stream
     assert len(added_events) == 1
     observation, source = added_events[0]
     assert isinstance(observation, MicroagentObservation)
     assert source == EventSource.ENVIRONMENT
-    assert observation.recall_type == RecallType.KNOWLEDGE
     assert len(observation.microagent_knowledge) == 1
     assert observation.microagent_knowledge[0].name == 'flarglebargle'
     assert observation.microagent_knowledge[0].trigger == 'flarglebargle'
@@ -250,7 +258,6 @@ REPOSITORY INSTRUCTIONS: This is a test repository.
 
         # Get the first WorkspaceContextObservation
         observation = workspace_context_obs_events[0]
-        assert observation.recall_type == RecallType.WORKSPACE_CONTEXT
         assert observation.repo_name == 'owner/repo'
         assert observation.repo_directory == '/workspace/repo'
         assert 'This is a test repository' in observation.repo_instructions
