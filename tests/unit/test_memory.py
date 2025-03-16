@@ -98,29 +98,15 @@ async def test_memory_on_workspace_context_action_exception_handling(
 ):
     """Test that exceptions in Memory._on_workspace_context_action are properly handled via status callback."""
 
-    # Create a dummy agent for the controller
-    agent = MagicMock(spec=Agent)
-    agent.llm = MagicMock(spec=LLM)
-    agent.llm.metrics = Metrics()
-    agent.llm.config = AppConfig().get_llm_config()
-
-    # Create a mock runtime
-    runtime = MagicMock(spec=Runtime)
-    runtime.event_stream = event_stream
+    # Create a mock status_callback to verify it's called on exception
+    status_callback_mock = MagicMock()
+    memory.status_callback = status_callback_mock
 
     # Create a recall action that will trigger _on_workspace_context_action
     recall_action = RecallAction(
         query='Test message', recall_type=RecallType.WORKSPACE_CONTEXT
     )
     recall_action._source = EventSource.USER  # type: ignore[attr-defined]
-
-    # Mock send_error_message to capture errors directly
-    error_messages = []
-
-    def mock_send_error_message(message_id, message):
-        error_messages.append(message)
-
-    memory.send_error_message = mock_send_error_message
 
     # Mock Memory._on_workspace_context_action to raise an exception
     with patch.object(
@@ -131,9 +117,16 @@ async def test_memory_on_workspace_context_action_exception_handling(
         # Process the recall action directly
         await memory._on_event(recall_action)
 
-        # Verify that an error message was captured
-        assert len(error_messages) == 1
-        assert 'Error: Exception' in error_messages[0]
+        # Verify that the status_callback was called with the correct error message
+        # The callback is called asynchronously, so we need to wait a bit
+        await asyncio.sleep(0.1)
+
+        # Verify the status_callback was called with the correct parameters
+        status_callback_mock.assert_called_once()
+        call_args = status_callback_mock.call_args[0]
+        assert call_args[0] == 'error'  # First arg should be message type 'error'
+        assert call_args[1] == 'STATUS$ERROR_MEMORY'  # Second arg should be the message ID
+        assert 'Error: Exception' in call_args[2]  # Third arg should contain the error message
 
 
 @pytest.mark.asyncio
