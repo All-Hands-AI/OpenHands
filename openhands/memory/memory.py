@@ -83,7 +83,7 @@ class Memory:
                     event.source == EventSource.USER
                     and event.recall_type == RecallType.WORKSPACE_CONTEXT
                 ):
-                    logger.info('Workspace context recall')
+                    logger.debug('Workspace context recall')
                     workspace_obs: RecallObservation | NullObservation | None = None
 
                     workspace_obs = self._on_workspace_context_recall(event)
@@ -101,7 +101,7 @@ class Memory:
                     event.source == EventSource.USER
                     and event.recall_type == RecallType.KNOWLEDGE
                 ):
-                    logger.info('Microagent knowledge recall')
+                    logger.debug('Microagent knowledge recall')
                     microagent_obs: RecallObservation | NullObservation | None = None
                     microagent_obs = self._on_microagent_recall(event)
                     if microagent_obs is None:
