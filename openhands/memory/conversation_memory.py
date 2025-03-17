@@ -6,6 +6,7 @@ from openhands.core.message import ImageContent, Message, TextContent
 from openhands.core.schema import ActionType
 from openhands.events.action import (
     Action,
+    AgentCondensationAction,
     AgentDelegateAction,
     AgentFinishAction,
     AgentThinkAction,
@@ -383,8 +384,21 @@ class ConversationMemory:
             text += '\n[Last action has been rejected by the user]'
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, AgentCondensationObservation):
-            text = truncate_content(obs.content, max_message_chars)
-            message = Message(role='user', content=[TextContent(text=text)])
+            # Find the corresponding AgentCondensationAction in history
+            if events:
+                for event in events:
+                    if isinstance(event, AgentCondensationAction):
+                        text = truncate_content(event.summary, max_message_chars)
+                        message = Message(role='user', content=[TextContent(text=text)])
+                        break
+                else:
+                    # Fallback to observation if action not found (should not happen)
+                    text = truncate_content(obs.content, max_message_chars)
+                    message = Message(role='user', content=[TextContent(text=text)])
+            else:
+                # If events is None, fallback to observation content
+                text = truncate_content(obs.content, max_message_chars)
+                message = Message(role='user', content=[TextContent(text=text)])
         elif (
             isinstance(obs, RecallObservation)
             and self.agent_config.enable_prompt_extensions
