@@ -247,7 +247,7 @@ def test_microagent_observation_serialization():
     original_observation_dict = {
         'observation': 'recall',
         'content': '',
-        'message': "**RecallObservation**\nrecall_type=RecallType.WORKSPACE_CONTEXT, repo_name=some_repo_name, repo_instructions=complex_repo_instruc..., runtime_hosts={'host1': 8080, 'host2': 8081}, additional_agent_instructions=You know it all abou...",
+        'message': 'Added workspace context',
         'extras': {
             'recall_type': 'workspace_context',
             'repo_name': 'some_repo_name',
@@ -265,7 +265,7 @@ def test_microagent_observation_microagent_knowledge_serialization():
     original_observation_dict = {
         'observation': 'recall',
         'content': '',
-        'message': '**RecallObservation**\nrecall_type=RecallType.KNOWLEDGE, repo_name=, repo_instructions=..., runtime_hosts={}, additional_agent_instructions=..., microagent_knowledge=microagent1, microagent2',
+        'message': 'Added microagent knowledge',
         'extras': {
             'recall_type': 'knowledge',
             'repo_name': '',

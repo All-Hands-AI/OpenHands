@@ -177,7 +177,7 @@ async def test_memory_with_microagents():
     added_events.clear()
 
     # Process the microagent action
-    await memory.on_event(microagent_action)
+    await memory._on_event(microagent_action)
 
     # Verify a RecallObservation was added to the event stream
     assert len(added_events) == 1

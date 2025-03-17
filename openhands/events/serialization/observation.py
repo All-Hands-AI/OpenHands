@@ -114,10 +114,6 @@ def observation_from_dict(observation: dict) -> Observation:
         else:
             extras['metadata'] = CmdOutputMetadata()
 
-    # compatibility
-    if observation_class.__name__ == 'MicroagentObservation':
-        observation_class = RecallObservation
-
     if observation_class is RecallObservation:
         # handle the Enum conversion
         if 'recall_type' in extras:
