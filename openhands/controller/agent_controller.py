@@ -18,6 +18,8 @@ from openhands.controller.state.state import State, TrafficControlState
 from openhands.controller.stuck import StuckDetector
 from openhands.core.config import AgentConfig, LLMConfig
 from openhands.core.exceptions import (
+    AgentRuntimeDisconnectedError,
+    AgentRuntimeUnavailableError,
     AgentStuckInLoopError,
     FunctionCallNotExistsError,
     FunctionCallValidationError,
