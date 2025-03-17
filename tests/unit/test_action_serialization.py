@@ -1,5 +1,6 @@
 from openhands.events.action import (
     Action,
+    AgentCondensationAction,
     AgentFinishAction,
     AgentRejectAction,
     BrowseInteractiveAction,
@@ -350,6 +351,18 @@ def test_agent_microagent_action_serialization_deserialization():
         },
     }
     serialization_deserialization(original_action_dict, RecallAction)
+
+
+def test_agent_condensation_action_serialization_deserialization():
+    original_action_dict = {
+        'action': 'condense',
+        'args': {
+            'start_id': 10,
+            'end_id': 20,
+            'metadata': {'summary': 'Condensed history', 'tokens': 1500},
+        },
+    }
+    serialization_deserialization(original_action_dict, AgentCondensationAction)
 
 
 def test_file_read_action_legacy_serialization():
