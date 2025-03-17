@@ -238,9 +238,8 @@ class Runtime(FileEditRuntimeMixin):
         )
 
         for provider, token in env_vars.items():
-            env_name = f'{provider.value}_token'
             export_cmd = CmdRunAction(
-                f"export {env_name.upper()}='{token.get_secret_value()}'"
+                f"export {ProviderHandler.get_provider_env_key(provider)}='{token.get_secret_value()}'"
             )
             await call_sync_from_async(self.run, export_cmd)
 

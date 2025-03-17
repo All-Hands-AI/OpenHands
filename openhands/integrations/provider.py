@@ -160,7 +160,7 @@ class ProviderHandler:
                 else provider_tokens[provider]
             )
             if token:
-                token_name = f'{provider.value}_token'
+                token_name = ProviderHandler.get_provider_env_key(provider, lower=True)
                 event_stream.set_secrets(
                     {
                         token_name: token.get_secret_value(),
@@ -204,7 +204,8 @@ class ProviderHandler:
 
         exposed_envs = {}
         for provider, token in env_vars.items():
-            exposed_envs[f'{provider.value.upper()}_token'] = token.get_secret_value()
+            env_key = ProviderHandler.get_provider_env_key(provider, lower=True)
+            exposed_envs[env_key] = token.get_secret_value()
 
         return exposed_envs
 
@@ -217,8 +218,15 @@ class ProviderHandler:
 
         called_providers = []
         for provider in ProviderType:
-            env_name = f'${provider.value.upper()}_TOKEN'
-            if env_name in event.command:
+            if ProviderHandler.get_provider_env_key(provider) in event.command:
                 called_providers.append(provider)
 
         return called_providers
+
+    @classmethod
+    def get_provider_env_key(cls, provider: ProviderType, lower: bool = False) -> str:
+        env_key = f'${provider.value.upper()}_TOKEN'
+        if lower:
+            return env_key.lower()
+
+        return env_key.upper()
