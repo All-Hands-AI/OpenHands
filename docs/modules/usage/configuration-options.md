@@ -308,6 +308,11 @@ The agent configuration options are defined in the `[agent]` and `[agent.<agent_
   - Default: `false`
   - Description: Whether Jupyter is enabled in the action space
 
+- `enable_search_engine`
+  - Type: `bool`
+  - Default: `false`
+  - Description: Whether the search engine tool is enabled in the action space. When enabled, the agent can perform web searches using a search engine API.
+
 - `enable_history_truncation`
   - Type: `bool`
   - Default: `true`
@@ -379,6 +384,11 @@ To use these with the docker command, pass in `-e SANDBOX_<option>`. Example: `-
   - Type: `dict`
   - Default: `{}`
   - Description: Environment variables to set at the launch of the runtime
+
+- `brave_api_key`
+  - Type: `str`
+  - Default: `""`
+  - Description: API key for Brave Search. Required when `enable_search_engine` is set to `true`. You can obtain a key from [Brave Search API](https://api.search.brave.com/app/keys).
 
 ### Evaluation
 - `browsergym_eval_env`
