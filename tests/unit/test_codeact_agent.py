@@ -6,11 +6,11 @@ from litellm import ChatCompletionMessageToolCall
 from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
 from openhands.agenthub.codeact_agent.function_calling import (
     BrowserTool,
+    CmdRunTool,
     IPythonTool,
     LLMBasedFileEditTool,
+    StrReplaceEditorTool,
     WebReadTool,
-    create_cmd_run_tool,
-    create_str_replace_editor_tool,
     get_tools,
     response_to_actions,
 )
@@ -66,6 +66,22 @@ def test_reset(agent: CodeActAgent):
     assert len(agent.pending_actions) == 0
 
 
+def test_tool_description_length_limit_for_openai():
+    tools = get_tools(
+        codeact_enable_jupyter=True,
+        codeact_enable_llm_editor=False,
+        codeact_enable_browsing=True,
+    )
+    assert len(tools) > 0
+
+    for tool in tools:
+        print(
+            f"name: {tool['function']['name']}, description length: {len(tool['function']['description'])}"
+        )
+        # OpenAI has a limit of 1024 tokens for tool descriptions :(
+        assert len(tool['function']['description']) < 1024
+
+
 def test_step_with_pending_actions(agent: CodeActAgent):
     # Add a pending action
     pending_action = MessageAction(content='test')
@@ -119,7 +135,6 @@ def test_get_tools_with_options():
 
 
 def test_cmd_run_tool():
-    CmdRunTool = create_cmd_run_tool()
     assert CmdRunTool['type'] == 'function'
     assert CmdRunTool['function']['name'] == 'execute_bash'
     assert 'command' in CmdRunTool['function']['parameters']['properties']
@@ -150,7 +165,6 @@ def test_llm_based_file_edit_tool():
 
 
 def test_str_replace_editor_tool():
-    StrReplaceEditorTool = create_str_replace_editor_tool()
     assert StrReplaceEditorTool['type'] == 'function'
     assert StrReplaceEditorTool['function']['name'] == 'str_replace_editor'
 
@@ -238,11 +252,7 @@ def test_step_with_no_pending_actions(mock_state: State):
     mock_response.choices[0].message.content = 'Task completed'
     mock_response.choices[0].message.tool_calls = []
 
-    mock_config = Mock()
-    mock_config.model = 'mock_model'
-
     llm = Mock()
-    llm.config = mock_config
     llm.completion = Mock(return_value=mock_response)
     llm.is_function_calling_active = Mock(return_value=True)  # Enable function calling
     llm.is_caching_prompt_active = Mock(return_value=False)
@@ -264,28 +274,6 @@ def test_step_with_no_pending_actions(mock_state: State):
     action = agent.step(mock_state)
     assert isinstance(action, MessageAction)
     assert action.content == 'Task completed'
-
-
-def test_correct_tool_description_loaded_based_on_model_name(mock_state: State):
-    """Tests that the simplified tool descriptions are loaded for specific models."""
-    o3_mock_config = Mock()
-    o3_mock_config.model = 'mock_o3_model'
-
-    llm = Mock()
-    llm.config = o3_mock_config
-
-    agent = CodeActAgent(llm=llm, config=AgentConfig())
-    for tool in agent.tools:
-        # Assert all descriptions have less than 1024 characters
-        assert len(tool['function']['description']) < 1024
-
-    sonnet_mock_config = Mock()
-    sonnet_mock_config.model = 'mock_sonnet_model'
-
-    llm.config = sonnet_mock_config
-    agent = CodeActAgent(llm=llm, config=AgentConfig())
-    # Assert existence of the detailed tool descriptions that are longer than 1024 characters
-    assert any(len(tool['function']['description']) > 1024 for tool in agent.tools)
 
 
 def test_mismatched_tool_call_events(mock_state: State):
