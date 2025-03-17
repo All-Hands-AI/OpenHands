@@ -21,7 +21,7 @@ Please follow instruction [here](../../README.md#setup) to setup your local deve
 > [!NOTE]
 > **Iterative Evaluation Protocol**
 >
-> By default, we use an iterative approach for more stable and reproducible results:
+> We have an iterative approach for more stable and reproducible results:
 > - For each instance, we attempt to generate a solution up to 3 times
 > - Each attempt continues until either:
 >   1. The agent successfully produces a patch with `AgentFinishAction`, or
@@ -29,7 +29,7 @@ Please follow instruction [here](../../README.md#setup) to setup your local deve
 > - If an attempt fails, we retry with a fresh attempt (up to the 3-attempt maximum)
 > - If your LLM config has temperature=0, we will automatically use temperature=0.1 for the 2nd and 3rd attempts
 >
-> To disable this iterative protocol and use only a single attempt per instance, set `export ITERATIVE_EVAL_MODE=false`
+> To enable this iterative protocol, set `export ITERATIVE_EVAL_MODE=true`
 
 
 ### Running Locally with Docker
