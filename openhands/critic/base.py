@@ -11,6 +11,7 @@ class CriticResult(BaseModel):
     """
 
     score: float
+    message: str
 
     @property
     def success(self) -> bool:
