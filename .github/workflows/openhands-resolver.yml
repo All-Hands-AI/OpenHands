@@ -219,7 +219,9 @@ jobs:
             if (isExperimentalLabel || isIssueCommentExperimental || isReviewCommentExperimental) {
               console.log("Installing experimental OpenHands...");
               await exec.exec("python -m pip install --upgrade pip");
+              await exec.exec("pip cache purge");  // Clears pip cache
               await exec.exec("pip install --upgrade git+https://github.com/Fazek007/OpenHandsForked");
+
             }  else {
               console.log("Installing from requirements.txt...");
               await exec.exec("python -m pip install --upgrade pip");
