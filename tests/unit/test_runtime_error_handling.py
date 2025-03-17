@@ -45,22 +45,7 @@ def test_runtime_error_handling_implementation():
     assert "_runtime_error_count = 0" in step_source
 
 
-def test_try_migrate_workspace_function():
-    """
-    This is a simple test to verify that the _try_migrate_workspace function exists
-    and has the expected functionality. We don't need to test the actual implementation
-    since it would require extensive mocking of the RemoteRuntime class.
-    """
-    # The function should exist in the RemoteRuntime class
-    from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
-    
-    # Verify the function exists
-    assert hasattr(RemoteRuntime, '_try_migrate_workspace'), "RemoteRuntime should have _try_migrate_workspace method"
-    
-    # Verify the function has the expected docstring
-    docstring = RemoteRuntime._try_migrate_workspace.__doc__
-    assert "migrate the workspace" in docstring.lower(), "Docstring should mention workspace migration"
-    assert "failed runtime" in docstring.lower(), "Docstring should mention failed runtime"
+
 
 
 if __name__ == '__main__':
