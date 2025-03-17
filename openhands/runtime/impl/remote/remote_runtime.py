@@ -1,3 +1,4 @@
+import logging
 import os
 from typing import Callable
 from urllib.parse import urlparse
@@ -425,10 +426,11 @@ class RemoteRuntime(ActionExecutionClient):
             return self._send_action_server_request_impl(method, url, **kwargs)
 
         retry_decorator = tenacity.retry(
-            retry=tenacity.retry_if_exception_type(ConnectionError),
+            retry=tenacity.retry_if_exception_type(requests.ConnectionError),
             stop=tenacity.stop_after_attempt(3)
             | stop_if_should_exit()
             | self._stop_if_closed,
+            before_sleep=tenacity.before_sleep_log(logger, logging.WARNING),
             wait=tenacity.wait_exponential(multiplier=1, min=4, max=60),
         )
         return retry_decorator(self._send_action_server_request_impl)(
