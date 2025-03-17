@@ -240,7 +240,7 @@ class Runtime(FileEditRuntimeMixin):
         )
 
         self.add_env_vars(env_vars)
-        ProviderHandler.set_or_update_event_stream_secrets(self.event_stream, env_vars)
+        ProviderHandler.set_event_stream_secrets(self.event_stream, env_vars)
 
     async def _handle_action(self, event: Action) -> None:
         if event.timeout is None:

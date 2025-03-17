@@ -136,7 +136,7 @@ class AgentSession:
             )
 
             if provider_tokens:
-                ProviderHandler.set_or_update_event_stream_secrets(
+                ProviderHandler.set_event_stream_secrets(
                     self.event_stream, provider_tokens
                 )
 

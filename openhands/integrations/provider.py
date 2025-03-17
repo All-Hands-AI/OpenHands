@@ -151,13 +151,25 @@ class ProviderHandler:
         return all_repos
 
     @classmethod
-    def set_or_update_event_stream_secrets(
+    def set_event_stream_secrets(
         cls,
         event_stream: EventStream,
         provider_tokens: PROVIDER_TOKEN_TYPE
         | dict[ProviderType, SecretStr]
         | dict[str, str],
     ):
+        """
+        This function sets the secret values for the event stream.
+        This ensures that the latest provider tokens are masked from the event stream.
+        It is called when the provider tokens are first initialized in the runtime, or when the provider tokens are re-exported with the latest working ones
+
+
+        Args:
+            event_stream: Agent session's event stream
+            provider_tokens: Dict of providers and their tokens that require setting/updating
+
+        """
+
         normalized_dict = {
             ProviderHandler.get_provider_env_key(provider, lower=True)
             if isinstance(provider, ProviderType)
@@ -202,6 +214,16 @@ class ProviderHandler:
         required_providers: list[ProviderType] | None = None,
         get_latest: bool = False,
     ) -> dict[ProviderType, SecretStr] | dict[str, str]:
+        """
+        Retrieves the provider tokens from ProviderHandler object
+        This is used when initializing/exporting new provider tokens in the runtime
+
+        Args:
+            expose_secrets: Flag which returns strings instead of secrets
+            required_providers: Return provider tokens for the list passed in, otherwise return all available providers
+            get_latest: Get the latest working token for the providers if True, otherwise get the existing ones
+        """
+
         if not self.provider_tokens:
             return {}
 
@@ -237,6 +259,11 @@ class ProviderHandler:
     def check_cmd_action_for_provider_token_ref(
         cls, event: Action
     ) -> list[ProviderType]:
+        """
+        Detect if agent run action is using a provider token (e.g $GITHUB_TOKEN)
+        Returns a list of providers which are called by the agent
+        """
+
         if not isinstance(event, CmdRunAction):
             return []
 
@@ -249,6 +276,9 @@ class ProviderHandler:
 
     @classmethod
     def get_provider_env_key(cls, provider: ProviderType, lower: bool = False) -> str:
+        """
+        Map ProviderType value to the environment variable name in the runtime
+        """
         env_key = f'${provider.value.upper()}_TOKEN'
         if lower:
             return env_key.lower()
