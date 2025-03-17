@@ -61,7 +61,10 @@ function AccountSettings() {
     if (isSuccess) {
       return (
         isCustomModel(resources.models, settings.LLM_MODEL) ||
-        hasAdvancedSettingsSet(settings)
+        hasAdvancedSettingsSet({
+          ...settings,
+          PROVIDER_TOKENS: settings.PROVIDER_TOKENS || {},
+        })
       );
     }
 
@@ -128,37 +131,42 @@ function AccountSettings() {
       : llmBaseUrl;
     const finalLlmApiKey = shouldHandleSpecialSaasCase ? undefined : llmApiKey;
 
-    saveSettings(
-      {
-        github_token:
-          formData.get("github-token-input")?.toString() || undefined,
-        LANGUAGE: languageValue,
-        user_consents_to_analytics: userConsentsToAnalytics,
-        ENABLE_DEFAULT_CONDENSER: enableMemoryCondenser,
-        ENABLE_SOUND_NOTIFICATIONS: enableSoundNotifications,
-        LLM_MODEL: finalLlmModel,
-        LLM_BASE_URL: finalLlmBaseUrl,
-        LLM_API_KEY: finalLlmApiKey,
-        AGENT: formData.get("agent-input")?.toString(),
-        SECURITY_ANALYZER:
-          formData.get("security-analyzer-input")?.toString() || "",
-        REMOTE_RUNTIME_RESOURCE_FACTOR:
-          remoteRuntimeResourceFactor ||
-          DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
-        CONFIRMATION_MODE: confirmationModeIsEnabled,
+    const githubToken = formData.get("github-token-input")?.toString();
+    const newSettings = {
+      github_token: githubToken,
+      provider_tokens: githubToken
+        ? {
+            github: githubToken,
+            gitlab: "",
+          }
+        : undefined,
+      LANGUAGE: languageValue,
+      user_consents_to_analytics: userConsentsToAnalytics,
+      ENABLE_DEFAULT_CONDENSER: enableMemoryCondenser,
+      ENABLE_SOUND_NOTIFICATIONS: enableSoundNotifications,
+      LLM_MODEL: finalLlmModel,
+      LLM_BASE_URL: finalLlmBaseUrl,
+      LLM_API_KEY: finalLlmApiKey,
+      AGENT: formData.get("agent-input")?.toString(),
+      SECURITY_ANALYZER:
+        formData.get("security-analyzer-input")?.toString() || "",
+      REMOTE_RUNTIME_RESOURCE_FACTOR:
+        remoteRuntimeResourceFactor ||
+        DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
+      CONFIRMATION_MODE: confirmationModeIsEnabled,
+    };
+
+    saveSettings(newSettings, {
+      onSuccess: () => {
+        handleCaptureConsent(userConsentsToAnalytics);
+        displaySuccessToast("Settings saved");
+        setLlmConfigMode(isAdvancedSettingsSet ? "advanced" : "basic");
       },
-      {
-        onSuccess: () => {
-          handleCaptureConsent(userConsentsToAnalytics);
-          displaySuccessToast("Settings saved");
-          setLlmConfigMode(isAdvancedSettingsSet ? "advanced" : "basic");
-        },
-        onError: (error) => {
-          const errorMessage = retrieveAxiosErrorMessage(error);
-          displayErrorToast(errorMessage);
-        },
+      onError: (error) => {
+        const errorMessage = retrieveAxiosErrorMessage(error);
+        displayErrorToast(errorMessage);
       },
-    );
+    });
   };
 
   const handleReset = () => {
