@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from openhands.core.config.condenser_config import LLMSummarizingCondenserConfig
 from openhands.core.message import Message, TextContent
+from openhands.events.action.agent import AgentCondensationAction
 from openhands.events.event import Event
 from openhands.events.observation.agent import AgentCondensationObservation
 from openhands.llm import LLM
@@ -101,7 +102,25 @@ INTENT: Fix precision while maintaining FITS compliance"""
         self.add_metadata('response', response.model_dump())
         self.add_metadata('metrics', self.llm.metrics.get())
 
-        return head + [AgentCondensationObservation(summary)] + tail
+        # Check if the first event after keep_first is a condensation observation
+        has_existing_summary = isinstance(events[self.keep_first], AgentCondensationObservation)
+        
+        # Determine the start_id based on whether there's an existing summary
+        start_index = self.keep_first + 1 if has_existing_summary else self.keep_first
+        
+        # Get the IDs of the first and last events being condensed
+        start_id = events[start_index].id
+        end_id = events[-events_from_tail - 1].id
+        
+        # Create the condensation action with the summary
+        condensation_action = AgentCondensationAction(
+            start_id=start_id,
+            end_id=end_id,
+            metadata={"summary": summary}
+        )
+        
+        # Add the action first, then the observation to the returned events
+        return head + [condensation_action, AgentCondensationObservation(summary)] + tail
 
     @classmethod
     def from_config(
