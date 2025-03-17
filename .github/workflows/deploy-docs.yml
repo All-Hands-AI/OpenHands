@@ -11,6 +11,7 @@ on:
     paths:
       - 'docs/**'
       - '.github/workflows/deploy-docs.yml'
+      - 'pydoc-markdown.yml'
     branches:
       - main
 
@@ -39,7 +40,10 @@ jobs:
         with:
           python-version: '3.12'
       - name: Generate Python Docs
-        run: rm -rf docs/modules/python && pip install pydoc-markdown && pydoc-markdown
+        run: |
+          rm -rf docs/modules/python
+          pip install pydoc-markdown
+          pydoc-markdown
       - name: Install dependencies
         run: cd docs && npm ci
       - name: Build website
