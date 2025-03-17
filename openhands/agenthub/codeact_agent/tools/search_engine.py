@@ -2,8 +2,7 @@ from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChun
 
 _SEARCH_ENGINE_DESCRIPTION = """Execute a web search query (similar to Google search).
 
-You MUST use this tool as a search engine and find URLs of webpages that are relevant to the search query.
-NOTE: Do NOT use the browser tool to search using Google or Bing since you will be blocked by CAPTCHAs.
+NOTE: When you need to search for information online, please use the `search_engine` tool rather than the `browser` or `web_read` tools. The `search_engine` tool connects directly to a search engine, which will help avoid CAPTCHA challenges that would otherwise block your access.
 """
 
 SearchEngineTool = ChatCompletionToolParam(
