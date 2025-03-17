@@ -76,7 +76,7 @@ class AgentSession:
         config: AppConfig,
         agent: Agent,
         max_iterations: int,
-        provider_tokens: PROVIDER_TOKEN_TYPE,
+        provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
         max_budget_per_task: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
@@ -209,7 +209,7 @@ class AgentSession:
         runtime_name: str,
         config: AppConfig,
         agent: Agent,
-        provider_tokens: PROVIDER_TOKEN_TYPE = {},
+        provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
         selected_repository: str | None = None,
         selected_branch: str | None = None,
     ) -> bool:
@@ -230,7 +230,7 @@ class AgentSession:
         self.logger.debug(f'Initializing runtime `{runtime_name}` now...')
         runtime_cls = get_runtime_cls(runtime_name)
 
-        provider_handler = ProviderHandler(provider_tokens)
+        provider_handler = ProviderHandler(provider_tokens or {})
         raw_env_vars: dict[str, str] = await provider_handler.get_env_vars(expose_secrets=True)
     
         self.runtime = runtime_cls(

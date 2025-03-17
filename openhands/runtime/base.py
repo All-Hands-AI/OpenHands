@@ -228,7 +228,9 @@ class Runtime(FileEditRuntimeMixin):
             provider_handler = ProviderHandler(
                 provider_tokens=self.provider_tokens, external_token_manager=True
             )
-            env_vars = await provider_handler.get_env_vars(providers_called)
+            env_vars = await provider_handler.get_env_vars(
+                required_providers=providers_called, expose_secrets=False
+            )
 
             # Convert env_vars to the expected type
             provider_env_vars: dict[ProviderType, SecretStr] = {}
