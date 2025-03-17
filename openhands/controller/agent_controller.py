@@ -298,7 +298,7 @@ class AgentController:
                 # Add an error observation to the event stream with retry count
                 self.event_stream.add_event(
                     ErrorObservation(
-                        content=f"Your command consumed too much resources, and the previous runtime died. "
+                        content=f"Your command may have consumed too much resources, and the previous runtime died. "
                         f"You are connected to a new runtime container, all dependencies you have installed "
                         f"outside /workspace are not persisted. (Retry {self._runtime_error_count} of 3)"
                     ),
