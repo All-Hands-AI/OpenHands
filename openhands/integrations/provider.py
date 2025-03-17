@@ -151,21 +151,31 @@ class ProviderHandler:
     def set_or_update_event_stream_secrets(
         cls,
         event_stream: EventStream,
-        provider_tokens: PROVIDER_TOKEN_TYPE | dict[ProviderType, SecretStr],
+        provider_tokens: PROVIDER_TOKEN_TYPE
+        | dict[ProviderType, SecretStr]
+        | dict[str, str],
     ):
-        for provider in provider_tokens:
-            token = (
-                provider_tokens[provider].token
-                if isinstance(provider_tokens[provider], ProviderToken)
-                else provider_tokens[provider]
-            )
+        normalized_dict = {
+            ProviderHandler.get_provider_env_key(provider, lower=True)
+            if isinstance(provider, ProviderType)
+            else provider: token
+            for provider, token in provider_tokens.items()
+        }
+
+        for provider, raw_token in normalized_dict.items():
+            token: str
+
+            if isinstance(raw_token, ProviderToken):
+                token = raw_token.token.get_secret_value() if raw_token.token else ''
+            elif isinstance(raw_token, SecretStr):
+                token = raw_token.get_secret_value()
+            elif isinstance(raw_token, str):
+                token = raw_token
+            else:
+                continue  # Skip invalid token types
+
             if token:
-                token_name = ProviderHandler.get_provider_env_key(provider, lower=True)
-                event_stream.set_secrets(
-                    {
-                        token_name: token.get_secret_value(),
-                    }
-                )
+                event_stream.set_secrets({provider: token})
 
     @overload
     def get_env_vars(

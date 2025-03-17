@@ -174,6 +174,8 @@ class Runtime(FileEditRuntimeMixin):
     # ====================================================================
 
     def add_env_vars(self, env_vars: dict[str, str]) -> None:
+        env_vars = {key.upper(): value for key, value in env_vars.items()}
+
         # Add env vars to the IPython shell (if Jupyter is used)
         if any(isinstance(plugin, JupyterRequirement) for plugin in self.plugins):
             code = 'import os\n'
@@ -234,15 +236,10 @@ class Runtime(FileEditRuntimeMixin):
             provider_tokens=self.provider_tokens, external_token_manager=True
         )
         env_vars = await provider_handler.get_env_vars(
-            required_providers=providers_called, expose_secrets=False
+            required_providers=providers_called, expose_secrets=True
         )
 
-        for provider, token in env_vars.items():
-            export_cmd = CmdRunAction(
-                f"export {ProviderHandler.get_provider_env_key(provider)}='{token.get_secret_value()}'"
-            )
-            await call_sync_from_async(self.run, export_cmd)
-
+        self.add_env_vars(env_vars)
         ProviderHandler.set_or_update_event_stream_secrets(self.event_stream, env_vars)
 
     async def _handle_action(self, event: Action) -> None:
