@@ -38,6 +38,7 @@ from openhands.events import (
 from openhands.events.action import (
     Action,
     ActionConfirmationStatus,
+    AgentCondensationAction,
     AgentDelegateAction,
     AgentFinishAction,
     AgentRejectAction,
@@ -290,6 +291,8 @@ class AgentController:
                 # TODO: this is fragile, but how else to check if eligible?
                 return True
             if isinstance(event, AgentDelegateAction):
+                return True
+            if isinstance(event, AgentCondensationAction):
                 return True
             return False
         if isinstance(event, Observation):

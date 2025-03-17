@@ -1,6 +1,7 @@
 from openhands.controller.state.state import State
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.action import Action
+from openhands.events.action.agent import AgentCondensationAction
 from openhands.events.action.commands import IPythonRunCellAction
 from openhands.events.action.empty import NullAction
 from openhands.events.action.message import MessageAction
@@ -318,7 +319,7 @@ class StuckDetector:
 
         This happens when we repeatedly get context window errors and try to trim,
         but the trimming doesn't work, causing us to get more context window errors.
-        The pattern is repeated AgentCondensationObservation events without any other
+        The pattern is repeated AgentCondensationAction events without any other
         events between them.
 
         Args:
@@ -327,11 +328,11 @@ class StuckDetector:
         Returns:
             bool: True if we detect a context window error loop
         """
-        # Look for AgentCondensationObservation events
+        # Look for AgentCondensationAction events
         condensation_events = [
             (i, event)
             for i, event in enumerate(filtered_history)
-            if isinstance(event, AgentCondensationObservation)
+            if isinstance(event, AgentCondensationAction)
         ]
 
         # Need at least 10 condensation events to detect a loop
@@ -349,7 +350,7 @@ class StuckDetector:
             # Look for any non-condensation events between these two
             has_other_events = False
             for event in filtered_history[start_idx + 1 : end_idx]:
-                if not isinstance(event, AgentCondensationObservation):
+                if not isinstance(event, AgentCondensationAction):
                     has_other_events = True
                     break
 

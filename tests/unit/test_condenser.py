@@ -16,6 +16,7 @@ from openhands.core.config.condenser_config import (
 )
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.message import Message, TextContent
+from openhands.events.action.agent import AgentCondensationAction
 from openhands.events.event import Event, EventSource
 from openhands.events.observation import BrowserOutputObservation
 from openhands.events.observation.agent import AgentCondensationObservation
@@ -336,17 +337,28 @@ def test_llm_summarizing_condenser_forgets_and_summarizes(mock_llm, mock_state):
     # 1. First event (keep_first = 1)
     # 2. Summary event
     # 3. Most recent event
-    assert len(results) == 3, f'Expected 3 events, got {len(results)}: {results}'
+    assert len(results) == 4, f'Expected 4 events, got {len(results)}: {results}'
     assert (
         results[0] == first_event
     ), f'First event should be {first_event}, got {results[0]}'
+    
+    # Check for AgentCondensationAction
     assert isinstance(
-        results[1], AgentCondensationObservation
-    ), f'Second event should be a summary, got {results[1]}'
+        results[1], AgentCondensationAction
+    ), f'Second event should be a condensation action, got {results[1]}'
     assert (
-        results[1].content == 'Summary of forgotten events'
-    ), f"Summary content should be 'Summary of forgotten events', got {results[1].content}"
-    assert results[2] == event, f'Last event should be {event}, got {results[2]}'
+        results[1].summary == 'Summary of forgotten events'
+    ), f"Summary content should be 'Summary of forgotten events', got {results[1].summary}"
+    
+    # Check for AgentCondensationObservation (should be empty)
+    assert isinstance(
+        results[2], AgentCondensationObservation
+    ), f'Third event should be a condensation observation, got {results[2]}'
+    assert (
+        results[2].content == ''
+    ), f"Observation content should be empty, got {results[2].content}"
+    
+    assert results[3] == event, f'Last event should be {event}, got {results[3]}'
 
 
 def test_llm_summarizing_condenser_llm_call(mock_llm, mock_state):
@@ -408,11 +420,12 @@ def test_llm_summarizing_condenser_resets_when_given_truncated_history(
     # Get the condensed history
     results = condenser.condensed_history(mock_state)
 
-    # We should have exactly 3 events:
+    # We should have exactly 4 events:
     # 1. First event (keep_first = 1)
-    # 2. Summary event
-    # 3. Most recent event
-    assert len(results) == 3, f'Expected 3 events, got {len(results)}: {results}'
+    # 2. AgentCondensationAction with summary
+    # 3. AgentCondensationObservation (empty)
+    # 4. Most recent event
+    assert len(results) == 4, f'Expected 4 events, got {len(results)}: {results}'
 
     # Now, call condensation on a small history that contains only two events.
     alternate_history = [
