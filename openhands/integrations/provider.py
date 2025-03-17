@@ -23,56 +23,16 @@ class ProviderType(Enum):
 
 
 class ProviderToken(BaseModel):
-    """A frozen model representing a provider token with its associated user ID."""
     token: SecretStr | None
     user_id: str | None
 
-    model_config = {
-        "frozen": True,  # Make the model immutable
-        "validate_assignment": True,  # Validate values on assignment
-    }
 
-
-from typing import Dict, Mapping
-
-class ProviderTokens(BaseModel):
-    """An immutable mapping of provider types to their tokens."""
-    tokens: Dict[ProviderType, ProviderToken] = Field(default_factory=dict)
-
-    model_config = {
-        "frozen": True,
-        "validate_assignment": True,
-    }
-
-    def __getitem__(self, key: ProviderType) -> ProviderToken:
-        return self.tokens[key]
-    
-    def __contains__(self, key: ProviderType) -> bool:
-        return key in self.tokens
-    
-    def items(self):
-        return self.tokens.items()
-    
-    def __iter__(self):
-        return iter(self.tokens)
-    
-    @classmethod
-    def from_dict(cls, data: Dict[ProviderType, ProviderToken]) -> "ProviderTokens":
-        return cls(tokens=data)
-
-PROVIDER_TOKEN_TYPE = ProviderTokens
-CUSTOM_SECRETS_TYPE = Dict[str, SecretStr]
+PROVIDER_TOKEN_TYPE = dict[ProviderType, ProviderToken]
+CUSTOM_SECRETS_TYPE = dict[str, SecretStr]
 
 
 class SecretStore(BaseModel):
-    """A store for provider tokens and other secrets. This class is immutable."""
-    provider_tokens: PROVIDER_TOKEN_TYPE = Field(default_factory=ProviderTokens)
-
-    model_config = {
-        "frozen": True,
-        "validate_assignment": True,
-        "arbitrary_types_allowed": True,
-    }
+    provider_tokens: PROVIDER_TOKEN_TYPE = {}
 
     @classmethod
     def _convert_token(
