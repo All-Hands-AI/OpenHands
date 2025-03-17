@@ -302,6 +302,12 @@ def process_instance(
                         with open(test_output_path, 'w') as f:
                             f.write(test_output)
                         try:
+                            extra_kwargs = {}
+                            if 'SWE-Gym' in metadata.dataset:
+                                # SWE-Gym uses a different version of the package, hence a different eval report argument
+                                extra_kwargs['log_path'] = test_output_path
+                            else:
+                                extra_kwargs['test_log_path'] = test_output_path
                             _report = conditional_imports.get_eval_report(
                                 test_spec=test_spec,
                                 prediction={
@@ -309,6 +315,7 @@ def process_instance(
                                     'instance_id': instance_id,
                                 },
                                 include_tests_status=True,
+                                **extra_kwargs,
                             )
                             report = _report[instance_id]
                             logger.info(
