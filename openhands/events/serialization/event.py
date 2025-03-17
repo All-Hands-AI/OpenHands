@@ -122,7 +122,7 @@ def event_to_dict(event: 'Event') -> dict:
         # props is a dict whose values can include a complex object like an instance of a BaseModel subclass
         # such as CmdOutputMetadata
         # we serialize it along with the rest
-        # we also handle the Enum conversion for MicroagentObservation
+        # we also handle the Enum conversion for RecallObservation
         d['extras'] = {
             k: (v.value if isinstance(v, Enum) else _convert_pydantic_to_dict(v))
             for k, v in props.items()

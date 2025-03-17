@@ -76,7 +76,7 @@ class PromptManager:
         if example_message:
             message.content.insert(0, TextContent(text=example_message))
 
-    def build_additional_info(
+    def build_workspace_context(
         self,
         repository_info: RepositoryInfo | None,
         runtime_info: RuntimeInfo | None,
