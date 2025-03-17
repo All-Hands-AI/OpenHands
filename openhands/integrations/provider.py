@@ -179,7 +179,7 @@ class ProviderHandler:
         self,
         expose_secrets: Literal[False],
         required_providers: list[ProviderType] | None = ...,
-    ) -> Coroutine[Any, Any, dict[ProviderType, Any]]: ...
+    ) -> Coroutine[Any, Any, dict[ProviderType, SecretStr]]: ...
 
     async def get_env_vars(
         self,
