@@ -16,7 +16,7 @@ from pydantic import BaseModel
 from tqdm import tqdm
 
 from openhands.controller.state.state import State
-from openhands.core.config import LLMConfig
+from openhands.core.config import LLMConfig, SandboxConfig
 from openhands.core.config.agent_config import AgentConfig
 from openhands.core.config.condenser_config import (
     CondenserConfig,
@@ -247,11 +247,21 @@ def prepare_dataset(
             f'Starting evaluation with skipping first {skip_num} instances ({len(dataset)} instances to run).'
         )
         if eval_n_limit and eval_n_limit > 0:
-            dataset = dataset.head(eval_n_limit)
-            logger.info(f'Limiting evaluation to {eval_n_limit} instances.')
+            # Use fixed random seed 42 for sampling without replacement
+            dataset = dataset.sample(
+                min(eval_n_limit, len(dataset)), random_state=42, replace=False
+            )
+            logger.info(
+                f'Randomly sampling {eval_n_limit} unique instances with random seed 42.'
+            )
     elif eval_n_limit and eval_n_limit > 0:
-        dataset = dataset.head(eval_n_limit)
-        logger.info(f'Limiting evaluation to first {eval_n_limit} instances.')
+        # Use fixed random seed 42 for sampling without replacement
+        dataset = dataset.sample(
+            min(eval_n_limit, len(dataset)), random_state=42, replace=False
+        )
+        logger.info(
+            f'Randomly sampling {eval_n_limit} unique instances with random seed 42.'
+        )
 
     new_dataset = [
         instance
@@ -555,3 +565,18 @@ def get_metrics(state: State) -> dict[str, Any]:
     metrics = state.metrics.get() if state.metrics else {}
     metrics['condenser'] = get_condensation_metadata(state)
     return metrics
+
+
+def get_default_sandbox_config_for_eval() -> SandboxConfig:
+    return SandboxConfig(
+        use_host_network=False,
+        # large enough timeout, since some testcases take very long to run
+        timeout=300,
+        api_key=os.environ.get('ALLHANDS_API_KEY', None),
+        remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL'),
+        keep_runtime_alive=False,
+        remote_runtime_init_timeout=3600,
+        remote_runtime_api_timeout=120,
+        remote_runtime_enable_retries=True,
+        remote_runtime_class='sysbox',
+    )

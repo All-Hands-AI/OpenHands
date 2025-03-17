@@ -5,6 +5,7 @@ import shutil
 import subprocess
 
 import jinja2
+from pydantic import SecretStr
 
 from openhands.core.config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
@@ -543,7 +544,7 @@ def process_all_successful_issues(
             )
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         description='Send a pull request to Github or Gitlab.'
     )
@@ -641,7 +642,7 @@ def main():
     api_key = my_args.llm_api_key or os.environ['LLM_API_KEY']
     llm_config = LLMConfig(
         model=my_args.llm_model or os.environ['LLM_MODEL'],
-        api_key=str(api_key) if api_key else None,
+        api_key=SecretStr(api_key) if api_key else None,
         base_url=my_args.llm_base_url or os.environ.get('LLM_BASE_URL', None),
     )
 

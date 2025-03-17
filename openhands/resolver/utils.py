@@ -22,18 +22,37 @@ class Platform(Enum):
     GITLAB = 2
 
 
-def identify_token(token: str) -> Platform:
+def identify_token(token: str, repo: str | None = None) -> Platform:
     """
     Identifies whether a token belongs to GitHub or GitLab.
 
     Parameters:
         token (str): The personal access token to check.
+        repo (str): Repository in format "owner/repo" for GitHub Actions token validation.
 
     Returns:
         Platform: "GitHub" if the token is valid for GitHub,
              "GitLab" if the token is valid for GitLab,
              "Invalid" if the token is not recognized by either.
     """
+    # Try GitHub Actions token format (Bearer) with repo endpoint if repo is provided
+    if repo:
+        github_repo_url = f'https://api.github.com/repos/{repo}'
+        github_bearer_headers = {
+            'Authorization': f'Bearer {token}',
+            'Accept': 'application/vnd.github+json',
+        }
+
+        try:
+            github_repo_response = requests.get(
+                github_repo_url, headers=github_bearer_headers, timeout=5
+            )
+            if github_repo_response.status_code == 200:
+                return Platform.GITHUB
+        except requests.RequestException as e:
+            print(f'Error connecting to GitHub API (repo check): {e}')
+
+    # Try GitHub PAT format (token)
     github_url = 'https://api.github.com/user'
     github_headers = {'Authorization': f'token {token}'}
 
@@ -44,6 +63,7 @@ def identify_token(token: str) -> Platform:
     except requests.RequestException as e:
         print(f'Error connecting to GitHub API: {e}')
 
+    # Try GitLab token
     gitlab_url = 'https://gitlab.com/api/v4/user'
     gitlab_headers = {'Authorization': f'Bearer {token}'}
 
@@ -107,7 +127,7 @@ def codeact_user_response(
     return msg
 
 
-def cleanup():
+def cleanup() -> None:
     print('Cleaning up child processes...')
     for process in mp.active_children():
         print(f'Terminating child process: {process.name}')
@@ -115,7 +135,9 @@ def cleanup():
         process.join()
 
 
-def prepare_dataset(dataset: pd.DataFrame, output_file: str, eval_n_limit: int):
+def prepare_dataset(
+    dataset: pd.DataFrame, output_file: str, eval_n_limit: int
+) -> pd.DataFrame:
     assert 'instance_id' in dataset.columns, (
         "Expected 'instance_id' column in the dataset. You should define your own "
         "unique identifier for each instance and use it as the 'instance_id' column."
@@ -152,7 +174,7 @@ def prepare_dataset(dataset: pd.DataFrame, output_file: str, eval_n_limit: int):
 
 def reset_logger_for_multiprocessing(
     logger: logging.Logger, instance_id: str, log_dir: str
-):
+) -> None:
     """Reset the logger for multiprocessing.
 
     Save logs to a separate file for each process, instead of trying to write to the
@@ -208,7 +230,7 @@ def extract_issue_references(body: str) -> list[int]:
     return [int(match) for match in re.findall(pattern, body)]
 
 
-def get_unique_uid(start_uid=1000):
+def get_unique_uid(start_uid: int = 1000) -> int:
     existing_uids = set()
     with open('/etc/passwd', 'r') as passwd_file:
         for line in passwd_file:

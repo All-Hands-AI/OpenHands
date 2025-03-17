@@ -21,6 +21,7 @@ from openhands.core.exceptions import (
     AgentStuckInLoopError,
     FunctionCallNotExistsError,
     FunctionCallValidationError,
+    LLMContextWindowExceedError,
     LLMMalformedActionError,
     LLMNoActionError,
     LLMResponseError,
@@ -28,7 +29,12 @@ from openhands.core.exceptions import (
 from openhands.core.logger import LOG_ALL_EVENTS
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema import AgentState
-from openhands.events import EventSource, EventStream, EventStreamSubscriber
+from openhands.events import (
+    EventSource,
+    EventStream,
+    EventStreamSubscriber,
+    RecallType,
+)
 from openhands.events.action import (
     Action,
     ActionConfirmationStatus,
@@ -41,6 +47,7 @@ from openhands.events.action import (
     MessageAction,
     NullAction,
 )
+from openhands.events.action.agent import RecallAction
 from openhands.events.event import Event
 from openhands.events.observation import (
     AgentCondensationObservation,
@@ -50,8 +57,9 @@ from openhands.events.observation import (
     NullObservation,
     Observation,
 )
-from openhands.events.serialization.event import truncate_content
+from openhands.events.serialization.event import event_to_trajectory, truncate_content
 from openhands.llm.llm import LLM
+from openhands.llm.metrics import Metrics, TokenUsage
 
 # note: RESUME is only available on web GUI
 TRAFFIC_CONTROL_REMINDER = (
@@ -77,7 +85,6 @@ class AgentController:
         NullObservation,
         ChangeAgentStateAction,
         AgentStateChangedObservation,
-        AgentCondensationObservation,
     )
 
     def __init__(
@@ -88,7 +95,7 @@ class AgentController:
         max_budget_per_task: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
-        sid: str = 'default',
+        sid: str | None = None,
         confirmation_mode: bool = False,
         initial_state: State | None = None,
         is_delegate: bool = False,
@@ -115,7 +122,7 @@ class AgentController:
             status_callback: Optional callback function to handle status updates.
             replay_events: A list of logs to replay.
         """
-        self.id = sid
+        self.id = sid or event_stream.sid
         self.agent = agent
         self.headless_mode = headless_mode
         self.is_delegate = is_delegate
@@ -148,12 +155,13 @@ class AgentController:
         # replay-related
         self._replay_manager = ReplayManager(replay_events)
 
-    async def close(self) -> None:
+    async def close(self, set_stop_state=True) -> None:
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream.
 
         Note that it's fairly important that this closes properly, otherwise the state is incomplete.
         """
-        await self.set_agent_state_to(AgentState.STOPPED)
+        if set_stop_state:
+            await self.set_agent_state_to(AgentState.STOPPED)
 
         # we made history, now is the time to rewrite it!
         # the final state.history will be used by external scripts like evals, tests, etc.
@@ -191,10 +199,13 @@ class AgentController:
         Args:
             level (str): The logging level to use (e.g., 'info', 'debug', 'error').
             message (str): The message to log.
-            extra (dict | None, optional): Additional fields to include in the log. Defaults to None.
+            extra (dict | None, optional): Additional fields to log. Includes session_id by default.
         """
         message = f'[Agent Controller {self.id}] {message}'
-        getattr(logger, level)(message, extra=extra, stacklevel=2)
+        if extra is None:
+            extra = {}
+        extra_merged = {'session_id': self.id, **extra}
+        getattr(logger, level)(message, extra=extra_merged, stacklevel=2)
 
     def update_state_before_step(self):
         self.state.iteration += 1
@@ -225,6 +236,8 @@ class AgentController:
                 err_id = 'STATUS$ERROR_LLM_SERVICE_UNAVAILABLE'
             elif isinstance(e, litellm.InternalServerError):
                 err_id = 'STATUS$ERROR_LLM_INTERNAL_SERVER_ERROR'
+            elif isinstance(e, litellm.BadRequestError) and 'ExceededBudget' in str(e):
+                err_id = 'STATUS$ERROR_LLM_OUT_OF_CREDITS'
             elif isinstance(e, RateLimitError):
                 await self.set_agent_state_to(AgentState.RATE_LIMITED)
                 return
@@ -244,13 +257,15 @@ class AgentController:
             )
             reported = RuntimeError(
                 'There was an unexpected error while running the agent. Please '
-                f'report this error to the developers. Your session ID is {self.id}. '
-                f'Error type: {e.__class__.__name__}'
+                'report this error to the developers by opening an issue at '
+                'https://github.com/All-Hands-AI/OpenHands. Your session ID is '
+                f' {self.id}. Error type: {e.__class__.__name__}'
             )
             if (
                 isinstance(e, litellm.AuthenticationError)
                 or isinstance(e, litellm.BadRequestError)
                 or isinstance(e, RateLimitError)
+                or isinstance(e, LLMContextWindowExceedError)
             ):
                 reported = e
             await self._react_to_exception(reported)
@@ -278,8 +293,14 @@ class AgentController:
                 return True
             return False
         if isinstance(event, Observation):
-            if isinstance(event, NullObservation) or isinstance(
-                event, AgentStateChangedObservation
+            if (
+                isinstance(event, NullObservation)
+                and event.cause is not None
+                and event.cause > 0
+            ):
+                return True
+            if isinstance(event, AgentStateChangedObservation) or isinstance(
+                event, NullObservation
             ):
                 return False
             return True
@@ -379,6 +400,7 @@ class AgentController:
         if observation.llm_metrics is not None:
             self.agent.llm.metrics.merge(observation.llm_metrics)
 
+        # this happens for runnable actions and microagent actions
         if self._pending_action and self._pending_action.id == observation.cause:
             if self.state.agent_state == AgentState.AWAITING_USER_CONFIRMATION:
                 return
@@ -422,6 +444,25 @@ class AgentController:
                     'debug',
                     f'Extended max iterations to {self.state.max_iterations} after user message',
                 )
+            # try to retrieve microagents relevant to the user message
+            # set pending_action while we search for information
+
+            # if this is the first user message for this agent, matters for the microagent info type
+            first_user_message = self._first_user_message()
+            is_first_user_message = (
+                action.id == first_user_message.id if first_user_message else False
+            )
+            recall_type = (
+                RecallType.WORKSPACE_CONTEXT
+                if is_first_user_message
+                else RecallType.KNOWLEDGE
+            )
+
+            recall_action = RecallAction(query=action.content, recall_type=recall_type)
+            self._pending_action = recall_action
+            # this is source=USER because the user message is the trigger for the microagent retrieval
+            self.event_stream.add_event(recall_action, EventSource.USER)
+
             if self.get_agent_state() != AgentState.RUNNING:
                 await self.set_agent_state_to(AgentState.RUNNING)
         elif action.source == EventSource.AGENT and action.wait_for_response:
@@ -429,6 +470,7 @@ class AgentController:
 
     def _reset(self) -> None:
         """Resets the agent controller"""
+        # Runnable actions need an Observation
         # make sure there is an Observation with the tool call metadata to be recognized by the agent
         # otherwise the pending action is found in history, but it's incomplete without an obs with tool result
         if self._pending_action and hasattr(self._pending_action, 'tool_call_metadata'):
@@ -449,6 +491,8 @@ class AgentController:
                 obs.tool_call_metadata = self._pending_action.tool_call_metadata
                 obs._cause = self._pending_action.id  # type: ignore[attr-defined]
                 self.event_stream.add_event(obs, EventSource.AGENT)
+
+        # NOTE: RecallActions don't need an ErrorObservation upon reset, as long as they have no tool calls
 
         # reset the pending action, this will be called when the agent is STOPPED or ERROR
         self._pending_action = None
@@ -692,30 +736,22 @@ class AgentController:
             except (ContextWindowExceededError, BadRequestError, OpenAIError) as e:
                 # FIXME: this is a hack until a litellm fix is confirmed
                 # Check if this is a nested context window error
+                # We have to rely on string-matching because LiteLLM doesn't consistently
+                # wrap the failure in a ContextWindowExceededError
                 error_str = str(e).lower()
                 if (
                     'contextwindowexceedederror' in error_str
                     or 'prompt is too long' in error_str
+                    or 'input length and `max_tokens` exceed context limit' in error_str
                     or isinstance(e, ContextWindowExceededError)
                 ):
-                    # When context window is exceeded, keep roughly half of agent interactions
-                    self.state.history = self._apply_conversation_window(
-                        self.state.history
-                    )
-
-                    # Save the ID of the first event in our truncated history for future reloading
-                    if self.state.history:
-                        self.state.start_id = self.state.history[0].id
-
-                    # Add an error event to trigger another step by the agent
-                    self.event_stream.add_event(
-                        AgentCondensationObservation(
-                            content='Trimming prompt to meet context window limitations'
-                        ),
-                        EventSource.AGENT,
-                    )
-                    return
-                raise e
+                    if self.agent.config.enable_history_truncation:
+                        self._handle_long_context_error()
+                        return
+                    else:
+                        raise LLMContextWindowExceedError()
+                else:
+                    raise e
 
         if action.runnable:
             if self.state.confirmation_mode and (
@@ -733,6 +769,10 @@ class AgentController:
                 == ActionConfirmationStatus.AWAITING_CONFIRMATION
             ):
                 await self.set_agent_state_to(AgentState.AWAITING_USER_CONFIRMATION)
+
+            # Create and log metrics for frontend display
+            self._prepare_metrics_for_frontend(action)
+
             self.event_stream.add_event(action, action._source)  # type: ignore [attr-defined]
 
         await self.update_state_after_step()
@@ -841,6 +881,11 @@ class AgentController:
 
         # Always load from the event stream to avoid losing history
         self._init_history()
+
+    def get_trajectory(self) -> list[dict]:
+        # state history could be partially hidden/truncated before controller is closed
+        assert self._closed
+        return [event_to_trajectory(event) for event in self.state.history]
 
     def _init_history(self) -> None:
         """Initializes the agent's history from the event stream.
@@ -967,6 +1012,22 @@ class AgentController:
         # make sure history is in sync
         self.state.start_id = start_id
 
+    def _handle_long_context_error(self) -> None:
+        # When context window is exceeded, keep roughly half of agent interactions
+        self.state.history = self._apply_conversation_window(self.state.history)
+
+        # Save the ID of the first event in our truncated history for future reloading
+        if self.state.history:
+            self.state.start_id = self.state.history[0].id
+
+        # Add an error event to trigger another step by the agent
+        self.event_stream.add_event(
+            AgentCondensationObservation(
+                content='Trimming prompt to meet context window limitations'
+            ),
+            EventSource.AGENT,
+        )
+
     def _apply_conversation_window(self, events: list[Event]) -> list[Event]:
         """Cuts history roughly in half when context window is exceeded, preserving action-observation pairs
         and ensuring the first user message is always included.
@@ -1065,6 +1126,44 @@ class AgentController:
 
         return self._stuck_detector.is_stuck(self.headless_mode)
 
+    def _prepare_metrics_for_frontend(self, action: Action) -> None:
+        """Create a minimal metrics object for frontend display and log it.
+
+        To avoid performance issues with long conversations, we only keep:
+        - accumulated_cost: The current total cost
+        - latest token_usage: Token statistics from the most recent API call
+
+        Args:
+            action: The action to attach metrics to
+        """
+        metrics = Metrics(model_name=self.agent.llm.metrics.model_name)
+        metrics.accumulated_cost = self.agent.llm.metrics.accumulated_cost
+        if self.agent.llm.metrics.token_usages:
+            latest_usage = self.agent.llm.metrics.token_usages[-1]
+            metrics.add_token_usage(
+                prompt_tokens=latest_usage.prompt_tokens,
+                completion_tokens=latest_usage.completion_tokens,
+                cache_read_tokens=latest_usage.cache_read_tokens,
+                cache_write_tokens=latest_usage.cache_write_tokens,
+                response_id=latest_usage.response_id,
+            )
+        action.llm_metrics = metrics
+
+        # Log the metrics information for frontend display
+        log_usage: TokenUsage | None = (
+            metrics.token_usages[-1] if metrics.token_usages else None
+        )
+        self.log(
+            'debug',
+            f'Action metrics - accumulated_cost: {metrics.accumulated_cost}, '
+            f'tokens (prompt/completion/cache_read/cache_write): '
+            f'{log_usage.prompt_tokens if log_usage else 0}/'
+            f'{log_usage.completion_tokens if log_usage else 0}/'
+            f'{log_usage.cache_read_tokens if log_usage else 0}/'
+            f'{log_usage.cache_write_tokens if log_usage else 0}',
+            extra={'msg_type': 'METRICS'},
+        )
+
     def __repr__(self):
         return (
             f'AgentController(id={getattr(self, "id", "<uninitialized>")}, '
@@ -1082,3 +1181,26 @@ class AgentController:
                 result = event.agent_state == AgentState.RUNNING
                 return result
         return False
+
+    def _first_user_message(self) -> MessageAction | None:
+        """
+        Get the first user message for this agent.
+
+        For regular agents, this is the first user message from the beginning (start_id=0).
+        For delegate agents, this is the first user message after the delegate's start_id.
+
+        Returns:
+            MessageAction | None: The first user message, or None if no user message found
+        """
+        # Find the first user message from the appropriate starting point
+        user_messages = list(self.event_stream.get_events(start_id=self.state.start_id))
+
+        # Get and return the first user message
+        return next(
+            (
+                e
+                for e in user_messages
+                if isinstance(e, MessageAction) and e.source == EventSource.USER
+            ),
+            None,
+        )

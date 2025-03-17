@@ -1,4 +1,5 @@
 import os
+import shutil
 import tempfile
 import threading
 from abc import abstractmethod
@@ -15,6 +16,7 @@ from openhands.core.exceptions import (
 from openhands.events import EventStream
 from openhands.events.action import (
     ActionConfirmationStatus,
+    AgentThinkAction,
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
@@ -26,6 +28,7 @@ from openhands.events.action import (
 from openhands.events.action.action import Action
 from openhands.events.action.files import FileEditSource
 from openhands.events.observation import (
+    AgentThinkObservation,
     ErrorObservation,
     NullObservation,
     Observation,
@@ -56,7 +59,7 @@ class ActionExecutionClient(Runtime):
         status_callback: Any | None = None,
         attach_to_existing: bool = False,
         headless_mode: bool = True,
-        github_user_id: str | None = None,
+        user_id: str | None = None,
     ):
         self.session = HttpSession()
         self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
@@ -72,7 +75,7 @@ class ActionExecutionClient(Runtime):
             status_callback,
             attach_to_existing,
             headless_mode,
-            github_user_id,
+            user_id,
         )
 
     @abstractmethod
@@ -143,12 +146,10 @@ class ActionExecutionClient(Runtime):
                 stream=True,
                 timeout=30,
             ) as response:
-                with tempfile.NamedTemporaryFile(delete=False) as temp_file:
-                    total_length = 0
-                    for chunk in response.iter_content(chunk_size=8192):
-                        if chunk:  # filter out keep-alive new chunks
-                            total_length += len(chunk)
-                            temp_file.write(chunk)
+                with tempfile.NamedTemporaryFile(
+                    suffix='.zip', delete=False
+                ) as temp_file:
+                    shutil.copyfileobj(response.raw, temp_file, length=16 * 1024)
                     return Path(temp_file.name)
         except requests.Timeout:
             raise TimeoutError('Copy operation timed out')
@@ -231,6 +232,8 @@ class ActionExecutionClient(Runtime):
 
         with self.action_semaphore:
             if not action.runnable:
+                if isinstance(action, AgentThinkAction):
+                    return AgentThinkObservation('Your thought has been logged.')
                 return NullObservation('')
             if (
                 hasattr(action, 'confirmation_state')

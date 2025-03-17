@@ -12,8 +12,14 @@ export const DEFAULT_SETTINGS: Settings = {
   SECURITY_ANALYZER: "",
   REMOTE_RUNTIME_RESOURCE_FACTOR: 1,
   GITHUB_TOKEN_IS_SET: false,
-  ENABLE_DEFAULT_CONDENSER: false,
+  ENABLE_DEFAULT_CONDENSER: true,
+  ENABLE_SOUND_NOTIFICATIONS: false,
   USER_CONSENTS_TO_ANALYTICS: false,
+  PROVIDER_TOKENS: {
+    github: "",
+    gitlab: "",
+  },
+  IS_NEW_USER: true,
 };
 
 /**

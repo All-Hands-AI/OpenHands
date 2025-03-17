@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ##################################################################################################
 # Adapted from https://github.com/TheAgentCompany/TheAgentCompany/blob/main/evaluation/run_eval.sh

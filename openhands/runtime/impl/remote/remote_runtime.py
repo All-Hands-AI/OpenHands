@@ -1,5 +1,6 @@
+import logging
 import os
-from typing import Callable, Optional
+from typing import Callable
 from urllib.parse import urlparse
 
 import requests
@@ -42,10 +43,10 @@ class RemoteRuntime(ActionExecutionClient):
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
-        status_callback: Optional[Callable] = None,
+        status_callback: Callable | None = None,
         attach_to_existing: bool = False,
         headless_mode: bool = True,
-        github_user_id: str | None = None,
+        user_id: str | None = None,
     ):
         super().__init__(
             config,
@@ -56,7 +57,7 @@ class RemoteRuntime(ActionExecutionClient):
             status_callback,
             attach_to_existing,
             headless_mode,
-            github_user_id,
+            user_id,
         )
         if self.config.sandbox.api_key is None:
             raise ValueError(
@@ -74,6 +75,8 @@ class RemoteRuntime(ActionExecutionClient):
             raise ValueError(
                 'remote_runtime_api_url is required in the remote runtime.'
             )
+
+        assert self.config.sandbox.remote_runtime_class in (None, 'sysbox', 'gvisor')
 
         self.runtime_builder = RemoteRuntimeBuilder(
             self.config.sandbox.remote_runtime_api_url,
@@ -151,6 +154,12 @@ class RemoteRuntime(ActionExecutionClient):
                 return False
             self.log('debug', f'Error while looking for remote runtime: {e}')
             raise
+        except requests.exceptions.JSONDecodeError as e:
+            self.log(
+                'error',
+                f'Invalid JSON response from runtime API: {e}. URL: {self.config.sandbox.remote_runtime_api_url}/sessions/{self.sid}. Response: {response}',
+            )
+            raise
 
         if status == 'running':
             return True
@@ -225,6 +234,9 @@ class RemoteRuntime(ActionExecutionClient):
             'session_id': self.sid,
             'resource_factor': self.config.sandbox.remote_runtime_resource_factor,
         }
+        if self.config.sandbox.remote_runtime_class == 'sysbox':
+            start_request['runtime_class'] = 'sysbox-runc'
+        # We ignore other runtime classes for now, because both None and 'gvisor' map to 'gvisor'
 
         # Start the sandbox using the /start endpoint
         try:
@@ -366,7 +378,22 @@ class RemoteRuntime(ActionExecutionClient):
         raise AgentRuntimeNotReadyError()
 
     def close(self):
-        if self.config.sandbox.keep_runtime_alive or self.attach_to_existing:
+        if self.attach_to_existing:
+            super().close()
+            return
+        if self.config.sandbox.keep_runtime_alive:
+            if self.config.sandbox.pause_closed_runtimes:
+                try:
+                    if not self._runtime_closed:
+                        with self._send_runtime_api_request(
+                            'POST',
+                            f'{self.config.sandbox.remote_runtime_api_url}/pause',
+                            json={'runtime_id': self.runtime_id},
+                        ):
+                            self.log('debug', 'Runtime paused.')
+                except Exception as e:
+                    self.log('error', f'Unable to pause runtime: {str(e)}')
+                    raise e
             super().close()
             return
         try:
@@ -399,10 +426,11 @@ class RemoteRuntime(ActionExecutionClient):
             return self._send_action_server_request_impl(method, url, **kwargs)
 
         retry_decorator = tenacity.retry(
-            retry=tenacity.retry_if_exception_type(ConnectionError),
+            retry=tenacity.retry_if_exception_type(requests.ConnectionError),
             stop=tenacity.stop_after_attempt(3)
             | stop_if_should_exit()
             | self._stop_if_closed,
+            before_sleep=tenacity.before_sleep_log(logger, logging.WARNING),
             wait=tenacity.wait_exponential(multiplier=1, min=4, max=60),
         )
         return retry_decorator(self._send_action_server_request_impl)(

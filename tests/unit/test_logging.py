@@ -1,3 +1,4 @@
+import json
 import logging
 from io import StringIO
 from unittest.mock import patch
@@ -5,6 +6,7 @@ from unittest.mock import patch
 import pytest
 
 from openhands.core.config import AppConfig, LLMConfig
+from openhands.core.logger import OpenHandsLoggerAdapter, json_log_handler
 from openhands.core.logger import openhands_logger as openhands_logger
 
 
@@ -18,6 +20,15 @@ def test_handler():
     openhands_logger.addHandler(handler)
     yield openhands_logger, stream
     openhands_logger.removeHandler(handler)
+
+
+@pytest.fixture
+def json_handler():
+    stream = StringIO()
+    json_handler = json_log_handler(logging.INFO, _out=stream)
+    openhands_logger.addHandler(json_handler)
+    yield openhands_logger, stream
+    openhands_logger.removeHandler(json_handler)
 
 
 def test_openai_api_key_masking(test_handler):
@@ -118,3 +129,59 @@ def test_special_cases_masking(test_handler):
         log_output = stream.getvalue()
         for attr, value in environ.items():
             assert value not in log_output
+
+
+class TestJsonOutput:
+    def test_info(self, json_handler):
+        logger, string_io = json_handler
+
+        logger.info('Test message')
+        output = json.loads(string_io.getvalue())
+        assert 'timestamp' in output
+        del output['timestamp']
+        assert output == {'message': 'Test message', 'level': 'INFO'}
+
+    def test_error(self, json_handler):
+        logger, string_io = json_handler
+
+        logger.error('Test message')
+        output = json.loads(string_io.getvalue())
+        del output['timestamp']
+        assert output == {'message': 'Test message', 'level': 'ERROR'}
+
+    def test_extra_fields(self, json_handler):
+        logger, string_io = json_handler
+
+        logger.info('Test message', extra={'key': '..val..'})
+        output = json.loads(string_io.getvalue())
+        del output['timestamp']
+        assert output == {
+            'key': '..val..',
+            'message': 'Test message',
+            'level': 'INFO',
+        }
+
+    def test_extra_fields_from_adapter(self, json_handler):
+        logger, string_io = json_handler
+        subject = OpenHandsLoggerAdapter(logger, extra={'context_field': '..val..'})
+        subject.info('Test message', extra={'log_fied': '..val..'})
+        output = json.loads(string_io.getvalue())
+        del output['timestamp']
+        assert output == {
+            'context_field': '..val..',
+            'log_fied': '..val..',
+            'message': 'Test message',
+            'level': 'INFO',
+        }
+
+    def test_extra_fields_from_adapter_can_override(self, json_handler):
+        logger, string_io = json_handler
+        subject = OpenHandsLoggerAdapter(logger, extra={'override': 'a'})
+        subject.info('Test message', extra={'override': 'b'})
+        output = json.loads(string_io.getvalue())
+        del output['timestamp']
+        assert output == {
+            'override': 'b',
+            'message': 'Test message',
+            'level': 'INFO',
+        }

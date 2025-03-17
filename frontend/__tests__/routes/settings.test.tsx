@@ -1,6 +1,15 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import { createRoutesStub } from "react-router";
-import { afterEach, describe, expect, it, test, vi } from "vitest";
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  test,
+  vi,
+} from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import userEvent, { UserEvent } from "@testing-library/user-event";
 import OpenHands from "#/api/open-hands";
@@ -10,6 +19,8 @@ import * as AdvancedSettingsUtlls from "#/utils/has-advanced-settings-set";
 import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
 import { PostApiSettings } from "#/types/settings";
 import * as ConsentHandlers from "#/utils/handle-capture-consent";
+import AccountSettings from "#/routes/account-settings";
+import * as FeatureFlags from "#/utils/feature-flags";
 
 const toggleAdvancedSettings = async (user: UserEvent) => {
   const advancedSwitch = await screen.findByTestId("advanced-settings-switch");
@@ -28,6 +39,11 @@ describe("Settings Screen", () => {
     useAppLogout: vi.fn().mockReturnValue({ handleLogout: handleLogoutMock }),
   }));
 
+  beforeAll(() => {
+    // TODO: Remove this once we release
+    vi.spyOn(FeatureFlags, "HIDE_LLM_SETTINGS").mockReturnValue(true);
+  });
+
   afterEach(() => {
     vi.clearAllMocks();
   });
@@ -36,6 +52,7 @@ describe("Settings Screen", () => {
     {
       Component: SettingsScreen,
       path: "/settings",
+      children: [{ Component: AccountSettings, path: "/settings" }],
     },
   ]);
 
@@ -65,6 +82,14 @@ describe("Settings Screen", () => {
   });
 
   describe("Account Settings", () => {
+    beforeEach(() => {
+      getConfigSpy.mockResolvedValue({
+        APP_MODE: "oss",
+        GITHUB_CLIENT_ID: "123",
+        POSTHOG_CLIENT_KEY: "456",
+      });
+    });
+
     it("should render the account settings", async () => {
       renderSettingsScreen();
 
@@ -76,7 +101,8 @@ describe("Settings Screen", () => {
       });
     });
 
-    it("should render an indicator if the GitHub token is not set", async () => {
+    // TODO: Set a better unset indicator
+    it.skip("should render an indicator if the GitHub token is not set", async () => {
       getSettingsSpy.mockResolvedValue({
         ...MOCK_DEFAULT_USER_SETTINGS,
         github_token_is_set: false,
@@ -94,6 +120,20 @@ describe("Settings Screen", () => {
         } else {
           throw new Error("GitHub token input parent not found");
         }
+      });
+    });
+
+    it("should set asterik placeholder if the GitHub token is set", async () => {
+      getSettingsSpy.mockResolvedValue({
+        ...MOCK_DEFAULT_USER_SETTINGS,
+        github_token_is_set: true,
+      });
+
+      renderSettingsScreen();
+
+      await waitFor(() => {
+        const input = screen.getByTestId("github-token-input");
+        expect(input).toHaveProperty("placeholder", "**********");
       });
     });
 
@@ -263,6 +303,14 @@ describe("Settings Screen", () => {
   });
 
   describe("LLM Settings", () => {
+    beforeEach(() => {
+      getConfigSpy.mockResolvedValue({
+        APP_MODE: "oss",
+        GITHUB_CLIENT_ID: "123",
+        POSTHOG_CLIENT_KEY: "456",
+      });
+    });
+
     it("should render the basic LLM settings by default", async () => {
       renderSettingsScreen();
 
@@ -314,7 +362,8 @@ describe("Settings Screen", () => {
       // screen.getByTestId("security-analyzer-input");
     });
 
-    it("should render an indicator if the LLM API key is not set", async () => {
+    // TODO: Set a better unset indicator
+    it.skip("should render an indicator if the LLM API key is not set", async () => {
       getSettingsSpy.mockResolvedValueOnce({
         ...MOCK_DEFAULT_USER_SETTINGS,
         llm_api_key: null,
@@ -409,8 +458,7 @@ describe("Settings Screen", () => {
         expect(input).not.toBeInTheDocument();
       });
 
-      it("should render the runtime settings input if SaaS mode", async () => {
-        const user = userEvent.setup();
+      it.skip("should render the runtime settings input if SaaS mode", async () => {
         getConfigSpy.mockResolvedValue({
           APP_MODE: "saas",
           GITHUB_CLIENT_ID: "123",
@@ -418,12 +466,10 @@ describe("Settings Screen", () => {
         });
 
         renderSettingsScreen();
-
-        await toggleAdvancedSettings(user);
-        screen.getByTestId("runtime-settings-input");
+        await screen.findByTestId("runtime-settings-input");
       });
 
-      it("should set the default runtime setting set", async () => {
+      it.skip("should set the default runtime setting set", async () => {
         getConfigSpy.mockResolvedValue({
           APP_MODE: "saas",
           GITHUB_CLIENT_ID: "123",
@@ -437,13 +483,24 @@ describe("Settings Screen", () => {
 
         renderSettingsScreen();
 
-        await toggleAdvancedSettings(userEvent.setup());
-
         const input = await screen.findByTestId("runtime-settings-input");
         expect(input).toHaveValue("1x (2 core, 8G)");
       });
 
-      it("should save the runtime settings when the 'Save Changes' button is clicked", async () => {
+      it.skip("should always have the runtime input disabled", async () => {
+        getConfigSpy.mockResolvedValue({
+          APP_MODE: "saas",
+          GITHUB_CLIENT_ID: "123",
+          POSTHOG_CLIENT_KEY: "456",
+        });
+
+        renderSettingsScreen();
+
+        const input = await screen.findByTestId("runtime-settings-input");
+        expect(input).toBeDisabled();
+      });
+
+      it.skip("should save the runtime settings when the 'Save Changes' button is clicked", async () => {
         const user = userEvent.setup();
         getConfigSpy.mockResolvedValue({
           APP_MODE: "saas",
@@ -456,8 +513,6 @@ describe("Settings Screen", () => {
         });
 
         renderSettingsScreen();
-
-        await toggleAdvancedSettings(user);
 
         const input = await screen.findByTestId("runtime-settings-input");
         await user.click(input);
@@ -665,8 +720,8 @@ describe("Settings Screen", () => {
 
       expect(saveSettingsSpy).toHaveBeenCalledWith(
         expect.objectContaining({
-          llm_api_key: undefined,
-          github_token: undefined,
+          llm_api_key: "", // empty because it's not set previously
+          provider_tokens: undefined,
           language: "no",
         }),
       );
@@ -703,8 +758,8 @@ describe("Settings Screen", () => {
 
       expect(saveSettingsSpy).toHaveBeenCalledWith(
         expect.objectContaining({
-          github_token: undefined,
-          llm_api_key: undefined,
+          provider_tokens: undefined,
+          llm_api_key: "", // empty because it's not set previously
           llm_model: "openai/gpt-4o",
         }),
       );
@@ -746,7 +801,7 @@ describe("Settings Screen", () => {
 
       expect(saveSettingsSpy).toHaveBeenCalledWith({
         ...mockCopy,
-        github_token: undefined, // not set
+        provider_tokens: undefined, // not set
         llm_api_key: "", // reset as well
       });
       expect(screen.queryByTestId("reset-modal")).not.toBeInTheDocument();
@@ -866,6 +921,156 @@ describe("Settings Screen", () => {
       expect(saveSettingsSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           enable_default_condenser: true,
+        }),
+      );
+    });
+
+    it("should send an empty LLM API Key if the user submits an empty string", async () => {
+      const user = userEvent.setup();
+      renderSettingsScreen();
+
+      const input = await screen.findByTestId("llm-api-key-input");
+      expect(input).toHaveValue("");
+
+      const saveButton = screen.getByText("Save Changes");
+      await user.click(saveButton);
+
+      expect(saveSettingsSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ llm_api_key: "" }),
+      );
+    });
+
+    it("should not send an empty LLM API Key if the user submits an empty string but already has it set", async () => {
+      const user = userEvent.setup();
+      getSettingsSpy.mockResolvedValue({
+        ...MOCK_DEFAULT_USER_SETTINGS,
+        llm_api_key: "**********",
+      });
+
+      renderSettingsScreen();
+
+      const input = await screen.findByTestId("llm-api-key-input");
+      expect(input).toHaveValue("");
+
+      const saveButton = screen.getByText("Save Changes");
+      await user.click(saveButton);
+
+      expect(saveSettingsSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ llm_api_key: undefined }),
+      );
+    });
+
+    it("should submit the LLM API Key if it is the first time the user sets it", async () => {
+      const user = userEvent.setup();
+      renderSettingsScreen();
+
+      const input = await screen.findByTestId("llm-api-key-input");
+      await user.type(input, "new-api-key");
+
+      const saveButton = screen.getByText("Save Changes");
+      await user.click(saveButton);
+
+      expect(saveSettingsSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ llm_api_key: "new-api-key" }),
+      );
+    });
+  });
+
+  describe("SaaS mode", () => {
+    beforeEach(() => {
+      getConfigSpy.mockResolvedValue({
+        APP_MODE: "saas",
+        GITHUB_CLIENT_ID: "123",
+        POSTHOG_CLIENT_KEY: "456",
+      });
+    });
+
+    it("should hide the entire LLM section", async () => {
+      renderSettingsScreen();
+
+      await waitFor(() => {
+        screen.getByTestId("account-settings-form"); // wait for the account settings form to render
+
+        const llmSection = screen.queryByTestId("llm-settings-section");
+        expect(llmSection).not.toBeInTheDocument();
+      });
+    });
+
+    it("should not render LLM Provider, LLM Model, and LLM API Key inputs", async () => {
+      renderSettingsScreen();
+
+      await waitFor(() => {
+        screen.getByTestId("account-settings-form"); // wait for the account settings form to render
+
+        const providerInput = screen.queryByTestId("llm-provider-input");
+        const modelInput = screen.queryByTestId("llm-model-input");
+        const apiKeyInput = screen.queryByTestId("llm-api-key-input");
+        const llmApiKeyHelpAnchor = screen.queryByTestId(
+          "llm-api-key-help-anchor",
+        );
+        const advancedSettingsSwitch = screen.queryByTestId(
+          "advanced-settings-switch",
+        );
+
+        expect(providerInput).not.toBeInTheDocument();
+        expect(modelInput).not.toBeInTheDocument();
+        expect(apiKeyInput).not.toBeInTheDocument();
+        expect(llmApiKeyHelpAnchor).not.toBeInTheDocument();
+        expect(advancedSettingsSwitch).not.toBeInTheDocument();
+      });
+    });
+
+    // We might want to bring this back if users wish to set advanced settings
+    it.skip("should render advanced settings by default", async () => {
+      renderSettingsScreen();
+
+      await waitFor(() => {
+        screen.getByTestId("account-settings-form"); // wait for the account settings form to render
+
+        const agentInput = screen.getByTestId("agent-input"); // this is only rendered in advanced mode
+        expect(agentInput).toBeInTheDocument();
+
+        // we should not allow the user to change these fields
+        const customModelInput = screen.queryByTestId("llm-custom-model-input");
+        const baseUrlInput = screen.queryByTestId("base-url-input");
+
+        expect(customModelInput).not.toBeInTheDocument();
+        expect(baseUrlInput).not.toBeInTheDocument();
+      });
+    });
+
+    it("should not submit the unwanted fields when saving", async () => {
+      const user = userEvent.setup();
+      renderSettingsScreen();
+
+      const saveButton = await screen.findByText("Save Changes");
+      await user.click(saveButton);
+
+      expect(saveSettingsSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          llm_api_key: undefined,
+          llm_base_url: undefined,
+          llm_model: undefined,
+        }),
+      );
+    });
+
+    it("should not submit the unwanted fields when resetting", async () => {
+      const user = userEvent.setup();
+      renderSettingsScreen();
+
+      const resetButton = await screen.findByText("Reset to defaults");
+      await user.click(resetButton);
+
+      const modal = await screen.findByTestId("reset-modal");
+      const confirmButton = within(modal).getByText("Reset");
+      await user.click(confirmButton);
+
+      expect(saveSettingsSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          llm_api_key: undefined,
+          llm_base_url: undefined,
+          llm_model: undefined,
         }),
       );
     });

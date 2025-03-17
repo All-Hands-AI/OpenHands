@@ -22,6 +22,7 @@ from openhands.events import EventSource, EventStream, EventStreamSubscriber
 from openhands.events.action import (
     Action,
     ActionConfirmationStatus,
+    AgentThinkAction,
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
@@ -31,6 +32,7 @@ from openhands.events.action import (
 )
 from openhands.events.event import Event
 from openhands.events.observation import (
+    AgentThinkObservation,
     CmdOutputObservation,
     ErrorObservation,
     FileReadObservation,
@@ -95,7 +97,7 @@ class Runtime(FileEditRuntimeMixin):
         status_callback: Callable | None = None,
         attach_to_existing: bool = False,
         headless_mode: bool = False,
-        github_user_id: str | None = None,
+        user_id: str | None = None,
     ):
         self.sid = sid
         self.event_stream = event_stream
@@ -128,7 +130,7 @@ class Runtime(FileEditRuntimeMixin):
             self, enable_llm_editor=config.get_agent_config().codeact_enable_llm_editor
         )
 
-        self.github_user_id = github_user_id
+        self.user_id = user_id
 
     def setup_initial_env(self) -> None:
         if self.attach_to_existing:
@@ -218,8 +220,10 @@ class Runtime(FileEditRuntimeMixin):
         assert event.timeout is not None
         try:
             if isinstance(event, CmdRunAction):
-                if self.github_user_id and '$GITHUB_TOKEN' in event.command:
-                    gh_client = GithubServiceImpl(user_id=self.github_user_id)
+                if self.user_id and '$GITHUB_TOKEN' in event.command:
+                    gh_client = GithubServiceImpl(
+                        external_auth_id=self.user_id, external_token_manager=True
+                    )
                     token = await gh_client.get_latest_token()
                     if token:
                         export_cmd = CmdRunAction(
@@ -254,6 +258,9 @@ class Runtime(FileEditRuntimeMixin):
 
         # this might be unnecessary, since source should be set by the event stream when we're here
         source = event.source if event.source else EventSource.AGENT
+        if isinstance(observation, NullObservation):
+            # don't add null observations to the event stream
+            return
         self.event_stream.add_event(observation, source)  # type: ignore[arg-type]
 
     def clone_repo(
@@ -267,7 +274,7 @@ class Runtime(FileEditRuntimeMixin):
                 'github_token and selected_repository must be provided to clone a repository'
             )
         url = f'https://{github_token.get_secret_value()}@github.com/{selected_repository}.git'
-        dir_name = selected_repository.split('/')[1]
+        dir_name = selected_repository.split('/')[-1]
 
         # Generate a random branch name to avoid conflicts
         random_str = ''.join(
@@ -306,7 +313,7 @@ class Runtime(FileEditRuntimeMixin):
         microagents_dir = workspace_root / '.openhands' / 'microagents'
         repo_root = None
         if selected_repository:
-            repo_root = workspace_root / selected_repository.split('/')[1]
+            repo_root = workspace_root / selected_repository.split('/')[-1]
             microagents_dir = repo_root / '.openhands' / 'microagents'
         self.log(
             'info',
@@ -378,6 +385,8 @@ class Runtime(FileEditRuntimeMixin):
         If the action is not supported by the current runtime, an ErrorObservation is returned.
         """
         if not action.runnable:
+            if isinstance(action, AgentThinkAction):
+                return AgentThinkObservation('Your thought has been logged.')
             return NullObservation('')
         if (
             hasattr(action, 'confirmation_state')
@@ -480,3 +489,7 @@ class Runtime(FileEditRuntimeMixin):
     @property
     def web_hosts(self) -> dict[str, int]:
         return {}
+
+    @property
+    def additional_agent_instructions(self) -> str:
+        return ''

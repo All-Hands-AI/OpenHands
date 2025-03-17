@@ -42,6 +42,7 @@ LLM_RETRY_EXCEPTIONS: tuple[type[Exception], ...] = (RateLimitError,)
 # cache prompt supporting models
 # remove this when we gemini and deepseek are supported
 CACHE_PROMPT_SUPPORTED_MODELS = [
+    'claude-3-7-sonnet-20250219',
     'claude-3-5-sonnet-20241022',
     'claude-3-5-sonnet-20240620',
     'claude-3-5-haiku-20241022',
@@ -51,6 +52,7 @@ CACHE_PROMPT_SUPPORTED_MODELS = [
 
 # function calling supporting models
 FUNCTION_CALLING_SUPPORTED_MODELS = [
+    'claude-3-7-sonnet-20250219',
     'claude-3-5-sonnet',
     'claude-3-5-sonnet-20240620',
     'claude-3-5-sonnet-20241022',
@@ -73,6 +75,8 @@ REASONING_EFFORT_SUPPORTED_MODELS = [
 MODELS_WITHOUT_STOP_WORDS = [
     'o1-mini',
     'o1-preview',
+    'o1',
+    'o1-2024-12-17',
 ]
 
 
@@ -134,6 +138,7 @@ class LLM(RetryMixin, DebugMixin):
         # set up the completion function
         kwargs: dict[str, Any] = {
             'temperature': self.config.temperature,
+            'max_completion_tokens': self.config.max_output_tokens,
         }
         if (
             self.config.model.lower() in REASONING_EFFORT_SUPPORTED_MODELS
@@ -143,6 +148,10 @@ class LLM(RetryMixin, DebugMixin):
             kwargs.pop(
                 'temperature'
             )  # temperature is not supported for reasoning models
+        # Azure issue: https://github.com/All-Hands-AI/OpenHands/issues/6777
+        if self.config.model.startswith('azure'):
+            kwargs['max_tokens'] = self.config.max_output_tokens
+            kwargs.pop('max_completion_tokens')
 
         self._completion = partial(
             litellm_completion,
@@ -153,7 +162,6 @@ class LLM(RetryMixin, DebugMixin):
             base_url=self.config.base_url,
             api_version=self.config.api_version,
             custom_llm_provider=self.config.custom_llm_provider,
-            max_completion_tokens=self.config.max_output_tokens,
             timeout=self.config.timeout,
             top_p=self.config.top_p,
             drop_params=self.config.drop_params,
@@ -172,7 +180,7 @@ class LLM(RetryMixin, DebugMixin):
         )
         def wrapper(*args, **kwargs):
             """Wrapper for the litellm completion function. Logs the input and output of the completion function."""
-            from openhands.core.utils import json
+            from openhands.io import json
 
             messages: list[dict[str, Any]] | dict[str, Any] = []
             mock_function_calling = not self.is_function_calling_active()
@@ -210,9 +218,8 @@ class LLM(RetryMixin, DebugMixin):
                     kwargs['stop'] = STOP_WORDS
 
                 mock_fncall_tools = kwargs.pop('tools')
-                kwargs['tool_choice'] = (
-                    'none'  # force no tool calling because we're mocking it - without it, it will cause issue with sglang
-                )
+                # tool_choice should not be specified when mocking function calling
+                kwargs.pop('tool_choice', None)
 
             # if we have no messages, something went very wrong
             if not messages:
@@ -230,7 +237,6 @@ class LLM(RetryMixin, DebugMixin):
 
             # Record start time for latency measurement
             start_time = time.time()
-
             # we don't support streaming here, thus we get a ModelResponse
             resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
 
@@ -243,7 +249,8 @@ class LLM(RetryMixin, DebugMixin):
 
             # if we mocked function calling, and we have tools, convert the response back to function calling format
             if mock_function_calling and mock_fncall_tools is not None:
-                assert len(resp.choices) == 1
+                logger.debug(f'Response choices: {len(resp.choices)}')
+                assert len(resp.choices) >= 1
                 non_fncall_response_message = resp.choices[0].message
                 fn_call_messages_with_response = (
                     convert_non_fncall_messages_to_fncall_messages(
@@ -287,7 +294,11 @@ class LLM(RetryMixin, DebugMixin):
                     'messages': messages,
                     'response': resp,
                     'args': args,
-                    'kwargs': {k: v for k, v in kwargs.items() if k != 'messages'},
+                    'kwargs': {
+                        k: v
+                        for k, v in kwargs.items()
+                        if k not in ('messages', 'client')
+                    },
                     'timestamp': time.time(),
                     'cost': cost,
                 }
@@ -369,7 +380,7 @@ class LLM(RetryMixin, DebugMixin):
             # noinspection PyBroadException
             except Exception:
                 pass
-        from openhands.core.utils import json
+        from openhands.io import json
 
         logger.debug(f'Model info: {json.dumps(self.model_info, indent=2)}')
 
@@ -406,6 +417,8 @@ class LLM(RetryMixin, DebugMixin):
                     self.model_info['max_tokens'], int
                 ):
                     self.config.max_output_tokens = self.model_info['max_tokens']
+            if 'claude-3-7-sonnet' in self.config.model:
+                self.config.max_output_tokens = 64000  # litellm set max to 128k, but that requires a header to be set
 
         # Initialize function calling capability
         # Check if model name is in our supported list
@@ -497,20 +510,21 @@ class LLM(RetryMixin, DebugMixin):
             stats += 'Response Latency: %.3f seconds\n' % latest_latency.latency
 
         usage: Usage | None = response.get('usage')
+        response_id = response.get('id', 'unknown')
 
         if usage:
             # keep track of the input and output tokens
-            input_tokens = usage.get('prompt_tokens')
-            output_tokens = usage.get('completion_tokens')
+            prompt_tokens = usage.get('prompt_tokens', 0)
+            completion_tokens = usage.get('completion_tokens', 0)
 
-            if input_tokens:
-                stats += 'Input tokens: ' + str(input_tokens)
+            if prompt_tokens:
+                stats += 'Input tokens: ' + str(prompt_tokens)
 
-            if output_tokens:
+            if completion_tokens:
                 stats += (
-                    (' | ' if input_tokens else '')
+                    (' | ' if prompt_tokens else '')
                     + 'Output tokens: '
-                    + str(output_tokens)
+                    + str(completion_tokens)
                     + '\n'
                 )
 
@@ -519,7 +533,7 @@ class LLM(RetryMixin, DebugMixin):
                 'prompt_tokens_details'
             )
             cache_hit_tokens = (
-                prompt_tokens_details.cached_tokens if prompt_tokens_details else None
+                prompt_tokens_details.cached_tokens if prompt_tokens_details else 0
             )
             if cache_hit_tokens:
                 stats += 'Input tokens (cache hit): ' + str(cache_hit_tokens) + '\n'
@@ -528,9 +542,19 @@ class LLM(RetryMixin, DebugMixin):
             # but litellm doesn't separate them in the usage stats
             # so we can read it from the provider-specific extra field
             model_extra = usage.get('model_extra', {})
-            cache_write_tokens = model_extra.get('cache_creation_input_tokens')
+            cache_write_tokens = model_extra.get('cache_creation_input_tokens', 0)
             if cache_write_tokens:
                 stats += 'Input tokens (cache write): ' + str(cache_write_tokens) + '\n'
+
+            # Record in metrics
+            # We'll treat cache_hit_tokens as "cache read" and cache_write_tokens as "cache write"
+            self.metrics.add_token_usage(
+                prompt_tokens=prompt_tokens,
+                completion_tokens=completion_tokens,
+                cache_read_tokens=cache_hit_tokens,
+                cache_write_tokens=cache_write_tokens,
+                response_id=response_id,
+            )
 
         # log the stats
         if stats:

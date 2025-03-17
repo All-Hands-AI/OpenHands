@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from openhands.core.config.condenser_config import LLMSummarizingCondenserConfig
+from openhands.core.message import Message, TextContent
 from openhands.events.event import Event
 from openhands.events.observation.agent import AgentCondensationObservation
 from openhands.llm import LLM
@@ -57,22 +58,29 @@ class LLMSummarizingCondenser(RollingCondenser):
         # Construct prompt for summarization
         prompt = """You are maintaining state history for an LLM-based code agent. Track:
 
+USER_CONTEXT: (Preserve essential user requirements, problem descriptions, and clarifications in concise form)
+
 STATE: {File paths, function signatures, data structures}
 TESTS: {Failing cases, error messages, outputs}
 CHANGES: {Code edits, variable updates}
 DEPS: {Dependencies, imports, external calls}
 INTENT: {Why changes were made, acceptance criteria}
 
-SKIP: {Git clones, build logs}
-SUMMARIZE: {File listings}
-MAX_LENGTH: Keep summaries under 1000 words
+PRIORITIZE:
+1. Capture key user requirements and constraints
+2. Maintain critical problem context
+3. Keep all sections concise
+
+SKIP: {Git clones, build logs, file listings}
 
 Example history format:
+USER_CONTEXT: Fix FITS card float representation - "0.009125" becomes "0.009124999999999999" causing comment truncation. Use Python's str() when possible while maintaining FITS compliance.
+
 STATE: mod_float() in card.py updated
 TESTS: test_format() passed
 CHANGES: str(val) replaces f"{val:.16G}"
 DEPS: None modified
-INTENT: Fix float precision overflow"""
+INTENT: Fix precision while maintaining FITS compliance"""
 
         prompt + '\n\n'
 
@@ -83,13 +91,10 @@ INTENT: Fix float precision overflow"""
         for forgotten_event in forgotten_events:
             prompt += str(forgotten_event) + '\n\n'
 
+        messages = [Message(role='user', content=[TextContent(text=prompt)])]
+
         response = self.llm.completion(
-            messages=[
-                {
-                    'content': prompt,
-                    'role': 'user',
-                },
-            ],
+            messages=self.llm.format_messages_for_llm(messages),
         )
         summary = response.choices[0].message.content
 
