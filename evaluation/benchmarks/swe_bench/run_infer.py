@@ -701,7 +701,7 @@ if __name__ == '__main__':
                     instances[col] = instances[col].apply(lambda x: str(x))
 
             logger.info(
-                f'Evaluating {len(instances)} instances for attempt {attempt}...'
+                f'Use critic {critic.__class__.__name__} to check {len(instances)} instances for attempt {attempt}...'
             )
 
             # Run evaluation - but save them to cur_output_file
