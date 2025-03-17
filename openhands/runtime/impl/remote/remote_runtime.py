@@ -46,7 +46,7 @@ class RemoteRuntime(ActionExecutionClient):
         status_callback: Callable | None = None,
         attach_to_existing: bool = False,
         headless_mode: bool = True,
-        github_user_id: str | None = None,
+        user_id: str | None = None,
     ):
         super().__init__(
             config,
@@ -57,7 +57,7 @@ class RemoteRuntime(ActionExecutionClient):
             status_callback,
             attach_to_existing,
             headless_mode,
-            github_user_id,
+            user_id,
         )
         if self.config.sandbox.api_key is None:
             raise ValueError(
