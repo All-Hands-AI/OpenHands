@@ -11,7 +11,6 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request as StarletteRequest
 from starlette.types import ASGIApp
 
-from openhands.integrations.provider import ProviderTokens
 from openhands.server import shared
 from openhands.server.auth import get_user_id
 from openhands.server.types import SessionMiddlewareInterface
@@ -184,6 +183,8 @@ class AttachConversationMiddleware(SessionMiddlewareInterface):
         return response
 
 
+from openhands.integrations.provider import ProviderTokens
+
 class GitHubTokenMiddleware(SessionMiddlewareInterface):
     def __init__(self, app):
         self.app = app
@@ -201,16 +202,16 @@ class GitHubTokenMiddleware(SessionMiddlewareInterface):
                 and settings.secrets_store
                 and settings.secrets_store.provider_tokens
             ):
-                # Convert to ProviderTokens if needed
-                request.state.provider_tokens = (
-                    settings.secrets_store.provider_tokens
-                    if isinstance(
-                        settings.secrets_store.provider_tokens, ProviderTokens
+                # If the tokens are already a ProviderTokens instance, use them directly
+                if isinstance(settings.secrets_store.provider_tokens, ProviderTokens):
+                    request.state.provider_tokens = settings.secrets_store.provider_tokens
+                else:
+                    # Convert to ProviderTokens if needed (for backward compatibility)
+                    request.state.provider_tokens = ProviderTokens.from_dict(
+                        settings.secrets_store.provider_tokens.tokens
+                        if hasattr(settings.secrets_store.provider_tokens, 'tokens')
+                        else settings.secrets_store.provider_tokens
                     )
-                    else ProviderTokens.from_dict(
-                        settings.secrets_store.provider_tokens
-                    )
-                )
             else:
                 # Create an empty ProviderTokens instance instead of None
                 request.state.provider_tokens = ProviderTokens()

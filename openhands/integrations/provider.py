@@ -1,7 +1,7 @@
 from enum import Enum
-from typing import Any, Coroutine, Dict, Literal, overload
+from typing import Any, Coroutine, Literal, overload
 
-from pydantic import BaseModel, Field, SecretStr, SerializationInfo, field_serializer
+from pydantic import BaseModel, SecretStr, SerializationInfo, field_serializer
 from pydantic.json import pydantic_encoder
 
 from openhands.events.action.action import Action
@@ -24,42 +24,41 @@ class ProviderType(Enum):
 
 class ProviderToken(BaseModel):
     """A frozen model representing a provider token with its associated user ID."""
-
     token: SecretStr | None
     user_id: str | None
 
     model_config = {
-        'frozen': True,  # Make the model immutable
-        'validate_assignment': True,  # Validate values on assignment
+        "frozen": True,  # Make the model immutable
+        "validate_assignment": True,  # Validate values on assignment
     }
 
 
+from typing import Dict, Mapping
+
 class ProviderTokens(BaseModel):
     """An immutable mapping of provider types to their tokens."""
-
     tokens: Dict[ProviderType, ProviderToken] = Field(default_factory=dict)
 
     model_config = {
-        'frozen': True,
-        'validate_assignment': True,
+        "frozen": True,
+        "validate_assignment": True,
     }
 
     def __getitem__(self, key: ProviderType) -> ProviderToken:
         return self.tokens[key]
-
+    
     def __contains__(self, key: ProviderType) -> bool:
         return key in self.tokens
-
+    
     def items(self):
         return self.tokens.items()
-
+    
     def __iter__(self):
         return iter(self.tokens)
-
+    
     @classmethod
-    def from_dict(cls, data: Dict[ProviderType, ProviderToken]) -> 'ProviderTokens':
+    def from_dict(cls, data: Dict[ProviderType, ProviderToken]) -> "ProviderTokens":
         return cls(tokens=data)
-
 
 PROVIDER_TOKEN_TYPE = ProviderTokens
 CUSTOM_SECRETS_TYPE = Dict[str, SecretStr]
@@ -67,13 +66,12 @@ CUSTOM_SECRETS_TYPE = Dict[str, SecretStr]
 
 class SecretStore(BaseModel):
     """A store for provider tokens and other secrets. This class is immutable."""
-
     provider_tokens: PROVIDER_TOKEN_TYPE = Field(default_factory=ProviderTokens)
 
     model_config = {
-        'frozen': True,
-        'validate_assignment': True,
-        'arbitrary_types_allowed': True,
+        "frozen": True,
+        "validate_assignment": True,
+        "arbitrary_types_allowed": True,
     }
 
     @classmethod
@@ -91,7 +89,7 @@ class SecretStore(BaseModel):
 
     def model_post_init(self, __context) -> None:
         # Convert any string tokens to ProviderToken objects
-        converted_tokens: Dict[ProviderType, ProviderToken] = {}
+        converted_tokens = {}
         for token_type, token_value in self.provider_tokens.items():
             if token_value:  # Only convert non-empty tokens
                 try:
@@ -101,7 +99,7 @@ class SecretStore(BaseModel):
                 except ValueError:
                     # Skip invalid provider types or tokens
                     continue
-        self.provider_tokens = ProviderTokens.from_dict(converted_tokens)
+        self.provider_tokens = converted_tokens
 
     @field_serializer('provider_tokens')
     def provider_tokens_serializer(
@@ -205,9 +203,11 @@ class ProviderHandler:
         This ensures that the latest provider tokens are masked from the event stream.
         It is called when the provider tokens are first initialized in the runtime, or when the provider tokens are re-exported with the latest working ones
 
+
         Args:
             event_stream: Agent session's event stream
             provider_tokens: Dict of providers and their tokens that require setting/updating
+
         """
 
         normalized_dict = {
