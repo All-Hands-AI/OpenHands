@@ -116,7 +116,7 @@ INTENT: Fix precision while maintaining FITS compliance"""
         condensation_action = AgentCondensationAction(
             start_id=start_id,
             end_id=end_id,
-            metadata={"summary": summary}
+            summary=summary
         )
         
         # Add the action first, then the observation to the returned events

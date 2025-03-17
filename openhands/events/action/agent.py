@@ -114,12 +114,12 @@ class AgentCondensationAction(Action):
     """Action to record condensation of the agent's history.
 
     This action stores information about a condensation event, including the range of events
-    that were condensed and any metadata needed to restore the condenser's state.
+    that were condensed and the summary of those events.
     """
 
     start_id: int
     end_id: int
-    metadata: dict[str, Any] = field(default_factory=dict)
+    summary: str
     action: str = ActionType.CONDENSE
 
     @property
@@ -129,8 +129,7 @@ class AgentCondensationAction(Action):
     def __str__(self) -> str:
         ret = '**AgentCondensationAction**\n'
         ret += f'RANGE: [{self.start_id}..{self.end_id}]\n'
-        if self.metadata:
-            ret += f'METADATA: {self.metadata}'
+        ret += f'SUMMARY: {self.summary}'
         return ret
 
 
