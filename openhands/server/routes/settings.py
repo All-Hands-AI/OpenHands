@@ -76,77 +76,52 @@ async def store_settings(
 
         # Convert to Settings model and merge with existing settings
         if existing_settings:
-            # Create a dict of updates from existing settings
-            updates = {}
-            
             # Keep existing LLM settings if not provided
             if settings.llm_api_key is None:
-                updates['llm_api_key'] = existing_settings.llm_api_key
+                settings.llm_api_key = existing_settings.llm_api_key
             if settings.llm_model is None:
-                updates['llm_model'] = existing_settings.llm_model
+                settings.llm_model = existing_settings.llm_model
             if settings.llm_base_url is None:
-                updates['llm_base_url'] = existing_settings.llm_base_url
+                settings.llm_base_url = existing_settings.llm_base_url
 
             # Keep existing analytics consent if not provided
             if settings.user_consents_to_analytics is None:
-                updates['user_consents_to_analytics'] = (
+                settings.user_consents_to_analytics = (
                     existing_settings.user_consents_to_analytics
                 )
-                
-            # Apply updates if any
-            if updates:
-                settings = settings.model_copy(update=updates)
-
-            # Handle provider tokens
-            updates = {}
-            provider_token_updates = {}
 
             if settings.unset_github_token:
-                # Create new empty SecretStore
-                updates['secrets_store'] = SecretStore.create()
-                provider_token_updates = {}
+                settings.secrets_store.provider_tokens = ProviderTokens()
+                settings.provider_tokens = {}
             else:  # Only merge if not unsetting tokens
                 if settings.provider_tokens:
-                    # Convert incoming tokens
-                    new_tokens: Dict[ProviderType, ProviderToken] = {}
-                    
-                    # First, add existing tokens that aren't being updated
-                    if existing_settings and existing_settings.secrets_store:
-                        for provider_type, token in existing_settings.secrets_store.provider_tokens.items():
-                            if (
-                                provider_type.value not in settings.provider_tokens
-                                or not settings.provider_tokens[provider_type.value]
-                            ):
-                                new_tokens[provider_type] = token
-                    
-                    # Then add/update with new tokens
-                    for provider_str, token_value in settings.provider_tokens.items():
-                        if token_value:  # Only add non-empty tokens
-                            try:
-                                provider_type = ProviderType(provider_str)
-                                new_tokens[provider_type] = ProviderToken(
-                                    token=SecretStr(token_value),
-                                    user_id=None
+                    if existing_settings.secrets_store:
+                        existing_providers = [
+                            provider.value
+                            for provider in existing_settings.secrets_store.provider_tokens
+                        ]
+
+                        # Merge incoming settings store with the existing one
+                        for provider, token_value in settings.provider_tokens.items():
+                            if provider in existing_providers and not token_value:
+                                provider_type = ProviderType(provider)
+                                existing_token = (
+                                    existing_settings.secrets_store.provider_tokens.get(
+                                        provider_type
+                                    )
                                 )
-                            except ValueError:
-                                continue  # Skip invalid provider types
-                    
-                    # Create new SecretStore with merged tokens
-                    updates['secrets_store'] = SecretStore.create(provider_tokens=new_tokens)
-                elif existing_settings and existing_settings.secrets_store:
-                    # If no new tokens provided, keep existing ones
-                    updates['secrets_store'] = existing_settings.secrets_store
-                    provider_token_updates = {
-                        provider.value: token.token.get_secret_value()
-                        if token.token else None
-                        for provider, token in existing_settings.secrets_store.provider_tokens.items()
+                                if existing_token and existing_token.token:
+                                    settings.provider_tokens[provider] = (
+                                        existing_token.token.get_secret_value()
+                                    )
+                else:  # nothing passed in means keep current settings
+                    provider_tokens = existing_settings.secrets_store.provider_tokens
+                    settings.provider_tokens = {
+                        provider.value: data.token.get_secret_value()
+                        if data.token
+                        else None
+                        for provider, data in provider_tokens.items()
                     }
-            
-            # Apply updates
-            if provider_token_updates:
-                updates['provider_tokens'] = provider_token_updates
-            if updates:
-                settings = settings.model_copy(update=updates)
 
         # Update sandbox config with new settings
         if settings.remote_runtime_resource_factor is not None:
@@ -181,23 +156,16 @@ def convert_to_settings(settings_with_token_data: POSTSettingsModel) -> Settings
     # Convert the `llm_api_key` to a `SecretStr` instance
     filtered_settings_data['llm_api_key'] = settings_with_token_data.llm_api_key
 
-    # Handle provider tokens
+    # Create a new Settings instance without provider tokens
+    settings = Settings(**filtered_settings_data)
+
+    # Update provider tokens if any are provided
     if settings_with_token_data.provider_tokens:
-        converted_tokens: Dict[ProviderType, ProviderToken] = {}
         for token_type, token_value in settings_with_token_data.provider_tokens.items():
             if token_value:
-                try:
-                    provider = ProviderType(token_type)
-                    converted_tokens[provider] = ProviderToken(
-                        token=SecretStr(token_value), user_id=None
-                    )
-                except ValueError:
-                    continue  # Skip invalid provider types
+                provider = ProviderType(token_type)
+                settings.secrets_store.provider_tokens[provider] = ProviderToken(
+                    token=SecretStr(token_value), user_id=None
+                )
 
-        # Create SecretStore with converted tokens
-        filtered_settings_data['secrets_store'] = SecretStore.create(
-            provider_tokens=converted_tokens
-        )
-
-    # Create a new Settings instance
-    return Settings(**filtered_settings_data)
+    return settings
