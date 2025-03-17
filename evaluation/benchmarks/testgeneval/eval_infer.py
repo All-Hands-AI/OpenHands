@@ -21,7 +21,6 @@ from evaluation.benchmarks.testgeneval.constants import (
 )
 from evaluation.benchmarks.testgeneval.metrics import (
     bleu,
-    code_bleu,
     edit_sim,
     exact_match,
     rouge_l,
@@ -94,7 +93,6 @@ def compute_lexical_metrics(pred_suite, gold_suite):
         'gold_readability': readability_gold,
         'pred_methods': pred_methods,
         'gold_methods': gold_methods,
-        'code_bleu': code_bleu(preds, golds, 'Python3'),
         'bleu': bleu(preds, golds),
         'xmatch': exact_match(preds, golds),
         'edit_sim': edit_sim(preds, golds),
@@ -334,7 +332,6 @@ def process_instance(
         'gold_readability': -1,
         'pred_methods': -1,
         'gold_methods': -1,
-        'code_bleu': -1,
         'bleu': -1,
         'xmatch': -1,
         'edit_sim': -1,
@@ -619,7 +616,6 @@ if __name__ == '__main__':
         'gold_loc',
         'pred_methods',
         'gold_methods',
-        'code_bleu',
         'bleu',
         'xmatch',
         'edit_sim',

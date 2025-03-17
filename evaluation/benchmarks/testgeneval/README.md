@@ -42,7 +42,7 @@ To evaluate the generated tests, use the `eval_infer.sh` script:
 ./evaluation/benchmarks/testgeneval/scripts/eval_infer.sh $YOUR_OUTPUT_JSONL [instance_id] [dataset_name] [split] [num_workers] [skip_mutation]
 
 # Example
-./evaluation/benchmarks/testgeneval/scripts/eval_infer.sh evaluation/evaluation_outputs/outputs/testgeneval/CodeActAgent/gpt-4-1106-preview_maxiter_50_N_v1.0/output.jsonl
+./evaluation/benchmarks/testgeneval/scripts/eval_infer.sh evaluation/evaluation_outputs/outputs/kjain14__testgenevallite-test/CodeActAgent/gpt-4-1106-preview_maxiter_50_N_v1.0/output.jsonl
 ```
 
 Optional arguments:
@@ -52,7 +52,7 @@ Optional arguments:
 - `num_workers`: Number of workers for running docker (default: 1)
 - `skip_mutation`: Skip mutation testing (enter `true` if desired)
 
-The evaluation results will be saved to `evaluation/evaluation_outputs/outputs/testgeneval/CodeActAgent/gpt-4-1106-preview_maxiter_50_N_v1.0/` with `output.testgeneval.jsonl` containing the metrics.
+The evaluation results will be saved to `evaluation/evaluation_outputs/outputs/kjain14__testgenevallite-test/CodeActAgent/gpt-4-1106-preview_maxiter_50_N_v1.0/` with `output.testgeneval.jsonl` containing the metrics.
 
 ## Metrics
 
