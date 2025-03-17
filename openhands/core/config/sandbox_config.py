@@ -40,7 +40,7 @@ class SandboxConfig(BaseModel):
     """
 
     remote_runtime_api_url: str | None = Field(default='http://localhost:8000')
-    local_runtime_url: str = Field(default='http://host.docker.internal')
+    local_runtime_url: str = Field(default='http://192.168.88.11')
     keep_runtime_alive: bool = Field(default=False)
     pause_closed_runtimes: bool = Field(default=True)
     rm_all_containers: bool = Field(default=False)
