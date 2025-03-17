@@ -197,8 +197,8 @@ async def test_runtime_error_handling(mock_agent, mock_event_stream):
     assert "previous runtime died" in args[0].content
     assert "Retry 1 of 3" in args[0].content
     
-    # Check that the source is SYSTEM
-    assert kwargs['source'] == EventSource.SYSTEM
+    # Check that the source is ENVIRONMENT
+    assert kwargs['source'] == EventSource.ENVIRONMENT
     
     # Verify that the runtime error counter was incremented
     assert hasattr(controller, '_runtime_error_count')
@@ -276,8 +276,8 @@ async def test_runtime_error_handling_with_unavailable_error(mock_agent, mock_ev
     assert "Your command consumed too much resources" in args[0].content
     assert "previous runtime died" in args[0].content
     
-    # Check that the source is SYSTEM
-    assert kwargs['source'] == EventSource.SYSTEM
+    # Check that the source is ENVIRONMENT
+    assert kwargs['source'] == EventSource.ENVIRONMENT
     
     await controller.close()
 
