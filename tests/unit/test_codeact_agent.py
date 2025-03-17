@@ -228,7 +228,7 @@ def test_browser_tool():
 
 def test_response_to_actions_search_engine():
     # Test response with search engine tool call
-    from litellm import ModelResponse, Choices, Message, ChatCompletionMessageToolCall
+    from litellm import ChatCompletionMessageToolCall, Choices, Message, ModelResponse
 
     mock_response = ModelResponse(
         id='mock_id',
