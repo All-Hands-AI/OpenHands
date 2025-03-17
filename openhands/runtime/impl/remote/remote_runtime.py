@@ -41,6 +41,7 @@ class RemoteRuntime(ActionExecutionClient):
         self,
         config: AppConfig,
         event_stream: EventStream,
+        provider_tokens: PROVIDER_TOKEN_TYPE,
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
@@ -48,7 +49,6 @@ class RemoteRuntime(ActionExecutionClient):
         attach_to_existing: bool = False,
         headless_mode: bool = True,
         user_id: str | None = None,
-        provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
     ):
         super().__init__(
             config,

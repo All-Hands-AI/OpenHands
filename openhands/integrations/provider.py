@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Literal, Union, overload
 
 from pydantic import BaseModel, SecretStr, SerializationInfo, field_serializer
 from pydantic.json import pydantic_encoder
@@ -165,9 +166,12 @@ class ProviderHandler:
                         token_name: token.get_secret_value(),
                     }
                 )
+                
 
     async def get_env_vars(
-        self, required_providers: list[ProviderType] | None = None, expose_secrets=False
+        self,
+        required_providers: list[ProviderType] | None = None,
+        expose_secrets: bool = False,
     ) -> dict[ProviderType, SecretStr] | dict[str, str]:
         if not self.provider_tokens:
             return {}

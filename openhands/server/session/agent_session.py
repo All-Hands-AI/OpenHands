@@ -209,7 +209,7 @@ class AgentSession:
         runtime_name: str,
         config: AppConfig,
         agent: Agent,
-        provider_tokens: PROVIDER_TOKEN_TYPE,
+        provider_tokens: PROVIDER_TOKEN_TYPE = {},
         selected_repository: str | None = None,
         selected_branch: str | None = None,
     ) -> bool:
@@ -231,19 +231,8 @@ class AgentSession:
         runtime_cls = get_runtime_cls(runtime_name)
 
         provider_handler = ProviderHandler(provider_tokens)
-        raw_env_vars = await provider_handler.get_env_vars(expose_secrets=True)
-        # Convert to dict[str, str] as required by Runtime
-        env_vars: dict[str, str] = {}
-        for key, value in raw_env_vars.items():
-            if hasattr(value, 'get_secret_value'):
-                env_vars[str(key)] = value.get_secret_value()
-            else:
-                env_vars[str(key)] = str(value)
-
-        kwargs = {}
-        if runtime_cls == RemoteRuntime:
-            kwargs['user_id'] = self.user_id
-
+        raw_env_vars: dict[str, str] = await provider_handler.get_env_vars(expose_secrets=True)
+    
         self.runtime = runtime_cls(
             config=config,
             event_stream=self.event_stream,
@@ -252,9 +241,9 @@ class AgentSession:
             status_callback=self._status_callback,
             headless_mode=False,
             attach_to_existing=False,
-            env_vars=env_vars,
-            provider_tokens=provider_tokens if runtime_cls == RemoteRuntime else None,
-            **kwargs,
+            env_vars=raw_env_vars,
+            provider_tokens=provider_tokens,
+            user_id=self.user_id,
         )
 
         # FIXME: this sleep is a terrible hack.

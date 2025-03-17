@@ -61,7 +61,7 @@ class ActionExecutionClient(Runtime):
         attach_to_existing: bool = False,
         headless_mode: bool = True,
         user_id: str | None = None,
-        provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
+        provider_tokens: PROVIDER_TOKEN_TYPE | None = None
     ):
         self.session = HttpSession()
         self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
