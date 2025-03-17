@@ -262,3 +262,39 @@ REPOSITORY INSTRUCTIONS: This is a test repository.
 
     # Clean up
     os.remove(os.path.join(prompt_dir, 'micro', f'{repo_microagent_name}.md'))
+
+
+def test_agent_controller_should_step_with_null_observation_cause_zero():
+    """Test that AgentController's should_step method returns True for NullObservation with cause = 0."""
+    from unittest.mock import MagicMock
+
+    from openhands.controller.agent import Agent
+    from openhands.controller.agent_controller import AgentController
+    from openhands.events.observation.empty import NullObservation
+
+    # Create a mock event stream
+    file_store = InMemoryFileStore()
+    event_stream = EventStream(sid='test-session', file_store=file_store)
+
+    # Create a mock agent
+    mock_agent = MagicMock(spec=Agent)
+
+    # Create an agent controller
+    controller = AgentController(
+        agent=mock_agent,
+        event_stream=event_stream,
+        max_iterations=10,
+        sid='test-session',
+    )
+
+    # Create a NullObservation with cause = 0
+    null_observation = NullObservation(content='Test observation')
+    null_observation._cause = 0  # type: ignore[attr-defined]
+
+    # Check if should_step returns True for this observation
+    result = controller.should_step(null_observation)
+
+    # It should return True after our fix
+    assert (
+        result is True
+    ), 'should_step should return True for NullObservation with cause = 0'
