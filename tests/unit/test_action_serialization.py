@@ -376,7 +376,7 @@ def test_agent_condensation_action_serialization_deserialization():
         'args': {
             'start_id': 10,
             'end_id': 20,
-            'metadata': {'summary': 'Condensed history', 'tokens': 1500},
+            'summary': 'Condensed history',
         },
     }
     serialization_deserialization(original_action_dict, AgentCondensationAction)
