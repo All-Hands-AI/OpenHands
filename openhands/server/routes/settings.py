@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.integrations.provider import ProviderToken, ProviderType
+from openhands.integrations.provider import ProviderToken, ProviderTokens, ProviderType
 from openhands.integrations.utils import validate_provider_token
 from openhands.server.auth import get_provider_tokens, get_user_id
 from openhands.server.settings import GETSettingsModel, POSTSettingsModel, Settings
@@ -91,7 +91,7 @@ async def store_settings(
                 )
 
             if settings.unset_github_token:
-                settings.secrets_store.provider_tokens = {}
+                settings.secrets_store.provider_tokens = ProviderTokens()
                 settings.provider_tokens = {}
             else:  # Only merge if not unsetting tokens
                 if settings.provider_tokens:

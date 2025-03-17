@@ -13,12 +13,15 @@ from openhands.core.schema.agent import AgentState
 from openhands.events.action import ChangeAgentStateAction, MessageAction
 from openhands.events.event import EventSource
 from openhands.events.stream import EventStream
-from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderHandler
+from openhands.integrations.provider import (
+    PROVIDER_TOKEN_TYPE,
+    ProviderHandler,
+    ProviderTokens,
+)
 from openhands.memory.memory import Memory
 from openhands.microagent.microagent import BaseMicroAgent
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
-from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
 from openhands.security import SecurityAnalyzer, options
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import call_sync_from_async
@@ -175,7 +178,7 @@ class AgentSession:
                 f'Waiting for initialization to finish before closing session {self.sid}'
             )
             await asyncio.sleep(WAIT_TIME_BEFORE_CLOSE_INTERVAL)
-            if time.time() <= self._started_at + WAIT_TIME_BEFORE_CLOSE:
+            if time.time() >= self._started_at + WAIT_TIME_BEFORE_CLOSE:
                 self.logger.error(
                     f'Waited too long for initialization to finish before closing session {self.sid}'
                 )
@@ -230,10 +233,11 @@ class AgentSession:
         self.logger.debug(f'Initializing runtime `{runtime_name}` now...')
         runtime_cls = get_runtime_cls(runtime_name)
 
-        provider_handler = ProviderHandler(provider_tokens or {})
-        raw_env_vars: dict[str, str] = await provider_handler.get_env_vars(expose_secrets=True, 
-                                                                           get_latest=True)
-    
+        provider_handler = ProviderHandler(provider_tokens or ProviderTokens())
+        raw_env_vars: dict[str, str] = await provider_handler.get_env_vars(
+            expose_secrets=True, get_latest=True
+        )
+
         self.runtime = runtime_cls(
             config=config,
             event_stream=self.event_stream,
