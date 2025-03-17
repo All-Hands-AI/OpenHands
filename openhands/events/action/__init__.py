@@ -6,6 +6,7 @@ from openhands.events.action.agent import (
     AgentSummarizeAction,
     AgentThinkAction,
     ChangeAgentStateAction,
+    RecallAction,
 )
 from openhands.events.action.browse import BrowseInteractiveAction, BrowseURLAction
 from openhands.events.action.commands import CmdRunAction, IPythonRunCellAction
@@ -16,7 +17,6 @@ from openhands.events.action.files import (
     FileWriteAction,
 )
 from openhands.events.action.message import MessageAction
-from openhands.events.action.search_engine import SearchAction
 
 __all__ = [
     'Action',
@@ -36,5 +36,5 @@ __all__ = [
     'MessageAction',
     'ActionConfirmationStatus',
     'AgentThinkAction',
-    'SearchAction',
+    'RecallAction',
 ]

@@ -12,14 +12,13 @@ from litellm import (
 
 from openhands.agenthub.codeact_agent.tools import (
     BrowserTool,
-    CmdRunTool,
     FinishTool,
     IPythonTool,
     LLMBasedFileEditTool,
-    SearchEngineTool,
-    StrReplaceEditorTool,
     ThinkTool,
     WebReadTool,
+    create_cmd_run_tool,
+    create_str_replace_editor_tool,
 )
 from openhands.core.exceptions import (
     FunctionCallNotExistsError,
@@ -37,10 +36,10 @@ from openhands.events.action import (
     FileReadAction,
     IPythonRunCellAction,
     MessageAction,
-    SearchAction,
 )
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.tool import ToolCallMetadata
+from openhands.llm import LLM
 
 
 def combine_thought(action: Action, thought: str) -> Action:
@@ -82,7 +81,7 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
             # CmdRunTool (Bash)
             # ================================================
 
-            if tool_call.function.name == CmdRunTool['function']['name']:
+            if tool_call.function.name == create_cmd_run_tool()['function']['name']:
                 if 'command' not in arguments:
                     raise FunctionCallValidationError(
                         f'Missing required argument "command" in tool call {tool_call.function.name}'
@@ -133,7 +132,10 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                     start=arguments.get('start', 1),
                     end=arguments.get('end', -1),
                 )
-            elif tool_call.function.name == StrReplaceEditorTool['function']['name']:
+            elif (
+                tool_call.function.name
+                == create_str_replace_editor_tool()['function']['name']
+            ):
                 if 'command' not in arguments:
                     raise FunctionCallValidationError(
                         f'Missing required argument "command" in tool call {tool_call.function.name}'
@@ -189,15 +191,6 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                         f'Missing required argument "url" in tool call {tool_call.function.name}'
                     )
                 action = BrowseURLAction(url=arguments['url'])
-            # ================================================
-            # SearchEngineTool (search the web using text queries)
-            # ================================================
-            elif tool_call.function.name == SearchEngineTool['function']['name']:
-                if 'query' not in arguments:
-                    raise FunctionCallNotExistsError(
-                        f'Missing required argument "query" in tool call {tool_call.function.name}'
-                    )
-                action = SearchAction(query=arguments['query'])
             else:
                 raise FunctionCallNotExistsError(
                     f'Tool {tool_call.function.name} is not registered. (arguments: {arguments}). Please check the tool name and retry with an existing tool.'
@@ -230,11 +223,22 @@ def get_tools(
     codeact_enable_browsing: bool = False,
     codeact_enable_llm_editor: bool = False,
     codeact_enable_jupyter: bool = False,
-    codeact_enable_search_engine: bool = False,
+    llm: LLM | None = None,
 ) -> list[ChatCompletionToolParam]:
-    tools = [CmdRunTool, ThinkTool, FinishTool]
-    if codeact_enable_search_engine:
-        tools.append(SearchEngineTool)
+    SIMPLIFIED_TOOL_DESCRIPTION_LLM_SUBSTRS = ['gpt-', 'o3', 'o1']
+
+    use_simplified_tool_desc = False
+    if llm is not None:
+        use_simplified_tool_desc = any(
+            model_substr in llm.config.model
+            for model_substr in SIMPLIFIED_TOOL_DESCRIPTION_LLM_SUBSTRS
+        )
+
+    tools = [
+        create_cmd_run_tool(use_simplified_description=use_simplified_tool_desc),
+        ThinkTool,
+        FinishTool,
+    ]
     if codeact_enable_browsing:
         tools.append(WebReadTool)
         tools.append(BrowserTool)
@@ -243,5 +247,9 @@ def get_tools(
     if codeact_enable_llm_editor:
         tools.append(LLMBasedFileEditTool)
     else:
-        tools.append(StrReplaceEditorTool)
+        tools.append(
+            create_str_replace_editor_tool(
+                use_simplified_description=use_simplified_tool_desc
+            )
+        )
     return tools
