@@ -8,7 +8,7 @@ import {
 import { EllipsisButton } from "./ellipsis-button";
 import { ConversationCardContextMenu } from "./conversation-card-context-menu";
 import { cn } from "#/utils/utils";
-import { MetricsModal } from "../../shared/metrics-modal";
+import { BaseModal } from "../../shared/modals/base-modal/base-modal";
 
 interface ConversationCardProps {
   onClick?: () => void;
@@ -39,8 +39,35 @@ export function ConversationCard({
 }: ConversationCardProps) {
   const [contextMenuVisible, setContextMenuVisible] = React.useState(false);
   const [titleMode, setTitleMode] = React.useState<"view" | "edit">("view");
-  const [metricsModalVisible, setMetricsModalVisible] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
+
+  // Only create metrics-related state if onDisplayCost is provided
+  const [metricsModalVisible, setMetricsModalVisible] = React.useState(false);
+  const [metrics, setMetrics] = React.useState<{
+    cost: number | null;
+    usage: {
+      prompt_tokens: number;
+      completion_tokens: number;
+      total_tokens: number;
+    } | null;
+  }>({
+    cost: null,
+    usage: null,
+  });
+
+  // Only add metrics event listener if onDisplayCost is provided
+  React.useEffect(() => {
+    if (!onDisplayCost) return () => {};
+
+    function handleMessage(event: MessageEvent) {
+      if (event.data?.type === "metrics_update") {
+        setMetrics(event.data.metrics);
+      }
+    }
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [onDisplayCost]);
 
   const handleBlur = () => {
     if (inputRef.current?.value) {
@@ -90,7 +117,7 @@ export function ConversationCard({
   const handleDisplayCost = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
     setMetricsModalVisible(true);
-    setContextMenuVisible(false);
+    onDisplayCost?.();
   };
 
   React.useEffect(() => {
@@ -162,7 +189,7 @@ export function ConversationCard({
                 onDelete={onDelete && handleDelete}
                 onEdit={onChangeTitle && handleEdit}
                 onDownload={onDownloadWorkspace && handleDownload}
-                onDisplayCost={handleDisplayCost}
+                onDisplayCost={onDisplayCost && handleDisplayCost}
                 position={variant === "compact" ? "top" : "bottom"}
               />
             )}
@@ -183,10 +210,33 @@ export function ConversationCard({
         </div>
       </div>
 
-      <MetricsModal
-        isOpen={metricsModalVisible}
-        onClose={() => setMetricsModalVisible(false)}
-      />
+      {onDisplayCost && (
+        <BaseModal
+          isOpen={metricsModalVisible}
+          onOpenChange={setMetricsModalVisible}
+          title="Metrics Information"
+          testID="metrics-modal"
+        >
+          <div className="space-y-2">
+            {metrics?.cost !== null && (
+              <p>Total Cost: ${metrics.cost.toFixed(4)}</p>
+            )}
+            {metrics?.usage !== null && (
+              <>
+                <p>Tokens Used:</p>
+                <ul className="list-inside space-y-1 ml-2">
+                  <li>- Input: {metrics.usage.prompt_tokens}</li>
+                  <li>- Output: {metrics.usage.completion_tokens}</li>
+                  <li>- Total: {metrics.usage.total_tokens}</li>
+                </ul>
+              </>
+            )}
+            {!metrics?.cost && !metrics?.usage && (
+              <p className="text-neutral-400">No metrics data available</p>
+            )}
+          </div>
+        </BaseModal>
+      )}
     </>
   );
 }

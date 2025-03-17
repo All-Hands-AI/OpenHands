@@ -298,39 +298,59 @@ describe("ConversationCard", () => {
     expect(onDownloadWorkspace).toHaveBeenCalled();
   });
 
-  it("should show display cost button even if onDisplayCost is not provided", async () => {
+  it("should show display cost button only when onDisplayCost is provided", async () => {
     const user = userEvent.setup();
-    render(
+    const onDisplayCost = vi.fn();
+    const { rerender } = render(
       <ConversationCard
-        onClick={onClick}
         onDelete={onDelete}
         onChangeTitle={onChangeTitle}
+        isActive
         title="Conversation 1"
         selectedRepository={null}
         lastUpdatedAt="2021-10-01T12:00:00Z"
       />,
     );
 
-    // Menu button should exist
     const ellipsisButton = screen.getByTestId("ellipsis-button");
     await user.click(ellipsisButton);
 
-    // Menu should be visible
-    const menu = screen.getByTestId("context-menu");
-    // Display cost button should exist
-    expect(within(menu).getByTestId("display-cost-button")).toBeInTheDocument();
-    // Other buttons should exist
-    expect(within(menu).getByTestId("delete-button")).toBeInTheDocument();
-    expect(within(menu).getByTestId("edit-button")).toBeInTheDocument();
+    // Wait for context menu to appear
+    const menu = await screen.findByTestId("context-menu");
+    expect(within(menu).queryByTestId("display-cost-button")).not.toBeInTheDocument();
+
+    // Close menu
+    await user.click(ellipsisButton);
+
+    rerender(
+      <ConversationCard
+        onDelete={onDelete}
+        onChangeTitle={onChangeTitle}
+        onDisplayCost={onDisplayCost}
+        isActive
+        title="Conversation 1"
+        selectedRepository={null}
+        lastUpdatedAt="2021-10-01T12:00:00Z"
+      />,
+    );
+
+    // Open menu again
+    await user.click(ellipsisButton);
+
+    // Wait for context menu to appear and check for display cost button
+    const newMenu = await screen.findByTestId("context-menu");
+    within(newMenu).getByTestId("display-cost-button");
   });
 
   it("should show metrics modal when clicking the display cost button", async () => {
     const user = userEvent.setup();
+    const onDisplayCost = vi.fn();
     render(
       <ConversationCard
         onClick={onClick}
         onDelete={onDelete}
         onChangeTitle={onChangeTitle}
+        onDisplayCost={onDisplayCost}
         title="Conversation 1"
         selectedRepository={null}
         lastUpdatedAt="2021-10-01T12:00:00Z"
@@ -340,7 +360,7 @@ describe("ConversationCard", () => {
     const ellipsisButton = screen.getByTestId("ellipsis-button");
     await user.click(ellipsisButton);
 
-    const menu = screen.getByTestId("context-menu");
+    const menu = await screen.findByTestId("context-menu");
     const displayCostButton = within(menu).getByTestId("display-cost-button");
 
     await user.click(displayCostButton);
@@ -364,8 +384,9 @@ describe("ConversationCard", () => {
     const ellipsisButton = screen.getByTestId("ellipsis-button");
     await user.click(ellipsisButton);
 
-    expect(screen.queryByTestId("edit-button")).toBeInTheDocument();
-    expect(screen.queryByTestId("delete-button")).not.toBeInTheDocument();
+    const menu = await screen.findByTestId("context-menu");
+    expect(within(menu).queryByTestId("edit-button")).toBeInTheDocument();
+    expect(within(menu).queryByTestId("delete-button")).not.toBeInTheDocument();
 
     // toggle to hide the context menu
     await user.click(ellipsisButton);
@@ -381,9 +402,9 @@ describe("ConversationCard", () => {
     );
 
     await user.click(ellipsisButton);
-
-    expect(screen.queryByTestId("edit-button")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("delete-button")).toBeInTheDocument();
+    const newMenu = await screen.findByTestId("context-menu");
+    expect(within(newMenu).queryByTestId("edit-button")).not.toBeInTheDocument();
+    expect(within(newMenu).queryByTestId("delete-button")).toBeInTheDocument();
   });
 
   it("should not render the ellipsis button if there are no actions", () => {
