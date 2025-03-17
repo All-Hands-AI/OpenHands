@@ -95,7 +95,10 @@ describe("Settings Screen", () => {
 
       await waitFor(() => {
         screen.getByTestId("github-token-input");
-        screen.getByTestId("github-token-help-anchor");
+        // Check for GitHub link instead of the help anchor
+        screen.getByRole("link", { name: "GitHub" });
+        // Check for documentation link
+        screen.getByRole("link", { name: "documentation" });
         screen.getByTestId("language-input");
         screen.getByTestId("enable-analytics-switch");
       });
@@ -237,10 +240,12 @@ describe("Settings Screen", () => {
 
       await waitFor(() => {
         const input = screen.queryByTestId("github-token-input");
-        const helpAnchor = screen.queryByTestId("github-token-help-anchor");
+        const githubLink = screen.queryByText("GitHub");
+        const documentationLink = screen.queryByText("documentation");
 
         expect(input).not.toBeInTheDocument();
-        expect(helpAnchor).not.toBeInTheDocument();
+        expect(githubLink).not.toBeInTheDocument();
+        expect(documentationLink).not.toBeInTheDocument();
       });
     });
 
