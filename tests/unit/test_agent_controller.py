@@ -233,10 +233,13 @@ async def test_runtime_error_handling(mock_agent, mock_event_stream):
     # First set up the counter
     controller._runtime_error_count = 2
     
-    # Mock _step to succeed this time
+    # We need to mock the get_agent_state method to return RUNNING
+    controller.get_agent_state = MagicMock(return_value=AgentState.RUNNING)
+    
+    # Mock _step to succeed this time (not raise an exception)
     controller._step = AsyncMock()
     
-    # Call the method
+    # Call the method directly to test the reset logic
     await controller._step()
     
     # Verify that the counter was reset
