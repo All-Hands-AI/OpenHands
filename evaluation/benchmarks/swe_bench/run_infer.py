@@ -700,11 +700,10 @@ if __name__ == '__main__':
                 for col in ['PASS_TO_PASS', 'FAIL_TO_PASS']:
                     instances[col] = instances[col].apply(lambda x: str(x))
 
-            logger.info(
-                f'Use critic {critic.__class__.__name__} to check {len(instances)} instances for attempt {attempt}...'
-            )
-
             # Run evaluation - but save them to cur_output_file
+            logger.info(
+                f'Evaluating {len(instances)} instances for attempt {attempt}...'
+            )
             run_evaluation(
                 instances,
                 metadata,
@@ -720,7 +719,7 @@ if __name__ == '__main__':
             # When eval is done, we update eval_ids to the instances that failed the current attempt
             instances_failed = []
             logger.info(
-                f'Evaluating instances that failed the current attempt {attempt}...'
+                f'Use critic {critic.__class__.__name__} to check {len(instances)} instances for attempt {attempt}...'
             )
             with open(cur_output_file, 'r') as f:
                 for line in f:
