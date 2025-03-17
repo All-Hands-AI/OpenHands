@@ -198,7 +198,8 @@ async def test_runtime_error_handling(mock_agent, mock_event_stream):
     assert "Retry 1 of 3" in args[0].content
     
     # Check that the source is ENVIRONMENT
-    assert kwargs['source'] == EventSource.ENVIRONMENT
+    assert len(args) >= 2  # Should have at least 2 positional arguments
+    assert args[1] == EventSource.ENVIRONMENT
     
     # Verify that the runtime error counter was incremented
     assert hasattr(controller, '_runtime_error_count')
@@ -277,7 +278,8 @@ async def test_runtime_error_handling_with_unavailable_error(mock_agent, mock_ev
     assert "previous runtime died" in args[0].content
     
     # Check that the source is ENVIRONMENT
-    assert kwargs['source'] == EventSource.ENVIRONMENT
+    assert len(args) >= 2  # Should have at least 2 positional arguments
+    assert args[1] == EventSource.ENVIRONMENT
     
     await controller.close()
 
