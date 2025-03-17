@@ -89,19 +89,30 @@ class SecretStore(BaseModel):
         else:
             raise ValueError(f'Invalid token type: {type(token_value)}')
 
-    def model_post_init(self, __context) -> None:
-        # Convert any string tokens to ProviderToken objects
+    @classmethod
+    def create(
+        cls,
+        provider_tokens: Dict[str | ProviderType, str | ProviderToken | SecretStr] | None = None,
+    ) -> "SecretStore":
+        """Create a new SecretStore with properly converted provider tokens."""
+        if not provider_tokens:
+            return cls()
+
         converted_tokens: Dict[ProviderType, ProviderToken] = {}
-        for token_type, token_value in self.provider_tokens.items():
+        for token_type, token_value in provider_tokens.items():
             if token_value:  # Only convert non-empty tokens
                 try:
-                    if isinstance(token_type, str):
-                        token_type = ProviderType(token_type)
-                    converted_tokens[token_type] = self._convert_token(token_value)
+                    provider_type = (
+                        token_type
+                        if isinstance(token_type, ProviderType)
+                        else ProviderType(token_type)
+                    )
+                    converted_tokens[provider_type] = cls._convert_token(token_value)
                 except ValueError:
                     # Skip invalid provider types or tokens
                     continue
-        self.provider_tokens = ProviderTokens.from_dict(converted_tokens)
+
+        return cls(provider_tokens=ProviderTokens(tokens=converted_tokens))
 
     @field_serializer('provider_tokens')
     def provider_tokens_serializer(
