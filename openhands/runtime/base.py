@@ -220,36 +220,31 @@ class Runtime(FileEditRuntimeMixin):
             asyncio.get_event_loop().run_until_complete(self._handle_action(event))
 
     async def _export_latest_provider_tokens(self, event: Action) -> None:
+        if not self.provider_tokens:
+            return
+
         providers_called = ProviderHandler.check_cmd_action_for_provider_token_ref(
             event
         )
 
-        if providers_called and self.provider_tokens:
-            provider_handler = ProviderHandler(
-                provider_tokens=self.provider_tokens, external_token_manager=True
-            )
-            env_vars = await provider_handler.get_env_vars(
-                required_providers=providers_called, expose_secrets=False
-            )
+        if not providers_called:
+            return
 
-            # Convert env_vars to the expected type
-            provider_env_vars: dict[ProviderType, SecretStr] = {}
-            for provider, token in env_vars.items():
-                if isinstance(provider, ProviderType) and hasattr(
-                    token, 'get_secret_value'
-                ):
-                    provider_env_vars[provider] = token
+        provider_handler = ProviderHandler(
+            provider_tokens=self.provider_tokens, external_token_manager=True
+        )
+        env_vars = await provider_handler.get_env_vars(
+            required_providers=providers_called, expose_secrets=False
+        )
 
-            for provider, token in provider_env_vars.items():
-                env_name = f'{provider.value}_token'
-                export_cmd = CmdRunAction(
-                    f"export {env_name.upper()}='{token.get_secret_value()}'"
-                )
-                await call_sync_from_async(self.run, export_cmd)
-
-            ProviderHandler.set_or_update_event_stream_secrets(
-                self.event_stream, provider_env_vars
+        for provider, token in env_vars.items():
+            env_name = f'{provider.value}_token'
+            export_cmd = CmdRunAction(
+                f"export {env_name.upper()}='{token.get_secret_value()}'"
             )
+            await call_sync_from_async(self.run, export_cmd)
+
+        ProviderHandler.set_or_update_event_stream_secrets(self.event_stream, env_vars)
 
     async def _handle_action(self, event: Action) -> None:
         if event.timeout is None:
