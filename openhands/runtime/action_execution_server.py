@@ -10,6 +10,7 @@ import asyncio
 import base64
 import mimetypes
 import os
+import platform
 import shutil
 import tempfile
 import time
@@ -17,6 +18,7 @@ import traceback
 from contextlib import asynccontextmanager
 from pathlib import Path
 from zipfile import ZipFile
+from typing import Optional
 
 from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
@@ -62,6 +64,7 @@ from openhands.runtime.utils.memory_monitor import MemoryMonitor
 from openhands.runtime.utils.runtime_init import init_user_and_working_directory
 from openhands.runtime.utils.system_stats import get_system_stats
 from openhands.utils.async_utils import call_sync_from_async, wait_all
+from openhands.runtime.utils.windows_bash import WindowsBashSession
 
 
 class ActionRequest(BaseModel):
@@ -155,11 +158,18 @@ class ActionExecutor:
         if _updated_user_id is not None:
             self.user_id = _updated_user_id
 
-        self.bash_session: BashSession | None = None
+        self.bash_session: Optional[BashSession | WindowsBashSession] = None
         self.lock = asyncio.Lock()
         self.plugins: dict[str, Plugin] = {}
         self.file_editor = OHEditor(workspace_root=self._initial_cwd)
-        self.browser = BrowserEnv(browsergym_eval_env)
+        
+        # Check if we're running on Windows
+        if platform.system() == 'Windows':
+            logger.warning("Browser functionality is not supported on Windows. Browser actions will be skipped.")
+            self.browser = None
+        else:
+            self.browser = BrowserEnv(browsergym_eval_env)
+            
         self.start_time = time.time()
         self.last_execution_time = self.start_time
         self._initialized = False
@@ -186,14 +196,24 @@ class ActionExecutor:
     async def ainit(self):
         # bash needs to be initialized first
         logger.debug('Initializing bash session')
-        self.bash_session = BashSession(
-            work_dir=self._initial_cwd,
-            username=self.username,
-            no_change_timeout_seconds=int(
-                os.environ.get('NO_CHANGE_TIMEOUT_SECONDS', 30)
-            ),
-            max_memory_mb=self.max_memory_gb * 1024 if self.max_memory_gb else None,
-        )
+        if platform.system() == 'Windows':
+            self.bash_session = WindowsBashSession(
+                work_dir=self._initial_cwd,
+                username=self.username,
+                no_change_timeout_seconds=int(
+                    os.environ.get('NO_CHANGE_TIMEOUT_SECONDS', 30)
+                ),
+                max_memory_mb=self.max_memory_gb * 1024 if self.max_memory_gb else None,
+            )
+        else:
+            self.bash_session = BashSession(
+                work_dir=self._initial_cwd,
+                username=self.username,
+                no_change_timeout_seconds=int(
+                    os.environ.get('NO_CHANGE_TIMEOUT_SECONDS', 30)
+                ),
+                max_memory_mb=self.max_memory_gb * 1024 if self.max_memory_gb else None,
+            )
         self.bash_session.initialize()
         logger.debug('Bash session initialized')
 
@@ -243,18 +263,18 @@ class ActionExecutor:
             if os.environ.get('LOCAL_RUNTIME_MODE') == '1'
             else 'git config --global user.name "openhands" && git config --global user.email "openhands@all-hands.dev" && alias git="git --no-pager"'
         ]
-        logger.debug(f'Initializing by running {len(INIT_COMMANDS)} bash commands...')
+        logger.info(f'Initializing by running {len(INIT_COMMANDS)} bash commands...')
         for command in INIT_COMMANDS:
             action = CmdRunAction(command=command)
             action.set_hard_timeout(300)
-            logger.debug(f'Executing init command: {command}')
+            logger.info(f'Executing init command: {command}')
             obs = await self.run(action)
             assert isinstance(obs, CmdOutputObservation)
-            logger.debug(
+            logger.info(
                 f'Init command outputs (exit code: {obs.exit_code}): {obs.content}'
             )
             assert obs.exit_code == 0
-        logger.debug('Bash init commands completed')
+        logger.info('Bash init commands completed')
 
     async def run_action(self, action) -> Observation:
         async with self.lock:
@@ -459,16 +479,21 @@ class ActionExecutor:
         )
 
     async def browse(self, action: BrowseURLAction) -> Observation:
+        if self.browser is None:
+            return ErrorObservation("Browser functionality is not supported on Windows.")
         return await browse(action, self.browser)
 
     async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
+        if self.browser is None:
+            return ErrorObservation("Browser functionality is not supported on Windows.")
         return await browse(action, self.browser)
 
     def close(self):
         self.memory_monitor.stop_monitoring()
         if self.bash_session is not None:
             self.bash_session.close()
-        self.browser.close()
+        if self.browser is not None:
+            self.browser.close()
 
 
 if __name__ == '__main__':

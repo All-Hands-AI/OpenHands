@@ -40,6 +40,21 @@ from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
 
+def get_user_info():
+    """Get user ID and username in a cross-platform way."""
+    import getpass
+    import platform
+    
+    username = getpass.getuser()
+    if platform.system() == 'Windows':
+        # On Windows, we don't use user IDs the same way
+        # Return a default value that won't cause issues
+        return 1000, username
+    else:
+        # On Unix systems, use os.getuid()
+        return os.getuid(), username
+
+
 def check_dependencies(code_repo_path: str, poetry_venvs_path: str):
     ERROR_MESSAGE = 'Please follow the instructions in https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md to install OpenHands.'
     if not os.path.exists(code_repo_path):
@@ -62,25 +77,31 @@ def check_dependencies(code_repo_path: str, poetry_venvs_path: str):
     if 'jupyter' not in output.lower():
         raise ValueError('Jupyter is not properly installed. ' + ERROR_MESSAGE)
 
-    # Check libtmux is installed
-    logger.debug('Checking dependencies: libtmux')
-    import libtmux
+    # Check libtmux is installed (skip on Windows)
+    import platform
+    if platform.system() != 'Windows':
+        logger.debug('Checking dependencies: libtmux')
+        import libtmux
 
-    server = libtmux.Server()
-    session = server.new_session(session_name='test-session')
-    pane = session.attached_pane
-    pane.send_keys('echo "test"')
-    pane_output = '\n'.join(pane.cmd('capture-pane', '-p').stdout)
-    session.kill_session()
-    if 'test' not in pane_output:
-        raise ValueError('libtmux is not properly installed. ' + ERROR_MESSAGE)
+        server = libtmux.Server()
+        session = server.new_session(session_name='test-session')
+        pane = session.attached_pane
+        pane.send_keys('echo "test"')
+        pane_output = '\n'.join(pane.cmd('capture-pane', '-p').stdout)
+        session.kill_session()
+        if 'test' not in pane_output:
+            raise ValueError('libtmux is not properly installed. ' + ERROR_MESSAGE)
+    else:
+        logger.warning('Running on Windows - tmux functionality will be limited.')
 
-    # Check browser works
-    logger.debug('Checking dependencies: browser')
-    from openhands.runtime.browser.browser_env import BrowserEnv
-
-    browser = BrowserEnv()
-    browser.close()
+    # Skip browser environment check on Windows
+    if platform.system() != 'Windows':
+        logger.debug('Checking dependencies: browser')
+        from openhands.runtime.browser.browser_env import BrowserEnv
+        browser = BrowserEnv()
+        browser.close()
+    else:
+        logger.warning('Running on Windows - browser environment check skipped.')
 
 
 class LocalRuntime(ActionExecutionClient):
@@ -106,9 +127,16 @@ class LocalRuntime(ActionExecutionClient):
         attach_to_existing: bool = False,
         headless_mode: bool = True,
     ):
+        import platform
+        self.is_windows = platform.system() == 'Windows'
+        if self.is_windows:
+            logger.warning(
+                'Running on Windows - some features that require tmux will be limited. '
+                'For full functionality, please consider using WSL or Docker runtime.'
+            )
+
         self.config = config
-        self._user_id = os.getuid()
-        self._username = os.getenv('USER')
+        self._user_id, self._username = get_user_info()
 
         if self.config.workspace_base is not None:
             logger.warning(
@@ -194,33 +222,39 @@ class LocalRuntime(ActionExecutionClient):
             server_port=self._host_port,
             plugins=self.plugins,
             app_config=self.config,
-            python_prefix=[],
+            python_prefix=['poetry', 'run'],
             override_user_id=self._user_id,
             override_username=self._username,
         )
 
-        self.log('debug', f'Starting server with command: {cmd}')
+        logger.info(f'Starting server with command: {cmd}')
         env = os.environ.copy()
         # Get the code repo path
         code_repo_path = os.path.dirname(os.path.dirname(openhands.__file__))
-        env['PYTHONPATH'] = f'{code_repo_path}:$PYTHONPATH'
+        env['PYTHONPATH'] = os.pathsep.join([code_repo_path, os.getenv('PYTHONPATH', '')])
         env['OPENHANDS_REPO_PATH'] = code_repo_path
         env['LOCAL_RUNTIME_MODE'] = '1'
-        # run poetry show -v | head -n 1 | awk '{print $2}'
-        poetry_venvs_path = (
-            subprocess.check_output(
-                ['poetry', 'show', '-v'],
-                env=env,
-                cwd=code_repo_path,
-                text=True,
-                shell=False,
-            )
-            .splitlines()[0]
-            .split(':')[1]
-            .strip()
-        )
+        
+        # Get poetry virtualenv path in a cross-platform way
+        output = subprocess.check_output(
+            ['poetry', 'show', '-v'],
+            env=env,
+            cwd=code_repo_path,
+            text=True,
+            shell=False,
+        ).splitlines()[0]
+        
+        # On Windows, the output might look like:
+        # Using virtualenv: C:\Users\username\AppData\Local\pypoetry\Cache\virtualenvs\openhands-py3.12
+        # On Unix:
+        # Using virtualenv: /home/username/.cache/pypoetry/virtualenvs/openhands-py3.12
+        poetry_venvs_path = output.split('Using virtualenv:', 1)[1].strip()
+        if not os.path.exists(poetry_venvs_path):
+            # If the exact path doesn't exist, try to get the parent directory
+            poetry_venvs_path = os.path.dirname(poetry_venvs_path)
+            
         env['POETRY_VIRTUALENVS_PATH'] = poetry_venvs_path
-        logger.debug(f'POETRY_VIRTUALENVS_PATH: {poetry_venvs_path}')
+        logger.info(f'POETRY_VIRTUALENVS_PATH: {poetry_venvs_path}')
 
         check_dependencies(code_repo_path, poetry_venvs_path)
         self.server_process = subprocess.Popen(
@@ -270,19 +304,14 @@ class LocalRuntime(ActionExecutionClient):
             return port
         return port
 
-    @tenacity.retry(
-        wait=tenacity.wait_exponential(min=1, max=10),
-        stop=tenacity.stop_after_attempt(10) | stop_if_should_exit(),
-        before_sleep=lambda retry_state: logger.debug(
-            f'Waiting for server to be ready... (attempt {retry_state.attempt_number})'
-        ),
-    )
     def _wait_until_alive(self):
         """Wait until the server is ready to accept requests."""
         if self.server_process and self.server_process.poll() is not None:
             raise RuntimeError('Server process died')
 
         try:
+            import time
+            time.sleep(120)
             response = self.session.get(f'{self.api_url}/alive')
             response.raise_for_status()
             return True
