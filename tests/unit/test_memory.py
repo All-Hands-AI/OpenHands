@@ -298,3 +298,94 @@ def test_agent_controller_should_step_with_null_observation_cause_zero():
     assert (
         result is True
     ), 'should_step should return True for NullObservation with cause = 0'
+
+
+@pytest.mark.asyncio
+async def test_agent_controller_processes_null_observation_with_cause():
+    """Test that AgentController processes NullObservation events with a cause value
+    and that the agent's step method is called as a result."""
+    from unittest.mock import MagicMock, patch
+
+    from openhands.controller.agent import Agent
+    from openhands.controller.agent_controller import AgentController
+    from openhands.events.action.agent import RecallAction
+    from openhands.events.observation.empty import NullObservation
+
+    # Create an in-memory file store and real event stream
+    file_store = InMemoryFileStore()
+    event_stream = EventStream(sid='test-session', file_store=file_store)
+
+    # Create a Memory instance
+    memory = Memory(event_stream=event_stream, sid='test-session')
+
+    # Create a mock agent with necessary attributes
+    mock_agent = MagicMock(spec=Agent)
+    mock_agent.llm = MagicMock(spec=LLM)
+    mock_agent.llm.metrics = Metrics()
+    mock_agent.llm.config = AppConfig().get_llm_config()
+
+    # Create a controller with the mock agent
+    controller = AgentController(
+        agent=mock_agent,
+        event_stream=event_stream,
+        max_iterations=10,
+        sid='test-session',
+    )
+
+    # Patch the controller's step method to track calls
+    with patch.object(controller, 'step') as mock_step:
+        # Create and add the first user message (will have ID 0)
+        user_message = MessageAction(content='First user message')
+        user_message._source = EventSource.USER  # type: ignore[attr-defined]
+        event_stream.add_event(user_message, EventSource.USER)
+
+        # Give it a little time to process
+        await asyncio.sleep(0.3)
+
+        # Get all events from the stream
+        events = list(event_stream.get_events())
+        
+        # Print all events for debugging
+        print("\n=== EVENTS IN STREAM ===")
+        for i, event in enumerate(events):
+            event_type = type(event).__name__
+            event_id = event.id
+            event_cause = getattr(event, 'cause', 'N/A')
+            event_content = getattr(event, 'content', 'N/A')
+            event_source = getattr(event, 'source', 'N/A')
+            print(f"Event {i}: {event_type}, ID: {event_id}, Cause: {event_cause}, Source: {event_source}")
+            print(f"  Content: {event_content[:100]}..." if len(str(event_content)) > 100 else f"  Content: {event_content}")
+        print("=== END EVENTS ===\n")
+
+        # Find the RecallAction event (should be automatically created)
+        recall_actions = [
+            event for event in events if isinstance(event, RecallAction)
+        ]
+        assert len(recall_actions) > 0, "No RecallAction was created"
+        recall_action = recall_actions[0]
+        
+        # Find any NullObservation events
+        null_obs_events = [
+            event for event in events if isinstance(event, NullObservation)
+        ]
+        assert len(null_obs_events) > 0, "No NullObservation was created"
+        null_observation = null_obs_events[0]
+        
+        # Verify the NullObservation has a cause that points to the RecallAction
+        assert null_observation.cause is not None, "NullObservation cause is None"
+        assert null_observation.cause == recall_action.id, f"Expected cause={recall_action.id}, got cause={null_observation.cause}"
+        
+        # Verify the controller's should_step method returns True for this observation
+        assert controller.should_step(null_observation), "should_step should return True for this NullObservation"
+
+        # Verify the controller's step method was called
+        # This means the controller processed the NullObservation
+        assert mock_step.called, "Controller's step method was not called"
+        
+        # Now test with a NullObservation that has cause=0
+        # Create a NullObservation with cause = 0 (pointing to the first user message)
+        null_observation_zero = NullObservation(content='Test observation with cause=0')
+        null_observation_zero._cause = 0  # type: ignore[attr-defined]
+        
+        # Verify the controller's should_step method would return True for this observation too
+        assert controller.should_step(null_observation_zero), "should_step should return True for NullObservation with cause=0"
