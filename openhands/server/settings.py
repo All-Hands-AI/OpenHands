@@ -28,7 +28,7 @@ class Settings(BaseModel):
     llm_api_key: SecretStr | None = None
     llm_base_url: str | None = None
     remote_runtime_resource_factor: int | None = None
-    secrets_store: SecretStore = Field(default_factory=SecretStore.create)
+    secrets_store: SecretStore = SecretStore()
     enable_default_condenser: bool = False
     enable_sound_notifications: bool = False
     user_consents_to_analytics: bool | None = None
@@ -91,7 +91,7 @@ class Settings(BaseModel):
             if provider_token:
                 converted_tokens[token_type] = provider_token
 
-        data['secrets_store'] = SecretStore.create(provider_tokens=converted_tokens)
+        data['secrets_store'] = SecretStore(provider_tokens=converted_tokens)
         return data
 
     @field_serializer('secrets_store')
