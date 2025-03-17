@@ -16,8 +16,15 @@ from openhands.integrations.provider import ProviderToken, ProviderType, SecretS
 
 class Settings(BaseModel):
     """
-    Persisted settings for OpenHands sessions
+    Persisted settings for OpenHands sessions.
+    This class is immutable to ensure consistent state.
     """
+    
+    model_config = {
+        'frozen': True,
+        'validate_assignment': True,
+        'arbitrary_types_allowed': True,
+    }
 
     language: str | None = None
     agent: str | None = None
