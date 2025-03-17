@@ -51,7 +51,7 @@ At the user's request, repository {{ repository_info.repo_name }} has been clone
     assert 'System prompt: bar' in system_msg
 
     # Test building additional info
-    additional_info = manager.build_additional_info(
+    additional_info = manager.build_workspace_context(
         repository_info=repo_info, runtime_info=None, repo_instructions=''
     )
     assert '<REPOSITORY_INFO>' in additional_info
@@ -199,7 +199,7 @@ def test_add_turns_left_reminder(prompt_dir):
     )
 
 
-def test_build_additional_info_with_repo_and_runtime(prompt_dir):
+def test_build_workspace_context_with_repo_and_runtime(prompt_dir):
     """Test building additional info with repository and runtime information."""
     # Create an additional_info.j2 template file
     with open(os.path.join(prompt_dir, 'additional_info.j2'), 'w') as f:
@@ -245,7 +245,7 @@ each of which has a corresponding port:
     repo_instructions = 'This repository contains important code.'
 
     # Build additional info
-    result = manager.build_additional_info(
+    result = manager.build_workspace_context(
         repository_info=repo_info,
         runtime_info=runtime_info,
         repo_instructions=repo_instructions,

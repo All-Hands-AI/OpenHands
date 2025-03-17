@@ -22,7 +22,7 @@ from openhands.events.event import (
 from openhands.events.observation import CmdOutputObservation
 from openhands.events.observation.agent import (
     MicroagentKnowledge,
-    MicroagentObservation,
+    RecallObservation,
 )
 from openhands.events.observation.browse import BrowserOutputObservation
 from openhands.events.observation.commands import (
@@ -51,7 +51,7 @@ def agent_config():
 def conversation_memory(agent_config):
     prompt_manager = MagicMock(spec=PromptManager)
     prompt_manager.get_system_message.return_value = 'System message'
-    prompt_manager.build_additional_info.return_value = (
+    prompt_manager.build_workspace_context.return_value = (
         'Formatted repository and runtime info'
     )
 
@@ -353,10 +353,10 @@ def test_process_events_with_user_reject_observation(conversation_memory):
 
 
 def test_process_events_with_empty_environment_info(conversation_memory):
-    """Test that empty environment info observations return an empty list of messages without calling build_additional_info."""
-    # Create a MicroagentObservation with empty info
+    """Test that empty environment info observations return an empty list of messages without calling build_workspace_context."""
+    # Create a RecallObservation with empty info
 
-    empty_obs = MicroagentObservation(
+    empty_obs = RecallObservation(
         recall_type=RecallType.WORKSPACE_CONTEXT,
         repo_name='',
         repo_directory='',
@@ -382,8 +382,8 @@ def test_process_events_with_empty_environment_info(conversation_memory):
     assert len(messages) == 1
     assert messages[0].role == 'system'
 
-    # Verify that build_additional_info was NOT called since all input values were empty
-    conversation_memory.prompt_manager.build_additional_info.assert_not_called()
+    # Verify that build_workspace_context was NOT called since all input values were empty
+    conversation_memory.prompt_manager.build_workspace_context.assert_not_called()
 
 
 def test_process_events_with_function_calling_observation(conversation_memory):
@@ -527,8 +527,8 @@ def test_apply_prompt_caching(conversation_memory):
 
 
 def test_process_events_with_environment_microagent_observation(conversation_memory):
-    """Test processing a MicroagentObservation with ENVIRONMENT info type."""
-    obs = MicroagentObservation(
+    """Test processing a RecallObservation with ENVIRONMENT info type."""
+    obs = RecallObservation(
         recall_type=RecallType.WORKSPACE_CONTEXT,
         repo_name='test-repo',
         repo_directory='/path/to/repo',
@@ -556,8 +556,8 @@ def test_process_events_with_environment_microagent_observation(conversation_mem
     assert result.content[0].text == 'Formatted repository and runtime info'
 
     # Verify the prompt_manager was called with the correct parameters
-    conversation_memory.prompt_manager.build_additional_info.assert_called_once()
-    call_args = conversation_memory.prompt_manager.build_additional_info.call_args[1]
+    conversation_memory.prompt_manager.build_workspace_context.assert_called_once()
+    call_args = conversation_memory.prompt_manager.build_workspace_context.call_args[1]
     assert isinstance(call_args['repository_info'], RepositoryInfo)
     assert call_args['repository_info'].repo_name == 'test-repo'
     assert call_args['repository_info'].repo_directory == '/path/to/repo'
@@ -572,7 +572,7 @@ def test_process_events_with_environment_microagent_observation(conversation_mem
 def test_process_events_with_knowledge_microagent_microagent_observation(
     conversation_memory,
 ):
-    """Test processing a MicroagentObservation with KNOWLEDGE type."""
+    """Test processing a RecallObservation with KNOWLEDGE type."""
     microagent_knowledge = [
         MicroagentKnowledge(
             name='test_agent',
@@ -591,7 +591,7 @@ def test_process_events_with_knowledge_microagent_microagent_observation(
         ),
     ]
 
-    obs = MicroagentObservation(
+    obs = RecallObservation(
         recall_type=RecallType.KNOWLEDGE,
         microagent_knowledge=microagent_knowledge,
         content='Retrieved knowledge from microagents',
@@ -634,11 +634,11 @@ def test_process_events_with_knowledge_microagent_microagent_observation(
 def test_process_events_with_microagent_observation_extensions_disabled(
     agent_config, conversation_memory
 ):
-    """Test processing a MicroagentObservation when prompt extensions are disabled."""
+    """Test processing a RecallObservation when prompt extensions are disabled."""
     # Modify the agent config to disable prompt extensions
     agent_config.enable_prompt_extensions = False
 
-    obs = MicroagentObservation(
+    obs = RecallObservation(
         recall_type=RecallType.WORKSPACE_CONTEXT,
         repo_name='test-repo',
         repo_directory='/path/to/repo',
@@ -656,18 +656,18 @@ def test_process_events_with_microagent_observation_extensions_disabled(
         vision_is_active=False,
     )
 
-    # When prompt extensions are disabled, the MicroagentObservation should be ignored
+    # When prompt extensions are disabled, the RecallObservation should be ignored
     assert len(messages) == 1  # Only the initial system message
     assert messages[0].role == 'system'
 
     # Verify the prompt_manager was not called
-    conversation_memory.prompt_manager.build_additional_info.assert_not_called()
+    conversation_memory.prompt_manager.build_workspace_context.assert_not_called()
     conversation_memory.prompt_manager.build_microagent_info.assert_not_called()
 
 
 def test_process_events_with_empty_microagent_knowledge(conversation_memory):
-    """Test processing a MicroagentObservation with empty microagent knowledge."""
-    obs = MicroagentObservation(
+    """Test processing a RecallObservation with empty microagent knowledge."""
+    obs = RecallObservation(
         recall_type=RecallType.KNOWLEDGE,
         microagent_knowledge=[],
         content='Retrieved knowledge from microagents',
@@ -693,7 +693,7 @@ def test_process_events_with_empty_microagent_knowledge(conversation_memory):
 
 
 def test_conversation_memory_processes_microagent_observation(prompt_dir):
-    """Test that ConversationMemory processes MicroagentObservations correctly."""
+    """Test that ConversationMemory processes RecallObservations correctly."""
     # Create a microagent_info.j2 template file
     template_path = os.path.join(prompt_dir, 'microagent_info.j2')
     if not os.path.exists(template_path):
@@ -722,8 +722,8 @@ It may or may not be relevant to the user's request.
         config=agent_config, prompt_manager=prompt_manager
     )
 
-    # Create a MicroagentObservation with microagent knowledge
-    microagent_observation = MicroagentObservation(
+    # Create a RecallObservation with microagent knowledge
+    microagent_observation = RecallObservation(
         recall_type=RecallType.KNOWLEDGE,
         microagent_knowledge=[
             MicroagentKnowledge(
@@ -761,7 +761,7 @@ This is triggered content for testing.
 
 
 def test_conversation_memory_processes_environment_microagent_observation(prompt_dir):
-    """Test that ConversationMemory processes environment info MicroagentObservations correctly."""
+    """Test that ConversationMemory processes environment info RecallObservations correctly."""
     # Create an additional_info.j2 template file
     template_path = os.path.join(prompt_dir, 'additional_info.j2')
     if not os.path.exists(template_path):
@@ -802,8 +802,8 @@ each of which has a corresponding port:
         config=agent_config, prompt_manager=prompt_manager
     )
 
-    # Create a MicroagentObservation with environment info
-    microagent_observation = MicroagentObservation(
+    # Create a RecallObservation with environment info
+    microagent_observation = RecallObservation(
         recall_type=RecallType.WORKSPACE_CONTEXT,
         repo_name='owner/repo',
         repo_directory='/workspace/repo',
@@ -839,13 +839,13 @@ each of which has a corresponding port:
 
 
 def test_process_events_with_microagent_observation_deduplication(conversation_memory):
-    """Test that MicroagentObservations are properly deduplicated based on agent name.
+    """Test that RecallObservations are properly deduplicated based on agent name.
 
     The deduplication logic should keep the FIRST occurrence of each microagent
     and filter out later occurrences to avoid redundant information.
     """
-    # Create a sequence of MicroagentObservations with overlapping agents
-    obs1 = MicroagentObservation(
+    # Create a sequence of RecallObservations with overlapping agents
+    obs1 = RecallObservation(
         recall_type=RecallType.KNOWLEDGE,
         microagent_knowledge=[
             MicroagentKnowledge(
@@ -867,7 +867,7 @@ def test_process_events_with_microagent_observation_deduplication(conversation_m
         content='First retrieval',
     )
 
-    obs2 = MicroagentObservation(
+    obs2 = RecallObservation(
         recall_type=RecallType.KNOWLEDGE,
         microagent_knowledge=[
             MicroagentKnowledge(
@@ -879,7 +879,7 @@ def test_process_events_with_microagent_observation_deduplication(conversation_m
         content='Second retrieval',
     )
 
-    obs3 = MicroagentObservation(
+    obs3 = RecallObservation(
         recall_type=RecallType.KNOWLEDGE,
         microagent_knowledge=[
             MicroagentKnowledge(
@@ -918,8 +918,8 @@ def test_process_events_with_microagent_observation_deduplication_disabled_agent
     conversation_memory,
 ):
     """Test that disabled agents are filtered out and deduplication keeps the first occurrence."""
-    # Create a sequence of MicroagentObservations with disabled agents
-    obs1 = MicroagentObservation(
+    # Create a sequence of RecallObservations with disabled agents
+    obs1 = RecallObservation(
         recall_type=RecallType.KNOWLEDGE,
         microagent_knowledge=[
             MicroagentKnowledge(
@@ -936,7 +936,7 @@ def test_process_events_with_microagent_observation_deduplication_disabled_agent
         content='First retrieval',
     )
 
-    obs2 = MicroagentObservation(
+    obs2 = RecallObservation(
         recall_type=RecallType.KNOWLEDGE,
         microagent_knowledge=[
             MicroagentKnowledge(
@@ -973,8 +973,8 @@ def test_process_events_with_microagent_observation_deduplication_disabled_agent
 def test_process_events_with_microagent_observation_deduplication_empty(
     conversation_memory,
 ):
-    """Test that empty MicroagentObservations are handled correctly."""
-    obs = MicroagentObservation(
+    """Test that empty RecallObservations are handled correctly."""
+    obs = RecallObservation(
         recall_type=RecallType.KNOWLEDGE,
         microagent_knowledge=[],
         content='Empty retrieval',
@@ -991,7 +991,7 @@ def test_process_events_with_microagent_observation_deduplication_empty(
         vision_is_active=False,
     )
 
-    # Verify that empty MicroagentObservations are handled gracefully
+    # Verify that empty RecallObservations are handled gracefully
     assert (
         len(messages) == 1
     )  # system message, because an empty microagent is not added to Messages
@@ -999,8 +999,8 @@ def test_process_events_with_microagent_observation_deduplication_empty(
 
 def test_has_agent_in_earlier_events(conversation_memory):
     """Test the _has_agent_in_earlier_events helper method."""
-    # Create test MicroagentObservations
-    obs1 = MicroagentObservation(
+    # Create test RecallObservations
+    obs1 = RecallObservation(
         recall_type=RecallType.KNOWLEDGE,
         microagent_knowledge=[
             MicroagentKnowledge(
@@ -1012,7 +1012,7 @@ def test_has_agent_in_earlier_events(conversation_memory):
         content='First retrieval',
     )
 
-    obs2 = MicroagentObservation(
+    obs2 = RecallObservation(
         recall_type=RecallType.KNOWLEDGE,
         microagent_knowledge=[
             MicroagentKnowledge(
@@ -1024,7 +1024,7 @@ def test_has_agent_in_earlier_events(conversation_memory):
         content='Second retrieval',
     )
 
-    obs3 = MicroagentObservation(
+    obs3 = RecallObservation(
         recall_type=RecallType.WORKSPACE_CONTEXT,
         content='Environment info',
     )

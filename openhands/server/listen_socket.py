@@ -39,7 +39,9 @@ async def connect(connection_id: str, environ):
 
     cookies_str = environ.get('HTTP_COOKIE', '')
     conversation_validator = ConversationValidatorImpl()
-    user_id = await conversation_validator.validate(conversation_id, cookies_str)
+    user_id, github_user_id = await conversation_validator.validate(
+        conversation_id, cookies_str
+    )
 
     settings_store = await SettingsStoreImpl.get_instance(config, user_id)
     settings = await settings_store.load()
@@ -50,7 +52,7 @@ async def connect(connection_id: str, environ):
         )
 
     event_stream = await conversation_manager.join_conversation(
-        conversation_id, connection_id, settings, user_id
+        conversation_id, connection_id, settings, user_id, github_user_id
     )
 
     agent_state_changed = None
