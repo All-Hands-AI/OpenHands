@@ -185,6 +185,7 @@ class ProviderHandler:
         self,
         expose_secrets: Literal[True],
         required_providers: list[ProviderType] | None = ...,
+        get_latest: bool = False,
     ) -> Coroutine[Any, Any, dict[str, str]]: ...
 
     @overload
@@ -192,12 +193,14 @@ class ProviderHandler:
         self,
         expose_secrets: Literal[False],
         required_providers: list[ProviderType] | None = ...,
+        get_latest: bool = False,
     ) -> Coroutine[Any, Any, dict[ProviderType, SecretStr]]: ...
 
     async def get_env_vars(
         self,
         expose_secrets: bool = False,
         required_providers: list[ProviderType] | None = None,
+        get_latest: bool = False,
     ) -> dict[ProviderType, SecretStr] | dict[str, str]:
         if not self.provider_tokens:
             return {}
@@ -208,7 +211,15 @@ class ProviderHandler:
 
         for provider in provider_list:
             if provider in self.provider_tokens:
-                token = await self._get_latest_provider_token(provider)
+                token = (
+                    self.provider_tokens[provider].token
+                    if self.provider_tokens
+                    else SecretStr('')
+                )
+
+                if get_latest:
+                    token = await self._get_latest_provider_token(provider)
+
                 if token:
                     env_vars[provider] = token
 
