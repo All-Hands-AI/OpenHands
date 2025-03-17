@@ -39,8 +39,8 @@ class SandboxConfig(BaseModel):
             This should be a JSON string that will be parsed into a dictionary.
     """
 
-    remote_runtime_api_url: str | None = Field(default='http://localhost:8000')
-    local_runtime_url: str = Field(default='http://192.168.88.11')
+    remote_runtime_api_url: str | None = Field(default='http://192.168.88.11:8111')
+    local_runtime_url: str = Field(default='http://host.docker.internal')
     keep_runtime_alive: bool = Field(default=False)
     pause_closed_runtimes: bool = Field(default=True)
     rm_all_containers: bool = Field(default=False)
