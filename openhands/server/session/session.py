@@ -124,7 +124,7 @@ class Session:
 
         agent = Agent.get_cls(agent_cls)(llm, agent_config)
 
-        provider_tokens: PROVIDER_TOKEN_TYPE = {}
+        provider_tokens = None
         selected_repository = None
         selected_branch = None
         if isinstance(settings, ConversationInitData):
