@@ -425,8 +425,18 @@ class RemoteRuntime(ActionExecutionClient):
         if not self.config.sandbox.remote_runtime_enable_retries:
             return self._send_action_server_request_impl(method, url, **kwargs)
 
+        # Define a custom retry condition for both connection errors and HTTP errors (502, 503, 504)
+        def should_retry_exception(exception):
+            if isinstance(exception, requests.ConnectionError):
+                return True
+            if isinstance(exception, AgentRuntimeDisconnectedError):
+                # Attempt to migrate workspace and restart runtime
+                self._try_migrate_workspace()
+                return True
+            return False
+
         retry_decorator = tenacity.retry(
-            retry=tenacity.retry_if_exception_type(requests.ConnectionError),
+            retry=tenacity.retry_if_exception(should_retry_exception),
             stop=tenacity.stop_after_attempt(3)
             | stop_if_should_exit()
             | self._stop_if_closed,
@@ -471,3 +481,65 @@ class RemoteRuntime(ActionExecutionClient):
 
     def _stop_if_closed(self, retry_state: tenacity.RetryCallState) -> bool:
         return self._runtime_closed
+        
+    def _try_migrate_workspace(self):
+        """
+        Attempt to migrate the workspace from a failed runtime to a new one.
+        
+        This method is called when a runtime error occurs (HTTP 502/503/404) and we need to:
+        1. Download the workspace from the failed runtime if possible
+        2. Start a new runtime
+        3. Upload the workspace to the new runtime
+        """
+        self.log('info', 'Attempting to migrate workspace from failed runtime...')
+        
+        try:
+            # First, try to download the workspace from the failed runtime
+            workspace_data = None
+            try:
+                # Try to download the workspace from the failed runtime
+                with self._send_runtime_api_request(
+                    'GET',
+                    f'{self.config.sandbox.remote_runtime_api_url}/download_workspace',
+                    params={'runtime_id': self.runtime_id},
+                    timeout=30,  # Use a shorter timeout for this operation
+                ) as response:
+                    workspace_data = response.content
+                self.log('info', 'Successfully downloaded workspace from failed runtime')
+            except Exception as e:
+                self.log('warning', f'Failed to download workspace from failed runtime: {e}')
+            
+            # Stop the failed runtime
+            try:
+                with self._send_runtime_api_request(
+                    'POST',
+                    f'{self.config.sandbox.remote_runtime_api_url}/stop',
+                    json={'runtime_id': self.runtime_id},
+                ):
+                    self.log('info', 'Stopped failed runtime')
+            except Exception as e:
+                self.log('warning', f'Failed to stop failed runtime: {e}')
+            
+            # Start a new runtime
+            self.log('info', 'Starting new runtime...')
+            self._start_runtime()
+            self._wait_until_alive()
+            
+            # If we have workspace data, upload it to the new runtime
+            if workspace_data:
+                try:
+                    with self._send_runtime_api_request(
+                        'POST',
+                        f'{self.config.sandbox.remote_runtime_api_url}/upload_workspace',
+                        params={'runtime_id': self.runtime_id},
+                        files={'workspace': ('workspace.zip', workspace_data, 'application/zip')},
+                    ):
+                        self.log('info', 'Successfully uploaded workspace to new runtime')
+                except Exception as e:
+                    self.log('warning', f'Failed to upload workspace to new runtime: {e}')
+            
+            self.log('info', 'Workspace migration completed')
+            return True
+        except Exception as e:
+            self.log('error', f'Failed to migrate workspace: {e}')
+            return False
