@@ -101,6 +101,7 @@ class Runtime(FileEditRuntimeMixin):
         status_callback: Callable | None = None,
         attach_to_existing: bool = False,
         headless_mode: bool = False,
+        user_id: str | None = None,
         provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
     ):
         self.sid = sid
@@ -134,6 +135,7 @@ class Runtime(FileEditRuntimeMixin):
             self, enable_llm_editor=config.get_agent_config().codeact_enable_llm_editor
         )
 
+        self.user_id = user_id
         self.provider_tokens = provider_tokens
 
     def setup_initial_env(self) -> None:

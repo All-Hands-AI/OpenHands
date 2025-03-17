@@ -60,6 +60,7 @@ class ActionExecutionClient(Runtime):
         status_callback: Any | None = None,
         attach_to_existing: bool = False,
         headless_mode: bool = True,
+        user_id: str | None = None,
         provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
     ):
         self.session = HttpSession()
@@ -76,6 +77,7 @@ class ActionExecutionClient(Runtime):
             status_callback,
             attach_to_existing,
             headless_mode,
+            user_id,
             provider_tokens,
         )
 

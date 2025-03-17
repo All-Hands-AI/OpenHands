@@ -62,7 +62,7 @@ class Session:
             sid,
             file_store,
             status_callback=self.queue_status_message,
-            github_user_id=user_id,
+            user_id=user_id,
         )
         self.agent_session.event_stream.subscribe(
             EventStreamSubscriber.SERVER, self.on_event, self.sid
