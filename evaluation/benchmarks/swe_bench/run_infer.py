@@ -762,3 +762,6 @@ if __name__ == '__main__':
                 f'Aggregated instances from {cur_output_file}. Total instances added so far: {len(added_instance_ids)}'
             )
         fout.close()
+        logger.info(
+            f'Done! Total {len(added_instance_ids)} instances added to {output_file}'
+        )
