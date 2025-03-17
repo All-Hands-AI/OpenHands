@@ -751,7 +751,7 @@ if __name__ == '__main__':
                     f'Intermediate output file {cur_output_file} does not exist. Skipping...'
                 )
                 continue
-            logger.info(f'Aggregating results from {cur_output_file}...')
+
             with open(cur_output_file, 'r') as f:
                 for line in f:
                     instance = json.loads(line)
