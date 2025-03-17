@@ -10,7 +10,10 @@ from openhands.controller.agent_controller import AgentController
 from openhands.controller.state.state import State, TrafficControlState
 from openhands.core.config import AppConfig
 from openhands.core.config.agent_config import AgentConfig
-from openhands.core.exceptions import AgentRuntimeDisconnectedError, AgentRuntimeUnavailableError
+from openhands.core.exceptions import (
+    AgentRuntimeDisconnectedError,
+    AgentRuntimeUnavailableError,
+)
 from openhands.core.main import run_controller
 from openhands.core.schema import AgentState
 from openhands.events import Event, EventSource, EventStream, EventStreamSubscriber
@@ -176,67 +179,71 @@ async def test_runtime_error_handling(mock_agent, mock_event_stream):
         confirmation_mode=False,
         headless_mode=True,
     )
-    
+
     # Mock the _step method to raise a runtime error
-    controller._step = AsyncMock(side_effect=AgentRuntimeDisconnectedError(
-        "Runtime is temporarily unavailable. This may be due to a restart or network issue."
-    ))
-    
+    controller._step = AsyncMock(
+        side_effect=AgentRuntimeDisconnectedError(
+            'Runtime is temporarily unavailable. This may be due to a restart or network issue.'
+        )
+    )
+
     # Call the _step_with_exception_handling method
     await controller._step_with_exception_handling()
-    
+
     # Verify that an error observation was added to the event stream
     mock_event_stream.add_event.assert_called_once()
     args, kwargs = mock_event_stream.add_event.call_args
-    
+
     # Check that the first argument is an ErrorObservation
     assert isinstance(args[0], ErrorObservation)
-    
+
     # Check that the content of the ErrorObservation contains the expected message
-    assert "Your command consumed too much resources" in args[0].content
-    assert "previous runtime died" in args[0].content
-    assert "Retry 1 of 3" in args[0].content
-    
+    assert 'Your command may have consumed too much resources' in args[0].content
+    assert 'previous runtime died' in args[0].content
+    assert 'Retry 1 of 3' in args[0].content
+
     # Check that the source is ENVIRONMENT
     assert len(args) >= 2  # Should have at least 2 positional arguments
     assert args[1] == EventSource.ENVIRONMENT
-    
+
     # Verify that the runtime error counter was incremented
     assert hasattr(controller, '_runtime_error_count')
     assert controller._runtime_error_count == 1
-    
+
     # Call the method again to test the counter increment
     await controller._step_with_exception_handling()
-    
+
     # Verify that the counter was incremented
     assert controller._runtime_error_count == 2
-    
+
     # Verify that another error observation was added
     assert mock_event_stream.add_event.call_count == 2
     args, kwargs = mock_event_stream.add_event.call_args
-    assert "Retry 2 of 3" in args[0].content
-    
+    assert 'Retry 2 of 3' in args[0].content
+
     # Call the method a third time
     await controller._step_with_exception_handling()
-    
+
     # Verify that the counter was incremented
     assert controller._runtime_error_count == 3
-    assert "Retry 3 of 3" in mock_event_stream.add_event.call_args[0][0].content
-    
+    assert 'Retry 3 of 3' in mock_event_stream.add_event.call_args[0][0].content
+
     # Call the method a fourth time, which should exceed the retry limit
     await controller._step_with_exception_handling()
-    
+
     # Verify that the counter was reset
     assert controller._runtime_error_count == 0
-    
+
     # Note: We're not testing the counter reset functionality here
     # because it requires more complex mocking of the agent controller state
-    
+
     await controller.close()
 
 
 @pytest.mark.asyncio
-async def test_runtime_error_handling_with_unavailable_error(mock_agent, mock_event_stream):
+async def test_runtime_error_handling_with_unavailable_error(
+    mock_agent, mock_event_stream
+):
     """Test that AgentRuntimeUnavailableError is handled properly."""
     # Create a controller
     controller = AgentController(
@@ -247,30 +254,32 @@ async def test_runtime_error_handling_with_unavailable_error(mock_agent, mock_ev
         confirmation_mode=False,
         headless_mode=True,
     )
-    
+
     # Mock the _step method to raise a runtime error
-    controller._step = AsyncMock(side_effect=AgentRuntimeUnavailableError(
-        "Runtime is unavailable. This may be due to a resource constraint."
-    ))
-    
+    controller._step = AsyncMock(
+        side_effect=AgentRuntimeUnavailableError(
+            'Runtime is unavailable. This may be due to a resource constraint.'
+        )
+    )
+
     # Call the _step_with_exception_handling method
     await controller._step_with_exception_handling()
-    
+
     # Verify that an error observation was added to the event stream
     mock_event_stream.add_event.assert_called_once()
     args, kwargs = mock_event_stream.add_event.call_args
-    
+
     # Check that the first argument is an ErrorObservation
     assert isinstance(args[0], ErrorObservation)
-    
+
     # Check that the content of the ErrorObservation contains the expected message
-    assert "Your command consumed too much resources" in args[0].content
-    assert "previous runtime died" in args[0].content
-    
+    assert 'Your command may have consumed too much resources' in args[0].content
+    assert 'previous runtime died' in args[0].content
+
     # Check that the source is ENVIRONMENT
     assert len(args) >= 2  # Should have at least 2 positional arguments
     assert args[1] == EventSource.ENVIRONMENT
-    
+
     await controller.close()
 
 
