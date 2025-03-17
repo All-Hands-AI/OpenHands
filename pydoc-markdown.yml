@@ -1,6 +1,6 @@
 loaders:
   - type: python
-    search_path: [openhands]
+    search_path: [.]
 processors:
   - type: filter
     skip_empty_modules: true

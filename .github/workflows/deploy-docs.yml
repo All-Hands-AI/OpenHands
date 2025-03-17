@@ -2,7 +2,7 @@
 name: Deploy Docs to GitHub Pages
 
 # * Always run on "main"
-# * Run on PRs that have changes in the "docs" folder or this workflow
+# * Run on PRs that target the "main" branch and have changes in the "docs" folder or this workflow
 on:
   push:
     branches:
@@ -12,6 +12,8 @@ on:
       - 'docs/**'
       - '.github/workflows/deploy-docs.yml'
       - 'pydoc-markdown.yml'
+    branches:
+      - main
 
 # If triggered by a PR, it will be in the same group. However, each commit on main will be in its own unique group
 concurrency:
@@ -21,6 +23,7 @@ concurrency:
 jobs:
   # Build the documentation website
   build:
+    if: github.repository == 'All-Hands-AI/OpenHands'
     name: Build Docusaurus
     runs-on: ubuntu-latest
     steps:
