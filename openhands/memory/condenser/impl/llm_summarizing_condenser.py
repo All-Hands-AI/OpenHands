@@ -50,7 +50,7 @@ class LLMSummarizingCondenser(RollingCondenser):
             summary_observation = events[self.keep_first + 1] if len(events) > self.keep_first + 1 and isinstance(events[self.keep_first + 1], AgentCondensationObservation) else AgentCondensationObservation('')
         else:
             # Use placeholder IDs since we don't have real events to reference yet
-            summary_action = AgentCondensationAction(start_id=0, end_id=0, summary='No events summarized')
+            summary_action = AgentCondensationAction(start_id=-1, end_id=-1, summary='No events summarized')
             summary_observation = AgentCondensationObservation('')
 
         # Identify events to be forgotten (those not in head or tail)
