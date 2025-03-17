@@ -66,6 +66,22 @@ def test_reset(agent: CodeActAgent):
     assert len(agent.pending_actions) == 0
 
 
+def test_tool_description_length_limit_for_openai():
+    tools = get_tools(
+        codeact_enable_jupyter=True,
+        codeact_enable_llm_editor=False,
+        codeact_enable_browsing=True,
+    )
+    assert len(tools) > 0
+
+    for tool in tools:
+        print(
+            f"name: {tool['function']['name']}, description length: {len(tool['function']['description'])}"
+        )
+        # OpenAI has a limit of 1024 tokens for tool descriptions :(
+        assert len(tool['function']['description']) < 1024
+
+
 def test_step_with_pending_actions(agent: CodeActAgent):
     # Add a pending action
     pending_action = MessageAction(content='test')
