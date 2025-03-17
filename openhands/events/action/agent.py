@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any
+from typing import Any, Dict
 
 from openhands.core.schema import ActionType
 from openhands.events.action.action import Action
@@ -107,6 +107,31 @@ class AgentDelegateAction(Action):
     @property
     def message(self) -> str:
         return f"I'm asking {self.agent} for help with this task."
+
+
+@dataclass
+class AgentCondensationAction(Action):
+    """Action to record condensation of the agent's history.
+
+    This action stores information about a condensation event, including the range of events
+    that were condensed and any metadata needed to restore the condenser's state.
+    """
+
+    start_id: int
+    end_id: int
+    metadata: Dict[str, Any] = field(default_factory=dict)
+    action: str = ActionType.CONDENSE
+
+    @property
+    def message(self) -> str:
+        return f'Condensed events from {self.start_id} to {self.end_id}'
+
+    def __str__(self) -> str:
+        ret = '**AgentCondensationAction**\n'
+        ret += f'RANGE: [{self.start_id}..{self.end_id}]\n'
+        if self.metadata:
+            ret += f'METADATA: {self.metadata}'
+        return ret
 
 
 @dataclass
