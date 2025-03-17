@@ -6,7 +6,6 @@ import numpy as np
 from fuzzywuzzy import fuzz
 from rouge import Rouge
 
-from CodeBLEU.Evaluator import Evaluator
 
 
 # increase recursion depth to ensure ROUGE can be calculated for long sentences
@@ -301,41 +300,8 @@ def self_edit_distance(samples: List[Union[str, List[str]]], sep=" ") -> float:
     return np.mean(scores).item()
 
 
-EVALUATORS = {
-    "Java8": Evaluator("java"),
-    "Python3": Evaluator("python"),
-}
-
-
-def code_bleu(gold: List[str], pred: List[str], language: str = "Java8") -> float:
-    if len(gold) == 0 or len(pred) == 0:
-        return 0
-    return EVALUATORS[language].sentence_code_bleu([gold], pred) * 100
-
-
-def batch_sentence_code_bleu(
-    golds_toks: List[List[str]], preds_toks: List[List[str]], language: str = "Java8"
-) -> List[float]:
-    return [
-        EVALUATORS[language].sentence_code_bleu([gold_toks], pred_toks) * 100
-        for gold_toks, pred_toks in zip(golds_toks, preds_toks)
-    ]
-
-
-def corpus_code_bleu(
-    golds_toks: List[List[str]], preds_toks: List[List[str]], language: str = "Java8"
-) -> float:
-    return (
-        EVALUATORS[language].corpus_code_bleu(
-            [[gold_toks] for gold_toks in golds_toks],
-            preds_toks,
-        )
-        * 100
-    )
-
 
 QUALITY_METRICS: Dict[str, Callable[[List[str], List[str]], float]] = {
-    "code-bleu": code_bleu,
     "bleu": bleu,
     "xmatch": exact_match,
     "edit-sim": edit_sim,

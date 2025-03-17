@@ -324,9 +324,14 @@ def compute_regression(results):
 def compute_readability(python_code):
     parser = Parser()
     this_dir = Path(os.path.dirname(os.path.realpath(__file__)))
-    parser.set_language(
-        Language(this_dir / 'CodeBLEU' / 'parser' / 'my-languages.so', 'python')
-    )
+    parser.set_language(Language.build_library(
+        # Store the library in the `build` directory
+        this_dir / "build" / "my-languages.so",
+        # Include one or more languages
+        [
+            this_dir / "tree-sitter-python"
+        ]
+    ).get_language('python'))
 
     results = code_stats(python_code)
 
