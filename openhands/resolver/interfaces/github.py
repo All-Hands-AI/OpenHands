@@ -27,7 +27,7 @@ class GithubIssueHandler(IssueHandlerInterface):
 
     def get_headers(self) -> dict[str, str]:
         return {
-            'Authorization': f'token {self.token}',
+            'Authorization': f'Bearer {self.token}',
             'Accept': 'application/vnd.github.v3+json',
         }
 
@@ -450,7 +450,7 @@ class GithubPRHandler(GithubIssueHandler):
         """Download comments for a specific pull request from Github."""
         url = f'https://api.github.com/repos/{self.owner}/{self.repo}/issues/{pr_number}/comments'
         headers = {
-            'Authorization': f'token {self.token}',
+            'Authorization': f'Bearer {self.token}',
             'Accept': 'application/vnd.github.v3+json',
         }
         params = {'per_page': 100, 'page': 1}

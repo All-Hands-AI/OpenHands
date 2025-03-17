@@ -643,3 +643,35 @@ def test_pr_handler_get_converted_issues_with_duplicate_issue_refs():
                 'External context #1.',
                 'External context #2.',
             ]
+
+
+def test_authorization_header_format():
+    """Test that the GitHub API is called with the correct authorization header format."""
+    with patch('requests.get') as mock_get:
+        # Mock the response
+        mock_response = MagicMock()
+        mock_response.json.return_value = []
+        mock_get.return_value = mock_response
+
+        # Create an instance of GithubIssueHandler
+        handler = GithubIssueHandler('test-owner', 'test-repo', 'test-token')
+        
+        # Call a method that makes an API request
+        handler.download_issues()
+        
+        # Verify that the request was made with the correct authorization header
+        headers = mock_get.call_args[1]['headers']
+        assert headers['Authorization'] == 'Bearer test-token'
+        
+        # Reset the mock
+        mock_get.reset_mock()
+        
+        # Create an instance of GithubPRHandler
+        pr_handler = GithubPRHandler('test-owner', 'test-repo', 'test-token')
+        
+        # Call a method that makes an API request
+        pr_handler.download_issues()
+        
+        # Verify that the request was made with the correct authorization header
+        headers = mock_get.call_args[1]['headers']
+        assert headers['Authorization'] == 'Bearer test-token'
