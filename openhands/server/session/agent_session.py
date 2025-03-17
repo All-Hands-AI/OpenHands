@@ -14,7 +14,6 @@ from openhands.events.action import ChangeAgentStateAction, MessageAction
 from openhands.events.event import EventSource
 from openhands.events.stream import EventStream
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderHandler
-from openhands.microagent import BaseMicroAgent
 from openhands.memory.memory import Memory
 from openhands.microagent.microagent import BaseMicroAgent
 from openhands.runtime import get_runtime_cls
@@ -127,7 +126,6 @@ class AgentSession:
                 agent_to_llm_config=agent_to_llm_config,
                 agent_configs=agent_configs,
             )
-
 
             repo_directory = None
             if self.runtime and runtime_connected and selected_repository:
@@ -244,7 +242,6 @@ class AgentSession:
 
         kwargs = {}
         if runtime_cls == RemoteRuntime:
-            kwargs['provider_tokens'] = provider_tokens
             kwargs['user_id'] = self.user_id
 
         self.runtime = runtime_cls(
@@ -256,6 +253,7 @@ class AgentSession:
             headless_mode=False,
             attach_to_existing=False,
             env_vars=env_vars,
+            provider_tokens=provider_tokens if runtime_cls == RemoteRuntime else None,
             **kwargs,
         )
 

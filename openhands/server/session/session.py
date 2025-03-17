@@ -127,9 +127,7 @@ class Session:
         provider_tokens: PROVIDER_TOKEN_TYPE = {}
         selected_repository = None
         selected_branch = None
-        if (
-            isinstance(settings, ConversationInitData)
-        ):
+        if isinstance(settings, ConversationInitData):
             provider_tokens = settings.provider_tokens
             selected_repository = settings.selected_repository
             selected_branch = settings.selected_branch
