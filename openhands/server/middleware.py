@@ -183,6 +183,8 @@ class AttachConversationMiddleware(SessionMiddlewareInterface):
         return response
 
 
+from openhands.integrations.provider import ProviderTokens
+
 class GitHubTokenMiddleware(SessionMiddlewareInterface):
     def __init__(self, app):
         self.app = app
@@ -193,15 +195,25 @@ class GitHubTokenMiddleware(SessionMiddlewareInterface):
         )
         settings = await settings_store.load()
 
-        # TODO: To avoid checks like this we should re-add the abilty to have completely different middleware in SAAS as in OSS
+        # Only set provider_tokens if not already set
         if getattr(request.state, 'provider_tokens', None) is None:
             if (
                 settings
                 and settings.secrets_store
                 and settings.secrets_store.provider_tokens
             ):
-                request.state.provider_tokens = settings.secrets_store.provider_tokens
+                # If the tokens are already a ProviderTokens instance, use them directly
+                if isinstance(settings.secrets_store.provider_tokens, ProviderTokens):
+                    request.state.provider_tokens = settings.secrets_store.provider_tokens
+                else:
+                    # Convert to ProviderTokens if needed (for backward compatibility)
+                    request.state.provider_tokens = ProviderTokens.from_dict(
+                        settings.secrets_store.provider_tokens.tokens
+                        if hasattr(settings.secrets_store.provider_tokens, 'tokens')
+                        else settings.secrets_store.provider_tokens
+                    )
             else:
-                request.state.provider_tokens = None
+                # Create an empty ProviderTokens instance instead of None
+                request.state.provider_tokens = ProviderTokens()
 
         return await call_next(request)
