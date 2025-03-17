@@ -9,6 +9,7 @@ import { appendSecurityAnalyzerInput } from "#/state/security-analyzer-slice";
 import { setCode, setActiveFilepath } from "#/state/code-slice";
 import { appendJupyterInput } from "#/state/jupyter-slice";
 import { setCurStatusMessage } from "#/state/status-slice";
+import { setMetrics } from "#/state/metrics-slice";
 import store from "#/store";
 import ActionType from "#/types/action-type";
 import {
@@ -91,16 +92,10 @@ export function handleActionMessage(message: ActionMessage) {
     message.tool_call_metadata?.model_response?.usage
   ) {
     const metrics = {
-      cost: message.llm_metrics?.accumulated_cost || null,
-      usage: message.tool_call_metadata?.model_response?.usage || null,
+      cost: message.llm_metrics?.accumulated_cost ?? null,
+      usage: message.tool_call_metadata?.model_response?.usage ?? null,
     };
-    window.postMessage(
-      {
-        type: "metrics_update",
-        metrics,
-      },
-      "*",
-    );
+    store.dispatch(setMetrics(metrics));
   }
 
   if (message.action === ActionType.RUN) {

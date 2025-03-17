@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import {
   afterAll,
   afterEach,
@@ -13,6 +13,7 @@ import userEvent from "@testing-library/user-event";
 import { formatTimeDelta } from "#/utils/format-time-delta";
 import { ConversationCard } from "#/components/features/conversation-panel/conversation-card";
 import { clickOnEditButton } from "./utils";
+import { renderWithProviders } from "test-utils";
 
 describe("ConversationCard", () => {
   const onClick = vi.fn();
@@ -37,7 +38,7 @@ describe("ConversationCard", () => {
   });
 
   it("should render the conversation card", () => {
-    render(
+    renderWithProviders(
       <ConversationCard
         onDelete={onDelete}
         onChangeTitle={onChangeTitle}
@@ -56,7 +57,7 @@ describe("ConversationCard", () => {
   });
 
   it("should render the selectedRepository if available", () => {
-    const { rerender } = render(
+    const { rerender } = renderWithProviders(
       <ConversationCard
         onDelete={onDelete}
         onChangeTitle={onChangeTitle}
@@ -87,7 +88,7 @@ describe("ConversationCard", () => {
 
   it("should toggle a context menu when clicking the ellipsis button", async () => {
     const user = userEvent.setup();
-    render(
+    renderWithProviders(
       <ConversationCard
         onDelete={onDelete}
         onChangeTitle={onChangeTitle}
@@ -112,7 +113,7 @@ describe("ConversationCard", () => {
 
   it("should call onDelete when the delete button is clicked", async () => {
     const user = userEvent.setup();
-    render(
+    renderWithProviders(
       <ConversationCard
         onDelete={onDelete}
         isActive
@@ -136,7 +137,7 @@ describe("ConversationCard", () => {
 
   test("clicking the selectedRepository should not trigger the onClick handler", async () => {
     const user = userEvent.setup();
-    render(
+    renderWithProviders(
       <ConversationCard
         onDelete={onDelete}
         isActive
@@ -157,7 +158,7 @@ describe("ConversationCard", () => {
 
   test("conversation title should call onChangeTitle when changed and blurred", async () => {
     const user = userEvent.setup();
-    render(
+    renderWithProviders(
       <ConversationCard
         onDelete={onDelete}
         isActive
@@ -186,7 +187,7 @@ describe("ConversationCard", () => {
 
   it("should reset title and not call onChangeTitle when the title is empty", async () => {
     const user = userEvent.setup();
-    render(
+    renderWithProviders(
       <ConversationCard
         onDelete={onDelete}
         isActive
@@ -210,7 +211,7 @@ describe("ConversationCard", () => {
 
   test("clicking the title should trigger the onClick handler", async () => {
     const user = userEvent.setup();
-    render(
+    renderWithProviders(
       <ConversationCard
         onClick={onClick}
         onDelete={onDelete}
@@ -230,7 +231,7 @@ describe("ConversationCard", () => {
 
   test("clicking the title should not trigger the onClick handler if edit mode", async () => {
     const user = userEvent.setup();
-    render(
+    renderWithProviders(
       <ConversationCard
         onDelete={onDelete}
         isActive
@@ -251,7 +252,7 @@ describe("ConversationCard", () => {
 
   test("clicking the delete button should not trigger the onClick handler", async () => {
     const user = userEvent.setup();
-    render(
+    renderWithProviders(
       <ConversationCard
         onDelete={onDelete}
         isActive
@@ -275,7 +276,7 @@ describe("ConversationCard", () => {
 
   it("should call onDownloadWorkspace when the download button is clicked", async () => {
     const user = userEvent.setup();
-    render(
+    renderWithProviders(
       <ConversationCard
         onClick={onClick}
         onDelete={onDelete}
@@ -301,7 +302,7 @@ describe("ConversationCard", () => {
   it("should show display cost button only when onDisplayCost is provided", async () => {
     const user = userEvent.setup();
     const onDisplayCost = vi.fn();
-    const { rerender } = render(
+    const { rerender } = renderWithProviders(
       <ConversationCard
         onDelete={onDelete}
         onChangeTitle={onChangeTitle}
@@ -344,23 +345,22 @@ describe("ConversationCard", () => {
 
   it("should show metrics modal when clicking the display cost button", async () => {
     const user = userEvent.setup();
-    const onDisplayCost = vi.fn();
-    render(
+    renderWithProviders(
       <ConversationCard
-        onClick={onClick}
         onDelete={onDelete}
+        isActive
         onChangeTitle={onChangeTitle}
-        onDisplayCost={onDisplayCost}
         title="Conversation 1"
         selectedRepository={null}
         lastUpdatedAt="2021-10-01T12:00:00Z"
+        onDisplayCost={() => {}}
       />,
     );
 
     const ellipsisButton = screen.getByTestId("ellipsis-button");
     await user.click(ellipsisButton);
 
-    const menu = await screen.findByTestId("context-menu");
+    const menu = screen.getByTestId("context-menu");
     const displayCostButton = within(menu).getByTestId("display-cost-button");
 
     await user.click(displayCostButton);
@@ -371,7 +371,7 @@ describe("ConversationCard", () => {
 
   it("should not display the edit or delete options if the handler is not provided", async () => {
     const user = userEvent.setup();
-    const { rerender } = render(
+    const { rerender } = renderWithProviders(
       <ConversationCard
         onClick={onClick}
         onChangeTitle={onChangeTitle}
@@ -408,7 +408,7 @@ describe("ConversationCard", () => {
   });
 
   it("should not render the ellipsis button if there are no actions", () => {
-    const { rerender } = render(
+    const { rerender } = renderWithProviders(
       <ConversationCard
         onClick={onClick}
         onDelete={onDelete}
@@ -461,7 +461,7 @@ describe("ConversationCard", () => {
 
   describe("state indicator", () => {
     it("should render the 'STOPPED' indicator by default", () => {
-      render(
+      renderWithProviders(
         <ConversationCard
           onDelete={onDelete}
           isActive
@@ -476,7 +476,7 @@ describe("ConversationCard", () => {
     });
 
     it("should render the other indicators when provided", () => {
-      render(
+      renderWithProviders(
         <ConversationCard
           onDelete={onDelete}
           isActive

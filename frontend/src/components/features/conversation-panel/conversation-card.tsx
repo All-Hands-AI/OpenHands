@@ -1,4 +1,5 @@
 import React from "react";
+import { useSelector } from "react-redux";
 import { formatTimeDelta } from "#/utils/format-time-delta";
 import { ConversationRepoLink } from "./conversation-repo-link";
 import {
@@ -9,6 +10,7 @@ import { EllipsisButton } from "./ellipsis-button";
 import { ConversationCardContextMenu } from "./conversation-card-context-menu";
 import { cn } from "#/utils/utils";
 import { BaseModal } from "../../shared/modals/base-modal/base-modal";
+import { RootState } from "#/store";
 
 interface ConversationCardProps {
   onClick?: () => void;
@@ -39,35 +41,11 @@ export function ConversationCard({
 }: ConversationCardProps) {
   const [contextMenuVisible, setContextMenuVisible] = React.useState(false);
   const [titleMode, setTitleMode] = React.useState<"view" | "edit">("view");
+  const [metricsModalVisible, setMetricsModalVisible] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
-  // Only create metrics-related state if onDisplayCost is provided
-  const [metricsModalVisible, setMetricsModalVisible] = React.useState(false);
-  const [metrics, setMetrics] = React.useState<{
-    cost: number | null;
-    usage: {
-      prompt_tokens: number;
-      completion_tokens: number;
-      total_tokens: number;
-    } | null;
-  }>({
-    cost: null,
-    usage: null,
-  });
-
-  // Only add metrics event listener if onDisplayCost is provided
-  React.useEffect(() => {
-    if (!onDisplayCost) return () => {};
-
-    function handleMessage(event: MessageEvent) {
-      if (event.data?.type === "metrics_update") {
-        setMetrics(event.data.metrics);
-      }
-    }
-
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
-  }, [onDisplayCost]);
+  // Subscribe to metrics data from Redux store
+  const metrics = useSelector((state: RootState) => state.metrics);
 
   const handleBlur = () => {
     if (inputRef.current?.value) {
