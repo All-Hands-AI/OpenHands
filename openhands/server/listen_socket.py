@@ -12,7 +12,7 @@ from openhands.events.observation import (
 )
 from openhands.events.observation.agent import (
     AgentStateChangedObservation,
-    MicroagentObservation,
+    RecallObservation,
 )
 from openhands.events.serialization import event_to_dict
 from openhands.events.stream import AsyncEventStreamWrapper
@@ -60,7 +60,7 @@ async def connect(connection_id: str, environ):
     async for event in async_stream:
         if isinstance(
             event,
-            (NullAction, NullObservation, RecallAction, MicroagentObservation),
+            (NullAction, NullObservation, RecallAction, RecallObservation),
         ):
             continue
         elif isinstance(event, AgentStateChangedObservation):
