@@ -365,8 +365,8 @@ function AccountSettings() {
                   }
                   placeholder={isGitHubTokenSet ? "**********" : ""}
                 />
-                <p class="text-xs">Generate a token on <b><a href="https://github.com/settings/tokens/new?description=openhands-app&scopes=repo,user,workflow" target="_blank" class="underline underline-offset-2" rel="noopener noreferrer">GitHub</a> </b>
-                    or see the <b><a href="https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token" target="_blank" class="underline underline-offset-2" rel="noopener noreferrer">documentation</a></b>.</p>
+                <p className="text-xs">Generate a token on <b><a href="https://github.com/settings/tokens/new?description=openhands-app&scopes=repo,user,workflow" target="_blank" className="underline underline-offset-2" rel="noopener noreferrer">GitHub</a> </b>
+                    or see the <b><a href="https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token" target="_blank" className="underline underline-offset-2" rel="noopener noreferrer">documentation</a></b>.</p>
               </>
             )}
 
