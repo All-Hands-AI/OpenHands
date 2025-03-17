@@ -52,9 +52,10 @@ class GitService(Protocol):
 
     def __init__(
         self,
-        user_id: str | None,
-        token: SecretStr | None,
-        external_auth_token: SecretStr | None,
+        user_id: str | None = None,
+        token: SecretStr | None = None,
+        external_auth_id: str | None = None,
+        external_auth_token: SecretStr | None = None,
         external_token_manager: bool = False,
     ) -> None:
         """Initialize the service with authentication details"""

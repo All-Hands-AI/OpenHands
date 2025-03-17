@@ -91,6 +91,7 @@ class ProviderHandler:
     def __init__(
         self,
         provider_tokens: PROVIDER_TOKEN_TYPE,
+        external_auth_id: str | None = None,
         external_auth_token: SecretStr | None = None,
         external_token_manager: bool = False,
     ):
@@ -100,6 +101,7 @@ class ProviderHandler:
         }
 
         self.provider_tokens = provider_tokens
+        self.external_auth_id = external_auth_id
         self.external_auth_token = external_auth_token
         self.external_token_manager = external_token_manager
 
@@ -109,6 +111,7 @@ class ProviderHandler:
         service_class = self.service_class_map[provider]
         return service_class(
             user_id=token.user_id,
+            external_auth_id=self.external_auth_id,
             external_auth_token=self.external_auth_token,
             token=token.token,
             external_token_manager=self.external_token_manager,
