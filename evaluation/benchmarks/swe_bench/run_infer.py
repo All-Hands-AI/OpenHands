@@ -76,18 +76,20 @@ Your task is to make the minimal changes to non-test files in the /workspace/{wo
 
 Follow these steps to resolve the issue:
 
+0. FRAMING: Based on your exploration, think carefully about the problem and propose how you would reproduce the problem.
+   - Analyze how the user found the problem.
+   - Analyze message errors, stack traces, all technical details.
+   - Enumerate the steps to reproduce the problem.
+   - Restate the problem.
+
 1. EXPLORATION: First, thoroughly explore the repository structure using tools like `find` and `grep`.
    - Identify all files mentioned in the problem statement
    - Locate where the issue occurs in the codebase
    - Understand the surrounding context and dependencies
    - Use `grep` to search for relevant functions, classes, or error messages
+   - Pinpoint the probable locations of the problem. 
 
-2.a. SYMPTOM ANALYSIS: Based on your exploration, think carefully about the problem and propose how you would test the issue.
-   - Describe how you would reproduce the issue.
-   - Describe how it could be tested, propose 2-5 ways of testing.
-   - Select the most promising test and explain why.
-
-2.b. ROOT ANALYSIS: Based on your exploration, think carefully about the problem and propose 2-5 possible approaches to fix the issue.
+2. ANALYSIS: Based on the symtom analysis, think carefully about the problem and propose 2-5 possible approaches to fix the issue.
    - Analyze the root cause of the problem
    - Consider trade-offs between different solutions
    - Select the most promising approach and explain your reasoning
