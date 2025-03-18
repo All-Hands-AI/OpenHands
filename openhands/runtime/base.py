@@ -132,6 +132,8 @@ class Runtime(FileEditRuntimeMixin):
 
         self.user_id = user_id
 
+        self.prev_token: SecretStr | None = None
+
     def setup_initial_env(self) -> None:
         if self.attach_to_existing:
             return
@@ -225,14 +227,30 @@ class Runtime(FileEditRuntimeMixin):
                         external_auth_id=self.user_id, external_token_manager=True
                     )
                     token = await gh_client.get_latest_token()
-                    if token:
-                        export_cmd = CmdRunAction(
-                            f"export GITHUB_TOKEN='{token.get_secret_value()}'"
+                    if not token:
+                        logger.info(
+                            f'Failed to refresh github token for runtime: {self.sid}'
                         )
+
+                    if token:
+                        raw_token = token.get_secret_value()
+
+                        if not self.prev_token:
+                            logger.info(
+                                f'Setting github token in runtime: {self.sid}\nToken value: {raw_token[0:5]}; length: {len(raw_token)}'
+                            )
+
+                        elif self.prev_token.get_secret_value() != raw_token:
+                            logger.info(
+                                f'Setting [NEW] github token in runtime {self.sid}\nToken value: {raw_token[0:5]}; length: {len(raw_token)}'
+                            )
+
+                        self.prev_token = token
+                        export_cmd = CmdRunAction(f"export GITHUB_TOKEN='{raw_token}'")
 
                         self.event_stream.update_secrets(
                             {
-                                'github_token': token.get_secret_value(),
+                                'github_token': raw_token,
                             }
                         )
 
