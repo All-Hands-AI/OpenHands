@@ -19,7 +19,7 @@ some flags being passed to `docker run` that make this possible:
 
 ```
 docker run # ...
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.28-nikolaik \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.29-nikolaik \
     -v /var/run/docker.sock:/var/run/docker.sock \
     # ...
 ```
@@ -64,17 +64,7 @@ but seems to work well on most systems.
 OpenHands Remote Runtime is currently in beta (read [here](https://runtime.all-hands.dev/) for more details), it allows you to launch runtimes in parallel in the cloud.
 Fill out [this form](https://docs.google.com/forms/d/e/1FAIpQLSckVz_JFwg2_mOxNZjCtr7aoBFI2Mwdan3f75J_TrdMS1JV2g/viewform) to apply if you want to try this out!
 
-To use the OpenHands Remote Runtime, set the following environment variables when
-starting OpenHands:
-
-```bash
-docker run # ...
-    -e RUNTIME=remote \
-    -e SANDBOX_REMOTE_RUNTIME_API_URL="https://runtime.app.all-hands.dev" \
-    -e SANDBOX_API_KEY="your-all-hands-api-key" \
-    -e SANDBOX_KEEP_RUNTIME_ALIVE="true" \
-    # ...
-```
+NOTE: This runtime is specifically designed for agent evaluation purposes only through [OpenHands evaluation harness](https://github.com/All-Hands-AI/OpenHands/tree/main/evaluation). It should not be used to launch production OpenHands applications.
 
 ## Modal Runtime
 Our partners at [Modal](https://modal.com/) have also provided a runtime for OpenHands.

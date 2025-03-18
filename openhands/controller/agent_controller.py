@@ -271,9 +271,9 @@ class AgentController:
             await self._react_to_exception(reported)
 
     def should_step(self, event: Event) -> bool:
-        """
-        Whether the agent should take a step based on an event. In general,
-        the agent should take a step if it receives a message from the user,
+        """Whether the agent should take a step based on an event.
+
+        In general, the agent should take a step if it receives a message from the user,
         or observes something in the environment (after acting).
         """
         # it might be the delegate's day in the sun
@@ -298,7 +298,8 @@ class AgentController:
             if (
                 isinstance(event, NullObservation)
                 and event.cause is not None
-                and event.cause > 0
+                and event.cause
+                > 0  # NullObservation has cause > 0 (RecallAction), not 0 (user message)
             ):
                 return True
             if isinstance(event, AgentStateChangedObservation) or isinstance(
@@ -314,7 +315,6 @@ class AgentController:
         Args:
             event (Event): The incoming event to process.
         """
-
         # If we have a delegate that is not finished or errored, forward events to it
         if self.delegate is not None:
             delegate_state = self.delegate.get_agent_state()
@@ -471,7 +471,7 @@ class AgentController:
             await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
 
     def _reset(self) -> None:
-        """Resets the agent controller"""
+        """Resets the agent controller."""
         # Runnable actions need an Observation
         # make sure there is an Observation with the tool call metadata to be recognized by the agent
         # otherwise the pending action is found in history, but it's incomplete without an obs with tool result
@@ -623,7 +623,8 @@ class AgentController:
         )
 
     def end_delegate(self) -> None:
-        """Ends the currently active delegate (e.g., if it is finished or errored)
+        """Ends the currently active delegate (e.g., if it is finished or errored).
+
         so that this controller can resume normal operation.
         """
         if self.delegate is None:
@@ -1035,8 +1036,9 @@ class AgentController:
         )
 
     def _apply_conversation_window(self, events: list[Event]) -> list[Event]:
-        """Cuts history roughly in half when context window is exceeded, preserving action-observation pairs
-        and ensuring the first user message is always included.
+        """Cuts history roughly in half when context window is exceeded.
+
+        It preserves action-observation pairs and ensures that the first user message is always included.
 
         The algorithm:
         1. Cut history in half
@@ -1189,8 +1191,7 @@ class AgentController:
         return False
 
     def _first_user_message(self) -> MessageAction | None:
-        """
-        Get the first user message for this agent.
+        """Get the first user message for this agent.
 
         For regular agents, this is the first user message from the beginning (start_id=0).
         For delegate agents, this is the first user message after the delegate's start_id.
