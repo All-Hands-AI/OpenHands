@@ -1,6 +1,16 @@
-from enum import Enum
+from __future__ import annotations
 
-from pydantic import BaseModel, SecretStr, SerializationInfo, field_serializer
+from enum import Enum
+from types import MappingProxyType
+
+from pydantic import (
+    BaseModel,
+    Field,
+    SecretStr,
+    SerializationInfo,
+    field_serializer,
+    model_validator,
+)
 from pydantic.json import pydantic_encoder
 
 from openhands.integrations.github.github_service import GithubServiceImpl
@@ -19,43 +29,42 @@ class ProviderType(Enum):
 
 
 class ProviderToken(BaseModel):
-    token: SecretStr | None
-    user_id: str | None
+    token: SecretStr | None = Field(default=None)
+    user_id: str | None = Field(default=None)
+
+    model_config = {
+        'frozen': True,  # Makes the entire model immutable
+        'validate_assignment': True,
+    }
+
+    @classmethod
+    def from_value(cls, token_value: ProviderToken | dict[str, str]) -> ProviderToken:
+        """Factory method to create a ProviderToken from various input types"""
+        if isinstance(token_value, ProviderToken):
+            return token_value
+        elif isinstance(token_value, dict):
+            token_str = token_value.get('token')
+            user_id = token_value.get('user_id')
+            return cls(token=SecretStr(token_str), user_id=user_id)
+
+        else:
+            raise ValueError('Unsupport Provider token type')
 
 
-PROVIDER_TOKEN_TYPE = dict[ProviderType, ProviderToken]
-CUSTOM_SECRETS_TYPE = dict[str, SecretStr]
+PROVIDER_TOKEN_TYPE = MappingProxyType[ProviderType, ProviderToken]
+CUSTOM_SECRETS_TYPE = MappingProxyType[str, SecretStr]
 
 
 class SecretStore(BaseModel):
-    provider_tokens: PROVIDER_TOKEN_TYPE = {}
+    provider_tokens: PROVIDER_TOKEN_TYPE = Field(
+        default_factory=lambda: MappingProxyType({})
+    )
 
-    @classmethod
-    def _convert_token(
-        cls, token_value: str | ProviderToken | SecretStr
-    ) -> ProviderToken:
-        if isinstance(token_value, ProviderToken):
-            return token_value
-        elif isinstance(token_value, str):
-            return ProviderToken(token=SecretStr(token_value), user_id=None)
-        elif isinstance(token_value, SecretStr):
-            return ProviderToken(token=token_value, user_id=None)
-        else:
-            raise ValueError(f'Invalid token type: {type(token_value)}')
-
-    def model_post_init(self, __context) -> None:
-        # Convert any string tokens to ProviderToken objects
-        converted_tokens = {}
-        for token_type, token_value in self.provider_tokens.items():
-            if token_value:  # Only convert non-empty tokens
-                try:
-                    if isinstance(token_type, str):
-                        token_type = ProviderType(token_type)
-                    converted_tokens[token_type] = self._convert_token(token_value)
-                except ValueError:
-                    # Skip invalid provider types or tokens
-                    continue
-        self.provider_tokens = converted_tokens
+    model_config = {
+        'frozen': True,
+        'validate_assignment': True,
+        'arbitrary_types_allowed': True,
+    }
 
     @field_serializer('provider_tokens')
     def provider_tokens_serializer(
@@ -82,6 +91,40 @@ class SecretStore(BaseModel):
 
         return tokens
 
+    @model_validator(mode='before')
+    @classmethod
+    def convert_dict_to_mappingproxy(
+        cls, data: dict[str, dict[str, dict[str, str]]] | PROVIDER_TOKEN_TYPE
+    ) -> dict[str, MappingProxyType]:
+        """Custom deserializer to convert dictionary into MappingProxyType"""
+        if not isinstance(data, dict):
+            raise ValueError('SecretStore must be initialized with a dictionary')
+
+        new_data = {}
+
+        if 'provider_tokens' in data:
+            tokens = data['provider_tokens']
+            if isinstance(
+                tokens, dict
+            ):  # Ensure conversion happens only for dict inputs
+                converted_tokens = {}
+                for key, value in tokens.items():
+                    try:
+                        provider_type = (
+                            ProviderType(key) if isinstance(key, str) else key
+                        )
+                        converted_tokens[provider_type] = ProviderToken.from_value(
+                            value
+                        )
+                    except ValueError:
+                        # Skip invalid provider types or tokens
+                        continue
+
+                # Convert to MappingProxyType
+                new_data['provider_tokens'] = MappingProxyType(converted_tokens)
+
+        return new_data
+
 
 class ProviderHandler:
     def __init__(
@@ -94,8 +137,14 @@ class ProviderHandler:
             ProviderType.GITLAB: GitLabServiceImpl,
         }
 
-        self.provider_tokens = provider_tokens
+        # Create immutable copy through SecretStore
         self.external_auth_token = external_auth_token
+        self._provider_tokens = provider_tokens
+
+    @property
+    def provider_tokens(self) -> PROVIDER_TOKEN_TYPE:
+        """Read-only access to provider tokens."""
+        return self._provider_tokens
 
     def _get_service(self, provider: ProviderType) -> GitService:
         """Helper method to instantiate a service for a given provider"""
