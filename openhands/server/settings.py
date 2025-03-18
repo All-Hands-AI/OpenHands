@@ -1,10 +1,7 @@
 from __future__ import annotations
 
-from typing import Dict, Union
-
 from pydantic import (
     BaseModel,
-    Field,
     SecretStr,
     SerializationInfo,
     field_serializer,
@@ -31,44 +28,10 @@ class Settings(BaseModel):
     llm_api_key: SecretStr | None = None
     llm_base_url: str | None = None
     remote_runtime_resource_factor: int | None = None
-    secrets_store: SecretStore = Field(default_factory=SecretStore.create)
+    secrets_store: SecretStore = SecretStore()
     enable_default_condenser: bool = False
     enable_sound_notifications: bool = False
     user_consents_to_analytics: bool | None = None
-
-    def with_updated_provider_token(
-        self,
-        provider_type: ProviderType,
-        token: str | None,
-        user_id: str | None = None
-    ) -> "Settings":
-        """Creates a new Settings instance with updated provider token"""
-        current_tokens = dict(self.secrets_store.provider_tokens)
-        
-        if token is None:
-            current_tokens.pop(provider_type, None)
-        else:
-            current_tokens[provider_type] = ProviderToken(
-                token=SecretStr(token),
-                user_id=user_id
-            )
-        
-        return self.model_copy(
-            update={
-                'secrets_store': SecretStore.create(current_tokens)
-            }
-        )
-
-    def with_removed_provider_token(self, provider_type: ProviderType) -> "Settings":
-        """Creates a new Settings instance with the specified provider token removed"""
-        current_tokens = dict(self.secrets_store.provider_tokens)
-        current_tokens.pop(provider_type, None)
-        
-        return self.model_copy(
-            update={
-                'secrets_store': SecretStore.create(current_tokens)
-            }
-        )
 
     @field_serializer('llm_api_key')
     def llm_api_key_serializer(self, llm_api_key: SecretStr, info: SerializationInfo):
@@ -163,61 +126,18 @@ class Settings(BaseModel):
         return settings
 
 
-class POSTSettingsModel(BaseModel):
+class POSTSettingsModel(Settings):
     """
-    Model for handling POST requests to update settings
+    Settings for POST requests
     """
+
     unset_github_token: bool | None = None
-    provider_tokens: Dict[str, Union[str, Dict[str, str]]] = Field(default_factory=dict)
-    language: str | None = None
-    agent: str | None = None
-    max_iterations: int | None = None
-    security_analyzer: str | None = None
-    confirmation_mode: bool | None = None
-    llm_model: str | None = None
-    llm_api_key: SecretStr | None = None
-    llm_base_url: str | None = None
-    remote_runtime_resource_factor: int | None = None
-    enable_default_condenser: bool | None = None
-    enable_sound_notifications: bool | None = None
-    user_consents_to_analytics: bool | None = None
+    # Override provider_tokens to accept string tokens from frontend
+    provider_tokens: dict[str, str] = {}
 
-    def to_settings(self, current_settings: Settings) -> Settings:
-        """Convert POST model to Settings, preserving immutability"""
-        # Start with a copy of current settings
-        settings_dict = current_settings.model_dump()
-        
-        # Update non-token fields if they are provided
-        for field, value in self.model_dump(exclude={'provider_tokens', 'unset_github_token'}).items():
-            if value is not None:
-                settings_dict[field] = value
-
-        # Handle provider tokens
-        new_tokens = dict(current_settings.secrets_store.provider_tokens)
-        for token_type_str, token_value in self.provider_tokens.items():
-            try:
-                token_type = ProviderType(token_type_str)
-                if isinstance(token_value, dict):
-                    token_str = token_value.get('token')
-                    user_id = token_value.get('user_id')
-                    if token_str:
-                        new_tokens[token_type] = ProviderToken(
-                            token=SecretStr(token_str),
-                            user_id=user_id
-                        )
-                elif isinstance(token_value, str) and token_value:
-                    new_tokens[token_type] = ProviderToken(
-                        token=SecretStr(token_value)
-                    )
-            except ValueError:
-                continue
-        
-        # Handle explicit token removal
-        if self.unset_github_token:
-            new_tokens.pop(ProviderType.GITHUB, None)
-        
-        settings_dict['secrets_store'] = SecretStore.create(new_tokens)
-        return Settings(**settings_dict)
+    @field_serializer('provider_tokens')
+    def provider_tokens_serializer(self, provider_tokens: dict[str, str]):
+        return provider_tokens
 
 
 class GETSettingsModel(Settings):

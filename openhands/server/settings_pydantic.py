@@ -60,65 +60,15 @@ class Settings(BaseModel):
         return self.with_updated_provider_token(provider_type, None)
 
 
-class POSTSettingsModel(BaseModel):
-    """Model for handling POST requests to update settings"""
+class POSTSettingsModel(Settings):
+    """Settings for POST requests"""
     unset_github_token: bool | None = None
-    provider_tokens: dict[str, str | dict[str, str]] = Field(default_factory=dict)
-    language: str | None = None
-    agent: str | None = None
-    max_iterations: int | None = None
-    security_analyzer: str | None = None
-    confirmation_mode: bool | None = None
-    llm_model: str | None = None
-    llm_api_key: SecretStr | None = None
-    llm_base_url: str | None = None
-    remote_runtime_resource_factor: int | None = None
-    enable_default_condenser: bool | None = None
-    enable_sound_notifications: bool | None = None
-    user_consents_to_analytics: bool | None = None
+    # Override provider_tokens to accept string tokens from frontend
+    provider_tokens: dict[str, str] = Field(default_factory=dict)
 
-    def to_settings(self, current_settings: Settings) -> Settings:
-        """Convert POST model to Settings, preserving immutability"""
-        # Start with a copy of current settings
-        settings_dict = current_settings.model_dump()
-
-        # Update non-token fields if they are provided
-        for field, value in self.model_dump(
-            exclude={'provider_tokens', 'unset_github_token'}
-        ).items():
-            if value is not None:
-                settings_dict[field] = value
-
-        # Handle provider tokens
-        current_tokens = dict(current_settings.secrets_store.provider_tokens.tokens)
-        
-        for token_type_str, token_value in self.provider_tokens.items():
-            try:
-                token_type = ProviderType(token_type_str)
-                if isinstance(token_value, dict):
-                    token_str = token_value.get('token')
-                    user_id = token_value.get('user_id')
-                    if token_str:
-                        current_tokens[token_type] = ProviderToken(
-                            token=SecretStr(token_str),
-                            user_id=user_id
-                        )
-                elif isinstance(token_value, str) and token_value:
-                    current_tokens[token_type] = ProviderToken(
-                        token=SecretStr(token_value)
-                    )
-            except ValueError:
-                continue
-
-        # Handle explicit token removal
-        if self.unset_github_token:
-            current_tokens.pop(ProviderType.GITHUB, None)
-
-        settings_dict['secrets_store'] = SecretStore(
-            provider_tokens=ProviderTokens(tokens=current_tokens)
-        )
-        
-        return Settings(**settings_dict)
+    @field_serializer('provider_tokens')
+    def provider_tokens_serializer(self, provider_tokens: dict[str, str]):
+        return provider_tokens
 
 
 class GETSettingsModel(Settings):
