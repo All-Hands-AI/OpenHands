@@ -297,7 +297,7 @@ class AgentController:
                 isinstance(event, NullObservation)
                 and event.cause is not None
                 and event.cause
-                > 0  # NullObservation typically has cause=1 (RecallAction), not 0 (user message)
+                > 0  # NullObservation has cause > 0 (RecallAction), not 0 (user message)
             ):
                 return True
             if isinstance(event, AgentStateChangedObservation) or isinstance(
