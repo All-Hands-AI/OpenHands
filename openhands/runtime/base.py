@@ -226,6 +226,7 @@ class Runtime(FileEditRuntimeMixin):
                     gh_client = GithubServiceImpl(
                         external_auth_id=self.user_id, external_token_manager=True
                     )
+                    logger.info(f"Fetching latest github token for runtime: {self.sid}")
                     token = await gh_client.get_latest_token()
                     if not token:
                         logger.info(
