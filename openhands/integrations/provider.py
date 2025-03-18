@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from enum import Enum
+from types import MappingProxyType
 
-from pydantic import BaseModel, Field, SecretStr, SerializationInfo, field_serializer
+from pydantic import BaseModel, Field, SecretStr, SerializationInfo, field_serializer, model_validator
 from pydantic.json import pydantic_encoder
 
 from openhands.integrations.github.github_service import GithubServiceImpl
@@ -27,6 +28,7 @@ class ProviderToken(BaseModel):
     model_config = {
         'frozen': True,  # Makes the entire model immutable
         'validate_assignment': True,
+        'arbitrary_types_allowed': True,
     }
 
     @classmethod
@@ -43,39 +45,18 @@ class ProviderToken(BaseModel):
             raise ValueError('Unsupport Provider token type')
 
 
-PROVIDER_TOKEN_TYPE = dict[ProviderType, ProviderToken]
-CUSTOM_SECRETS_TYPE = dict[str, SecretStr]
+PROVIDER_TOKEN_TYPE = MappingProxyType[ProviderType, ProviderToken]
+CUSTOM_SECRETS_TYPE = MappingProxyType[str, SecretStr]
 
 
 class SecretStore(BaseModel):
-    provider_tokens: PROVIDER_TOKEN_TYPE = Field(default_factory=dict, frozen=True)
+    provider_tokens: PROVIDER_TOKEN_TYPE = Field(default_factory=lambda: MappingProxyType({}), frozen=True)
 
     model_config = {
         'frozen': True,
         'validate_assignment': True,
+        'arbitrary_types_allowed': True,
     }
-
-    @classmethod
-    def create(
-        cls, tokens: PROVIDER_TOKEN_TYPE | dict[str, dict[str, str]] | None = None
-    ) -> SecretStore:
-        """Factory method to create a new SecretStore with converted tokens"""
-        if not tokens:
-            return cls()
-
-        converted_tokens = {}
-        for token_type, token_value in tokens.items():
-            if token_value:  # Only convert non-empty tokens
-                try:
-                    if isinstance(token_type, str):
-                        token_type = ProviderType(token_type)
-                    converted_tokens[token_type] = ProviderToken.from_value(token_value)
-                except ValueError:
-                    # Skip invalid provider types or tokens
-                    continue
-
-        # Convert to immutable mapping
-        return cls(provider_tokens=converted_tokens)
 
     @field_serializer('provider_tokens')
     def provider_tokens_serializer(
@@ -101,6 +82,32 @@ class SecretStore(BaseModel):
             }
 
         return tokens
+    
+    @model_validator(mode="before")
+    @classmethod
+    def convert_dict_to_mappingproxy(cls, data: dict[str, dict[str, str]] | PROVIDER_TOKEN_TYPE) -> dict:
+        """Custom deserializer to convert dictionary into MappingProxyType"""
+        if not isinstance(data, dict):
+            raise ValueError("SecretStore must be initialized with a dictionary")
+
+        if "provider_tokens" in data:
+            tokens = data["provider_tokens"]
+            if isinstance(tokens, dict):  # Ensure conversion happens only for dict inputs
+                converted_tokens = {}
+                for key, value in tokens.items():
+                    try:
+                        provider_type = (
+                            ProviderType(key) if isinstance(key, str) else key
+                        )
+                        converted_tokens[provider_type] = ProviderToken.from_value(value)
+                    except ValueError:
+                        # Skip invalid provider types or tokens
+                        continue
+
+                # Convert to MappingProxyType
+                data["provider_tokens"] = MappingProxyType(converted_tokens)
+        return data
+
 
 
 class ProviderHandler:
@@ -115,13 +122,13 @@ class ProviderHandler:
         }
 
         # Create immutable copy through SecretStore
-        self._secret_store = SecretStore.create(dict(provider_tokens))
         self.external_auth_token = external_auth_token
+        self._provider_tokens = provider_tokens
 
     @property
     def provider_tokens(self) -> PROVIDER_TOKEN_TYPE:
-        """Read-only access to provider tokens"""
-        return self._secret_store.provider_tokens
+        """Read-only access to provider tokens."""
+        return self._provider_tokens
 
     def _get_service(self, provider: ProviderType) -> GitService:
         """Helper method to instantiate a service for a given provider"""

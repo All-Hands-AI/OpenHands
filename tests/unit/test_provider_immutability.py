@@ -1,104 +1,124 @@
+from types import MappingProxyType
 import pytest
 from pydantic import SecretStr, ValidationError
 
 from openhands.integrations.provider import ProviderToken, ProviderType, SecretStore
 from openhands.server.settings import Settings, POSTSettingsModel
+from openhands.server.routes.settings import convert_to_settings
+from openhands.integrations.provider import ProviderHandler
 
 
 def test_provider_token_immutability():
     """Test that ProviderToken is immutable"""
     token = ProviderToken(token=SecretStr("test"), user_id="user1")
     
-    # These should raise ValidationError
+    # Test direct attribute modification
     with pytest.raises(ValidationError):
         token.token = SecretStr("new")
     
     with pytest.raises(ValidationError):
         token.user_id = "new_user"
+    
+    # Test that __setattr__ is blocked
+    with pytest.raises(ValidationError):
+        setattr(token, 'token', SecretStr("new"))
+    
+    # Verify original values are unchanged
+    assert token.token.get_secret_value() == "test"
+    assert token.user_id == "user1"
 
 
 def test_secret_store_immutability():
     """Test that SecretStore is immutable"""
-    store = SecretStore.create({
+    store = SecretStore(provider_tokens={
         ProviderType.GITHUB: ProviderToken(token=SecretStr("test"))
     })
     
-    # These should raise ValidationError due to frozen field
+    # Test direct attribute modification
     with pytest.raises(ValidationError):
         store.provider_tokens = {}
     
-    # The token itself should be immutable
-    with pytest.raises(ValidationError):
-        store.provider_tokens[ProviderType.GITHUB].token = SecretStr("new")
+    # Test dictionary mutation attempts
+    with pytest.raises((TypeError, AttributeError)):
+        store.provider_tokens[ProviderType.GITHUB] = ProviderToken(token=SecretStr("new"))
     
-    # Verify the original token is unchanged
+    with pytest.raises((TypeError, AttributeError)):
+        store.provider_tokens.clear()
+    
+    with pytest.raises((TypeError, AttributeError)):
+        store.provider_tokens.update({ProviderType.GITLAB: ProviderToken(token=SecretStr("test"))})
+    
+    # Test nested immutability
+    github_token = store.provider_tokens[ProviderType.GITHUB]
+    with pytest.raises(ValidationError):
+        github_token.token = SecretStr("new")
+    
+    # Verify original values are unchanged
     assert store.provider_tokens[ProviderType.GITHUB].token.get_secret_value() == "test"
 
 
-def test_settings_token_updates():
-    """Test that Settings handles token updates immutably"""
-    # Create initial settings
+def test_settings_immutability():
+    """Test that Settings secrets_store is immutable"""
     settings = Settings(
-        secrets_store=SecretStore.create({
-            ProviderType.GITHUB: ProviderToken(token=SecretStr("initial"))
+        secrets_store=SecretStore(provider_tokens={
+            ProviderType.GITHUB: ProviderToken(token=SecretStr("test"))
         })
     )
     
-    # Update token
-    new_settings = settings.with_updated_provider_token(
-        ProviderType.GITHUB,
-        "new_token",
-        "user1"
-    )
+    # Test direct modification of secrets_store
+    with pytest.raises(ValidationError):
+        settings.secrets_store = SecretStore()
     
-    # Original settings should be unchanged
-    assert settings.secrets_store.provider_tokens[ProviderType.GITHUB].token.get_secret_value() == "initial"
-    assert settings.secrets_store.provider_tokens[ProviderType.GITHUB].user_id is None
+    # Test nested modification attempts
+    with pytest.raises((TypeError, AttributeError)):
+        settings.secrets_store.provider_tokens[ProviderType.GITHUB] = ProviderToken(token=SecretStr("new"))
     
-    # New settings should have updated token
+    # Test model_copy creates new instance
+    new_store = SecretStore(provider_tokens={
+        ProviderType.GITHUB: ProviderToken(token=SecretStr("new_token"))
+    })
+    new_settings = settings.model_copy(update={"secrets_store": new_store})
+    
+    # Verify original is unchanged and new has updated values
+    assert settings.secrets_store.provider_tokens[ProviderType.GITHUB].token.get_secret_value() == "test"
     assert new_settings.secrets_store.provider_tokens[ProviderType.GITHUB].token.get_secret_value() == "new_token"
-    assert new_settings.secrets_store.provider_tokens[ProviderType.GITHUB].user_id == "user1"
+
+    with pytest.raises(ValidationError):
+        new_settings.secrets_store.provider_tokens[ProviderType.GITHUB].token = SecretStr("")
 
 
-def test_post_settings_model():
-    """Test that POSTSettingsModel correctly handles token updates"""
-    # Create initial settings
-    current_settings = Settings(
-        secrets_store=SecretStore.create({
-            ProviderType.GITHUB: ProviderToken(token=SecretStr("initial"))
-        })
-    )
-    
-    # Create POST model with updates
+def test_post_settings_conversion():
+    """Test that POSTSettingsModel correctly converts to Settings"""
+    # Create POST model with token data
     post_data = POSTSettingsModel(
         provider_tokens={
-            "github": {"token": "new_token", "user_id": "user1"},
+            "github": "test_token",
             "gitlab": "gitlab_token"
         }
     )
     
-    # Convert to settings
-    new_settings = post_data.to_settings(current_settings)
+    # Convert to settings using convert_to_settings function
+    settings = convert_to_settings(post_data)
     
-    # Original settings should be unchanged
-    assert current_settings.secrets_store.provider_tokens[ProviderType.GITHUB].token.get_secret_value() == "initial"
+    # Verify tokens were converted correctly
+    assert settings.secrets_store.provider_tokens[ProviderType.GITHUB].token.get_secret_value() == "test_token"
+    assert settings.secrets_store.provider_tokens[ProviderType.GITLAB].token.get_secret_value() == "gitlab_token"
+    assert settings.secrets_store.provider_tokens[ProviderType.GITLAB].user_id == None
     
-    # New settings should have updated tokens
-    assert new_settings.secrets_store.provider_tokens[ProviderType.GITHUB].token.get_secret_value() == "new_token"
-    assert new_settings.secrets_store.provider_tokens[ProviderType.GITHUB].user_id == "user1"
-    assert new_settings.secrets_store.provider_tokens[ProviderType.GITLAB].token.get_secret_value() == "gitlab_token"
+    # Verify immutability of converted settings
+    with pytest.raises(ValidationError):
+        settings.secrets_store = SecretStore()
 
 
 def test_provider_handler_immutability():
     """Test that ProviderHandler maintains token immutability"""
-    from openhands.integrations.provider import ProviderHandler
     
     # Create initial tokens
-    tokens = {
+    tokens = MappingProxyType({
         ProviderType.GITHUB: ProviderToken(token=SecretStr("test"))
-    }
+    })
     
-    handler = ProviderHandler(tokens, None)
+    handler = ProviderHandler(provider_tokens=tokens)
     
     # Try to modify tokens (should raise TypeError due to frozen dict)
     with pytest.raises((TypeError, AttributeError)):
@@ -115,20 +135,44 @@ def test_provider_handler_immutability():
 def test_token_conversion():
     """Test token conversion in SecretStore.create"""
     # Test with string token
-    store1 = SecretStore.create({
-        ProviderType.GITHUB: "test_token"
-    })
-    assert store1.provider_tokens[ProviderType.GITHUB].token.get_secret_value() == "test_token"
+    store1 = Settings(secrets_store=SecretStore(provider_tokens={
+        ProviderType.GITHUB: ProviderToken(token=SecretStr("test_token"))
+    }))
+
+    assert store1.secrets_store.provider_tokens[ProviderType.GITHUB].token.get_secret_value() == "test_token"
+    assert store1.secrets_store.provider_tokens[ProviderType.GITHUB].user_id is None
     
     # Test with dict token
-    store2 = SecretStore.create({
-        ProviderType.GITHUB: {"token": "test_token", "user_id": "user1"}
+    store2 = SecretStore(provider_tokens={
+        "github": {"token": "test_token", "user_id": "user1"}
     })
     assert store2.provider_tokens[ProviderType.GITHUB].token.get_secret_value() == "test_token"
     assert store2.provider_tokens[ProviderType.GITHUB].user_id == "user1"
     
-    # Test with SecretStr token
-    store3 = SecretStore.create({
-        ProviderType.GITHUB: SecretStr("test_token")
+    # Test with ProviderToken
+    token = ProviderToken(token=SecretStr("test_token"), user_id="user2")
+    store3 = SecretStore(provider_tokens={
+        ProviderType.GITHUB: token
     })
     assert store3.provider_tokens[ProviderType.GITHUB].token.get_secret_value() == "test_token"
+    assert store3.provider_tokens[ProviderType.GITHUB].user_id == "user2"
+    
+   
+    store4 = SecretStore(provider_tokens={
+            ProviderType.GITHUB: 123  # Invalid type
+        })
+    
+    assert ProviderType.GITHUB not in store4.provider_tokens
+    
+    # Test with empty/None token
+    store5 = SecretStore(provider_tokens={
+        ProviderType.GITHUB: None
+    })
+    assert ProviderType.GITHUB not in store5.provider_tokens
+    
+
+    store6 = SecretStore(provider_tokens={
+            "invalid_provider": "test_token"  # Invalid provider type
+        })
+    
+    assert len(store6.provider_tokens.keys()) == 0
