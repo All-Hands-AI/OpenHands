@@ -99,6 +99,14 @@ class Session:
         self.config.security.security_analyzer = (
             settings.security_analyzer or self.config.security.security_analyzer
         )
+        self.config.sandbox.base_container_image = (
+            settings.sandbox_base_container_image
+            or self.config.sandbox.base_container_image
+        )
+        self.config.sandbox.runtime_container_image = (
+            settings.sandbox_runtime_container_image
+            or self.config.sandbox.runtime_container_image
+        )
         max_iterations = settings.max_iterations or self.config.max_iterations
 
         # This is a shallow copy of the default LLM config, so changes here will
