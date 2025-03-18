@@ -35,7 +35,6 @@ class ProviderToken(BaseModel):
     model_config = {
         'frozen': True,  # Makes the entire model immutable
         'validate_assignment': True,
-        'arbitrary_types_allowed': True,
     }
 
     @classmethod
