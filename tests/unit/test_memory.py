@@ -61,7 +61,6 @@ def prompt_dir(tmp_path):
 @pytest.mark.asyncio
 async def test_memory_on_event_exception_handling(memory, event_stream):
     """Test that exceptions in Memory.on_event are properly handled via status callback."""
-
     # Create a dummy agent for the controller
     agent = MagicMock(spec=Agent)
     agent.llm = MagicMock(spec=LLM)
