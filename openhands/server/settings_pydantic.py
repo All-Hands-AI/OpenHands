@@ -64,11 +64,23 @@ class POSTSettingsModel(Settings):
     """Settings for POST requests"""
     unset_github_token: bool | None = None
     # Override provider_tokens to accept string tokens from frontend
-    provider_tokens: dict[str, str] = Field(default_factory=dict)
+    provider_tokens: dict[str, str | dict[str, str]] = Field(default_factory=dict)
 
     @field_serializer('provider_tokens')
-    def provider_tokens_serializer(self, provider_tokens: dict[str, str]):
+    def provider_tokens_serializer(self, provider_tokens: dict[str, str | dict[str, str]]):
         return provider_tokens
+
+    @model_validator(mode='after')
+    def handle_token_updates(self) -> 'POSTSettingsModel':
+        """Handle token updates and removals immutably"""
+        if self.unset_github_token:
+            # Create new SecretStore without GitHub token
+            current_tokens = dict(self.secrets_store.provider_tokens.tokens)
+            current_tokens.pop(ProviderType.GITHUB, None)
+            self.secrets_store = SecretStore(
+                provider_tokens=ProviderTokens(tokens=current_tokens)
+            )
+        return self
 
 
 class GETSettingsModel(Settings):
