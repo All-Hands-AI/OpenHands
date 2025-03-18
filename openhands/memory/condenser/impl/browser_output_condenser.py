@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 from openhands.core.config.condenser_config import BrowserOutputCondenserConfig
+from openhands.events.action.agent import AgentCondensationAction
 from openhands.events.event import Event
 from openhands.events.observation import BrowserOutputObservation
-from openhands.events.action.agent import AgentCondensationAction
-from openhands.events.observation.agent import AgentCondensationObservation
 from openhands.memory.condenser.condenser import Condenser
 
 
@@ -32,7 +31,7 @@ class BrowserOutputCondenser(Condenser):
                     AgentCondensationAction(
                         start_id=event.id,
                         end_id=event.id,
-                        summary=f'Current URL: {event.url}\nContent Omitted'
+                        summary=f'Current URL: {event.url}\nContent Omitted',
                     )
                 )
                 # No need to add an empty observation as the action itself is sufficient

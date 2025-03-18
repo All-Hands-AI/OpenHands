@@ -10,7 +10,6 @@ from openhands.events.observation import (
     CmdOutputObservation,
     IPythonRunCellObservation,
 )
-from openhands.events.observation.agent import AgentCondensationObservation
 from openhands.events.observation.empty import NullObservation
 from openhands.events.observation.error import ErrorObservation
 from openhands.events.observation.observation import Observation

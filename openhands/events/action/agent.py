@@ -119,7 +119,7 @@ class AgentCondensationAction(Action):
 
     start_id: int = -1
     end_id: int = -1
-    summary: str = ""
+    summary: str = ''
     action: str = ActionType.CONDENSE
 
     @property

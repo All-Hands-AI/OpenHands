@@ -184,7 +184,9 @@ class ConversationMemory:
         # create a regular message from an event
         if isinstance(action, AgentCondensationAction):
             # For condensation actions, create a message with the summary
-            text = truncate_content(action.summary, 10000)  # Use a reasonable max length
+            text = truncate_content(
+                action.summary, 10000
+            )  # Use a reasonable max length
             return [Message(role='user', content=[TextContent(text=text)])]
         elif isinstance(
             action,
