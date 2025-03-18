@@ -11,32 +11,33 @@ The search engine feature enables agents to:
 
 ## Configuration
 
-### Enabling Search
+### Configuration Setup
 
-To enable the search engine feature, set the following in your `config.toml`:
+The search engine feature is configured through the `search` section in your `config.toml`:
 
 ```toml
-[agent]
+[search]
+# Enable the search engine feature
 enable_search_engine = true
+
+# Set your Brave Search API key
+# You can obtain one from the Brave Search API Dashboard: https://api.search.brave.com/app/keys
+brave_api_key = "your-api-key-here"
+
+# Optional: Override the Brave Search API URL if needed
+# brave_api_url = "https://api.search.brave.com/res/v1/web/search"
 ```
 
-Or when using Docker, set the environment variable:
+Or when using Docker, set the environment variables:
 ```bash
--e AGENT_ENABLE_SEARCH_ENGINE=true
-```
+# Enable the search engine feature
+-e SEARCH_ENABLE_SEARCH_ENGINE=true
 
-### API Key Setup
+# Set your Brave Search API key
+-e SEARCH_BRAVE_API_KEY="your-api-key-here"
 
-The search feature requires a Brave Search API key. You can obtain one from the [Brave Search API Dashboard](https://api.search.brave.com/app/keys).
-
-Set the API key in your environment:
-```bash
-export SANDBOX_ENV_BRAVE_API_KEY="your-api-key-here"
-```
-
-Or when using Docker:
-```bash
--e SANDBOX_ENV_BRAVE_API_KEY="your-api-key-here"
+# Optional: Override the Brave Search API URL
+# -e SEARCH_BRAVE_API_URL="https://api.search.brave.com/res/v1/web/search"
 ```
 
 ## Search Results
@@ -95,9 +96,9 @@ The search results will be returned in a markdown-formatted structure that's eas
 Common issues and solutions:
 
 1. **Search Not Working**
-   - Verify `enable_search_engine` is set to `true`
-   - Confirm the Brave API key is correctly set
-   - Check API key permissions and quotas
+   - Verify `search.enable_search_engine` is set to `true` in your config
+   - Confirm the Brave API key is correctly set in `search.brave_api_key`
+   - Check API key permissions and quotas in the Brave Search API Dashboard
 
 2. **No Results**
    - Verify the query is not empty
