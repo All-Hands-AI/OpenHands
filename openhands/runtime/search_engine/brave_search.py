@@ -4,6 +4,7 @@ import re
 import requests
 import tenacity
 
+from openhands.core.config import AppConfig
 from openhands.events.action import SearchAction
 from openhands.events.observation.error import ErrorObservation
 from openhands.events.observation.search_engine import SearchEngineObservation
@@ -204,20 +205,35 @@ def query_api(query: str, API_KEY, BRAVE_SEARCH_URL):
     return SearchEngineObservation(query=query, content=markdown_content)
 
 
-def search(action: SearchAction):
+def search(action: SearchAction, config: AppConfig):
+    """Execute a search query using the Brave Search API.
+
+    Args:
+        action: The search action containing the query.
+        config: The application configuration.
+
+    Returns:
+        SearchEngineObservation: The search results in markdown format.
+        ErrorObservation: If the query is empty or search is not enabled.
+    """
+    if not config.search.enabled:
+        return ErrorObservation(
+            content='Search engine functionality is not enabled. Enable it by setting search.enabled=true in config.'
+        )
+
     query = action.query
     if query is None or len(query.strip()) == 0:
         return ErrorObservation(
             content='The query string for search_engine tool must be a non-empty string.'
         )
 
-    BRAVE_SEARCH_URL = os.environ.get(
-        'SANDBOX_ENV_BRAVE_API_URL', 'https://api.search.brave.com/res/v1/web/search'
-    )
-
-    API_KEY = os.environ.get('SANDBOX_ENV_BRAVE_API_KEY', None)
-    if API_KEY is None:
-        raise ValueError(
-            'Environment variable SANDBOX_ENV_BRAVE_API_KEY not set. It must be set to the Brave Search API Key.'
+    if config.search.api_key is None:
+        return ErrorObservation(
+            content='Search API key not configured. Set search.api_key in config.'
         )
-    return query_api(query, API_KEY, BRAVE_SEARCH_URL)
+
+    return query_api(
+        query=query,
+        API_KEY=config.search.api_key.get_secret_value(),
+        BRAVE_SEARCH_URL=config.search.api_url
+    )

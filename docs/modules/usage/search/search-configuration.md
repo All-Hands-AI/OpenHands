@@ -29,14 +29,17 @@ Or when using Docker, set the environment variable:
 
 The search feature requires a Brave Search API key. You can obtain one from the [Brave Search API Dashboard](https://api.search.brave.com/app/keys).
 
-Set the API key in your environment:
-```bash
-export SANDBOX_ENV_BRAVE_API_KEY="your-api-key-here"
+Set the API key in your `config.toml`:
+```toml
+[search]
+enabled = true
+api_key = "your-api-key-here"
 ```
 
 Or when using Docker:
 ```bash
--e SANDBOX_ENV_BRAVE_API_KEY="your-api-key-here"
+-e SEARCH_ENABLED=true
+-e SEARCH_API_KEY="your-api-key-here"
 ```
 
 ## Search Results
