@@ -34,6 +34,9 @@ from openhands.events.observation.error import ErrorObservation
 from openhands.events.observation.files import FileEditObservation, FileReadObservation
 from openhands.events.observation.reject import UserRejectObservation
 from openhands.events.tool import ToolCallMetadata
+from openhands.memory.condenser.impl.llm_summarizing_condenser import (
+    LLMSummarizingCondenser,
+)
 from openhands.memory.conversation_memory import ConversationMemory
 from openhands.utils.prompt import PromptManager, RepositoryInfo, RuntimeInfo
 
@@ -1061,37 +1064,56 @@ def test_process_events_with_agent_condensation_action(agent_config):
     prompt_manager.get_system_message.return_value = 'System message'
     memory = ConversationMemory(agent_config, prompt_manager)
 
-    # Create a condensation action
+    # Create some events to process
+    event0 = MessageAction(content='Message 0')
+    event0._id = 0  # ignore [attr-defined]
+    event1 = MessageAction(content='Message 1')
+    event1._id = 1  # ignore [attr-defined]
+    event2 = MessageAction(content='Message 2')
+    event2._id = 2  # ignore [attr-defined]
+    event3 = MessageAction(content='Message 3')
+    event3._id = 3  # ignore [attr-defined]
+    event4 = MessageAction(content='Message 4')
+    event4._id = 4  # ignore [attr-defined]
+    event5 = MessageAction(content='Message 5')
+    event5._id = 5  # ignore [attr-defined]
+
+    # Create a mock condenser that will return our condensation action
+    mock_condenser = MagicMock(spec=LLMSummarizingCondenser)
     condensation_action = AgentCondensationAction(
         start_id=1,
         end_id=5,
         summary='This is condensed content',
     )
 
-    # Create some events to process
-    events = [
-        Event(
-            id=1, source=EventSource.AGENT, action=MessageAction(content='Message 1')
-        ),
-        Event(
-            id=2, source=EventSource.AGENT, action=MessageAction(content='Message 2')
-        ),
-        Event(
-            id=3, source=EventSource.AGENT, action=MessageAction(content='Message 3')
-        ),
-        Event(
-            id=4, source=EventSource.AGENT, action=MessageAction(content='Message 4')
-        ),
-        Event(
-            id=5, source=EventSource.AGENT, action=MessageAction(content='Message 5')
-        ),
-        Event(id=6, source=EventSource.AGENT, action=condensation_action),
+    # Set up the mock condenser to return our condensation action
+    mock_condenser.condensed_history.return_value = [
+        event0,  # Keep first event
+        condensation_action,  # Condensation action
+        event5,  # Most recent event
     ]
 
-    # Process the events
-    memory.process_events(events)
+    # Create a state with our events
+    state = State()
+    state.history = [event0, event1, event2, event3, event4, event5]
 
-    # Check that the condensation action was processed correctly
-    assert len(memory.events) == 2  # The condensation action and the event after it
-    assert memory.events[0].action.summary == 'This is condensed content'
-    assert memory.events[0].id == 6  # The condensation action's ID
+    # Process the events
+    messages = memory.process_events(
+        condensed_history=mock_condenser.condensed_history(state),
+        initial_messages=[
+            Message(role='system', content=[TextContent(text='System message')])
+        ],
+        max_message_chars=None,
+        vision_is_active=False,
+    )
+
+    # Verify that the condensation action was processed correctly
+    assert (
+        len(messages) == 4
+    )  # system message + +initial message + condensation action + most recent event
+    assert messages[0].role == 'system'
+    assert messages[1].role == 'assistant'
+    assert messages[2].role == 'user'
+    assert 'This is condensed content' in messages[2].content[0].text
+    assert messages[3].role == 'assistant'
+    assert 'Message 5' in messages[3].content[0].text
