@@ -117,9 +117,9 @@ class AgentCondensationAction(Action):
     that were condensed and the summary of those events.
     """
 
-    start_id: int
-    end_id: int
-    summary: str
+    start_id: int = -1
+    end_id: int = -1
+    summary: str = ""
     action: str = ActionType.CONDENSE
 
     @property
