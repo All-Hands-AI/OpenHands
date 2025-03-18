@@ -1140,6 +1140,7 @@ def test_agent_controller_should_step_with_null_observation_cause_zero():
     )
 
     # Create a NullObservation with cause = 0
+    # This should not happen, but if it does, the controller shouldn't step.
     null_observation = NullObservation(content='Test observation')
     null_observation._cause = 0  # type: ignore[attr-defined]
 
