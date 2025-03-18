@@ -53,14 +53,14 @@ This will start the application in development mode. Open [http://localhost:3001
 To run the application with the actual backend:
 
 ```sh
+# Build the application from the root directory
+make build
+
 # Start the backend from the root directory
 make start-backend
 
-# Build the frontend
-cd frontend && npm run build
-
 # Serve the frontend
-npm start -- --port 3001
+cd frontend && npm start -- --port 3001
 ```
 
 ### Environment Variables
