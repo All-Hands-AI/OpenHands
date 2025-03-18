@@ -158,7 +158,7 @@ class ActionExecutor:
         self.bash_session: BashSession | None = None
         self.lock = asyncio.Lock()
         self.plugins: dict[str, Plugin] = {}
-        self.file_editor = OHEditor()
+        self.file_editor = OHEditor(workspace_root=self._initial_cwd)
         self.browser = BrowserEnv(browsergym_eval_env)
         self.start_time = time.time()
         self.last_execution_time = self.start_time
@@ -546,7 +546,9 @@ if __name__ == '__main__':
             try:
                 verify_api_key(request.headers.get('X-Session-API-Key'))
             except HTTPException as e:
-                return e
+                return JSONResponse(
+                    status_code=e.status_code, content={'detail': e.detail}
+                )
         response = await call_next(request)
         return response
 
