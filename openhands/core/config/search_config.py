@@ -10,8 +10,6 @@ class SearchConfig(BaseModel):
     """
 
     brave_api_key: str | None = Field(default=None)
-    brave_api_url: str = Field(
-        default='https://api.search.brave.com/res/v1/web/search'
-    )
+    brave_api_url: str = Field(default='https://api.search.brave.com/res/v1/web/search')
 
     model_config = {'extra': 'forbid'}

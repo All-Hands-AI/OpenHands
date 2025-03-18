@@ -1,4 +1,3 @@
-import os
 import re
 
 import requests
@@ -205,7 +204,7 @@ def query_api(query: str, API_KEY, BRAVE_SEARCH_URL):
 
 
 def search(action: SearchAction):
-    from openhands.core.config import app_config
+    from openhands.core.config.app_config import AppConfig
 
     query = action.query
     if query is None or len(query.strip()) == 0:
@@ -213,7 +212,7 @@ def search(action: SearchAction):
             content='The query string for search_engine tool must be a non-empty string.'
         )
 
-    search_config = app_config.get_app_config().search
+    search_config = AppConfig().search
     if search_config.brave_api_key is None:
         raise ValueError(
             'Brave Search API key not set in configuration. Please set it in the search configuration.'
