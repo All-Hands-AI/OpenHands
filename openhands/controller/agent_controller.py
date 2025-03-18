@@ -297,7 +297,7 @@ class AgentController:
                 isinstance(event, NullObservation)
                 and event.cause is not None
                 and event.cause
-                > 0  # NullObservation typically has cause=1 (RecallAction), not 0 (user message)
+                > 0  # NullObservation has cause > 0 (RecallAction), not 0 (user message)
             ):
                 return True
             if isinstance(event, AgentStateChangedObservation) or isinstance(
@@ -1032,7 +1032,7 @@ class AgentController:
     def _apply_conversation_window(self, events: list[Event]) -> list[Event]:
         """Cuts history roughly in half when context window is exceeded.
 
-        Preserving action-observation pairs and ensuring the first user message is always included.
+        It preserves action-observation pairs and ensures that the first user message is always included.
 
         The algorithm:
         1. Cut history in half
