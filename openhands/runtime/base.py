@@ -132,6 +132,7 @@ class Runtime(FileEditRuntimeMixin):
 
         self.user_id = user_id
 
+        # TODO: remove once done debugging expired github token
         self.prev_token: SecretStr | None = None
 
     def setup_initial_env(self) -> None:
@@ -229,7 +230,7 @@ class Runtime(FileEditRuntimeMixin):
                     logger.info(f'Fetching latest github token for runtime: {self.sid}')
                     token = await gh_client.get_latest_token()
                     if not token:
-                        logger.info(
+                        logger.error(
                             f'Failed to refresh github token for runtime: {self.sid}'
                         )
 
@@ -243,7 +244,7 @@ class Runtime(FileEditRuntimeMixin):
 
                         elif self.prev_token.get_secret_value() != raw_token:
                             logger.info(
-                                f'Setting [NEW] github token in runtime {self.sid}\nToken value: {raw_token[0:5]}; length: {len(raw_token)}'
+                                f'Setting new github token in runtime {self.sid}\nToken value: {raw_token[0:5]}; length: {len(raw_token)}'
                             )
 
                         self.prev_token = token
