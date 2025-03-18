@@ -29,8 +29,8 @@ class ProviderType(Enum):
 
 
 class ProviderToken(BaseModel):
-    token: SecretStr | None = Field(default=None, frozen=True)
-    user_id: str | None = Field(default=None, frozen=True)
+    token: SecretStr | None = Field(default=None)
+    user_id: str | None = Field(default=None)
 
     model_config = {
         'frozen': True,  # Makes the entire model immutable
@@ -57,7 +57,7 @@ CUSTOM_SECRETS_TYPE = MappingProxyType[str, SecretStr]
 
 class SecretStore(BaseModel):
     provider_tokens: PROVIDER_TOKEN_TYPE = Field(
-        default_factory=lambda: MappingProxyType({}), frozen=True
+        default_factory=lambda: MappingProxyType({})
     )
 
     model_config = {
