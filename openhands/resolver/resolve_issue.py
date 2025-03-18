@@ -60,7 +60,10 @@ def initialize_runtime(
     logger.info('BEGIN Runtime Completion Fn')
     logger.info('-' * 30)
     obs: Observation
-
+    
+    """git add not working fix"""
+    action = CmdRunAction(command='export GIT_DISCOVERY_ACROSS_FILESYSTEM=1')
+    
     action = CmdRunAction(command='cd /workspace')
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
