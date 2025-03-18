@@ -246,15 +246,23 @@ class Runtime(FileEditRuntimeMixin):
                             )
 
                         self.prev_token = token
-                        export_cmd = CmdRunAction(f"export GITHUB_TOKEN='{raw_token}'")
+
+                        env_vars = {
+                            'GITHUB_TOKEN': raw_token,
+                        }
+
+                        try:
+                            self.add_env_vars(env_vars)
+                        except Exception as e:
+                            logger.warning(
+                                f'Failed export latest github token to runtime: {self.sid}, {e}'
+                            )
 
                         self.event_stream.update_secrets(
                             {
                                 'github_token': raw_token,
                             }
                         )
-
-                        await call_sync_from_async(self.run, export_cmd)
 
             observation: Observation = await call_sync_from_async(
                 self.run_action, event
