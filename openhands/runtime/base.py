@@ -97,7 +97,7 @@ class Runtime(FileEditRuntimeMixin):
         status_callback: Callable | None = None,
         attach_to_existing: bool = False,
         headless_mode: bool = False,
-        github_user_id: str | None = None,
+        user_id: str | None = None,
     ):
         self.sid = sid
         self.event_stream = event_stream
@@ -130,7 +130,7 @@ class Runtime(FileEditRuntimeMixin):
             self, enable_llm_editor=config.get_agent_config().codeact_enable_llm_editor
         )
 
-        self.github_user_id = github_user_id
+        self.user_id = user_id
 
     def setup_initial_env(self) -> None:
         if self.attach_to_existing:
@@ -220,9 +220,11 @@ class Runtime(FileEditRuntimeMixin):
         assert event.timeout is not None
         try:
             if isinstance(event, CmdRunAction):
-                if self.github_user_id and '$GITHUB_TOKEN' in event.command:
-                    gh_client = GithubServiceImpl(user_id=self.github_user_id)
-                    token = await gh_client.get_latest_provider_token()
+                if self.user_id and '$GITHUB_TOKEN' in event.command:
+                    gh_client = GithubServiceImpl(
+                        external_auth_id=self.user_id, external_token_manager=True
+                    )
+                    token = await gh_client.get_latest_token()
                     if token:
                         export_cmd = CmdRunAction(
                             f"export GITHUB_TOKEN='{token.get_secret_value()}'"
@@ -272,7 +274,7 @@ class Runtime(FileEditRuntimeMixin):
                 'github_token and selected_repository must be provided to clone a repository'
             )
         url = f'https://{github_token.get_secret_value()}@github.com/{selected_repository}.git'
-        dir_name = selected_repository.split('/')[1]
+        dir_name = selected_repository.split('/')[-1]
 
         # Generate a random branch name to avoid conflicts
         random_str = ''.join(
@@ -311,7 +313,7 @@ class Runtime(FileEditRuntimeMixin):
         microagents_dir = workspace_root / '.openhands' / 'microagents'
         repo_root = None
         if selected_repository:
-            repo_root = workspace_root / selected_repository.split('/')[1]
+            repo_root = workspace_root / selected_repository.split('/')[-1]
             microagents_dir = repo_root / '.openhands' / 'microagents'
         self.log(
             'info',
