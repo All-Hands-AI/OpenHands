@@ -74,25 +74,23 @@ I've already taken care of all changes to any of the test files described in the
 Also the development Python environment is already set up for you (i.e., all dependencies already installed), so you don't need to install other packages.
 Your task is to make the minimal changes to non-test files in the /workspace/{workspace_dir_name} directory to ensure the <issue_description> is satisfied.
 
-Follow these steps to resolve the issue:
+Follow these steps in order to resolve the issue:
 
-0. FRAMING: Based on your exploration, think carefully about the problem and propose how you would reproduce the problem.
-   - Analyze how the user found the problem.
-   - Analyze message errors, stack traces, all technical details.
+0. FRAMING: restate the problem highlight key data
+   - Analyze message errors, stack traces, and technical details.
+   - Explain the problem in clear terms
    - Enumerate the steps to reproduce the problem.
-   - Restate the problem.
 
-1. EXPLORATION: First, thoroughly explore the repository structure using tools like `find` and `grep`.
-   - Identify all files mentioned in the problem statement
-   - Locate where the issue occurs in the codebase
+1. EXPLORATION: Thoroughly explore the repository structure using tools like `find` and `grep`.
+   - Use `grep` to search for relevant methods, classes, keywords or error messages
+   - Identify all files related to the problem statement
    - Understand the surrounding context and dependencies
-   - Use `grep` to search for relevant functions, classes, or error messages
-   - Pinpoint the probable locations of the problem. 
+   - Propose the locations where the issue could be fixed and explain why.
 
-2. ANALYSIS: Based on the symtom analysis, think carefully about the problem and propose 2-5 possible approaches to fix the issue.
+2. ANALYSIS: Think carefully about the problem and propose 2-5 possible approaches to fix the issue.
    - Analyze the root cause of the problem
    - Consider trade-offs between different solutions
-   - Select the most promising approach and explain your reasoning
+   - Taking everything into account, propose how you can best fix the issue.
 
 3. TEST CREATION: Before implementing any fix, create a script to reproduce and verify the issue.
    - Look at existing test files in the repository to understand the test format/structure
