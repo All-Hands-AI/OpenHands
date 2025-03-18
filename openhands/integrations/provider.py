@@ -116,17 +116,12 @@ class ProviderHandler:
 
         # Create immutable copy through SecretStore
         self._secret_store = SecretStore.create(dict(provider_tokens))
-        self._external_auth_token = external_auth_token
+        self.external_auth_token = external_auth_token
 
     @property
     def provider_tokens(self) -> PROVIDER_TOKEN_TYPE:
         """Read-only access to provider tokens"""
         return self._secret_store.provider_tokens
-
-    @property
-    def external_auth_token(self) -> SecretStr | None:
-        """Read-only access to external auth token"""
-        return self._external_auth_token
 
     def _get_service(self, provider: ProviderType) -> GitService:
         """Helper method to instantiate a service for a given provider"""
