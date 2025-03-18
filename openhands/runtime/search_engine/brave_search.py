@@ -205,19 +205,18 @@ def query_api(query: str, API_KEY, BRAVE_SEARCH_URL):
 
 
 def search(action: SearchAction):
+    from openhands.core.config import load_app_config
+
     query = action.query
     if query is None or len(query.strip()) == 0:
         return ErrorObservation(
             content='The query string for search_engine tool must be a non-empty string.'
         )
 
-    BRAVE_SEARCH_URL = os.environ.get(
-                'BRAVE_API_URL', 'https://api.search.brave.com/res/v1/web/search'
-    )
-
-    API_KEY = os.environ.get('BRAVE_API_KEY', None)
-    if API_KEY is None:
+    config = load_app_config()
+    if config.search.brave_api_key is None:
         raise ValueError(
-            'Environment variable SANDBOX_ENV_BRAVE_API_KEY not set. It must be set to the Brave Search API Key.'
+            'Brave Search API key not set in configuration. Please set it in the search.brave_api_key configuration.'
         )
-    return query_api(query, API_KEY, BRAVE_SEARCH_URL)
+
+    return query_api(query, config.search.brave_api_key.get_secret_value(), config.search.brave_api_url)
