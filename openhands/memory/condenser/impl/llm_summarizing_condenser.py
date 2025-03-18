@@ -45,18 +45,23 @@ class LLMSummarizingCondenser(RollingCondenser):
         tail = events[-events_from_tail:]
 
         # Check if the first event after keep_first is a condensation action
-        if isinstance(events[self.keep_first], AgentCondensationAction):
+        has_existing_summary = isinstance(
+            events[self.keep_first], AgentCondensationAction
+        )
+        if has_existing_summary:
             summary_action = events[self.keep_first]
-            summary_observation = events[self.keep_first + 1] if len(events) > self.keep_first + 1 and isinstance(events[self.keep_first + 1], AgentCondensationObservation) else AgentCondensationObservation('')
         else:
             # Use placeholder IDs since we don't have real events to reference yet
-            summary_action = AgentCondensationAction(start_id=-1, end_id=-1, summary='No events summarized')
-            summary_observation = AgentCondensationObservation('')
+            summary_action = AgentCondensationAction(
+                start_id=-1, end_id=-1, summary='No events summarized'
+            )
 
         # Identify events to be forgotten (those not in head or tail)
         forgotten_events = []
         for event in events[self.keep_first : -events_from_tail]:
-            if not isinstance(event, AgentCondensationObservation) and not isinstance(event, AgentCondensationAction):
+            if not isinstance(event, AgentCondensationObservation) and not isinstance(
+                event, AgentCondensationAction
+            ):
                 forgotten_events.append(event)
 
         # Construct prompt for summarization
@@ -89,7 +94,11 @@ INTENT: Fix precision while maintaining FITS compliance"""
         prompt += '\n\n'
 
         # Add the summary from the action if it exists
-        prompt += ('\n' + summary_action.summary + '\n') if hasattr(summary_action, 'summary') and summary_action.summary else ''
+        prompt += (
+            ('\n' + summary_action.summary + '\n')
+            if hasattr(summary_action, 'summary') and summary_action.summary
+            else ''
+        )
 
         prompt += '\n\n'
 
@@ -107,26 +116,26 @@ INTENT: Fix precision while maintaining FITS compliance"""
         self.add_metadata('metrics', self.llm.metrics.get())
 
         # Check if the first event after keep_first is a condensation action
-        has_existing_summary = isinstance(events[self.keep_first], AgentCondensationAction)
-        
+        has_existing_summary = isinstance(
+            events[self.keep_first], AgentCondensationAction
+        )
+
         # Determine the start_id based on whether there's an existing summary
         start_index = self.keep_first + 2 if has_existing_summary else self.keep_first
-        
+
         # Get the IDs of the first and last events being condensed
-        start_id = events[start_index].id if start_index < len(events) else None
-        end_id = events[-events_from_tail - 1].id if -events_from_tail - 1 >= 0 else None
-        
+        start_id = events[start_index].id if start_index < len(events) else -1
+        end_id = events[-events_from_tail - 1].id if -events_from_tail - 1 >= 0 else -1
+
         # Create the condensation action with the summary
         condensation_action = AgentCondensationAction(
-            summary=summary,
-            start_id=start_id,
-            end_id=end_id
+            summary=summary, start_id=start_id, end_id=end_id
         )
-        
+
         # Create the observation with an empty message to avoid duplicating the summary
         # The summary is already in the action
-        condensation_observation = AgentCondensationObservation("")
-        
+        condensation_observation = AgentCondensationObservation('')
+
         # Add the action first, then the observation to the returned events
         return head + [condensation_action, condensation_observation] + tail
 
