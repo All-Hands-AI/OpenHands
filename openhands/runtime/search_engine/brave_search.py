@@ -215,7 +215,7 @@ def search(action: SearchAction):
                 'BRAVE_API_URL', 'https://api.search.brave.com/res/v1/web/search'
     )
 
-    API_KEY = os.environ.get('SANDBOX_ENV_BRAVE_API_KEY', None)
+    API_KEY = os.environ.get('BRAVE_API_KEY', None)
     if API_KEY is None:
         raise ValueError(
             'Environment variable SANDBOX_ENV_BRAVE_API_KEY not set. It must be set to the Brave Search API Key.'
