@@ -219,7 +219,7 @@ class ProviderHandler:
         """
 
         normalized_dict = {
-            ProviderHandler.get_provider_env_key(provider, lower=True)
+            ProviderHandler.get_provider_env_key(provider)
             if isinstance(provider, ProviderType)
             else provider: token
             for provider, token in provider_tokens.items()
@@ -298,7 +298,7 @@ class ProviderHandler:
 
         exposed_envs = {}
         for provider, token in env_vars.items():
-            env_key = ProviderHandler.get_provider_env_key(provider, lower=True)
+            env_key = ProviderHandler.get_provider_env_key(provider)
             exposed_envs[env_key] = token.get_secret_value()
 
         return exposed_envs
@@ -317,18 +317,14 @@ class ProviderHandler:
 
         called_providers = []
         for provider in ProviderType:
-            if ProviderHandler.get_provider_env_key(provider) in event.command:
+            if ProviderHandler.get_provider_env_key(provider) in event.command.lower():
                 called_providers.append(provider)
 
         return called_providers
 
     @classmethod
-    def get_provider_env_key(cls, provider: ProviderType, lower: bool = False) -> str:
+    def get_provider_env_key(cls, provider: ProviderType) -> str:
         """
         Map ProviderType value to the environment variable name in the runtime
         """
-        env_key = f'${provider.value.upper()}_TOKEN'
-        if lower:
-            return env_key.lower()
-
-        return env_key.upper()
+        return f'${provider.value.upper()}_token'.lower()
