@@ -3,7 +3,14 @@ from __future__ import annotations
 from enum import Enum
 from types import MappingProxyType
 
-from pydantic import BaseModel, Field, SecretStr, SerializationInfo, field_serializer, model_validator
+from pydantic import (
+    BaseModel,
+    Field,
+    SecretStr,
+    SerializationInfo,
+    field_serializer,
+    model_validator,
+)
 from pydantic.json import pydantic_encoder
 
 from openhands.integrations.github.github_service import GithubServiceImpl
@@ -50,7 +57,9 @@ CUSTOM_SECRETS_TYPE = MappingProxyType[str, SecretStr]
 
 
 class SecretStore(BaseModel):
-    provider_tokens: PROVIDER_TOKEN_TYPE = Field(default_factory=lambda: MappingProxyType({}), frozen=True)
+    provider_tokens: PROVIDER_TOKEN_TYPE = Field(
+        default_factory=lambda: MappingProxyType({}), frozen=True
+    )
 
     model_config = {
         'frozen': True,
@@ -82,32 +91,40 @@ class SecretStore(BaseModel):
             }
 
         return tokens
-    
-    @model_validator(mode="before")
+
+    @model_validator(mode='before')
     @classmethod
-    def convert_dict_to_mappingproxy(cls, data: dict[str, dict[str, str]] | PROVIDER_TOKEN_TYPE) -> dict:
+    def convert_dict_to_mappingproxy(
+        cls, data: dict[str, dict[str, dict[str, str]]] | PROVIDER_TOKEN_TYPE
+    ) -> dict[str, MappingProxyType]:
         """Custom deserializer to convert dictionary into MappingProxyType"""
         if not isinstance(data, dict):
-            raise ValueError("SecretStore must be initialized with a dictionary")
+            raise ValueError('SecretStore must be initialized with a dictionary')
 
-        if "provider_tokens" in data:
-            tokens = data["provider_tokens"]
-            if isinstance(tokens, dict):  # Ensure conversion happens only for dict inputs
+        new_data = {}
+
+        if 'provider_tokens' in data:
+            tokens = data['provider_tokens']
+            if isinstance(
+                tokens, dict
+            ):  # Ensure conversion happens only for dict inputs
                 converted_tokens = {}
                 for key, value in tokens.items():
                     try:
                         provider_type = (
                             ProviderType(key) if isinstance(key, str) else key
                         )
-                        converted_tokens[provider_type] = ProviderToken.from_value(value)
+                        converted_tokens[provider_type] = ProviderToken.from_value(
+                            value
+                        )
                     except ValueError:
                         # Skip invalid provider types or tokens
                         continue
 
                 # Convert to MappingProxyType
-                data["provider_tokens"] = MappingProxyType(converted_tokens)
-        return data
+                new_data['provider_tokens'] = MappingProxyType(converted_tokens)
 
+        return new_data
 
 
 class ProviderHandler:

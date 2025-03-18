@@ -12,7 +12,7 @@ from pydantic.json import pydantic_encoder
 
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.utils import load_app_config
-from openhands.integrations.provider import ProviderToken, ProviderType, SecretStore
+from openhands.integrations.provider import SecretStore
 
 
 class Settings(BaseModel):
@@ -49,7 +49,6 @@ class Settings(BaseModel):
             return llm_api_key.get_secret_value()
 
         return pydantic_encoder(llm_api_key) if llm_api_key else None
-
 
     @model_validator(mode='before')
     @classmethod
