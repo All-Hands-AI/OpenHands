@@ -1100,7 +1100,9 @@ async def test_agent_controller_processes_null_observation_with_cause():
 
         # Verify the NullObservation has a cause that points to the RecallAction
         assert null_observation.cause is not None, 'NullObservation cause is None'
-        assert null_observation.cause == recall_action.id, f'Expected cause={recall_action.id}, got cause={null_observation.cause}'
+        assert (
+            null_observation.cause == recall_action.id
+        ), f'Expected cause={recall_action.id}, got cause={null_observation.cause}'
 
         # Verify the controller's should_step method returns True for this observation
         assert controller.should_step(
