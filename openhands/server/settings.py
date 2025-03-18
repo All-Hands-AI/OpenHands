@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pydantic import (
     BaseModel,
+    Field,
     SecretStr,
     SerializationInfo,
     field_serializer,
@@ -28,10 +29,15 @@ class Settings(BaseModel):
     llm_api_key: SecretStr | None = None
     llm_base_url: str | None = None
     remote_runtime_resource_factor: int | None = None
-    secrets_store: SecretStore = SecretStore()
+    secrets_store: SecretStore = Field(default_factory=SecretStore)
     enable_default_condenser: bool = False
     enable_sound_notifications: bool = False
     user_consents_to_analytics: bool | None = None
+
+    model_config = {
+        'validate_assignment': True,
+    }
+
 
     @field_serializer('llm_api_key')
     def llm_api_key_serializer(self, llm_api_key: SecretStr, info: SerializationInfo):

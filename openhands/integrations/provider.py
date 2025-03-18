@@ -21,7 +21,7 @@ class ProviderType(Enum):
 
 
 class ProviderToken(BaseModel):
-    token: SecretStr | None = Field(frozen=True)
+    token: SecretStr | None = Field(default= None, frozen=True)
     user_id: str | None = Field(default=None, frozen=True)
 
     model_config = {
@@ -29,6 +29,7 @@ class ProviderToken(BaseModel):
         'validate_assignment': True,
     }
 
+    
     @classmethod
     def from_value(cls, token_value: Union[str, "ProviderToken", SecretStr, Dict[str, str]]) -> "ProviderToken":
         """Factory method to create a ProviderToken from various input types"""
@@ -50,12 +51,12 @@ class ProviderToken(BaseModel):
             raise ValueError(f'Invalid token type: {type(token_value)}')
 
 
-PROVIDER_TOKEN_TYPE = Dict[ProviderType, ProviderToken]
-CUSTOM_SECRETS_TYPE = Dict[str, SecretStr]
+PROVIDER_TOKEN_TYPE = dict[ProviderType, ProviderToken]
+CUSTOM_SECRETS_TYPE = dict[str, SecretStr]
 
 
 class SecretStore(BaseModel):
-    provider_tokens: Mapping[ProviderType, ProviderToken] = Field(default_factory=dict, frozen=True)
+    provider_tokens: PROVIDER_TOKEN_TYPE = Field(default_factory=dict, frozen=True)
 
     model_config = {
         'frozen': True,
@@ -63,7 +64,7 @@ class SecretStore(BaseModel):
     }
 
     @classmethod
-    def create(cls, tokens: Dict[ProviderType, Union[ProviderToken, str, SecretStr, Dict[str, str]]] | None = None) -> "SecretStore":
+    def create(cls, tokens: dict[ProviderType, Union[ProviderToken, str, SecretStr, dict[str, str]]] | None = None) -> "SecretStore":
         """Factory method to create a new SecretStore with converted tokens"""
         if not tokens:
             return cls()
