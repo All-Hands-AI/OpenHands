@@ -38,8 +38,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Generate Python Docs
-        run: rm -rf docs/modules/python && pip install pydoc-markdown && pydoc-markdown
       - name: Install dependencies
         run: cd docs && npm ci
       - name: Build website

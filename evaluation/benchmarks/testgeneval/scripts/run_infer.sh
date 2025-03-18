@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 set -eo pipefail
 
 source "evaluation/utils/version_control.sh"
@@ -12,6 +12,7 @@ NUM_WORKERS=$6
 DATASET=$7
 SPLIT=$8
 N_RUNS=$9
+ZERO_SHOT_PATH=${10}  # New argument for zero-shot path
 
 if [ -z "$NUM_WORKERS" ]; then
   NUM_WORKERS=1
@@ -25,8 +26,13 @@ if [ -z "$AGENT" ]; then
 fi
 
 if [ -z "$MAX_ITER" ]; then
-  echo "MAX_ITER not specified, use default 60"
-  MAX_ITER=60
+  echo "MAX_ITER not specified, use default 100"
+  MAX_ITER=100
+fi
+
+if [ -z "$USE_INSTANCE_IMAGE" ]; then
+  echo "USE_INSTANCE_IMAGE not specified, use default true"
+  USE_INSTANCE_IMAGE=true
 fi
 
 if [ -z "$RUN_WITH_BROWSING" ]; then
@@ -45,6 +51,8 @@ if [ -z "$SPLIT" ]; then
   SPLIT="test"
 fi
 
+export USE_INSTANCE_IMAGE=$USE_INSTANCE_IMAGE
+echo "USE_INSTANCE_IMAGE: $USE_INSTANCE_IMAGE"
 export RUN_WITH_BROWSING=$RUN_WITH_BROWSING
 echo "RUN_WITH_BROWSING: $RUN_WITH_BROWSING"
 
@@ -77,7 +85,7 @@ fi
 
 function run_eval() {
   local eval_note=$1
-  COMMAND="poetry run python evaluation/benchmarks/swe_bench/run_infer.py \
+  COMMAND="poetry run python evaluation/benchmarks/testgeneval/run_infer.py \
     --agent-cls $AGENT \
     --llm-config $MODEL_CONFIG \
     --max-iterations $MAX_ITER \
@@ -91,7 +99,11 @@ function run_eval() {
     COMMAND="$COMMAND --eval-n-limit $EVAL_LIMIT"
   fi
 
-  # Run the command
+  if [ -n "$ZERO_SHOT_PATH" ]; then
+    echo "ZERO_SHOT_PATH: $ZERO_SHOT_PATH"
+    COMMAND="$COMMAND --testfile_start --zero_shot_path $ZERO_SHOT_PATH"
+  fi
+
   eval $COMMAND
 }
 
@@ -101,14 +113,7 @@ if [ -z "$N_RUNS" ]; then
   echo "N_RUNS not specified, use default $N_RUNS"
 fi
 
-# Skip runs if the run number is in the SKIP_RUNS list
-# read from env variable SKIP_RUNS as a comma separated list of run numbers
-SKIP_RUNS=(${SKIP_RUNS//,/ })
 for i in $(seq 1 $N_RUNS); do
-  if [[ " ${SKIP_RUNS[@]} " =~ " $i " ]]; then
-    echo "Skipping run $i"
-    continue
-  fi
   current_eval_note="$EVAL_NOTE-run_$i"
   echo "EVAL_NOTE: $current_eval_note"
   run_eval $current_eval_note
