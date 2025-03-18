@@ -182,7 +182,11 @@ class ConversationMemory:
             tool call results are available.
         """
         # create a regular message from an event
-        if isinstance(
+        if isinstance(action, AgentCondensationAction):
+            # For condensation actions, create a message with the summary
+            text = truncate_content(action.summary, 10000)  # Use a reasonable max length
+            return [Message(role='user', content=[TextContent(text=text)])]
+        elif isinstance(
             action,
             (
                 AgentDelegateAction,
@@ -384,21 +388,10 @@ class ConversationMemory:
             text += '\n[Last action has been rejected by the user]'
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, AgentCondensationObservation):
-            # Find the corresponding AgentCondensationAction in history
-            if events:
-                for event in events:
-                    if isinstance(event, AgentCondensationAction):
-                        text = truncate_content(event.summary, max_message_chars)
-                        message = Message(role='user', content=[TextContent(text=text)])
-                        break
-                else:
-                    # Fallback to observation if action not found (should not happen)
-                    text = truncate_content(obs.content, max_message_chars)
-                    message = Message(role='user', content=[TextContent(text=text)])
-            else:
-                # If events is None, fallback to observation content
-                text = truncate_content(obs.content, max_message_chars)
-                message = Message(role='user', content=[TextContent(text=text)])
+            # This case should no longer occur as we've removed the creation of AgentCondensationObservation
+            # But keeping it for backward compatibility
+            text = truncate_content(obs.content, max_message_chars)
+            message = Message(role='user', content=[TextContent(text=text)])
         elif (
             isinstance(obs, RecallObservation)
             and self.agent_config.enable_prompt_extensions

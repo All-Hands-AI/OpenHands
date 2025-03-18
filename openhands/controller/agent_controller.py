@@ -1025,8 +1025,10 @@ class AgentController:
 
         # Add an error event to trigger another step by the agent
         self.event_stream.add_event(
-            AgentCondensationObservation(
-                content='Trimming prompt to meet context window limitations'
+            AgentCondensationAction(
+                start_id=self.state.start_id,
+                end_id=self.state.history[-1].id if self.state.history else self.state.start_id,
+                summary='Trimming prompt to meet context window limitations'
             ),
             EventSource.AGENT,
         )
