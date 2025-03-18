@@ -81,10 +81,14 @@ def test_settings_handles_sensitive_data():
         llm_api_key='test-key',
         llm_base_url='https://test.example.com',
         remote_runtime_resource_factor=2,
-        secrets_store=SecretStore(provider_tokens={ProviderType.GITHUB: ProviderToken(
-            token=SecretStr('test-token'),
-            user_id=None,
-        )})
+        secrets_store=SecretStore(
+            provider_tokens={
+                ProviderType.GITHUB: ProviderToken(
+                    token=SecretStr('test-token'),
+                    user_id=None,
+                )
+            }
+        ),
     )
 
     assert str(settings.llm_api_key) == '**********'
