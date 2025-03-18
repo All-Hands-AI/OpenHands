@@ -6,11 +6,10 @@ import numpy as np
 from fuzzywuzzy import fuzz
 from rouge import Rouge
 
-
-
 # increase recursion depth to ensure ROUGE can be calculated for long sentences
 if sys.getrecursionlimit() < 10_000:
     sys.setrecursionlimit(10_000)
+
 
 def bleu(gold: List[str], pred: List[str]) -> float:
     """
@@ -39,7 +38,7 @@ def batch_bleu(golds: List[List[str]], preds: List[List[str]]) -> List[float]:
     :return: list of BLEU scores
     """
     if len(golds) != len(preds):
-        raise ValueError("golds and preds must have the same length")
+        raise ValueError('golds and preds must have the same length')
     return [bleu(gold, pred) for gold, pred in zip(golds, preds)]
 
 
@@ -52,7 +51,7 @@ def corpus_bleu(golds: List[List[str]], preds: List[List[str]]) -> float:
     :return: corpus-level BLEU score
     """
     if len(golds) != len(preds):
-        raise ValueError("golds and preds must have the same length")
+        raise ValueError('golds and preds must have the same length')
     return 100.0 * nltk.translate.bleu_score.corpus_bleu(
         [[gold] for gold in golds],
         preds,
@@ -62,7 +61,7 @@ def corpus_bleu(golds: List[List[str]], preds: List[List[str]]) -> float:
 
 
 def edit_sim(
-    gold: Union[str, List[str]], pred: Union[str, List[str]], sep: str = " "
+    gold: Union[str, List[str]], pred: Union[str, List[str]], sep: str = ' '
 ) -> float:
     """
     Calculate char-level edit similarity, in the range of 0~100.
@@ -84,7 +83,7 @@ def edit_sim(
 def batch_edit_sim(
     golds: List[Union[str, List[str]]],
     preds: List[Union[str, List[str]]],
-    sep: str = " ",
+    sep: str = ' ',
 ) -> List[float]:
     """
     Calculate char-level edit similarity for a batch of sentences.
@@ -95,11 +94,11 @@ def batch_edit_sim(
     :return: list of char-level edit similarity
     """
     if len(golds) != len(preds):
-        raise ValueError("golds and preds must have the same length")
+        raise ValueError('golds and preds must have the same length')
     return [edit_sim(gold, pred, sep) for gold, pred in zip(golds, preds)]
 
 
-T = TypeVar("T")
+T = TypeVar('T')
 
 
 def exact_match(gold: T, pred: T) -> float:
@@ -124,12 +123,12 @@ def batch_exact_match(golds: List[T], preds: List[T]) -> List[float]:
     :return: list of exact match accuracy
     """
     if len(golds) != len(preds):
-        raise ValueError("golds and preds must have the same length")
+        raise ValueError('golds and preds must have the same length')
     return [exact_match(gold, pred) for gold, pred in zip(golds, preds)]
 
 
 def rouge_l(
-    gold: Union[str, List[str]], pred: Union[str, List[str]], sep: str = " "
+    gold: Union[str, List[str]], pred: Union[str, List[str]], sep: str = ' '
 ) -> Dict[str, float]:
     """
     Calculate ROUGE-L F1, precision, and recall scores, in the range of 0~100.
@@ -139,7 +138,7 @@ def rouge_l(
     :return: {"p": precision, "r": recall, "f": F1}
     """
     if len(pred) == 0 or len(gold) == 0:
-        return {"p": 0.0, "r": 0.0, "f": 0.0}
+        return {'p': 0.0, 'r': 0.0, 'f': 0.0}
     if isinstance(gold, list):
         gold = sep.join(gold)
     if isinstance(pred, list):
@@ -147,15 +146,15 @@ def rouge_l(
     try:
         rouge = Rouge()
         scores = rouge.get_scores(hyps=pred, refs=gold, avg=True)
-        return {x: scores["rouge-l"][x] * 100.0 for x in ["p", "r", "f"]}
+        return {x: scores['rouge-l'][x] * 100.0 for x in ['p', 'r', 'f']}
     except ValueError:
-        return {"p": 0.0, "r": 0.0, "f": 0.0}
+        return {'p': 0.0, 'r': 0.0, 'f': 0.0}
 
 
 def batch_rouge_l(
     golds: List[Union[str, List[str]]],
     preds: List[Union[str, List[str]]],
-    sep: str = " ",
+    sep: str = ' ',
 ) -> Dict[str, List[float]]:
     """
     Calculate ROUGE-L F1, precision, and recall scores for a batch of sentences.
@@ -166,9 +165,9 @@ def batch_rouge_l(
     :return: list of {"p": precision, "r": recall, "f": F1}
     """
     if len(golds) != len(preds):
-        raise ValueError("golds and preds must have the same length")
+        raise ValueError('golds and preds must have the same length')
     scores = [rouge_l(gold, pred, sep) for gold, pred in zip(golds, preds)]
-    return {x: [score[x] for score in scores] for x in ["p", "r", "f"]}
+    return {x: [score[x] for score in scores] for x in ['p', 'r', 'f']}
 
 
 def accuracy(
@@ -220,7 +219,7 @@ def batch_accuracy(
     :return: list of accuracy
     """
     if len(golds) != len(preds):
-        raise ValueError("golds and preds must have the same length")
+        raise ValueError('golds and preds must have the same length')
     return [accuracy(gold, pred, ignore) for gold, pred in zip(golds, preds)]
 
 
@@ -274,7 +273,7 @@ def self_bleu(samples: List[List[str]]) -> float:
     return np.mean(scores).item()
 
 
-def self_edit_distance(samples: List[Union[str, List[str]]], sep=" ") -> float:
+def self_edit_distance(samples: List[Union[str, List[str]]], sep=' ') -> float:
     """
     Calculate self-edit-distance among the samples.
     :param samples: the chosen m samples
@@ -300,12 +299,11 @@ def self_edit_distance(samples: List[Union[str, List[str]]], sep=" ") -> float:
     return np.mean(scores).item()
 
 
-
 QUALITY_METRICS: Dict[str, Callable[[List[str], List[str]], float]] = {
-    "bleu": bleu,
-    "xmatch": exact_match,
-    "edit-sim": edit_sim,
-    "rouge-f": lambda g, p: rouge_l(g, p)["f"],
-    "rouge-p": lambda g, p: rouge_l(g, p)["p"],
-    "rouge-r": lambda g, p: rouge_l(g, p)["r"],
+    'bleu': bleu,
+    'xmatch': exact_match,
+    'edit-sim': edit_sim,
+    'rouge-f': lambda g, p: rouge_l(g, p)['f'],
+    'rouge-p': lambda g, p: rouge_l(g, p)['p'],
+    'rouge-r': lambda g, p: rouge_l(g, p)['r'],
 }
