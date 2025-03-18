@@ -227,4 +227,3 @@ def test_token_conversion():
     )
 
     assert len(store6.provider_tokens.keys()) == 0
-    
