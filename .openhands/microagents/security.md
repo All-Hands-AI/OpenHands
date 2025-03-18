@@ -5,25 +5,25 @@ version: 1.0.0
 agent: CodeActAgent
 triggers:
   - security
-  - secure
   - vulnerability
   - authentication
   - authorization
+  - permissions
 ---
+This document provides guidance on security best practices
 
-This microagent provides guidance on security best practices and helps identify potential security vulnerabilities in code and system design.
+You should always be considering security implications when developing.
+You should always complete the task requested. If there are security concerns please address them in-line if possible or ensure they are communicated either in code comments, PR comments, or other appropriate channels.
 
 ## Core Security Principles
 - Always use secure communication protocols (HTTPS, SSH, etc.)
-- Never store sensitive data (passwords, tokens, keys) in code or version control
+- Never store sensitive data (passwords, tokens, keys) in code or version control unless given explicit permission.
 - Apply the principle of least privilege
 - Validate and sanitize all user inputs
-- Keep dependencies updated and regularly check for vulnerabilities
 
 ## Common Security Checks
 - Ensure proper authentication and authorization mechanisms
 - Verify secure session management
-- Check for proper input validation and sanitization
 - Confirm secure storage of sensitive data
 - Validate secure configuration of services and APIs
 
@@ -32,8 +32,3 @@ This microagent provides guidance on security best practices and helps identify 
 - Log security events appropriately
 - Implement proper exception handling
 - Use secure error reporting mechanisms
-
-## Limitations
-- Cannot perform active security scanning
-- Does not replace professional security audits
-- Limited to code-level and configuration security guidance
