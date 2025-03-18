@@ -9,6 +9,7 @@ from openhands.events.action import (
     FileReadAction,
     FileWriteAction,
     MessageAction,
+    RecallAction,
 )
 from openhands.events.action.action import ActionConfirmationStatus
 from openhands.events.action.files import FileEditSource, FileReadSource
@@ -354,6 +355,18 @@ def test_file_ohaci_edit_action_legacy_serialization():
     assert event_dict['args']['content'] == ''
     assert event_dict['args']['start'] == 1
     assert event_dict['args']['end'] == -1
+
+
+def test_agent_microagent_action_serialization_deserialization():
+    original_action_dict = {
+        'action': 'recall',
+        'args': {
+            'query': 'What is the capital of France?',
+            'thought': 'I need to find information about France',
+            'recall_type': 'knowledge',
+        },
+    }
+    serialization_deserialization(original_action_dict, RecallAction)
 
 
 def test_file_read_action_legacy_serialization():
