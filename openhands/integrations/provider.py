@@ -21,7 +21,7 @@ class ProviderType(Enum):
 
 
 class ProviderToken(BaseModel):
-    token: SecretStr | None = Field(default= None, frozen=True)
+    token: SecretStr | None = Field(default=None, frozen=True)
     user_id: str | None = Field(default=None, frozen=True)
 
     model_config = {
@@ -29,7 +29,6 @@ class ProviderToken(BaseModel):
         'validate_assignment': True,
     }
 
-    
     @classmethod
     def from_value(cls, token_value: ProviderToken | dict[str, str]) -> ProviderToken:
         """Factory method to create a ProviderToken from various input types"""
@@ -38,10 +37,10 @@ class ProviderToken(BaseModel):
         elif isinstance(token_value, dict):
             token_str = token_value.get('token')
             user_id = token_value.get('user_id')
-            return cls(
-                token=SecretStr(token_str),
-                user_id=user_id
-            )
+            return cls(token=SecretStr(token_str), user_id=user_id)
+
+        else:
+            raise ValueError('Unsupport Provider token type')
 
 
 PROVIDER_TOKEN_TYPE = dict[ProviderType, ProviderToken]
@@ -57,7 +56,9 @@ class SecretStore(BaseModel):
     }
 
     @classmethod
-    def create(cls, tokens: PROVIDER_TOKEN_TYPE | dict[str, dict[str, str]] | None = None) -> SecretStore:
+    def create(
+        cls, tokens: PROVIDER_TOKEN_TYPE | dict[str, dict[str, str]] | None = None
+    ) -> SecretStore:
         """Factory method to create a new SecretStore with converted tokens"""
         if not tokens:
             return cls()
@@ -72,7 +73,7 @@ class SecretStore(BaseModel):
                 except ValueError:
                     # Skip invalid provider types or tokens
                     continue
-        
+
         # Convert to immutable mapping
         return cls(provider_tokens=converted_tokens)
 

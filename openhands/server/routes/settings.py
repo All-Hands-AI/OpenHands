@@ -26,12 +26,11 @@ async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
 
         github_token_is_set = bool(user_id) or bool(get_provider_tokens(request))
         settings_with_token_data = GETSettingsModel(
-            **settings.model_dump(),
+            **settings.model_dump(exclude='secrets_store'),
             github_token_is_set=github_token_is_set,
         )
-        settings_with_token_data.llm_api_key = settings.llm_api_key
 
-        del settings_with_token_data.secrets_store
+        settings_with_token_data.llm_api_key = settings.llm_api_key
         return settings_with_token_data
     except Exception as e:
         logger.warning(f'Invalid token: {e}')
@@ -92,7 +91,7 @@ async def store_settings(
 
             # Handle token updates immutably
             if settings.unset_github_token:
-                settings.secrets_store = SecretStore()
+                settings = settings.model_copy(update={"secrets_store": SecretStore()})
 
             else:  # Only merge if not unsetting tokens
                 if settings.provider_tokens:
@@ -171,8 +170,8 @@ def convert_to_settings(settings_with_token_data: POSTSettingsModel) -> Settings
                 )
         
         # Create new SecretStore with tokens
-        settings.secrets_store = SecretStore(
+        settings = settings.model_copy(update={"secrets_store": SecretStore(
             provider_tokens=tokens
-        )
+        )})
 
     return settings
