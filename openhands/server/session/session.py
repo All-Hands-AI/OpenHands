@@ -105,7 +105,8 @@ class Session:
         )
         self.config.sandbox.runtime_container_image = (
             settings.sandbox_runtime_container_image
-            if settings.sandbox_base_container_image 
+            if settings.sandbox_base_container_image
+            or settings.sandbox_runtime_container_image
             else self.config.sandbox.runtime_container_image
         )
         max_iterations = settings.max_iterations or self.config.max_iterations
