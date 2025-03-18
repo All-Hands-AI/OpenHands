@@ -212,7 +212,7 @@ def search(action: SearchAction):
         )
 
     BRAVE_SEARCH_URL = os.environ.get(
-        'SANDBOX_ENV_BRAVE_API_URL', 'https://api.search.brave.com/res/v1/web/search'
+                'BRAVE_API_URL', 'https://api.search.brave.com/res/v1/web/search'
     )
 
     API_KEY = os.environ.get('SANDBOX_ENV_BRAVE_API_KEY', None)
