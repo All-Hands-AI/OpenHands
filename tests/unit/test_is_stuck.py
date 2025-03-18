@@ -8,13 +8,12 @@ from openhands.controller.agent_controller import AgentController
 from openhands.controller.state.state import State
 from openhands.controller.stuck import StuckDetector
 from openhands.events.action import CmdRunAction, FileReadAction, MessageAction
+from openhands.events.action.agent import AgentCondensationAction
 from openhands.events.action.commands import IPythonRunCellAction
 from openhands.events.observation import (
     CmdOutputObservation,
     FileReadObservation,
 )
-from openhands.events.action.agent import AgentCondensationAction
-from openhands.events.observation.agent import AgentCondensationObservation
 from openhands.events.observation.commands import IPythonRunCellObservation
 from openhands.events.observation.empty import NullObservation
 from openhands.events.observation.error import ErrorObservation
@@ -618,9 +617,9 @@ class TestStuckDetector:
         # Add ten consecutive condensation events (should detect as stuck)
         for _ in range(10):
             condensation = AgentCondensationAction(
-                start_id=0, 
-                end_id=0, 
-                summary='Trimming prompt to meet context window limitations'
+                start_id=0,
+                end_id=0,
+                summary='Trimming prompt to meet context window limitations',
             )
             state.history.append(condensation)
 
@@ -645,9 +644,9 @@ class TestStuckDetector:
         for i in range(10):
             # Add a condensation event
             condensation = AgentCondensationAction(
-                start_id=0, 
-                end_id=0, 
-                summary='Trimming prompt to meet context window limitations'
+                start_id=0,
+                end_id=0,
+                summary='Trimming prompt to meet context window limitations',
             )
             state.history.append(condensation)
 
@@ -688,9 +687,9 @@ class TestStuckDetector:
         # Add only nine condensation events (should not detect as stuck)
         for _ in range(9):
             condensation = AgentCondensationAction(
-                start_id=0, 
-                end_id=0, 
-                summary='Trimming prompt to meet context window limitations'
+                start_id=0,
+                end_id=0,
+                summary='Trimming prompt to meet context window limitations',
             )
             state.history.append(condensation)
 
@@ -717,9 +716,9 @@ class TestStuckDetector:
         for i in range(10):
             # Add a condensation event
             condensation = AgentCondensationAction(
-                start_id=0, 
-                end_id=0, 
-                summary='Trimming prompt to meet context window limitations'
+                start_id=0,
+                end_id=0,
+                summary='Trimming prompt to meet context window limitations',
             )
             state.history.append(condensation)
 
@@ -750,9 +749,9 @@ class TestStuckDetector:
         # Add condensation events first
         for _ in range(10):
             condensation = AgentCondensationAction(
-                start_id=0, 
-                end_id=0, 
-                summary='Trimming prompt to meet context window limitations'
+                start_id=0,
+                end_id=0,
+                summary='Trimming prompt to meet context window limitations',
             )
             state.history.append(condensation)
 

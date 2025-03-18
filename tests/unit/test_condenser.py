@@ -341,7 +341,7 @@ def test_llm_summarizing_condenser_forgets_and_summarizes(mock_llm, mock_state):
     assert (
         results[0] == first_event
     ), f'First event should be {first_event}, got {results[0]}'
-    
+
     # Check for AgentCondensationAction
     assert isinstance(
         results[1], AgentCondensationAction
@@ -349,15 +349,15 @@ def test_llm_summarizing_condenser_forgets_and_summarizes(mock_llm, mock_state):
     assert (
         results[1].summary == 'Summary of forgotten events'
     ), f"Summary content should be 'Summary of forgotten events', got {results[1].summary}"
-    
+
     # Check for AgentCondensationObservation (should be empty)
     assert isinstance(
         results[2], AgentCondensationObservation
     ), f'Third event should be a condensation observation, got {results[2]}'
     assert (
         results[2].content == ''
-    ), f"Observation content should be empty, got {results[2].content}"
-    
+    ), f'Observation content should be empty, got {results[2].content}'
+
     assert results[3] == event, f'Last event should be {event}, got {results[3]}'
 
 

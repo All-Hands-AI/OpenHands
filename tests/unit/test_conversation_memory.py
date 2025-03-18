@@ -1067,20 +1067,30 @@ def test_process_events_with_agent_condensation_action(agent_config):
         end_id=5,
         summary='This is condensed content',
     )
-    
+
     # Create some events to process
     events = [
-        Event(id=1, source=EventSource.AGENT, action=MessageAction(content='Message 1')),
-        Event(id=2, source=EventSource.AGENT, action=MessageAction(content='Message 2')),
-        Event(id=3, source=EventSource.AGENT, action=MessageAction(content='Message 3')),
-        Event(id=4, source=EventSource.AGENT, action=MessageAction(content='Message 4')),
-        Event(id=5, source=EventSource.AGENT, action=MessageAction(content='Message 5')),
+        Event(
+            id=1, source=EventSource.AGENT, action=MessageAction(content='Message 1')
+        ),
+        Event(
+            id=2, source=EventSource.AGENT, action=MessageAction(content='Message 2')
+        ),
+        Event(
+            id=3, source=EventSource.AGENT, action=MessageAction(content='Message 3')
+        ),
+        Event(
+            id=4, source=EventSource.AGENT, action=MessageAction(content='Message 4')
+        ),
+        Event(
+            id=5, source=EventSource.AGENT, action=MessageAction(content='Message 5')
+        ),
         Event(id=6, source=EventSource.AGENT, action=condensation_action),
     ]
-    
+
     # Process the events
     memory.process_events(events)
-    
+
     # Check that the condensation action was processed correctly
     assert len(memory.events) == 2  # The condensation action and the event after it
     assert memory.events[0].action.summary == 'This is condensed content'
