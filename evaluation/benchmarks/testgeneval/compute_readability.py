@@ -1,8 +1,4 @@
 import math
-import os
-from pathlib import Path
-
-from tree_sitter import Language, Parser
 
 
 def total_byte_entropy_stats(python_code):
@@ -324,8 +320,8 @@ def compute_regression(results):
 def compute_readability(python_code):
     # Create parser and set up language
     import tree_sitter_python
-    from tree_sitter import Parser, Language
-    
+    from tree_sitter import Language, Parser
+
     parser = Parser(Language(tree_sitter_python.language()))
 
     results = code_stats(python_code)
