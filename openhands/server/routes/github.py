@@ -65,9 +65,7 @@ async def get_github_user(
     access_token: SecretStr | None = Depends(get_access_token),
 ):
     if provider_tokens:
-        client = ProviderHandler(
-            provider_tokens=provider_tokens, external_auth_token=access_token
-        )
+        client = ProviderHandler(provider_tokens=provider_tokens, external_auth_token=access_token)
 
         try:
             user: User = await client.get_user()
@@ -166,7 +164,7 @@ async def search_github_repositories(
 @app.get('/suggested-tasks', response_model=list[SuggestedTask])
 async def get_suggested_tasks(
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
-    access_token: SecretStr | None = Depends(get_access_token),
+    access_token: SecretStr | None = Depends(get_access_token)
 ):
     """Get suggested tasks for the authenticated user across their most recently pushed repositories.
 

@@ -91,7 +91,7 @@ async def store_settings(
 
             # Handle token updates immutably
             if settings.unset_github_token:
-                settings = settings.model_copy(update={'secrets_store': SecretStore()})
+                settings = settings.model_copy(update={"secrets_store": SecretStore()})
 
             else:  # Only merge if not unsetting tokens
                 if settings.provider_tokens:
@@ -168,10 +168,10 @@ def convert_to_settings(settings_with_token_data: POSTSettingsModel) -> Settings
                 tokens[provider] = ProviderToken(
                     token=SecretStr(token_value), user_id=None
                 )
-
+        
         # Create new SecretStore with tokens
-        settings = settings.model_copy(
-            update={'secrets_store': SecretStore(provider_tokens=tokens)}
-        )
+        settings = settings.model_copy(update={"secrets_store": SecretStore(
+            provider_tokens=tokens
+        )})
 
     return settings

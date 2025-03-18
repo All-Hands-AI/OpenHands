@@ -90,7 +90,9 @@ if __name__ == '__main__':
                 break
 
     # print the error counter (with percentage)
-    print(f'Average coverage for {num_lines} ({coverage / num_lines * 100:.2f}%)')
+    print(
+        f'Average coverage for {num_lines} ({coverage / num_lines * 100:.2f}%)'
+    )
     print(
         f'Average mutation score for {num_lines} ({mutation_score / num_lines * 100:.2f}%)'
     )

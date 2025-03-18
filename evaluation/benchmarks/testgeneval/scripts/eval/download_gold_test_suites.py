@@ -20,8 +20,7 @@ print(
     f'Downloading gold test suites from {args.dataset_name} (split: {args.split}) to {output_filepath}'
 )
 test_suites = [
-    {'instance_id': row['instance_id'], 'test_suite': row['test_src']}
-    for row in dataset
+    {'instance_id': row['instance_id'], 'test_suite': row['test_src']} for row in dataset
 ]
 print(f'{len(test_suites)} test suites loaded')
 pd.DataFrame(test_suites).to_json(output_filepath, lines=True, orient='records')

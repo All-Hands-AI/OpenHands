@@ -8,6 +8,7 @@ import os
 import pandas as pd
 from tqdm import tqdm
 
+from evaluation.testgeneval.eval_infer import process_test_suite
 from openhands.events.serialization import event_from_dict
 
 tqdm.pandas()
