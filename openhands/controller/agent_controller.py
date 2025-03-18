@@ -1032,7 +1032,7 @@ class AgentController:
     def _apply_conversation_window(self, events: list[Event]) -> list[Event]:
         """Cuts history roughly in half when context window is exceeded.
 
-        Preserving action-observation pairs and ensuring the first user message is always included.
+        It preserves action-observation pairs and ensures that the first user message is always included.
 
         The algorithm:
         1. Cut history in half
