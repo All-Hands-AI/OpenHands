@@ -50,17 +50,7 @@ This will start the application in development mode. Open [http://localhost:3001
 
 ### Running the Application with the Actual Backend (Production Mode)
 
-There are two ways to run the application with the actual backend:
-
-```sh
-# Build the application from the root directory
-make build
-
-# Start the application
-make start
-```
-
-OR
+To run the application with the actual backend:
 
 ```sh
 # Start the backend from the root directory
