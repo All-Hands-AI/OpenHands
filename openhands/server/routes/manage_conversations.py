@@ -48,7 +48,7 @@ class InitSessionRequest(BaseModel):
 
 async def _create_new_conversation(
     user_id: str | None,
-    provider_tokens: PROVIDER_TOKEN_TYPE,
+    provider_tokens: PROVIDER_TOKEN_TYPE | None,
     selected_repository: str | None,
     selected_branch: str | None,
     initial_user_msg: str | None,
@@ -151,24 +151,6 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     """
     logger.info('Initializing new conversation')
     provider_tokens = get_provider_tokens(request)
-
-    if not provider_tokens or ProviderType.GITHUB not in provider_tokens:
-        raise MissingSettingsError('Require git provider tokens')
-
-    if not provider_tokens[ProviderType.GITHUB].token:
-        token = provider_tokens[ProviderType.GITHUB]
-        user_id = token.user_id
-        gh_client = GithubServiceImpl(
-            user_id=user_id,
-            external_auth_token=get_access_token(request),
-            token=token.token,
-        )
-        github_token = await gh_client.get_latest_token()
-        provider_tokens[ProviderType.GITHUB] = ProviderToken(
-            user_id=user_id,
-            token=github_token,
-        )
-
     selected_repository = data.selected_repository
     selected_branch = data.selected_branch
     initial_user_msg = data.initial_user_msg
