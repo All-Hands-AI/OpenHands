@@ -143,7 +143,6 @@ class ProviderHandler:
             ProviderType.GITLAB: GitLabServiceImpl,
         }
 
-
         self.external_auth_id = external_auth_id
         self.external_auth_token = external_auth_token
         self.external_token_manager = external_token_manager

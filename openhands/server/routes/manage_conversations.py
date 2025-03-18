@@ -7,15 +7,11 @@ from pydantic import BaseModel
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.message import MessageAction
-from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
-    ProviderToken,
-    ProviderType,
 )
 from openhands.runtime import get_runtime_cls
 from openhands.server.auth import (
-    get_access_token,
     get_github_user_id,
     get_provider_tokens,
     get_user_id,

@@ -1,7 +1,8 @@
 import asyncio
 import time
 from logging import LoggerAdapter
-from typing import Callable
+from types import MappingProxyType
+from typing import Callable, cast
 
 from openhands.controller import AgentController
 from openhands.controller.agent import Agent
@@ -230,7 +231,7 @@ class AgentSession:
         self.logger.debug(f'Initializing runtime `{runtime_name}` now...')
         runtime_cls = get_runtime_cls(runtime_name)
 
-        provider_handler = ProviderHandler(provider_tokens or {})
+        provider_handler = ProviderHandler(provider_tokens or cast(PROVIDER_TOKEN_TYPE, MappingProxyType({})))
         raw_env_vars: dict[str, str] = await provider_handler.get_env_vars(expose_secrets=True, 
                                                                            get_latest=True)
     
