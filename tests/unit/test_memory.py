@@ -315,8 +315,8 @@ async def test_agent_controller_processes_null_observation_with_cause():
     file_store = InMemoryFileStore()
     event_stream = EventStream(sid='test-session', file_store=file_store)
 
-    # Create a Memory instance
-    memory = Memory(event_stream=event_stream, sid='test-session')
+    # Create a Memory instance - not used directly in this test but needed for setup
+    Memory(event_stream=event_stream, sid='test-session')
 
     # Create a mock agent with necessary attributes
     mock_agent = MagicMock(spec=Agent)
@@ -366,7 +366,6 @@ async def test_agent_controller_processes_null_observation_with_cause():
         # Find the RecallAction event (should be automatically created)
         recall_actions = [event for event in events if isinstance(event, RecallAction)]
         assert len(recall_actions) > 0, 'No RecallAction was created'
-        recall_action = recall_actions[0]
 
         # Find any NullObservation events
         null_obs_events = [
