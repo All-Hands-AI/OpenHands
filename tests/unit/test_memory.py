@@ -260,8 +260,3 @@ REPOSITORY INSTRUCTIONS: This is a test repository.
 
     # Clean up
     os.remove(os.path.join(prompt_dir, 'micro', f'{repo_microagent_name}.md'))
-
-
-
-
-
