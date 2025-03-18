@@ -39,7 +39,7 @@ class ProviderToken(BaseModel):
 
     @classmethod
     def from_value(cls, token_value: ProviderToken | dict[str, str]) -> ProviderToken:
-        """Factory method to create a ProviderToken from various input types"""
+        """Factory method to create a ProviderToken from various input types."""
         if isinstance(token_value, ProviderToken):
             return token_value
         elif isinstance(token_value, dict):
@@ -96,7 +96,7 @@ class SecretStore(BaseModel):
     def convert_dict_to_mappingproxy(
         cls, data: dict[str, dict[str, dict[str, str]]] | PROVIDER_TOKEN_TYPE
     ) -> dict[str, MappingProxyType]:
-        """Custom deserializer to convert dictionary into MappingProxyType"""
+        """Custom deserializer to convert dictionary into MappingProxyType."""
         if not isinstance(data, dict):
             raise ValueError('SecretStore must be initialized with a dictionary')
 
@@ -147,7 +147,7 @@ class ProviderHandler:
         return self._provider_tokens
 
     def _get_service(self, provider: ProviderType) -> GitService:
-        """Helper method to instantiate a service for a given provider"""
+        """Helper method to instantiate a service for a given provider."""
         token = self.provider_tokens[provider]
         service_class = self.service_class_map[provider]
         return service_class(
@@ -157,7 +157,7 @@ class ProviderHandler:
         )
 
     async def get_user(self) -> User:
-        """Get user information from the first available provider"""
+        """Get user information from the first available provider."""
         for provider in self.provider_tokens:
             try:
                 service = self._get_service(provider)
@@ -167,7 +167,7 @@ class ProviderHandler:
         raise AuthenticationError('Need valid provider token')
 
     async def get_latest_provider_tokens(self) -> dict[ProviderType, SecretStr]:
-        """Get latest token from services"""
+        """Get latest token from services."""
         tokens = {}
         for provider in self.provider_tokens:
             service = self._get_service(provider)
@@ -178,7 +178,7 @@ class ProviderHandler:
     async def get_repositories(
         self, page: int, per_page: int, sort: str, installation_id: int | None
     ) -> list[Repository]:
-        """Get repositories from all available providers"""
+        """Get repositories from all available providers."""
         all_repos = []
         for provider in self.provider_tokens:
             try:
