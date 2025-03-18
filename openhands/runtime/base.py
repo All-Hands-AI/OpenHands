@@ -138,6 +138,9 @@ class Runtime(FileEditRuntimeMixin):
         self.user_id = user_id
         self.provider_tokens = provider_tokens
 
+        # TODO: remove once done debugging expired github token
+        self.prev_token: SecretStr | None = None
+
     def setup_initial_env(self) -> None:
         if self.attach_to_existing:
             return
@@ -235,12 +238,35 @@ class Runtime(FileEditRuntimeMixin):
         provider_handler = ProviderHandler(
             provider_tokens=self.provider_tokens, external_token_manager=True
         )
+
+        logger.info(f'Fetching latest github token for runtime: {self.sid}')
         env_vars = await provider_handler.get_env_vars(
-            required_providers=providers_called, expose_secrets=True
+            required_providers=providers_called, expose_secrets=True, get_latest=True
         )
 
-        self.add_env_vars(env_vars)
-        ProviderHandler.set_event_stream_secrets(self.event_stream, env_vars)
+        if 'github_token' not in env_vars:
+            logger.error(f'Failed to refresh github token for runtime: {self.sid}')
+            return
+
+        raw_token = env_vars['github_token']
+        if not self.prev_token:
+            logger.info(
+                f'Setting github token in runtime: {self.sid}\nToken value: {raw_token[0:5]}; length: {len(raw_token)}'
+            )
+        elif self.prev_token.get_secret_value() != raw_token:
+            logger.info(
+                f'Setting new github token in runtime {self.sid}\nToken value: {raw_token[0:5]}; length: {len(raw_token)}'
+            )
+
+        self.prev_token = SecretStr(raw_token)
+
+        try:
+            self.add_env_vars(env_vars)
+            ProviderHandler.set_event_stream_secrets(self.event_stream, env_vars)
+        except Exception as e:
+            logger.warning(
+                f'Failed export latest github token to runtime: {self.sid}, {e}'
+            )
 
     async def _handle_action(self, event: Action) -> None:
         if event.timeout is None:
