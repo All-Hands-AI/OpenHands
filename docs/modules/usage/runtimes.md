@@ -64,7 +64,7 @@ but seems to work well on most systems.
 OpenHands Remote Runtime is currently in beta (read [here](https://runtime.all-hands.dev/) for more details), it allows you to launch runtimes in parallel in the cloud.
 Fill out [this form](https://docs.google.com/forms/d/e/1FAIpQLSckVz_JFwg2_mOxNZjCtr7aoBFI2Mwdan3f75J_TrdMS1JV2g/viewform) to apply if you want to try this out!
 
-NOTE: this runtime is specifically designed for evaluation purpose and you shouldn't launch OpenHands application with it.
+NOTE: This runtime is specifically designed for evaluation purposes only. It should not be used to launch production OpenHands applications.
 
 ## Modal Runtime
 Our partners at [Modal](https://modal.com/) have also provided a runtime for OpenHands.
