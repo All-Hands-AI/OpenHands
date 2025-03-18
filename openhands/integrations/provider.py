@@ -327,4 +327,4 @@ class ProviderHandler:
         """
         Map ProviderType value to the environment variable name in the runtime
         """
-        return f'${provider.value.upper()}_token'.lower()
+        return f'{provider.value.upper()}_token'.lower()
