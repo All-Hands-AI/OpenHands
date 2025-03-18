@@ -96,6 +96,7 @@ async def test_memory_on_workspace_context_recall_exception_handling(
     memory, event_stream
 ):
     """Test that exceptions in Memory._on_workspace_context_recall are properly handled via status callback."""
+
     # Create a dummy agent for the controller
     agent = MagicMock(spec=Agent)
     agent.llm = MagicMock(spec=LLM)
