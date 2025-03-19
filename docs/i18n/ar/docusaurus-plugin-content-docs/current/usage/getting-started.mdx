@@ -1,0 +1,170 @@
+# البدء مع OpenHands
+
+لقد قمت بـ[تشغيل OpenHands](./installation) و
+[إعداد LLM الخاص بك](./installation#setup). والآن ماذا؟
+
+يمكن أن يساعدك OpenHands في التعامل مع مجموعة واسعة من مهام الهندسة. لكن التكنولوجيا
+لا تزال جديدة، ونحن بعيدون عن امتلاك وكلاء يمكنهم تولي مهام هندسية كبيرة ومعقدة
+دون أي توجيه. لذلك من المهم الحصول على فكرة عما يقوم به الوكيل
+بشكل جيد، وأين قد يحتاج إلى بعض المساعدة.
+
+## مرحبًا بالعالم
+
+أول شيء قد ترغب في تجربته هو مثال بسيط "مرحبًا بالعالم".
+يمكن أن يكون هذا أكثر تعقيدًا مما يبدو!
+
+جرب توجيه الوكيل بـ:
+<div dir="ltr">
+
+> Please write a bash script hello.sh that prints "hello world!"
+
+</div>
+
+يجب أن ترى أن الوكيل لا يكتب البرنامج النصي فحسب، بل يضبط الأذونات الصحيحة
+ويقوم بتشغيل البرنامج النصي للتحقق من المخرجات.
+
+يمكنك الاستمرار في توجيه الوكيل لتحسين التعليمات البرمجية الخاصة بك. هذه طريقة رائعة للعمل
+مع الوكلاء. ابدأ ببساطة وكرر.
+
+<div dir="ltr">
+
+> Please modify hello.sh so that it accepts a name as the first argument, but defaults to "world"
+
+</div>
+
+يمكنك أيضًا العمل بأي لغة تحتاجها، على الرغم من أن الوكيل قد يحتاج إلى بعض الوقت
+لإعداد بيئته!
+
+<div dir="ltr">
+
+> Please convert hello.sh to a Ruby script, and run it
+
+</div>
+
+## البناء من الصفر
+
+يقوم الوكلاء بعمل استثنائي في مهام "المجال الأخضر" (المهام التي لا يحتاجون فيها
+إلى أي سياق حول قاعدة التعليمات البرمجية الموجودة) ويمكنهم فقط البدء من الصفر.
+
+من الأفضل البدء بمهمة بسيطة، ثم التكرار عليها. كما أنه من الأفضل أن تكون
+محددًا قدر الإمكان بشأن ما تريده، وما يجب أن تكون عليه مكدس التقنية، إلخ.
+
+على سبيل المثال، يمكننا بناء تطبيق TODO:
+
+<div dir="ltr">
+
+> Please build a basic TODO list app in React. It should be frontend-only, and all state
+> should be kept in localStorage.
+
+</div>
+
+يمكننا الاستمرار في التكرار على التطبيق بمجرد وجود الهيكل:
+
+<div dir="ltr">
+
+> Please allow adding an optional due date to every task.
+
+</div>
+
+تمامًا كما هو الحال مع التطوير العادي، من الجيد الالتزام ودفع التعليمات البرمجية الخاصة بك بشكل متكرر.
+بهذه الطريقة يمكنك دائمًا العودة إلى حالة قديمة إذا انحرف الوكيل عن المسار.
+يمكنك أن تطلب من الوكيل الالتزام والدفع نيابة عنك:
+
+<div dir="ltr">
+
+> Please commit the changes and push them to a new branch called "feature/due-dates"
+
+</div>
+
+## إضافة تعليمات برمجية جديدة
+
+يمكن لـ OpenHands أيضًا القيام بعمل رائع في إضافة تعليمات برمجية جديدة إلى قاعدة التعليمات البرمجية الموجودة.
+
+على سبيل المثال، يمكنك أن تطلب من OpenHands إضافة إجراء GitHub جديد إلى مشروعك
+والذي يقوم بتنظيف التعليمات البرمجية الخاصة بك. قد يلقي OpenHands نظرة على قاعدة التعليمات البرمجية الخاصة بك لمعرفة اللغة
+التي يجب استخدامها ثم إسقاط ملف جديد في `./github/workflows/lint.yml`.
+
+<div dir="ltr">
+
+> Please add a GitHub action that lints the code in this repository.
+
+</div>
+
+قد تتطلب بعض المهام سياقًا أكثر قليلاً. بينما يمكن لـ OpenHands استخدام `ls` و `grep`
+للبحث في قاعدة التعليمات البرمجية الخاصة بك، فإن توفير السياق مسبقًا يسمح له بالتحرك بشكل أسرع،
+وبدقة أكبر. وسيكلفك رموزًا أقل!
+
+<div dir="ltr">
+
+> Please modify ./backend/api/routes.js to add a new route that returns a list of all tasks.
+
+</div>
+
+<div dir="ltr">
+
+> Please add a new React component that displays a list of Widgets to the ./frontend/components
+> directory. It should use the existing Widget component.
+
+</div>
+
+## إعادة هيكلة
+
+يقوم OpenHands بعمل رائع في إعادة هيكلة التعليمات البرمجية الموجودة، خاصة في أجزاء صغيرة.
+ربما لا تريد محاولة إعادة هيكلة قاعدة التعليمات البرمجية بأكملها، ولكن تقسيم
+الملفات والوظائف الطويلة، وإعادة تسمية المتغيرات، وما إلى ذلك تميل إلى العمل بشكل جيد للغاية.
+
+<div dir="ltr">
+
+> Please rename all the single-letter variables in ./app.go.
+
+</div>
+
+<div dir="ltr">
+
+> Please break the function `build_and_deploy_widgets` into two functions, `build_widgets` and `deploy_widgets` in widget.php.
+
+</div>
+
+<div dir="ltr">
+
+> Please break ./api/routes.js into separate files for each route.
+
+</div>
+
+## إصلاح الأخطاء
+
+يمكن لـ OpenHands أيضًا مساعدتك في تتبع الأخطاء وإصلاحها في التعليمات البرمجية الخاصة بك. ولكن كما يعلم أي
+مطور، يمكن أن يكون إصلاح الأخطاء صعبًا للغاية، وغالبًا ما يحتاج OpenHands إلى سياق أكثر.
+يساعد إذا قمت بتشخيص الخطأ، ولكن تريد من OpenHands معرفة المنطق.
+
+<div dir="ltr">
+
+> Currently the email field in the `/subscribe` endpoint is rejecting .io domains. Please fix this.
+
+</div>
+
+<div dir="ltr">
+
+> The `search_widgets` function in ./app.py is doing a case-sensitive search. Please make it case-insensitive.
+
+</div>
+
+غالبًا ما يساعد القيام بالتطوير المدفوع بالاختبار عند إصلاح الأخطاء باستخدام وكيل.
+يمكنك أن تطلب من الوكيل كتابة اختبار جديد، ثم التكرار حتى يتم إصلاح الخطأ:
+
+<div dir="ltr">
+
+> The `hello` function crashes on the empty string. Please write a test that reproduces this bug, then fix the code so it passes.
+
+</div>
+
+## المزيد
+
+OpenHands قادر على المساعدة في أي مهمة برمجية تقريبًا ولكنه يتطلب بعض الممارسة
+للحصول على أقصى استفادة منه. تذكر أن:
+* حافظ على مهامك صغيرة.
+* كن محددًا قدر الإمكان.
+* قدم أكبر قدر ممكن من السياق.
+* قم بالالتزام والدفع بشكل متكرر.
+
+راجع [أفضل ممارسات التوجيه](./prompting/prompting-best-practices) للحصول على المزيد من النصائح حول كيفية الحصول على أقصى استفادة من OpenHands.

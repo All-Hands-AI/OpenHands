@@ -1,0 +1,111 @@
+# Primeros pasos con OpenHands
+
+Así que has [ejecutado OpenHands](./installation) y has 
+[configurado tu LLM](./installation#setup). ¿Y ahora qué?
+
+OpenHands puede ayudarte a abordar una amplia variedad de tareas de ingeniería. Pero la tecnología
+todavía es nueva, y estamos lejos de tener agentes que puedan asumir tareas de ingeniería grandes y complicadas
+sin ninguna orientación. Por lo que es importante tener una idea de lo que el agente
+hace bien, y dónde podría necesitar algo de ayuda.
+
+## Hola Mundo
+
+Lo primero que podrías querer probar es un simple ejemplo de "hola mundo".
+¡Esto puede ser más complicado de lo que parece!
+
+Intenta solicitar al agente con:
+> Por favor, escribe un script de bash hello.sh que imprima "¡hola mundo!"
+
+Deberías ver que el agente no solo escribe el script, sino que también establece los
+permisos correctos y ejecuta el script para verificar la salida.
+
+Puedes seguir solicitando al agente que refine tu código. Esta es una excelente manera de
+trabajar con agentes. Comienza de manera simple, e itera.
+
+> Por favor, modifica hello.sh para que acepte un nombre como primer argumento, pero que por defecto sea "mundo"
+
+También puedes trabajar en cualquier lenguaje que necesites, ¡aunque el agente podría necesitar algo de tiempo
+para configurar su entorno!
+
+> Por favor, convierte hello.sh a un script de Ruby, y ejecútalo
+
+## Construyendo desde cero
+
+Los agentes se desempeñan excepcionalmente bien en tareas "greenfield" (tareas donde no necesitan
+ningún contexto sobre una base de código existente) y pueden comenzar desde cero.
+
+Es mejor comenzar con una tarea simple, y luego iterar sobre ella. También es mejor ser
+lo más específico posible sobre lo que quieres, cuál debería ser el stack tecnológico, etc.
+
+Por ejemplo, podríamos construir una aplicación de tareas pendientes (TODO):
+
+> Por favor, construye una aplicación básica de lista de tareas pendientes en React. Debería ser solo frontend, y todo el estado
+> debería mantenerse en localStorage.
+
+Podemos seguir iterando en la aplicación una vez que el esqueleto esté ahí:
+
+> Por favor, permite agregar una fecha de vencimiento opcional a cada tarea.
+
+Al igual que con el desarrollo normal, es bueno hacer commit y push de tu código con frecuencia.
+De esta manera, siempre puedes revertir a un estado anterior si el agente se desvía.
+Puedes pedirle al agente que haga commit y push por ti:
+
+> Por favor, haz commit de los cambios y haz push a una nueva rama llamada "feature/due-dates"
+
+
+## Agregando nuevo código
+
+OpenHands también puede hacer un gran trabajo agregando nuevo código a una base de código existente.
+
+Por ejemplo, puedes pedirle a OpenHands que agregue una nueva acción de GitHub a tu proyecto
+que haga lint a tu código. OpenHands puede echar un vistazo a tu base de código para ver qué lenguaje
+debería usar y luego colocar un nuevo archivo en `./github/workflows/lint.yml`.
+
+> Por favor, agrega una acción de GitHub que haga lint al código en este repositorio.
+
+Algunas tareas podrían requerir un poco más de contexto. Si bien OpenHands puede usar `ls` y `grep`
+para buscar en tu base de código, proporcionar contexto por adelantado le permite moverse más rápido,
+y con mayor precisión. ¡Y te costará menos tokens!
+
+> Por favor, modifica ./backend/api/routes.js para agregar una nueva ruta que devuelva una lista de todas las tareas.
+
+> Por favor, agrega un nuevo componente de React que muestre una lista de Widgets en el directorio ./frontend/components. 
+> Debería usar el componente Widget existente.
+
+## Refactorización
+
+OpenHands se desempeña muy bien en la refactorización de código existente, especialmente en pequeñas porciones.
+Probablemente no quieras intentar rediseñar toda tu base de código, pero dividir
+archivos y funciones largas, renombrar variables, etc. tienden a funcionar muy bien.
+
+> Por favor, renombra todas las variables de una sola letra en ./app.go.
+
+> Por favor, divide la función `build_and_deploy_widgets` en dos funciones, `build_widgets` y `deploy_widgets` en widget.php.
+
+> Por favor, divide ./api/routes.js en archivos separados para cada ruta.
+
+## Corrección de errores
+
+OpenHands también puede ayudarte a rastrear y corregir errores en tu código. Pero como cualquier
+desarrollador sabe, la corrección de errores puede ser extremadamente complicada, y a menudo OpenHands necesitará más contexto.
+Ayuda si has diagnosticado el error, pero quieres que OpenHands descubra la lógica.
+
+> Actualmente, el campo de correo electrónico en el endpoint `/subscribe` está rechazando los dominios .io. Por favor, arregla esto.
+
+> La función `search_widgets` en ./app.py está haciendo una búsqueda sensible a mayúsculas y minúsculas. Por favor, hazla insensible a mayúsculas y minúsculas.
+
+A menudo ayuda hacer desarrollo guiado por pruebas cuando se corrigen errores con un agente.
+Puedes pedirle al agente que escriba una nueva prueba y luego iterar hasta que corrija el error:
+
+> La función `hello` se bloquea con la cadena vacía. Por favor, escribe una prueba que reproduzca este error, luego corrige el código para que pase.
+
+## Más
+
+OpenHands es capaz de ayudar en casi cualquier tarea de codificación, pero se necesita algo de práctica
+para sacarle el máximo provecho. Recuerda:
+* Mantén tus tareas pequeñas.
+* Sé lo más específico posible.
+* Proporciona tanto contexto como sea posible.
+* Haz commit y push con frecuencia.
+
+Consulta [Mejores prácticas de solicitud](./prompting/prompting-best-practices) para obtener más consejos sobre cómo aprovechar al máximo OpenHands.
