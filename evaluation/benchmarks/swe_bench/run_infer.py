@@ -38,8 +38,12 @@ from openhands.core.config import (
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.critic import AgentFinishedCritic
-from openhands.events.action import CmdRunAction, MessageAction
-from openhands.events.observation import CmdOutputObservation, ErrorObservation
+from openhands.events.action import CmdRunAction, FileReadAction, MessageAction
+from openhands.events.observation import (
+    CmdOutputObservation,
+    ErrorObservation,
+    FileReadObservation,
+)
 from openhands.events.serialization.event import event_from_dict, event_to_dict
 from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
@@ -452,10 +456,22 @@ def complete_runtime(
 
     assert_and_raise(git_patch is not None, 'Failed to get git diff (None)')
 
+    repo_md = None
+    if '.openhands/microagents/repo.md' in git_patch:
+        action = FileReadAction(
+            path=f'/workspace/{workspace_dir_name}/.openhands/microagents/repo.md'
+        )
+        logger.info(action, extra={'msg_type': 'ACTION'})
+        obs = runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        if isinstance(obs, FileReadObservation):
+            repo_md = obs.content.strip()
+            logger.info(f'repo.md detected:\n{repo_md}')
+
     logger.info('-' * 30)
     logger.info('END Runtime Completion Fn')
     logger.info('-' * 30)
-    return {'git_patch': git_patch}
+    return {'git_patch': git_patch, 'repo_md': repo_md}
 
 
 def process_instance(
