@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from openhands.core.config.condenser_config import AmortizedForgettingCondenserConfig
 from openhands.events.event import Event
-from openhands.memory.condenser.condenser import RollingCondenser
+from openhands.memory.condenser.condenser import Condensation, RollingCondenser, View
 
 
 class AmortizedForgettingCondenser(RollingCondenser):
@@ -32,10 +32,10 @@ class AmortizedForgettingCondenser(RollingCondenser):
 
         super().__init__()
 
-    def condense(self, events: list[Event]) -> list[Event]:
+    def condense(self, events: list[Event]) -> View | Condensation:
         """Apply the amortized forgetting strategy to the given list of events."""
         if len(events) <= self.max_size:
-            return events
+            return View(events=events)
 
         target_size = self.max_size // 2
         head = events[: self.keep_first]
@@ -43,7 +43,7 @@ class AmortizedForgettingCondenser(RollingCondenser):
         events_from_tail = target_size - len(head)
         tail = events[-events_from_tail:]
 
-        return head + tail
+        return View(events=head + tail)
 
     @classmethod
     def from_config(

@@ -11,8 +11,10 @@ from openhands.events.action import (
     Action,
     AgentFinishAction,
 )
+from openhands.events.event import Event
 from openhands.llm.llm import LLM
 from openhands.memory.condenser import Condenser
+from openhands.memory.condenser.condenser import Condensation, View
 from openhands.memory.conversation_memory import ConversationMemory
 from openhands.runtime.plugins import (
     AgentSkillsRequirement,
@@ -166,7 +168,12 @@ class CodeActAgent(Agent):
         )
 
         # Condense the events from the state.
-        events = self.condenser.condensed_history(state)
+        condensed_history: list[Event] = []
+        match self.condenser.condensed_history(state):
+            case View(events):
+                condensed_history = events
+            case Condensation(events):
+                raise NotImplementedError()
 
         logger.debug(
             f'Processing {len(events)} events from a total of {len(state.history)} events'
@@ -174,7 +181,7 @@ class CodeActAgent(Agent):
 
         # Use ConversationMemory to process events
         messages = self.conversation_memory.process_events(
-            condensed_history=events,
+            condensed_history=condensed_history,
             initial_messages=messages,
             max_message_chars=self.llm.config.max_message_chars,
             vision_is_active=self.llm.vision_is_active(),

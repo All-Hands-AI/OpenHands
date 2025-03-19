@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from typing import Any
 
+from pydantic import BaseModel
 from typing_extensions import override
 
 from openhands.controller.state.state import State
@@ -30,6 +31,14 @@ def get_condensation_metadata(state: State) -> list[dict[str, Any]]:
 
 CONDENSER_REGISTRY: dict[type[CondenserConfig], type[Condenser]] = {}
 """Registry of condenser configurations to their corresponding condenser classes."""
+
+
+class View(BaseModel):
+    events: list[Event]
+
+
+class Condensation(BaseModel):
+    event: Event
 
 
 class Condenser(ABC):
@@ -82,7 +91,7 @@ class Condenser(ABC):
             self.write_metadata(state)
 
     @abstractmethod
-    def condense(self, events: list[Event]) -> list[Event]:
+    def condense(self, events: list[Event]) -> View | Condensation:
         """Condense a sequence of events into a potentially smaller list.
 
         New condenser strategies should override this method to implement their own condensation logic. Call `self.add_metadata` in the implementation to record any relevant per-condensation diagnostic information.
@@ -94,7 +103,7 @@ class Condenser(ABC):
             list[Event]: An event sequence representing a condensed history of the agent.
         """
 
-    def condensed_history(self, state: State) -> list[Event]:
+    def condensed_history(self, state: State) -> View | Condensation:
         """Condense the state's history."""
         with self.metadata_batch(state):
             return self.condense(state.history)
@@ -160,7 +169,7 @@ class RollingCondenser(Condenser, ABC):
         super().__init__()
 
     @override
-    def condensed_history(self, state: State) -> list[Event]:
+    def condensed_history(self, state: State) -> View | Condensation:
         # The history should grow monotonically -- if it doesn't, something has
         # truncated the history and we need to reset our tracking.
         if len(state.history) < self._last_history_length:
@@ -172,7 +181,12 @@ class RollingCondenser(Condenser, ABC):
         with self.metadata_batch(state):
             results = self.condense(self._condensation + new_events)
 
-        self._condensation = results
-        self._last_history_length = len(state.history)
+        match results:
+            case View(events):
+                self._condensation = events
+                self._last_history_length = len(state.history)
+
+            case Condensation(_):
+                raise NotImplementedError()
 
         return results

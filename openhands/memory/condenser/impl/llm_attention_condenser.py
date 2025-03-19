@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from openhands.core.config.condenser_config import LLMAttentionCondenserConfig
 from openhands.events.event import Event
 from openhands.llm.llm import LLM
-from openhands.memory.condenser.condenser import RollingCondenser
+from openhands.memory.condenser.condenser import Condensation, RollingCondenser, View
 
 
 class ImportantEventSelection(BaseModel):
@@ -43,10 +43,10 @@ class LLMAttentionCondenser(RollingCondenser):
 
         super().__init__()
 
-    def condense(self, events: list[Event]) -> list[Event]:
+    def condense(self, events: list[Event]) -> View | Condensation:
         """If the history is too long, use an LLM to select the most important events."""
         if len(events) <= self.max_size:
-            return events
+            return View(events=events)
 
         target_size = self.max_size // 2
         head = events[: self.keep_first]
@@ -102,7 +102,7 @@ class LLMAttentionCondenser(RollingCondenser):
         # Grab the events associated with the response IDs
         tail = [event for event in events if event.id in response_ids]
 
-        return head + tail
+        return View(events=head + tail)
 
     @classmethod
     def from_config(cls, config: LLMAttentionCondenserConfig) -> LLMAttentionCondenser:

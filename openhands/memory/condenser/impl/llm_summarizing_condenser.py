@@ -5,7 +5,7 @@ from openhands.core.message import Message, TextContent
 from openhands.events.event import Event
 from openhands.events.observation.agent import AgentCondensationObservation
 from openhands.llm import LLM
-from openhands.memory.condenser.condenser import RollingCondenser
+from openhands.memory.condenser.condenser import Condensation, RollingCondenser, View
 
 
 class LLMSummarizingCondenser(RollingCondenser):
@@ -32,10 +32,10 @@ class LLMSummarizingCondenser(RollingCondenser):
 
         super().__init__()
 
-    def condense(self, events: list[Event]) -> list[Event]:
+    def condense(self, events: list[Event]) -> View | Condensation:
         """Apply the amortized forgetting strategy with LLM summarization to the given list of events."""
         if len(events) <= self.max_size:
-            return events
+            return View(events=events)
 
         head = events[: self.keep_first]
 
@@ -101,7 +101,7 @@ INTENT: Fix precision while maintaining FITS compliance"""
         self.add_metadata('response', response.model_dump())
         self.add_metadata('metrics', self.llm.metrics.get())
 
-        return head + [AgentCondensationObservation(summary)] + tail
+        return View(events=head + [AgentCondensationObservation(summary)] + tail)
 
     @classmethod
     def from_config(
