@@ -155,10 +155,17 @@ class RollingCondenser(Condenser, ABC):
     Attributes:
         _condensation: A list of Event objects representing the result of the previous condensation.
             This is used to avoid reprocessing the entire history on each call to condensed_history.
+            When a condensation occurs, this list will contain any AgentCondensationAction objects
+            that summarize previously condensed events.
             
         _last_history_length: An integer tracking the length of state.history at the time of the
             last condensation. This is used to identify new events that have been added since the
             last condensation and to detect if the history has been truncated.
+            
+    Note:
+        These tracking variables can be reconstructed from the state history by examining
+        AgentCondensationAction objects and their positions in the history. This is useful
+        for debugging or understanding the condenser's state at any point in time.
     """
 
     def __init__(self) -> None:
@@ -166,6 +173,15 @@ class RollingCondenser(Condenser, ABC):
         self._last_history_length: int = 0
 
         super().__init__()
+        
+    def reset_tracking(self) -> None:
+        """Reset the tracking variables to their initial state.
+        
+        This forces the condenser to process the entire history on the next call
+        to condensed_history, rather than just the new events.
+        """
+        self._condensation = []
+        self._last_history_length = 0
 
     @override
     def condensed_history(self, state: State) -> list[Event]:
@@ -173,8 +189,7 @@ class RollingCondenser(Condenser, ABC):
         # truncated the history and we need to reset our tracking.
         if len(state.history) < self._last_history_length:
             # Reset tracking variables if history has been truncated
-            self._condensation = []
-            self._last_history_length = 0
+            self.reset_tracking()
 
         # Extract only the new events that have been added since the last condensation
         # This is an optimization to avoid reprocessing the entire history
@@ -191,3 +206,46 @@ class RollingCondenser(Condenser, ABC):
         self._last_history_length = len(state.history)
 
         return results
+        
+    def reconstruct_tracking_variables(self, state: State) -> tuple[list[Event], int]:
+        """Reconstruct the tracking variables from the state history.
+        
+        This method analyzes the state history to reconstruct what the _condensation and
+        _last_history_length variables would be if the condenser had processed this state.
+        This is useful for debugging or understanding the condenser's state.
+        
+        Args:
+            state: The state containing the history to analyze.
+            
+        Returns:
+            A tuple containing:
+                - The reconstructed _condensation list
+                - The reconstructed _last_history_length value
+                
+        Note:
+            This method does not modify the condenser's actual tracking variables.
+            It only returns what they would be based on the given state.
+        """
+        from openhands.events.action.agent import AgentCondensationAction
+        
+        # If there are no condensation actions in the history, the condensation
+        # would be the entire history and the last_history_length would be the
+        # current history length
+        condensation_actions = [
+            (i, event) for i, event in enumerate(state.history) 
+            if isinstance(event, AgentCondensationAction)
+        ]
+        
+        if not condensation_actions:
+            return state.history.copy(), len(state.history)
+            
+        # Find the most recent condensation action
+        last_condensation_idx, last_condensation = condensation_actions[-1]
+        
+        # The condensation would be all events up to and including the last condensation action
+        reconstructed_condensation = state.history[:last_condensation_idx + 1].copy()
+        
+        # The last_history_length would be the current history length
+        reconstructed_last_history_length = len(state.history)
+        
+        return reconstructed_condensation, reconstructed_last_history_length
