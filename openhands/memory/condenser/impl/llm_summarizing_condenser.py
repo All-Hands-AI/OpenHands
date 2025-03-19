@@ -96,7 +96,7 @@ INTENT: Fix precision while maintaining FITS compliance"""
         # Add the summary from the action if it exists
         prompt += (
             ('\n' + summary_action.summary + '\n')
-            if hasattr(summary_action, 'summary') and summary_action.summary
+            if summary_action.summary
             else ''
         )
 
