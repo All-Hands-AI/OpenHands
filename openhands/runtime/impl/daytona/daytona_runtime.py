@@ -1,6 +1,7 @@
 import json
 from typing import Callable
 
+import requests
 import tenacity
 from daytona_sdk import (
     CreateWorkspaceParams,
@@ -17,6 +18,7 @@ from openhands.runtime.impl.action_execution.action_execution_client import (
 )
 from openhands.runtime.plugins.requirement import PluginRequirement
 from openhands.runtime.utils.command import get_action_execution_server_startup_command
+from openhands.runtime.utils.request import RequestHTTPError
 from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
@@ -218,6 +220,13 @@ class DaytonaRuntime(ActionExecutionClient):
         self._runtime_initialized = True
 
     @tenacity.retry(
+        retry=tenacity.retry_if_exception(
+            lambda e: (
+                isinstance(e, requests.HTTPError) or isinstance(e, RequestHTTPError)
+            )
+            and hasattr(e, 'response')
+            and e.response.status_code == 502
+        ),
         stop=tenacity.stop_after_delay(120) | stop_if_should_exit(),
         wait=tenacity.wait_fixed(1),
         reraise=True,
