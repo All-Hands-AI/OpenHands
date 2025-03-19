@@ -18,7 +18,21 @@ DOCS_DIR = 'docs/'
 CACHE_FILE = os.path.join(DOCS_DIR, 'translation_cache.json')
 
 # Supported languages and their codes
-LANGUAGES = {'fr': 'French', 'zh-Hans': 'Simplified Chinese'}
+LANGUAGES = {
+    'ar': 'Arabic',
+    'de': 'German',
+    'es': 'Spanish',
+    'fa': 'Persian',
+    'fr': 'French',
+    'it': 'Italian',
+    'ja': 'Japanese',
+    'ko-KR': 'Korean',
+    'no': 'Norwegian',
+    'pt': 'Portuguese',
+    'tr': 'Turkish',
+    'zh-Hans': 'Simplified Chinese',
+    'zh-TW': 'Traditional Chinese'
+}
 
 
 def get_file_hash(filepath):

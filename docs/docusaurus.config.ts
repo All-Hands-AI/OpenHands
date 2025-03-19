@@ -24,10 +24,51 @@ const config: Config = {
   // may want to replace "en" with "zh-Hans".
   i18n: {
     defaultLocale: 'en',
-    locales: ['en', 'fr', 'zh-Hans'],
+    locales: ['en', 'ar', 'de', 'es', 'fa', 'fr', 'it', 'ja', 'ko-KR', 'no', 'pt', 'tr', 'zh-Hans', 'zh-TW'],
     localeConfigs: {
       en: {
         htmlLang: 'en-GB',
+      },
+      ar: {
+        htmlLang: 'ar',
+        direction: 'rtl',
+      },
+      de: {
+        htmlLang: 'de',
+      },
+      es: {
+        htmlLang: 'es',
+      },
+      fa: {
+        htmlLang: 'fa',
+        direction: 'rtl',
+      },
+      fr: {
+        htmlLang: 'fr',
+      },
+      it: {
+        htmlLang: 'it',
+      },
+      ja: {
+        htmlLang: 'ja',
+      },
+      'ko-KR': {
+        htmlLang: 'ko-KR',
+      },
+      no: {
+        htmlLang: 'no',
+      },
+      pt: {
+        htmlLang: 'pt',
+      },
+      tr: {
+        htmlLang: 'tr',
+      },
+      'zh-Hans': {
+        htmlLang: 'zh-Hans',
+      },
+      'zh-TW': {
+        htmlLang: 'zh-TW',
       },
     },
   },
