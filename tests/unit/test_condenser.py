@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any
+from typing import Any, Callable, Iterable
 from unittest.mock import MagicMock
 
 import pytest
@@ -97,6 +97,40 @@ def mock_state() -> State:
     mock_state.extra_data = {}
 
     return mock_state
+
+
+class RollingCondenserTestHarness:
+    def __init__(self, condenser: RollingCondenser):
+        self.condenser = condenser
+        self.callbacks: list[Callable[[list[Event]], None]] = []
+
+    def add_callback(self, callback: Callable[[list[Event]], None]):
+        """Add a callback to the test harness.
+
+        This callback will be called on the history after each event is added, but before the condenser is applied. You can use this to export information about the event that was just added, or to set LLM responses based on the state.
+        """
+        self.callbacks.append(callback)
+
+    def views(self, events: Iterable[Event]) -> Iterable[View]:
+        """Generate a sequence of views similating the condenser's behavior over the given event stream.
+
+        This generator assumes we're starting from an empty history.
+        """
+        mock_state = MagicMock()
+        mock_state.extra_data = {}
+        mock_state.history = []
+
+        for event in events:
+            mock_state.history.append(event)
+            for callback in self.callbacks:
+                callback(mock_state.history)
+
+            match self.condenser.condensed_history(mock_state):
+                case View() as view:
+                    yield view
+
+                case Condensation(event=condensation_event):
+                    mock_state.history.append(condensation_event)
 
 
 def test_noop_condenser_from_config():
@@ -471,20 +505,22 @@ def test_amortized_forgetting_condenser_forgets_when_larger_than_max_size():
     max_size = 2
     condenser = AmortizedForgettingCondenser(max_size=max_size)
 
-    mock_state = MagicMock()
-    mock_state.extra_data = {}
-    mock_state.history = []
+    events = [create_test_event(f'Event {i}') for i in range(max_size * 10)]
 
-    for i in range(max_size * 10):
-        event = create_test_event(f'Event {i}')
-        mock_state.history.append(event)
-        results = condenser.condensed_history(mock_state)
+    # To ensure the most recent event is always recorded, track it in a non-local variable udpated
+    # with a closure we'll pass to the view generator as a callback.
+    most_recent_event: Event | None = None
 
-        # The last event in the results is always the event we just added.
-        assert results[-1] == event
+    def set_most_recent_event(history: list[Event]):
+        nonlocal most_recent_event
+        most_recent_event = history[-1]
 
-        # The number of results should bounce back and forth between 1, 2, 1, 2, ...
-        assert len(results) == (i % 2) + 1
+    harness = RollingCondenserTestHarness(condenser)
+    harness.add_callback(set_most_recent_event)
+
+    for i, view in enumerate(harness.views(events)):
+        assert view[-1] == most_recent_event
+        assert len(view) == (i % 2) + 1
 
 
 def test_amortized_forgetting_condenser_keeps_first_events():
@@ -494,25 +530,31 @@ def test_amortized_forgetting_condenser_keeps_first_events():
     condenser = AmortizedForgettingCondenser(max_size=max_size, keep_first=keep_first)
 
     first_event = create_test_event('Event 0')
+    other_events = [
+        create_test_event(f'Event {i+1}', datetime(2024, 1, 1, 10, i + 1))
+        for i in range(max_size * 10)
+    ]
+    events = [first_event] + other_events
 
-    mock_state = MagicMock()
-    mock_state.extra_data = {}
-    mock_state.history = [first_event]
+    # To ensure the most recent event is always recorded, track it in a non-local variable udpated
+    # with a closure we'll pass to the view generator as a callback.
+    most_recent_event: Event | None = None
 
-    for i in range(max_size * 10):
-        event = create_test_event(f'Event {i+1}', datetime(2024, 1, 1, 10, i + 1))
-        mock_state.history.append(event)
-        results = condenser.condensed_history(mock_state)
+    def set_most_recent_event(history: list[Event]):
+        nonlocal most_recent_event
+        most_recent_event = history[-1]
 
-        # The last event is always the event we just added.
-        assert results[-1] == event
+    harness = RollingCondenserTestHarness(condenser)
+    harness.add_callback(set_most_recent_event)
+
+    for i, view in enumerate(harness.views(events)):
+        assert view[-1] == most_recent_event
 
         # The first event is always the first event.
-        assert results[0] == first_event
+        assert view[0] == first_event
 
-        # The number of results should bounce back between 2, 3, 4, 2, 3, 4, ...
-        print(len(results))
-        assert len(results) == (i % 3) + 2
+        # The number of results should bounce back between 1, 2, 3, 4, 1, 2, 3, 4, ...
+        assert len(view) == (i % 4) + 1
 
 
 def test_llm_attention_condenser_from_config():
