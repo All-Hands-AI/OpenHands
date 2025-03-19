@@ -6,10 +6,14 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     NullAction,
 )
+from openhands.events.action.agent import RecallAction
 from openhands.events.observation import (
     NullObservation,
 )
-from openhands.events.observation.agent import AgentStateChangedObservation
+from openhands.events.observation.agent import (
+    AgentStateChangedObservation,
+    RecallObservation,
+)
 from openhands.events.serialization import event_to_dict
 from openhands.events.stream import AsyncEventStreamWrapper
 from openhands.server.shared import (
@@ -35,7 +39,9 @@ async def connect(connection_id: str, environ):
 
     cookies_str = environ.get('HTTP_COOKIE', '')
     conversation_validator = ConversationValidatorImpl()
-    user_id = await conversation_validator.validate(conversation_id, cookies_str)
+    user_id, github_user_id = await conversation_validator.validate(
+        conversation_id, cookies_str
+    )
 
     settings_store = await SettingsStoreImpl.get_instance(config, user_id)
     settings = await settings_store.load()
@@ -46,7 +52,7 @@ async def connect(connection_id: str, environ):
         )
 
     event_stream = await conversation_manager.join_conversation(
-        conversation_id, connection_id, settings, user_id
+        conversation_id, connection_id, settings, user_id, github_user_id
     )
 
     agent_state_changed = None
@@ -54,10 +60,7 @@ async def connect(connection_id: str, environ):
     async for event in async_stream:
         if isinstance(
             event,
-            (
-                NullAction,
-                NullObservation,
-            ),
+            (NullAction, NullObservation, RecallAction, RecallObservation),
         ):
             continue
         elif isinstance(event, AgentStateChangedObservation):

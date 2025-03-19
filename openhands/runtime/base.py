@@ -208,7 +208,7 @@ class Runtime(FileEditRuntimeMixin):
         status_callback: Callable | None = None,
         attach_to_existing: bool = False,
         headless_mode: bool = False,
-        github_user_id: str | None = None,
+        user_id: str | None = None,
     ):
         self.git_handler = GitHandler(
             self._execute_shell_fn_git_handler, self._read_file_content
@@ -244,7 +244,10 @@ class Runtime(FileEditRuntimeMixin):
             self, enable_llm_editor=config.get_agent_config().codeact_enable_llm_editor
         )
 
-        self.github_user_id = github_user_id
+        self.user_id = user_id
+
+        # TODO: remove once done debugging expired github token
+        self.prev_token: SecretStr | None = None
 
     def _execute_shell(self, command: str) -> CommandResult:
         obs = self.run(CmdRunAction(command=command))
@@ -340,23 +343,48 @@ class Runtime(FileEditRuntimeMixin):
         assert event.timeout is not None
         try:
             if isinstance(event, CmdRunAction):
-                if self.github_user_id and '$GITHUB_TOKEN' in event.command:
+                if self.user_id and 'GITHUB_TOKEN' in event.command:
                     gh_client = GithubServiceImpl(
-                        user_id=self.github_user_id, external_token_manager=True
+                        external_auth_id=self.user_id, external_token_manager=True
                     )
+                    logger.info(f'Fetching latest github token for runtime: {self.sid}')
                     token = await gh_client.get_latest_token()
-                    if token:
-                        export_cmd = CmdRunAction(
-                            f"export GITHUB_TOKEN='{token.get_secret_value()}'"
+                    if not token:
+                        logger.error(
+                            f'Failed to refresh github token for runtime: {self.sid}'
                         )
+
+                    if token:
+                        raw_token = token.get_secret_value()
+
+                        if not self.prev_token:
+                            logger.info(
+                                f'Setting github token in runtime: {self.sid}\nToken value: {raw_token[0:5]}; length: {len(raw_token)}'
+                            )
+
+                        elif self.prev_token.get_secret_value() != raw_token:
+                            logger.info(
+                                f'Setting new github token in runtime {self.sid}\nToken value: {raw_token[0:5]}; length: {len(raw_token)}'
+                            )
+
+                        self.prev_token = token
+
+                        env_vars = {
+                            'GITHUB_TOKEN': raw_token,
+                        }
+
+                        try:
+                            self.add_env_vars(env_vars)
+                        except Exception as e:
+                            logger.warning(
+                                f'Failed export latest github token to runtime: {self.sid}, {e}'
+                            )
 
                         self.event_stream.update_secrets(
                             {
-                                'github_token': token.get_secret_value(),
+                                'github_token': raw_token,
                             }
                         )
-
-                        await call_sync_from_async(self.run, export_cmd)
 
             observation: Observation = await call_sync_from_async(
                 self.run_action, event
