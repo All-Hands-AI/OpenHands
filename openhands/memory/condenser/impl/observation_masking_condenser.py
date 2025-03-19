@@ -29,7 +29,7 @@ class ObservationMaskingCondenser(Condenser):
                         start_id=event.id, end_id=event.id, summary='<MASKED>'
                     )
                 )
-                # No need to add an empty observation as the action itself is sufficient
+                # No need to add an observation as the action itself is sufficient
             else:
                 results.append(event)
 
