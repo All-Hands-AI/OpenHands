@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from openhands.core.config.condenser_config import AmortizedForgettingCondenserConfig
+from openhands.events.action.action import Action
 from openhands.events.event import Event
 from openhands.memory.condenser.condenser import Condensation, RollingCondenser, View
 
 
-class AmortizedForgettingCondensationEvent(Event):
+class AmortizedForgettingCondensationEvent(Action):
     forgotten_event_ids: list[int]
     considered_event_ids: list[int]
 
@@ -69,7 +70,7 @@ class AmortizedForgettingCondenser(RollingCondenser):
         ]
         event.considered_event_ids = [event.id for event in view]
 
-        return Condensation(event=event)
+        return Condensation(action=event)
 
     def should_condense(self, view: View) -> bool:
         return len(view) > self.max_size

@@ -8,6 +8,7 @@ from pydantic import BaseModel
 
 from openhands.controller.state.state import State
 from openhands.core.config.condenser_config import CondenserConfig
+from openhands.events.action.action import Action
 from openhands.events.event import Event
 
 CONDENSER_METADATA_KEY = 'condenser_meta'
@@ -62,7 +63,7 @@ class View(BaseModel):
 
 
 class Condensation(BaseModel):
-    event: Event
+    action: Action
 
 
 class Condenser(ABC):

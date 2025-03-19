@@ -2,13 +2,14 @@ from __future__ import annotations
 
 from openhands.core.config.condenser_config import LLMSummarizingCondenserConfig
 from openhands.core.message import Message, TextContent
+from openhands.events.action.action import Action
 from openhands.events.event import Event
 from openhands.events.observation.agent import AgentCondensationObservation
 from openhands.llm import LLM
 from openhands.memory.condenser.condenser import Condensation, RollingCondenser, View
 
 
-class LLMSummarizingCondensationEvent(Event):
+class LLMSummarizingCondensationEvent(Action):
     forgotten_event_ids: list[int]
     considered_event_ids: list[int]
     summary: str
@@ -139,7 +140,7 @@ INTENT: Fix precision while maintaining FITS compliance"""
         event.considered_event_ids = [event.id for event in view]
         event.summary = summary
 
-        return Condensation(event=event)
+        return Condensation(action=event)
 
     def should_condense(self, view: View) -> bool:
         return len(view) > self.max_size
