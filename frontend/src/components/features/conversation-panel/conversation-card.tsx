@@ -82,16 +82,30 @@ export function ConversationCard({
     setContextMenuVisible(false);
   };
 
-  const handleDownloadViaVSCode = (
+  const handleDownloadViaVSCode = async (
     event: React.MouseEvent<HTMLButtonElement>,
   ) => {
     event.preventDefault();
     event.stopPropagation();
     posthog.capture("download_via_vscode_button_clicked");
 
-    // We'll open a new window to the VS Code URL
-    // The actual URL will be fetched in the context menu component
-    window.open(`/api/conversations/${conversationId}/vscode-url`, "_blank");
+    // Fetch the VS Code URL from the API
+    if (conversationId) {
+      try {
+        const response = await fetch(
+          `/api/conversations/${conversationId}/vscode-url`,
+        );
+        const data = await response.json();
+
+        if (data.vscode_url) {
+          window.open(data.vscode_url, "_blank");
+        } else {
+          console.error("VS Code URL not available", data.error);
+        }
+      } catch (error) {
+        console.error("Failed to fetch VS Code URL", error);
+      }
+    }
 
     setContextMenuVisible(false);
   };
