@@ -55,3 +55,6 @@ class HttpSession:
 
     def close(self) -> None:
         self.is_closed = True
+        # This closes all TCP sessions which are not currently in use, but doesn't
+        # prevent new connections. Closing periodically seems smart.
+        SESSION.close()
