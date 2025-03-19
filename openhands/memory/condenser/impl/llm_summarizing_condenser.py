@@ -32,6 +32,15 @@ class LLMSummarizingCondenser(RollingCondenser):
 
         super().__init__()
 
+    def get_view(self, events: list[Event]) -> View:
+        raise NotImplementedError()
+
+    def get_condensation(self, view: View) -> Condensation:
+        raise NotImplementedError()
+
+    def should_condense(self, view: View) -> bool:
+        raise NotImplementedError()
+
     def condense(self, events: list[Event]) -> View | Condensation:
         """Apply the amortized forgetting strategy with LLM summarization to the given list of events."""
         if len(events) <= self.max_size:

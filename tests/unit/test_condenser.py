@@ -19,10 +19,11 @@ from openhands.core.message import Message, TextContent
 from openhands.events.event import Event, EventSource
 from openhands.events.observation import BrowserOutputObservation
 from openhands.events.observation.agent import AgentCondensationObservation
+from openhands.events.observation.empty import NullObservation
 from openhands.events.observation.observation import Observation
 from openhands.llm import LLM
 from openhands.memory.condenser import Condenser
-from openhands.memory.condenser.condenser import RollingCondenser, View
+from openhands.memory.condenser.condenser import Condensation, RollingCondenser, View
 from openhands.memory.condenser.impl import (
     AmortizedForgettingCondenser,
     BrowserOutputCondenser,
@@ -553,8 +554,14 @@ def test_rolling_condenser_handles_truncation(mock_state: State):
     class TestRollingCondenser(RollingCondenser):
         """Test implementation of RollingCondenser that just returns all events."""
 
-        def condense(self, events: list[Event]) -> list[Event]:
-            return events
+        def get_view(self, events: list[Event]) -> View:
+            return View(events=events)
+
+        def get_condensation(self, view: View) -> Condensation:
+            return Condensation(event=NullObservation())
+
+        def should_condense(self, view: View) -> bool:
+            return False
 
     condenser = TestRollingCondenser()
 

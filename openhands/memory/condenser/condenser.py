@@ -5,7 +5,6 @@ from contextlib import contextmanager
 from typing import Any
 
 from pydantic import BaseModel
-from typing_extensions import override
 
 from openhands.controller.state.state import State
 from openhands.core.config.condenser_config import CondenserConfig
@@ -41,6 +40,9 @@ class View(BaseModel):
 
     def __getitem__(self, key: int) -> Event:
         return self.events[key]
+
+    def __iter__(self):
+        return iter(self.events)
 
 
 class Condensation(BaseModel):
@@ -153,20 +155,7 @@ class Condenser(ABC):
 
 
 class RollingCondenser(Condenser, ABC):
-    """Base class for a specialized condenser strategy that applies condensation to a rolling history.
-
-    The rolling history is computed by appending new events to the most recent condensation. For example, the sequence of calls::
-
-        assert state.history == [event1, event2, event3]
-        condensation = condenser.condensed_history(state)
-
-        # ...new events are added to the state...
-
-        assert state.history == [event1, event2, event3, event4, event5]
-        condenser.condensed_history(state)
-
-    will result in second call to `condensed_history` passing `condensation + [event4, event5]` to the `condense` method.
-    """
+    """Base class for a specialized condenser strategy that applies condensation to a rolling history."""
 
     def __init__(self) -> None:
         self._condensation: list[Event] = []
@@ -174,25 +163,27 @@ class RollingCondenser(Condenser, ABC):
 
         super().__init__()
 
-    @override
-    def condensed_history(self, state: State) -> View | Condensation:
-        # The history should grow monotonically -- if it doesn't, something has
-        # truncated the history and we need to reset our tracking.
-        if len(state.history) < self._last_history_length:
-            self._condensation = []
-            self._last_history_length = 0
+    @abstractmethod
+    def should_condense(self, view: View) -> bool:
+        """Determine if a view should be condensed."""
 
-        new_events = state.history[self._last_history_length :]
+    @abstractmethod
+    def get_view(self, events: list[Event]) -> View:
+        """Get the view from a list of events."""
 
-        with self.metadata_batch(state):
-            results = self.condense(self._condensation + new_events)
+    @abstractmethod
+    def get_condensation(self, view: View) -> Condensation:
+        """Get the condensation from a view."""
 
-        match results:
-            case View(events=events):
-                self._condensation = events
-                self._last_history_length = len(state.history)
+    def condense(self, events: list[Event]) -> View | Condensation:
+        # Convert the state to a view. This might require some condenser-specific logic.
+        view = self.get_view(events)
 
-            case Condensation(_):
-                raise NotImplementedError()
+        # If we trigger the condenser-specific condensation threshold, compute and return
+        # the condensation.
+        if self.should_condense(view):
+            return self.get_condensation(view)
 
-        return results
+        # Otherwise we're safe to just return the view.
+        else:
+            return view

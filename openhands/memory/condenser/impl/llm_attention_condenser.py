@@ -43,6 +43,15 @@ class LLMAttentionCondenser(RollingCondenser):
 
         super().__init__()
 
+    def get_view(self, events: list[Event]) -> View:
+        raise NotImplementedError()
+
+    def get_condensation(self, view: View) -> Condensation:
+        raise NotImplementedError()
+
+    def should_condense(self, view: View) -> bool:
+        raise NotImplementedError()
+
     def condense(self, events: list[Event]) -> View | Condensation:
         """If the history is too long, use an LLM to select the most important events."""
         if len(events) <= self.max_size:
