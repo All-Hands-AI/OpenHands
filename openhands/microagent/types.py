@@ -43,5 +43,5 @@ class TaskProgress(BaseModel):
     title: str
     description: str
     steps: list[TaskStep] = []
-    review_notes: str = ""
+    review_notes: str = ''
     completed: bool = False
