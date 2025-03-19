@@ -96,19 +96,19 @@ class EventStream:
     def __post_init__(self) -> None:
         events = []
 
-        # first try old location
-        try:
-            events_dir = get_conversation_events_dir(self.sid)
-            events += self.file_store.list(events_dir)
-        except FileNotFoundError:
-            logger.info(f'No events found for session {self.sid} at {events_dir}')
-
-        # Now try new location
         try:
             events_dir = get_conversation_events_dir(self.sid, self.user_id)
             events += self.file_store.list(events_dir)
         except FileNotFoundError:
             logger.info(f'No events found for session {self.sid} at {events_dir}')
+
+        if self.user_id:
+            # During transition to new location, try old location if user_id is set
+            try:
+                events_dir = get_conversation_events_dir(self.sid)
+                events += self.file_store.list(events_dir)
+            except FileNotFoundError:
+                logger.info(f'No events found for session {self.sid} at {events_dir}')
 
         if not events:
             self._cur_id = 0
@@ -247,6 +247,8 @@ class EventStream:
             return event_from_dict(data)
         except FileNotFoundError:
             logger.info(f'File {filename} not found')
+            if not self.user_id:
+                raise
 
         filename = self._get_filename_for_id(id, None)
         content = self.file_store.read(filename)

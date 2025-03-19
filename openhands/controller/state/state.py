@@ -110,6 +110,13 @@ class State:
             file_store.write(
                 get_conversation_agent_state_filename(sid, user_id), encoded
             )
+
+            # see if state is in old directory. If yes, delete it.
+            filename = get_conversation_agent_state_filename(sid)
+            try:
+                file_store.delete(filename)
+            except Exception:
+                pass
         except Exception as e:
             logger.error(f'Failed to save state to session: {e}')
             raise e
@@ -126,12 +133,11 @@ class State:
             state = pickle.loads(pickled)
         except FileNotFoundError:
             if user_id:
-                # see if state is in old directory. If yes, load and delete.
+                # see if state is in old directory. If yes, load it.
                 filename = get_conversation_agent_state_filename(sid)
                 encoded = file_store.read(filename)
                 pickled = base64.b64decode(encoded)
                 state = pickle.loads(pickled)
-                file_store.delete(filename)
         except Exception as e:
             logger.debug(f'Could not restore state from session: {e}')
             raise e
