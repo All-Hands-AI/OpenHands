@@ -74,13 +74,13 @@ jobs:
         (github.event.review.author_association == 'OWNER' || github.event.review.author_association == 'COLLABORATOR' || github.event.review.author_association == 'MEMBER')
         )
       )
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2204
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: useblacksmith/setup-python@v6
         with:
           python-version: "3.12"
 
@@ -106,7 +106,7 @@ jobs:
               contains(github.event.review.body, '@openhands-agent-exp')
             )
           )
-        uses: actions/cache@v4
+        uses: useblacksmith/cache@v5
         with:
           path: ${{ env.pythonLocation }}/lib/python3.12/site-packages/*
           key: ${{ runner.os }}-pip-openhands-resolver-${{ hashFiles('/tmp/requirements.txt') }}
@@ -295,11 +295,12 @@ jobs:
         if: always()
         env:
           AGENT_RESPONDED: ${{ env.AGENT_RESPONDED || 'false' }}
+          ISSUE_NUMBER: ${{ env.ISSUE_NUMBER }}
         with:
           github-token: ${{ secrets.PAT_TOKEN || github.token }}
           script: |
             const fs = require('fs');
-            const issueNumber = ${{ env.ISSUE_NUMBER }};
+            const issueNumber = process.env.ISSUE_NUMBER;
             let logContent = '';
 
             try {
@@ -330,13 +331,15 @@ jobs:
         if: always() # Comment on issue even if the previous steps fail
         env:
           AGENT_RESPONDED: ${{ env.AGENT_RESPONDED || 'false' }}
+          ISSUE_NUMBER: ${{ env.ISSUE_NUMBER }}
+          RESOLUTION_SUCCESS: ${{ steps.check_result.outputs.RESOLUTION_SUCCESS }}
         with:
           github-token: ${{ secrets.PAT_TOKEN || github.token }}
           script: |
             const fs = require('fs');
             const path = require('path');
-            const issueNumber = ${{ env.ISSUE_NUMBER }};
-            const success = ${{ steps.check_result.outputs.RESOLUTION_SUCCESS }};
+            const issueNumber = process.env.ISSUE_NUMBER;
+            const success = process.env.RESOLUTION_SUCCESS === 'true';
 
             let prNumber = '';
             let branchName = '';
@@ -401,10 +404,12 @@ jobs:
       - name: Fallback Error Comment
         uses: actions/github-script@v7
         if: ${{ env.AGENT_RESPONDED == 'false' }} # Only run if no conditions were met in previous steps
+        env:
+          ISSUE_NUMBER: ${{ env.ISSUE_NUMBER }}
         with:
           github-token: ${{ secrets.PAT_TOKEN || github.token }}
           script: |
-            const issueNumber = ${{ env.ISSUE_NUMBER }};
+            const issueNumber = process.env.ISSUE_NUMBER;
 
             github.rest.issues.createComment({
               issue_number: issueNumber,

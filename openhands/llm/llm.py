@@ -249,7 +249,8 @@ class LLM(RetryMixin, DebugMixin):
 
             # if we mocked function calling, and we have tools, convert the response back to function calling format
             if mock_function_calling and mock_fncall_tools is not None:
-                assert len(resp.choices) == 1
+                logger.debug(f'Response choices: {len(resp.choices)}')
+                assert len(resp.choices) >= 1
                 non_fncall_response_message = resp.choices[0].message
                 fn_call_messages_with_response = (
                     convert_non_fncall_messages_to_fncall_messages(

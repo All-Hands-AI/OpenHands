@@ -1,4 +1,5 @@
 import asyncio
+import copy
 import json
 import os
 import tempfile
@@ -36,9 +37,10 @@ from openhands.core.config import (
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
+from openhands.critic import AgentFinishedCritic
 from openhands.events.action import CmdRunAction, MessageAction
 from openhands.events.observation import CmdOutputObservation, ErrorObservation
-from openhands.events.serialization.event import event_to_dict
+from openhands.events.serialization.event import event_from_dict, event_to_dict
 from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
 from openhands.utils.shutdown_listener import sleep_if_should_continue
@@ -121,24 +123,28 @@ You SHOULD NEVER attempt to browse the web.
 
 
 # TODO: migrate all swe-bench docker to ghcr.io/openhands
-DOCKER_IMAGE_PREFIX = os.environ.get('EVAL_DOCKER_IMAGE_PREFIX', 'docker.io/xingyaoww/')
-logger.info(f'Using docker image prefix: {DOCKER_IMAGE_PREFIX}')
+DEFAULT_DOCKER_IMAGE_PREFIX = os.environ.get(
+    'EVAL_DOCKER_IMAGE_PREFIX', 'docker.io/xingyaoww/'
+)
+logger.info(f'Default docker image prefix: {DEFAULT_DOCKER_IMAGE_PREFIX}')
 
 
 def get_instance_docker_image(instance_id: str, official_image: bool = False) -> str:
     if official_image:
         # Official SWE-Bench image
         # swebench/sweb.eval.x86_64.django_1776_django-11333:v1
+        docker_image_prefix = 'docker.io/swebench/'
         repo, name = instance_id.split('__')
         image_name = f'sweb.eval.x86_64.{repo}_1776_{name}:latest'
         logger.warning(f'Using official SWE-Bench image: {image_name}')
     else:
         # OpenHands version of the image
+        docker_image_prefix = DEFAULT_DOCKER_IMAGE_PREFIX
         image_name = 'sweb.eval.x86_64.' + instance_id
         image_name = image_name.replace(
             '__', '_s_'
         )  # to comply with docker image naming convention
-    return (DOCKER_IMAGE_PREFIX.rstrip('/') + '/' + image_name).lower()
+    return (docker_image_prefix.rstrip('/') + '/' + image_name).lower()
 
 
 def get_config(
@@ -147,7 +153,8 @@ def get_config(
 ) -> AppConfig:
     # We use a different instance image for the each instance of swe-bench eval
     use_official_image = bool(
-        'verified' in metadata.dataset.lower() or 'lite' in metadata.dataset.lower()
+        ('verified' in metadata.dataset.lower() or 'lite' in metadata.dataset.lower())
+        and 'swe-gym' not in metadata.dataset.lower()
     )
     base_container_image = get_instance_docker_image(
         instance['instance_id'], use_official_image
@@ -473,6 +480,13 @@ def process_instance(
         logger.warning(
             f'This is the {runtime_failure_count + 1}th attempt for instance {instance.instance_id}, setting resource factor to {config.sandbox.remote_runtime_resource_factor}'
         )
+
+    metadata = copy.deepcopy(metadata)
+    metadata.details['runtime_failure_count'] = runtime_failure_count
+    metadata.details['remote_runtime_resource_factor'] = (
+        config.sandbox.remote_runtime_resource_factor
+    )
+
     runtime = create_runtime(config)
     call_async_from_sync(runtime.connect)
 
@@ -558,20 +572,6 @@ def filter_dataset(dataset: pd.DataFrame, filter_column: str) -> pd.DataFrame:
     return dataset
 
 
-# A list of instances that are known to be tricky to infer
-# (will cause runtime failure even with resource factor = 8)
-SWEGYM_EXCLUDE_IDS = [
-    'dask__dask-10422',
-    'pandas-dev__pandas-50548',
-    'pandas-dev__pandas-53672',
-    'pandas-dev__pandas-54174',
-    'pandas-dev__pandas-55518',
-    'pandas-dev__pandas-58383',
-    'pydata__xarray-6721',
-    'pytest-dev__pytest-10081',
-    'pytest-dev__pytest-7236',
-]
-
 if __name__ == '__main__':
     parser = get_parser()
     parser.add_argument(
@@ -596,11 +596,20 @@ if __name__ == '__main__':
         f'Loaded dataset {args.dataset} with split {args.split}: {len(swe_bench_tests)} tasks'
     )
     if 'SWE-Gym' in args.dataset:
-        swe_bench_tests = swe_bench_tests[
-            ~swe_bench_tests['instance_id'].isin(SWEGYM_EXCLUDE_IDS)
-        ]
+        with open(
+            os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                'split',
+                'swegym_verified_instances.json',
+            ),
+            'r',
+        ) as f:
+            swegym_verified_instances = json.load(f)
+            swe_bench_tests = swe_bench_tests[
+                swe_bench_tests['instance_id'].isin(swegym_verified_instances)
+            ]
         logger.info(
-            f'{len(swe_bench_tests)} tasks left after excluding SWE-Gym excluded tasks'
+            f'{len(swe_bench_tests)} tasks left after filtering for SWE-Gym verified instances'
         )
 
     llm_config = None
@@ -631,20 +640,132 @@ if __name__ == '__main__':
 
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     print(f'### OUTPUT FILE: {output_file} ###')
-    instances = prepare_dataset(swe_bench_tests, output_file, args.eval_n_limit)
 
-    if len(instances) > 0 and not isinstance(
-        instances['PASS_TO_PASS'][instances['PASS_TO_PASS'].index[0]], str
-    ):
-        for col in ['PASS_TO_PASS', 'FAIL_TO_PASS']:
-            instances[col] = instances[col].apply(lambda x: str(x))
-
-    run_evaluation(
-        instances,
-        metadata,
-        output_file,
-        args.eval_num_workers,
-        process_instance,
-        timeout_seconds=8 * 60 * 60,  # 8 hour PER instance should be more than enough
-        max_retries=5,
+    # Run evaluation in iterative mode:
+    # If a rollout fails to output AgentFinishAction, we will try again until it succeeds OR total 3 attempts have been made.
+    ITERATIVE_EVAL_MODE = (
+        os.environ.get('ITERATIVE_EVAL_MODE', 'false').lower() == 'true'
     )
+    ITERATIVE_EVAL_MODE_MAX_ATTEMPTS = int(
+        os.environ.get('ITERATIVE_EVAL_MODE_MAX_ATTEMPTS', '3')
+    )
+
+    if not ITERATIVE_EVAL_MODE:
+        # load the dataset
+        instances = prepare_dataset(swe_bench_tests, output_file, args.eval_n_limit)
+        if len(instances) > 0 and not isinstance(
+            instances['PASS_TO_PASS'][instances['PASS_TO_PASS'].index[0]], str
+        ):
+            for col in ['PASS_TO_PASS', 'FAIL_TO_PASS']:
+                instances[col] = instances[col].apply(lambda x: str(x))
+
+        run_evaluation(
+            instances,
+            metadata,
+            output_file,
+            args.eval_num_workers,
+            process_instance,
+            timeout_seconds=8
+            * 60
+            * 60,  # 8 hour PER instance should be more than enough
+            max_retries=5,
+        )
+    else:
+        critic = AgentFinishedCritic()
+
+        def get_cur_output_file_path(attempt: int) -> str:
+            return (
+                f'{output_file.removesuffix(".jsonl")}.critic_attempt_{attempt}.jsonl'
+            )
+
+        eval_ids = None
+        for attempt in range(1, ITERATIVE_EVAL_MODE_MAX_ATTEMPTS + 1):
+            cur_output_file = get_cur_output_file_path(attempt)
+            logger.info(
+                f'Running evaluation with critic {critic.__class__.__name__} for attempt {attempt} of {ITERATIVE_EVAL_MODE_MAX_ATTEMPTS}.'
+            )
+
+            # For deterministic eval, we set temperature to 0.1 for (>1) attempt
+            # so hopefully we get slightly different results
+            if attempt > 1 and metadata.llm_config.temperature == 0:
+                logger.info(
+                    f'Detected temperature is 0 for (>1) attempt {attempt}. Setting temperature to 0.1...'
+                )
+                metadata.llm_config.temperature = 0.1
+
+            # Load instances - at first attempt, we evaluate all instances
+            # On subsequent attempts, we only evaluate the instances that failed the previous attempt determined by critic
+            instances = prepare_dataset(
+                swe_bench_tests, cur_output_file, args.eval_n_limit, eval_ids=eval_ids
+            )
+            if len(instances) > 0 and not isinstance(
+                instances['PASS_TO_PASS'][instances['PASS_TO_PASS'].index[0]], str
+            ):
+                for col in ['PASS_TO_PASS', 'FAIL_TO_PASS']:
+                    instances[col] = instances[col].apply(lambda x: str(x))
+
+            # Run evaluation - but save them to cur_output_file
+            logger.info(
+                f'Evaluating {len(instances)} instances for attempt {attempt}...'
+            )
+            run_evaluation(
+                instances,
+                metadata,
+                cur_output_file,
+                args.eval_num_workers,
+                process_instance,
+                timeout_seconds=8
+                * 60
+                * 60,  # 8 hour PER instance should be more than enough
+                max_retries=5,
+            )
+
+            # When eval is done, we update eval_ids to the instances that failed the current attempt
+            instances_failed = []
+            logger.info(
+                f'Use critic {critic.__class__.__name__} to check {len(instances)} instances for attempt {attempt}...'
+            )
+            with open(cur_output_file, 'r') as f:
+                for line in f:
+                    instance = json.loads(line)
+                    history = [event_from_dict(event) for event in instance['history']]
+                    critic_result = critic.evaluate(history)
+                    if not critic_result.success:
+                        instances_failed.append(instance['instance_id'])
+            logger.info(
+                f'{len(instances_failed)} instances failed the current attempt {attempt}: {instances_failed}'
+            )
+            eval_ids = instances_failed
+
+            # If no instances failed, we break
+            if len(instances_failed) == 0:
+                break
+
+        # Then we should aggregate the results from all attempts into the original output file
+        # and remove the intermediate files
+        logger.info(
+            'Aggregating results from all attempts into the original output file...'
+        )
+        fout = open(output_file, 'w')
+        added_instance_ids = set()
+        for attempt in reversed(range(1, ITERATIVE_EVAL_MODE_MAX_ATTEMPTS + 1)):
+            cur_output_file = get_cur_output_file_path(attempt)
+            if not os.path.exists(cur_output_file):
+                logger.warning(
+                    f'Intermediate output file {cur_output_file} does not exist. Skipping...'
+                )
+                continue
+
+            with open(cur_output_file, 'r') as f:
+                for line in f:
+                    instance = json.loads(line)
+                    if instance['instance_id'] not in added_instance_ids:
+                        fout.write(line)
+                        added_instance_ids.add(instance['instance_id'])
+            logger.info(
+                f'Aggregated instances from {cur_output_file}. Total instances added so far: {len(added_instance_ids)}'
+            )
+        fout.close()
+        logger.info(
+            f'Done! Total {len(added_instance_ids)} instances added to {output_file}'
+        )
