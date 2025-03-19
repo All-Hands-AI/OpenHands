@@ -4,7 +4,6 @@ from openhands.core.config.condenser_config import LLMSummarizingCondenserConfig
 from openhands.core.message import Message, TextContent
 from openhands.events.action.agent import AgentCondensationAction
 from openhands.events.event import Event
-from openhands.events.observation.agent import AgentCondensationObservation
 from openhands.llm import LLM
 from openhands.memory.condenser.condenser import RollingCondenser
 
@@ -59,9 +58,7 @@ class LLMSummarizingCondenser(RollingCondenser):
         # Identify events to be forgotten (those not in head or tail)
         forgotten_events = []
         for event in events[self.keep_first : -events_from_tail]:
-            if not isinstance(event, AgentCondensationObservation) and not isinstance(
-                event, AgentCondensationAction
-            ):
+            if not isinstance(event, AgentCondensationAction):
                 forgotten_events.append(event)
 
         # Construct prompt for summarization
@@ -94,11 +91,11 @@ INTENT: Fix precision while maintaining FITS compliance"""
         prompt += '\n\n'
 
         # Add the summary from the action if it exists
-        prompt += (
-            ('\n' + summary_action.summary + '\n')
-            if summary_action.summary
-            else ''
-        )
+        if (
+            isinstance(summary_action, AgentCondensationAction)
+            and summary_action.summary
+        ):
+            prompt += '\n' + summary_action.summary + '\n'
 
         prompt += '\n\n'
 
@@ -132,12 +129,9 @@ INTENT: Fix precision while maintaining FITS compliance"""
             summary=summary, start_id=start_id, end_id=end_id
         )
 
-        # Create the observation with an empty message to avoid duplicating the summary
-        # The summary is already in the action
-        condensation_observation = AgentCondensationObservation('')
-
-        # Add the action first, then the observation to the returned events
-        return head + [condensation_action, condensation_observation] + tail
+        # Return the events with just the condensation action in the middle
+        # No need for a separate observation as the action is sufficient
+        return head + [condensation_action] + tail
 
     @classmethod
     def from_config(

@@ -1,12 +1,15 @@
-import pytest
 from unittest.mock import MagicMock
 
+import pytest
+
+from openhands.controller.state.state import State
 from openhands.core.config.agent_config import AgentConfig
 from openhands.core.message import Message, TextContent
-from openhands.controller.state.state import State
 from openhands.events.action.agent import AgentCondensationAction
 from openhands.events.action.message import MessageAction
-from openhands.memory.condenser.impl.llm_summarizing_condenser import LLMSummarizingCondenser
+from openhands.memory.condenser.impl.llm_summarizing_condenser import (
+    LLMSummarizingCondenser,
+)
 from openhands.memory.conversation_memory import ConversationMemory
 from openhands.utils.prompt import PromptManager
 
@@ -30,13 +33,13 @@ def test_agent_condensation_action_with_max_message_chars(agent_config):
     # Create some events to process
     event0 = MessageAction(content='Message 0')
     event0._id = 0  # ignore [attr-defined]
-    
+
     # Create a mock condenser that will return our condensation action with a very long summary
     mock_condenser = MagicMock(spec=LLMSummarizingCondenser)
-    
+
     # Create a long summary (15,000 characters)
-    long_summary = "A" * 15000
-    
+    long_summary = 'A' * 15000
+
     condensation_action = AgentCondensationAction(
         start_id=1,
         end_id=5,
@@ -69,12 +72,12 @@ def test_agent_condensation_action_with_max_message_chars(agent_config):
     assert messages[0].role == 'system'
     assert messages[1].role == 'assistant'
     assert messages[2].role == 'user'
-    
+
     # The content should be truncated
     condensed_content = messages[2].content[0].text
     assert len(condensed_content) < 15000
     assert '[... Observation truncated due to length ...]' in condensed_content
-    
+
     # The truncated content should be approximately max_chars in length
     # (half from beginning, half from end, plus the truncation message)
     truncation_message = '\n[... Observation truncated due to length ...]\n'
@@ -92,13 +95,13 @@ def test_agent_condensation_action_without_max_message_chars(agent_config):
     # Create some events to process
     event0 = MessageAction(content='Message 0')
     event0._id = 0  # ignore [attr-defined]
-    
+
     # Create a mock condenser that will return our condensation action
     mock_condenser = MagicMock(spec=LLMSummarizingCondenser)
-    
+
     # Create a summary
-    summary = "This is a condensed summary of the conversation"
-    
+    summary = 'This is a condensed summary of the conversation'
+
     condensation_action = AgentCondensationAction(
         start_id=1,
         end_id=5,
@@ -130,7 +133,7 @@ def test_agent_condensation_action_without_max_message_chars(agent_config):
     assert messages[0].role == 'system'
     assert messages[1].role == 'assistant'
     assert messages[2].role == 'user'
-    
+
     # The content should not be truncated
     condensed_content = messages[2].content[0].text
     assert condensed_content == summary
