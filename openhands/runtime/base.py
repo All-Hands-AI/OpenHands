@@ -94,10 +94,11 @@ class GitHandler:
     def _is_git_repo(self) -> bool:
         cmd = 'git rev-parse --is-inside-work-tree'
         output = self.execute(cmd)
+        logger.info(f'Is git repo: {output.content.strip() == "true"}')
 
         test_output = self.execute('pwd')
         logger.info(f'Current directory: {test_output.content}')
-        return output.content == 'true'
+        return output.content.strip() == 'true'
 
     def _get_current_file_content(self, file_path: str) -> str:
         output = self.read(file_path)
