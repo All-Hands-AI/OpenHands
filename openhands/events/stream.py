@@ -100,15 +100,16 @@ class EventStream:
             events_dir = get_conversation_events_dir(self.sid, self.user_id)
             events += self.file_store.list(events_dir)
         except FileNotFoundError:
-            logger.info(f'No events found for session {self.sid} at {events_dir}')
+            logger.debug(f'No events found for session {self.sid} at {events_dir}')
 
         if self.user_id:
             # During transition to new location, try old location if user_id is set
+            # TODO: remove this code after 5/1/2025
             try:
                 events_dir = get_conversation_events_dir(self.sid)
                 events += self.file_store.list(events_dir)
             except FileNotFoundError:
-                logger.info(f'No events found for session {self.sid} at {events_dir}')
+                logger.debug(f'No events found for session {self.sid} at {events_dir}')
 
         if not events:
             self._cur_id = 0
@@ -246,14 +247,14 @@ class EventStream:
             data = json.loads(content)
             return event_from_dict(data)
         except FileNotFoundError:
-            logger.info(f'File {filename} not found')
-            if not self.user_id:
-                raise
-
-        filename = self._get_filename_for_id(id, None)
-        content = self.file_store.read(filename)
-        data = json.loads(content)
-        return event_from_dict(data)
+            logger.debug(f'File {filename} not found')
+            # TODO remove this block after 5/1/2025
+            if self.user_id:
+                filename = self._get_filename_for_id(id, None)
+                content = self.file_store.read(filename)
+                data = json.loads(content)
+                return event_from_dict(data)
+            raise
 
     def get_latest_event(self) -> Event:
         return self.get_event(self._cur_id - 1)
