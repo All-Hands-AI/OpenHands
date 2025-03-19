@@ -34,7 +34,6 @@ class BrowserOutputCondenser(Condenser):
                         summary=f'Current URL: {event.url}\nContent Omitted',
                     )
                 )
-                # No need to add an empty observation as the action itself is sufficient
             else:
                 results.append(event)
                 if isinstance(event, BrowserOutputObservation):
