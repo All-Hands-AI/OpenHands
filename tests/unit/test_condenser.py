@@ -680,47 +680,46 @@ def test_llm_attention_condenser_grows_to_max_size(mock_llm, mock_state):
         assert len(results) == i + 1
 
 
-def test_llm_attention_condenser_forgets_when_larger_than_max_size(
-    mock_llm, mock_state
-):
+def test_llm_attention_condenser_forgets_when_larger_than_max_size(mock_llm):
     """Test that the LLMAttentionCondenser forgets events when the context grows too large."""
     max_size = 2
     condenser = LLMAttentionCondenser(max_size=max_size, keep_first=0, llm=mock_llm)
 
-    for i in range(max_size * 10):
-        event = create_test_event(f'Event {i}', id=i)
-        mock_state.history.append(event)
+    events = [create_test_event(f'Event {i}', id=i) for i in range(max_size * 10)]
 
+    def set_response_content(history: list[Event]):
         mock_llm.set_mock_response_content(
             ImportantEventSelection(
-                ids=[event.id for event in mock_state.history]
+                ids=[event.id for event in history]
             ).model_dump_json()
         )
 
-        results = condenser.condensed_history(mock_state)
+    harness = RollingCondenserTestHarness(condenser)
+    harness.add_callback(set_response_content)
 
-        # The number of results should bounce back and forth between 1, 2, 1, 2, ...
-        assert len(results) == (i % 2) + 1
+    for i, view in enumerate(harness.views(events)):
+        assert len(view) == (i % 2) + 1
 
 
-def test_llm_attention_condenser_handles_events_outside_history(mock_llm, mock_state):
+def test_llm_attention_condenser_handles_events_outside_history(mock_llm):
     """Test that the LLMAttentionCondenser handles event IDs that aren't from the event history."""
     max_size = 2
     condenser = LLMAttentionCondenser(max_size=max_size, keep_first=0, llm=mock_llm)
 
-    for i in range(max_size * 10):
-        event = create_test_event(f'Event {i}', id=i)
-        mock_state.history.append(event)
+    events = [create_test_event(f'Event {i}', id=i) for i in range(max_size * 10)]
 
+    def set_response_content(history: list[Event]):
         mock_llm.set_mock_response_content(
             ImportantEventSelection(
                 ids=[event.id for event in mock_state.history] + [-1, -2, -3, -4]
             ).model_dump_json()
         )
-        results = condenser.condensed_history(mock_state)
 
-        # The number of results should bounce back and forth between 1, 2, 1, 2, ...
-        assert len(results) == (i % 2) + 1
+    harness = RollingCondenserTestHarness(condenser)
+    harness.add_callback(set_response_content)
+
+    for i, view in enumerate(harness.views(events)):
+        assert len(view) == (i % 2) + 1
 
 
 def test_llm_attention_condenser_handles_too_many_events(mock_llm, mock_state):
@@ -728,67 +727,61 @@ def test_llm_attention_condenser_handles_too_many_events(mock_llm, mock_state):
     max_size = 2
     condenser = LLMAttentionCondenser(max_size=max_size, keep_first=0, llm=mock_llm)
 
-    for i in range(max_size * 10):
-        event = create_test_event(f'Event {i}', id=i)
-        mock_state.history.append(event)
+    events = [create_test_event(f'Event {i}', id=i) for i in range(max_size * 10)]
+
+    def set_response_content(history: list[Event]):
         mock_llm.set_mock_response_content(
             ImportantEventSelection(
-                ids=[event.id for event in mock_state.history]
-                + [event.id for event in mock_state.history]
+                ids=[event.id for event in history] + [event.id for event in history]
             ).model_dump_json()
         )
-        results = condenser.condensed_history(mock_state)
 
-        # The number of results should bounce back and forth between 1, 2, 1, 2, ...
-        assert len(results) == (i % 2) + 1
+    harness = RollingCondenserTestHarness(condenser)
+    harness.add_callback(set_response_content)
+
+    for i, view in enumerate(harness.views(events)):
+        assert len(view) == (i % 2) + 1
 
 
-def test_llm_attention_condenser_handles_too_few_events(mock_llm, mock_state):
+def test_llm_attention_condenser_handles_too_few_events(mock_llm):
     """Test that the LLMAttentionCondenser handles when the response contains too few event IDs."""
     max_size = 2
     # Developer note: We must specify keep_first=0 because
     # keep_first (1) >= max_size//2 (1) is invalid.
     condenser = LLMAttentionCondenser(max_size=max_size, keep_first=0, llm=mock_llm)
 
-    for i in range(max_size * 10):
-        event = create_test_event(f'Event {i}', id=i)
-        mock_state.history.append(event)
+    events = [create_test_event(f'Event {i}', id=i) for i in range(max_size * 10)]
 
+    def set_response_content(history: list[Event]):
         mock_llm.set_mock_response_content(
             ImportantEventSelection(ids=[]).model_dump_json()
         )
 
-        results = condenser.condensed_history(mock_state)
+    harness = RollingCondenserTestHarness(condenser)
+    harness.add_callback(set_response_content)
 
-        # The number of results should bounce back and forth between 1, 2, 1, 2, ...
-        assert len(results) == (i % 2) + 1
-
-    # Add a new test verifying that keep_first=1 works with max_size > 2
+    for i, view in enumerate(harness.views(events)):
+        assert len(view) == (i % 2) + 1
 
 
-def test_llm_attention_condenser_handles_keep_first_for_larger_max_size(
-    mock_llm, mock_state
-):
+def test_llm_attention_condenser_handles_keep_first_for_larger_max_size(mock_llm):
     """Test that LLMAttentionCondenser works when keep_first=1 is allowed (must be less than half of max_size)."""
     max_size = 4  # so keep_first=1 < (max_size // 2) = 2
     condenser = LLMAttentionCondenser(max_size=max_size, keep_first=1, llm=mock_llm)
 
-    for i in range(max_size * 2):
-        # We append new events, then ensure some are pruned.
-        event = create_test_event(f'Event {i}', id=i)
-        mock_state.history.append(event)
+    events = [create_test_event(f'Event {i}', id=i) for i in range(max_size * 10)]
 
+    def set_response_content(history: list[Event]):
         mock_llm.set_mock_response_content(
             ImportantEventSelection(ids=[]).model_dump_json()
         )
 
-        results = condenser.condensed_history(mock_state)
+    harness = RollingCondenserTestHarness(condenser)
+    harness.add_callback(set_response_content)
 
-        # We expect that the first event is always kept, and the tail grows until max_size
-        if len(mock_state.history) <= max_size:
-            # No condensation needed yet
-            assert len(results) == len(mock_state.history)
+    for i, view in enumerate(harness.views(events)):
+        if (i + 1) <= max_size:
+            assert len(view) == i + 1
         else:
-            # The first event is kept, plus some from the tail
-            assert results[0].id == 0
-            assert len(results) <= max_size
+            assert len(view) <= max_size
+            assert view[0].id == 0
