@@ -279,7 +279,7 @@ class AgentController:
             else:
                 # Log unexpected exceptions at error level
                 self.log(
-                    'error',
+                    'warning',
                     f'Unknown exception type while running the agent: {type(e).__name__}.',
                 )
             await self._react_to_exception(reported)
