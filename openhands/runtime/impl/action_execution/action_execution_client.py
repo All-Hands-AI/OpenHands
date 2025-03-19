@@ -146,7 +146,7 @@ class ActionExecutionClient(Runtime):
             response_json = response.json()
             assert isinstance(response_json, list)
             return response_json
-        except httpx.Timeout:
+        except httpx.TimeoutException:
             raise TimeoutError('List files operation timed out')
 
     def copy_from(self, path: str) -> Path:
@@ -164,7 +164,7 @@ class ActionExecutionClient(Runtime):
             with tempfile.NamedTemporaryFile(suffix='.zip', delete=False) as temp_file:
                 shutil.copyfileobj(response.raw, temp_file, length=16 * 1024)
                 return Path(temp_file.name)
-        except httpx.Timeout:
+        except httpx.TimeoutException:
             raise TimeoutError('Copy operation timed out')
 
     def copy_to(
@@ -284,7 +284,7 @@ class ActionExecutionClient(Runtime):
                 output = response.json()
                 obs = observation_from_dict(output)
                 obs._cause = action.id  # type: ignore[attr-defined]
-            except httpx.Timeout:
+            except httpx.TimeoutException:
                 raise AgentRuntimeTimeoutError(
                     f'Runtime failed to return execute_action before the requested timeout of {action.timeout}s'
                 )

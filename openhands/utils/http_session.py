@@ -1,8 +1,7 @@
 from dataclasses import dataclass, field
-from typing import Any, cast
+from typing import Any, MutableMapping, cast
 
 import httpx
-from requests.structures import CaseInsensitiveDict
 
 from openhands.core.logger import openhands_logger as logger
 
@@ -26,14 +25,14 @@ class HttpSession:
         return getattr(self.client, name)
 
     @property
-    def headers(self) -> CaseInsensitiveDict[str]:
+    def headers(self) -> MutableMapping[str, str]:
         if self.client is None:
             logger.error(
                 'Session is being used after close!', stack_info=True, exc_info=True
             )
             self.client = httpx.Client()
         # Cast to CaseInsensitiveDict[str] since mypy doesn't know the exact type
-        return cast(CaseInsensitiveDict[str], self.client.headers)
+        return cast(MutableMapping[str, str], self.client.headers)
 
     def close(self) -> None:
         if self.client is not None:

@@ -12,8 +12,8 @@ from pathlib import Path
 from typing import Callable
 from zipfile import ZipFile
 
+import httpx
 from pydantic import SecretStr
-from requests.exceptions import ConnectionError
 
 from openhands.core.config import AppConfig, SandboxConfig
 from openhands.core.exceptions import AgentRuntimeDisconnectedError
@@ -271,7 +271,7 @@ class Runtime(FileEditRuntimeMixin):
             )
         except Exception as e:
             err_id = ''
-            if isinstance(e, ConnectionError) or isinstance(
+            if isinstance(e, httpx.NetworkError) or isinstance(
                 e, AgentRuntimeDisconnectedError
             ):
                 err_id = 'STATUS$ERROR_RUNTIME_DISCONNECTED'

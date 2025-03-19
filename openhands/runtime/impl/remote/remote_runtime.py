@@ -1,10 +1,10 @@
+import json
 import logging
 import os
 from typing import Callable
 from urllib.parse import urlparse
 
 import httpx
-import requests
 import tenacity
 
 from openhands.core.config import AppConfig
@@ -155,7 +155,7 @@ class RemoteRuntime(ActionExecutionClient):
                 return False
             self.log('debug', f'Error while looking for remote runtime: {e}')
             raise
-        except requests.exceptions.JSONDecodeError as e:
+        except json.decoder.JSONDecodeError as e:
             self.log(
                 'error',
                 f'Invalid JSON response from runtime API: {e}. URL: {self.config.sandbox.remote_runtime_api_url}/sessions/{self.sid}. Response: {response}',
@@ -273,7 +273,7 @@ class RemoteRuntime(ActionExecutionClient):
         self.setup_initial_env()
         self.log('debug', 'Runtime resumed.')
 
-    def _parse_runtime_response(self, response: requests.Response):
+    def _parse_runtime_response(self, response: httpx.Response):
         start_response = response.json()
         self.runtime_id = start_response['runtime_id']
         self.runtime_url = start_response['url']
@@ -415,7 +415,7 @@ class RemoteRuntime(ActionExecutionClient):
         try:
             kwargs['timeout'] = self.config.sandbox.remote_runtime_api_timeout
             return send_request(self.session, method, url, **kwargs)
-        except requests.Timeout:
+        except httpx.TimeoutException:
             self.log(
                 'error',
                 f'No response received within the timeout period for url: {url}',
@@ -427,7 +427,7 @@ class RemoteRuntime(ActionExecutionClient):
             return self._send_action_server_request_impl(method, url, **kwargs)
 
         retry_decorator = tenacity.retry(
-            retry=tenacity.retry_if_exception_type(requests.ConnectionError),
+            retry=tenacity.retry_if_exception_type(httpx.NetworkError),
             stop=tenacity.stop_after_attempt(3)
             | stop_if_should_exit()
             | self._stop_if_closed,
@@ -441,7 +441,7 @@ class RemoteRuntime(ActionExecutionClient):
     def _send_action_server_request_impl(self, method, url, **kwargs):
         try:
             return super()._send_action_server_request(method, url, **kwargs)
-        except requests.Timeout:
+        except httpx.TimeoutException:
             self.log(
                 'error',
                 f'No response received within the timeout period for url: {url}',
