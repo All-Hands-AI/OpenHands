@@ -151,6 +151,14 @@ class RollingCondenser(Condenser, ABC):
         condenser.condensed_history(state)
 
     will result in second call to `condensed_history` passing `condensation + [event4, event5]` to the `condense` method.
+    
+    Attributes:
+        _condensation: A list of Event objects representing the result of the previous condensation.
+            This is used to avoid reprocessing the entire history on each call to condensed_history.
+            
+        _last_history_length: An integer tracking the length of state.history at the time of the
+            last condensation. This is used to identify new events that have been added since the
+            last condensation and to detect if the history has been truncated.
     """
 
     def __init__(self) -> None:
@@ -164,15 +172,22 @@ class RollingCondenser(Condenser, ABC):
         # The history should grow monotonically -- if it doesn't, something has
         # truncated the history and we need to reset our tracking.
         if len(state.history) < self._last_history_length:
+            # Reset tracking variables if history has been truncated
             self._condensation = []
             self._last_history_length = 0
 
+        # Extract only the new events that have been added since the last condensation
+        # This is an optimization to avoid reprocessing the entire history
         new_events = state.history[self._last_history_length :]
 
         with self.metadata_batch(state):
+            # Combine the previous condensation result with new events
+            # This allows incremental processing of the history
             results = self.condense(self._condensation + new_events)
 
+        # Store the condensation result for the next call
         self._condensation = results
+        # Update the history length tracker to the current length
         self._last_history_length = len(state.history)
 
         return results
