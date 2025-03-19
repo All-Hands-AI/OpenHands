@@ -236,7 +236,9 @@ class Runtime(FileEditRuntimeMixin):
             return
 
         provider_handler = ProviderHandler(
-            provider_tokens=self.provider_tokens, external_token_manager=True
+            provider_tokens=self.provider_tokens,
+            external_auth_id=self.user_id,
+            external_token_manager=True,
         )
 
         logger.info(f'Fetching latest github token for runtime: {self.sid}')
