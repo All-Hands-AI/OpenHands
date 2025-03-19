@@ -2,6 +2,8 @@ import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
 import { HomepageHeader } from '../components/HomepageHeader/HomepageHeader';
 import { translate } from '@docusaurus/Translate';
+import Translate from '@docusaurus/Translate';
+import Link from '@docusaurus/Link';
 import { Demo } from "../components/Demo/Demo";
 
 export default function Home(): JSX.Element {
@@ -24,22 +26,22 @@ export default function Home(): JSX.Element {
         <h2><Translate>Most Popular Links</Translate></h2>
         <ul style={{ listStyleType: 'none'}}>
           <li>
-            <Link to={`/${useDocusaurusContext().i18n.currentLocale}/usage/prompting/microagents-repo`}>
+            <Link to="/modules/usage/prompting/microagents-repo">
               <Translate>Customizing OpenHands to a repository</Translate>
             </Link>
           </li>
           <li>
-            <Link to={`/${useDocusaurusContext().i18n.currentLocale}/usage/how-to/github-action`}>
+            <Link to="/modules/usage/how-to/github-action">
               <Translate>Integrating OpenHands with Github</Translate>
             </Link>
           </li>
           <li>
-            <Link to={`/${useDocusaurusContext().i18n.currentLocale}/usage/llms#model-recommendations`}>
+            <Link to="/modules/usage/llms#model-recommendations">
               <Translate>Recommended models to use</Translate>
             </Link>
           </li>
           <li>
-            <Link to={`/${useDocusaurusContext().i18n.currentLocale}/usage/runtimes#connecting-to-your-filesystem`}>
+            <Link to="/modules/usage/runtimes#connecting-to-your-filesystem">
               <Translate>Connecting OpenHands to your filesystem</Translate>
             </Link>
           </li>

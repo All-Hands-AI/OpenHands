@@ -30,7 +30,7 @@ export function HomepageHeader() {
             call APIs, and yes-even copy code snippets from StackOverflow.
           </Translate>
           <br/>
-          <Link to={`/${useDocusaurusContext().i18n.currentLocale}/usage/installation`}
+          <Link to="/modules/usage/installation"
             style={{
               textDecoration: 'underline',
               display: 'inline-block',
