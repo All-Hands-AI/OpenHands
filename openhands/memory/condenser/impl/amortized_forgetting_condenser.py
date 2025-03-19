@@ -5,6 +5,11 @@ from openhands.events.event import Event
 from openhands.memory.condenser.condenser import Condensation, RollingCondenser, View
 
 
+class AmortizedForgettingCondensationEvent(Event):
+    forgotten_event_ids: list[int]
+    considered_event_ids: list[int]
+
+
 class AmortizedForgettingCondenser(RollingCondenser):
     """A condenser that maintains a condensed history and forgets old events when it grows too large."""
 
@@ -33,26 +38,41 @@ class AmortizedForgettingCondenser(RollingCondenser):
         super().__init__()
 
     def get_view(self, events: list[Event]) -> View:
-        raise NotImplementedError()
+        # Get all non-condensation events
+        result_events = []
+        forgotten_event_ids = []
+
+        for event in events:
+            if isinstance(event, AmortizedForgettingCondensationEvent):
+                forgotten_event_ids.extend(event.forgotten_event_ids)
+            else:
+                result_events.append(event)
+
+        return View(
+            events=[
+                event for event in result_events if event.id not in forgotten_event_ids
+            ]
+        )
 
     def get_condensation(self, view: View) -> Condensation:
-        raise NotImplementedError()
-
-    def should_condense(self, view: View) -> bool:
-        raise NotImplementedError()
-
-    def condense(self, events: list[Event]) -> View | Condensation:
-        """Apply the amortized forgetting strategy to the given list of events."""
-        if len(events) <= self.max_size:
-            return View(events=events)
-
         target_size = self.max_size // 2
-        head = events[: self.keep_first]
+        head = view[: self.keep_first]
 
         events_from_tail = target_size - len(head)
-        tail = events[-events_from_tail:]
+        tail = view[-events_from_tail:]
 
-        return View(events=head + tail)
+        events_to_keep = head + tail
+
+        event = AmortizedForgettingCondensationEvent()
+        event.forgotten_event_ids = [
+            event.id for event in view if event not in events_to_keep
+        ]
+        event.considered_event_ids = [event.id for event in view]
+
+        return Condensation(event=event)
+
+    def should_condense(self, view: View) -> bool:
+        return len(view) > self.max_size
 
     @classmethod
     def from_config(
