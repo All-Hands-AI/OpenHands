@@ -524,7 +524,7 @@ class GithubPRHandler(GithubIssueHandler):
                 issue_body = issue_data.get('body', '')
                 if issue_body:
                     closing_issues.append(issue_body)
-            except httpx.RequestError as e:
+            except httpx.HTTPError as e:
                 logger.warning(f'Failed to fetch issue {issue_number}: {str(e)}')
 
         return closing_issues

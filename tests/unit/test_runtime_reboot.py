@@ -1,4 +1,4 @@
-from unittest.mock import Mock
+from unittest.mock import MagicMock, Mock
 
 import httpx
 import pytest
@@ -61,7 +61,9 @@ def test_runtime_disconnected_error(
     mock_response = Mock()
     mock_response.status_code = status_code
     mock_response.raise_for_status = Mock(
-        side_effect=httpx.HTTPError(response=mock_response)
+        side_effect=httpx.HTTPStatusError(
+            'mock_error', request=MagicMock(), response=mock_response
+        )
     )
     mock_response.json = Mock(
         return_value={

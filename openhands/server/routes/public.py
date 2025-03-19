@@ -64,7 +64,7 @@ async def get_litellm_models() -> list[str]:
                 for model in ollama_models_list:
                     model_list.append('ollama/' + model['name'])
                 break
-            except httpx.RequestError as e:
+            except httpx.HTTPError as e:
                 logger.error(f'Error getting OLLAMA models: {e}')
 
     return list(sorted(set(model_list)))

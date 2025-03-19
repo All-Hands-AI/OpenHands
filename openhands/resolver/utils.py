@@ -49,7 +49,7 @@ def identify_token(token: str, repo: str | None = None) -> Platform:
             )
             if github_repo_response.status_code == 200:
                 return Platform.GITHUB
-        except httpx.RequestError as e:
+        except httpx.HTTPError as e:
             print(f'Error connecting to GitHub API (repo check): {e}')
 
     # Try GitHub PAT format (token)
@@ -60,7 +60,7 @@ def identify_token(token: str, repo: str | None = None) -> Platform:
         github_response = httpx.get(github_url, headers=github_headers, timeout=5)
         if github_response.status_code == 200:
             return Platform.GITHUB
-    except httpx.RequestError as e:
+    except httpx.HTTPError as e:
         print(f'Error connecting to GitHub API: {e}')
 
     # Try GitLab token
@@ -71,7 +71,7 @@ def identify_token(token: str, repo: str | None = None) -> Platform:
         gitlab_response = httpx.get(gitlab_url, headers=gitlab_headers, timeout=5)
         if gitlab_response.status_code == 200:
             return Platform.GITLAB
-    except httpx.RequestError as e:
+    except httpx.HTTPError as e:
         print(f'Error connecting to GitLab API: {e}')
 
     return Platform.INVALID
