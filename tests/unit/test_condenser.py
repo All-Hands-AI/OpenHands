@@ -100,6 +100,11 @@ def mock_state() -> State:
 
 
 class RollingCondenserTestHarness:
+    """Test harness for rolling condensers.
+
+    Simulates the behavior of a simple agent loop (appropriately handling the distinction between `View` and `Condensation` results) and provides utilities for testing the results.
+    """
+
     def __init__(self, condenser: RollingCondenser):
         self.condenser = condenser
         self.callbacks: list[Callable[[list[Event]], None]] = []
@@ -137,10 +142,16 @@ class RollingCondenserTestHarness:
 
         Assumes the condenser triggers condensation when the view is _longer_ than the max size, and that the target size is half the max size.
         """
+        # Until we hit the max size, the views should grow monotonically.
         if index < max_size:
             return index + 1
 
+        # Once we hit the max size, the next view should be reduced to the target size.
         target_size = max_size // 2
+
+        # So when the index is the same as the max size, we should have target size + 1 events in the view.
+        # And the maximum value we will ever see is the max size (approximately 2 * target size).
+        # Put together, we get the following formula:
         return ((index - max_size) % target_size) + target_size + 1
 
 
@@ -495,26 +506,24 @@ def test_amortized_forgetting_condenser_invalid_config():
     pytest.raises(ValueError, AmortizedForgettingCondenser, keep_first=-1)
 
 
-def test_amortized_forgetting_condenser_grows_to_max_size():
-    """Test that AmortizedForgettingCondenser correctly maintains an event context up to max size."""
-    max_size = 15
+def test_amortized_forgetting_condenser_gives_expected_view_size():
+    """Test that AmortizedForgettingCondenser maintains a context view of the correct size."""
+    max_size = 12
     condenser = AmortizedForgettingCondenser(max_size=max_size)
 
-    mock_state = MagicMock()
-    mock_state.extra_data = {}
-    mock_state.history = []
+    events = [create_test_event(f'Event {i}') for i in range(max_size * 10)]
 
-    for i in range(max_size):
-        event = create_test_event(f'Event {i}')
-        mock_state.history.append(event)
-        results = condenser.condensed_history(mock_state)
-        assert len(results) == i + 1
+    harness = RollingCondenserTestHarness(condenser)
+
+    for i, view in enumerate(harness.views(events)):
+        assert len(view) == harness.expected_size(i, max_size)
 
 
-def test_amortized_forgetting_condenser_forgets_when_larger_than_max_size():
-    """Test that the AmortizedForgettingCondenser forgets events when the context grows too large."""
-    max_size = 2
-    condenser = AmortizedForgettingCondenser(max_size=max_size)
+def test_amortized_forgetting_condenser_keeps_first_and_last_events():
+    """Test that the AmortizedForgettingCondenser keeps the prefix and suffix events, even when condensing."""
+    max_size = 12
+    keep_first = 4
+    condenser = AmortizedForgettingCondenser(max_size=max_size, keep_first=keep_first)
 
     events = [create_test_event(f'Event {i}') for i in range(max_size * 10)]
 
@@ -530,42 +539,13 @@ def test_amortized_forgetting_condenser_forgets_when_larger_than_max_size():
     harness.add_callback(set_most_recent_event)
 
     for i, view in enumerate(harness.views(events)):
-        assert view[-1] == most_recent_event
-        assert len(view) == (i % 2) + 1
+        assert len(view) == harness.expected_size(i, max_size)
 
-
-def test_amortized_forgetting_condenser_keeps_first_events():
-    """Test that the AmortizedForgettingCondenser keeps the right number of initial events when forgetting."""
-    max_size = 4
-    keep_first = 1
-    condenser = AmortizedForgettingCondenser(max_size=max_size, keep_first=keep_first)
-
-    first_event = create_test_event('Event 0')
-    other_events = [
-        create_test_event(f'Event {i+1}', datetime(2024, 1, 1, 10, i + 1))
-        for i in range(max_size * 10)
-    ]
-    events = [first_event] + other_events
-
-    # To ensure the most recent event is always recorded, track it in a non-local variable udpated
-    # with a closure we'll pass to the view generator as a callback.
-    most_recent_event: Event | None = None
-
-    def set_most_recent_event(history: list[Event]):
-        nonlocal most_recent_event
-        most_recent_event = history[-1]
-
-    harness = RollingCondenserTestHarness(condenser)
-    harness.add_callback(set_most_recent_event)
-
-    for i, view in enumerate(harness.views(events)):
+        # The last event should always be the most-recently added.
         assert view[-1] == most_recent_event
 
-        # The first event is always the first event.
-        assert view[0] == first_event
-
-        # The number of results should bounce back between 1, 2, 3, 4, 1, 2, 3, 4, ...
-        assert len(view) == (i % 4) + 1
+        # The prefix should always match the list of events, up to the keep_first limit.
+        assert view[:keep_first] == events[: min(keep_first, i + 1)]
 
 
 def test_llm_attention_condenser_from_config():
