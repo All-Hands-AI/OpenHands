@@ -165,6 +165,81 @@ class CmdOutputObservation(Observation):
 
 
 @dataclass
+class StaticCmdRunObservation(Observation):
+    """This data class represents the output of a command."""
+
+    command: str
+    observation: str = ObservationType.RUN_STATIC
+    # Additional metadata captured from PS1
+    metadata: CmdOutputMetadata = field(default_factory=CmdOutputMetadata)
+    # Whether the command output should be hidden from the user
+    hidden: bool = False
+
+    def __init__(
+        self,
+        content: str,
+        command: str,
+        observation: str = ObservationType.RUN,
+        metadata: dict | CmdOutputMetadata | None = None,
+        hidden: bool = False,
+        **kwargs,
+    ):
+        super().__init__(content)
+        self.command = command
+        self.observation = observation
+        self.hidden = hidden
+        if isinstance(metadata, dict):
+            self.metadata = CmdOutputMetadata(**metadata)
+        else:
+            self.metadata = metadata or CmdOutputMetadata()
+
+        # Handle legacy attribute
+        if 'exit_code' in kwargs:
+            self.metadata.exit_code = kwargs['exit_code']
+        if 'command_id' in kwargs:
+            self.metadata.pid = kwargs['command_id']
+
+    @property
+    def command_id(self) -> int:
+        return self.metadata.pid
+
+    @property
+    def exit_code(self) -> int:
+        return self.metadata.exit_code
+
+    @property
+    def error(self) -> bool:
+        return self.exit_code != 0
+
+    @property
+    def message(self) -> str:
+        return f'Command `{self.command}` executed with exit code {self.exit_code}.'
+
+    @property
+    def success(self) -> bool:
+        return not self.error
+
+    def __str__(self) -> str:
+        return (
+            f'**CmdOutputObservation (source={self.source}, exit code={self.exit_code}, '
+            f'metadata={json.dumps(self.metadata.model_dump(), indent=2)})**\n'
+            '--BEGIN AGENT OBSERVATION--\n'
+            f'{self.to_agent_observation()}\n'
+            '--END AGENT OBSERVATION--'
+        )
+
+    def to_agent_observation(self) -> str:
+        ret = f'{self.metadata.prefix}{self.content}{self.metadata.suffix}'
+        if self.metadata.working_dir:
+            ret += f'\n[Current working directory: {self.metadata.working_dir}]'
+        if self.metadata.py_interpreter_path:
+            ret += f'\n[Python interpreter: {self.metadata.py_interpreter_path}]'
+        if self.metadata.exit_code != -1:
+            ret += f'\n[Command finished with exit code {self.metadata.exit_code}]'
+        return ret
+
+
+@dataclass
 class IPythonRunCellObservation(Observation):
     """This data class represents the output of a IPythonRunCellAction."""
 

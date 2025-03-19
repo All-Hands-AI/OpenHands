@@ -54,8 +54,8 @@ from openhands.events.observation import (
     IPythonRunCellObservation,
     Observation,
 )
+from openhands.events.observation.commands import StaticCmdRunObservation
 from openhands.events.serialization import event_from_dict, event_to_dict
-from openhands.runtime.base import CommandResult
 from openhands.runtime.browser import browse
 from openhands.runtime.browser.browser_env import BrowserEnv
 from openhands.runtime.plugins import ALL_PLUGINS, JupyterPlugin, Plugin, VSCodePlugin
@@ -189,8 +189,10 @@ class ActionExecutor:
     def initial_cwd(self):
         return self._initial_cwd
 
-    async def _execute_shell_fn_git_handler(self, command: str) -> CommandResult:
-        return await AsyncBashSession.execute(command, self._initial_cwd)
+    async def _execute_shell_fn_git_handler(self, command: str):
+        return await call_sync_from_async(
+            AsyncBashSession.execute, command, self._initial_cwd
+        )
 
     async def _init_browser_async(self):
         """Initialize the browser asynchronously."""
@@ -305,6 +307,7 @@ class ActionExecutor:
         async with self.lock:
             action_type = action.action
             logger.debug(f'Running action:\n{action}')
+            logger.info(f'Running action:\n{action}')
             observation = await getattr(self, action_type)(action)
             logger.debug(f'Action output:\n{observation}')
             return observation
@@ -316,10 +319,12 @@ class ActionExecutor:
         obs = await call_sync_from_async(self.bash_session.execute, action)
         return obs
 
-    async def run_static(self, action: StaticCmdRunAction) -> CmdOutputObservation:
-        obs = await call_sync_from_async(
-            self._execute_shell_fn_git_handler, action.command
+    async def run_static(self, action: StaticCmdRunAction) -> StaticCmdRunObservation:
+        result = await AsyncBashSession.execute(action.command, self._initial_cwd)
+        obs = StaticCmdRunObservation(
+            content=result.content, exit_code=result.exit_code, command=action.command
         )
+        logger.info(f'Command executed: {obs.exit_code} {obs.content}')
         return obs
 
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
@@ -630,6 +635,7 @@ if __name__ == '__main__':
                 raise HTTPException(status_code=400, detail='Invalid action type')
             client.last_execution_time = time.time()
             observation = await client.run_action(action)
+            logger.info(f'Obs executed: {observation.content}')
             return event_to_dict(observation)
         except Exception as e:
             logger.error(f'Error while running /execute_action: {str(e)}')

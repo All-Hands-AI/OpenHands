@@ -26,8 +26,14 @@ class AsyncBashSession:
             )
 
             try:
-                stdout, _ = await asyncio.wait_for(process.communicate(), timeout=30)
+                stdout, stderr = await asyncio.wait_for(
+                    process.communicate(), timeout=30
+                )
                 output = stdout.decode('utf-8')
+
+                if stderr:
+                    output = stderr.decode('utf-8')
+                    print(f'!##! Error running command: {stderr.decode("utf-8")}')
 
                 return CommandResult(content=output, exit_code=process.returncode or 0)
 
