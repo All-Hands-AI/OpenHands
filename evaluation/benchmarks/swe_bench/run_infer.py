@@ -111,6 +111,8 @@ Follow these steps to resolve the issue:
    - If any tests fail, revise your implementation until all tests pass
 
 Be thorough in your exploration, testing, and reasoning. It's fine if your thinking process is lengthy - quality and completeness are more important than brevity.
+
+IMPORTANT: make sure to log your learnings about this repository in the repo.md file.
 """
 
     if RUN_WITH_BROWSING:
