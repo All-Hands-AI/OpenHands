@@ -203,43 +203,27 @@ class ProviderHandler:
                 continue
         return all_repos
 
-    async def set_event_stream_secrets(self, event_stream: EventStream):
-        """
-        Set the secrets in event stream
-        This method uses the `provider_tokens` attribute from an object of this class
-        It is called when the provider tokens are first initialized in the runtime
-
-        Args:
-            event_stream: Agent session's event stream
-
-        """
-        exposed_env_vars = await self.get_env_vars(expose_secrets=True)
-        event_stream.set_secrets(exposed_env_vars)
-
-    @classmethod
-    def set_event_stream_secrets_from_envs(
-        cls,
+    async def set_event_stream_secrets(
+        self,
         event_stream: EventStream,
-        env_vars: dict[ProviderType, SecretStr],
+        env_vars: dict[ProviderType, SecretStr] | None = None,
     ):
         """
-        This function sets the secret values for the event stream.
-        This ensures that the latest provider tokens are masked from the event stream.
-        It is called when the provider tokens are re-exported with the latest working ones
-
+        This ensures that the latest provider tokens are masked from the event stream
+        It is called when the provider tokens are first initialized in the runtime or when tokens are re-exported with the latest working ones
 
         Args:
             event_stream: Agent session's event stream
             env_vars: Dict of providers and their tokens that require updating
-
         """
+        if env_vars:
+            exposed_env_vars = self.expose_env_vars(env_vars)
+        else:
+            exposed_env_vars = await self.get_env_vars(expose_secrets=True)
+        event_stream.set_secrets(exposed_env_vars)
 
-        exposed_envs = ProviderHandler.expose_env_vars(env_vars)
-        event_stream.set_secrets(exposed_envs)
-
-    @classmethod
     def expose_env_vars(
-        cls, env_secrets: dict[ProviderType, SecretStr]
+        self, env_secrets: dict[ProviderType, SecretStr]
     ) -> dict[str, str]:
         """
         Return string values instead of typed values for environment secrets
@@ -308,7 +292,7 @@ class ProviderHandler:
         if not expose_secrets:
             return env_vars
 
-        return ProviderHandler.expose_env_vars(env_vars)
+        return self.expose_env_vars(env_vars)
 
     @classmethod
     def check_cmd_action_for_provider_token_ref(

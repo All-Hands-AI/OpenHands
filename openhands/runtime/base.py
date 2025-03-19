@@ -266,10 +266,11 @@ class Runtime(FileEditRuntimeMixin):
         self.prev_token = SecretStr(raw_token)
 
         try:
-            self.add_env_vars(ProviderHandler.expose_env_vars(env_vars))
-            ProviderHandler.set_event_stream_secrets_from_envs(
-                self.event_stream, env_vars
+            provider_handler = ProviderHandler(provider_tokens=self.git_provider_tokens)
+            await provider_handler.set_event_stream_secrets(
+                self.event_stream, env_vars=env_vars
             )
+            self.add_env_vars(provider_handler.expose_env_vars(env_vars))
         except Exception as e:
             logger.warning(
                 f'Failed export latest github token to runtime: {self.sid}, {e}'
