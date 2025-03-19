@@ -6,10 +6,17 @@ from typing import Callable, ClassVar, Type
 
 import litellm
 from litellm.exceptions import (
+    APIConnectionError,
+    APIError,
+    AuthenticationError,
     BadRequestError,
     ContextWindowExceededError,
+    InternalServerError,
+    NotFoundError,
     OpenAIError,
     RateLimitError,
+    ServiceUnavailableError,
+    Timeout,
 )
 
 from openhands.controller.agent import Agent
@@ -256,14 +263,15 @@ class AgentController:
                 f'Traceback: {traceback.format_exc()}',
             )
             reported = RuntimeError(
-                'There was an unexpected error while running the agent. Please '
-                'report this error to the developers by opening an issue at '
-                'https://github.com/All-Hands-AI/OpenHands. Your session ID is '
-                f' {self.id}. Error type: {e.__class__.__name__}'
+                'There was an unexpected error while running the agent. You can refresh the page or ask the agent to try again.'
             )
             if (
-                isinstance(e, litellm.AuthenticationError)
+                isinstance(e, litellm.Timeout)
+                or isinstance(e, litellm.APIError)
                 or isinstance(e, litellm.BadRequestError)
+                or isinstance(e, litellm.NotFoundError)
+                or isinstance(e, litellm.InternalServerError)
+                or isinstance(e, litellm.AuthenticationError)
                 or isinstance(e, RateLimitError)
                 or isinstance(e, LLMContextWindowExceedError)
             ):
