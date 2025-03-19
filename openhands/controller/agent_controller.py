@@ -277,7 +277,6 @@ class AgentController:
             ):
                 reported = e
             else:
-                # Log unexpected exceptions at error level
                 self.log(
                     'warning',
                     f'Unknown exception type while running the agent: {type(e).__name__}.',
