@@ -20,6 +20,7 @@ from openhands.agenthub.codeact_agent.tools import (
     create_cmd_run_tool,
     create_str_replace_editor_tool,
 )
+from openhands.agenthub.codeact_agent.tools.delegate import DelegateTool
 from openhands.core.exceptions import (
     FunctionCallNotExistsError,
     FunctionCallValidationError,
@@ -99,10 +100,18 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                         f'Missing required argument "code" in tool call {tool_call.function.name}'
                     )
                 action = IPythonRunCellAction(code=arguments['code'])
-            elif tool_call.function.name == 'delegate_to_browsing_agent':
+            elif tool_call.function.name == DelegateTool['function']['name']:
+                if 'agent' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "agent" in tool call {tool_call.function.name}'
+                    )
+                if 'inputs' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "inputs" in tool call {tool_call.function.name}'
+                    )
                 action = AgentDelegateAction(
-                    agent='BrowsingAgent',
-                    inputs=arguments,
+                    agent=arguments['agent'],
+                    inputs=arguments['inputs'],
                 )
 
             # ================================================
@@ -238,6 +247,7 @@ def get_tools(
         create_cmd_run_tool(use_simplified_description=use_simplified_tool_desc),
         ThinkTool,
         FinishTool,
+        DelegateTool,
     ]
     if codeact_enable_browsing:
         tools.append(WebReadTool)
