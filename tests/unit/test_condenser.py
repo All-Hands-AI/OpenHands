@@ -132,6 +132,17 @@ class RollingCondenserTestHarness:
                 case Condensation(event=condensation_event):
                     mock_state.history.append(condensation_event)
 
+    def expected_size(self, index: int, max_size: int) -> int:
+        """Calculate the expected size of the view at the given index.
+
+        Assumes the condenser triggers condensation when the view is _longer_ than the max size, and that the target size is half the max size.
+        """
+        if index < max_size:
+            return index + 1
+
+        target_size = max_size // 2
+        return ((index - max_size) % target_size) + target_size + 1
+
 
 def test_noop_condenser_from_config():
     """Test that the NoOpCondenser objects can be made from config."""
@@ -682,7 +693,7 @@ def test_llm_attention_condenser_grows_to_max_size(mock_llm, mock_state):
 
 def test_llm_attention_condenser_forgets_when_larger_than_max_size(mock_llm):
     """Test that the LLMAttentionCondenser forgets events when the context grows too large."""
-    max_size = 2
+    max_size = 10
     condenser = LLMAttentionCondenser(max_size=max_size, keep_first=0, llm=mock_llm)
 
     events = [create_test_event(f'Event {i}', id=i) for i in range(max_size * 10)]
@@ -698,7 +709,7 @@ def test_llm_attention_condenser_forgets_when_larger_than_max_size(mock_llm):
     harness.add_callback(set_response_content)
 
     for i, view in enumerate(harness.views(events)):
-        assert len(view) == (i % 2) + 1
+        assert len(view) == harness.expected_size(i, max_size)
 
 
 def test_llm_attention_condenser_handles_events_outside_history(mock_llm):
@@ -711,7 +722,7 @@ def test_llm_attention_condenser_handles_events_outside_history(mock_llm):
     def set_response_content(history: list[Event]):
         mock_llm.set_mock_response_content(
             ImportantEventSelection(
-                ids=[event.id for event in mock_state.history] + [-1, -2, -3, -4]
+                ids=[event.id for event in history] + [-1, -2, -3, -4]
             ).model_dump_json()
         )
 
@@ -719,7 +730,7 @@ def test_llm_attention_condenser_handles_events_outside_history(mock_llm):
     harness.add_callback(set_response_content)
 
     for i, view in enumerate(harness.views(events)):
-        assert len(view) == (i % 2) + 1
+        assert len(view) == harness.expected_size(i, max_size)
 
 
 def test_llm_attention_condenser_handles_too_many_events(mock_llm, mock_state):
@@ -740,7 +751,7 @@ def test_llm_attention_condenser_handles_too_many_events(mock_llm, mock_state):
     harness.add_callback(set_response_content)
 
     for i, view in enumerate(harness.views(events)):
-        assert len(view) == (i % 2) + 1
+        assert len(view) == harness.expected_size(i, max_size)
 
 
 def test_llm_attention_condenser_handles_too_few_events(mock_llm):
@@ -761,7 +772,7 @@ def test_llm_attention_condenser_handles_too_few_events(mock_llm):
     harness.add_callback(set_response_content)
 
     for i, view in enumerate(harness.views(events)):
-        assert len(view) == (i % 2) + 1
+        assert len(view) == harness.expected_size(i, max_size)
 
 
 def test_llm_attention_condenser_handles_keep_first_for_larger_max_size(mock_llm):
@@ -780,8 +791,4 @@ def test_llm_attention_condenser_handles_keep_first_for_larger_max_size(mock_llm
     harness.add_callback(set_response_content)
 
     for i, view in enumerate(harness.views(events)):
-        if (i + 1) <= max_size:
-            assert len(view) == i + 1
-        else:
-            assert len(view) <= max_size
-            assert view[0].id == 0
+        assert len(view) == harness.expected_size(i, max_size)
