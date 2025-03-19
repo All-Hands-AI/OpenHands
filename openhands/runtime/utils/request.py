@@ -24,7 +24,7 @@ class RequestHTTPError(requests.HTTPError):
 
 def is_retryable_error(exception):
     return (
-        isinstance(exception, requests.HTTPError)
+        isinstance(exception, (requests.HTTPError, RequestHTTPError))
         and exception.response.status_code == 429
     )
 
