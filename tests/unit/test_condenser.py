@@ -614,10 +614,13 @@ def test_llm_attention_condenser_keeps_first_events(mock_llm, mock_state):
                 ids=[event.id for event in mock_state.history]
             ).model_dump_json()
         )
-        results = condenser.condensed_history(mock_state)
 
-        # The first event is always the first event.
-        assert results[0] == first_event
+        match condenser.condensed_history(mock_state):
+            case View(events=events):
+                assert events[0] == first_event
+
+            case Condensation(event=condensation_event):
+                mock_state.history.append(condensation_event)
 
 
 def test_llm_attention_condenser_grows_to_max_size(mock_llm, mock_state):

@@ -15,6 +15,11 @@ class ImportantEventSelection(BaseModel):
     ids: list[int]
 
 
+class LLMAttentionCondensationEvent(Event):
+    forgotten_event_ids: list[int]
+    considered_event_ids: list[int]
+
+
 class LLMAttentionCondenser(RollingCondenser):
     """Rolling condenser strategy that uses an LLM to select the most important events when condensing the history."""
 
@@ -44,23 +49,27 @@ class LLMAttentionCondenser(RollingCondenser):
         super().__init__()
 
     def get_view(self, events: list[Event]) -> View:
-        raise NotImplementedError()
+        result_events = []
+        forgotten_event_ids = []
+
+        for event in events:
+            if isinstance(event, LLMAttentionCondensationEvent):
+                forgotten_event_ids.extend(event.forgotten_event_ids)
+            else:
+                result_events.append(event)
+
+        # Filter any forgotten events from the result events
+        return View(
+            events=[
+                event for event in result_events if event.id not in forgotten_event_ids
+            ]
+        )
 
     def get_condensation(self, view: View) -> Condensation:
-        raise NotImplementedError()
-
-    def should_condense(self, view: View) -> bool:
-        raise NotImplementedError()
-
-    def condense(self, events: list[Event]) -> View | Condensation:
-        """If the history is too long, use an LLM to select the most important events."""
-        if len(events) <= self.max_size:
-            return View(events=events)
-
         target_size = self.max_size // 2
-        head = events[: self.keep_first]
+        head_event_ids = [event.id for event in view.events[: self.keep_first]]
 
-        events_from_tail = target_size - len(head)
+        events_from_tail = target_size - len(head_event_ids)
 
         message: str = """You will be given a list of actions, observations, and thoughts from a coding agent.
         Each item in the list has an identifier. Please sort the identifiers in order of how important the
@@ -75,7 +84,7 @@ class LLMAttentionCondenser(RollingCondenser):
                         'content': f'<ID>{e.id}</ID>\n<CONTENT>{e.message}</CONTENT>',
                         'role': 'user',
                     }
-                    for e in events
+                    for e in view
                 ],
             ],
             response_format={
@@ -91,27 +100,40 @@ class LLMAttentionCondenser(RollingCondenser):
             response.choices[0].message.content
         ).ids
 
-        self.add_metadata('all_event_ids', [event.id for event in events])
-        self.add_metadata('response_ids', response_ids)
         self.add_metadata('metrics', self.llm.metrics.get())
 
         # Filter out any IDs from the head and trim the results down
-        head_ids = [event.id for event in head]
         response_ids = [
-            response_id for response_id in response_ids if response_id not in head_ids
+            response_id
+            for response_id in response_ids
+            if response_id not in head_event_ids
         ][:events_from_tail]
 
         # If the response IDs aren't _long_ enough, iterate backwards through the events and add any unfound IDs to the list.
-        for event in reversed(events):
+        for event in reversed(view):
             if len(response_ids) >= events_from_tail:
                 break
             if event.id not in response_ids:
                 response_ids.append(event.id)
 
-        # Grab the events associated with the response IDs
-        tail = [event for event in events if event.id in response_ids]
+        # Now that we've found the right number of events to keep, convert this into a list of events to forget.
+        forgotten_event_ids = [
+            event.id
+            for event in view
+            if event.id not in response_ids and event.id not in head_event_ids
+        ]
+        considered_event_ids = [
+            event.id for event in view if event.id not in head_event_ids
+        ]
 
-        return View(events=head + tail)
+        event = LLMAttentionCondensationEvent()
+        event.forgotten_event_ids = forgotten_event_ids
+        event.considered_event_ids = considered_event_ids
+
+        return Condensation(event=event)
+
+    def should_condense(self, view: View) -> bool:
+        return len(view) > self.max_size
 
     @classmethod
     def from_config(cls, config: LLMAttentionCondenserConfig) -> LLMAttentionCondenser:

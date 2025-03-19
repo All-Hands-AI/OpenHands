@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from typing import Any
+from typing import Any, overload
 
 from pydantic import BaseModel
 
@@ -38,11 +38,27 @@ class View(BaseModel):
     def __len__(self) -> int:
         return len(self.events)
 
-    def __getitem__(self, key: int) -> Event:
-        return self.events[key]
-
     def __iter__(self):
         return iter(self.events)
+
+    # To preserve list-like indexing, we ideally support slicing and position-based indexing.
+    # The only challenge with that is switching the return type based on the input type -- we
+    # can mark the different signatures for MyPy with `@overload` decorators.
+
+    @overload
+    def __getitem__(self, key: slice) -> list[Event]: ...
+
+    @overload
+    def __getitem__(self, key: int) -> Event: ...
+
+    def __getitem__(self, key: int | slice) -> Event | list[Event]:
+        if isinstance(key, slice):
+            start, stop, step = key.indices(len(self))
+            return [self[i] for i in range(start, stop, step)]
+        elif isinstance(key, int):
+            return self.events[key]
+        else:
+            raise ValueError(f'Invalid key type: {type(key)}')
 
 
 class Condensation(BaseModel):
