@@ -263,7 +263,7 @@ class AgentController:
                 f'Traceback: {traceback.format_exc()}',
             )
             reported = RuntimeError(
-                'There was an unexpected error while running the agent. You can refresh the page or ask the agent to try again.'
+                f'There was an unexpected error while running the agent. Error type: {e.__class__.__name__}. You can refresh the page or ask the agent to try again.'
             )
             if (
                 isinstance(e, litellm.Timeout)
