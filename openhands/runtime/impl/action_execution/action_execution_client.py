@@ -1,5 +1,4 @@
 import os
-import shutil
 import tempfile
 import threading
 from abc import abstractmethod
@@ -154,16 +153,18 @@ class ActionExecutionClient(Runtime):
 
         try:
             params = {'path': path}
-            response = self._send_action_server_request(
+            with self.session.stream(
                 'GET',
                 f'{self._get_action_execution_server_host()}/download_files',
                 params=params,
-                stream=True,
                 timeout=30,
-            )
-            with tempfile.NamedTemporaryFile(suffix='.zip', delete=False) as temp_file:
-                shutil.copyfileobj(response.raw, temp_file, length=16 * 1024)
-                return Path(temp_file.name)
+            ) as response:
+                with tempfile.NamedTemporaryFile(
+                    suffix='.zip', delete=False
+                ) as temp_file:
+                    for chunk in response.iter_bytes():
+                        temp_file.write(chunk)
+                    return Path(temp_file.name)
         except httpx.TimeoutException:
             raise TimeoutError('Copy operation timed out')
 
