@@ -87,6 +87,9 @@
 # JWT secret for authentication
 #jwt_secret = ""
 
+# jwt secret for authentication
+#jwt_secret_client_auth = jwt-secret-for-client-auth
+
 # Restrict file types for file uploads
 #file_uploads_restrict_file_types = false
 

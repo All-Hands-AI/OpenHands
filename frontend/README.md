@@ -91,6 +91,7 @@ The frontend application uses the following environment variables:
 | `VITE_FRONTEND_PORT`        | Port to run the frontend application                                   | `3001`           |
 | `VITE_INSECURE_SKIP_VERIFY` | Skip TLS certificate verification                                      | `false`          |
 | `VITE_GITHUB_TOKEN`         | GitHub token for repository access (used in some tests)                | -                |
+| `VITE_CLIENT_JWT`           | JWT secret for client authentication (Specify JWT_SECRET_CLIENT_AUTH in server) <br> Example of JWT <br> `import jwt` <br> `payload = {'user_id': 'some-user-id(any string)'}` <br> `secret = 'secret-key-for-client-auth'` <br> `token = jwt.encode(payload, secret, algorithm='HS256')`   | -  |
 
 You can create a `.env` file in the frontend directory with these variables based on the `.env.sample` file.
 

@@ -28,7 +28,7 @@ from openhands.storage.conversation.conversation_validator import (
 
 
 @sio.event
-async def connect(connection_id: str, environ):
+async def connect(connection_id: str, environ, auth):
     logger.info(f'sio:connect: {connection_id}')
     query_params = parse_qs(environ.get('QUERY_STRING', ''))
     latest_event_id = int(query_params.get('latest_event_id', [-1])[0])
@@ -37,10 +37,16 @@ async def connect(connection_id: str, environ):
         logger.error('No conversation_id in query params')
         raise ConnectionRefusedError('No conversation_id in query params')
 
-    cookies_str = environ.get('HTTP_COOKIE', '')
+    auth_info_str = environ.get('HTTP_COOKIE', '')
+    if config.jwt_secret_client_auth:
+        if not auth['token']:
+            logger.error('No Authorization token')
+            raise ConnectionRefusedError('No Authorization header')
+        auth_info_str = auth['token']
+
     conversation_validator = ConversationValidatorImpl()
     user_id, github_user_id = await conversation_validator.validate(
-        conversation_id, cookies_str
+        conversation_id, auth_info_str
     )
 
     settings_store = await SettingsStoreImpl.get_instance(config, user_id)
