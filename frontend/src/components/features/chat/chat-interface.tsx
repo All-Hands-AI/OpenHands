@@ -1,6 +1,7 @@
 import { useDispatch, useSelector } from "react-redux";
 import React from "react";
 import posthog from "posthog-js";
+import { useParams } from "react-router";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
 import { TrajectoryActions } from "../trajectory/trajectory-actions";
 import { createChatMessage } from "#/services/chat-service";
@@ -19,6 +20,9 @@ import { ActionSuggestions } from "./action-suggestions";
 import { ContinueButton } from "#/components/shared/buttons/continue-button";
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
+import { useGetTrajectory } from "#/hooks/mutation/use-get-trajectory";
+import { downloadTrajectory } from "#/utils/download-files";
+import { displayErrorToast } from "#/utils/custom-toast-handlers";
 
 function getEntryPoint(
   hasRepository: boolean | null,
@@ -47,6 +51,8 @@ export function ChatInterface() {
   const { selectedRepository, importedProjectZip } = useSelector(
     (state: RootState) => state.initialQuery,
   );
+  const params = useParams();
+  const { mutate: getTrajectory } = useGetTrajectory();
 
   const handleSendMessage = async (content: string, files: File[]) => {
     if (messages.length === 0) {
@@ -88,6 +94,25 @@ export function ChatInterface() {
   ) => {
     setFeedbackModalIsOpen(true);
     setFeedbackPolarity(polarity);
+  };
+
+  const onClickExportTrajectoryButton = () => {
+    if (!params.conversationId) {
+      displayErrorToast("ConversationId unknown, cannot download trajectory");
+      return;
+    }
+
+    getTrajectory(params.conversationId, {
+      onSuccess: async (data) => {
+        await downloadTrajectory(
+          params.conversationId ?? "unknown",
+          data.trajectory,
+        );
+      },
+      onError: (error) => {
+        displayErrorToast(error.message);
+      },
+    });
   };
 
   const isWaitingForUserInput =
@@ -136,6 +161,7 @@ export function ChatInterface() {
             onNegativeFeedback={() =>
               onClickShareFeedbackActionButton("negative")
             }
+            onExportTrajectory={() => onClickExportTrajectoryButton()}
           />
 
           <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0">

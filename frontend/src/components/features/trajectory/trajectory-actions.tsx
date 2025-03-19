@@ -1,16 +1,19 @@
 import { useTranslation } from "react-i18next";
 import ThumbsUpIcon from "#/icons/thumbs-up.svg?react";
 import ThumbDownIcon from "#/icons/thumbs-down.svg?react";
+import ExportIcon from "#/icons/export.svg?react";
 import { TrajectoryActionButton } from "#/components/shared/buttons/trajectory-action-button";
 
 interface TrajectoryActionsProps {
   onPositiveFeedback: () => void;
   onNegativeFeedback: () => void;
+  onExportTrajectory: () => void;
 }
 
 export function TrajectoryActions({
   onPositiveFeedback,
   onNegativeFeedback,
+  onExportTrajectory,
 }: TrajectoryActionsProps) {
   const { t } = useTranslation();
 
@@ -27,6 +30,12 @@ export function TrajectoryActions({
         onClick={onNegativeFeedback}
         icon={<ThumbDownIcon width={15} height={15} />}
         tooltip={t("BUTTON$MARK_NOT_HELPFUL")}
+      />
+      <TrajectoryActionButton
+        testId="export-trajectory"
+        onClick={onExportTrajectory}
+        icon={<ExportIcon width={15} height={15} />}
+        tooltip={t("BUTTON$EXPORT_CONVERSATION")}
       />
     </div>
   );
