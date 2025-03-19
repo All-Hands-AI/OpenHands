@@ -100,7 +100,9 @@ class Runtime(FileEditRuntimeMixin):
         headless_mode: bool = False,
         user_id: str | None = None,
     ):
-        self.git_handler = GitHandler(self._execute_shell_fn_git_handler)
+        self.git_handler = GitHandler(
+            execute_shell_fn=self._execute_shell_fn_git_handler
+        )
         self.sid = sid
         self.event_stream = event_stream
         self.event_stream.subscribe(
@@ -525,6 +527,9 @@ class Runtime(FileEditRuntimeMixin):
     # ====================================================================
 
     def _execute_shell_fn_git_handler(self, command: str) -> CommandResult:
+        """
+        This function is used by the GitHandler to execute shell commands.
+        """
         obs = self.run(CmdRunAction(command=command, is_static=True))
         exit_code = 0
         content = ''

@@ -187,11 +187,6 @@ class ActionExecutor:
     def initial_cwd(self):
         return self._initial_cwd
 
-    async def _execute_shell_fn_git_handler(self, command: str):
-        return await call_sync_from_async(
-            AsyncBashSession.execute, command, self._initial_cwd
-        )
-
     async def _init_browser_async(self):
         """Initialize the browser asynchronously."""
         logger.debug('Initializing browser asynchronously')
