@@ -34,6 +34,7 @@ export function Controls({ setSecurityOpen, showSecurityLock }: ControlsProps) {
         lastUpdatedAt={conversation?.created_at ?? ""}
         selectedRepository={conversation?.selected_repository ?? null}
         status={conversation?.status}
+        conversationId={conversation?.conversation_id}
       />
     </div>
   );

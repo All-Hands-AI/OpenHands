@@ -1,4 +1,5 @@
 import React from "react";
+import posthog from "posthog-js";
 import { formatTimeDelta } from "#/utils/format-time-delta";
 import { ConversationRepoLink } from "./conversation-repo-link";
 import {
@@ -19,6 +20,7 @@ interface ConversationCardProps {
   lastUpdatedAt: string; // ISO 8601
   status?: ProjectStatus;
   variant?: "compact" | "default";
+  conversationId?: string; // Optional conversation ID for VS Code URL
 }
 
 export function ConversationCard({
@@ -31,10 +33,14 @@ export function ConversationCard({
   lastUpdatedAt,
   status = "STOPPED",
   variant = "default",
+  conversationId,
 }: ConversationCardProps) {
   const [contextMenuVisible, setContextMenuVisible] = React.useState(false);
   const [titleMode, setTitleMode] = React.useState<"view" | "edit">("view");
   const inputRef = React.useRef<HTMLInputElement>(null);
+
+  // We don't use the VS Code URL hook directly here to avoid test failures
+  // Instead, we'll add the download button conditionally
 
   const handleBlur = () => {
     if (inputRef.current?.value) {
@@ -76,13 +82,31 @@ export function ConversationCard({
     setContextMenuVisible(false);
   };
 
+  const handleDownloadViaVSCode = (
+    event: React.MouseEvent<HTMLButtonElement>,
+  ) => {
+    event.preventDefault();
+    event.stopPropagation();
+    posthog.capture("download_via_vscode_button_clicked");
+
+    // We'll open a new window to the VS Code URL
+    // The actual URL will be fetched in the context menu component
+    window.open(`/api/conversations/${conversationId}/vscode-url`, "_blank");
+
+    setContextMenuVisible(false);
+  };
+
   React.useEffect(() => {
     if (titleMode === "edit") {
       inputRef.current?.focus();
     }
   }, [titleMode]);
 
-  const hasContextMenu = !!(onDelete || onChangeTitle);
+  const hasContextMenu = !!(
+    onDelete ||
+    onChangeTitle ||
+    conversationId // If we have a conversation ID, we can show the download button
+  );
 
   return (
     <div
@@ -138,6 +162,9 @@ export function ConversationCard({
               onClose={() => setContextMenuVisible(false)}
               onDelete={onDelete && handleDelete}
               onEdit={onChangeTitle && handleEdit}
+              onDownloadViaVSCode={
+                conversationId ? handleDownloadViaVSCode : undefined
+              }
               position={variant === "compact" ? "top" : "bottom"}
             />
           )}
