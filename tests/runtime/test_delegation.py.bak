@@ -1,11 +1,10 @@
 import asyncio
 import os
-import pytest
-from typing import Any, Dict
 
-from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
+import pytest
+
 from openhands.agenthub.browsing_agent.browsing_agent import BrowsingAgent
-from openhands.controller.agent import Agent
+from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
 from openhands.controller.agent_controller import AgentController
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig, LLMConfig
@@ -16,139 +15,62 @@ from openhands.events.action import (
     AgentFinishAction,
     MessageAction,
 )
-
 from openhands.llm.llm import LLM
-from openhands.llm.metrics import Metrics
 from openhands.storage.memory import InMemoryFileStore
-from litellm.types.utils import ModelResponse
-
-
-class MockLLM(LLM):
-    """Base class for mock LLMs used in testing."""
-    def __init__(self, config: LLMConfig, completion_response: dict):
-        super().__init__(config)
-        self._completion_response = completion_response
-        self._function_calling_active = True
-        self.metrics = Metrics()
-
-    def _completion(self, **kwargs) -> dict:
-        return self._completion_response
-
-    def vision_is_active(self) -> bool:
-        return False
-
-    def is_caching_prompt_active(self) -> bool:
-        return False
-
-    def format_messages_for_llm(self, messages: list) -> list:
-        return messages
-
-    def _post_completion(self, response: ModelResponse) -> float:
-        return 0.0
 
 
 @pytest.fixture
 def mock_llm():
     """Creates a mock LLM for testing."""
-    completion_response = {
-        "choices": [
+    llm = LLM(LLMConfig())
+    llm._completion = lambda **kwargs: {
+        'choices': [
             {
-                "message": {
-                    "role": "assistant",
-                    "content": "I'll help with that task.",
-                    "tool_calls": [
+                'message': {
+                    'role': 'assistant',
+                    'content': "I'll help with that task.",
+                    'tool_calls': [
                         {
-                            "id": "call_1",
-                            "type": "function",
-                            "function": {
-                                "name": "delegate",
-                                "arguments": '{"agent": "BrowsingAgent", "inputs": {"task": "search for OpenHands repository"}}'
-                            }
+                            'id': 'call_1',
+                            'type': 'function',
+                            'function': {
+                                'name': 'delegate',
+                                'arguments': '{"agent": "BrowsingAgent", "inputs": {"task": "search for OpenHands repository"}}',
+                            },
                         }
-                    ]
+                    ],
                 }
             }
         ]
     }
-    return MockLLM(LLMConfig(), completion_response)
+    return llm
 
 
 @pytest.fixture
 def mock_browsing_llm():
     """Creates a mock LLM for the browsing agent."""
-    completion_response = {
-        "choices": [
+    llm = LLM(LLMConfig())
+    llm._completion = lambda **kwargs: {
+        'choices': [
             {
-                "message": {
-                    "role": "assistant",
-                    "content": "I've completed the search task.",
-                    "tool_calls": [
+                'message': {
+                    'role': 'assistant',
+                    'content': "I've completed the search task.",
+                    'tool_calls': [
                         {
-                            "id": "call_1",
-                            "type": "function",
-                            "function": {
-                                "name": "finish",
-                                "arguments": '{"message": "Found the repository at github.com/All-Hands-AI/OpenHands", "task_completed": "true"}'
-                            }
+                            'id': 'call_1',
+                            'type': 'function',
+                            'function': {
+                                'name': 'finish',
+                                'arguments': '{"message": "Found the repository at github.com/All-Hands-AI/OpenHands", "task_completed": "true"}',
+                            },
                         }
-                    ]
+                    ],
                 }
             }
         ]
     }
-    return MockLLM(LLMConfig(), completion_response)
-
-
-@pytest.fixture
-def mock_writer_llm():
-    """Creates a mock LLM for the writer CodeAct agent."""
-    completion_response = {
-        "choices": [
-            {
-                "message": {
-                    "role": "assistant",
-                    "content": "I'll help with that task.",
-                    "tool_calls": [
-                        {
-                            "id": "call_1",
-                            "type": "function",
-                            "function": {
-                                "name": "delegate",
-                                "arguments": '{"agent": "CodeActAgent", "inputs": {"task": "analyze the code in /workspace/example.py"}}'
-                            }
-                        }
-                    ]
-                }
-            }
-        ]
-    }
-    return MockLLM(LLMConfig(), completion_response)
-
-
-@pytest.fixture
-def mock_reader_llm():
-    """Creates a mock LLM for the reader CodeAct agent."""
-    completion_response = {
-        "choices": [
-            {
-                "message": {
-                    "role": "assistant",
-                    "content": "I've analyzed the code.",
-                    "tool_calls": [
-                        {
-                            "id": "call_1",
-                            "type": "function",
-                            "function": {
-                                "name": "finish",
-                                "arguments": '{"message": "The code has been analyzed. It contains a simple function.", "task_completed": "true"}'
-                            }
-                        }
-                    ]
-                }
-            }
-        ]
-    }
-    return MockLLM(LLMConfig(), completion_response)
+    return llm
 
 
 @pytest.mark.asyncio
@@ -167,7 +89,6 @@ async def test_codeact_to_browsing_delegation(mock_llm, mock_browsing_llm):
 
     # Create parent CodeAct agent
     parent_config = AgentConfig()
-    parent_config.codeact_enable_browsing = True  # Enable browsing to allow delegation to BrowsingAgent
     parent_agent = CodeActAgent(mock_llm, parent_config)
     parent_state = State(max_iterations=10)
     parent_controller = AgentController(
@@ -212,17 +133,16 @@ async def test_codeact_to_browsing_delegation(mock_llm, mock_browsing_llm):
     delegate_actions = [e for e in events if isinstance(e, AgentDelegateAction)]
     assert len(delegate_actions) == 1, 'Expected one delegation action'
     delegate_action = delegate_actions[0]
-    assert delegate_action.agent == "BrowsingAgent"
-    assert "search" in str(delegate_action.inputs)
+    assert delegate_action.agent == 'BrowsingAgent'
+    assert 'search' in str(delegate_action.inputs)
 
     # Verify parent has a delegate controller
     assert parent_controller.delegate is not None
-    assert parent_controller.delegate.agent.name == "BrowsingAgent"
+    assert parent_controller.delegate.agent.name == 'BrowsingAgent'
 
     # Let the child agent process its task
     child_message = Message(
-        role='user',
-        content=[TextContent(text=str(delegate_action.inputs))]
+        role='user', content=[TextContent(text=str(delegate_action.inputs))]
     )
     child_message_action = MessageAction(content=child_message.content[0].text)
     child_message_action._source = EventSource.USER
@@ -232,13 +152,67 @@ async def test_codeact_to_browsing_delegation(mock_llm, mock_browsing_llm):
     # Verify child completed its task
     events = list(event_stream.get_events())
     finish_actions = [e for e in events if isinstance(e, AgentFinishAction)]
-    assert len(finish_actions) == 1, "Expected one finish action"
+    assert len(finish_actions) == 1, 'Expected one finish action'
 
     # Verify parent's delegate is cleared after child finishes
     assert parent_controller.delegate is None
 
     # Cleanup
     await parent_controller.close()
+
+
+@pytest.fixture
+def mock_writer_llm():
+    """Creates a mock LLM for the writer CodeAct agent."""
+    llm = LLM(LLMConfig())
+    llm._completion = lambda **kwargs: {
+        'choices': [
+            {
+                'message': {
+                    'role': 'assistant',
+                    'content': "I'll help with that task.",
+                    'tool_calls': [
+                        {
+                            'id': 'call_1',
+                            'type': 'function',
+                            'function': {
+                                'name': 'delegate',
+                                'arguments': '{"agent": "CodeActAgent", "inputs": {"task": "analyze the code in /workspace/example.py"}}',
+                            },
+                        }
+                    ],
+                }
+            }
+        ]
+    }
+    return llm
+
+
+@pytest.fixture
+def mock_reader_llm():
+    """Creates a mock LLM for the reader CodeAct agent."""
+    llm = LLM(LLMConfig())
+    llm._completion = lambda **kwargs: {
+        'choices': [
+            {
+                'message': {
+                    'role': 'assistant',
+                    'content': "I've analyzed the code.",
+                    'tool_calls': [
+                        {
+                            'id': 'call_1',
+                            'type': 'function',
+                            'function': {
+                                'name': 'finish',
+                                'arguments': '{"message": "The code has been analyzed. It contains a simple function.", "task_completed": "true"}',
+                            },
+                        }
+                    ],
+                }
+            }
+        ]
+    }
+    return llm
 
 
 @pytest.mark.asyncio
@@ -264,7 +238,6 @@ async def test_codeact_to_codeact_delegation(mock_writer_llm, mock_reader_llm):
     parent_config = AgentConfig()
     parent_config.codeact_enable_jupyter = True
     parent_config.codeact_enable_llm_editor = True
-    parent_config.codeact_enable_browsing = True  # Enable browsing to allow delegation
     parent_agent = CodeActAgent(mock_writer_llm, parent_config)
     parent_state = State(max_iterations=10)
     parent_controller = AgentController(
@@ -310,17 +283,16 @@ async def test_codeact_to_codeact_delegation(mock_writer_llm, mock_reader_llm):
     delegate_actions = [e for e in events if isinstance(e, AgentDelegateAction)]
     assert len(delegate_actions) == 1, 'Expected one delegation action'
     delegate_action = delegate_actions[0]
-    assert delegate_action.agent == "CodeActAgent"
-    assert "analyze" in str(delegate_action.inputs)
+    assert delegate_action.agent == 'CodeActAgent'
+    assert 'analyze' in str(delegate_action.inputs)
 
     # Verify parent has a delegate controller
     assert parent_controller.delegate is not None
-    assert parent_controller.delegate.agent.name == "CodeActAgent"
+    assert parent_controller.delegate.agent.name == 'CodeActAgent'
 
     # Let the child agent process its task
     child_message = Message(
-        role='user',
-        content=[TextContent(text=str(delegate_action.inputs))]
+        role='user', content=[TextContent(text=str(delegate_action.inputs))]
     )
     child_message_action = MessageAction(content=child_message.content[0].text)
     child_message_action._source = EventSource.USER
@@ -330,7 +302,7 @@ async def test_codeact_to_codeact_delegation(mock_writer_llm, mock_reader_llm):
     # Verify child completed its task
     events = list(event_stream.get_events())
     finish_actions = [e for e in events if isinstance(e, AgentFinishAction)]
-    assert len(finish_actions) == 1, "Expected one finish action"
+    assert len(finish_actions) == 1, 'Expected one finish action'
 
     # Verify parent's delegate is cleared after child finishes
     assert parent_controller.delegate is None
