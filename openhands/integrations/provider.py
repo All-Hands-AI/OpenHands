@@ -60,6 +60,8 @@ class SecretStore(BaseModel):
         default_factory=lambda: MappingProxyType({})
     )
 
+    custom_secrets: CUSTOM_SECRETS_TYPE | None = Field(default_factory=None)
+
     model_config = {
         'frozen': True,
         'validate_assignment': True,
@@ -90,6 +92,22 @@ class SecretStore(BaseModel):
             }
 
         return tokens
+    
+    @field_serializer('custom_secrets')
+    def custom_secrets_serializer(
+        self, custom_secrets: CUSTOM_SECRETS_TYPE, info: SerializationInfo
+    ):
+        secrets = {}
+        expose_secrets = info.context and info.context.get('expose_secrets', False)
+
+        for secret_name, secret_key in custom_secrets.items():
+            secrets[secret_name] = {
+                secret_key.get_secret_value()
+                if expose_secrets
+                else pydantic_encoder(secret_key)
+            }
+
+        return secrets
 
     @model_validator(mode='before')
     @classmethod
@@ -122,7 +140,19 @@ class SecretStore(BaseModel):
 
                 # Convert to MappingProxyType
                 new_data['provider_tokens'] = MappingProxyType(converted_tokens)
+        if 'custom_secrets' in data:
+            secrets = data['custom_secrets']
+            if isinstance(
+                secrets, dict
+            ):
+                converted_secrets = {}
+                for key, value in tokens.items():
+                    if isinstance(value, str):
+                        converted_secrets[key] = SecretStr(value)
+                    elif isinstance(value, SecretStr):
+                        converted_secrets[key] = value
 
+                new_data['custom_secrets'] = MappingProxyType(converted_secrets)
         return new_data
 
 
