@@ -227,3 +227,8 @@ def test_token_conversion():
     )
 
     assert len(store6.provider_tokens.keys()) == 0
+
+
+def test_provider_handler_type_enforcement():
+    with pytest.raises((TypeError)):
+        ProviderHandler(provider_tokens={"a": "b"})

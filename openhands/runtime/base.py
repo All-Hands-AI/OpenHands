@@ -243,14 +243,14 @@ class Runtime(FileEditRuntimeMixin):
 
         logger.info(f'Fetching latest github token for runtime: {self.sid}')
         env_vars = await provider_handler.get_env_vars(
-            required_providers=providers_called, expose_secrets=True, get_latest=True
+            required_providers=providers_called, expose_secrets=False, get_latest=True
         )
 
-        if 'github_token' not in env_vars:
+        if ProviderType.GITHUB not in env_vars:
             logger.error(f'Failed to refresh github token for runtime: {self.sid}')
             return
 
-        raw_token = env_vars['github_token']
+        raw_token = env_vars[ProviderType.GITHUB].get_secret_value()
         if not self.prev_token:
             logger.info(
                 f'Setting github token in runtime: {self.sid}\nToken value: {raw_token[0:5]}; length: {len(raw_token)}'
@@ -263,8 +263,10 @@ class Runtime(FileEditRuntimeMixin):
         self.prev_token = SecretStr(raw_token)
 
         try:
-            self.add_env_vars(env_vars)
-            ProviderHandler.set_event_stream_secrets(self.event_stream, env_vars)
+            self.add_env_vars(ProviderHandler.expose_env_vars(env_vars))
+            ProviderHandler.set_event_stream_secrets_from_envs(
+                self.event_stream, env_vars
+            )
         except Exception as e:
             logger.warning(
                 f'Failed export latest github token to runtime: {self.sid}, {e}'

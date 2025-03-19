@@ -138,6 +138,11 @@ class ProviderHandler:
         external_auth_token: SecretStr | None = None,
         external_token_manager: bool = False,
     ):
+        if not isinstance(provider_tokens, MappingProxyType):
+            raise TypeError(
+                f'provider_tokens must be a MappingProxyType, got {type(provider_tokens).__name__}'
+            )
+
         self.service_class_map: dict[ProviderType, type[GitService]] = {
             ProviderType.GITHUB: GithubServiceImpl,
             ProviderType.GITLAB: GitLabServiceImpl,
@@ -198,13 +203,15 @@ class ProviderHandler:
                 continue
         return all_repos
 
+    async def set_event_stream_secrets(self, event_stream: EventStream):
+        exposed_env_vars = await self.get_env_vars(expose_secrets=True)
+        event_stream.set_secrets(exposed_env_vars)
+
     @classmethod
-    def set_event_stream_secrets(
+    def set_event_stream_secrets_from_envs(
         cls,
         event_stream: EventStream,
-        provider_tokens: PROVIDER_TOKEN_TYPE
-        | dict[ProviderType, SecretStr]
-        | dict[str, str],
+        env_vars: dict[ProviderType, SecretStr],
     ):
         """
         This function sets the secret values for the event stream.
@@ -218,27 +225,17 @@ class ProviderHandler:
 
         """
 
-        normalized_dict = {
-            ProviderHandler.get_provider_env_key(provider)
-            if isinstance(provider, ProviderType)
-            else provider: token
-            for provider, token in provider_tokens.items()
-        }
+        exposed_envs = ProviderHandler.expose_env_vars(env_vars)
+        event_stream.set_secrets(exposed_envs)
 
-        for provider, raw_token in normalized_dict.items():
-            token: str
+    @classmethod
+    def expose_env_vars(cls, env_vars: dict[ProviderType, SecretStr]) -> dict[str, str]:
+        exposed_envs = {}
+        for provider, token in env_vars.items():
+            env_key = ProviderHandler.get_provider_env_key(provider)
+            exposed_envs[env_key] = token.get_secret_value()
 
-            if isinstance(raw_token, ProviderToken):
-                token = raw_token.token.get_secret_value() if raw_token.token else ''
-            elif isinstance(raw_token, SecretStr):
-                token = raw_token.get_secret_value()
-            elif isinstance(raw_token, str):
-                token = raw_token
-            else:
-                continue  # Skip invalid token types
-
-            if token:
-                event_stream.set_secrets({provider: token})
+        return exposed_envs
 
     @overload
     def get_env_vars(
@@ -296,12 +293,7 @@ class ProviderHandler:
         if not expose_secrets:
             return env_vars
 
-        exposed_envs = {}
-        for provider, token in env_vars.items():
-            env_key = ProviderHandler.get_provider_env_key(provider)
-            exposed_envs[env_key] = token.get_secret_value()
-
-        return exposed_envs
+        return ProviderHandler.expose_env_vars(env_vars)
 
     @classmethod
     def check_cmd_action_for_provider_token_ref(
@@ -327,4 +319,4 @@ class ProviderHandler:
         """
         Map ProviderType value to the environment variable name in the runtime
         """
-        return f'{provider.value.upper()}_token'.lower()
+        return f'{provider.value}_token'.lower()

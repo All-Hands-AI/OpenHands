@@ -137,8 +137,9 @@ class AgentSession:
             )
 
             if provider_tokens:
-                ProviderHandler.set_event_stream_secrets(
-                    self.event_stream, provider_tokens
+                provider_handler = ProviderHandler(provider_tokens=provider_tokens)
+                await provider_handler.set_event_stream_secrets(
+                    self.event_stream
                 )
 
             if not self._closed:
