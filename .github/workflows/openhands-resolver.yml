@@ -332,7 +332,7 @@ jobs:
         env:
           AGENT_RESPONDED: ${{ env.AGENT_RESPONDED || 'false' }}
           ISSUE_NUMBER: ${{ env.ISSUE_NUMBER }}
-          RESOLUTION_SUCCESS: ${{ steps.check_result.outputs.RESOLUTION_SUCCESS 
+          RESOLUTION_SUCCESS: ${{ steps.check_result.outputs.RESOLUTION_SUCCESS }}
         with:
           github-token: ${{ secrets.PAT_TOKEN || github.token }}
           script: |
