@@ -1,7 +1,7 @@
 import json
 from typing import Any
 
-import requests
+import httpx
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
 from openhands.utils.http_session import HttpSession
@@ -40,7 +40,7 @@ def send_request(
     url: str,
     timeout: int = 10,
     **kwargs: Any,
-) -> requests.Response:
+) -> httpx.Response:
     response = session.request(method, url, timeout=timeout, **kwargs)
     try:
         response.raise_for_status()
