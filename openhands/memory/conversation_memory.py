@@ -85,6 +85,7 @@ class ConversationMemory:
                     action=event,
                     pending_tool_call_action_messages=pending_tool_call_action_messages,
                     vision_is_active=vision_is_active,
+                    max_message_chars=max_message_chars,
                 )
             elif isinstance(event, Observation):
                 messages_to_add = self._process_observation(
@@ -148,6 +149,7 @@ class ConversationMemory:
         action: Action,
         pending_tool_call_action_messages: dict[str, Message],
         vision_is_active: bool = False,
+        max_message_chars: int | None = None,
     ) -> list[Message]:
         """Converts an action into a message format that can be sent to the LLM.
 
@@ -172,6 +174,9 @@ class ConversationMemory:
 
             vision_is_active: Whether vision is active in the LLM. If True, image URLs will be included
 
+            max_message_chars: The maximum number of characters in the content of an action included
+                in the prompt to the LLM. Larger content is truncated.
+
         Returns:
             list[Message]: A list containing the formatted message(s) for the action.
                 May be empty if the action is handled as a tool call in function calling mode.
@@ -185,8 +190,8 @@ class ConversationMemory:
         if isinstance(action, AgentCondensationAction):
             # For condensation actions, create a message with the summary
             text = truncate_content(
-                action.summary, 10000
-            )  # Use a reasonable max length
+                action.summary, max_message_chars
+            )  # Use the same max length as other messages
             return [Message(role='user', content=[TextContent(text=text)])]
         elif isinstance(
             action,
