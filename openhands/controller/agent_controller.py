@@ -51,6 +51,7 @@ from openhands.events.action import (
 from openhands.events.action.agent import RecallAction
 from openhands.events.event import Event
 from openhands.events.observation import (
+    AgentCondensationObservation,
     AgentDelegateObservation,
     AgentStateChangedObservation,
     ErrorObservation,
@@ -301,6 +302,8 @@ class AgentController:
                 and event.cause
                 > 0  # NullObservation has cause > 0 (RecallAction), not 0 (user message)
             ):
+                return True
+            if isinstance(event, AgentCondensationObservation):
                 return True
             if isinstance(event, AgentStateChangedObservation) or isinstance(
                 event, NullObservation
@@ -1023,14 +1026,10 @@ class AgentController:
         if self.state.history:
             self.state.start_id = self.state.history[0].id
 
-        # Add an error event to trigger another step by the agent
+        # Add an observation event to trigger another step by the agent
         self.event_stream.add_event(
-            AgentCondensationAction(
-                start_id=self.state.start_id,
-                end_id=self.state.history[-1].id
-                if self.state.history
-                else self.state.start_id,
-                summary='Trimming prompt to meet context window limitations',
+            AgentCondensationObservation(
+                content='Trimming prompt to meet context window limitations',
             ),
             EventSource.AGENT,
         )

@@ -9,48 +9,48 @@ This guide provides an overview of the key documentation resources available in 
 ## Core Documentation
 
 ### Project Fundamentals
-- **Main Project Overview** (`/README.md`)  
+- **Main Project Overview** (`/README.md`)
   The primary entry point for understanding OpenHands, including features and basic setup instructions.
 
-- **Development Guide** (`/Development.md`)  
+- **Development Guide** (`/Development.md`)
   Comprehensive guide for developers working on OpenHands, including setup, requirements, and development workflows.
 
-- **Contributing Guidelines** (`/CONTRIBUTING.md`)  
+- **Contributing Guidelines** (`/CONTRIBUTING.md`)
   Essential information for contributors, covering code style, PR process, and contribution workflows.
 
 ### Component Documentation
 
 #### Frontend
-- **Frontend Application** (`/frontend/README.md`)  
+- **Frontend Application** (`/frontend/README.md`)
   Complete guide for setting up and developing the React-based frontend application.
 
 #### Backend
-- **Backend Implementation** (`/openhands/README.md`)  
+- **Backend Implementation** (`/openhands/README.md`)
   Detailed documentation of the Python backend implementation and architecture.
 
-- **Server Documentation** (`/openhands/server/README.md`)  
+- **Server Documentation** (`/openhands/server/README.md`)
   Server implementation details, API documentation, and service architecture.
 
-- **Runtime Environment** (`/openhands/runtime/README.md`)  
+- **Runtime Environment** (`/openhands/runtime/README.md`)
   Documentation covering the runtime environment, execution model, and runtime configurations.
 
 #### Infrastructure
-- **Container Documentation** (`/containers/README.md`)  
+- **Container Documentation** (`/containers/README.md`)
   Comprehensive information about Docker containers, deployment strategies, and container management.
 
 ### Testing and Evaluation
-- **Unit Testing Guide** (`/tests/unit/README.md`)  
+- **Unit Testing Guide** (`/tests/unit/README.md`)
   Instructions for writing, running, and maintaining unit tests.
 
-- **Evaluation Framework** (`/evaluation/README.md`)  
+- **Evaluation Framework** (`/evaluation/README.md`)
   Documentation for the evaluation framework, benchmarks, and performance testing.
 
 ### Advanced Features
-- **Microagents Architecture** (`/microagents/README.md`)  
+- **Microagents Architecture** (`/microagents/README.md`)
   Detailed information about the microagents architecture, implementation, and usage.
 
 ### Documentation Standards
-- **Documentation Style Guide** (`/docs/DOC_STYLE_GUIDE.md`)  
+- **Documentation Style Guide** (`/docs/DOC_STYLE_GUIDE.md`)
   Standards and guidelines for writing and maintaining project documentation.
 
 ## Getting Started with Development
