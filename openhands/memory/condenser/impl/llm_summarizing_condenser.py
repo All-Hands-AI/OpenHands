@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from openhands.core.config.condenser_config import LLMSummarizingCondenserConfig
 from openhands.core.message import Message, TextContent
+from openhands.controller.state.state import State
 from openhands.events.action.agent import AgentCondensationAction
 from openhands.events.event import Event
 from openhands.llm import LLM

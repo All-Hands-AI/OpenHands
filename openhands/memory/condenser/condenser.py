@@ -270,6 +270,7 @@ class RollingCondenser(Condenser, ABC):
             
             # Reconstruct the condensation result based on the condenser's structure
             # For LLMSummarizingCondenser, this would be head + condensation_action
+            # We need to use the keep_first attribute if it exists, otherwise just use the condensation action
             head = state.history[:min(self.keep_first, len(state.history))] if hasattr(self, 'keep_first') else []
             self._condensation = head + [condensation_action]
             self._last_history_length = last_processed_index
@@ -365,6 +366,7 @@ class RollingCondenser(Condenser, ABC):
         
         # Reconstruct the condensation result based on the condenser's structure
         # For LLMSummarizingCondenser, this would be head + condensation_action
+        # We need to use the keep_first attribute if it exists, otherwise just use the condensation action
         head = state.history[:min(self.keep_first, len(state.history))] if hasattr(self, 'keep_first') else []
         condensation = head + [condensation_action]
         
