@@ -276,6 +276,12 @@ class AgentController:
                 or isinstance(e, LLMContextWindowExceedError)
             ):
                 reported = e
+            else:
+                # Log unexpected exceptions at error level
+                self.log(
+                    'error',
+                    f'Unexpected exception type: {type(e).__name__}. This exception type is not in the list of expected exceptions.',
+                )
             await self._react_to_exception(reported)
 
     def should_step(self, event: Event) -> bool:
