@@ -37,6 +37,7 @@ class AgentSession:
     """
 
     sid: str
+    user_id: str | None
     event_stream: EventStream
     file_store: FileStore
     controller: AgentController | None = None
@@ -63,7 +64,7 @@ class AgentSession:
         """
 
         self.sid = sid
-        self.event_stream = EventStream(sid, file_store)
+        self.event_stream = EventStream(sid, file_store, user_id)
         self.file_store = file_store
         self._status_callback = status_callback
         self.user_id = user_id
@@ -186,7 +187,7 @@ class AgentSession:
             self.event_stream.close()
         if self.controller is not None:
             end_state = self.controller.get_state()
-            end_state.save_to_session(self.sid, self.file_store)
+            end_state.save_to_session(self.sid, self.file_store, self.user_id)
             await self.controller.close()
         if self.runtime is not None:
             self.runtime.close()
@@ -371,7 +372,9 @@ class AgentSession:
         # Use a heuristic to figure out if we should have a state:
         # if we have events in the stream.
         try:
-            restored_state = State.restore_from_session(self.sid, self.file_store)
+            restored_state = State.restore_from_session(
+                self.sid, self.file_store, self.user_id
+            )
             self.logger.debug(f'Restored state from session, sid: {self.sid}')
         except Exception as e:
             if self.event_stream.get_latest_event_id() > 0:

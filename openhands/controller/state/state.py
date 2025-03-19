@@ -102,20 +102,26 @@ class State:
     extra_data: dict[str, Any] = field(default_factory=dict)
     last_error: str = ''
 
-    def save_to_session(self, sid: str, file_store: FileStore):
+    def save_to_session(self, sid: str, file_store: FileStore, user_id: str | None):
         pickled = pickle.dumps(self)
         logger.debug(f'Saving state to session {sid}:{self.agent_state}')
         encoded = base64.b64encode(pickled).decode('utf-8')
         try:
-            file_store.write(get_conversation_agent_state_filename(sid), encoded)
+            file_store.write(
+                get_conversation_agent_state_filename(sid, user_id), encoded
+            )
         except Exception as e:
             logger.error(f'Failed to save state to session: {e}')
             raise e
 
     @staticmethod
-    def restore_from_session(sid: str, file_store: FileStore) -> 'State':
+    def restore_from_session(
+        sid: str, file_store: FileStore, user_id: str | None = None
+    ) -> 'State':
         try:
-            encoded = file_store.read(get_conversation_agent_state_filename(sid))
+            encoded = file_store.read(
+                get_conversation_agent_state_filename(sid, user_id)
+            )
             pickled = base64.b64decode(encoded)
             state = pickle.loads(pickled)
         except Exception as e:
