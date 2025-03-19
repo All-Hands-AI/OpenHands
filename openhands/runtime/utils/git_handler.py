@@ -1,20 +1,27 @@
+from dataclasses import dataclass
 from typing import Callable
 
-from openhands.runtime.base import CommandResult
+
+@dataclass
+class CommandResult:
+    content: str
+    exit_code: int
 
 
 class GitHandler:
-    def __init__(self, execute_shell_fn: Callable[[str], CommandResult]):
+    def __init__(
+        self,
+        execute_shell_fn: Callable[[str], CommandResult],
+    ):
         self.execute = execute_shell_fn
 
     def _is_git_repo(self) -> bool:
         cmd = 'git rev-parse --is-inside-work-tree'
         output = self.execute(cmd)
-        return output.content == 'true'
+        return output.content.strip() == 'true'
 
     def _get_current_file_content(self, file_path: str) -> str:
-        cmd = f'cat {file_path}'
-        output = self.execute(cmd)
+        output = self.execute(f'cat {file_path}')
         return output.content
 
     def _verify_ref_exists(self, ref: str) -> bool:
@@ -91,7 +98,7 @@ class GitHandler:
         result += self.get_untracked_files()
         return result
 
-    def get_git_diff(self, file_path: str, ref='HEAD') -> dict[str, str]:
+    def get_git_diff(self, file_path: str) -> dict[str, str]:
         modified = self._get_current_file_content(file_path)
         original = self._get_ref_content(file_path)
 
