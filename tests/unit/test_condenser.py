@@ -630,49 +630,8 @@ def test_rolling_condenser_handles_truncation(mock_state: State):
     assert [e._id for e in results] == [3, 4, 5]
 
 
-def test_llm_attention_condenser_keeps_first_events(mock_llm, mock_state):
-    """Test that the LLMAttentionCondenser keeps the right number of initial events when forgetting."""
-    max_size = 4
-    condenser = LLMAttentionCondenser(max_size=max_size, keep_first=1, llm=mock_llm)
-
-    first_event = create_test_event('Event 0', id=0)
-    mock_state.history.append(first_event)
-
-    for i in range(max_size * 10):
-        event = create_test_event(f'Event {i+1}', id=i + 1)
-        mock_state.history.append(event)
-
-        mock_llm.set_mock_response_content(
-            ImportantEventSelection(
-                ids=[event.id for event in mock_state.history]
-            ).model_dump_json()
-        )
-
-        match condenser.condensed_history(mock_state):
-            case View(events=events):
-                assert events[0] == first_event
-
-            case Condensation(event=condensation_event):
-                mock_state.history.append(condensation_event)
-
-
-def test_llm_attention_condenser_grows_to_max_size(mock_llm, mock_state):
-    """Test that LLMAttentionCondenser correctly maintains an event context up to max size."""
-    max_size = 15
-    condenser = LLMAttentionCondenser(max_size=max_size, llm=mock_llm)
-
-    for i in range(max_size):
-        event = create_test_event(f'Event {i}')
-        mock_state.history.append(event)
-        mock_llm.set_mock_response_content(
-            ImportantEventSelection(ids=[event.id for event in mock_state.history])
-        )
-        results = condenser.condensed_history(mock_state)
-        assert len(results) == i + 1
-
-
-def test_llm_attention_condenser_forgets_when_larger_than_max_size(mock_llm):
-    """Test that the LLMAttentionCondenser forgets events when the context grows too large."""
+def test_llm_attention_condenser_gives_expected_view_size(mock_llm):
+    """Test that the LLMAttentionCondenser gives views of the expected size."""
     max_size = 10
     condenser = LLMAttentionCondenser(max_size=max_size, keep_first=0, llm=mock_llm)
 
@@ -755,10 +714,13 @@ def test_llm_attention_condenser_handles_too_few_events(mock_llm):
         assert len(view) == harness.expected_size(i, max_size)
 
 
-def test_llm_attention_condenser_handles_keep_first_for_larger_max_size(mock_llm):
+def test_llm_attention_condenser_handles_keep_first_events(mock_llm):
     """Test that LLMAttentionCondenser works when keep_first=1 is allowed (must be less than half of max_size)."""
-    max_size = 4  # so keep_first=1 < (max_size // 2) = 2
-    condenser = LLMAttentionCondenser(max_size=max_size, keep_first=1, llm=mock_llm)
+    max_size = 12
+    keep_first = 4
+    condenser = LLMAttentionCondenser(
+        max_size=max_size, keep_first=keep_first, llm=mock_llm
+    )
 
     events = [create_test_event(f'Event {i}', id=i) for i in range(max_size * 10)]
 
@@ -772,3 +734,4 @@ def test_llm_attention_condenser_handles_keep_first_for_larger_max_size(mock_llm
 
     for i, view in enumerate(harness.views(events)):
         assert len(view) == harness.expected_size(i, max_size)
+        assert view[:keep_first] == events[: min(keep_first, i + 1)]
