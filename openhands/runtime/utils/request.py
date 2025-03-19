@@ -41,19 +41,25 @@ def send_request(
     timeout: int = 10,
     **kwargs: Any,
 ) -> requests.Response:
-    response = session.request(method, url, timeout=timeout, **kwargs)
     try:
-        response.raise_for_status()
-    except requests.HTTPError as e:
+        response = session.request(method, url, timeout=timeout, **kwargs)
         try:
-            _json = response.json()
-        except (requests.exceptions.JSONDecodeError, json.decoder.JSONDecodeError):
-            _json = None
-        finally:
-            response.close()
-        raise RequestHTTPError(
-            e,
-            response=e.response,
-            detail=_json.get('detail') if _json is not None else None,
-        ) from e
-    return response
+            response.raise_for_status()
+        except requests.HTTPError as e:
+            try:
+                _json = response.json()
+            except (requests.exceptions.JSONDecodeError, json.decoder.JSONDecodeError):
+                _json = None
+            finally:
+                response.close()
+            raise RequestHTTPError(
+                e,
+                response=e.response,
+                detail=_json.get('detail') if _json is not None else None,
+            ) from e
+        return response
+    except:
+        # Closes all TCP connections, but does not prevent new ones being opened.
+        # In case of errors, this prevents orphaned connections.
+        session.close()
+        raise
