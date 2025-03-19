@@ -1,11 +1,11 @@
 import asyncio
 import os
-import pytest
-from typing import Any, Dict
 
-from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
+import pytest
+from litellm.types.utils import ModelResponse
+
 from openhands.agenthub.browsing_agent.browsing_agent import BrowsingAgent
-from openhands.controller.agent import Agent
+from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
 from openhands.controller.agent_controller import AgentController
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig, LLMConfig
@@ -16,15 +16,14 @@ from openhands.events.action import (
     AgentFinishAction,
     MessageAction,
 )
-
 from openhands.llm.llm import LLM
 from openhands.llm.metrics import Metrics
 from openhands.storage.memory import InMemoryFileStore
-from litellm.types.utils import ModelResponse
 
 
 class MockLLM(LLM):
     """Base class for mock LLMs used in testing."""
+
     def __init__(self, config: LLMConfig, completion_response: dict):
         super().__init__(config)
         self._completion_response = completion_response
@@ -51,21 +50,21 @@ class MockLLM(LLM):
 def mock_llm():
     """Creates a mock LLM for testing."""
     completion_response = {
-        "choices": [
+        'choices': [
             {
-                "message": {
-                    "role": "assistant",
-                    "content": "I'll help with that task.",
-                    "tool_calls": [
+                'message': {
+                    'role': 'assistant',
+                    'content': "I'll help with that task.",
+                    'tool_calls': [
                         {
-                            "id": "call_1",
-                            "type": "function",
-                            "function": {
-                                "name": "delegate",
-                                "arguments": '{"agent": "BrowsingAgent", "inputs": {"task": "search for OpenHands repository"}}'
-                            }
+                            'id': 'call_1',
+                            'type': 'function',
+                            'function': {
+                                'name': 'delegate',
+                                'arguments': '{"agent": "BrowsingAgent", "inputs": {"task": "search for OpenHands repository"}}',
+                            },
                         }
-                    ]
+                    ],
                 }
             }
         ]
@@ -77,21 +76,21 @@ def mock_llm():
 def mock_browsing_llm():
     """Creates a mock LLM for the browsing agent."""
     completion_response = {
-        "choices": [
+        'choices': [
             {
-                "message": {
-                    "role": "assistant",
-                    "content": "I've completed the search task.",
-                    "tool_calls": [
+                'message': {
+                    'role': 'assistant',
+                    'content': "I've completed the search task.",
+                    'tool_calls': [
                         {
-                            "id": "call_1",
-                            "type": "function",
-                            "function": {
-                                "name": "finish",
-                                "arguments": '{"message": "Found the repository at github.com/All-Hands-AI/OpenHands", "task_completed": "true"}'
-                            }
+                            'id': 'call_1',
+                            'type': 'function',
+                            'function': {
+                                'name': 'finish',
+                                'arguments': '{"message": "Found the repository at github.com/All-Hands-AI/OpenHands", "task_completed": "true"}',
+                            },
                         }
-                    ]
+                    ],
                 }
             }
         ]
@@ -103,21 +102,21 @@ def mock_browsing_llm():
 def mock_writer_llm():
     """Creates a mock LLM for the writer CodeAct agent."""
     completion_response = {
-        "choices": [
+        'choices': [
             {
-                "message": {
-                    "role": "assistant",
-                    "content": "I'll help with that task.",
-                    "tool_calls": [
+                'message': {
+                    'role': 'assistant',
+                    'content': "I'll help with that task.",
+                    'tool_calls': [
                         {
-                            "id": "call_1",
-                            "type": "function",
-                            "function": {
-                                "name": "delegate",
-                                "arguments": '{"agent": "CodeActAgent", "inputs": {"task": "analyze the code in /workspace/example.py"}}'
-                            }
+                            'id': 'call_1',
+                            'type': 'function',
+                            'function': {
+                                'name': 'delegate',
+                                'arguments': '{"agent": "CodeActAgent", "inputs": {"task": "analyze the code in /workspace/example.py"}}',
+                            },
                         }
-                    ]
+                    ],
                 }
             }
         ]
@@ -129,21 +128,21 @@ def mock_writer_llm():
 def mock_reader_llm():
     """Creates a mock LLM for the reader CodeAct agent."""
     completion_response = {
-        "choices": [
+        'choices': [
             {
-                "message": {
-                    "role": "assistant",
-                    "content": "I've analyzed the code.",
-                    "tool_calls": [
+                'message': {
+                    'role': 'assistant',
+                    'content': "I've analyzed the code.",
+                    'tool_calls': [
                         {
-                            "id": "call_1",
-                            "type": "function",
-                            "function": {
-                                "name": "finish",
-                                "arguments": '{"message": "The code has been analyzed. It contains a simple function.", "task_completed": "true"}'
-                            }
+                            'id': 'call_1',
+                            'type': 'function',
+                            'function': {
+                                'name': 'finish',
+                                'arguments': '{"message": "The code has been analyzed. It contains a simple function.", "task_completed": "true"}',
+                            },
                         }
-                    ]
+                    ],
                 }
             }
         ]
@@ -167,7 +166,9 @@ async def test_codeact_to_browsing_delegation(mock_llm, mock_browsing_llm):
 
     # Create parent CodeAct agent
     parent_config = AgentConfig()
-    parent_config.codeact_enable_browsing = True  # Enable browsing to allow delegation to BrowsingAgent
+    parent_config.codeact_enable_browsing = (
+        True  # Enable browsing to allow delegation to BrowsingAgent
+    )
     parent_agent = CodeActAgent(mock_llm, parent_config)
     parent_state = State(max_iterations=10)
     parent_controller = AgentController(
@@ -212,17 +213,16 @@ async def test_codeact_to_browsing_delegation(mock_llm, mock_browsing_llm):
     delegate_actions = [e for e in events if isinstance(e, AgentDelegateAction)]
     assert len(delegate_actions) == 1, 'Expected one delegation action'
     delegate_action = delegate_actions[0]
-    assert delegate_action.agent == "BrowsingAgent"
-    assert "search" in str(delegate_action.inputs)
+    assert delegate_action.agent == 'BrowsingAgent'
+    assert 'search' in str(delegate_action.inputs)
 
     # Verify parent has a delegate controller
     assert parent_controller.delegate is not None
-    assert parent_controller.delegate.agent.name == "BrowsingAgent"
+    assert parent_controller.delegate.agent.name == 'BrowsingAgent'
 
     # Let the child agent process its task
     child_message = Message(
-        role='user',
-        content=[TextContent(text=str(delegate_action.inputs))]
+        role='user', content=[TextContent(text=str(delegate_action.inputs))]
     )
     child_message_action = MessageAction(content=child_message.content[0].text)
     child_message_action._source = EventSource.USER
@@ -232,7 +232,7 @@ async def test_codeact_to_browsing_delegation(mock_llm, mock_browsing_llm):
     # Verify child completed its task
     events = list(event_stream.get_events())
     finish_actions = [e for e in events if isinstance(e, AgentFinishAction)]
-    assert len(finish_actions) == 1, "Expected one finish action"
+    assert len(finish_actions) == 1, 'Expected one finish action'
 
     # Verify parent's delegate is cleared after child finishes
     assert parent_controller.delegate is None
@@ -310,17 +310,16 @@ async def test_codeact_to_codeact_delegation(mock_writer_llm, mock_reader_llm):
     delegate_actions = [e for e in events if isinstance(e, AgentDelegateAction)]
     assert len(delegate_actions) == 1, 'Expected one delegation action'
     delegate_action = delegate_actions[0]
-    assert delegate_action.agent == "CodeActAgent"
-    assert "analyze" in str(delegate_action.inputs)
+    assert delegate_action.agent == 'CodeActAgent'
+    assert 'analyze' in str(delegate_action.inputs)
 
     # Verify parent has a delegate controller
     assert parent_controller.delegate is not None
-    assert parent_controller.delegate.agent.name == "CodeActAgent"
+    assert parent_controller.delegate.agent.name == 'CodeActAgent'
 
     # Let the child agent process its task
     child_message = Message(
-        role='user',
-        content=[TextContent(text=str(delegate_action.inputs))]
+        role='user', content=[TextContent(text=str(delegate_action.inputs))]
     )
     child_message_action = MessageAction(content=child_message.content[0].text)
     child_message_action._source = EventSource.USER
@@ -330,7 +329,7 @@ async def test_codeact_to_codeact_delegation(mock_writer_llm, mock_reader_llm):
     # Verify child completed its task
     events = list(event_stream.get_events())
     finish_actions = [e for e in events if isinstance(e, AgentFinishAction)]
-    assert len(finish_actions) == 1, "Expected one finish action"
+    assert len(finish_actions) == 1, 'Expected one finish action'
 
     # Verify parent's delegate is cleared after child finishes
     assert parent_controller.delegate is None
