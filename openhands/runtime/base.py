@@ -102,7 +102,7 @@ class Runtime(FileEditRuntimeMixin):
         attach_to_existing: bool = False,
         headless_mode: bool = False,
         user_id: str | None = None,
-        provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
+        git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
     ):
         self.sid = sid
         self.event_stream = event_stream
@@ -136,7 +136,7 @@ class Runtime(FileEditRuntimeMixin):
         )
 
         self.user_id = user_id
-        self.provider_tokens = provider_tokens
+        self.git_provider_tokens = git_provider_tokens
 
         # TODO: remove once done debugging expired github token
         self.prev_token: SecretStr | None = None
@@ -224,8 +224,8 @@ class Runtime(FileEditRuntimeMixin):
         if isinstance(event, Action):
             asyncio.get_event_loop().run_until_complete(self._handle_action(event))
 
-    async def _export_latest_provider_tokens(self, event: Action) -> None:
-        if not self.provider_tokens:
+    async def _export_latest_git_provider_tokens(self, event: Action) -> None:
+        if not self.git_provider_tokens:
             return
 
         providers_called = ProviderHandler.check_cmd_action_for_provider_token_ref(
@@ -236,7 +236,7 @@ class Runtime(FileEditRuntimeMixin):
             return
 
         provider_handler = ProviderHandler(
-            provider_tokens=self.provider_tokens,
+            provider_tokens=self.git_provider_tokens,
             external_auth_id=self.user_id,
             external_token_manager=True,
         )
@@ -278,7 +278,7 @@ class Runtime(FileEditRuntimeMixin):
             event.set_hard_timeout(self.config.sandbox.timeout, blocking=False)
         assert event.timeout is not None
         try:
-            await self._export_latest_provider_tokens(event)
+            await self._export_latest_git_provider_tokens(event)
             observation: Observation = await call_sync_from_async(
                 self.run_action, event
             )
@@ -306,20 +306,20 @@ class Runtime(FileEditRuntimeMixin):
 
     def clone_repo(
         self,
-        provider_tokens: PROVIDER_TOKEN_TYPE,
+        git_provider_tokens: PROVIDER_TOKEN_TYPE,
         selected_repository: str,
         selected_branch: str | None,
     ) -> str:
         if (
-            ProviderType.GITHUB not in provider_tokens
-            or not provider_tokens[ProviderType.GITHUB].token
+            ProviderType.GITHUB not in git_provider_tokens
+            or not git_provider_tokens[ProviderType.GITHUB].token
             or not selected_repository
         ):
             raise ValueError(
                 'github_token and selected_repository must be provided to clone a repository'
             )
 
-        github_token: SecretStr = provider_tokens[ProviderType.GITHUB].token
+        github_token: SecretStr = git_provider_tokens[ProviderType.GITHUB].token
         url = f'https://{github_token.get_secret_value()}@github.com/{selected_repository}.git'
         dir_name = selected_repository.split('/')[-1]
 

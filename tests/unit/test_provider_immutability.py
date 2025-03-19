@@ -231,4 +231,4 @@ def test_token_conversion():
 
 def test_provider_handler_type_enforcement():
     with pytest.raises((TypeError)):
-        ProviderHandler(provider_tokens={"a": "b"})
+        ProviderHandler(provider_tokens={'a': 'b'})
