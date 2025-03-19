@@ -94,6 +94,9 @@ class GitHandler:
     def _is_git_repo(self) -> bool:
         cmd = 'git rev-parse --is-inside-work-tree'
         output = self.execute(cmd)
+
+        test_output = self.execute('pwd')
+        logger.info(f'Current directory: {test_output.content}')
         return output.content == 'true'
 
     def _get_current_file_content(self, file_path: str) -> str:
@@ -578,7 +581,11 @@ class Runtime(FileEditRuntimeMixin):
     # ====================================================================
 
     @abstractmethod
-    def run(self, action: CmdRunAction | StaticCmdRunAction) -> Observation:
+    def run(self, action: CmdRunAction) -> Observation:
+        pass
+
+    @abstractmethod
+    def run_static(self, action: StaticCmdRunAction) -> Observation:
         pass
 
     @abstractmethod
@@ -643,7 +650,7 @@ class Runtime(FileEditRuntimeMixin):
     # ====================================================================
 
     def _execute_shell_fn_git_handler(self, command: str) -> CommandResult:
-        obs = self.run(StaticCmdRunAction(command=command))
+        obs = self.run_static(StaticCmdRunAction(command=command))
         exit_code = 0
         content = ''
 

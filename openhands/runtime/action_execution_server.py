@@ -310,17 +310,17 @@ class ActionExecutor:
             return observation
 
     async def run(
-        self, action: CmdRunAction | StaticCmdRunAction
+        self, action: CmdRunAction
     ) -> CmdOutputObservation | ErrorObservation:
-        if isinstance(action, CmdRunAction):
-            assert self.bash_session is not None
-            obs = await call_sync_from_async(self.bash_session.execute, action)
-            return obs
-        elif isinstance(action, StaticCmdRunAction):
-            obs = await call_sync_from_async(
-                self._execute_shell_fn_git_handler, action.command
-            )
-            return obs
+        assert self.bash_session is not None
+        obs = await call_sync_from_async(self.bash_session.execute, action)
+        return obs
+
+    async def run_static(self, action: StaticCmdRunAction) -> CmdOutputObservation:
+        obs = await call_sync_from_async(
+            self._execute_shell_fn_git_handler, action.command
+        )
+        return obs
 
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
         assert self.bash_session is not None

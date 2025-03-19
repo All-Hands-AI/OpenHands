@@ -277,7 +277,10 @@ class ActionExecutionClient(Runtime):
                 )
             return obs
 
-    def run(self, action: CmdRunAction | StaticCmdRunAction) -> Observation:
+    def run(self, action: CmdRunAction) -> Observation:
+        return self.send_action_for_execution(action)
+
+    def run_static(self, action: StaticCmdRunAction) -> Observation:
         return self.send_action_for_execution(action)
 
     def run_ipython(self, action: IPythonRunCellAction) -> Observation:
