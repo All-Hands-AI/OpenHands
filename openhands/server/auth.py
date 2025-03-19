@@ -28,15 +28,6 @@ def get_github_token(request: Request) -> SecretStr | None:
 
 def get_github_user_id(request: Request) -> str | None:
     provider_tokens = get_provider_tokens(request)
-    if provider_tokens:
-        return get_github_user_id_from_provider_tokens(provider_tokens)
-
-    return None
-
-
-def get_github_user_id_from_provider_tokens(
-    provider_tokens: PROVIDER_TOKEN_TYPE,
-) -> str | None:
     if provider_tokens and ProviderType.GITHUB in provider_tokens:
         return provider_tokens[ProviderType.GITHUB].user_id
 
