@@ -533,8 +533,12 @@ def process_instance(
         # Get git patch
         return_val = complete_runtime(runtime, instance)
         git_patch = return_val['git_patch']
+        repo_md = return_val['repo_md']
         logger.info(
             f'Got git diff for instance {instance.instance_id}:\n--------\n{git_patch}\n--------'
+        )
+        logger.info(
+            f'Got repo.md for instance {instance.instance_id}:\n--------\n{repo_md}\n--------'
         )
     finally:
         runtime.close()
@@ -545,6 +549,7 @@ def process_instance(
     # because the agent may alter the environment / testcases
     test_result = {
         'git_patch': git_patch,
+        'repo_md': repo_md,
     }
 
     # If you are working on some simpler benchmark that only evaluates the final model output (e.g., in a MessageAction)
