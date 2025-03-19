@@ -15,6 +15,8 @@ export const useUserRepositories = () => {
     initialPageParam: 1,
     getNextPageParam: (lastPage) => lastPage.nextPage,
     enabled: githubTokenIsSet && config?.APP_MODE === "oss",
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 15, // 15 minutes
   });
 
   // TODO: Once we create our custom dropdown component, we should fetch data onEndReached

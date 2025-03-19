@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from openhands.core.config.condenser_config import LLMSummarizingCondenserConfig
+from openhands.core.message import Message, TextContent
 from openhands.events.event import Event
 from openhands.events.observation.agent import AgentCondensationObservation
 from openhands.llm import LLM
@@ -90,13 +91,10 @@ INTENT: Fix precision while maintaining FITS compliance"""
         for forgotten_event in forgotten_events:
             prompt += str(forgotten_event) + '\n\n'
 
+        messages = [Message(role='user', content=[TextContent(text=prompt)])]
+
         response = self.llm.completion(
-            messages=[
-                {
-                    'content': prompt,
-                    'role': 'user',
-                },
-            ],
+            messages=self.llm.format_messages_for_llm(messages),
         )
         summary = response.choices[0].message.content
 

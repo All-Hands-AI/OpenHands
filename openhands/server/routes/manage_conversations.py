@@ -1,6 +1,5 @@
 import uuid
 from datetime import datetime, timezone
-from typing import Callable
 
 from fastapi import APIRouter, Body, Request, status
 from fastapi.responses import JSONResponse
@@ -8,10 +7,15 @@ from pydantic import BaseModel, SecretStr
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.message import MessageAction
-from openhands.events.stream import EventStreamSubscriber
 from openhands.integrations.github.github_service import GithubServiceImpl
+from openhands.integrations.provider import ProviderType
 from openhands.runtime import get_runtime_cls
-from openhands.server.auth import get_github_token, get_idp_token, get_user_id
+from openhands.server.auth import (
+    get_access_token,
+    get_github_user_id,
+    get_provider_tokens,
+    get_user_id,
+)
 from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.data_models.conversation_info_result_set import (
     ConversationInfoResultSet,
@@ -22,19 +26,13 @@ from openhands.server.shared import (
     SettingsStoreImpl,
     config,
     conversation_manager,
-    monitoring_listener,
 )
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.data_models.conversation_status import ConversationStatus
-from openhands.utils.async_utils import (
-    GENERAL_TIMEOUT,
-    call_async_from_sync,
-    wait_all,
-)
+from openhands.utils.async_utils import wait_all
 
 app = APIRouter(prefix='/api')
-UPDATED_AT_CALLBACK_ID = 'updated_at_callback_id'
 
 
 class InitSessionRequest(BaseModel):
@@ -53,7 +51,10 @@ async def _create_new_conversation(
     image_urls: list[str] | None,
     attach_convo_id: bool = False,
 ):
-    monitoring_listener.on_create_conversation()
+    logger.info(
+        'Creating conversation',
+        extra={'signal': 'create_conversation', 'user_id': user_id},
+    )
     logger.info('Loading settings')
     settings_store = await SettingsStoreImpl.get_instance(config, user_id)
     settings = await settings_store.load()
@@ -77,19 +78,22 @@ async def _create_new_conversation(
         logger.warn('Settings not present, not starting conversation')
         raise MissingSettingsError('Settings not found')
 
-    session_init_args['github_token'] = token or SecretStr('')
+    session_init_args['provider_token'] = token
     session_init_args['selected_repository'] = selected_repository
     session_init_args['selected_branch'] = selected_branch
     conversation_init_data = ConversationInitData(**session_init_args)
     logger.info('Loading conversation store')
-    conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
+    conversation_store = await ConversationStoreImpl.get_instance(config, user_id, None)
     logger.info('Conversation store loaded')
 
     conversation_id = uuid.uuid4().hex
     while await conversation_store.exists(conversation_id):
         logger.warning(f'Collision on conversation ID: {conversation_id}. Retrying...')
         conversation_id = uuid.uuid4().hex
-    logger.info(f'New conversation ID: {conversation_id}')
+    logger.info(
+        f'New conversation ID: {conversation_id}',
+        extra={'user_id': user_id, 'session_id': conversation_id},
+    )
 
     repository_title = (
         selected_repository.split('/')[-1] if selected_repository else None
@@ -101,13 +105,17 @@ async def _create_new_conversation(
         ConversationMetadata(
             conversation_id=conversation_id,
             title=conversation_title,
-            github_user_id=user_id,
+            user_id=user_id,
+            github_user_id=None,
             selected_repository=selected_repository,
             selected_branch=selected_branch,
         )
     )
 
-    logger.info(f'Starting agent loop for conversation {conversation_id}')
+    logger.info(
+        f'Starting agent loop for conversation {conversation_id}',
+        extra={'user_id': user_id, 'session_id': conversation_id},
+    )
     initial_message_action = None
     if initial_user_msg or image_urls:
         user_msg = (
@@ -119,17 +127,12 @@ async def _create_new_conversation(
             content=user_msg or '',
             image_urls=image_urls or [],
         )
-    event_stream = await conversation_manager.maybe_start_agent_loop(
-        conversation_id, conversation_init_data, user_id, initial_message_action
+    await conversation_manager.maybe_start_agent_loop(
+        conversation_id,
+        conversation_init_data,
+        user_id,
+        initial_user_msg=initial_message_action,
     )
-    try:
-        event_stream.subscribe(
-            EventStreamSubscriber.SERVER,
-            _create_conversation_update_callback(user_id, conversation_id),
-            UPDATED_AT_CALLBACK_ID,
-        )
-    except ValueError:
-        pass  # Already subscribed - take no action
     logger.info(f'Finished initializing conversation {conversation_id}')
 
     return conversation_id
@@ -143,13 +146,18 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     using the returned conversation ID.
     """
     logger.info('Initializing new conversation')
-    user_id = get_user_id(request)
-    gh_client = GithubServiceImpl(
-        user_id=user_id,
-        idp_token=get_idp_token(request),
-        token=get_github_token(request),
-    )
-    github_token = await gh_client.get_latest_token()
+    user_id = None
+    github_token = None
+    provider_tokens = get_provider_tokens(request)
+    if provider_tokens and ProviderType.GITHUB in provider_tokens:
+        token = provider_tokens[ProviderType.GITHUB]
+        user_id = token.user_id
+        gh_client = GithubServiceImpl(
+            user_id=user_id,
+            external_auth_token=get_access_token(request),
+            token=token.token,
+        )
+        github_token = await gh_client.get_latest_token()
 
     selected_repository = data.selected_repository
     selected_branch = data.selected_branch
@@ -159,7 +167,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     try:
         # Create conversation with initial message
         conversation_id = await _create_new_conversation(
-            user_id,
+            get_user_id(request),
             github_token,
             selected_repository,
             selected_branch,
@@ -198,7 +206,7 @@ async def search_conversations(
     limit: int = 20,
 ) -> ConversationInfoResultSet:
     conversation_store = await ConversationStoreImpl.get_instance(
-        config, get_user_id(request)
+        config, get_user_id(request), get_github_user_id(request)
     )
     conversation_metadata_result_set = await conversation_store.search(page_id, limit)
 
@@ -237,7 +245,7 @@ async def get_conversation(
     conversation_id: str, request: Request
 ) -> ConversationInfo | None:
     conversation_store = await ConversationStoreImpl.get_instance(
-        config, get_user_id(request)
+        config, get_user_id(request), get_github_user_id(request)
     )
     try:
         metadata = await conversation_store.get_metadata(conversation_id)
@@ -253,7 +261,7 @@ async def update_conversation(
     request: Request, conversation_id: str, title: str = Body(embed=True)
 ) -> bool:
     conversation_store = await ConversationStoreImpl.get_instance(
-        config, get_user_id(request)
+        config, get_user_id(request), get_github_user_id(request)
     )
     metadata = await conversation_store.get_metadata(conversation_id)
     if not metadata:
@@ -269,7 +277,7 @@ async def delete_conversation(
     request: Request,
 ) -> bool:
     conversation_store = await ConversationStoreImpl.get_instance(
-        config, get_user_id(request)
+        config, get_user_id(request), get_github_user_id(request)
     )
     try:
         await conversation_store.get_metadata(conversation_id)
@@ -305,26 +313,6 @@ async def _get_conversation_info(
     except Exception as e:
         logger.error(
             f'Error loading conversation {conversation.conversation_id}: {str(e)}',
+            extra={'session_id': conversation.conversation_id},
         )
         return None
-
-
-def _create_conversation_update_callback(
-    user_id: str | None, conversation_id: str
-) -> Callable:
-    def callback(*args, **kwargs):
-        call_async_from_sync(
-            _update_timestamp_for_conversation,
-            GENERAL_TIMEOUT,
-            user_id,
-            conversation_id,
-        )
-
-    return callback
-
-
-async def _update_timestamp_for_conversation(user_id: str, conversation_id: str):
-    conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
-    conversation = await conversation_store.get_metadata(conversation_id)
-    conversation.last_updated_at = datetime.now(timezone.utc)
-    await conversation_store.save_metadata(conversation)

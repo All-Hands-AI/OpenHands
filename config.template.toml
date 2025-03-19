@@ -38,9 +38,6 @@ workspace_base = "./workspace"
 # Disable color in terminal output
 #disable_color = false
 
-# Enable saving and restoring the session when run from CLI
-#enable_cli_session = false
-
 # Path to store trajectories, can be a folder or a file
 # If it's a folder, the session id will be used as the file name
 #save_trajectory_path="./trajectories"
@@ -55,9 +52,6 @@ workspace_base = "./workspace"
 
 # File store type
 #file_store = "memory"
-
-# List of allowed file extensions for uploads
-#file_uploads_allowed_extensions = [".*"]
 
 # Maximum file size for uploads, in megabytes
 #file_uploads_max_file_size_mb = 0
@@ -100,6 +94,12 @@ workspace_base = "./workspace"
 # When false, a NoOpCondenserConfig (no summarization) will be used
 #enable_default_condenser = true
 
+# Maximum number of concurrent conversations per user
+#max_concurrent_conversations = 3
+
+# Maximum age of conversations in seconds before they are automatically closed
+#conversation_max_age_seconds = 864000  # 10 days
+
 #################################### LLM #####################################
 # Configuration for LLM models (group name starts with 'llm')
 # use 'llm' for the default LLM config
@@ -131,15 +131,6 @@ api_key = ""
 
 # Custom LLM provider
 #custom_llm_provider = ""
-
-# Embedding API base URL
-#embedding_base_url = ""
-
-# Embedding deployment name
-#embedding_deployment_name = ""
-
-# Embedding model to use
-embedding_model = "local"
 
 # Maximum number of characters in an observation's content
 #max_message_chars = 10000
@@ -205,6 +196,8 @@ model = "gpt-4o"
 # https://github.com/All-Hands-AI/OpenHands/pull/4711
 #native_tool_calling = None
 
+
+
 [llm.gpt4o-mini]
 api_key = ""
 model = "gpt-4o"
@@ -218,23 +211,14 @@ model = "gpt-4o"
 ##############################################################################
 [agent]
 
-# whether the browsing tool is enabled
+# Whether the browsing tool is enabled
 codeact_enable_browsing = true
 
-# whether the LLM draft editor is enabled
+# Whether the LLM draft editor is enabled
 codeact_enable_llm_editor = false
 
-# whether the IPython tool is enabled
+# Whether the IPython tool is enabled
 codeact_enable_jupyter = true
-
-# Name of the micro agent to use for this agent
-#micro_agent_name = ""
-
-# Memory enabled
-#memory_enabled = false
-
-# Memory maximum threads
-#memory_max_threads = 3
 
 # LLM config group to use
 #llm_config = 'your-llm-config-group'
@@ -270,7 +254,7 @@ llm_config = 'gpt3'
 # Use host network
 #use_host_network = false
 
-# runtime extra build args
+# Runtime extra build args
 #runtime_extra_build_args = ["--network=host", "--add-host=host.docker.internal:host-gateway"]
 
 # Enable auto linting after editing
@@ -288,6 +272,33 @@ llm_config = 'gpt3'
 # BrowserGym environment to use for evaluation
 #browsergym_eval_env = ""
 
+# Platform to use for building the runtime image (e.g., "linux/amd64")
+#platform = ""
+
+# Force rebuild of runtime image even if it exists
+#force_rebuild_runtime = false
+
+# Runtime container image to use (if not provided, will be built from base_container_image)
+#runtime_container_image = ""
+
+# Keep runtime alive after session ends
+#keep_runtime_alive = false
+
+# Pause closed runtimes instead of stopping them
+#pause_closed_runtimes = false
+
+# Delay in seconds before closing idle runtimes
+#close_delay = 300
+
+# Remove all containers when stopping the runtime
+#rm_all_containers = false
+
+# Enable GPU support in the runtime
+#enable_gpu = false
+
+# Additional Docker runtime kwargs
+#docker_runtime_kwargs = {}
+
 #################################### Security ###################################
 # Configuration for security features
 ##############################################################################
@@ -298,6 +309,9 @@ llm_config = 'gpt3'
 
 # The security analyzer to use (For Headless / CLI only -  In Web this is overridden by Session Init)
 #security_analyzer = ""
+
+# Whether to enable security analyzer
+#enable_security_analyzer = false
 
 #################################### Condenser #################################
 # Condensers control how conversation history is managed and compressed when

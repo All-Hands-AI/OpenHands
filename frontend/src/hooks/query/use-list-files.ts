@@ -23,5 +23,7 @@ export const useListFiles = (config: UseListFilesConfig = DEFAULT_CONFIG) => {
     queryKey: ["files", conversationId, config?.path],
     queryFn: () => OpenHands.getFiles(conversationId, config?.path),
     enabled: !!(isActive && config?.enabled),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 15, // 15 minutes
   });
 };

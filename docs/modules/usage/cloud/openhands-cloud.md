@@ -12,14 +12,16 @@ instructions on how to access it.
 
 After visiting OpenHands Cloud, you will be asked to connect with your GitHub account:
 1. After reading and accepting the terms of service, click `Connect to GitHub`.
-2. Review the permissions requested by OpenHands and then click `Authorize OpenHands by All Hands AI`.
+2. Review the permissions requested by OpenHands and then click `Authorize OpenHands AI`.
    - OpenHands will require some permissions from your GitHub account. To read more about these permissions,
      you can click the `Learn more` link on the GitHub authorize page.
 
-## Adding Repositories
+## Repository Access
+
+### Adding Repository Access
 
 You can grant OpenHands specific repository access:
-1. Under the `Select a GitHub project` dropdown, select `Add more repositories...`.
+1. Click the `Select a GitHub project` dropdown, select `Add more repositories...`.
 2. Select the organization, then choose the specific repositories to grant OpenHands access to.
    - Openhands requests short-lived tokens (8-hour expiry) with these permissions:
      - Actions: Read and write
@@ -34,6 +36,10 @@ You can grant OpenHands specific repository access:
    - Repository access for a user is granted based on:
      - Granted permission for the repository.
      - User's GitHub permissions (owner/collaborator).
+3. Click on `Install & Authorize`.
 
-You can manage repository access any time by following the above workflow or visiting the Settings page and selecting
-`Configure GitHub Repositories` under the `GitHub Settings` section.
+### Modifying Repository Access
+
+You can modify repository access at any time by:
+* Using the same `Select a GitHub project > Add more repositories` workflow, or
+* Visiting the Settings page and selecting `Configure GitHub Repositories` under the `GitHub Settings` section.
