@@ -4,6 +4,7 @@ This is similar to the functionality of `CodeActResponseParser`.
 """
 
 import json
+from openhands.core.logger import openhands_logger as logger
 from litellm import (
     ChatCompletionToolParam,
     ModelResponse,

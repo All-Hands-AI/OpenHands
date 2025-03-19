@@ -1,16 +1,6 @@
-from datasets import load_dataset
-import os
+# from datasets import load_dataset
 import fnmatch
-from collections import defaultdict
-import re
-from util.benchmark.setup_repo import setup_repo
-
-
-# SET THIS IF YOU WANT TO USE THE PREPROCESSED FILES
-GRAPH_INDEX_DIR = os.environ.get("GRAPH_INDEX_DIR")
-BM25_INDEX_DIR = os.environ.get("BM25_INDEX_DIR")
-assert GRAPH_INDEX_DIR != ''
-assert BM25_INDEX_DIR != ''
+# import re
 
 
 def find_matching_files_from_list(file_list, file_pattern):
@@ -31,10 +21,10 @@ def find_matching_files_from_list(file_list, file_pattern):
     return matching_files
 
 
-def get_meta_data(target_id, dataset:str="princeton-nlp/SWE-bench_Lite", split:str = "test"):
-    swe_bench_data = load_dataset(dataset, split=split)
-    bench_data = [x for x in swe_bench_data if x["instance_id"] == target_id][0]
-    return bench_data
+# def get_meta_data(target_id, dataset:str="princeton-nlp/SWE-bench_Lite", split:str = "test"):
+#     swe_bench_data = load_dataset(dataset, split=split)
+#     bench_data = [x for x in swe_bench_data if x["instance_id"] == target_id][0]
+#     return bench_data
 
 
 def merge_intervals(intervals):
@@ -61,16 +51,16 @@ def merge_intervals(intervals):
     return merged_intervals
 
 
-def extract_file_to_code(raw_content: str):
-    # Pattern to extract the file name and code
-    pattern = r'([\w\/\.]+)\n```\n(.*?)\n```'
+# def extract_file_to_code(raw_content: str):
+#     # Pattern to extract the file name and code
+#     pattern = r'([\w\/\.]+)\n```\n(.*?)\n```'
 
-    # Use re.findall to extract all matches (file name and code)
-    matches = re.findall(pattern, raw_content, re.DOTALL)
+#     # Use re.findall to extract all matches (file name and code)
+#     matches = re.findall(pattern, raw_content, re.DOTALL)
 
-    # Create a dictionary from the extracted file names and code
-    file_to_code = {filename: code for filename, code in matches}
+#     # Create a dictionary from the extracted file names and code
+#     file_to_code = {filename: code for filename, code in matches}
 
-    return file_to_code
+#     return file_to_code
 
 

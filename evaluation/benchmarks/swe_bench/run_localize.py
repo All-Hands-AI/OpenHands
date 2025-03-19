@@ -171,6 +171,10 @@ def get_config(
         dataset_name=metadata.dataset,
         instance_id=instance['instance_id'],
     )
+    workspace_dir_name = _get_swebench_workspace_dir_name(instance)
+    sandbox_config.runtime_startup_env_vars={
+        'REPO_PATH': f'/workspace/{workspace_dir_name}/',
+    }
 
     config = AppConfig(
         default_agent=metadata.agent_class,

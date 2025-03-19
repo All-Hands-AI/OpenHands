@@ -2,14 +2,14 @@ import logging
 
 from tree_sitter_languages import get_language
 
-from ..codeblocks import (
+from openhands.runtime.plugins.agent_skills.repo_ops.repo_index.chunk_index.codeblocks.codeblocks import (
     CodeBlock,
     CodeBlockType,
     ReferenceScope,
     RelationshipType,
     ValidationError,
 )
-from .parser import (
+from openhands.runtime.plugins.agent_skills.repo_ops.repo_index.chunk_index.codeblocks.parser.parser import (
     CodeParser,
     NodeMatch,
     commented_out_keywords,
@@ -19,7 +19,7 @@ child_block_types = ['ERROR', 'block']
 
 block_delimiters = [':']
 
-logger = logging.getLogger(__name__)
+# logger = logging.getLogger(__name__)
 
 
 class PythonParser(CodeParser):
@@ -49,9 +49,9 @@ class PythonParser(CodeParser):
             and node_match.check_child.start_point[0]
             < node_match.first_child.start_point[0]
         ):
-            logger.warning(
-                f'Parsed block with type ASSIGNMENT with line break but no ending \\: {codeblock.content_lines[0]}'
-            )
+            # logger.warning(
+            #     f'Parsed block with type ASSIGNMENT with line break but no ending \\: {codeblock.content_lines[0]}'
+            # )
             codeblock.content_lines[0] = codeblock.content_lines[0] + ' \\'
 
     def post_process(self, codeblock: CodeBlock):

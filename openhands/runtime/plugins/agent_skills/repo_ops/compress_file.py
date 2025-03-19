@@ -88,10 +88,10 @@ def get_skeleton(raw_code, keep_constant: bool = True):
     return code
 
 
-def test_compress():
-    skeleton = get_skeleton(code, True)
-    print(skeleton)
+# def test_compress():
+#     skeleton = get_skeleton(code, True)
+#     print(skeleton)
 
 
-if __name__ == "__main__":
-    test_compress()
+# if __name__ == "__main__":
+#     test_compress()

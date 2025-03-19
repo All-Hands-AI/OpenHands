@@ -78,6 +78,12 @@ qtconsole = "^5.6.1"
 memory-profiler = "^0.61.0"
 daytona-sdk = "0.10.2"
 python-json-logger = "^3.2.1"
+llama-index = "*"
+llama-index-core = "*"
+llama-index-retrievers-bm25 = "0.4.0"
+rapidfuzz = "3.10.1"
+PyStemmer = "2.2.0.3"
+libcst = "1.5.0"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "0.11.0"

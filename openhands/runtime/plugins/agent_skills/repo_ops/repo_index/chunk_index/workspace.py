@@ -1,9 +1,9 @@
 # import logging
 # from typing import Optional
-# from .file_context import FileContext
-# from .index.code_index import CodeIndex
-# from .repository import FileRepository
-# from .types import FileWithSpans
+# from openhands.runtime.plugins.agent_skills.repo_ops.repo_index.chunk_index.file_context import FileContext
+# from openhands.runtime.plugins.agent_skills.repo_ops.repo_index.chunk_index.index.code_index import CodeIndex
+# from openhands.runtime.plugins.agent_skills.repo_ops.repo_index.chunk_index.repository import FileRepository
+# from openhands.runtime.plugins.agent_skills.repo_ops.repo_index.chunk_index.types import FileWithSpans
 
 # logger = logging.getLogger(__name__)
 

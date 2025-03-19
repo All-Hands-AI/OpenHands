@@ -1,8 +1,8 @@
-from typing import List, Optional, Union, Tuple, Dict
-from openhands.repo_index.dependency_graph.build_graph import (
+from typing import List, Optional
+from openhands.runtime.plugins.agent_skills.repo_ops.repo_index.dependency_graph.build_graph import (
     NODE_TYPE_DIRECTORY, NODE_TYPE_FILE, NODE_TYPE_CLASS, NODE_TYPE_FUNCTION
 )
-from .compress_file import get_skeleton
+from openhands.runtime.plugins.agent_skills.repo_ops.compress_file import get_skeleton
 
 
 class QueryInfo:

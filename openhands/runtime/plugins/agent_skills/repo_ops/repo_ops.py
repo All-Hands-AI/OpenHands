@@ -6,44 +6,50 @@ from collections import defaultdict
 from typing import List, Optional
 import collections
 from copy import deepcopy
-import uuid
 import networkx as nx
-from openhands.repo_index.dependency_graph import (
-    RepoEntitySearcher, RepoDependencySearcher, traverse_tree_structure
-)
-from openhands.repo_index.dependency_graph.build_graph import (
+from openhands.runtime.plugins.agent_skills.repo_ops.repo_index.dependency_graph import (
+    RepoEntitySearcher, RepoDependencySearcher, 
+    traverse_tree_structure,
     build_graph,
     NODE_TYPE_DIRECTORY, NODE_TYPE_FILE, NODE_TYPE_CLASS, NODE_TYPE_FUNCTION,
     EDGE_TYPE_CONTAINS,
     VALID_NODE_TYPES, VALID_EDGE_TYPES
 )
-from openhands.repo_index.dependency_graph.traverse_graph import (
+from openhands.runtime.plugins.agent_skills.repo_ops.repo_index.dependency_graph.traverse_graph import (
     is_test_file,
     traverse_json_structure,
 )
-from openhands.repo_index.dependency_graph.index_retriever import (
-    build_code_retriever_from_repo as build_code_retriever,
+from openhands.runtime.plugins.agent_skills.repo_ops.repo_index.dependency_graph.index_retriever import (
     build_module_retriever_from_graph as build_module_retriever,
     build_retriever_from_persist_dir as load_retriever,
     fuzzy_retrieve_from_graph_nodes as fuzzy_retrieve
 )
-from openhands.runtime.plugins.agent_skills.utils.result_format import (
+from openhands.runtime.plugins.agent_skills.repo_ops.repo_index.chunk_index.code_retriever import (
+    build_code_retriever_from_repo as build_code_retriever,
+)
+from openhands.runtime.plugins.agent_skills.repo_ops.result_format import (
     QueryInfo, QueryResult
 )
-from openhands.runtime.plugins.agent_skills.utils.util import (
-    get_meta_data,
+from openhands.runtime.plugins.agent_skills.repo_ops.util import (
+    # get_meta_data,
     find_matching_files_from_list,
     merge_intervals,
-    GRAPH_INDEX_DIR,
-    BM25_INDEX_DIR,
 )
 # from util.benchmark.setup_repo import setup_repo
-import subprocess
-import logging
-logger = logging.getLogger(__name__)
+# import subprocess
+# import logging
+# logger = logging.getLogger(__name__)
 
-CURRENT_ISSUE_ID: str | None = None
-CURRENT_INSTANCE: dict | None = None
+# from openhands.core.logger import openhands_logger as logger
+# SET THIS IF YOU WANT TO USE THE PREPROCESSED FILES
+
+REPO_PATH = os.environ.get("REPO_PATH", '')
+BASE_INDEX_DIR = os.path.join(REPO_PATH, '_index_data')
+GRAPH_INDEX_DIR = os.path.join(BASE_INDEX_DIR, 'graph_index_v2.3')
+BM25_INDEX_DIR = os.path.join(BASE_INDEX_DIR, 'bm25_index')
+
+# CURRENT_ISSUE_ID: str | None = None
+# CURRENT_INSTANCE: dict | None = None
 ALL_FILE: list | None = None
 ALL_CLASS: list | None = None
 ALL_FUNC: list | None = None
@@ -52,48 +58,22 @@ DP_GRAPH_ENTITY_SEARCHER: RepoEntitySearcher | None = None
 DP_GRAPH_DEPENDENCY_SEARCHER: RepoDependencySearcher | None = None
 DP_GRAPH: nx.MultiDiGraph | None = None
 
-REPO_SAVE_DIR: str | None = None
 
-def set_current_issue(instance_id: str = None, 
-                      instance_data: dict = None,
-                      repo_path: str = None,
-                      dataset: str = "princeton-nlp/SWE-bench_Lite", split: str = "test", rank=0):
-    global CURRENT_ISSUE_ID, CURRENT_INSTANCE
-    global ALL_FILE, ALL_CLASS, ALL_FUNC
-    assert instance_id or instance_data
-
-    if instance_id:
-        CURRENT_ISSUE_ID = instance_id
-        CURRENT_INSTANCE = get_meta_data(CURRENT_ISSUE_ID, dataset, split)
-    else:
-        CURRENT_ISSUE_ID = instance_data['instance_id']
-        CURRENT_INSTANCE = instance_data
-
-    global REPO_SAVE_DIR
-    REPO_SAVE_DIR = repo_path
-    # # Generate a temperary folder and add uuid to avoid collision
-    # REPO_SAVE_DIR = os.path.join('playground', str(uuid.uuid4()))
-    # # assert playground doesn't exist
-    # assert not os.path.exists(REPO_SAVE_DIR), f"{REPO_SAVE_DIR} already exists"
-    # # create playground
-    # os.makedirs(REPO_SAVE_DIR)
-    
+def parse_repo_index():    
     # setup graph traverser
     global DP_GRAPH_ENTITY_SEARCHER, DP_GRAPH_DEPENDENCY_SEARCHER, DP_GRAPH
-    graph_index_file = f"{GRAPH_INDEX_DIR}/{CURRENT_ISSUE_ID}.pkl"
+    graph_index_file = f"{GRAPH_INDEX_DIR}/code_graph.pkl"
     if not os.path.exists(graph_index_file):
-        # pull repo
-        # repo_dir = setup_repo(instance_data=CURRENT_INSTANCE, repo_base_dir=REPO_SAVE_DIR, dataset=None)
-        # repo_dir = './'
-        # parse the repository:
         try:
             os.makedirs(GRAPH_INDEX_DIR, exist_ok=True)
-            G = build_graph(repo_path, global_import=True)
+            G = build_graph(REPO_PATH, global_import=True)
             with open(graph_index_file, 'wb') as f:
                 pickle.dump(G, f)
-            logging.info(f'[{rank}] Processed {CURRENT_ISSUE_ID}')
+            # logger.debug(f'Parsed repo `{REPO_PATH}`')
+            print(f'Parsed repo `{REPO_PATH}`')
         except Exception as e:
-            logging.error(f'[{rank}] Error processing {CURRENT_ISSUE_ID}: {e}')
+            # logger.error(f'Error processing repo `{REPO_PATH}`: {e}')
+            print(f'Error processing repo `{REPO_PATH}`: {e}')
     else:
         G = pickle.load(open(graph_index_file, "rb"))
         
@@ -101,61 +81,43 @@ def set_current_issue(instance_id: str = None,
     DP_GRAPH_DEPENDENCY_SEARCHER = RepoDependencySearcher(G)
     DP_GRAPH = G
     
+    global ALL_FILE, ALL_CLASS, ALL_FUNC
     ALL_FILE = DP_GRAPH_ENTITY_SEARCHER.get_all_nodes_by_type(NODE_TYPE_FILE)
     ALL_CLASS = DP_GRAPH_ENTITY_SEARCHER.get_all_nodes_by_type(NODE_TYPE_CLASS)
     ALL_FUNC = DP_GRAPH_ENTITY_SEARCHER.get_all_nodes_by_type(NODE_TYPE_FUNCTION)
     
-    logging.debug(f'Rank = {rank}, set CURRENT_ISSUE_ID = {CURRENT_ISSUE_ID}')
+    # logging.debug(f'Set CURRENT_ISSUE_ID = {CURRENT_ISSUE_ID}')
+    # logger.debug(f'Process repo {REPO_PATH} successfully.')
+    print(f'Process repo {REPO_PATH} successfully.')
 
-
-def reset_current_issue():
-    global CURRENT_ISSUE_ID, CURRENT_INSTANCE
-    CURRENT_ISSUE_ID = None
-    CURRENT_INSTANCE = None
-
-    global ALL_FILE, ALL_CLASS, ALL_FUNC
-    ALL_FILE, ALL_CLASS, ALL_FUNC = None, None, None
-
-    global REPO_SAVE_DIR
-    subprocess.run(
-        ["rm", "-rf", REPO_SAVE_DIR], check=True
-    )
-    REPO_SAVE_DIR = None
-
-
-def get_current_issue_id():
-    global CURRENT_ISSUE_ID
-    return CURRENT_ISSUE_ID
+if REPO_PATH:
+    # logger.debug(f'Begin to process repo {REPO_PATH}.')
+    print(f'Begin to process repo {REPO_PATH}.')
+    parse_repo_index()
+else:
+    # logger.debug("no need to process repo")
+    print("no need to process repo")
 
 
 def get_current_repo_modules():
-    global ALL_FILE, ALL_CLASS, ALL_FUNC
+    # global ALL_FILE, ALL_CLASS, ALL_FUNC
     return ALL_FILE, ALL_CLASS, ALL_FUNC
 
 
-def get_current_issue_data():
-    global CURRENT_INSTANCE
-    return CURRENT_INSTANCE
-
-
 def get_graph_entity_searcher() -> RepoEntitySearcher:
-    global DP_GRAPH_ENTITY_SEARCHER
+    # global DP_GRAPH_ENTITY_SEARCHER
     return DP_GRAPH_ENTITY_SEARCHER
 
 
 def get_graph_dependency_searcher() -> RepoDependencySearcher:
-    global DP_GRAPH_DEPENDENCY_SEARCHER
+    # global DP_GRAPH_DEPENDENCY_SEARCHER
     return DP_GRAPH_DEPENDENCY_SEARCHER
 
 
 def get_graph():
-    global DP_GRAPH
+    # global DP_GRAPH
     assert DP_GRAPH is not None
     return DP_GRAPH
-
-def get_repo_save_dir():
-    global REPO_SAVE_DIR
-    return REPO_SAVE_DIR
 
 
 def get_module_name_by_line_num(file_path: str, line_num: int):
@@ -587,15 +549,15 @@ def search_code_snippets(
             cur_query_results.extend(query_results)
             
             # search content
-            if continue_search:
-                query_results = bm25_content_retrieve(query_info=query_info, include_files=include_files)
-                cur_query_results.extend(query_results)
+            # if continue_search:
+            #     query_results = bm25_content_retrieve(query_info=query_info, include_files=include_files)
+            #     cur_query_results.extend(query_results)
                 
-            elif i != (len(filter_terms)-1):
-                joint_terms[i] = ''
-                filter_terms[-1] = ' '.join([t for t in joint_terms if t.strip()])
-                if filter_terms[-1] in filter_terms[:-1]:
-                    filter_terms[-1] = ''
+            # elif i != (len(filter_terms)-1):
+            #     joint_terms[i] = ''
+            #     filter_terms[-1] = ' '.join([t for t in joint_terms if t.strip()])
+            #     if filter_terms[-1] in filter_terms[:-1]:
+            #         filter_terms[-1] = ''
                 
             all_query_results.extend(cur_query_results)
     
@@ -752,7 +714,8 @@ def bm25_module_retrieve(
     try:
         retrieved_nodes = retriever.retrieve(query)
     except IndexError as e:
-        logging.warning(f'{e}. Probably because the query `{query}` is too short.')
+        # logger.warning(f'{e}. Probably because the query `{query}` is too short.')
+        print(f'{e}. Probably because the query `{query}` is too short.')
         return []
 
     filter_nodes = []
@@ -790,19 +753,20 @@ def bm25_content_retrieve(
         str: A formatted string containing the search results, including file paths and the retrieved code snippets (the partial code of a module or the skeleton of the specific module).
     """
 
-    instance = get_current_issue_data()
+    # instance = get_current_issue_data()
+    # instance_id = get_current_issue_id()
     query = query_info.term
     
-    persist_path = os.path.join(BM25_INDEX_DIR, instance["instance_id"])
-    if os.path.exists(f'{persist_path}/corpus.jsonl'):
+    # persist_path = os.path.join(BM25_INDEX_DIR, instance_id)
+    if os.path.exists(f'{BM25_INDEX_DIR}/corpus.jsonl'):
         # TODO: if similairy_top_k > cache's setting, then regenerate
-        retriever = load_retriever(persist_path)
+        retriever = load_retriever(BM25_INDEX_DIR)
     else:
-        repo_path = get_repo_save_dir()
+        # repo_path = get_repo_save_dir()
         # repo_dir = setup_repo(instance_data=instance, repo_base_dir=repo_playground, 
         # dataset=None, split=None)
         # absolute_repo_dir = os.path.abspath(REPO_SAVE_DIR)
-        retriever = build_code_retriever(repo_path, persist_path=persist_path,
+        retriever = build_code_retriever(REPO_PATH, persist_path=BM25_INDEX_DIR,
                                          similarity_top_k=similarity_top_k)
 
     # similarity: {score}

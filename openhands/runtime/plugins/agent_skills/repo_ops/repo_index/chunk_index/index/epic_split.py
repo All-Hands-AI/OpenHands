@@ -10,11 +10,11 @@ from llama_index.core.node_parser.node_utils import logger
 from llama_index.core.schema import BaseNode, TextNode
 from llama_index.core.utils import get_tokenizer, get_tqdm_iterable
 
-from ..codeblocks.parser.create import create_parser
-from ..codeblocks.codeblocks import CodeBlock, CodeBlockType, PathTree
-from ..codeblocks.parser.python import PythonParser
-from .code_node import CodeNode
-from .settings import CommentStrategy
+from openhands.runtime.plugins.agent_skills.repo_ops.repo_index.chunk_index.codeblocks.parser.create import create_parser
+from openhands.runtime.plugins.agent_skills.repo_ops.repo_index.chunk_index.codeblocks.codeblocks import CodeBlock, CodeBlockType, PathTree
+from openhands.runtime.plugins.agent_skills.repo_ops.repo_index.chunk_index.codeblocks.parser.python import PythonParser
+from openhands.runtime.plugins.agent_skills.repo_ops.repo_index.chunk_index.index.code_node import CodeNode
+from openhands.runtime.plugins.agent_skills.repo_ops.repo_index.chunk_index.index.settings import CommentStrategy
 
 CodeBlockChunk = list[CodeBlock]
 

@@ -8,7 +8,7 @@ import networkx as nx
 from llama_index.core import get_tokenizer
 from tree_sitter import Language, Node, Parser
 
-from ..codeblocks import (
+from openhands.runtime.plugins.agent_skills.repo_ops.repo_index.chunk_index.codeblocks.codeblocks import (
     BlockSpan,
     CodeBlock,
     CodeBlockType,
@@ -19,8 +19,8 @@ from ..codeblocks import (
     RelationshipType,
     SpanType,
 )
-from ..module import Module
-from .comment import get_comment_symbol
+from openhands.runtime.plugins.agent_skills.repo_ops.repo_index.chunk_index.codeblocks.module import Module
+from openhands.runtime.plugins.agent_skills.repo_ops.repo_index.chunk_index.codeblocks.parser.comment import get_comment_symbol
 import warnings
 warnings.simplefilter('ignore', FutureWarning)
 
@@ -28,7 +28,7 @@ commented_out_keywords = ['rest of the code', 'existing code', 'other code']
 child_block_types = ['ERROR', 'block']
 module_types = ['program', 'module']
 
-logger = logging.getLogger(__name__)
+# logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -86,7 +86,7 @@ class CodeParser:
             self.tree_parser.set_language(language)
             self.tree_language = language
         except Exception as e:
-            logger.warning(f'Could not get parser for language {language}.')
+            # logger.warning(f'Could not get parser for language {language}.')
             raise e
         self.apply_gpt_tweaks = apply_gpt_tweaks
         self.index_callback = index_callback
@@ -578,9 +578,9 @@ class CodeParser:
                 reference_id_path = reference_id.split('.')
 
                 if not reference_id_path:
-                    logger.warning(
-                        f'Empty reference_id_path ({reference_id_path}) for code `{code}` in reference node {reference} with value {reference_id}'
-                    )
+                    # logger.warning(
+                    #     f'Empty reference_id_path ({reference_id_path}) for code `{code}` in reference node {reference} with value {reference_id}'
+                    # )
                     continue
 
                 if reference[1] == 'reference.utilizes':
@@ -862,4 +862,5 @@ class CodeParser:
 
     def debug_log(self, message: str):
         if self.debug:
-            logger.debug(message)
+            # logger.debug(message)
+            print(message)

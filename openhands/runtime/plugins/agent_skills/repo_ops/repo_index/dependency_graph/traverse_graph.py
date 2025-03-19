@@ -4,7 +4,7 @@ from typing import Optional, List
 
 import networkx as nx
 
-from dependency_graph.build_graph import (
+from openhands.runtime.plugins.agent_skills.repo_ops.repo_index.dependency_graph.build_graph import (
     VALID_EDGE_TYPES, VALID_NODE_TYPES, 
     NODE_TYPE_FILE, NODE_TYPE_CLASS, NODE_TYPE_FUNCTION,
     EDGE_TYPE_CONTAINS

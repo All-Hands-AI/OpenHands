@@ -1,7 +1,7 @@
 from typing import Optional
 
-from .parser import CodeParser
-from .python import PythonParser
+from  openhands.runtime.plugins.agent_skills.repo_ops.repo_index.chunk_index.codeblocks.parser.parser import CodeParser
+from openhands.runtime.plugins.agent_skills.repo_ops.repo_index.chunk_index.codeblocks.parser.python import PythonParser
 
 
 def is_supported(language: str) -> bool:
