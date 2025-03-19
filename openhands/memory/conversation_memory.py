@@ -395,8 +395,7 @@ class ConversationMemory:
             text += '\n[Last action has been rejected by the user]'
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, AgentCondensationObservation):
-            # This case should no longer occur as we've removed the creation of AgentCondensationObservation
-            # But keeping it for backward compatibility
+            # These observations are created by the controller during system-initiated truncation
             text = truncate_content(obs.content, max_message_chars)
             message = Message(role='user', content=[TextContent(text=text)])
         elif (
