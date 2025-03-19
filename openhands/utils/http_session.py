@@ -1,41 +1,57 @@
 from dataclasses import dataclass, field
-from typing import Any, cast
+from typing import MutableMapping
 
 import requests
-from requests.structures import CaseInsensitiveDict
 
 from openhands.core.logger import openhands_logger as logger
+
+SESSION = requests.Session()
 
 
 @dataclass
 class HttpSession:
     """
-    request.Session is reusable after it has been closed. This behavior makes it
-    likely to leak file descriptors (Especially when combined with tenacity).
-    We wrap the session to make it unusable after being closed
+    This class gives us the flexibility to handle http connections efficiently, pooling where
+    possible. Each session has different http headers, though we use a single shared httpx client
+    instance. (Which is thread safe).
+    We maintain a close method mostly to track unclosed connections, though reuse of the class after
+    close is not prevented.
     """
 
-    session: requests.Session | None = field(default_factory=requests.Session)
+    _headers: MutableMapping[str, str] = field(default_factory=dict)
+    is_closed: bool = False
 
-    def __getattr__(self, name: str) -> Any:
-        if self.session is None:
+    def get(self, *args, **kwargs):
+        return self.request('GET', *args, **kwargs)
+
+    def post(self, *args, **kwargs):
+        return self.request('POST', *args, **kwargs)
+
+    def patch(self, *args, **kwargs):
+        return self.request('PATCH', *args, **kwargs)
+
+    def put(self, *args, **kwargs):
+        return self.request('PUT', *args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        return self.request('DELETE', *args, **kwargs)
+
+    def request(self, method, *args, **kwargs):
+        if self.is_closed:
             logger.error(
                 'Session is being used after close!', stack_info=True, exc_info=True
             )
-            self.session = requests.Session()
-        return getattr(self.session, name)
+            self.is_closed = False
+        headers = {**self._headers}
+        if 'headers' in kwargs:
+            headers.update(**kwargs['headers'])
+        kwargs['headers'] = headers
+        response = SESSION.request(method, *args, **kwargs)
+        return response
 
     @property
-    def headers(self) -> CaseInsensitiveDict[str]:
-        if self.session is None:
-            logger.error(
-                'Session is being used after close!', stack_info=True, exc_info=True
-            )
-            self.session = requests.Session()
-        # Cast to CaseInsensitiveDict[str] since mypy doesn't know the exact type
-        return cast(CaseInsensitiveDict[str], self.session.headers)
+    def headers(self) -> MutableMapping[str, str]:
+        return self._headers
 
     def close(self) -> None:
-        if self.session is not None:
-            self.session.close()
-            self.session = None
+        self.is_closed = True
