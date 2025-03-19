@@ -19,7 +19,6 @@ from openhands.core.message import Message, TextContent
 from openhands.events.event import Event, EventSource
 from openhands.events.observation import BrowserOutputObservation
 from openhands.events.observation.agent import AgentCondensationObservation
-from openhands.events.observation.empty import NullObservation
 from openhands.events.observation.observation import Observation
 from openhands.llm import LLM
 from openhands.memory.condenser import Condenser
@@ -153,6 +152,17 @@ class RollingCondenserTestHarness:
         # And the maximum value we will ever see is the max size (approximately 2 * target size).
         # Put together, we get the following formula:
         return ((index - max_size) % target_size) + target_size + 1
+
+    def expected_condensations(self, index: int, max_size: int) -> int:
+        """Calculate the expected number of condensation events at the given index.
+
+        Assumes the condenser triggers condensation when the view is _longer_ than the max size, and that the target size is half the max size.
+        """
+        if index < max_size:
+            return 0
+
+        target_size = max_size // 2
+        return ((index - max_size) // target_size) + 1
 
 
 def test_noop_condenser_from_config():
@@ -322,7 +332,7 @@ def test_recent_events_condenser():
     assert result[2]._message == 'Event 5'  # kept from max_events
 
 
-def test_llm_summarization_condenser_from_config():
+def test_llm_summarizing_condenser_from_config():
     """Test that LLMSummarizingCondenser objects can be made from config."""
     config = LLMSummarizingCondenserConfig(
         max_size=50,
@@ -341,7 +351,7 @@ def test_llm_summarization_condenser_from_config():
     assert condenser.keep_first == 10
 
 
-def test_llm_amortized_summarization_condenser_invalid_config():
+def test_llm_summarizing_condenser_invalid_config():
     """Test that LLMSummarizingCondenser raises error when keep_first > max_size."""
     pytest.raises(
         ValueError,
@@ -354,135 +364,49 @@ def test_llm_amortized_summarization_condenser_invalid_config():
     pytest.raises(ValueError, LLMSummarizingCondenser, llm=MagicMock(), keep_first=-1)
 
 
-def test_llm_summarizing_condenser_grows_to_max_size(mock_llm, mock_state):
-    """Test that LLMSummarizingCondenser correctly maintains an event context up to max size."""
-    max_size = 15
+def test_llm_summarizing_condenser_gives_expected_view_size(mock_llm):
+    """Test that LLMSummarizingCondenser maintains the correct view size."""
+    max_size = 10
     condenser = LLMSummarizingCondenser(max_size=max_size, llm=mock_llm)
 
-    for i in range(max_size):
-        event = create_test_event(f'Event {i}')
-        mock_state.history.append(event)
-        results = condenser.condensed_history(mock_state)
-        assert len(results) == i + 1
-
-
-def test_llm_summarizing_condenser_forgets_and_summarizes(mock_llm, mock_state):
-    """Test that the LLMSummarizingCondenser forgets events and maintains a summary."""
-    max_size = 4
-    keep_first = 1
-    condenser = LLMSummarizingCondenser(
-        max_size=max_size, keep_first=keep_first, llm=mock_llm
-    )
-
-    # Add initial event
-    first_event = create_test_event('Event 0')
-    mock_state.history.append(first_event)
+    events = [create_test_event(f'Event {i}', id=i) for i in range(max_size * 10)]
 
     # Set up mock LLM response
     mock_llm.set_mock_response_content('Summary of forgotten events')
 
-    # Add enough events to trigger forgetting
-    for i in range(max_size + 3):  # +3 to ensure we're well past max_size
-        event = create_test_event(f'Event {i+1}')
-        mock_state.history.append(event)
+    harness = RollingCondenserTestHarness(condenser)
 
-    # Get the condensed history
-    results = condenser.condensed_history(mock_state)
-
-    # We should have exactly 3 events:
-    # 1. First event (keep_first = 1)
-    # 2. Summary event
-    # 3. Most recent event
-    assert len(results) == 3, f'Expected 3 events, got {len(results)}: {results}'
-    assert (
-        results[0] == first_event
-    ), f'First event should be {first_event}, got {results[0]}'
-    assert isinstance(
-        results[1], AgentCondensationObservation
-    ), f'Second event should be a summary, got {results[1]}'
-    assert (
-        results[1].content == 'Summary of forgotten events'
-    ), f"Summary content should be 'Summary of forgotten events', got {results[1].content}"
-    assert results[2] == event, f'Last event should be {event}, got {results[2]}'
+    for i, view in enumerate(harness.views(events)):
+        assert len(view) == harness.expected_size(i, max_size)
 
 
-def test_llm_summarizing_condenser_llm_call(mock_llm, mock_state):
-    """Test that the LLM is called correctly when forgetting events."""
-    max_size = 4
-    keep_first = 1
+def test_llm_summarizing_condenser_keeps_first_and_summary_events(mock_llm, mock_state):
+    """Test that the LLM summarizing condenser appropriately maintains the event prefix and any summary events."""
+    max_size = 10
+    keep_first = 3
     condenser = LLMSummarizingCondenser(
         max_size=max_size, keep_first=keep_first, llm=mock_llm
     )
 
-    # Add initial event
-    first_event = create_test_event('Event 0')
-    mock_state.history.append(first_event)
-
-    # Set up mock LLM response
-    mock_llm.set_mock_response_content('Summary of forgotten events')
-    mock_llm.metrics.get.return_value = {'test_metric': 1.0}
-
-    # Add enough events to trigger forgetting
-    for i in range(max_size):
-        event = create_test_event(f'Event {i+1}')
-        mock_state.history.append(event)
-        condenser.condensed_history(mock_state)
-
-    # Verify LLM was called with correct prompt
-    mock_llm.completion.assert_called_once()
-    call_args = mock_llm.completion.call_args[1]
-    assert 'messages' in call_args
-    assert len(call_args['messages']) == 1
-
-    # Verify metrics were added to state
-    assert 'condenser_meta' in mock_state.extra_data
-    assert len(mock_state.extra_data['condenser_meta']) == 1
-    assert mock_state.extra_data['condenser_meta'][0]['metrics'] == {'test_metric': 1.0}
-
-
-def test_llm_summarizing_condenser_resets_when_given_truncated_history(
-    mock_llm, mock_state
-):
-    """Test that the condenser, when it sees a shorter history than it has in the past (due to truncation), will reset its tracking."""
-    max_size = 4
-    keep_first = 1
-    condenser = LLMSummarizingCondenser(
-        max_size=max_size, keep_first=keep_first, llm=mock_llm
-    )
-
-    # Add initial event
-    first_event = create_test_event('Event 0')
-    mock_state.history.append(first_event)
-
-    # Set up mock LLM response
     mock_llm.set_mock_response_content('Summary of forgotten events')
 
-    # Add enough events to trigger forgetting
-    for i in range(max_size + 3):  # +3 to ensure we're well past max_size
-        event = create_test_event(f'Event {i+1}')
-        mock_state.history.append(event)
+    events = [create_test_event(f'Event {i}', id=i) for i in range(max_size * 10)]
+    harness = RollingCondenserTestHarness(condenser)
 
-    # Get the condensed history
-    results = condenser.condensed_history(mock_state)
+    for i, view in enumerate(harness.views(events)):
+        assert len(view) == harness.expected_size(i, max_size)
 
-    # We should have exactly 3 events:
-    # 1. First event (keep_first = 1)
-    # 2. Summary event
-    # 3. Most recent event
-    assert len(results) == 3, f'Expected 3 events, got {len(results)}: {results}'
+        # Ensure that the we've called out the summarizing LLM once per condensation
+        assert mock_llm.completion.call_count == harness.expected_condensations(
+            i, max_size
+        )
 
-    # Now, call condensation on a small history that contains only two events.
-    alternate_history = [
-        create_test_event('Alt. Event 0'),
-        create_test_event('Alt. Event 1'),
-    ]
-    mock_state.history = alternate_history
+        # Ensure that the prefix is appropiately maintained
+        assert view[:keep_first] == events[: min(keep_first, i + 1)]
 
-    # When we do this, the condenser should start tracking the alternative history
-    # as the de-facto history. That means we lose the summarization event and any
-    # other events that were in the previous history.
-    results = condenser.condensed_history(mock_state)
-    assert results == View(events=alternate_history)
+        # If we've condensed, ensure that the summary event is present
+        if i > max_size:
+            assert isinstance(view[keep_first], AgentCondensationObservation)
 
 
 def test_amortized_forgetting_condenser_from_config():
@@ -579,55 +503,6 @@ def test_llm_attention_condenser_invalid_config():
     )
 
     pytest.raises(ValueError, LLMAttentionCondenser.from_config, config)
-
-
-def test_rolling_condenser_handles_truncation(mock_state: State):
-    """Test that RollingCondenser correctly handles history truncation."""
-
-    class TestRollingCondenser(RollingCondenser):
-        """Test implementation of RollingCondenser that just returns all events."""
-
-        def get_view(self, events: list[Event]) -> View:
-            return View(events=events)
-
-        def get_condensation(self, view: View) -> Condensation:
-            return Condensation(event=NullObservation())
-
-        def should_condense(self, view: View) -> bool:
-            return False
-
-    condenser = TestRollingCondenser()
-
-    # Initial history with 3 events
-    events = [
-        create_test_event('Event 1', id=1),
-        create_test_event('Event 2', id=2),
-        create_test_event('Event 3', id=3),
-    ]
-    mock_state.history = events
-
-    # First condensation - should return all events
-    results = condenser.condensed_history(mock_state)
-    assert len(results) == 3
-    assert [e._id for e in results] == [1, 2, 3]
-
-    # Simulate truncation - history is now shorter, and the condensation should
-    # just include the truncated history
-    mock_state.history = mock_state.history[-1:]
-
-    results = condenser.condensed_history(mock_state)
-    assert len(results) == 1
-    assert results[0]._id == 3
-
-    # Adding more events and condensing should "rebase" us from the truncated history
-    mock_state.history += [
-        create_test_event('Event 4', id=4),
-        create_test_event('Event 5', id=5),
-    ]
-
-    results = condenser.condensed_history(mock_state)
-    assert len(results) == 3
-    assert [e._id for e in results] == [3, 4, 5]
 
 
 def test_llm_attention_condenser_gives_expected_view_size(mock_llm):

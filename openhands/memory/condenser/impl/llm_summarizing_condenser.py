@@ -71,9 +71,10 @@ class LLMSummarizingCondenser(RollingCondenser):
 
     def get_condensation(self, view: View) -> Condensation:
         head = view[: self.keep_first]
-
         target_size = self.max_size // 2
-        events_from_tail = target_size - len(head)
+        # Number of events to keep from the tail -- target size, minus however many
+        # prefix events from the head, minus one for the summarization event
+        events_from_tail = target_size - len(head) - 1
 
         summary_event = (
             view[self.keep_first]
@@ -142,77 +143,6 @@ INTENT: Fix precision while maintaining FITS compliance"""
 
     def should_condense(self, view: View) -> bool:
         return len(view) > self.max_size
-
-    def _condense(self, events: list[Event]) -> View | Condensation:
-        """Apply the amortized forgetting strategy with LLM summarization to the given list of events."""
-        if len(events) <= self.max_size:
-            return View(events=events)
-
-        head = events[: self.keep_first]
-
-        target_size = self.max_size // 2
-        events_from_tail = target_size - len(head)
-        tail = events[-events_from_tail:]
-
-        summary_event = (
-            events[self.keep_first]
-            if isinstance(events[self.keep_first], AgentCondensationObservation)
-            else AgentCondensationObservation('No events summarized')
-        )
-
-        # Identify events to be forgotten (those not in head or tail)
-        forgotten_events = []
-        for event in events[self.keep_first : -events_from_tail]:
-            if not isinstance(event, AgentCondensationObservation):
-                forgotten_events.append(event)
-
-        # Construct prompt for summarization
-        prompt = """You are maintaining state history for an LLM-based code agent. Track:
-
-USER_CONTEXT: (Preserve essential user requirements, problem descriptions, and clarifications in concise form)
-
-STATE: {File paths, function signatures, data structures}
-TESTS: {Failing cases, error messages, outputs}
-CHANGES: {Code edits, variable updates}
-DEPS: {Dependencies, imports, external calls}
-INTENT: {Why changes were made, acceptance criteria}
-
-PRIORITIZE:
-1. Capture key user requirements and constraints
-2. Maintain critical problem context
-3. Keep all sections concise
-
-SKIP: {Git clones, build logs, file listings}
-
-Example history format:
-USER_CONTEXT: Fix FITS card float representation - "0.009125" becomes "0.009124999999999999" causing comment truncation. Use Python's str() when possible while maintaining FITS compliance.
-
-STATE: mod_float() in card.py updated
-TESTS: test_format() passed
-CHANGES: str(val) replaces f"{val:.16G}"
-DEPS: None modified
-INTENT: Fix precision while maintaining FITS compliance"""
-
-        prompt + '\n\n'
-
-        prompt += ('\n' + summary_event.message + '\n') if summary_event.message else ''
-
-        prompt + '\n\n'
-
-        for forgotten_event in forgotten_events:
-            prompt += str(forgotten_event) + '\n\n'
-
-        messages = [Message(role='user', content=[TextContent(text=prompt)])]
-
-        response = self.llm.completion(
-            messages=self.llm.format_messages_for_llm(messages),
-        )
-        summary = response.choices[0].message.content
-
-        self.add_metadata('response', response.model_dump())
-        self.add_metadata('metrics', self.llm.metrics.get())
-
-        return View(events=head + [AgentCondensationObservation(summary)] + tail)
 
     @classmethod
     def from_config(
