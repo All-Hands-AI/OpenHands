@@ -8,7 +8,6 @@ import shutil
 import string
 import tempfile
 from abc import abstractmethod
-from asyncio import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
@@ -32,6 +31,7 @@ from openhands.events.action import (
     FileWriteAction,
     IPythonRunCellAction,
 )
+from openhands.events.action.commands import StaticCmdRunAction
 from openhands.events.event import Event
 from openhands.events.observation import (
     AgentThinkObservation,
@@ -83,8 +83,13 @@ class CommandResult:
 
 
 class GitHandler:
-    def __init__(self, execute_shell_fn: Callable[[str], CommandResult]):
+    def __init__(
+        self,
+        execute_shell_fn: Callable[[str], CommandResult],
+        read: Callable[[str], CommandResult],
+    ):
         self.execute = execute_shell_fn
+        self.read = read
 
     def _is_git_repo(self) -> bool:
         cmd = 'git rev-parse --is-inside-work-tree'
@@ -92,8 +97,7 @@ class GitHandler:
         return output.content == 'true'
 
     def _get_current_file_content(self, file_path: str) -> str:
-        cmd = f'cat {file_path}'
-        output = self.execute(cmd)
+        output = self.read(file_path)
         return output.content
 
     def _verify_ref_exists(self, ref: str) -> bool:
@@ -171,7 +175,7 @@ class GitHandler:
         result += self.get_untracked_files()
         return result
 
-    def get_git_diff(self, file_path: str, ref='HEAD') -> dict[str, str]:
+    def get_git_diff(self, file_path: str) -> dict[str, str]:
         modified = self._get_current_file_content(file_path)
         original = self._get_ref_content(file_path)
 
@@ -206,9 +210,11 @@ class Runtime(FileEditRuntimeMixin):
         headless_mode: bool = False,
         github_user_id: str | None = None,
     ):
+        self.git_handler = GitHandler(
+            self._execute_shell_fn_git_handler, self._read_file_content
+        )
         self.sid = sid
         self.event_stream = event_stream
-        self.git_handler = GitHandler(self._execute_shell)
         self.event_stream.subscribe(
             EventStreamSubscriber.RUNTIME, self.on_event, self.sid
         )
@@ -544,7 +550,7 @@ class Runtime(FileEditRuntimeMixin):
     # ====================================================================
 
     @abstractmethod
-    def run(self, action: CmdRunAction) -> Observation:
+    def run(self, action: CmdRunAction | StaticCmdRunAction) -> Observation:
         pass
 
     @abstractmethod
@@ -608,6 +614,31 @@ class Runtime(FileEditRuntimeMixin):
     # Git
     # ====================================================================
 
+    def _execute_shell_fn_git_handler(self, command: str) -> CommandResult:
+        obs = self.run(StaticCmdRunAction(command=command))
+        exit_code = 0
+        content = ''
+
+        if hasattr(obs, 'exit_code'):
+            exit_code = obs.exit_code
+        if hasattr(obs, 'content'):
+            content = obs.content
+
+        return CommandResult(content=content, exit_code=exit_code)
+
+    def _read_file_content(self, file_path: str) -> CommandResult:
+        logger.info(f'Reading file content: {file_path}')
+        obs = self.read(FileReadAction(path=file_path))
+        exit_code = 0
+        content = ''
+
+        if hasattr(obs, 'exit_code'):
+            exit_code = obs.exit_code
+        if hasattr(obs, 'content'):
+            content = obs.content
+
+        return CommandResult(content=content, exit_code=exit_code)
+
     def get_git_changes(self) -> list[dict[str, str]]:
         return self.git_handler.get_git_changes()
 
@@ -617,65 +648,3 @@ class Runtime(FileEditRuntimeMixin):
     @property
     def additional_agent_instructions(self) -> str:
         return ''
-
-
-class AsyncBashSession:
-    @staticmethod
-    async def execute(self, command: str, work_dir: str) -> dict:
-        """Execute a command in the bash session asynchronously."""
-        work_dir = os.path.abspath(work_dir)
-
-        if not os.path.exists(work_dir):
-            raise ValueError(f'Work directory {work_dir} does not exist.')
-
-        command = command.strip()
-        if not command:
-            return {
-                'content': '',
-                'exit_code': 0,
-                'command': command,
-                'working_dir': self.work_dir,
-            }
-
-        try:
-            process = await subprocess.create_subprocess_shell(
-                command,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-                cwd=self.work_dir,
-            )
-
-            try:
-                stdout, _ = await asyncio.wait_for(process.communicate(), timeout=30)
-                output = stdout.decode('utf-8')
-
-                return {
-                    'content': output,
-                    'exit_code': process.returncode,
-                    'command': command,
-                    'working_dir': self.work_dir,
-                }
-
-            except asyncio.TimeoutError:
-                process.terminate()
-
-                # Allow a brief moment for cleanup
-                try:
-                    await asyncio.wait_for(process.wait(), timeout=1.0)
-                except asyncio.TimeoutError:
-                    process.kill()  # Force kill if it doesn't terminate cleanly
-
-                return {
-                    'content': 'Command timed out.',
-                    'exit_code': -1,
-                    'command': command,
-                    'working_dir': self.work_dir,
-                }
-
-        except Exception as e:
-            return {
-                'content': f'Error running command: {str(e)}',
-                'exit_code': -1,
-                'command': command,
-                'working_dir': self.work_dir,
-            }

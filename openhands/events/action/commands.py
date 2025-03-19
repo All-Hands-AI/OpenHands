@@ -60,3 +60,24 @@ class IPythonRunCellAction(Action):
     @property
     def message(self) -> str:
         return f'Running Python code interactively: {self.code}'
+
+
+@dataclass
+class StaticCmdRunAction(Action):
+    command: str
+    thought: str = ''
+    action: str = ActionType.RUN_STATIC
+    runnable: ClassVar[bool] = True
+    confirmation_state: ActionConfirmationStatus = ActionConfirmationStatus.CONFIRMED
+    security_risk: ActionSecurityRisk | None = None
+
+    def __str__(self) -> str:
+        ret = '**StaticCmdRunAction**\n'
+        if self.thought:
+            ret += f'THOUGHT: {self.thought}\n'
+        ret += f'COMMAND:\n{self.command}'
+        return ret
+
+    @property
+    def message(self) -> str:
+        return f'Running static command: {self.command}'

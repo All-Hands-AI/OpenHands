@@ -42,6 +42,7 @@ from openhands.events.action import (
     FileWriteAction,
     IPythonRunCellAction,
 )
+from openhands.events.action.commands import StaticCmdRunAction
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.observation import (
     CmdOutputObservation,
@@ -53,9 +54,11 @@ from openhands.events.observation import (
     Observation,
 )
 from openhands.events.serialization import event_from_dict, event_to_dict
+from openhands.runtime.base import CommandResult
 from openhands.runtime.browser import browse
 from openhands.runtime.browser.browser_env import BrowserEnv
 from openhands.runtime.plugins import ALL_PLUGINS, JupyterPlugin, Plugin, VSCodePlugin
+from openhands.runtime.utils.async_bash import AsyncBashSession
 from openhands.runtime.utils.bash import BashSession
 from openhands.runtime.utils.files import insert_lines, read_lines
 from openhands.runtime.utils.memory_monitor import MemoryMonitor
@@ -183,6 +186,9 @@ class ActionExecutor:
     def initial_cwd(self):
         return self._initial_cwd
 
+    async def _execute_shell_fn_git_handler(self, command: str) -> CommandResult:
+        return await AsyncBashSession.execute(command, self._initial_cwd)
+
     async def ainit(self):
         # bash needs to be initialized first
         logger.debug('Initializing bash session')
@@ -265,11 +271,17 @@ class ActionExecutor:
             return observation
 
     async def run(
-        self, action: CmdRunAction
+        self, action: CmdRunAction | StaticCmdRunAction
     ) -> CmdOutputObservation | ErrorObservation:
-        assert self.bash_session is not None
-        obs = await call_sync_from_async(self.bash_session.execute, action)
-        return obs
+        if isinstance(action, CmdRunAction):
+            assert self.bash_session is not None
+            obs = await call_sync_from_async(self.bash_session.execute, action)
+            return obs
+        elif isinstance(action, StaticCmdRunAction):
+            obs = await call_sync_from_async(
+                self._execute_shell_fn_git_handler, action.command
+            )
+            return obs
 
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
         assert self.bash_session is not None

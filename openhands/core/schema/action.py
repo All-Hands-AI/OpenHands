@@ -28,6 +28,10 @@ class ActionTypeSchema(BaseModel):
     """Runs a command.
     """
 
+    RUN_STATIC: str = Field(default='run_static')
+    """Runs a command through the static command runner.
+    """
+
     RUN_IPYTHON: str = Field(default='run_ipython')
     """Runs a IPython cell.
     """

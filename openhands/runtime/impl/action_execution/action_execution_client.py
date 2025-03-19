@@ -26,6 +26,7 @@ from openhands.events.action import (
     IPythonRunCellAction,
 )
 from openhands.events.action.action import Action
+from openhands.events.action.commands import StaticCmdRunAction
 from openhands.events.action.files import FileEditSource
 from openhands.events.observation import (
     AgentThinkObservation,
@@ -276,7 +277,7 @@ class ActionExecutionClient(Runtime):
                 )
             return obs
 
-    def run(self, action: CmdRunAction) -> Observation:
+    def run(self, action: CmdRunAction | StaticCmdRunAction) -> Observation:
         return self.send_action_for_execution(action)
 
     def run_ipython(self, action: IPythonRunCellAction) -> Observation:

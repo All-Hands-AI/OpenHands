@@ -343,7 +343,7 @@ async def git_changes(request: Request):
         changes = await call_sync_from_async(runtime.get_git_changes)
         return changes
     except AgentRuntimeUnavailableError as e:
-        logger.error(f'Error getting changes: {e}')
+        logger.error(f'Runtime unavailable: {e}')
         return JSONResponse(
             status_code=500,
             content={'error': f'Error getting changes: {e}'},
