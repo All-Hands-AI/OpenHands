@@ -56,11 +56,23 @@ To run the application with the actual backend:
 # Build the application from the root directory
 make build
 
+# Start the application
+make run
+```
+Or to run backend and frontend seperately.
+
+```sh
 # Start the backend from the root directory
 make start-backend
 
 # Serve the frontend
+make start-frontend or
 cd frontend && npm start -- --port 3001
+```
+
+Start frontend with Mock Service Worker (MSW), see testing for more info.
+```sh
+npm run dev:mock or npm run dev:mock:saas
 ```
 
 ### Environment Variables
@@ -136,6 +148,7 @@ npm run test:coverage
 
 1. **Component Testing**
    - Test components in isolation
+   - Use our custom renderWithProviders() that wraps the components we want to test in our providers. It is especially useful for components that use Redux
    - Use `render()` from React Testing Library to render components
    - Prefer querying elements by role, label, or test ID over CSS selectors
    - Test both rendering and interaction scenarios
@@ -146,8 +159,9 @@ npm run test:coverage
    - Handle edge cases like disabled states, empty inputs, etc.
 
 3. **Mocking**
+   - We test components that make network requests by mocking those requests with Mock Service Worker (MSW)
    - Use `vi.fn()` to create mock functions for callbacks and event handlers
-   - Mock external dependencies and API calls
+   - Mock external dependencies and API calls (more info)[https://mswjs.io/docs/getting-started]
    - Verify mock function calls using `.toHaveBeenCalledWith()`, `.toHaveBeenCalledTimes()`
 
 4. **Accessibility Testing**
@@ -179,10 +193,10 @@ describe("ComponentName", () => {
   it("should handle user interactions", async () => {
     const mockCallback = vi.fn();
     const user = userEvent.setup();
-    
+
     render(<Component onClick={mockCallback} />);
     const button = screen.getByRole("button");
-    
+
     await user.click(button);
     expect(mockCallback).toHaveBeenCalledOnce();
   });
@@ -193,12 +207,12 @@ describe("ComponentName", () => {
 
 For real-world examples of testing, check out these test files:
 
-1. **Chat Input Component Test**: 
+1. **Chat Input Component Test**:
    [`__tests__/components/chat/chat-input.test.tsx`](https://github.com/All-Hands-AI/OpenHands/blob/main/frontend/__tests__/components/chat/chat-input.test.tsx)
    - Demonstrates comprehensive testing of a complex input component
    - Covers various scenarios like submission, disabled states, and user interactions
 
-2. **File Explorer Component Test**: 
+2. **File Explorer Component Test**:
    [`__tests__/components/file-explorer/file-explorer.test.tsx`](https://github.com/All-Hands-AI/OpenHands/blob/main/frontend/__tests__/components/file-explorer/file-explorer.test.tsx)
    - Shows testing of a more complex component with multiple interactions
    - Illustrates testing of nested components and state management
