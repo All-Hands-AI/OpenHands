@@ -324,6 +324,15 @@ class StandaloneConversationManager(ConversationManager):
 
         session = self._local_agent_loops_by_sid.get(sid)
         if session:
+            # Check if the session is ready to process actions
+            if not session.is_ready():
+                logger.info(
+                    f'Session not ready, queueing action: {data}',
+                    extra={'session_id': sid},
+                )
+                session.queue_action(data)
+                return
+
             await session.dispatch(data)
             return
 

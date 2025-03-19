@@ -86,12 +86,10 @@ export function ChatInterface() {
     // Create and send the chat message
     const chatMessage = createChatMessage(content, imageUrls, timestamp);
     send(chatMessage);
-    
-    // Wait a moment before sending the agent state change event
-    // This helps ensure the message is processed first
-    setTimeout(() => {
-      send(generateAgentStateChangeEvent(AgentState.RUNNING));
-    }, 100);
+
+    // Send the agent state change event immediately
+    // The backend will handle the ordering and queueing
+    send(generateAgentStateChangeEvent(AgentState.RUNNING));
 
     setMessageToSend(null);
   };

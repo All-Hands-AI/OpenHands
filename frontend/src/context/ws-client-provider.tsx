@@ -135,15 +135,7 @@ export function WsClientProvider({
       return;
     }
 
-    if (!backendReady) {
-      // If backend is not ready yet, queue the message
-      EventLogger.info(
-        `Backend not ready, queueing message: ${JSON.stringify(event)}`,
-      );
-      queueMessage(event);
-      return;
-    }
-
+    // Always send the message to the backend, which will handle queueing if needed
     EventLogger.info(`Sending message to backend: ${JSON.stringify(event)}`);
     sioRef.current.emit("oh_action", event);
   }
@@ -212,16 +204,20 @@ export function WsClientProvider({
     updateStatusWhenErrorMessagePresent(data);
   }
 
-  // Watch for backend ready state and send queued messages when ready
+  // Process any pending messages when the WebSocket connects
   React.useEffect(() => {
     EventLogger.info(
-      `Backend ready: ${backendReady}, Pending messages: ${pendingMessages.length}`,
+      `Connection status: ${status}, Pending messages: ${pendingMessages.length}`,
     );
 
-    if (backendReady && pendingMessages.length > 0 && sioRef.current) {
-      // Backend is ready and we have pending messages
+    if (
+      status === WsClientProviderStatus.CONNECTED &&
+      pendingMessages.length > 0 &&
+      sioRef.current
+    ) {
+      // We're connected and have pending messages
       EventLogger.info(
-        `Backend is ready! Sending ${pendingMessages.length} queued messages`,
+        `Connected! Sending ${pendingMessages.length} queued messages`,
       );
 
       pendingMessages.forEach((event, index) => {
@@ -231,20 +227,10 @@ export function WsClientProvider({
         sioRef.current?.emit("oh_action", event);
       });
 
-      // Also set the agent state to RUNNING if needed
-      const agentStateEvent = {
-        action: "change_agent_state",
-        args: { agent_state: "running" },
-      };
-      EventLogger.info(
-        `Setting agent state to RUNNING: ${JSON.stringify(agentStateEvent)}`,
-      );
-      sioRef.current.emit("oh_action", agentStateEvent);
-
       setPendingMessages([]);
       EventLogger.info("All queued messages sent, queue cleared");
     }
-  }, [backendReady, pendingMessages.length]);
+  }, [status, pendingMessages.length]);
 
   React.useEffect(() => {
     lastEventRef.current = null;

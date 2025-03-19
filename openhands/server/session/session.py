@@ -1,7 +1,9 @@
 import asyncio
 import time
 from copy import deepcopy
+from dataclasses import field
 from logging import LoggerAdapter
+from typing import List
 
 import socketio
 
@@ -12,6 +14,7 @@ from openhands.core.config.condenser_config import (
 )
 from openhands.core.const.guide_url import TROUBLESHOOTING_URL
 from openhands.core.logger import OpenHandsLoggerAdapter
+from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema import AgentState
 from openhands.events.action import MessageAction, NullAction
 from openhands.events.event import Event, EventSource
@@ -43,6 +46,9 @@ class Session:
     file_store: FileStore
     user_id: str | None
     logger: LoggerAdapter
+    _pending_actions: List[dict] = []
+    _is_ready: bool = False
+    _ready_event: asyncio.Event = field(default_factory=asyncio.Event)
 
     def __init__(
         self,
@@ -70,6 +76,16 @@ class Session:
         self.config = deepcopy(config)
         self.loop = asyncio.get_event_loop()
         self.user_id = user_id
+        self._pending_actions = []
+        self._is_ready = False
+        self._ready_event = asyncio.Event()
+
+        # Subscribe to agent state changes to detect when the agent is ready
+        self.agent_session.event_stream.subscribe(
+            EventStreamSubscriber.SERVER,
+            self._on_agent_state_change,
+            f'{self.sid}_state_change',
+        )
 
     async def close(self):
         if self.sio:
@@ -86,6 +102,11 @@ class Session:
     async def initialize_agent(
         self, settings: Settings, initial_message: MessageAction | None
     ):
+        # Reset the ready state when initializing a new agent
+        self._is_ready = False
+        self._ready_event.clear()
+
+        # Set the agent state to LOADING
         self.agent_session.event_stream.add_event(
             AgentStateChangedObservation('', AgentState.LOADING),
             EventSource.ENVIRONMENT,
@@ -269,3 +290,55 @@ class Session:
         asyncio.run_coroutine_threadsafe(
             self._send_status_message(msg_type, id, message), self.loop
         )
+
+    def is_ready(self) -> bool:
+        """Check if the session is ready to process actions."""
+        return self._is_ready
+
+    def queue_action(self, action_data: dict):
+        """Queue an action to be processed when the session is ready."""
+        logger.info(f'Queueing action for session {self.sid}: {action_data}')
+        self._pending_actions.append(action_data)
+
+        # Start a task to process the queue when the session becomes ready
+        asyncio.run_coroutine_threadsafe(self._process_queue_when_ready(), self.loop)
+
+    async def _process_queue_when_ready(self):
+        """Process the queue of actions when the session becomes ready."""
+        if not self._ready_event.is_set():
+            try:
+                # Wait for the session to become ready
+                await asyncio.wait_for(self._ready_event.wait(), timeout=60)
+            except asyncio.TimeoutError:
+                logger.warning(
+                    f'Timeout waiting for session {self.sid} to become ready'
+                )
+                return
+
+        # Process all pending actions
+        if self._pending_actions:
+            logger.info(
+                f'Processing {len(self._pending_actions)} queued actions for session {self.sid}'
+            )
+
+            # Process all pending actions
+            for action_data in self._pending_actions:
+                logger.info(f'Processing queued action: {action_data}')
+                await self.dispatch(action_data)
+
+            # Clear the queue
+            self._pending_actions = []
+
+    def _on_agent_state_change(self, event: Event):
+        """Handle agent state change events to detect when the agent is ready."""
+        if isinstance(event, AgentStateChangedObservation):
+            # Check if the agent state indicates it's ready
+            if event.agent_state in ['idle', 'ready']:
+                logger.info(f'Agent for session {self.sid} is now ready')
+                self._is_ready = True
+                self._ready_event.set()
+
+                # Process any pending actions
+                asyncio.run_coroutine_threadsafe(
+                    self._process_queue_when_ready(), self.loop
+                )

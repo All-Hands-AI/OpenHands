@@ -6,6 +6,7 @@
  */
 class EventLogger {
   static isDevMode = process.env.NODE_ENV === "development";
+
   static FORCE_LOGGING = true; // Set to true to enable logging in all environments
 
   static shouldLog() {
@@ -18,7 +19,10 @@ class EventLogger {
    */
   static message(event: MessageEvent) {
     if (this.shouldLog()) {
-      console.warn("[OpenHands]", JSON.stringify(JSON.parse(event.data.toString()), null, 2));
+      console.warn(
+        "[OpenHands]",
+        JSON.stringify(JSON.parse(event.data.toString()), null, 2),
+      );
     }
   }
 
