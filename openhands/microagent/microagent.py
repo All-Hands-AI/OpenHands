@@ -219,7 +219,9 @@ class TaskMicroAgent(BaseMicroAgent):
                     task_steps.append(
                         TaskStep(
                             description=main_step,
-                            subtasks=[TaskStep(description=subtask) for subtask in subtasks],
+                            subtasks=[
+                                TaskStep(description=subtask) for subtask in subtasks
+                            ],
                         )
                     )
                 except (StopIteration, TypeError, ValueError):
@@ -275,7 +277,9 @@ class TaskMicroAgent(BaseMicroAgent):
             if not step.subtasks:
                 raise ValueError(f'Step {step_index} has no subtasks')
             if not (1 <= subtask_index <= len(step.subtasks)):
-                raise ValueError(f'Invalid subtask index {subtask_index} for step {step_index}')
+                raise ValueError(
+                    f'Invalid subtask index {subtask_index} for step {step_index}'
+                )
             step.subtasks[subtask_index - 1].completed = completed
         else:
             step.completed = completed

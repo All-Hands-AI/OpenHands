@@ -161,15 +161,24 @@ def test_invalid_step_format(task_agent):
 
         # Test with invalid step type
         steps = [42]  # Integer instead of string or dict
-        with pytest.raises(ValueError, match='Each step must be either a string or a dict with subtasks'):
+        with pytest.raises(
+            ValueError,
+            match='Each step must be either a string or a dict with subtasks',
+        ):
             task_agent.create_progress_file(title, description, steps, output_dir)
 
         # Test with empty dict
         steps = [{}]
-        with pytest.raises(ValueError, match='Each step must be either a string or a dict with subtasks'):
+        with pytest.raises(
+            ValueError,
+            match='Each step must be either a string or a dict with subtasks',
+        ):
             task_agent.create_progress_file(title, description, steps, output_dir)
 
         # Test with dict containing non-list value
         steps = [{'Step 1': 'not a list'}]
-        with pytest.raises(ValueError, match='Each step must be either a string or a dict with subtasks'):
+        with pytest.raises(
+            ValueError,
+            match='Each step must be either a string or a dict with subtasks',
+        ):
             task_agent.create_progress_file(title, description, steps, output_dir)
