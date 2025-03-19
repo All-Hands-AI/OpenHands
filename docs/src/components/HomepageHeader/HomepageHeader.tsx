@@ -25,17 +25,19 @@ export function HomepageHeader() {
           padding: '0rem 0rem 1rem'
         }}>
         <p style={{ margin: '0' }}>
-          Use AI to tackle the toil in your backlog. Our agents have all the same tools as a human developer: they can modify code, run commands, browse the web,
-          call APIs, and yes-even copy code snippets from StackOverflow.
+          <Translate>
+            Use AI to tackle the toil in your backlog. Our agents have all the same tools as a human developer: they can modify code, run commands, browse the web,
+            call APIs, and yes-even copy code snippets from StackOverflow.
+          </Translate>
           <br/>
-          <Link to="https://docs.all-hands.dev/modules/usage/installation"
+          <Link to={`/${useDocusaurusContext().i18n.currentLocale}/usage/installation`}
             style={{
               textDecoration: 'underline',
               display: 'inline-block',
               marginTop: '0.5rem'
             }}
           >
-            Get started with OpenHands.
+            <Translate>Get started with OpenHands.</Translate>
           </Link>
         </p>
       </div>
