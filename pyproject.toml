@@ -99,7 +99,6 @@ reportlab = "*"
 [tool.coverage.run]
 concurrency = ["gevent"]
 
-
 [tool.poetry.group.runtime.dependencies]
 jupyterlab = "*"
 notebook = "*"
