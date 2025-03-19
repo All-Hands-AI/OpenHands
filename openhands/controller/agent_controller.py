@@ -280,7 +280,7 @@ class AgentController:
                 # Log unexpected exceptions at error level
                 self.log(
                     'error',
-                    f'Unexpected exception type: {type(e).__name__}. This exception type is not in the list of expected exceptions.',
+                    f'Unknown exception type while running the agent: {type(e).__name__}.',
                 )
             await self._react_to_exception(reported)
 
