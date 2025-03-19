@@ -19,6 +19,7 @@ each of which has a corresponding port:
 When starting a web server, use the corresponding ports. You should also
 set any options to allow iframes and CORS requests, and allow the server to
 be accessed from any host (e.g. 0.0.0.0).
+For example, if you are using vite.config.js, you should set server.host to 0.0.0.0, server.port to the port assigned to you, and allowedHosts to ['*'].
 {% endif %}
 {% if runtime_info.additional_agent_instructions %}
 {{ runtime_info.additional_agent_instructions }}
