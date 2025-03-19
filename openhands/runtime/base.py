@@ -31,7 +31,6 @@ from openhands.events.action import (
     FileWriteAction,
     IPythonRunCellAction,
 )
-from openhands.events.action.commands import StaticCmdRunAction
 from openhands.events.event import Event
 from openhands.events.observation import (
     AgentThinkObservation,
@@ -86,10 +85,8 @@ class GitHandler:
     def __init__(
         self,
         execute_shell_fn: Callable[[str], CommandResult],
-        read: Callable[[str], CommandResult],
     ):
         self.execute = execute_shell_fn
-        self.read = read
 
     def _is_git_repo(self) -> bool:
         cmd = 'git rev-parse --is-inside-work-tree'
@@ -101,7 +98,7 @@ class GitHandler:
         return output.content.strip() == 'true'
 
     def _get_current_file_content(self, file_path: str) -> str:
-        output = self.read(file_path)
+        output = self.execute(f'cat {file_path}')
         return output.content
 
     def _verify_ref_exists(self, ref: str) -> bool:
@@ -214,9 +211,7 @@ class Runtime(FileEditRuntimeMixin):
         headless_mode: bool = False,
         user_id: str | None = None,
     ):
-        self.git_handler = GitHandler(
-            self._execute_shell_fn_git_handler, self._read_file_content
-        )
+        self.git_handler = GitHandler(self._execute_shell_fn_git_handler)
         self.sid = sid
         self.event_stream = event_stream
         self.event_stream.subscribe(
@@ -586,10 +581,6 @@ class Runtime(FileEditRuntimeMixin):
         pass
 
     @abstractmethod
-    def run_static(self, action: StaticCmdRunAction) -> Observation:
-        pass
-
-    @abstractmethod
     def run_ipython(self, action: IPythonRunCellAction) -> Observation:
         pass
 
@@ -651,20 +642,7 @@ class Runtime(FileEditRuntimeMixin):
     # ====================================================================
 
     def _execute_shell_fn_git_handler(self, command: str) -> CommandResult:
-        obs = self.run_static(StaticCmdRunAction(command=command))
-        exit_code = 0
-        content = ''
-
-        if hasattr(obs, 'exit_code'):
-            exit_code = obs.exit_code
-        if hasattr(obs, 'content'):
-            content = obs.content
-
-        return CommandResult(content=content, exit_code=exit_code)
-
-    def _read_file_content(self, file_path: str) -> CommandResult:
-        logger.info(f'Reading file content: {file_path}')
-        obs = self.read(FileReadAction(path=file_path))
+        obs = self.run(CmdRunAction(command=command, is_static=True))
         exit_code = 0
         content = ''
 

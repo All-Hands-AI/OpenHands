@@ -43,7 +43,6 @@ from openhands.events.action import (
     FileWriteAction,
     IPythonRunCellAction,
 )
-from openhands.events.action.commands import StaticCmdRunAction
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.observation import (
     CmdOutputObservation,
@@ -54,7 +53,6 @@ from openhands.events.observation import (
     IPythonRunCellObservation,
     Observation,
 )
-from openhands.events.observation.commands import StaticCmdRunObservation
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.runtime.browser import browse
 from openhands.runtime.browser.browser_env import BrowserEnv
@@ -315,16 +313,18 @@ class ActionExecutor:
     async def run(
         self, action: CmdRunAction
     ) -> CmdOutputObservation | ErrorObservation:
+        if action.is_static:
+            path = self._initial_cwd
+            result = await AsyncBashSession.execute(action.command, path)
+            obs = CmdOutputObservation(
+                content=result.content,
+                exit_code=result.exit_code,
+                command=action.command,
+            )
+            return obs
+
         assert self.bash_session is not None
         obs = await call_sync_from_async(self.bash_session.execute, action)
-        return obs
-
-    async def run_static(self, action: StaticCmdRunAction) -> StaticCmdRunObservation:
-        result = await AsyncBashSession.execute(action.command, self._initial_cwd)
-        obs = StaticCmdRunObservation(
-            content=result.content, exit_code=result.exit_code, command=action.command
-        )
-        logger.info(f'Command executed: {obs.exit_code} {obs.content}')
         return obs
 
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:

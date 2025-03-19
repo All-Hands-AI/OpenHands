@@ -20,10 +20,6 @@ class ObservationTypeSchema(BaseModel):
     """The output of a command
     """
 
-    RUN_STATIC: str = Field(default='run_static')
-    """The output of a static command
-    """
-
     RUN_IPYTHON: str = Field(default='run_ipython')
     """Runs a IPython cell.
     """
