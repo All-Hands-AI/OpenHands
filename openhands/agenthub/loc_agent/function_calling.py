@@ -4,23 +4,23 @@ This is similar to the functionality of `CodeActResponseParser`.
 """
 
 import json
-from openhands.core.logger import openhands_logger as logger
+
 from litellm import (
     ChatCompletionToolParam,
     ModelResponse,
 )
 
 from openhands.agenthub.loc_agent.tools import (
-    FinishTool,
-    SearchEntityTool, 
-    SearchRepoTool,
     ExploreTreeStructureTool,
-    ExploreTreeStructureTool_simple
+    ExploreTreeStructureTool_simple,
+    FinishTool,
+    SearchEntityTool,
+    SearchRepoTool,
 )
 from openhands.core.exceptions import (
     FunctionCallNotExistsError,
-    FunctionCallValidationError,
 )
+from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     Action,
     # AgentDelegateAction,
@@ -28,10 +28,14 @@ from openhands.events.action import (
     IPythonRunCellAction,
     MessageAction,
 )
-from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.tool import ToolCallMetadata
 
-ALL_FUNCTIONS = ['explore_tree_structure', 'search_code_snippets', 'get_entity_contents']
+ALL_FUNCTIONS = [
+    'explore_tree_structure',
+    'search_code_snippets',
+    'get_entity_contents',
+]
+
 
 def combine_thought(action: Action, thought: str) -> Action:
     if not hasattr(action, 'thought'):
@@ -114,10 +118,10 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
 
 
 def get_tools(
-        enable_search_keyword: bool = False,
-        enable_search_entity: bool = False,
-        enable_tree_structure_traverser: bool = False,
-        simple_desc: bool = False,
+    enable_search_keyword: bool = False,
+    enable_search_entity: bool = False,
+    enable_tree_structure_traverser: bool = False,
+    simple_desc: bool = False,
 ) -> list[ChatCompletionToolParam]:
     tools = [FinishTool]
     # if codeact_enable_cmd:

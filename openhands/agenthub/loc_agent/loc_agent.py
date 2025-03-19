@@ -1,4 +1,3 @@
-import json
 import os
 from collections import deque
 
@@ -66,14 +65,14 @@ class LocAgent(Agent):
         self.pending_actions: deque[Action] = deque()
         self.reset()
 
-        logger.debug("Begin to load tools.")
+        logger.debug('Begin to load tools.')
         # Retrieve the enabled tools
         self.tools = loc_function_calling.get_tools(
             enable_search_entity=True,
             enable_search_keyword=True,
             enable_tree_structure_traverser=True,
             # simple_desc=getattr(self.config, 'simple_desc', True)
-            simple_desc=True
+            simple_desc=True,
         )
         logger.debug(
             f"TOOLS loaded for LocAgent: {', '.join([tool.get('function').get('name') for tool in self.tools])}"

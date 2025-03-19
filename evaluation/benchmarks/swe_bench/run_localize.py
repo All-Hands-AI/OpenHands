@@ -122,7 +122,9 @@ You SHOULD NEVER attempt to browse the web.
 
 
 # TODO: migrate all swe-bench docker to ghcr.io/openhands
-DEFAULT_DOCKER_IMAGE_PREFIX = os.environ.get('EVAL_DOCKER_IMAGE_PREFIX', 'docker.io/xingyaoww/')
+DEFAULT_DOCKER_IMAGE_PREFIX = os.environ.get(
+    'EVAL_DOCKER_IMAGE_PREFIX', 'docker.io/xingyaoww/'
+)
 logger.info(f'Default docker image prefix: {DEFAULT_DOCKER_IMAGE_PREFIX}')
 
 
@@ -172,7 +174,7 @@ def get_config(
         instance_id=instance['instance_id'],
     )
     workspace_dir_name = _get_swebench_workspace_dir_name(instance)
-    sandbox_config.runtime_startup_env_vars={
+    sandbox_config.runtime_startup_env_vars = {
         'REPO_PATH': f'/workspace/{workspace_dir_name}/',
     }
 

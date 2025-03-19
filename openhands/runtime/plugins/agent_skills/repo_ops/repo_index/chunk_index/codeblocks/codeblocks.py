@@ -4,10 +4,13 @@ from typing import List, Optional, Set
 
 from pydantic import BaseModel, Field, root_validator, validator
 from typing_extensions import deprecated
+
 from openhands.runtime.plugins.agent_skills.repo_ops.repo_index.chunk_index.codeblocks.parser.comment import (
     get_comment_symbol,
 )
-from openhands.runtime.plugins.agent_skills.repo_ops.repo_index.chunk_index.utils.colors import Colors
+from openhands.runtime.plugins.agent_skills.repo_ops.repo_index.chunk_index.utils.colors import (
+    Colors,
+)
 
 BlockPath = List[str]
 

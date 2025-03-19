@@ -1,31 +1,40 @@
 import re
 from collections import defaultdict
-from typing import Optional, List
+from typing import List, Optional
 
 import networkx as nx
 
 from openhands.runtime.plugins.agent_skills.repo_ops.repo_index.dependency_graph.build_graph import (
-    VALID_EDGE_TYPES, VALID_NODE_TYPES, 
-    NODE_TYPE_FILE, NODE_TYPE_CLASS, NODE_TYPE_FUNCTION,
-    EDGE_TYPE_CONTAINS
+    EDGE_TYPE_CONTAINS,
+    NODE_TYPE_CLASS,
+    NODE_TYPE_FILE,
+    NODE_TYPE_FUNCTION,
+    VALID_EDGE_TYPES,
+    VALID_NODE_TYPES,
 )
+
 
 def is_test_file(nid):
     # input node id (e.g., 'tests/_core.py:test') and output whether it belongs to a test file
     file_path = nid.split(':')[0]
-    word_list = re.split(r" |_|\/", file_path.lower())  # split by ' ', '_', and '/'
+    word_list = re.split(r' |_|\/', file_path.lower())  # split by ' ', '_', and '/'
     return any([word.startswith('test') for word in word_list])
 
 
 def wrap_code_snippet(code_snippet, start_line, end_line):
-    lines = code_snippet.split("\n")
+    lines = code_snippet.split('\n')
     max_line_number = start_line + len(lines) - 1
     if not start_line == end_line == 1:  # which is a file
         assert max_line_number == end_line
     number_width = len(str(max_line_number))
-    return (f"```\n"
-            + "\n".join(f"{str(i + start_line).rjust(number_width)} | {line}" for i, line in enumerate(lines))
-            + "\n```")
+    return (
+        '```\n'
+        + '\n'.join(
+            f'{str(i + start_line).rjust(number_width)} | {line}'
+            for i, line in enumerate(lines)
+        )
+        + '\n```'
+    )
 
 
 def add_quotes_to_nodes(G):
@@ -53,22 +62,21 @@ class RepoEntitySearcher:
         self.G = graph
         self._global_name_dict = None
         self._global_name_dict_lowercase = None
-        self._etypes_dict = {
-            etype: i for i, etype in enumerate(VALID_EDGE_TYPES)
-        }
+        self._etypes_dict = {etype: i for i, etype in enumerate(VALID_EDGE_TYPES)}
 
     @property
     def global_name_dict(self):
         if self._global_name_dict is None:  # Compute only once
             _global_name_dict = defaultdict(list)
             for nid in self.G.nodes():
-                if is_test_file(nid): continue
+                if is_test_file(nid):
+                    continue
 
                 if nid.endswith('.py'):
                     fname = nid.split('/')[-1]
                     _global_name_dict[fname].append(nid)
 
-                    name = nid[:-(len('.py'))].split('/')[-1]
+                    name = nid[: -(len('.py'))].split('/')[-1]
                     _global_name_dict[name].append(nid)
 
                 elif ':' in nid:
@@ -78,19 +86,19 @@ class RepoEntitySearcher:
             self._global_name_dict = _global_name_dict
         return self._global_name_dict
 
-
     @property
     def global_name_dict_lowercase(self):
         if self._global_name_dict_lowercase is None:  # Compute only once
             _global_name_dict_lowercase = defaultdict(list)
             for nid in self.G.nodes():
-                if is_test_file(nid): continue
+                if is_test_file(nid):
+                    continue
 
                 if nid.endswith('.py'):
                     fname = nid.split('/')[-1].lower()
                     _global_name_dict_lowercase[fname].append(nid)
 
-                    name = nid[:-(len('.py'))].split('/')[-1].lower()
+                    name = nid[: -(len('.py'))].split('/')[-1].lower()
                     _global_name_dict_lowercase[name].append(nid)
 
                 elif ':' in nid:
@@ -100,12 +108,10 @@ class RepoEntitySearcher:
             self._global_name_dict_lowercase = _global_name_dict_lowercase
         return self._global_name_dict_lowercase
 
-
     def has_node(self, nid, include_test=False):
         if not include_test and is_test_file(nid):
             return False
         return nid in self.G
-
 
     def get_node_data(self, nids, return_code_content=False, wrap_with_ln=True):
         rtn = []
@@ -118,7 +124,7 @@ class RepoEntitySearcher:
                 # 'start_line': node_data.get('start_line', 0),
                 # 'end_line': node_data.get('end_line', 0)
             }
-            if node_data.get('code', ""):
+            if node_data.get('code', ''):
                 if 'start_line' in node_data:
                     formatted_data['start_line'] = node_data['start_line']
                     start_line = node_data['start_line']
@@ -132,32 +138,33 @@ class RepoEntitySearcher:
                     formatted_data['end_line'] = node_data['end_line']
                     end_line = node_data['end_line']
                 elif formatted_data['type'] == NODE_TYPE_FILE:
-                    end_line = len(node_data['code'].split("\n")) # - 1
+                    end_line = len(node_data['code'].split('\n'))  # - 1
                     formatted_data['end_line'] = end_line
                 else:
                     end_line = 1
                 # load formatted code data
                 if return_code_content and wrap_with_ln:
                     formatted_data['code_content'] = wrap_code_snippet(
-                        node_data['code'], start_line, end_line)
+                        node_data['code'], start_line, end_line
+                    )
                 elif return_code_content:
                     formatted_data['code_content'] = node_data['code']
             rtn.append(formatted_data)
         return rtn
-    
-    
+
     def get_all_nodes_by_type(self, type):
         assert type in VALID_NODE_TYPES
         nodes = []
         for nid in self.G.nodes():
-            if is_test_file(nid): continue
+            if is_test_file(nid):
+                continue
             if self.G.nodes[nid]['type'] == type:
                 node_data = self.G.nodes[nid]
                 if type == NODE_TYPE_FILE:
                     formatted_data = {
                         'name': nid,
                         'type': node_data['type'],
-                        'content': node_data.get('code', '').split('\n')
+                        'content': node_data.get('code', '').split('\n'),
                     }
                 elif type == NODE_TYPE_FUNCTION:
                     formatted_data = {
@@ -166,7 +173,7 @@ class RepoEntitySearcher:
                         'type': node_data['type'],
                         'content': node_data.get('code', '').split('\n'),
                         'start_line': node_data.get('start_line', 0),
-                        'end_line': node_data.get('end_line', 0)
+                        'end_line': node_data.get('end_line', 0),
                     }
                 elif type == NODE_TYPE_CLASS:
                     formatted_data = {
@@ -176,20 +183,25 @@ class RepoEntitySearcher:
                         'content': node_data.get('code', '').split('\n'),
                         'start_line': node_data.get('start_line', 0),
                         'end_line': node_data.get('end_line', 0),
-                        'methods': []
+                        'methods': [],
                     }
                     dp_searcher = RepoDependencySearcher(self.G)
-                    methods = dp_searcher.get_neighbors(nid, 'forward', 
-                                                        ntype_filter=[NODE_TYPE_FUNCTION],
-                                                        etype_filter=[EDGE_TYPE_CONTAINS])[0]
+                    methods = dp_searcher.get_neighbors(
+                        nid,
+                        'forward',
+                        ntype_filter=[NODE_TYPE_FUNCTION],
+                        etype_filter=[EDGE_TYPE_CONTAINS],
+                    )[0]
                     formatted_methods = []
                     for mid in methods:
                         mnode = self.G.nodes[mid]
-                        formatted_methods.append({
-                            'name': mid.split('.')[-1],
-                            'start_line': mnode.get('start_line', 0),
-                            'end_line': mnode.get('end_line', 0),
-                        })
+                        formatted_methods.append(
+                            {
+                                'name': mid.split('.')[-1],
+                                'start_line': mnode.get('start_line', 0),
+                                'end_line': mnode.get('end_line', 0),
+                            }
+                        )
                     formatted_data['methods'] = formatted_methods
                 nodes.append(formatted_data)
         return nodes
@@ -200,15 +212,19 @@ class RepoDependencySearcher:
 
     def __init__(self, graph):
         self.G = graph
-        self._etypes_dict = {
-            etype: i for i, etype in enumerate(VALID_EDGE_TYPES)
-        }
+        self._etypes_dict = {etype: i for i, etype in enumerate(VALID_EDGE_TYPES)}
 
     def subgraph(self, nids):
         return self.G.subgraph(nids)
 
-    def get_neighbors(self, nid, direction='forward',
-                      ntype_filter=None, etype_filter=None, ignore_test_file=True):
+    def get_neighbors(
+        self,
+        nid,
+        direction='forward',
+        ntype_filter=None,
+        etype_filter=None,
+        ignore_test_file=True,
+    ):
         nodes, edges = [], []
         if direction == 'forward':
             for sn in self.G.successors(nid):
@@ -239,9 +255,14 @@ class RepoDependencySearcher:
         return nodes, edges
 
 
-def traverse_graph_structure(G, roots, direction='downstream', hops=2,
-                             node_type_filter: Optional[List[str]] = None,
-                             edge_type_filter: Optional[List[str]] = None):
+def traverse_graph_structure(
+    G,
+    roots,
+    direction='downstream',
+    hops=2,
+    node_type_filter: Optional[List[str]] = None,
+    edge_type_filter: Optional[List[str]] = None,
+):
     if hops == -1:
         hops = 20
 
@@ -268,21 +289,29 @@ def traverse_graph_structure(G, roots, direction='downstream', hops=2,
         # if direction == 'both', we only search bidirectionally at level == 0 and perform
         # unidirectional search for other levels (e.g., when level < 0 perform backward search
         # and when level > 0 perform forward search)
-        if level > 0 or (level == 0 and (direction == 'downstream' or direction == 'both')):
-            nodes, edges = searcher.get_neighbors(nid,
-                                                  'forward',
-                                                  ntype_filter=ntype_filter,
-                                                  etype_filter=etype_filter,
-                                                  ignore_test_file=True)
+        if level > 0 or (
+            level == 0 and (direction == 'downstream' or direction == 'both')
+        ):
+            nodes, edges = searcher.get_neighbors(
+                nid,
+                'forward',
+                ntype_filter=ntype_filter,
+                etype_filter=etype_filter,
+                ignore_test_file=True,
+            )
             frontiers.extend([(nid, level + 1) for nid in nodes])
             subG.add_edges_from(edges)  # return the path in a graph format
 
-        if level < 0 or (level == 0 and (direction == 'upstream' or direction == 'both')):
-            nodes, edges = searcher.get_neighbors(nid,
-                                                  'backward',
-                                                  ntype_filter=ntype_filter,
-                                                  etype_filter=etype_filter,
-                                                  ignore_test_file=True)
+        if level < 0 or (
+            level == 0 and (direction == 'upstream' or direction == 'both')
+        ):
+            nodes, edges = searcher.get_neighbors(
+                nid,
+                'backward',
+                ntype_filter=ntype_filter,
+                etype_filter=etype_filter,
+                ignore_test_file=True,
+            )
             frontiers.extend([(nid, level - 1) for nid in nodes])
             subG.add_edges_from(edges)  # return the path in a graph format
 
@@ -314,7 +343,7 @@ def traverse_graph_structure(G, roots, direction='downstream', hops=2,
         rtn_strs = []
         n_index_dict = {}
         if encode_type == 'incident-index':
-            s = ""
+            s = ''
             for i, node in enumerate(subG.nodes()):
                 s += f'Map {G.nodes[node]["type"]} {node} to index {i}.\n'
                 n_index_dict[node] = i
@@ -328,7 +357,7 @@ def traverse_graph_structure(G, roots, direction='downstream', hops=2,
                 for key, edge_data in subG.get_edge_data(node, neigh).items():
                     etype = edge_data['type']
                     incident_dict[etype][neigh_type].append(neigh)
-            s = ""
+            s = ''
             for i, (edge_type, neigh_dict) in enumerate(incident_dict.items()):
                 if i == 0:
                     if encode_type == 'incident-index':
@@ -349,16 +378,21 @@ def traverse_graph_structure(G, roots, direction='downstream', hops=2,
                 s = s[:-6] + '.'
                 # s = s[:-1]
                 rtn_strs.append(s)
-        rtn = "\n\n".join(rtn_strs)
+        rtn = '\n\n'.join(rtn_strs)
     else:
         raise NotImplementedError
 
     return rtn
 
 
-def traverse_tree_structure(G, root, direction='downstream', hops=2,
-                            node_type_filter: Optional[List[str]] = None,
-                            edge_type_filter: Optional[List[str]] = None):
+def traverse_tree_structure(
+    G,
+    root,
+    direction='downstream',
+    hops=2,
+    node_type_filter: Optional[List[str]] = None,
+    edge_type_filter: Optional[List[str]] = None,
+):
     if hops == -1:
         hops = 20
 
@@ -371,13 +405,13 @@ def traverse_tree_structure(G, root, direction='downstream', hops=2,
             return
 
         if node == root and level == 0:
-            rtn_str.append(f"{node}")
+            rtn_str.append(f'{node}')
             new_prefix = ''
             edirection = direction
         else:
             connector = '└── ' if is_last else '├── '
-            connector += f"{edge_type} ── "
-            rtn_str.append(f"{prefix}{connector}{node}")
+            connector += f'{edge_type} ── '
+            rtn_str.append(f'{prefix}{connector}{node}')
             new_prefix = prefix + (' ' if is_last else '│') + ' ' * (len(connector) - 1)
 
         if node in traversed_nodes:
@@ -393,7 +427,7 @@ def traverse_tree_structure(G, root, direction='downstream', hops=2,
             return edge_type_filter is not None and _etype not in edge_type_filter
 
         if 'downstream' == edirection or (node == root and direction == 'both'):
-        # if 'downstream' == edirection or direction == 'both':
+            # if 'downstream' == edirection or direction == 'both':
             for neighbor in G.successors(node):
                 neigh_type = G.nodes[neighbor]['type']
                 if is_ntype_not_valid(neigh_type):
@@ -411,7 +445,7 @@ def traverse_tree_structure(G, root, direction='downstream', hops=2,
                             traversed_edges.add((node, etype, neighbor))
 
         if 'upstream' == edirection or (node == root and direction == 'both'):
-        # if 'upstream' == edirection or direction == 'both':
+            # if 'upstream' == edirection or direction == 'both':
             for neighbor in G.predecessors(node):
                 neigh_type = G.nodes[neighbor]['type']
                 if is_ntype_not_valid(neigh_type):
@@ -429,18 +463,23 @@ def traverse_tree_structure(G, root, direction='downstream', hops=2,
                             traversed_edges.add((neighbor, etype, node))
 
         for i, (neigh_id, etype, edir) in enumerate(zip(neigh_ids, etypes, edirs)):
-            is_last_child = (i == len(neigh_ids) - 1)
+            is_last_child = i == len(neigh_ids) - 1
             if edir == 'upstream':
                 etype += '-by'
             traverse(neigh_id, new_prefix, is_last_child, level + 1, etype, edir)
 
     traverse(root, '', False, 0, None, None)
-    return "\n".join(rtn_str)
+    return '\n'.join(rtn_str)
 
 
-def traverse_json_structure(G, root, direction='downstream', hops=2,
-                            node_type_filter: Optional[List[str]] = None,
-                            edge_type_filter: Optional[List[str]] = None):
+def traverse_json_structure(
+    G,
+    root,
+    direction='downstream',
+    hops=2,
+    node_type_filter: Optional[List[str]] = None,
+    edge_type_filter: Optional[List[str]] = None,
+):
     if hops == -1:
         hops = 20
 
@@ -465,8 +504,10 @@ def traverse_json_structure(G, root, direction='downstream', hops=2,
                     etype = edges[key]['type']
                     if is_etype_not_validate(etype):
                         continue
-                    if (not is_test_file(neighbor) and
-                            (etype, neigh_type, neighbor) not in neigh_set):
+                    if (
+                        not is_test_file(neighbor)
+                        and (etype, neigh_type, neighbor) not in neigh_set
+                    ):
                         neigh_ids.append(neighbor)
                         etypes.append(etype)
                         edirs.append('downstream')
@@ -482,8 +523,10 @@ def traverse_json_structure(G, root, direction='downstream', hops=2,
                     etype = edges[key]['type']
                     if is_etype_not_validate(etype):
                         continue
-                    if (not is_test_file(neighbor) and
-                            (etype, neigh_type, neighbor) not in neigh_set):
+                    if (
+                        not is_test_file(neighbor)
+                        and (etype, neigh_type, neighbor) not in neigh_set
+                    ):
                         neigh_ids.append(neighbor)
                         etypes.append(etype)
                         edirs.append('upstream')

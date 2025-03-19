@@ -1,5 +1,6 @@
 import logging
 import re
+import warnings
 from dataclasses import dataclass, field
 from importlib import resources
 from typing import Callable, List, Optional, Tuple
@@ -19,9 +20,13 @@ from openhands.runtime.plugins.agent_skills.repo_ops.repo_index.chunk_index.code
     RelationshipType,
     SpanType,
 )
-from openhands.runtime.plugins.agent_skills.repo_ops.repo_index.chunk_index.codeblocks.module import Module
-from openhands.runtime.plugins.agent_skills.repo_ops.repo_index.chunk_index.codeblocks.parser.comment import get_comment_symbol
-import warnings
+from openhands.runtime.plugins.agent_skills.repo_ops.repo_index.chunk_index.codeblocks.module import (
+    Module,
+)
+from openhands.runtime.plugins.agent_skills.repo_ops.repo_index.chunk_index.codeblocks.parser.comment import (
+    get_comment_symbol,
+)
+
 warnings.simplefilter('ignore', FutureWarning)
 
 commented_out_keywords = ['rest of the code', 'existing code', 'other code']

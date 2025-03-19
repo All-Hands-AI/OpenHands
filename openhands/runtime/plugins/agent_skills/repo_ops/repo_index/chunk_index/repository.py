@@ -8,7 +8,7 @@ from typing import Optional
 from pydantic import BaseModel
 
 from .codeblocks import get_parser_by_path
-from .codeblocks.codeblocks import CodeBlockTypeGroup, CodeBlockType
+from .codeblocks.codeblocks import CodeBlockType, CodeBlockTypeGroup
 from .codeblocks.module import Module
 from .codeblocks.parser.python import PythonParser
 
@@ -33,7 +33,7 @@ class CodeFile(BaseModel):
 
     @classmethod
     def from_file(cls, repo_path: str, file_path: str):
-        with open(os.path.join(repo_path, file_path), "r") as f:
+        with open(os.path.join(repo_path, file_path), 'r') as f:
             parser = get_parser_by_path(file_path)
             if parser:
                 content = f.read()
@@ -55,16 +55,16 @@ class CodeFile(BaseModel):
     def update_content_by_line_numbers(
         self, start_line_index: int, end_line_index: int, replacement_content: str
     ) -> UpdateResult:
-        replacement_lines = replacement_content.split("\n")
+        replacement_lines = replacement_content.split('\n')
 
         # Strip empty lines from the start and end
-        while replacement_lines and replacement_lines[0].strip() == "":
+        while replacement_lines and replacement_lines[0].strip() == '':
             replacement_lines.pop(0)
 
-        while replacement_lines and replacement_lines[-1].strip() == "":
+        while replacement_lines and replacement_lines[-1].strip() == '':
             replacement_lines.pop()
 
-        original_lines = self.content.split("\n")
+        original_lines = self.content.split('\n')
 
         replacement_lines = remove_duplicate_lines(
             replacement_lines, original_lines[end_line_index:]
@@ -75,9 +75,9 @@ class CodeFile(BaseModel):
             + replacement_lines
             + original_lines[end_line_index:]
         )
-        updated_content = "\n".join(updated_lines)
+        updated_content = '\n'.join(updated_lines)
         logger.info(
-            f"Updating content for {self.file_path} from line {start_line_index} to {end_line_index} with {len(replacement_lines)} lines. The updated file has {len(updated_lines)} lines."
+            f'Updating content for {self.file_path} from line {start_line_index} to {end_line_index} with {len(replacement_lines)} lines. The updated file has {len(updated_lines)} lines.'
         )
 
         return self.update_content(updated_content)
@@ -93,7 +93,7 @@ class CodeFile(BaseModel):
                         file_path=self.file_path,
                         updated=False,
                         diff=diff,
-                        error="The updated code is invalid.",
+                        error='The updated code is invalid.',
                     )
 
                 # TODO: Move the prompt instructions to the loop
@@ -108,7 +108,7 @@ class CodeFile(BaseModel):
                     else []
                 )
                 if error_blocks or validation_errors or new_placeholders:
-                    error_response = ""
+                    error_response = ''
                     if error_blocks:
                         for error_block in error_blocks:
                             parent_block = error_block.find_type_group_in_parents(
@@ -118,9 +118,9 @@ class CodeFile(BaseModel):
                                 parent_block
                                 and not parent_block.type == CodeBlockType.MODULE
                             ):
-                                error_response += f"{parent_block.type.name} has invalid code:\n\n```{parent_block.to_string()}\n```.\n"
+                                error_response += f'{parent_block.type.name} has invalid code:\n\n```{parent_block.to_string()}\n```.\n'
                             else:
-                                error_response += f"This code is invalid: \n```{error_block.to_string()}\n```.\n"
+                                error_response += f'This code is invalid: \n```{error_block.to_string()}\n```.\n'
 
                     if new_placeholders:
                         for new_placeholder in new_placeholders:
@@ -130,13 +130,13 @@ class CodeFile(BaseModel):
                             if parent_block:
                                 error_response += f"{parent_block.identifier} has a placeholder `{new_placeholder.content}` indicating that it's not fully implemented. Implement the full {parent_block.type.name} or reject the request.: \n\n```{parent_block.to_string()}```\n\n"
                             else:
-                                error_response += f"There is a placeholder indicating out commented code : \n```{new_placeholder.to_string()}\n```. Do the full implementation or reject the request.\n"
+                                error_response += f'There is a placeholder indicating out commented code : \n```{new_placeholder.to_string()}\n```. Do the full implementation or reject the request.\n'
 
                     for validation_error in validation_errors:
-                        error_response += f"{validation_error}\n"
+                        error_response += f'{validation_error}\n'
 
                     logger.warning(
-                        f"Errors in updated file {self.file_path}:\n{error_response}"
+                        f'Errors in updated file {self.file_path}:\n{error_response}'
                     )
 
                     return UpdateResult(
@@ -151,7 +151,7 @@ class CodeFile(BaseModel):
                 )
 
                 logger.info(
-                    f"Updated content for {self.file_path} with {len(new_span_ids)} new span ids."
+                    f'Updated content for {self.file_path} with {len(new_span_ids)} new span ids.'
                 )
                 self.module = module
             else:
@@ -171,7 +171,6 @@ class CodeFile(BaseModel):
 
 
 class FileRepository:
-
     def __init__(self, repo_path: str):
         self._repo_path = repo_path
         self._files: dict[str, CodeFile] = {}
@@ -193,13 +192,13 @@ class FileRepository:
         if not file or refresh or from_origin:
             full_file_path = os.path.join(self._repo_path, file_path)
             if not os.path.exists(full_file_path):
-                logger.warning(f"File not found: {full_file_path}")
+                logger.warning(f'File not found: {full_file_path}')
                 return None
             if not os.path.isfile(full_file_path):
-                logger.warning(f"{full_file_path} is not a file")
+                logger.warning(f'{full_file_path} is not a file')
                 return None
 
-            with open(full_file_path, "r") as f:
+            with open(full_file_path, 'r') as f:
                 parser = get_parser_by_path(file_path)
                 if parser:
                     content = f.read()
@@ -215,7 +214,7 @@ class FileRepository:
     def save_file(self, file_path: str, updated_content: Optional[str] = None):
         file = self._files.get(file_path)
         full_file_path = os.path.join(self._repo_path, file_path)
-        with open(full_file_path, "w") as f:
+        with open(full_file_path, 'w') as f:
             updated_content = updated_content or file.module.to_string()
             f.write(updated_content)
 
@@ -233,8 +232,8 @@ class FileRepository:
         ):
             matched_files.append(matched_file)
 
-        if not matched_files and not file_pattern.startswith("*"):
-            return self.matching_files(f"**/{file_pattern}")
+        if not matched_files and not file_pattern.startswith('*'):
+            return self.matching_files(f'**/{file_pattern}')
 
         return matched_files
 
@@ -283,12 +282,12 @@ def remove_duplicate_lines(replacement_lines, original_lines):
 def do_diff(
     file_path: str, original_content: str, updated_content: str
 ) -> Optional[str]:
-    return "".join(
+    return ''.join(
         difflib.unified_diff(
             original_content.strip().splitlines(True),
             updated_content.strip().splitlines(True),
             fromfile=file_path,
             tofile=file_path,
-            lineterm="\n",
+            lineterm='\n',
         )
     )

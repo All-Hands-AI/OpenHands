@@ -1,6 +1,8 @@
 from tree_sitter_languages import get_language
 
-from openhands.runtime.plugins.agent_skills.repo_ops.repo_index.chunk_index.codeblocks.parser.parser import CodeParser
+from openhands.runtime.plugins.agent_skills.repo_ops.repo_index.chunk_index.codeblocks.parser.parser import (
+    CodeParser,
+)
 
 
 class JavaParser(CodeParser):

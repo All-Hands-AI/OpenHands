@@ -5,8 +5,8 @@ import re
 from collections import Counter, defaultdict
 from typing import List
 
-import networkx as nx
 import matplotlib.pyplot as plt
+import networkx as nx
 from matplotlib.lines import Line2D
 
 VERSION = 'v2.3'
@@ -19,10 +19,22 @@ EDGE_TYPE_INHERITS = 'inherits'
 EDGE_TYPE_INVOKES = 'invokes'
 EDGE_TYPE_IMPORTS = 'imports'
 
-VALID_NODE_TYPES = [NODE_TYPE_DIRECTORY, NODE_TYPE_FILE, NODE_TYPE_CLASS, NODE_TYPE_FUNCTION]
-VALID_EDGE_TYPES = [EDGE_TYPE_CONTAINS, EDGE_TYPE_INHERITS, EDGE_TYPE_INVOKES, EDGE_TYPE_IMPORTS]
+VALID_NODE_TYPES = [
+    NODE_TYPE_DIRECTORY,
+    NODE_TYPE_FILE,
+    NODE_TYPE_CLASS,
+    NODE_TYPE_FUNCTION,
+]
+VALID_EDGE_TYPES = [
+    EDGE_TYPE_CONTAINS,
+    EDGE_TYPE_INHERITS,
+    EDGE_TYPE_INVOKES,
+    EDGE_TYPE_IMPORTS,
+]
 
 SKIP_DIRS = ['.github', '.git']
+
+
 def is_skip_dir(dirname):
     for skip_dir in SKIP_DIRS:
         if skip_dir in dirname:
@@ -35,16 +47,16 @@ def handle_edge_cases(code):
     code = code.replace('\ufeff', '')
     code = code.replace('constants.False', '_False')
     code = code.replace('constants.True', '_True')
-    code = code.replace("False", "_False")
-    code = code.replace("True", "_True")
-    code = code.replace("DOMAIN\\username", "DOMAIN\\\\username")
-    code = code.replace("Error, ", "Error as ")
+    code = code.replace('False', '_False')
+    code = code.replace('True', '_True')
+    code = code.replace('DOMAIN\\username', 'DOMAIN\\\\username')
+    code = code.replace('Error, ', 'Error as ')
     code = code.replace('Exception, ', 'Exception as ')
-    code = code.replace("print ", "yield ")
+    code = code.replace('print ', 'yield ')
     pattern = r'except\s+\(([^,]+)\s+as\s+([^)]+)\):'
     # Replace 'as' with ','
     code = re.sub(pattern, r'except (\1, \2):', code)
-    code = code.replace("raise AttributeError as aname", "raise AttributeError")
+    code = code.replace('raise AttributeError as aname', 'raise AttributeError')
     return code
 
 
@@ -68,11 +80,9 @@ def find_imports(filepath, repo_path, tree=None):
             for alias in node.names:
                 module_name = alias.name
                 asname = alias.asname
-                imports.append({
-                    "type": "import",
-                    "module": module_name,
-                    "alias": asname
-                })
+                imports.append(
+                    {'type': 'import', 'module': module_name, 'alias': asname}
+                )
         elif isinstance(node, ast.ImportFrom):
             # Handle 'from ... import ...' statements
             import_entities = []
@@ -83,10 +93,7 @@ def find_imports(filepath, repo_path, tree=None):
                 else:
                     entity_name = alias.name
                     asname = alias.asname
-                    import_entities.append({
-                        "name": entity_name,
-                        "alias": asname
-                    })
+                    import_entities.append({'name': entity_name, 'alias': asname})
 
             # Calculate the module name for relative imports
             if node.level == 0:
@@ -100,7 +107,7 @@ def find_imports(filepath, repo_path, tree=None):
 
                 # Adjust for the level of relative import
                 if len(package_parts) >= node.level:
-                    package_parts = package_parts[:-node.level]
+                    package_parts = package_parts[: -node.level]
                 else:
                     package_parts = []
 
@@ -109,11 +116,9 @@ def find_imports(filepath, repo_path, tree=None):
                 else:
                     module_name = '.'.join(package_parts)
 
-            imports.append({
-                "type": "from",
-                "module": module_name,
-                "entities": import_entities
-            })
+            imports.append(
+                {'type': 'from', 'module': module_name, 'entities': import_entities}
+            )
     return imports
 
 
@@ -127,13 +132,15 @@ class CodeAnalyzer(ast.NodeVisitor):
     def visit_ClassDef(self, node):
         class_name = node.name
         full_class_name = '.'.join(self.node_name_stack + [class_name])
-        self.nodes.append({
-            'name': full_class_name,
-            'type': NODE_TYPE_CLASS,
-            'code': self._get_source_segment(node),
-            'start_line': node.lineno,
-            'end_line': node.end_lineno,
-        })
+        self.nodes.append(
+            {
+                'name': full_class_name,
+                'type': NODE_TYPE_CLASS,
+                'code': self._get_source_segment(node),
+                'start_line': node.lineno,
+                'end_line': node.end_lineno,
+            }
+        )
 
         self.node_name_stack.append(class_name)
         self.node_type_stack.append(NODE_TYPE_CLASS)
@@ -142,7 +149,11 @@ class CodeAnalyzer(ast.NodeVisitor):
         self.node_type_stack.pop()
 
     def visit_FunctionDef(self, node):
-        if self.node_type_stack and self.node_type_stack[-1] == NODE_TYPE_CLASS and node.name == '__init__':
+        if (
+            self.node_type_stack
+            and self.node_type_stack[-1] == NODE_TYPE_CLASS
+            and node.name == '__init__'
+        ):
             return
         self._visit_func(node)
 
@@ -152,14 +163,18 @@ class CodeAnalyzer(ast.NodeVisitor):
     def _visit_func(self, node):
         function_name = node.name
         full_function_name = '.'.join(self.node_name_stack + [function_name])
-        self.nodes.append({
-            'name': full_function_name,
-            'parent_type': self.node_type_stack[-1] if self.node_type_stack else None,
-            'type': NODE_TYPE_FUNCTION,
-            'code': self._get_source_segment(node),
-            'start_line': node.lineno,
-            'end_line': node.end_lineno,
-        })
+        self.nodes.append(
+            {
+                'name': full_function_name,
+                'parent_type': self.node_type_stack[-1]
+                if self.node_type_stack
+                else None,
+                'type': NODE_TYPE_FUNCTION,
+                'code': self._get_source_segment(node),
+                'start_line': node.lineno,
+                'end_line': node.end_lineno,
+            }
+        )
 
         self.node_name_stack.append(function_name)
         self.node_type_stack.append(NODE_TYPE_FUNCTION)
@@ -217,7 +232,12 @@ def add_imports(root_node, imports, graph, repo_path):
             if module_path:
                 imp_filename = os.path.relpath(module_path, repo_path)
                 if graph.has_node(imp_filename):
-                    graph.add_edge(root_node, imp_filename, type=EDGE_TYPE_IMPORTS, alias=imp['alias'])
+                    graph.add_edge(
+                        root_node,
+                        imp_filename,
+                        type=EDGE_TYPE_IMPORTS,
+                        alias=imp['alias'],
+                    )
         elif imp['type'] == 'from':
             # Handle 'from module import entity' statements
             module_name = imp['module']
@@ -229,37 +249,54 @@ def add_imports(root_node, imports, graph, repo_path):
                 if module_path:
                     imp_filename = os.path.relpath(module_path, repo_path)
                     if graph.has_node(imp_filename):
-                        graph.add_edge(root_node, imp_filename, type=EDGE_TYPE_IMPORTS, alias=None)
+                        graph.add_edge(
+                            root_node, imp_filename, type=EDGE_TYPE_IMPORTS, alias=None
+                        )
                 continue  # Skip further processing for 'import *'
 
             for entity in entities:
                 entity_name, entity_alias = entity['name'], entity['alias']
-                entity_module_name = f"{module_name}.{entity_name}"
+                entity_module_name = f'{module_name}.{entity_name}'
                 entity_module_path = resolve_module(entity_module_name, repo_path)
                 if entity_module_path:
                     # Entity is a submodule
                     entity_filename = os.path.relpath(entity_module_path, repo_path)
                     if graph.has_node(entity_filename):
-                        graph.add_edge(root_node, entity_filename, type=EDGE_TYPE_IMPORTS, alias=entity_alias)
+                        graph.add_edge(
+                            root_node,
+                            entity_filename,
+                            type=EDGE_TYPE_IMPORTS,
+                            alias=entity_alias,
+                        )
                 else:
                     # Entity might be an attribute inside the module
                     module_path = resolve_module(module_name, repo_path)
                     if module_path:
                         imp_filename = os.path.relpath(module_path, repo_path)
-                        node = f"{imp_filename}:{entity_name}"
+                        node = f'{imp_filename}:{entity_name}'
                         if graph.has_node(node):
-                            graph.add_edge(root_node, node, type=EDGE_TYPE_IMPORTS, alias=entity_alias)
+                            graph.add_edge(
+                                root_node,
+                                node,
+                                type=EDGE_TYPE_IMPORTS,
+                                alias=entity_alias,
+                            )
                         elif graph.has_node(imp_filename):
-                            graph.add_edge(root_node, imp_filename, type=EDGE_TYPE_IMPORTS, alias=entity_alias)
+                            graph.add_edge(
+                                root_node,
+                                imp_filename,
+                                type=EDGE_TYPE_IMPORTS,
+                                alias=entity_alias,
+                            )
 
 
 def resolve_symlink(file_path):
     """
     Resolve the absolute path of a symbolic link.
-    
+
     Args:
         file_path (str): The symbolic link file path.
-    
+
     Returns:
         str: The absolute path of the target file if the file is a symbolic link.
         None: If the file is not a symbolic link.
@@ -272,11 +309,11 @@ def resolve_symlink(file_path):
         # Combine the symlink directory with the relative target path
         absolute_target = os.path.abspath(os.path.join(symlink_dir, relative_target))
         if not os.path.exists(absolute_target):
-            print(f"The target file does not exist: {absolute_target}")
+            print(f'The target file does not exist: {absolute_target}')
             return None
         return absolute_target
     else:
-        print(f"{file_path} is not a symbolic link.")
+        print(f'{file_path} is not a symbolic link.')
         return None
 
 
@@ -305,7 +342,6 @@ def build_graph(repo_path, fuzzy_search=True, global_import=False):
     dir_stack: List[str] = []
     dir_include_stack: List[bool] = []
     for root, _, files in os.walk(repo_path):
-
         # add directory nodes and edges
         dirname = os.path.relpath(root, repo_path)
         if dirname == '.':
@@ -314,7 +350,7 @@ def build_graph(repo_path, fuzzy_search=True, global_import=False):
             continue
         else:
             graph.add_node(dirname, type=NODE_TYPE_DIRECTORY)
-            parent_dirname  = os.path.dirname(dirname)
+            parent_dirname = os.path.dirname(dirname)
             if parent_dirname == '':
                 parent_dirname = '/'
             graph.add_edge(parent_dirname, dirname, type=EDGE_TYPE_CONTAINS)
@@ -363,8 +399,13 @@ def build_graph(repo_path, fuzzy_search=True, global_import=False):
                 # add function/class nodes
                 for node in nodes:
                     full_name = f'{filename}:{node["name"]}'
-                    graph.add_node(full_name, type=node['type'], code=node['code'],
-                                   start_line=node['start_line'], end_line=node['end_line'])
+                    graph.add_node(
+                        full_name,
+                        type=node['type'],
+                        code=node['code'],
+                        start_line=node['start_line'],
+                        end_line=node['end_line'],
+                    )
 
                 # add edges with type=contains
                 graph.add_edge(dirname, filename, type=EDGE_TYPE_CONTAINS)
@@ -376,7 +417,9 @@ def build_graph(repo_path, fuzzy_search=True, global_import=False):
                     else:
                         parent_name = '.'.join(name_list[:-1])
                         full_parent_name = f'{filename}:{parent_name}'
-                        graph.add_edge(full_parent_name, full_name, type=EDGE_TYPE_CONTAINS)
+                        graph.add_edge(
+                            full_parent_name, full_name, type=EDGE_TYPE_CONTAINS
+                        )
 
         # keep all parent directories
         if dir_has_py:
@@ -431,7 +474,9 @@ def build_graph(repo_path, fuzzy_search=True, global_import=False):
 
         # analysis invokes and inherits, add (top-level) imports edges (class/function -> class/function)
         if attributes.get('type') == NODE_TYPE_CLASS:
-            invocations, inheritances = analyze_init(node, caller_code_tree, graph, repo_path)
+            invocations, inheritances = analyze_init(
+                node, caller_code_tree, graph, repo_path
+            )
         else:
             invocations = analyze_invokes(node, caller_code_tree, graph, repo_path)
             inheritances = []
@@ -476,7 +521,9 @@ def get_inner_nodes(query_node, src_node, graph):
     for _, dst_node, attr in graph.edges(src_node, data=True):
         if attr['type'] == EDGE_TYPE_CONTAINS and dst_node != query_node:
             inner_nodes.append(dst_node)
-            if graph.nodes[dst_node]['type'] == NODE_TYPE_CLASS:  # only include class's inner nodes
+            if (
+                graph.nodes[dst_node]['type'] == NODE_TYPE_CLASS
+            ):  # only include class's inner nodes
                 inner_nodes.extend(get_inner_nodes(query_node, dst_node, graph))
     return inner_nodes
 
@@ -496,14 +543,17 @@ def find_all_possible_callee(node, graph):
         callee_nodes.extend(get_inner_nodes(pre_node, cur_node, graph))
 
         if graph.nodes[cur_node]['type'] == NODE_TYPE_FILE:
-
             # check recursive imported files
             file_list = []
             file_stack = [cur_node]
             while len(file_stack) > 0:
                 for _, dst_node, attr in graph.edges(file_stack.pop(), data=True):
-                    if attr['type'] == EDGE_TYPE_IMPORTS and dst_node not in file_list + [cur_node]:
-                        if graph.nodes[dst_node]['type'] == NODE_TYPE_FILE and dst_node.endswith('__init__.py'):
+                    if attr[
+                        'type'
+                    ] == EDGE_TYPE_IMPORTS and dst_node not in file_list + [cur_node]:
+                        if graph.nodes[dst_node][
+                            'type'
+                        ] == NODE_TYPE_FILE and dst_node.endswith('__init__.py'):
                             file_list.append(dst_node)
                             file_stack.append(dst_node)
 
@@ -513,9 +563,15 @@ def find_all_possible_callee(node, graph):
                     if attr['type'] == EDGE_TYPE_IMPORTS:
                         if attr['alias'] is not None:
                             callee_alias[attr['alias']] = dst_node
-                        if graph.nodes[dst_node]['type'] in [NODE_TYPE_FILE, NODE_TYPE_CLASS]:
+                        if graph.nodes[dst_node]['type'] in [
+                            NODE_TYPE_FILE,
+                            NODE_TYPE_CLASS,
+                        ]:
                             callee_nodes.extend(get_inner_nodes(file, dst_node, graph))
-                        if graph.nodes[dst_node]['type'] in [NODE_TYPE_FUNCTION, NODE_TYPE_CLASS]:
+                        if graph.nodes[dst_node]['type'] in [
+                            NODE_TYPE_FUNCTION,
+                            NODE_TYPE_CLASS,
+                        ]:
                             callee_nodes.append(dst_node)
 
             # check imported functions and classes
@@ -523,9 +579,15 @@ def find_all_possible_callee(node, graph):
                 if attr['type'] == EDGE_TYPE_IMPORTS:
                     if attr['alias'] is not None:
                         callee_alias[attr['alias']] = dst_node
-                    if graph.nodes[dst_node]['type'] in [NODE_TYPE_FILE, NODE_TYPE_CLASS]:
+                    if graph.nodes[dst_node]['type'] in [
+                        NODE_TYPE_FILE,
+                        NODE_TYPE_CLASS,
+                    ]:
                         callee_nodes.extend(get_inner_nodes(cur_node, dst_node, graph))
-                    if graph.nodes[dst_node]['type'] in [NODE_TYPE_FUNCTION, NODE_TYPE_CLASS]:
+                    if graph.nodes[dst_node]['type'] in [
+                        NODE_TYPE_FUNCTION,
+                        NODE_TYPE_CLASS,
+                    ]:
                         callee_nodes.append(dst_node)
 
             break
@@ -555,7 +617,9 @@ def analyze_init(node, code_tree, graph, repo_path):
             add_invoke(_decorator_node.id)
         else:
             for _sub_node in ast.walk(_decorator_node):
-                if isinstance(_sub_node, ast.Call) and isinstance(_sub_node.func, ast.Name):
+                if isinstance(_sub_node, ast.Call) and isinstance(
+                    _sub_node.func, ast.Name
+                ):
                     add_invoke(_sub_node.func.id)
                 elif isinstance(_sub_node, ast.Attribute):
                     add_invoke(_sub_node.attr)
@@ -579,7 +643,10 @@ def analyze_init(node, code_tree, graph, repo_path):
                 process_decorator_node(decorator_node)
 
             for body_item in ast_node.body:
-                if isinstance(body_item, ast.FunctionDef) and body_item.name == '__init__':
+                if (
+                    isinstance(body_item, ast.FunctionDef)
+                    and body_item.name == '__init__'
+                ):
                     # add imports
                     imports = find_imports(file_path, repo_path, tree=body_item)
                     add_imports(node, imports, graph, repo_path)
@@ -615,7 +682,9 @@ def analyze_invokes(node, code_tree, graph, repo_path):
             add_invoke(_decorator_node.id)
         else:
             for _sub_node in ast.walk(_decorator_node):
-                if isinstance(_sub_node, ast.Call) and isinstance(_sub_node.func, ast.Name):
+                if isinstance(_sub_node, ast.Call) and isinstance(
+                    _sub_node.func, ast.Name
+                ):
                     add_invoke(_sub_node.func.id)
                 elif isinstance(_sub_node, ast.Attribute):
                     add_invoke(_sub_node.attr)
@@ -635,8 +704,10 @@ def analyze_invokes(node, code_tree, graph, repo_path):
 
     # 遍历 AST 节点以找到调用关系
     for ast_node in ast.walk(code_tree):
-        if (isinstance(ast_node, (ast.FunctionDef, ast.AsyncFunctionDef))
-                and ast_node.name == caller_name):
+        if (
+            isinstance(ast_node, (ast.FunctionDef, ast.AsyncFunctionDef))
+            and ast_node.name == caller_name
+        ):
             # add imports
             imports = find_imports(file_path, repo_path, tree=ast_node)
             add_imports(node, imports, graph, repo_path)
@@ -654,16 +725,32 @@ def analyze_invokes(node, code_tree, graph, repo_path):
 
 def visualize_graph(G):
     node_types = set(nx.get_node_attributes(G, 'type').values())
-    node_shapes = {NODE_TYPE_CLASS: 'o', NODE_TYPE_FUNCTION: 's', NODE_TYPE_FILE: 'D',
-                   NODE_TYPE_DIRECTORY: '^'}
-    node_colors = {NODE_TYPE_CLASS: 'lightgreen', NODE_TYPE_FUNCTION: 'lightblue',
-                   NODE_TYPE_FILE: 'lightgrey', NODE_TYPE_DIRECTORY: 'orange'}
+    node_shapes = {
+        NODE_TYPE_CLASS: 'o',
+        NODE_TYPE_FUNCTION: 's',
+        NODE_TYPE_FILE: 'D',
+        NODE_TYPE_DIRECTORY: '^',
+    }
+    node_colors = {
+        NODE_TYPE_CLASS: 'lightgreen',
+        NODE_TYPE_FUNCTION: 'lightblue',
+        NODE_TYPE_FILE: 'lightgrey',
+        NODE_TYPE_DIRECTORY: 'orange',
+    }
 
     edge_types = set(nx.get_edge_attributes(G, 'type').values())
-    edge_colors = {EDGE_TYPE_IMPORTS: 'forestgreen', EDGE_TYPE_CONTAINS: 'skyblue',
-                   EDGE_TYPE_INVOKES: 'magenta', EDGE_TYPE_INHERITS: 'brown'}
-    edge_styles = {EDGE_TYPE_IMPORTS: 'solid', EDGE_TYPE_CONTAINS: 'dashed', EDGE_TYPE_INVOKES: 'dotted',
-                   EDGE_TYPE_INHERITS: 'dashdot'}
+    edge_colors = {
+        EDGE_TYPE_IMPORTS: 'forestgreen',
+        EDGE_TYPE_CONTAINS: 'skyblue',
+        EDGE_TYPE_INVOKES: 'magenta',
+        EDGE_TYPE_INHERITS: 'brown',
+    }
+    edge_styles = {
+        EDGE_TYPE_IMPORTS: 'solid',
+        EDGE_TYPE_CONTAINS: 'dashed',
+        EDGE_TYPE_INVOKES: 'dotted',
+        EDGE_TYPE_INHERITS: 'dashdot',
+    }
 
     # pos = nx.spring_layout(G, k=2, iterations=50)
     pos = nx.shell_layout(G)
@@ -714,17 +801,31 @@ def visualize_graph(G):
                 arrowsize=15,
                 min_source_margin=15,
                 min_target_margin=15,
-                width=1.5
+                width=1.5,
             )
 
     # Create legends for edge types and node types
     edge_legend_elements = [
-        Line2D([0], [0], color=edge_colors[etype], lw=2, linestyle=edge_styles[etype], label=etype)
+        Line2D(
+            [0],
+            [0],
+            color=edge_colors[etype],
+            lw=2,
+            linestyle=edge_styles[etype],
+            label=etype,
+        )
         for etype in edge_types
     ]
     node_legend_elements = [
-        Line2D([0], [0], marker=node_shapes[ntype], color='w', label=ntype,
-               markerfacecolor=node_colors[ntype], markersize=15)
+        Line2D(
+            [0],
+            [0],
+            marker=node_shapes[ntype],
+            color='w',
+            label=ntype,
+            markerfacecolor=node_colors[ntype],
+            markersize=15,
+        )
         for ntype in node_types
     ]
 
@@ -737,11 +838,11 @@ def visualize_graph(G):
 def traverse_directory_structure(graph, root='/'):
     def traverse(node, prefix, is_last):
         if node == root:
-            print(f"{node}")
+            print(f'{node}')
             new_prefix = ''
         else:
             connector = '└── ' if is_last else '├── '
-            print(f"{prefix}{connector}{node}")
+            print(f'{prefix}{connector}{node}')
             new_prefix = prefix + ('    ' if is_last else '│   ')
 
         # Stop if the current node is a file (leaf node)
@@ -753,7 +854,7 @@ def traverse_directory_structure(graph, root='/'):
         for i, neighbor in enumerate(neighbors):
             for key in graph[node][neighbor]:
                 if graph[node][neighbor][key].get('type') == 'contains':
-                    is_last_child = (i == len(neighbors) - 1)
+                    is_last_child = i == len(neighbors) - 1
                     traverse(neighbor, new_prefix, is_last_child)
 
     traverse(root, '', False)
@@ -787,10 +888,11 @@ def main():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--repo_path', type=str, default='DATA/repo/pallets__flask-5063')
+    parser.add_argument(
+        '--repo_path', type=str, default='DATA/repo/pallets__flask-5063'
+    )
     parser.add_argument('--visualize', action='store_true')
     parser.add_argument('--global_import', action='store_true')
     args = parser.parse_args()
 
     main()
-

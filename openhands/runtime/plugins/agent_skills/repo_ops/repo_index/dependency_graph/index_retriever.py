@@ -1,30 +1,31 @@
-import os
-import re
 import pickle
-import Stemmer
-import fnmatch
-import mimetypes
-from typing import Dict, List, Optional
+import re
 
-from llama_index.core import SimpleDirectoryReader
+# from ..chunk_index.index.epic_split import EpicSplitter
+import warnings
+from typing import Optional
+
+import networkx as nx
+import Stemmer
 from llama_index.core import Document
 from llama_index.core.node_parser import SimpleFileNodeParser
 from llama_index.retrievers.bm25 import BM25Retriever
-from rapidfuzz import process, fuzz
-import networkx as nx
+from rapidfuzz import fuzz, process
 
-from openhands.runtime.plugins.agent_skills.repo_ops.repo_index.dependency_graph import RepoEntitySearcher
-from openhands.runtime.plugins.agent_skills.repo_ops.repo_index.dependency_graph.traverse_graph import is_test_file
+from openhands.runtime.plugins.agent_skills.repo_ops.repo_index.dependency_graph import (
+    RepoEntitySearcher,
+)
 from openhands.runtime.plugins.agent_skills.repo_ops.repo_index.dependency_graph.build_graph import (
-    VALID_NODE_TYPES,
+    NODE_TYPE_CLASS,
     NODE_TYPE_DIRECTORY,
     NODE_TYPE_FILE,
-    NODE_TYPE_CLASS,
     NODE_TYPE_FUNCTION,
+    VALID_NODE_TYPES,
 )
-# from ..chunk_index.index.epic_split import EpicSplitter
+from openhands.runtime.plugins.agent_skills.repo_ops.repo_index.dependency_graph.traverse_graph import (
+    is_test_file,
+)
 
-import warnings
 warnings.simplefilter('ignore', FutureWarning)
 
 NTYPES = [
@@ -123,25 +124,26 @@ def build_retriever_from_persist_dir(path: str):
     return retriever
 
 
-def build_module_retriever_from_graph(graph_path: Optional[str] = None,
-                                      entity_searcher: Optional[RepoEntitySearcher] = None,
-                                      search_scope: str = 'all',
-                                      # enum = {'function', 'class', 'file', 'all'}
-                                      similarity_top_k: int = 10,
-
-                                      ):
+def build_module_retriever_from_graph(
+    graph_path: Optional[str] = None,
+    entity_searcher: Optional[RepoEntitySearcher] = None,
+    search_scope: str = 'all',
+    # enum = {'function', 'class', 'file', 'all'}
+    similarity_top_k: int = 10,
+):
     assert search_scope in NTYPES or search_scope == 'all'
     assert graph_path or isinstance(entity_searcher, RepoEntitySearcher)
 
     if graph_path:
-        G = pickle.load(open(graph_path, "rb"))
+        G = pickle.load(open(graph_path, 'rb'))
         entity_searcher = RepoEntitySearcher(G)
     else:
         G = entity_searcher.G
 
     selected_nodes = list()
     for nid in G:
-        if is_test_file(nid): continue
+        if is_test_file(nid):
+            continue
 
         ndata = entity_searcher.get_node_data([nid])[0]
         ndata['nid'] = nid  # add `nid` property
@@ -159,8 +161,8 @@ def build_module_retriever_from_graph(graph_path: Optional[str] = None,
     retriever = BM25Retriever.from_defaults(
         nodes=nodes,
         similarity_top_k=similarity_top_k,
-        stemmer=Stemmer.Stemmer("english"),
-        language="english",
+        stemmer=Stemmer.Stemmer('english'),
+        language='english',
     )
 
     return retriever
@@ -168,9 +170,9 @@ def build_module_retriever_from_graph(graph_path: Optional[str] = None,
 
 def fuzzy_retrieve_from_graph_nodes(
     keyword: str,
-    graph_path : Optional[str] = None,
+    graph_path: Optional[str] = None,
     graph: Optional[nx.MultiDiGraph] = None,
-    search_scope: str = 'all', # enum = {'function', 'class', 'file', 'all'}
+    search_scope: str = 'all',  # enum = {'function', 'class', 'file', 'all'}
     include_files: Optional[str] = None,
     similarity_top_k: int = 5,
     return_score: bool = False,
@@ -179,16 +181,19 @@ def fuzzy_retrieve_from_graph_nodes(
     assert search_scope in VALID_NODE_TYPES or search_scope == 'all'
 
     if graph_path:
-        graph = pickle.load(open(graph_path, "rb"))
+        graph = pickle.load(open(graph_path, 'rb'))
 
     selected_nids = list()
     filter_nids = list()
     for nid in graph:
-        if is_test_file(nid): continue
+        if is_test_file(nid):
+            continue
         ndata = graph.nodes[nid]
-        if search_scope == 'all' and \
-            ndata['type'] in [NODE_TYPE_FILE, NODE_TYPE_CLASS, NODE_TYPE_FUNCTION]:
-                
+        if search_scope == 'all' and ndata['type'] in [
+            NODE_TYPE_FILE,
+            NODE_TYPE_CLASS,
+            NODE_TYPE_FUNCTION,
+        ]:
             nfile = nid.split(':')[0]
             if not include_files or nfile in include_files:
                 filter_nids.append(nid)
@@ -198,10 +203,10 @@ def fuzzy_retrieve_from_graph_nodes(
             if not include_files or nfile in include_files:
                 filter_nids.append(nid)
             selected_nids.append(nid)
-    
+
     if not filter_nids:
         filter_nids = selected_nids
-        
+
     # Custom function to split tokens on underscores and hyphens
     def custom_tokenizer(s):
         return re.findall(r'\b\w+\b', s.replace('_', ' ').replace('-', ' '))
@@ -212,11 +217,11 @@ def fuzzy_retrieve_from_graph_nodes(
         filter_nids,
         scorer=fuzz.token_set_ratio,
         processor=lambda s: ' '.join(custom_tokenizer(s)),
-        limit=similarity_top_k
+        limit=similarity_top_k,
     )
     if not return_score:
         return_nids = [match[0] for match in matches]
         return return_nids
-    
+
     # matches: List[Tuple(nid, score)]
     return matches

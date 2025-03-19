@@ -1,25 +1,28 @@
-from openhands.runtime.plugins.agent_skills.repo_ops.repo_index.chunk_index.index.epic_split import (
-    EpicSplitter
-)
-from llama_index.core import SimpleDirectoryReader
 import fnmatch
 import mimetypes
-from typing import Dict, List, Optional
 import os
-from llama_index.retrievers.bm25 import BM25Retriever
+from typing import Dict
+
 import Stemmer
+from llama_index.core import SimpleDirectoryReader
+from llama_index.retrievers.bm25 import BM25Retriever
+
+from openhands.runtime.plugins.agent_skills.repo_ops.repo_index.chunk_index.index.epic_split import (
+    EpicSplitter,
+)
 
 
-def build_code_retriever_from_repo(repo_path,
-                                   similarity_top_k=10,
-                                   min_chunk_size=100,
-                                   chunk_size=500,
-                                   max_chunk_size=2000,
-                                   hard_token_limit=2000,
-                                   max_chunks=200,
-                                   persist_path=None,
-                                   show_progress=False,
-                                   ):
+def build_code_retriever_from_repo(
+    repo_path,
+    similarity_top_k=10,
+    min_chunk_size=100,
+    chunk_size=500,
+    max_chunk_size=2000,
+    hard_token_limit=2000,
+    max_chunks=200,
+    persist_path=None,
+    show_progress=False,
+):
     # print(repo_path)
     # Only extract file name and type to not trigger unnecessary embedding jobs
     def file_metadata_func(file_path: str) -> Dict:
@@ -77,14 +80,16 @@ def build_code_retriever_from_repo(repo_path,
         max_chunks=max_chunks,
         repo_path=repo_path,
     )
-    prepared_nodes = splitter.get_nodes_from_documents(docs, show_progress=show_progress)
+    prepared_nodes = splitter.get_nodes_from_documents(
+        docs, show_progress=show_progress
+    )
 
     # We can pass in the index, docstore, or list of nodes to create the retriever
     retriever = BM25Retriever.from_defaults(
         nodes=prepared_nodes,
         similarity_top_k=similarity_top_k,
-        stemmer=Stemmer.Stemmer("english"),
-        language="english",
+        stemmer=Stemmer.Stemmer('english'),
+        language='english',
     )
     if persist_path:
         retriever.persist(persist_path)

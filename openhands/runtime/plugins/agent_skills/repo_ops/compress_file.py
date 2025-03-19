@@ -3,7 +3,7 @@ import libcst.matchers as m
 
 
 class CompressTransformer(cst.CSTTransformer):
-    DESCRIPTION = str = "Replaces function body with ..."
+    DESCRIPTION = str = 'Replaces function body with ...'
     replacement_string = '"$$FUNC_BODY_REPLACEMENT_STRING$$"'
 
     def __init__(self, keep_constant=True):
@@ -83,8 +83,8 @@ def get_skeleton(raw_code, keep_constant: bool = True):
     transformer = CompressTransformer(keep_constant=keep_constant)
     modified_tree = tree.visit(transformer)
     code = modified_tree.code
-    code = code.replace(CompressTransformer.replacement_string + "\n", "...\n")
-    code = code.replace(CompressTransformer.replacement_string, "...\n")
+    code = code.replace(CompressTransformer.replacement_string + '\n', '...\n')
+    code = code.replace(CompressTransformer.replacement_string, '...\n')
     return code
 
 
