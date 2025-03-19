@@ -13,7 +13,6 @@ interface ConversationCardProps {
   onClick?: () => void;
   onDelete?: () => void;
   onChangeTitle?: (title: string) => void;
-  onDownloadWorkspace?: () => void;
   isActive?: boolean;
   title: string;
   selectedRepository: string | null;
@@ -26,7 +25,6 @@ export function ConversationCard({
   onClick,
   onDelete,
   onChangeTitle,
-  onDownloadWorkspace,
   isActive,
   title,
   selectedRepository,
@@ -78,18 +76,13 @@ export function ConversationCard({
     setContextMenuVisible(false);
   };
 
-  const handleDownload = (event: React.MouseEvent<HTMLButtonElement>) => {
-    event.stopPropagation();
-    onDownloadWorkspace?.();
-  };
-
   React.useEffect(() => {
     if (titleMode === "edit") {
       inputRef.current?.focus();
     }
   }, [titleMode]);
 
-  const hasContextMenu = !!(onDelete || onChangeTitle || onDownloadWorkspace);
+  const hasContextMenu = !!(onDelete || onChangeTitle);
 
   return (
     <div
@@ -145,7 +138,6 @@ export function ConversationCard({
               onClose={() => setContextMenuVisible(false)}
               onDelete={onDelete && handleDelete}
               onEdit={onChangeTitle && handleEdit}
-              onDownload={onDownloadWorkspace && handleDownload}
               position={variant === "compact" ? "top" : "bottom"}
             />
           )}

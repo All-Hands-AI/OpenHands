@@ -7,7 +7,6 @@ interface ConversationCardContextMenuProps {
   onClose: () => void;
   onDelete?: (event: React.MouseEvent<HTMLButtonElement>) => void;
   onEdit?: (event: React.MouseEvent<HTMLButtonElement>) => void;
-  onDownload?: (event: React.MouseEvent<HTMLButtonElement>) => void;
   position?: "top" | "bottom";
 }
 
@@ -15,7 +14,6 @@ export function ConversationCardContextMenu({
   onClose,
   onDelete,
   onEdit,
-  onDownload,
   position = "bottom",
 }: ConversationCardContextMenuProps) {
   const ref = useClickOutsideElement<HTMLUListElement>(onClose);
@@ -38,11 +36,6 @@ export function ConversationCardContextMenu({
       {onEdit && (
         <ContextMenuListItem testId="edit-button" onClick={onEdit}>
           Edit Title
-        </ContextMenuListItem>
-      )}
-      {onDownload && (
-        <ContextMenuListItem testId="download-button" onClick={onDownload}>
-          Download Workspace
         </ContextMenuListItem>
       )}
     </ContextMenu>
