@@ -22,7 +22,7 @@ from openhands.events.observation.agent import AgentCondensationObservation
 from openhands.events.observation.observation import Observation
 from openhands.llm import LLM
 from openhands.memory.condenser import Condenser
-from openhands.memory.condenser.condenser import RollingCondenser
+from openhands.memory.condenser.condenser import RollingCondenser, View
 from openhands.memory.condenser.impl import (
     AmortizedForgettingCondenser,
     BrowserOutputCondenser,
@@ -120,7 +120,7 @@ def test_noop_condenser():
     condenser = NoOpCondenser()
     result = condenser.condensed_history(mock_state)
 
-    assert result == events
+    assert result == View(events=events)
 
 
 def test_observation_masking_condenser_from_config():
@@ -231,7 +231,7 @@ def test_recent_events_condenser():
     condenser = RecentEventsCondenser(max_events=len(events))
     result = condenser.condensed_history(mock_state)
 
-    assert result == events
+    assert result == View(events=events)
 
     # If the max_events are smaller than the number of events, only keep the last few.
     max_events = 3
@@ -425,7 +425,7 @@ def test_llm_summarizing_condenser_resets_when_given_truncated_history(
     # as the de-facto history. That means we lose the summarization event and any
     # other events that were in the previous history.
     results = condenser.condensed_history(mock_state)
-    assert results == alternate_history
+    assert results == View(events=alternate_history)
 
 
 def test_amortized_forgetting_condenser_from_config():

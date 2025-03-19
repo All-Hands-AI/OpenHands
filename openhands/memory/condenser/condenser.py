@@ -36,6 +36,12 @@ CONDENSER_REGISTRY: dict[type[CondenserConfig], type[Condenser]] = {}
 class View(BaseModel):
     events: list[Event]
 
+    def __len__(self) -> int:
+        return len(self.events)
+
+    def __getitem__(self, key: int) -> Event:
+        return self.events[key]
+
 
 class Condensation(BaseModel):
     event: Event
@@ -182,7 +188,7 @@ class RollingCondenser(Condenser, ABC):
             results = self.condense(self._condensation + new_events)
 
         match results:
-            case View(events):
+            case View(events=events):
                 self._condensation = events
                 self._last_history_length = len(state.history)
 

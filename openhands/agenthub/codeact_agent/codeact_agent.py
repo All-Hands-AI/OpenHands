@@ -170,9 +170,9 @@ class CodeActAgent(Agent):
         # Condense the events from the state.
         condensed_history: list[Event] = []
         match self.condenser.condensed_history(state):
-            case View(events):
+            case View(events=events):
                 condensed_history = events
-            case Condensation(events):
+            case Condensation(_):
                 raise NotImplementedError()
 
         logger.debug(
