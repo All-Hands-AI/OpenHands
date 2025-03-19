@@ -72,8 +72,10 @@ describe("useTerminal", () => {
       wrapper: Wrapper,
     });
 
-    expect(mockTerminal.writeln).toHaveBeenNthCalledWith(1, "echo hello");
-    expect(mockTerminal.writeln).toHaveBeenNthCalledWith(2, "hello");
+    // Input commands should be displayed
+    expect(mockTerminal.writeln).toHaveBeenCalledWith("echo hello");
+    // Output commands should be displayed
+    expect(mockTerminal.writeln).toHaveBeenCalledWith("hello");
   });
 
   it("should hide secrets in the terminal", () => {
@@ -97,13 +99,31 @@ describe("useTerminal", () => {
       },
     );
 
-    // BUG: `vi.clearAllMocks()` does not clear the number of calls
-    // therefore, we need to assume the order of the calls based
-    // on the test order
-    expect(mockTerminal.writeln).toHaveBeenNthCalledWith(
-      3,
+    // Input command should be displayed with secrets masked
+    expect(mockTerminal.writeln).toHaveBeenCalledWith(
       `export GITHUB_TOKEN=${"*".repeat(10)},${"*".repeat(10)},${"*".repeat(10)}`,
     );
-    expect(mockTerminal.writeln).toHaveBeenNthCalledWith(4, "*".repeat(10));
+    
+    // Output command should be displayed with secrets masked
+    expect(mockTerminal.writeln).toHaveBeenCalledWith("*".repeat(10));
+  });
+  
+  it("should prevent duplicate command display", () => {
+    const inputCommand = "ls -la";
+    const commands: Command[] = [
+      { content: inputCommand, type: "input" },
+      { content: `${inputCommand}\nfile1.txt\nfile2.txt`, type: "output" },
+    ];
+
+    render(<TestTerminalComponent commands={commands} secrets={[]} />, {
+      wrapper: Wrapper,
+    });
+
+    // Input command should be displayed
+    expect(mockTerminal.writeln).toHaveBeenCalledWith(inputCommand);
+    
+    // Output should not be displayed since it starts with the input command
+    // This prevents the duplicate display of the command
+    expect(mockTerminal.writeln).not.toHaveBeenCalledWith(`${inputCommand}\nfile1.txt\nfile2.txt`);
   });
 });
