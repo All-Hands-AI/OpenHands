@@ -15,6 +15,7 @@ from openhands.core.schema.agent import AgentState
 from openhands.events.action import ChangeAgentStateAction, MessageAction
 from openhands.events.event import EventSource
 from openhands.events.stream import EventStream
+from openhands.integrations.provider import CUSTOM_SECRETS_TYPE
 from openhands.memory.memory import Memory
 from openhands.microagent.microagent import BaseMicroAgent
 from openhands.runtime import get_runtime_cls
@@ -81,6 +82,7 @@ class AgentSession:
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
         github_token: SecretStr | None = None,
+        custom_secrets: CUSTOM_SECRETS_TYPE | None = None,
         selected_repository: str | None = None,
         selected_branch: str | None = None,
         initial_message: MessageAction | None = None,
@@ -115,6 +117,7 @@ class AgentSession:
                 config=config,
                 agent=agent,
                 github_token=github_token,
+                custom_secrets=custom_secrets,
                 selected_repository=selected_repository,
                 selected_branch=selected_branch,
             )
@@ -142,6 +145,13 @@ class AgentSession:
                         'github_token': github_token.get_secret_value(),
                     }
                 )
+
+            if custom_secrets:
+                secrets = {}
+                for secret, secret_value in custom_secrets.items():
+                    secrets[secret] = secret_value.get_secret_value()
+                self.event_stream.set_secrets(secrets)
+
             if not self._closed:
                 if initial_message:
                     self.event_stream.add_event(initial_message, EventSource.USER)
@@ -212,6 +222,7 @@ class AgentSession:
         config: AppConfig,
         agent: Agent,
         github_token: SecretStr | None = None,
+        custom_secrets: CUSTOM_SECRETS_TYPE | None = None,
         selected_repository: str | None = None,
         selected_branch: str | None = None,
     ) -> bool:
@@ -236,8 +247,12 @@ class AgentSession:
                 'GITHUB_TOKEN': github_token.get_secret_value(),
             }
             if github_token
-            else None
+            else {}
         )
+
+        if custom_secrets:
+            for secret, secret_value in custom_secrets.items():
+                env_vars[secret] = secret_value.get_secret_value()
 
         kwargs = {}
         if runtime_cls == RemoteRuntime:

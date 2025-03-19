@@ -126,10 +126,12 @@ class Session:
         provider_token = None
         selected_repository = None
         selected_branch = None
+        custom_secrets = None
         if isinstance(settings, ConversationInitData):
             provider_token = settings.provider_token
             selected_repository = settings.selected_repository
             selected_branch = settings.selected_branch
+            custom_secrets = settings.custom_secrets
 
         try:
             await self.agent_session.start(
@@ -141,6 +143,7 @@ class Session:
                 agent_to_llm_config=self.config.get_agent_to_llm_config_map(),
                 agent_configs=self.config.get_agent_configs(),
                 github_token=provider_token,
+                custom_secrets=custom_secrets,
                 selected_repository=selected_repository,
                 selected_branch=selected_branch,
                 initial_message=initial_message,

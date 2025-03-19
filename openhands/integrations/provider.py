@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from enum import Enum
 from types import MappingProxyType
+from typing import Any
 
 from pydantic import (
     BaseModel,
@@ -92,7 +93,7 @@ class SecretStore(BaseModel):
             }
 
         return tokens
-    
+
     @field_serializer('custom_secrets')
     def custom_secrets_serializer(
         self, custom_secrets: CUSTOM_SECRETS_TYPE, info: SerializationInfo
@@ -112,7 +113,7 @@ class SecretStore(BaseModel):
     @model_validator(mode='before')
     @classmethod
     def convert_dict_to_mappingproxy(
-        cls, data: dict[str, dict[str, dict[str, str]]] | PROVIDER_TOKEN_TYPE
+        cls, data: dict[str, dict[str, Any]] | PROVIDER_TOKEN_TYPE
     ) -> dict[str, MappingProxyType]:
         """Custom deserializer to convert dictionary into MappingProxyType"""
         if not isinstance(data, dict):
@@ -127,6 +128,9 @@ class SecretStore(BaseModel):
             ):  # Ensure conversion happens only for dict inputs
                 converted_tokens = {}
                 for key, value in tokens.items():
+                    if not isinstance(value, dict):
+                        continue
+
                     try:
                         provider_type = (
                             ProviderType(key) if isinstance(key, str) else key
@@ -142,11 +146,9 @@ class SecretStore(BaseModel):
                 new_data['provider_tokens'] = MappingProxyType(converted_tokens)
         if 'custom_secrets' in data:
             secrets = data['custom_secrets']
-            if isinstance(
-                secrets, dict
-            ):
+            if isinstance(secrets, dict):
                 converted_secrets = {}
-                for key, value in tokens.items():
+                for key, value in secrets.items():
                     if isinstance(value, str):
                         converted_secrets[key] = SecretStr(value)
                     elif isinstance(value, SecretStr):
