@@ -204,6 +204,15 @@ class ProviderHandler:
         return all_repos
 
     async def set_event_stream_secrets(self, event_stream: EventStream):
+        """
+        Set the secrets in event stream
+        This method uses the `provider_tokens` attribute from an object of this class
+        It is called when the provider tokens are first initialized in the runtime
+
+        Args:
+            event_stream: Agent session's event stream
+
+        """
         exposed_env_vars = await self.get_env_vars(expose_secrets=True)
         event_stream.set_secrets(exposed_env_vars)
 
@@ -216,12 +225,12 @@ class ProviderHandler:
         """
         This function sets the secret values for the event stream.
         This ensures that the latest provider tokens are masked from the event stream.
-        It is called when the provider tokens are first initialized in the runtime, or when the provider tokens are re-exported with the latest working ones
+        It is called when the provider tokens are re-exported with the latest working ones
 
 
         Args:
             event_stream: Agent session's event stream
-            provider_tokens: Dict of providers and their tokens that require setting/updating
+            env_vars: Dict of providers and their tokens that require updating
 
         """
 
@@ -229,9 +238,15 @@ class ProviderHandler:
         event_stream.set_secrets(exposed_envs)
 
     @classmethod
-    def expose_env_vars(cls, env_vars: dict[ProviderType, SecretStr]) -> dict[str, str]:
+    def expose_env_vars(
+        cls, env_secrets: dict[ProviderType, SecretStr]
+    ) -> dict[str, str]:
+        """
+        Return string values instead of typed values for environment secrets
+        Called just before exporting secrets to runtime, or setting secrets in the event stream
+        """
         exposed_envs = {}
-        for provider, token in env_vars.items():
+        for provider, token in env_secrets.items():
             env_key = ProviderHandler.get_provider_env_key(provider)
             exposed_envs[env_key] = token.get_secret_value()
 
