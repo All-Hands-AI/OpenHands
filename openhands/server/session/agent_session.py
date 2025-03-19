@@ -262,7 +262,7 @@ class AgentSession:
                 )
             return False
 
-        if selected_repository:
+        if selected_repository and provider_tokens:
             await call_sync_from_async(
                 self.runtime.clone_repo,
                 provider_tokens,

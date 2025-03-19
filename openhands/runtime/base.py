@@ -308,8 +308,8 @@ class Runtime(FileEditRuntimeMixin):
     ) -> str:
         if not (
             ProviderType.GITHUB not in provider_tokens
-            and provider_tokens[ProviderType.GITHUB].token
-            and selected_repository
+            or provider_tokens[ProviderType.GITHUB].token
+            or selected_repository
         ):
             raise ValueError(
                 'github_token and selected_repository must be provided to clone a repository'
