@@ -163,9 +163,11 @@ class RollingCondenser(Condenser, ABC):
             last condensation and to detect if the history has been truncated.
             
     Note:
-        These tracking variables can be reconstructed from the state history by examining
-        AgentCondensationAction objects and their positions in the history. This is useful
-        for debugging or understanding the condenser's state at any point in time.
+        These tracking variables are automatically reconstructed from the state history when
+        the condenser is initialized with an existing history containing AgentCondensationAction
+        events. This ensures that the condenser can properly resume operation after an application
+        restart without losing context. The reconstruction process examines the most recent
+        AgentCondensationAction in the history and uses it to rebuild the internal state.
     """
 
     def __init__(self) -> None:
@@ -185,6 +187,31 @@ class RollingCondenser(Condenser, ABC):
 
     @override
     def condensed_history(self, state: State) -> list[Event]:
+        from openhands.events.action.agent import AgentCondensationAction
+        
+        # If we're loading a fresh instance but have history, try to reconstruct state
+        if not self._condensation and self._last_history_length == 0 and state.history:
+            # Find the most recent AgentCondensationAction
+            condensation_action = None
+            for event in reversed(state.history):
+                if isinstance(event, AgentCondensationAction):
+                    condensation_action = event
+                    break
+                    
+            if condensation_action is not None:
+                # Find where in the history we left off
+                last_processed_index = 0
+                for i, e in enumerate(state.history):
+                    if hasattr(e, 'id') and e.id == condensation_action.end_id:
+                        last_processed_index = i + 1
+                        break
+                
+                # Reconstruct the condensation result based on the condenser's structure
+                # For LLMSummarizingCondenser, this would be head + condensation_action
+                head = state.history[:min(self.keep_first, len(state.history))] if hasattr(self, 'keep_first') else []
+                self._condensation = head + [condensation_action]
+                self._last_history_length = last_processed_index
+        
         # The history should grow monotonically -- if it doesn't, something has
         # truncated the history and we need to reset our tracking.
         if len(state.history) < self._last_history_length:
@@ -193,7 +220,7 @@ class RollingCondenser(Condenser, ABC):
 
         # Extract only the new events that have been added since the last condensation
         # This is an optimization to avoid reprocessing the entire history
-        new_events = state.history[self._last_history_length :]
+        new_events = state.history[self._last_history_length:]
 
         with self.metadata_batch(state):
             # Combine the previous condensation result with new events
@@ -228,24 +255,27 @@ class RollingCondenser(Condenser, ABC):
         """
         from openhands.events.action.agent import AgentCondensationAction
         
-        # If there are no condensation actions in the history, the condensation
-        # would be the entire history and the last_history_length would be the
-        # current history length
-        condensation_actions = [
-            (i, event) for i, event in enumerate(state.history) 
-            if isinstance(event, AgentCondensationAction)
-        ]
-        
-        if not condensation_actions:
-            return state.history.copy(), len(state.history)
+        # Find the most recent AgentCondensationAction
+        condensation_action = None
+        for event in reversed(state.history):
+            if isinstance(event, AgentCondensationAction):
+                condensation_action = event
+                break
+                
+        if condensation_action is None:
+            # No condensation has occurred yet
+            return [], 0
             
-        # Find the most recent condensation action
-        last_condensation_idx, last_condensation = condensation_actions[-1]
+        # Find where in the history we left off
+        last_processed_index = 0
+        for i, event in enumerate(state.history):
+            if hasattr(event, 'id') and event.id == condensation_action.end_id:
+                last_processed_index = i + 1
+                break
         
-        # The condensation would be all events up to and including the last condensation action
-        reconstructed_condensation = state.history[:last_condensation_idx + 1].copy()
+        # Reconstruct the condensation result based on the condenser's structure
+        # For LLMSummarizingCondenser, this would be head + condensation_action
+        head = state.history[:min(self.keep_first, len(state.history))] if hasattr(self, 'keep_first') else []
+        condensation = head + [condensation_action]
         
-        # The last_history_length would be the current history length
-        reconstructed_last_history_length = len(state.history)
-        
-        return reconstructed_condensation, reconstructed_last_history_length
+        return condensation, last_processed_index
