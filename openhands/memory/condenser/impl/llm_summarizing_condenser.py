@@ -118,7 +118,7 @@ INTENT: Fix precision while maintaining FITS compliance"""
         )
 
         # Determine the start_id based on whether there's an existing summary
-        start_index = self.keep_first + 2 if has_existing_summary else self.keep_first
+        start_index = self.keep_first + 1 if has_existing_summary else self.keep_first
 
         # Get the IDs of the first and last events being condensed
         start_id = events[start_index].id if start_index < len(events) else -1
