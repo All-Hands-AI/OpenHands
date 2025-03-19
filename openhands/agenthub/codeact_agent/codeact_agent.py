@@ -165,7 +165,13 @@ class CodeActAgent(Agent):
             with_caching=self.llm.is_caching_prompt_active()
         )
 
-        # Condense the events from the state.
+        # Check if we need to condense the history and add a condensation action
+        condensation_action = self.condenser.get_condensation_action(state)
+        if condensation_action:
+            # Add the condensation action to the state history
+            state.add_event(condensation_action)
+            
+        # Get the condensed history for processing
         events = self.condenser.condensed_history(state)
 
         logger.debug(
