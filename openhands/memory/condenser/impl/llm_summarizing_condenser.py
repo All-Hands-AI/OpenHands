@@ -33,7 +33,18 @@ class LLMSummarizingCondenser(RollingCondenser):
         super().__init__()
 
     def condense(self, events: list[Event]) -> list[Event]:
-        """Apply the amortized forgetting strategy with LLM summarization to the given list of events."""
+        """Apply the amortized forgetting strategy with LLM summarization to the given list of events.
+        
+        This method checks if the event list exceeds the maximum size. If it does, it creates
+        a condensed version by keeping the first few events, creating a summary of the middle
+        events, and keeping the last few events.
+        
+        Args:
+            events: The list of events to condense.
+            
+        Returns:
+            list[Event]: The condensed list of events, or the original list if no condensation is needed.
+        """
         if len(events) <= self.max_size:
             return events
 
@@ -131,6 +142,30 @@ INTENT: Fix precision while maintaining FITS compliance"""
 
         # Return the events with just the condensation action in the middle
         # No need for a separate observation as the action is sufficient
+        return head + [condensation_action] + tail
+        
+    def reconstruct_condensed_events(self, state: State, condensation_action: AgentCondensationAction) -> list[Event]:
+        """Reconstruct the condensed event list from a condensation action and the full history.
+        
+        This method is used to reconstruct what the condensed event list would be, given a
+        condensation action and the full history. This is useful for the conversation memory
+        to build the list of events for the agent.
+        
+        Args:
+            state: The state containing the full history.
+            condensation_action: The condensation action to use for reconstruction.
+            
+        Returns:
+            list[Event]: The reconstructed condensed event list.
+        """
+        # Calculate how many events to take from the beginning and end of the history
+        head = state.history[: self.keep_first]
+        
+        target_size = self.max_size // 2
+        events_from_tail = target_size - len(head)
+        tail = state.history[-events_from_tail:] if events_from_tail > 0 else []
+        
+        # Return the reconstructed event list
         return head + [condensation_action] + tail
 
     @classmethod
