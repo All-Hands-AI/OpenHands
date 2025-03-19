@@ -3,6 +3,7 @@ import os
 from typing import Callable
 from urllib.parse import urlparse
 
+import httpx
 import requests
 import tenacity
 
@@ -149,7 +150,7 @@ class RemoteRuntime(ActionExecutionClient):
                 status = data.get('status')
                 if status == 'running' or status == 'paused':
                     self._parse_runtime_response(response)
-        except requests.HTTPError as e:
+        except httpx.HTTPError as e:
             if e.response.status_code == 404:
                 return False
             self.log('debug', f'Error while looking for remote runtime: {e}')
@@ -250,7 +251,7 @@ class RemoteRuntime(ActionExecutionClient):
                 'debug',
                 f'Runtime started. URL: {self.runtime_url}',
             )
-        except requests.HTTPError as e:
+        except httpx.HTTPError as e:
             self.log('error', f'Unable to start runtime: {str(e)}')
             raise AgentRuntimeUnavailableError() from e
 
@@ -341,7 +342,7 @@ class RemoteRuntime(ActionExecutionClient):
         if pod_status == 'ready':
             try:
                 self.check_if_alive()
-            except requests.HTTPError as e:
+            except httpx.HTTPError as e:
                 self.log(
                     'warning',
                     f"Runtime /alive failed, but pod says it's ready: {str(e)}",
@@ -447,7 +448,7 @@ class RemoteRuntime(ActionExecutionClient):
             )
             raise
 
-        except requests.HTTPError as e:
+        except httpx.HTTPError as e:
             if e.response.status_code in (404, 502, 504):
                 if e.response.status_code == 404:
                     raise AgentRuntimeDisconnectedError(

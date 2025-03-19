@@ -8,7 +8,7 @@ from openhands.utils.http_session import HttpSession
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
 
-class RequestHTTPError(requests.HTTPError):
+class RequestHTTPError(httpx.HTTPStatusError):
     """Exception raised when an error occurs in a request with details."""
 
     def __init__(self, *args, detail=None, **kwargs):
@@ -24,7 +24,7 @@ class RequestHTTPError(requests.HTTPError):
 
 def is_retryable_error(exception):
     return (
-        isinstance(exception, requests.HTTPError)
+        isinstance(exception, httpx.HTTPStatusError)
         and exception.response.status_code == 429
     )
 
@@ -44,10 +44,10 @@ def send_request(
     response = session.request(method, url, timeout=timeout, **kwargs)
     try:
         response.raise_for_status()
-    except requests.HTTPError as e:
+    except httpx.HTTPError as e:
         try:
             _json = response.json()
-        except (requests.exceptions.JSONDecodeError, json.decoder.JSONDecodeError):
+        except json.decoder.JSONDecodeError:
             _json = None
         finally:
             response.close()
