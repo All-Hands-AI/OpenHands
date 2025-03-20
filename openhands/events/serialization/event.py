@@ -1,5 +1,6 @@
 from dataclasses import asdict
 from datetime import datetime
+from enum import Enum
 
 from pydantic import BaseModel
 
@@ -23,7 +24,14 @@ TOP_KEYS = [
     'tool_call_metadata',
     'llm_metrics',
 ]
-UNDERSCORE_KEYS = ['id', 'timestamp', 'source', 'cause', 'tool_call_metadata', 'llm_metrics']
+UNDERSCORE_KEYS = [
+    'id',
+    'timestamp',
+    'source',
+    'cause',
+    'tool_call_metadata',
+    'llm_metrics',
+]
 
 DELETE_FROM_TRAJECTORY_EXTRAS = {
     'screenshot',
@@ -62,8 +70,13 @@ def event_from_dict(data) -> 'Event':
                     metrics.accumulated_cost = value.get('accumulated_cost', 0.0)
                     for cost in value.get('costs', []):
                         metrics._costs.append(Cost(**cost))
-                    metrics.response_latencies = [ResponseLatency(**latency) for latency in value.get('response_latencies', [])]
-                    metrics.token_usages = [TokenUsage(**usage) for usage in value.get('token_usages', [])]
+                    metrics.response_latencies = [
+                        ResponseLatency(**latency)
+                        for latency in value.get('response_latencies', [])
+                    ]
+                    metrics.token_usages = [
+                        TokenUsage(**usage) for usage in value.get('token_usages', [])
+                    ]
                 value = metrics
             setattr(evt, '_' + key, value)
     return evt
@@ -90,6 +103,8 @@ def event_to_dict(event: 'Event') -> dict:
                 d['timestamp'] = d['timestamp'].isoformat()
         if key == 'source' and 'source' in d:
             d['source'] = d['source'].value
+        if key == 'recall_type' and 'recall_type' in d:
+            d['recall_type'] = d['recall_type'].value
         if key == 'tool_call_metadata' and 'tool_call_metadata' in d:
             d['tool_call_metadata'] = d['tool_call_metadata'].model_dump()
         if key == 'llm_metrics' and 'llm_metrics' in d:
@@ -107,7 +122,11 @@ def event_to_dict(event: 'Event') -> dict:
         # props is a dict whose values can include a complex object like an instance of a BaseModel subclass
         # such as CmdOutputMetadata
         # we serialize it along with the rest
-        d['extras'] = {k: _convert_pydantic_to_dict(v) for k, v in props.items()}
+        # we also handle the Enum conversion for RecallObservation
+        d['extras'] = {
+            k: (v.value if isinstance(v, Enum) else _convert_pydantic_to_dict(v))
+            for k, v in props.items()
+        }
         # Include success field for CmdOutputObservation
         if hasattr(event, 'success'):
             d['success'] = event.success

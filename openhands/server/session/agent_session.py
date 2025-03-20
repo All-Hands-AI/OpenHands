@@ -15,7 +15,8 @@ from openhands.core.schema.agent import AgentState
 from openhands.events.action import ChangeAgentStateAction, MessageAction
 from openhands.events.event import EventSource
 from openhands.events.stream import EventStream
-from openhands.microagent import BaseMicroAgent
+from openhands.memory.memory import Memory
+from openhands.microagent.microagent import BaseMicroAgent
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
 from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
@@ -36,6 +37,7 @@ class AgentSession:
     """
 
     sid: str
+    user_id: str | None
     event_stream: EventStream
     file_store: FileStore
     controller: AgentController | None = None
@@ -52,7 +54,7 @@ class AgentSession:
         sid: str,
         file_store: FileStore,
         status_callback: Callable | None = None,
-        github_user_id: str | None = None,
+        user_id: str | None = None,
     ):
         """Initializes a new instance of the Session class
 
@@ -62,12 +64,12 @@ class AgentSession:
         """
 
         self.sid = sid
-        self.event_stream = EventStream(sid, file_store)
+        self.event_stream = EventStream(sid, file_store, user_id)
         self.file_store = file_store
         self._status_callback = status_callback
-        self.github_user_id = github_user_id
+        self.user_id = user_id
         self.logger = OpenHandsLoggerAdapter(
-            extra={'session_id': sid, 'user_id': github_user_id}
+            extra={'session_id': sid, 'user_id': user_id}
         )
 
     async def start(
@@ -126,6 +128,15 @@ class AgentSession:
                 agent_to_llm_config=agent_to_llm_config,
                 agent_configs=agent_configs,
             )
+
+            repo_directory = None
+            if self.runtime and runtime_connected and selected_repository:
+                repo_directory = selected_repository.split('/')[-1]
+            self.memory = await self._create_memory(
+                selected_repository=selected_repository,
+                repo_directory=repo_directory,
+            )
+
             if github_token:
                 self.event_stream.set_secrets(
                     {
@@ -176,7 +187,7 @@ class AgentSession:
             self.event_stream.close()
         if self.controller is not None:
             end_state = self.controller.get_state()
-            end_state.save_to_session(self.sid, self.file_store)
+            end_state.save_to_session(self.sid, self.file_store, self.user_id)
             await self.controller.close()
         if self.runtime is not None:
             self.runtime.close()
@@ -231,7 +242,7 @@ class AgentSession:
 
         kwargs = {}
         if runtime_cls == RemoteRuntime:
-            kwargs['github_user_id'] = self.github_user_id
+            kwargs['user_id'] = self.user_id
 
         self.runtime = runtime_cls(
             config=config,
@@ -260,25 +271,13 @@ class AgentSession:
                 )
             return False
 
-        repo_directory = None
         if selected_repository:
-            repo_directory = await call_sync_from_async(
+            await call_sync_from_async(
                 self.runtime.clone_repo,
                 github_token,
                 selected_repository,
                 selected_branch,
             )
-
-        if agent.prompt_manager:
-            agent.prompt_manager.set_runtime_info(self.runtime)
-            microagents: list[BaseMicroAgent] = await call_sync_from_async(
-                self.runtime.get_microagents_from_selected_repo, selected_repository
-            )
-            agent.prompt_manager.load_microagents(microagents)
-            if selected_repository and repo_directory:
-                agent.prompt_manager.set_repository_info(
-                    selected_repository, repo_directory
-                )
 
         self.logger.debug(
             f'Runtime initialized with plugins: {[plugin.name for plugin in self.runtime.plugins]}'
@@ -342,6 +341,29 @@ class AgentSession:
 
         return controller
 
+    async def _create_memory(
+        self, selected_repository: str | None, repo_directory: str | None
+    ) -> Memory:
+        memory = Memory(
+            event_stream=self.event_stream,
+            sid=self.sid,
+            status_callback=self._status_callback,
+        )
+
+        if self.runtime:
+            # sets available hosts and other runtime info
+            memory.set_runtime_info(self.runtime)
+
+            # loads microagents from repo/.openhands/microagents
+            microagents: list[BaseMicroAgent] = await call_sync_from_async(
+                self.runtime.get_microagents_from_selected_repo, selected_repository
+            )
+            memory.load_user_workspace_microagents(microagents)
+
+            if selected_repository and repo_directory:
+                memory.set_repository_info(selected_repository, repo_directory)
+        return memory
+
     def _maybe_restore_state(self) -> State | None:
         """Helper method to handle state restore logic."""
         restored_state = None
@@ -350,7 +372,9 @@ class AgentSession:
         # Use a heuristic to figure out if we should have a state:
         # if we have events in the stream.
         try:
-            restored_state = State.restore_from_session(self.sid, self.file_store)
+            restored_state = State.restore_from_session(
+                self.sid, self.file_store, self.user_id
+            )
             self.logger.debug(f'Restored state from session, sid: {self.sid}')
         except Exception as e:
             if self.event_stream.get_latest_event_id() > 0:

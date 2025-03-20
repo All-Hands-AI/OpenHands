@@ -37,7 +37,9 @@ class ConversationManager(ABC):
         """Clean up the conversation manager."""
 
     @abstractmethod
-    async def attach_to_conversation(self, sid: str) -> Conversation | None:
+    async def attach_to_conversation(
+        self, sid: str, user_id: str | None = None
+    ) -> Conversation | None:
         """Attach to an existing conversation or create a new one."""
 
     @abstractmethod
@@ -46,7 +48,12 @@ class ConversationManager(ABC):
 
     @abstractmethod
     async def join_conversation(
-        self, sid: str, connection_id: str, settings: Settings, user_id: str | None
+        self,
+        sid: str,
+        connection_id: str,
+        settings: Settings,
+        user_id: str | None,
+        github_user_id: str | None,
     ) -> EventStream | None:
         """Join a conversation and return its event stream."""
 
@@ -74,6 +81,7 @@ class ConversationManager(ABC):
         settings: Settings,
         user_id: str | None,
         initial_user_msg: MessageAction | None = None,
+        github_user_id: str | None = None,
     ) -> EventStream:
         """Start an event loop if one is not already running"""
 

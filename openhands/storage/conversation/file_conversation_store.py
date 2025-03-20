@@ -85,8 +85,8 @@ class FileConversationStore(ConversationStore):
             try:
                 conversations.append(await self.get_metadata(conversation_id))
             except Exception:
-                logger.error(
-                    f'Error loading conversation: {conversation_id}',
+                logger.warning(
+                    f'Could not load conversation metadata: {conversation_id}'
                 )
         conversations.sort(key=_sort_key, reverse=True)
         conversations = conversations[start:end]
@@ -101,7 +101,7 @@ class FileConversationStore(ConversationStore):
 
     @classmethod
     async def get_instance(
-        cls, config: AppConfig, user_id: str | None
+        cls, config: AppConfig, user_id: str | None, github_user_id: str | None
     ) -> FileConversationStore:
         file_store = get_file_store(config.file_store, config.file_store_path)
         return FileConversationStore(file_store)
