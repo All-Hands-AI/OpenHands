@@ -209,7 +209,11 @@ class LLM(RetryMixin, DebugMixin):
             # if the agent or caller has defined tools, and we mock via prompting, convert the messages
             if mock_function_calling and 'tools' in kwargs:
                 messages = convert_fncall_messages_to_non_fncall_messages(
-                    messages, kwargs['tools']
+                    messages,
+                    kwargs['tools'],
+                    add_in_context_learning_example=bool(
+                        'openhands-lm' not in self.config.model
+                    ),
                 )
                 kwargs['messages'] = messages
 
