@@ -9,10 +9,10 @@ from typing import List, Optional
 
 import networkx as nx
 
-from openhands.runtime.plugins.agent_skills.repo_ops.repo_index.chunk_index.code_retriever import (
+from .repo_index.chunk_index.code_retriever import (
     build_code_retriever_from_repo as build_code_retriever,
 )
-from openhands.runtime.plugins.agent_skills.repo_ops.repo_index.dependency_graph import (
+from .repo_index.dependency_graph import (
     EDGE_TYPE_CONTAINS,
     NODE_TYPE_CLASS,
     NODE_TYPE_DIRECTORY,
@@ -25,44 +25,36 @@ from openhands.runtime.plugins.agent_skills.repo_ops.repo_index.dependency_graph
     build_graph,
     traverse_tree_structure,
 )
-from openhands.runtime.plugins.agent_skills.repo_ops.repo_index.dependency_graph.index_retriever import (
+from .repo_index.dependency_graph.index_retriever import (
     build_module_retriever_from_graph as build_module_retriever,
 )
-from openhands.runtime.plugins.agent_skills.repo_ops.repo_index.dependency_graph.index_retriever import (
+from .repo_index.dependency_graph.index_retriever import (
     build_retriever_from_persist_dir as load_retriever,
 )
-from openhands.runtime.plugins.agent_skills.repo_ops.repo_index.dependency_graph.index_retriever import (
+from .repo_index.dependency_graph.index_retriever import (
     fuzzy_retrieve_from_graph_nodes as fuzzy_retrieve,
 )
-from openhands.runtime.plugins.agent_skills.repo_ops.repo_index.dependency_graph.traverse_graph import (
+from .repo_index.dependency_graph.traverse_graph import (
     is_test_file,
     traverse_json_structure,
 )
-from openhands.runtime.plugins.agent_skills.repo_ops.result_format import (
+from .result_format import (
     QueryInfo,
     QueryResult,
 )
 from openhands.runtime.plugins.agent_skills.repo_ops.util import (
-    # get_meta_data,
     find_matching_files_from_list,
     merge_intervals,
 )
-
-# from util.benchmark.setup_repo import setup_repo
-# import subprocess
 # import logging
 # logger = logging.getLogger(__name__)
 
 # from openhands.core.logger import openhands_logger as logger
 # SET THIS IF YOU WANT TO USE THE PREPROCESSED FILES
 
-REPO_PATH = os.environ.get('REPO_PATH', '')
-BASE_INDEX_DIR = os.path.join(REPO_PATH, '_index_data')
-GRAPH_INDEX_DIR = os.path.join(BASE_INDEX_DIR, 'graph_index_v2.3')
-BM25_INDEX_DIR = os.path.join(BASE_INDEX_DIR, 'bm25_index')
-
-# CURRENT_ISSUE_ID: str | None = None
-# CURRENT_INSTANCE: dict | None = None
+REPO_PATH: str | None = None
+GRAPH_INDEX_DIR: str | None = None
+BM25_INDEX_DIR: str | None = None
 ALL_FILE: list | None = None
 ALL_CLASS: list | None = None
 ALL_FUNC: list | None = None
@@ -73,63 +65,63 @@ DP_GRAPH: nx.MultiDiGraph | None = None
 
 
 def parse_repo_index():
-    # setup graph traverser
+    global REPO_PATH, GRAPH_INDEX_DIR, BM25_INDEX_DIR
     global DP_GRAPH_ENTITY_SEARCHER, DP_GRAPH_DEPENDENCY_SEARCHER, DP_GRAPH
-    graph_index_file = f'{GRAPH_INDEX_DIR}/code_graph.pkl'
-    if not os.path.exists(graph_index_file):
-        try:
-            os.makedirs(GRAPH_INDEX_DIR, exist_ok=True)
-            G = build_graph(REPO_PATH, global_import=True)
-            with open(graph_index_file, 'wb') as f:
-                pickle.dump(G, f)
-            # logger.debug(f'Parsed repo `{REPO_PATH}`')
-            print(f'Parsed repo `{REPO_PATH}`')
-        except Exception as e:
-            # logger.error(f'Error processing repo `{REPO_PATH}`: {e}')
-            print(f'Error processing repo `{REPO_PATH}`: {e}')
-    else:
-        G = pickle.load(open(graph_index_file, 'rb'))
+    
+    if not REPO_PATH:
+        REPO_PATH = os.environ.get('REPO_PATH', '')
+        # print('='*5, REPO_PATH, '='*5) 
 
-    DP_GRAPH_ENTITY_SEARCHER = RepoEntitySearcher(G)
-    DP_GRAPH_DEPENDENCY_SEARCHER = RepoDependencySearcher(G)
-    DP_GRAPH = G
+    if not GRAPH_INDEX_DIR or BM25_INDEX_DIR:
+        BASE_INDEX_DIR = os.path.join(REPO_PATH, '_index_data')
+        GRAPH_INDEX_DIR = os.path.join(BASE_INDEX_DIR, 'graph_index_v2.3')
+        BM25_INDEX_DIR = os.path.join(BASE_INDEX_DIR, 'bm25_index')
+        # print('='*5, BASE_INDEX_DIR, '='*5)
+    
+    if not DP_GRAPH:
+        # setup graph traverser
+        graph_index_file = os.path.join(GRAPH_INDEX_DIR, 'code_graph.pkl')
+        if not os.path.exists(graph_index_file):
+            try:
+                os.makedirs(GRAPH_INDEX_DIR, exist_ok=True)
+                G = build_graph(REPO_PATH, global_import=True)
+                with open(graph_index_file, 'wb') as f:
+                    pickle.dump(G, f)
+                # logger.debug(f'Parsed repo `{REPO_PATH}`')
+                print(f'Parsed repo `{REPO_PATH}`')
+            except Exception as e:
+                # logger.error(f'Error processing repo `{REPO_PATH}`: {e}')
+                print(f'Error processing repo `{REPO_PATH}`: {e}')
+        else:
+            G = pickle.load(open(graph_index_file, 'rb'))
 
-    global ALL_FILE, ALL_CLASS, ALL_FUNC
-    ALL_FILE = DP_GRAPH_ENTITY_SEARCHER.get_all_nodes_by_type(NODE_TYPE_FILE)
-    ALL_CLASS = DP_GRAPH_ENTITY_SEARCHER.get_all_nodes_by_type(NODE_TYPE_CLASS)
-    ALL_FUNC = DP_GRAPH_ENTITY_SEARCHER.get_all_nodes_by_type(NODE_TYPE_FUNCTION)
+        DP_GRAPH_ENTITY_SEARCHER = RepoEntitySearcher(G)
+        DP_GRAPH_DEPENDENCY_SEARCHER = RepoDependencySearcher(G)
+        DP_GRAPH = G
 
-    # logging.debug(f'Set CURRENT_ISSUE_ID = {CURRENT_ISSUE_ID}')
-    # logger.debug(f'Process repo {REPO_PATH} successfully.')
-    print(f'Process repo {REPO_PATH} successfully.')
+        global ALL_FILE, ALL_CLASS, ALL_FUNC
+        ALL_FILE = DP_GRAPH_ENTITY_SEARCHER.get_all_nodes_by_type(NODE_TYPE_FILE)
+        ALL_CLASS = DP_GRAPH_ENTITY_SEARCHER.get_all_nodes_by_type(NODE_TYPE_CLASS)
+        ALL_FUNC = DP_GRAPH_ENTITY_SEARCHER.get_all_nodes_by_type(NODE_TYPE_FUNCTION)
 
-
-if REPO_PATH:
-    # logger.debug(f'Begin to process repo {REPO_PATH}.')
-    print(f'Begin to process repo {REPO_PATH}.')
-    parse_repo_index()
-else:
-    # logger.debug("no need to process repo")
-    print('no need to process repo')
+        # logging.debug(f'Set CURRENT_ISSUE_ID = {CURRENT_ISSUE_ID}')
+        # logger.debug(f'Process repo {REPO_PATH} successfully.')
+        print(f'Process repo {REPO_PATH} successfully.')
 
 
 def get_current_repo_modules():
-    # global ALL_FILE, ALL_CLASS, ALL_FUNC
     return ALL_FILE, ALL_CLASS, ALL_FUNC
 
 
 def get_graph_entity_searcher() -> RepoEntitySearcher:
-    # global DP_GRAPH_ENTITY_SEARCHER
     return DP_GRAPH_ENTITY_SEARCHER
 
 
 def get_graph_dependency_searcher() -> RepoDependencySearcher:
-    # global DP_GRAPH_DEPENDENCY_SEARCHER
     return DP_GRAPH_DEPENDENCY_SEARCHER
 
 
 def get_graph():
-    # global DP_GRAPH
     assert DP_GRAPH is not None
     return DP_GRAPH
 
@@ -184,10 +176,10 @@ def get_code_block_by_line_nums(query_info, context_window=20):
     res_modules = []
     # res_code_blocks = None
     for line in line_nums:
-        # 首先检查是哪个module的代码
+        # First check if within a certain module
         module_data = get_module_name_by_line_num(file_path, line)
 
-        # 如果不是某个module, 则搜索上下20行
+        # if not within any modules, then search for the nearby lines.
         if not module_data:
             min_line_num = max(1, line - context_window)
             max_line_num = min(file_data['end_line'], line + context_window)
@@ -564,7 +556,7 @@ def search_code_snippets(
         # Combined search for a module name and within a specific file pattern
         result = search_code_snippets(search_terms=["MyClass"], file_path_or_pattern="src/**/*.py")
     """
-
+    parse_repo_index()
     files, _, _ = get_current_repo_modules()
     all_file_paths = [file['name'] for file in files]
 
@@ -613,15 +605,15 @@ def search_code_snippets(
             cur_query_results.extend(query_results)
 
             # search content
-            # if continue_search:
-            #     query_results = bm25_content_retrieve(query_info=query_info, include_files=include_files)
-            #     cur_query_results.extend(query_results)
+            if continue_search:
+                query_results = bm25_content_retrieve(query_info=query_info, include_files=include_files)
+                cur_query_results.extend(query_results)
 
-            # elif i != (len(filter_terms)-1):
-            #     joint_terms[i] = ''
-            #     filter_terms[-1] = ' '.join([t for t in joint_terms if t.strip()])
-            #     if filter_terms[-1] in filter_terms[:-1]:
-            #         filter_terms[-1] = ''
+            elif i != (len(filter_terms)-1):
+                joint_terms[i] = ''
+                filter_terms[-1] = ' '.join([t for t in joint_terms if t.strip()])
+                if filter_terms[-1] in filter_terms[:-1]:
+                    filter_terms[-1] = ''
 
             all_query_results.extend(cur_query_results)
 
@@ -744,7 +736,8 @@ def get_entity_contents(entity_names: List[str]):
         >>> get_entity_contents(['src/my_file.py:MyClass.func_name'])
         >>> get_entity_contents(['src/my_file.py'])
     """
-
+    
+    parse_repo_index()
     searcher = get_graph_entity_searcher()
 
     result = ''
@@ -832,16 +825,16 @@ def bm25_content_retrieve(
     query = query_info.term
 
     # persist_path = os.path.join(BM25_INDEX_DIR, instance_id)
-    if os.path.exists(f'{BM25_INDEX_DIR}/corpus.jsonl'):
+    if os.path.exists(os.path.join(BM25_INDEX_DIR, 'corpus.jsonl')):
         # TODO: if similairy_top_k > cache's setting, then regenerate
         retriever = load_retriever(BM25_INDEX_DIR)
     else:
         # repo_path = get_repo_save_dir()
         # repo_dir = setup_repo(instance_data=instance, repo_base_dir=repo_playground,
         # dataset=None, split=None)
-        # absolute_repo_dir = os.path.abspath(REPO_SAVE_DIR)
+        absolute_repo_dir = os.path.abspath(REPO_PATH)
         retriever = build_code_retriever(
-            REPO_PATH, persist_path=BM25_INDEX_DIR, similarity_top_k=similarity_top_k
+            absolute_repo_dir, persist_path=BM25_INDEX_DIR, similarity_top_k=similarity_top_k
         )
 
     # similarity: {score}
@@ -1094,6 +1087,7 @@ def explore_tree_structure(
     result : object
         An object representing the traversal results, which includes discovered entities and their dependencies.
     """
+    parse_repo_index()
     start_entities, hints = _validate_graph_explorer_inputs(
         start_entities,
         direction,

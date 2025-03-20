@@ -70,48 +70,71 @@ I've uploaded a python code repository in the directory {workspace_dir_name}. Co
 {instance.problem_statement}
 </issue_description>
 
-Can you help me implement the necessary changes to the repository so that the requirements specified in the <issue_description> are met?
-I've already taken care of all changes to any of the test files described in the <issue_description>. This means you DON'T have to modify the testing logic or any of the tests in any way!
-Also the development Python environment is already set up for you (i.e., all dependencies already installed), so you don't need to install other packages.
-Your task is to make the minimal changes to non-test files in the /workspace/{workspace_dir_name} directory to ensure the <issue_description> is satisfied.
+Your objective is to localize the specific files, classes or functions, and lines of code that need modification or contain key information to resolve the issue.
 
-Follow these steps to resolve the issue:
+Follow these steps to localize the issue:
+## Step 1: Categorize and Extract Key Problem Information
+ - Classify the problem statement into the following categories:
+    Problem description, error trace, code to reproduce the bug, and additional context.
+ - Identify modules in the "{instance.instance_id.split('_')[0]}" package mentioned in each category.
+ - Use extracted keywords and line numbers to search for relevant code references for additional context.
 
-1. EXPLORATION: First, thoroughly explore the repository structure using tools like `find` and `grep`.
-   - Identify all files mentioned in the problem statement
-   - Locate where the issue occurs in the codebase
-   - Understand the surrounding context and dependencies
-   - Use `grep` to search for relevant functions, classes, or error messages
+## Step 2: Locate Referenced Modules
+- Accurately determine specific modules
+    - Explore the repo to familiarize yourself with its structure.
+    - Analyze the described execution flow to identify specific modules or components being referenced.
+- Pay special attention to distinguishing between modules with similar names using context and described execution flow.
+- Output Format for collected relevant modules:
+    - Use the format: 'file_path:QualifiedName'
+    - E.g., for a function `calculate_sum` in the `MathUtils` class located in `src/helpers/math_helpers.py`, represent it as: 'src/helpers/math_helpers.py:MathUtils.calculate_sum'.
 
-2. ANALYSIS: Based on your exploration, think carefully about the problem and propose 2-5 possible approaches to fix the issue.
-   - Analyze the root cause of the problem
-   - Consider trade-offs between different solutions
-   - Select the most promising approach and explain your reasoning
+## Step 3: Analyze and Reproducing the Problem
+- Clarify the Purpose of the Issue
+    - If expanding capabilities: Identify where and how to incorporate new behavior, fields, or modules.
+    - If addressing unexpected behavior: Focus on localizing modules containing potential bugs.
+- Reconstruct the execution flow
+    - Identify main entry points triggering the issue.
+    - Trace function calls, class interactions, and sequences of events.
+    - Identify potential breakpoints causing the issue.
+    Important: Keep the reconstructed flow focused on the problem, avoiding irrelevant details.
 
-3. TEST CREATION: Before implementing any fix, create a script to reproduce and verify the issue.
-   - Look at existing test files in the repository to understand the test format/structure
-   - Create a minimal reproduction script that demonstrates the issue
-   - Run your script to confirm the error exists
+## Step 4: Locate Areas for Modification
+- Locate specific files, functions, or lines of code requiring changes or containing critical information for resolving the issue.
+- Consider upstream and downstream dependencies that may affect or be affected by the issue.
+- If applicable, identify where to introduce new fields, functions, or variables.
+- Think Thoroughly: List multiple potential solutions and consider edge cases that could impact the resolution.
 
-4. IMPLEMENTATION: Edit the source code to implement your chosen solution.
-   - Make minimal, focused changes to fix the issue
+## Output Format for Final Results:
+Your final output should list the locations requiring modification, wrapped with triple backticks ```
+Each location should include the file path, class name (if applicable), function name, or line numbers, ordered by importance.
+Your answer would better include about 5 files.
 
-5. VERIFICATION: Test your implementation thoroughly.
-   - Run your reproduction script to verify the fix works
-   - Add edge cases to your test script to ensure comprehensive coverage
-   - Run existing tests related to the modified code to ensure you haven't broken anything
+### Examples:
+```
+full_path1/file1.py
+line: 10
+class: MyClass1
+function: my_function1
 
-6. FINAL REVIEW: Carefully re-read the problem description and compare your changes with the base commit {instance["base_commit"]}.
-   - Ensure you've fully addressed all requirements
-   - Run any tests in the repository related to:
-     * The issue you are fixing
-     * The files you modified
-     * The functions you changed
-   - If any tests fail, revise your implementation until all tests pass
+full_path2/file2.py
+line: 76
+function: MyClass2.my_function2
 
-Be thorough in your exploration, testing, and reasoning. It's fine if your thinking process is lengthy - quality and completeness are more important than brevity.
+full_path3/file3.py
+line: 24
+line: 156
+function: my_function3
+```
+
+Return just the location(s)
+
+Note: Your thinking should be thorough and so it's fine if it's very long.
 """
-
+    instruction += (
+            'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
+            'Don\'t include any lambda functions!\n'
+            'You should NOT modify any files!\n'
+        )
     if RUN_WITH_BROWSING:
         instruction += """
 <IMPORTANT!>
