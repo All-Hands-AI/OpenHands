@@ -54,10 +54,9 @@ async def connect(connection_id: str, environ):
     event_stream = await conversation_manager.join_conversation(
         conversation_id, connection_id, settings, user_id, github_user_id
     )
-    if not event_stream:
-        raise ConnectionRefusedError(
-            'Event stream not found', {'msg_id': 'CONVERSATION$STREAM_NOT_FOUND'}
-        )
+    logger.info(
+        f'Connected to conversation {conversation_id} with connection_id {connection_id}'
+    )
 
     agent_state_changed = None
     async_stream = AsyncEventStreamWrapper(event_stream, latest_event_id + 1)
@@ -70,6 +69,7 @@ async def connect(connection_id: str, environ):
         elif isinstance(event, AgentStateChangedObservation):
             agent_state_changed = event
         else:
+            logger.info(f'oh_event:{event.event_type}')
             await sio.emit('oh_event', event_to_dict(event), to=connection_id)
     if agent_state_changed:
         await sio.emit('oh_event', event_to_dict(agent_state_changed), to=connection_id)
