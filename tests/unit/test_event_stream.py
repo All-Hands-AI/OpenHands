@@ -167,7 +167,7 @@ def test_get_matching_events_source_filter(temp_dir: str):
     # Update the serialized version
     data = event_to_dict(event)
     event_stream.file_store.write(
-        event_stream._get_filename_for_id(event.id), json.dumps(data)
+        event_stream._get_filename_for_id(event.id, event_stream.user_id), json.dumps(data)
     )
 
     # Verify that source comparison works correctly
