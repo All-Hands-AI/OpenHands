@@ -65,14 +65,16 @@ def initialize_runtime(
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    action = CmdRunAction(command='git clone https://Fazek007:Be20031128@github.com/Fazek007/habit-tracker.git')
 
-    action = CmdRunAction(command='git clone https://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@github.com/Fazek007/habit-tracker.git')
+    
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     
     if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
         raise RuntimeError(f'Failed to change directory to /workspace.\n{obs}')
+        
 
     if platform == Platform.GITLAB and os.getenv('GITLAB_CI') == 'true':
         action = CmdRunAction(command='sudo chown -R 1001:0 /workspace/*')
