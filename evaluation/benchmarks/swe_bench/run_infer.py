@@ -76,26 +76,27 @@ Your task is to make the minimal changes to non-test files in the /workspace/{wo
 
 Follow these steps in order to resolve the issue:
 
-0. FRAMING: restate the problem highlight key data
-   - Analyze message errors, stack traces, and technical details.
-   - Explain the problem in clear terms
+0. READING: read the problem and reword it in clearer terms
+   - Hightlight message errors, method names, variables, file names, stack traces, and technical details.
+   - Explain the problem in clear terms.
    - Enumerate the steps to reproduce the problem.
 
-1. EXPLORATION: Thoroughly explore the repository structure using tools like `find` and `grep`.
-   - Use `grep` to search for relevant methods, classes, keywords or error messages
-   - Identify all files related to the problem statement
-   - Understand the surrounding context and dependencies
-   - Propose the locations where the issue could be fixed and explain why.
+1. EXPLORATION: find the files that are related to the problem and possible solutions
+   - Use `grep` to search for relevant methods, classes, keywords and error messages.
+   - Identify all files related to the problem statement.
+   - Propose the methods and files to fixe the issue and explain why.
+   - From the possible file locations, select the most likely location to fix the file.
 
-2. ANALYSIS: Think carefully about the problem and propose 2-5 possible approaches to fix the issue.
+2. TEST CREATION: before implementing any fix, create a script to reproduce and verify the issue.
+   - Look at existing test files in the repository to understand the test format/structure
+   - Create a minimal reproduction script that reproduces the located issue
+   - Run the reproduction script to confirm you are reproducing the issue
+   - Adjust the reproduction script as necessary
+
+3. ANALYSIS: Think carefully about the problem and propose 2-5 possible approaches to fix the issue.
    - Analyze the root cause of the problem
    - Consider trade-offs between different solutions
-   - Taking everything into account, propose how you can best fix the issue.
-
-3. TEST CREATION: Before implementing any fix, create a script to reproduce and verify the issue.
-   - Look at existing test files in the repository to understand the test format/structure
-   - Create a minimal reproduction script that demonstrates the issue
-   - Run your script to confirm the error exists
+   - Select the most promising approach and explain your reasoning
 
 4. IMPLEMENTATION: Edit the source code to implement your chosen solution.
    - Make minimal, focused changes to fix the issue
