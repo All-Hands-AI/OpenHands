@@ -94,6 +94,7 @@ class AgentController:
         AgentStateChangedObservation,
     )
     _cached_first_user_message: MessageAction | None = None
+    _cached_first_user_message: MessageAction | None = None
 
     def __init__(
         self,
@@ -945,20 +946,7 @@ class AgentController:
         # If we have a truncation point, get first user message and then rest of history
         if hasattr(self.state, 'truncation_id') and self.state.truncation_id > 0:
             # Find first user message from stream
-            first_user_msg = next(
-                (
-                    e
-                    for e in self.event_stream.get_events(
-                        start_id=start_id,
-                        end_id=end_id,
-                        reverse=False,
-                        filter_out_type=self.filter_out,
-                        filter_hidden=True,
-                    )
-                    if isinstance(e, MessageAction) and e.source == EventSource.USER
-                ),
-                None,
-            )
+            first_user_msg = self._first_user_message(start_id=start_id, end_id=end_id)
             if first_user_msg:
                 events.append(first_user_msg)
 
@@ -1201,25 +1189,42 @@ class AgentController:
                 return result
         return False
 
-    def _first_user_message(self) -> MessageAction | None:
+    def _first_user_message(
+        self, start_id: int = -1, end_id: int = -1
+    ) -> MessageAction | None:
         """Get the first user message for this agent.
 
         For regular agents, this is the first user message from the beginning (start_id=0).
         For delegate agents, this is the first user message after the delegate's start_id.
 
         Returns:
-            MessageAction | None: The first user message, or None if no user message found
+            The first user message, or None if no user message found (though that should never happen)
         """
-        # Return cached message if any
         if self._cached_first_user_message is not None:
             return self._cached_first_user_message
+
+        # start_id is typically saved in state as state.start_id
+        if start_id == -1:
+            start_id = self.state.start_id if self.state.start_id >= 0 else 0
+
+        # end_id is saved in state as state.end_id
+        if end_id == -1:
+            end_id = (
+                self.state.end_id
+                if self.state.end_id >= 0
+                else self.event_stream.get_latest_event_id()
+            )
 
         # Find the first user message
         self._cached_first_user_message = next(
             (
                 e
                 for e in self.event_stream.get_events(
-                    start_id=self.state.start_id,
+                    start_id=start_id,
+                    end_id=end_id,
+                    reverse=False,
+                    filter_out_type=self.filter_out,
+                    filter_hidden=True,
                 )
                 if isinstance(e, MessageAction) and e.source == EventSource.USER
             ),
