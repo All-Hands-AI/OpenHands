@@ -46,6 +46,7 @@ class AppConfig(BaseModel):
         file_uploads_allowed_extensions: Allowed file extensions. `['.*']` allows all.
         cli_multiline_input: Whether to enable multiline input in CLI. When disabled,
             input is read line by line. When enabled, input continues until /exit command.
+        custom_microagents_dir: Path to the directory containing microagents that apply to all projects. Absolute path.
     """
 
     llms: dict[str, LLMConfig] = Field(default_factory=dict)
@@ -86,7 +87,7 @@ class AppConfig(BaseModel):
     max_concurrent_conversations: int = Field(
         default=3
     )  # Maximum number of concurrent agent loops allowed per user
-
+    custom_microagents_dir: str | None = Field(default=None)
     defaults_dict: ClassVar[dict] = {}
 
     model_config = {'extra': 'forbid'}
