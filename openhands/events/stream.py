@@ -406,7 +406,7 @@ class EventStream:
         # Text search in event content if query provided
         if query:
             event_dict = event_to_dict(event)
-            event_str = str(event_dict).lower()
+            event_str = json.dumps(event_dict).lower()
             if query.lower() not in event_str:
                 return True
 
