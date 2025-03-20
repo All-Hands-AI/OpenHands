@@ -111,12 +111,13 @@ class State:
                 get_conversation_agent_state_filename(sid, user_id), encoded
             )
 
-            # see if state is in old directory. If yes, delete it.
-            filename = get_conversation_agent_state_filename(sid)
-            try:
-                file_store.delete(filename)
-            except Exception:
-                pass
+            # see if state is in the old directory on saas use case and delete it.
+            if user_id:
+                filename = get_conversation_agent_state_filename(sid)
+                try:
+                    file_store.delete(filename)
+                except Exception:
+                    pass
         except Exception as e:
             logger.error(f'Failed to save state to session: {e}')
             raise e
