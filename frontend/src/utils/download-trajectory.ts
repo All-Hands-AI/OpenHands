@@ -11,7 +11,7 @@ export async function downloadTrajectory(
       "Your browser doesn't support downloading files. Please use Chrome, Edge, or another browser that supports the File System Access API.",
     );
   }
-  const options = {
+  const options: SaveFilePickerOptions = {
     suggestedName: `trajectory-${conversationId}.json`,
     types: [
       {
@@ -23,7 +23,6 @@ export async function downloadTrajectory(
     ],
   };
 
-  // @ts-expect-error - showSaveFilePicker is not in the TypeScript DOM lib yet
   const fileHandle = await window.showSaveFilePicker(options);
   const writable = await fileHandle.createWritable();
   await writable.write(JSON.stringify(data, null, 2));
