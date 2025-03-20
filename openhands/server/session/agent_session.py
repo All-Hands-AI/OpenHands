@@ -1,9 +1,8 @@
 import asyncio
 import time
 from logging import LoggerAdapter
-from typing import Callable
-
-from pydantic import SecretStr
+from types import MappingProxyType
+from typing import Callable, cast
 
 from openhands.controller import AgentController
 from openhands.controller.agent import Agent
@@ -15,6 +14,7 @@ from openhands.core.schema.agent import AgentState
 from openhands.events.action import ChangeAgentStateAction, MessageAction
 from openhands.events.event import EventSource
 from openhands.events.stream import EventStream
+from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderHandler
 from openhands.memory.memory import Memory
 from openhands.microagent.microagent import BaseMicroAgent
 from openhands.runtime import get_runtime_cls
@@ -37,6 +37,7 @@ class AgentSession:
     """
 
     sid: str
+    user_id: str | None
     event_stream: EventStream
     file_store: FileStore
     controller: AgentController | None = None
@@ -63,7 +64,7 @@ class AgentSession:
         """
 
         self.sid = sid
-        self.event_stream = EventStream(sid, file_store)
+        self.event_stream = EventStream(sid, file_store, user_id)
         self.file_store = file_store
         self._status_callback = status_callback
         self.user_id = user_id
@@ -77,10 +78,10 @@ class AgentSession:
         config: AppConfig,
         agent: Agent,
         max_iterations: int,
+        git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
         max_budget_per_task: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
-        github_token: SecretStr | None = None,
         selected_repository: str | None = None,
         selected_branch: str | None = None,
         initial_message: MessageAction | None = None,
@@ -114,7 +115,7 @@ class AgentSession:
                 runtime_name=runtime_name,
                 config=config,
                 agent=agent,
-                github_token=github_token,
+                git_provider_tokens=git_provider_tokens,
                 selected_repository=selected_repository,
                 selected_branch=selected_branch,
             )
@@ -136,12 +137,12 @@ class AgentSession:
                 repo_directory=repo_directory,
             )
 
-            if github_token:
-                self.event_stream.set_secrets(
-                    {
-                        'github_token': github_token.get_secret_value(),
-                    }
+            if git_provider_tokens:
+                provider_handler = ProviderHandler(provider_tokens=git_provider_tokens)
+                await provider_handler.set_event_stream_secrets(
+                    self.event_stream
                 )
+
             if not self._closed:
                 if initial_message:
                     self.event_stream.add_event(initial_message, EventSource.USER)
@@ -186,7 +187,7 @@ class AgentSession:
             self.event_stream.close()
         if self.controller is not None:
             end_state = self.controller.get_state()
-            end_state.save_to_session(self.sid, self.file_store)
+            end_state.save_to_session(self.sid, self.file_store, self.user_id)
             await self.controller.close()
         if self.runtime is not None:
             self.runtime.close()
@@ -211,7 +212,7 @@ class AgentSession:
         runtime_name: str,
         config: AppConfig,
         agent: Agent,
-        github_token: SecretStr | None = None,
+        git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
         selected_repository: str | None = None,
         selected_branch: str | None = None,
     ) -> bool:
@@ -231,17 +232,6 @@ class AgentSession:
 
         self.logger.debug(f'Initializing runtime `{runtime_name}` now...')
         runtime_cls = get_runtime_cls(runtime_name)
-        env_vars = (
-            {
-                'GITHUB_TOKEN': github_token.get_secret_value(),
-            }
-            if github_token
-            else None
-        )
-
-        kwargs = {}
-        if runtime_cls == RemoteRuntime:
-            kwargs['user_id'] = self.user_id
 
         self.runtime = runtime_cls(
             config=config,
@@ -251,8 +241,8 @@ class AgentSession:
             status_callback=self._status_callback,
             headless_mode=False,
             attach_to_existing=False,
-            env_vars=env_vars,
-            **kwargs,
+            git_provider_tokens=git_provider_tokens,
+            user_id=self.user_id,
         )
 
         # FIXME: this sleep is a terrible hack.
@@ -270,10 +260,10 @@ class AgentSession:
                 )
             return False
 
-        if selected_repository:
+        if selected_repository and git_provider_tokens:
             await call_sync_from_async(
                 self.runtime.clone_repo,
-                github_token,
+                git_provider_tokens,
                 selected_repository,
                 selected_branch,
             )
@@ -371,7 +361,9 @@ class AgentSession:
         # Use a heuristic to figure out if we should have a state:
         # if we have events in the stream.
         try:
-            restored_state = State.restore_from_session(self.sid, self.file_store)
+            restored_state = State.restore_from_session(
+                self.sid, self.file_store, self.user_id
+            )
             self.logger.debug(f'Restored state from session, sid: {self.sid}')
         except Exception as e:
             if self.event_stream.get_latest_event_id() > 0:

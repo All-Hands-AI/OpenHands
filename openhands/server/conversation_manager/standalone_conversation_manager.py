@@ -63,9 +63,11 @@ class StandaloneConversationManager(ConversationManager):
             self._cleanup_task.cancel()
             self._cleanup_task = None
 
-    async def attach_to_conversation(self, sid: str) -> Conversation | None:
+    async def attach_to_conversation(
+        self, sid: str, user_id: str | None = None
+    ) -> Conversation | None:
         start_time = time.time()
-        if not await session_exists(sid, self.file_store):
+        if not await session_exists(sid, self.file_store, user_id=user_id):
             return None
 
         async with self._conversations_lock:
@@ -88,7 +90,9 @@ class StandaloneConversationManager(ConversationManager):
                 return conversation
 
             # Create new conversation if none exists
-            c = Conversation(sid, file_store=self.file_store, config=self.config)
+            c = Conversation(
+                sid, file_store=self.file_store, config=self.config, user_id=user_id
+            )
             try:
                 await c.connect()
             except AgentRuntimeUnavailableError as e:
@@ -119,7 +123,7 @@ class StandaloneConversationManager(ConversationManager):
         )
         await self.sio.enter_room(connection_id, ROOM_KEY.format(sid=sid))
         self._local_connection_id_to_session_id[connection_id] = sid
-        event_stream = await self._get_event_stream(sid)
+        event_stream = await self._get_event_stream(sid, user_id)
         if not event_stream:
             return await self.maybe_start_agent_loop(
                 sid, settings, user_id, github_user_id=github_user_id
@@ -299,7 +303,7 @@ class StandaloneConversationManager(ConversationManager):
             except ValueError:
                 pass  # Already subscribed - take no action
 
-        event_stream = await self._get_event_stream(sid)
+        event_stream = await self._get_event_stream(sid, user_id)
         if not event_stream:
             logger.error(
                 f'No event stream after starting agent loop: {sid}',
@@ -308,7 +312,9 @@ class StandaloneConversationManager(ConversationManager):
             raise RuntimeError(f'no_event_stream:{sid}')
         return event_stream
 
-    async def _get_event_stream(self, sid: str) -> EventStream | None:
+    async def _get_event_stream(
+        self, sid: str, user_id: str | None
+    ) -> EventStream | None:
         logger.info(f'_get_event_stream:{sid}', extra={'session_id': sid})
         session = self._local_agent_loops_by_sid.get(sid)
         if session:
