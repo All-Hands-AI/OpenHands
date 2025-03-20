@@ -99,6 +99,7 @@ reportlab = "*"
 [tool.coverage.run]
 concurrency = ["gevent"]
 
+
 [tool.poetry.group.runtime.dependencies]
 jupyterlab = "*"
 notebook = "*"
@@ -127,12 +128,13 @@ ignore = ["D1"]
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
+
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"
 whatthepatch = "*"
 retry = "*"
 evaluate = "*"
-swebench = "^3.0.8"
+swebench = { git = "https://github.com/All-Hands-AI/SWE-Bench.git", branch = "xw/run-all-test" }
 swegym = { git = "https://github.com/SWE-Gym/SWE-Bench-Package.git" }
 commit0 = "*"
 func_timeout = "*"
