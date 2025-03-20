@@ -83,7 +83,7 @@ def create_runtime(
 
 def initialize_repository_for_runtime(
     runtime: Runtime,
-    selected_repository: "Fazek007/habit-tracker",
+    selected_repository: "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/habit-tracker",
     agent: Agent | None = None,
     github_token: SecretStr | None = None,
 ) -> str | None:
