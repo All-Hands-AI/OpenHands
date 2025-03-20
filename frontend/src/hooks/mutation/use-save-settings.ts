@@ -33,8 +33,22 @@ export const useSaveSettings = () => {
   const { data: currentSettings } = useSettings();
 
   return useMutation({
-    mutationFn: (settings: Partial<PostSettings>) =>
-      saveSettingsMutationFn({ ...currentSettings, ...settings }),
+    mutationFn: async (settings: Partial<PostSettings>) => {
+      const newSettings = { ...currentSettings, ...settings };
+
+      // Temp hack for reset logic
+      if (
+        settings.LLM_API_KEY === undefined &&
+        settings.LLM_BASE_URL === undefined &&
+        settings.LLM_MODEL === undefined
+      ) {
+        delete newSettings.LLM_API_KEY;
+        delete newSettings.LLM_BASE_URL;
+        delete newSettings.LLM_MODEL;
+      }
+
+      await saveSettingsMutationFn(newSettings);
+    },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["settings"] });
     },
