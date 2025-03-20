@@ -45,6 +45,10 @@ workspace_base = "./workspace"
 # If it's a folder, the session id will be used as the file name
 #save_trajectory_path="./trajectories"
 
+# Whether to save screenshots in the trajectory
+# The screenshots are encoded and can make trajectory json files very large
+#save_screenshots_in_trajectory = false
+
 # Path to replay a trajectory, must be a file path
 # If provided, trajectory will be loaded and replayed before the
 # agent responds to any user instruction
