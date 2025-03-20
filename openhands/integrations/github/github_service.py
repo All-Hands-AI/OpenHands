@@ -5,6 +5,7 @@ from typing import Any
 import httpx
 from pydantic import SecretStr
 
+from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.service_types import (
     AuthenticationError,
     GitService,
@@ -25,34 +26,31 @@ class GitHubService(GitService):
     def __init__(
         self,
         user_id: str | None = None,
-        idp_token: SecretStr | None = None,
+        external_auth_id: str | None = None,
+        external_auth_token: SecretStr | None = None,
         token: SecretStr | None = None,
+        external_token_manager: bool = False,
     ):
         self.user_id = user_id
+        self.external_token_manager = external_token_manager
 
         if token:
             self.token = token
 
     async def _get_github_headers(self) -> dict:
-        """
-        Retrieve the GH Token from settings store to construct the headers
-        """
-
+        """Retrieve the GH Token from settings store to construct the headers."""
         if self.user_id and not self.token:
             self.token = await self.get_latest_token()
 
         return {
-            'Authorization': f'Bearer {self.token.get_secret_value()}',
+            'Authorization': f'Bearer {self.token.get_secret_value() if self.token else ""}',
             'Accept': 'application/vnd.github.v3+json',
         }
 
     def _has_token_expired(self, status_code: int) -> bool:
         return status_code == 401
 
-    async def get_latest_token(self) -> SecretStr:
-        return self.token
-
-    async def get_latest_provider_token(self) -> SecretStr:
+    async def get_latest_token(self) -> SecretStr | None:
         return self.token
 
     async def _fetch_data(
@@ -79,9 +77,12 @@ class GitHubService(GitService):
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 401:
                 raise AuthenticationError('Invalid Github token')
+
+            logger.warning(f'Status error on GH API: {e}')
             raise UnknownException('Unknown error')
 
-        except httpx.HTTPError:
+        except httpx.HTTPError as e:
+            logger.warning(f'HTTP error on GH API: {e}')
             raise UnknownException('Unknown error')
 
     async def get_user(self) -> User:
@@ -173,17 +174,20 @@ class GitHubService(GitService):
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 401:
                 raise AuthenticationError('Invalid Github token')
+
+            logger.warning(f'Status error on GH API: {e}')
             raise UnknownException('Unknown error')
 
-        except httpx.HTTPError:
+        except httpx.HTTPError as e:
+            logger.warning(f'HTTP error on GH API: {e}')
             raise UnknownException('Unknown error')
 
     async def get_suggested_tasks(self) -> list[SuggestedTask]:
-        """
-        Get suggested tasks for the authenticated user across all repositories.
+        """Get suggested tasks for the authenticated user across all repositories.
+
         Returns:
-        - PRs authored by the user
-        - Issues assigned to the user
+        - PRs authored by the user.
+        - Issues assigned to the user.
         """
         # Get user info to use in queries
         user = await self.get_user()

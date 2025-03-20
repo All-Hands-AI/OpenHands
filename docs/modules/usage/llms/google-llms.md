@@ -16,7 +16,7 @@ If the model is not in the list, toggle `Advanced` options, and enter it in `Cus
 ## VertexAI - Google Cloud Platform Configs
 
 To use Vertex AI through Google Cloud Platform when running OpenHands, you'll need to set the following environment
-variables using `-e` in the [docker run command](/modules/usage/installation#start-the-app):
+variables using `-e` in the [docker run command](../installation#running-openhands):
 
 ```
 GOOGLE_APPLICATION_CREDENTIALS="<json-dump-of-gcp-service-account-json>"

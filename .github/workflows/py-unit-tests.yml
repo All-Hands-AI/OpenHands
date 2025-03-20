@@ -44,11 +44,11 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: 'poetry'
       - name: Install Python dependencies using Poetry
-        run: poetry install --without evaluation,llama-index
+        run: poetry install --without evaluation
       - name: Build Environment
         run: make build
       - name: Run Tests
-        run: poetry run pytest --forked -n auto --cov=openhands --cov-report=xml -svv ./tests/unit --ignore=tests/unit/test_long_term_memory.py
+        run: poetry run pytest --forked -n auto --cov=openhands --cov-report=xml -svv ./tests/unit
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         env:

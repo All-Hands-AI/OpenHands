@@ -1,3 +1,5 @@
+export type Provider = "github" | "gitlab";
+
 export type Settings = {
   LLM_MODEL: string;
   LLM_BASE_URL: string;
@@ -11,6 +13,8 @@ export type Settings = {
   ENABLE_DEFAULT_CONDENSER: boolean;
   ENABLE_SOUND_NOTIFICATIONS: boolean;
   USER_CONSENTS_TO_ANALYTICS: boolean | null;
+  PROVIDER_TOKENS: Record<Provider, string>;
+  IS_NEW_USER?: boolean;
 };
 
 export type ApiSettings = {

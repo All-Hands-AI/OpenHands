@@ -1,10 +1,10 @@
 import React from "react";
 import { MutateOptions } from "@tanstack/react-query";
-import toast from "react-hot-toast";
 import { useSettings } from "#/hooks/query/use-settings";
 import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 import { PostSettings, Settings } from "#/types/settings";
 import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
+import { displayErrorToast } from "#/utils/custom-toast-handlers";
 
 type SaveUserSettingsConfig = {
   onSuccess: MutateOptions<void, Error, Partial<PostSettings>>["onSuccess"];
@@ -47,7 +47,7 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
       onSuccess: config?.onSuccess,
       onError: (error) => {
         const errorMessage = retrieveAxiosErrorMessage(error);
-        toast.error(errorMessage);
+        displayErrorToast(errorMessage);
       },
     });
   };

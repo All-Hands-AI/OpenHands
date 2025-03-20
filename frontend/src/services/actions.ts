@@ -62,13 +62,12 @@ const messageActions = {
     let successPrediction = "";
     if (message.args.task_completed === "partial") {
       successPrediction =
-        "The agent thinks that the task was **completed partially**.";
+        "I believe that the task was **completed partially**.";
     } else if (message.args.task_completed === "false") {
-      successPrediction =
-        "The agent thinks that the task was **not completed**.";
+      successPrediction = "I believe that the task was **not completed**.";
     } else if (message.args.task_completed === "true") {
       successPrediction =
-        "The agent thinks that the task was **completed successfully**.";
+        "I believe that the task was **completed successfully**.";
     }
     if (successPrediction) {
       // if final_thought is not empty, add a new line before the success prediction
