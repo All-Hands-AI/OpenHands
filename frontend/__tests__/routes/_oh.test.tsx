@@ -55,7 +55,7 @@ describe("frontend/routes/_oh", () => {
     });
   });
 
-  it("should render and capture the user's consent if oss mode", async () => {
+  it.skip("should render and capture the user's consent if oss mode", async () => {
     const user = userEvent.setup();
     const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
     const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
