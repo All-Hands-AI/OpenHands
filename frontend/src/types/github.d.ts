@@ -13,7 +13,7 @@ interface GitHubUser {
   email: string | null;
 }
 
-interface GitHubRepository {
+interface GitRepository {
   id: number;
   full_name: string;
   stargazers_count?: number;

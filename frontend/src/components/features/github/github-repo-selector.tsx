@@ -12,11 +12,11 @@ import { setSelectedRepository } from "#/state/initial-query-slice";
 import { useConfig } from "#/hooks/query/use-config";
 import { sanitizeQuery } from "#/utils/sanitize-query";
 
-interface GitHubRepositorySelectorProps {
+interface GitRepositorySelectorProps {
   onInputChange: (value: string) => void;
   onSelect: () => void;
-  userRepositories: GitHubRepository[];
-  publicRepositories: GitHubRepository[];
+  userRepositories: GitRepository[];
+  publicRepositories: GitRepository[];
 }
 
 export function GitHubRepositorySelector({
@@ -24,12 +24,12 @@ export function GitHubRepositorySelector({
   onSelect,
   userRepositories,
   publicRepositories,
-}: GitHubRepositorySelectorProps) {
+}: GitRepositorySelectorProps) {
   const { t } = useTranslation();
   const { data: config } = useConfig();
   const [selectedKey, setSelectedKey] = React.useState<string | null>(null);
 
-  const allRepositories: GitHubRepository[] = [
+  const allRepositories: GitRepository[] = [
     ...publicRepositories.filter(
       (repo) => !userRepositories.find((r) => r.id === repo.id),
     ),

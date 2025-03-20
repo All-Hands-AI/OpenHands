@@ -11,6 +11,7 @@ import { sanitizeQuery } from "#/utils/sanitize-query";
 import { useDebounce } from "#/hooks/use-debounce";
 import { BrandButton } from "../settings/brand-button";
 import GitHubLogo from "#/assets/branding/github-logo.svg?react";
+import { ProviderSelector } from "./providers-selector";
 
 interface GitHubRepositoriesSuggestionBoxProps {
   handleSubmit: () => void;
@@ -26,11 +27,14 @@ export function GitHubRepositoriesSuggestionBox({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = React.useState<string>("");
+  const [selectedProvider, setSelectedProvider] = React.useState<string | null>(
+    null,
+  );
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   // TODO: Use `useQueries` to fetch all repositories in parallel
   const { data: appRepositories } = useAppRepositories();
-  const { data: userRepositories } = useUserRepositories();
+  const { data: userRepositories } = useUserRepositories(selectedProvider);
   const { data: searchedRepos } = useSearchRepositories(
     sanitizeQuery(debouncedSearchQuery),
   );
@@ -55,12 +59,20 @@ export function GitHubRepositoriesSuggestionBox({
       title={t(I18nKey.LANDING$OPEN_REPO)}
       content={
         isLoggedIn ? (
-          <GitHubRepositorySelector
-            onInputChange={setSearchQuery}
-            onSelect={handleSubmit}
-            publicRepositories={searchedRepos || []}
-            userRepositories={repositories}
-          />
+          <>
+            <ProviderSelector
+              selectedProvider={selectedProvider}
+              setSelectedProvider={setSelectedProvider}
+            />
+            {selectedProvider && (
+              <GitHubRepositorySelector
+                onInputChange={setSearchQuery}
+                onSelect={handleSubmit}
+                publicRepositories={searchedRepos || []}
+                userRepositories={repositories}
+              />
+            )}
+          </>
         ) : (
           <BrandButton
             testId="connect-to-github"

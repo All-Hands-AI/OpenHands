@@ -4,7 +4,7 @@ import { retrieveGitHubUserRepositories } from "#/api/github";
 import { useConfig } from "./use-config";
 import { useAuth } from "#/context/auth-context";
 
-export const useUserRepositories = () => {
+export const useUserRepositories = (selectedProvider: string | null) => {
   const { providersAreSet } = useAuth();
   const { data: config } = useConfig();
 
@@ -14,7 +14,8 @@ export const useUserRepositories = () => {
       retrieveGitHubUserRepositories(pageParam, 100),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => lastPage.nextPage,
-    enabled: providersAreSet && config?.APP_MODE === "oss",
+    enabled:
+      providersAreSet && config?.APP_MODE === "oss" && !!selectedProvider,
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 15, // 15 minutes
   });
