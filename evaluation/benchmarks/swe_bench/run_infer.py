@@ -716,7 +716,7 @@ if __name__ == '__main__':
             for col in ['PASS_TO_PASS', 'FAIL_TO_PASS']:
                 instances[col] = instances[col].apply(lambda x: str(x))
 
-        if REPO_MD_SOURCE is not None:
+        if REPO_MD_SOURCE:
             assert os.path.exists(
                 REPO_MD_SOURCE
             ), f'Repo md source {REPO_MD_SOURCE} does not exist'
