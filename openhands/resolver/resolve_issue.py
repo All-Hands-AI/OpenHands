@@ -65,8 +65,6 @@ def initialize_runtime(
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    action = CmdRunAction(command='git clone https://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@github.com/Fazek007/habit-tracker.git')
-
     
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
