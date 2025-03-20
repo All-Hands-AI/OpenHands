@@ -429,14 +429,23 @@ async def resolve_issue(
     # checkout the repo
     repo_dir = os.path.join(output_dir, 'repo')
     if not os.path.exists(repo_dir):
-        checkout_output = subprocess.check_output(
-            [
-                'git',
-                'clone',
-                issue_handler.get_clone_url(),
-                f'{output_dir}/repo',
-            ]
-        ).decode('utf-8')
+        # Configure Git LFS to skip downloading large files if requested
+        if os.getenv('GIT_LFS_SKIP_SMUDGE') == '1':
+            subprocess.check_output(['git', 'config', '--global', 'filter.lfs.smudge', 'git-lfs smudge --skip'])
+            subprocess.check_output(['git', 'config', '--global', 'filter.lfs.process', 'git-lfs filter-process --skip'])
+
+        # Build git clone command
+        clone_cmd = ['git', 'clone']
+
+        # Add --depth if requested
+        if depth := os.getenv('GIT_CLONE_DEPTH'):
+            clone_cmd.extend(['--depth', depth])
+
+        # Add repository URL and destination
+        clone_cmd.extend([issue_handler.get_clone_url(), f'{output_dir}/repo'])
+
+        # Execute git clone
+        checkout_output = subprocess.check_output(clone_cmd).decode('utf-8')
         if 'fatal' in checkout_output:
             raise RuntimeError(f'Failed to clone repository: {checkout_output}')
 
