@@ -447,27 +447,27 @@ function AccountSettings() {
               Custom Secrets
             </h2>
             <div className="flex flex-col gap-4">
-              {settings.CUSTOM_SECRETS?.map((secret) => (
-                <div key={secret.id} className="flex items-start gap-2">
+              {Object.entries(settings.CUSTOM_SECRETS || {}).map(([name, value]) => (
+                <div key={name} className="flex items-start gap-2">
                   <SettingsInput
-                    name={`secret-name-${secret.id}`}
+                    name={`secret-name-${name}`}
                     placeholder="Secret Name"
-                    defaultValue={secret.name}
+                    defaultValue={name}
                     className="w-[330px]"
+                    disabled
                   />
                   <SettingsInput
-                    name={`secret-value-${secret.id}`}
+                    name={`secret-value-${name}`}
                     type="password"
                     placeholder="Secret Value"
-                    defaultValue={secret.value}
+                    defaultValue={value}
                     className="w-[330px]"
                   />
                   <button
                     type="button"
                     onClick={() => {
-                      const newSecrets = settings.CUSTOM_SECRETS?.filter(
-                        (s) => s.id !== secret.id
-                      );
+                      const newSecrets = { ...settings.CUSTOM_SECRETS };
+                      delete newSecrets[name];
                       saveSettings({ CUSTOM_SECRETS: newSecrets });
                     }}
                     className="mt-2 p-1 text-gray-400 hover:text-gray-300"
@@ -476,25 +476,40 @@ function AccountSettings() {
                   </button>
                 </div>
               ))}
-              <button
-                type="button"
-                onClick={() => {
-                  const newSecret = {
-                    id: crypto.randomUUID(),
-                    name: "",
-                    value: "",
-                  };
-                  const newSecrets = [
-                    ...(settings.CUSTOM_SECRETS || []),
-                    newSecret,
-                  ];
-                  saveSettings({ CUSTOM_SECRETS: newSecrets });
-                }}
-                className="flex items-center gap-1 text-sm text-primary hover:text-primary/80"
-              >
-                <PlusIcon className="h-4 w-4" />
-                Add Secret
-              </button>
+              <div className="flex items-start gap-2">
+                <SettingsInput
+                  name="new-secret-name"
+                  placeholder="Secret Name"
+                  className="w-[330px]"
+                />
+                <SettingsInput
+                  name="new-secret-value"
+                  type="password"
+                  placeholder="Secret Value"
+                  className="w-[330px]"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nameInput = formRef.current?.elements.namedItem('new-secret-name') as HTMLInputElement;
+                    const valueInput = formRef.current?.elements.namedItem('new-secret-value') as HTMLInputElement;
+                    
+                    if (!nameInput?.value) return;
+                    
+                    const newSecrets = {
+                      ...settings.CUSTOM_SECRETS,
+                      [nameInput.value]: valueInput?.value || '',
+                    };
+                    
+                    saveSettings({ CUSTOM_SECRETS: newSecrets });
+                    nameInput.value = '';
+                    valueInput.value = '';
+                  }}
+                  className="mt-2 p-1 text-primary hover:text-primary/80"
+                >
+                  <PlusIcon className="h-5 w-5" />
+                </button>
+              </div>
             </div>
           </section>
 
