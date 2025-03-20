@@ -61,9 +61,6 @@ def initialize_runtime(
     logger.info('-' * 30)
     obs: Observation
     
-    """git add not working fix"""
-    action = CmdRunAction(command='export GIT_DISCOVERY_ACROSS_FILESYSTEM=1')
-    
     action = CmdRunAction(command='cd /workspace')
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
@@ -106,13 +103,13 @@ async def complete_runtime(
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     
-    """git add not working fix"""
-    action = CmdRunAction(command='export GIT_DISCOVERY_ACROSS_FILESYSTEM=1')
+     """git add not working fix"""
+    action = CmdRunAction(command='sleep 600')  # Sleep for 600 seconds (10 minutes)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-
-    action = CmdRunAction(command='git status')
+    
+    action = CmdRunAction(command='export GIT_DISCOVERY_ACROSS_FILESYSTEM=1')
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
