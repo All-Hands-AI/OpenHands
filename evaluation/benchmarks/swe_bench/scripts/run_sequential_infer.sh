@@ -1,102 +1,118 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -eo pipefail
 
-# This script runs the sequential inference for SWE-Bench
-# It's based on run_infer.sh but uses run_sequential_infer.py instead
+source "evaluation/utils/version_control.sh"
 
-set -e
+MODEL_CONFIG=$1
+COMMIT_HASH=$2
+AGENT=$3
+EVAL_LIMIT=$4
+MAX_ITER=$5
+NUM_WORKERS=$6
+DATASET=$7
+SPLIT=$8
+N_RUNS=$9
 
-# Default values
-DATASET="princeton-nlp/SWE-bench"
-SPLIT="test"
-AGENT_CLS="CodeActAgent"
-MAX_ITERATIONS=100
-EVAL_NOTE=""
-EVAL_N_LIMIT=0
-EVAL_OUTPUT_DIR=""
-MODEL_CONFIG=""
-OPENHANDS_VERSION=""
-USE_HINT_TEXT="false"
-RUN_WITH_BROWSING="false"
+if [ -z "$NUM_WORKERS" ]; then
+  NUM_WORKERS=1
+  echo "Number of workers not specified, use default $NUM_WORKERS"
+fi
+checkout_eval_branch
 
-# Parse command line arguments
-while [[ $# -gt 0 ]]; do
-  case $1 in
-    --dataset)
-      DATASET="$2"
-      shift 2
-      ;;
-    --split)
-      SPLIT="$2"
-      shift 2
-      ;;
-    --agent_cls)
-      AGENT_CLS="$2"
-      shift 2
-      ;;
-    --max_iterations)
-      MAX_ITERATIONS="$2"
-      shift 2
-      ;;
-    --eval_note)
-      EVAL_NOTE="$2"
-      shift 2
-      ;;
-    --eval_n_limit)
-      EVAL_N_LIMIT="$2"
-      shift 2
-      ;;
-    --eval_output_dir)
-      EVAL_OUTPUT_DIR="$2"
-      shift 2
-      ;;
-    --model_config)
-      MODEL_CONFIG="$2"
-      shift 2
-      ;;
-    --openhands_version)
-      OPENHANDS_VERSION="$2"
-      shift 2
-      ;;
-    --use_hint_text)
-      USE_HINT_TEXT="$2"
-      shift 2
-      ;;
-    --run_with_browsing)
-      RUN_WITH_BROWSING="$2"
-      shift 2
-      ;;
-    *)
-      echo "Unknown option: $1"
-      exit 1
-      ;;
-  esac
-done
+if [ -z "$AGENT" ]; then
+  echo "Agent not specified, use default CodeActAgent"
+  AGENT="CodeActAgent"
+fi
 
-# Print configuration
-echo "Running sequential inference with the following configuration:"
-echo "DATASET: $DATASET"
-echo "SPLIT: $SPLIT"
-echo "AGENT_CLS: $AGENT_CLS"
-echo "MAX_ITERATIONS: $MAX_ITERATIONS"
-echo "EVAL_NOTE: $EVAL_NOTE"
-echo "EVAL_N_LIMIT: $EVAL_N_LIMIT"
-echo "EVAL_OUTPUT_DIR: $EVAL_OUTPUT_DIR"
-echo "OPENHANDS_VERSION: $OPENHANDS_VERSION"
-echo "MODEL_CONFIG: $MODEL_CONFIG"
-echo "USE_HINT_TEXT: $USE_HINT_TEXT"
+if [ -z "$MAX_ITER" ]; then
+  echo "MAX_ITER not specified, use default 60"
+  MAX_ITER=60
+fi
+
+if [ -z "$RUN_WITH_BROWSING" ]; then
+  echo "RUN_WITH_BROWSING not specified, use default false"
+  RUN_WITH_BROWSING=false
+fi
+
+
+if [ -z "$DATASET" ]; then
+  echo "DATASET not specified, use default princeton-nlp/SWE-bench_Lite"
+  DATASET="princeton-nlp/SWE-bench_Lite"
+fi
+
+if [ -z "$SPLIT" ]; then
+  echo "SPLIT not specified, use default test"
+  SPLIT="test"
+fi
+
+export RUN_WITH_BROWSING=$RUN_WITH_BROWSING
 echo "RUN_WITH_BROWSING: $RUN_WITH_BROWSING"
 
-# Export environment variables
-export USE_HINT_TEXT=$USE_HINT_TEXT
-export RUN_WITH_BROWSING=$RUN_WITH_BROWSING
+get_openhands_version
 
-# Run the sequential inference
-python -m evaluation.benchmarks.swe_bench.run_sequential_infer \
-  --dataset "$DATASET" \
-  --split "$SPLIT" \
-  --agent_cls "$AGENT_CLS" \
-  --max_iterations "$MAX_ITERATIONS" \
-  --eval_note "$EVAL_NOTE" \
-  --eval_n_limit "$EVAL_N_LIMIT" \
-  --eval_output_dir "$EVAL_OUTPUT_DIR" \
-  --llm_config "$MODEL_CONFIG"
+echo "AGENT: $AGENT"
+echo "OPENHANDS_VERSION: $OPENHANDS_VERSION"
+echo "MODEL_CONFIG: $MODEL_CONFIG"
+echo "DATASET: $DATASET"
+echo "SPLIT: $SPLIT"
+echo "ITERATIVE_EVAL_MODE: $ITERATIVE_EVAL_MODE"
+
+# Default to NOT use Hint
+if [ -z "$USE_HINT_TEXT" ]; then
+  export USE_HINT_TEXT=false
+fi
+echo "USE_HINT_TEXT: $USE_HINT_TEXT"
+EVAL_NOTE="$OPENHANDS_VERSION"
+# if not using Hint, add -no-hint to the eval note
+if [ "$USE_HINT_TEXT" = false ]; then
+  EVAL_NOTE="$EVAL_NOTE-no-hint"
+fi
+
+if [ "$RUN_WITH_BROWSING" = true ]; then
+  EVAL_NOTE="$EVAL_NOTE-with-browsing"
+fi
+
+if [ -n "$EXP_NAME" ]; then
+  EVAL_NOTE="$EVAL_NOTE-$EXP_NAME"
+fi
+
+function run_eval() {
+  local eval_note=$1
+  COMMAND="poetry run python evaluation/benchmarks/swe_bench/run_sequential_infer.py \
+    --agent-cls $AGENT \
+    --llm-config $MODEL_CONFIG \
+    --max-iterations $MAX_ITER \
+    --eval-num-workers $NUM_WORKERS \
+    --eval-note $eval_note \
+    --dataset $DATASET \
+    --split $SPLIT"
+
+  if [ -n "$EVAL_LIMIT" ]; then
+    echo "EVAL_LIMIT: $EVAL_LIMIT"
+    COMMAND="$COMMAND --eval-n-limit $EVAL_LIMIT"
+  fi
+
+  # Run the command
+  eval $COMMAND
+}
+
+unset SANDBOX_ENV_GITHUB_TOKEN # prevent the agent from using the github token to push
+if [ -z "$N_RUNS" ]; then
+  N_RUNS=1
+  echo "N_RUNS not specified, use default $N_RUNS"
+fi
+
+# Skip runs if the run number is in the SKIP_RUNS list
+# read from env variable SKIP_RUNS as a comma separated list of run numbers
+SKIP_RUNS=(${SKIP_RUNS//,/ })
+for i in $(seq 1 $N_RUNS); do
+  if [[ " ${SKIP_RUNS[@]} " =~ " $i " ]]; then
+    echo "Skipping run $i"
+    continue
+  fi
+  current_eval_note="$EVAL_NOTE-run_$i"
+  echo "EVAL_NOTE: $current_eval_note"
+  run_eval $current_eval_note
+done
+
+checkout_original_branch
