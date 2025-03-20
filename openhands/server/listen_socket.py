@@ -55,12 +55,10 @@ async def connect(connection_id: str, environ):
         conversation_id, connection_id, settings, user_id, github_user_id
     )
     logger.info(
-        f'Connected to conversation {conversation_id} with connection_id {connection_id}'
+        f'Connected to conversation {conversation_id} with connection_id {connection_id}. Replaying event stream...'
     )
-
     agent_state_changed = None
     async_stream = AsyncEventStreamWrapper(event_stream, latest_event_id + 1)
-    logger.info(f'Replaying event stream for conversation {conversation_id}')
     async for event in async_stream:
         logger.info(f'oh_event: {event.__class__.__name__}')
         if isinstance(
@@ -71,7 +69,6 @@ async def connect(connection_id: str, environ):
         elif isinstance(event, AgentStateChangedObservation):
             agent_state_changed = event
         else:
-            logger.info(f'sending oh_event: {event.__class__.__name__}')
             await sio.emit('oh_event', event_to_dict(event), to=connection_id)
     if agent_state_changed:
         await sio.emit('oh_event', event_to_dict(agent_state_changed), to=connection_id)

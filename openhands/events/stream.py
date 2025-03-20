@@ -50,14 +50,10 @@ class AsyncEventStreamWrapper:
 
     async def __aiter__(self):
         loop = asyncio.get_running_loop()
-        logger.info(f'Creating async iterator for {self.event_stream.sid}')
 
         # Create an async generator that yields events
         for event in self.event_stream.get_events(*self.args, **self.kwargs):
             # Run the blocking get_events() in a thread pool
-            logger.info(
-                f'Yielding event {event.id} from async iterator for {self.event_stream.sid}'
-            )
             yield await loop.run_in_executor(None, lambda e=event: e)  # type: ignore
 
 
@@ -211,9 +207,6 @@ class EventStream:
         Yields:
             Events from the stream that match the criteria.
         """
-        logger.info(
-            f'Getting events for session {self.sid} from {start_id} to {end_id}'
-        )
 
         def should_filter(event: Event):
             if filter_hidden and hasattr(event, 'hidden') and event.hidden:
@@ -237,18 +230,15 @@ class EventStream:
         else:
             event_id = start_id
             while should_continue():
-                logger.info(f'Getting event {event_id} for session {self.sid}')
                 if end_id is not None and event_id > end_id:
                     break
                 try:
                     event = self.get_event(event_id)
-                    logger.info(f'Got event {event.id} for session {self.sid}')
                     if not should_filter(event):
                         yield event
                 except FileNotFoundError:
                     break
                 event_id += 1
-        logger.info(f'Finished getting events for session {self.sid}')
 
     def get_event(self, id: int) -> Event:
         filename = self._get_filename_for_id(id, self.user_id)
