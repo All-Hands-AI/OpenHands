@@ -38,7 +38,7 @@ export const useGitHubUser = () => {
   const handleLogout = async () => {
     if (config?.APP_MODE === "saas") await logout();
     else {
-      await saveUserSettings({ unset_github_token: true });
+      saveUserSettings({ unset_github_token: true });
       setGitHubTokenIsSet(false);
     }
     posthog.reset();
