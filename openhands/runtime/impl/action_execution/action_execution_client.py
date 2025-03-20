@@ -164,6 +164,7 @@ class ActionExecutionClient(Runtime):
                 ) as temp_file:
                     for chunk in response.iter_bytes():
                         temp_file.write(chunk)
+                    temp_file.flush()
                     return Path(temp_file.name)
         except httpx.TimeoutException:
             raise TimeoutError('Copy operation timed out')

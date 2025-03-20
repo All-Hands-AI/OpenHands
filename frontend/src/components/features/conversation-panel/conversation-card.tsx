@@ -1,4 +1,5 @@
 import React from "react";
+import posthog from "posthog-js";
 import { formatTimeDelta } from "#/utils/format-time-delta";
 import { ConversationRepoLink } from "./conversation-repo-link";
 import {
@@ -13,30 +14,33 @@ interface ConversationCardProps {
   onClick?: () => void;
   onDelete?: () => void;
   onChangeTitle?: (title: string) => void;
-  onDownloadWorkspace?: () => void;
   isActive?: boolean;
   title: string;
   selectedRepository: string | null;
   lastUpdatedAt: string; // ISO 8601
   status?: ProjectStatus;
   variant?: "compact" | "default";
+  conversationId?: string; // Optional conversation ID for VS Code URL
 }
 
 export function ConversationCard({
   onClick,
   onDelete,
   onChangeTitle,
-  onDownloadWorkspace,
   isActive,
   title,
   selectedRepository,
   lastUpdatedAt,
   status = "STOPPED",
   variant = "default",
+  conversationId,
 }: ConversationCardProps) {
   const [contextMenuVisible, setContextMenuVisible] = React.useState(false);
   const [titleMode, setTitleMode] = React.useState<"view" | "edit">("view");
   const inputRef = React.useRef<HTMLInputElement>(null);
+
+  // We don't use the VS Code URL hook directly here to avoid test failures
+  // Instead, we'll add the download button conditionally
 
   const handleBlur = () => {
     if (inputRef.current?.value) {
@@ -78,9 +82,32 @@ export function ConversationCard({
     setContextMenuVisible(false);
   };
 
-  const handleDownload = (event: React.MouseEvent<HTMLButtonElement>) => {
+  const handleDownloadViaVSCode = async (
+    event: React.MouseEvent<HTMLButtonElement>,
+  ) => {
+    event.preventDefault();
     event.stopPropagation();
-    onDownloadWorkspace?.();
+    posthog.capture("download_via_vscode_button_clicked");
+
+    // Fetch the VS Code URL from the API
+    if (conversationId) {
+      try {
+        const response = await fetch(
+          `/api/conversations/${conversationId}/vscode-url`,
+        );
+        const data = await response.json();
+
+        if (data.vscode_url) {
+          window.open(data.vscode_url, "_blank");
+        } else {
+          console.error("VS Code URL not available", data.error);
+        }
+      } catch (error) {
+        console.error("Failed to fetch VS Code URL", error);
+      }
+    }
+
+    setContextMenuVisible(false);
   };
 
   React.useEffect(() => {
@@ -89,7 +116,11 @@ export function ConversationCard({
     }
   }, [titleMode]);
 
-  const hasContextMenu = !!(onDelete || onChangeTitle || onDownloadWorkspace);
+  const hasContextMenu = !!(
+    onDelete ||
+    onChangeTitle ||
+    conversationId // If we have a conversation ID, we can show the download button
+  );
 
   return (
     <div
@@ -145,7 +176,9 @@ export function ConversationCard({
               onClose={() => setContextMenuVisible(false)}
               onDelete={onDelete && handleDelete}
               onEdit={onChangeTitle && handleEdit}
-              onDownload={onDownloadWorkspace && handleDownload}
+              onDownloadViaVSCode={
+                conversationId ? handleDownloadViaVSCode : undefined
+              }
               position={variant === "compact" ? "top" : "bottom"}
             />
           )}
