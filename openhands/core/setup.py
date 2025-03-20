@@ -110,9 +110,7 @@ def initialize_repository_for_runtime(
             selected_repository,
             None,
         )
-    else:
-        raise ValueError("GitHub token is required!")
-
+        
     # load microagents from selected repository
     if agent and agent.prompt_manager and selected_repository and repo_directory:
         agent.prompt_manager.set_runtime_info(runtime)
