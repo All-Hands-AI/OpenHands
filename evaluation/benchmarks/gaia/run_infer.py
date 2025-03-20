@@ -47,7 +47,6 @@ AGENT_CLS_TO_INST_SUFFIX = {
 
 def get_config(
     metadata: EvalMetadata,
-    instance_id: str,
 ) -> AppConfig:
     sandbox_config = get_default_sandbox_config_for_eval()
     sandbox_config.base_container_image = 'python:3.12-bookworm'
@@ -60,10 +59,6 @@ def get_config(
         # do not mount workspace
         workspace_base=None,
         workspace_mount_path=None,
-        save_trajectory_path=os.path.join(
-            metadata.eval_output_dir, 'trajs', f'traj_{instance_id}.json'
-        ),
-        save_screenshots_in_trajectory=True,
     )
     config.set_llm_config(metadata.llm_config)
     if metadata.agent_config:
@@ -123,7 +118,7 @@ def process_instance(
     metadata: EvalMetadata,
     reset_logger: bool = True,
 ) -> EvalOutput:
-    config = get_config(metadata, instance['instance_id'])
+    config = get_config(metadata)
 
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
