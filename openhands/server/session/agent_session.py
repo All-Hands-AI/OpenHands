@@ -233,17 +233,32 @@ class AgentSession:
         self.logger.debug(f'Initializing runtime `{runtime_name}` now...')
         runtime_cls = get_runtime_cls(runtime_name)
 
-        self.runtime = runtime_cls(
-            config=config,
-            event_stream=self.event_stream,
-            sid=self.sid,
-            plugins=agent.sandbox_plugins,
-            status_callback=self._status_callback,
-            headless_mode=False,
-            attach_to_existing=False,
-            git_provider_tokens=git_provider_tokens,
-            user_id=self.user_id,
-        )
+        if runtime_cls == RemoteRuntime:
+            self.runtime = runtime_cls(
+                config=config,
+                event_stream=self.event_stream,
+                sid=self.sid,
+                plugins=agent.sandbox_plugins,
+                status_callback=self._status_callback,
+                headless_mode=False,
+                attach_to_existing=False,
+                git_provider_tokens=git_provider_tokens,
+                user_id=self.user_id
+            )
+        else:
+            provider_handler = ProviderHandler(provider_tokens=git_provider_tokens or cast(PROVIDER_TOKEN_TYPE, MappingProxyType({})))
+            env_vars = await provider_handler.get_env_vars(expose_secrets=True)
+        
+            self.runtime = runtime_cls(
+                config=config,
+                event_stream=self.event_stream,
+                sid=self.sid,
+                plugins=agent.sandbox_plugins,
+                status_callback=self._status_callback,
+                headless_mode=False,
+                attach_to_existing=False,
+                env_vars=env_vars
+            )
 
         # FIXME: this sleep is a terrible hack.
         # This is to give the websocket a second to connect, so that
