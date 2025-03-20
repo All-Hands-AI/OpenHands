@@ -60,7 +60,9 @@ async def connect(connection_id: str, environ):
 
     agent_state_changed = None
     async_stream = AsyncEventStreamWrapper(event_stream, latest_event_id + 1)
+    logger.info(f'Replaying event stream for conversation {conversation_id}')
     async for event in async_stream:
+        logger.info(f'oh_event: {event.__class__.__name__}')
         if isinstance(
             event,
             (NullAction, NullObservation, RecallAction, RecallObservation),
@@ -69,10 +71,11 @@ async def connect(connection_id: str, environ):
         elif isinstance(event, AgentStateChangedObservation):
             agent_state_changed = event
         else:
-            logger.info(f'oh_event:{event.event_type}')
+            logger.info(f'sending oh_event: {event.__class__.__name__}')
             await sio.emit('oh_event', event_to_dict(event), to=connection_id)
     if agent_state_changed:
         await sio.emit('oh_event', event_to_dict(agent_state_changed), to=connection_id)
+    logger.info(f'Finished replaying event stream for conversation {conversation_id}')
 
 
 @sio.event
