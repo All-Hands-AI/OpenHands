@@ -40,10 +40,10 @@ async def get_github_repositories(
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     access_token: SecretStr | None = Depends(get_access_token),
 ):
-    if provider_tokens and ProviderType.GITHUB in provider_tokens:
-        token = provider_tokens[ProviderType.GITHUB]
-        client = GithubServiceImpl(
-            user_id=token.user_id, external_auth_token=access_token, token=token.token
+    if provider_tokens:
+
+        client = ProviderHandler(
+            provider_tokens=provider_tokens, external_auth_token=access_token
         )
 
         try:
@@ -70,8 +70,8 @@ async def get_github_repositories(
     )
 
 
-@app.get('/user', response_model=User)
-async def get_github_user(
+@app.get('/info', response_model=User)
+async def get_user(
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     access_token: SecretStr | None = Depends(get_access_token),
 ):
@@ -97,7 +97,7 @@ async def get_github_user(
             )
 
     return JSONResponse(
-        content='GitHub token required.',
+        content='Git token required.',
         status_code=status.HTTP_401_UNAUTHORIZED,
     )
 
