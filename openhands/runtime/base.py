@@ -246,7 +246,7 @@ class Runtime(FileEditRuntimeMixin):
 
         logger.info(f'Fetching latest github token for runtime: {self.sid}')
         env_vars = await provider_handler.get_env_vars(
-            required_providers=providers_called, expose_secrets=False, get_latest=True
+            providers=providers_called, expose_secrets=False, get_latest=True
         )
 
         if ProviderType.GITHUB not in env_vars:

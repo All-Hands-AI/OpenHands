@@ -240,7 +240,7 @@ class ProviderHandler:
     def get_env_vars(
         self,
         expose_secrets: Literal[True],
-        required_providers: list[ProviderType] | None = ...,
+        providers: list[ProviderType] | None = ...,
         get_latest: bool = False,
     ) -> Coroutine[Any, Any, dict[str, str]]: ...
 
@@ -248,14 +248,14 @@ class ProviderHandler:
     def get_env_vars(
         self,
         expose_secrets: Literal[False],
-        required_providers: list[ProviderType] | None = ...,
+        providers: list[ProviderType] | None = ...,
         get_latest: bool = False,
     ) -> Coroutine[Any, Any, dict[ProviderType, SecretStr]]: ...
 
     async def get_env_vars(
         self,
         expose_secrets: bool = False,
-        required_providers: list[ProviderType] | None = None,
+        providers: list[ProviderType] | None = None,
         get_latest: bool = False,
     ) -> dict[ProviderType, SecretStr] | dict[str, str]:
         """
@@ -264,7 +264,7 @@ class ProviderHandler:
 
         Args:
             expose_secrets: Flag which returns strings instead of secrets
-            required_providers: Return provider tokens for the list passed in, otherwise return all available providers
+            providers: Return provider tokens for the list passed in, otherwise return all available providers
             get_latest: Get the latest working token for the providers if True, otherwise get the existing ones
         """
 
@@ -273,7 +273,7 @@ class ProviderHandler:
 
         env_vars: dict[ProviderType, SecretStr] = {}
         all_providers = [provider for provider in ProviderType]
-        provider_list = required_providers if required_providers else all_providers
+        provider_list = providers if providers else all_providers
 
         for provider in provider_list:
             if provider in self.provider_tokens:
