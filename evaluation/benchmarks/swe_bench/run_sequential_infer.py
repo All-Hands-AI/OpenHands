@@ -1,71 +1,26 @@
-import asyncio
-import copy
 import json
 import os
 from collections import defaultdict
-from typing import Any, Dict, List, Tuple
 
 import pandas as pd
-import toml
 from datasets import load_dataset
 
 import openhands.agenthub
-from evaluation.benchmarks.swe_bench.resource.mapping import (
-    get_instance_resource_factor,
-)
 from evaluation.benchmarks.swe_bench.run_infer import (
-    AGENT_CLS_TO_FAKE_USER_RESPONSE_FN,
-    DEFAULT_DOCKER_IMAGE_PREFIX,
-    RUN_WITH_BROWSING,
-    USE_HINT_TEXT,
-    _get_swebench_workspace_dir_name,
-    complete_runtime,
     filter_dataset,
-    get_config,
-    get_instruction,
-    get_instance_docker_image,
-    initialize_runtime,
     process_instance,
 )
 from evaluation.utils.shared import (
-    EvalException,
     EvalMetadata,
-    EvalOutput,
-    assert_and_raise,
-    get_default_sandbox_config_for_eval,
-    get_metrics,
     is_fatal_evaluation_error,
     make_metadata,
     prepare_dataset,
-    reset_logger_for_multiprocessing,
-    update_llm_config_for_completions_logging,
 )
-from openhands.controller.state.state import State
 from openhands.core.config import (
-    AgentConfig,
-    AppConfig,
     get_llm_config_arg,
     get_parser,
 )
 from openhands.core.logger import openhands_logger as logger
-from openhands.core.main import create_runtime, run_controller
-from openhands.critic import AgentFinishedCritic
-from openhands.events.action import (
-    CmdRunAction,
-    FileReadAction,
-    FileWriteAction,
-    MessageAction,
-)
-from openhands.events.observation import (
-    CmdOutputObservation,
-    ErrorObservation,
-    FileReadObservation,
-    FileWriteObservation,
-)
-from openhands.events.serialization.event import event_from_dict, event_to_dict
-from openhands.runtime.base import Runtime
-from openhands.utils.async_utils import call_async_from_sync
-from openhands.utils.shutdown_listener import sleep_if_should_continue
 
 
 def run_sequential_evaluation(
@@ -77,7 +32,7 @@ def run_sequential_evaluation(
 ):
     """
     Run evaluation sequentially for instances grouped by repository.
-    
+
     1. First sort by instance_ids, split them by __ and take the first element as "repo"
     2. Group instance_ids by repo, and then sort them by order
     3. Run the evaluation for each instance in each repo one by one
@@ -86,92 +41,108 @@ def run_sequential_evaluation(
     """
     # Extract repo from instance_id and add as a column
     dataset['repo'] = dataset['instance_id'].apply(lambda x: x.split('__')[0])
-    
+
     # Group by repo and sort within each group
     repo_groups = defaultdict(list)
     for _, instance in dataset.iterrows():
         repo_groups[instance['repo']].append(instance)
-    
+
     # Sort instances within each repo group
     for repo in repo_groups:
         repo_groups[repo] = sorted(repo_groups[repo], key=lambda x: x['instance_id'])
-    
+
     # Process instances sequentially by repo
     total_instances = len(dataset)
     processed_count = 0
-    
+
     # Open output file for writing results
     output_fp = open(output_file, 'a')
-    
+
     try:
         # Process each repo group sequentially
         for repo, instances in repo_groups.items():
-            logger.info(f"Processing repository: {repo} with {len(instances)} instances")
-            
+            logger.info(
+                f'Processing repository: {repo} with {len(instances)} instances'
+            )
+
             # Track repo_md across instances in the same repo
             current_repo_md = None
-            
+
             # Process each instance in the repo sequentially
             for i, instance in enumerate(instances):
                 instance_series = pd.Series(instance)
-                
+
                 # Set repo_md from previous instance if available
                 if i > 0 and current_repo_md is not None:
                     instance_series['repo_md'] = current_repo_md
                 else:
                     instance_series['repo_md'] = None
-                
+
                 # Process the instance
-                logger.info(f"Processing instance {instance_series['instance_id']} ({processed_count + 1}/{total_instances})")
-                
+                logger.info(
+                    f"Processing instance {instance_series['instance_id']} ({processed_count + 1}/{total_instances})"
+                )
+
                 # Try processing with retries
                 retry_count = 0
                 result = None
-                
+
                 while retry_count < max_retries:
                     try:
                         # Process the instance
                         result = process_instance_func(
                             instance=instance_series,
                             metadata=metadata,
-                            reset_logger=(retry_count == 0),  # Only reset logger on first attempt
+                            reset_logger=False,
                             runtime_failure_count=retry_count,
                         )
-                        
+
                         # If successful, break out of retry loop
                         if result is not None:
                             break
                     except Exception as e:
-                        logger.error(f"Error processing instance {instance_series['instance_id']}: {str(e)}")
+                        logger.error(
+                            f"Error processing instance {instance_series['instance_id']}: {str(e)}"
+                        )
                         if is_fatal_evaluation_error(e):
-                            logger.error(f"Fatal error encountered: {str(e)}")
+                            logger.error(f'Fatal error encountered: {str(e)}')
                             break
-                        
+
                         # Increment retry count and try again
                         retry_count += 1
-                        logger.info(f"Retrying instance {instance_series['instance_id']} (attempt {retry_count + 1}/{max_retries})")
-                
+                        logger.info(
+                            f"Retrying instance {instance_series['instance_id']} (attempt {retry_count + 1}/{max_retries})"
+                        )
+
                 # Write result to output file
                 if result is not None:
                     # Extract repo_md from the result for the next instance
-                    if 'test_result' in result and result['test_result'] and 'repo_md' in result['test_result']:
+                    if (
+                        'test_result' in result
+                        and result['test_result']
+                        and 'repo_md' in result['test_result']
+                    ):
                         current_repo_md = result['test_result']['repo_md']
-                        logger.info(f"Extracted repo_md for next instance in {repo}")
-                    
+                        logger.info(
+                            f'Extracted repo_md for next instance in {repo}: {current_repo_md}'
+                        )
+
                     # Write result to output file
                     output_fp.write(json.dumps(result) + '\n')
                     output_fp.flush()
-                
+
                 processed_count += 1
-                logger.info(f"Completed instance {instance_series['instance_id']} ({processed_count}/{total_instances})")
-    
+                logger.info(
+                    f"Completed instance {instance_series['instance_id']} ({processed_count}/{total_instances})"
+                )
+
     except KeyboardInterrupt:
-        logger.info("Keyboard interrupt received. Cleaning up...")
-    
+        logger.info('Keyboard interrupt received. Cleaning up...')
+
     finally:
         output_fp.close()
-    
-    logger.info("Sequential evaluation completed")
+
+    logger.info('Sequential evaluation completed')
 
 
 if __name__ == '__main__':
@@ -196,7 +167,7 @@ if __name__ == '__main__':
     logger.info(
         f'Loaded dataset {args.dataset} with split {args.split}: {len(swe_bench_tests)} tasks'
     )
-    
+
     # Filter for SWE-Gym verified instances if needed
     if 'SWE-Gym' in args.dataset:
         with open(
@@ -246,14 +217,22 @@ if __name__ == '__main__':
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     print(f'### OUTPUT FILE: {output_file} ###')
 
+    instance_ids = sorted(swe_bench_tests['instance_id'].tolist())
+    selected_instance_ids = instance_ids[: args.eval_n_limit]
+
     # Run evaluation in sequential mode
-    instances = prepare_dataset(swe_bench_tests, output_file, args.eval_n_limit)
+    instances = prepare_dataset(
+        swe_bench_tests, output_file, args.eval_n_limit, eval_ids=selected_instance_ids
+    )
     if len(instances) > 0 and not isinstance(
         instances['PASS_TO_PASS'][instances['PASS_TO_PASS'].index[0]], str
     ):
         for col in ['PASS_TO_PASS', 'FAIL_TO_PASS']:
             instances[col] = instances[col].apply(lambda x: str(x))
 
+    logger.info(
+        f'Running sequential evaluation for {len(instances)} instances: {instances["instance_id"].tolist()}'
+    )
     # Run sequential evaluation
     run_sequential_evaluation(
         instances,
