@@ -541,7 +541,7 @@ class Runtime(FileEditRuntimeMixin):
 
         return CommandResult(content=content, exit_code=exit_code)
 
-    def get_git_changes(self) -> list[dict[str, str]]:
+    def get_git_changes(self, path: str | None) -> list[dict[str, str]]:
         return self.git_handler.get_git_changes()
 
     def get_git_diff(self, file_path: str) -> dict[str, str]:

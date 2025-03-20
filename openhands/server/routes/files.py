@@ -25,11 +25,18 @@ from openhands.events.observation import (
     FileWriteObservation,
 )
 from openhands.runtime.base import Runtime
+from openhands.server.auth import get_github_user_id, get_user_id
 from openhands.server.file_config import (
     FILES_TO_IGNORE,
     MAX_FILE_SIZE_MB,
     is_extension_allowed,
     sanitize_filename,
+)
+from openhands.server.shared import (
+    ConversationStoreImpl,
+    _get_conversation_info,
+    config,
+    conversation_manager,
 )
 from openhands.utils.async_utils import call_sync_from_async
 
@@ -337,10 +344,23 @@ def zip_current_workspace(request: Request, conversation_id: str):
 
 
 @app.get('/git/changes')
-async def git_changes(request: Request):
+async def git_changes(request: Request, conversation_id: str):
     runtime: Runtime = request.state.conversation.runtime
+
+    conversation_store = await ConversationStoreImpl.get_instance(
+        config, get_user_id(request), get_github_user_id(request)
+    )
+    metadata = await conversation_store.get_metadata(conversation_id)
+    is_running = await conversation_manager.is_agent_loop_running(conversation_id)
+    conversation_info = await _get_conversation_info(metadata, is_running)
+
+    path = runtime.config.workspace_mount_path_in_sandbox
+    if conversation_info and conversation_info.selected_repository:
+        repo_dir = conversation_info.selected_repository.split('/')[-1]
+        path = os.path.join(path, repo_dir)
+
     try:
-        changes = await call_sync_from_async(runtime.get_git_changes)
+        changes = await call_sync_from_async(runtime.get_git_changes, path)
         return changes
     except AgentRuntimeUnavailableError as e:
         logger.error(f'Runtime unavailable: {e}')
