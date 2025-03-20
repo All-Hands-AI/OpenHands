@@ -32,6 +32,15 @@ FROM python:3.12.3-slim AS openhands-app
 
 WORKDIR /app
 
+# 必要なパッケージをすべてインストール
+RUN apt-get update -y \
+    && apt-get install -y curl ssh sudo dos2unix file
+
+# その後entrypoint.shをコピーして処理
+COPY containers/app/entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh && \
+    dos2unix /app/entrypoint.sh
+
 ARG OPENHANDS_BUILD_VERSION #re-declare for this section
 
 ENV RUN_AS_OPENHANDS=true
@@ -46,9 +55,6 @@ ENV FILE_STORE=local
 ENV FILE_STORE_PATH=/.openhands-state
 RUN mkdir -p $FILE_STORE_PATH
 RUN mkdir -p $WORKSPACE_BASE
-
-RUN apt-get update -y \
-    && apt-get install -y curl ssh sudo
 
 # Default is 1000, but OSX is often 501
 RUN sed -i 's/^UID_MIN.*/UID_MIN 499/' /etc/login.defs
@@ -88,11 +94,13 @@ RUN python openhands/core/download.py # No-op to download assets
 RUN find /app \! -group app -exec chgrp app {} +
 
 COPY --chown=openhands:app --chmod=770 --from=frontend-builder /app/build ./frontend/build
-COPY --chown=openhands:app --chmod=770 ./containers/app/entrypoint.sh /app/entrypoint.sh
 
 USER root
-
 WORKDIR /app
+
+# 最後にもう一度確認
+RUN ls -la /app/entrypoint.sh && \
+    file /app/entrypoint.sh
 
 ENTRYPOINT ["/app/entrypoint.sh"]
 CMD ["uvicorn", "openhands.server.listen:app", "--host", "0.0.0.0", "--port", "3000"]
