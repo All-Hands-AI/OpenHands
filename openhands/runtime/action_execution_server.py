@@ -300,7 +300,6 @@ class ActionExecutor:
         async with self.lock:
             action_type = action.action
             logger.debug(f'Running action:\n{action}')
-            logger.info(f'Running action:\n{action}')
             observation = await getattr(self, action_type)(action)
             logger.debug(f'Action output:\n{observation}')
             return observation
@@ -630,7 +629,6 @@ if __name__ == '__main__':
                 raise HTTPException(status_code=400, detail='Invalid action type')
             client.last_execution_time = time.time()
             observation = await client.run_action(action)
-            logger.info(f'Obs executed: {observation.content}')
             return event_to_dict(observation)
         except Exception as e:
             logger.error(f'Error while running /execute_action: {str(e)}')
