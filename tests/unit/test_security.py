@@ -374,6 +374,8 @@ async def test_unsafe_bash_command(temp_dir: str):
                             'is_input': False,
                             'hidden': False,
                             'confirmation_state': ActionConfirmationStatus.CONFIRMED,
+                            'is_static': False,
+                            'cwd': None,
                         },
                     ),
                 ),
