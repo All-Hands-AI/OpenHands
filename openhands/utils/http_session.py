@@ -17,7 +17,7 @@ class HttpSession:
     """
 
     _is_closed: bool = False
-    _headers: MutableMapping[str, str] = field(default_factory=dict)
+    headers: MutableMapping[str, str] = field(default_factory=dict)
 
     def request(self, *args, **kwargs):
         if self._is_closed:
@@ -58,10 +58,6 @@ class HttpSession:
 
     def options(self, *args, **kwargs):
         return self.request('OPTIONS', *args, **kwargs)
-
-    @property
-    def headers(self) -> MutableMapping[str, str]:
-        return self._headers
 
     def close(self) -> None:
         self._is_closed = True
