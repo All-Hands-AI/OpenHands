@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import OpenHands from "#/api/open-hands";
 import { PostSettings, PostApiSettings } from "#/types/settings";
+import { useSettings } from "../query/use-settings";
 
 const saveSettingsMutationFn = async (settings: Partial<PostSettings>) => {
   const resetLlmApiKey = settings.LLM_API_KEY === "";
@@ -29,9 +30,11 @@ const saveSettingsMutationFn = async (settings: Partial<PostSettings>) => {
 
 export const useSaveSettings = () => {
   const queryClient = useQueryClient();
+  const { data: currentSettings } = useSettings();
 
   return useMutation({
-    mutationFn: saveSettingsMutationFn,
+    mutationFn: (settings: Partial<PostSettings>) =>
+      saveSettingsMutationFn({ ...currentSettings, ...settings }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["settings"] });
     },
