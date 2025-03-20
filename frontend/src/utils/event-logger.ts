@@ -7,7 +7,7 @@
 class EventLogger {
   static isDevMode = process.env.NODE_ENV === "development";
 
-  static FORCE_LOGGING = true; // Set to true to enable logging in all environments
+  static FORCE_LOGGING = false; // Set to false for production, true only for debugging
 
   static shouldLog() {
     return this.isDevMode || this.FORCE_LOGGING;
