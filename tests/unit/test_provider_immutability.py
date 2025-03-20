@@ -297,6 +297,7 @@ async def test_get_env_vars():
 @pytest.fixture
 def event_stream():
     """Fixture for event stream testing"""
+
     class TestEventStream:
         def __init__(self):
             self.secrets = {}
@@ -305,6 +306,7 @@ def event_stream():
             self.secrets = secrets
 
     return TestEventStream()
+
 
 @pytest.mark.asyncio
 async def test_set_event_stream_secrets(event_stream):
@@ -325,14 +327,14 @@ async def test_set_event_stream_secrets(event_stream):
     await handler.set_event_stream_secrets(event_stream, env_vars)
     assert event_stream.secrets == {
         'github_token': 'new_token',
-        'gitlab_token': 'new_gitlab_token'
+        'gitlab_token': 'new_gitlab_token',
     }
 
     # Test without env_vars (using existing tokens)
     await handler.set_event_stream_secrets(event_stream)
     assert event_stream.secrets == {
         'github_token': 'test_token',
-        'gitlab_token': 'gitlab_token'
+        'gitlab_token': 'gitlab_token',
     }
 
 
