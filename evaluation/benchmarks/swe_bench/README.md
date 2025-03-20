@@ -18,6 +18,20 @@ Please follow instruction [here](../../README.md#setup) to setup your local deve
 
 ## Run Inference (Rollout) on SWE-Bench Instances: Generate Patch from Problem Statement
 
+> [!NOTE]
+> **Iterative Evaluation Protocol**
+>
+> We have an iterative approach for more stable and reproducible results:
+> - For each instance, we attempt to generate a solution up to 3 times
+> - Each attempt continues until either:
+>   1. The agent successfully produces a patch with `AgentFinishAction`, or
+>   2. The attempt reaches the maximum iteration limit
+> - If an attempt fails, we retry with a fresh attempt (up to the 3-attempt maximum)
+> - If your LLM config has temperature=0, we will automatically use temperature=0.1 for the 2nd and 3rd attempts
+>
+> To enable this iterative protocol, set `export ITERATIVE_EVAL_MODE=true`
+
+
 ### Running Locally with Docker
 
 Make sure your Docker daemon is running, and you have ample disk space (at least 200-500GB, depends on the SWE-Bench set you are running on) for the instance-level docker image.
@@ -45,7 +59,7 @@ to `CodeActAgent`.
 default, the script evaluates the entire SWE-bench_Lite test set (300 issues). Note:
 in order to use `eval_limit`, you must also set `agent`.
 - `max_iter`, e.g. `20`, is the maximum number of iterations for the agent to run. By
-default, it is set to 30.
+default, it is set to 60.
 - `num_workers`, e.g. `3`, is the number of parallel workers to run the evaluation. By
 default, it is set to 1.
 - `dataset`, a huggingface dataset name. e.g. `princeton-nlp/SWE-bench`, `princeton-nlp/SWE-bench_Lite`, or `princeton-nlp/SWE-bench_Verified`, specifies which dataset to evaluate on.
