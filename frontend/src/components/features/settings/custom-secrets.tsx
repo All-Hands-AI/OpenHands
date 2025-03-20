@@ -1,6 +1,6 @@
 import React from "react";
+import CloseIcon from "#/icons/close.svg?react";
 import PlusIcon from "#/icons/plus.svg?react";
-import XMarkIcon from "#/icons/x-mark.svg?react";
 import { SettingsInput } from "./settings-input";
 
 interface SecretEntry {
@@ -34,7 +34,7 @@ export function CustomSecrets() {
           onClick={addNewSecret}
           className="flex items-center gap-1 text-sm text-primary hover:text-primary/80"
         >
-          <PlusIcon className="h-4 w-4" />
+          <PlusIcon width={28} height={28} className="text-[#9099AC]" />
           Add Secret
         </button>
       </div>
@@ -45,19 +45,22 @@ export function CustomSecrets() {
             name={`secret-name-${secret.id}`}
             placeholder="Secret Name"
             className="w-[330px]"
+            label=""
+            type="number"
           />
           <SettingsInput
             name={`secret-value-${secret.id}`}
             type="password"
             placeholder="Secret Value"
             className="w-[330px]"
+            label=""
           />
           <button
             type="button"
             onClick={() => removeSecret(secret.id)}
             className="mt-2 p-1 text-gray-400 hover:text-gray-300"
           >
-            <XMarkIcon className="h-5 w-5" />
+            <CloseIcon width={28} height={28} className="text-[#9099AC]" />
           </button>
         </div>
       ))}
