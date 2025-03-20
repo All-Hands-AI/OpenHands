@@ -103,7 +103,7 @@ async def complete_runtime(
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     
-     """git add not working fix"""
+    """git add not working fix"""
     action = CmdRunAction(command='sleep 600')  # Sleep for 600 seconds (10 minutes)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
