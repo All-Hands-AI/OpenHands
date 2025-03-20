@@ -228,7 +228,7 @@ class Runtime(FileEditRuntimeMixin):
         """
         Refresh runtime provider tokens when agent attemps to run action with provider token
         """
-        if not self.git_provider_tokens:
+        if not self.git_provider_tokens or not self.user_id:
             return
 
         providers_called = ProviderHandler.check_cmd_action_for_provider_token_ref(
