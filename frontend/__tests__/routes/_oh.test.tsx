@@ -55,6 +55,7 @@ describe("frontend/routes/_oh", () => {
     });
   });
 
+  // FIXME: This test fails when it shouldn't be, please investigate
   it.skip("should render and capture the user's consent if oss mode", async () => {
     const user = userEvent.setup();
     const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
