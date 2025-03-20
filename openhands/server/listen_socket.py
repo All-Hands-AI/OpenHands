@@ -77,6 +77,13 @@ async def oh_user_action(connection_id: str, data: dict):
 
 
 @sio.event
+async def oh_action(connection_id: str, data: dict):
+    # TODO: Remove this handler once all clients are updated to use oh_user_action
+    # Keeping for backward compatibility with in-progress sessions
+    await conversation_manager.send_to_event_stream(connection_id, data)
+
+
+@sio.event
 async def disconnect(connection_id: str):
     logger.info(f'sio:disconnect:{connection_id}')
     await conversation_manager.disconnect_from_session(connection_id)

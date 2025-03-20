@@ -93,7 +93,7 @@ describe("WsClientProvider", () => {
 
     // Assert
     expect(getByText("Test Component")).toBeInTheDocument();
-    
+
     // Wait for the emit call to happen (useEffect needs time to run)
     await waitFor(() => {
       expect(mockEmit).toHaveBeenCalledWith("oh_user_action", { type: "test_event" });
