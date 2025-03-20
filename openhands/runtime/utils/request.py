@@ -53,6 +53,7 @@ def send_request(
             response.close()
         raise RequestHTTPError(
             e,
+            request=e.request,
             response=e.response,
             detail=_json.get('detail') if _json is not None else None,
         ) from e
