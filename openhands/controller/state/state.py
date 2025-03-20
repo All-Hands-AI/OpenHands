@@ -138,7 +138,7 @@ class State:
             pickled = base64.b64decode(encoded)
             state = pickle.loads(pickled)
         except FileNotFoundError:
-            # if user_id is not provided, we are in a saas/remote use case
+            # if user_id is provided, we are in a saas/remote use case
             # and we need to check if the state is in the old directory.
             if user_id:
                 filename = get_conversation_agent_state_filename(sid)
