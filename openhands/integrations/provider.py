@@ -155,6 +155,8 @@ class SecretStore(BaseModel):
                         converted_secrets[key] = value
 
                 new_data['custom_secrets'] = MappingProxyType(converted_secrets)
+        else:
+            new_data['custom_secrets'] = None
         return new_data
 
 

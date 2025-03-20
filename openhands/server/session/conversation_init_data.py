@@ -13,3 +13,7 @@ class ConversationInitData(Settings):
     custom_secrets: CUSTOM_SECRETS_TYPE | None = Field(default=None, frozen=True)
     selected_repository: str | None = Field(default=None)
     selected_branch: str | None = Field(default=None)
+
+    model_config = {
+        "arbitrary_types_allowed": True
+    }
