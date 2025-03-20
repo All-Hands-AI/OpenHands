@@ -62,7 +62,7 @@ class GitService(Protocol):
         ...
 
     async def get_latest_token(self) -> SecretStr | None:
-        """Get latest working token of the users"""
+        """Get latest working token of the user"""
         ...
 
     async def get_user(self) -> User:
