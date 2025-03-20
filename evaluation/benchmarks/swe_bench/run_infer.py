@@ -38,11 +38,17 @@ from openhands.core.config import (
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.critic import AgentFinishedCritic
-from openhands.events.action import CmdRunAction, FileReadAction, MessageAction
+from openhands.events.action import (
+    CmdRunAction,
+    FileReadAction,
+    FileWriteAction,
+    MessageAction,
+)
 from openhands.events.observation import (
     CmdOutputObservation,
     ErrorObservation,
     FileReadObservation,
+    FileWriteObservation,
 )
 from openhands.events.serialization.event import event_from_dict, event_to_dict
 from openhands.runtime.base import Runtime
@@ -119,6 +125,14 @@ Be thorough in your exploration, testing, and reasoning. It's fine if your think
 IMPORTANT: make sure to log your learnings about this repository in the repo.md file.
 """
 
+    if 'repo_md' in instance and instance['repo_md'] is not None:
+        instruction += f"""
+
+Here's the current version of the repo.md file:
+<repo_md>
+{instance['repo_md']}
+</repo_md>
+"""
     if RUN_WITH_BROWSING:
         instruction += """
 <IMPORTANT!>
@@ -336,6 +350,21 @@ def initialize_runtime(
         obs.exit_code == 0 and 'testbed' in obs.content,
         f'Expected to find python interpreter from testbed, but got: {str(obs)}',
     )
+
+    if 'repo_md' in instance and instance['repo_md'] is not None:
+        action = FileWriteAction(
+            path=f'/workspace/{workspace_dir_name}/.openhands/microagents/repo.md',
+            content=instance['repo_md'],
+        )
+        action.set_hard_timeout(600)
+        logger.info(action, extra={'msg_type': 'ACTION'})
+        obs = runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert_and_raise(
+            isinstance(obs, FileWriteObservation),
+            f'Failed to write repo.md: {str(obs)}',
+        )
+        logger.info(f'Wrote repo.md for instance {instance["instance_id"]}')
 
     logger.info('-' * 30)
     logger.info('END Runtime Initialization Fn')
@@ -673,6 +702,11 @@ if __name__ == '__main__':
         os.environ.get('ITERATIVE_EVAL_MODE_MAX_ATTEMPTS', '3')
     )
 
+    # If you want to use a different repo.md for each instance, you can set the REPO_MD_SOURCE environment variable to the path of the file containing the repo.md for each instance
+    # The file should be a jsonl file with the following format:
+    # {"instance_id": "123", "test_result": {"repo_md": "content of repo.md"}}
+    REPO_MD_SOURCE = os.environ.get('REPO_MD_SOURCE', None)
+
     if not ITERATIVE_EVAL_MODE:
         # load the dataset
         instances = prepare_dataset(swe_bench_tests, output_file, args.eval_n_limit)
@@ -681,6 +715,18 @@ if __name__ == '__main__':
         ):
             for col in ['PASS_TO_PASS', 'FAIL_TO_PASS']:
                 instances[col] = instances[col].apply(lambda x: str(x))
+
+        if REPO_MD_SOURCE is not None:
+            assert os.path.exists(
+                REPO_MD_SOURCE
+            ), f'Repo md source {REPO_MD_SOURCE} does not exist'
+            _df = pd.read_json(REPO_MD_SOURCE, orient='records', lines=True)
+            _df['repo_md'] = _df['test_result'].apply(lambda x: x['repo_md'])
+            instance_id_to_repo_md = dict(zip(_df['instance_id'], _df['repo_md']))
+            instances['repo_md'] = instances['instance_id'].map(instance_id_to_repo_md)
+            logger.info(
+                f'Loaded {instances["repo_md"].notna().sum()}/{instances.shape[0]} instances with repo_md'
+            )
 
         run_evaluation(
             instances,
