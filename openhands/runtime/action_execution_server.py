@@ -309,7 +309,7 @@ class ActionExecutor:
         self, action: CmdRunAction
     ) -> CmdOutputObservation | ErrorObservation:
         if action.is_static:
-            path = self._initial_cwd
+            path = action.cwd or self._initial_cwd
             result = await AsyncBashSession.execute(action.command, path)
             obs = CmdOutputObservation(
                 content=result.content,

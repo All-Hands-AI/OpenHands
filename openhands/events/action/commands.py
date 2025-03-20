@@ -18,6 +18,7 @@ class CmdRunAction(Action):
     thought: str = ''
     blocking: bool = False
     is_static: bool = False
+    cwd: str | None = None  # current working directory, only used if is_static is True
     # If blocking is True, the command will be run in a blocking manner.
     # e.g., it will NOT return early due to soft timeout.
     hidden: bool = False

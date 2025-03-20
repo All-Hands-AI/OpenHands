@@ -38,6 +38,7 @@ from openhands.server.shared import (
     config,
     conversation_manager,
 )
+from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.utils.async_utils import call_sync_from_async
 
 app = APIRouter(prefix='/api/conversations/{conversation_id}')
@@ -346,21 +347,19 @@ def zip_current_workspace(request: Request, conversation_id: str):
 @app.get('/git/changes')
 async def git_changes(request: Request, conversation_id: str):
     runtime: Runtime = request.state.conversation.runtime
-
     conversation_store = await ConversationStoreImpl.get_instance(
         config, get_user_id(request), get_github_user_id(request)
     )
-    metadata = await conversation_store.get_metadata(conversation_id)
-    is_running = await conversation_manager.is_agent_loop_running(conversation_id)
-    conversation_info = await _get_conversation_info(metadata, is_running)
 
-    path = runtime.config.workspace_mount_path_in_sandbox
-    if conversation_info and conversation_info.selected_repository:
-        repo_dir = conversation_info.selected_repository.split('/')[-1]
-        path = os.path.join(path, repo_dir)
+    cwd = await get_cwd(
+        conversation_store,
+        conversation_id,
+        runtime.config.workspace_mount_path_in_sandbox,
+    )
+    logger.info(f'Getting git changes in {cwd}')
 
     try:
-        changes = await call_sync_from_async(runtime.get_git_changes, path)
+        changes = await call_sync_from_async(runtime.get_git_changes, cwd)
         return changes
     except AgentRuntimeUnavailableError as e:
         logger.error(f'Runtime unavailable: {e}')
@@ -377,10 +376,20 @@ async def git_changes(request: Request, conversation_id: str):
 
 
 @app.get('/git/diff')
-async def git_diff(request: Request, path: str):
+async def git_diff(request: Request, path: str, conversation_id: str):
     runtime: Runtime = request.state.conversation.runtime
+    conversation_store = await ConversationStoreImpl.get_instance(
+        config, get_user_id(request), get_github_user_id(request)
+    )
+
+    cwd = await get_cwd(
+        conversation_store,
+        conversation_id,
+        runtime.config.workspace_mount_path_in_sandbox,
+    )
+
     try:
-        diff = await call_sync_from_async(runtime.get_git_diff, path)
+        diff = await call_sync_from_async(runtime.get_git_diff, path, cwd)
         return diff
     except AgentRuntimeUnavailableError as e:
         logger.error(f'Error getting diff: {e}')
@@ -388,3 +397,20 @@ async def git_diff(request: Request, path: str):
             status_code=500,
             content={'error': f'Error getting diff: {e}'},
         )
+
+
+async def get_cwd(
+    conversation_store: ConversationStore,
+    conversation_id: str,
+    workspace_mount_path_in_sandbox: str,
+):
+    metadata = await conversation_store.get_metadata(conversation_id)
+    is_running = await conversation_manager.is_agent_loop_running(conversation_id)
+    conversation_info = await _get_conversation_info(metadata, is_running)
+
+    cwd = workspace_mount_path_in_sandbox
+    if conversation_info and conversation_info.selected_repository:
+        repo_dir = conversation_info.selected_repository.split('/')[-1]
+        cwd = os.path.join(cwd, repo_dir)
+
+    return cwd

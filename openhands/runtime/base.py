@@ -526,11 +526,13 @@ class Runtime(FileEditRuntimeMixin):
     # Git
     # ====================================================================
 
-    def _execute_shell_fn_git_handler(self, command: str) -> CommandResult:
+    def _execute_shell_fn_git_handler(
+        self, command: str, cwd: str | None
+    ) -> CommandResult:
         """
         This function is used by the GitHandler to execute shell commands.
         """
-        obs = self.run(CmdRunAction(command=command, is_static=True))
+        obs = self.run(CmdRunAction(command=command, is_static=True, cwd=cwd))
         exit_code = 0
         content = ''
 
@@ -541,10 +543,12 @@ class Runtime(FileEditRuntimeMixin):
 
         return CommandResult(content=content, exit_code=exit_code)
 
-    def get_git_changes(self, path: str | None) -> list[dict[str, str]]:
+    def get_git_changes(self, cwd: str) -> list[dict[str, str]]:
+        self.git_handler.set_cwd(cwd)
         return self.git_handler.get_git_changes()
 
-    def get_git_diff(self, file_path: str) -> dict[str, str]:
+    def get_git_diff(self, file_path: str, cwd: str) -> dict[str, str]:
+        self.git_handler.set_cwd(cwd)
         return self.git_handler.get_git_diff(file_path)
 
     @property

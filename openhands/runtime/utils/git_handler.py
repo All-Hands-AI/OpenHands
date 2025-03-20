@@ -23,9 +23,19 @@ class GitHandler:
 
     def __init__(
         self,
-        execute_shell_fn: Callable[[str], CommandResult],
+        execute_shell_fn: Callable[[str, str | None], CommandResult],
     ):
         self.execute = execute_shell_fn
+        self.cwd: str | None = None
+
+    def set_cwd(self, cwd: str):
+        """
+        Sets the current working directory for Git operations.
+
+        Args:
+            cwd (str): The directory path.
+        """
+        self.cwd = cwd
 
     def _is_git_repo(self) -> bool:
         """
@@ -35,7 +45,7 @@ class GitHandler:
             bool: True if inside a Git repository, otherwise False.
         """
         cmd = 'git rev-parse --is-inside-work-tree'
-        output = self.execute(cmd)
+        output = self.execute(cmd, self.cwd)
         return output.content.strip() == 'true'
 
     def _get_current_file_content(self, file_path: str) -> str:
@@ -48,7 +58,7 @@ class GitHandler:
         Returns:
             str: The file content.
         """
-        output = self.execute(f'cat {file_path}')
+        output = self.execute(f'cat {file_path}', self.cwd)
         return output.content
 
     def _verify_ref_exists(self, ref: str) -> bool:
@@ -62,7 +72,7 @@ class GitHandler:
             bool: True if the reference exists, otherwise False.
         """
         cmd = f'git rev-parse --verify {ref}'
-        output = self.execute(cmd)
+        output = self.execute(cmd, self.cwd)
         return output.exit_code == 0
 
     def _get_valid_ref(self) -> str | None:
@@ -98,7 +108,7 @@ class GitHandler:
             return ''
 
         cmd = f'git show {ref}:{file_path}'
-        output = self.execute(cmd)
+        output = self.execute(cmd, self.cwd)
         return output.content if output.exit_code == 0 else ''
 
     def _get_current_branch(self) -> str:
@@ -109,7 +119,7 @@ class GitHandler:
             str: The name of the primary branch.
         """
         cmd = 'git remote show origin | grep "HEAD branch"'
-        output = self.execute(cmd)
+        output = self.execute(cmd, self.cwd)
         return output.content.split()[-1].strip()
 
     def _get_changed_files(self) -> list[str]:
@@ -124,7 +134,7 @@ class GitHandler:
             return []
 
         diff_cmd = f'git diff --name-status {ref}'
-        output = self.execute(diff_cmd)
+        output = self.execute(diff_cmd, self.cwd)
         return output.content.splitlines()
 
     def _get_untracked_files(self) -> list[dict[str, str]]:
@@ -135,7 +145,7 @@ class GitHandler:
             list[dict[str, str]]: A list of dictionaries containing file paths and statuses.
         """
         cmd = 'git ls-files --others --exclude-standard'
-        output = self.execute(cmd)
+        output = self.execute(cmd, self.cwd)
         obs_list = output.content.splitlines()
         return (
             [{'status': 'A', 'path': path} for path in obs_list]
