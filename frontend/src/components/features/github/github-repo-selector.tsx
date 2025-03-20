@@ -19,7 +19,7 @@ interface GitRepositorySelectorProps {
   publicRepositories: GitRepository[];
 }
 
-export function GitHubRepositorySelector({
+export function GitRepositorySelector({
   onInputChange,
   onSelect,
   userRepositories,

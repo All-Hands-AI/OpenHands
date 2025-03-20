@@ -7,7 +7,7 @@ import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useConfig } from "#/hooks/query/use-config";
 import { ImportProjectSuggestionBox } from "../../components/features/suggestions/import-project-suggestion-box";
-import { GitHubRepositoriesSuggestionBox } from "#/components/features/github/github-repositories-suggestion-box";
+import { GitRepositoriesSuggestionBox } from "#/components/features/github/github-repositories-suggestion-box";
 import { HeroHeading } from "#/components/shared/hero-heading";
 import { TaskForm } from "#/components/shared/task-form";
 
@@ -35,7 +35,7 @@ function Home() {
         </div>
 
         <div className="flex gap-4 w-full flex-col md:flex-row">
-          <GitHubRepositoriesSuggestionBox
+          <GitRepositoriesSuggestionBox
             handleSubmit={() => formRef.current?.requestSubmit()}
             gitHubAuthUrl={gitHubAuthUrl}
             user={user || null}

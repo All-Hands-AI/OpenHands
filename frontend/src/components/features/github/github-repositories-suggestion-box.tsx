@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { I18nKey } from "#/i18n/declaration";
 import { SuggestionBox } from "#/components/features/suggestions/suggestion-box";
-import { GitHubRepositorySelector } from "./github-repo-selector";
+import { GitRepositorySelector } from "./github-repo-selector";
 import { useAppRepositories } from "#/hooks/query/use-app-repositories";
 import { useSearchRepositories } from "#/hooks/query/use-search-repositories";
 import { useUserRepositories } from "#/hooks/query/use-user-repositories";
@@ -14,17 +14,17 @@ import GitHubLogo from "#/assets/branding/github-logo.svg?react";
 import { ProviderSelector } from "./providers-selector";
 import { Provider } from "#/types/settings";
 
-interface GitHubRepositoriesSuggestionBoxProps {
+interface GitRepositoriesSuggestionBoxProps {
   handleSubmit: () => void;
   gitHubAuthUrl: string | null;
   user: GitHubErrorReponse | GitHubUser | null;
 }
 
-export function GitHubRepositoriesSuggestionBox({
+export function GitRepositoriesSuggestionBox({
   handleSubmit,
   gitHubAuthUrl,
   user,
-}: GitHubRepositoriesSuggestionBoxProps) {
+}: GitRepositoriesSuggestionBoxProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = React.useState<string>("");
@@ -65,7 +65,7 @@ export function GitHubRepositoriesSuggestionBox({
               setSelectedProvider={setSelectedProvider}
             />
             {selectedProvider && (
-              <GitHubRepositorySelector
+              <GitRepositorySelector
                 onInputChange={setSearchQuery}
                 onSelect={handleSubmit}
                 publicRepositories={searchedRepos || []}
