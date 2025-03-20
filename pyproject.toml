@@ -84,6 +84,8 @@ ruff = "0.11.0"
 mypy = "1.15.0"
 pre-commit = "4.1.0"
 build = "*"
+pytest-mock = "^3.14.0"
+pytest-asyncio = "^0.25.3"
 
 [tool.poetry.group.test.dependencies]
 pytest = "*"
@@ -98,6 +100,8 @@ reportlab = "*"
 
 [tool.coverage.run]
 concurrency = ["gevent"]
+
+
 
 [tool.poetry.group.runtime.dependencies]
 jupyterlab = "*"
@@ -126,6 +130,8 @@ ignore = ["D1"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
+
 
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"
