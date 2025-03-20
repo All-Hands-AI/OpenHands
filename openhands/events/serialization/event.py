@@ -1,6 +1,7 @@
 from dataclasses import asdict
 from datetime import datetime
 from enum import Enum
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -47,14 +48,14 @@ DELETE_FROM_TRAJECTORY_EXTRAS = {
 DELETE_FROM_MEMORY_EXTRAS = DELETE_FROM_TRAJECTORY_EXTRAS | {'open_pages_urls'}
 
 
-def event_from_dict(data) -> 'Event':
+def event_from_dict(data: dict[str, Any]) -> 'Event':
     evt: Event
     if 'action' in data:
         evt = action_from_dict(data)
     elif 'observation' in data:
         evt = observation_from_dict(data)
     else:
-        raise ValueError('Unknown event type: ' + data)
+        raise ValueError(f'Unknown event type: {data}')
     for key in UNDERSCORE_KEYS:
         if key in data:
             value = data[key]

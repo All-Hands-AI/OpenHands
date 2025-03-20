@@ -24,6 +24,7 @@ from openhands.events.observation.files import (
     FileReadObservation,
     FileWriteObservation,
 )
+from openhands.events.serialization.event import event_to_dict
 from openhands.storage import get_file_store
 from openhands.storage.locations import get_conversation_event_filename
 
@@ -157,6 +158,31 @@ def test_get_matching_events_source_filter(temp_dir: str):
         and events[0].source == EventSource.ENVIRONMENT
     )
 
+    # Test that source comparison works correctly with None source
+    null_source_event = NullObservation('test4')
+    event_stream.add_event(null_source_event, EventSource.AGENT)
+    event = event_stream.get_event(event_stream.get_latest_event_id())
+    event._source = None  # type: ignore
+
+    # Update the serialized version
+    data = event_to_dict(event)
+    event_stream.file_store.write(
+        event_stream._get_filename_for_id(event.id, event_stream.user_id),
+        json.dumps(data),
+    )
+
+    # Verify that source comparison works correctly
+    assert event_stream._should_filter_event(
+        event, source='agent'
+    )  # Should filter out None source events
+    assert not event_stream._should_filter_event(
+        event, source=None
+    )  # Should not filter out when source filter is None
+
+    # Filter by AGENT source again
+    events = event_stream.get_matching_events(source='agent')
+    assert len(events) == 2  # Should not include the None source event
+
 
 def test_get_matching_events_pagination(temp_dir: str):
     file_store = get_file_store('local', temp_dir)
@@ -210,7 +236,7 @@ def test_memory_usage_file_operations(temp_dir: str):
     """
 
     def get_memory_mb():
-        """Get current memory usage in MB"""
+        """Get current memory usage in MB."""
         process = psutil.Process(os.getpid())
         return process.memory_info().rss / 1024 / 1024
 
