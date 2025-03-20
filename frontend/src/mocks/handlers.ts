@@ -22,12 +22,13 @@ export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
   enable_default_condenser: DEFAULT_SETTINGS.ENABLE_DEFAULT_CONDENSER,
   enable_sound_notifications: DEFAULT_SETTINGS.ENABLE_SOUND_NOTIFICATIONS,
   user_consents_to_analytics: DEFAULT_SETTINGS.USER_CONSENTS_TO_ANALYTICS,
+  provider_tokens: DEFAULT_SETTINGS.PROVIDER_TOKENS,
 };
 
 const MOCK_USER_PREFERENCES: {
-  settings: ApiSettings | PostApiSettings;
+  settings: ApiSettings | PostApiSettings | null;
 } = {
-  settings: MOCK_DEFAULT_USER_SETTINGS,
+  settings: null,
 };
 
 const conversations: Conversation[] = [
@@ -174,22 +175,24 @@ export const handlers = [
   ),
   http.get("/api/options/config", () => {
     const mockSaas = import.meta.env.VITE_MOCK_SAAS === "true";
+
     const config: GetConfigResponse = {
       APP_MODE: mockSaas ? "saas" : "oss",
       GITHUB_CLIENT_ID: "fake-github-client-id",
       POSTHOG_CLIENT_KEY: "fake-posthog-client-key",
+      STRIPE_PUBLISHABLE_KEY: "",
     };
 
     return HttpResponse.json(config);
   }),
   http.get("/api/settings", async () => {
     await delay();
-    const settings: ApiSettings = {
-      ...MOCK_USER_PREFERENCES.settings,
-      language: "no",
-    };
-    // @ts-expect-error - mock types
-    if (settings.github_token) settings.github_token_is_set = true;
+    const { settings } = MOCK_USER_PREFERENCES;
+
+    if (!settings) return HttpResponse.json(null, { status: 404 });
+
+    if (Object.keys(settings.provider_tokens).length > 0)
+      settings.github_token_is_set = true;
 
     return HttpResponse.json(settings);
   }),
@@ -201,17 +204,19 @@ export const handlers = [
       if (typeof body === "object") {
         newSettings = { ...body };
         if (newSettings.unset_github_token) {
-          newSettings.github_token = undefined;
+          newSettings.provider_tokens = { github: "", gitlab: "" };
           newSettings.github_token_is_set = false;
           delete newSettings.unset_github_token;
         }
       }
 
-      MOCK_USER_PREFERENCES.settings = {
+      const fullSettings = {
+        ...MOCK_DEFAULT_USER_SETTINGS,
         ...MOCK_USER_PREFERENCES.settings,
         ...newSettings,
       };
 
+      MOCK_USER_PREFERENCES.settings = fullSettings;
       return HttpResponse.json(null, { status: 200 });
     }
 

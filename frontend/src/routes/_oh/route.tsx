@@ -1,5 +1,13 @@
 import React from "react";
-import { useRouteError, isRouteErrorResponse, Outlet } from "react-router";
+import {
+  useRouteError,
+  isRouteErrorResponse,
+  Outlet,
+  useNavigate,
+  useLocation,
+  useSearchParams,
+} from "react-router";
+import { useTranslation } from "react-i18next";
 import i18n from "#/i18n";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useIsAuthed } from "#/hooks/query/use-is-authed";
@@ -10,6 +18,10 @@ import { AnalyticsConsentFormModal } from "#/components/features/analytics/analy
 import { useSettings } from "#/hooks/query/use-settings";
 import { useAuth } from "#/context/auth-context";
 import { useMigrateUserConsent } from "#/hooks/use-migrate-user-consent";
+import { useBalance } from "#/hooks/query/use-balance";
+import { SetupPaymentModal } from "#/components/features/payment/setup-payment-modal";
+import { BILLING_SETTINGS } from "#/utils/feature-flags";
+import { displaySuccessToast } from "#/utils/custom-toast-handlers";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -44,11 +56,14 @@ export function ErrorBoundary() {
 }
 
 export default function MainApp() {
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const [searchParams] = useSearchParams();
   const { githubTokenIsSet } = useAuth();
   const { data: settings } = useSettings();
+  const { error, isFetching } = useBalance();
   const { migrateUserConsent } = useMigrateUserConsent();
-
-  const [consentFormIsOpen, setConsentFormIsOpen] = React.useState(false);
+  const { t } = useTranslation();
 
   const config = useConfig();
   const {
@@ -61,6 +76,8 @@ export default function MainApp() {
     appMode: config.data?.APP_MODE || null,
     gitHubClientId: config.data?.GITHUB_CLIENT_ID || null,
   });
+
+  const [consentFormIsOpen, setConsentFormIsOpen] = React.useState(false);
 
   React.useEffect(() => {
     if (settings?.LANGUAGE) {
@@ -83,6 +100,17 @@ export default function MainApp() {
       },
     });
   }, []);
+
+  React.useEffect(() => {
+    // Don't allow users to use the app if it 402s
+    if (error?.status === 402 && pathname !== "/") {
+      navigate("/");
+    } else if (!isFetching && searchParams.get("free_credits") === "success") {
+      displaySuccessToast(t("BILLING$YOURE_IN"));
+      searchParams.delete("free_credits");
+      navigate("/");
+    }
+  }, [error?.status, pathname, isFetching]);
 
   const userIsAuthed = !!isAuthed && !authError;
   const renderWaitlistModal =
@@ -116,6 +144,10 @@ export default function MainApp() {
           }}
         />
       )}
+
+      {BILLING_SETTINGS() &&
+        config.data?.APP_MODE === "saas" &&
+        settings?.IS_NEW_USER && <SetupPaymentModal />}
     </div>
   );
 }

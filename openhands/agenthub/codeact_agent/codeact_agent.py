@@ -1,8 +1,6 @@
-import json
 import os
 from collections import deque
 
-import openhands
 import openhands.agenthub.codeact_agent.function_calling as codeact_function_calling
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
@@ -72,23 +70,17 @@ class CodeActAgent(Agent):
             codeact_enable_browsing=self.config.codeact_enable_browsing,
             codeact_enable_jupyter=self.config.codeact_enable_jupyter,
             codeact_enable_llm_editor=self.config.codeact_enable_llm_editor,
+            llm=self.llm,
         )
         logger.debug(
-            f'TOOLS loaded for CodeActAgent: {json.dumps(self.tools, indent=2, ensure_ascii=False).replace("\\n", "\n")}'
+            f"TOOLS loaded for CodeActAgent: {', '.join([tool.get('function').get('name') for tool in self.tools])}"
         )
         self.prompt_manager = PromptManager(
-            microagent_dir=os.path.join(
-                os.path.dirname(os.path.dirname(openhands.__file__)),
-                'microagents',
-            )
-            if self.config.enable_prompt_extensions
-            else None,
             prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
-            disabled_microagents=self.config.disabled_microagents,
         )
 
         # Create a ConversationMemory instance
-        self.conversation_memory = ConversationMemory(self.prompt_manager)
+        self.conversation_memory = ConversationMemory(self.config, self.prompt_manager)
 
         self.condenser = Condenser.from_config(self.config.condenser)
         logger.debug(f'Using condenser: {type(self.condenser)}')
@@ -168,7 +160,7 @@ class CodeActAgent(Agent):
         if not self.prompt_manager:
             raise Exception('Prompt Manager not instantiated.')
 
-        # Use conversation_memory to process events instead of calling events_to_messages directly
+        # Use ConversationMemory to process initial messages
         messages = self.conversation_memory.process_initial_messages(
             with_caching=self.llm.is_caching_prompt_active()
         )
@@ -180,12 +172,12 @@ class CodeActAgent(Agent):
             f'Processing {len(events)} events from a total of {len(state.history)} events'
         )
 
+        # Use ConversationMemory to process events
         messages = self.conversation_memory.process_events(
             condensed_history=events,
             initial_messages=messages,
             max_message_chars=self.llm.config.max_message_chars,
             vision_is_active=self.llm.vision_is_active(),
-            enable_som_visual_browsing=self.config.enable_som_visual_browsing,
         )
 
         messages = self._enhance_messages(messages)
@@ -216,14 +208,7 @@ class CodeActAgent(Agent):
                 # compose the first user message with examples
                 self.prompt_manager.add_examples_to_initial_message(msg)
 
-                # and/or repo/runtime info
-                if self.config.enable_prompt_extensions:
-                    self.prompt_manager.add_info_to_initial_message(msg)
-
-            # enhance the user message with additional context based on keywords matched
-            if msg.role == 'user':
-                self.prompt_manager.enhance_message(msg)
-
+            elif msg.role == 'user':
                 # Add double newline between consecutive user messages
                 if prev_role == 'user' and len(msg.content) > 0:
                     # Find the first TextContent in the message to add newlines

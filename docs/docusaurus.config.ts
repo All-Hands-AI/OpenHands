@@ -76,12 +76,6 @@ const config: Config = {
           label: "User Guides",
         },
         {
-          type: "docSidebar",
-          sidebarId: "apiSidebar",
-          position: "left",
-          label: "Python API",
-        },
-        {
           type: 'localeDropdown',
           position: 'left',
         },

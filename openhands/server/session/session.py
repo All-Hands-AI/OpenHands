@@ -61,7 +61,7 @@ class Session:
             sid,
             file_store,
             status_callback=self.queue_status_message,
-            github_user_id=user_id,
+            user_id=user_id,
         )
         self.agent_session.event_stream.subscribe(
             EventStreamSubscriber.SERVER, self.on_event, self.sid
@@ -99,6 +99,16 @@ class Session:
         self.config.security.security_analyzer = (
             settings.security_analyzer or self.config.security.security_analyzer
         )
+        self.config.sandbox.base_container_image = (
+            settings.sandbox_base_container_image
+            or self.config.sandbox.base_container_image
+        )
+        self.config.sandbox.runtime_container_image = (
+            settings.sandbox_runtime_container_image
+            if settings.sandbox_base_container_image
+            or settings.sandbox_runtime_container_image
+            else self.config.sandbox.runtime_container_image
+        )
         max_iterations = settings.max_iterations or self.config.max_iterations
 
         # This is a shallow copy of the default LLM config, so changes here will
@@ -123,11 +133,11 @@ class Session:
 
         agent = Agent.get_cls(agent_cls)(llm, agent_config)
 
-        github_token = None
+        provider_token = None
         selected_repository = None
         selected_branch = None
         if isinstance(settings, ConversationInitData):
-            github_token = settings.github_token
+            provider_token = settings.provider_token
             selected_repository = settings.selected_repository
             selected_branch = settings.selected_branch
 
@@ -140,7 +150,7 @@ class Session:
                 max_budget_per_task=self.config.max_budget_per_task,
                 agent_to_llm_config=self.config.get_agent_to_llm_config_map(),
                 agent_configs=self.config.get_agent_configs(),
-                github_token=github_token,
+                github_token=provider_token,
                 selected_repository=selected_repository,
                 selected_branch=selected_branch,
                 initial_message=initial_message,
