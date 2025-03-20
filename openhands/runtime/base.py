@@ -292,19 +292,10 @@ class Runtime(FileEditRuntimeMixin):
             else f'git checkout -b {openhands_workspace_branch}'
         )
 
-    
-        action = CmdRunAction(command='pwd')
-        obs = self.run_action(action)
-        self.log('info', f'Current working directory: {obs}')
-
-        
         action = CmdRunAction(
             command=f'{clone_command} ; cd {dir_name} ; {checkout_command}',
         )
         self.log('info', f'Cloning repo: {selected_repository}')
-        self.run_action(action)
-
-        action = CmdRunAction('sleep 100')
         self.run_action(action)
         return dir_name
 
