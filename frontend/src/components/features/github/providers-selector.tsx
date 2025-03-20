@@ -1,4 +1,6 @@
+import { useAuth } from "#/context/auth-context";
 import { useSettings } from "#/hooks/query/use-settings";
+import { Provider } from "#/types/settings";
 import {
   Autocomplete,
   AutocompleteItem,
@@ -6,20 +8,19 @@ import {
 } from "@heroui/react";
 
 interface ProviderSelectorProps {
-  selectedProvider: string | null;
-  setSelectedProvider: (value: string | null) => void;
+  selectedProvider: Provider | null;
+  setSelectedProvider: (value: Provider | null) => void;
 }
 
 export function ProviderSelector({
   selectedProvider,
   setSelectedProvider,
 }: ProviderSelectorProps) {
-  const { data: settings } = useSettings();
-
-  const providerSet = settings?.PROVIDER_TOKENS_SET || {};
+  const { providerTokensSet } = useAuth();
+  console.log(providerTokensSet);
 
   const handleProviderSelection = (provider: string | null) => {
-    setSelectedProvider(provider);
+    setSelectedProvider(provider as Provider);
   };
 
   return (
@@ -41,9 +42,9 @@ export function ProviderSelector({
           handleProviderSelection(id?.toString() ?? null)
         }
       >
-        {Object.keys(providerSet).length > 0 ? (
+        {providerTokensSet.length > 0 ? (
           <AutocompleteSection>
-            {Object.keys(providerSet).map((provider) => (
+            {providerTokensSet.map((provider) => (
               <AutocompleteItem key={provider} textValue={provider}>
                 {provider}
               </AutocompleteItem>

@@ -22,17 +22,10 @@ app = APIRouter(prefix='/api/user')
 
 from pydantic import BaseModel
 
-class PaginationInfo(BaseModel):
-    total_count: int
-    has_more: bool
-    provider_cursors: dict[str, str]
 
-class RepositoryResponse(BaseModel):
-    repositories: list[Repository]
-    pagination: PaginationInfo
-
-@app.get('/repositories', response_model=RepositoryResponse)
+@app.get('/repositories', response_model=list[Repository])
 async def get_github_repositories(
+    selected_provider: str = 'github',
     page: int = 1,
     per_page: int = 10,
     sort: str = 'pushed',
@@ -40,17 +33,18 @@ async def get_github_repositories(
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     access_token: SecretStr | None = Depends(get_access_token),
 ):
-    if provider_tokens:
+    selected_provider = ProviderType(selected_provider)
 
+    if provider_tokens:
         client = ProviderHandler(
             provider_tokens=provider_tokens, external_auth_token=access_token
         )
 
         try:
             repos: list[Repository] = await client.get_repositories(
-                page, per_page, sort, installation_id
+                selected_provider, page, per_page, sort, installation_id
             )
-            return RepositoryResponse(**repos)
+            return repos
 
         except AuthenticationError as e:
             return JSONResponse(
@@ -65,7 +59,7 @@ async def get_github_repositories(
             )
 
     return JSONResponse(
-        content='GitHub token required.',
+        content='Git provider token required. (such as GitHub).',
         status_code=status.HTTP_401_UNAUTHORIZED,
     )
 
@@ -97,7 +91,7 @@ async def get_user(
             )
 
     return JSONResponse(
-        content='Git token required.',
+        content='Git provider token required. (such as GitHub).',
         status_code=status.HTTP_401_UNAUTHORIZED,
     )
 

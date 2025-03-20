@@ -25,8 +25,9 @@ import {
   displayErrorToast,
   displaySuccessToast,
 } from "#/utils/custom-toast-handlers";
-import { PostSettings } from "#/types/settings";
+import { PostSettings, Provider } from "#/types/settings";
 import { HIDE_LLM_SETTINGS } from "#/utils/feature-flags";
+import { useAuth } from "#/context/auth-context";
 
 const REMOTE_RUNTIME_OPTIONS = [
   { key: 1, label: "1x (2 core, 8G)" },
@@ -48,6 +49,7 @@ function AccountSettings() {
   } = useAIConfigOptions();
   const { mutate: saveSettings } = useSaveSettings();
   const { handleLogout } = useAppLogout();
+  const { providerTokensSet, providersAreSet } = useAuth();
 
   const isFetching = isFetchingSettings || isFetchingResources;
   const isSuccess = isSuccessfulSettings && isSuccessfulResources;
@@ -71,13 +73,8 @@ function AccountSettings() {
   };
 
   const hasAppSlug = !!config?.APP_SLUG;
-  const providerTokensSet = settings?.PROVIDER_TOKENS_SET || {};
-  const isGithubTokenSet = providerTokensSet.github || false;
-  const isGitlabTokenSet = providerTokensSet.gitlab || false;
-  // Check if at least one provider has a true value
-  const hasAnyProviderToken = Object.values(providerTokensSet).some(
-    (value) => value === true,
-  );
+  const isGithubTokenSet = providerTokensSet.includes(Provider.github) || false;
+  const isGitlabTokenSet = providerTokensSet.includes(Provider.gitlab) || false;
   const isLLMKeySet = settings?.LLM_API_KEY === "**********";
   const isAnalyticsEnabled = settings?.USER_CONSENTS_TO_ANALYTICS;
   const isAdvancedSettingsSet = determineWhetherToToggleAdvancedSettings();
@@ -442,7 +439,7 @@ function AccountSettings() {
               type="button"
               variant="secondary"
               onClick={handleLogout}
-              isDisabled={!hasAnyProviderToken}
+              isDisabled={!providersAreSet}
             >
               Disconnect Tokens
             </BrandButton>

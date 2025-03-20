@@ -1,4 +1,9 @@
-export type Provider = "github" | "gitlab";
+export const Provider = {
+  github: "github",
+  gitlab: "gitlab",
+} as const;
+
+export type Provider = keyof typeof Provider;
 
 export type Settings = {
   LLM_MODEL: string;
@@ -9,7 +14,7 @@ export type Settings = {
   CONFIRMATION_MODE: boolean;
   SECURITY_ANALYZER: string;
   REMOTE_RUNTIME_RESOURCE_FACTOR: number | null;
-  PROVIDER_TOKENS_SET: Record<string, boolean>;
+  PROVIDER_TOKENS_SET: Record<Provider, boolean>;
   ENABLE_DEFAULT_CONDENSER: boolean;
   ENABLE_SOUND_NOTIFICATIONS: boolean;
   USER_CONSENTS_TO_ANALYTICS: boolean | null;
@@ -29,7 +34,7 @@ export type ApiSettings = {
   enable_default_condenser: boolean;
   enable_sound_notifications: boolean;
   user_consents_to_analytics: boolean | null;
-  provider_tokens_set: Record<string, boolean>;
+  provider_tokens_set: Record<Provider, boolean>;
 };
 
 export type PostSettings = Settings & {

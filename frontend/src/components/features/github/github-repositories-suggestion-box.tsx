@@ -12,6 +12,7 @@ import { useDebounce } from "#/hooks/use-debounce";
 import { BrandButton } from "../settings/brand-button";
 import GitHubLogo from "#/assets/branding/github-logo.svg?react";
 import { ProviderSelector } from "./providers-selector";
+import { Provider } from "#/types/settings";
 
 interface GitHubRepositoriesSuggestionBoxProps {
   handleSubmit: () => void;
@@ -27,9 +28,8 @@ export function GitHubRepositoriesSuggestionBox({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = React.useState<string>("");
-  const [selectedProvider, setSelectedProvider] = React.useState<string | null>(
-    null,
-  );
+  const [selectedProvider, setSelectedProvider] =
+    React.useState<Provider | null>(null);
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   // TODO: Use `useQueries` to fetch all repositories in parallel

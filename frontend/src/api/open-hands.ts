@@ -320,8 +320,8 @@ class OpenHands {
   static async searchGitHubRepositories(
     query: string,
     per_page = 5,
-  ): Promise<GitHubRepository[]> {
-    const response = await openHands.get<GitHubRepository[]>(
+  ): Promise<GitRepository[]> {
+    const response = await openHands.get<GitRepository[]>(
       "/api/user/search/repositories",
       {
         params: {

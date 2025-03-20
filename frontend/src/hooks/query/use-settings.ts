@@ -51,7 +51,11 @@ export const useSettings = () => {
 
   React.useEffect(() => {
     if (query.data?.PROVIDER_TOKENS_SET) {
-      setProviderTokensSet(query.data.PROVIDER_TOKENS_SET);
+      const providers = query.data.PROVIDER_TOKENS_SET;
+      const setProviders = (
+        Object.keys(providers) as Array<keyof typeof providers>
+      ).filter((key) => providers[key]);
+      setProviderTokensSet(setProviders);
       const atLeastOneSet = Object.values(query.data.PROVIDER_TOKENS_SET).some(
         (value) => value,
       );

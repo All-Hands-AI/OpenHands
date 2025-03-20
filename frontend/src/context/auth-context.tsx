@@ -1,25 +1,26 @@
+import { Provider } from "#/types/settings";
 import React from "react";
 
 interface AuthContextType {
-  providerTokensSet: Record<string, boolean>;
-  setProviderTokensSet: (tokens: Record<string, boolean>) => void;
+  providerTokensSet: Provider[];
+  setProviderTokensSet: (tokens: Provider[]) => void;
   providersAreSet: boolean;
   setProvidersAreSet: (status: boolean) => void;
 }
 
 interface AuthContextProps extends React.PropsWithChildren {
-  initialProviderTokens?: Record<string, boolean>;
+  initialProviderTokens?: Provider[];
 }
 
 const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 
 function AuthProvider({
   children,
-  initialProviderTokens = {},
+  initialProviderTokens = [],
 }: AuthContextProps) {
-  const [providerTokensSet, setProviderTokensSet] = React.useState<
-    Record<string, boolean>
-  >(initialProviderTokens);
+  const [providerTokensSet, setProviderTokensSet] = React.useState<Provider[]>(
+    initialProviderTokens,
+  );
 
   const [providersAreSet, setProvidersAreSet] = React.useState<boolean>(false);
 
