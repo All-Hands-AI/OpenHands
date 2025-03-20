@@ -1,0 +1,88 @@
+---
+sidebar_position: 2
+---
+
+# 🔧 インストール
+
+OpenHandsをインストールする方法は複数あります。以下のオプションから選択してください：
+
+## Dockerを使用する（推奨）
+
+最も簡単な方法は、公式のDockerイメージを使用することです：
+
+```bash
+docker pull ghcr.io/all-hands-ai/openhands:latest
+```
+
+そして、以下のコマンドで実行します：
+
+```bash
+WORKSPACE_BASE=$(pwd)/workspace
+docker run -it \
+    --pull=always \
+    -e SANDBOX_USER_ID=$(id -u) \
+    -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
+    -v $WORKSPACE_BASE:/opt/workspace_base \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    -p 3000:3000 \
+    --add-host host.docker.internal:host-gateway \
+    --name openhands-app-$(date +%Y%m%d%H%M%S) \
+    ghcr.io/all-hands-ai/openhands:latest
+```
+
+## ソースからビルドする
+
+開発版を使用したい場合は、ソースからビルドすることができます：
+
+```bash
+# リポジトリのクローン
+git clone https://github.com/All-Hands-AI/OpenHands.git
+cd OpenHands
+
+# 依存関係のインストール
+make build
+
+# 開発サーバーの起動
+make dev
+```
+
+## Pythonパッケージとして使用
+
+OpenHandsをPythonパッケージとして使用することもできます：
+
+```bash
+pip install openhands
+```
+
+そして、以下のようにPythonコードで使用します：
+
+```python
+from openhands import OpenHandsClient
+
+client = OpenHandsClient(
+    api_key="your-api-key",
+    model="gpt-4",
+    workspace="/path/to/workspace"
+)
+
+result = client.execute_task("新しいPythonファイルを作成してください")
+print(result.output)
+```
+
+## システム要件
+
+- Docker 26.0.0以降（Dockerを使用する場合）
+- Python 3.9以降（Pythonパッケージとして使用する場合）
+- Linux、macOS、またはWindows（WSL2）
+- 最小4GB RAM
+- インターネット接続（LLMとの通信用）
+
+## トラブルシューティング
+
+インストール中に問題が発生した場合は、以下を確認してください：
+
+1. Dockerが正しくインストールされ、実行されていることを確認
+2. 必要なポートが利用可能であることを確認（デフォルトでは3000番ポート）
+3. システム要件を満たしていることを確認
+
+詳細なトラブルシューティングについては、[トラブルシューティングガイド](./troubleshooting/troubleshooting.md)を参照してください。
