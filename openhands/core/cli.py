@@ -183,6 +183,7 @@ async def main(loop: asyncio.AbstractEventLoop):
         runtime=runtime,
         event_stream=event_stream,
         sid=sid,
+        custom_microagents_dir=config.custom_microagents_dir,
         selected_repository=config.sandbox.selected_repo,
         repo_directory=repo_directory,
     )
