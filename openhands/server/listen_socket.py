@@ -54,6 +54,10 @@ async def connect(connection_id: str, environ):
     event_stream = await conversation_manager.join_conversation(
         conversation_id, connection_id, settings, user_id, github_user_id
     )
+    if not event_stream:
+        raise ConnectionRefusedError(
+            'Event stream not found', {'msg_id': 'CONVERSATION$STREAM_NOT_FOUND'}
+        )
 
     agent_state_changed = None
     async_stream = AsyncEventStreamWrapper(event_stream, latest_event_id + 1)
