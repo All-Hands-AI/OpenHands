@@ -1,12 +1,10 @@
 import { DiffEditor } from "@monaco-editor/react";
-import { useQuery } from "@tanstack/react-query";
 import React from "react";
-import OpenHands from "#/api/open-hands";
-import { useConversation } from "#/context/conversation-context";
 import { GitChangeStatus } from "#/api/open-hands.types";
 import { getLanguageFromPath } from "#/utils/get-language-from-path";
 import { cn } from "#/utils/utils";
 import ChevronUp from "#/icons/chveron-up.svg?react";
+import { useGitDiff } from "#/hooks/query/use-get-diff";
 
 const STATUS_MAP: Record<GitChangeStatus, string> = {
   A: "Added",
@@ -22,7 +20,6 @@ export interface FileDiffViewerProps {
 }
 
 export function FileDiffViewer({ path, type }: FileDiffViewerProps) {
-  const { conversationId } = useConversation();
   const [isCollapsed, setIsCollapsed] = React.useState(true);
 
   const isAdded = type === "A" || type === "U";
@@ -42,9 +39,9 @@ export function FileDiffViewer({ path, type }: FileDiffViewerProps) {
     isLoading,
     isSuccess,
     isRefetching,
-  } = useQuery({
-    queryKey: ["file_diff", conversationId, filePath, type],
-    queryFn: () => OpenHands.getGitChangeDiff(conversationId, filePath),
+  } = useGitDiff({
+    filePath,
+    type,
     enabled: !isCollapsed,
   });
 

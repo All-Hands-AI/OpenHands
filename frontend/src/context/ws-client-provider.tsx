@@ -13,6 +13,7 @@ import {
   FileWriteAction,
   UserMessageAction,
 } from "#/types/core/actions";
+import { Conversation } from "#/api/open-hands.types";
 
 const isOpenHandsEvent = (event: unknown): event is OpenHandsParsedEvent =>
   typeof event === "object" &&
@@ -159,12 +160,24 @@ export function WsClientProvider({
 
         // Invalidate file diff cache when a file is edited or written
         if (!isCommandAction(event)) {
+          const cachedConversaton = queryClient.getQueryData<Conversation>([
+            "user",
+            "conversation",
+            conversationId,
+          ]);
+          const clonedRepositoryDirectory =
+            cachedConversaton?.selected_repository?.split("/").pop();
+
+          let fileToInvalidate = event.args.path.replace("/workspace/", "");
+          if (clonedRepositoryDirectory) {
+            fileToInvalidate = fileToInvalidate.replace(
+              `${clonedRepositoryDirectory}/`,
+              "",
+            );
+          }
+
           queryClient.invalidateQueries({
-            queryKey: [
-              "file_diff",
-              conversationId,
-              event.args.path.replace("/workspace/", ""),
-            ],
+            queryKey: ["file_diff", conversationId, fileToInvalidate],
           });
         }
       }

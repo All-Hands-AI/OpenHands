@@ -1,8 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
-import OpenHands from "#/api/open-hands";
 import { FileDiffViewer } from "#/components/features/diff-viewer/file-diff-viewer";
-import { useConversation } from "#/context/conversation-context";
 import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
+import { useGetGitChanges } from "#/hooks/query/use-get-git-changes";
 
 function StatusMessage({ children }: React.PropsWithChildren) {
   return (
@@ -13,20 +11,7 @@ function StatusMessage({ children }: React.PropsWithChildren) {
 }
 
 function EditorScreen() {
-  const { conversationId } = useConversation();
-  const {
-    data: gitChanges,
-    isSuccess,
-    isError,
-    error,
-  } = useQuery({
-    queryKey: ["file_changes", conversationId],
-    queryFn: () => OpenHands.getGitChanges(conversationId),
-    retry: false,
-    meta: {
-      disableToast: true,
-    },
-  });
+  const { data: gitChanges, isSuccess, isError, error } = useGetGitChanges();
 
   const isNotGitRepoError =
     isError && retrieveAxiosErrorMessage(error) === "Not a git repository";
