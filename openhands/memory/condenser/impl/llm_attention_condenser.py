@@ -4,10 +4,14 @@ from litellm import supports_response_schema
 from pydantic import BaseModel
 
 from openhands.core.config.condenser_config import LLMAttentionCondenserConfig
-from openhands.events.action.action import Action
 from openhands.events.event import Event
 from openhands.llm.llm import LLM
-from openhands.memory.condenser.condenser import Condensation, RollingCondenser, View
+from openhands.memory.condenser.condenser import (
+    AgentCondensationAction,
+    Condensation,
+    RollingCondenser,
+    View,
+)
 
 
 class ImportantEventSelection(BaseModel):
@@ -16,7 +20,7 @@ class ImportantEventSelection(BaseModel):
     ids: list[int]
 
 
-class LLMAttentionCondensationEvent(Action):
+class LLMAttentionCondensationEvent(AgentCondensationAction):
     forgotten_event_ids: list[int]
     considered_event_ids: list[int]
 

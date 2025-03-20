@@ -2,14 +2,18 @@ from __future__ import annotations
 
 from openhands.core.config.condenser_config import LLMSummarizingCondenserConfig
 from openhands.core.message import Message, TextContent
-from openhands.events.action.action import Action
 from openhands.events.event import Event
 from openhands.events.observation.agent import AgentCondensationObservation
 from openhands.llm import LLM
-from openhands.memory.condenser.condenser import Condensation, RollingCondenser, View
+from openhands.memory.condenser.condenser import (
+    AgentCondensationAction,
+    Condensation,
+    RollingCondenser,
+    View,
+)
 
 
-class LLMSummarizingCondensationEvent(Action):
+class LLMSummarizingCondensationEvent(AgentCondensationAction):
     forgotten_event_ids: list[int]
     considered_event_ids: list[int]
     summary: str

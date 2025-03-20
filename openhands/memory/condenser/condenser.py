@@ -62,8 +62,11 @@ class View(BaseModel):
             raise ValueError(f'Invalid key type: {type(key)}')
 
 
+class AgentCondensationAction(Action): ...
+
+
 class Condensation(BaseModel):
-    action: Action
+    action: AgentCondensationAction
 
 
 class Condenser(ABC):

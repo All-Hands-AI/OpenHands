@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 from openhands.core.config.condenser_config import AmortizedForgettingCondenserConfig
-from openhands.events.action.action import Action
 from openhands.events.event import Event
-from openhands.memory.condenser.condenser import Condensation, RollingCondenser, View
+from openhands.memory.condenser.condenser import (
+    AgentCondensationAction,
+    Condensation,
+    RollingCondenser,
+    View,
+)
 
 
-class AmortizedForgettingCondensationEvent(Action):
+class AmortizedForgettingCondensationEvent(AgentCondensationAction):
     forgotten_event_ids: list[int]
     considered_event_ids: list[int]
 
