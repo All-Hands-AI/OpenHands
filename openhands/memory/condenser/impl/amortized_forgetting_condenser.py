@@ -1,18 +1,13 @@
 from __future__ import annotations
 
 from openhands.core.config.condenser_config import AmortizedForgettingCondenserConfig
+from openhands.events.action.agent import CondensationAction
 from openhands.events.event import Event
 from openhands.memory.condenser.condenser import (
-    AgentCondensationAction,
     Condensation,
     RollingCondenser,
     View,
 )
-
-
-class AmortizedForgettingCondensationEvent(AgentCondensationAction):
-    forgotten_event_ids: list[int]
-    considered_event_ids: list[int]
 
 
 class AmortizedForgettingCondenser(RollingCondenser):
@@ -48,7 +43,7 @@ class AmortizedForgettingCondenser(RollingCondenser):
         forgotten_event_ids = []
 
         for event in events:
-            if isinstance(event, AmortizedForgettingCondensationEvent):
+            if isinstance(event, CondensationAction):
                 forgotten_event_ids.extend(event.forgotten_event_ids)
             else:
                 result_events.append(event)
@@ -68,7 +63,7 @@ class AmortizedForgettingCondenser(RollingCondenser):
 
         events_to_keep = head + tail
 
-        event = AmortizedForgettingCondensationEvent()
+        event = CondensationAction()
         event.forgotten_event_ids = [
             event.id for event in view if event not in events_to_keep
         ]

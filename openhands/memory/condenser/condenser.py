@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 from openhands.controller.state.state import State
 from openhands.core.config.condenser_config import CondenserConfig
-from openhands.events.action.action import Action
+from openhands.events.action.agent import CondensationAction
 from openhands.events.event import Event
 
 CONDENSER_METADATA_KEY = 'condenser_meta'
@@ -62,11 +62,8 @@ class View(BaseModel):
             raise ValueError(f'Invalid key type: {type(key)}')
 
 
-class AgentCondensationAction(Action): ...
-
-
 class Condensation(BaseModel):
-    action: AgentCondensationAction
+    action: CondensationAction
 
 
 class Condenser(ABC):

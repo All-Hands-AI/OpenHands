@@ -126,3 +126,18 @@ class RecallAction(Action):
         ret = '**RecallAction**\n'
         ret += f'QUERY: {self.query[:50]}'
         return ret
+
+
+@dataclass
+class CondensationAction(Action):
+    """..."""
+
+    forgotten_event_ids: list[int] = field(default_factory=list)
+    considered_event_ids: list[int] = field(default_factory=list)
+    summary: str | None = None
+
+    action: str = ActionType.CONDENSATION
+
+    @property
+    def message(self) -> str:
+        return f'Summary: {self.summary}'

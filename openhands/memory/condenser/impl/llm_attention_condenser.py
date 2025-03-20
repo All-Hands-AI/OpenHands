@@ -4,10 +4,10 @@ from litellm import supports_response_schema
 from pydantic import BaseModel
 
 from openhands.core.config.condenser_config import LLMAttentionCondenserConfig
+from openhands.events.action.agent import CondensationAction
 from openhands.events.event import Event
 from openhands.llm.llm import LLM
 from openhands.memory.condenser.condenser import (
-    AgentCondensationAction,
     Condensation,
     RollingCondenser,
     View,
@@ -18,11 +18,6 @@ class ImportantEventSelection(BaseModel):
     """Utility class for the `LLMAttentionCondenser` that forces the LLM to return a list of integers."""
 
     ids: list[int]
-
-
-class LLMAttentionCondensationEvent(AgentCondensationAction):
-    forgotten_event_ids: list[int]
-    considered_event_ids: list[int]
 
 
 class LLMAttentionCondenser(RollingCondenser):
@@ -58,7 +53,7 @@ class LLMAttentionCondenser(RollingCondenser):
         forgotten_event_ids = []
 
         for event in events:
-            if isinstance(event, LLMAttentionCondensationEvent):
+            if isinstance(event, CondensationAction):
                 forgotten_event_ids.extend(event.forgotten_event_ids)
             else:
                 result_events.append(event)
@@ -131,7 +126,7 @@ class LLMAttentionCondenser(RollingCondenser):
             event.id for event in view if event.id not in head_event_ids
         ]
 
-        event = LLMAttentionCondensationEvent()
+        event = CondensationAction()
         event.forgotten_event_ids = forgotten_event_ids
         event.considered_event_ids = considered_event_ids
 

@@ -2,21 +2,15 @@ from __future__ import annotations
 
 from openhands.core.config.condenser_config import LLMSummarizingCondenserConfig
 from openhands.core.message import Message, TextContent
+from openhands.events.action.agent import CondensationAction
 from openhands.events.event import Event
 from openhands.events.observation.agent import AgentCondensationObservation
 from openhands.llm import LLM
 from openhands.memory.condenser.condenser import (
-    AgentCondensationAction,
     Condensation,
     RollingCondenser,
     View,
 )
-
-
-class LLMSummarizingCondensationEvent(AgentCondensationAction):
-    forgotten_event_ids: list[int]
-    considered_event_ids: list[int]
-    summary: str
 
 
 class LLMSummarizingCondenser(RollingCondenser):
@@ -48,7 +42,7 @@ class LLMSummarizingCondenser(RollingCondenser):
         forgotten_event_ids = []
 
         for event in events:
-            if isinstance(event, LLMSummarizingCondensationEvent):
+            if isinstance(event, CondensationAction):
                 forgotten_event_ids.extend(event.forgotten_event_ids)
             else:
                 result_events.append(event)
@@ -60,7 +54,7 @@ class LLMSummarizingCondenser(RollingCondenser):
         # Grab the latest summary
         summary: str | None = None
         for event in reversed(events):
-            if isinstance(event, LLMSummarizingCondensationEvent):
+            if isinstance(event, CondensationAction):
                 summary = event.summary
                 break
 
@@ -139,7 +133,7 @@ INTENT: Fix precision while maintaining FITS compliance"""
         self.add_metadata('response', response.model_dump())
         self.add_metadata('metrics', self.llm.metrics.get())
 
-        event = LLMSummarizingCondensationEvent()
+        event = CondensationAction()
         event.forgotten_event_ids = [event.id for event in forgotten_events]
         event.considered_event_ids = [event.id for event in view]
         event.summary = summary
