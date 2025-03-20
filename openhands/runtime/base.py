@@ -9,7 +9,8 @@ import string
 import tempfile
 from abc import abstractmethod
 from pathlib import Path
-from typing import Callable
+from types import MappingProxyType
+from typing import Callable, cast
 from zipfile import ZipFile
 
 from pydantic import SecretStr
@@ -56,7 +57,11 @@ from openhands.runtime.plugins import (
     VSCodeRequirement,
 )
 from openhands.runtime.utils.edit import FileEditRuntimeMixin
-from openhands.utils.async_utils import call_sync_from_async
+from openhands.utils.async_utils import (
+    GENERAL_TIMEOUT,
+    call_async_from_sync,
+    call_sync_from_async,
+)
 
 STATUS_MESSAGES = {
     'STATUS$STARTING_RUNTIME': 'Starting runtime...',
@@ -125,6 +130,14 @@ class Runtime(FileEditRuntimeMixin):
         self.initial_env_vars = _default_env_vars(config.sandbox)
         if env_vars is not None:
             self.initial_env_vars.update(env_vars)
+
+        provider_handler = ProviderHandler(
+            git_provider_tokens or cast(PROVIDER_TOKEN_TYPE, MappingProxyType({}))
+        )
+        raw_env_vars: dict[str, str] = call_async_from_sync(
+            provider_handler.get_env_vars, GENERAL_TIMEOUT, True, None, False
+        )
+        self.initial_env_vars.update(raw_env_vars)
 
         self._vscode_enabled = any(
             isinstance(plugin, VSCodeRequirement) for plugin in self.plugins
