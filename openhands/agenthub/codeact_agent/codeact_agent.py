@@ -124,8 +124,8 @@ class CodeActAgent(Agent):
             case View(events=events):
                 condensed_history = events
 
-            case Condensation(event=event):
-                return event
+            case Condensation(action=condensation_action):
+                return condensation_action
 
         logger.debug(
             f'Processing {len(condensed_history)} events from a total of {len(state.history)} events'
