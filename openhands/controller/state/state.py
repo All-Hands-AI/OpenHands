@@ -111,7 +111,7 @@ class State:
                 get_conversation_agent_state_filename(sid, user_id), encoded
             )
 
-            # see if state is in the old directory on saas use case and delete it.
+            # see if state is in the old directory on saas/remote use cases and delete it.
             if user_id:
                 filename = get_conversation_agent_state_filename(sid)
                 try:
