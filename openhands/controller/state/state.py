@@ -126,6 +126,11 @@ class State:
     def restore_from_session(
         sid: str, file_store: FileStore, user_id: str | None = None
     ) -> 'State':
+        """
+        Restores the state from the previously saved session.
+        """
+
+        state: State
         try:
             encoded = file_store.read(
                 get_conversation_agent_state_filename(sid, user_id)
@@ -133,12 +138,17 @@ class State:
             pickled = base64.b64decode(encoded)
             state = pickle.loads(pickled)
         except FileNotFoundError:
+            # if user_id is not provided, we are in a saas/remote use case
+            # and we need to check if the state is in the old directory.
             if user_id:
-                # see if state is in old directory. If yes, load it.
                 filename = get_conversation_agent_state_filename(sid)
                 encoded = file_store.read(filename)
                 pickled = base64.b64decode(encoded)
                 state = pickle.loads(pickled)
+            else:
+                raise FileNotFoundError(
+                    f'Could not restore state from session file for sid: {sid}'
+                )
         except Exception as e:
             logger.debug(f'Could not restore state from session: {e}')
             raise e
