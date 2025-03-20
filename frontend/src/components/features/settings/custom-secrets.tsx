@@ -1,5 +1,6 @@
 import React from "react";
-import { PlusIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import PlusIcon from "#/icons/plus.svg?react";
+import XMarkIcon from "#/icons/x-mark.svg?react";
 import { SettingsInput } from "./settings-input";
 
 interface SecretEntry {

@@ -7,7 +7,6 @@
     "node": ">=20.0.0"
   },
   "dependencies": {
-    "@heroicons/react": "^2.2.0",
     "@heroui/react": "2.7.4",
     "@monaco-editor/react": "^4.7.0-rc.0",
     "@react-router/node": "^7.3.0",
