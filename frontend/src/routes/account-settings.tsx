@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router";
 import PlusIcon from "#/icons/plus.svg?react";
-import XMarkIcon from "#/icons/x-mark.svg?react";
+import CloseIcon from "#/icons/close.svg?react";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { HelpLink } from "#/components/features/settings/help-link";
 import { KeyStatusIcon } from "#/components/features/settings/key-status-icon";
@@ -75,6 +75,9 @@ function AccountSettings() {
 
   const hasAppSlug = !!config?.APP_SLUG;
   const isGitHubTokenSet = settings?.GITHUB_TOKEN_IS_SET;
+  const [secrets, setSecrets] = React.useState(
+    Object.entries(settings?.CUSTOM_SECRETS || {}),
+  );
   const isLLMKeySet = settings?.LLM_API_KEY === "**********";
   const isAnalyticsEnabled = settings?.USER_CONSENTS_TO_ANALYTICS;
   const isAdvancedSettingsSet = determineWhetherToToggleAdvancedSettings();
@@ -220,6 +223,25 @@ function AccountSettings() {
       </div>
     );
   }
+
+  const handleAddSecret = () => {
+    setSecrets([...secrets, ["", ""]]);
+  };
+
+  const handleRemoveSecret = (index: number) => {
+    setSecrets((prevSecrets) => {
+      const newSecrets = prevSecrets.filter((_, i) => i !== index);
+      return [...newSecrets];
+    });
+  };
+
+  const handleSecretsChange = (index: number, field: string, value: string) => {
+    setSecrets((prevSecrets) => {
+      const updatedSecrets = [...prevSecrets];
+      updatedSecrets[index][field === "name" ? 0 : 1] = value;
+      return updatedSecrets;
+    });
+  };
 
   return (
     <>
@@ -440,80 +462,7 @@ function AccountSettings() {
                 </p>
               </>
             )}
-          </section>
 
-          <section className="flex flex-col gap-6">
-            <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">
-              Custom Secrets
-            </h2>
-            <div className="flex flex-col gap-4">
-              {Object.entries(settings.CUSTOM_SECRETS || {}).map(([name, value]) => (
-                <div key={name} className="flex items-start gap-2">
-                  <SettingsInput
-                    name={`secret-name-${name}`}
-                    placeholder="Secret Name"
-                    defaultValue={name}
-                    className="w-[330px]"
-                    disabled
-                  />
-                  <SettingsInput
-                    name={`secret-value-${name}`}
-                    type="password"
-                    placeholder="Secret Value"
-                    defaultValue={value}
-                    className="w-[330px]"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const newSecrets = { ...settings.CUSTOM_SECRETS };
-                      delete newSecrets[name];
-                      saveSettings({ CUSTOM_SECRETS: newSecrets });
-                    }}
-                    className="mt-2 p-1 text-gray-400 hover:text-gray-300"
-                  >
-                    <XMarkIcon className="h-5 w-5" />
-                  </button>
-                </div>
-              ))}
-              <div className="flex items-start gap-2">
-                <SettingsInput
-                  name="new-secret-name"
-                  placeholder="Secret Name"
-                  className="w-[330px]"
-                />
-                <SettingsInput
-                  name="new-secret-value"
-                  type="password"
-                  placeholder="Secret Value"
-                  className="w-[330px]"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    const nameInput = formRef.current?.elements.namedItem('new-secret-name') as HTMLInputElement;
-                    const valueInput = formRef.current?.elements.namedItem('new-secret-value') as HTMLInputElement;
-                    
-                    if (!nameInput?.value) return;
-                    
-                    const newSecrets = {
-                      ...settings.CUSTOM_SECRETS,
-                      [nameInput.value]: valueInput?.value || '',
-                    };
-                    
-                    saveSettings({ CUSTOM_SECRETS: newSecrets });
-                    nameInput.value = '';
-                    valueInput.value = '';
-                  }}
-                  className="mt-2 p-1 text-primary hover:text-primary/80"
-                >
-                  <PlusIcon className="h-5 w-5" />
-                </button>
-              </div>
-            </div>
-          </section>
-
-          <section className="flex flex-col gap-6">
             <BrandButton
               type="button"
               variant="secondary"
@@ -522,6 +471,57 @@ function AccountSettings() {
             >
               Disconnect from GitHub
             </BrandButton>
+          </section>
+
+          <section className="flex flex-col gap-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-[28px] font-bold">Custom Secrets</h2>
+              <button
+                type="button"
+                onClick={handleAddSecret}
+                className="p-2 text-primary hover:text-primary/80"
+              >
+                <PlusIcon className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="flex flex-col gap-4">
+              {secrets.map(([secretName, secretValue], index) => (
+                <div
+                  key={`${secretName}-${index}`}
+                  className="flex items-center gap-2"
+                >
+                  <SettingsInput
+                    name={`secret-name-${index}`}
+                    placeholder="Secret Name"
+                    defaultValue={secretName}
+                    onChange={(value) =>
+                      handleSecretsChange(index, "name", value)
+                    }
+                    className="w-[330px]"
+                    label="Secret Name"
+                    type="text"
+                  />
+                  <SettingsInput
+                    name={`secret-value-${index}`}
+                    type="password"
+                    placeholder={secretValue ? "**********" : ""}
+                    defaultValue={secretValue}
+                    onChange={(value) =>
+                      handleSecretsChange(index, "value", value)
+                    }
+                    className="w-[330px]"
+                    label="Secret Value"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveSecret(index)}
+                    className="p-1 text-gray-400 hover:text-gray-300"
+                  >
+                    <CloseIcon className="h-5 w-5" />
+                  </button>
+                </div>
+              ))}
+            </div>
           </section>
 
           <section className="flex flex-col gap-6">

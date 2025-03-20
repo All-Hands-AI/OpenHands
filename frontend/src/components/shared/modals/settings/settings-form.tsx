@@ -15,7 +15,6 @@ import { BrandButton } from "#/components/features/settings/brand-button";
 import { KeyStatusIcon } from "#/components/features/settings/key-status-icon";
 import { SettingsInput } from "#/components/features/settings/settings-input";
 import { HelpLink } from "#/components/features/settings/help-link";
-import { CustomSecrets } from "#/components/features/settings/custom-secrets";
 
 interface SettingsFormProps {
   settings: Settings;
@@ -110,7 +109,6 @@ export function SettingsForm({ settings, models, onClose }: SettingsFormProps) {
 
         <div className="flex flex-col gap-4">
           <h2 className="text-base font-medium">Additional Settings</h2>
-          <CustomSecrets />
         </div>
 
         <div className="flex flex-col gap-2">

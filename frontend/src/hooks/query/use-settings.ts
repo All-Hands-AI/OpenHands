@@ -23,6 +23,7 @@ const getSettingsQueryFn = async () => {
     USER_CONSENTS_TO_ANALYTICS: apiSettings.user_consents_to_analytics,
     PROVIDER_TOKENS: apiSettings.provider_tokens,
     IS_NEW_USER: false,
+    CUSTOM_SECRETS: apiSettings.custom_secrets,
   };
 };
 
