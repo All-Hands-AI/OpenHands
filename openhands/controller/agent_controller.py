@@ -1211,7 +1211,6 @@ class AgentController:
                 e
                 for e in self.event_stream.get_events(
                     start_id=self.state.start_id,
-                    reverse=False,
                 )
                 if isinstance(e, MessageAction) and e.source == EventSource.USER
             ),
