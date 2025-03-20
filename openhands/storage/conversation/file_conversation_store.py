@@ -29,7 +29,7 @@ conversation_metadata_type_adapter = TypeAdapter(ConversationMetadata)
 class FileConversationStore(ConversationStore):
     file_store: FileStore
 
-    async def save_metadata(self, metadata: ConversationMetadata):
+    async def save_metadata(self, metadata: ConversationMetadata) -> None:
         json_str = conversation_metadata_type_adapter.dump_json(metadata)
         path = self.get_conversation_metadata_filename(metadata.conversation_id)
         await call_sync_from_async(self.file_store.write, path, json_str)
@@ -85,8 +85,8 @@ class FileConversationStore(ConversationStore):
             try:
                 conversations.append(await self.get_metadata(conversation_id))
             except Exception:
-                logger.error(
-                    f'Error loading conversation: {conversation_id}',
+                logger.warning(
+                    f'Could not load conversation metadata: {conversation_id}'
                 )
         conversations.sort(key=_sort_key, reverse=True)
         conversations = conversations[start:end]
@@ -101,7 +101,7 @@ class FileConversationStore(ConversationStore):
 
     @classmethod
     async def get_instance(
-        cls, config: AppConfig, user_id: str | None
+        cls, config: AppConfig, user_id: str | None, github_user_id: str | None
     ) -> FileConversationStore:
         file_store = get_file_store(config.file_store, config.file_store_path)
         return FileConversationStore(file_store)

@@ -42,7 +42,7 @@ const sidebars: SidebarsConfig = {
               id: 'usage/prompting/microagents-public',
             },
           ],
-        }
+        },
       ],
     },
     {
@@ -66,8 +66,25 @@ const sidebars: SidebarsConfig = {
         },
         {
           type: 'doc',
-          label: 'Github Actions',
+          label: 'Github Action',
           id: 'usage/how-to/github-action',
+        },
+        {
+          type: 'category',
+          label: 'Cloud',
+          items: [
+            {
+              type: 'doc',
+              label: 'Openhands Cloud',
+              id: 'usage/cloud/openhands-cloud',
+            },
+
+            {
+              type: 'doc',
+              label: 'Cloud GitHub Resolver',
+              id: 'usage/cloud/cloud-github-resolver',
+            },
+          ],
         },
       ],
     },
@@ -154,6 +171,11 @@ const sidebars: SidebarsConfig = {
       label: 'For OpenHands Developers',
       items: [
         {
+          type: 'doc',
+          label: 'Development Overview',
+          id: 'usage/how-to/development-overview',
+        },
+        {
           type: 'category',
           label: 'Architecture',
           items: [
@@ -185,7 +207,7 @@ const sidebars: SidebarsConfig = {
       type: 'doc',
       label: 'About',
       id: 'usage/about',
-    }
+    },
   ],
 };
 

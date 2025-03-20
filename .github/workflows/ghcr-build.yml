@@ -32,7 +32,7 @@ jobs:
   # Builds the OpenHands Docker images
   ghcr_build_app:
     name: Build App Image
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2204
     permissions:
       contents: read
       packages: write
@@ -41,22 +41,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@main
         with:
-          # this might remove tools that are actually needed,
-          # if set to "true" but frees about 6 GB
-          tool-cache: true
-          # all of these default to true, but feel free to set to
-          # "false" if necessary for your workflow
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          docker-images: false
-          swap-storage: true
+          ref: ${{ github.event.pull_request.head.sha }}
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3.3.0
+        uses: docker/setup-qemu-action@v3.6.0
         with:
           image: tonistiigi/binfmt:latest
       - name: Login to GHCR
@@ -68,22 +56,22 @@ jobs:
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
+      - name: Lowercase Repository Owner
+        run: |
+          echo REPO_OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
       - name: Build and push app image
         if: "!github.event.pull_request.head.repo.fork"
         run: |
-          ./containers/build.sh -i openhands -o ${{ github.repository_owner }} --push
+          ./containers/build.sh -i openhands -o ${{ env.REPO_OWNER }} --push
       - name: Build app image
         if: "github.event.pull_request.head.repo.fork"
         run: |
-          ./containers/build.sh -i openhands -o ${{ github.repository_owner }} --load
+          ./containers/build.sh -i openhands -o ${{ env.REPO_OWNER }} --load
       - name: Get hash in App Image
         id: get_hash_in_app_image
         run: |
-          # Lowercase the repository owner
-          export REPO_OWNER=${{ github.repository_owner }}
-          REPO_OWNER=$(echo $REPO_OWNER | tr '[:upper:]' '[:lower:]')
           # Run the build script in the app image
-          docker run -e SANDBOX_USER_ID=0 -v /var/run/docker.sock:/var/run/docker.sock ghcr.io/${REPO_OWNER}/openhands:${{ env.RELEVANT_SHA }} /bin/bash -c "mkdir -p containers/runtime; python3 openhands/runtime/utils/runtime_build.py --base_image ${{ env.BASE_IMAGE_FOR_HASH_EQUIVALENCE_TEST }} --build_folder containers/runtime --force_rebuild" 2>&1 | tee docker-outputs.txt
+          docker run -e SANDBOX_USER_ID=0 -v /var/run/docker.sock:/var/run/docker.sock ghcr.io/${{ env.REPO_OWNER }}/openhands:${{ env.RELEVANT_SHA }} /bin/bash -c "mkdir -p containers/runtime; python3 openhands/runtime/utils/runtime_build.py --base_image ${{ env.BASE_IMAGE_FOR_HASH_EQUIVALENCE_TEST }} --build_folder containers/runtime --force_rebuild" 2>&1 | tee docker-outputs.txt
           # Get the hash from the build script
           hash_from_app_image=$(cat docker-outputs.txt | grep "Hash for docker build directory" | awk -F "): " '{print $2}' | uniq | head -n1)
           echo "hash_from_app_image=$hash_from_app_image" >> $GITHUB_OUTPUT
@@ -92,7 +80,7 @@ jobs:
   # Builds the runtime Docker images
   ghcr_build_runtime:
     name: Build Image
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2204
     permissions:
       contents: read
       packages: write
@@ -104,22 +92,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@main
         with:
-          # this might remove tools that are actually needed,
-          # if set to "true" but frees about 6 GB
-          tool-cache: true
-          # all of these default to true, but feel free to set to
-          # "false" if necessary for your workflow
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          docker-images: false
-          swap-storage: true
+          ref: ${{ github.event.pull_request.head.sha }}
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3.3.0
+        uses: docker/setup-qemu-action@v3.6.0
         with:
           image: tonistiigi/binfmt:latest
       - name: Login to GHCR
@@ -132,11 +108,11 @@ jobs:
         id: buildx
         uses: docker/setup-buildx-action@v3
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: useblacksmith/setup-python@v6
         with:
           python-version: '3.12'
       - name: Cache Poetry dependencies
-        uses: actions/cache@v4
+        uses: useblacksmith/cache@v5
         with:
           path: |
             ~/.cache/pypoetry
@@ -150,16 +126,19 @@ jobs:
         run: make install-python-dependencies
       - name: Create source distribution and Dockerfile
         run: poetry run python3 openhands/runtime/utils/runtime_build.py --base_image ${{ matrix.base_image.image }} --build_folder containers/runtime --force_rebuild
+      - name: Lowercase Repository Owner
+        run: |
+          echo REPO_OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
       - name: Build and push runtime image ${{ matrix.base_image.image }}
         if: github.event.pull_request.head.repo.fork != true
         run: |
-          ./containers/build.sh -i runtime -o ${{ github.repository_owner }} --push -t ${{ matrix.base_image.tag }}
+          ./containers/build.sh -i runtime -o ${{ env.REPO_OWNER }} --push -t ${{ matrix.base_image.tag }}
       # Forked repos can't push to GHCR, so we need to upload the image as an artifact
       - name: Build runtime image ${{ matrix.base_image.image }} for fork
         if: github.event.pull_request.head.repo.fork
         uses: docker/build-push-action@v6
         with:
-          tags: ghcr.io/all-hands-ai/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
+          tags: ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
           outputs: type=docker,dest=/tmp/runtime-${{ matrix.base_image.tag }}.tar
           context: containers/runtime
       - name: Upload runtime image for fork
@@ -171,7 +150,7 @@ jobs:
 
   verify_hash_equivalence_in_runtime_and_app:
     name: Verify Hash Equivalence in Runtime and Docker images
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2204
     needs: [ghcr_build_runtime, ghcr_build_app]
     strategy:
       fail-fast: false
@@ -179,8 +158,10 @@ jobs:
         base_image: ['nikolaik']
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
       - name: Cache Poetry dependencies
-        uses: actions/cache@v4
+        uses: useblacksmith/cache@v5
         with:
           path: |
             ~/.cache/pypoetry
@@ -189,7 +170,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-poetry-
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: useblacksmith/setup-python@v6
         with:
           python-version: '3.12'
       - name: Install poetry via pipx
@@ -223,27 +204,13 @@ jobs:
   test_runtime_root:
     name: RT Unit Tests (Root)
     needs: [ghcr_build_runtime]
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2204
     strategy:
       fail-fast: false
       matrix:
         base_image: ['nikolaik']
     steps:
       - uses: actions/checkout@v4
-      - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@main
-        with:
-          # this might remove tools that are actually needed,
-          # if set to "true" but frees about 6 GB
-          tool-cache: true
-          # all of these default to true, but feel free to set to
-          # "false" if necessary for your workflow
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          docker-images: false
-          swap-storage: true
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
@@ -259,7 +226,7 @@ jobs:
         run: |
           docker load --input /tmp/runtime-${{ matrix.base_image }}.tar
       - name: Cache Poetry dependencies
-        uses: actions/cache@v4
+        uses: useblacksmith/cache@v5
         with:
           path: |
             ~/.cache/pypoetry
@@ -268,14 +235,17 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-poetry-
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: useblacksmith/setup-python@v6
         with:
           python-version: '3.12'
       - name: Install poetry via pipx
         run: pipx install poetry
       - name: Install Python dependencies using Poetry
         run: make install-python-dependencies
-      - name: Run runtime tests
+      - name: Lowercase Repository Owner
+        run: |
+          echo REPO_OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
+      - name: Run docker runtime tests
         run: |
           # We install pytest-xdist in order to run tests across CPUs
           poetry run pip install pytest-xdist
@@ -283,8 +253,7 @@ jobs:
           # Install to be able to retry on failures for flaky tests
           poetry run pip install pytest-rerunfailures
 
-          image_name=ghcr.io/${{ github.repository_owner }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image }}
-          image_name=$(echo $image_name | tr '[:upper:]' '[:lower:]')
+          image_name=ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image }}
 
           TEST_RUNTIME=docker \
           SANDBOX_USER_ID=$(id -u) \
@@ -300,27 +269,13 @@ jobs:
   # Run unit tests with the Docker runtime Docker images as openhands user
   test_runtime_oh:
     name: RT Unit Tests (openhands)
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2204
     needs: [ghcr_build_runtime]
     strategy:
       matrix:
         base_image: ['nikolaik']
     steps:
       - uses: actions/checkout@v4
-      - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@main
-        with:
-          # this might remove tools that are actually needed,
-          # if set to "true" but frees about 6 GB
-          tool-cache: true
-          # all of these default to true, but feel free to set to
-          # "false" if necessary for your workflow
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          docker-images: false
-          swap-storage: true
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
@@ -336,7 +291,7 @@ jobs:
         run: |
           docker load --input /tmp/runtime-${{ matrix.base_image }}.tar
       - name: Cache Poetry dependencies
-        uses: actions/cache@v4
+        uses: useblacksmith/cache@v5
         with:
           path: |
             ~/.cache/pypoetry
@@ -345,13 +300,16 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-poetry-
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: useblacksmith/setup-python@v6
         with:
           python-version: '3.12'
       - name: Install poetry via pipx
         run: pipx install poetry
       - name: Install Python dependencies using Poetry
         run: make install-python-dependencies
+      - name: Lowercase Repository Owner
+        run: |
+          echo REPO_OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
       - name: Run runtime tests
         run: |
           # We install pytest-xdist in order to run tests across CPUs
@@ -360,8 +318,7 @@ jobs:
           # Install to be able to retry on failures for flaky tests
           poetry run pip install pytest-rerunfailures
 
-          image_name=ghcr.io/${{ github.repository_owner }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image }}
-          image_name=$(echo $image_name | tr '[:upper:]' '[:lower:]')
+          image_name=ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image }}
 
           TEST_RUNTIME=docker \
           SANDBOX_USER_ID=$(id -u) \
@@ -381,7 +338,7 @@ jobs:
   runtime_tests_check_success:
     name: All Runtime Tests Passed
     if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2204
     needs: [test_runtime_root, test_runtime_oh, verify_hash_equivalence_in_runtime_and_app]
     steps:
       - name: All tests passed
@@ -390,7 +347,7 @@ jobs:
   runtime_tests_check_fail:
     name: All Runtime Tests Passed
     if: ${{ cancelled() || contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2204
     needs: [test_runtime_root, test_runtime_oh, verify_hash_equivalence_in_runtime_and_app]
     steps:
       - name: Some tests failed
@@ -401,7 +358,7 @@ jobs:
     name: Update PR Description
     if: github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork && github.actor != 'dependabot[bot]'
     needs: [ghcr_build_runtime]
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2204
     steps:
       - name: Checkout
         uses: actions/checkout@v4

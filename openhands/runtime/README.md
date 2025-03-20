@@ -52,6 +52,11 @@ There are currently four implementations:
 * Modal (uses the Modal API)
 * Runloop (uses the Runloop API)
 
+You may also add your own `Runtime` subclass to the classpath and configure it like this:
+
+```toml
+runtime = "app.my.CustomRuntime"
+```
 
 ## Workflow Description
 
@@ -109,8 +114,26 @@ Key features:
 - Real-time logging and debugging capabilities
 - Direct access to the local file system
 - Faster execution due to local resources
+- Container isolation for security
 
 This is the default runtime used within OpenHands.
+
+### Local Runtime
+
+The Local Runtime is designed for direct execution on the local machine. Currently only supports running as the local user:
+
+- Runs the action_execution_server directly on the host
+- No Docker container overhead
+- Direct access to local system resources
+- Ideal for development and testing when Docker is not available or desired
+
+Key features:
+- Minimal setup required
+- Direct access to local resources
+- No container overhead
+- Fastest execution speed
+
+**Important: This runtime provides no isolation as it runs directly on the host machine. All actions are executed with the same permissions as the user running OpenHands. For secure execution with proper isolation, use the Docker Runtime instead.**
 
 ### Remote Runtime
 
@@ -127,7 +150,7 @@ Key features:
 - Support for cloud-based deployments
 - Potential for improved security through isolation
 
-At the time of this writing, this is mostly used in parallel evaluation, such as this example for [SWE-Bench](https://github.com/All-Hands-AI/OpenHands/tree/main/evaluation/swe_bench#run-inference-on-remoteruntime-experimental).
+At the time of this writing, this is mostly used in parallel evaluation, such as this example for [SWE-Bench](https://github.com/All-Hands-AI/OpenHands/tree/main/evaluation/benchmarks/swe_bench#run-inference-on-remoteruntime-experimental).
 
 ## Related Components
 

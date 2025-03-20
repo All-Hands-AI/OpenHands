@@ -41,9 +41,18 @@ export interface IPythonAction extends OpenHandsActionEvent<"run_ipython"> {
   };
 }
 
+export interface ThinkAction extends OpenHandsActionEvent<"think"> {
+  source: "agent";
+  args: {
+    thought: string;
+  };
+}
+
 export interface FinishAction extends OpenHandsActionEvent<"finish"> {
   source: "agent";
   args: {
+    final_thought: string;
+    task_completed: "success" | "failure" | "partial";
     outputs: Record<string, unknown>;
     thought: string;
   };
@@ -83,7 +92,9 @@ export interface FileReadAction extends OpenHandsActionEvent<"read"> {
   args: {
     path: string;
     thought: string;
-    translated_ipython_code: string | null;
+    security_risk: ActionSecurityRisk | null;
+    impl_source?: string;
+    view_range?: number[] | null;
   };
 }
 
@@ -100,7 +111,18 @@ export interface FileEditAction extends OpenHandsActionEvent<"edit"> {
   source: "agent";
   args: {
     path: string;
-    translated_ipython_code: string;
+    command?: string;
+    file_text?: string | null;
+    view_range?: number[] | null;
+    old_str?: string | null;
+    new_str?: string | null;
+    insert_line?: number | null;
+    content?: string;
+    start?: number;
+    end?: number;
+    thought: string;
+    security_risk: ActionSecurityRisk | null;
+    impl_source?: string;
   };
 }
 
@@ -116,6 +138,7 @@ export type OpenHandsAction =
   | AssistantMessageAction
   | CommandAction
   | IPythonAction
+  | ThinkAction
   | FinishAction
   | DelegateAction
   | BrowseAction

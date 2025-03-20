@@ -1,4 +1,4 @@
-import { Tooltip } from "@nextui-org/react";
+import { Tooltip } from "@heroui/react";
 import React, { ReactNode } from "react";
 import { cn } from "#/utils/utils";
 

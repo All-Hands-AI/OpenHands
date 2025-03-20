@@ -4,7 +4,7 @@ import {
   Autocomplete,
   AutocompleteItem,
   AutocompleteSection,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import { useDispatch } from "react-redux";
 import posthog from "posthog-js";
 import { I18nKey } from "#/i18n/declaration";
@@ -31,7 +31,7 @@ export function GitHubRepositorySelector({
 
   const allRepositories: GitHubRepository[] = [
     ...publicRepositories.filter(
-      (repo) => !publicRepositories.find((r) => r.id === repo.id),
+      (repo) => !userRepositories.find((r) => r.id === repo.id),
     ),
     ...userRepositories,
   ];
@@ -99,7 +99,6 @@ export function GitHubRepositorySelector({
             <AutocompleteItem
               data-testid="github-repo-item"
               key={repo.id}
-              value={repo.id}
               className="data-[selected=true]:bg-default-100"
               textValue={repo.full_name}
             >
@@ -114,7 +113,6 @@ export function GitHubRepositorySelector({
             <AutocompleteItem
               data-testid="github-repo-item"
               key={repo.id}
-              value={repo.id}
               className="data-[selected=true]:bg-default-100"
               textValue={repo.full_name}
             >

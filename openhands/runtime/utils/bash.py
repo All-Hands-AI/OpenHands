@@ -175,24 +175,34 @@ class BashSession:
         work_dir: str,
         username: str | None = None,
         no_change_timeout_seconds: int = 30,
+        max_memory_mb: int | None = None,
     ):
         self.NO_CHANGE_TIMEOUT_SECONDS = no_change_timeout_seconds
         self.work_dir = work_dir
         self.username = username
         self._initialized = False
+        self.max_memory_mb = max_memory_mb
 
     def initialize(self):
         self.server = libtmux.Server()
-        window_command = '/bin/bash'
-        if self.username:
+        _shell_command = '/bin/bash'
+        if self.username in ['root', 'openhands']:
             # This starts a non-login (new) shell for the given user
-            window_command = f'su {self.username} -'
+            _shell_command = f'su {self.username} -'
 
+        # FIXME: we will introduce memory limit using sysbox-runc in coming PR
+        # # otherwise, we are running as the CURRENT USER (e.g., when running LocalRuntime)
+        # if self.max_memory_mb is not None:
+        #     window_command = (
+        #         f'prlimit --as={self.max_memory_mb * 1024 * 1024} {_shell_command}'
+        #     )
+        # else:
+        window_command = _shell_command
+
+        logger.debug(f'Initializing bash session with command: {window_command}')
         session_name = f'openhands-{self.username}-{uuid.uuid4()}'
         self.session = self.server.new_session(
             session_name=session_name,
-            window_name='bash',
-            window_command=window_command,
             start_directory=self.work_dir,
             kill_session=True,
             x=1000,
@@ -206,6 +216,7 @@ class BashSession:
         # We need to create a new pane because the initial pane's history limit is (default) 2000
         _initial_window = self.session.attached_window
         self.window = self.session.new_window(
+            window_name='bash',
             window_shell=window_command,
             start_directory=self.work_dir,
         )

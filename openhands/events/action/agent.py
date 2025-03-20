@@ -1,8 +1,10 @@
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import Any
 
 from openhands.core.schema import ActionType
 from openhands.events.action.action import Action
+from openhands.events.event import RecallType
 
 
 @dataclass
@@ -33,16 +35,26 @@ class AgentSummarizeAction(Action):
         return ret
 
 
+class AgentFinishTaskCompleted(Enum):
+    FALSE = 'false'
+    PARTIAL = 'partial'
+    TRUE = 'true'
+
+
 @dataclass
 class AgentFinishAction(Action):
     """An action where the agent finishes the task.
 
     Attributes:
-        outputs (dict): The outputs of the agent, for instance "content".
+        final_thought (str): The message to send to the user.
+        task_completed (enum): Whether the agent believes the task has been completed.
+        outputs (dict): The other outputs of the agent, for instance "content".
         thought (str): The agent's explanation of its actions.
         action (str): The action type, namely ActionType.FINISH.
     """
 
+    final_thought: str = ''
+    task_completed: AgentFinishTaskCompleted | None = None
     outputs: dict[str, Any] = field(default_factory=dict)
     thought: str = ''
     action: str = ActionType.FINISH
@@ -52,6 +64,23 @@ class AgentFinishAction(Action):
         if self.thought != '':
             return self.thought
         return "All done! What's next on the agenda?"
+
+
+@dataclass
+class AgentThinkAction(Action):
+    """An action where the agent logs a thought.
+
+    Attributes:
+        thought (str): The agent's explanation of its actions.
+        action (str): The action type, namely ActionType.THINK.
+    """
+
+    thought: str = ''
+    action: str = ActionType.THINK
+
+    @property
+    def message(self) -> str:
+        return f'I am thinking...: {self.thought}'
 
 
 @dataclass
@@ -78,3 +107,22 @@ class AgentDelegateAction(Action):
     @property
     def message(self) -> str:
         return f"I'm asking {self.agent} for help with this task."
+
+
+@dataclass
+class RecallAction(Action):
+    """This action is used for retrieving content, e.g., from the global directory or user workspace."""
+
+    recall_type: RecallType
+    query: str = ''
+    thought: str = ''
+    action: str = ActionType.RECALL
+
+    @property
+    def message(self) -> str:
+        return f'Retrieving content for: {self.query[:50]}'
+
+    def __str__(self) -> str:
+        ret = '**RecallAction**\n'
+        ret += f'QUERY: {self.query[:50]}'
+        return ret

@@ -3,7 +3,7 @@ class PatchingException(Exception):
 
 
 class HunkException(PatchingException):
-    def __init__(self, msg, hunk=None):
+    def __init__(self, msg: str, hunk: int | None = None) -> None:
         self.hunk = hunk
         if hunk is not None:
             super(HunkException, self).__init__(
@@ -18,7 +18,7 @@ class ApplyException(PatchingException):
 
 
 class SubprocessException(ApplyException):
-    def __init__(self, msg, code):
+    def __init__(self, msg: str, code: int) -> None:
         super(SubprocessException, self).__init__(msg)
         self.code = code
 

@@ -44,6 +44,10 @@ class ActionTypeSchema(BaseModel):
     """Delegates a task to another agent.
     """
 
+    THINK: str = Field(default='think')
+    """Logs a thought.
+    """
+
     FINISH: str = Field(default='finish')
     """If you're absolutely certain that you've completed your task and have tested your work,
     use the finish action to stop working.
@@ -77,6 +81,9 @@ class ActionTypeSchema(BaseModel):
 
     SEND_PR: str = Field(default='send_pr')
     """Send a PR to github."""
+
+    RECALL: str = Field(default='recall')
+    """Retrieves content from a user workspace, microagent, or other source."""
 
 
 ActionType = ActionTypeSchema()

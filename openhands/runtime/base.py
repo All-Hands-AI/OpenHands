@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Callable
 from zipfile import ZipFile
 
+from pydantic import SecretStr
 from requests.exceptions import ConnectionError
 
 from openhands.core.config import AppConfig, SandboxConfig
@@ -21,6 +22,7 @@ from openhands.events import EventSource, EventStream, EventStreamSubscriber
 from openhands.events.action import (
     Action,
     ActionConfirmationStatus,
+    AgentThinkAction,
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
@@ -30,6 +32,7 @@ from openhands.events.action import (
 )
 from openhands.events.event import Event
 from openhands.events.observation import (
+    AgentThinkObservation,
     CmdOutputObservation,
     ErrorObservation,
     FileReadObservation,
@@ -38,6 +41,7 @@ from openhands.events.observation import (
     UserRejectObservation,
 )
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
+from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.microagent import (
     BaseMicroAgent,
     load_microagents_from_dir,
@@ -93,6 +97,7 @@ class Runtime(FileEditRuntimeMixin):
         status_callback: Callable | None = None,
         attach_to_existing: bool = False,
         headless_mode: bool = False,
+        user_id: str | None = None,
     ):
         self.sid = sid
         self.event_stream = event_stream
@@ -124,6 +129,11 @@ class Runtime(FileEditRuntimeMixin):
         FileEditRuntimeMixin.__init__(
             self, enable_llm_editor=config.get_agent_config().codeact_enable_llm_editor
         )
+
+        self.user_id = user_id
+
+        # TODO: remove once done debugging expired github token
+        self.prev_token: SecretStr | None = None
 
     def setup_initial_env(self) -> None:
         if self.attach_to_existing:
@@ -172,11 +182,14 @@ class Runtime(FileEditRuntimeMixin):
             # Note: we don't log the vars values, they're leaking info
             logger.debug('Added env vars to IPython')
 
-        # Add env vars to the Bash shell
+        # Add env vars to the Bash shell and .bashrc for persistence
         cmd = ''
+        bashrc_cmd = ''
         for key, value in env_vars.items():
             # Note: json.dumps gives us nice escaping for free
             cmd += f'export {key}={json.dumps(value)}; '
+            # Add to .bashrc if not already present
+            bashrc_cmd += f'grep -q "^export {key}=" ~/.bashrc || echo "export {key}={json.dumps(value)}" >> ~/.bashrc; '
         if not cmd:
             return
         cmd = cmd.strip()
@@ -190,6 +203,15 @@ class Runtime(FileEditRuntimeMixin):
                 f'Failed to add env vars [{env_vars.keys()}] to environment: {obs.content}'
             )
 
+        # Add to .bashrc for persistence
+        bashrc_cmd = bashrc_cmd.strip()
+        logger.debug(f'Adding env var to .bashrc: {env_vars.keys()}')
+        obs = self.run(CmdRunAction(bashrc_cmd))
+        if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
+            raise RuntimeError(
+                f'Failed to add env vars [{env_vars.keys()}] to .bashrc: {obs.content}'
+            )
+
     def on_event(self, event: Event) -> None:
         if isinstance(event, Action):
             asyncio.get_event_loop().run_until_complete(self._handle_action(event))
@@ -200,6 +222,50 @@ class Runtime(FileEditRuntimeMixin):
             event.set_hard_timeout(self.config.sandbox.timeout, blocking=False)
         assert event.timeout is not None
         try:
+            if isinstance(event, CmdRunAction):
+                if self.user_id and 'GITHUB_TOKEN' in event.command:
+                    gh_client = GithubServiceImpl(
+                        external_auth_id=self.user_id, external_token_manager=True
+                    )
+                    logger.info(f'Fetching latest github token for runtime: {self.sid}')
+                    token = await gh_client.get_latest_token()
+                    if not token:
+                        logger.error(
+                            f'Failed to refresh github token for runtime: {self.sid}'
+                        )
+
+                    if token:
+                        raw_token = token.get_secret_value()
+
+                        if not self.prev_token:
+                            logger.info(
+                                f'Setting github token in runtime: {self.sid}\nToken value: {raw_token[0:5]}; length: {len(raw_token)}'
+                            )
+
+                        elif self.prev_token.get_secret_value() != raw_token:
+                            logger.info(
+                                f'Setting new github token in runtime {self.sid}\nToken value: {raw_token[0:5]}; length: {len(raw_token)}'
+                            )
+
+                        self.prev_token = token
+
+                        env_vars = {
+                            'GITHUB_TOKEN': raw_token,
+                        }
+
+                        try:
+                            self.add_env_vars(env_vars)
+                        except Exception as e:
+                            logger.warning(
+                                f'Failed export latest github token to runtime: {self.sid}, {e}'
+                            )
+
+                        self.event_stream.update_secrets(
+                            {
+                                'github_token': raw_token,
+                            }
+                        )
+
             observation: Observation = await call_sync_from_async(
                 self.run_action, event
             )
@@ -220,22 +286,42 @@ class Runtime(FileEditRuntimeMixin):
 
         # this might be unnecessary, since source should be set by the event stream when we're here
         source = event.source if event.source else EventSource.AGENT
+        if isinstance(observation, NullObservation):
+            # don't add null observations to the event stream
+            return
         self.event_stream.add_event(observation, source)  # type: ignore[arg-type]
 
-    def clone_repo(self, github_token: str, selected_repository: str) -> str:
+    def clone_repo(
+        self,
+        github_token: SecretStr,
+        selected_repository: str,
+        selected_branch: str | None,
+    ) -> str:
         if not github_token or not selected_repository:
             raise ValueError(
                 'github_token and selected_repository must be provided to clone a repository'
             )
-        url = f'https://{github_token}@github.com/{selected_repository}.git'
-        dir_name = selected_repository.split('/')[1]
-        # add random branch name to avoid conflicts
+        url = f'https://{github_token.get_secret_value()}@github.com/{selected_repository}.git'
+        dir_name = selected_repository.split('/')[-1]
+
+        # Generate a random branch name to avoid conflicts
         random_str = ''.join(
             random.choices(string.ascii_lowercase + string.digits, k=8)
         )
-        branch_name = f'openhands-workspace-{random_str}'
+        openhands_workspace_branch = f'openhands-workspace-{random_str}'
+
+        # Clone repository command
+        clone_command = f'git clone {url} {dir_name}'
+
+        # Checkout to appropriate branch
+        checkout_command = (
+            f'git checkout {selected_branch}'
+            if selected_branch
+            else f'git checkout -b {openhands_workspace_branch}'
+        )
+
         action = CmdRunAction(
-            command=f'git clone {url} {dir_name} ; cd {dir_name} ; git checkout -b {branch_name}',
+            command=f'{clone_command} ; cd {dir_name} ; {checkout_command}',
         )
         self.log('info', f'Cloning repo: {selected_repository}')
         self.run_action(action)
@@ -255,7 +341,7 @@ class Runtime(FileEditRuntimeMixin):
         microagents_dir = workspace_root / '.openhands' / 'microagents'
         repo_root = None
         if selected_repository:
-            repo_root = workspace_root / selected_repository.split('/')[1]
+            repo_root = workspace_root / selected_repository.split('/')[-1]
             microagents_dir = repo_root / '.openhands' / 'microagents'
         self.log(
             'info',
@@ -327,6 +413,8 @@ class Runtime(FileEditRuntimeMixin):
         If the action is not supported by the current runtime, an ErrorObservation is returned.
         """
         if not action.runnable:
+            if isinstance(action, AgentThinkAction):
+                return AgentThinkObservation('Your thought has been logged.')
             return NullObservation('')
         if (
             hasattr(action, 'confirmation_state')
@@ -429,3 +517,7 @@ class Runtime(FileEditRuntimeMixin):
     @property
     def web_hosts(self) -> dict[str, int]:
         return {}
+
+    @property
+    def additional_agent_instructions(self) -> str:
+        return ''
