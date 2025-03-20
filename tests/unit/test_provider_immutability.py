@@ -3,7 +3,6 @@ from types import MappingProxyType
 import pytest
 from pydantic import SecretStr, ValidationError
 
-from openhands.events.action import MessageAction
 from openhands.events.action.commands import CmdRunAction
 from openhands.integrations.provider import (
     ProviderHandler,
@@ -238,19 +237,21 @@ def test_provider_handler_type_enforcement():
 
 def test_expose_env_vars():
     """Test that expose_env_vars correctly exposes secrets as strings"""
-    tokens = MappingProxyType({
-        ProviderType.GITHUB: ProviderToken(token=SecretStr('test_token')),
-        ProviderType.GITLAB: ProviderToken(token=SecretStr('gitlab_token'))
-    })
+    tokens = MappingProxyType(
+        {
+            ProviderType.GITHUB: ProviderToken(token=SecretStr('test_token')),
+            ProviderType.GITLAB: ProviderToken(token=SecretStr('gitlab_token')),
+        }
+    )
     handler = ProviderHandler(provider_tokens=tokens)
 
     # Test with specific provider tokens
     env_secrets = {
         ProviderType.GITHUB: SecretStr('gh_token'),
-        ProviderType.GITLAB: SecretStr('gl_token')
+        ProviderType.GITLAB: SecretStr('gl_token'),
     }
     exposed = handler.expose_env_vars(env_secrets)
-    
+
     assert exposed['github_token'] == 'gh_token'
     assert exposed['gitlab_token'] == 'gl_token'
 
@@ -258,10 +259,12 @@ def test_expose_env_vars():
 @pytest.mark.asyncio
 async def test_get_env_vars():
     """Test get_env_vars with different configurations"""
-    tokens = MappingProxyType({
-        ProviderType.GITHUB: ProviderToken(token=SecretStr('test_token')),
-        ProviderType.GITLAB: ProviderToken(token=SecretStr('gitlab_token'))
-    })
+    tokens = MappingProxyType(
+        {
+            ProviderType.GITHUB: ProviderToken(token=SecretStr('test_token')),
+            ProviderType.GITLAB: ProviderToken(token=SecretStr('gitlab_token')),
+        }
+    )
     handler = ProviderHandler(provider_tokens=tokens)
 
     # Test getting all tokens unexposed
@@ -273,8 +276,7 @@ async def test_get_env_vars():
 
     # Test getting specific providers
     env_vars = await handler.get_env_vars(
-        expose_secrets=False,
-        providers=[ProviderType.GITHUB]
+        expose_secrets=False, providers=[ProviderType.GITHUB]
     )
     assert len(env_vars) == 1
     assert ProviderType.GITHUB in env_vars
@@ -299,35 +301,34 @@ async def test_set_event_stream_secrets(mocker):
     mock_event_stream = mocker.Mock()
     mock_event_stream.set_secrets = mocker.Mock()
 
-    tokens = MappingProxyType({
-        ProviderType.GITHUB: ProviderToken(token=SecretStr('test_token')),
-        ProviderType.GITLAB: ProviderToken(token=SecretStr('gitlab_token'))
-    })
+    tokens = MappingProxyType(
+        {
+            ProviderType.GITHUB: ProviderToken(token=SecretStr('test_token')),
+            ProviderType.GITLAB: ProviderToken(token=SecretStr('gitlab_token')),
+        }
+    )
     handler = ProviderHandler(provider_tokens=tokens)
 
     # Test with provided env_vars
     env_vars = {
         ProviderType.GITHUB: SecretStr('new_token'),
-        ProviderType.GITLAB: SecretStr('new_gitlab_token')
+        ProviderType.GITLAB: SecretStr('new_gitlab_token'),
     }
     await handler.set_event_stream_secrets(mock_event_stream, env_vars)
-    mock_event_stream.set_secrets.assert_called_once_with({
-        'github_token': 'new_token',
-        'gitlab_token': 'new_gitlab_token'
-    })
+    mock_event_stream.set_secrets.assert_called_once_with(
+        {'github_token': 'new_token', 'gitlab_token': 'new_gitlab_token'}
+    )
 
     # Test without env_vars (using existing tokens)
     mock_event_stream.set_secrets.reset_mock()
     await handler.set_event_stream_secrets(mock_event_stream)
-    mock_event_stream.set_secrets.assert_called_once_with({
-        'github_token': 'test_token',
-        'gitlab_token': 'gitlab_token'
-    })
+    mock_event_stream.set_secrets.assert_called_once_with(
+        {'github_token': 'test_token', 'gitlab_token': 'gitlab_token'}
+    )
 
 
 def test_check_cmd_action_for_provider_token_ref():
     """Test detection of provider tokens in command actions"""
-    from openhands.events.action.commands import CmdRunAction
 
     # Test command with GitHub token
     cmd = CmdRunAction(command='echo $GITHUB_TOKEN')
@@ -349,6 +350,7 @@ def test_check_cmd_action_for_provider_token_ref():
 
     # Test non-command action
     from openhands.events.action import MessageAction
+
     msg = MessageAction(content='test')
     providers = ProviderHandler.check_cmd_action_for_provider_token_ref(msg)
     assert len(providers) == 0
