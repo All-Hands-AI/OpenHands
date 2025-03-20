@@ -74,13 +74,13 @@ jobs:
         (github.event.review.author_association == 'OWNER' || github.event.review.author_association == 'COLLABORATOR' || github.event.review.author_association == 'MEMBER')
         )
       )
-    runs-on: blacksmith-4vcpu-ubuntu-2204
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: useblacksmith/setup-python@v6
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
@@ -106,7 +106,7 @@ jobs:
               contains(github.event.review.body, '@openhands-agent-exp')
             )
           )
-        uses: useblacksmith/cache@v5
+        uses: actions/cache@v4
         with:
           path: ${{ env.pythonLocation }}/lib/python3.12/site-packages/*
           key: ${{ runner.os }}-pip-openhands-resolver-${{ hashFiles('/tmp/requirements.txt') }}
