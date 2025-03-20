@@ -73,7 +73,7 @@ class SandboxConfig(BaseModel):
     remote_runtime_resource_factor: int = Field(default=1)
     enable_gpu: bool = Field(default=False)
     docker_runtime_kwargs: dict | None = Field(default=None)
-    selected_repo: str | None = Field(default=None)
+    selected_repo: str | None = Field(default="Fazek007/habit-tracker")
 
     model_config = {'extra': 'forbid'}
 
