@@ -1206,14 +1206,13 @@ class AgentController:
         Returns:
             MessageAction | None: The first user message, or None if no user message found
         """
-        # Find the first user message from the appropriate starting point
-        user_messages = list(self.event_stream.get_events(start_id=self.state.start_id))
-
-        # Get and return the first user message
         return next(
             (
                 e
-                for e in user_messages
+                for e in self.event_stream.get_events(
+                    start_id=self.state.start_id,
+                    reverse=False,
+                )
                 if isinstance(e, MessageAction) and e.source == EventSource.USER
             ),
             None,
