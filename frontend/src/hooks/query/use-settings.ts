@@ -44,14 +44,12 @@ export const useSettings = () => {
   });
 
   React.useEffect(() => {
-    console.count(`LLM_API_KEY: ${query.data?.LLM_API_KEY}`);
     if (query.isFetched && query.data?.LLM_API_KEY) {
       posthog.capture("user_activated");
     }
   }, [query.data?.LLM_API_KEY, query.isFetched]);
 
   React.useEffect(() => {
-    console.count(`GITHUB_TOKEN_IS_SET: ${query.data?.GITHUB_TOKEN_IS_SET}`);
     if (query.isFetched) setGitHubTokenIsSet(!!query.data?.GITHUB_TOKEN_IS_SET);
   }, [query.data?.GITHUB_TOKEN_IS_SET, query.isFetched]);
 
