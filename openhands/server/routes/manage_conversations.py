@@ -95,10 +95,14 @@ async def _create_new_conversation(
         extra={'user_id': user_id, 'session_id': conversation_id},
     )
 
+    # Create a default title based on repository or conversation ID
     repository_title = (
         selected_repository.split('/')[-1] if selected_repository else None
     )
     conversation_title = f'{repository_title or "Conversation"} {conversation_id[:5]}'
+
+    # If there's an initial message, we'll update the title later when the LLM is available
+    # This temporary title will be replaced by the LLM-generated one
 
     logger.info(f'Saving metadata for conversation {conversation_id}')
     await conversation_store.save_metadata(

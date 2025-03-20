@@ -233,7 +233,56 @@ class Session:
                         'Model does not support image upload, change to a different model or try without an image.'
                     )
                     return
+        
+        # Check if this is the first user message in the conversation
+        is_first_message = True
+        for event_item in self.agent_session.event_stream.get_events():
+            if event_item.source == EventSource.USER:
+                is_first_message = False
+                break
+        
+        # If this is the first user message and it's a MessageAction, generate a title
+        if is_first_message and isinstance(event, MessageAction) and event.content:
+            # We'll handle title generation in a separate task to avoid blocking
+            asyncio.create_task(self._generate_and_update_title(event.content))
+            
         self.agent_session.event_stream.add_event(event, EventSource.USER)
+        
+    async def _generate_and_update_title(self, message_content: str):
+        """Generate a title for the conversation and update the metadata."""
+        from openhands.server.utils.title_generator import generate_conversation_title
+        from openhands.storage.conversation.conversation_store import ConversationStore
+        from openhands.utils.import_utils import get_impl
+        from openhands.server.shared import config
+        from openhands.server.config.server_config import ServerConfig
+        
+        try:
+            # Get the server config
+            server_config = ServerConfig()
+            
+            # Get the conversation store
+            conversation_store_class = get_impl(
+                ConversationStore,  # type: ignore
+                server_config.conversation_store_class,
+            )
+            store = await conversation_store_class.get_instance(
+                self.config, self.user_id, None
+            )
+            
+            # Get the current metadata
+            metadata = await store.get_metadata(self.sid)
+            
+            # Generate a title using the LLM
+            controller = self.agent_session.controller
+            if controller and controller.agent and controller.agent.llm:
+                title = await generate_conversation_title(message_content, controller.agent.llm)
+                
+                # Update the metadata with the new title
+                metadata.title = title
+                await store.save_metadata(metadata)
+                self.logger.info(f"Updated conversation title to: {title}", extra={"session_id": self.sid})
+        except Exception as e:
+            self.logger.error(f"Error updating conversation title: {e}", extra={"session_id": self.sid})
 
     async def send(self, data: dict[str, object]):
         if asyncio.get_running_loop() != self.loop:
