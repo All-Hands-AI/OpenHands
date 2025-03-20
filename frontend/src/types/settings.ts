@@ -1,5 +1,11 @@
 export type Provider = "github" | "gitlab";
 
+export type CustomSecret = {
+  id: string;
+  name: string;
+  value: string;
+};
+
 export type Settings = {
   LLM_MODEL: string;
   LLM_BASE_URL: string;
@@ -15,6 +21,7 @@ export type Settings = {
   USER_CONSENTS_TO_ANALYTICS: boolean | null;
   PROVIDER_TOKENS: Record<Provider, string>;
   IS_NEW_USER?: boolean;
+  CUSTOM_SECRETS?: CustomSecret[];
 };
 
 export type ApiSettings = {
@@ -31,6 +38,7 @@ export type ApiSettings = {
   enable_sound_notifications: boolean;
   user_consents_to_analytics: boolean | null;
   provider_tokens: Record<Provider, string>;
+  custom_secrets?: CustomSecret[];
 };
 
 export type PostSettings = Settings & {

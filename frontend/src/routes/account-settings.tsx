@@ -1,5 +1,7 @@
 import React from "react";
 import { Link } from "react-router";
+import PlusIcon from "#/icons/plus.svg?react";
+import XMarkIcon from "#/icons/x-mark.svg?react";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { HelpLink } from "#/components/features/settings/help-link";
 import { KeyStatusIcon } from "#/components/features/settings/key-status-icon";
@@ -438,7 +440,65 @@ function AccountSettings() {
                 </p>
               </>
             )}
+          </section>
 
+          <section className="flex flex-col gap-6">
+            <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">
+              Custom Secrets
+            </h2>
+            <div className="flex flex-col gap-4">
+              {settings.CUSTOM_SECRETS?.map((secret) => (
+                <div key={secret.id} className="flex items-start gap-2">
+                  <SettingsInput
+                    name={`secret-name-${secret.id}`}
+                    placeholder="Secret Name"
+                    defaultValue={secret.name}
+                    className="w-[330px]"
+                  />
+                  <SettingsInput
+                    name={`secret-value-${secret.id}`}
+                    type="password"
+                    placeholder="Secret Value"
+                    defaultValue={secret.value}
+                    className="w-[330px]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newSecrets = settings.CUSTOM_SECRETS?.filter(
+                        (s) => s.id !== secret.id
+                      );
+                      saveSettings({ CUSTOM_SECRETS: newSecrets });
+                    }}
+                    className="mt-2 p-1 text-gray-400 hover:text-gray-300"
+                  >
+                    <XMarkIcon className="h-5 w-5" />
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => {
+                  const newSecret = {
+                    id: crypto.randomUUID(),
+                    name: "",
+                    value: "",
+                  };
+                  const newSecrets = [
+                    ...(settings.CUSTOM_SECRETS || []),
+                    newSecret,
+                  ];
+                  saveSettings({ CUSTOM_SECRETS: newSecrets });
+                }}
+                className="flex items-center gap-1 text-sm text-primary hover:text-primary/80"
+              >
+                <PlusIcon className="h-4 w-4" />
+                Add Secret
+              </button>
+            </div>
+          </section>
+
+          <section className="flex flex-col gap-6">
             <BrandButton
               type="button"
               variant="secondary"
