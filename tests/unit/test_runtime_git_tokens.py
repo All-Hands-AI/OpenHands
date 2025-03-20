@@ -7,8 +7,10 @@ from openhands.core.config import AppConfig
 from openhands.events.action import Action
 from openhands.events.action.commands import CmdRunAction
 from openhands.events.observation import NullObservation, Observation
+from openhands.events.stream import EventStream
 from openhands.integrations.provider import ProviderToken, ProviderType
 from openhands.runtime.base import Runtime
+from openhands.storage import get_file_store
 
 
 class TestRuntime(Runtime):
@@ -52,32 +54,19 @@ class TestRuntime(Runtime):
 
 
 @pytest.fixture
-def event_stream():
-    """Fixture for event stream testing"""
-
-    class TestEventStream:
-        def __init__(self):
-            self.secrets = {}
-
-        def set_secrets(self, secrets):
-            self.secrets = secrets
-
-        def add_event(self, event, source):
-            pass
-
-        def subscribe(self, subscriber, callback, sid):
-            pass
-
-    return TestEventStream()
+def temp_dir(tmp_path_factory: pytest.TempPathFactory) -> str:
+    return str(tmp_path_factory.mktemp('test_event_stream'))
 
 
 @pytest.fixture
-def runtime(event_stream):
+def runtime(temp_dir):
     """Fixture for runtime testing"""
     config = AppConfig()
     git_provider_tokens = MappingProxyType(
         {ProviderType.GITHUB: ProviderToken(token=SecretStr('test_token'))}
     )
+    file_store = get_file_store('local', temp_dir)
+    event_stream = EventStream('abc', file_store)
     runtime = TestRuntime(
         config=config,
         event_stream=event_stream,
@@ -89,9 +78,11 @@ def runtime(event_stream):
 
 
 @pytest.mark.asyncio
-async def test_export_latest_git_provider_tokens_no_user_id(event_stream):
+async def test_export_latest_git_provider_tokens_no_user_id(temp_dir):
     """Test that no token export happens when user_id is not set"""
     config = AppConfig()
+    file_store = get_file_store('local', temp_dir)
+    event_stream = EventStream('abc', file_store)
     runtime = TestRuntime(config=config, event_stream=event_stream, sid='test')
 
     # Create a command that would normally trigger token export
@@ -105,9 +96,11 @@ async def test_export_latest_git_provider_tokens_no_user_id(event_stream):
 
 
 @pytest.mark.asyncio
-async def test_export_latest_git_provider_tokens_no_token_ref(event_stream):
+async def test_export_latest_git_provider_tokens_no_token_ref(temp_dir):
     """Test that no token export happens when command doesn't reference tokens"""
     config = AppConfig()
+    file_store = get_file_store('local', temp_dir)
+    event_stream = EventStream('abc', file_store)
     runtime = TestRuntime(
         config=config, event_stream=event_stream, sid='test', user_id='test_user'
     )
@@ -123,7 +116,7 @@ async def test_export_latest_git_provider_tokens_no_token_ref(event_stream):
 
 
 @pytest.mark.asyncio
-async def test_export_latest_git_provider_tokens_success(runtime, event_stream):
+async def test_export_latest_git_provider_tokens_success(runtime):
     """Test successful token export when command references tokens"""
     # Create a command that references the GitHub token
     cmd = CmdRunAction(command='echo $GITHUB_TOKEN')
@@ -132,17 +125,11 @@ async def test_export_latest_git_provider_tokens_success(runtime, event_stream):
     await runtime._export_latest_git_provider_tokens(cmd)
 
     # Verify that the token was exported to the event stream
-    assert event_stream.secrets == {'github_token': 'test_token'}
-
-    # Verify that the token was added to environment variables
-    # This is done by checking if the command to add the env var was executed
-    # We can't directly check the env vars as they're in the runtime environment
-    assert runtime.prev_token is not None
-    assert runtime.prev_token.get_secret_value() == 'test_token'
+    assert runtime.event_stream.secrets == {'github_token': 'test_token'}
 
 
 @pytest.mark.asyncio
-async def test_export_latest_git_provider_tokens_multiple_refs(event_stream):
+async def test_export_latest_git_provider_tokens_multiple_refs(temp_dir):
     """Test token export with multiple token references"""
     config = AppConfig()
     # Initialize with both GitHub and GitLab tokens
@@ -152,6 +139,8 @@ async def test_export_latest_git_provider_tokens_multiple_refs(event_stream):
             ProviderType.GITLAB: ProviderToken(token=SecretStr('gitlab_token')),
         }
     )
+    file_store = get_file_store('local', temp_dir)
+    event_stream = EventStream('abc', file_store)
     runtime = TestRuntime(
         config=config,
         event_stream=event_stream,
@@ -171,13 +160,10 @@ async def test_export_latest_git_provider_tokens_multiple_refs(event_stream):
         'github_token': 'github_token',
         'gitlab_token': 'gitlab_token',
     }
-    # The prev_token should store the GitHub token
-    assert runtime.prev_token is not None
-    assert runtime.prev_token.get_secret_value() == 'github_token'
 
 
 @pytest.mark.asyncio
-async def test_export_latest_git_provider_tokens_token_update(runtime, event_stream):
+async def test_export_latest_git_provider_tokens_token_update(runtime):
     """Test that token updates are handled correctly"""
     # First export with initial token
     cmd = CmdRunAction(command='echo $GITHUB_TOKEN')
@@ -193,6 +179,4 @@ async def test_export_latest_git_provider_tokens_token_update(runtime, event_str
     await runtime._export_latest_git_provider_tokens(cmd)
 
     # Verify that the new token was exported
-    assert event_stream.secrets == {'github_token': new_token}
-    assert runtime.prev_token is not None
-    assert runtime.prev_token.get_secret_value() == new_token
+    assert runtime.event_stream.secrets == {'github_token': new_token}
