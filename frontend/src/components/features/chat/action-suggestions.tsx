@@ -40,7 +40,7 @@ export function ActionSuggestions({
                 suggestion={{
                   label: "Push to Branch",
                   value:
-                    "Please push the changes to a remote branch on GitHub, but do NOT create a pull request.",
+                    "Please push the changes to a remote branch on GitHub, but do NOT create a pull request. Please use the exact SAME branch name as the one you are currently on.",
                 }}
                 onClick={(value) => {
                   posthog.capture("push_to_branch_button_clicked");
@@ -51,7 +51,7 @@ export function ActionSuggestions({
                 suggestion={{
                   label: "Push & Create PR",
                   value:
-                    "Please push the changes to GitHub and open a pull request.",
+                    "Please push the changes to GitHub and open a pull request. Please use the exact SAME branch name as the one you are currently on.",
                 }}
                 onClick={(value) => {
                   posthog.capture("create_pr_button_clicked");
