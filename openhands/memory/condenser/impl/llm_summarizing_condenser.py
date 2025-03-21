@@ -133,12 +133,13 @@ INTENT: Fix precision while maintaining FITS compliance"""
         self.add_metadata('response', response.model_dump())
         self.add_metadata('metrics', self.llm.metrics.get())
 
-        event = CondensationAction()
-        event.forgotten_event_ids = [event.id for event in forgotten_events]
-        event.considered_event_ids = [event.id for event in view]
-        event.summary = summary
-
-        return Condensation(action=event)
+        return Condensation(
+            action=CondensationAction(
+                forgotten_event_ids=[event.id for event in forgotten_events],
+                considered_event_ids=[event.id for event in view],
+                summary=summary,
+            )
+        )
 
     def should_condense(self, view: View) -> bool:
         return len(view) > self.max_size
