@@ -6,7 +6,6 @@ import { AgentStatusBar } from "./agent-status-bar";
 import { SecurityLock } from "./security-lock";
 import { useUserConversation } from "#/hooks/query/use-user-conversation";
 import { ConversationCard } from "../conversation-panel/conversation-card";
-import { useDocumentTitle } from "#/hooks/use-document-title";
 import { setConversation } from "#/state/conversation-slice";
 
 interface ControlsProps {
@@ -21,10 +20,6 @@ export function Controls({ setSecurityOpen, showSecurityLock }: ControlsProps) {
     params.conversationId ?? null,
   );
 
-  // Update document title when conversation title changes
-  useDocumentTitle(conversation?.title);
-
-  // Update conversation state when conversation data changes
   useEffect(() => {
     if (conversation) {
       dispatch(
