@@ -17,6 +17,7 @@ from openhands.core.exceptions import (
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
+from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.runtime.builder.remote import RemoteRuntimeBuilder
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
@@ -48,6 +49,7 @@ class RemoteRuntime(ActionExecutionClient):
         attach_to_existing: bool = False,
         headless_mode: bool = True,
         user_id: str | None = None,
+        git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
     ):
         super().__init__(
             config,
@@ -59,6 +61,7 @@ class RemoteRuntime(ActionExecutionClient):
             attach_to_existing,
             headless_mode,
             user_id,
+            git_provider_tokens,
         )
         if self.config.sandbox.api_key is None:
             raise ValueError(
