@@ -1,5 +1,5 @@
-import { Provider } from "#/types/settings";
 import React from "react";
+import { Provider } from "#/types/settings";
 
 interface AuthContextType {
   providerTokensSet: Provider[];

@@ -25,7 +25,7 @@ import {
   displayErrorToast,
   displaySuccessToast,
 } from "#/utils/custom-toast-handlers";
-import { PostSettings, Provider } from "#/types/settings";
+import { PostSettings, ProviderOptions } from "#/types/settings";
 import { HIDE_LLM_SETTINGS } from "#/utils/feature-flags";
 import { useAuth } from "#/context/auth-context";
 
@@ -65,6 +65,10 @@ function AccountSettings() {
         isCustomModel(resources.models, settings.LLM_MODEL) ||
         hasAdvancedSettingsSet({
           ...settings,
+          PROVIDER_TOKENS: {
+            github: "",
+            gitlab: "",
+          },
         })
       );
     }
@@ -73,8 +77,10 @@ function AccountSettings() {
   };
 
   const hasAppSlug = !!config?.APP_SLUG;
-  const isGithubTokenSet = providerTokensSet.includes(Provider.github) || false;
-  const isGitlabTokenSet = providerTokensSet.includes(Provider.gitlab) || false;
+  const isGithubTokenSet =
+    providerTokensSet.includes(ProviderOptions.github) || false;
+  const isGitlabTokenSet =
+    providerTokensSet.includes(ProviderOptions.gitlab) || false;
   const isLLMKeySet = settings?.LLM_API_KEY === "**********";
   const isAnalyticsEnabled = settings?.USER_CONSENTS_TO_ANALYTICS;
   const isAdvancedSettingsSet = determineWhetherToToggleAdvancedSettings();

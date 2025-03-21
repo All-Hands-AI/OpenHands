@@ -1,9 +1,9 @@
-export const Provider = {
+export const ProviderOptions = {
   github: "github",
   gitlab: "gitlab",
 } as const;
 
-export type Provider = keyof typeof Provider;
+export type Provider = keyof typeof ProviderOptions;
 
 export type Settings = {
   LLM_MODEL: string;
