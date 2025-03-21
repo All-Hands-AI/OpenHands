@@ -250,48 +250,50 @@ async def get_conversation(
 async def auto_generate_title(conversation_id: str, user_id: str) -> str:
     """
     Auto-generate a title for a conversation based on the first user message.
-    
+
     Args:
         conversation_id: The ID of the conversation
         user_id: The ID of the user
-        
+
     Returns:
         A generated title string
     """
-    logger.info(f"Auto-generating title for conversation {conversation_id}")
-    
+    logger.info(f'Auto-generating title for conversation {conversation_id}')
+
     try:
         # Create an event stream for the conversation
         event_stream = EventStream(conversation_id, file_store, user_id)
-        
+
         # Find the first user message
         first_user_message = None
         for event in event_stream.get_events():
-            if (event.source == EventSource.USER and 
-                isinstance(event, MessageAction) and 
-                event.content and 
-                event.content.strip()):  # Ensure content is not just whitespace
+            if (
+                event.source == EventSource.USER
+                and isinstance(event, MessageAction)
+                and event.content
+                and event.content.strip()
+            ):  # Ensure content is not just whitespace
                 first_user_message = event.content
                 break
-        
+
         if first_user_message:
             # Use the first 15 characters of the user message as the title
             # Strip any leading/trailing whitespace
             first_user_message = first_user_message.strip()
             title = first_user_message[:15]
             if len(first_user_message) > 15:
-                title += "..."
-            logger.info(f"Generated title: {title}")
+                title += '...'
+            logger.info(f'Generated title: {title}')
             return title
         else:
             # Fallback if no user message is found
-            title = f"Conversation {conversation_id[:5]}"
-            logger.info(f"No user message found, using fallback title: {title}")
+            title = f'Conversation {conversation_id[:5]}'
+            logger.info(f'No user message found, using fallback title: {title}')
             return title
     except Exception as e:
         # If anything goes wrong, use a fallback title
-        logger.error(f"Error generating title: {str(e)}")
-        return f"Conversation {conversation_id[:5]}"
+        logger.error(f'Error generating title: {str(e)}')
+        return f'Conversation {conversation_id[:5]}'
 
 
 @app.patch('/conversations/{conversation_id}')
@@ -304,11 +306,16 @@ async def update_conversation(
     metadata = await conversation_store.get_metadata(conversation_id)
     if not metadata:
         return False
-    
+
     # If title is empty or unspecified, auto-generate it from the first user message
     if not title or title.isspace():
-        title = await auto_generate_title(conversation_id, get_user_id(request))
-    
+        user_id = get_user_id(request)
+        if user_id is not None:
+            title = await auto_generate_title(conversation_id, user_id)
+        else:
+            # Fallback if no user ID is available
+            title = f'Conversation {conversation_id[:5]}'
+
     metadata.title = title
     await conversation_store.save_metadata(metadata)
     return True
