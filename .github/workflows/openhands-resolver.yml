@@ -242,6 +242,8 @@ jobs:
             --repo ${{ github.repository }} \
             --issue-number ${{ env.ISSUE_NUMBER }} \
             --comment-id ${{ env.COMMENT_ID }} \
+            --username ${{ env.GITHUB_USERNAME }} \
+            --token ${{ env.GITHUB_TOKEN }}
 
       - name: Check resolution result
         id: check_result
