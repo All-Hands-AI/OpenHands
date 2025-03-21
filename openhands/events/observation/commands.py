@@ -100,6 +100,9 @@ class CmdOutputObservation(Observation):
     # Whether the command output should be hidden from the user
     hidden: bool = False
 
+    # Default max size for command output content - matching LLM config
+    MAX_CMD_OUTPUT_SIZE: int = 50000
+
     def __init__(
         self,
         content: str,
@@ -109,7 +112,12 @@ class CmdOutputObservation(Observation):
         hidden: bool = False,
         **kwargs,
     ):
-        super().__init__(content)
+        # Truncate content before passing it to parent
+        truncated_content = self._truncate_if_needed(content)
+
+        # Initialize the parent with the truncated content
+        super().__init__(truncated_content)
+
         self.command = command
         self.observation = observation
         self.hidden = hidden
@@ -123,6 +131,36 @@ class CmdOutputObservation(Observation):
             self.metadata.exit_code = kwargs['exit_code']
         if 'command_id' in kwargs:
             self.metadata.pid = kwargs['command_id']
+
+    @staticmethod
+    def _truncate_if_needed(content: str, max_size: int = MAX_CMD_OUTPUT_SIZE) -> str:
+        """Truncate the content if it's too large.
+
+        This helps avoid storing unnecessarily large content in the event stream.
+
+        Args:
+            content: The content to truncate
+            max_size: Maximum size before truncation. Defaults to MAX_CMD_OUTPUT_SIZE.
+
+        Returns:
+            Truncated content or original if small enough
+        """
+
+        if len(content) <= max_size:
+            return content
+
+        # Truncate the middle and include a message about it
+        half = max_size // 2
+        original_length = len(content)
+        truncated = (
+            content[:half]
+            + f'\n[... Command output truncated: removed {original_length - max_size} characters from the middle ...]\n'
+            + content[-half:]
+        )
+        logger.info(
+            f'Truncated large command output: {original_length} -> {len(truncated)} chars'
+        )
+        return truncated
 
     @property
     def command_id(self) -> int:
