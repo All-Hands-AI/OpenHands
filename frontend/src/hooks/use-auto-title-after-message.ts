@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useParams } from "react-router";
 import { useSelector } from "react-redux";
+import { useQueryClient } from "@tanstack/react-query";
 import { useUpdateConversation } from "./mutation/use-update-conversation";
 import { useWsClient } from "#/context/ws-client-provider";
 import { RootState } from "#/store";
@@ -14,6 +15,7 @@ import { RootState } from "#/store";
  */
 export function useAutoTitleAfterMessage() {
   const { conversationId } = useParams<{ conversationId: string }>();
+  const queryClient = useQueryClient();
   const { mutate: updateConversation } = useUpdateConversation();
   const { send } = useWsClient();
   const hasTitleBeenGenerated = useRef(false);
@@ -29,19 +31,25 @@ export function useAutoTitleAfterMessage() {
   // Effect to trigger title generation after the first agent message
   useEffect(() => {
     if (hasAgentMessage && !hasTitleBeenGenerated.current && conversationId) {
-      console.log(
-        "[useAutoTitleAfterMessage] First agent message detected, generating title",
-      );
       hasTitleBeenGenerated.current = true;
 
       // Generate the title
-      updateConversation({
-        id: conversationId,
-        conversation: { title: "" },
-      });
-      console.log("[useAutoTitleAfterMessage] Title generation request sent");
+      updateConversation(
+        {
+          id: conversationId,
+          conversation: { title: "" },
+        },
+        {
+          onSuccess: () => {
+            // Invalidate the conversation query to refresh the title in the UI
+            queryClient.invalidateQueries({
+              queryKey: ["user", "conversation", conversationId],
+            });
+          },
+        },
+      );
     }
-  }, [hasAgentMessage, conversationId, updateConversation]);
+  }, [hasAgentMessage, conversationId, updateConversation, queryClient]);
 
   // Return the original send function
   return send;

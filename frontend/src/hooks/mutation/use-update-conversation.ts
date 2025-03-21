@@ -9,19 +9,10 @@ export const useUpdateConversation = () => {
     mutationFn: (variables: {
       id: string;
       conversation: Partial<Omit<Conversation, "id">>;
-    }) => {
-      console.log("[useUpdateConversation] Mutation called with:", variables);
-      return OpenHands.updateUserConversation(
-        variables.id,
-        variables.conversation,
-      );
-    },
+    }) =>
+      OpenHands.updateUserConversation(variables.id, variables.conversation),
     onSuccess: () => {
-      console.log("[useUpdateConversation] Mutation succeeded");
       queryClient.invalidateQueries({ queryKey: ["user", "conversations"] });
-    },
-    onError: (error) => {
-      console.error("[useUpdateConversation] Mutation failed:", error);
     },
   });
 };
