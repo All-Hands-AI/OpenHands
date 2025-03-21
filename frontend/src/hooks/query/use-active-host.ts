@@ -6,14 +6,12 @@ import { openHands } from "#/api/open-hands-axios";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
 import { RootState } from "#/store";
 import { useConversation } from "#/context/conversation-context";
+import { useActionEvents } from "#/hooks/use-action-events";
 
 export const useActiveHost = () => {
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const [activeHost, setActiveHost] = React.useState<string | null>(null);
   const queryClient = useQueryClient();
-  const messages = useSelector((state: RootState) => state.chat.messages);
-  const prevMessagesLengthRef = React.useRef(messages.length);
-
   const { conversationId } = useConversation();
 
   // Get the list of hosts from the backend
@@ -54,30 +52,16 @@ export const useActiveHost = () => {
 
   const appsData = apps.map((app) => app.data);
 
-  // Effect to detect new CommandRunAction and trigger URL testing
-  React.useEffect(() => {
-    // Check if messages length increased (new message added)
-    if (messages.length > prevMessagesLengthRef.current) {
-      // Look for CommandRunAction in the new messages
-      const newMessages = messages.slice(prevMessagesLengthRef.current);
-      const hasCommandRunAction = newMessages.some(
-        (msg) =>
-          msg.type === "action" && msg.translationID === "ACTION_MESSAGE$RUN",
-      );
-
-      // If a new CommandRunAction was added, trigger refetch of all host queries
-      if (hasCommandRunAction && data.hosts.length > 0) {
-        data.hosts.forEach((host) => {
-          queryClient.invalidateQueries({
-            queryKey: [conversationId, "hosts", host],
-          });
+  // Subscribe to "run" action events and test URLs when a new command is run
+  useActionEvents("run", () => {
+    if (data.hosts.length > 0) {
+      data.hosts.forEach((host) => {
+        queryClient.invalidateQueries({
+          queryKey: [conversationId, "hosts", host],
         });
-      }
+      });
     }
-
-    // Update the ref for next comparison
-    prevMessagesLengthRef.current = messages.length;
-  }, [messages, data.hosts, conversationId, queryClient]);
+  });
 
   // Update activeHost when app data changes
   React.useEffect(() => {
