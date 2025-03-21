@@ -1,20 +1,22 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import React from "react";
-import { retrieveGitHubUserRepositories } from "#/api/github";
+import { retrieveUserGitRepositories } from "#/api/github";
 import { useConfig } from "./use-config";
 import { useAuth } from "#/context/auth-context";
+import { Provider } from "#/types/settings";
 
-export const useUserRepositories = () => {
-  const { githubTokenIsSet } = useAuth();
+export const useUserRepositories = (selectedProvider: Provider | null) => {
+  const { providersAreSet } = useAuth();
   const { data: config } = useConfig();
 
   const repos = useInfiniteQuery({
-    queryKey: ["repositories", githubTokenIsSet],
+    queryKey: ["repositories", providersAreSet, selectedProvider],
     queryFn: async ({ pageParam }) =>
-      retrieveGitHubUserRepositories(pageParam, 100),
+      retrieveUserGitRepositories(pageParam, 100, selectedProvider),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => lastPage.nextPage,
-    enabled: githubTokenIsSet && config?.APP_MODE === "oss",
+    enabled:
+      providersAreSet && config?.APP_MODE === "oss" && !!selectedProvider,
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 15, // 15 minutes
   });

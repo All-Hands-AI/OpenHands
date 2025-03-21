@@ -188,20 +188,47 @@ class ProviderHandler:
         return await service.get_latest_token()
 
     async def get_repositories(
-        self, page: int, per_page: int, sort: str, installation_id: int | None
+        self,
+        selected_provider: ProviderType,
+        page: int,
+        per_page: int,
+        sort: str,
+        installation_id: int | None,
     ) -> list[Repository]:
-        """Get repositories from all available providers"""
-        all_repos = []
+        """
+        Get repositories from a selected providers with pagination support
+        """
+
+        provider = self._get_service(selected_provider)
+        repos = await provider.get_repositories(page, per_page, sort, installation_id)
+        return repos
+
+    async def search_repositories(
+        self,
+        selected_provider: ProviderType,
+        query: str,
+        per_page: int,
+        sort: str,
+        order: str,
+    ):
+        provider = self._get_service(selected_provider)
+        repos = await provider.search_repositories(query, per_page, sort, order)
+        return repos
+
+    async def get_remote_repository_url(self, repository: str) -> str | None:
+        if not repository:
+            return None
+
         for provider in self.provider_tokens:
             try:
                 service = self._get_service(provider)
-                repos = await service.get_repositories(
-                    page, per_page, sort, installation_id
-                )
-                all_repos.extend(repos)
+                if service.does_repo_exist(repository):
+                    git_token = self.provider_tokens[provider].token
+                    if git_token:
+                        return f'https://{git_token.get_secret_value()}@github.com/{repository}.git'
             except Exception:
                 continue
-        return all_repos
+        return None
 
     async def set_event_stream_secrets(
         self,

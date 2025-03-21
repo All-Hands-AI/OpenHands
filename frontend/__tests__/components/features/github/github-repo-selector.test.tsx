@@ -1,16 +1,16 @@
 import { screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "test-utils";
-import { GitHubRepositorySelector } from "#/components/features/github/github-repo-selector";
+import { GitRepositorySelector } from "#/components/features/github/github-repo-selector";
 import OpenHands from "#/api/open-hands";
 
-describe("GitHubRepositorySelector", () => {
+describe("GitRepositorySelector", () => {
   const onInputChangeMock = vi.fn();
   const onSelectMock = vi.fn();
 
   it("should render the search input", () => {
     renderWithProviders(
-      <GitHubRepositorySelector
+      <GitRepositorySelector
         onInputChange={onInputChangeMock}
         onSelect={onSelectMock}
         publicRepositories={[]}
@@ -33,7 +33,7 @@ describe("GitHubRepositorySelector", () => {
     });
 
     renderWithProviders(
-      <GitHubRepositorySelector
+      <GitRepositorySelector
         onInputChange={onInputChangeMock}
         onSelect={onSelectMock}
         publicRepositories={[]}
@@ -65,7 +65,7 @@ describe("GitHubRepositorySelector", () => {
     searchPublicRepositoriesSpy.mockResolvedValue(mockSearchedRepos);
 
     renderWithProviders(
-      <GitHubRepositorySelector
+      <GitRepositorySelector
         onInputChange={onInputChangeMock}
         onSelect={onSelectMock}
         publicRepositories={[]}

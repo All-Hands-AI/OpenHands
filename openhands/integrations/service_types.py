@@ -33,6 +33,7 @@ class Repository(BaseModel):
     full_name: str
     stargazers_count: int | None = None
     link_header: str | None = None
+    pushed_at: str | None = None  # ISO 8601 format date string
 
 
 class AuthenticationError(ValueError):
@@ -88,3 +89,6 @@ class GitService(Protocol):
     ) -> list[Repository]:
         """Get repositories for the authenticated user"""
         ...
+
+    async def does_repo_exist(self, repository: str) -> bool:
+        """Check if a repository exists for the user"""

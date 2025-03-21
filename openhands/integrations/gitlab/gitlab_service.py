@@ -95,7 +95,7 @@ class GitLabService(GitService):
 
     async def search_repositories(
         self, query: str, per_page: int = 30, sort: str = 'updated', order: str = 'desc'
-    ):
+    ) -> list[Repository]:
         url = f'{self.BASE_URL}/search'
         params = {
             'scope': 'projects',
@@ -104,13 +104,65 @@ class GitLabService(GitService):
             'order_by': sort,
             'sort': order,
         }
-        response, headers = await self._fetch_data(url, params)
-        return response, headers
+        response, _ = await self._fetch_data(url, params)
+        repos = [
+            Repository(
+                id=repo.get('id'),
+                full_name=repo.get('path_with_namespace'),
+                stargazers_count=repo.get('star_count'),
+            )
+            for repo in response
+        ]
+        
+        return repos
 
     async def get_repositories(
         self, page: int, per_page: int, sort: str, installation_id: int | None
     ) -> list[Repository]:
-        return []
+        if installation_id:
+            return []  # Not implementing installation_token case yet
+        
+        url = f'{self.BASE_URL}/projects'
+        # Map GitHub's sort values to GitLab's order_by values
+        order_by = {
+            'pushed': 'last_activity_at',
+            'updated': 'last_activity_at',
+            'created': 'created_at',
+            'full_name': 'name'
+        }.get(sort, 'last_activity_at')
+
+        params = {
+            'page': str(page),
+            'per_page': str(per_page),
+            'order_by': order_by,
+            'sort': 'desc',  # GitLab uses sort for direction (asc/desc)
+            'owned': 1,  # Use 1 instead of True
+            'membership': 1  # Use 1 instead of True
+        }
+        response, headers = await self._fetch_data(url, params)
+        
+        next_link: str = headers.get('Link', '')
+        repos = [
+            Repository(
+                id=repo.get('id'),
+                full_name=repo.get('path_with_namespace'),
+                stargazers_count=repo.get('star_count'),
+                link_header=next_link,
+            )
+            for repo in response
+        ]
+        return repos
+
+    async def does_repo_exist(self, repository: str) -> bool:
+        url = f'{self.BASE_URL}/projects/{repository}'
+        try:
+            await self._fetch_data(url)
+            return True
+        except AuthenticationError:
+            return False
+        except UnknownException:
+            return False
+
 
 
 gitlab_service_cls = os.environ.get(

@@ -8,16 +8,16 @@ import { useLogout } from "../mutation/use-logout";
 import { useSaveSettings } from "../mutation/use-save-settings";
 
 export const useGitHubUser = () => {
-  const { githubTokenIsSet } = useAuth();
-  const { setGitHubTokenIsSet } = useAuth();
+  const { providersAreSet } = useAuth();
+  const { setProvidersAreSet } = useAuth();
   const { mutateAsync: logout } = useLogout();
   const { mutate: saveUserSettings } = useSaveSettings();
   const { data: config } = useConfig();
 
   const user = useQuery({
-    queryKey: ["user", githubTokenIsSet],
+    queryKey: ["user", providersAreSet],
     queryFn: OpenHands.getGitHubUser,
-    enabled: githubTokenIsSet && !!config?.APP_MODE,
+    enabled: providersAreSet && !!config?.APP_MODE,
     retry: false,
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 15, // 15 minutes
@@ -38,8 +38,8 @@ export const useGitHubUser = () => {
   const handleLogout = async () => {
     if (config?.APP_MODE === "saas") await logout();
     else {
-      saveUserSettings({ unset_github_token: true });
-      setGitHubTokenIsSet(false);
+      await saveUserSettings({ unset_tokens: true });
+      setProvidersAreSet(false);
     }
     posthog.reset();
   };

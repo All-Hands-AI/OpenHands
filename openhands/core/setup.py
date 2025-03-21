@@ -23,6 +23,7 @@ from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
 from openhands.security import SecurityAnalyzer, options
 from openhands.storage import get_file_store
+from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync
 
 
 def create_runtime(
@@ -117,10 +118,8 @@ def initialize_repository_for_runtime(
     repo_directory = None
     if selected_repository and provider_tokens:
         logger.debug(f'Selected repository {selected_repository}.')
-        repo_directory = runtime.clone_repo(
-            provider_tokens,
-            selected_repository,
-            None,
+        repo_directory = call_async_from_sync(
+            runtime.clone_repo, GENERAL_TIMEOUT, github_token, selected_repository, None
         )
 
     return repo_directory

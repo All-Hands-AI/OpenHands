@@ -9,7 +9,7 @@ export const useAppLogout = () => {
 
   const handleLogout = async () => {
     if (config?.APP_MODE === "saas") await logout();
-    else saveUserSettings({ unset_github_token: true });
+    else await saveUserSettings({ unset_tokens: true });
   };
 
   return { handleLogout };

@@ -17,11 +17,15 @@ from openhands.integrations.service_types import (
 )
 from openhands.server.auth import get_access_token, get_provider_tokens
 
-app = APIRouter(prefix='/api/github')
+app = APIRouter(prefix='/api/user')
+
+
+from pydantic import BaseModel
 
 
 @app.get('/repositories', response_model=list[Repository])
-async def get_github_repositories(
+async def get_user_repositories(
+    selected_provider: str = 'github',
     page: int = 1,
     per_page: int = 10,
     sort: str = 'pushed',
@@ -29,15 +33,17 @@ async def get_github_repositories(
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     access_token: SecretStr | None = Depends(get_access_token),
 ):
-    if provider_tokens and ProviderType.GITHUB in provider_tokens:
-        token = provider_tokens[ProviderType.GITHUB]
-        client = GithubServiceImpl(
-            user_id=token.user_id, external_auth_token=access_token, token=token.token
+
+    if provider_tokens:
+        client = ProviderHandler(
+            provider_tokens=provider_tokens, external_auth_token=access_token
         )
 
         try:
+            provider = ProviderType(selected_provider)
+
             repos: list[Repository] = await client.get_repositories(
-                page, per_page, sort, installation_id
+                provider, page, per_page, sort, installation_id
             )
             return repos
 
@@ -54,13 +60,13 @@ async def get_github_repositories(
             )
 
     return JSONResponse(
-        content='GitHub token required.',
+        content='Git provider token required. (such as GitHub).',
         status_code=status.HTTP_401_UNAUTHORIZED,
     )
 
 
-@app.get('/user', response_model=User)
-async def get_github_user(
+@app.get('/info', response_model=User)
+async def get_user(
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     access_token: SecretStr | None = Depends(get_access_token),
 ):
@@ -86,7 +92,7 @@ async def get_github_user(
             )
 
     return JSONResponse(
-        content='GitHub token required.',
+        content='Git provider token required. (such as GitHub).',
         status_code=status.HTTP_401_UNAUTHORIZED,
     )
 
@@ -125,7 +131,8 @@ async def get_github_installation_ids(
 
 
 @app.get('/search/repositories', response_model=list[Repository])
-async def search_github_repositories(
+async def search_repositories(
+    selected_provider: str,
     query: str,
     per_page: int = 5,
     sort: str = 'stars',
@@ -133,15 +140,16 @@ async def search_github_repositories(
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     access_token: SecretStr | None = Depends(get_access_token),
 ):
-    if provider_tokens and ProviderType.GITHUB in provider_tokens:
-        token = provider_tokens[ProviderType.GITHUB]
 
-        client = GithubServiceImpl(
-            user_id=token.user_id, external_auth_token=access_token, token=token.token
+    if provider_tokens:
+        client = ProviderHandler(
+            provider_tokens=provider_tokens, external_auth_token=access_token
         )
         try:
+            provider = ProviderType(selected_provider)
+
             repos: list[Repository] = await client.search_repositories(
-                query, per_page, sort, order
+                provider, query, per_page, sort, order
             )
             return repos
 

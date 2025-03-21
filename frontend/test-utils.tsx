@@ -65,7 +65,7 @@ export function renderWithProviders(
   function Wrapper({ children }: PropsWithChildren) {
     return (
       <Provider store={store}>
-        <AuthProvider initialGithubTokenIsSet>
+        <AuthProvider initialProviderTokens={[]}>
           <QueryClientProvider
             client={
               new QueryClient({
