@@ -129,7 +129,7 @@ We use the following testing tools:
 - **Test Runner**: Vitest
 - **Rendering**: React Testing Library
 - **User Interactions**: @testing-library/user-event
-- **Mocking**: Vitest's built-in mocking (vi.fn(), vi.mock())
+- **API Mocking**: [Mock Service Worker (MSW)](https://mswjs.io/)
 - **Code Coverage**: Vitest with V8 coverage
 
 ### Running Tests
