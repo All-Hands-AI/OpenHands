@@ -66,26 +66,15 @@ def initialize_runtime(
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
-    action = CmdRunAction(command='sleep 25')
+    action = CmdRunAction(command="git clone https://${HABIT_PAT_TOKEN}@github.com/Fazek007/habit-tracker.git")
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
-    action = CmdRunAction(command='sleep 25')
+    action = CmdRunAction(command='cd /habit-tracker')
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-
-    action = CmdRunAction(command='sleep 25')
-    logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = runtime.run_action(action)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-
-    action = CmdRunAction(command='sleep 25')
-    logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = runtime.run_action(action)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    
     
     if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
         raise RuntimeError(f'Failed to change directory to /workspace.\n{obs}')
