@@ -70,6 +70,7 @@ describe("frontend/routes/_oh", () => {
       POSTHOG_CLIENT_KEY: "test-key",
       FEATURE_FLAGS: {
         ENABLE_BILLING: false,
+        HIDE_LLM_SETTINGS: false,
       },
     });
 
@@ -104,6 +105,7 @@ describe("frontend/routes/_oh", () => {
       POSTHOG_CLIENT_KEY: "test-key",
       FEATURE_FLAGS: {
         ENABLE_BILLING: false,
+        HIDE_LLM_SETTINGS: false,
       },
     });
 

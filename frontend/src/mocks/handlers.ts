@@ -128,7 +128,6 @@ const openHandsHandlers = [
 
     const url = new URL(request.url);
     const file = url.searchParams.get("file")?.toString();
-
     if (file) {
       return HttpResponse.json({ code: `Content of ${file}` });
     }
@@ -183,6 +182,7 @@ export const handlers = [
       STRIPE_PUBLISHABLE_KEY: "",
       FEATURE_FLAGS: {
         ENABLE_BILLING: mockSaas,
+        HIDE_LLM_SETTINGS: mockSaas,
       },
     };
 

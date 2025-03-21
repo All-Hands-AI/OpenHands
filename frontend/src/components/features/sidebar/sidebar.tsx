@@ -22,7 +22,6 @@ import { useLogout } from "#/hooks/mutation/use-logout";
 import { useConfig } from "#/hooks/query/use-config";
 import { cn } from "#/utils/utils";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
-import { HIDE_LLM_SETTINGS } from "#/utils/feature-flags";
 
 export function Sidebar() {
   const location = useLocation();
@@ -44,7 +43,8 @@ export function Sidebar() {
     React.useState(false);
 
   // TODO: Remove HIDE_LLM_SETTINGS check once released
-  const isSaas = HIDE_LLM_SETTINGS() && config?.APP_MODE === "saas";
+  const isSaas =
+    config?.FEATURE_FLAGS.HIDE_LLM_SETTINGS && config?.APP_MODE === "saas";
 
   React.useEffect(() => {
     if (isSaas) return;

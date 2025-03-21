@@ -32,6 +32,7 @@ describe("GitHubRepositorySelector", () => {
       POSTHOG_CLIENT_KEY: "test-posthog-key",
       FEATURE_FLAGS: {
         ENABLE_BILLING: false,
+        HIDE_LLM_SETTINGS: false,
       },
     });
 

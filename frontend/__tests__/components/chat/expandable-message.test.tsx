@@ -102,6 +102,7 @@ describe("ExpandableMessage", () => {
       APP_MODE: "saas",
       FEATURE_FLAGS: {
         ENABLE_BILLING: true,
+        HIDE_LLM_SETTINGS: false,
       },
     });
     const RouterStub = createRoutesStub([

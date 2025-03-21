@@ -27,6 +27,7 @@ describe("PaymentForm", () => {
       POSTHOG_CLIENT_KEY: "456",
       FEATURE_FLAGS: {
         ENABLE_BILLING: true,
+        HIDE_LLM_SETTINGS: false,
       },
     });
   });

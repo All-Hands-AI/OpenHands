@@ -37,6 +37,7 @@ describe("Settings Billing", () => {
       POSTHOG_CLIENT_KEY: "456",
       FEATURE_FLAGS: {
         ENABLE_BILLING: false,
+        HIDE_LLM_SETTINGS: false,
       },
     });
 
@@ -55,6 +56,7 @@ describe("Settings Billing", () => {
       POSTHOG_CLIENT_KEY: "456",
       FEATURE_FLAGS: {
         ENABLE_BILLING: true,
+        HIDE_LLM_SETTINGS: false,
       },
     });
 
@@ -75,6 +77,7 @@ describe("Settings Billing", () => {
       POSTHOG_CLIENT_KEY: "456",
       FEATURE_FLAGS: {
         ENABLE_BILLING: true,
+        HIDE_LLM_SETTINGS: false,
       },
     });
 

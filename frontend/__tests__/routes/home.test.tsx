@@ -8,7 +8,6 @@ import MainApp from "#/routes/_oh/route";
 import SettingsScreen from "#/routes/settings";
 import Home from "#/routes/_oh._index/route";
 import OpenHands from "#/api/open-hands";
-import * as FeatureFlags from "#/utils/feature-flags";
 
 const createAxiosNotFoundErrorObject = () =>
   new AxiosError(
@@ -119,8 +118,6 @@ describe("Settings 404", () => {
   });
 
   it("should not open the settings modal if GET /settings fails but is SaaS mode", async () => {
-    // TODO: Remove HIDE_LLM_SETTINGS check once released
-    vi.spyOn(FeatureFlags, "HIDE_LLM_SETTINGS").mockReturnValue(true);
     // @ts-expect-error - we only need APP_MODE for this test
     getConfigSpy.mockResolvedValue({ APP_MODE: "saas" });
     const error = createAxiosNotFoundErrorObject();
@@ -148,6 +145,7 @@ describe("Setup Payment modal", () => {
       APP_MODE: "saas",
       FEATURE_FLAGS: {
         ENABLE_BILLING: true,
+        HIDE_LLM_SETTINGS: false,
       },
     });
     const error = createAxiosNotFoundErrorObject();
