@@ -19,7 +19,7 @@ import {
 } from "#/types/message";
 import { handleObservationMessage } from "./observations";
 import { appendInput } from "#/state/command-slice";
-import { updateConversationTitle } from "#/utils/update-conversation-title";
+import { autogenerateConversationTitle } from "#/utils/update-conversation-title";
 
 const messageActions = {
   [ActionType.BROWSE]: (message: ActionMessage) => {
@@ -104,8 +104,8 @@ export function handleActionMessage(message: ActionMessage) {
     const conversationId = store.getState().conversation.id;
 
     if (conversationId) {
-      // Update the conversation title
-      updateConversationTitle(conversationId);
+      // Auto-generate the conversation title if it matches the default pattern
+      autogenerateConversationTitle(conversationId);
     }
   }
 
