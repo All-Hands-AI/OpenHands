@@ -47,22 +47,50 @@ export function useAutoTitleAfterMessage() {
     );
   }, [conversationId, messages, hasAgentMessage]);
 
-  // Reset the messages when the conversation ID changes
-  useEffect(
-    () =>
-      // This effect runs when the conversation ID changes
-      () => {
-        // No cleanup needed
-      },
-    [conversationId],
-  );
+  // Track when the conversation ID changes
+  const lastConversationChangeTime = useRef<number>(Date.now());
+
+  // Reset tracking when the conversation ID changes
+  useEffect(() => {
+    // This effect runs when the conversation ID changes
+    lastConversationChangeTime.current = Date.now();
+    console.log(
+      `[useAutoTitleAfterMessage] Conversation changed to ${conversationId}, resetting timestamp`,
+    );
+  }, [conversationId]);
 
   // Effect to trigger title generation after the first agent message
   useEffect(() => {
-    // Only proceed if we have a conversation ID, agent messages, and haven't generated a title for this conversation yet
+    // Check if we have recent messages (after the last conversation change)
+    const recentMessages = messages.filter((message) => {
+      const messageTime = new Date(message.timestamp).getTime();
+      return messageTime > lastConversationChangeTime.current;
+    });
+
+    // Check if we have recent agent and user messages
+    const hasRecentAgentMessage = recentMessages.some(
+      (message) => message.sender === "assistant",
+    );
+    const hasRecentUserMessage = recentMessages.some(
+      (message) => message.sender === "user",
+    );
+
+    console.log(`[useAutoTitleAfterMessage] Recent messages:`, recentMessages);
+    console.log(
+      `[useAutoTitleAfterMessage] Has recent agent message:`,
+      hasRecentAgentMessage,
+    );
+    console.log(
+      `[useAutoTitleAfterMessage] Has recent user message:`,
+      hasRecentUserMessage,
+    );
+
+    // Only proceed if we have a conversation ID, recent agent messages, recent user messages,
+    // and haven't generated a title for this conversation yet
     if (
       conversationId &&
-      hasAgentMessage &&
+      hasRecentAgentMessage &&
+      hasRecentUserMessage &&
       !generatedTitlesRef.current.has(conversationId)
     ) {
       // Mark this conversation as having a generated title
@@ -116,7 +144,7 @@ export function useAutoTitleAfterMessage() {
         },
       );
     }
-  }, [hasAgentMessage, conversationId, updateConversation, queryClient]);
+  }, [messages, conversationId, updateConversation, queryClient]);
 
   // Return the original send function
   return send;
