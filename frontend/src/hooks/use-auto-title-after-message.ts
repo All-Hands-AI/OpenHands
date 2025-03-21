@@ -19,7 +19,9 @@ export function useAutoTitleAfterMessage() {
   const queryClient = useQueryClient();
   const { mutate: updateConversation } = useUpdateConversation();
   const { send } = useWsClient();
-  const hasTitleBeenGenerated = useRef(false);
+
+  // Track which conversation IDs have already had titles generated
+  const generatedTitlesRef = useRef<Set<string>>(new Set());
 
   // Get messages from the Redux store
   const messages = useSelector((state: RootState) => state.chat.messages);
@@ -29,10 +31,47 @@ export function useAutoTitleAfterMessage() {
     (message) => message.sender === "assistant",
   );
 
+  // Debug log to see the current state
+  useEffect(() => {
+    console.log(
+      `[useAutoTitleAfterMessage] Hook called for conversation ${conversationId}`,
+    );
+    console.log(`[useAutoTitleAfterMessage] Messages:`, messages);
+    console.log(
+      `[useAutoTitleAfterMessage] Has agent message:`,
+      hasAgentMessage,
+    );
+    console.log(
+      `[useAutoTitleAfterMessage] Already generated:`,
+      generatedTitlesRef.current.has(conversationId || ""),
+    );
+  }, [conversationId, messages, hasAgentMessage]);
+
+  // Reset the messages when the conversation ID changes
+  useEffect(
+    () =>
+      // This effect runs when the conversation ID changes
+      () => {
+        // No cleanup needed
+      },
+    [conversationId],
+  );
+
   // Effect to trigger title generation after the first agent message
   useEffect(() => {
-    if (hasAgentMessage && !hasTitleBeenGenerated.current && conversationId) {
-      hasTitleBeenGenerated.current = true;
+    // Only proceed if we have a conversation ID, agent messages, and haven't generated a title for this conversation yet
+    if (
+      conversationId &&
+      hasAgentMessage &&
+      !generatedTitlesRef.current.has(conversationId)
+    ) {
+      // Mark this conversation as having a generated title
+      generatedTitlesRef.current.add(conversationId);
+
+      // Debug log to help understand when title generation is triggered
+      console.log(
+        `[useAutoTitleAfterMessage] Generating title for conversation ${conversationId}`,
+      );
 
       // Generate the title
       updateConversation(
@@ -44,31 +83,33 @@ export function useAutoTitleAfterMessage() {
           onSuccess: async () => {
             try {
               // Fetch the updated conversation with the new title
-              const updatedConversation = await OpenHands.getConversation(conversationId);
-              
+              const updatedConversation =
+                await OpenHands.getConversation(conversationId);
+
               // Update the conversation in the cache directly
               queryClient.setQueryData(
                 ["user", "conversation", conversationId],
-                updatedConversation
+                updatedConversation,
               );
-              
+
               // Also update the conversations list cache if it exists
               queryClient.setQueriesData(
                 { queryKey: ["user", "conversations"] },
-                (oldData: any) => {
+                (oldData: unknown) => {
                   if (!oldData) return oldData;
-                  
-                  return oldData.map((conversation: any) => 
-                    conversation.conversation_id === conversationId
-                      ? { ...conversation, title: updatedConversation.title }
-                      : conversation
+
+                  return (oldData as Array<{ conversation_id: string }>).map(
+                    (conversation) =>
+                      conversation.conversation_id === conversationId
+                        ? { ...conversation, title: updatedConversation.title }
+                        : conversation,
                   );
-                }
+                },
               );
             } catch (error) {
               // If direct update fails, fall back to invalidating the query
-              queryClient.invalidateQueries({ 
-                queryKey: ["user", "conversation", conversationId] 
+              queryClient.invalidateQueries({
+                queryKey: ["user", "conversation", conversationId],
               });
             }
           },
