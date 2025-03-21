@@ -5,11 +5,13 @@ import { RootState } from "#/store";
 /**
  * Hook that updates the document title based on the conversation title in the Redux state.
  * This ensures that any changes to the conversation title are reflected in the document title.
- * 
+ *
  * @param suffix Optional suffix to append to the title (default: "OpenHands")
  */
 export function useDocumentTitleFromState(suffix = "OpenHands") {
-  const conversationTitle = useSelector((state: RootState) => state.conversation.title);
+  const conversationTitle = useSelector(
+    (state: RootState) => state.conversation.title,
+  );
   const lastValidTitleRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -17,7 +19,7 @@ export function useDocumentTitleFromState(suffix = "OpenHands") {
     if (conversationTitle) {
       lastValidTitleRef.current = conversationTitle;
       document.title = `${conversationTitle} - ${suffix}`;
-    } 
+    }
     // If the title is empty but we have a last valid title, keep using that
     else if (lastValidTitleRef.current) {
       document.title = `${lastValidTitleRef.current} - ${suffix}`;

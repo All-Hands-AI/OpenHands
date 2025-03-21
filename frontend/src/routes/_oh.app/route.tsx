@@ -213,7 +213,7 @@ function AppContent() {
 function App() {
   // Use the hook to update the document title based on the conversation title in the Redux state
   useDocumentTitleFromState();
-  
+
   return (
     <ConversationProvider>
       <AppContent />

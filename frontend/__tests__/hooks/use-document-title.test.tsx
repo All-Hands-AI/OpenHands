@@ -1,6 +1,11 @@
 import { renderHook } from "@testing-library/react";
 import { useDocumentTitle } from "#/hooks/use-document-title";
 
+// Define the type for our test props
+type TitleProps = {
+  title?: string | null;
+};
+
 describe("useDocumentTitle", () => {
   const originalTitle = document.title;
 
@@ -35,7 +40,7 @@ describe("useDocumentTitle", () => {
   });
 
   it("should update the document title when the title changes", () => {
-    const { rerender } = renderHook(({ title }) => useDocumentTitle(title), {
+    const { rerender } = renderHook(({ title }: TitleProps) => useDocumentTitle(title), {
       initialProps: { title: "Initial Title" },
     });
     expect(document.title).toBe("Initial Title - OpenHands");
@@ -45,7 +50,7 @@ describe("useDocumentTitle", () => {
   });
 
   it("should maintain the last valid title when a null title is provided", () => {
-    const { rerender } = renderHook(({ title }) => useDocumentTitle(title), {
+    const { rerender } = renderHook(({ title }: TitleProps) => useDocumentTitle(title), {
       initialProps: { title: "Valid Title" },
     });
     expect(document.title).toBe("Valid Title - OpenHands");
@@ -60,7 +65,7 @@ describe("useDocumentTitle", () => {
   });
 
   it("should maintain the last valid title when an empty title is provided", () => {
-    const { rerender } = renderHook(({ title }) => useDocumentTitle(title), {
+    const { rerender } = renderHook(({ title }: TitleProps) => useDocumentTitle(title), {
       initialProps: { title: "Valid Title" },
     });
     expect(document.title).toBe("Valid Title - OpenHands");

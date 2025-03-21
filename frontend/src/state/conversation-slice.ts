@@ -22,9 +22,10 @@ export const conversationSlice = createSlice({
   name: "conversation",
   initialState,
   reducers: {
-    setConversation: (state, action: PayloadAction<Partial<ConversationState>>) => {
-      return { ...state, ...action.payload };
-    },
+    setConversation: (
+      state,
+      action: PayloadAction<Partial<ConversationState>>,
+    ) => ({ ...state, ...action.payload }),
     setConversationTitle: (state, action: PayloadAction<string>) => {
       state.title = action.payload;
     },
@@ -32,6 +33,7 @@ export const conversationSlice = createSlice({
   },
 });
 
-export const { setConversation, setConversationTitle, clearConversation } = conversationSlice.actions;
+export const { setConversation, setConversationTitle, clearConversation } =
+  conversationSlice.actions;
 
 export default conversationSlice.reducer;

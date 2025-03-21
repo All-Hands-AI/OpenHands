@@ -35,7 +35,7 @@ export function Controls({ setSecurityOpen, showSecurityLock }: ControlsProps) {
           selectedRepository: conversation.selected_repository,
           createdAt: conversation.created_at,
           lastUpdatedAt: conversation.last_updated_at,
-        })
+        }),
       );
     }
   }, [conversation, dispatch]);

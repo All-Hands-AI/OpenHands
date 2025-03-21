@@ -19,24 +19,26 @@ export function useAutoTitleAfterMessage() {
   const { mutate: updateConversation } = useUpdateConversation();
 
   const messages = useSelector((state: RootState) => state.chat.messages);
-  const currentTitle = useSelector((state: RootState) => state.conversation.title);
+  const currentTitle = useSelector(
+    (state: RootState) => state.conversation.title,
+  );
 
   useEffect(() => {
     if (!conversationId || !messages || messages.length === 0) {
       return;
     }
-    
+
     const hasAgentMessage = messages.some(
       (message) => message.sender === "assistant",
     );
     const hasUserMessage = messages.some(
       (message) => message.sender === "user",
     );
-    
+
     if (!hasAgentMessage || !hasUserMessage) {
       return;
     }
-    
+
     // Skip if we already have a meaningful title (not the default "Conversation" prefix)
     if (currentTitle && !currentTitle.startsWith("Conversation ")) {
       return;
@@ -56,7 +58,7 @@ export function useAutoTitleAfterMessage() {
             // Update the Redux state with the new title immediately
             if (updatedConversation && updatedConversation.title) {
               dispatch(setConversationTitle(updatedConversation.title));
-              
+
               // Force update the document title directly as well for immediate feedback
               document.title = `${updatedConversation.title} - OpenHands`;
             }
@@ -74,7 +76,8 @@ export function useAutoTitleAfterMessage() {
 
                 return (oldData as Array<{ conversation_id: string }>).map(
                   (conversation) =>
-                    conversation.conversation_id === conversationId
+                    conversation.conversation_id === conversationId &&
+                    updatedConversation
                       ? { ...conversation, title: updatedConversation.title }
                       : conversation,
                 );
@@ -88,5 +91,12 @@ export function useAutoTitleAfterMessage() {
         },
       },
     );
-  }, [messages, conversationId, currentTitle, updateConversation, queryClient, dispatch]);
+  }, [
+    messages,
+    conversationId,
+    currentTitle,
+    updateConversation,
+    queryClient,
+    dispatch,
+  ]);
 }

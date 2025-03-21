@@ -18,10 +18,13 @@ export const useUpdateConversation = () => {
       if (variables.conversation.title !== undefined) {
         dispatch(setConversationTitle(variables.conversation.title));
       }
-      
-      return OpenHands.updateUserConversation(variables.id, variables.conversation);
+
+      return OpenHands.updateUserConversation(
+        variables.id,
+        variables.conversation,
+      );
     },
-    onSuccess: (_, variables) => {
+    onSuccess: () => {
       // Invalidate the queries to refresh the data
       queryClient.invalidateQueries({ queryKey: ["user", "conversations"] });
     },

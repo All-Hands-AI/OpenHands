@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "__tests__/**/*.ts",
+    "__tests__/**/*.tsx",
+    "src/**/*.ts",
+    "src/**/*.tsx"
+  ],
+  "compilerOptions": {
+    "strict": false,
+    "jsx": "react-jsx"
+  }
+}
