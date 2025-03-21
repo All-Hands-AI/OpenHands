@@ -21,7 +21,6 @@
     "types": [
       "@react-router/node",
       "vite/client",
-      "jest",
       "@testing-library/jest-dom"
     ],
     "rootDirs": [

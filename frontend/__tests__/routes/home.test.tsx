@@ -67,7 +67,7 @@ describe("Home Screen", () => {
     expect(settingsScreen).toBeInTheDocument();
   });
 
-  it.skip("should navigate to the settings when pressing 'Connect to GitHub' if the user isn't authenticated", async () => {
+  it("should navigate to the settings when pressing 'Connect to GitHub' if the user isn't authenticated", async () => {
     const user = userEvent.setup();
     renderWithProviders(<RouterStub initialEntries={["/"]} />);
 

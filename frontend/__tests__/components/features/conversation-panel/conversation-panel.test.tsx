@@ -8,11 +8,14 @@ import {
 import userEvent from "@testing-library/user-event";
 import { createRoutesStub } from "react-router";
 import React from "react";
+import { Provider } from "react-redux";
+import { configureStore } from "@reduxjs/toolkit";
 import { ConversationPanel } from "#/components/features/conversation-panel/conversation-panel";
 import OpenHands from "#/api/open-hands";
 import { AuthProvider } from "#/context/auth-context";
 import { clickOnEditButton } from "./utils";
 import { queryClientConfig } from "#/query-client-config";
+import { rootReducer } from "#/store";
 
 describe("ConversationPanel", () => {
   const onCloseMock = vi.fn();
@@ -23,16 +26,23 @@ describe("ConversationPanel", () => {
     },
   ]);
 
-  const renderConversationPanel = (config?: QueryClientConfig) =>
-    render(<RouterStub />, {
+  const renderConversationPanel = (config?: QueryClientConfig) => {
+    const store = configureStore({
+      reducer: rootReducer,
+    });
+    
+    return render(<RouterStub />, {
       wrapper: ({ children }) => (
-        <AuthProvider>
-          <QueryClientProvider client={new QueryClient(config)}>
-            {children}
-          </QueryClientProvider>
-        </AuthProvider>
+        <Provider store={store}>
+          <AuthProvider>
+            <QueryClientProvider client={new QueryClient(config)}>
+              {children}
+            </QueryClientProvider>
+          </AuthProvider>
+        </Provider>
       ),
     });
+  };
 
   const { endSessionMock } = vi.hoisted(() => ({
     endSessionMock: vi.fn(),
@@ -260,13 +270,19 @@ describe("ConversationPanel", () => {
     ]);
 
     const getUserConversationsSpy = vi.spyOn(OpenHands, "getUserConversations");
+    const store = configureStore({
+      reducer: rootReducer,
+    });
+    
     render(<MyRouterStub />, {
       wrapper: ({ children }) => (
-        <AuthProvider>
-          <QueryClientProvider client={new QueryClient(queryClientConfig)}>
-            {children}
-          </QueryClientProvider>
-        </AuthProvider>
+        <Provider store={store}>
+          <AuthProvider>
+            <QueryClientProvider client={new QueryClient(queryClientConfig)}>
+              {children}
+            </QueryClientProvider>
+          </AuthProvider>
+        </Provider>
       ),
     });
 
