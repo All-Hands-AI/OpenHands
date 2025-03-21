@@ -101,7 +101,7 @@ class CmdOutputObservation(Observation):
     hidden: bool = False
 
     # Default max size for command output content - matching LLM config
-    MAX_CMD_OUTPUT_SIZE: int = 30000
+    MAX_CMD_OUTPUT_SIZE: int = 50000
 
     def __init__(
         self,
