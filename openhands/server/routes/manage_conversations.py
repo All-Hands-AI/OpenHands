@@ -247,7 +247,7 @@ async def get_conversation(
         return None
 
 
-async def auto_generate_title(conversation_id: str, user_id: str) -> str:
+async def auto_generate_title(conversation_id: str, user_id: str | None) -> str:
     """
     Auto-generate a title for a conversation based on the first user message.
 
@@ -285,23 +285,19 @@ async def auto_generate_title(conversation_id: str, user_id: str) -> str:
                 title += '...'
             logger.info(f'Generated title: {title}')
             return title
-        else:
-            # Fallback if no user message is found
-            title = f'Conversation {conversation_id[:5]}'
-            logger.info(f'No user message found, using fallback title: {title}')
-            return title
     except Exception as e:
         # If anything goes wrong, use a fallback title
         logger.error(f'Error generating title: {str(e)}')
-        return f'Conversation {conversation_id[:5]}'
+    return ''
 
 
 @app.patch('/conversations/{conversation_id}')
 async def update_conversation(
     request: Request, conversation_id: str, title: str = Body(embed=True)
 ) -> bool:
+    user_id = get_user_id(request)
     conversation_store = await ConversationStoreImpl.get_instance(
-        config, get_user_id(request), get_github_user_id(request)
+        config, user_id, get_github_user_id(request)
     )
     metadata = await conversation_store.get_metadata(conversation_id)
     if not metadata:
@@ -309,10 +305,8 @@ async def update_conversation(
 
     # If title is empty or unspecified, auto-generate it from the first user message
     if not title or title.isspace():
-        user_id = get_user_id(request)
-        if user_id is not None:
-            title = await auto_generate_title(conversation_id, user_id)
-        else:
+        title = await auto_generate_title(conversation_id, user_id)
+        if not title:
             # Fallback if no user ID is available
             title = f'Conversation {conversation_id[:5]}'
 
