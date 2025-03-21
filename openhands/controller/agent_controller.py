@@ -94,7 +94,6 @@ class AgentController:
         AgentStateChangedObservation,
     )
     _cached_first_user_message: MessageAction | None = None
-    _cached_first_user_message: MessageAction | None = None
 
     def __init__(
         self,
