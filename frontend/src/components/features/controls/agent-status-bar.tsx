@@ -72,7 +72,7 @@ export function AgentStatusBar() {
   React.useEffect(() => {
     if (status === WsClientProviderStatus.DISCONNECTED) {
       // Use a hardcoded string that doesn't require translation
-      setStatusMessage("Trying to reconnect...");
+      setStatusMessage("Connecting...");
     } else {
       setStatusMessage(AGENT_STATUS_MAP[curAgentState].message);
       if (notificationStates.includes(curAgentState)) {
