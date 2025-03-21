@@ -144,6 +144,17 @@ class GitLabService(GitService):
         ]
         return repos
 
+    async def does_repo_exist(self, repository: str) -> bool:
+        url = f'{self.BASE_URL}/projects/{repository}'
+        try:
+            await self._fetch_data(url)
+            return True
+        except AuthenticationError:
+            return False
+        except UnknownException:
+            return False
+
+
 
 gitlab_service_cls = os.environ.get(
     'OPENHANDS_GITLAB_SERVICE_CLS',

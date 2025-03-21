@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, SecretStr, SerializationInfo, field_serializer
-from pydantic.json import pydantic_encoder
-
 from enum import Enum
 from types import MappingProxyType
 
@@ -15,6 +12,7 @@ from pydantic import (
     model_validator,
 )
 from pydantic.json import pydantic_encoder
+
 from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
 from openhands.integrations.service_types import (
@@ -179,7 +177,12 @@ class ProviderHandler:
         raise AuthenticationError('Need valid provider token')
 
     async def get_repositories(
-        self, selected_provider: ProviderType, page: int, per_page: int, sort: str, installation_id: int | None
+        self,
+        selected_provider: ProviderType,
+        page: int,
+        per_page: int,
+        sort: str,
+        installation_id: int | None,
     ) -> Repository:
         """
         Get repositories from a selected providers with pagination support
@@ -188,3 +191,18 @@ class ProviderHandler:
         provider = self._get_service(selected_provider)
         repos = await provider.get_repositories(page, per_page, sort, installation_id)
         return repos
+
+    async def get_remote_repository_url(self, repository: str) -> str | None:
+        if not repository:
+            return None
+
+        for provider in self.provider_tokens:
+            try:
+                service = self._get_service(provider)
+                if service.does_repo_exist(repository):
+                    git_token = self.provider_tokens[provider].token
+                    return f'https://{git_token.get_secret_value()}@github.com/{repository}.git'
+            except Exception:
+                continue
+
+        return None

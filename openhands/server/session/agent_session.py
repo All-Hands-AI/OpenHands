@@ -264,12 +264,9 @@ class AgentSession:
             return False
 
         if selected_repository and git_provider_tokens:
-            await call_sync_from_async(
-                self.runtime.clone_repo,
-                git_provider_tokens,
-                selected_repository,
-                selected_branch,
-            )
+            await self.runtime.clone_repo(git_provider_tokens,
+                                          selected_repository,
+                                          selected_branch)
 
         self.logger.debug(
             f'Runtime initialized with plugins: {[plugin.name for plugin in self.runtime.plugins]}'
