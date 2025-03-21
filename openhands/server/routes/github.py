@@ -33,7 +33,7 @@ async def get_github_repositories(
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     access_token: SecretStr | None = Depends(get_access_token),
 ):
-    selected_provider = ProviderType(selected_provider)
+    provider = ProviderType(selected_provider)
 
     if provider_tokens:
         client = ProviderHandler(
@@ -42,7 +42,7 @@ async def get_github_repositories(
 
         try:
             repos: list[Repository] = await client.get_repositories(
-                selected_provider, page, per_page, sort, installation_id
+                provider, page, per_page, sort, installation_id
             )
             return repos
 

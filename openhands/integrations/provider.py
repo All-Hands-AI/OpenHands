@@ -194,7 +194,7 @@ class ProviderHandler:
         per_page: int,
         sort: str,
         installation_id: int | None,
-    ) -> Repository:
+    ) -> list[Repository]:
         """
         Get repositories from a selected providers with pagination support
         """
@@ -212,7 +212,8 @@ class ProviderHandler:
                 service = self._get_service(provider)
                 if service.does_repo_exist(repository):
                     git_token = self.provider_tokens[provider].token
-                    return f'https://{git_token.get_secret_value()}@github.com/{repository}.git'
+                    if git_token:
+                        return f'https://{git_token.get_secret_value()}@github.com/{repository}.git'
             except Exception:
                 continue
         return None
