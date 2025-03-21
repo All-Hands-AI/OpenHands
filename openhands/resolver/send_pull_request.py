@@ -205,7 +205,9 @@ def make_commit(repo_dir: str, issue: Issue, issue_type: str) -> None:
 
     # If there are no changes, raise an error
     if not status_result.stdout.strip():
-        logger.error(f'No changes to commit for issue #{issue.number}. Skipping commit.')
+        logger.error(
+            f'No changes to commit for issue #{issue.number}. Skipping commit.'
+        )
         raise RuntimeError('ERROR: Openhands failed to make code changes.')
 
     # Prepare the commit message
