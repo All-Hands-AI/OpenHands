@@ -169,8 +169,8 @@ def test_unclosed_backtick():
         # This is the error we're trying to fix
         assert False, f"TypeError was raised: {e}"
         
-    # Also test with the original command from the issue
-    curl_command = 'curl -X POST "https://api.github.com/repos/All-Hands-AI/infra/pulls" \\ -H "Authorization: Bearer $GITHUB_TOKEN" \\ -H "Accept: application/vnd.github.v3+json" \\ -d \'{ "title": "XXX", "head": "XXX", "base": "main", "draft": false }\' `echo unclosed'
+    # Also test with the original command from the issue (with placeholder org/repo)
+    curl_command = 'curl -X POST "https://api.github.com/repos/example-org/example-repo/pulls" \\ -H "Authorization: Bearer $GITHUB_TOKEN" \\ -H "Accept: application/vnd.github.v3+json" \\ -d \'{ "title": "XXX", "head": "XXX", "base": "main", "draft": false }\' `echo unclosed'
     
     try:
         result = split_bash_commands(curl_command)
