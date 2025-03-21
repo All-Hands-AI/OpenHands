@@ -1,44 +1,46 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useParams } from "react-router";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { useQueryClient } from "@tanstack/react-query";
 import { useUpdateConversation } from "./mutation/use-update-conversation";
 import { RootState } from "#/store";
+import { setConversationTitle } from "#/state/conversation-slice";
 import OpenHands from "#/api/open-hands";
 
 /**
  * Hook that monitors for the first agent message and triggers title generation.
  * This approach is more robust as it ensures the user message has been processed
  * by the backend and the agent has responded before generating the title.
- *
- * @returns The original WebSocket send function
  */
 export function useAutoTitleAfterMessage() {
   const { conversationId } = useParams<{ conversationId: string }>();
   const queryClient = useQueryClient();
+  const dispatch = useDispatch();
   const { mutate: updateConversation } = useUpdateConversation();
 
   const messages = useSelector((state: RootState) => state.chat.messages);
+  const currentTitle = useSelector((state: RootState) => state.conversation.title);
 
   useEffect(() => {
     if (!conversationId || !messages || messages.length === 0) {
       return;
     }
+    
     const hasAgentMessage = messages.some(
       (message) => message.sender === "assistant",
     );
     const hasUserMessage = messages.some(
       (message) => message.sender === "user",
     );
+    
     if (!hasAgentMessage || !hasUserMessage) {
       return;
     }
-    const currentConversation = {title: ''}; // FIXME
-    if (currentConversation.title && !currentConversation.title.startsWith("Conversation ")) {
-      return
+    
+    // Skip if we already have a meaningful title (not the default "Conversation" prefix)
+    if (currentTitle && !currentTitle.startsWith("Conversation ")) {
+      return;
     }
-
-    console.log('triggered!');
 
     updateConversation(
       {
@@ -51,6 +53,10 @@ export function useAutoTitleAfterMessage() {
             const updatedConversation =
               await OpenHands.getConversation(conversationId);
 
+            // Update the Redux state with the new title
+            dispatch(setConversationTitle(updatedConversation.title));
+
+            // Update the query cache
             queryClient.setQueryData(
               ["user", "conversation", conversationId],
               updatedConversation,
@@ -77,5 +83,5 @@ export function useAutoTitleAfterMessage() {
         },
       },
     );
-  }, [messages, conversationId, updateConversation, queryClient]);
+  }, [messages, conversationId, currentTitle, updateConversation, queryClient, dispatch]);
 }
