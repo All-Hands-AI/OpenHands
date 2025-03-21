@@ -69,7 +69,7 @@ export function GitRepositorySelector({
       placeholder={t(
         selectedProvider === "gitlab"
           ? I18nKey.LANDING$SELECT_GITLAB_REPO
-          : I18nKey.LANDING$SELECT_REPO,
+          : I18nKey.LANDING$SELECT_GITHUB_REPO,
       )}
       isVirtualized={false}
       selectedKey={selectedKey}

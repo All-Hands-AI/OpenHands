@@ -4524,7 +4524,7 @@
         "no": "Ingen samtaler funnet",
         "tr": "Konuşma yok"
     },
-    "LANDING$SELECT_REPO": {
+    "LANDING$SELECT_GITHUB_REPO": {
         "en": "Select a GitHub project",
         "ja": "GitHubプロジェクトを選択",
         "zh-CN": "选择GitHub项目",
