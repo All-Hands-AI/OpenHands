@@ -19,7 +19,6 @@ describe("ConversationCard", () => {
   const onClick = vi.fn();
   const onDelete = vi.fn();
   const onChangeTitle = vi.fn();
-  const onDownloadWorkspace = vi.fn();
 
   beforeAll(() => {
     vi.stubGlobal("window", {
@@ -274,31 +273,6 @@ describe("ConversationCard", () => {
     expect(onClick).not.toHaveBeenCalled();
   });
 
-  it("should call onDownloadWorkspace when the download button is clicked", async () => {
-    const user = userEvent.setup();
-    renderWithProviders(
-      <ConversationCard
-        onClick={onClick}
-        onDelete={onDelete}
-        onChangeTitle={onChangeTitle}
-        onDownloadWorkspace={onDownloadWorkspace}
-        title="Conversation 1"
-        selectedRepository={null}
-        lastUpdatedAt="2021-10-01T12:00:00Z"
-      />,
-    );
-
-    const ellipsisButton = screen.getByTestId("ellipsis-button");
-    await user.click(ellipsisButton);
-
-    const menu = screen.getByTestId("context-menu");
-    const downloadButton = within(menu).getByTestId("download-button");
-
-    await user.click(downloadButton);
-
-    expect(onDownloadWorkspace).toHaveBeenCalled();
-  });
-
   it("should show display cost button only when showDisplayCostOption is true", async () => {
     const user = userEvent.setup();
     const { rerender } = renderWithProviders(
@@ -416,7 +390,6 @@ describe("ConversationCard", () => {
         onClick={onClick}
         onDelete={onDelete}
         onChangeTitle={onChangeTitle}
-        onDownloadWorkspace={onDownloadWorkspace}
         title="Conversation 1"
         selectedRepository={null}
         lastUpdatedAt="2021-10-01T12:00:00Z"
@@ -429,7 +402,6 @@ describe("ConversationCard", () => {
       <ConversationCard
         onClick={onClick}
         onDelete={onDelete}
-        onDownloadWorkspace={onDownloadWorkspace}
         title="Conversation 1"
         selectedRepository={null}
         lastUpdatedAt="2021-10-01T12:00:00Z"
@@ -437,18 +409,6 @@ describe("ConversationCard", () => {
     );
 
     expect(screen.getByTestId("ellipsis-button")).toBeInTheDocument();
-
-    rerender(
-      <ConversationCard
-        onClick={onClick}
-        onDownloadWorkspace={onDownloadWorkspace}
-        title="Conversation 1"
-        selectedRepository={null}
-        lastUpdatedAt="2021-10-01T12:00:00Z"
-      />,
-    );
-
-    expect(screen.queryByTestId("ellipsis-button")).toBeInTheDocument();
 
     rerender(
       <ConversationCard

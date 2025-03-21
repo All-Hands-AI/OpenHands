@@ -1,5 +1,6 @@
 import React from "react";
 import { useSelector } from "react-redux";
+import posthog from "posthog-js";
 import { formatTimeDelta } from "#/utils/format-time-delta";
 import { ConversationRepoLink } from "./conversation-repo-link";
 import {
@@ -16,7 +17,6 @@ interface ConversationCardProps {
   onClick?: () => void;
   onDelete?: () => void;
   onChangeTitle?: (title: string) => void;
-  onDownloadWorkspace?: () => void;
   showDisplayCostOption?: boolean;
   isActive?: boolean;
   title: string;
@@ -24,13 +24,13 @@ interface ConversationCardProps {
   lastUpdatedAt: string; // ISO 8601
   status?: ProjectStatus;
   variant?: "compact" | "default";
+  conversationId?: string; // Optional conversation ID for VS Code URL
 }
 
 export function ConversationCard({
   onClick,
   onDelete,
   onChangeTitle,
-  onDownloadWorkspace,
   showDisplayCostOption,
   isActive,
   title,
@@ -38,6 +38,7 @@ export function ConversationCard({
   lastUpdatedAt,
   status = "STOPPED",
   variant = "default",
+  conversationId,
 }: ConversationCardProps) {
   const [contextMenuVisible, setContextMenuVisible] = React.useState(false);
   const [titleMode, setTitleMode] = React.useState<"view" | "edit">("view");
@@ -87,9 +88,32 @@ export function ConversationCard({
     setContextMenuVisible(false);
   };
 
-  const handleDownload = (event: React.MouseEvent<HTMLButtonElement>) => {
+  const handleDownloadViaVSCode = async (
+    event: React.MouseEvent<HTMLButtonElement>,
+  ) => {
+    event.preventDefault();
     event.stopPropagation();
-    onDownloadWorkspace?.();
+    posthog.capture("download_via_vscode_button_clicked");
+
+    // Fetch the VS Code URL from the API
+    if (conversationId) {
+      try {
+        const response = await fetch(
+          `/api/conversations/${conversationId}/vscode-url`,
+        );
+        const data = await response.json();
+
+        if (data.vscode_url) {
+          window.open(data.vscode_url, "_blank");
+        } else {
+          console.error("VS Code URL not available", data.error);
+        }
+      } catch (error) {
+        console.error("Failed to fetch VS Code URL", error);
+      }
+    }
+
+    setContextMenuVisible(false);
   };
 
   const handleDisplayCost = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -103,12 +127,7 @@ export function ConversationCard({
     }
   }, [titleMode]);
 
-  const hasContextMenu = !!(
-    onDelete ||
-    onChangeTitle ||
-    onDownloadWorkspace ||
-    showDisplayCostOption
-  );
+  const hasContextMenu = !!(onDelete || onChangeTitle || showDisplayCostOption);
 
   return (
     <>
@@ -165,7 +184,9 @@ export function ConversationCard({
                 onClose={() => setContextMenuVisible(false)}
                 onDelete={onDelete && handleDelete}
                 onEdit={onChangeTitle && handleEdit}
-                onDownload={onDownloadWorkspace && handleDownload}
+                onDownloadViaVSCode={
+                  conversationId ? handleDownloadViaVSCode : undefined
+                }
                 onDisplayCost={
                   showDisplayCostOption ? handleDisplayCost : undefined
                 }
