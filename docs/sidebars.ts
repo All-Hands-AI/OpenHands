@@ -14,6 +14,11 @@ const sidebars: SidebarsConfig = {
       id: 'usage/getting-started',
     },
     {
+      type: 'doc',
+      label: 'Key Features',
+      id: 'usage/key-features',
+    },
+    {
       type: 'category',
       label: 'Prompting',
       items: [
