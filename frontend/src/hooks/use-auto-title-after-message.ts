@@ -28,14 +28,11 @@ export function useAutoTitleAfterMessage() {
       return;
     }
 
-    const hasAgentMessage = messages.some(
-      (message) => message.sender === "assistant",
-    );
     const hasUserMessage = messages.some(
       (message) => message.sender === "user",
     );
 
-    if (!hasAgentMessage || !hasUserMessage) {
+    if (!hasUserMessage) {
       return;
     }
 

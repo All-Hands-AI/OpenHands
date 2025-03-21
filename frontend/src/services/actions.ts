@@ -98,6 +98,10 @@ export function handleActionMessage(message: ActionMessage) {
     store.dispatch(setMetrics(metrics));
   }
 
+  if (message.action === ActionType.MESSAGE && message.source === "user") {
+    // maybe request updated title
+  }
+
   if (message.action === ActionType.RUN) {
     store.dispatch(appendInput(message.args.command));
   }
