@@ -25,7 +25,6 @@ export const useUpdateConversation = () => {
       );
     },
     onSuccess: () => {
-      // Invalidate the queries to refresh the data
       queryClient.invalidateQueries({ queryKey: ["user", "conversations"] });
     },
   });
