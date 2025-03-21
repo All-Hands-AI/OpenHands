@@ -1,6 +1,7 @@
 import os
 import tempfile
 import threading
+import time
 from abc import abstractmethod
 from pathlib import Path
 from typing import Any
@@ -106,12 +107,21 @@ class ActionExecutionClient(Runtime):
         return send_request(self.session, method, url, **kwargs)
 
     def check_if_alive(self) -> None:
-        with self._send_action_server_request(
-            'GET',
-            f'{self._get_action_execution_server_host()}/alive',
-            timeout=5,
-        ):
-            pass
+        # loop check for avoid error if the container is alive
+        max_attempts = 10
+        for _ in range(max_attempts):
+            try:
+                with self._send_action_server_request(
+                    'GET',
+                    f'{self._get_action_execution_server_host()}/alive',
+                    timeout=5,
+                ) as response:
+                    if response.status_code == 200:
+                        return None
+            except Exception as e:
+                self.log('warning', f'Error checking if alive: {e}')
+                time.sleep(5)
+        raise TimeoutError('Container is not alive')
 
     def list_files(self, path: str | None = None) -> list[str]:
         """List files in the sandbox.
