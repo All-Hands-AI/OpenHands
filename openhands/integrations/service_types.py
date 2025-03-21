@@ -52,16 +52,17 @@ class GitService(Protocol):
 
     def __init__(
         self,
-        user_id: str | None,
-        token: SecretStr | None,
-        external_auth_token: SecretStr | None,
+        user_id: str | None = None,
+        token: SecretStr | None = None,
+        external_auth_id: str | None = None,
+        external_auth_token: SecretStr | None = None,
         external_token_manager: bool = False,
     ) -> None:
         """Initialize the service with authentication details"""
         ...
 
-    async def get_latest_token(self) -> SecretStr:
-        """Get latest working token of the users"""
+    async def get_latest_token(self) -> SecretStr | None:
+        """Get latest working token of the user"""
         ...
 
     async def get_user(self) -> User:
