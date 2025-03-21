@@ -22,7 +22,7 @@ import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bott
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { useGetTrajectory } from "#/hooks/mutation/use-get-trajectory";
 import { downloadTrajectory } from "#/utils/download-trajectory";
-import { useAutoTitleAfterMessage } from "#/hooks/use-auto-title-after-message";
+
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 
 function getEntryPoint(
@@ -43,8 +43,6 @@ export function ChatInterface() {
 
   const { messages } = useSelector((state: RootState) => state.chat);
   const { curAgentState } = useSelector((state: RootState) => state.agent);
-
-  useAutoTitleAfterMessage();
 
   const [feedbackPolarity, setFeedbackPolarity] = React.useState<
     "positive" | "negative"

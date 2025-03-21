@@ -1,4 +1,3 @@
-import { QueryClient } from "@tanstack/react-query";
 import {
   addAssistantMessage,
   addAssistantAction,
@@ -20,8 +19,7 @@ import {
 } from "#/types/message";
 import { handleObservationMessage } from "./observations";
 import { appendInput } from "#/state/command-slice";
-import OpenHands from "#/api/open-hands";
-import { setConversationTitle } from "#/state/conversation-slice";
+import { updateConversationTitle } from "#/utils/update-conversation-title";
 
 const messageActions = {
   [ActionType.BROWSE]: (message: ActionMessage) => {
@@ -102,73 +100,12 @@ export function handleActionMessage(message: ActionMessage) {
   }
 
   if (message.action === ActionType.MESSAGE && message.source === "user") {
-    // Get the conversation ID from the URL
-    const pathParts = window.location.pathname.split("/");
-    const conversationIdIndex = pathParts.indexOf("conversation") + 1;
-    const conversationId = pathParts[conversationIdIndex];
+    // Get the conversation ID from the state
+    const conversationId = store.getState().conversation.id;
 
     if (conversationId) {
-      // Create a query client for cache invalidation
-      const queryClient = new QueryClient();
-
       // Update the conversation title
-      const updateTitle = async () => {
-        try {
-          // Check if we already have a meaningful title (not the default "Conversation" prefix)
-          const currentTitle = store.getState().conversation.title;
-          if (currentTitle && !currentTitle.startsWith("Conversation ")) {
-            return; // Skip if we already have a meaningful title
-          }
-
-          // Send empty title to trigger auto-generation on the backend
-          await OpenHands.updateUserConversation(conversationId, { title: "" });
-
-          // Fetch the updated conversation with the new title
-          const updatedConversation =
-            await OpenHands.getConversation(conversationId);
-
-          // Update the Redux state with the new title
-          if (updatedConversation && updatedConversation.title) {
-            store.dispatch(setConversationTitle(updatedConversation.title));
-
-            // Update document title
-            document.title = `${updatedConversation.title} - OpenHands`;
-
-            // Update the query cache
-            queryClient.setQueryData(
-              ["user", "conversation", conversationId],
-              updatedConversation,
-            );
-
-            // Update the conversations list in the cache
-            queryClient.setQueriesData(
-              { queryKey: ["user", "conversations"] },
-              (oldData: unknown) => {
-                if (!oldData) return oldData;
-
-                return (oldData as Array<{ conversation_id: string }>).map(
-                  (conversation) =>
-                    conversation.conversation_id === conversationId &&
-                    updatedConversation
-                      ? { ...conversation, title: updatedConversation.title }
-                      : conversation,
-                );
-              },
-            );
-          }
-        } catch (error) {
-          console.error("Failed to update conversation title:", error);
-          // Invalidate queries on error
-          queryClient.invalidateQueries({
-            queryKey: ["user", "conversation", conversationId],
-          });
-          queryClient.invalidateQueries({
-            queryKey: ["user", "conversations"],
-          });
-        }
-      };
-
-      updateTitle();
+      updateConversationTitle(conversationId);
     }
   }
 
