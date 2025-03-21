@@ -11,7 +11,6 @@ from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.agent import AgentState
 from openhands.events.action import MessageAction
-from openhands.events.observation.agent import AgentStateChangedObservation
 from openhands.events.stream import EventStream, EventStreamSubscriber, session_exists
 from openhands.server.config.server_config import ServerConfig
 from openhands.server.monitoring import MonitoringListener
@@ -116,27 +115,22 @@ class StandaloneConversationManager(ConversationManager):
         settings: Settings,
         user_id: str | None,
         github_user_id: str | None,
-    ):
+    ) -> EventStream:
         logger.info(
             f'join_conversation:{sid}:{connection_id}',
             extra={'session_id': sid, 'user_id': user_id},
         )
         await self.sio.enter_room(connection_id, ROOM_KEY.format(sid=sid))
         self._local_connection_id_to_session_id[connection_id] = sid
-        event_stream = await self._get_event_stream(sid, user_id)
+        event_stream = await self.maybe_start_agent_loop(
+            sid, settings, user_id, github_user_id=github_user_id
+        )
         if not event_stream:
-            return await self.maybe_start_agent_loop(
-                sid, settings, user_id, github_user_id=github_user_id
+            logger.error(
+                f'No event stream after joining conversation: {sid}',
+                extra={'session_id': sid},
             )
-        for event in event_stream.get_events(reverse=True):
-            if isinstance(event, AgentStateChangedObservation):
-                if event.agent_state in (
-                    AgentState.STOPPED.value,
-                    AgentState.ERROR.value,
-                ):
-                    await self.close_session(sid)
-                    return await self.maybe_start_agent_loop(sid, settings, user_id)
-                break
+            raise RuntimeError(f'no_event_stream:{sid}')
         return event_stream
 
     async def detach_from_conversation(self, conversation: Conversation):
