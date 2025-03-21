@@ -107,6 +107,19 @@ export function SettingsForm({ settings, models, onClose }: SettingsFormProps) {
           />
         </div>
 
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="accept-tos"
+            name="accept-tos"
+            defaultChecked={settings.ACCEPT_TOS}
+            className="h-4 w-4 rounded border-gray-300"
+          />
+          <label htmlFor="accept-tos" className="text-sm text-gray-300">
+            I accept the Terms of Service
+          </label>
+        </div>
+
         <div className="flex flex-col gap-2">
           <BrandButton
             testId="save-settings-button"

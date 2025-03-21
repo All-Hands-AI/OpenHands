@@ -9,9 +9,9 @@ export const useAppLogout = () => {
 
   const handleLogout = async () => {
     // Save the current page before logging out
-    const { saveLastPage } = await import('../utils/last-page');
+    const { saveLastPage } = await import("../utils/last-page");
     saveLastPage();
-    
+
     if (config?.APP_MODE === "saas") await logout();
     else await saveUserSettings({ unset_github_token: true });
   };

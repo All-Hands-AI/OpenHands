@@ -119,8 +119,10 @@ export default function MainApp() {
   // Handle redirection to last page after login
   React.useEffect(() => {
     const handleLastPageRedirect = async () => {
-      if (userIsAuthed && pathname === '/') {
-        const { getLastPage, clearLastPage } = await import('#/utils/last-page');
+      if (userIsAuthed && pathname === "/") {
+        const { getLastPage, clearLastPage } = await import(
+          "#/utils/last-page"
+        );
         const lastPage = getLastPage();
         if (lastPage) {
           clearLastPage();
@@ -132,8 +134,8 @@ export default function MainApp() {
 
     // Save last page when component unmounts
     return () => {
-      if (userIsAuthed && pathname !== '/') {
-        import('#/utils/last-page').then(({ saveLastPage }) => {
+      if (userIsAuthed && pathname !== "/") {
+        import("#/utils/last-page").then(({ saveLastPage }) => {
           saveLastPage();
         });
       }

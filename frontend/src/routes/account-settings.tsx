@@ -154,6 +154,7 @@ function AccountSettings() {
         remoteRuntimeResourceFactor ||
         DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
       CONFIRMATION_MODE: confirmationModeIsEnabled,
+      ACCEPT_TOS: formData.get("accept-tos")?.toString() === "on",
     };
 
     saveSettings(newSettings, {
@@ -173,6 +174,7 @@ function AccountSettings() {
     const newSettings: Partial<PostSettings> = {
       ...DEFAULT_SETTINGS,
       LLM_API_KEY: "", // reset LLM API key
+      ACCEPT_TOS: false,
     };
 
     // we don't want the user to be able to modify these settings in SaaS

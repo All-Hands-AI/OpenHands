@@ -55,12 +55,16 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
   const value = React.useMemo(
     () => ({
       saveUserSettings,
-      settings: userSettings,
+      settings: userSettings as Settings | undefined,
     }),
     [saveUserSettings, userSettings],
   );
 
-  return <SettingsContext value={value}>{children}</SettingsContext>;
+  return (
+    <SettingsContext.Provider value={value}>
+      {children}
+    </SettingsContext.Provider>
+  );
 }
 
 export function useCurrentSettings() {

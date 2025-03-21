@@ -35,6 +35,7 @@ class Settings(BaseModel):
     user_consents_to_analytics: bool | None = None
     sandbox_base_container_image: str | None = None
     sandbox_runtime_container_image: str | None = None
+    accept_tos: bool = False
 
     model_config = {
         'validate_assignment': True,
