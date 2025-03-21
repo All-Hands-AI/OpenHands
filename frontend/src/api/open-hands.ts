@@ -219,7 +219,20 @@ class OpenHands {
     conversationId: string,
     conversation: Partial<Omit<Conversation, "conversation_id">>,
   ): Promise<void> {
-    await openHands.patch(`/api/conversations/${conversationId}`, conversation);
+    console.log("[OpenHands.updateUserConversation] Called with:", {
+      conversationId,
+      conversation,
+    });
+    try {
+      const response = await openHands.patch(
+        `/api/conversations/${conversationId}`,
+        conversation,
+      );
+      console.log("[OpenHands.updateUserConversation] Response:", response);
+    } catch (error) {
+      console.error("[OpenHands.updateUserConversation] Error:", error);
+      throw error;
+    }
   }
 
   static async createConversation(
