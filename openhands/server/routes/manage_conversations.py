@@ -7,6 +7,8 @@ from pydantic import BaseModel
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.message import MessageAction
+from openhands.events.event import EventSource
+from openhands.events.stream import EventStream
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
 )
@@ -257,9 +259,6 @@ async def auto_generate_title(conversation_id: str, user_id: str) -> str:
         A generated title string
     """
     logger.info(f"Auto-generating title for conversation {conversation_id}")
-    from openhands.events.stream import EventStream
-    from openhands.events.action.message import MessageAction
-    from openhands.events.event import EventSource
     
     try:
         # Create an event stream for the conversation

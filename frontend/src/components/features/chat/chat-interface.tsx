@@ -22,6 +22,7 @@ import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bott
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { useGetTrajectory } from "#/hooks/mutation/use-get-trajectory";
 import { downloadTrajectory } from "#/utils/download-trajectory";
+import { useAutoGenerateTitle } from "#/hooks/use-auto-generate-title";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 
 function getEntryPoint(
@@ -42,6 +43,9 @@ export function ChatInterface() {
 
   const { messages } = useSelector((state: RootState) => state.chat);
   const { curAgentState } = useSelector((state: RootState) => state.agent);
+
+  // Use the auto-generate title hook to generate a title after the first user message
+  useAutoGenerateTitle(messages.length);
 
   const [feedbackPolarity, setFeedbackPolarity] = React.useState<
     "positive" | "negative"
