@@ -8,9 +8,6 @@
     "**/.client/**/*.tsx",
     ".react-router/types/**/*",
   ],
-  "exclude": [
-    "__tests__/**/*"
-  ],
   "compilerOptions": {
     "lib": [
       "dom",
@@ -21,7 +18,6 @@
     "types": [
       "@react-router/node",
       "vite/client",
-      "@testing-library/jest-dom"
     ],
     "rootDirs": [
       ".",
