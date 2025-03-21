@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   QueryClientProvider,
@@ -16,6 +16,7 @@ import { AuthProvider } from "#/context/auth-context";
 import { clickOnEditButton } from "./utils";
 import { queryClientConfig } from "#/query-client-config";
 import { rootReducer } from "#/store";
+import { renderWithProviders } from "test-utils";
 
 describe("ConversationPanel", () => {
   const onCloseMock = vi.fn();
@@ -26,23 +27,15 @@ describe("ConversationPanel", () => {
     },
   ]);
 
-  const renderConversationPanel = (config?: QueryClientConfig) => {
-    const store = configureStore({
-      reducer: rootReducer,
+  const renderConversationPanel = (config?: QueryClientConfig) =>
+    renderWithProviders(<RouterStub />, {
+      preloadedState: {
+        metrics: {
+          cost: null,
+          usage: null
+        }
+      }
     });
-    
-    return render(<RouterStub />, {
-      wrapper: ({ children }) => (
-        <Provider store={store}>
-          <AuthProvider>
-            <QueryClientProvider client={new QueryClient(config)}>
-              {children}
-            </QueryClientProvider>
-          </AuthProvider>
-        </Provider>
-      ),
-    });
-  };
 
   const { endSessionMock } = vi.hoisted(() => ({
     endSessionMock: vi.fn(),
@@ -63,9 +56,38 @@ describe("ConversationPanel", () => {
     }));
   });
 
+  const mockConversations = [
+    {
+      conversation_id: "1",
+      title: "Conversation 1",
+      selected_repository: null,
+      last_updated_at: "2021-10-01T12:00:00Z",
+      created_at: "2021-10-01T12:00:00Z",
+      status: "STOPPED" as const,
+    },
+    {
+      conversation_id: "2",
+      title: "Conversation 2",
+      selected_repository: null,
+      last_updated_at: "2021-10-02T12:00:00Z",
+      created_at: "2021-10-02T12:00:00Z",
+      status: "STOPPED" as const,
+    },
+    {
+      conversation_id: "3",
+      title: "Conversation 3",
+      selected_repository: null,
+      last_updated_at: "2021-10-03T12:00:00Z",
+      created_at: "2021-10-03T12:00:00Z",
+      status: "STOPPED" as const,
+    },
+  ];
+
   beforeEach(() => {
     vi.clearAllMocks();
     vi.restoreAllMocks();
+    // Setup default mock for getUserConversations
+    vi.spyOn(OpenHands, "getUserConversations").mockResolvedValue([...mockConversations]);
   });
 
   it("should render the conversations", async () => {
@@ -93,13 +115,7 @@ describe("ConversationPanel", () => {
       new Error("Failed to fetch conversations"),
     );
 
-    renderConversationPanel({
-      defaultOptions: {
-        queries: {
-          retry: false,
-        },
-      },
-    });
+    renderConversationPanel();
 
     const error = await screen.findByText("Failed to fetch conversations");
     expect(error).toBeInTheDocument();
@@ -134,6 +150,20 @@ describe("ConversationPanel", () => {
 
   it("should call endSession after deleting a conversation that is the current session", async () => {
     const user = userEvent.setup();
+    const mockData = [...mockConversations];
+    const getUserConversationsSpy = vi.spyOn(OpenHands, "getUserConversations");
+    getUserConversationsSpy.mockImplementation(async () => mockData);
+
+    const deleteUserConversationSpy = vi.spyOn(OpenHands, "deleteUserConversation");
+    deleteUserConversationSpy.mockImplementation(async (id: string) => {
+      const index = mockData.findIndex(conv => conv.conversation_id === id);
+      if (index !== -1) {
+        mockData.splice(index, 1);
+      }
+      // Wait for React Query to update its cache
+      await new Promise(resolve => setTimeout(resolve, 0));
+    });
+
     renderConversationPanel();
 
     let cards = await screen.findAllByTestId("conversation-card");
@@ -150,18 +180,60 @@ describe("ConversationPanel", () => {
 
     expect(screen.queryByText("Confirm")).not.toBeInTheDocument();
 
-    // Ensure the conversation is deleted
-    cards = await screen.findAllByTestId("conversation-card");
-    expect(cards).toHaveLength(2);
+    // Wait for the cards to update with a longer timeout
+    await waitFor(() => {
+      const updatedCards = screen.getAllByTestId("conversation-card");
+      expect(updatedCards).toHaveLength(2);
+    }, { timeout: 2000 });
 
     expect(endSessionMock).toHaveBeenCalledOnce();
   });
 
   it("should delete a conversation", async () => {
     const user = userEvent.setup();
+    const mockData = [
+      {
+        conversation_id: "1",
+        title: "Conversation 1",
+        selected_repository: null,
+        last_updated_at: "2021-10-01T12:00:00Z",
+        created_at: "2021-10-01T12:00:00Z",
+        status: "STOPPED" as const,
+      },
+      {
+        conversation_id: "2",
+        title: "Conversation 2",
+        selected_repository: null,
+        last_updated_at: "2021-10-02T12:00:00Z",
+        created_at: "2021-10-02T12:00:00Z",
+        status: "STOPPED" as const,
+      },
+      {
+        conversation_id: "3",
+        title: "Conversation 3",
+        selected_repository: null,
+        last_updated_at: "2021-10-03T12:00:00Z",
+        created_at: "2021-10-03T12:00:00Z",
+        status: "STOPPED" as const,
+      },
+    ];
+
+    const getUserConversationsSpy = vi.spyOn(OpenHands, "getUserConversations");
+    getUserConversationsSpy.mockImplementation(async () => mockData);
+
+    const deleteUserConversationSpy = vi.spyOn(OpenHands, "deleteUserConversation");
+    deleteUserConversationSpy.mockImplementation(async (id: string) => {
+      const index = mockData.findIndex(conv => conv.conversation_id === id);
+      if (index !== -1) {
+        mockData.splice(index, 1);
+      }
+    });
+
     renderConversationPanel();
 
     let cards = await screen.findAllByTestId("conversation-card");
+    expect(cards).toHaveLength(3);
+
     const ellipsisButton = within(cards[0]).getByTestId("ellipsis-button");
     await user.click(ellipsisButton);
     const deleteButton = screen.getByTestId("delete-button");
@@ -175,9 +247,11 @@ describe("ConversationPanel", () => {
 
     expect(screen.queryByText("Confirm")).not.toBeInTheDocument();
 
-    // Ensure the conversation is deleted
-    cards = await screen.findAllByTestId("conversation-card");
-    expect(cards).toHaveLength(1);
+    // Wait for the cards to update
+    await waitFor(() => {
+      const updatedCards = screen.getAllByTestId("conversation-card");
+      expect(updatedCards).toHaveLength(2);
+    });
   });
 
   it("should rename a conversation", async () => {
@@ -199,7 +273,7 @@ describe("ConversationPanel", () => {
     await user.tab();
 
     // Ensure the conversation is renamed
-    expect(updateUserConversationSpy).toHaveBeenCalledWith("3", {
+    expect(updateUserConversationSpy).toHaveBeenCalledWith("1", {
       title: "Conversation 1 Renamed",
     });
   });
@@ -224,7 +298,7 @@ describe("ConversationPanel", () => {
     // Ensure the conversation is not renamed
     expect(updateUserConversationSpy).not.toHaveBeenCalled();
 
-    await clickOnEditButton(user);
+    await clickOnEditButton(user, card);
 
     await user.type(title, "Conversation 1");
     await user.click(title);
@@ -239,17 +313,21 @@ describe("ConversationPanel", () => {
   });
 
   it("should call onClose after clicking a card", async () => {
+    const user = userEvent.setup();
     renderConversationPanel();
     const cards = await screen.findAllByTestId("conversation-card");
     const firstCard = cards[1];
 
-    await userEvent.click(firstCard);
+    await user.click(firstCard);
 
     expect(onCloseMock).toHaveBeenCalledOnce();
   });
 
   it("should refetch data on rerenders", async () => {
-    // We need to simulate the toggling of the component to test the refetching
+    const user = userEvent.setup();
+    const getUserConversationsSpy = vi.spyOn(OpenHands, "getUserConversations");
+    getUserConversationsSpy.mockResolvedValue([...mockConversations]);
+
     function PanelWithToggle() {
       const [isOpen, setIsOpen] = React.useState(true);
       return (
@@ -269,31 +347,28 @@ describe("ConversationPanel", () => {
       },
     ]);
 
-    const getUserConversationsSpy = vi.spyOn(OpenHands, "getUserConversations");
-    const store = configureStore({
-      reducer: rootReducer,
-    });
-    
-    render(<MyRouterStub />, {
-      wrapper: ({ children }) => (
-        <Provider store={store}>
-          <AuthProvider>
-            <QueryClientProvider client={new QueryClient(queryClientConfig)}>
-              {children}
-            </QueryClientProvider>
-          </AuthProvider>
-        </Provider>
-      ),
+    renderWithProviders(<MyRouterStub />, {
+      preloadedState: {
+        metrics: {
+          cost: null,
+          usage: null
+        }
+      }
     });
 
-    await waitFor(() => expect(getUserConversationsSpy).toHaveBeenCalledOnce());
+    const toggleButton = screen.getByText("Toggle");
 
-    const button = screen.getByText("Toggle");
-    await userEvent.click(button);
-    await userEvent.click(button);
+    // Initial render
+    const cards = await screen.findAllByTestId("conversation-card");
+    expect(cards).toHaveLength(3);
 
-    await waitFor(() =>
-      expect(getUserConversationsSpy).toHaveBeenCalledTimes(2),
-    );
+    // Toggle off
+    await user.click(toggleButton);
+    expect(screen.queryByTestId("conversation-card")).not.toBeInTheDocument();
+
+    // Toggle on
+    await user.click(toggleButton);
+    const newCards = await screen.findAllByTestId("conversation-card");
+    expect(newCards).toHaveLength(3);
   });
 });

@@ -53,6 +53,7 @@ export function Controls({ setSecurityOpen, showSecurityLock }: ControlsProps) {
 
       <ConversationCard
         variant="compact"
+        showDisplayCostOption
         title={conversation?.title ?? ""}
         lastUpdatedAt={conversation?.created_at ?? ""}
         selectedRepository={conversation?.selected_repository ?? null}
