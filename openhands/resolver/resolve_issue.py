@@ -112,6 +112,21 @@ async def complete_runtime(
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+
+    action = CmdRunAction(command='ls -lah /workspace/habit-tracker/.git/')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+
+    action = CmdRunAction(command='sudo chown -R $(whoami) /workspace/habit-tracker/.git/')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+
+    action = CmdRunAction(command='chmod -R u+w /workspace/habit-tracker/.git/')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     
     if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
         raise RuntimeError(
