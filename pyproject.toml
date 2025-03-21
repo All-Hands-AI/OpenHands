@@ -82,7 +82,7 @@ python-json-logger = "^3.2.1"
 [tool.poetry.group.dev.dependencies]
 ruff = "0.11.0"
 mypy = "1.15.0"
-pre-commit = "4.1.0"
+pre-commit = "4.2.0"
 build = "*"
 
 [tool.poetry.group.test.dependencies]
