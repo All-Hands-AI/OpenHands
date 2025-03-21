@@ -127,7 +127,7 @@ def run_sequential_evaluation(
                         logger.error(
                             f"Error processing instance {instance_series['instance_id']}: {str(e)}"
                         )
-                        if is_fatal_evaluation_error(e):
+                        if is_fatal_evaluation_error(str(e)):
                             logger.error(f'Fatal error encountered: {str(e)}')
                             break
 
