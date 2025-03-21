@@ -13,6 +13,7 @@ import { BrandButton } from "../settings/brand-button";
 import GitHubLogo from "#/assets/branding/github-logo.svg?react";
 import { ProviderSelector } from "./providers-selector";
 import { Provider } from "#/types/settings";
+import { useAuth } from "#/context/auth-context";
 
 interface GitRepositoriesSuggestionBoxProps {
   handleSubmit: () => void;
@@ -27,9 +28,12 @@ export function GitRepositoriesSuggestionBox({
 }: GitRepositoriesSuggestionBoxProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { providerTokensSet } = useAuth();
   const [searchQuery, setSearchQuery] = React.useState<string>("");
   const [selectedProvider, setSelectedProvider] =
-    React.useState<Provider | null>(null);
+    React.useState<Provider | null>(
+      providerTokensSet.length === 1 ? providerTokensSet[0] : null,
+    );
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   // TODO: Use `useQueries` to fetch all repositories in parallel
@@ -60,10 +64,12 @@ export function GitRepositoriesSuggestionBox({
       content={
         isLoggedIn ? (
           <>
-            <ProviderSelector
-              selectedProvider={selectedProvider}
-              setSelectedProvider={setSelectedProvider}
-            />
+            {providerTokensSet.length !== 1 && (
+              <ProviderSelector
+                selectedProvider={selectedProvider}
+                setSelectedProvider={setSelectedProvider}
+              />
+            )}
             {selectedProvider && (
               <GitRepositorySelector
                 onInputChange={setSearchQuery}
