@@ -33,6 +33,8 @@ class Settings(BaseModel):
     enable_default_condenser: bool = False
     enable_sound_notifications: bool = False
     user_consents_to_analytics: bool | None = None
+    sandbox_base_container_image: str | None = None
+    sandbox_runtime_container_image: str | None = None
 
     model_config = {
         'validate_assignment': True,

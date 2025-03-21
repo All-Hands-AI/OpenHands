@@ -4,12 +4,19 @@ import os
 import traceback
 from typing import Callable, ClassVar, Type
 
-import litellm
-from litellm.exceptions import (
+import litellm  # noqa
+from litellm.exceptions import (  # noqa
+    APIConnectionError,
+    APIError,
+    AuthenticationError,
     BadRequestError,
     ContextWindowExceededError,
+    InternalServerError,
+    NotFoundError,
     OpenAIError,
     RateLimitError,
+    ServiceUnavailableError,
+    Timeout,
 )
 
 from openhands.controller.agent import Agent
@@ -86,6 +93,7 @@ class AgentController:
         ChangeAgentStateAction,
         AgentStateChangedObservation,
     )
+    _cached_first_user_message: MessageAction | None = None
 
     def __init__(
         self,
@@ -223,20 +231,20 @@ class AgentController:
         await self.set_agent_state_to(AgentState.ERROR)
         if self.status_callback is not None:
             err_id = ''
-            if isinstance(e, litellm.AuthenticationError):
+            if isinstance(e, AuthenticationError):
                 err_id = 'STATUS$ERROR_LLM_AUTHENTICATION'
             elif isinstance(
                 e,
                 (
-                    litellm.ServiceUnavailableError,
-                    litellm.APIConnectionError,
-                    litellm.APIError,
+                    ServiceUnavailableError,
+                    APIConnectionError,
+                    APIError,
                 ),
             ):
                 err_id = 'STATUS$ERROR_LLM_SERVICE_UNAVAILABLE'
-            elif isinstance(e, litellm.InternalServerError):
+            elif isinstance(e, InternalServerError):
                 err_id = 'STATUS$ERROR_LLM_INTERNAL_SERVER_ERROR'
-            elif isinstance(e, litellm.BadRequestError) and 'ExceededBudget' in str(e):
+            elif isinstance(e, BadRequestError) and 'ExceededBudget' in str(e):
                 err_id = 'STATUS$ERROR_LLM_OUT_OF_CREDITS'
             elif isinstance(e, RateLimitError):
                 await self.set_agent_state_to(AgentState.RATE_LIMITED)
@@ -256,18 +264,24 @@ class AgentController:
                 f'Traceback: {traceback.format_exc()}',
             )
             reported = RuntimeError(
-                'There was an unexpected error while running the agent. Please '
-                'report this error to the developers by opening an issue at '
-                'https://github.com/All-Hands-AI/OpenHands. Your session ID is '
-                f' {self.id}. Error type: {e.__class__.__name__}'
+                f'There was an unexpected error while running the agent: {e.__class__.__name__}. You can refresh the page or ask the agent to try again.'
             )
             if (
-                isinstance(e, litellm.AuthenticationError)
-                or isinstance(e, litellm.BadRequestError)
+                isinstance(e, Timeout)
+                or isinstance(e, APIError)
+                or isinstance(e, BadRequestError)
+                or isinstance(e, NotFoundError)
+                or isinstance(e, InternalServerError)
+                or isinstance(e, AuthenticationError)
                 or isinstance(e, RateLimitError)
                 or isinstance(e, LLMContextWindowExceedError)
             ):
                 reported = e
+            else:
+                self.log(
+                    'warning',
+                    f'Unknown exception type while running the agent: {type(e).__name__}.',
+                )
             await self._react_to_exception(reported)
 
     def should_step(self, event: Event) -> bool:
@@ -1193,15 +1207,19 @@ class AgentController:
         Returns:
             MessageAction | None: The first user message, or None if no user message found
         """
-        # Find the first user message from the appropriate starting point
-        user_messages = list(self.event_stream.get_events(start_id=self.state.start_id))
+        # Return cached message if any
+        if self._cached_first_user_message is not None:
+            return self._cached_first_user_message
 
-        # Get and return the first user message
-        return next(
+        # Find the first user message
+        self._cached_first_user_message = next(
             (
                 e
-                for e in user_messages
+                for e in self.event_stream.get_events(
+                    start_id=self.state.start_id,
+                )
                 if isinstance(e, MessageAction) and e.source == EventSource.USER
             ),
             None,
         )
+        return self._cached_first_user_message

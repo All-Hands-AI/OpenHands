@@ -37,6 +37,7 @@ class AgentSession:
     """
 
     sid: str
+    user_id: str | None
     event_stream: EventStream
     file_store: FileStore
     controller: AgentController | None = None
@@ -63,7 +64,7 @@ class AgentSession:
         """
 
         self.sid = sid
-        self.event_stream = EventStream(sid, file_store)
+        self.event_stream = EventStream(sid, file_store, user_id)
         self.file_store = file_store
         self._status_callback = status_callback
         self.user_id = user_id
@@ -186,7 +187,7 @@ class AgentSession:
             self.event_stream.close()
         if self.controller is not None:
             end_state = self.controller.get_state()
-            end_state.save_to_session(self.sid, self.file_store)
+            end_state.save_to_session(self.sid, self.file_store, self.user_id)
             await self.controller.close()
         if self.runtime is not None:
             self.runtime.close()
@@ -232,21 +233,32 @@ class AgentSession:
         self.logger.debug(f'Initializing runtime `{runtime_name}` now...')
         runtime_cls = get_runtime_cls(runtime_name)
 
-        provider_handler = ProviderHandler(git_provider_tokens or cast(PROVIDER_TOKEN_TYPE, MappingProxyType({})))
-        raw_env_vars: dict[str, str] = await provider_handler.get_env_vars(expose_secrets=True)
-    
-        self.runtime = runtime_cls(
-            config=config,
-            event_stream=self.event_stream,
-            sid=self.sid,
-            plugins=agent.sandbox_plugins,
-            status_callback=self._status_callback,
-            headless_mode=False,
-            attach_to_existing=False,
-            env_vars=raw_env_vars,
-            git_provider_tokens=git_provider_tokens,
-            user_id=self.user_id,
-        )
+        if runtime_cls == RemoteRuntime:
+            self.runtime = runtime_cls(
+                config=config,
+                event_stream=self.event_stream,
+                sid=self.sid,
+                plugins=agent.sandbox_plugins,
+                status_callback=self._status_callback,
+                headless_mode=False,
+                attach_to_existing=False,
+                git_provider_tokens=git_provider_tokens,
+                user_id=self.user_id
+            )
+        else:
+            provider_handler = ProviderHandler(provider_tokens=git_provider_tokens or cast(PROVIDER_TOKEN_TYPE, MappingProxyType({})))
+            env_vars = await provider_handler.get_env_vars(expose_secrets=True)
+        
+            self.runtime = runtime_cls(
+                config=config,
+                event_stream=self.event_stream,
+                sid=self.sid,
+                plugins=agent.sandbox_plugins,
+                status_callback=self._status_callback,
+                headless_mode=False,
+                attach_to_existing=False,
+                env_vars=env_vars
+            )
 
         # FIXME: this sleep is a terrible hack.
         # This is to give the websocket a second to connect, so that
@@ -361,7 +373,9 @@ class AgentSession:
         # Use a heuristic to figure out if we should have a state:
         # if we have events in the stream.
         try:
-            restored_state = State.restore_from_session(self.sid, self.file_store)
+            restored_state = State.restore_from_session(
+                self.sid, self.file_store, self.user_id
+            )
             self.logger.debug(f'Restored state from session, sid: {self.sid}')
         except Exception as e:
             if self.event_stream.get_latest_event_id() > 0:

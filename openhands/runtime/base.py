@@ -9,7 +9,8 @@ import string
 import tempfile
 from abc import abstractmethod
 from pathlib import Path
-from typing import Callable
+from types import MappingProxyType
+from typing import Callable, cast
 from zipfile import ZipFile
 
 from pydantic import SecretStr
@@ -56,7 +57,11 @@ from openhands.runtime.plugins import (
     VSCodeRequirement,
 )
 from openhands.runtime.utils.edit import FileEditRuntimeMixin
-from openhands.utils.async_utils import call_sync_from_async
+from openhands.utils.async_utils import (
+    GENERAL_TIMEOUT,
+    call_async_from_sync,
+    call_sync_from_async,
+)
 
 STATUS_MESSAGES = {
     'STATUS$STARTING_RUNTIME': 'Starting runtime...',
@@ -125,6 +130,17 @@ class Runtime(FileEditRuntimeMixin):
         self.initial_env_vars = _default_env_vars(config.sandbox)
         if env_vars is not None:
             self.initial_env_vars.update(env_vars)
+
+        self.provider_handler = ProviderHandler(
+            provider_tokens=git_provider_tokens
+            or cast(PROVIDER_TOKEN_TYPE, MappingProxyType({})),
+            external_auth_id=user_id,
+            external_token_manager=True,
+        )
+        raw_env_vars: dict[str, str] = call_async_from_sync(
+            self.provider_handler.get_env_vars, GENERAL_TIMEOUT, True, None, False
+        )
+        self.initial_env_vars.update(raw_env_vars)
 
         self._vscode_enabled = any(
             isinstance(plugin, VSCodeRequirement) for plugin in self.plugins
@@ -228,7 +244,7 @@ class Runtime(FileEditRuntimeMixin):
         """
         Refresh runtime provider tokens when agent attemps to run action with provider token
         """
-        if not self.git_provider_tokens:
+        if not self.user_id:
             return
 
         providers_called = ProviderHandler.check_cmd_action_for_provider_token_ref(
@@ -238,19 +254,17 @@ class Runtime(FileEditRuntimeMixin):
         if not providers_called:
             return
 
-        provider_handler = ProviderHandler(
-            provider_tokens=self.git_provider_tokens,
-            external_auth_id=self.user_id,
-            external_token_manager=True,
-        )
-
         logger.info(f'Fetching latest github token for runtime: {self.sid}')
-        env_vars = await provider_handler.get_env_vars(
-            required_providers=providers_called, expose_secrets=False, get_latest=True
+        env_vars = await self.provider_handler.get_env_vars(
+            providers=providers_called, expose_secrets=False, get_latest=True
         )
 
+        # This statement is to debug expired github tokens, and will be removed later
         if ProviderType.GITHUB not in env_vars:
             logger.error(f'Failed to refresh github token for runtime: {self.sid}')
+            return
+
+        if len(env_vars) == 0:
             return
 
         raw_token = env_vars[ProviderType.GITHUB].get_secret_value()
@@ -266,11 +280,10 @@ class Runtime(FileEditRuntimeMixin):
         self.prev_token = SecretStr(raw_token)
 
         try:
-            provider_handler = ProviderHandler(provider_tokens=self.git_provider_tokens)
-            await provider_handler.set_event_stream_secrets(
+            await self.provider_handler.set_event_stream_secrets(
                 self.event_stream, env_vars=env_vars
             )
-            self.add_env_vars(provider_handler.expose_env_vars(env_vars))
+            self.add_env_vars(self.provider_handler.expose_env_vars(env_vars))
         except Exception as e:
             logger.warning(
                 f'Failed export latest github token to runtime: {self.sid}, {e}'

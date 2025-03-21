@@ -183,10 +183,10 @@ def convert_to_settings(settings_with_token_data: POSTSettingsModel) -> Settings
                 tokens[provider] = ProviderToken(
                     token=SecretStr(token_value), user_id=None
                 )
-        
+
         # Create new SecretStore with tokens
-        settings = settings.model_copy(update={"secrets_store": SecretStore(
-            provider_tokens=tokens
-        )})
+        settings = settings.model_copy(
+            update={'secrets_store': SecretStore(provider_tokens=tokens)}
+        )
 
     return settings
