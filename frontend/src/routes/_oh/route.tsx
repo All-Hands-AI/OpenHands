@@ -109,11 +109,14 @@ export default function MainApp() {
     (settings as Settings)?.ACCEPT_TOS === false;
 
   React.useEffect(() => {
-    // Redirect unauthenticated users to GitHub auth
-    if (!isFetchingAuth && !userIsAuthed && pathname === "/" && gitHubAuthUrl) {
-      window.location.href = gitHubAuthUrl;
+    // Save current page and redirect unauthenticated users to GitHub auth
+    if (!isFetchingAuth && !userIsAuthed && gitHubAuthUrl) {
+      import("#/utils/last-page").then(({ saveLastPage }) => {
+        saveLastPage();
+        window.location.href = gitHubAuthUrl;
+      });
     }
-  }, [isFetchingAuth, userIsAuthed, pathname, gitHubAuthUrl]);
+  }, [isFetchingAuth, userIsAuthed, gitHubAuthUrl]);
 
   React.useEffect(() => {
     // Don't allow users to use the app if it 402s
@@ -129,12 +132,12 @@ export default function MainApp() {
   // Handle redirection to last page after login
   React.useEffect(() => {
     const handleLastPageRedirect = async () => {
-      if (userIsAuthed && pathname === "/") {
+      if (userIsAuthed) {
         const { getLastPage, clearLastPage } = await import(
           "#/utils/last-page"
         );
         const lastPage = getLastPage();
-        if (lastPage) {
+        if (lastPage && pathname === "/") {
           clearLastPage();
           navigate(lastPage);
         }
@@ -144,7 +147,7 @@ export default function MainApp() {
 
     // Save last page when component unmounts
     return () => {
-      if (userIsAuthed && pathname !== "/") {
+      if (userIsAuthed) {
         import("#/utils/last-page").then(({ saveLastPage }) => {
           saveLastPage();
         });
