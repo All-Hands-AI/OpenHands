@@ -40,7 +40,7 @@ export function Controls({ setSecurityOpen, showSecurityLock }: ControlsProps) {
       <ConversationCard
         variant="compact"
         onDownloadWorkspace={handleDownloadWorkspace}
-        onDisplayCost={() => {}}
+        showDisplayCostOption
         title={conversation?.title ?? ""}
         lastUpdatedAt={conversation?.created_at ?? ""}
         selectedRepository={conversation?.selected_repository ?? null}

@@ -17,7 +17,7 @@ interface ConversationCardProps {
   onDelete?: () => void;
   onChangeTitle?: (title: string) => void;
   onDownloadWorkspace?: () => void;
-  onDisplayCost?: () => void;
+  showDisplayCostOption?: boolean;
   isActive?: boolean;
   title: string;
   selectedRepository: string | null;
@@ -31,7 +31,7 @@ export function ConversationCard({
   onDelete,
   onChangeTitle,
   onDownloadWorkspace,
-  onDisplayCost,
+  showDisplayCostOption,
   isActive,
   title,
   selectedRepository,
@@ -95,7 +95,6 @@ export function ConversationCard({
   const handleDisplayCost = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
     setMetricsModalVisible(true);
-    onDisplayCost?.();
   };
 
   React.useEffect(() => {
@@ -108,7 +107,7 @@ export function ConversationCard({
     onDelete ||
     onChangeTitle ||
     onDownloadWorkspace ||
-    onDisplayCost
+    showDisplayCostOption
   );
 
   return (
@@ -167,7 +166,9 @@ export function ConversationCard({
                 onDelete={onDelete && handleDelete}
                 onEdit={onChangeTitle && handleEdit}
                 onDownload={onDownloadWorkspace && handleDownload}
-                onDisplayCost={onDisplayCost && handleDisplayCost}
+                onDisplayCost={
+                  showDisplayCostOption ? handleDisplayCost : undefined
+                }
                 position={variant === "compact" ? "top" : "bottom"}
               />
             )}
@@ -188,33 +189,31 @@ export function ConversationCard({
         </div>
       </div>
 
-      {onDisplayCost && (
-        <BaseModal
-          isOpen={metricsModalVisible}
-          onOpenChange={setMetricsModalVisible}
-          title="Metrics Information"
-          testID="metrics-modal"
-        >
-          <div className="space-y-2">
-            {metrics?.cost !== null && (
-              <p>Total Cost: ${metrics.cost.toFixed(4)}</p>
-            )}
-            {metrics?.usage !== null && (
-              <>
-                <p>Tokens Used:</p>
-                <ul className="list-inside space-y-1 ml-2">
-                  <li>- Input: {metrics.usage.prompt_tokens}</li>
-                  <li>- Output: {metrics.usage.completion_tokens}</li>
-                  <li>- Total: {metrics.usage.total_tokens}</li>
-                </ul>
-              </>
-            )}
-            {!metrics?.cost && !metrics?.usage && (
-              <p className="text-neutral-400">No metrics data available</p>
-            )}
-          </div>
-        </BaseModal>
-      )}
+      <BaseModal
+        isOpen={metricsModalVisible}
+        onOpenChange={setMetricsModalVisible}
+        title="Metrics Information"
+        testID="metrics-modal"
+      >
+        <div className="space-y-2">
+          {metrics?.cost !== null && (
+            <p>Total Cost: ${metrics.cost.toFixed(4)}</p>
+          )}
+          {metrics?.usage !== null && (
+            <>
+              <p>Tokens Used:</p>
+              <ul className="list-inside space-y-1 ml-2">
+                <li>- Input: {metrics.usage.prompt_tokens}</li>
+                <li>- Output: {metrics.usage.completion_tokens}</li>
+                <li>- Total: {metrics.usage.total_tokens}</li>
+              </ul>
+            </>
+          )}
+          {!metrics?.cost && !metrics?.usage && (
+            <p className="text-neutral-400">No metrics data available</p>
+          )}
+        </div>
+      </BaseModal>
     </>
   );
 }

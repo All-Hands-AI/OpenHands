@@ -10,10 +10,10 @@ import {
   vi,
 } from "vitest";
 import userEvent from "@testing-library/user-event";
+import { renderWithProviders } from "test-utils";
 import { formatTimeDelta } from "#/utils/format-time-delta";
 import { ConversationCard } from "#/components/features/conversation-panel/conversation-card";
 import { clickOnEditButton } from "./utils";
-import { renderWithProviders } from "test-utils";
 
 describe("ConversationCard", () => {
   const onClick = vi.fn();
@@ -299,9 +299,8 @@ describe("ConversationCard", () => {
     expect(onDownloadWorkspace).toHaveBeenCalled();
   });
 
-  it("should show display cost button only when onDisplayCost is provided", async () => {
+  it("should show display cost button only when showDisplayCostOption is true", async () => {
     const user = userEvent.setup();
-    const onDisplayCost = vi.fn();
     const { rerender } = renderWithProviders(
       <ConversationCard
         onDelete={onDelete}
@@ -318,7 +317,9 @@ describe("ConversationCard", () => {
 
     // Wait for context menu to appear
     const menu = await screen.findByTestId("context-menu");
-    expect(within(menu).queryByTestId("display-cost-button")).not.toBeInTheDocument();
+    expect(
+      within(menu).queryByTestId("display-cost-button"),
+    ).not.toBeInTheDocument();
 
     // Close menu
     await user.click(ellipsisButton);
@@ -327,7 +328,7 @@ describe("ConversationCard", () => {
       <ConversationCard
         onDelete={onDelete}
         onChangeTitle={onChangeTitle}
-        onDisplayCost={onDisplayCost}
+        showDisplayCostOption
         isActive
         title="Conversation 1"
         selectedRepository={null}
@@ -353,7 +354,7 @@ describe("ConversationCard", () => {
         title="Conversation 1"
         selectedRepository={null}
         lastUpdatedAt="2021-10-01T12:00:00Z"
-        onDisplayCost={() => {}}
+        showDisplayCostOption
       />,
     );
 
@@ -403,7 +404,9 @@ describe("ConversationCard", () => {
 
     await user.click(ellipsisButton);
     const newMenu = await screen.findByTestId("context-menu");
-    expect(within(newMenu).queryByTestId("edit-button")).not.toBeInTheDocument();
+    expect(
+      within(newMenu).queryByTestId("edit-button"),
+    ).not.toBeInTheDocument();
     expect(within(newMenu).queryByTestId("delete-button")).toBeInTheDocument();
   });
 
