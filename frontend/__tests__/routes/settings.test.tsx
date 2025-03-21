@@ -79,7 +79,7 @@ describe("Settings Screen", () => {
 
     await waitFor(() => {
       screen.getByText("LLM Settings");
-      screen.getByText("Provider Settings");
+      screen.getByText("Git Provider Settings");
       screen.getByText("Additional Settings");
       screen.getByText("Reset to defaults");
       screen.getByText("Save Changes");

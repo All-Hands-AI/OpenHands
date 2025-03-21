@@ -24,7 +24,7 @@ from pydantic import BaseModel
 
 
 @app.get('/repositories', response_model=list[Repository])
-async def get_github_repositories(
+async def get_user_repositories(
     selected_provider: str = 'github',
     page: int = 1,
     per_page: int = 10,
@@ -41,7 +41,7 @@ async def get_github_repositories(
 
         try:
             provider = ProviderType(selected_provider)
-            
+
             repos: list[Repository] = await client.get_repositories(
                 provider, page, per_page, sort, installation_id
             )
@@ -131,7 +131,7 @@ async def get_github_installation_ids(
 
 
 @app.get('/search/repositories', response_model=list[Repository])
-async def search_github_repositories(
+async def search_repositories(
     selected_provider: str,
     query: str,
     per_page: int = 5,

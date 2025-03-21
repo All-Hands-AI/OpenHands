@@ -390,7 +390,7 @@ function AccountSettings() {
 
           <section className="flex flex-col gap-6">
             <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">
-              Provider Settings
+              Git Provider Settings
             </h2>
             {isSaas && hasAppSlug && (
               <Link
