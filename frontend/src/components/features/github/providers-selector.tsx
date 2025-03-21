@@ -11,6 +11,11 @@ interface ProviderSelectorProps {
   setSelectedProvider: (value: Provider | null) => void;
 }
 
+const PROVIDER_LABELS: Record<string, string> = {
+  github: "GitHub",
+  gitlab: "GitLab",
+};
+
 export function ProviderSelector({
   selectedProvider,
   setSelectedProvider,
@@ -29,6 +34,11 @@ export function ProviderSelector({
       placeholder="Select Git Provider"
       isVirtualized={false}
       selectedKey={selectedProvider}
+      inputValue={
+        selectedProvider
+          ? (PROVIDER_LABELS[selectedProvider] ?? selectedProvider)
+          : ""
+      }
       inputProps={{
         classNames: {
           inputWrapper:
@@ -43,7 +53,7 @@ export function ProviderSelector({
         <AutocompleteSection>
           {providerTokensSet.map((provider) => (
             <AutocompleteItem key={provider} textValue={provider}>
-              {provider}
+              {PROVIDER_LABELS[provider] ?? provider}
             </AutocompleteItem>
           ))}
         </AutocompleteSection>
