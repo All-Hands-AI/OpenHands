@@ -10,9 +10,9 @@ import { useConversation } from "#/context/conversation-context";
 export const useActiveHost = () => {
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const [activeHost, setActiveHost] = React.useState<string | null>(null);
-
   const { conversationId } = useConversation();
 
+  // Get the list of hosts from the backend
   const { data } = useQuery({
     queryKey: [conversationId, "hosts"],
     queryFn: async () => {
@@ -28,6 +28,7 @@ export const useActiveHost = () => {
     },
   });
 
+  // Create queries for each host, but don't automatically refetch
   const apps = useQueries({
     queries: data.hosts.map((host) => ({
       queryKey: [conversationId, "hosts", host],
@@ -39,7 +40,8 @@ export const useActiveHost = () => {
           return "";
         }
       },
-      refetchInterval: 3000,
+      // Don't automatically refetch - we'll trigger manually
+      refetchInterval: undefined,
       meta: {
         disableToast: true,
       },
@@ -48,6 +50,7 @@ export const useActiveHost = () => {
 
   const appsData = apps.map((app) => app.data);
 
+  // Update activeHost when app data changes
   React.useEffect(() => {
     const successfulApp = appsData.find((app) => app);
     setActiveHost(successfulApp || "");
