@@ -12,14 +12,16 @@ export const useUpdateConversation = () => {
     mutationFn: (variables: {
       id: string;
       conversation: Partial<Omit<Conversation, "id">>;
-    }) =>
-      OpenHands.updateUserConversation(variables.id, variables.conversation),
-    onSuccess: (_, variables) => {
-      // If the title was updated, update the Redux state
+    }) => {
+      // If the title is being updated, update the Redux state immediately
+      // This ensures the document title is updated right away
       if (variables.conversation.title !== undefined) {
         dispatch(setConversationTitle(variables.conversation.title));
       }
       
+      return OpenHands.updateUserConversation(variables.id, variables.conversation);
+    },
+    onSuccess: (_, variables) => {
       // Invalidate the queries to refresh the data
       queryClient.invalidateQueries({ queryKey: ["user", "conversations"] });
     },

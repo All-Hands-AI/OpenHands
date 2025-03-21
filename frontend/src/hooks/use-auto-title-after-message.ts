@@ -53,8 +53,13 @@ export function useAutoTitleAfterMessage() {
             const updatedConversation =
               await OpenHands.getConversation(conversationId);
 
-            // Update the Redux state with the new title
-            dispatch(setConversationTitle(updatedConversation.title));
+            // Update the Redux state with the new title immediately
+            if (updatedConversation && updatedConversation.title) {
+              dispatch(setConversationTitle(updatedConversation.title));
+              
+              // Force update the document title directly as well for immediate feedback
+              document.title = `${updatedConversation.title} - OpenHands`;
+            }
 
             // Update the query cache
             queryClient.setQueryData(

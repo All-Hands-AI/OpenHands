@@ -9,6 +9,7 @@ import {
   ConversationProvider,
   useConversation,
 } from "#/context/conversation-context";
+import { useDocumentTitleFromState } from "#/hooks/use-document-title-from-state";
 import { Controls } from "#/components/features/controls/controls";
 import { clearMessages, addUserMessage } from "#/state/chat-slice";
 import { clearTerminal } from "#/state/command-slice";
@@ -210,6 +211,9 @@ function AppContent() {
 }
 
 function App() {
+  // Use the hook to update the document title based on the conversation title in the Redux state
+  useDocumentTitleFromState();
+  
   return (
     <ConversationProvider>
       <AppContent />
