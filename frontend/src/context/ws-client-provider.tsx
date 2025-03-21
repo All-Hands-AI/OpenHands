@@ -11,7 +11,6 @@ import {
   UserMessageAction,
   CommandAction,
 } from "#/types/core/actions";
-import { useConversation } from "./conversation-context";
 
 const isOpenHandsEvent = (event: unknown): event is OpenHandsParsedEvent =>
   typeof event === "object" &&
@@ -137,13 +136,13 @@ export function WsClientProvider({
       if (isMessageAction(event)) {
         messageRateHandler.record(new Date().getTime());
       }
-      
+
       // Invalidate hosts query when a command run action is received
       if (isCommandAction(event)) {
         queryClient.invalidateQueries({ queryKey: [conversationId, "hosts"] });
       }
     }
-    
+
     setEvents((prevEvents) => [...prevEvents, event]);
     if (!Number.isNaN(parseInt(event.id as string, 10))) {
       lastEventRef.current = event;
