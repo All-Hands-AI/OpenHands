@@ -12,9 +12,9 @@ from evaluation.benchmarks.swe_bench.run_infer import (
 )
 from evaluation.utils.shared import (
     EvalMetadata,
+    EvalOutput,
     is_fatal_evaluation_error,
     make_metadata,
-    prepare_dataset,
 )
 from openhands.core.config import (
     get_llm_config_arg,
@@ -55,6 +55,15 @@ def run_sequential_evaluation(
     total_instances = len(dataset)
     processed_count = 0
 
+    instance_id_to_repo_md = {}
+    if os.path.exists(output_file):
+        with open(output_file, 'r') as input_fp:
+            for line in input_fp:
+                result = EvalOutput.model_validate_json(line)
+                instance_id_to_repo_md[result.instance_id] = result.test_result[
+                    'repo_md'
+                ]
+
     # Open output file for writing results
     output_fp = open(output_file, 'a')
 
@@ -72,6 +81,17 @@ def run_sequential_evaluation(
             for i, instance in enumerate(instances):
                 instance_series = pd.Series(instance)
 
+                if instance_series['instance_id'] in instance_id_to_repo_md:
+                    # Skip if the instance has already been processed
+                    _repo_md = instance_id_to_repo_md[instance_series['instance_id']]
+                    if _repo_md is not None and _repo_md.strip() != '':
+                        current_repo_md = _repo_md
+                    logger.info(
+                        f'Skipping instance {instance_series["instance_id"]} because it has already been processed'
+                    )
+                    processed_count += 1
+                    continue
+
                 # Set repo_md from previous instance if available
                 if i > 0 and current_repo_md is not None:
                     instance_series['repo_md'] = current_repo_md
@@ -82,6 +102,9 @@ def run_sequential_evaluation(
                 logger.info(
                     f"Processing instance {instance_series['instance_id']} ({processed_count + 1}/{total_instances})"
                 )
+                logger.info(
+                    f'Repo.md for instance {instance_series["instance_id"]}: {instance_series["repo_md"]}'
+                )
 
                 # Try processing with retries
                 retry_count = 0
@@ -90,7 +113,7 @@ def run_sequential_evaluation(
                 while retry_count < max_retries:
                     try:
                         # Process the instance
-                        result = process_instance_func(
+                        result: EvalOutput = process_instance_func(
                             instance=instance_series,
                             metadata=metadata,
                             reset_logger=False,
@@ -117,18 +140,14 @@ def run_sequential_evaluation(
                 # Write result to output file
                 if result is not None:
                     # Extract repo_md from the result for the next instance
-                    if (
-                        'test_result' in result
-                        and result['test_result']
-                        and 'repo_md' in result['test_result']
-                    ):
-                        current_repo_md = result['test_result']['repo_md']
+                    if result.test_result and 'repo_md' in result.test_result:
+                        current_repo_md = result.test_result['repo_md']
                         logger.info(
                             f'Extracted repo_md for next instance in {repo}: {current_repo_md}'
                         )
 
                     # Write result to output file
-                    output_fp.write(json.dumps(result) + '\n')
+                    output_fp.write(result.model_dump_json() + '\n')
                     output_fp.flush()
 
                 processed_count += 1
@@ -220,15 +239,15 @@ if __name__ == '__main__':
     instance_ids = sorted(swe_bench_tests['instance_id'].tolist())
     selected_instance_ids = instance_ids[: args.eval_n_limit]
 
-    # Run evaluation in sequential mode
-    instances = prepare_dataset(
-        swe_bench_tests, output_file, args.eval_n_limit, eval_ids=selected_instance_ids
-    )
+    instances = swe_bench_tests[
+        swe_bench_tests['instance_id'].isin(selected_instance_ids)
+    ]
     if len(instances) > 0 and not isinstance(
         instances['PASS_TO_PASS'][instances['PASS_TO_PASS'].index[0]], str
     ):
         for col in ['PASS_TO_PASS', 'FAIL_TO_PASS']:
             instances[col] = instances[col].apply(lambda x: str(x))
+    # We will do the filtering in the run_sequential_evaluation function
 
     logger.info(
         f'Running sequential evaluation for {len(instances)} instances: {instances["instance_id"].tolist()}'
