@@ -87,6 +87,9 @@ describe("Settings Screen", () => {
         APP_MODE: "oss",
         GITHUB_CLIENT_ID: "123",
         POSTHOG_CLIENT_KEY: "456",
+        FEATURE_FLAGS: {
+          ENABLE_BILLING: false,
+        },
       });
     });
 
@@ -206,6 +209,9 @@ describe("Settings Screen", () => {
         APP_MODE: "oss",
         GITHUB_CLIENT_ID: "123",
         POSTHOG_CLIENT_KEY: "456",
+        FEATURE_FLAGS: {
+          ENABLE_BILLING: false,
+        },
       });
 
       renderSettingsScreen();
@@ -220,6 +226,9 @@ describe("Settings Screen", () => {
         GITHUB_CLIENT_ID: "123",
         POSTHOG_CLIENT_KEY: "456",
         APP_SLUG: "test-app",
+        FEATURE_FLAGS: {
+          ENABLE_BILLING: false,
+        },
       });
 
       renderSettingsScreen();
@@ -231,6 +240,9 @@ describe("Settings Screen", () => {
         APP_MODE: "saas",
         GITHUB_CLIENT_ID: "123",
         POSTHOG_CLIENT_KEY: "456",
+        FEATURE_FLAGS: {
+          ENABLE_BILLING: false,
+        },
       });
 
       renderSettingsScreen();
@@ -308,6 +320,9 @@ describe("Settings Screen", () => {
         APP_MODE: "oss",
         GITHUB_CLIENT_ID: "123",
         POSTHOG_CLIENT_KEY: "456",
+        FEATURE_FLAGS: {
+          ENABLE_BILLING: false,
+        },
       });
     });
 
@@ -449,6 +464,9 @@ describe("Settings Screen", () => {
           APP_MODE: "oss",
           GITHUB_CLIENT_ID: "123",
           POSTHOG_CLIENT_KEY: "456",
+          FEATURE_FLAGS: {
+            ENABLE_BILLING: false,
+          },
         });
 
         renderSettingsScreen();
@@ -463,6 +481,9 @@ describe("Settings Screen", () => {
           APP_MODE: "saas",
           GITHUB_CLIENT_ID: "123",
           POSTHOG_CLIENT_KEY: "456",
+          FEATURE_FLAGS: {
+            ENABLE_BILLING: false,
+          },
         });
 
         renderSettingsScreen();
@@ -474,6 +495,9 @@ describe("Settings Screen", () => {
           APP_MODE: "saas",
           GITHUB_CLIENT_ID: "123",
           POSTHOG_CLIENT_KEY: "456",
+          FEATURE_FLAGS: {
+            ENABLE_BILLING: false,
+          },
         });
 
         getSettingsSpy.mockResolvedValue({
@@ -492,6 +516,9 @@ describe("Settings Screen", () => {
           APP_MODE: "saas",
           GITHUB_CLIENT_ID: "123",
           POSTHOG_CLIENT_KEY: "456",
+          FEATURE_FLAGS: {
+            ENABLE_BILLING: false,
+          },
         });
 
         renderSettingsScreen();
@@ -506,6 +533,9 @@ describe("Settings Screen", () => {
           APP_MODE: "saas",
           GITHUB_CLIENT_ID: "123",
           POSTHOG_CLIENT_KEY: "456",
+          FEATURE_FLAGS: {
+            ENABLE_BILLING: false,
+          },
         });
 
         getSettingsSpy.mockResolvedValue({
@@ -982,6 +1012,9 @@ describe("Settings Screen", () => {
         APP_MODE: "saas",
         GITHUB_CLIENT_ID: "123",
         POSTHOG_CLIENT_KEY: "456",
+        FEATURE_FLAGS: {
+          ENABLE_BILLING: false,
+        },
       });
     });
 

@@ -146,14 +146,18 @@ describe("Setup Payment modal", () => {
     // @ts-expect-error - we only need the APP_MODE for this test
     getConfigSpy.mockResolvedValue({
       APP_MODE: "saas",
+      FEATURE_FLAGS: {
+        ENABLE_BILLING: true,
+      },
     });
-    vi.spyOn(FeatureFlags, "BILLING_SETTINGS").mockReturnValue(true);
     const error = createAxiosNotFoundErrorObject();
     getSettingsSpy.mockRejectedValue(error);
 
     renderWithProviders(<RouterStub initialEntries={["/"]} />);
 
-    const setupPaymentModal = await screen.findByTestId("proceed-to-stripe-button");
+    const setupPaymentModal = await screen.findByTestId(
+      "proceed-to-stripe-button",
+    );
     expect(setupPaymentModal).toBeInTheDocument();
   });
 });

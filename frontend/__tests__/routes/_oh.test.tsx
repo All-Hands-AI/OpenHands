@@ -68,6 +68,9 @@ describe("frontend/routes/_oh", () => {
       APP_MODE: "oss",
       GITHUB_CLIENT_ID: "test-id",
       POSTHOG_CLIENT_KEY: "test-key",
+      FEATURE_FLAGS: {
+        ENABLE_BILLING: false,
+      },
     });
 
     // @ts-expect-error - We only care about the user_consents_to_analytics field
@@ -99,6 +102,9 @@ describe("frontend/routes/_oh", () => {
       APP_MODE: "saas",
       GITHUB_CLIENT_ID: "test-id",
       POSTHOG_CLIENT_KEY: "test-key",
+      FEATURE_FLAGS: {
+        ENABLE_BILLING: false,
+      },
     });
 
     renderWithProviders(<RouteStub />);

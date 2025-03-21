@@ -181,6 +181,9 @@ export const handlers = [
       GITHUB_CLIENT_ID: "fake-github-client-id",
       POSTHOG_CLIENT_KEY: "fake-posthog-client-key",
       STRIPE_PUBLISHABLE_KEY: "",
+      FEATURE_FLAGS: {
+        ENABLE_BILLING: mockSaas,
+      },
     };
 
     return HttpResponse.json(config);
