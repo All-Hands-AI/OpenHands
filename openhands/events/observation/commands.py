@@ -103,9 +103,6 @@ class CmdOutputObservation(Observation):
     # Default max size for command output content - matching LLM config
     MAX_CMD_OUTPUT_SIZE: int = 30000
 
-    # Need to exclude _raw_content from dataclass fields
-    _raw_content: str = field(default='', repr=False, compare=False)
-
     def __init__(
         self,
         content: str,
@@ -115,11 +112,12 @@ class CmdOutputObservation(Observation):
         hidden: bool = False,
         **kwargs,
     ):
-        # Initialize the parent with a dummy content - we'll manage content ourselves
-        super().__init__('')
+        # Truncate content before passing it to parent
+        truncated_content = self._truncate_if_needed(content)
 
-        # Store our actual content
-        self._raw_content = content
+        # Initialize the parent with the truncated content
+        super().__init__(truncated_content)
+
         self.command = command
         self.observation = observation
         self.hidden = hidden
@@ -134,44 +132,35 @@ class CmdOutputObservation(Observation):
         if 'command_id' in kwargs:
             self.metadata.pid = kwargs['command_id']
 
-        # Truncate content upon initialization
-        self._truncate_content()
-
-    # Override the content property to ensure it's always truncated
-    @property
-    def content(self) -> str:
-        """Get the (potentially truncated) content."""
-        return self._raw_content
-
-    @content.setter
-    def content(self, value: str) -> None:
-        """Intercept setting of content to ensure it's always truncated.
-
-        This safeguards against any code that might set content after creation
-        but before the observation is added to the event stream.
-        """
-        self._raw_content = value
-        self._truncate_content()
-
-    def _truncate_content(self) -> None:
-        """Truncate the content of this observation if it's too large.
+    @staticmethod
+    def _truncate_if_needed(content: str, max_size: int = MAX_CMD_OUTPUT_SIZE) -> str:
+        """Truncate the content if it's too large.
 
         This helps avoid storing unnecessarily large content in the event stream.
+
+        Args:
+            content: The content to truncate
+            max_size: Maximum size before truncation. Defaults to MAX_CMD_OUTPUT_SIZE.
+
+        Returns:
+            Truncated content or original if small enough
         """
-        if len(self._raw_content) <= self.MAX_CMD_OUTPUT_SIZE:
-            return
+
+        if len(content) <= max_size:
+            return content
 
         # Truncate the middle and include a message about it
-        half = self.MAX_CMD_OUTPUT_SIZE // 2
-        original_length = len(self._raw_content)
-        self._raw_content = (
-            self._raw_content[:half]
-            + f'\n[... Command output truncated: removed {original_length - self.MAX_CMD_OUTPUT_SIZE} characters from the middle ...]\n'
-            + self._raw_content[-half:]
+        half = max_size // 2
+        original_length = len(content)
+        truncated = (
+            content[:half]
+            + f'\n[... Command output truncated: removed {original_length - max_size} characters from the middle ...]\n'
+            + content[-half:]
         )
         logger.info(
-            f"Truncated large command output from command '{self.command}': {original_length} -> {len(self._raw_content)} chars"
+            f'Truncated large command output: {original_length} -> {len(truncated)} chars'
         )
+        return truncated
 
     @property
     def command_id(self) -> int:
