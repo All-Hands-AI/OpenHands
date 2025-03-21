@@ -1,6 +1,6 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import React from "react";
-import { retrieveGitHubUserRepositories } from "#/api/github";
+import { retrieveUserGitRepositories } from "#/api/github";
 import { useConfig } from "./use-config";
 import { useAuth } from "#/context/auth-context";
 import { Provider } from "#/types/settings";
@@ -12,7 +12,7 @@ export const useUserRepositories = (selectedProvider: Provider | null) => {
   const repos = useInfiniteQuery({
     queryKey: ["repositories", providersAreSet, selectedProvider],
     queryFn: async ({ pageParam }) =>
-      retrieveGitHubUserRepositories(pageParam, 100, selectedProvider),
+      retrieveUserGitRepositories(pageParam, 100, selectedProvider),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => lastPage.nextPage,
     enabled:

@@ -54,7 +54,7 @@ export const retrieveGitHubAppRepositories = async (
  * Given a PAT, retrieves the repositories of the user
  * @returns A list of repositories
  */
-export const retrieveGitHubUserRepositories = async (
+export const retrieveUserGitRepositories = async (
   page = 1,
   per_page = 30,
   selected_provider: Provider | null = null,

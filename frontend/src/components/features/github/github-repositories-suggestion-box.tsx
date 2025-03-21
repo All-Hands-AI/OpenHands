@@ -34,6 +34,15 @@ export function GitRepositoriesSuggestionBox({
     React.useState<Provider | null>(
       providerTokensSet.length === 1 ? providerTokensSet[0] : null,
     );
+
+  React.useEffect(() => {
+    if (providerTokensSet.length === 1) {
+      setSelectedProvider(providerTokensSet[0]);
+    } else {
+      setSelectedProvider(null);
+    }
+  }, [providerTokensSet]);
+
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   // TODO: Use `useQueries` to fetch all repositories in parallel

@@ -454,7 +454,7 @@ function AccountSettings() {
                   type="password"
                   className="w-[680px]"
                   startContent={
-                    isGitHubTokenSet && (
+                    isGitLabTokenSet && (
                       <KeyStatusIcon isSet={!!isGitLabTokenSet} />
                     )
                   }
