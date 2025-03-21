@@ -19,17 +19,17 @@ describe("useDocumentTitle", () => {
     expect(document.title).toBe("Test Title - Custom Suffix");
   });
 
-  it("should set only the suffix when title is null", () => {
+  it("should set only the suffix when title is null and no previous title exists", () => {
     renderHook(() => useDocumentTitle(null));
     expect(document.title).toBe("OpenHands");
   });
 
-  it("should set only the suffix when title is undefined", () => {
+  it("should set only the suffix when title is undefined and no previous title exists", () => {
     renderHook(() => useDocumentTitle(undefined));
     expect(document.title).toBe("OpenHands");
   });
 
-  it("should set only the suffix when title is empty string", () => {
+  it("should set only the suffix when title is empty string and no previous title exists", () => {
     renderHook(() => useDocumentTitle(""));
     expect(document.title).toBe("OpenHands");
   });
@@ -42,6 +42,32 @@ describe("useDocumentTitle", () => {
 
     rerender({ title: "Updated Title" });
     expect(document.title).toBe("Updated Title - OpenHands");
+  });
+
+  it("should maintain the last valid title when a null title is provided", () => {
+    const { rerender } = renderHook(({ title }) => useDocumentTitle(title), {
+      initialProps: { title: "Valid Title" },
+    });
+    expect(document.title).toBe("Valid Title - OpenHands");
+
+    // When title becomes null, it should keep the last valid title
+    rerender({ title: null });
+    expect(document.title).toBe("Valid Title - OpenHands");
+
+    // When a new valid title is provided, it should update
+    rerender({ title: "New Valid Title" });
+    expect(document.title).toBe("New Valid Title - OpenHands");
+  });
+
+  it("should maintain the last valid title when an empty title is provided", () => {
+    const { rerender } = renderHook(({ title }) => useDocumentTitle(title), {
+      initialProps: { title: "Valid Title" },
+    });
+    expect(document.title).toBe("Valid Title - OpenHands");
+
+    // When title becomes empty, it should keep the last valid title
+    rerender({ title: "" });
+    expect(document.title).toBe("Valid Title - OpenHands");
   });
 
   it("should reset the document title when the component unmounts", () => {
