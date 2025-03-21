@@ -148,7 +148,7 @@ npm run test:coverage
 
 1. **Component Testing**
    - Test components in isolation
-   - Use our custom renderWithProviders() that wraps the components we want to test in our providers. It is especially useful for components that use Redux
+   - Use our custom [`renderWithProviders()`](https://github.com/All-Hands-AI/OpenHands/blob/ce26f1c6d3feec3eedf36f823dee732b5a61e517/frontend/test-utils.tsx#L56-L85) that wraps the components we want to test in our providers. It is especially useful for components that use Redux
    - Use `render()` from React Testing Library to render components
    - Prefer querying elements by role, label, or test ID over CSS selectors
    - Test both rendering and interaction scenarios
