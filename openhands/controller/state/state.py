@@ -1,4 +1,5 @@
 import base64
+import os
 import pickle
 from dataclasses import dataclass, field
 from enum import Enum
@@ -14,6 +15,7 @@ from openhands.events.action import (
 from openhands.events.action.agent import AgentFinishAction
 from openhands.events.event import Event, EventSource
 from openhands.llm.metrics import Metrics
+from openhands.server.shared import server_config
 from openhands.storage.files import FileStore
 from openhands.storage.locations import get_conversation_agent_state_filename
 
@@ -208,5 +210,9 @@ class State:
         return {
             'session_id': self.session_id,
             'version': openhands.__version__,
-            'tags': [f'agent:{agent_name}'],
+            'tags': [
+                f'agent:{agent_name}',
+                f'app_mode:{server_config.APP_MODE}',
+                f'web_host:{os.environ.get("WEB_HOST", "unspecified")}',
+            ],
         }
