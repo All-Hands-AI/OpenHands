@@ -304,7 +304,6 @@ async def update_conversation(
     if not title or title.isspace():
         title = await auto_generate_title(conversation_id, user_id)
         if not title:
-            # Fallback if no user ID is available
             title = f'Conversation {conversation_id[:5]}'
 
     metadata.title = title
