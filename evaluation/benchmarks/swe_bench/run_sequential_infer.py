@@ -1,26 +1,220 @@
+import asyncio
+import copy
 import json
 import os
 from collections import defaultdict
+from zipfile import ZipFile
 
 import pandas as pd
 from datasets import load_dataset
 
 import openhands.agenthub
 from evaluation.benchmarks.swe_bench.run_infer import (
+    AGENT_CLS_TO_FAKE_USER_RESPONSE_FN,
+    _get_swebench_workspace_dir_name,
+    complete_runtime,
     filter_dataset,
-    process_instance,
+    get_config,
+    get_instruction,
+    initialize_runtime,
 )
 from evaluation.utils.shared import (
+    EvalException,
     EvalMetadata,
     EvalOutput,
+    get_metrics,
     is_fatal_evaluation_error,
     make_metadata,
+    reset_logger_for_multiprocessing,
 )
+from openhands.controller.state.state import State
 from openhands.core.config import (
     get_llm_config_arg,
     get_parser,
 )
 from openhands.core.logger import openhands_logger as logger
+from openhands.core.main import create_runtime, run_controller
+from openhands.events.action import (
+    CmdRunAction,
+    MessageAction,
+)
+from openhands.events.observation import (
+    CmdOutputObservation,
+)
+from openhands.events.serialization.event import event_to_dict
+from openhands.runtime.base import Runtime
+from openhands.utils.async_utils import call_async_from_sync
+
+
+def initialize_runtime_for_memory_files(
+    runtime: Runtime,
+    instance: pd.Series,
+):
+    workspace_dir_name = _get_swebench_workspace_dir_name(instance)
+    # if memory_files_dir is not None, copy it to /workspace/{workspace_dir_name}/.openhands/memory
+    if 'memory_files_dir' in instance and instance['memory_files_dir'] is not None:
+        runtime.copy_to(
+            instance['memory_files_dir'],
+            f'/workspace/{workspace_dir_name}/.openhands/memory',
+            recursive=True,
+        )
+
+        action = CmdRunAction(
+            command='ls -la /workspace/{workspace_dir_name}/.openhands/memory'
+        )
+        action.set_hard_timeout(600)
+        logger.info(action, extra={'msg_type': 'ACTION'})
+        obs = runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+
+
+def complete_runtime_for_memory_files(
+    runtime: Runtime,
+    instance: pd.Series,
+    metadata: EvalMetadata,
+):
+    workspace_dir_name = _get_swebench_workspace_dir_name(instance)
+
+    # Get the .openhands/memory directory if it exists
+    memory_zip_file = None
+
+    # Check if the memory directory exists
+    action = CmdRunAction(
+        command=f'ls -la /workspace/{workspace_dir_name}/.openhands/memory'
+    )
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+
+    memory_files_dir = None
+    if isinstance(obs, CmdOutputObservation) and obs.exit_code == 0:
+        logger.info('Memory directory exists, copying as zip')
+
+        # Copy the zipped memory directory
+        temp_zip = runtime.copy_from(
+            f'/workspace/{workspace_dir_name}/.openhands/memory'
+        )
+        memory_zip_file = temp_zip
+        logger.info(f'Copied memory zip to temporary location: {memory_zip_file}')
+        # unzip to metadata.eval_output_dir / "memory_files" / instance_id / memory.zip
+        memory_files_dir = os.path.join(
+            metadata.eval_output_dir, 'memory_files', instance['instance_id']
+        )
+        os.makedirs(memory_files_dir, exist_ok=True)
+        with ZipFile(memory_zip_file, 'r') as zip_ref:
+            zip_ref.extractall(memory_files_dir)
+        logger.info(f'Unzipped memory zip to {memory_files_dir}')
+    else:
+        logger.warning(f'Failed to create memory.zip: {str(obs)}')
+    return memory_files_dir
+
+
+def process_instance_with_memory(
+    instance: pd.Series,
+    metadata: EvalMetadata,
+    reset_logger: bool = True,
+    runtime_failure_count: int = 0,
+) -> EvalOutput:
+    config = get_config(instance, metadata)
+
+    # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
+    if reset_logger:
+        log_dir = os.path.join(metadata.eval_output_dir, 'infer_logs')
+        reset_logger_for_multiprocessing(logger, instance.instance_id, log_dir)
+    else:
+        logger.info(f'Starting evaluation for instance {instance.instance_id}.')
+
+    # Increase resource_factor with increasing attempt_id
+    if runtime_failure_count > 0:
+        config.sandbox.remote_runtime_resource_factor = min(
+            config.sandbox.remote_runtime_resource_factor * (2**runtime_failure_count),
+            8,
+        )
+        logger.warning(
+            f'This is the {runtime_failure_count + 1}th attempt for instance {instance.instance_id}, setting resource factor to {config.sandbox.remote_runtime_resource_factor}'
+        )
+
+    metadata = copy.deepcopy(metadata)
+    metadata.details['runtime_failure_count'] = runtime_failure_count
+    metadata.details['remote_runtime_resource_factor'] = (
+        config.sandbox.remote_runtime_resource_factor
+    )
+
+    runtime = create_runtime(config)
+    call_async_from_sync(runtime.connect)
+
+    try:
+        initialize_runtime(runtime, instance)
+        initialize_runtime_for_memory_files(runtime, instance)
+
+        instruction = get_instruction(instance, metadata)
+
+        # Here's how you can run the agent (similar to the `main` function) and get the final task state
+        state: State | None = asyncio.run(
+            run_controller(
+                config=config,
+                initial_user_action=MessageAction(content=instruction),
+                runtime=runtime,
+                fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
+                    metadata.agent_class
+                ],
+            )
+        )
+
+        # if fatal error, throw EvalError to trigger re-run
+        if is_fatal_evaluation_error(state.last_error):
+            raise EvalException('Fatal error detected: ' + state.last_error)
+
+        # ======= THIS IS SWE-Bench specific =======
+        # Get git patch
+        return_val = complete_runtime(runtime, instance)
+        memory_files_dir = complete_runtime_for_memory_files(
+            runtime, instance, metadata
+        )
+        git_patch = return_val['git_patch']
+        repo_md = return_val['repo_md']
+
+        logger.info(
+            f'Got git diff for instance {instance.instance_id}:\n--------\n{git_patch}\n--------'
+        )
+        logger.info(
+            f'Got repo.md for instance {instance.instance_id}:\n--------\n{repo_md}\n--------'
+        )
+
+    finally:
+        runtime.close()
+    # ==========================================
+
+    # ======= Attempt to evaluate the agent's edits =======
+    # we use eval_infer.sh to evaluate the agent's edits, not here
+    # because the agent may alter the environment / testcases
+    test_result = {
+        'git_patch': git_patch,
+        'repo_md': repo_md,
+        'memory_files_dir': memory_files_dir,
+    }
+
+    # If you are working on some simpler benchmark that only evaluates the final model output (e.g., in a MessageAction)
+    # You can simply get the LAST `MessageAction` from the returned `state.history` and parse it for evaluation.
+    if state is None:
+        raise ValueError('State should not be None.')
+
+    # NOTE: this is NO LONGER the event stream, but an agent history that includes delegate agent's events
+    histories = [event_to_dict(event) for event in state.history]
+    metrics = get_metrics(state)
+
+    # Save the output
+    output = EvalOutput(
+        instance_id=instance.instance_id,
+        instruction=instruction,
+        instance=instance.to_dict(),  # SWE Bench specific
+        test_result=test_result,
+        metadata=metadata,
+        history=histories,
+        metrics=metrics,
+        error=state.last_error if state and state.last_error else None,
+    )
+    return output
 
 
 def run_sequential_evaluation(
@@ -257,6 +451,6 @@ if __name__ == '__main__':
         instances,
         metadata,
         output_file,
-        process_instance,
+        process_instance_with_memory,
         max_retries=5,
     )
