@@ -22,7 +22,6 @@ import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bott
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { useGetTrajectory } from "#/hooks/mutation/use-get-trajectory";
 import { downloadTrajectory } from "#/utils/download-trajectory";
-
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 
 function getEntryPoint(
