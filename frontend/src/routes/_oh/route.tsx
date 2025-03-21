@@ -13,9 +13,10 @@ import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useIsAuthed } from "#/hooks/query/use-is-authed";
 import { useConfig } from "#/hooks/query/use-config";
 import { Sidebar } from "#/components/features/sidebar/sidebar";
-import { WaitlistModal } from "#/components/features/waitlist/waitlist-modal";
+import { TOSModal } from "#/components/features/tos/tos-modal";
 import { AnalyticsConsentFormModal } from "#/components/features/analytics/analytics-consent-form-modal";
 import { useSettings } from "#/hooks/query/use-settings";
+import { Settings } from "#/types/settings";
 import { useAuth } from "#/context/auth-context";
 import { useMigrateUserConsent } from "#/hooks/use-migrate-user-consent";
 import { useBalance } from "#/hooks/query/use-balance";
@@ -59,7 +60,7 @@ export default function MainApp() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [searchParams] = useSearchParams();
-  const { githubTokenIsSet } = useAuth();
+  useAuth(); // Keep the auth context active
   const { data: settings } = useSettings();
   const { error, isFetching } = useBalance();
   const { migrateUserConsent } = useMigrateUserConsent();
@@ -102,8 +103,17 @@ export default function MainApp() {
   }, []);
 
   const userIsAuthed = !!isAuthed && !authError;
-  const renderWaitlistModal =
-    !isFetchingAuth && !userIsAuthed && config.data?.APP_MODE === "saas";
+  const renderTOSModal =
+    !isFetchingAuth &&
+    userIsAuthed &&
+    (settings as Settings)?.ACCEPT_TOS === false;
+
+  React.useEffect(() => {
+    // Redirect unauthenticated users to GitHub auth
+    if (!isFetchingAuth && !userIsAuthed && pathname === "/" && gitHubAuthUrl) {
+      window.location.href = gitHubAuthUrl;
+    }
+  }, [isFetchingAuth, userIsAuthed, pathname, gitHubAuthUrl]);
 
   React.useEffect(() => {
     // Don't allow users to use the app if it 402s
@@ -156,12 +166,7 @@ export default function MainApp() {
         <Outlet />
       </div>
 
-      {renderWaitlistModal && (
-        <WaitlistModal
-          ghTokenIsSet={githubTokenIsSet}
-          githubAuthUrl={gitHubAuthUrl}
-        />
-      )}
+      {renderTOSModal && <TOSModal />}
 
       {config.data?.APP_MODE === "oss" && consentFormIsOpen && (
         <AnalyticsConsentFormModal
