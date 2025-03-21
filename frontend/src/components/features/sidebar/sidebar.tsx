@@ -10,7 +10,6 @@ import { DocsButton } from "#/components/shared/buttons/docs-button";
 import { ExitProjectButton } from "#/components/shared/buttons/exit-project-button";
 import { SettingsButton } from "#/components/shared/buttons/settings-button";
 import { SettingsModal } from "#/components/shared/modals/settings/settings-modal";
-import { useCurrentSettings } from "#/context/settings-context";
 import { useSettings } from "#/hooks/query/use-settings";
 import { ConversationPanel } from "../conversation-panel/conversation-panel";
 import { useEndSession } from "#/hooks/use-end-session";
@@ -23,6 +22,7 @@ import { useConfig } from "#/hooks/query/use-config";
 import { cn } from "#/utils/utils";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { HIDE_LLM_SETTINGS } from "#/utils/feature-flags";
+import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 
 export function Sidebar() {
   const location = useLocation();
@@ -31,12 +31,13 @@ export function Sidebar() {
   const user = useGitHubUser();
   const { data: config } = useConfig();
   const {
+    data: settings,
     error: settingsError,
     isError: settingsIsError,
     isFetching: isFetchingSettings,
   } = useSettings();
   const { mutateAsync: logout } = useLogout();
-  const { settings, saveUserSettings } = useCurrentSettings();
+  const { mutate: saveUserSettings } = useSaveSettings();
 
   const [settingsModalIsOpen, setSettingsModalIsOpen] = React.useState(false);
 

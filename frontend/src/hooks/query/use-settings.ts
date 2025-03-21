@@ -44,10 +44,10 @@ export const useSettings = () => {
   });
 
   React.useEffect(() => {
-    if (query.data?.LLM_API_KEY) {
+    if (query.isFetched && query.data?.LLM_API_KEY) {
       posthog.capture("user_activated");
     }
-  }, [query.data?.LLM_API_KEY]);
+  }, [query.data?.LLM_API_KEY, query.isFetched]);
 
   React.useEffect(() => {
     if (query.data?.PROVIDER_TOKENS_SET) {

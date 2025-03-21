@@ -5,13 +5,13 @@ import { useConfig } from "./use-config";
 import OpenHands from "#/api/open-hands";
 import { useAuth } from "#/context/auth-context";
 import { useLogout } from "../mutation/use-logout";
-import { useCurrentSettings } from "#/context/settings-context";
+import { useSaveSettings } from "../mutation/use-save-settings";
 
 export const useGitHubUser = () => {
   const { providersAreSet } = useAuth();
   const { setProvidersAreSet } = useAuth();
   const { mutateAsync: logout } = useLogout();
-  const { saveUserSettings } = useCurrentSettings();
+  const { mutate: saveUserSettings } = useSaveSettings();
   const { data: config } = useConfig();
 
   const user = useQuery({
