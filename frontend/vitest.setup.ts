@@ -14,11 +14,13 @@ vi.mock("#/icons/loading-outer.svg?react", () => ({
 
 vi.mock("./state-indicators/cold.svg?react", () => ({
   default: () => React.createElement("div", { "data-testid": "mock-svg-cold" }),
-}), { virtual: true });
+  virtual: true
+}));
 
 vi.mock("./state-indicators/running.svg?react", () => ({
   default: () => React.createElement("div", { "data-testid": "mock-svg-running" }),
-}), { virtual: true });
+  virtual: true
+}));
 
 // Mock the i18n provider
 vi.mock("react-i18next", async (importOriginal) => ({
