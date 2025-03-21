@@ -9,6 +9,7 @@ import { appendSecurityAnalyzerInput } from "#/state/security-analyzer-slice";
 import { setCode, setActiveFilepath } from "#/state/code-slice";
 import { appendJupyterInput } from "#/state/jupyter-slice";
 import { setCurStatusMessage } from "#/state/status-slice";
+import { setMetrics } from "#/state/metrics-slice";
 import store from "#/store";
 import ActionType from "#/types/action-type";
 import {
@@ -18,7 +19,6 @@ import {
 } from "#/types/message";
 import { handleObservationMessage } from "./observations";
 import { appendInput } from "#/state/command-slice";
-import { notifyActionSubscribers } from "#/hooks/use-action-subscription";
 
 const messageActions = {
   [ActionType.BROWSE]: (message: ActionMessage) => {
@@ -86,8 +86,17 @@ export function handleActionMessage(message: ActionMessage) {
     return;
   }
 
-  // Notify subscribers about this action
-  notifyActionSubscribers(message);
+  // Update metrics if available
+  if (
+    message.llm_metrics ||
+    message.tool_call_metadata?.model_response?.usage
+  ) {
+    const metrics = {
+      cost: message.llm_metrics?.accumulated_cost ?? null,
+      usage: message.tool_call_metadata?.model_response?.usage ?? null,
+    };
+    store.dispatch(setMetrics(metrics));
+  }
 
   if (message.action === ActionType.RUN) {
     store.dispatch(appendInput(message.args.command));

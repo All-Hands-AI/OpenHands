@@ -1,4 +1,4 @@
-import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import React from "react";
 import { useSelector } from "react-redux";
@@ -6,13 +6,10 @@ import { openHands } from "#/api/open-hands-axios";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
 import { RootState } from "#/store";
 import { useConversation } from "#/context/conversation-context";
-import { useActionSubscription } from "#/hooks/use-action-subscription";
-import ActionType from "#/types/action-type";
 
 export const useActiveHost = () => {
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const [activeHost, setActiveHost] = React.useState<string | null>(null);
-  const queryClient = useQueryClient();
   const { conversationId } = useConversation();
 
   // Get the list of hosts from the backend
@@ -52,17 +49,6 @@ export const useActiveHost = () => {
   });
 
   const appsData = apps.map((app) => app.data);
-
-  // Subscribe to "run" action events and test URLs when a new command is run
-  useActionSubscription(ActionType.RUN, () => {
-    if (data.hosts.length > 0) {
-      data.hosts.forEach((host) => {
-        queryClient.invalidateQueries({
-          queryKey: [conversationId, "hosts", host],
-        });
-      });
-    }
-  });
 
   // Update activeHost when app data changes
   React.useEffect(() => {

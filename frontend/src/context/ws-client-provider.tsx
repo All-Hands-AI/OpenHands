@@ -1,5 +1,6 @@
 import React from "react";
 import { io, Socket } from "socket.io-client";
+import { useQueryClient } from "@tanstack/react-query";
 import EventLogger from "#/utils/event-logger";
 import { handleAssistantMessage } from "#/services/actions";
 import { showChatError } from "#/utils/error-handler";
@@ -8,7 +9,9 @@ import { OpenHandsParsedEvent } from "#/types/core";
 import {
   AssistantMessageAction,
   UserMessageAction,
+  CommandAction,
 } from "#/types/core/actions";
+import { useConversation } from "./conversation-context";
 
 const isOpenHandsEvent = (event: unknown): event is OpenHandsParsedEvent =>
   typeof event === "object" &&
@@ -38,6 +41,9 @@ const isMessageAction = (
   event: OpenHandsParsedEvent,
 ): event is UserMessageAction | AssistantMessageAction =>
   isUserMessage(event) || isAssistantMessage(event);
+
+const isCommandAction = (event: OpenHandsParsedEvent): event is CommandAction =>
+  "action" in event && event.action === "run";
 
 export enum WsClientProviderStatus {
   CONNECTED,
@@ -110,6 +116,7 @@ export function WsClientProvider({
   );
   const [events, setEvents] = React.useState<Record<string, unknown>[]>([]);
   const lastEventRef = React.useRef<Record<string, unknown> | null>(null);
+  const queryClient = useQueryClient();
 
   const messageRateHandler = useRate({ threshold: 250 });
 
@@ -126,9 +133,17 @@ export function WsClientProvider({
   }
 
   function handleMessage(event: Record<string, unknown>) {
-    if (isOpenHandsEvent(event) && isMessageAction(event)) {
-      messageRateHandler.record(new Date().getTime());
+    if (isOpenHandsEvent(event)) {
+      if (isMessageAction(event)) {
+        messageRateHandler.record(new Date().getTime());
+      }
+      
+      // Invalidate hosts query when a command run action is received
+      if (isCommandAction(event)) {
+        queryClient.invalidateQueries({ queryKey: [conversationId, "hosts"] });
+      }
     }
+    
     setEvents((prevEvents) => [...prevEvents, event]);
     if (!Number.isNaN(parseInt(event.id as string, 10))) {
       lastEventRef.current = event;
