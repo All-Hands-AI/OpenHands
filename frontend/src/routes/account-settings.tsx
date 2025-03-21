@@ -461,12 +461,33 @@ function AccountSettings() {
                   placeholder={isGitLabTokenSet ? "**********" : ""}
                 />
 
-                <HelpLink
-                  testId="gitlab-token-help-anchor"
-                  text="Get your GitLab token"
-                  linkText="here"
-                  href="https://gitlab.com/-/profile/personal_access_tokens?name=openhands-app&scopes=api,read_user,read_repository"
-                />
+                <p data-testId="gitlab-token-help-anchor" className="text-xs">
+                  {" "}
+                  Generate a token on{" "}
+                  <b>
+                    {" "}
+                    <a
+                      href="https://gitlab.com/-/user_settings/personal_access_tokens?name=openhands-app&scopes=api,read_user,read_repository"
+                      target="_blank"
+                      className="underline underline-offset-2"
+                      rel="noopener noreferrer"
+                    >
+                      GitLab
+                    </a>{" "}
+                  </b>
+                  or see the{" "}
+                  <b>
+                    <a
+                      href="https://docs.gitlab.com/user/profile/personal_access_tokens/"
+                      target="_blank"
+                      className="underline underline-offset-2"
+                      rel="noopener noreferrer"
+                    >
+                      documentation
+                    </a>
+                  </b>
+                  .
+                </p>
               </>
             )}
 
