@@ -51,6 +51,8 @@ afterEach(() => {
 });
 
 describe("Home Screen", () => {
+  const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+
   it("should render the home screen", () => {
     renderWithProviders(<RouterStub initialEntries={["/"]} />);
   });
@@ -67,6 +69,14 @@ describe("Home Screen", () => {
   });
 
   it("should navigate to the settings when pressing 'Connect to GitHub' if the user isn't authenticated", async () => {
+    // @ts-expect-error - we only need APP_MODE for this test
+    getConfigSpy.mockResolvedValue({
+      APP_MODE: "oss",
+      FEATURE_FLAGS: {
+        ENABLE_BILLING: false,
+        HIDE_LLM_SETTINGS: false,
+      },
+    });
     const user = userEvent.setup();
     renderWithProviders(<RouterStub initialEntries={["/"]} />);
 
@@ -119,7 +129,13 @@ describe("Settings 404", () => {
 
   it("should not open the settings modal if GET /settings fails but is SaaS mode", async () => {
     // @ts-expect-error - we only need APP_MODE for this test
-    getConfigSpy.mockResolvedValue({ APP_MODE: "saas" });
+    getConfigSpy.mockResolvedValue({
+      APP_MODE: "saas",
+      FEATURE_FLAGS: {
+        ENABLE_BILLING: false,
+        HIDE_LLM_SETTINGS: false,
+      },
+    });
     const error = createAxiosNotFoundErrorObject();
     getSettingsSpy.mockRejectedValue(error);
 
