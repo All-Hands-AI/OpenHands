@@ -15,6 +15,7 @@ describe("GitRepositorySelector", () => {
         onSelect={onSelectMock}
         publicRepositories={[]}
         userRepositories={[]}
+        selectedProvider="github"
       />,
     );
 
@@ -38,6 +39,7 @@ describe("GitRepositorySelector", () => {
         onSelect={onSelectMock}
         publicRepositories={[]}
         userRepositories={[]}
+        selectedProvider="github"
       />,
     );
 
@@ -70,6 +72,7 @@ describe("GitRepositorySelector", () => {
         onSelect={onSelectMock}
         publicRepositories={[]}
         userRepositories={[]}
+        selectedProvider="github"
       />,
     );
 

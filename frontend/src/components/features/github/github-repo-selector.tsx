@@ -11,12 +11,14 @@ import { I18nKey } from "#/i18n/declaration";
 import { setSelectedRepository } from "#/state/initial-query-slice";
 import { useConfig } from "#/hooks/query/use-config";
 import { sanitizeQuery } from "#/utils/sanitize-query";
+import { Provider } from "#/types/settings";
 
 interface GitRepositorySelectorProps {
   onInputChange: (value: string) => void;
   onSelect: () => void;
   userRepositories: GitRepository[];
   publicRepositories: GitRepository[];
+  selectedProvider: Provider;
 }
 
 export function GitRepositorySelector({
@@ -24,6 +26,7 @@ export function GitRepositorySelector({
   onSelect,
   userRepositories,
   publicRepositories,
+  selectedProvider,
 }: GitRepositorySelectorProps) {
   const { t } = useTranslation();
   const { data: config } = useConfig();
@@ -58,8 +61,16 @@ export function GitRepositorySelector({
     <Autocomplete
       data-testid="github-repo-selector"
       name="repo"
-      aria-label="GitHub Repository"
-      placeholder={t(I18nKey.LANDING$SELECT_REPO)}
+      aria-label={
+        selectedProvider === "gitlab"
+          ? "GitLab Repository"
+          : "GitHub Repository"
+      }
+      placeholder={t(
+        selectedProvider === "gitlab"
+          ? I18nKey.LANDING$SELECT_GITLAB_REPO
+          : I18nKey.LANDING$SELECT_REPO,
+      )}
       isVirtualized={false}
       selectedKey={selectedKey}
       inputProps={{

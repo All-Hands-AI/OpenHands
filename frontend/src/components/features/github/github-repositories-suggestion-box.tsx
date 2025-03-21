@@ -86,6 +86,7 @@ export function GitRepositoriesSuggestionBox({
                 onSelect={handleSubmit}
                 publicRepositories={searchedRepos || []}
                 userRepositories={repositories}
+                selectedProvider={selectedProvider}
               />
             )}
           </>

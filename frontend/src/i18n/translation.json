@@ -4530,14 +4530,22 @@
         "zh-CN": "选择GitHub项目",
         "zh-TW": "選擇 GitHub 專案",
         "ko-KR": "GitHub 프로젝트 선택",
-        "fr": "Sélectionner un projet GitHub",
-        "es": "Seleccionar un proyecto de GitHub",
-        "de": "Ein GitHub-Projekt auswählen",
-        "it": "Seleziona un progetto GitHub",
-        "pt": "Selecionar um projeto do GitHub",
-        "ar": "اختر مشروع GitHub",
-        "no": "Velg et GitHub-prosjekt",
-        "tr": "Depo seç"
+        "fr": "Sélectionner un projet GitHub"
+    },
+    "LANDING$SELECT_GITLAB_REPO": {
+        "en": "Select a GitLab project",
+        "ja": "GitLabプロジェクトを選択",
+        "zh-CN": "选择GitLab项目",
+        "zh-TW": "選擇 GitLab 專案",
+        "ko-KR": "GitLab 프로젝트 선택",
+        "fr": "Sélectionner un projet GitLab",
+        "es": "Seleccionar un proyecto de GitLab",
+        "de": "Ein GitLab-Projekt auswählen",
+        "it": "Seleziona un progetto GitLab",
+        "pt": "Selecionar um projeto do GitLab",
+        "no": "Velg et GitLab-prosjekt",
+        "ar": "اختر مشروع GitLab",
+        "tr": "Bir GitLab projesi seçin"
     },
     "BUTTON$SEND": {
         "en": "Send",
