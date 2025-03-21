@@ -42,6 +42,8 @@ from openhands.events.action import (
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.tool import ToolCallMetadata
 
+_finish_count = 0
+
 
 def combine_thought(action: Action, thought: str) -> Action:
     if not hasattr(action, 'thought'):
@@ -110,10 +112,24 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
             # AgentFinishAction
             # ================================================
             elif tool_call.function.name == FinishTool['function']['name']:
-                action = AgentFinishAction(
-                    final_thought=arguments.get('message', ''),
-                    task_completed=arguments.get('task_completed', None),
-                )
+                global _finish_count
+                if _finish_count % 2 == 0:
+                    action = MessageAction(
+                        content='Final thought: '
+                        + arguments.get('message', '')
+                        + '\nPlease double check that the final answer STRICTLY adheres to the output formatting instructions given by the user and then call finish function again with the final answer. You MUST STRICTLY use the finish tool in the next step.',
+                        wait_for_response=False,
+                    )
+                else:
+                    action = AgentFinishAction(
+                        final_thought=arguments.get('message', ''),
+                        task_completed=arguments.get('task_completed', None),
+                    )
+                _finish_count += 1
+                # action = AgentFinishAction(
+                #     final_thought=arguments.get('message', ''),
+                #     task_completed=arguments.get('task_completed', None),
+                # )
 
             # ================================================
             # LLMBasedFileEditTool (LLM-based file editor, deprecated)

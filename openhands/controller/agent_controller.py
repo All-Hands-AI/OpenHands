@@ -47,6 +47,7 @@ from openhands.events.observation import (
     AgentCondensationObservation,
     AgentDelegateObservation,
     AgentStateChangedObservation,
+    BrowserOutputObservation,
     ErrorObservation,
     NullObservation,
     Observation,
@@ -979,6 +980,36 @@ class AgentController:
 
     def _handle_long_context_error(self) -> None:
         # When context window is exceeded, keep roughly half of agent interactions
+        last_event = self.state.history[-1]
+        if isinstance(last_event, BrowserOutputObservation):
+            # truncated_event = BrowserOutputObservation(
+            #     content=last_event.content,
+            #     url=last_event.url,
+            #     trigger_by_action=last_event.trigger_by_action,
+            #     screenshot=last_event.screenshot,
+            #     set_of_marks=last_event.set_of_marks,
+            #     error=last_event.error,
+            #     goal_image_urls=last_event.goal_image_urls,
+            #     open_pages_urls=last_event.open_pages_urls,
+            #     active_page_index=last_event.active_page_index,
+            #     dom_object=last_event.dom_object,
+            #     axtree_object=last_event.axtree_object,
+            #     extra_element_properties=last_event.extra_element_properties,
+            #     last_browser_action=last_event.last_browser_action,
+            #     last_browser_action_error=last_event.last_browser_action_error,
+            #     focused_element_bid=last_event.focused_element_bid
+            # )
+            # truncated_event.tool_call_metadata = last_event.tool_call_metadata
+            # truncated_event.filter_visible_only = True
+            last_event.filter_visible_only = True
+
+            self.event_stream.add_event(
+                AgentCondensationObservation(
+                    content='Trimming accessibility tree to only the visible portion of webpage to meet context window limitations'
+                ),
+                EventSource.AGENT,
+            )
+            return
         self.state.history = self._apply_conversation_window(self.state.history)
 
         # Save the ID of the first event in our truncated history for future reloading

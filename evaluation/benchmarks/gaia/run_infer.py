@@ -387,7 +387,14 @@ if __name__ == '__main__':
 
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     prepared_dataset = prepare_dataset(gaia_tests, output_file, args.eval_n_limit)
-
+    # indices = [30, 60, 102, 106, 110, 115, 133, 161] # crashing behaviour
+    indices = [28, 43, 47, 93, 105, 119, 125, 137, 148, 153, 154]
+    prepared_dataset = prepared_dataset.iloc[indices]
+    # print(prepared_dataset['Question'])
+    # print(type(prepared_dataset), prepared_dataset)
+    # column_names = prepared_dataset.columns.tolist()
+    # print(column_names)
+    # exit()
     run_evaluation(
         dataset=prepared_dataset,
         metadata=metadata,
