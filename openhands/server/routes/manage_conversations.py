@@ -26,6 +26,7 @@ from openhands.server.shared import (
     SettingsStoreImpl,
     config,
     conversation_manager,
+    file_store,
 )
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
@@ -254,6 +255,45 @@ async def update_conversation(
     metadata = await conversation_store.get_metadata(conversation_id)
     if not metadata:
         return False
+    
+    # If title is empty or unspecified, auto-generate it from the first user message
+    if not title or title.isspace():
+        logger.info(f"Auto-generating title for conversation {conversation_id}")
+        from openhands.events.stream import EventStream
+        from openhands.events.action.message import MessageAction
+        from openhands.events.event import EventSource
+        
+        try:
+            # Create an event stream for the conversation
+            event_stream = EventStream(conversation_id, file_store, get_user_id(request))
+            
+            # Find the first user message
+            first_user_message = None
+            for event in event_stream.get_events():
+                if (event.source == EventSource.USER and 
+                    isinstance(event, MessageAction) and 
+                    event.content and 
+                    event.content.strip()):  # Ensure content is not just whitespace
+                    first_user_message = event.content
+                    break
+            
+            if first_user_message:
+                # Use the first 15 characters of the user message as the title
+                # Strip any leading/trailing whitespace
+                first_user_message = first_user_message.strip()
+                title = first_user_message[:15]
+                if len(first_user_message) > 15:
+                    title += "..."
+                logger.info(f"Generated title: {title}")
+            else:
+                # Fallback if no user message is found
+                title = f"Conversation {conversation_id[:5]}"
+                logger.info(f"No user message found, using fallback title: {title}")
+        except Exception as e:
+            # If anything goes wrong, use a fallback title
+            logger.error(f"Error generating title: {str(e)}")
+            title = f"Conversation {conversation_id[:5]}"
+    
     metadata.title = title
     await conversation_store.save_metadata(metadata)
     return True
