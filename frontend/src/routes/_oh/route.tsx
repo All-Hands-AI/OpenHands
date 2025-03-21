@@ -101,6 +101,10 @@ export default function MainApp() {
     });
   }, []);
 
+  const userIsAuthed = !!isAuthed && !authError;
+  const renderWaitlistModal =
+    !isFetchingAuth && !userIsAuthed && config.data?.APP_MODE === "saas";
+
   React.useEffect(() => {
     // Don't allow users to use the app if it 402s
     if (error?.status === 402 && pathname !== "/") {
@@ -110,11 +114,31 @@ export default function MainApp() {
       searchParams.delete("free_credits");
       navigate("/");
     }
-  }, [error?.status, pathname, isFetching]);
+  }, [error?.status, pathname, isFetching, navigate, searchParams, t]);
 
-  const userIsAuthed = !!isAuthed && !authError;
-  const renderWaitlistModal =
-    !isFetchingAuth && !userIsAuthed && config.data?.APP_MODE === "saas";
+  // Handle redirection to last page after login
+  React.useEffect(() => {
+    const handleLastPageRedirect = async () => {
+      if (userIsAuthed && pathname === '/') {
+        const { getLastPage, clearLastPage } = await import('#/utils/last-page');
+        const lastPage = getLastPage();
+        if (lastPage) {
+          clearLastPage();
+          navigate(lastPage);
+        }
+      }
+    };
+    handleLastPageRedirect();
+
+    // Save last page when component unmounts
+    return () => {
+      if (userIsAuthed && pathname !== '/') {
+        import('#/utils/last-page').then(({ saveLastPage }) => {
+          saveLastPage();
+        });
+      }
+    };
+  }, [userIsAuthed, pathname, navigate]);
 
   return (
     <div
