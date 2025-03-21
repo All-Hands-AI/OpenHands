@@ -25,7 +25,6 @@ export function Controls({ setSecurityOpen, showSecurityLock }: ControlsProps) {
       dispatch(
         setConversation({
           id: conversation.conversation_id,
-          title: conversation.title,
           status: conversation.status,
           selectedRepository: conversation.selected_repository,
           createdAt: conversation.created_at,
