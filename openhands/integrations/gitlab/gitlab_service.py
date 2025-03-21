@@ -95,7 +95,7 @@ class GitLabService(GitService):
 
     async def search_repositories(
         self, query: str, per_page: int = 30, sort: str = 'updated', order: str = 'desc'
-    ):
+    ) -> list[Repository]:
         url = f'{self.BASE_URL}/search'
         params = {
             'scope': 'projects',
@@ -104,8 +104,17 @@ class GitLabService(GitService):
             'order_by': sort,
             'sort': order,
         }
-        response, headers = await self._fetch_data(url, params)
-        return response, headers
+        response, _ = await self._fetch_data(url, params)
+        repos = [
+            Repository(
+                id=repo.get('id'),
+                full_name=repo.get('path_with_namespace'),
+                stargazers_count=repo.get('star_count'),
+            )
+            for repo in response
+        ]
+        
+        return repos
 
     async def get_repositories(
         self, page: int, per_page: int, sort: str, installation_id: int | None

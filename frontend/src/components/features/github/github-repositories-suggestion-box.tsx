@@ -41,6 +41,7 @@ export function GitRepositoriesSuggestionBox({
   const { data: userRepositories } = useUserRepositories(selectedProvider);
   const { data: searchedRepos } = useSearchRepositories(
     sanitizeQuery(debouncedSearchQuery),
+    selectedProvider,
   );
 
   const repositories =

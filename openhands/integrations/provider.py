@@ -203,6 +203,18 @@ class ProviderHandler:
         repos = await provider.get_repositories(page, per_page, sort, installation_id)
         return repos
 
+    async def search_repositories(
+        self,
+        selected_provider: ProviderType,
+        query: str,
+        per_page: int,
+        sort: str,
+        order: str,
+    ):
+        provider = self._get_service(selected_provider)
+        repos = await provider.search_repositories(query, per_page, sort, order)
+        return repos
+
     async def get_remote_repository_url(self, repository: str) -> str | None:
         if not repository:
             return None

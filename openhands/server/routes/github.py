@@ -33,7 +33,6 @@ async def get_github_repositories(
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     access_token: SecretStr | None = Depends(get_access_token),
 ):
-    provider = ProviderType(selected_provider)
 
     if provider_tokens:
         client = ProviderHandler(
@@ -41,6 +40,8 @@ async def get_github_repositories(
         )
 
         try:
+            provider = ProviderType(selected_provider)
+            
             repos: list[Repository] = await client.get_repositories(
                 provider, page, per_page, sort, installation_id
             )
@@ -131,6 +132,7 @@ async def get_github_installation_ids(
 
 @app.get('/search/repositories', response_model=list[Repository])
 async def search_github_repositories(
+    selected_provider: str,
     query: str,
     per_page: int = 5,
     sort: str = 'stars',
@@ -138,15 +140,16 @@ async def search_github_repositories(
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     access_token: SecretStr | None = Depends(get_access_token),
 ):
-    if provider_tokens and ProviderType.GITHUB in provider_tokens:
-        token = provider_tokens[ProviderType.GITHUB]
 
-        client = GithubServiceImpl(
-            user_id=token.user_id, external_auth_token=access_token, token=token.token
+    if provider_tokens:
+        client = ProviderHandler(
+            provider_tokens=provider_tokens, external_auth_token=access_token
         )
         try:
+            provider = ProviderType(selected_provider)
+
             repos: list[Repository] = await client.search_repositories(
-                query, per_page, sort, order
+                provider, query, per_page, sort, order
             )
             return repos
 
