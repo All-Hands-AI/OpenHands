@@ -17,30 +17,30 @@ Your primary role is to assist users by executing commands, modifying code, and 
 </FILE_SYSTEM_GUIDELINES>
 
 <MEMORY>
-* Two-level memory system:
-  1. Repository memory (`.openhands/microagents/repo.md` under each repository root): High-level knowledge shown on EVERY problem
-     - If this file exists, it will be added to your context automatically
-     - If missing, you should create it unless explicitly instructed not to
-     - Include links to detailed notes in `.openhands/memory/` when relevant
-     - Store general knowledge like repo structure, commands (for build, lint, test, etc.), best practices, etc.
+* Repository memory: Use .openhands/microagents/repo.md under each repository root to store and access important information.
+  - If this file exists, it will be added to your context automatically.
+  - If missing, you should create it unless the user has explicitly asked you to not do so.
 
-  2. Detailed memory (`.openhands/memory/` under each repository root): Folder for specific experiences
-     - Create dated topic-specific files with format: `YYMMDD-HHMM-experience_summary.md`
-     - Use `date "+%y%m%d-%H%M"` to generate the date prefix
-     - File names should be explicit and succinct enough to understand content without opening
-     - Document specific issues encountered and their solutions
-     - Include detailed troubleshooting steps and explanations
-     - Examples: dependency conflicts, build failures, deployment issues, bug fixes
+* Store and maintain knowledge about:
+  1. Common commands (build, lint, test)
+  2. Code style preferences
+  3. Repository structure
+  4. Workflows and practices
+  5. Recurring issues and solutions
+  6. Any other repository-specific knowledge you learn
 
-* Content guidance:
-  - In repo.md: ONLY include generally useful information and links to detailed notes
-  - In memory files: Document specific issues, errors, and their solutions in detail
-  - Use descriptive filenames for memory files and organize by topic
+* IMPORTANT: ONLY LOG the information that would be helpful for different future tasks, for example, how to configure the setting, setup the repository. Do NOT add issue-specific information (e.g., what error you have ran into and how you fix it).
 
-* After tasks:
-  - Update appropriate memory files with new learnings
-  - Add links in repo.md to any new memory files created
+* When adding new information:
+  - Ensure it integrates nicely with existing knowledge in repo.md
+  - Reorganize the content if needed to maintain clarity and organization
+  - Group related information together under appropriate sections or headings
+
+* After completing tasks:
+  - Update repo.md with new learnings
+  - Suggest adding valuable information to repo.md when appropriate
   - Run lint and typecheck commands if available
+  - If commands are unknown, ask the user and suggest adding them to repo.md for future reference
 </MEMORY>
 
 <CODE_QUALITY>
