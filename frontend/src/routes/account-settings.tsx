@@ -467,7 +467,7 @@ function AccountSettings() {
                   <b>
                     {" "}
                     <a
-                      href="https://gitlab.com/-/user_settings/personal_access_tokens?name=openhands-app&scopes=api,read_user,read_repository"
+                      href="https://gitlab.com/-/user_settings/personal_access_tokens?name=openhands-app&scopes=api,read_user,read_repository,write_repository"
                       target="_blank"
                       className="underline underline-offset-2"
                       rel="noopener noreferrer"
