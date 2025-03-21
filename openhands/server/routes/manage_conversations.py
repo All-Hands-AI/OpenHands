@@ -272,13 +272,11 @@ async def auto_generate_title(conversation_id: str, user_id: str | None) -> str:
                 and isinstance(event, MessageAction)
                 and event.content
                 and event.content.strip()
-            ):  # Ensure content is not just whitespace
+            ):
                 first_user_message = event.content
                 break
 
         if first_user_message:
-            # Use the first 15 characters of the user message as the title
-            # Strip any leading/trailing whitespace
             first_user_message = first_user_message.strip()
             title = first_user_message[:15]
             if len(first_user_message) > 15:
@@ -286,7 +284,6 @@ async def auto_generate_title(conversation_id: str, user_id: str | None) -> str:
             logger.info(f'Generated title: {title}')
             return title
     except Exception as e:
-        # If anything goes wrong, use a fallback title
         logger.error(f'Error generating title: {str(e)}')
     return ''
 
