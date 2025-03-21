@@ -34,11 +34,12 @@ export type ApiSettings = {
   enable_default_condenser: boolean;
   enable_sound_notifications: boolean;
   user_consents_to_analytics: boolean | null;
+  provider_tokens: Record<Provider, string>;
   provider_tokens_set: Record<Provider, boolean>;
 };
 
 export type PostSettings = Settings & {
-  provider_tokens: Record<string, string>;
+  provider_tokens: Record<Provider, string>;
   unset_tokens: boolean;
   user_consents_to_analytics: boolean | null;
 };
