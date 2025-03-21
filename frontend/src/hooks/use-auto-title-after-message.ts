@@ -5,6 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useUpdateConversation } from "./mutation/use-update-conversation";
 import { useWsClient } from "#/context/ws-client-provider";
 import { RootState } from "#/store";
+import OpenHands from "#/api/open-hands";
 
 /**
  * Hook that monitors for the first agent message and triggers title generation.
@@ -40,11 +41,36 @@ export function useAutoTitleAfterMessage() {
           conversation: { title: "" },
         },
         {
-          onSuccess: () => {
-            // Invalidate the conversation query to refresh the title in the UI
-            queryClient.invalidateQueries({
-              queryKey: ["user", "conversation", conversationId],
-            });
+          onSuccess: async () => {
+            try {
+              // Fetch the updated conversation with the new title
+              const updatedConversation = await OpenHands.getConversation(conversationId);
+              
+              // Update the conversation in the cache directly
+              queryClient.setQueryData(
+                ["user", "conversation", conversationId],
+                updatedConversation
+              );
+              
+              // Also update the conversations list cache if it exists
+              queryClient.setQueriesData(
+                { queryKey: ["user", "conversations"] },
+                (oldData: any) => {
+                  if (!oldData) return oldData;
+                  
+                  return oldData.map((conversation: any) => 
+                    conversation.conversation_id === conversationId
+                      ? { ...conversation, title: updatedConversation.title }
+                      : conversation
+                  );
+                }
+              );
+            } catch (error) {
+              // If direct update fails, fall back to invalidating the query
+              queryClient.invalidateQueries({ 
+                queryKey: ["user", "conversation", conversationId] 
+              });
+            }
           },
         },
       );
