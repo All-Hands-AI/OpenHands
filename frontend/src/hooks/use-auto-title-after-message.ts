@@ -31,20 +31,9 @@ export function useAutoTitleAfterMessage() {
     (message) => message.sender === "assistant",
   );
 
-  // Debug log to see the current state
+  // Monitor state changes for debugging purposes
   useEffect(() => {
-    console.log(
-      `[useAutoTitleAfterMessage] Hook called for conversation ${conversationId}`,
-    );
-    console.log(`[useAutoTitleAfterMessage] Messages:`, messages);
-    console.log(
-      `[useAutoTitleAfterMessage] Has agent message:`,
-      hasAgentMessage,
-    );
-    console.log(
-      `[useAutoTitleAfterMessage] Already generated:`,
-      generatedTitlesRef.current.has(conversationId || ""),
-    );
+    // Debug logs removed for production
   }, [conversationId, messages, hasAgentMessage]);
 
   // Track when the conversation ID changes
@@ -54,9 +43,6 @@ export function useAutoTitleAfterMessage() {
   useEffect(() => {
     // This effect runs when the conversation ID changes
     lastConversationChangeTime.current = Date.now();
-    console.log(
-      `[useAutoTitleAfterMessage] Conversation changed to ${conversationId}, resetting timestamp`,
-    );
   }, [conversationId]);
 
   // Effect to trigger title generation after the first agent message
@@ -75,15 +61,7 @@ export function useAutoTitleAfterMessage() {
       (message) => message.sender === "user",
     );
 
-    console.log(`[useAutoTitleAfterMessage] Recent messages:`, recentMessages);
-    console.log(
-      `[useAutoTitleAfterMessage] Has recent agent message:`,
-      hasRecentAgentMessage,
-    );
-    console.log(
-      `[useAutoTitleAfterMessage] Has recent user message:`,
-      hasRecentUserMessage,
-    );
+    // Debug logs removed for production
 
     // Only proceed if we have a conversation ID, recent agent messages, recent user messages,
     // and haven't generated a title for this conversation yet
@@ -96,10 +74,7 @@ export function useAutoTitleAfterMessage() {
       // Mark this conversation as having a generated title
       generatedTitlesRef.current.add(conversationId);
 
-      // Debug log to help understand when title generation is triggered
-      console.log(
-        `[useAutoTitleAfterMessage] Generating title for conversation ${conversationId}`,
-      );
+      // Title generation triggered
 
       // Generate the title
       updateConversation(
