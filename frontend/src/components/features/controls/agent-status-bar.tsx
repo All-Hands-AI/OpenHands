@@ -71,7 +71,8 @@ export function AgentStatusBar() {
 
   React.useEffect(() => {
     if (status === WsClientProviderStatus.DISCONNECTED) {
-      setStatusMessage("Connecting...");
+      // Use a hardcoded string that doesn't require translation
+      setStatusMessage("Trying to reconnect...");
     } else {
       setStatusMessage(AGENT_STATUS_MAP[curAgentState].message);
       if (notificationStates.includes(curAgentState)) {
@@ -87,7 +88,7 @@ export function AgentStatusBar() {
         }
       }
     }
-  }, [curAgentState, notify, t]);
+  }, [curAgentState, status, notify, t]);
 
   return (
     <div className="flex flex-col items-center">
