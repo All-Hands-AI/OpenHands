@@ -2,13 +2,11 @@ import OpenHands from "#/api/open-hands";
 import { queryClient } from "#/query-client-config";
 
 /**
- * Auto-generates the conversation title by sending an empty title to the backend,
+ * Auto-generates a conversation title by sending an empty title to the backend,
  * which triggers auto-generation of a title based on the conversation content.
  *
  * This function will only trigger if the current title does NOT match the pattern
  * "Conversation [a-f0-9]+" (e.g., "Conversation 1a2b3").
- *
- * Uses React Query's invalidation to refresh the data instead of manually fetching.
  *
  * @param conversationId - The ID of the conversation to update
  * @returns A promise that resolves when the title has been updated
