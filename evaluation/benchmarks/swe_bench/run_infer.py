@@ -77,42 +77,44 @@ Your task is to make the minimal changes to non-test files in the /workspace/{wo
 Follow these steps in order to resolve the issue:
 
 0. READING: read the problem and reword it in clearer terms
-   - Hightlight message errors, method names, variables, file names, stack traces, and technical details.
-   - Explain the problem in clear terms.
-   - Enumerate the steps to reproduce the problem.
+   0.1 If there are code or config snippets. Express in words any best practices or conventions in them.
+   0.2 Hightlight message errors, method names, variables, file names, stack traces, and technical details.
+   0.3 Explain the problem in clear terms.
+   0.4 Enumerate the steps to reproduce the problem.
+   0.5 Hightlight any best practices to take into account when testing and fixing the issue
 
 1. EXPLORATION: find the files that are related to the problem and possible solutions
-   - Use `grep` to search for relevant methods, classes, keywords and error messages.
-   - Identify all files related to the problem statement.
-   - Propose the methods and files to fixe the issue and explain why.
-   - From the possible file locations, select the most likely location to fix the file.
+   1.1 Use `grep` to search for relevant methods, classes, keywords and error messages.
+   1.2 Identify all files related to the problem statement.
+   1.3 Propose the methods and files to fixe the issue and explain why.
+   1.4 From the possible file locations, select the most likely location to fix the issue.
 
 2. TEST CREATION: before implementing any fix, create a script to reproduce and verify the issue.
-   - Look at existing test files in the repository to understand the test format/structure
-   - Create a minimal reproduction script that reproduces the located issue
-   - Run the reproduction script to confirm you are reproducing the issue
-   - Adjust the reproduction script as necessary
+   2.1 Look at existing test files in the repository to understand the test format/structure.
+   2.2 Create a minimal reproduction script that reproduces the located issue.
+   2.3 Run the reproduction script to confirm you are reproducing the issue.
+   2.4 Adjust the reproduction script as necessary.
 
 3. ANALYSIS: Think carefully about the problem and propose 2-5 possible approaches to fix the issue.
-   - Analyze the root cause of the problem
-   - Consider trade-offs between different solutions
-   - Select the most promising approach and explain your reasoning
+   3.1 From the possible file and method locations, select the most likely location to fix the issue.
+   3.2 Consider trade-offs between different solutions
+   3.3 Select the most promising approach and explain your reasoning
 
-4. IMPLEMENTATION: Edit the source code to implement your chosen solution.
-   - Make minimal, focused changes to fix the issue
+4. IMMPLEMENTATION: Edit the source code to implement your chosen solution.
+   4.1 Make minimal, focused changes to fix the issue
 
 5. VERIFICATION: Test your implementation thoroughly.
-   - Run your reproduction script to verify the fix works
-   - Add edge cases to your test script to ensure comprehensive coverage
-   - Run existing tests related to the modified code to ensure you haven't broken anything
+   5.1 Run your reproduction script to verify the fix works
+   5.2 Add edge cases to your test script to ensure comprehensive coverage
+   5.3 Run existing tests related to the modified code to ensure you haven't broken anything
 
 6. FINAL REVIEW: Carefully re-read the problem description and compare your changes with the base commit {instance["base_commit"]}.
-   - Ensure you've fully addressed all requirements
-   - Run any tests in the repository related to:
+   6.1 Ensure you've fully addressed all requirements
+   6.2 Run any tests in the repository related to:
      * The issue you are fixing
      * The files you modified
      * The functions you changed
-   - If any tests fail, revise your implementation until all tests pass
+   6.3 If any tests fail, revise your implementation until all tests pass
 
 Be thorough in your exploration, testing, and reasoning. It's fine if your thinking process is lengthy - quality and completeness are more important than brevity.
 """
