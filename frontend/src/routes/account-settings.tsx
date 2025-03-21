@@ -65,10 +65,6 @@ function AccountSettings() {
         isCustomModel(resources.models, settings.LLM_MODEL) ||
         hasAdvancedSettingsSet({
           ...settings,
-          PROVIDER_TOKENS: {
-            github: "",
-            gitlab: "",
-          },
         })
       );
     }
@@ -77,9 +73,9 @@ function AccountSettings() {
   };
 
   const hasAppSlug = !!config?.APP_SLUG;
-  const isGithubTokenSet =
+  const isGitHubTokenSet =
     providerTokensSet.includes(ProviderOptions.github) || false;
-  const isGitlabTokenSet =
+  const isGitLabTokenSet =
     providerTokensSet.includes(ProviderOptions.gitlab) || false;
   const isLLMKeySet = settings?.LLM_API_KEY === "**********";
   const isAnalyticsEnabled = settings?.USER_CONSENTS_TO_ANALYTICS;
@@ -182,6 +178,10 @@ function AccountSettings() {
     const newSettings: Partial<PostSettings> = {
       ...DEFAULT_SETTINGS,
       LLM_API_KEY: "", // reset LLM API key
+      provider_tokens: {
+        github: "",
+        gitlab: "",
+      },
     };
 
     // we don't want the user to be able to modify these settings in SaaS
@@ -411,8 +411,12 @@ function AccountSettings() {
                   label="GitHub Token"
                   type="password"
                   className="w-[680px]"
-                  startContent={<KeyStatusIcon isSet={isGithubTokenSet} />}
-                  placeholder={isGithubTokenSet ? "**********" : ""}
+                  startContent={
+                    isGitHubTokenSet && (
+                      <KeyStatusIcon isSet={!!isGitHubTokenSet} />
+                    )
+                  }
+                  placeholder={isGitHubTokenSet ? "**********" : ""}
                 />
 
                 <p data-testId="github-token-help-anchor" className="text-xs">
@@ -449,8 +453,12 @@ function AccountSettings() {
                   label="GitLab Token"
                   type="password"
                   className="w-[680px]"
-                  startContent={<KeyStatusIcon isSet={isGitlabTokenSet} />}
-                  placeholder={isGitlabTokenSet ? "**********" : ""}
+                  startContent={
+                    isGitHubTokenSet && (
+                      <KeyStatusIcon isSet={!!isGitLabTokenSet} />
+                    )
+                  }
+                  placeholder={isGitLabTokenSet ? "**********" : ""}
                 />
 
                 <HelpLink

@@ -17,7 +17,7 @@ import { AuthProvider } from "#/context/auth-context";
 import SettingsScreen from "#/routes/settings";
 import * as AdvancedSettingsUtlls from "#/utils/has-advanced-settings-set";
 import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
-import { PostApiSettings } from "#/types/settings";
+import { PostApiSettings, Provider } from "#/types/settings";
 import * as ConsentHandlers from "#/utils/handle-capture-consent";
 import AccountSettings from "#/routes/account-settings";
 import * as FeatureFlags from "#/utils/feature-flags";
@@ -25,6 +25,11 @@ import * as FeatureFlags from "#/utils/feature-flags";
 const toggleAdvancedSettings = async (user: UserEvent) => {
   const advancedSwitch = await screen.findByTestId("advanced-settings-switch");
   await user.click(advancedSwitch);
+};
+
+const mock_provider_tokens_are_set: Record<Provider, boolean> = {
+  github: true,
+  gitlab: false,
 };
 
 describe("Settings Screen", () => {
@@ -125,6 +130,7 @@ describe("Settings Screen", () => {
     it("should set asterik placeholder if the GitHub token is set", async () => {
       getSettingsSpy.mockResolvedValue({
         ...MOCK_DEFAULT_USER_SETTINGS,
+        provider_tokens_set: mock_provider_tokens_are_set,
       });
 
       renderSettingsScreen();
@@ -138,6 +144,7 @@ describe("Settings Screen", () => {
     it("should render an indicator if the GitHub token is set", async () => {
       getSettingsSpy.mockResolvedValue({
         ...MOCK_DEFAULT_USER_SETTINGS,
+        provider_tokens_set: mock_provider_tokens_are_set,
       });
 
       renderSettingsScreen();
@@ -165,9 +172,10 @@ describe("Settings Screen", () => {
       expect(button).toBeDisabled();
     });
 
-    it("should render an enabled 'Disconnect Tokens' button if the GitHub token is set", async () => {
+    it("should render an enabled 'Disconnect Tokens' button if any Git tokens are set", async () => {
       getSettingsSpy.mockResolvedValue({
         ...MOCK_DEFAULT_USER_SETTINGS,
+        provider_tokens_set: mock_provider_tokens_are_set,
       });
 
       renderSettingsScreen();
@@ -185,6 +193,7 @@ describe("Settings Screen", () => {
 
       getSettingsSpy.mockResolvedValue({
         ...MOCK_DEFAULT_USER_SETTINGS,
+        provider_tokens_set: mock_provider_tokens_are_set,
       });
 
       renderSettingsScreen();
@@ -792,6 +801,10 @@ describe("Settings Screen", () => {
       expect(saveSettingsSpy).toHaveBeenCalledWith({
         ...mockCopy,
         llm_api_key: "", // reset as well
+        provider_tokens: {
+          github: "",
+          gitlab: "",
+        },
       });
       expect(screen.queryByTestId("reset-modal")).not.toBeInTheDocument();
     });
