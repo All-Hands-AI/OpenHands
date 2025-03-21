@@ -18,65 +18,64 @@ export function useAutoTitleAfterMessage() {
   const queryClient = useQueryClient();
   const { mutate: updateConversation } = useUpdateConversation();
 
-  const generatedTitlesRef = useRef<Set<string>>(new Set());
-
   const messages = useSelector((state: RootState) => state.chat.messages);
 
   useEffect(() => {
+    if (!conversationId || !messages || messages.length === 0) {
+      return;
+    }
     const hasAgentMessage = messages.some(
       (message) => message.sender === "assistant",
     );
     const hasUserMessage = messages.some(
       (message) => message.sender === "user",
     );
-
-    console.log('triggering', hasAgentMessage, hasUserMessage, conversationId, generatedTitlesRef.current.has(conversationId));
-
-    if (
-      hasAgentMessage &&
-      hasUserMessage &&
-      conversationId &&
-      !generatedTitlesRef.current.has(conversationId)
-    ) {
-      generatedTitlesRef.current.add(conversationId);
-
-      updateConversation(
-        {
-          id: conversationId,
-          conversation: { title: "" },
-        },
-        {
-          onSuccess: async () => {
-            try {
-              const updatedConversation =
-                await OpenHands.getConversation(conversationId);
-
-              queryClient.setQueryData(
-                ["user", "conversation", conversationId],
-                updatedConversation,
-              );
-
-              queryClient.setQueriesData(
-                { queryKey: ["user", "conversations"] },
-                (oldData: unknown) => {
-                  if (!oldData) return oldData;
-
-                  return (oldData as Array<{ conversation_id: string }>).map(
-                    (conversation) =>
-                      conversation.conversation_id === conversationId
-                        ? { ...conversation, title: updatedConversation.title }
-                        : conversation,
-                  );
-                },
-              );
-            } catch (error) {
-              queryClient.invalidateQueries({
-                queryKey: ["user", "conversation", conversationId],
-              });
-            }
-          },
-        },
-      );
+    if (!hasAgentMessage || !hasUserMessage) {
+      return;
     }
+    const currentConversation = {title: ''}; // FIXME
+    if (currentConversation.title && !currentConversation.title.startsWith("Conversation ")) {
+      return
+    }
+
+    console.log('triggered!');
+
+    updateConversation(
+      {
+        id: conversationId,
+        conversation: { title: "" },
+      },
+      {
+        onSuccess: async () => {
+          try {
+            const updatedConversation =
+              await OpenHands.getConversation(conversationId);
+
+            queryClient.setQueryData(
+              ["user", "conversation", conversationId],
+              updatedConversation,
+            );
+
+            queryClient.setQueriesData(
+              { queryKey: ["user", "conversations"] },
+              (oldData: unknown) => {
+                if (!oldData) return oldData;
+
+                return (oldData as Array<{ conversation_id: string }>).map(
+                  (conversation) =>
+                    conversation.conversation_id === conversationId
+                      ? { ...conversation, title: updatedConversation.title }
+                      : conversation,
+                );
+              },
+            );
+          } catch (error) {
+            queryClient.invalidateQueries({
+              queryKey: ["user", "conversation", conversationId],
+            });
+          }
+        },
+      },
+    );
   }, [messages, conversationId, updateConversation, queryClient]);
 }
