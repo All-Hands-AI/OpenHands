@@ -35,7 +35,7 @@ function getEntryPoint(
 }
 
 export function ChatInterface() {
-  const { isLoadingMessages } = useWsClient();
+  const { send, isLoadingMessages } = useWsClient();
   const dispatch = useDispatch();
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const { scrollDomToBottom, onChatBodyScroll, hitBottom } =
@@ -44,8 +44,7 @@ export function ChatInterface() {
   const { messages } = useSelector((state: RootState) => state.chat);
   const { curAgentState } = useSelector((state: RootState) => state.agent);
 
-  // Use our custom hook that wraps the WebSocket send function
-  const send = useAutoTitleAfterMessage();
+  useAutoTitleAfterMessage();
 
   const [feedbackPolarity, setFeedbackPolarity] = React.useState<
     "positive" | "negative"
