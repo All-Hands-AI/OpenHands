@@ -6,7 +6,8 @@ import { openHands } from "#/api/open-hands-axios";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
 import { RootState } from "#/store";
 import { useConversation } from "#/context/conversation-context";
-import { useActionEvents } from "#/hooks/use-action-events";
+import { useActionSubscription } from "#/hooks/use-action-subscription";
+import ActionType from "#/types/action-type";
 
 export const useActiveHost = () => {
   const { curAgentState } = useSelector((state: RootState) => state.agent);
@@ -53,7 +54,7 @@ export const useActiveHost = () => {
   const appsData = apps.map((app) => app.data);
 
   // Subscribe to "run" action events and test URLs when a new command is run
-  useActionEvents("run", () => {
+  useActionSubscription(ActionType.RUN, () => {
     if (data.hosts.length > 0) {
       data.hosts.forEach((host) => {
         queryClient.invalidateQueries({

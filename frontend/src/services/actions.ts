@@ -18,6 +18,7 @@ import {
 } from "#/types/message";
 import { handleObservationMessage } from "./observations";
 import { appendInput } from "#/state/command-slice";
+import { notifyActionSubscribers } from "#/hooks/use-action-subscription";
 
 const messageActions = {
   [ActionType.BROWSE]: (message: ActionMessage) => {
@@ -84,6 +85,9 @@ export function handleActionMessage(message: ActionMessage) {
   if (message.args?.hidden) {
     return;
   }
+
+  // Notify subscribers about this action
+  notifyActionSubscribers(message);
 
   if (message.action === ActionType.RUN) {
     store.dispatch(appendInput(message.args.command));
