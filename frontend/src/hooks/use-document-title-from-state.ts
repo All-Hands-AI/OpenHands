@@ -1,5 +1,4 @@
 import { useEffect, useRef } from "react";
-import { useParams } from "react-router";
 import { useUserConversation } from "./query/use-user-conversation";
 
 /**
@@ -9,10 +8,7 @@ import { useUserConversation } from "./query/use-user-conversation";
  * @param suffix Optional suffix to append to the title (default: "OpenHands")
  */
 export function useDocumentTitleFromState(suffix = "OpenHands") {
-  const params = useParams();
-  const { data: conversation } = useUserConversation(
-    params.conversationId ?? null,
-  );
+  const { data: conversation } = useUserConversation();
   const lastValidTitleRef = useRef<string | null>(null);
 
   useEffect(() => {

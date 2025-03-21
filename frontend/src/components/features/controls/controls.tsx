@@ -1,4 +1,3 @@
-import { useParams } from "react-router";
 import React, { useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { AgentControlBar } from "./agent-control-bar";
@@ -14,11 +13,8 @@ interface ControlsProps {
 }
 
 export function Controls({ setSecurityOpen, showSecurityLock }: ControlsProps) {
-  const params = useParams();
   const dispatch = useDispatch();
-  const { data: conversation } = useUserConversation(
-    params.conversationId ?? null,
-  );
+  const { data: conversation } = useUserConversation();
 
   useEffect(() => {
     if (conversation) {

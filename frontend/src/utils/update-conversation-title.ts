@@ -1,5 +1,5 @@
-import { QueryClient } from "@tanstack/react-query";
 import OpenHands from "#/api/open-hands";
+import { queryClient } from "#/query-client-config";
 
 /**
  * Updates the conversation title by sending an empty title to the backend,
@@ -14,9 +14,6 @@ export async function updateConversationTitle(
   conversationId: string,
 ): Promise<void> {
   try {
-    // Create a query client for cache invalidation
-    const queryClient = new QueryClient();
-
     // Send empty title to trigger auto-generation on the backend
     await OpenHands.updateUserConversation(conversationId, { title: "" });
 
@@ -29,8 +26,6 @@ export async function updateConversationTitle(
     });
   } catch (error) {
     console.error("Failed to update conversation title:", error);
-    // Create a query client for cache invalidation on error
-    const queryClient = new QueryClient();
 
     // Invalidate queries on error
     queryClient.invalidateQueries({
