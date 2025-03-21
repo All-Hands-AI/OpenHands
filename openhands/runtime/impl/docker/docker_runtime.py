@@ -251,17 +251,32 @@ class DockerRuntime(ActionExecutionClient):
                 self.config.workspace_mount_path: {
                     'bind': self.config.workspace_mount_path_in_sandbox,
                     'mode': 'rw',
-                }
+                },
+                # Add Docker socket mount to allow Docker-in-Docker
+                '/var/run/docker.sock': {
+                    'bind': '/var/run/docker.sock',
+                    'mode': 'rw',
+                },
             }
             logger.debug(f'Mount dir: {self.config.workspace_mount_path}')
         else:
             logger.debug(
                 'Mount dir is not set, will not mount the workspace directory to the container'
             )
-            volumes = None
+            # Even without workspace mount, we still want to mount the Docker socket
+            volumes = {
+                '/var/run/docker.sock': {
+                    'bind': '/var/run/docker.sock',
+                    'mode': 'rw',
+                }
+            }
         self.log(
             'debug',
             f'Sandbox workspace: {self.config.workspace_mount_path_in_sandbox}',
+        )
+        self.log(
+            'debug',
+            'Docker socket mounted: /var/run/docker.sock -> /var/run/docker.sock',
         )
 
         command = get_action_execution_server_startup_command(
@@ -343,6 +358,10 @@ class DockerRuntime(ActionExecutionClient):
         self.log(
             'debug',
             f'attached to container: {self.container_name} {self._container_port} {self.api_url}',
+        )
+        self.log(
+            'debug',
+            'Docker socket should be mounted: /var/run/docker.sock -> /var/run/docker.sock',
         )
 
     @tenacity.retry(
