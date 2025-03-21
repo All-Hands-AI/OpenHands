@@ -33,6 +33,7 @@ class Repository(BaseModel):
     full_name: str
     stargazers_count: int | None = None
     link_header: str | None = None
+    pushed_at: str | None = None  # ISO 8601 format date string
 
 
 class AuthenticationError(ValueError):
@@ -52,16 +53,17 @@ class GitService(Protocol):
 
     def __init__(
         self,
-        user_id: str | None,
-        token: SecretStr | None,
-        external_auth_token: SecretStr | None,
+        user_id: str | None = None,
+        token: SecretStr | None = None,
+        external_auth_id: str | None = None,
+        external_auth_token: SecretStr | None = None,
         external_token_manager: bool = False,
     ) -> None:
         """Initialize the service with authentication details"""
         ...
 
-    async def get_latest_token(self) -> SecretStr:
-        """Get latest working token of the users"""
+    async def get_latest_token(self) -> SecretStr | None:
+        """Get latest working token of the user"""
         ...
 
     async def get_user(self) -> User:
@@ -87,3 +89,6 @@ class GitService(Protocol):
     ) -> list[Repository]:
         """Get repositories for the authenticated user"""
         ...
+
+    async def does_repo_exist(self, repository: str) -> bool:
+        """Check if a repository exists for the user"""

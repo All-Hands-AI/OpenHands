@@ -27,8 +27,9 @@ import {
   displayErrorToast,
   displaySuccessToast,
 } from "#/utils/custom-toast-handlers";
-import { PostSettings } from "#/types/settings";
+import { PostSettings, ProviderOptions } from "#/types/settings";
 import { HIDE_LLM_SETTINGS } from "#/utils/feature-flags";
+import { useAuth } from "#/context/auth-context";
 
 const REMOTE_RUNTIME_OPTIONS = [
   { key: 1, label: "1x (2 core, 8G)" },
@@ -50,6 +51,7 @@ function AccountSettings() {
   } = useAIConfigOptions();
   const { mutate: saveSettings } = useSaveSettings();
   const { handleLogout } = useAppLogout();
+  const { providerTokensSet, providersAreSet } = useAuth();
 
   const isFetching = isFetchingSettings || isFetchingResources;
   const isSuccess = isSuccessfulSettings && isSuccessfulResources;
@@ -65,7 +67,6 @@ function AccountSettings() {
         isCustomModel(resources.models, settings.LLM_MODEL) ||
         hasAdvancedSettingsSet({
           ...settings,
-          PROVIDER_TOKENS: settings.PROVIDER_TOKENS || {},
         })
       );
     }
@@ -74,7 +75,10 @@ function AccountSettings() {
   };
 
   const hasAppSlug = !!config?.APP_SLUG;
-  const isGitHubTokenSet = settings?.GITHUB_TOKEN_IS_SET;
+  const isGitHubTokenSet =
+    providerTokensSet.includes(ProviderOptions.github) || false;
+  const isGitLabTokenSet =
+    providerTokensSet.includes(ProviderOptions.gitlab) || false;
   const [secrets, setSecrets] = React.useState(
     Object.entries(settings?.CUSTOM_SECRETS || {}),
   );
@@ -127,6 +131,8 @@ function AccountSettings() {
         ? undefined // don't update if it's already set
         : ""); // reset if it's first time save to avoid 500 error
 
+    const githubToken = formData.get("github-token-input")?.toString();
+    const gitlabToken = formData.get("gitlab-token-input")?.toString();
     // we don't want the user to be able to modify these settings in SaaS
     const finalLlmModel = shouldHandleSpecialSaasCase
       ? undefined
@@ -136,15 +142,14 @@ function AccountSettings() {
       : llmBaseUrl;
     const finalLlmApiKey = shouldHandleSpecialSaasCase ? undefined : llmApiKey;
 
-    const githubToken = formData.get("github-token-input")?.toString();
     const newSettings = {
-      github_token: githubToken,
-      provider_tokens: githubToken
-        ? {
-            github: githubToken,
-            gitlab: "",
-          }
-        : undefined,
+      provider_tokens:
+        githubToken || gitlabToken
+          ? {
+              github: githubToken || "",
+              gitlab: gitlabToken || "",
+            }
+          : undefined,
       LANGUAGE: languageValue,
       user_consents_to_analytics: userConsentsToAnalytics,
       ENABLE_DEFAULT_CONDENSER: enableMemoryCondenser,
@@ -178,6 +183,10 @@ function AccountSettings() {
     const newSettings: Partial<PostSettings> = {
       ...DEFAULT_SETTINGS,
       LLM_API_KEY: "", // reset LLM API key
+      provider_tokens: {
+        github: "",
+        gitlab: "",
+      },
     };
 
     // we don't want the user to be able to modify these settings in SaaS
@@ -405,7 +414,7 @@ function AccountSettings() {
 
           <section className="flex flex-col gap-6">
             <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">
-              GitHub Settings
+              Git Provider Settings
             </h2>
             {isSaas && hasAppSlug && (
               <Link
@@ -433,6 +442,7 @@ function AccountSettings() {
                   }
                   placeholder={isGitHubTokenSet ? "**********" : ""}
                 />
+
                 <p data-testId="github-token-help-anchor" className="text-xs">
                   {" "}
                   Generate a token on{" "}
@@ -460,6 +470,48 @@ function AccountSettings() {
                   </b>
                   .
                 </p>
+
+                <SettingsInput
+                  testId="gitlab-token-input"
+                  name="gitlab-token-input"
+                  label="GitLab Token"
+                  type="password"
+                  className="w-[680px]"
+                  startContent={
+                    isGitLabTokenSet && (
+                      <KeyStatusIcon isSet={!!isGitLabTokenSet} />
+                    )
+                  }
+                  placeholder={isGitLabTokenSet ? "**********" : ""}
+                />
+
+                <p data-testId="gitlab-token-help-anchor" className="text-xs">
+                  {" "}
+                  Generate a token on{" "}
+                  <b>
+                    {" "}
+                    <a
+                      href="https://gitlab.com/-/user_settings/personal_access_tokens?name=openhands-app&scopes=api,read_user,read_repository,write_repository"
+                      target="_blank"
+                      className="underline underline-offset-2"
+                      rel="noopener noreferrer"
+                    >
+                      GitLab
+                    </a>{" "}
+                  </b>
+                  or see the{" "}
+                  <b>
+                    <a
+                      href="https://docs.gitlab.com/user/profile/personal_access_tokens/"
+                      target="_blank"
+                      className="underline underline-offset-2"
+                      rel="noopener noreferrer"
+                    >
+                      documentation
+                    </a>
+                  </b>
+                  .
+                </p>
               </>
             )}
 
@@ -467,9 +519,9 @@ function AccountSettings() {
               type="button"
               variant="secondary"
               onClick={handleLogout}
-              isDisabled={!isGitHubTokenSet}
+              isDisabled={!providersAreSet}
             >
-              Disconnect from GitHub
+              Disconnect Tokens
             </BrandButton>
           </section>
 

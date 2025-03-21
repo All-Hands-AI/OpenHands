@@ -9,6 +9,7 @@ from openhands.server.auth import get_provider_tokens, get_user_id
 from openhands.server.settings import GETSettingsModel, POSTSettingsModel, Settings
 from openhands.server.shared import SettingsStoreImpl, config
 
+
 app = APIRouter(prefix='/api')
 
 
@@ -24,10 +25,24 @@ async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
                 content={'error': 'Settings not found'},
             )
 
-        github_token_is_set = bool(user_id) or bool(get_provider_tokens(request))
+        provider_tokens_set = {}
+        
+        if bool(user_id):
+            provider_tokens_set[ProviderType.GITHUB.value] = True
+        
+        provider_tokens = get_provider_tokens(request)
+        if provider_tokens:
+            all_provider_types = [provider.value for provider in ProviderType]
+            provider_tokens_types = [provider.value for provider in provider_tokens]
+            for provider_type in all_provider_types:
+                if provider_type in provider_tokens_types:
+                    provider_tokens_set[provider_type] = True
+                else:
+                    provider_tokens_set[provider_type] = False
+
         settings_with_token_data = GETSettingsModel(
             **settings.model_dump(exclude='secrets_store'),
-            github_token_is_set=github_token_is_set,
+            provider_tokens_set=provider_tokens_set,
         )
 
         settings_with_token_data.llm_api_key = settings.llm_api_key
@@ -90,8 +105,8 @@ async def store_settings(
                 )
 
             # Handle token updates immutably
-            if settings.unset_github_token:
-                settings = settings.model_copy(update={'secrets_store': SecretStore()})
+            if settings.unset_tokens:
+                settings = settings.model_copy(update={"secrets_store": SecretStore()})
 
             else:  # Only merge if not unsetting tokens
                 if settings.provider_tokens:

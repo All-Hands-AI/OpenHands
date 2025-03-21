@@ -11,25 +11,28 @@ import { I18nKey } from "#/i18n/declaration";
 import { setSelectedRepository } from "#/state/initial-query-slice";
 import { useConfig } from "#/hooks/query/use-config";
 import { sanitizeQuery } from "#/utils/sanitize-query";
+import { Provider } from "#/types/settings";
 
-interface GitHubRepositorySelectorProps {
+interface GitRepositorySelectorProps {
   onInputChange: (value: string) => void;
   onSelect: () => void;
-  userRepositories: GitHubRepository[];
-  publicRepositories: GitHubRepository[];
+  userRepositories: GitRepository[];
+  publicRepositories: GitRepository[];
+  selectedProvider: Provider;
 }
 
-export function GitHubRepositorySelector({
+export function GitRepositorySelector({
   onInputChange,
   onSelect,
   userRepositories,
   publicRepositories,
-}: GitHubRepositorySelectorProps) {
+  selectedProvider,
+}: GitRepositorySelectorProps) {
   const { t } = useTranslation();
   const { data: config } = useConfig();
   const [selectedKey, setSelectedKey] = React.useState<string | null>(null);
 
-  const allRepositories: GitHubRepository[] = [
+  const allRepositories: GitRepository[] = [
     ...publicRepositories.filter(
       (repo) => !userRepositories.find((r) => r.id === repo.id),
     ),
@@ -58,8 +61,16 @@ export function GitHubRepositorySelector({
     <Autocomplete
       data-testid="github-repo-selector"
       name="repo"
-      aria-label="GitHub Repository"
-      placeholder={t(I18nKey.LANDING$SELECT_REPO)}
+      aria-label={
+        selectedProvider === "gitlab"
+          ? "GitLab Repository"
+          : "GitHub Repository"
+      }
+      placeholder={t(
+        selectedProvider === "gitlab"
+          ? I18nKey.LANDING$SELECT_GITLAB_REPO
+          : I18nKey.LANDING$SELECT_GITHUB_REPO,
+      )}
       isVirtualized={false}
       selectedKey={selectedKey}
       inputProps={{

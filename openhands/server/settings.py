@@ -33,6 +33,8 @@ class Settings(BaseModel):
     enable_default_condenser: bool = False
     enable_sound_notifications: bool = False
     user_consents_to_analytics: bool | None = None
+    sandbox_base_container_image: str | None = None
+    sandbox_runtime_container_image: str | None = None
 
     model_config = {
         'validate_assignment': True,
@@ -105,7 +107,7 @@ class POSTSettingsModel(Settings):
     Settings for POST requests
     """
 
-    unset_github_token: bool | None = None
+    unset_tokens: bool | None = None
     # Override provider_tokens to accept string tokens from frontend
     provider_tokens: dict[str, str] = {}
 
@@ -119,4 +121,4 @@ class GETSettingsModel(Settings):
     Settings with additional token data for the frontend
     """
 
-    github_token_is_set: bool | None = None
+    provider_tokens_set: dict[str, bool] | None = None

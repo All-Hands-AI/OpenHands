@@ -3,15 +3,15 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, Body, Request, status
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, SecretStr
+from pydantic import BaseModel
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.message import MessageAction
-from openhands.integrations.github.github_service import GithubServiceImpl
-from openhands.integrations.provider import ProviderType
+from openhands.integrations.provider import (
+    PROVIDER_TOKEN_TYPE,
+)
 from openhands.runtime import get_runtime_cls
 from openhands.server.auth import (
-    get_access_token,
     get_github_user_id,
     get_provider_tokens,
     get_user_id,
@@ -44,7 +44,7 @@ class InitSessionRequest(BaseModel):
 
 async def _create_new_conversation(
     user_id: str | None,
-    token: SecretStr | None,
+    git_provider_tokens: PROVIDER_TOKEN_TYPE | None,
     selected_repository: str | None,
     selected_branch: str | None,
     initial_user_msg: str | None,
@@ -78,7 +78,7 @@ async def _create_new_conversation(
         logger.warn('Settings not present, not starting conversation')
         raise MissingSettingsError('Settings not found')
 
-    session_init_args['provider_token'] = token
+    session_init_args['git_provider_tokens'] = git_provider_tokens
     session_init_args['custom_secrets'] = settings.secrets_store.custom_secrets
     session_init_args['selected_repository'] = selected_repository
     session_init_args['selected_branch'] = selected_branch
@@ -147,19 +147,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     using the returned conversation ID.
     """
     logger.info('Initializing new conversation')
-    user_id = None
-    github_token = None
     provider_tokens = get_provider_tokens(request)
-    if provider_tokens and ProviderType.GITHUB in provider_tokens:
-        token = provider_tokens[ProviderType.GITHUB]
-        user_id = token.user_id
-        gh_client = GithubServiceImpl(
-            user_id=user_id,
-            external_auth_token=get_access_token(request),
-            token=token.token,
-        )
-        github_token = await gh_client.get_latest_token()
-
     selected_repository = data.selected_repository
     selected_branch = data.selected_branch
     initial_user_msg = data.initial_user_msg
@@ -169,7 +157,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
         # Create conversation with initial message
         conversation_id = await _create_new_conversation(
             get_user_id(request),
-            github_token,
+            provider_tokens,
             selected_repository,
             selected_branch,
             initial_user_msg,

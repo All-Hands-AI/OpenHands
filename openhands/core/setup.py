@@ -15,6 +15,7 @@ from openhands.core.config import (
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.events.event import Event
+from openhands.integrations.provider import ProviderToken, ProviderType, SecretStore
 from openhands.llm.llm import LLM
 from openhands.memory.memory import Memory
 from openhands.microagent.microagent import BaseMicroAgent
@@ -22,6 +23,7 @@ from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
 from openhands.security import SecurityAnalyzer, options
 from openhands.storage import get_file_store
+from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync
 
 
 def create_runtime(
@@ -101,13 +103,23 @@ def initialize_repository_for_runtime(
     github_token = (
         SecretStr(os.environ.get('GITHUB_TOKEN')) if not github_token else github_token
     )
+
+    secret_store = (
+        SecretStore(
+            provider_tokens={
+                ProviderType.GITHUB: ProviderToken(token=SecretStr(github_token))
+            }
+        )
+        if github_token
+        else None
+    )
+    provider_tokens = secret_store.provider_tokens if secret_store else None
+
     repo_directory = None
-    if selected_repository and github_token:
+    if selected_repository and provider_tokens:
         logger.debug(f'Selected repository {selected_repository}.')
-        repo_directory = runtime.clone_repo(
-            github_token,
-            selected_repository,
-            None,
+        repo_directory = call_async_from_sync(
+            runtime.clone_repo, GENERAL_TIMEOUT, github_token, selected_repository, None
         )
 
     return repo_directory

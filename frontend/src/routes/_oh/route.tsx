@@ -59,7 +59,7 @@ export default function MainApp() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [searchParams] = useSearchParams();
-  const { githubTokenIsSet } = useAuth();
+  const { providersAreSet } = useAuth();
   const { data: settings } = useSettings();
   const { error, isFetching } = useBalance();
   const { migrateUserConsent } = useMigrateUserConsent();
@@ -132,7 +132,7 @@ export default function MainApp() {
 
       {renderWaitlistModal && (
         <WaitlistModal
-          ghTokenIsSet={githubTokenIsSet}
+          ghTokenIsSet={providersAreSet}
           githubAuthUrl={gitHubAuthUrl}
         />
       )}
