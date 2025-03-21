@@ -5,6 +5,7 @@ import { AgentStatusBar } from "./agent-status-bar";
 import { SecurityLock } from "./security-lock";
 import { useUserConversation } from "#/hooks/query/use-user-conversation";
 import { ConversationCard } from "../conversation-panel/conversation-card";
+import { useDocumentTitle } from "#/hooks/use-document-title";
 
 interface ControlsProps {
   setSecurityOpen: (isOpen: boolean) => void;
@@ -16,6 +17,9 @@ export function Controls({ setSecurityOpen, showSecurityLock }: ControlsProps) {
   const { data: conversation } = useUserConversation(
     params.conversationId ?? null,
   );
+
+  // Update document title when conversation title changes
+  useDocumentTitle(conversation?.title);
 
   return (
     <div className="flex items-center justify-between">
