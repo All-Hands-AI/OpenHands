@@ -19,7 +19,7 @@ import {
 } from "#/types/message";
 import { handleObservationMessage } from "./observations";
 import { appendInput } from "#/state/command-slice";
-import { autogenerateConversationTitle } from "#/utils/update-conversation-title";
+import { autogenerateConversationTitle } from "#/utils/autogenerate-conversation-title";
 
 const messageActions = {
   [ActionType.BROWSE]: (message: ActionMessage) => {

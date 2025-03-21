@@ -5,7 +5,7 @@ import { queryClient } from "#/query-client-config";
  * Auto-generates the conversation title by sending an empty title to the backend,
  * which triggers auto-generation of a title based on the conversation content.
  *
- * This function will only trigger if the current title matches the default pattern
+ * This function will only trigger if the current title does NOT match the pattern
  * "Conversation [a-f0-9]+" (e.g., "Conversation 1a2b3").
  *
  * Uses React Query's invalidation to refresh the data instead of manually fetching.
@@ -28,7 +28,8 @@ export async function autogenerateConversationTitle(
     // Check if the current title matches the default pattern "Conversation [a-f0-9]+"
     const defaultTitlePattern = /^Conversation [a-f0-9]+$/;
 
-    if (!conversation.title || defaultTitlePattern.test(conversation.title)) {
+    // Only auto-generate title if it doesn't match the default pattern
+    if (conversation.title && !defaultTitlePattern.test(conversation.title)) {
       // Send empty title to trigger auto-generation on the backend
       await OpenHands.updateUserConversation(conversationId, { title: "" });
 
