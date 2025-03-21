@@ -601,9 +601,10 @@ class AgentController:
         """
         agent_cls: Type[Agent] = Agent.get_cls(action.agent)
         agent_config = self.agent_configs.get(action.agent, self.agent.config)
-        
-        # Use the existing LLM directly instead of creating a new one
-        delegate_agent = agent_cls(llm=self.agent.llm, config=agent_config)
+        llm_config = self.agent_to_llm_config.get(action.agent, self.agent.llm.config)
+        # Create a new LLM instance for the delegate with its own config
+        llm = LLM(config=llm_config, retry_listener=self._notify_on_llm_retry)
+        delegate_agent = agent_cls(llm=llm, config=agent_config)
         state = State(
             inputs=action.inputs or {},
             local_iteration=0,
@@ -617,7 +618,7 @@ class AgentController:
         )
         self.log(
             'debug',
-            f'start delegate, creating agent {delegate_agent.name} using existing LLM {self.agent.llm}',
+            f'start delegate, creating agent {delegate_agent.name} using LLM {llm}',
         )
 
         # Create the delegate with is_delegate=True so it does NOT subscribe directly
