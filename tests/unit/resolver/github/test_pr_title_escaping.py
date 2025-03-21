@@ -87,8 +87,8 @@ def test_pr_title_with_quotes(monkeypatch):
         def raise_for_status(self):
             pass
 
-    monkeypatch.setattr('requests.post', mock_post)
-    monkeypatch.setattr('requests.get', lambda *args, **kwargs: MockGetResponse())
+    monkeypatch.setattr('httpx.post', mock_post)
+    monkeypatch.setattr('httpx.get', lambda *args, **kwargs: MockGetResponse())
     monkeypatch.setattr(
         'openhands.resolver.interfaces.github.GithubIssueHandler.branch_exists',
         lambda *args, **kwargs: False,

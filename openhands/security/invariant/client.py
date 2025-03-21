@@ -1,8 +1,7 @@
 import time
 from typing import Any, Union
 
-import requests
-from requests.exceptions import ConnectionError, HTTPError, Timeout
+import httpx
 
 
 class InvariantClient:
@@ -23,17 +22,17 @@ class InvariantClient:
         while elapsed < self.timeout:
             try:
                 if session_id:
-                    response = requests.get(
+                    response = httpx.get(
                         f'{self.server}/session/new?session_id={session_id}', timeout=60
                     )
                 else:
-                    response = requests.get(f'{self.server}/session/new', timeout=60)
+                    response = httpx.get(f'{self.server}/session/new', timeout=60)
                 response.raise_for_status()
                 return response.json().get('id'), None
-            except (ConnectionError, Timeout):
+            except (httpx.NetworkError, httpx.TimeoutException):
                 elapsed += 1
                 time.sleep(1)
-            except HTTPError as http_err:
+            except httpx.HTTPError as http_err:
                 return None, http_err
             except Exception as err:
                 return None, err
@@ -41,11 +40,11 @@ class InvariantClient:
 
     def close_session(self) -> Union[None, Exception]:
         try:
-            response = requests.delete(
+            response = httpx.delete(
                 f'{self.server}/session/?session_id={self.session_id}', timeout=60
             )
             response.raise_for_status()
-        except (ConnectionError, Timeout, HTTPError) as err:
+        except (ConnectionError, httpx.TimeoutException, httpx.HTTPError) as err:
             return err
         return None
 
@@ -56,25 +55,25 @@ class InvariantClient:
 
         def _create_policy(self, rule: str) -> tuple[str | None, Exception | None]:
             try:
-                response = requests.post(
+                response = httpx.post(
                     f'{self.server}/policy/new?session_id={self.session_id}',
                     json={'rule': rule},
                     timeout=60,
                 )
                 response.raise_for_status()
                 return response.json().get('policy_id'), None
-            except (ConnectionError, Timeout, HTTPError) as err:
+            except (ConnectionError, httpx.TimeoutException, httpx.HTTPError) as err:
                 return None, err
 
         def get_template(self) -> tuple[str | None, Exception | None]:
             try:
-                response = requests.get(
+                response = httpx.get(
                     f'{self.server}/policy/template',
                     timeout=60,
                 )
                 response.raise_for_status()
                 return response.json(), None
-            except (ConnectionError, Timeout, HTTPError) as err:
+            except (ConnectionError, httpx.TimeoutException, httpx.HTTPError) as err:
                 return None, err
 
         def from_string(self, rule: str) -> 'InvariantClient._Policy':
@@ -86,14 +85,14 @@ class InvariantClient:
 
         def analyze(self, trace: list[dict]) -> Union[Any, Exception]:
             try:
-                response = requests.post(
+                response = httpx.post(
                     f'{self.server}/policy/{self.policy_id}/analyze?session_id={self.session_id}',
                     json={'trace': trace},
                     timeout=60,
                 )
                 response.raise_for_status()
                 return response.json(), None
-            except (ConnectionError, Timeout, HTTPError) as err:
+            except (ConnectionError, httpx.TimeoutException, httpx.HTTPError) as err:
                 return None, err
 
     class _Monitor:
@@ -104,14 +103,14 @@ class InvariantClient:
 
         def _create_monitor(self, rule: str) -> tuple[str | None, Exception | None]:
             try:
-                response = requests.post(
+                response = httpx.post(
                     f'{self.server}/monitor/new?session_id={self.session_id}',
                     json={'rule': rule},
                     timeout=60,
                 )
                 response.raise_for_status()
                 return response.json().get('monitor_id'), None
-            except (ConnectionError, Timeout, HTTPError) as err:
+            except (ConnectionError, httpx.TimeoutException, httpx.HTTPError) as err:
                 return None, err
 
         def from_string(self, rule: str) -> 'InvariantClient._Monitor':
@@ -126,12 +125,12 @@ class InvariantClient:
             self, past_events: list[dict], pending_events: list[dict]
         ) -> Union[Any, Exception]:
             try:
-                response = requests.post(
+                response = httpx.post(
                     f'{self.server}/monitor/{self.monitor_id}/check?session_id={self.session_id}',
                     json={'past_events': past_events, 'pending_events': pending_events},
                     timeout=60,
                 )
                 response.raise_for_status()
                 return response.json(), None
-            except (ConnectionError, Timeout, HTTPError) as err:
+            except (ConnectionError, httpx.TimeoutException, httpx.HTTPError) as err:
                 return None, err

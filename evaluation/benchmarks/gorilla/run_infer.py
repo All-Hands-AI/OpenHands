@@ -2,8 +2,8 @@ import asyncio
 import json
 import os
 
+import httpx
 import pandas as pd
-import requests
 
 from evaluation.benchmarks.gorilla.utils import encode_question, get_data_for_hub
 from evaluation.utils.shared import (
@@ -182,7 +182,7 @@ if __name__ == '__main__':
     # Check if the file exists
     if not os.path.exists(file_path):
         url = 'https://raw.githubusercontent.com/ShishirPatil/gorilla/main/eval/eval-scripts/codebleu/parser/my-languages.so'
-        response = requests.get(url)
+        response = httpx.get(url)
         with open(file_path, 'wb') as f:
             f.write(response.content)
     else:

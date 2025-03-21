@@ -1,8 +1,8 @@
 import logging
 import re
 
+import httpx
 import openai
-import requests.exceptions
 from openai import OpenAI
 from retry import retry
 
@@ -101,7 +101,7 @@ class Q20Game:
     @retry(
         (
             openai.Timeout,
-            requests.exceptions.ReadTimeout,
+            httpx.TimeoutException,
             openai.RateLimitError,
             openai.APIError,
             openai.APIConnectionError,
@@ -161,7 +161,7 @@ class Q20GameCelebrity(Q20Game):
     @retry(
         (
             openai.Timeout,
-            requests.exceptions.ReadTimeout,
+            httpx.TimeoutException,
             openai.RateLimitError,
             openai.APIError,
             openai.APIConnectionError,
