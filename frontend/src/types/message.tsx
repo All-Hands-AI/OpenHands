@@ -15,6 +15,22 @@ export interface ActionMessage {
 
   // The timestamp of the message
   timestamp: string;
+
+  // LLM metrics information
+  llm_metrics?: {
+    accumulated_cost: number;
+  };
+
+  // Tool call metadata
+  tool_call_metadata?: {
+    model_response?: {
+      usage: {
+        prompt_tokens: number;
+        completion_tokens: number;
+        total_tokens: number;
+      };
+    };
+  };
 }
 
 export interface ObservationMessage {
