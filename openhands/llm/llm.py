@@ -243,7 +243,7 @@ class LLM(RetryMixin, DebugMixin):
             start_time = time.time()
             # we don't support streaming here, thus we get a ModelResponse
             logger.info(
-                'DEBUG: LLM: calling litellm completion with kwargs: %s', kwargs
+                f'DEBUG: LLM: calling litellm completion with model: {self.config.model}, base_url: {self.config.base_url}, args: {args}, kwargs: {kwargs}'
             )
             resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
 
