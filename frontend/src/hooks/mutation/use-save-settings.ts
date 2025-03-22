@@ -22,6 +22,7 @@ const saveSettingsMutationFn = async (settings: Partial<PostSettings>) => {
     enable_sound_notifications: settings.ENABLE_SOUND_NOTIFICATIONS,
     user_consents_to_analytics: settings.user_consents_to_analytics,
     provider_tokens: settings.provider_tokens,
+    custom_secrets: settings.custom_secrets,
     unset_tokens: settings.unset_tokens,
   };
 

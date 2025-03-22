@@ -161,6 +161,7 @@ function AccountSettings() {
               gitlab: gitlabToken || "",
             }
           : undefined,
+      custom_secrets: secretsEntries,
       LANGUAGE: languageValue,
       user_consents_to_analytics: userConsentsToAnalytics,
       ENABLE_DEFAULT_CONDENSER: enableMemoryCondenser,
@@ -175,7 +176,6 @@ function AccountSettings() {
         remoteRuntimeResourceFactor ||
         DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
       CONFIRMATION_MODE: confirmationModeIsEnabled,
-      CUSTOM_SECRETS: secretsEntries,
     };
 
     saveSettings(newSettings, {
