@@ -109,8 +109,14 @@ export default function MainApp() {
     (settings as Settings)?.ACCEPT_TOS === false;
 
   React.useEffect(() => {
-    // Redirect unauthenticated users to GitHub auth
-    if (!isFetchingAuth && !userIsAuthed && pathname === "/" && gitHubAuthUrl) {
+    // Redirect unauthenticated users to GitHub auth for all routes
+    if (!isFetchingAuth && !userIsAuthed && gitHubAuthUrl) {
+      // Save current page before redirecting to auth
+      if (pathname !== "/") {
+        import("#/utils/last-page").then(({ saveLastPage }) => {
+          saveLastPage();
+        });
+      }
       window.location.href = gitHubAuthUrl;
     }
   }, [isFetchingAuth, userIsAuthed, pathname, gitHubAuthUrl]);
