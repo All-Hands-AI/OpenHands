@@ -17,7 +17,7 @@ import { useWsClient } from "#/context/ws-client-provider";
 import { Messages } from "./messages";
 import { ChatSuggestions } from "./chat-suggestions";
 import { ActionSuggestions } from "./action-suggestions";
-import { ContinueButton } from "#/components/shared/buttons/continue-button";
+
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { useGetTrajectory } from "#/hooks/mutation/use-get-trajectory";
@@ -83,10 +83,6 @@ export function ChatInterface() {
   const handleStop = () => {
     posthog.capture("stop_button_clicked");
     send(generateAgentStateChangeEvent(AgentState.STOPPED));
-  };
-
-  const handleSendContinueMsg = () => {
-    handleSendMessage("Continue", []);
   };
 
   const onClickShareFeedbackActionButton = async (
@@ -165,10 +161,6 @@ export function ChatInterface() {
           />
 
           <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0">
-            {messages.length > 2 &&
-              curAgentState === AgentState.AWAITING_USER_INPUT && (
-                <ContinueButton onClick={handleSendContinueMsg} />
-              )}
             {curAgentState === AgentState.RUNNING && <TypingIndicator />}
           </div>
 
