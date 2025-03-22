@@ -10,6 +10,11 @@ const shownErrors = new Set<string>();
 export const queryClientConfig: QueryClientConfig = {
   queryCache: new QueryCache({
     onError: (error, query) => {
+      // Don't show error toasts on the logout page
+      if (window.location.pathname.includes('/logout')) {
+        return;
+      }
+
       if (!query.meta?.disableToast) {
         const errorMessage = retrieveAxiosErrorMessage(error);
 
@@ -26,6 +31,11 @@ export const queryClientConfig: QueryClientConfig = {
   }),
   mutationCache: new MutationCache({
     onError: (error, _, __, mutation) => {
+      // Don't show error toasts on the logout page
+      if (window.location.pathname.includes('/logout')) {
+        return;
+      }
+
       if (!mutation?.meta?.disableToast) {
         const message = retrieveAxiosErrorMessage(error);
         displayErrorToast(message);
