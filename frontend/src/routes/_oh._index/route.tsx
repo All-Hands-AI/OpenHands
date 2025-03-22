@@ -15,6 +15,7 @@ import { GitHubRepositoriesSuggestionBox } from "#/components/features/github/gi
 import { HeroHeading } from "#/components/shared/hero-heading";
 import { TaskForm } from "#/components/shared/task-form";
 import { convertFileToText } from "#/utils/convert-file-to-text";
+import { ENABLE_TRAJECTORY_REPLAY } from "#/utils/feature-flags";
 
 function Home() {
   const dispatch = useDispatch();
@@ -57,9 +58,10 @@ function Home() {
               }
             }}
           />
-          <ReplaySuggestionBox
-            onChange={async (event) => {
-              if (event.target.files) {
+          {ENABLE_TRAJECTORY_REPLAY() && (
+            <ReplaySuggestionBox
+              onChange={async (event) => {
+                if (event.target.files) {
                 const json = event.target.files[0];
                 dispatch(setReplayJson(await convertFileToText(json)));
                 posthog.capture("json_file_uploaded");
@@ -69,6 +71,7 @@ function Home() {
               }
             }}
           />
+          )}
         </div>
       </div>
     </div>
