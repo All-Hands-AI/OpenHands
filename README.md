@@ -57,8 +57,7 @@ docker run -it --rm --pull=always \
 ```
 
 > [!WARNING]
-> The default Docker configuration above is designed for local development and binds to all network interfaces (0.0.0.0). 
-> For production or multi-user environments, see our [Hardened Docker Installation](https://docs.all-hands.dev/modules/usage/runtimes/docker#hardened-docker-installation) guide 
+> On a public network? See our [Hardened Docker Installation](https://docs.all-hands.dev/modules/usage/runtimes/docker#hardened-docker-installation) guide 
 > to secure your deployment by restricting network binding and implementing additional security measures.
 
 You'll find OpenHands running at [http://localhost:3000](http://localhost:3000)!
