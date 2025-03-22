@@ -8,20 +8,11 @@ import { BrandButton } from "#/components/features/settings/brand-button";
 
 export default function LogoutPage() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const config = useConfig();
-  const { data: isAuthed } = useIsAuthed();
   const gitHubAuthUrl = useGitHubAuthUrl({
     appMode: config.data?.APP_MODE || null,
     gitHubClientId: config.data?.GITHUB_CLIENT_ID || null,
   });
-
-  // If user is already authenticated, redirect to home
-  React.useEffect(() => {
-    if (isAuthed) {
-      navigate('/');
-    }
-  }, [isAuthed, navigate]);
 
   const handleLogin = () => {
     if (gitHubAuthUrl) {

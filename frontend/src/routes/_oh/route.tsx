@@ -163,9 +163,14 @@ export default function MainApp() {
     };
   }, [userIsAuthed, pathname, navigate]);
 
-  // Don't show the main layout on the logout page
+  // Don't show the main layout or run auth checks on the logout page
   if (pathname === '/logout') {
     return <Outlet />;
+  }
+
+  // Don't run any auth checks if we're on the logout page
+  if (pathname.includes('/logout')) {
+    return null;
   }
 
   return (

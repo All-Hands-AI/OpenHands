@@ -10,10 +10,16 @@ export const useIsAuthed = () => {
 
   const appMode = React.useMemo(() => config?.APP_MODE, [config]);
 
+  // Don't run auth check on logout page
+  const isLogoutPage = window.location.pathname.includes('/logout');
+  if (isLogoutPage) {
+    return { data: false, isError: false, isFetching: false };
+  }
+
   return useQuery({
     queryKey: ["user", "authenticated", githubTokenIsSet, appMode],
     queryFn: () => OpenHands.authenticate(appMode!),
-    enabled: !!appMode,
+    enabled: !!appMode && !isLogoutPage,
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 15, // 15 minutes
     retry: false,
