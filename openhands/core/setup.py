@@ -117,6 +117,10 @@ def initialize_repository_for_runtime(
     repo_directory = None
     if selected_repository and provider_tokens:
         logger.debug(f'Selected repository {selected_repository}.')
+        if runtime.status_callback:
+            runtime.status_callback(
+                'info', 'STATUS$SETTING_UP_WORKSPACE', 'Setting up workspace...'
+            )
         repo_directory = runtime.clone_repo(
             provider_tokens,
             selected_repository,

@@ -69,6 +69,7 @@ STATUS_MESSAGES = {
     'STATUS$PREPARING_CONTAINER': 'Preparing container...',
     'STATUS$CONTAINER_STARTED': 'Container started.',
     'STATUS$WAITING_FOR_CLIENT': 'Waiting for client...',
+    'STATUS$SETTING_UP_WORKSPACE': 'Setting up workspace...',
 }
 
 
@@ -368,6 +369,11 @@ class Runtime(FileEditRuntimeMixin):
         read_obs = self.read(FileReadAction(path=setup_script))
         if isinstance(read_obs, ErrorObservation):
             return
+
+        if self.status_callback:
+            self.status_callback(
+                'info', 'STATUS$SETTING_UP_WORKSPACE', 'Setting up workspace...'
+            )
 
         action = CmdRunAction(f'chmod +x {setup_script} && source {setup_script}')
         obs = self.run_action(action)

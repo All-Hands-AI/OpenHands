@@ -139,9 +139,7 @@ class AgentSession:
 
             if git_provider_tokens:
                 provider_handler = ProviderHandler(provider_tokens=git_provider_tokens)
-                await provider_handler.set_event_stream_secrets(
-                    self.event_stream
-                )
+                await provider_handler.set_event_stream_secrets(self.event_stream)
 
             if not self._closed:
                 if initial_message:
@@ -243,12 +241,15 @@ class AgentSession:
                 headless_mode=False,
                 attach_to_existing=False,
                 git_provider_tokens=git_provider_tokens,
-                user_id=self.user_id
+                user_id=self.user_id,
             )
         else:
-            provider_handler = ProviderHandler(provider_tokens=git_provider_tokens or cast(PROVIDER_TOKEN_TYPE, MappingProxyType({})))
+            provider_handler = ProviderHandler(
+                provider_tokens=git_provider_tokens
+                or cast(PROVIDER_TOKEN_TYPE, MappingProxyType({}))
+            )
             env_vars = await provider_handler.get_env_vars(expose_secrets=True)
-        
+
             self.runtime = runtime_cls(
                 config=config,
                 event_stream=self.event_stream,
@@ -257,7 +258,7 @@ class AgentSession:
                 status_callback=self._status_callback,
                 headless_mode=False,
                 attach_to_existing=False,
-                env_vars=env_vars
+                env_vars=env_vars,
             )
 
         # FIXME: this sleep is a terrible hack.
@@ -276,6 +277,10 @@ class AgentSession:
             return False
 
         if selected_repository and git_provider_tokens:
+            if self._status_callback:
+                self._status_callback(
+                    'info', 'STATUS$SETTING_UP_WORKSPACE', 'Setting up workspace...'
+                )
             await call_sync_from_async(
                 self.runtime.clone_repo,
                 git_provider_tokens,
