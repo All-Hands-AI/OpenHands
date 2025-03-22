@@ -78,7 +78,8 @@ export function updateStatusWhenErrorMessagePresent(data: ErrorArg | unknown) {
     !!val && typeof val === "object";
   const isString = (val: unknown): val is string => typeof val === "string";
   if (isObject(data) && "message" in data && isString(data.message)) {
-    if (data.message === "websocket error") {
+    // Don't show error messages for websocket errors or timeout messages
+    if (data.message === "websocket error" || data.message === "timeout") {
       return;
     }
     let msgId: string | undefined;
