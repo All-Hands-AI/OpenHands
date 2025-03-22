@@ -13,11 +13,6 @@ export const useLogout = () => {
   return useMutation({
     mutationFn: OpenHands.logout,
     onSuccess: async () => {
-      // Save current page if not on logout page
-      if (!location.pathname.includes('/logout')) {
-        saveLastPage();
-      }
-      
       setGitHubTokenIsSet(false);
       await queryClient.invalidateQueries();
       
