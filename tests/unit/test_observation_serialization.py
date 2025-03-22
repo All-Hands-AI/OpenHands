@@ -12,7 +12,6 @@ from openhands.events.observation.agent import MicroagentKnowledge
 from openhands.events.serialization import (
     event_from_dict,
     event_to_dict,
-    event_to_memory,
     event_to_trajectory,
 )
 from openhands.events.serialization.observation import observation_from_dict
@@ -30,21 +29,12 @@ def serialization_deserialization(
     ), f'The observation instance should be an instance of {cls}.'
     serialized_observation_dict = event_to_dict(observation_instance)
     serialized_observation_trajectory = event_to_trajectory(observation_instance)
-    serialized_observation_memory = event_to_memory(
-        observation_instance, max_message_chars
-    )
     assert (
         serialized_observation_dict == original_observation_dict
     ), 'The serialized observation should match the original observation dict.'
     assert (
         serialized_observation_trajectory == original_observation_dict
     ), 'The serialized observation trajectory should match the original observation dict.'
-    original_observation_dict.pop('message', None)
-    original_observation_dict.pop('id', None)
-    original_observation_dict.pop('timestamp', None)
-    assert (
-        serialized_observation_memory == original_observation_dict
-    ), 'The serialized observation memory should match the original observation dict.'
 
 
 # Additional tests for various observation subclasses can be included here
