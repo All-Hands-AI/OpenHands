@@ -18,5 +18,6 @@ export default [
       route("jupyter", "routes/_oh.app.jupyter.tsx"),
       route("served", "routes/app.tsx"),
     ]),
+    route("logout", "routes/logout/route.tsx"),
   ]),
 ] satisfies RouteConfig;
