@@ -1,11 +1,11 @@
 import { useParams } from "react-router";
 import React from "react";
+import { useSelector } from "react-redux";
 import { AgentControlBar } from "./agent-control-bar";
 import { AgentStatusBar } from "./agent-status-bar";
 import { SecurityLock } from "./security-lock";
 import { useUserConversation } from "#/hooks/query/use-user-conversation";
 import { ConversationCard } from "../conversation-panel/conversation-card";
-import { useSelector } from "react-redux";
 import { queryClient } from "#/entry.client";
 import OpenHands from "#/api/open-hands";
 
@@ -25,7 +25,9 @@ export function Controls({ setSecurityOpen, showSecurityLock }: ControlsProps) {
   const [autogenerating, setAutogenerating] = React.useState(false);
 
   const autogenereateConversationTitle = async () => {
-    await OpenHands.updateUserConversation(params.conversationId, { title: "" });
+    await OpenHands.updateUserConversation(params.conversationId, {
+      title: "",
+    });
 
     // Invalidate the queries to refresh the data
     queryClient.invalidateQueries({
@@ -34,9 +36,11 @@ export function Controls({ setSecurityOpen, showSecurityLock }: ControlsProps) {
     queryClient.invalidateQueries({
       queryKey: ["user", "conversations"],
     });
-  }
+  };
 
-  const { latestUserMessage } = useSelector((state: RootState) => state.latestUserMessage);
+  const { latestUserMessage } = useSelector(
+    (state: RootState) => state.latestUserMessage,
+  );
   React.useEffect(() => {
     if (!latestUserMessage || !conversation) {
       return;
@@ -50,7 +54,6 @@ export function Controls({ setSecurityOpen, showSecurityLock }: ControlsProps) {
     setAutogenerating(true);
     autogenereateConversationTitle();
   }, [latestUserMessage, conversation]);
-
 
   return (
     <div className="flex items-center justify-between">

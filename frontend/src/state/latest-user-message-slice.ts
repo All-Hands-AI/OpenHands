@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import {ActionMessage} from "#/types/message";
+import { ActionMessage } from "#/types/message";
 
 export const latestUserMessageSlice = createSlice({
   name: "status",
