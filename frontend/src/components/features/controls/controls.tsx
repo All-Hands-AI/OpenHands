@@ -8,6 +8,7 @@ import { useUserConversation } from "#/hooks/query/use-user-conversation";
 import { ConversationCard } from "../conversation-panel/conversation-card";
 import { queryClient } from "#/entry.client";
 import OpenHands from "#/api/open-hands";
+import { useAutoTitle } from "#/hooks/use-auto-title";
 
 interface ControlsProps {
   setSecurityOpen: (isOpen: boolean) => void;
@@ -22,41 +23,9 @@ export function Controls({ setSecurityOpen, showSecurityLock }: ControlsProps) {
     params.conversationId ?? null,
   );
 
+  useAutoTitle();
+
   const [autogenerating, setAutogenerating] = React.useState(false);
-
-  const autogenereateConversationTitle = async () => {
-    console.log("Autogenerating conversation title...");
-    await OpenHands.updateUserConversation(params.conversationId, {
-      title: "",
-    });
-
-    /*
-    queryClient.setQueryData(
-      ["user", "conversation", params.conversationId],
-      (oldData) => oldData ? { ...oldData, title: "gotcha" } : oldData
-    );
-    */
-  };
-
-  const { latestUserMessage } = useSelector(
-    (state: RootState) => state.latestUserMessage,
-  );
-  React.useEffect(() => {
-    if (!latestUserMessage || !conversation) {
-      return;
-    }
-    if (conversation.title && !defaultTitlePattern.test(conversation.title)) {
-      return;
-    }
-    if (autogenerating) {
-      return;
-    }
-    setAutogenerating(true);
-    setTimeout(() => {
-      // FIXME: Sometimes the message isn't quite ready on the backend
-      autogenereateConversationTitle();
-    }, 1000);
-  }, [latestUserMessage, conversation]);
 
   React.useEffect(() => {
     if (isFetched && !conversation) {
