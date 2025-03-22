@@ -108,12 +108,8 @@ class POSTSettingsModel(Settings):
     """
 
     unset_tokens: bool | None = None
-    # Override provider_tokens to accept string tokens from frontend
     provider_tokens: dict[str, str] = {}
-
-    @field_serializer('provider_tokens')
-    def provider_tokens_serializer(self, provider_tokens: dict[str, str]):
-        return provider_tokens
+    custom_secrets: dict[str, str] = {}
 
 
 class GETSettingsModel(Settings):

@@ -117,12 +117,12 @@ class SecretStore(BaseModel):
     @classmethod
     def convert_dict_to_mappingproxy(
         cls, data: dict[str, dict[str, Any]] | PROVIDER_TOKEN_TYPE
-    ) -> dict[str, MappingProxyType]:
+    ) -> dict[str, MappingProxyType | None]:
         """Custom deserializer to convert dictionary into MappingProxyType"""
         if not isinstance(data, dict):
             raise ValueError('SecretStore must be initialized with a dictionary')
 
-        new_data = {}
+        new_data: dict[str, MappingProxyType | None] = {}
 
         if 'provider_tokens' in data:
             tokens = data['provider_tokens']
