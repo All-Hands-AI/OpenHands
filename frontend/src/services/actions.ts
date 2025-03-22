@@ -19,6 +19,7 @@ import {
 } from "#/types/message";
 import { handleObservationMessage } from "./observations";
 import { appendInput } from "#/state/command-slice";
+import { autogenerateConversationTitle } from "./conversation-title-service";
 
 const messageActions = {
   [ActionType.BROWSE]: (message: ActionMessage) => {
@@ -96,6 +97,16 @@ export function handleActionMessage(message: ActionMessage) {
       usage: message.tool_call_metadata?.model_response?.usage ?? null,
     };
     store.dispatch(setMetrics(metrics));
+  }
+
+  if (message.action === ActionType.MESSAGE && message.source === "user") {
+    // Get the conversation ID from the state
+    const conversationId = store.getState().conversation.id;
+
+    if (conversationId) {
+      // Auto-generate the conversation title if it doesn't match the default pattern
+      autogenerateConversationTitle(conversationId);
+    }
   }
 
   if (message.action === ActionType.RUN) {

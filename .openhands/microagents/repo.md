@@ -33,6 +33,7 @@ Frontend:
 - Testing:
   - Run tests: `npm run test`
   - To run specific tests: `npm run test -- -t "TestName"`
+  - Our test framework is vitest
 - Building:
   - Build for production: `npm run build`
 - Environment Variables:

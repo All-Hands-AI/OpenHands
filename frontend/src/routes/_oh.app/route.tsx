@@ -9,6 +9,7 @@ import {
   ConversationProvider,
   useConversation,
 } from "#/context/conversation-context";
+import { useDocumentTitleFromState } from "#/hooks/use-document-title-from-state";
 import { Controls } from "#/components/features/controls/controls";
 import { clearMessages, addUserMessage } from "#/state/chat-slice";
 import { clearTerminal } from "#/state/command-slice";
@@ -42,9 +43,7 @@ function AppContent() {
   const { t } = useTranslation();
   const { data: settings } = useSettings();
   const { conversationId } = useConversation();
-  const { data: conversation, isFetched } = useUserConversation(
-    conversationId || null,
-  );
+  const { data: conversation, isFetched } = useUserConversation();
   const { initialPrompt, files } = useSelector(
     (state: RootState) => state.initialQuery,
   );
@@ -65,13 +64,13 @@ function AppContent() {
   );
 
   React.useEffect(() => {
-    if (isFetched && !conversation) {
+    if (isFetched && conversationId && !conversation) {
       displayErrorToast(
         "This conversation does not exist, or you do not have permission to access it.",
       );
       endSession();
     }
-  }, [conversation, isFetched]);
+  }, [conversation, isFetched, conversationId, endSession]);
 
   React.useEffect(() => {
     dispatch(clearMessages());
@@ -210,6 +209,9 @@ function AppContent() {
 }
 
 function App() {
+  // Use the hook to update the document title based on the conversation title in the Redux state
+  useDocumentTitleFromState();
+
   return (
     <ConversationProvider>
       <AppContent />
