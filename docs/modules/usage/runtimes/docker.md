@@ -1,8 +1,55 @@
-# Hardened Docker Installation
+# Docker Runtime
 
-When deploying OpenHands in environments where security is a priority, you should consider implementing a hardened Docker configuration. This guide provides recommendations for securing your OpenHands Docker deployment beyond the default configuration.
+This is the default Runtime that's used when you start OpenHands. You might notice
+some flags being passed to `docker run` that make this possible:
 
-## Security Considerations
+```
+docker run # ...
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.29-nikolaik \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    # ...
+```
+
+The `SANDBOX_RUNTIME_CONTAINER_IMAGE` from nikolaik is a pre-built runtime image
+that contains our Runtime server, as well as some basic utilities for Python and NodeJS.
+You can also [build your own runtime image](../how-to/custom-sandbox-guide).
+
+## Connecting to Your filesystem
+One useful feature here is the ability to connect to your local filesystem. To mount your filesystem into the runtime:
+1. Set `WORKSPACE_BASE`:
+
+    ```bash
+    export WORKSPACE_BASE=/path/to/your/code
+
+    # Linux and Mac Example
+    # export WORKSPACE_BASE=$HOME/OpenHands
+    # Will set $WORKSPACE_BASE to /home/<username>/OpenHands
+    #
+    # WSL on Windows Example
+    # export WORKSPACE_BASE=/mnt/c/dev/OpenHands
+    # Will set $WORKSPACE_BASE to C:\dev\OpenHands
+    ```
+2. Add the following options to the `docker run` command:
+
+    ```bash
+    docker run # ...
+        -e SANDBOX_USER_ID=$(id -u) \
+        -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
+        -v $WORKSPACE_BASE:/opt/workspace_base \
+        # ...
+    ```
+
+Be careful! There's nothing stopping the OpenHands agent from deleting or modifying
+any files that are mounted into its workspace.
+
+This setup can cause some issues with file permissions (hence the `SANDBOX_USER_ID` variable)
+but seems to work well on most systems.
+
+## Hardened Docker Installation
+
+When deploying OpenHands in environments where security is a priority, you should consider implementing a hardened Docker configuration. This section provides recommendations for securing your OpenHands Docker deployment beyond the default configuration.
+
+### Security Considerations
 
 The default Docker configuration in the README is designed for ease of use on a local development machine. For production or multi-user environments, you should implement additional security measures.
 
