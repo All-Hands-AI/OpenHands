@@ -41,15 +41,7 @@ It compiles all languages.
 
 Open a new pull request and - when it is merged - the [deploy-docs](.github/workflows/deploy-docs.yml) GH action will take care of everything else.
 
-## Contributing to the translation
-
-To contribute to the translation of these documents:
-
-1. Fork the repository
-2. Add or update translation files
-3. Submit a pull request
-
-### Automatic Translations
+## Automatic Translations
 
 Translations can be automatically updated when the original English content changes, this is done by the script [`translation_updater.py`](./translation_updater.py).
 
