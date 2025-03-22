@@ -1,6 +1,7 @@
 from functools import lru_cache
 from typing import Callable
 from uuid import UUID
+import os
 
 import docker
 import requests
@@ -242,42 +243,50 @@ class DockerRuntime(ActionExecutionClient):
         environment.update(self.config.sandbox.runtime_startup_env_vars)
 
         self.log('debug', f'Workspace Base: {self.config.workspace_base}')
+        # Initialize volumes dictionary
+        volumes = {}
+        
+        # Add workspace mount if configured
         if (
             self.config.workspace_mount_path is not None
             and self.config.workspace_mount_path_in_sandbox is not None
         ):
             # e.g. result would be: {"/home/user/openhands/workspace": {'bind': "/workspace", 'mode': 'rw'}}
-            volumes = {
-                self.config.workspace_mount_path: {
-                    'bind': self.config.workspace_mount_path_in_sandbox,
-                    'mode': 'rw',
-                },
-                # Add Docker socket mount to allow Docker-in-Docker
-                '/var/run/docker.sock': {
-                    'bind': '/var/run/docker.sock',
-                    'mode': 'rw',
-                },
+            volumes[self.config.workspace_mount_path] = {
+                'bind': self.config.workspace_mount_path_in_sandbox,
+                'mode': 'rw',
             }
             logger.debug(f'Mount dir: {self.config.workspace_mount_path}')
         else:
             logger.debug(
                 'Mount dir is not set, will not mount the workspace directory to the container'
             )
-            # Even without workspace mount, we still want to mount the Docker socket
-            volumes = {
-                '/var/run/docker.sock': {
-                    'bind': '/var/run/docker.sock',
-                    'mode': 'rw',
-                }
+        
+        # Add Docker socket mount if enabled via environment variable or config
+        env_docker_socket_enabled = os.environ.get('SANDBOX_DOCKER_SOCKET_ENABLED', '').lower() == 'true'
+        docker_socket_enabled = env_docker_socket_enabled or self.config.sandbox.docker_socket_enabled
+        if docker_socket_enabled:
+            volumes['/var/run/docker.sock'] = {
+                'bind': '/var/run/docker.sock',
+                'mode': 'rw',
             }
+            if env_docker_socket_enabled:
+                logger.debug('Docker socket mount enabled via SANDBOX_DOCKER_SOCKET_ENABLED environment variable')
+            else:
+                logger.debug('Docker socket mount enabled via configuration')
+        
+        # If no volumes are configured, set to None
+        if not volumes:
+            volumes = None
         self.log(
             'debug',
             f'Sandbox workspace: {self.config.workspace_mount_path_in_sandbox}',
         )
-        self.log(
-            'debug',
-            'Docker socket mounted: /var/run/docker.sock -> /var/run/docker.sock',
-        )
+        if docker_socket_enabled:
+            self.log(
+                'debug',
+                'Docker socket mounted: /var/run/docker.sock -> /var/run/docker.sock',
+            )
 
         command = get_action_execution_server_startup_command(
             server_port=self._container_port,
@@ -359,10 +368,13 @@ class DockerRuntime(ActionExecutionClient):
             'debug',
             f'attached to container: {self.container_name} {self._container_port} {self.api_url}',
         )
-        self.log(
-            'debug',
-            'Docker socket should be mounted: /var/run/docker.sock -> /var/run/docker.sock',
-        )
+        env_docker_socket_enabled = os.environ.get('SANDBOX_DOCKER_SOCKET_ENABLED', '').lower() == 'true'
+        docker_socket_enabled = env_docker_socket_enabled or self.config.sandbox.docker_socket_enabled
+        if docker_socket_enabled:
+            self.log(
+                'debug',
+                'Docker socket should be mounted: /var/run/docker.sock -> /var/run/docker.sock',
+            )
 
     @tenacity.retry(
         stop=tenacity.stop_after_delay(120) | stop_if_should_exit(),

@@ -48,6 +48,7 @@ docker pull docker.all-hands.dev/all-hands-ai/runtime:0.29-nikolaik
 docker run -it --rm --pull=always \
     -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.29-nikolaik \
     -e LOG_ALL_EVENTS=true \
+    -e SANDBOX_DOCKER_SOCKET_ENABLED=true \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v ~/.openhands-state:/.openhands-state \
     -p 3000:3000 \
@@ -57,6 +58,19 @@ docker run -it --rm --pull=always \
 ```
 
 You'll find OpenHands running at [http://localhost:3000](http://localhost:3000)!
+
+### Docker Socket Access
+
+By default, the Docker socket is mounted from the host to the OpenHands container, but it is not passed through to the sandbox containers unless explicitly enabled. To enable Docker access within sandbox containers:
+
+1. Set the environment variable `SANDBOX_DOCKER_SOCKET_ENABLED=true` when starting OpenHands, or
+2. Set `docker_socket_enabled: true` in your configuration file under the `sandbox` section
+3. Ensure the Docker socket is mounted with `-v /var/run/docker.sock:/var/run/docker.sock`
+
+This allows the agent to use Docker commands within the sandbox environment, which can be useful for building and testing containerized applications. For security reasons, this feature is disabled by default.
+
+> [!CAUTION]
+> Enabling Docker socket access in sandbox containers grants significant privileges to the agent. Only enable this feature in trusted environments and when Docker functionality is required.
 
 Finally, you'll need a model provider and API key.
 [Anthropic's Claude 3.5 Sonnet](https://www.anthropic.com/api) (`anthropic/claude-3-5-sonnet-20241022`)
