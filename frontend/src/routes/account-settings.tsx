@@ -29,7 +29,6 @@ import {
   displaySuccessToast,
 } from "#/utils/custom-toast-handlers";
 import { PostSettings, ProviderOptions } from "#/types/settings";
-import { HIDE_LLM_SETTINGS } from "#/utils/feature-flags";
 import { useAuth } from "#/context/auth-context";
 
 const REMOTE_RUNTIME_OPTIONS = [
