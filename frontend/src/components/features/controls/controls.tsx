@@ -25,17 +25,15 @@ export function Controls({ setSecurityOpen, showSecurityLock }: ControlsProps) {
   const [autogenerating, setAutogenerating] = React.useState(false);
 
   const autogenereateConversationTitle = async () => {
+    console.log("Autogenerating conversation title...");
     await OpenHands.updateUserConversation(params.conversationId, {
       title: "",
     });
-
-    // Invalidate the queries to refresh the data
+    /*
     queryClient.invalidateQueries({
       queryKey: ["user", "conversation", params.conversationId],
     });
-    queryClient.invalidateQueries({
-      queryKey: ["user", "conversations"],
-    });
+    */
   };
 
   const { latestUserMessage } = useSelector(
