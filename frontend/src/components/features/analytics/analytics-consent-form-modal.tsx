@@ -1,11 +1,12 @@
-import { ModalButton } from "#/components/shared/buttons/modal-button";
 import {
   BaseModalTitle,
   BaseModalDescription,
 } from "#/components/shared/modals/confirmation-modals/base-modal";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import { ModalBody } from "#/components/shared/modals/modal-body";
+import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 import { handleCaptureConsent } from "#/utils/handle-capture-consent";
+import { BrandButton } from "../settings/brand-button";
 
 interface AnalyticsConsentFormModalProps {
   onClose: () => void;
@@ -14,15 +15,22 @@ interface AnalyticsConsentFormModalProps {
 export function AnalyticsConsentFormModal({
   onClose,
 }: AnalyticsConsentFormModalProps) {
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const { mutate: saveUserSettings } = useSaveSettings();
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const analytics = formData.get("analytics") === "on";
 
-    handleCaptureConsent(analytics);
-    localStorage.setItem("analytics-consent", analytics.toString());
-
-    onClose();
+    saveUserSettings(
+      { user_consents_to_analytics: analytics },
+      {
+        onSuccess: () => {
+          handleCaptureConsent(analytics);
+          onClose();
+        },
+      },
+    );
   };
 
   return (
@@ -32,7 +40,7 @@ export function AnalyticsConsentFormModal({
         onSubmit={handleSubmit}
         className="flex flex-col gap-2"
       >
-        <ModalBody>
+        <ModalBody className="border border-tertiary">
           <BaseModalTitle title="Your Privacy Preferences" />
           <BaseModalDescription>
             We use tools to understand how our application is used to improve
@@ -45,11 +53,14 @@ export function AnalyticsConsentFormModal({
             Send anonymous usage data
           </label>
 
-          <ModalButton
+          <BrandButton
+            testId="confirm-preferences"
             type="submit"
-            text="Confirm Preferences"
-            className="bg-primary text-white w-full hover:opacity-80"
-          />
+            variant="primary"
+            className="w-full"
+          >
+            Confirm Preferences
+          </BrandButton>
         </ModalBody>
       </form>
     </ModalBackdrop>

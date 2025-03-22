@@ -15,6 +15,7 @@ from openhands.core.exceptions import (
 from openhands.events import EventStream
 from openhands.events.action import (
     ActionConfirmationStatus,
+    AgentThinkAction,
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
@@ -24,7 +25,9 @@ from openhands.events.action import (
     IPythonRunCellAction,
 )
 from openhands.events.action.action import Action
+from openhands.events.action.files import FileEditSource
 from openhands.events.observation import (
+    AgentThinkObservation,
     ErrorObservation,
     NullObservation,
     Observation,
@@ -32,6 +35,7 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
+from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.runtime.base import Runtime
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.request import send_request
@@ -55,6 +59,8 @@ class ActionExecutionClient(Runtime):
         status_callback: Any | None = None,
         attach_to_existing: bool = False,
         headless_mode: bool = True,
+        user_id: str | None = None,
+        git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None
     ):
         self.session = HttpSession()
         self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
@@ -70,6 +76,8 @@ class ActionExecutionClient(Runtime):
             status_callback,
             attach_to_existing,
             headless_mode,
+            user_id,
+            git_provider_tokens,
         )
 
     @abstractmethod
@@ -140,11 +148,14 @@ class ActionExecutionClient(Runtime):
                 stream=True,
                 timeout=30,
             ) as response:
-                temp_file = tempfile.NamedTemporaryFile(delete=False)
-                for chunk in response.iter_content(chunk_size=8192):
-                    if chunk:  # filter out keep-alive new chunks
-                        temp_file.write(chunk)
-                return Path(temp_file.name)
+                with tempfile.NamedTemporaryFile(
+                    suffix='.zip', delete=False
+                ) as temp_file:
+                    for chunk in response.iter_content(chunk_size=16 * 1024):
+                        if chunk:  # filter out keep-alive new chunks
+                            temp_file.write(chunk)
+                    temp_file.flush()
+                    return Path(temp_file.name)
         except requests.Timeout:
             raise TimeoutError('Copy operation timed out')
 
@@ -213,8 +224,11 @@ class ActionExecutionClient(Runtime):
             return ''
 
     def send_action_for_execution(self, action: Action) -> Observation:
-        if isinstance(action, FileEditAction):
-            return self.edit(action)
+        if (
+            isinstance(action, FileEditAction)
+            and action.impl_source == FileEditSource.LLM_BASED_EDIT
+        ):
+            return self.llm_based_edit(action)
 
         # set timeout to default if not set
         if action.timeout is None:
@@ -223,6 +237,8 @@ class ActionExecutionClient(Runtime):
 
         with self.action_semaphore:
             if not action.runnable:
+                if isinstance(action, AgentThinkAction):
+                    return AgentThinkObservation('Your thought has been logged.')
                 return NullObservation('')
             if (
                 hasattr(action, 'confirmation_state')
@@ -275,6 +291,9 @@ class ActionExecutionClient(Runtime):
         return self.send_action_for_execution(action)
 
     def write(self, action: FileWriteAction) -> Observation:
+        return self.send_action_for_execution(action)
+
+    def edit(self, action: FileEditAction) -> Observation:
         return self.send_action_for_execution(action)
 
     def browse(self, action: BrowseURLAction) -> Observation:

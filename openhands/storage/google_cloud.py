@@ -1,5 +1,5 @@
 import os
-from typing import List, Optional
+from typing import List
 
 from google.api_core.exceptions import NotFound
 from google.cloud import storage
@@ -8,7 +8,7 @@ from openhands.storage.files import FileStore
 
 
 class GoogleCloudFileStore(FileStore):
-    def __init__(self, bucket_name: Optional[str] = None) -> None:
+    def __init__(self, bucket_name: str | None = None) -> None:
         """
         Create a new FileStore. If GOOGLE_APPLICATION_CREDENTIALS is defined in the
         environment it will be used for authentication. Otherwise access will be
@@ -29,7 +29,7 @@ class GoogleCloudFileStore(FileStore):
         blob = self.bucket.blob(path)
         try:
             with blob.open('r') as f:
-                return f.read()
+                return str(f.read())
         except NotFound as err:
             raise FileNotFoundError(err)
 
@@ -60,5 +60,19 @@ class GoogleCloudFileStore(FileStore):
         return list(blobs)
 
     def delete(self, path: str) -> None:
-        blob = self.bucket.blob(path)
-        blob.delete()
+        # Sanitize path
+        if not path or path == '/':
+            path = ''
+        if path.endswith('/'):
+            path = path[:-1]
+
+        # Try to delete any child resources (Assume the path is a directory)
+        for blob in self.bucket.list_blobs(prefix=f'{path}/'):
+            blob.delete()
+
+        # Next try to delete item as a file
+        try:
+            blob = self.bucket.blob(path)
+            blob.delete()
+        except NotFound:
+            pass

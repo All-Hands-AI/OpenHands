@@ -42,10 +42,11 @@ Créez un fichier ```config.toml``` dans le répertoire OpenHands et entrez ces 
 [core]
 workspace_base="./workspace"
 run_as_openhands=true
-sandbox_base_container_image="image_personnalisée"
+[sandbox]
+base_container_image="image_personnalisée"
 ```
 
-> Assurez-vous que ```sandbox_base_container_image``` est défini sur le nom de votre image personnalisée précédente.
+> Assurez-vous que ```base_container_image``` est défini sur le nom de votre image personnalisée précédente.
 
 ## Exécution
 
@@ -82,20 +83,17 @@ dockerfile_content = (
 ## Dépannage / Erreurs
 
 ### Erreur: ```useradd: UID 1000 est non unique```
-Si vous voyez cette erreur dans la sortie de la console, il s'agit du fait que OpenHands essaie de créer le utilisateur openhands dans le sandbox avec un ID d'utilisateur de 1000, cependant cet ID d'utilisateur est déjà utilisé dans l'image (pour une raison inconnue). Pour résoudre ce problème, changez la valeur du champ sandbox_user_id dans le fichier config.toml en une valeur différente:
+Si vous voyez cette erreur dans la sortie de la console, il s'agit du fait que OpenHands essaie de créer le utilisateur openhands dans le sandbox avec un ID d'utilisateur de 1000, cependant cet ID d'utilisateur est déjà utilisé dans l'image (pour une raison inconnue). Pour résoudre ce problème, changez la valeur du champ user_id dans le fichier config.toml en une valeur différente:
 
 ```toml
 [core]
 workspace_base="./workspace"
 run_as_openhands=true
-sandbox_base_container_image="image_personnalisée"
-sandbox_user_id="1001"
+[sandbox]
+base_container_image="image_personnalisée"
+user_id="1001"
 ```
 
 ### Erreurs de port d'utilisation
 
 Si vous voyez un message d'erreur indiquant que le port est utilisé ou indisponible, essayez de supprimer toutes les containers docker en cours d'exécution (exécutez `docker ps` et `docker rm` des containers concernés) puis ré-exécutez ```make run```
-
-## Discuter
-
-Pour d'autres problèmes ou questions rejoignez le [Slack](https://join.slack.com/t/openhands-ai/shared_invite/zt-2wkh4pklz-w~h_DVDtEe9H5kyQlcNxVw) ou le [Discord](https://discord.gg/ESHStjSjD4) et demandez!

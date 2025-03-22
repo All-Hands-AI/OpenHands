@@ -41,8 +41,16 @@ docker build -t custom-image .
 
 This will produce a new image called `custom-image`, which will be available in Docker.
 
-> Note that in the configuration described in this document, OpenHands will run as user "openhands" inside the
-> sandbox and thus all packages installed via the docker file should be available to all users on the system, not just root.
+## Using the Docker Command
+
+When running OpenHands using [the docker command](/modules/usage/installation#start-the-app), replace
+`-e SANDBOX_RUNTIME_CONTAINER_IMAGE=...` with `-e SANDBOX_BASE_CONTAINER_IMAGE=<custom image name>`:
+
+```commandline
+docker run -it --rm --pull=always \
+    -e SANDBOX_BASE_CONTAINER_IMAGE=custom-image \
+    ...
+```
 
 ## Using the Development Workflow
 
@@ -52,13 +60,14 @@ First, ensure you can run OpenHands by following the instructions in [Developmen
 
 ### Specify the Base Sandbox Image
 
-In the `config.toml` file within the OpenHands directory, set the `sandbox_base_container_image` to the image you want to use.
+In the `config.toml` file within the OpenHands directory, set the `base_container_image` to the image you want to use.
 This can be an image you’ve already pulled or one you’ve built:
 
 ```bash
 [core]
 ...
-sandbox_base_container_image="custom-image"
+[sandbox]
+base_container_image="custom-image"
 ```
 
 ### Additional Configuration Options

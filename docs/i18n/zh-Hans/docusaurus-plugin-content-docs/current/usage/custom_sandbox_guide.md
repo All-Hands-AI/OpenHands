@@ -58,10 +58,11 @@ docker build -t custom_image .
 [core]
 workspace_base="./workspace"
 run_as_openhands=true
-sandbox_base_container_image="custom_image"
+[sandbox]
+base_container_image="custom_image"
 ```
 
-对于 `sandbox_base_container_image` 的值, 您可以选择以下任意一项：
+对于 `base_container_image` 的值, 您可以选择以下任意一项：
 1. 在上一步中您构建的自定义镜像的名称（例如，`“custom_image”`）
 2. 从 Docker Hub 拉取的镜像（例如，`“node:20”`，如果你需要一个预装 `Node.js` 的沙箱环境）
 
@@ -83,20 +84,17 @@ sandbox_base_container_image="custom_image"
 
 ### 错误：```useradd: UID 1000 is not unique```
 
-如果在控制台输出中看到此错误，说明 OpenHands 尝试在沙箱中以 UID 1000 创建 openhands 用户，但该 UID 已经被映像中的其他部分使用（不知何故）。要解决这个问题，请更改 config.toml 文件中的 sandbox_user_id 字段为不同的值：
+如果在控制台输出中看到此错误，说明 OpenHands 尝试在沙箱中以 UID 1000 创建 openhands 用户，但该 UID 已经被映像中的其他部分使用（不知何故）。要解决这个问题，请更改 config.toml 文件中的 user_id 字段为不同的值：
 
 ```
 [core]
 workspace_base="./workspace"
 run_as_openhands=true
-sandbox_base_container_image="custom_image"
-sandbox_user_id="1001"
+[sandbox]
+base_container_image="custom_image"
+user_id="1001"
 ```
 
 ### 端口使用错误
 
 如果您遇到端口被占用或不可用的错误提示，可以尝试先用`docker ps`命令列出所有运行中的 Docker 容器，然后使用`docker rm`命令删除相关容器，最后再重新执行```make run```命令。
-
-## 讨论
-
-对于其他问题或疑问，请加入 [Slack](https://join.slack.com/t/openhands-ai/shared_invite/zt-2wkh4pklz-w~h_DVDtEe9H5kyQlcNxVw) 或 [Discord](https://discord.gg/ESHStjSjD4) 提问！

@@ -14,6 +14,7 @@ from openhands.events.action.agent import AgentFinishAction
 from openhands.events.event import Event, EventSource
 from openhands.llm.metrics import Metrics
 from openhands.storage.files import FileStore
+from openhands.storage.locations import get_conversation_agent_state_filename
 
 
 class TrafficControlState(str, Enum):
@@ -101,22 +102,53 @@ class State:
     extra_data: dict[str, Any] = field(default_factory=dict)
     last_error: str = ''
 
-    def save_to_session(self, sid: str, file_store: FileStore):
+    def save_to_session(self, sid: str, file_store: FileStore, user_id: str | None):
         pickled = pickle.dumps(self)
         logger.debug(f'Saving state to session {sid}:{self.agent_state}')
         encoded = base64.b64encode(pickled).decode('utf-8')
         try:
-            file_store.write(f'sessions/{sid}/agent_state.pkl', encoded)
+            file_store.write(
+                get_conversation_agent_state_filename(sid, user_id), encoded
+            )
+
+            # see if state is in the old directory on saas/remote use cases and delete it.
+            if user_id:
+                filename = get_conversation_agent_state_filename(sid)
+                try:
+                    file_store.delete(filename)
+                except Exception:
+                    pass
         except Exception as e:
             logger.error(f'Failed to save state to session: {e}')
             raise e
 
     @staticmethod
-    def restore_from_session(sid: str, file_store: FileStore) -> 'State':
+    def restore_from_session(
+        sid: str, file_store: FileStore, user_id: str | None = None
+    ) -> 'State':
+        """
+        Restores the state from the previously saved session.
+        """
+
+        state: State
         try:
-            encoded = file_store.read(f'sessions/{sid}/agent_state.pkl')
+            encoded = file_store.read(
+                get_conversation_agent_state_filename(sid, user_id)
+            )
             pickled = base64.b64decode(encoded)
             state = pickle.loads(pickled)
+        except FileNotFoundError:
+            # if user_id is provided, we are in a saas/remote use case
+            # and we need to check if the state is in the old directory.
+            if user_id:
+                filename = get_conversation_agent_state_filename(sid)
+                encoded = file_store.read(filename)
+                pickled = base64.b64decode(encoded)
+                state = pickle.loads(pickled)
+            else:
+                raise FileNotFoundError(
+                    f'Could not restore state from session file for sid: {sid}'
+                )
         except Exception as e:
             logger.debug(f'Could not restore state from session: {e}')
             raise e

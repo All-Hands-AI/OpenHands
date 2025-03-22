@@ -1,8 +1,8 @@
 
 
-# 📦 Runtime EventStream
+# 📦 Runtime Docker
 
-Le Runtime EventStream d'OpenHands est le composant principal qui permet l'exécution sécurisée et flexible des actions des agents d'IA.
+Le Runtime Docker d'OpenHands est le composant principal qui permet l'exécution sécurisée et flexible des actions des agents d'IA.
 Il crée un environnement en bac à sable (sandbox) en utilisant Docker, où du code arbitraire peut être exécuté en toute sécurité sans risquer le système hôte.
 
 ## Pourquoi avons-nous besoin d'un runtime en bac à sable ?

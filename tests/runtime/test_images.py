@@ -1,4 +1,4 @@
-"""Image-related tests for the EventStreamRuntime, which connects to the ActionExecutor running in the sandbox."""
+"""Image-related tests for the DockerRuntime, which connects to the ActionExecutor running in the sandbox."""
 
 import pytest
 from conftest import _close_test_runtime, _load_runtime
@@ -18,7 +18,7 @@ def test_bash_python_version(temp_dir, runtime_cls, base_container_image):
     ]:
         pytest.skip('This test is only for python-related images')
 
-    runtime = _load_runtime(
+    runtime, config = _load_runtime(
         temp_dir, runtime_cls, base_container_image=base_container_image
     )
 
@@ -52,7 +52,7 @@ def test_nodejs_22_version(temp_dir, runtime_cls, base_container_image):
     ]:
         pytest.skip('This test is only for nodejs-related images')
 
-    runtime = _load_runtime(
+    runtime, config = _load_runtime(
         temp_dir, runtime_cls, base_container_image=base_container_image
     )
 
@@ -73,7 +73,7 @@ def test_go_version(temp_dir, runtime_cls, base_container_image):
     ]:
         pytest.skip('This test is only for go-related images')
 
-    runtime = _load_runtime(
+    runtime, config = _load_runtime(
         temp_dir, runtime_cls, base_container_image=base_container_image
     )
 

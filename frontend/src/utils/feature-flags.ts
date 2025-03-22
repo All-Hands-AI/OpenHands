@@ -1,4 +1,4 @@
-function loadFeatureFlag(
+export function loadFeatureFlag(
   flagName: string,
   defaultValue: boolean = false,
 ): boolean {
@@ -11,5 +11,3 @@ function loadFeatureFlag(
     return defaultValue;
   }
 }
-
-export const MULTI_CONVERSATION_UI = loadFeatureFlag("MULTI_CONVERSATION_UI");

@@ -7,6 +7,7 @@ from openhands.core.schema import AgentState
 from openhands.events import EventStream
 from openhands.events.action import MessageAction
 from openhands.events.event import EventSource
+from openhands.llm.metrics import Metrics
 
 
 class DummyAgent:
@@ -15,7 +16,10 @@ class DummyAgent:
         self.llm = type(
             'DummyLLM',
             (),
-            {'metrics': type('DummyMetrics', (), {'merge': lambda x: None})()},
+            {
+                'metrics': Metrics(),
+                'config': type('DummyConfig', (), {'max_message_chars': 10000})(),
+            },
         )()
 
     def reset(self):

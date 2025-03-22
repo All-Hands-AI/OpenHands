@@ -4,10 +4,12 @@ import {
   addUserMessage,
   addErrorMessage,
 } from "#/state/chat-slice";
+import { trackError } from "#/utils/error-handler";
 import { appendSecurityAnalyzerInput } from "#/state/security-analyzer-slice";
 import { setCode, setActiveFilepath } from "#/state/code-slice";
 import { appendJupyterInput } from "#/state/jupyter-slice";
 import { setCurStatusMessage } from "#/state/status-slice";
+import { setMetrics } from "#/state/metrics-slice";
 import store from "#/store";
 import ActionType from "#/types/action-type";
 import {
@@ -56,11 +58,44 @@ const messageActions = {
       store.dispatch(appendJupyterInput(message.args.code));
     }
   },
+  [ActionType.FINISH]: (message: ActionMessage) => {
+    store.dispatch(addAssistantMessage(message.args.final_thought));
+    let successPrediction = "";
+    if (message.args.task_completed === "partial") {
+      successPrediction =
+        "I believe that the task was **completed partially**.";
+    } else if (message.args.task_completed === "false") {
+      successPrediction = "I believe that the task was **not completed**.";
+    } else if (message.args.task_completed === "true") {
+      successPrediction =
+        "I believe that the task was **completed successfully**.";
+    }
+    if (successPrediction) {
+      // if final_thought is not empty, add a new line before the success prediction
+      if (message.args.final_thought) {
+        store.dispatch(addAssistantMessage(`\n${successPrediction}`));
+      } else {
+        store.dispatch(addAssistantMessage(successPrediction));
+      }
+    }
+  },
 };
 
 export function handleActionMessage(message: ActionMessage) {
   if (message.args?.hidden) {
     return;
+  }
+
+  // Update metrics if available
+  if (
+    message.llm_metrics ||
+    message.tool_call_metadata?.model_response?.usage
+  ) {
+    const metrics = {
+      cost: message.llm_metrics?.accumulated_cost ?? null,
+      usage: message.tool_call_metadata?.model_response?.usage ?? null,
+    };
+    store.dispatch(setMetrics(metrics));
   }
 
   if (message.action === ActionType.RUN) {
@@ -95,6 +130,11 @@ export function handleStatusMessage(message: StatusMessage) {
       }),
     );
   } else if (message.type === "error") {
+    trackError({
+      message: message.message,
+      source: "chat",
+      metadata: { msgId: message.id },
+    });
     store.dispatch(
       addErrorMessage({
         ...message,
@@ -111,9 +151,15 @@ export function handleAssistantMessage(message: Record<string, unknown>) {
   } else if (message.status_update) {
     handleStatusMessage(message as unknown as StatusMessage);
   } else {
+    const errorMsg = "Unknown message type received";
+    trackError({
+      message: errorMsg,
+      source: "chat",
+      metadata: { raw_message: message },
+    });
     store.dispatch(
       addErrorMessage({
-        message: "Unknown message type received",
+        message: errorMsg,
       }),
     );
   }

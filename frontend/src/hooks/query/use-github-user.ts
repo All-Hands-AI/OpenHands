@@ -1,24 +1,30 @@
 import { useQuery } from "@tanstack/react-query";
 import React from "react";
 import posthog from "posthog-js";
-import { useAuth } from "#/context/auth-context";
 import { useConfig } from "./use-config";
 import OpenHands from "#/api/open-hands";
+import { useAuth } from "#/context/auth-context";
+import { useLogout } from "../mutation/use-logout";
+import { useSaveSettings } from "../mutation/use-save-settings";
 
 export const useGitHubUser = () => {
-  const { gitHubToken, setUserId } = useAuth();
+  const { githubTokenIsSet } = useAuth();
+  const { setGitHubTokenIsSet } = useAuth();
+  const { mutateAsync: logout } = useLogout();
+  const { mutate: saveUserSettings } = useSaveSettings();
   const { data: config } = useConfig();
 
   const user = useQuery({
-    queryKey: ["user", gitHubToken],
+    queryKey: ["user", githubTokenIsSet],
     queryFn: OpenHands.getGitHubUser,
-    enabled: !!gitHubToken && !!config?.APP_MODE,
+    enabled: githubTokenIsSet && !!config?.APP_MODE,
     retry: false,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 15, // 15 minutes
   });
 
   React.useEffect(() => {
     if (user.data) {
-      setUserId(user.data.id.toString());
       posthog.identify(user.data.login, {
         company: user.data.company,
         name: user.data.name,
@@ -28,6 +34,21 @@ export const useGitHubUser = () => {
       });
     }
   }, [user.data]);
+
+  const handleLogout = async () => {
+    if (config?.APP_MODE === "saas") await logout();
+    else {
+      saveUserSettings({ unset_github_token: true });
+      setGitHubTokenIsSet(false);
+    }
+    posthog.reset();
+  };
+
+  React.useEffect(() => {
+    if (user.isError) {
+      handleLogout();
+    }
+  }, [user.isError]);
 
   return user;
 };

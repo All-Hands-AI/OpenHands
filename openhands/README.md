@@ -6,6 +6,7 @@ This diagram provides an overview of the roles of each component and how they co
 ![OpenHands System Architecture Diagram (July 4, 2024)](../docs/static/img/system_architecture_overview.png)
 
 ## Classes
+
 The key classes in OpenHands are:
 
 * LLM: brokers all interactions with large language models. Works with any underlying completion model, thanks to LiteLLM.
@@ -20,10 +21,12 @@ The key classes in OpenHands are:
     * Sandbox: the part of the runtime responsible for running commands, e.g. inside of Docker
 * Server: brokers OpenHands sessions over HTTP, e.g. to drive the frontend
     * Session: holds a single EventStream, a single AgentController, and a single Runtime. Generally represents a single task (but potentially including several user prompts)
-    * SessionManager: keeps a list of active sessions, and ensures requests are routed to the correct Session
+    * ConversationManager: keeps a list of active sessions, and ensures requests are routed to the correct Session
 
 ## Control Flow
+
 Here's the basic loop (in pseudocode) that drives agents.
+
 ```python
 while True:
   prompt = agent.generate_prompt(state)

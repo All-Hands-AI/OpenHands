@@ -1,10 +1,18 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, SecretStr, SerializationInfo, field_serializer
+from pydantic import (
+    BaseModel,
+    Field,
+    SecretStr,
+    SerializationInfo,
+    field_serializer,
+    model_validator,
+)
 from pydantic.json import pydantic_encoder
 
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.utils import load_app_config
+from openhands.integrations.provider import SecretStore
 
 
 class Settings(BaseModel):
@@ -21,6 +29,16 @@ class Settings(BaseModel):
     llm_api_key: SecretStr | None = None
     llm_base_url: str | None = None
     remote_runtime_resource_factor: int | None = None
+    secrets_store: SecretStore = Field(default_factory=SecretStore, frozen=True)
+    enable_default_condenser: bool = False
+    enable_sound_notifications: bool = False
+    user_consents_to_analytics: bool | None = None
+    sandbox_base_container_image: str | None = None
+    sandbox_runtime_container_image: str | None = None
+
+    model_config = {
+        'validate_assignment': True,
+    }
 
     @field_serializer('llm_api_key')
     def llm_api_key_serializer(self, llm_api_key: SecretStr, info: SerializationInfo):
@@ -32,7 +50,34 @@ class Settings(BaseModel):
         if context and context.get('expose_secrets', False):
             return llm_api_key.get_secret_value()
 
-        return pydantic_encoder(llm_api_key)
+        return pydantic_encoder(llm_api_key) if llm_api_key else None
+
+    @model_validator(mode='before')
+    @classmethod
+    def convert_provider_tokens(cls, data: dict | object) -> dict | object:
+        """Convert provider tokens from JSON format to SecretStore format."""
+        if not isinstance(data, dict):
+            return data
+
+        secrets_store = data.get('secrets_store')
+        if not isinstance(secrets_store, dict):
+            return data
+
+        tokens = secrets_store.get('provider_tokens')
+        if not isinstance(tokens, dict):
+            return data
+
+        data['secrets_store'] = SecretStore(provider_tokens=tokens)
+        return data
+
+    @field_serializer('secrets_store')
+    def secrets_store_serializer(self, secrets: SecretStore, info: SerializationInfo):
+        """Custom serializer for secrets store."""
+        return {
+            'provider_tokens': secrets.provider_tokens_serializer(
+                secrets.provider_tokens, info
+            )
+        }
 
     @staticmethod
     def from_config() -> Settings | None:
@@ -52,5 +97,28 @@ class Settings(BaseModel):
             llm_api_key=llm_config.api_key,
             llm_base_url=llm_config.base_url,
             remote_runtime_resource_factor=app_config.sandbox.remote_runtime_resource_factor,
+            provider_tokens={},
         )
         return settings
+
+
+class POSTSettingsModel(Settings):
+    """
+    Settings for POST requests
+    """
+
+    unset_github_token: bool | None = None
+    # Override provider_tokens to accept string tokens from frontend
+    provider_tokens: dict[str, str] = {}
+
+    @field_serializer('provider_tokens')
+    def provider_tokens_serializer(self, provider_tokens: dict[str, str]):
+        return provider_tokens
+
+
+class GETSettingsModel(Settings):
+    """
+    Settings with additional token data for the frontend
+    """
+
+    github_token_is_set: bool | None = None
