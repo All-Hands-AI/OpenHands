@@ -109,8 +109,8 @@ export default function MainApp() {
     (settings as Settings)?.ACCEPT_TOS === false;
 
   React.useEffect(() => {
-    // Redirect unauthenticated users to GitHub auth for all routes
-    if (!isFetchingAuth && !userIsAuthed && gitHubAuthUrl) {
+    // Redirect unauthenticated users to GitHub auth for all routes except logout
+    if (!isFetchingAuth && !userIsAuthed && gitHubAuthUrl && !pathname.includes('/logout')) {
       // Save current page before redirecting to auth
       if (pathname !== "/") {
         import("#/utils/last-page").then(({ saveLastPage }) => {
@@ -157,6 +157,11 @@ export default function MainApp() {
       }
     };
   }, [userIsAuthed, pathname, navigate]);
+
+  // Don't show the main layout on the logout page
+  if (pathname === '/logout') {
+    return <Outlet />;
+  }
 
   return (
     <div

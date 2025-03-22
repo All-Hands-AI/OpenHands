@@ -2,15 +2,26 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useConfig } from "#/hooks/query/use-config";
+import { useIsAuthed } from "#/hooks/query/use-is-authed";
+import { useNavigate } from "react-router";
 import { BrandButton } from "#/components/features/settings/brand-button";
 
 export default function LogoutPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const config = useConfig();
+  const { data: isAuthed } = useIsAuthed();
   const gitHubAuthUrl = useGitHubAuthUrl({
     appMode: config.data?.APP_MODE || null,
     gitHubClientId: config.data?.GITHUB_CLIENT_ID || null,
   });
+
+  // If user is already authenticated, redirect to home
+  React.useEffect(() => {
+    if (isAuthed) {
+      navigate('/');
+    }
+  }, [isAuthed, navigate]);
 
   const handleLogin = () => {
     if (gitHubAuthUrl) {
@@ -19,7 +30,7 @@ export default function LogoutPage() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center h-full gap-6">
+    <div className="flex flex-col items-center justify-center min-h-screen gap-6 bg-base">
       <h1 className="text-2xl font-semibold">
         {t("LOGOUT$TITLE")}
       </h1>
