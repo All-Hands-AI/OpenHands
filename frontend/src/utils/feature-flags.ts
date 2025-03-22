@@ -14,4 +14,4 @@ export function loadFeatureFlag(
 
 export const BILLING_SETTINGS = () => loadFeatureFlag("BILLING_SETTINGS");
 export const HIDE_LLM_SETTINGS = () => loadFeatureFlag("HIDE_LLM_SETTINGS");
-export const ENABLE_TRAJECTORY_REPLAY = () => loadFeatureFlag("ENABLE_TRAJECTORY_REPLAY");
+export const ENABLE_TRAJECTORY_REPLAY = () => loadFeatureFlag("TRAJECTORY_REPLAY");
