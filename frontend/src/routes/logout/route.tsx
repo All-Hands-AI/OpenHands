@@ -1,9 +1,7 @@
 import React from "react";
-import { useTranslation } from "react-i18next";
 import { BrandButton } from "#/components/features/settings/brand-button";
 
 export default function LogoutPage() {
-  const { t } = useTranslation();
 
   const handleLogin = () => {
     // Use the stored config from window.__OPENHANDS_CONFIG__ or default to GitHub auth URL
@@ -22,10 +20,10 @@ export default function LogoutPage() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen gap-6 bg-base">
       <h1 className="text-2xl font-semibold">
-        {t("LOGOUT$TITLE")}
+        You've been logged out
       </h1>
       <p className="text-base text-[#A3A3A3]">
-        {t("LOGOUT$DESCRIPTION")}
+        Thanks for using OpenHands. Click below to log back in.
       </p>
       <BrandButton
         testId="login-button"
@@ -33,7 +31,7 @@ export default function LogoutPage() {
         variant="primary"
         onClick={handleLogin}
       >
-        {t("LOGOUT$LOGIN_BUTTON")}
+        Log In
       </BrandButton>
     </div>
   );
