@@ -31,7 +31,7 @@ export function Controls({ setSecurityOpen, showSecurityLock }: ControlsProps) {
 
     // Invalidate the queries to refresh the data
     queryClient.invalidateQueries({
-      queryKey: ["user", "conversation", conversationId],
+      queryKey: ["user", "conversation", params.conversationId],
     });
     queryClient.invalidateQueries({
       queryKey: ["user", "conversations"],
