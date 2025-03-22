@@ -6,6 +6,7 @@ import {
 } from "@react-router/dev/routes";
 
 export default [
+  route("logout", "routes/logout.tsx"),
   layout("routes/_oh/route.tsx", [
     index("routes/_oh._index/route.tsx"),
     route("settings", "routes/settings.tsx", [
@@ -18,6 +19,5 @@ export default [
       route("jupyter", "routes/_oh.app.jupyter.tsx"),
       route("served", "routes/app.tsx"),
     ]),
-    route("logout", "routes/logout/route.tsx"),
   ]),
 ] satisfies RouteConfig;
