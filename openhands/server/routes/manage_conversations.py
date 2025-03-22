@@ -98,10 +98,7 @@ async def _create_new_conversation(
         extra={'user_id': user_id, 'session_id': conversation_id},
     )
 
-    repository_title = (
-        selected_repository.split('/')[-1] if selected_repository else None
-    )
-    conversation_title = f'{repository_title or "Conversation"} {conversation_id[:5]}'
+    conversation_title = get_default_conversation_title(conversation_id)
 
     logger.info(f'Saving metadata for conversation {conversation_id}')
     await conversation_store.save_metadata(
@@ -247,6 +244,19 @@ async def get_conversation(
         return None
 
 
+def get_default_conversation_title(conversation_id: str) -> str:
+    """
+    Generate a default title for a conversation based on its ID.
+
+    Args:
+        conversation_id: The ID of the conversation
+
+    Returns:
+        A default title string
+    """
+    return f'Conversation {conversation_id[:5]}'
+
+
 async def auto_generate_title(conversation_id: str, user_id: str | None) -> str:
     """
     Auto-generate a title for a conversation based on the first user message.
@@ -304,7 +314,7 @@ async def update_conversation(
     if not title or title.isspace():
         title = await auto_generate_title(conversation_id, user_id)
         if not title:
-            title = f'Conversation {conversation_id[:5]}'
+            title = get_default_conversation_title(conversation_id)
 
     metadata.title = title
     await conversation_store.save_metadata(metadata)
@@ -339,7 +349,7 @@ async def _get_conversation_info(
     try:
         title = conversation.title
         if not title:
-            title = f'Conversation {conversation.conversation_id[:5]}'
+            title = get_default_conversation_title(conversation.conversation_id)
         return ConversationInfo(
             conversation_id=conversation.conversation_id,
             title=title,
