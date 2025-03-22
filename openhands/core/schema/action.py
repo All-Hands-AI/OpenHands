@@ -85,5 +85,8 @@ class ActionTypeSchema(BaseModel):
     RECALL: str = Field(default='recall')
     """Retrieves content from a user workspace, microagent, or other source."""
 
+    CONDENSATION: str = Field(default='condensation')
+    """Condenses a list of events into a summary."""
+
 
 ActionType = ActionTypeSchema()

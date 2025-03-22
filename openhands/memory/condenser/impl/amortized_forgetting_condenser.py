@@ -1,8 +1,13 @@
 from __future__ import annotations
 
 from openhands.core.config.condenser_config import AmortizedForgettingCondenserConfig
+from openhands.events.action.agent import CondensationAction
 from openhands.events.event import Event
-from openhands.memory.condenser.condenser import RollingCondenser
+from openhands.memory.condenser.condenser import (
+    Condensation,
+    RollingCondenser,
+    View,
+)
 
 
 class AmortizedForgettingCondenser(RollingCondenser):
@@ -32,18 +37,42 @@ class AmortizedForgettingCondenser(RollingCondenser):
 
         super().__init__()
 
-    def condense(self, events: list[Event]) -> list[Event]:
-        """Apply the amortized forgetting strategy to the given list of events."""
-        if len(events) <= self.max_size:
-            return events
+    def get_view(self, events: list[Event]) -> View:
+        # Get all non-condensation events
+        result_events = []
+        forgotten_event_ids = []
 
+        for event in events:
+            if isinstance(event, CondensationAction):
+                forgotten_event_ids.extend(event.forgotten_event_ids)
+            else:
+                result_events.append(event)
+
+        return View(
+            events=[
+                event for event in result_events if event.id not in forgotten_event_ids
+            ]
+        )
+
+    def get_condensation(self, view: View) -> Condensation:
         target_size = self.max_size // 2
-        head = events[: self.keep_first]
+        head = view[: self.keep_first]
 
         events_from_tail = target_size - len(head)
-        tail = events[-events_from_tail:]
+        tail = view[-events_from_tail:]
 
-        return head + tail
+        events_to_keep = head + tail
+
+        event = CondensationAction()
+        event.forgotten_event_ids = [
+            event.id for event in view if event not in events_to_keep
+        ]
+        event.considered_event_ids = [event.id for event in view]
+
+        return Condensation(action=event)
+
+    def should_condense(self, view: View) -> bool:
+        return len(view) > self.max_size
 
     @classmethod
     def from_config(

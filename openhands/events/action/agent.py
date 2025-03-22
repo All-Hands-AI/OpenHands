@@ -126,3 +126,23 @@ class RecallAction(Action):
         ret = '**RecallAction**\n'
         ret += f'QUERY: {self.query[:50]}'
         return ret
+
+
+@dataclass
+class CondensationAction(Action):
+    """This action indicates a condensation of the conversation history is happening."""
+
+    action: str = ActionType.CONDENSATION
+
+    forgotten_event_ids: list[int] = field(default_factory=list)
+    """The IDs of the events that are being forgotten (removed from the `View` given to the LLM)."""
+
+    considered_event_ids: list[int] = field(default_factory=list)
+    """The IDs of the events that are being considered for condensation."""
+
+    summary: str | None = None
+    """An optional summary of the events being forgotten."""
+
+    @property
+    def message(self) -> str:
+        return f'Summary: {self.summary}'

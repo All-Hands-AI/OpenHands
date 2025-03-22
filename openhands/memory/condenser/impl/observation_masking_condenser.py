@@ -4,7 +4,7 @@ from openhands.core.config.condenser_config import ObservationMaskingCondenserCo
 from openhands.events.event import Event
 from openhands.events.observation import Observation
 from openhands.events.observation.agent import AgentCondensationObservation
-from openhands.memory.condenser.condenser import Condenser
+from openhands.memory.condenser.condenser import Condensation, Condenser, View
 
 
 class ObservationMaskingCondenser(Condenser):
@@ -15,7 +15,7 @@ class ObservationMaskingCondenser(Condenser):
 
         super().__init__()
 
-    def condense(self, events: list[Event]) -> list[Event]:
+    def condense(self, events: list[Event]) -> View | Condensation:
         """Replace the content of observations outside of the attention window with a placeholder."""
         results: list[Event] = []
         for i, event in enumerate(events):
@@ -27,7 +27,7 @@ class ObservationMaskingCondenser(Condenser):
             else:
                 results.append(event)
 
-        return results
+        return View(events=results)
 
     @classmethod
     def from_config(

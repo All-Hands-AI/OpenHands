@@ -324,21 +324,21 @@ def test_mismatched_tool_call_events(mock_state: State):
     # 2. The action message, and
     # 3. The observation message
     mock_state.history = [action, observation]
-    messages = agent._get_messages(mock_state)
+    messages = agent._get_messages(mock_state.history)
     assert len(messages) == 3
 
     # The same should hold if the events are presented out-of-order
     mock_state.history = [observation, action]
-    messages = agent._get_messages(mock_state)
+    messages = agent._get_messages(mock_state.history)
     assert len(messages) == 3
 
     # If only one of the two events is present, then we should just get the system message
     mock_state.history = [action]
-    messages = agent._get_messages(mock_state)
+    messages = agent._get_messages(mock_state.history)
     assert len(messages) == 1
 
     mock_state.history = [observation]
-    messages = agent._get_messages(mock_state)
+    messages = agent._get_messages(mock_state.history)
     assert len(messages) == 1
 
 
