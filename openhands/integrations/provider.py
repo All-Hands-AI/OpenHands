@@ -129,10 +129,7 @@ class SecretStore(BaseModel):
                 tokens, dict
             ):  # Ensure conversion happens only for dict inputs
                 converted_tokens = {}
-                for key, value in tokens.items():
-                    if not isinstance(value, dict):
-                        continue
-
+                for key, value in tokens.items():                    
                     try:
                         provider_type = (
                             ProviderType(key) if isinstance(key, str) else key

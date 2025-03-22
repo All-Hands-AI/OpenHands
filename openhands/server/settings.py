@@ -66,10 +66,28 @@ class Settings(BaseModel):
         tokens = secrets_store.get('provider_tokens')
         custom_secrets = secrets_store.get('custom_secrets')
 
-        data['secrets_store'] = SecretStore(
-            provider_tokens=tokens, custom_secrets=custom_secrets
-        )
+        secret_store = SecretStore(provider_tokens={}, custom_secrets={})
+        if isinstance(tokens, dict):
+            converted_store = SecretStore(provider_tokens=tokens)       
+            secret_store = secret_store.model_copy(
+                update={'provider_tokens': converted_store.provider_tokens}
+            )
+        else:
+            secret_store.model_copy(
+                update={'provider_tokens': tokens}
+            )
 
+        if isinstance(custom_secrets, dict):
+            converted_store = SecretStore(custom_secrets=custom_secrets)       
+            secret_store = secret_store.model_copy(
+                update={'custom_secrets': converted_store.custom_secrets}
+            )
+        else:
+            secret_store = secret_store.model_copy(
+                update={'custom_secrets': custom_secrets}
+            )
+
+        data['secrets_store'] = secret_store
         return data
 
     @field_serializer('secrets_store')

@@ -82,8 +82,8 @@ def update_custom_secrets(incoming_settings: POSTSettingsModel, existing_setting
                 incoming_secrets[key] = existing_secrets[key]
 
 
-def update_based_on_incoming_provider_tokes(settings: POSTSettingsModel, existing_settings: Settings):
-    if settings.provider_tokens:
+def update_based_on_incoming_provider_tokes(incoming_settings: POSTSettingsModel, existing_settings: Settings):
+    if incoming_settings.provider_tokens:
         if existing_settings.secrets_store:
             existing_providers = [
                 provider.value
@@ -91,7 +91,7 @@ def update_based_on_incoming_provider_tokes(settings: POSTSettingsModel, existin
             ]
 
             # Merge incoming settings store with the existing one
-            for provider, token_value in settings.provider_tokens.items():
+            for provider, token_value in incoming_settings.provider_tokens.items():
                 if provider in existing_providers and not token_value:
                     provider_type = ProviderType(provider)
                     existing_token = (
@@ -100,12 +100,14 @@ def update_based_on_incoming_provider_tokes(settings: POSTSettingsModel, existin
                         )
                     )
                     if existing_token and existing_token.token:
-                        settings.provider_tokens[provider] = (
+                        incoming_settings.provider_tokens[provider] = (
                             existing_token.token.get_secret_value()
                         )
+
+
     else:  # nothing passed in means keep current settings
         provider_tokens = existing_settings.secrets_store.provider_tokens
-        settings.provider_tokens = {
+        incoming_settings.provider_tokens = {
             provider.value: data.token.get_secret_value()
             if data.token
             else None
