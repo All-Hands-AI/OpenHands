@@ -1,0 +1,96 @@
+---
+sidebar_position: 3
+---
+
+# 🚀 使い方
+
+OpenHandsを使い始めるための基本的な手順を説明します。
+
+## 基本的な使用方法
+
+1. OpenHandsを起動します：
+
+```bash
+WORKSPACE_BASE=$(pwd)/workspace
+docker run -it \
+    --pull=always \
+    -e SANDBOX_USER_ID=$(id -u) \
+    -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
+    -v $WORKSPACE_BASE:/opt/workspace_base \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    -p 3000:3000 \
+    --add-host host.docker.internal:host-gateway \
+    --name openhands-app-$(date +%Y%m%d%H%M%S) \
+    ghcr.io/all-hands-ai/openhands:latest
+```
+
+2. ブラウザで [http://localhost:3000](http://localhost:3000) にアクセスします。
+
+3. APIキーを設定します：
+   - OpenAI APIキー
+   - その他のLLMプロバイダーのキー（オプション）
+
+4. ワークスペースを設定します：
+   - 作業したいプロジェクトのディレクトリを選択
+   - 必要な権限を設定
+
+5. タスクを入力します：
+   - 自然言語でタスクを説明
+   - 必要な制約や要件を指定
+
+## モード
+
+OpenHandsには3つの主要な動作モードがあります：
+
+### GUIモード（デフォルト）
+- Webインターフェースを使用
+- リアルタイムのフィードバック
+- 視覚的な進捗表示
+
+### CLIモード
+```bash
+openhands task "新しいPythonファイルを作成してください"
+```
+
+### ヘッドレスモード
+```python
+from openhands import OpenHandsClient
+
+client = OpenHandsClient()
+result = client.execute_task("新しいPythonファイルを作成してください")
+```
+
+## 設定オプション
+
+主要な設定オプション：
+
+- `model`: 使用するLLMモデル（例：gpt-4）
+- `workspace`: 作業ディレクトリのパス
+- `sandbox_config`: サンドボックスの設定
+- `timeout`: タスクのタイムアウト時間
+
+詳細な設定オプションについては、[設定ガイド](./configuration-options.md)を参照してください。
+
+## ベストプラクティス
+
+1. **明確なタスク説明**
+   - 具体的な要件を提供
+   - 期待される結果を説明
+
+2. **適切なワークスペース設定**
+   - 必要なファイルのみを含める
+   - 適切な権限を設定
+
+3. **段階的なタスク実行**
+   - 複雑なタスクを小さな部分に分割
+   - 各ステップを確認
+
+4. **フィードバックの活用**
+   - 進捗状況を監視
+   - 必要に応じて指示を調整
+
+## 次のステップ
+
+- [詳細な設定オプション](./configuration-options.md)を確認
+- [トラブルシューティングガイド](./troubleshooting/troubleshooting.md)を参照
+- [コミュニティに参加](https://github.com/All-Hands-AI/OpenHands/discussions)して質問や提案を共有

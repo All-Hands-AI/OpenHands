@@ -1,0 +1,22 @@
+{
+  "title": {
+    "message": "OpenHands",
+    "description": "The title in the navbar"
+  },
+  "logo.alt": {
+    "message": "OpenHands ロゴ",
+    "description": "The alt text of navbar logo"
+  },
+  "item.label.Tutorial": {
+    "message": "チュートリアル",
+    "description": "Navbar item with label Tutorial"
+  },
+  "item.label.Blog": {
+    "message": "ブログ",
+    "description": "Navbar item with label Blog"
+  },
+  "item.label.GitHub": {
+    "message": "GitHub",
+    "description": "Navbar item with label GitHub"
+  }
+}
