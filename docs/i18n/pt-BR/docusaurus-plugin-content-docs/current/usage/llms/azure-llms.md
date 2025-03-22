@@ -1,41 +1,41 @@
 # Azure
 
-OpenHands uses LiteLLM to make calls to Azure's chat models. You can find their documentation on using Azure as a provider [here](https://docs.litellm.ai/docs/providers/azure).
+O OpenHands usa o LiteLLM para fazer chamadas para os modelos de chat do Azure. Você pode encontrar a documentação sobre como usar o Azure como provedor [aqui](https://docs.litellm.ai/docs/providers/azure).
 
-## Azure OpenAI Configuration
+## Configuração do Azure OpenAI
 
-When running OpenHands, you'll need to set the following environment variable using `-e` in the
-[docker run command](../installation#running-openhands):
+Ao executar o OpenHands, você precisará definir a seguinte variável de ambiente usando `-e` no
+[comando docker run](../installation#running-openhands):
 
 ```
-LLM_API_VERSION="<api-version>"              # e.g. "2023-05-15"
+LLM_API_VERSION="<api-version>"              # por exemplo, "2023-05-15"
 ```
 
-Example:
+Exemplo:
 ```bash
 docker run -it --pull=always \
     -e LLM_API_VERSION="2023-05-15"
     ...
 ```
 
-Then in the OpenHands UI Settings:
+Então, nas configurações da interface do usuário do OpenHands:
 
 :::note
-You will need your ChatGPT deployment name which can be found on the deployments page in Azure. This is referenced as
-&lt;deployment-name&gt; below.
+Você precisará do nome da sua implantação do ChatGPT, que pode ser encontrado na página de implantações no Azure. Isso é referenciado como
+&lt;deployment-name&gt; abaixo.
 :::
 
-1. Enable `Advanced` options
-2. Set the following:
-   - `Custom Model` to azure/&lt;deployment-name&gt;
-   - `Base URL` to your Azure API Base URL (e.g. `https://example-endpoint.openai.azure.com`)
-   - `API Key` to your Azure API key
+1. Habilite as opções `Advanced`
+2. Defina o seguinte:
+   - `Custom Model` para azure/&lt;deployment-name&gt;
+   - `Base URL` para a URL base da sua API do Azure (por exemplo, `https://example-endpoint.openai.azure.com`)
+   - `API Key` para a sua chave de API do Azure
 
-### Azure OpenAI Configuration
+### Configuração do Azure OpenAI
 
-When running OpenHands, set the following environment variable using `-e` in the
-[docker run command](../installation#running-openhands):
+Ao executar o OpenHands, defina a seguinte variável de ambiente usando `-e` no
+[comando docker run](../installation#running-openhands):
 
 ```
-LLM_API_VERSION="<api-version>"                                    # e.g. "2024-02-15-preview"
+LLM_API_VERSION="<api-version>"                                    # por exemplo, "2024-02-15-preview"
 ```

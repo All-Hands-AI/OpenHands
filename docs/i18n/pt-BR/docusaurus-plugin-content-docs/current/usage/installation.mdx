@@ -1,62 +1,61 @@
-# Running OpenHands
+# Executando o OpenHands
 
-## System Requirements
+## Requisitos do Sistema
 
-- MacOS with [Docker Desktop support](https://docs.docker.com/desktop/setup/install/mac-install/#system-requirements)
+- MacOS com [suporte ao Docker Desktop](https://docs.docker.com/desktop/setup/install/mac-install/#system-requirements)
 - Linux
-- Windows with [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) and [Docker Desktop support](https://docs.docker.com/desktop/setup/install/windows-install/#system-requirements)
+- Windows com [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) e [suporte ao Docker Desktop](https://docs.docker.com/desktop/setup/install/windows-install/#system-requirements)
 
-A system with a modern processor and a minimum of **4GB RAM** is recommended to run OpenHands.
+É recomendado um sistema com um processador moderno e um mínimo de **4GB de RAM** para executar o OpenHands.
 
-## Prerequisites
+## Pré-requisitos
 
 <details>
   <summary>MacOS</summary>
 
-**Docker Desktop**
+  **Docker Desktop**
 
-1. [Install Docker Desktop on Mac](https://docs.docker.com/desktop/setup/install/mac-install).
-2. Open Docker Desktop, go to `Settings > Advanced` and ensure `Allow the default Docker socket to be used` is enabled.
-   </details>
+  1. [Instale o Docker Desktop no Mac](https://docs.docker.com/desktop/setup/install/mac-install).
+  2. Abra o Docker Desktop, vá em `Settings > Advanced` e certifique-se de que `Allow the default Docker socket to be used` esteja habilitado.
+</details>
 
 <details>
   <summary>Linux</summary>
 
-:::note
-Tested with Ubuntu 22.04.
-:::
+  :::note
+  Testado com Ubuntu 22.04.
+  :::
 
-**Docker Desktop**
+  **Docker Desktop**
 
-1. [Install Docker Desktop on Linux](https://docs.docker.com/desktop/setup/install/linux/).
+  1. [Instale o Docker Desktop no Linux](https://docs.docker.com/desktop/setup/install/linux/).
 
 </details>
 
 <details>
   <summary>Windows</summary>
 
-**WSL**
+  **WSL**
 
-1. [Install WSL](https://learn.microsoft.com/en-us/windows/wsl/install).
-2. Run `wsl --version` in powershell and confirm `Default Version: 2`.
+  1. [Instale o WSL](https://learn.microsoft.com/en-us/windows/wsl/install).
+  2. Execute `wsl --version` no powershell e confirme `Default Version: 2`.
 
-**Docker Desktop**
+  **Docker Desktop**
 
-1. [Install Docker Desktop on Windows](https://docs.docker.com/desktop/setup/install/windows-install).
-2. Open Docker Desktop, go to `Settings` and confirm the following:
+  1. [Instale o Docker Desktop no Windows](https://docs.docker.com/desktop/setup/install/windows-install).
+  2. Abra o Docker Desktop, vá em `Settings` e confirme o seguinte:
+  - General: `Use the WSL 2 based engine` está habilitado.
+  - Resources > WSL Integration: `Enable integration with my default WSL distro` está habilitado.
 
-- General: `Use the WSL 2 based engine` is enabled.
-- Resources > WSL Integration: `Enable integration with my default WSL distro` is enabled.
-
-:::note
-The docker command below to start the app must be run inside the WSL terminal.
-:::
+  :::note
+  O comando docker abaixo para iniciar o aplicativo deve ser executado dentro do terminal WSL.
+  :::
 
 </details>
 
-## Start the App
+## Inicie o Aplicativo
 
-The easiest way to run OpenHands is in Docker.
+A maneira mais fácil de executar o OpenHands é no Docker.
 
 ```bash
 docker pull docker.all-hands.dev/all-hands-ai/runtime:0.29-nikolaik
@@ -72,35 +71,34 @@ docker run -it --rm --pull=always \
     docker.all-hands.dev/all-hands-ai/openhands:0.29
 ```
 
-You'll find OpenHands running at http://localhost:3000!
+Você encontrará o OpenHands em execução em http://localhost:3000!
 
-You can also [connect OpenHands to your local filesystem](https://docs.all-hands.dev/modules/usage/runtimes#connecting-to-your-filesystem),
-run OpenHands in a scriptable [headless mode](https://docs.all-hands.dev/modules/usage/how-to/headless-mode),
-interact with it via a [friendly CLI](https://docs.all-hands.dev/modules/usage/how-to/cli-mode),
-or run it on tagged issues with [a GitHub action](https://docs.all-hands.dev/modules/usage/how-to/github-action).
+Você também pode [conectar o OpenHands ao seu sistema de arquivos local](https://docs.all-hands.dev/modules/usage/runtimes#connecting-to-your-filesystem),
+executar o OpenHands em um [modo headless programável](https://docs.all-hands.dev/modules/usage/how-to/headless-mode),
+interagir com ele através de uma [CLI amigável](https://docs.all-hands.dev/modules/usage/how-to/cli-mode),
+ou executá-lo em issues marcadas com [uma ação do GitHub](https://docs.all-hands.dev/modules/usage/how-to/github-action).
 
-## Setup
+## Configuração
 
-Upon launching OpenHands, you'll see a Settings page. You **must** select an `LLM Provider` and `LLM Model` and enter a corresponding `API Key`.
-These can be changed at any time by selecting the `Settings` button (gear icon) in the UI.
+Ao iniciar o OpenHands, você verá uma página de Configurações. Você **deve** selecionar um `LLM Provider` e `LLM Model` e inserir uma `API Key` correspondente.
+Estes podem ser alterados a qualquer momento selecionando o botão `Settings` (ícone de engrenagem) na interface do usuário.
 
-If the required model does not exist in the list, you can toggle `Advanced` options and manually enter it with the correct prefix
-in the `Custom Model` text box.
-The `Advanced` options also allow you to specify a `Base URL` if required.
+Se o modelo necessário não existir na lista, você pode ativar as opções `Advanced` e inseri-lo manualmente com o prefixo correto
+na caixa de texto `Custom Model`.
+As opções `Advanced` também permitem que você especifique uma `Base URL`, se necessário.
 
-Now you're ready to [get started with OpenHands](./getting-started).
+Agora você está pronto para [começar com o OpenHands](./getting-started).
 
-## Versions
+## Versões
 
-The [docker command above](./installation#start-the-app) pulls the most recent stable release of OpenHands. You have other options as well:
+O [comando docker acima](./installation#start-the-app) baixa a versão estável mais recente do OpenHands. Você também tem outras opções:
+- Para uma versão específica, substitua $VERSION em `openhands:$VERSION` e `runtime:$VERSION`, com o número da versão.
+Usamos SemVer, então `0.9` apontará automaticamente para a versão mais recente `0.9.x`, e `0` apontará para a versão mais recente `0.x.x`.
+- Para a versão de desenvolvimento mais atualizada, substitua $VERSION em `openhands:$VERSION` e `runtime:$VERSION`, por `main`.
+Esta versão é instável e é recomendada apenas para fins de teste ou desenvolvimento.
 
-- For a specific release, replace $VERSION in `openhands:$VERSION`and`runtime:$VERSION`, with the version number.
-We use SemVer so `0.9`will automatically point to the latest`0.9.x`release, and`0`will point to the latest`0.x.x` release.
-- For the most up-to-date development version, replace $VERSION in `openhands:$VERSION`and`runtime:$VERSION`, with `main`.
-  This version is unstable and is recommended for testing or development purposes only.
+Você pode escolher a tag que melhor se adapta às suas necessidades com base nos requisitos de estabilidade e recursos desejados.
 
-You can choose the tag that best suits your needs based on stability requirements and desired features.
+Para o fluxo de trabalho de desenvolvimento, consulte [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
 
-For the development workflow, see [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
-
-Are you having trouble? Check out our [Troubleshooting Guide](https://docs.all-hands.dev/modules/usage/troubleshooting).
+Está tendo problemas? Confira nosso [Guia de Solução de Problemas](https://docs.all-hands.dev/modules/usage/troubleshooting).

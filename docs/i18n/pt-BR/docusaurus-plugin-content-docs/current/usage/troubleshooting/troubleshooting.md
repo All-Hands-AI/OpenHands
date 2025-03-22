@@ -1,44 +1,48 @@
-# 🚧 Troubleshooting
+# 🚧 Solução de Problemas
 
 :::tip
-OpenHands only supports Windows via WSL. Please be sure to run all commands inside your WSL terminal.
+O OpenHands só suporta Windows via WSL. Certifique-se de executar todos os comandos dentro do seu terminal WSL.
 :::
 
-### Launch docker client failed
+### Falha ao iniciar o cliente docker
 
-**Description**
+**Descrição**
 
-When running OpenHands, the following error is seen:
+Ao executar o OpenHands, o seguinte erro é visto:
+
 ```
 Launch docker client failed. Please make sure you have installed docker and started docker desktop/daemon.
 ```
 
-**Resolution**
+**Resolução**
 
-Try these in order:
-* Confirm `docker` is running on your system. You should be able to run `docker ps` in the terminal successfully.
-* If using Docker Desktop, ensure `Settings > Advanced > Allow the default Docker socket to be used` is enabled.
-* Depending on your configuration you may need `Settings > Resources > Network > Enable host networking` enabled in Docker Desktop.
-* Reinstall Docker Desktop.
+Tente estes passos em ordem:
+
+- Confirme que o `docker` está em execução no seu sistema. Você deve ser capaz de executar `docker ps` no terminal com sucesso.
+- Se estiver usando o Docker Desktop, certifique-se de que `Settings > Advanced > Allow the default Docker socket to be used` esteja habilitado.
+- Dependendo da sua configuração, você pode precisar habilitar `Settings > Resources > Network > Enable host networking` no Docker Desktop.
+- Reinstale o Docker Desktop.
+
 ---
 
-# Development Workflow Specific
-### Error building runtime docker image
+# Problemas Específicos ao Ambiente de Desenvolvimento
 
-**Description**
+### Erro ao construir a imagem docker do runtime
 
-Attempts to start a new session fail, and errors with terms like the following appear in the logs:
+**Descrição**
+
+Tentativas de iniciar uma nova sessão falham e erros com termos como os seguintes aparecem nos logs:
+
 ```
 debian-security bookworm-security
 InRelease At least one invalid signature was encountered.
 ```
 
-This seems to happen when the hash of an existing external library changes and your local docker instance has
-cached a previous version. To work around this, please try the following:
+Isso parece acontecer quando o hash de uma biblioteca externa existente muda e sua instância local do docker tem uma versão anterior em cache. Para contornar isso, tente o seguinte:
 
-* Stop any containers where the name has the prefix `openhands-runtime-` :
+- Pare quaisquer contêineres onde o nome tenha o prefixo `openhands-runtime-`:
   `docker ps --filter name=openhands-runtime- --filter status=running -aq | xargs docker stop`
-* Remove any containers where the name has the prefix `openhands-runtime-` :
+- Remova quaisquer contêineres onde o nome tenha o prefixo `openhands-runtime-`:
   `docker rmi $(docker images --filter name=openhands-runtime- -q --no-trunc)`
-* Stop and Remove any containers / images where the name has the prefix `openhands-runtime-`
-* Prune containers / images : `docker container prune -f && docker image prune -f`
+- Pare e remova quaisquer contêineres / imagens onde o nome tenha o prefixo `openhands-runtime-`
+- Limpe contêineres / imagens: `docker container prune -f && docker image prune -f`

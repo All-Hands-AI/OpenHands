@@ -1,29 +1,29 @@
 # Openhands Cloud
 
-OpenHands Cloud is the cloud hosted version of OpenHands by All Hands AI.
+O OpenHands Cloud é a versão hospedada na nuvem do OpenHands da All Hands AI.
 
-## Accessing OpenHands Cloud
+## Acessando o OpenHands Cloud
 
-Currently, users are being admitted to access OpenHands Cloud in waves. To sign up,
-[join the waitlist](https://www.all-hands.dev/join-waitlist). Once you are approved, you will get an email with
-instructions on how to access it.
+Atualmente, os usuários estão sendo admitidos para acessar o OpenHands Cloud em ondas. Para se inscrever,
+[entre na lista de espera](https://www.all-hands.dev/join-waitlist). Assim que for aprovado, você receberá um e-mail com
+instruções sobre como acessá-lo.
 
-## Getting Started
+## Primeiros Passos
 
-After visiting OpenHands Cloud, you will be asked to connect with your GitHub account:
-1. After reading and accepting the terms of service, click `Connect to GitHub`.
-2. Review the permissions requested by OpenHands and then click `Authorize OpenHands AI`.
-   - OpenHands will require some permissions from your GitHub account. To read more about these permissions,
-     you can click the `Learn more` link on the GitHub authorize page.
+Após visitar o OpenHands Cloud, você será solicitado a se conectar com sua conta do GitHub:
+1. Após ler e aceitar os termos de serviço, clique em `Connect to GitHub`.
+2. Revise as permissões solicitadas pelo OpenHands e clique em `Authorize OpenHands AI`.
+   - O OpenHands exigirá algumas permissões da sua conta do GitHub. Para ler mais sobre essas permissões,
+     você pode clicar no link `Learn more` na página de autorização do GitHub.
 
-## Repository Access
+## Acesso ao Repositório
 
-### Adding Repository Access
+### Adicionando Acesso ao Repositório
 
-You can grant OpenHands specific repository access:
-1. Click the `Select a GitHub project` dropdown, select `Add more repositories...`.
-2. Select the organization, then choose the specific repositories to grant OpenHands access to.
-   - Openhands requests short-lived tokens (8-hour expiry) with these permissions:
+Você pode conceder ao OpenHands acesso específico ao repositório:
+1. Clique no menu suspenso `Select a GitHub project`, selecione `Add more repositories...`.
+2. Selecione a organização e escolha os repositórios específicos para conceder acesso ao OpenHands.
+   - O Openhands solicita tokens de curta duração (expiração de 8 horas) com estas permissões:
      - Actions: Read and write
      - Administration: Read-only
      - Commit statuses: Read and write
@@ -33,13 +33,13 @@ You can grant OpenHands specific repository access:
      - Pull requests: Read and write
      - Webhooks: Read and write
      - Workflows: Read and write
-   - Repository access for a user is granted based on:
-     - Granted permission for the repository.
-     - User's GitHub permissions (owner/collaborator).
-3. Click on `Install & Authorize`.
+   - O acesso ao repositório para um usuário é concedido com base em:
+     - Permissão concedida para o repositório.
+     - Permissões do GitHub do usuário (proprietário/colaborador).
+3. Clique em `Install & Authorize`.
 
-### Modifying Repository Access
+### Modificando o Acesso ao Repositório
 
-You can modify repository access at any time by:
-* Using the same `Select a GitHub project > Add more repositories` workflow, or
-* Visiting the Settings page and selecting `Configure GitHub Repositories` under the `GitHub Settings` section.
+Você pode modificar o acesso ao repositório a qualquer momento:
+* Usando o mesmo fluxo de trabalho `Select a GitHub project > Add more repositories`, ou
+* Visitando a página de Configurações e selecionando `Configure GitHub Repositories` na seção `GitHub Settings`.

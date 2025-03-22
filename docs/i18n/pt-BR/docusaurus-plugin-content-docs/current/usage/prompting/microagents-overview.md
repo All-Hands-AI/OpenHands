@@ -1,36 +1,33 @@
-# Microagents Overview
+# Visão Geral dos Microagentes
 
-Microagents are specialized prompts that enhance OpenHands with domain-specific knowledge, repository-specific context
-and task-specific workflows. They help by providing expert guidance, automating common tasks, and ensuring
-consistent practices across projects.
+Os microagentes são prompts especializados que aprimoram o OpenHands com conhecimento específico de domínio, contexto específico de repositório e fluxos de trabalho específicos de tarefas. Eles ajudam fornecendo orientação especializada, automatizando tarefas comuns e garantindo práticas consistentes em todos os projetos.
 
-## Microagent Types
+## Tipos de Microagentes
 
-Currently OpenHands supports the following types of microagents:
+Atualmente, o OpenHands suporta os seguintes tipos de microagentes:
 
-* [Repository Microagents](./microagents-repo): Repository-specific context and guidelines for OpenHands.
-* [Public Microagents](./microagents-public): General guidelines triggered by keywords for all OpenHands users.
+* [Microagentes de Repositório](./microagents-repo): Contexto e diretrizes específicas do repositório para o OpenHands.
+* [Microagentes Públicos](./microagents-public): Diretrizes gerais acionadas por palavras-chave para todos os usuários do OpenHands.
 
-When OpenHands works with a repository, it:
+Quando o OpenHands trabalha com um repositório, ele:
 
-1. Loads repository-specific instructions from `.openhands/microagents/` if present in the repository.
-2. Loads general guidelines triggered by keywords in conversations.
-See current [Public Microagents](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/knowledge).
+1. Carrega instruções específicas do repositório de `.openhands/microagents/`, se presentes no repositório.
+2. Carrega diretrizes gerais acionadas por palavras-chave nas conversas.
+Veja os [Microagentes Públicos](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/knowledge) atuais.
 
-## Microagent Format
+## Formato do Microagente
 
-All microagents use markdown files with YAML frontmatter that have special instructions to help OpenHands accomplish
-tasks:
+Todos os microagentes usam arquivos markdown com frontmatter YAML que possuem instruções especiais para ajudar o OpenHands a realizar tarefas:
 ```
 ---
-name: <Name of the microagent>
-type: <MicroAgent type>
-version: <MicroAgent version>
-agent: <The agent type (Typically CodeActAgent)>
+name: <Nome do microagente>
+type: <Tipo do MicroAgent>
+version: <Versão do MicroAgent>
+agent: <O tipo de agente (normalmente CodeActAgent)>
 triggers:
-- <Optional keywords triggering the microagent. If triggers are removed, it will always be included>
+- <Palavras-chave opcionais que acionam o microagente. Se os gatilhos forem removidos, ele sempre será incluído>
 ---
 
-<Markdown with any special guidelines, instructions, and prompts that OpenHands should follow.
-Check out the specific documentation for each microagent on best practices for more information.>
+<Markdown com quaisquer diretrizes especiais, instruções e prompts que o OpenHands deve seguir.
+Confira a documentação específica para cada microagente sobre as melhores práticas para obter mais informações.>
 ```

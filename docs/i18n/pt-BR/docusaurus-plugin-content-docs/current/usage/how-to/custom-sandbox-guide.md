@@ -1,50 +1,50 @@
-# Custom Sandbox
+# Sandbox Personalizado
 
-The sandbox is where the agent performs its tasks. Instead of running commands directly on your computer
-(which could be risky), the agent runs them inside a Docker container.
+O sandbox é onde o agente realiza suas tarefas. Em vez de executar comandos diretamente no seu computador
+(o que poderia ser arriscado), o agente os executa dentro de um contêiner Docker.
 
-The default OpenHands sandbox (`python-nodejs:python3.12-nodejs22`
-from [nikolaik/python-nodejs](https://hub.docker.com/r/nikolaik/python-nodejs)) comes with some packages installed such
-as python and Node.js but may need other software installed by default.
+O sandbox padrão do OpenHands (`python-nodejs:python3.12-nodejs22`
+do [nikolaik/python-nodejs](https://hub.docker.com/r/nikolaik/python-nodejs)) vem com alguns pacotes instalados, como
+python e Node.js, mas pode precisar de outros softwares instalados por padrão.
 
-You have two options for customization:
+Você tem duas opções para personalização:
 
-- Use an existing image with the required software.
-- Create your own custom Docker image.
+- Usar uma imagem existente com o software necessário.
+- Criar sua própria imagem personalizada do Docker.
 
-If you choose the first option, you can skip the `Create Your Docker Image` section.
+Se você escolher a primeira opção, pode pular a seção `Crie Sua Imagem Docker`.
 
-## Create Your Docker Image
+## Crie Sua Imagem Docker
 
-To create a custom Docker image, it must be Debian based.
+Para criar uma imagem personalizada do Docker, ela deve ser baseada no Debian.
 
-For example, if you want OpenHands to have `ruby` installed, you could create a `Dockerfile` with the following content:
+Por exemplo, se você quiser que o OpenHands tenha o `ruby` instalado, você pode criar um `Dockerfile` com o seguinte conteúdo:
 
 ```dockerfile
 FROM nikolaik/python-nodejs:python3.12-nodejs22
 
-# Install required packages
+# Instalar pacotes necessários
 RUN apt-get update && apt-get install -y ruby
 ```
 
-Or you could use a Ruby-specific base image:
+Ou você pode usar uma imagem base específica do Ruby:
 
 ```dockerfile
 FROM ruby:latest
 ```
 
-Save this file in a folder. Then, build your Docker image (e.g., named custom-image) by navigating to the folder in
-the terminal and running::
+Salve este arquivo em uma pasta. Em seguida, construa sua imagem Docker (por exemplo, chamada custom-image) navegando até a pasta no
+terminal e executando:
 ```bash
 docker build -t custom-image .
 ```
 
-This will produce a new image called `custom-image`, which will be available in Docker.
+Isso produzirá uma nova imagem chamada `custom-image`, que estará disponível no Docker.
 
-## Using the Docker Command
+## Usando o Comando Docker
 
-When running OpenHands using [the docker command](/modules/usage/installation#start-the-app), replace
-`-e SANDBOX_RUNTIME_CONTAINER_IMAGE=...` with `-e SANDBOX_BASE_CONTAINER_IMAGE=<custom image name>`:
+Ao executar o OpenHands usando [o comando docker](/modules/usage/installation#start-the-app), substitua
+`-e SANDBOX_RUNTIME_CONTAINER_IMAGE=...` por `-e SANDBOX_BASE_CONTAINER_IMAGE=<nome da imagem personalizada>`:
 
 ```commandline
 docker run -it --rm --pull=always \
@@ -52,16 +52,16 @@ docker run -it --rm --pull=always \
     ...
 ```
 
-## Using the Development Workflow
+## Usando o Fluxo de Trabalho de Desenvolvimento
 
-### Setup
+### Configuração
 
-First, ensure you can run OpenHands by following the instructions in [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
+Primeiro, certifique-se de que você pode executar o OpenHands seguindo as instruções em [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
 
-### Specify the Base Sandbox Image
+### Especifique a Imagem Base do Sandbox
 
-In the `config.toml` file within the OpenHands directory, set the `base_container_image` to the image you want to use.
-This can be an image you’ve already pulled or one you’ve built:
+No arquivo `config.toml` dentro do diretório OpenHands, defina `base_container_image` como a imagem que você deseja usar.
+Isso pode ser uma imagem que você já baixou ou uma que você construiu:
 
 ```bash
 [core]
@@ -70,28 +70,28 @@ This can be an image you’ve already pulled or one you’ve built:
 base_container_image="custom-image"
 ```
 
-### Additional Configuration Options
+### Opções de Configuração Adicionais
 
-The `config.toml` file supports several other options for customizing your sandbox:
+O arquivo `config.toml` suporta várias outras opções para personalizar seu sandbox:
 
 ```toml
 [core]
-# Install additional dependencies when the runtime is built
-# Can contain any valid shell commands
-# If you need the path to the Python interpreter in any of these commands, you can use the $OH_INTERPRETER_PATH variable
+# Instalar dependências adicionais quando o runtime for construído
+# Pode conter quaisquer comandos shell válidos
+# Se você precisar do caminho para o interpretador Python em qualquer um desses comandos, pode usar a variável $OH_INTERPRETER_PATH
 runtime_extra_deps = """
 pip install numpy pandas
 apt-get update && apt-get install -y ffmpeg
 """
 
-# Set environment variables for the runtime
-# Useful for configuration that needs to be available at runtime
+# Definir variáveis de ambiente para o runtime
+# Útil para configuração que precisa estar disponível em tempo de execução
 runtime_startup_env_vars = { DATABASE_URL = "postgresql://user:pass@localhost/db" }
 
-# Specify platform for multi-architecture builds (e.g., "linux/amd64" or "linux/arm64")
+# Especificar a plataforma para builds de várias arquiteturas (por exemplo, "linux/amd64" ou "linux/arm64")
 platform = "linux/amd64"
 ```
 
-### Run
+### Executar
 
-Run OpenHands by running ```make run``` in the top level directory.
+Execute o OpenHands executando ```make run``` no diretório de nível superior.

@@ -1,12 +1,14 @@
+Here is the translated content in Brazilian Portuguese:
+
 # OpenRouter
 
-OpenHands uses LiteLLM to make calls to chat models on OpenRouter. You can find their documentation on using OpenRouter as a provider [here](https://docs.litellm.ai/docs/providers/openrouter).
+O OpenHands usa o LiteLLM para fazer chamadas para modelos de chat no OpenRouter. Você pode encontrar a documentação deles sobre como usar o OpenRouter como provedor [aqui](https://docs.litellm.ai/docs/providers/openrouter).
 
-## Configuration
+## Configuração
 
-When running OpenHands, you'll need to set the following in the OpenHands UI through the Settings:
-* `LLM Provider` to `OpenRouter`
-* `LLM Model` to the model you will be using.
-[Visit here to see a full list of OpenRouter models](https://openrouter.ai/models).
-If the model is not in the list, toggle `Advanced` options, and enter it in `Custom Model` (e.g. openrouter/&lt;model-name&gt; like `openrouter/anthropic/claude-3.5-sonnet`).
-* `API Key` to your OpenRouter API key.
+Ao executar o OpenHands, você precisará definir o seguinte na interface do usuário do OpenHands através das Configurações:
+* `LLM Provider` para `OpenRouter`
+* `LLM Model` para o modelo que você usará.
+[Visite aqui para ver uma lista completa de modelos do OpenRouter](https://openrouter.ai/models).
+Se o modelo não estiver na lista, ative as opções `Advanced` e insira-o em `Custom Model` (por exemplo, openrouter/&lt;model-name&gt; como `openrouter/anthropic/claude-3.5-sonnet`).
+* `API Key` para a sua chave de API do OpenRouter.

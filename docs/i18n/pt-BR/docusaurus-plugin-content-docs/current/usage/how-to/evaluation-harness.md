@@ -1,17 +1,17 @@
-# Evaluation
+# Avaliação
 
-This guide provides an overview of how to integrate your own evaluation benchmark into the OpenHands framework.
+Este guia fornece uma visão geral de como integrar seu próprio benchmark de avaliação ao framework OpenHands.
 
-## Setup Environment and LLM Configuration
+## Configurar Ambiente e Configuração do LLM
 
-Please follow instructions [here](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md) to setup your local development environment.
-OpenHands in development mode uses `config.toml` to keep track of most configurations.
+Por favor, siga as instruções [aqui](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md) para configurar seu ambiente de desenvolvimento local.
+O OpenHands no modo de desenvolvimento usa `config.toml` para manter o controle da maioria das configurações.
 
-Here's an example configuration file you can use to define and use multiple LLMs:
+Aqui está um exemplo de arquivo de configuração que você pode usar para definir e usar múltiplos LLMs:
 
 ```toml
 [llm]
-# IMPORTANT: add your API key here, and set the model to the one you want to evaluate
+# IMPORTANTE: adicione sua chave de API aqui e defina o modelo para o que você deseja avaliar
 model = "claude-3-5-sonnet-20241022"
 api_key = "sk-XXX"
 
@@ -28,9 +28,9 @@ temperature = 0.0
 ```
 
 
-## How to use OpenHands in the command line
+## Como usar o OpenHands na linha de comando
 
-OpenHands can be run from the command line using the following format:
+O OpenHands pode ser executado a partir da linha de comando usando o seguinte formato:
 
 ```bash
 poetry run python ./openhands/core/main.py \
@@ -40,7 +40,7 @@ poetry run python ./openhands/core/main.py \
         -l <llm_config>
 ```
 
-For example:
+Por exemplo:
 
 ```bash
 poetry run python ./openhands/core/main.py \
@@ -50,39 +50,39 @@ poetry run python ./openhands/core/main.py \
         -l llm
 ```
 
-This command runs OpenHands with:
-- A maximum of 10 iterations
-- The specified task description
-- Using the CodeActAgent
-- With the LLM configuration defined in the `llm` section of your `config.toml` file
+Este comando executa o OpenHands com:
+- Um máximo de 10 iterações
+- A descrição da tarefa especificada
+- Usando o CodeActAgent
+- Com a configuração do LLM definida na seção `llm` do seu arquivo `config.toml`
 
-## How does OpenHands work
+## Como o OpenHands funciona
 
-The main entry point for OpenHands is in `openhands/core/main.py`. Here's a simplified flow of how it works:
+O ponto de entrada principal para o OpenHands está em `openhands/core/main.py`. Aqui está um fluxo simplificado de como ele funciona:
 
-1. Parse command-line arguments and load the configuration
-2. Create a runtime environment using `create_runtime()`
-3. Initialize the specified agent
-4. Run the controller using `run_controller()`, which:
-   - Attaches the runtime to the agent
-   - Executes the agent's task
-   - Returns a final state when complete
+1. Analisa os argumentos da linha de comando e carrega a configuração
+2. Cria um ambiente de execução usando `create_runtime()`
+3. Inicializa o agente especificado
+4. Executa o controlador usando `run_controller()`, que:
+   - Anexa o ambiente de execução ao agente
+   - Executa a tarefa do agente
+   - Retorna um estado final quando concluído
 
-The `run_controller()` function is the core of OpenHands's execution. It manages the interaction between the agent, the runtime, and the task, handling things like user input simulation and event processing.
-
-
-## Easiest way to get started: Exploring Existing Benchmarks
-
-We encourage you to review the various evaluation benchmarks available in the [`evaluation/benchmarks/` directory](https://github.com/All-Hands-AI/OpenHands/blob/main/evaluation/benchmarks) of our repository.
-
-To integrate your own benchmark, we suggest starting with the one that most closely resembles your needs. This approach can significantly streamline your integration process, allowing you to build upon existing structures and adapt them to your specific requirements.
-
-## How to create an evaluation workflow
+A função `run_controller()` é o núcleo da execução do OpenHands. Ela gerencia a interação entre o agente, o ambiente de execução e a tarefa, lidando com coisas como simulação de entrada do usuário e processamento de eventos.
 
 
-To create an evaluation workflow for your benchmark, follow these steps:
+## Maneira mais fácil de começar: Explorando Benchmarks Existentes
 
-1. Import relevant OpenHands utilities:
+Encorajamos você a revisar os vários benchmarks de avaliação disponíveis no [diretório `evaluation/benchmarks/`](https://github.com/All-Hands-AI/OpenHands/blob/main/evaluation/benchmarks) do nosso repositório.
+
+Para integrar seu próprio benchmark, sugerimos começar com aquele que mais se assemelha às suas necessidades. Essa abordagem pode simplificar significativamente seu processo de integração, permitindo que você construa sobre estruturas existentes e as adapte aos seus requisitos específicos.
+
+## Como criar um fluxo de trabalho de avaliação
+
+
+Para criar um fluxo de trabalho de avaliação para o seu benchmark, siga estas etapas:
+
+1. Importe as utilidades relevantes do OpenHands:
    ```python
     import openhands.agenthub
     from evaluation.utils.shared import (
@@ -107,7 +107,7 @@ To create an evaluation workflow for your benchmark, follow these steps:
     from openhands.runtime.runtime import Runtime
    ```
 
-2. Create a configuration:
+2. Crie uma configuração:
    ```python
    def get_config(instance: pd.Series, metadata: EvalMetadata) -> AppConfig:
        config = AppConfig(
@@ -124,15 +124,15 @@ To create an evaluation workflow for your benchmark, follow these steps:
        return config
    ```
 
-3. Initialize the runtime and set up the evaluation environment:
+3. Inicialize o ambiente de execução e configure o ambiente de avaliação:
    ```python
    def initialize_runtime(runtime: Runtime, instance: pd.Series):
-       # Set up your evaluation environment here
-       # For example, setting environment variables, preparing files, etc.
+       # Configure seu ambiente de avaliação aqui
+       # Por exemplo, definindo variáveis de ambiente, preparando arquivos, etc.
        pass
    ```
 
-4. Create a function to process each instance:
+4. Crie uma função para processar cada instância:
    ```python
    from openhands.utils.async_utils import call_async_from_sync
    def process_instance(instance: pd.Series, metadata: EvalMetadata) -> EvalOutput:
@@ -150,7 +150,7 @@ To create an evaluation workflow for your benchmark, follow these steps:
            fake_user_response_fn=your_user_response_function,
        )
 
-       # Evaluate the agent's actions
+       # Avalie as ações do agente
        evaluation_result = await evaluate_agent_actions(runtime, instance)
 
        return EvalOutput(
@@ -164,7 +164,7 @@ To create an evaluation workflow for your benchmark, follow these steps:
        )
    ```
 
-5. Run the evaluation:
+5. Execute a avaliação:
    ```python
    metadata = make_metadata(llm_config, dataset_name, agent_class, max_iterations, eval_note, eval_output_dir)
    output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
@@ -179,71 +179,71 @@ To create an evaluation workflow for your benchmark, follow these steps:
    )
    ```
 
-This workflow sets up the configuration, initializes the runtime environment, processes each instance by running the agent and evaluating its actions, and then collects the results into an `EvalOutput` object. The `run_evaluation` function handles parallelization and progress tracking.
+Este fluxo de trabalho configura a configuração, inicializa o ambiente de execução, processa cada instância executando o agente e avaliando suas ações e, em seguida, coleta os resultados em um objeto `EvalOutput`. A função `run_evaluation` lida com a paralelização e o rastreamento do progresso.
 
-Remember to customize the `get_instruction`, `your_user_response_function`, and `evaluate_agent_actions` functions according to your specific benchmark requirements.
+Lembre-se de personalizar as funções `get_instruction`, `your_user_response_function` e `evaluate_agent_actions` de acordo com os requisitos específicos do seu benchmark.
 
-By following this structure, you can create a robust evaluation workflow for your benchmark within the OpenHands framework.
-
-
-## Understanding the `user_response_fn`
-
-The `user_response_fn` is a crucial component in OpenHands's evaluation workflow. It simulates user interaction with the agent, allowing for automated responses during the evaluation process. This function is particularly useful when you want to provide consistent, predefined responses to the agent's queries or actions.
+Ao seguir essa estrutura, você pode criar um fluxo de trabalho de avaliação robusto para o seu benchmark dentro do framework OpenHands.
 
 
-### Workflow and Interaction
+## Entendendo a `user_response_fn`
 
-The correct workflow for handling actions and the `user_response_fn` is as follows:
+A `user_response_fn` é um componente crucial no fluxo de trabalho de avaliação do OpenHands. Ela simula a interação do usuário com o agente, permitindo respostas automatizadas durante o processo de avaliação. Essa função é particularmente útil quando você deseja fornecer respostas consistentes e predefinidas às consultas ou ações do agente.
 
-1. Agent receives a task and starts processing
-2. Agent emits an Action
-3. If the Action is executable (e.g., CmdRunAction, IPythonRunCellAction):
-   - The Runtime processes the Action
-   - Runtime returns an Observation
-4. If the Action is not executable (typically a MessageAction):
-   - The `user_response_fn` is called
-   - It returns a simulated user response
-5. The agent receives either the Observation or the simulated response
-6. Steps 2-5 repeat until the task is completed or max iterations are reached
 
-Here's a more accurate visual representation:
+### Fluxo de Trabalho e Interação
+
+O fluxo de trabalho correto para lidar com ações e a `user_response_fn` é o seguinte:
+
+1. O agente recebe uma tarefa e começa a processar
+2. O agente emite uma Ação
+3. Se a Ação for executável (por exemplo, CmdRunAction, IPythonRunCellAction):
+   - O Runtime processa a Ação
+   - O Runtime retorna uma Observação
+4. Se a Ação não for executável (normalmente uma MessageAction):
+   - A `user_response_fn` é chamada
+   - Ela retorna uma resposta simulada do usuário
+5. O agente recebe a Observação ou a resposta simulada
+6. As etapas 2-5 se repetem até que a tarefa seja concluída ou o número máximo de iterações seja atingido
+
+Aqui está uma representação visual mais precisa:
 
 ```
-                 [Agent]
+                 [Agente]
                     |
                     v
-               [Emit Action]
+               [Emitir Ação]
                     |
                     v
-            [Is Action Executable?]
+            [A Ação é Executável?]
            /                       \
-         Yes                        No
+         Sim                        Não
           |                          |
           v                          v
      [Runtime]               [user_response_fn]
           |                          |
           v                          v
-  [Return Observation]    [Simulated Response]
+  [Retornar Observação]    [Resposta Simulada]
            \                        /
             \                      /
              v                    v
-           [Agent receives feedback]
+           [Agente recebe feedback]
                     |
                     v
-         [Continue or Complete Task]
+         [Continuar ou Concluir Tarefa]
 ```
 
-In this workflow:
+Neste fluxo de trabalho:
 
-- Executable actions (like running commands or executing code) are handled directly by the Runtime
-- Non-executable actions (typically when the agent wants to communicate or ask for clarification) are handled by the `user_response_fn`
-- The agent then processes the feedback, whether it's an Observation from the Runtime or a simulated response from the `user_response_fn`
+- Ações executáveis (como executar comandos ou código) são tratadas diretamente pelo Runtime
+- Ações não executáveis (normalmente quando o agente deseja se comunicar ou pedir esclarecimentos) são tratadas pela `user_response_fn`
+- O agente então processa o feedback, seja uma Observação do Runtime ou uma resposta simulada da `user_response_fn`
 
-This approach allows for automated handling of both concrete actions and simulated user interactions, making it suitable for evaluation scenarios where you want to test the agent's ability to complete tasks with minimal human intervention.
+Essa abordagem permite o tratamento automatizado de ações concretas e interações simuladas do usuário, tornando-a adequada para cenários de avaliação em que você deseja testar a capacidade do agente de concluir tarefas com intervenção humana mínima.
 
-### Example Implementation
+### Exemplo de Implementação
 
-Here's an example of a `user_response_fn` used in the SWE-Bench evaluation:
+Aqui está um exemplo de uma `user_response_fn` usada na avaliação SWE-Bench:
 
 ```python
 def codeact_user_response(state: State | None) -> str:
@@ -269,10 +269,10 @@ def codeact_user_response(state: State | None) -> str:
     return msg
 ```
 
-This function does the following:
+Esta função faz o seguinte:
 
-1. Provides a standard message encouraging the agent to continue working
-2. Checks how many times the agent has attempted to communicate with the user
-3. If the agent has made multiple attempts, it provides an option to give up
+1. Fornece uma mensagem padrão encorajando o agente a continuar trabalhando
+2. Verifica quantas vezes o agente tentou se comunicar com o usuário
+3. Se o agente fez várias tentativas, fornece uma opção para desistir
 
-By using this function, you can ensure consistent behavior across multiple evaluation runs and prevent the agent from getting stuck waiting for human input.
+Ao usar essa função, você pode garantir um comportamento consistente em várias execuções de avaliação e evitar que o agente fique preso esperando a entrada do usuário.

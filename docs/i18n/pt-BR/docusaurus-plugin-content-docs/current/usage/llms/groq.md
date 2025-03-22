@@ -1,24 +1,21 @@
 # Groq
 
-OpenHands uses LiteLLM to make calls to chat models on Groq. You can find their documentation on using Groq as a provider [here](https://docs.litellm.ai/docs/providers/groq).
+O OpenHands usa o LiteLLM para fazer chamadas para modelos de chat no Groq. Você pode encontrar a documentação deles sobre como usar o Groq como provedor [aqui](https://docs.litellm.ai/docs/providers/groq).
 
-## Configuration
+## Configuração
 
-When running OpenHands, you'll need to set the following in the OpenHands UI through the Settings:
-- `LLM Provider` to `Groq`
-- `LLM Model` to the model you will be using. [Visit here to see the list of
-models that Groq hosts](https://console.groq.com/docs/models). If the model is not in the list, toggle
-`Advanced` options, and enter it in `Custom Model` (e.g. groq/&lt;model-name&gt; like `groq/llama3-70b-8192`).
-- `API key` to your Groq API key. To find or create your Groq API Key, [see here](https://console.groq.com/keys).
+Ao executar o OpenHands, você precisará definir o seguinte na interface do usuário do OpenHands através das Configurações:
+- `LLM Provider` para `Groq`
+- `LLM Model` para o modelo que você usará. [Visite aqui para ver a lista de modelos que o Groq hospeda](https://console.groq.com/docs/models). Se o modelo não estiver na lista, ative as opções `Advanced` e insira-o em `Custom Model` (por exemplo, groq/&lt;model-name&gt; como `groq/llama3-70b-8192`).
+- `API key` para sua chave de API do Groq. Para encontrar ou criar sua chave de API do Groq, [veja aqui](https://console.groq.com/keys).
 
 
 
-## Using Groq as an OpenAI-Compatible Endpoint
+## Usando o Groq como um Endpoint Compatível com OpenAI
 
-The Groq endpoint for chat completion is [mostly OpenAI-compatible](https://console.groq.com/docs/openai). Therefore, you can access Groq models as you
-would access any OpenAI-compatible endpoint. In the OpenHands UI through the Settings:
-1. Enable `Advanced` options
-2. Set the following:
-   - `Custom Model` to the prefix `openai/` + the model you will be using (e.g. `openai/llama3-70b-8192`)
-   - `Base URL` to `https://api.groq.com/openai/v1`
-   - `API Key` to your Groq API key
+O endpoint do Groq para conclusão de chat é [em grande parte compatível com OpenAI](https://console.groq.com/docs/openai). Portanto, você pode acessar os modelos do Groq como acessaria qualquer endpoint compatível com OpenAI. Na interface do usuário do OpenHands, através das Configurações:
+1. Habilite as opções `Advanced`
+2. Defina o seguinte:
+   - `Custom Model` para o prefixo `openai/` + o modelo que você usará (por exemplo, `openai/llama3-70b-8192`)
+   - `Base URL` para `https://api.groq.com/openai/v1`
+   - `API Key` para sua chave de API do Groq

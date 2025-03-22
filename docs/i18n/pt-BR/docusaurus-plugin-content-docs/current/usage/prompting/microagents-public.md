@@ -1,39 +1,39 @@
-# Public Microagents
+# Microagentes Públicos
 
-## Overview
+## Visão Geral
 
-Public microagents are specialized guidelines triggered by keywords for all OpenHands users.
-They are defined in markdown files under the
-[`microagents/knowledge/`](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/knowledge) directory.
+Microagentes públicos são diretrizes especializadas acionadas por palavras-chave para todos os usuários do OpenHands.
+Eles são definidos em arquivos markdown no diretório
+[`microagents/knowledge/`](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/knowledge).
 
-Public microagents:
-- Monitor incoming commands for their trigger words.
-- Activate when relevant triggers are detected.
-- Apply their specialized knowledge and capabilities.
-- Follow their specific guidelines and restrictions.
+Microagentes públicos:
+- Monitoram comandos recebidos em busca de suas palavras-chave de acionamento.
+- São ativados quando os gatilhos relevantes são detectados.
+- Aplicam seus conhecimentos e capacidades especializados.
+- Seguem suas diretrizes e restrições específicas.
 
-## Current Public Microagents
+## Microagentes Públicos Atuais
 
-For more information about specific microagents, refer to their individual documentation files in
-the [`microagents/knowledge/`](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/knowledge/) directory.
+Para mais informações sobre microagentes específicos, consulte seus arquivos de documentação individuais no
+diretório [`microagents/knowledge/`](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/knowledge/).
 
-### GitHub Agent
-**File**: `github.md`
-**Triggers**: `github`, `git`
+### Agente GitHub
+**Arquivo**: `github.md`
+**Gatilhos**: `github`, `git`
 
-The GitHub agent specializes in GitHub API interactions and repository management. It:
-- Has access to a `GITHUB_TOKEN` for API authentication.
-- Follows strict guidelines for repository interactions.
-- Handles branch management and pull requests.
-- Uses the GitHub API instead of web browser interactions.
+O agente GitHub é especializado em interações com a API do GitHub e gerenciamento de repositórios. Ele:
+- Tem acesso a um `GITHUB_TOKEN` para autenticação na API.
+- Segue diretrizes rígidas para interações com repositórios.
+- Lida com gerenciamento de branches e pull requests.
+- Usa a API do GitHub em vez de interações com navegador web.
 
-Key features:
-- Branch protection (prevents direct pushes to main/master)
-- Automated PR creation
-- Git configuration management
-- API-first approach for GitHub operations
+Principais recursos:
+- Proteção de branch (impede push direto para main/master)
+- Criação automatizada de PR
+- Gerenciamento de configuração do Git
+- Abordagem API-first para operações do GitHub
 
-Usage Example:
+Exemplo de Uso:
 
 ```bash
 git checkout -b feature-branch
@@ -41,69 +41,69 @@ git commit -m "Add new feature"
 git push origin feature-branch
 ```
 
-### NPM Agent
-**File**: `npm.md`
-**Triggers**: `npm`
+### Agente NPM
+**Arquivo**: `npm.md`
+**Gatilhos**: `npm`
 
-Specializes in handling npm package management with specific focus on:
-- Non-interactive shell operations.
-- Automated confirmation handling using Unix 'yes' command.
-- Package installation automation.
+Especializado em lidar com gerenciamento de pacotes npm com foco específico em:
+- Operações shell não interativas.
+- Tratamento automatizado de confirmação usando o comando Unix 'yes'.
+- Automação de instalação de pacotes.
 
-Usage Example:
+Exemplo de Uso:
 
 ```bash
 yes | npm install package-name
 ```
 
-## Contributing a Public Microagent
+## Contribuindo com um Microagente Público
 
-You can create your own public microagents by adding new markdown files to the
-[`microagents/knowledge/`](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/knowledge/) directory.
+Você pode criar seus próprios microagentes públicos adicionando novos arquivos markdown ao
+diretório [`microagents/knowledge/`](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/knowledge/).
 
-### Public Microagents Best Practices
+### Melhores Práticas para Microagentes Públicos
 
-- **Clear Scope**: Keep the microagent focused on a specific domain or task.
-- **Explicit Instructions**: Provide clear, unambiguous guidelines.
-- **Useful Examples**: Include practical examples of common use cases.
-- **Safety First**: Include necessary warnings and constraints.
-- **Integration Awareness**: Consider how the microagent interacts with other components.
+- **Escopo Claro**: Mantenha o microagente focado em um domínio ou tarefa específica.
+- **Instruções Explícitas**: Forneça diretrizes claras e inequívocas.
+- **Exemplos Úteis**: Inclua exemplos práticos de casos de uso comuns.
+- **Segurança em Primeiro Lugar**: Inclua avisos e restrições necessárias.
+- **Consciência de Integração**: Considere como o microagente interage com outros componentes.
 
-### Steps to Contribute a Public Microagent
+### Etapas para Contribuir com um Microagente Público
 
-#### 1. Plan the Public Microagent
+#### 1. Planeje o Microagente Público
 
-Before creating a public microagent, consider:
-- What specific problem or use case will it address?
-- What unique capabilities or knowledge should it have?
-- What trigger words make sense for activating it?
-- What constraints or guidelines should it follow?
+Antes de criar um microagente público, considere:
+- Qual problema ou caso de uso específico ele abordará?
+- Quais capacidades ou conhecimentos únicos ele deve ter?
+- Quais palavras-chave fazem sentido para ativá-lo?
+- Quais restrições ou diretrizes ele deve seguir?
 
-#### 2. Create File
+#### 2. Crie o Arquivo
 
-Create a new markdown file in [`microagents/knowledge/`](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/knowledge/)
-with a descriptive name (e.g., `docker.md` for a Docker-focused agent).
+Crie um novo arquivo markdown em [`microagents/knowledge/`](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/knowledge/)
+com um nome descritivo (por exemplo, `docker.md` para um agente focado em Docker).
 
-Update the file with the required frontmatter [according to the required format](./microagents-overview#microagent-format)
-and the required specialized guidelines while following the [best practices above](#public-microagents-best-practices).
+Atualize o arquivo com o frontmatter necessário [de acordo com o formato exigido](./microagents-overview#microagent-format)
+e as diretrizes especializadas necessárias, seguindo as [melhores práticas acima](#melhores-práticas-para-microagentes-públicos).
 
-#### 3. Testing the Public Microagent
+#### 3. Testando o Microagente Público
 
-- Test the agent with various prompts.
-- Verify trigger words activate the agent correctly.
-- Ensure instructions are clear and comprehensive.
-- Check for potential conflicts with existing agents.
+- Teste o agente com vários prompts.
+- Verifique se as palavras-chave acionam o agente corretamente.
+- Certifique-se de que as instruções estão claras e abrangentes.
+- Verifique possíveis conflitos com agentes existentes.
 
-#### 4. Submission Process
+#### 4. Processo de Envio
 
-Submit a pull request with:
-- The new microagent file.
-- Updated documentation if needed.
-- Description of the agent's purpose and capabilities.
+Envie um pull request com:
+- O novo arquivo do microagente.
+- Documentação atualizada, se necessário.
+- Descrição do propósito e das capacidades do agente.
 
-### Example Public Microagent Implementation
+### Exemplo de Implementação de Microagente Público
 
-Here's a template for a new microagent:
+Aqui está um modelo para um novo microagente:
 
 ```markdown
 ---
@@ -114,20 +114,20 @@ triggers:
 - container
 ---
 
-You are responsible for Docker container management and Dockerfile creation.
+Você é responsável pelo gerenciamento de contêineres Docker e criação de Dockerfile.
 
-Key responsibilities:
-1. Create and modify Dockerfiles
-2. Manage container lifecycle
-3. Handle Docker Compose configurations
+Principais responsabilidades:
+1. Criar e modificar Dockerfiles
+2. Gerenciar o ciclo de vida do contêiner
+3. Lidar com configurações do Docker Compose
 
-Guidelines:
-- Always use official base images when possible
-- Include necessary security considerations
-- Follow Docker best practices for layer optimization
+Diretrizes:
+- Sempre use imagens base oficiais quando possível
+- Inclua considerações de segurança necessárias
+- Siga as melhores práticas do Docker para otimização de camadas
 
-Examples:
-1. Creating a Dockerfile:
+Exemplos:
+1. Criando um Dockerfile:
    FROM node:18-alpine
    WORKDIR /app
    COPY package*.json ./
@@ -135,7 +135,7 @@ Examples:
    COPY . .
    CMD ["npm", "start"]
 
-2. Docker Compose usage:
+2. Uso do Docker Compose:
    version: '3'
    services:
      web:
@@ -143,11 +143,11 @@ Examples:
        ports:
          - "3000:3000"
 
-Remember to:
-- Validate Dockerfile syntax
-- Check for security vulnerabilities
-- Optimize for build time and image size
+Lembre-se de:
+- Validar a sintaxe do Dockerfile
+- Verificar vulnerabilidades de segurança
+- Otimizar para tempo de build e tamanho da imagem
 ```
 
-See the [current public micro-agents](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/knowledge) for
-more examples.
+Veja os [microagentes públicos atuais](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/knowledge) para
+mais exemplos.

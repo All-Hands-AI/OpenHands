@@ -1,43 +1,43 @@
-# Repository Microagents
+# Microagentes de Repositório
 
-## Overview
+## Visão Geral
 
-OpenHands can be customized to work more effectively with specific repositories by providing repository-specific context
-and guidelines. This section explains how to optimize OpenHands for your project.
+O OpenHands pode ser personalizado para trabalhar de forma mais eficaz com repositórios específicos, fornecendo contexto
+e diretrizes específicas do repositório. Esta seção explica como otimizar o OpenHands para o seu projeto.
 
-## Creating a Repository Micro-Agent
+## Criando um Micro-Agente de Repositório
 
-You can customize OpenHands' behavior for your repository by creating a `.openhands/microagents/` directory in your repository's root.
-At minimum it should contain the file
-`.openhands/microagents/repo.md`, which includes instructions that will
-be given to the agent every time it works with this repository.
+Você pode personalizar o comportamento do OpenHands para o seu repositório criando um diretório `.openhands/microagents/` na raiz do seu repositório.
+No mínimo, ele deve conter o arquivo
+`.openhands/microagents/repo.md`, que inclui instruções que serão
+fornecidas ao agente toda vez que ele trabalhar com este repositório.
 
-### Repository Microagents Best Practices
+### Melhores Práticas para Microagentes de Repositório
 
-- **Keep Instructions Updated**: Regularly update your `.openhands/microagents/` directory as your project evolves.
-- **Be Specific**: Include specific paths, patterns, and requirements unique to your project.
-- **Document Dependencies**: List all tools and dependencies required for development.
-- **Include Examples**: Provide examples of good code patterns from your project.
-- **Specify Conventions**: Document naming conventions, file organization, and code style preferences.
+- **Mantenha as Instruções Atualizadas**: Atualize regularmente o seu diretório `.openhands/microagents/` à medida que o seu projeto evolui.
+- **Seja Específico**: Inclua caminhos, padrões e requisitos específicos exclusivos do seu projeto.
+- **Documente as Dependências**: Liste todas as ferramentas e dependências necessárias para o desenvolvimento.
+- **Inclua Exemplos**: Forneça exemplos de bons padrões de código do seu projeto.
+- **Especifique Convenções**: Documente convenções de nomenclatura, organização de arquivos e preferências de estilo de código.
 
-### Steps to Create a Repository Microagent
+### Etapas para Criar um Microagente de Repositório
 
-#### 1. Plan the Repository Microagent
-When creating a repository-specific micro-agent, we suggest including the following information:
-- **Repository Overview**: A brief description of your project's purpose and architecture.
-- **Directory Structure**: Key directories and their purposes.
-- **Development Guidelines**: Project-specific coding standards and practices.
-- **Testing Requirements**: How to run tests and what types of tests are required.
-- **Setup Instructions**: Steps needed to build and run the project.
+#### 1. Planeje o Microagente de Repositório
+Ao criar um micro-agente específico para um repositório, sugerimos incluir as seguintes informações:
+- **Visão Geral do Repositório**: Uma breve descrição do propósito e arquitetura do seu projeto.
+- **Estrutura de Diretórios**: Diretórios-chave e seus propósitos.
+- **Diretrizes de Desenvolvimento**: Padrões e práticas de codificação específicas do projeto.
+- **Requisitos de Teste**: Como executar testes e quais tipos de testes são necessários.
+- **Instruções de Configuração**: Etapas necessárias para construir e executar o projeto.
 
-#### 2. Create File
+#### 2. Crie o Arquivo
 
-Create a file in your repository under `.openhands/microagents/` (Example: `.openhands/microagents/repo.md`)
+Crie um arquivo em seu repositório em `.openhands/microagents/` (Exemplo: `.openhands/microagents/repo.md`)
 
-Update the file with the required frontmatter [according to the required format](./microagents-overview#microagent-format)
-and the required specialized guidelines for your repository.
+Atualize o arquivo com o frontmatter necessário [de acordo com o formato exigido](./microagents-overview#microagent-format)
+e as diretrizes especializadas necessárias para o seu repositório.
 
-### Example Repository Microagent
+### Exemplo de Microagente de Repositório
 
 ```
 ---
@@ -46,23 +46,23 @@ type: repo
 agent: CodeActAgent
 ---
 
-Repository: MyProject
-Description: A web application for task management
+Repository: MeuProjeto
+Description: Uma aplicação web para gerenciamento de tarefas
 
 Directory Structure:
-- src/: Main application code
-- tests/: Test files
-- docs/: Documentation
+- src/: Código principal da aplicação
+- tests/: Arquivos de teste
+- docs/: Documentação
 
 Setup:
-- Run `npm install` to install dependencies
-- Use `npm run dev` for development
-- Run `npm test` for testing
+- Execute `npm install` para instalar as dependências
+- Use `npm run dev` para desenvolvimento
+- Execute `npm test` para testes
 
 Guidelines:
-- Follow ESLint configuration
-- Write tests for all new features
-- Use TypeScript for new code
+- Siga a configuração do ESLint
+- Escreva testes para todos os novos recursos
+- Use TypeScript para novo código
 
-If adding a new component in src/components, always add appropriate unit tests in tests/components/.
+Se adicionar um novo componente em src/components, sempre adicione testes unitários apropriados em tests/components/.
 ```

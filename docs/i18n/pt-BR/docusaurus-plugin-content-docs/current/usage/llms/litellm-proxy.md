@@ -1,20 +1,22 @@
-# LiteLLM Proxy
+Here is the translation to Brazilian Portuguese:
 
-OpenHands supports using the [LiteLLM proxy](https://docs.litellm.ai/docs/proxy/quick_start) to access various LLM providers.
+# Proxy LiteLLM
 
-## Configuration
+O OpenHands suporta o uso do [proxy LiteLLM](https://docs.litellm.ai/docs/proxy/quick_start) para acessar vários provedores de LLM.
 
-To use LiteLLM proxy with OpenHands, you need to:
+## Configuração
 
-1. Set up a LiteLLM proxy server (see [LiteLLM documentation](https://docs.litellm.ai/docs/proxy/quick_start))
-2. When running OpenHands, you'll need to set the following in the OpenHands UI through the Settings:
-  * Enable `Advanced` options
-  * `Custom Model` to the prefix `litellm_proxy/` + the model you will be using (e.g. `litellm_proxy/anthropic.claude-3-5-sonnet-20241022-v2:0`)
-  * `Base URL` to your LiteLLM proxy URL (e.g. `https://your-litellm-proxy.com`)
-  * `API Key` to your LiteLLM proxy API key
+Para usar o proxy LiteLLM com o OpenHands, você precisa:
 
-## Supported Models
+1. Configurar um servidor proxy LiteLLM (veja a [documentação do LiteLLM](https://docs.litellm.ai/docs/proxy/quick_start))
+2. Ao executar o OpenHands, você precisará definir o seguinte na interface do usuário do OpenHands através das Configurações:
+  * Habilitar opções `Avançadas`
+  * `Modelo Personalizado` para o prefixo `litellm_proxy/` + o modelo que você usará (por exemplo, `litellm_proxy/anthropic.claude-3-5-sonnet-20241022-v2:0`)
+  * `URL Base` para a URL do seu proxy LiteLLM (por exemplo, `https://your-litellm-proxy.com`)
+  * `Chave de API` para a chave de API do seu proxy LiteLLM
 
-The supported models depend on your LiteLLM proxy configuration. OpenHands supports any model that your LiteLLM proxy is configured to handle.
+## Modelos Suportados
 
-Refer to your LiteLLM proxy configuration for the list of available models and their names.
+Os modelos suportados dependem da configuração do seu proxy LiteLLM. O OpenHands suporta qualquer modelo que o seu proxy LiteLLM esteja configurado para lidar.
+
+Consulte a configuração do seu proxy LiteLLM para obter a lista de modelos disponíveis e seus nomes.

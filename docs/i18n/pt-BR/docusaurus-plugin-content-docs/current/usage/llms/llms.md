@@ -1,48 +1,38 @@
-# 🤖 LLM Backends
+# 🤖 Backends de LLM
 
-OpenHands can connect to any LLM supported by LiteLLM. However, it requires a powerful model to work.
+O OpenHands pode se conectar a qualquer LLM suportado pelo LiteLLM. No entanto, ele requer um modelo poderoso para funcionar.
 
-## Model Recommendations
+## Recomendações de Modelo
 
-Based on our evaluations of language models for coding tasks (using the SWE-bench dataset), we can provide some
-recommendations for model selection. Our latest benchmarking results can be found in [this spreadsheet](https://docs.google.com/spreadsheets/d/1wOUdFCMyY6Nt0AIqF705KN4JKOWgeI4wUGUP60krXXs/edit?gid=0).
+Com base em nossas avaliações de modelos de linguagem para tarefas de codificação (usando o conjunto de dados SWE-bench), podemos fornecer algumas recomendações para a seleção de modelos. Nossos resultados mais recentes de benchmarking podem ser encontrados nesta [planilha](https://docs.google.com/spreadsheets/d/1wOUdFCMyY6Nt0AIqF705KN4JKOWgeI4wUGUP60krXXs/edit?gid=0).
 
-Based on these findings and community feedback, the following models have been verified to work reasonably well with OpenHands:
+Com base nessas descobertas e no feedback da comunidade, os seguintes modelos foram verificados como funcionando razoavelmente bem com o OpenHands:
 
-- anthropic/claude-3-5-sonnet-20241022 (recommended)
+- anthropic/claude-3-5-sonnet-20241022 (recomendado)
 - anthropic/claude-3-5-haiku-20241022
 - deepseek/deepseek-chat
 - gpt-4o
 
 :::warning
-OpenHands will issue many prompts to the LLM you configure. Most of these LLMs cost money, so be sure to set spending
-limits and monitor usage.
+O OpenHands enviará muitos prompts para o LLM que você configurar. A maioria desses LLMs custa dinheiro, então certifique-se de definir limites de gastos e monitorar o uso.
 :::
 
-If you have successfully run OpenHands with specific LLMs not in the list, please add them to the verified list. We
-also encourage you to open a PR to share your setup process to help others using the same provider and LLM!
-
-For a full list of the providers and models available, please consult the
-[litellm documentation](https://docs.litellm.ai/docs/providers).
+Para obter uma lista completa dos provedores e modelos disponíveis, consulte a [documentação do litellm](https://docs.litellm.ai/docs/providers).
 
 :::note
-Most current local and open source models are not as powerful. When using such models, you may see long
-wait times between messages, poor responses, or errors about malformed JSON. OpenHands can only be as powerful as the
-models driving it. However, if you do find ones that work, please add them to the verified list above.
+A maioria dos modelos locais e de código aberto atuais não são tão poderosos. Ao usar esses modelos, você pode ver longos tempos de espera entre as mensagens, respostas ruins ou erros sobre JSON malformado. O OpenHands só pode ser tão poderoso quanto os modelos que o impulsionam. No entanto, se você encontrar alguns que funcionem, adicione-os à lista verificada acima.
 :::
 
-## LLM Configuration
+## Configuração do LLM
 
-The following can be set in the OpenHands UI through the Settings:
+O seguinte pode ser definido na interface do usuário do OpenHands por meio das Configurações:
 
-- `LLM Provider`
-- `LLM Model`
-- `API Key`
-- `Base URL` (through `Advanced` settings)
+- `Provedor LLM`
+- `Modelo LLM`
+- `Chave API`
+- `URL Base` (através das configurações `Avançadas`)
 
-There are some settings that may be necessary for some LLMs/providers that cannot be set through the UI. Instead, these
-can be set through environment variables passed to the docker run command when starting the app
-using `-e`:
+Existem algumas configurações que podem ser necessárias para alguns LLMs/provedores que não podem ser definidas através da interface do usuário. Em vez disso, elas podem ser definidas por meio de variáveis de ambiente passadas para o comando docker run ao iniciar o aplicativo usando `-e`:
 
 - `LLM_API_VERSION`
 - `LLM_EMBEDDING_MODEL`
@@ -51,7 +41,7 @@ using `-e`:
 - `LLM_DISABLE_VISION`
 - `LLM_CACHING_PROMPT`
 
-We have a few guides for running OpenHands with specific model providers:
+Temos alguns guias para executar o OpenHands com provedores de modelo específicos:
 
 - [Azure](llms/azure-llms)
 - [Google](llms/google-llms)
@@ -60,20 +50,18 @@ We have a few guides for running OpenHands with specific model providers:
 - [OpenAI](llms/openai-llms)
 - [OpenRouter](llms/openrouter)
 
-### API retries and rate limits
+### Novas tentativas de API e limites de taxa
 
-LLM providers typically have rate limits, sometimes very low, and may require retries. OpenHands will automatically
-retry requests if it receives a Rate Limit Error (429 error code).
+Os provedores de LLM normalmente têm limites de taxa, às vezes muito baixos, e podem exigir novas tentativas. O OpenHands tentará automaticamente as solicitações novamente se receber um Erro de Limite de Taxa (código de erro 429).
 
-You can customize these options as you need for the provider you're using. Check their documentation, and set the
-following environment variables to control the number of retries and the time between retries:
+Você pode personalizar essas opções conforme necessário para o provedor que está usando. Verifique a documentação deles e defina as seguintes variáveis de ambiente para controlar o número de novas tentativas e o tempo entre as novas tentativas:
 
-- `LLM_NUM_RETRIES` (Default of 4 times)
-- `LLM_RETRY_MIN_WAIT` (Default of 5 seconds)
-- `LLM_RETRY_MAX_WAIT` (Default of 30 seconds)
-- `LLM_RETRY_MULTIPLIER` (Default of 2)
+- `LLM_NUM_RETRIES` (Padrão de 4 vezes)
+- `LLM_RETRY_MIN_WAIT` (Padrão de 5 segundos)
+- `LLM_RETRY_MAX_WAIT` (Padrão de 30 segundos)
+- `LLM_RETRY_MULTIPLIER` (Padrão de 2)
 
-If you are running OpenHands in development mode, you can also set these options in the `config.toml` file:
+Se você estiver executando o OpenHands no modo de desenvolvimento, também poderá definir essas opções no arquivo `config.toml`:
 
 ```toml
 [llm]

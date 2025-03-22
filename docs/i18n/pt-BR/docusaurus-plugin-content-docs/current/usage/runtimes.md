@@ -1,21 +1,15 @@
-# Runtime Configuration
+# Configuração de Runtime
 
-A Runtime is an environment where the OpenHands agent can edit files and run
-commands.
+Um Runtime é um ambiente onde o agente OpenHands pode editar arquivos e executar comandos.
 
-By default, OpenHands uses a Docker-based runtime, running on your local computer.
-This means you only have to pay for the LLM you're using, and your code is only ever sent to the LLM.
+Por padrão, o OpenHands usa um runtime baseado em Docker, executando no seu computador local. Isso significa que você só precisa pagar pelo LLM que está usando, e seu código é enviado apenas para o LLM.
 
-We also support "remote" runtimes, which are typically managed by third-parties.
-They can make setup a bit simpler and more scalable, especially
-if you're running many OpenHands conversations in parallel (e.g. to do evaluation).
+Também suportamos runtimes "remotos", que são tipicamente gerenciados por terceiros. Eles podem tornar a configuração um pouco mais simples e escalável, especialmente se você estiver executando muitas conversas do OpenHands em paralelo (por exemplo, para fazer avaliação).
 
-Additionally, we provide a "local" runtime that runs directly on your machine without Docker,
-which can be useful in controlled environments like CI pipelines.
+Além disso, fornecemos um runtime "local" que é executado diretamente na sua máquina sem o Docker, o que pode ser útil em ambientes controlados como pipelines de CI.
 
-## Docker Runtime
-This is the default Runtime that's used when you start OpenHands. You might notice
-some flags being passed to `docker run` that make this possible:
+## Runtime Docker
+Este é o Runtime padrão que é usado quando você inicia o OpenHands. Você pode notar algumas flags sendo passadas para o `docker run` que tornam isso possível:
 
 ```
 docker run # ...
@@ -24,26 +18,24 @@ docker run # ...
     # ...
 ```
 
-The `SANDBOX_RUNTIME_CONTAINER_IMAGE` from nikolaik is a pre-built runtime image
-that contains our Runtime server, as well as some basic utilities for Python and NodeJS.
-You can also [build your own runtime image](how-to/custom-sandbox-guide).
+O `SANDBOX_RUNTIME_CONTAINER_IMAGE` do nikolaik é uma imagem de runtime pré-construída que contém nosso servidor Runtime, bem como algumas utilidades básicas para Python e NodeJS. Você também pode [construir sua própria imagem de runtime](how-to/custom-sandbox-guide).
 
-### Connecting to Your filesystem
-One useful feature here is the ability to connect to your local filesystem. To mount your filesystem into the runtime:
-1. Set `WORKSPACE_BASE`:
+### Conectando ao seu sistema de arquivos
+Um recurso útil aqui é a capacidade de se conectar ao seu sistema de arquivos local. Para montar seu sistema de arquivos no runtime:
+1. Defina `WORKSPACE_BASE`:
 
     ```bash
-    export WORKSPACE_BASE=/path/to/your/code
+    export WORKSPACE_BASE=/caminho/para/seu/codigo
 
-    # Linux and Mac Example
+    # Exemplo no Linux e Mac
     # export WORKSPACE_BASE=$HOME/OpenHands
-    # Will set $WORKSPACE_BASE to /home/<username>/OpenHands
+    # Definirá $WORKSPACE_BASE como /home/<username>/OpenHands
     #
-    # WSL on Windows Example
+    # Exemplo no WSL no Windows
     # export WORKSPACE_BASE=/mnt/c/dev/OpenHands
-    # Will set $WORKSPACE_BASE to C:\dev\OpenHands
+    # Definirá $WORKSPACE_BASE como C:\dev\OpenHands
     ```
-2. Add the following options to the `docker run` command:
+2. Adicione as seguintes opções ao comando `docker run`:
 
     ```bash
     docker run # ...
@@ -53,92 +45,89 @@ One useful feature here is the ability to connect to your local filesystem. To m
         # ...
     ```
 
-Be careful! There's nothing stopping the OpenHands agent from deleting or modifying
-any files that are mounted into its workspace.
+Tenha cuidado! Não há nada impedindo o agente OpenHands de excluir ou modificar quaisquer arquivos que estejam montados em seu workspace.
 
-This setup can cause some issues with file permissions (hence the `SANDBOX_USER_ID` variable)
-but seems to work well on most systems.
+Essa configuração pode causar alguns problemas com permissões de arquivo (daí a variável `SANDBOX_USER_ID`), mas parece funcionar bem na maioria dos sistemas.
 
 ## OpenHands Remote Runtime
 
-OpenHands Remote Runtime is currently in beta (read [here](https://runtime.all-hands.dev/) for more details), it allows you to launch runtimes in parallel in the cloud.
-Fill out [this form](https://docs.google.com/forms/d/e/1FAIpQLSckVz_JFwg2_mOxNZjCtr7aoBFI2Mwdan3f75J_TrdMS1JV2g/viewform) to apply if you want to try this out!
+O OpenHands Remote Runtime está atualmente em beta (leia [aqui](https://runtime.all-hands.dev/) para mais detalhes), ele permite que você inicie runtimes em paralelo na nuvem. Preencha [este formulário](https://docs.google.com/forms/d/e/1FAIpQLSckVz_JFwg2_mOxNZjCtr7aoBFI2Mwdan3f75J_TrdMS1JV2g/viewform) para se inscrever se quiser experimentar isso!
 
-NOTE: This runtime is specifically designed for agent evaluation purposes only through [OpenHands evaluation harness](https://github.com/All-Hands-AI/OpenHands/tree/main/evaluation). It should not be used to launch production OpenHands applications.
+NOTA: Este runtime é projetado especificamente apenas para fins de avaliação de agentes por meio do [harness de avaliação do OpenHands](https://github.com/All-Hands-AI/OpenHands/tree/main/evaluation). Ele não deve ser usado para iniciar aplicativos OpenHands em produção.
 
-## Modal Runtime
-Our partners at [Modal](https://modal.com/) have also provided a runtime for OpenHands.
+## Runtime Modal
+Nossos parceiros na [Modal](https://modal.com/) também forneceram um runtime para o OpenHands.
 
-To use the Modal Runtime, create an account, and then [create an API key.](https://modal.com/settings)
+Para usar o Runtime Modal, crie uma conta e, em seguida, [crie uma chave de API.](https://modal.com/settings)
 
-You'll then need to set the following environment variables when starting OpenHands:
+Você precisará definir as seguintes variáveis de ambiente ao iniciar o OpenHands:
 ```bash
 docker run # ...
     -e RUNTIME=modal \
-    -e MODAL_API_TOKEN_ID="your-id" \
-    -e MODAL_API_TOKEN_SECRET="your-secret" \
+    -e MODAL_API_TOKEN_ID="seu-id" \
+    -e MODAL_API_TOKEN_SECRET="seu-segredo" \
 ```
 
-## Daytona Runtime
+## Runtime Daytona
 
-Another option is using [Daytona](https://www.daytona.io/) as a runtime provider:
+Outra opção é usar o [Daytona](https://www.daytona.io/) como provedor de runtime:
 
-### Step 1: Retrieve Your Daytona API Key
-1. Visit the [Daytona Dashboard](https://app.daytona.io/dashboard/keys).
-2. Click **"Create Key"**.
-3. Enter a name for your key and confirm the creation.
-4. Once the key is generated, copy it.
+### Passo 1: Recupere sua chave de API do Daytona
+1. Visite o [Painel do Daytona](https://app.daytona.io/dashboard/keys).
+2. Clique em **"Create Key"**.
+3. Digite um nome para sua chave e confirme a criação.
+4. Depois que a chave for gerada, copie-a.
 
-### Step 2: Set Your API Key as an Environment Variable
-Run the following command in your terminal, replacing `<your-api-key>` with the actual key you copied:
+### Passo 2: Defina sua chave de API como uma variável de ambiente
+Execute o seguinte comando no seu terminal, substituindo `<sua-chave-de-api>` pela chave real que você copiou:
 ```bash
-export DAYTONA_API_KEY="<your-api-key>"
+export DAYTONA_API_KEY="<sua-chave-de-api>"
 ```
 
-This step ensures that OpenHands can authenticate with the Daytona platform when it runs.
+Esta etapa garante que o OpenHands possa se autenticar na plataforma Daytona quando for executado.
 
-### Step 3: Run OpenHands Locally Using Docker
-To start the latest version of OpenHands on your machine, execute the following command in your terminal:
+### Passo 3: Execute o OpenHands localmente usando o Docker
+Para iniciar a versão mais recente do OpenHands em sua máquina, execute o seguinte comando no seu terminal:
 ```bash
 bash -i <(curl -sL https://get.daytona.io/openhands)
 ```
 
-#### What This Command Does:
-- Downloads the latest OpenHands release script.
-- Runs the script in an interactive Bash session.
-- Automatically pulls and runs the OpenHands container using Docker.
+#### O que este comando faz:
+- Baixa o script de lançamento mais recente do OpenHands.
+- Executa o script em uma sessão interativa do Bash.
+- Automaticamente baixa e executa o contêiner do OpenHands usando o Docker.
 
-Once executed, OpenHands should be running locally and ready for use.
+Uma vez executado, o OpenHands deve estar sendo executado localmente e pronto para uso.
 
-For more details and manual initialization, view the entire [README.md](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/impl/daytona/README.md)
+Para mais detalhes e inicialização manual, veja o [README.md](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/impl/daytona/README.md) completo.
 
-## Local Runtime
+## Runtime Local
 
-The Local Runtime allows the OpenHands agent to execute actions directly on your local machine without using Docker. This runtime is primarily intended for controlled environments like CI pipelines or testing scenarios where Docker is not available.
+O Runtime Local permite que o agente OpenHands execute ações diretamente em sua máquina local sem usar o Docker. Este runtime é destinado principalmente para ambientes controlados, como pipelines de CI ou cenários de teste onde o Docker não está disponível.
 
 :::caution
-**Security Warning**: The Local Runtime runs without any sandbox isolation. The agent can directly access and modify files on your machine. Only use this runtime in controlled environments or when you fully understand the security implications.
+**Aviso de segurança**: O Runtime Local é executado sem nenhum isolamento de sandbox. O agente pode acessar e modificar diretamente os arquivos em sua máquina. Use este runtime apenas em ambientes controlados ou quando você entender completamente as implicações de segurança.
 :::
 
-### Prerequisites
+### Pré-requisitos
 
-Before using the Local Runtime, ensure you have the following dependencies installed:
+Antes de usar o Runtime Local, certifique-se de ter as seguintes dependências instaladas:
 
-1. You have followed the [Development setup instructions](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
-2. tmux is available on your system.
+1. Você seguiu as [instruções de configuração de desenvolvimento](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
+2. O tmux está disponível em seu sistema.
 
-### Configuration
+### Configuração
 
-To use the Local Runtime, besides required configurations like the model, API key, you'll need to set the following options via environment variables or the [config.toml file](https://github.com/All-Hands-AI/OpenHands/blob/main/config.template.toml) when starting OpenHands:
+Para usar o Runtime Local, além das configurações necessárias como o modelo, chave de API, você precisará definir as seguintes opções por meio de variáveis de ambiente ou do [arquivo config.toml](https://github.com/All-Hands-AI/OpenHands/blob/main/config.template.toml) ao iniciar o OpenHands:
 
-- Via environment variables:
+- Via variáveis de ambiente:
 
 ```bash
-# Required
+# Obrigatório
 export RUNTIME=local
 
-# Optional but recommended
-export WORKSPACE_BASE=/path/to/your/workspace
+# Opcional, mas recomendado
+export WORKSPACE_BASE=/caminho/para/seu/workspace
 ```
 
 - Via `config.toml`:
@@ -146,31 +135,31 @@ export WORKSPACE_BASE=/path/to/your/workspace
 ```toml
 [core]
 runtime = "local"
-workspace_base = "/path/to/your/workspace"
+workspace_base = "/caminho/para/seu/workspace"
 ```
 
-If `WORKSPACE_BASE` is not set, the runtime will create a temporary directory for the agent to work in.
+Se `WORKSPACE_BASE` não for definido, o runtime criará um diretório temporário para o agente trabalhar.
 
-### Example Usage
+### Exemplo de uso
 
-Here's an example of how to start OpenHands with the Local Runtime in Headless Mode:
+Aqui está um exemplo de como iniciar o OpenHands com o Runtime Local no Modo Headless:
 
 ```bash
-# Set the runtime type to local
+# Define o tipo de runtime como local
 export RUNTIME=local
 
-# Optionally set a workspace directory
-export WORKSPACE_BASE=/path/to/your/project
+# Opcionalmente, define um diretório de workspace
+export WORKSPACE_BASE=/caminho/para/seu/projeto
 
-# Start OpenHands
-poetry run python -m openhands.core.main -t "write a bash script that prints hi"
+# Inicia o OpenHands
+poetry run python -m openhands.core.main -t "escreva um script bash que imprima oi"
 ```
 
-### Use Cases
+### Casos de uso
 
-The Local Runtime is particularly useful for:
+O Runtime Local é particularmente útil para:
 
-- CI/CD pipelines where Docker is not available.
-- Testing and development of OpenHands itself.
-- Environments where container usage is restricted.
-- Scenarios where direct file system access is required.
+- Pipelines de CI/CD onde o Docker não está disponível.
+- Testes e desenvolvimento do próprio OpenHands.
+- Ambientes onde o uso de contêineres é restrito.
+- Cenários onde o acesso direto ao sistema de arquivos é necessário.

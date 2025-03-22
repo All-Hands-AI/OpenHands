@@ -9,6 +9,6 @@
   },
   "sidebar.title": {
     "message": "Artigos recentes",
-    "description": "O label para a barra lateral esquerda"
+    "description": "A descrição para a barra lateral esquerda"
   }
 }

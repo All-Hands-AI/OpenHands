@@ -1,33 +1,33 @@
-# Cloud GitHub Resolver
+Here is the translation to Brazilian Portuguese:
 
-The GitHub Resolver automates code fixes and provides intelligent assistance for your repositories.
+# GitHub Cloud Resolver
 
-## Setup
+O GitHub Cloud Resolver automatiza correções de código e fornece assistência inteligente para seus repositórios.
 
-The Cloud GitHub Resolver is available automatically when you
-[grant OpenHands Cloud repository access](./openhands-cloud.md#adding-repository-access).
+## Configuração
 
-## Usage
+O Resolvedor do GitHub na Nuvem está disponível automaticamente quando você
+[concede acesso ao repositório do OpenHands Cloud](./openhands-cloud.md#adding-repository-access).
 
-After granting OpenHands Cloud repository access, you can use the Cloud GitHub Resolver on the issues and pull requests
-on the repository.
+## Uso
+
+Após conceder acesso ao repositório do OpenHands Cloud, você pode usar o Resolvedor do GitHub na Nuvem nos problemas e pull requests
+do repositório.
 
 ### Issues
 
-On your repository, label an issue with `openhands`. OpenHands will:
-1. Comment on the issue to let you know it is working on it.
-    - You can click on the link to track the progress on OpenHands Cloud.
-2. Open a pull request if it determines that the issue has been successfully resolved.
-3. Comment on the issue with a summary of the performed tasks and a link to the pull request.
+No seu repositório, rotule um issue com `openhands`. O OpenHands irá:
 
+1. Comentar no issue para informar que está trabalhando nele.
+   - Você pode clicar no link para acompanhar o progresso no OpenHands Cloud.
+2. Abrir um pull request se determinar que o issue foi resolvido com sucesso.
+3. Comentar no issue com um resumo das tarefas realizadas e um link para o pull request.
 
 ### Pull Requests
 
-To get OpenHands to work on pull requests, use `@openhands` in top level or inline comments to:
-     - Ask questions
-     - Request updates
-     - Get code explanations
+Para fazer o OpenHands trabalhar em pull requests, use `@openhands` em comentários de nível superior ou inline para: - Fazer perguntas - Solicitar atualizações - Obter explicações de código
 
-OpenHands will:
-1. Comment on the PR to let you know it is working on it.
-2. Perform the task.
+O OpenHands irá:
+
+1. Comentar no PR para informar que está trabalhando nele.
+2. Realizar a tarefa.

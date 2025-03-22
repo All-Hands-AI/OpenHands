@@ -1,51 +1,50 @@
-# Using the OpenHands GitHub Action
+# Usando a Ação do GitHub OpenHands
 
-This guide explains how to use the OpenHands GitHub Action, both within the OpenHands repository and in your own projects.
+Este guia explica como usar a Ação do GitHub OpenHands, tanto dentro do repositório OpenHands quanto em seus próprios projetos.
 
-## Using the Action in the OpenHands Repository
+## Usando a Ação no Repositório OpenHands
 
-To use the OpenHands GitHub Action in a repository, you can:
+Para usar a Ação do GitHub OpenHands em um repositório, você pode:
 
-1. Create an issue in the repository.
-2. Add the `fix-me` label to the issue or leave a comment on the issue starting with `@openhands-agent`.
+1. Criar uma issue no repositório.
+2. Adicionar a etiqueta `fix-me` à issue ou deixar um comentário na issue começando com `@openhands-agent`.
 
-The action will automatically trigger and attempt to resolve the issue.
+A ação será acionada automaticamente e tentará resolver a issue.
 
-## Installing the Action in a New Repository
+## Instalando a Ação em um Novo Repositório
 
-To install the OpenHands GitHub Action in your own repository, follow
-the [README for the OpenHands Resolver](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/resolver/README.md).
+Para instalar a Ação do GitHub OpenHands em seu próprio repositório, siga o [README para o OpenHands Resolver](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/resolver/README.md).
 
-## Usage Tips
+## Dicas de Uso
 
-### Iterative resolution
+### Resolução Iterativa
 
-1. Create an issue in the repository.
-2. Add the `fix-me` label to the issue, or leave a comment starting with `@openhands-agent`.
-3. Review the attempt to resolve the issue by checking the pull request.
-4. Follow up with feedback through general comments, review comments, or inline thread comments.
-5. Add the `fix-me` label to the pull request, or address a specific comment by starting with `@openhands-agent`.
+1. Crie uma issue no repositório.
+2. Adicione a etiqueta `fix-me` à issue ou deixe um comentário começando com `@openhands-agent`.
+3. Revise a tentativa de resolver a issue verificando o pull request.
+4. Faça um acompanhamento com feedback por meio de comentários gerais, comentários de revisão ou comentários de thread inline.
+5. Adicione a etiqueta `fix-me` ao pull request ou aborde um comentário específico começando com `@openhands-agent`.
 
-### Label versus Macro
+### Etiqueta versus Macro
 
-- Label (`fix-me`): Requests OpenHands to address the **entire** issue or pull request.
-- Macro (`@openhands-agent`): Requests OpenHands to consider only the issue/pull request description and **the specific comment**.
+- Etiqueta (`fix-me`): Solicita ao OpenHands que aborde a issue ou pull request **inteiro**.
+- Macro (`@openhands-agent`): Solicita ao OpenHands que considere apenas a descrição da issue/pull request e **o comentário específico**.
 
-## Advanced Settings
+## Configurações Avançadas
 
-### Add custom repository settings
+### Adicionar configurações personalizadas do repositório
 
-You can provide custom directions for OpenHands by following the [README for the resolver](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/resolver/README.md#providing-custom-instructions).
+Você pode fornecer instruções personalizadas para o OpenHands seguindo o [README para o resolver](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/resolver/README.md#providing-custom-instructions).
 
-### Custom configurations
+### Configurações personalizadas
 
-GitHub resolver will automatically check for valid [repository secrets](https://docs.github.com/en/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions?tool=webui#creating-secrets-for-a-repository) or [repository variables](https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/store-information-in-variables#creating-configuration-variables-for-a-repository) to customize its behavior.
-The customization options you can set are:
+O GitHub resolver verificará automaticamente se há [segredos do repositório](https://docs.github.com/en/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions?tool=webui#creating-secrets-for-a-repository) ou [variáveis do repositório](https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/store-information-in-variables#creating-configuration-variables-for-a-repository) válidos para personalizar seu comportamento.
+As opções de personalização que você pode definir são:
 
-| **Attribute name**               | **Type** | **Purpose**                                                                                         | **Example**                                        |
+| **Nome do atributo**             | **Tipo** | **Finalidade**                                                                                       | **Exemplo**                                        |
 | -------------------------------- | -------- | --------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| `LLM_MODEL`                      | Variable | Set the LLM to use with OpenHands                                                                   | `LLM_MODEL="anthropic/claude-3-5-sonnet-20241022"` |
-| `OPENHANDS_MAX_ITER`             | Variable | Set max limit for agent iterations                                                                  | `OPENHANDS_MAX_ITER=10`                            |
-| `OPENHANDS_MACRO`                | Variable | Customize default macro for invoking the resolver                                                   | `OPENHANDS_MACRO=@resolveit`                       |
-| `OPENHANDS_BASE_CONTAINER_IMAGE` | Variable | Custom Sandbox ([learn more](https://docs.all-hands.dev/modules/usage/how-to/custom-sandbox-guide)) | `OPENHANDS_BASE_CONTAINER_IMAGE="custom_image"`    |
-| `TARGET_BRANCH`                  | Variable | Merge to branch other than `main`                                                                   | `TARGET_BRANCH="dev"`                              |
+| `LLM_MODEL`                      | Variável | Definir o LLM a ser usado com o OpenHands                                                           | `LLM_MODEL="anthropic/claude-3-5-sonnet-20241022"` |
+| `OPENHANDS_MAX_ITER`             | Variável | Definir o limite máximo de iterações do agente                                                      | `OPENHANDS_MAX_ITER=10`                            |
+| `OPENHANDS_MACRO`                | Variável | Personalizar a macro padrão para invocar o resolver                                                 | `OPENHANDS_MACRO=@resolveit`                       |
+| `OPENHANDS_BASE_CONTAINER_IMAGE` | Variável | Sandbox personalizado ([saiba mais](https://docs.all-hands.dev/modules/usage/how-to/custom-sandbox-guide)) | `OPENHANDS_BASE_CONTAINER_IMAGE="custom_image"`    |
+| `TARGET_BRANCH`                  | Variável | Mesclar em um branch diferente de `main`                                                            | `TARGET_BRANCH="dev"`                              |

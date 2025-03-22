@@ -1,25 +1,25 @@
 # OpenAI
 
-OpenHands uses LiteLLM to make calls to OpenAI's chat models. You can find their documentation on using OpenAI as a provider [here](https://docs.litellm.ai/docs/providers/openai).
+O OpenHands usa o LiteLLM para fazer chamadas para os modelos de chat da OpenAI. Você pode encontrar a documentação deles sobre como usar a OpenAI como provedor [aqui](https://docs.litellm.ai/docs/providers/openai).
 
-## Configuration
+## Configuração
 
-When running OpenHands, you'll need to set the following in the OpenHands UI through the Settings:
-* `LLM Provider` to `OpenAI`
-* `LLM Model` to the model you will be using.
-[Visit here to see a full list of OpenAI models that LiteLLM supports.](https://docs.litellm.ai/docs/providers/openai#openai-chat-completion-models)
-If the model is not in the list, toggle `Advanced` options, and enter it in `Custom Model` (e.g. openai/&lt;model-name&gt; like `openai/gpt-4o`).
-* `API Key` to your OpenAI API key. To find or create your OpenAI Project API Key, [see here](https://platform.openai.com/api-keys).
+Ao executar o OpenHands, você precisará definir o seguinte na interface do usuário do OpenHands através das Configurações:
+* `LLM Provider` para `OpenAI`
+* `LLM Model` para o modelo que você usará.
+[Visite aqui para ver uma lista completa dos modelos da OpenAI que o LiteLLM suporta.](https://docs.litellm.ai/docs/providers/openai#openai-chat-completion-models)
+Se o modelo não estiver na lista, ative as opções `Advanced` e insira-o em `Custom Model` (por exemplo, openai/&lt;model-name&gt; como `openai/gpt-4o`).
+* `API Key` para a sua chave de API da OpenAI. Para encontrar ou criar sua chave de API do projeto OpenAI, [veja aqui](https://platform.openai.com/api-keys).
 
-## Using OpenAI-Compatible Endpoints
+## Usando Endpoints Compatíveis com OpenAI
 
-Just as for OpenAI Chat completions, we use LiteLLM for OpenAI-compatible endpoints. You can find their full documentation on this topic [here](https://docs.litellm.ai/docs/providers/openai_compatible).
+Assim como para as conclusões de chat da OpenAI, usamos o LiteLLM para endpoints compatíveis com OpenAI. Você pode encontrar a documentação completa deles sobre este tópico [aqui](https://docs.litellm.ai/docs/providers/openai_compatible).
 
-## Using an OpenAI Proxy
+## Usando um Proxy OpenAI
 
-If you're using an OpenAI proxy, in the OpenHands UI through the Settings:
-1. Enable `Advanced` options
-2. Set the following:
-   - `Custom Model` to openai/&lt;model-name&gt; (e.g. `openai/gpt-4o` or openai/&lt;proxy-prefix&gt;/&lt;model-name&gt;)
-   - `Base URL` to the URL of your OpenAI proxy
-   - `API Key` to your OpenAI API key
+Se você estiver usando um proxy OpenAI, na interface do usuário do OpenHands através das Configurações:
+1. Ative as opções `Advanced`
+2. Defina o seguinte:
+   - `Custom Model` para openai/&lt;model-name&gt; (por exemplo, `openai/gpt-4o` ou openai/&lt;proxy-prefix&gt;/&lt;model-name&gt;)
+   - `Base URL` para a URL do seu proxy OpenAI
+   - `API Key` para a sua chave de API da OpenAI

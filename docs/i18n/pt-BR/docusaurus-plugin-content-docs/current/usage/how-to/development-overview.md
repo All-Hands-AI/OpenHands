@@ -2,73 +2,73 @@
 sidebar_position: 9
 ---
 
-# Development Overview
+# Visão Geral do Desenvolvimento
 
-This guide provides an overview of the key documentation resources available in the OpenHands repository. Whether you're looking to contribute, understand the architecture, or work on specific components, these resources will help you navigate the codebase effectively.
+Este guia fornece uma visão geral dos principais recursos de documentação disponíveis no repositório OpenHands. Se você está procurando contribuir, entender a arquitetura ou trabalhar em componentes específicos, esses recursos irão ajudá-lo a navegar pelo codebase de forma eficaz.
 
-## Core Documentation
+## Documentação Principal
 
-### Project Fundamentals
-- **Main Project Overview** (`/README.md`)
-  The primary entry point for understanding OpenHands, including features and basic setup instructions.
+### Fundamentos do Projeto
+- **Visão Geral do Projeto Principal** (`/README.md`)
+  O ponto de entrada principal para entender o OpenHands, incluindo recursos e instruções básicas de configuração.
 
-- **Development Guide** (`/Development.md`)
-  Comprehensive guide for developers working on OpenHands, including setup, requirements, and development workflows.
+- **Guia de Desenvolvimento** (`/Development.md`)
+  Guia abrangente para desenvolvedores que trabalham no OpenHands, incluindo configuração, requisitos e fluxos de trabalho de desenvolvimento.
 
-- **Contributing Guidelines** (`/CONTRIBUTING.md`)
-  Essential information for contributors, covering code style, PR process, and contribution workflows.
+- **Diretrizes de Contribuição** (`/CONTRIBUTING.md`)
+  Informações essenciais para contribuidores, abrangendo estilo de código, processo de PR e fluxos de trabalho de contribuição.
 
-### Component Documentation
+### Documentação de Componentes
 
 #### Frontend
-- **Frontend Application** (`/frontend/README.md`)
-  Complete guide for setting up and developing the React-based frontend application.
+- **Aplicação Frontend** (`/frontend/README.md`)
+  Guia completo para configurar e desenvolver a aplicação frontend baseada em React.
 
 #### Backend
-- **Backend Implementation** (`/openhands/README.md`)
-  Detailed documentation of the Python backend implementation and architecture.
+- **Implementação do Backend** (`/openhands/README.md`)
+  Documentação detalhada da implementação e arquitetura do backend em Python.
 
-- **Server Documentation** (`/openhands/server/README.md`)
-  Server implementation details, API documentation, and service architecture.
+- **Documentação do Servidor** (`/openhands/server/README.md`)
+  Detalhes de implementação do servidor, documentação da API e arquitetura de serviços.
 
-- **Runtime Environment** (`/openhands/runtime/README.md`)
-  Documentation covering the runtime environment, execution model, and runtime configurations.
+- **Ambiente de Execução** (`/openhands/runtime/README.md`)
+  Documentação abrangendo o ambiente de execução, modelo de execução e configurações de tempo de execução.
 
-#### Infrastructure
-- **Container Documentation** (`/containers/README.md`)
-  Comprehensive information about Docker containers, deployment strategies, and container management.
+#### Infraestrutura
+- **Documentação de Contêineres** (`/containers/README.md`)
+  Informações abrangentes sobre contêineres Docker, estratégias de implantação e gerenciamento de contêineres.
 
-### Testing and Evaluation
-- **Unit Testing Guide** (`/tests/unit/README.md`)
-  Instructions for writing, running, and maintaining unit tests.
+### Testes e Avaliação
+- **Guia de Testes Unitários** (`/tests/unit/README.md`)
+  Instruções para escrever, executar e manter testes unitários.
 
-- **Evaluation Framework** (`/evaluation/README.md`)
-  Documentation for the evaluation framework, benchmarks, and performance testing.
+- **Framework de Avaliação** (`/evaluation/README.md`)
+  Documentação para o framework de avaliação, benchmarks e testes de desempenho.
 
-### Advanced Features
-- **Microagents Architecture** (`/microagents/README.md`)
-  Detailed information about the microagents architecture, implementation, and usage.
+### Recursos Avançados
+- **Arquitetura de Microagentes** (`/microagents/README.md`)
+  Informações detalhadas sobre a arquitetura, implementação e uso de microagentes.
 
-### Documentation Standards
-- **Documentation Style Guide** (`/docs/DOC_STYLE_GUIDE.md`)
-  Standards and guidelines for writing and maintaining project documentation.
+### Padrões de Documentação
+- **Guia de Estilo de Documentação** (`/docs/DOC_STYLE_GUIDE.md`)
+  Padrões e diretrizes para escrever e manter a documentação do projeto.
 
-## Getting Started with Development
+## Começando com o Desenvolvimento
 
-If you're new to developing with OpenHands, we recommend following this sequence:
+Se você é novo no desenvolvimento com OpenHands, recomendamos seguir esta sequência:
 
-1. Start with the main `README.md` to understand the project's purpose and features
-2. Review the `CONTRIBUTING.md` guidelines if you plan to contribute
-3. Follow the setup instructions in `Development.md`
-4. Dive into specific component documentation based on your area of interest:
-   - Frontend developers should focus on `/frontend/README.md`
-   - Backend developers should start with `/openhands/README.md`
-   - Infrastructure work should begin with `/containers/README.md`
+1. Comece com o `README.md` principal para entender o propósito e os recursos do projeto
+2. Revise as diretrizes em `CONTRIBUTING.md` se você planeja contribuir
+3. Siga as instruções de configuração em `Development.md`
+4. Mergulhe na documentação de componentes específicos com base na sua área de interesse:
+   - Desenvolvedores frontend devem se concentrar em `/frontend/README.md`
+   - Desenvolvedores backend devem começar com `/openhands/README.md`
+   - O trabalho de infraestrutura deve começar com `/containers/README.md`
 
-## Documentation Updates
+## Atualizações da Documentação
 
-When making changes to the codebase, please ensure that:
-1. Relevant documentation is updated to reflect your changes
-2. New features are documented in the appropriate README files
-3. Any API changes are reflected in the server documentation
-4. Documentation follows the style guide in `/docs/DOC_STYLE_GUIDE.md`
+Ao fazer alterações no codebase, certifique-se de que:
+1. A documentação relevante seja atualizada para refletir suas alterações
+2. Novos recursos sejam documentados nos arquivos README apropriados
+3. Quaisquer alterações na API sejam refletidas na documentação do servidor
+4. A documentação siga o guia de estilo em `/docs/DOC_STYLE_GUIDE.md`

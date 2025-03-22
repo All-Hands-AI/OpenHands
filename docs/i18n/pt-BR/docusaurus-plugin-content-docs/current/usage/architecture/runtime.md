@@ -1,43 +1,43 @@
 # 📦 Docker Runtime
 
-The OpenHands Docker Runtime is the core component that enables secure and flexible execution of AI agent's action.
-It creates a sandboxed environment using Docker, where arbitrary code can be run safely without risking the host system.
+O OpenHands Docker Runtime é o componente principal que permite a execução segura e flexível das ações do agente de IA.
+Ele cria um ambiente isolado usando o Docker, onde código arbitrário pode ser executado com segurança sem arriscar o sistema host.
 
-## Why do we need a sandboxed runtime?
+## Por que precisamos de um runtime isolado?
 
-OpenHands needs to execute arbitrary code in a secure, isolated environment for several reasons:
+O OpenHands precisa executar código arbitrário em um ambiente seguro e isolado por várias razões:
 
-1. Security: Executing untrusted code can pose significant risks to the host system. A sandboxed environment prevents malicious code from accessing or modifying the host system's resources
-2. Consistency: A sandboxed environment ensures that code execution is consistent across different machines and setups, eliminating "it works on my machine" issues
-3. Resource Control: Sandboxing allows for better control over resource allocation and usage, preventing runaway processes from affecting the host system
-4. Isolation: Different projects or users can work in isolated environments without interfering with each other or the host system
-5. Reproducibility: Sandboxed environments make it easier to reproduce bugs and issues, as the execution environment is consistent and controllable
+1. Segurança: Executar código não confiável pode representar riscos significativos para o sistema host. Um ambiente isolado impede que código malicioso acesse ou modifique os recursos do sistema host
+2. Consistência: Um ambiente isolado garante que a execução do código seja consistente em diferentes máquinas e configurações, eliminando problemas do tipo "funciona na minha máquina"
+3. Controle de Recursos: O isolamento permite um melhor controle sobre a alocação e uso de recursos, evitando que processos descontrolados afetem o sistema host
+4. Isolamento: Diferentes projetos ou usuários podem trabalhar em ambientes isolados sem interferir uns com os outros ou com o sistema host
+5. Reprodutibilidade: Ambientes isolados facilitam a reprodução de bugs e problemas, já que o ambiente de execução é consistente e controlável
 
-## How does the Runtime work?
+## Como o Runtime funciona?
 
-The OpenHands Runtime system uses a client-server architecture implemented with Docker containers. Here's an overview of how it works:
+O sistema OpenHands Runtime usa uma arquitetura cliente-servidor implementada com contêineres Docker. Aqui está uma visão geral de como ele funciona:
 
 ```mermaid
 graph TD
-    A[User-provided Custom Docker Image] --> B[OpenHands Backend]
-    B -->|Builds| C[OH Runtime Image]
-    C -->|Launches| D[Action Executor]
-    D -->|Initializes| E[Browser]
-    D -->|Initializes| F[Bash Shell]
-    D -->|Initializes| G[Plugins]
-    G -->|Initializes| L[Jupyter Server]
+    A[Imagem Docker Personalizada Fornecida pelo Usuário] --> B[Backend do OpenHands]
+    B -->|Constrói| C[Imagem do OH Runtime]
+    C -->|Inicia| D[Executor de Ação]
+    D -->|Inicializa| E[Navegador]
+    D -->|Inicializa| F[Shell Bash]
+    D -->|Inicializa| G[Plugins]
+    G -->|Inicializa| L[Servidor Jupyter]
 
-    B -->|Spawn| H[Agent]
-    B -->|Spawn| I[EventStream]
-    I <--->|Execute Action to
-    Get Observation
-    via REST API
+    B -->|Gera| H[Agente]
+    B -->|Gera| I[EventStream]
+    I <--->|Executa Ação para
+    Obter Observação
+    via API REST
     | D
 
-    H -->|Generate Action| I
-    I -->|Obtain Observation| H
+    H -->|Gera Ação| I
+    I -->|Obtém Observação| H
 
-    subgraph "Docker Container"
+    subgraph "Contêiner Docker"
     D
     E
     F
@@ -46,89 +46,89 @@ graph TD
     end
 ```
 
-1. User Input: The user provides a custom base Docker image
-2. Image Building: OpenHands builds a new Docker image (the "OH runtime image") based on the user-provided image. This new image includes OpenHands-specific code, primarily the "runtime client"
-3. Container Launch: When OpenHands starts, it launches a Docker container using the OH runtime image
-4. Action Execution Server Initialization: The action execution server initializes an `ActionExecutor` inside the container, setting up necessary components like a bash shell and loading any specified plugins
-5. Communication: The OpenHands backend (`openhands/runtime/impl/eventstream/eventstream_runtime.py`) communicates with the action execution server over RESTful API, sending actions and receiving observations
-6. Action Execution: The runtime client receives actions from the backend, executes them in the sandboxed environment, and sends back observations
-7. Observation Return: The action execution server sends execution results back to the OpenHands backend as observations
+1. Entrada do Usuário: O usuário fornece uma imagem Docker base personalizada
+2. Construção da Imagem: O OpenHands constrói uma nova imagem Docker (a "imagem do OH runtime") com base na imagem fornecida pelo usuário. Essa nova imagem inclui código específico do OpenHands, principalmente o "cliente de runtime"
+3. Inicialização do Contêiner: Quando o OpenHands inicia, ele lança um contêiner Docker usando a imagem do OH runtime
+4. Inicialização do Servidor de Execução de Ação: O servidor de execução de ação inicializa um `ActionExecutor` dentro do contêiner, configurando os componentes necessários, como um shell bash e carregando quaisquer plugins especificados
+5. Comunicação: O backend do OpenHands (`openhands/runtime/impl/eventstream/eventstream_runtime.py`) se comunica com o servidor de execução de ação por meio de uma API RESTful, enviando ações e recebendo observações
+6. Execução da Ação: O cliente de runtime recebe ações do backend, as executa no ambiente isolado e envia de volta as observações
+7. Retorno da Observação: O servidor de execução de ação envia os resultados da execução de volta para o backend do OpenHands como observações
 
-The role of the client:
+O papel do cliente:
 
-- It acts as an intermediary between the OpenHands backend and the sandboxed environment
-- It executes various types of actions (shell commands, file operations, Python code, etc.) safely within the container
-- It manages the state of the sandboxed environment, including the current working directory and loaded plugins
-- It formats and returns observations to the backend, ensuring a consistent interface for processing results
+- Ele atua como um intermediário entre o backend do OpenHands e o ambiente isolado
+- Ele executa vários tipos de ações (comandos shell, operações de arquivo, código Python, etc.) com segurança dentro do contêiner
+- Ele gerencia o estado do ambiente isolado, incluindo o diretório de trabalho atual e os plugins carregados
+- Ele formata e retorna observações para o backend, garantindo uma interface consistente para processar os resultados
 
-## How OpenHands builds and maintains OH Runtime images
+## Como o OpenHands constrói e mantém imagens do OH Runtime
 
-OpenHands' approach to building and managing runtime images ensures efficiency, consistency, and flexibility in creating and maintaining Docker images for both production and development environments.
+A abordagem do OpenHands para construir e gerenciar imagens de runtime garante eficiência, consistência e flexibilidade na criação e manutenção de imagens Docker para ambientes de produção e desenvolvimento.
 
-Check out the [relevant code](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/utils/runtime_build.py) if you are interested in more details.
+Confira o [código relevante](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/utils/runtime_build.py) se você estiver interessado em mais detalhes.
 
-### Image Tagging System
+### Sistema de Tags de Imagem
 
-OpenHands uses a three-tag system for its runtime images to balance reproducibility with flexibility.
-Tags may be in one of 2 formats:
+O OpenHands usa um sistema de três tags para suas imagens de runtime para equilibrar reprodutibilidade com flexibilidade.
+As tags podem estar em um dos 2 formatos:
 
-- **Versioned Tag**: `oh_v{openhands_version}_{base_image}` (e.g.: `oh_v0.9.9_nikolaik_s_python-nodejs_t_python3.12-nodejs22`)
-- **Lock Tag**: `oh_v{openhands_version}_{16_digit_lock_hash}` (e.g.: `oh_v0.9.9_1234567890abcdef`)
-- **Source Tag**: `oh_v{openhands_version}_{16_digit_lock_hash}_{16_digit_source_hash}`
-  (e.g.: `oh_v0.9.9_1234567890abcdef_1234567890abcdef`)
+- **Tag Versionada**: `oh_v{openhands_version}_{base_image}` (ex.: `oh_v0.9.9_nikolaik_s_python-nodejs_t_python3.12-nodejs22`)
+- **Tag de Bloqueio**: `oh_v{openhands_version}_{16_digit_lock_hash}` (ex.: `oh_v0.9.9_1234567890abcdef`)
+- **Tag de Origem**: `oh_v{openhands_version}_{16_digit_lock_hash}_{16_digit_source_hash}`
+  (ex.: `oh_v0.9.9_1234567890abcdef_1234567890abcdef`)
 
-#### Source Tag - Most Specific
+#### Tag de Origem - Mais Específica
 
-This is the first 16 digits of the MD5 of the directory hash for the source directory. This gives a hash
-for only the openhands source
+Estes são os primeiros 16 dígitos do MD5 do hash do diretório para o diretório de origem. Isso fornece um hash
+apenas para o código-fonte do openhands
 
-#### Lock Tag
+#### Tag de Bloqueio
 
-This hash is built from the first 16 digits of the MD5 of:
+Este hash é construído a partir dos primeiros 16 dígitos do MD5 de:
 
-- The name of the base image upon which the image was built (e.g.: `nikolaik/python-nodejs:python3.12-nodejs22`)
-- The content of the `pyproject.toml` included in the image.
-- The content of the `poetry.lock` included in the image.
+- O nome da imagem base sobre a qual a imagem foi construída (ex.: `nikolaik/python-nodejs:python3.12-nodejs22`)
+- O conteúdo do `pyproject.toml` incluído na imagem.
+- O conteúdo do `poetry.lock` incluído na imagem.
 
-This effectively gives a hash for the dependencies of Openhands independent of the source code.
+Isso efetivamente fornece um hash para as dependências do Openhands independente do código-fonte.
 
-#### Versioned Tag - Most Generic
+#### Tag Versionada - Mais Genérica
 
-This tag is a concatenation of openhands version and the base image name (transformed to fit in tag standard).
+Esta tag é uma concatenação da versão do openhands e do nome da imagem base (transformado para se adequar ao padrão de tag).
 
-#### Build Process
+#### Processo de Construção
 
-When generating an image...
+Ao gerar uma imagem...
 
-- **No re-build**: OpenHands first checks whether an image with the same **most specific source tag** exists. If there is such an image,
-  no build is performed - the existing image is used.
-- **Fastest re-build**: OpenHands next checks whether an image with the **generic lock tag** exists. If there is such an image,
-  OpenHands builds a new image based upon it, bypassing all installation steps (like `poetry install` and
-  `apt-get`) except a final operation to copy the current source code. The new image is tagged with a
-  **source** tag only.
-- **Ok-ish re-build**: If neither a **source** nor **lock** tag exists, an image will be built based upon the **versioned** tag image.
-  In versioned tag image, most dependencies should already been installed hence saving time.
-- **Slowest re-build**: If all of the three tags don't exists, a brand new image is built based upon the base
-  image (Which is a slower operation). This new image is tagged with all the **source**, **lock**, and **versioned** tags.
+- **Sem reconstrução**: O OpenHands primeiro verifica se existe uma imagem com a mesma **tag de origem mais específica**. Se houver tal imagem,
+  nenhuma construção é realizada - a imagem existente é usada.
+- **Reconstrução mais rápida**: O OpenHands verifica em seguida se existe uma imagem com a **tag de bloqueio genérica**. Se houver tal imagem,
+  o OpenHands constrói uma nova imagem com base nela, ignorando todas as etapas de instalação (como `poetry install` e
+  `apt-get`), exceto uma operação final para copiar o código-fonte atual. A nova imagem é marcada apenas com uma
+  tag de **origem**.
+- **Reconstrução razoável**: Se não existir uma tag de **origem** nem de **bloqueio**, uma imagem será construída com base na imagem com tag **versionada**.
+  Na imagem com tag versionada, a maioria das dependências já deve estar instalada, economizando tempo.
+- **Reconstrução mais lenta**: Se todas as três tags não existirem, uma nova imagem é construída com base na imagem
+  base (o que é uma operação mais lenta). Esta nova imagem é marcada com todas as tags de **origem**, **bloqueio** e **versionada**.
 
-This tagging approach allows OpenHands to efficiently manage both development and production environments.
+Essa abordagem de tags permite que o OpenHands gerencie com eficiência ambientes de desenvolvimento e produção.
 
-1. Identical source code and Dockerfile always produce the same image (via hash-based tags)
-2. The system can quickly rebuild images when minor changes occur (by leveraging recent compatible images)
-3. The **lock** tag (e.g., `runtime:oh_v0.9.3_1234567890abcdef`) always points to the latest build for a particular base image, dependency, and OpenHands version combination
+1. Código-fonte e Dockerfile idênticos sempre produzem a mesma imagem (via tags baseadas em hash)
+2. O sistema pode reconstruir rapidamente imagens quando ocorrem pequenas alterações (aproveitando imagens compatíveis recentes)
+3. A tag de **bloqueio** (ex.: `runtime:oh_v0.9.3_1234567890abcdef`) sempre aponta para a construção mais recente para uma combinação específica de imagem base, dependência e versão do OpenHands
 
-## Runtime Plugin System
+## Sistema de Plugins do Runtime
 
-The OpenHands Runtime supports a plugin system that allows for extending functionality and customizing the runtime environment. Plugins are initialized when the runtime client starts up.
+O OpenHands Runtime suporta um sistema de plugins que permite estender a funcionalidade e personalizar o ambiente de runtime. Os plugins são inicializados quando o cliente de runtime é iniciado.
 
-Check [an example of Jupyter plugin here](https://github.com/All-Hands-AI/OpenHands/blob/ecf4aed28b0cf7c18d4d8ff554883ba182fc6bdd/openhands/runtime/plugins/jupyter/__init__.py#L21-L55) if you want to implement your own plugin.
+Confira [um exemplo do plugin Jupyter aqui](https://github.com/All-Hands-AI/OpenHands/blob/ecf4aed28b0cf7c18d4d8ff554883ba182fc6bdd/openhands/runtime/plugins/jupyter/__init__.py#L21-L55) se você quiser implementar seu próprio plugin.
 
-*More details about the Plugin system are still under construction - contributions are welcomed!*
+_Mais detalhes sobre o sistema de Plugins ainda estão em construção - contribuições são bem-vindas!_
 
-Key aspects of the plugin system:
+Aspectos-chave do sistema de plugins:
 
-1. Plugin Definition: Plugins are defined as Python classes that inherit from a base `Plugin` class
-2. Plugin Registration: Available plugins are registered in an `ALL_PLUGINS` dictionary
-3. Plugin Specification: Plugins are associated with `Agent.sandbox_plugins: list[PluginRequirement]`. Users can specify which plugins to load when initializing the runtime
-4. Initialization: Plugins are initialized asynchronously when the runtime client starts
-5. Usage: The runtime client can use initialized plugins to extend its capabilities (e.g., the JupyterPlugin for running IPython cells)
+1. Definição de Plugin: Os plugins são definidos como classes Python que herdam de uma classe base `Plugin`
+2. Registro de Plugin: Os plugins disponíveis são registrados em um dicionário `ALL_PLUGINS`
+3. Especificação de Plugin: Os plugins são associados a `Agent.sandbox_plugins: list[PluginRequirement]`. Os usuários podem especificar quais plugins carregar ao inicializar o runtime
+4. Inicialização: Os plugins são inicializados de forma assíncrona quando o cliente de runtime é iniciado
+5. Uso: O cliente de runtime pode usar plugins inicializados para estender suas capacidades (por exemplo, o JupyterPlugin para executar células IPython)

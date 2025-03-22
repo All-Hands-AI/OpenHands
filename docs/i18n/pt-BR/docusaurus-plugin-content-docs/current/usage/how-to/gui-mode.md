@@ -1,118 +1,118 @@
-# GUI Mode
+# Modo GUI
 
-OpenHands provides a Graphical User Interface (GUI) mode for interacting with the AI assistant.
+O OpenHands fornece um modo de Interface Gráfica do Usuário (GUI) para interagir com o assistente de IA.
 
-## Installation and Setup
+## Instalação e Configuração
 
-1. Follow the installation instructions to install OpenHands.
-2. After running the command, access OpenHands at [http://localhost:3000](http://localhost:3000).
+1. Siga as instruções de instalação para instalar o OpenHands.
+2. Após executar o comando, acesse o OpenHands em [http://localhost:3000](http://localhost:3000).
 
-## Interacting with the GUI
+## Interagindo com a GUI
 
-### Initial Setup
+### Configuração Inicial
 
-1. Upon first launch, you'll see a settings page.
-2. Select an `LLM Provider` and `LLM Model` from the dropdown menus. If the required model does not exist in the list,
-   toggle `Advanced` options and enter it with the correct prefix in the `Custom Model` text box.
-3. Enter the corresponding `API Key` for your chosen provider.
-4. Click `Save Changes` to apply the settings.
+1. No primeiro lançamento, você verá uma página de configurações.
+2. Selecione um `Provedor de LLM` e um `Modelo de LLM` nos menus suspensos. Se o modelo necessário não existir na lista,
+   ative as opções `Avançadas` e insira-o com o prefixo correto na caixa de texto `Modelo Personalizado`.
+3. Insira a `Chave de API` correspondente para o provedor escolhido.
+4. Clique em `Salvar Alterações` para aplicar as configurações.
 
-### GitHub Token Setup
+### Configuração do Token do GitHub
 
-OpenHands automatically exports a `GITHUB_TOKEN` to the shell environment if it is available. This can happen in two ways:
+O OpenHands exporta automaticamente um `GITHUB_TOKEN` para o ambiente shell se ele estiver disponível. Isso pode acontecer de duas maneiras:
 
-**Local Installation**: The user directly inputs their GitHub token.
+**Instalação Local**: O usuário insere diretamente seu token do GitHub.
 <details>
-  <summary>Setting Up a GitHub Token</summary>
+  <summary>Configurando um Token do GitHub</summary>
 
-  1. **Generate a Personal Access Token (PAT)**:
-   - On GitHub, go to Settings > Developer Settings > Personal Access Tokens > Tokens (classic).
+  1. **Gere um Personal Access Token (PAT)**:
+   - No GitHub, vá para Settings > Developer Settings > Personal Access Tokens > Tokens (classic).
    - **New token (classic)**
-     - Required scopes:
-     - `repo` (Full control of private repositories)
+     - Escopos necessários:
+     - `repo` (Controle total de repositórios privados)
    - **Fine-Grained Tokens**
-     - All Repositories (You can select specific repositories, but this will impact what returns in repo search)
-     - Minimal Permissions ( Select **Meta Data = Read-only** read for search, **Pull Requests = Read and Write**, **Content = Read and Write** for branch creation)
-  2. **Enter Token in OpenHands**:
-   - Click the Settings button (gear icon).
-   - Navigate to the `GitHub Settings` section.
-   - Paste your token in the `GitHub Token` field.
-   - Click `Save Changes` to apply the changes.
+     - All Repositories (Você pode selecionar repositórios específicos, mas isso afetará o que retorna na pesquisa de repositórios)
+     - Minimal Permissions (Selecione **Meta Data = Read-only** para pesquisa, **Pull Requests = Read and Write**, **Content = Read and Write** para criação de branches)
+  2. **Insira o Token no OpenHands**:
+   - Clique no botão Settings (ícone de engrenagem).
+   - Navegue até a seção `GitHub Settings`.
+   - Cole seu token no campo `GitHub Token`.
+   - Clique em `Save Changes` para aplicar as alterações.
 </details>
 
 <details>
-  <summary>Organizational Token Policies</summary>
+  <summary>Políticas de Token Organizacional</summary>
 
-  If you're working with organizational repositories, additional setup may be required:
+  Se você estiver trabalhando com repositórios organizacionais, configurações adicionais podem ser necessárias:
 
-  1. **Check Organization Requirements**:
-   - Organization admins may enforce specific token policies.
-   - Some organizations require tokens to be created with SSO enabled.
-   - Review your organization's [token policy settings](https://docs.github.com/en/organizations/managing-programmatic-access-to-your-organization/setting-a-personal-access-token-policy-for-your-organization).
-  2. **Verify Organization Access**:
-   - Go to your token settings on GitHub.
-   - Look for the organization under `Organization access`.
-   - If required, click `Enable SSO` next to your organization.
-   - Complete the SSO authorization process.
+  1. **Verifique os Requisitos da Organização**:
+   - Os administradores da organização podem impor políticas específicas de token.
+   - Algumas organizações exigem que os tokens sejam criados com SSO habilitado.
+   - Revise as [configurações de política de token](https://docs.github.com/en/organizations/managing-programmatic-access-to-your-organization/setting-a-personal-access-token-policy-for-your-organization) da sua organização.
+  2. **Verifique o Acesso à Organização**:
+   - Vá para as configurações do seu token no GitHub.
+   - Procure a organização em `Organization access`.
+   - Se necessário, clique em `Enable SSO` ao lado da sua organização.
+   - Conclua o processo de autorização SSO.
 </details>
 
 <details>
-  <summary>Troubleshooting</summary>
+  <summary>Solução de Problemas</summary>
 
-  Common issues and solutions:
+  Problemas comuns e soluções:
 
-  - **Token Not Recognized**:
-     - Ensure the token is properly saved in settings.
-     - Check that the token hasn't expired.
-     - Verify the token has the required scopes.
-     - Try regenerating the token.
+  - **Token Não Reconhecido**:
+     - Certifique-se de que o token esteja salvo corretamente nas configurações.
+     - Verifique se o token não expirou.
+     - Verifique se o token possui os escopos necessários.
+     - Tente regenerar o token.
 
-  - **Organization Access Denied**:
-     - Check if SSO is required but not enabled.
-     - Verify organization membership.
-     - Contact organization admin if token policies are blocking access.
+  - **Acesso à Organização Negado**:
+     - Verifique se o SSO é necessário, mas não está habilitado.
+     - Verifique a associação à organização.
+     - Entre em contato com o administrador da organização se as políticas de token estiverem bloqueando o acesso.
 
-  - **Verifying Token Works**:
-     - The app will show a green checkmark if the token is valid.
-     - Try accessing a repository to confirm permissions.
-     - Check the browser console for any error messages.
+  - **Verificando se o Token Funciona**:
+     - O aplicativo mostrará uma marca de seleção verde se o token for válido.
+     - Tente acessar um repositório para confirmar as permissões.
+     - Verifique o console do navegador em busca de mensagens de erro.
 </details>
 
-**OpenHands Cloud**: The token is obtained through GitHub OAuth authentication.
+**OpenHands Cloud**: O token é obtido por meio da autenticação OAuth do GitHub.
 
 <details>
-  <summary>OAuth Authentication</summary>
+  <summary>Autenticação OAuth</summary>
 
-  When using OpenHands Cloud, the GitHub OAuth flow requests the following permissions:
-   - Repository access (read/write)
-   - Workflow management
-   - Organization read access
+  Ao usar o OpenHands Cloud, o fluxo OAuth do GitHub solicita as seguintes permissões:
+   - Acesso ao repositório (leitura/escrita)
+   - Gerenciamento de fluxo de trabalho
+   - Acesso de leitura à organização
 
-  To authenticate OpenHands:
-   - Click `Sign in with GitHub` when prompted.
-   - Review the requested permissions.
-   - Authorize OpenHands to access your GitHub account.
-   - If using an organization, authorize organization access if prompted.
+  Para autenticar o OpenHands:
+   - Clique em `Sign in with GitHub` quando solicitado.
+   - Revise as permissões solicitadas.
+   - Autorize o OpenHands a acessar sua conta do GitHub.
+   - Se estiver usando uma organização, autorize o acesso à organização se solicitado.
 </details>
 
-### Advanced Settings
+### Configurações Avançadas
 
-1. Inside the Settings page, toggle `Advanced` options to access additional settings.
-2. Use the `Custom Model` text box to manually enter a model if it's not in the list.
-3. Specify a `Base URL` if required by your LLM provider.
+1. Dentro da página Settings, ative as opções `Advanced` para acessar configurações adicionais.
+2. Use a caixa de texto `Custom Model` para inserir manualmente um modelo se ele não estiver na lista.
+3. Especifique uma `Base URL` se necessário para o seu provedor de LLM.
 
-### Interacting with the AI
+### Interagindo com a IA
 
-1. Type your prompt in the input box.
-2. Click the send button or press Enter to submit your message.
-3. The AI will process your input and provide a response in the chat window.
-4. You can continue the conversation by asking follow-up questions or providing additional information.
+1. Digite seu prompt na caixa de entrada.
+2. Clique no botão de envio ou pressione Enter para enviar sua mensagem.
+3. A IA processará sua entrada e fornecerá uma resposta na janela de chat.
+4. Você pode continuar a conversa fazendo perguntas de acompanhamento ou fornecendo informações adicionais.
 
-## Tips for Effective Use
+## Dicas para Uso Eficaz
 
-- Be specific in your requests to get the most accurate and helpful responses, as described in the [prompting best practices](../prompting/prompting-best-practices).
-- Use the workspace panel to explore your project structure.
-- Use one of the recommended models, as described in the [LLMs section](usage/llms/llms.md).
+- Seja específico em suas solicitações para obter as respostas mais precisas e úteis, conforme descrito nas [melhores práticas de prompting](../prompting/prompting-best-practices).
+- Use o painel de workspace para explorar a estrutura do seu projeto.
+- Use um dos modelos recomendados, conforme descrito na seção [LLMs](usage/llms/llms.md).
 
-Remember, the GUI mode of OpenHands is designed to make your interaction with the AI assistant as smooth and intuitive
-as possible. Don't hesitate to explore its features to maximize your productivity.
+Lembre-se, o modo GUI do OpenHands é projetado para tornar sua interação com o assistente de IA o mais suave e intuitiva
+possível. Não hesite em explorar seus recursos para maximizar sua produtividade.

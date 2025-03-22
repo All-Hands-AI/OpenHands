@@ -1,50 +1,38 @@
-# ✅ Providing Feedback
+# ✅ Fornecendo Feedback
 
-When using OpenHands, you will encounter cases where things work well, and others where they don't. We encourage you to
-provide feedback when you use OpenHands to help give feedback to the development team, and perhaps more importantly,
-create an open corpus of coding agent training examples -- Share-OpenHands!
+Ao usar o OpenHands, você encontrará casos em que as coisas funcionam bem e outros em que não funcionam. Nós encorajamos você a fornecer feedback quando usar o OpenHands para ajudar a dar feedback para a equipe de desenvolvimento e, talvez mais importante, criar um corpus aberto de exemplos de treinamento de agentes de codificação -- Share-OpenHands!
 
-## 📝 How to Provide Feedback
+## 📝 Como Fornecer Feedback
 
-Providing feedback is easy! When you are using OpenHands, you can press the thumbs-up or thumbs-down button at any point
-during your interaction. You will be prompted to provide your email address
-(e.g. so we can contact you if we want to ask any follow-up questions), and you can choose whether you want to provide feedback publicly or privately.
+Fornecer feedback é fácil! Quando você estiver usando o OpenHands, você pode pressionar o botão de polegar para cima ou polegar para baixo a qualquer momento durante sua interação. Você será solicitado a fornecer seu endereço de e-mail (por exemplo, para que possamos entrar em contato com você se quisermos fazer alguma pergunta de acompanhamento), e você pode escolher se deseja fornecer feedback publicamente ou privadamente.
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/5rFx-StMVV0?si=svo7xzp6LhGK_GXr" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
-## 📜 Data Use and Privacy
+## 📜 Uso de Dados e Privacidade
 
-### Data sharing settings
+### Configurações de compartilhamento de dados
 
-When you submit data, you can submit it either publicly or privately.
+Quando você envia dados, você pode enviá-los publicamente ou privadamente.
 
-- **Public** data will be distributed under the MIT License, like OpenHands itself, and can be used by the community to
-train and test models. Obviously, feedback that you can make public will be more valuable for the community as a whole,
-so when you are not dealing with sensitive information, we would encourage you to choose this option!
-- **Private** data will be made available to the OpenHands team for the purpose of improving OpenHands.
-However, a link with a unique ID will still be created that you can share publicly with others.
+- Dados **públicos** serão distribuídos sob a Licença MIT, como o próprio OpenHands, e podem ser usados pela comunidade para treinar e testar modelos. Obviamente, o feedback que você pode tornar público será mais valioso para a comunidade como um todo, então quando você não estiver lidando com informações confidenciais, nós encorajamos você a escolher esta opção!
+- Dados **privados** serão disponibilizados para a equipe do OpenHands com o propósito de melhorar o OpenHands. No entanto, um link com um ID único ainda será criado para que você possa compartilhar publicamente com outras pessoas.
 
-### Who collects and stores the data?
+### Quem coleta e armazena os dados?
 
-The data is collected and stored by [All Hands AI](https://all-hands.dev), a company founded by OpenHands maintainers to support and improve OpenHands.
+Os dados são coletados e armazenados pela [All Hands AI](https://all-hands.dev), uma empresa fundada pelos mantenedores do OpenHands para apoiar e melhorar o OpenHands.
 
-### How will public data be released?
+### Como os dados públicos serão divulgados?
 
-The public data will be released when we hit fixed milestones, such as 1,000 public examples, 10,000 public examples, etc.
-At this time, we will follow the following release process:
+Os dados públicos serão divulgados quando atingirmos marcos fixos, como 1.000 exemplos públicos, 10.000 exemplos públicos, etc. Neste momento, seguiremos o seguinte processo de divulgação:
 
-1. All people who contributed public feedback will receive an email describing the data release and being given an opportunity to opt out.
-2. The person or people in charge of the data release will perform quality control of the data, removing low-quality feedback,
-removing email submitter email addresses, and attempting to remove any sensitive information.
-3. The data will be released publicly under the MIT license through commonly used sites such as GitHub or Hugging Face.
+1. Todas as pessoas que contribuíram com feedback público receberão um e-mail descrevendo a divulgação dos dados e terão a oportunidade de optar por não participar.
+2. A pessoa ou pessoas responsáveis pela divulgação dos dados realizarão o controle de qualidade dos dados, removendo feedback de baixa qualidade, removendo endereços de e-mail dos remetentes e tentando remover quaisquer informações confidenciais.
+3. Os dados serão divulgados publicamente sob a licença MIT por meio de sites comumente usados, como GitHub ou Hugging Face.
 
-### What if I want my data deleted?
+### E se eu quiser que meus dados sejam excluídos?
 
-For data on the All Hands AI servers, we are happy to delete it at request:
+Para dados nos servidores da All Hands AI, teremos prazer em excluí-los mediante solicitação:
 
-**One Piece of Data:** If you want one piece of data deleted, we will shortly be adding a mechanism to delete pieces of
-data using the link and password that is displayed on the interface when you submit data.
+**Uma Parte dos Dados:** Se você deseja que uma parte dos dados seja excluída, em breve adicionaremos um mecanismo para excluir partes dos dados usando o link e a senha exibidos na interface quando você envia os dados.
 
-**All Data:** If you would like all pieces of your data deleted, or you do not have the ID and password that you
-received when submitting the data, please contact `contact@all-hands.dev` from the email address that you registered
-when you originally submitted the data.
+**Todos os Dados:** Se você deseja que todas as partes de seus dados sejam excluídas, ou se você não possui o ID e a senha que recebeu ao enviar os dados, entre em contato com `contact@all-hands.dev` a partir do endereço de e-mail que você registrou quando enviou os dados originalmente.

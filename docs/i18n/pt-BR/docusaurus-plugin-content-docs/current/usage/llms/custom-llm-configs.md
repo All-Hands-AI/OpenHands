@@ -1,25 +1,25 @@
-# Custom LLM Configurations
+# Configurações Personalizadas de LLM
 
-OpenHands supports defining multiple named LLM configurations in your `config.toml` file. This feature allows you to use different LLM configurations for different purposes, such as using a cheaper model for tasks that don't require high-quality responses, or using different models with different parameters for specific agents.
+O OpenHands suporta a definição de múltiplas configurações nomeadas de LLM no seu arquivo `config.toml`. Este recurso permite que você use diferentes configurações de LLM para diferentes propósitos, como usar um modelo mais barato para tarefas que não exigem respostas de alta qualidade, ou usar diferentes modelos com diferentes parâmetros para agentes específicos.
 
-## How It Works
+## Como Funciona
 
-Named LLM configurations are defined in the `config.toml` file using sections that start with `llm.`. For example:
+As configurações nomeadas de LLM são definidas no arquivo `config.toml` usando seções que começam com `llm.`. Por exemplo:
 
 ```toml
-# Default LLM configuration
+# Configuração padrão de LLM
 [llm]
 model = "gpt-4"
 api_key = "your-api-key"
 temperature = 0.0
 
-# Custom LLM configuration for a cheaper model
+# Configuração personalizada de LLM para um modelo mais barato
 [llm.gpt3]
 model = "gpt-3.5-turbo"
 api_key = "your-api-key"
 temperature = 0.2
 
-# Another custom configuration with different parameters
+# Outra configuração personalizada com parâmetros diferentes
 [llm.high-creativity]
 model = "gpt-4"
 api_key = "your-api-key"
@@ -27,63 +27,63 @@ temperature = 0.8
 top_p = 0.9
 ```
 
-Each named configuration inherits all settings from the default `[llm]` section and can override any of those settings. You can define as many custom configurations as needed.
+Cada configuração nomeada herda todas as configurações da seção padrão `[llm]` e pode sobrescrever qualquer uma dessas configurações. Você pode definir quantas configurações personalizadas forem necessárias.
 
-## Using Custom Configurations
+## Usando Configurações Personalizadas
 
-### With Agents
+### Com Agentes
 
-You can specify which LLM configuration an agent should use by setting the `llm_config` parameter in the agent's configuration section:
+Você pode especificar qual configuração de LLM um agente deve usar definindo o parâmetro `llm_config` na seção de configuração do agente:
 
 ```toml
 [agent.RepoExplorerAgent]
-# Use the cheaper GPT-3 configuration for this agent
+# Usa a configuração mais barata do GPT-3 para este agente
 llm_config = 'gpt3'
 
 [agent.CodeWriterAgent]
-# Use the high creativity configuration for this agent
+# Usa a configuração de alta criatividade para este agente
 llm_config = 'high-creativity'
 ```
 
-### Configuration Options
+### Opções de Configuração
 
-Each named LLM configuration supports all the same options as the default LLM configuration. These include:
+Cada configuração nomeada de LLM suporta todas as mesmas opções que a configuração padrão de LLM. Isso inclui:
 
-- Model selection (`model`)
-- API configuration (`api_key`, `base_url`, etc.)
-- Model parameters (`temperature`, `top_p`, etc.)
-- Retry settings (`num_retries`, `retry_multiplier`, etc.)
-- Token limits (`max_input_tokens`, `max_output_tokens`)
-- And all other LLM configuration options
+- Seleção de modelo (`model`)
+- Configuração da API (`api_key`, `base_url`, etc.)
+- Parâmetros do modelo (`temperature`, `top_p`, etc.)
+- Configurações de repetição (`num_retries`, `retry_multiplier`, etc.)
+- Limites de tokens (`max_input_tokens`, `max_output_tokens`)
+- E todas as outras opções de configuração de LLM
 
-For a complete list of available options, see the LLM Configuration section in the [Configuration Options](../configuration-options) documentation.
+Para uma lista completa das opções disponíveis, consulte a seção Configuração de LLM na documentação de [Opções de Configuração](../configuration-options).
 
-## Use Cases
+## Casos de Uso
 
-Custom LLM configurations are particularly useful in several scenarios:
+As configurações personalizadas de LLM são particularmente úteis em vários cenários:
 
-- **Cost Optimization**: Use cheaper models for tasks that don't require high-quality responses, like repository exploration or simple file operations.
-- **Task-Specific Tuning**: Configure different temperature and top_p values for tasks that require different levels of creativity or determinism.
-- **Different Providers**: Use different LLM providers or API endpoints for different tasks.
-- **Testing and Development**: Easily switch between different model configurations during development and testing.
+- **Otimização de Custos**: Use modelos mais baratos para tarefas que não exigem respostas de alta qualidade, como exploração de repositório ou operações simples de arquivos.
+- **Ajuste Específico de Tarefas**: Configure diferentes valores de temperature e top_p para tarefas que exigem diferentes níveis de criatividade ou determinismo.
+- **Diferentes Provedores**: Use diferentes provedores de LLM ou endpoints de API para diferentes tarefas.
+- **Testes e Desenvolvimento**: Alterne facilmente entre diferentes configurações de modelo durante o desenvolvimento e testes.
 
-## Example: Cost Optimization
+## Exemplo: Otimização de Custos
 
-A practical example of using custom LLM configurations to optimize costs:
+Um exemplo prático de uso de configurações personalizadas de LLM para otimizar custos:
 
 ```toml
-# Default configuration using GPT-4 for high-quality responses
+# Configuração padrão usando GPT-4 para respostas de alta qualidade
 [llm]
 model = "gpt-4"
 api_key = "your-api-key"
 temperature = 0.0
 
-# Cheaper configuration for repository exploration
+# Configuração mais barata para exploração de repositório
 [llm.repo-explorer]
 model = "gpt-3.5-turbo"
 temperature = 0.2
 
-# Configuration for code generation
+# Configuração para geração de código
 [llm.code-gen]
 model = "gpt-4"
 temperature = 0.0
@@ -96,20 +96,20 @@ llm_config = 'repo-explorer'
 llm_config = 'code-gen'
 ```
 
-In this example:
-- Repository exploration uses a cheaper model since it mainly involves understanding and navigating code
-- Code generation uses GPT-4 with a higher token limit for generating larger code blocks
-- The default configuration remains available for other tasks
+Neste exemplo:
+- A exploração de repositório usa um modelo mais barato, pois envolve principalmente entender e navegar pelo código
+- A geração de código usa GPT-4 com um limite maior de tokens para gerar blocos de código maiores
+- A configuração padrão permanece disponível para outras tarefas
 
-# Custom Configurations with Reserved Names
+# Configurações Personalizadas com Nomes Reservados
 
-OpenHands can use custom LLM configurations named with reserved names, for specific use cases. If you specify the model and other settings under the reserved names, then OpenHands will load and them for a specific purpose. As of now, one such configuration is implemented: draft editor.
+O OpenHands pode usar configurações personalizadas de LLM nomeadas com nomes reservados, para casos de uso específicos. Se você especificar o modelo e outras configurações sob os nomes reservados, então o OpenHands irá carregá-los e usá-los para um propósito específico. Até agora, uma dessas configurações está implementada: editor de rascunho.
 
-## Draft Editor Configuration
+## Configuração do Editor de Rascunho
 
-The `draft_editor` configuration is a group of settings you can provide, to specify the model to use for preliminary drafting of code edits, for any tasks that involve editing and refining code. You need to provide it under the section `[llm.draft_editor]`.
+A configuração `draft_editor` é um grupo de configurações que você pode fornecer, para especificar o modelo a ser usado para a elaboração preliminar de edições de código, para quaisquer tarefas que envolvam edição e refinamento de código. Você precisa fornecê-la na seção `[llm.draft_editor]`.
 
-For example, you can define in `config.toml` a draft editor like this:
+Por exemplo, você pode definir em `config.toml` um editor de rascunho assim:
 
 ```toml
 [llm.draft_editor]
@@ -120,17 +120,17 @@ presence_penalty = 0.0
 frequency_penalty = 0.0
 ```
 
-This configuration:
-- Uses GPT-4 for high-quality edits and suggestions
-- Sets a low temperature (0.2) to maintain consistency while allowing some flexibility
-- Uses a high top_p value (0.95) to consider a wide range of token options
-- Disables presence and frequency penalties to maintain focus on the specific edits needed
+Esta configuração:
+- Usa GPT-4 para edições e sugestões de alta qualidade
+- Define uma temperatura baixa (0,2) para manter a consistência, permitindo alguma flexibilidade
+- Usa um valor alto de top_p (0,95) para considerar uma ampla gama de opções de tokens
+- Desativa as penalidades de presença e frequência para manter o foco nas edições específicas necessárias
 
-Use this configuration when you want to let an LLM draft edits before making them. In general, it may be useful to:
-- Review and suggest code improvements
-- Refine existing content while maintaining its core meaning
-- Make precise, focused changes to code or text
+Use esta configuração quando quiser que um LLM faça um rascunho das edições antes de realizá-las. Em geral, pode ser útil para:
+- Revisar e sugerir melhorias de código
+- Refinar o conteúdo existente, mantendo seu significado principal
+- Fazer alterações precisas e focadas no código ou texto
 
 :::note
-Custom LLM configurations are only available when using OpenHands in development mode, via `main.py` or `cli.py`. When running via `docker run`, please use the standard configuration options.
+As configurações personalizadas de LLM estão disponíveis apenas quando se usa o OpenHands no modo de desenvolvimento, via `main.py` ou `cli.py`. Ao executar via `docker run`, por favor, use as opções de configuração padrão.
 :::

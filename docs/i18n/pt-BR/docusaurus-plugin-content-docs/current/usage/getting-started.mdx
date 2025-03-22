@@ -1,111 +1,111 @@
-# Getting Started with OpenHands
+# Começando com o OpenHands
 
-Então você [iniciou o OpenHands](./installation) e [configurou sua LLM](./installation#setup). E agora?
+Então você [executou o OpenHands](./installation) e
+[configurou seu LLM](./installation#setup). E agora?
 
-OpenHands can help you tackle a wide variety of engineering tasks. But the technology
-is still new, and we're a long way off from having agents that can take on large, complicated
-engineering tasks without any guidance. So it's important to get a feel for what the agent
-does well, and where it might need some help.
+O OpenHands pode ajudá-lo a lidar com uma ampla variedade de tarefas de engenharia. Mas a tecnologia
+ainda é nova, e estamos longe de ter agentes que possam assumir tarefas de engenharia grandes e complicadas
+sem qualquer orientação. Portanto, é importante ter uma noção do que o agente
+faz bem e onde ele pode precisar de alguma ajuda.
 
-## Hello World
+## Olá Mundo
 
-The first thing you might want to try is a simple "hello world" example.
-This can be more complicated than it sounds!
+A primeira coisa que você pode querer tentar é um exemplo simples de "olá mundo".
+Isso pode ser mais complicado do que parece!
 
-Try prompting the agent with:
+Tente solicitar ao agente:
+> Por favor, escreva um script bash hello.sh que imprima "hello world!"
 
-> Please write a bash script hello.sh that prints "hello world!"
+Você deve ver que o agente não apenas escreve o script, mas também define as permissões
+corretas e executa o script para verificar a saída.
 
-You should see that the agent not only writes the script, it sets the correct
-permissions and runs the script to check the output.
+Você pode continuar solicitando ao agente para refinar seu código. Esta é uma ótima maneira de
+trabalhar com agentes. Comece de forma simples e itere.
 
-You can continue prompting the agent to refine your code. This is a great way to
-work with agents. Start simple, and iterate.
+> Por favor, modifique hello.sh para que ele aceite um nome como o primeiro argumento, mas use "world" como padrão
 
-> Please modify hello.sh so that it accepts a name as the first argument, but defaults to "world"
+Você também pode trabalhar em qualquer linguagem que precisar, embora o agente possa precisar de algum
+tempo para configurar seu ambiente!
 
-You can also work in any language you need, though the agent might need to spend some
-time setting up its environment!
+> Por favor, converta hello.sh para um script Ruby e execute-o
 
-> Please convert hello.sh to a Ruby script, and run it
+## Construindo do Zero
 
-## Building From Scratch
+Os agentes se saem excepcionalmente bem em tarefas "greenfield" (tarefas em que eles não precisam
+de nenhum contexto sobre uma base de código existente) e podem simplesmente começar do zero.
 
-Agents do exceptionally well at "greenfield" tasks (tasks where they don't need
-any context about an existing codebase) and they can just start from scratch.
+É melhor começar com uma tarefa simples e, em seguida, iterar sobre ela. Também é melhor ser
+o mais específico possível sobre o que você deseja, qual deve ser a pilha de tecnologia, etc.
 
-It's best to start with a simple task, and then iterate on it. It's also best to be
-as specific as possible about what you want, what the tech stack should be, etc.
+Por exemplo, podemos construir um aplicativo de lista de tarefas:
 
-For example, we might build a TODO app:
+> Por favor, construa um aplicativo básico de lista de tarefas em React. Ele deve ser apenas frontend e todo o estado
+> deve ser mantido no localStorage.
 
-> Please build a basic TODO list app in React. It should be frontend-only, and all state
-> should be kept in localStorage.
+Podemos continuar iterando no aplicativo assim que o esqueleto estiver lá:
 
-We can keep iterating on the app once the skeleton is there:
+> Por favor, permita adicionar uma data de vencimento opcional para cada tarefa.
 
-> Please allow adding an optional due date to every task.
+Assim como no desenvolvimento normal, é bom fazer commit e push do seu código com frequência.
+Dessa forma, você sempre pode reverter para um estado antigo se o agente sair do caminho.
+Você pode pedir ao agente para fazer commit e push para você:
 
-Just like with normal development, it's good to commit and push your code frequently.
-This way you can always revert back to an old state if the agent goes off track.
-You can ask the agent to commit and push for you:
+> Por favor, faça commit das alterações e envie-as para uma nova branch chamada "feature/due-dates"
 
-> Please commit the changes and push them to a new branch called "feature/due-dates"
 
-## Adding New Code
+## Adicionando Novo Código
 
-OpenHands can also do a great job adding new code to an existing code base.
+O OpenHands também pode fazer um ótimo trabalho adicionando novo código a uma base de código existente.
 
-For example, you can ask OpenHands to add a new GitHub action to your project
-which lints your code. OpenHands may take a peek at your codebase to see what language
-it should use and then drop a new file into `./github/workflows/lint.yml`.
+Por exemplo, você pode pedir ao OpenHands para adicionar uma nova ação do GitHub ao seu projeto
+que faça lint do seu código. O OpenHands pode dar uma olhada na sua base de código para ver qual linguagem
+ele deve usar e, em seguida, soltar um novo arquivo em `./github/workflows/lint.yml`.
 
-> Please add a GitHub action that lints the code in this repository.
+> Por favor, adicione uma ação do GitHub que faça lint do código neste repositório.
 
-Some tasks might require a bit more context. While OpenHands can use `ls` and `grep`
-to search through your codebase, providing context up front allows it to move faster,
-and more accurately. And it'll cost you fewer tokens!
+Algumas tarefas podem exigir um pouco mais de contexto. Embora o OpenHands possa usar `ls` e `grep`
+para pesquisar em sua base de código, fornecer contexto antecipadamente permite que ele se mova mais rápido
+e com mais precisão. E isso custará menos tokens para você!
 
-> Please modify ./backend/api/routes.js to add a new route that returns a list of all tasks.
+> Por favor, modifique ./backend/api/routes.js para adicionar uma nova rota que retorne uma lista de todas as tarefas.
 
-> Please add a new React component that displays a list of Widgets to the ./frontend/components
-> directory. It should use the existing Widget component.
+> Por favor, adicione um novo componente React que exiba uma lista de Widgets no diretório ./frontend/components.
+> Ele deve usar o componente Widget existente.
 
-## Refactoring
+## Refatoração
 
-OpenHands does great at refactoring existing code, especially in small chunks.
-You probably don't want to try rearchitecting your whole codebase, but breaking up
-long files and functions, renaming variables, etc. tend to work very well.
+O OpenHands é ótimo em refatorar código existente, especialmente em pequenos pedaços.
+Você provavelmente não vai querer tentar rearquitetar toda a sua base de código, mas dividir
+arquivos e funções longas, renomear variáveis, etc. tendem a funcionar muito bem.
 
-> Please rename all the single-letter variables in ./app.go.
+> Por favor, renomeie todas as variáveis de uma letra em ./app.go.
 
-> Please break the function `build_and_deploy_widgets` into two functions, `build_widgets` and `deploy_widgets` in widget.php.
+> Por favor, divida a função `build_and_deploy_widgets` em duas funções, `build_widgets` e `deploy_widgets` em widget.php.
 
-> Please break ./api/routes.js into separate files for each route.
+> Por favor, divida ./api/routes.js em arquivos separados para cada rota.
 
-## Bug Fixes
+## Correções de Bugs
 
-OpenHands can also help you track down and fix bugs in your code. But as any
-developer knows, bug fixing can be extremely tricky, and often OpenHands will need more context.
-It helps if you've diagnosed the bug, but want OpenHands to figure out the logic.
+O OpenHands também pode ajudá-lo a rastrear e corrigir bugs em seu código. Mas como qualquer
+desenvolvedor sabe, a correção de bugs pode ser extremamente complicada e, muitas vezes, o OpenHands precisará de mais contexto.
+Ajuda se você diagnosticou o bug, mas quer que o OpenHands descubra a lógica.
 
-> Currently the email field in the `/subscribe` endpoint is rejecting .io domains. Please fix this.
+> Atualmente, o campo de e-mail no endpoint `/subscribe` está rejeitando domínios .io. Por favor, corrija isso.
 
-> The `search_widgets` function in ./app.py is doing a case-sensitive search. Please make it case-insensitive.
+> A função `search_widgets` em ./app.py está fazendo uma pesquisa sensível a maiúsculas e minúsculas. Por favor, torne-a insensível a maiúsculas e minúsculas.
 
-It often helps to do test-driven development when bug fixing with an agent.
-You can ask the agent to write a new test, and then iterate until it fixes the bug:
+Muitas vezes, ajuda fazer o desenvolvimento orientado a testes ao corrigir bugs com um agente.
+Você pode pedir ao agente para escrever um novo teste e, em seguida, iterar até que ele corrija o bug:
 
-> The `hello` function crashes on the empty string. Please write a test that reproduces this bug, then fix the code so it passes.
+> A função `hello` trava na string vazia. Por favor, escreva um teste que reproduza esse bug e, em seguida, corrija o código para que ele passe.
 
-## More
+## Mais
 
-OpenHands is capable of helping out on just about any coding task but it takes some practice
-to get the most out of it. Remember to:
+O OpenHands é capaz de ajudar em praticamente qualquer tarefa de codificação, mas é necessária alguma prática
+para tirar o máximo proveito dele. Lembre-se de:
+* Manter suas tarefas pequenas.
+* Ser o mais específico possível.
+* Fornecer o máximo de contexto possível.
+* Fazer commit e push com frequência.
 
-- Keep your tasks small.
-- Be as specific as possible.
-- Provide as much context as possible.
-- Commit and push frequently.
-
-See [Prompting Best Practices](./prompting/prompting-best-practices) for more tips on how to get the most out of OpenHands.
+Veja [Melhores Práticas de Prompt](./prompting/prompting-best-practices) para mais dicas sobre como obter o máximo do OpenHands.

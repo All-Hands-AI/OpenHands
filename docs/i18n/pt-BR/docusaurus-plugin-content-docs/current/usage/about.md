@@ -1,28 +1,25 @@
-# About OpenHands
+# Sobre o OpenHands
 
-## Research Strategy
+## Estratégia de Pesquisa
 
-Achieving full replication of production-grade applications with LLMs is a complex endeavor. Our strategy involves:
+Alcançar a replicação completa de aplicações de nível de produção com LLMs é um esforço complexo. Nossa estratégia envolve:
 
-- **Core Technical Research:** Focusing on foundational research to understand and improve the technical aspects of code generation and handling.
-- **Task Planning:** Developing capabilities for bug detection, codebase management, and optimization.
-- **Evaluation:** Establishing comprehensive evaluation metrics to better understand and improve our agents.
+- **Pesquisa Técnica Central:** Foco em pesquisa fundamental para entender e aprimorar os aspectos técnicos da geração e manipulação de código.
+- **Planejamento de Tarefas:** Desenvolvimento de capacidades para detecção de bugs, gerenciamento de codebase e otimização.
+- **Avaliação:** Estabelecimento de métricas de avaliação abrangentes para melhor entender e aprimorar nossos agentes.
 
-## Default Agent
+## Agente Padrão
 
-Our default Agent is currently the [CodeActAgent](agents), which is capable of generating code and handling files.
+Nosso Agente padrão atualmente é o [CodeActAgent](agents), que é capaz de gerar código e lidar com arquivos.
 
-## Built With
+## Construído Com
 
-OpenHands is built using a combination of powerful frameworks and libraries, providing a robust foundation for its
-development. Here are the key technologies used in the project:
+O OpenHands é construído usando uma combinação de poderosos frameworks e bibliotecas, fornecendo uma base robusta para seu desenvolvimento. Aqui estão as principais tecnologias usadas no projeto:
 
 ![FastAPI](https://img.shields.io/badge/FastAPI-black?style=for-the-badge) ![uvicorn](https://img.shields.io/badge/uvicorn-black?style=for-the-badge) ![LiteLLM](https://img.shields.io/badge/LiteLLM-black?style=for-the-badge) ![Docker](https://img.shields.io/badge/Docker-black?style=for-the-badge) ![Ruff](https://img.shields.io/badge/Ruff-black?style=for-the-badge) ![MyPy](https://img.shields.io/badge/MyPy-black?style=for-the-badge) ![LlamaIndex](https://img.shields.io/badge/LlamaIndex-black?style=for-the-badge) ![React](https://img.shields.io/badge/React-black?style=for-the-badge)
 
-Please note that the selection of these technologies is in progress, and additional technologies may be added or
-existing ones may be removed as the project evolves. We strive to adopt the most suitable and efficient tools to
-enhance the capabilities of OpenHands.
+Por favor, note que a seleção dessas tecnologias está em andamento, e tecnologias adicionais podem ser adicionadas ou as existentes podem ser removidas à medida que o projeto evolui. Nós nos esforçamos para adotar as ferramentas mais adequadas e eficientes para aprimorar as capacidades do OpenHands.
 
-## License
+## Licença
 
-Distributed under MIT [License](https://github.com/All-Hands-AI/OpenHands/blob/main/LICENSE).
+Distribuído sob a [Licença](https://github.com/All-Hands-AI/OpenHands/blob/main/LICENSE) MIT.
