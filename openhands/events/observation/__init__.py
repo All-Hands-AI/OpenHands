@@ -5,6 +5,7 @@ from openhands.events.observation.agent import (
     AgentThinkObservation,
     RecallObservation,
 )
+from openhands.events.observation.search_engine import SearchEngineObservation
 from openhands.events.observation.browse import BrowserOutputObservation
 from openhands.events.observation.commands import (
     CmdOutputMetadata,
@@ -42,6 +43,7 @@ __all__ = [
     'SuccessObservation',
     'UserRejectObservation',
     'AgentCondensationObservation',
+    'SearchEngineObservation',
     'RecallObservation',
     'RecallType',
 ]

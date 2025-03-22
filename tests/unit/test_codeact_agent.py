@@ -25,6 +25,7 @@ from openhands.core.message import ImageContent, Message, TextContent
 from openhands.events.action import (
     CmdRunAction,
     MessageAction,
+    SearchAction,
 )
 from openhands.events.event import EventSource
 from openhands.events.observation.commands import (
@@ -100,22 +101,26 @@ def test_get_tools_with_options():
         codeact_enable_browsing=True,
         codeact_enable_jupyter=True,
         codeact_enable_llm_editor=True,
+        codeact_enable_search_engine=True,
     )
     tool_names = [tool['function']['name'] for tool in tools]
     assert 'browser' in tool_names
     assert 'execute_ipython_cell' in tool_names
     assert 'edit_file' in tool_names
+    assert 'search_engine' in tool_names
 
     # Test with all options disabled
     tools = get_tools(
         codeact_enable_browsing=False,
         codeact_enable_jupyter=False,
         codeact_enable_llm_editor=False,
+        codeact_enable_search_engine=False,
     )
     tool_names = [tool['function']['name'] for tool in tools]
     assert 'browser' not in tool_names
     assert 'execute_ipython_cell' not in tool_names
     assert 'edit_file' not in tool_names
+    assert 'search_engine' not in tool_names
 
 
 def test_cmd_run_tool():
@@ -176,6 +181,15 @@ def test_web_read_tool():
     assert WebReadTool['function']['parameters']['required'] == ['url']
 
 
+def test_search_engine_tool():
+    from openhands.agenthub.codeact_agent.tools import SearchEngineTool
+
+    assert SearchEngineTool['type'] == 'function'
+    assert SearchEngineTool['function']['name'] == 'search_engine'
+    assert 'query' in SearchEngineTool['function']['parameters']['properties']
+    assert SearchEngineTool['function']['parameters']['required'] == ['query']
+
+
 def test_browser_tool():
     assert BrowserTool['type'] == 'function'
     assert BrowserTool['function']['name'] == 'browser'
@@ -210,6 +224,42 @@ def test_browser_tool():
         BrowserTool['function']['parameters']['properties']['code']['type'] == 'string'
     )
     assert 'description' in BrowserTool['function']['parameters']['properties']['code']
+
+
+def test_response_to_actions_search_engine():
+    # Test response with search engine tool call
+    from litellm import ChatCompletionMessageToolCall, Choices, Message, ModelResponse
+
+    mock_response = ModelResponse(
+        id='mock_id',
+        choices=[
+            Choices(
+                message=Message(
+                    content='Let me search for that',
+                    tool_calls=[
+                        ChatCompletionMessageToolCall(
+                            id='tool_call_10',
+                            function={
+                                'name': 'search_engine',
+                                'arguments': '{"query": "test query"}',
+                            },
+                            type='function',
+                        )
+                    ],
+                    role='assistant',
+                ),
+                index=0,
+                finish_reason='tool_calls',
+            )
+        ],
+        model='mock_model',
+        usage={'total_tokens': 100},
+    )
+
+    actions = response_to_actions(mock_response)
+    assert len(actions) == 1
+    assert isinstance(actions[0], SearchAction)
+    assert actions[0].query == 'test query'
 
 
 def test_response_to_actions_invalid_tool():

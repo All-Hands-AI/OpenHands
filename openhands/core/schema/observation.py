@@ -49,6 +49,9 @@ class ObservationTypeSchema(BaseModel):
     CONDENSE: str = Field(default='condense')
     """Result of a condensation operation."""
 
+    SEARCH: str = Field(default='search')
+    """Result of querying a search engine."""
+
     RECALL: str = Field(default='recall')
     """Result of a recall operation. This can be the workspace context, a microagent, or other types of information."""
 

@@ -70,6 +70,7 @@ class CodeActAgent(Agent):
             codeact_enable_browsing=self.config.codeact_enable_browsing,
             codeact_enable_jupyter=self.config.codeact_enable_jupyter,
             codeact_enable_llm_editor=self.config.codeact_enable_llm_editor,
+            codeact_enable_search_engine=self.config.enable_search_engine,
             llm=self.llm,
         )
         logger.debug(

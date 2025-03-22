@@ -11,6 +11,7 @@ on:
     paths:
       - 'docs/**'
       - '.github/workflows/deploy-docs.yml'
+      - 'pydoc-markdown.yml'
     branches:
       - main
 
@@ -38,6 +39,7 @@ jobs:
         uses: useblacksmith/setup-python@v6
         with:
           python-version: '3.12'
+
       - name: Install dependencies
         run: cd docs && npm ci
       - name: Build website
