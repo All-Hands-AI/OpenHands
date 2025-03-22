@@ -16,7 +16,6 @@ export function useDocumentTitleFromState(suffix = "OpenHands") {
   const lastValidTitleRef = useRef<string | null>(null);
 
   useEffect(() => {
-    console.log('updating title', conversation);
     if (conversation?.title) {
       lastValidTitleRef.current = conversation.title;
       document.title = `${conversation.title} - ${suffix}`;
