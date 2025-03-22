@@ -30,6 +30,7 @@ async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
         if bool(user_id):
             provider_tokens_set[ProviderType.GITHUB.value] = True
         
+
         provider_tokens = get_provider_tokens(request)
         if provider_tokens:
             all_provider_types = [provider.value for provider in ProviderType]
@@ -40,10 +41,19 @@ async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
                 else:
                     provider_tokens_set[provider_type] = False
 
+
+        custom_secrets = {}
+        if settings.secrets_store.custom_secrets:
+            for secret_name, _ in settings.secrets_store.custom_secrets:
+                custom_secrets[secret_name] = ""
+
         settings_with_token_data = GETSettingsModel(
             **settings.model_dump(exclude='secrets_store'),
             provider_tokens_set=provider_tokens_set,
+            custom_secrets=custom_secrets
         )
+
+        print("loading", settings_with_token_data)
 
         settings_with_token_data.llm_api_key = settings.llm_api_key
         return settings_with_token_data
@@ -229,4 +239,5 @@ def convert_to_settings(settings_with_token_data: POSTSettingsModel) -> Settings
         )
 
 
+    print("final settings", settings)
     return settings
