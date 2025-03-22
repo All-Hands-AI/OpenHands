@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request, status
 from fastapi.responses import JSONResponse
-from pydantic import SecretStr
+from openhands.core.utils.secret_str import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.provider import ProviderToken, ProviderType, SecretStore

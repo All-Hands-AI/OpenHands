@@ -1,6 +1,6 @@
 from unittest.mock import patch
 
-from pydantic import SecretStr
+from openhands.core.utils.secret_str import SecretStr
 
 from openhands.core.config.app_config import AppConfig
 from openhands.core.config.llm_config import LLMConfig
@@ -91,10 +91,10 @@ def test_settings_handles_sensitive_data():
         ),
     )
 
-    assert str(settings.llm_api_key) == '**********'
+    assert str(settings.llm_api_key) == '<hidden>'
     assert (
         str(settings.secrets_store.provider_tokens[ProviderType.GITHUB].token)
-        == '**********'
+        == '<hidden>'
     )
 
     assert settings.llm_api_key.get_secret_value() == 'test-key'

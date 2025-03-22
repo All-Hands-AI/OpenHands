@@ -73,7 +73,7 @@ function AccountSettings() {
 
   const hasAppSlug = !!config?.APP_SLUG;
   const isGitHubTokenSet = settings?.GITHUB_TOKEN_IS_SET;
-  const isLLMKeySet = settings?.LLM_API_KEY === "**********";
+  const isLLMKeySet = settings?.LLM_API_KEY === "<hidden>";
   const isAnalyticsEnabled = settings?.USER_CONSENTS_TO_ANALYTICS;
   const isAdvancedSettingsSet = determineWhetherToToggleAdvancedSettings();
 
@@ -288,7 +288,7 @@ function AccountSettings() {
                   startContent={
                     isLLMKeySet && <KeyStatusIcon isSet={isLLMKeySet} />
                   }
-                  placeholder={isLLMKeySet ? "**********" : ""}
+                  placeholder={isLLMKeySet ? "<hidden>" : ""}
                 />
               )}
 
@@ -407,7 +407,7 @@ function AccountSettings() {
                       <KeyStatusIcon isSet={!!isGitHubTokenSet} />
                     )
                   }
-                  placeholder={isGitHubTokenSet ? "**********" : ""}
+                  placeholder={isGitHubTokenSet ? "<hidden>" : ""}
                 />
                 <p data-testId="github-token-help-anchor" className="text-xs">
                   {" "}

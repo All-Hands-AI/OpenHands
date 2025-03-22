@@ -3,7 +3,8 @@ from __future__ import annotations
 import os
 from typing import Any
 
-from pydantic import BaseModel, Field, SecretStr, ValidationError
+from pydantic import BaseModel, Field, ValidationError
+from openhands.core.utils.secret_str import SecretStr
 
 from openhands.core.logger import LOG_DIR
 from openhands.core.logger import openhands_logger as logger

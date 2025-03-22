@@ -7,12 +7,13 @@ from typing import Any, Coroutine, Literal, overload
 from pydantic import (
     BaseModel,
     Field,
-    SecretStr,
     SerializationInfo,
     field_serializer,
     model_validator,
 )
 from pydantic.json import pydantic_encoder
+
+from openhands.core.utils.secret_str import SecretStr
 
 from openhands.events.action.action import Action
 from openhands.events.action.commands import CmdRunAction

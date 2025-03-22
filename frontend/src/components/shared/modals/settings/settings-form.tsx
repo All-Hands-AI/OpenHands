@@ -74,7 +74,7 @@ export function SettingsForm({ settings, models, onClose }: SettingsFormProps) {
     }
   };
 
-  const isLLMKeySet = settings.LLM_API_KEY === "**********";
+  const isLLMKeySet = settings.LLM_API_KEY === "<hidden>";
 
   return (
     <div>
