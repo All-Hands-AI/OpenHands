@@ -98,7 +98,31 @@ async def _create_new_conversation(
     repository_title = (
         selected_repository.split('/')[-1] if selected_repository else None
     )
-    conversation_title = f'{repository_title or "Conversation"} {conversation_id[:5]}'
+    default_title = f'{repository_title or "Conversation"} {conversation_id[:5]}'
+
+    # Generate a natural language title if there's an initial user message
+    conversation_title = default_title
+    logger.debug(f'Initial user message: {initial_user_msg}; settings: {settings}')
+    if initial_user_msg and settings:
+        from openhands.core.config.llm_config import LLMConfig
+        from openhands.utils.conversation_summary import generate_conversation_title
+
+        logger.info(f'Generating title for conversation {conversation_id}')
+
+        # Create LLM config from the original settings
+        llm_config = LLMConfig(
+            model=settings.llm_model,
+            api_key=settings.llm_api_key,
+            base_url=settings.llm_base_url,
+        )
+
+        generated_title = await generate_conversation_title(
+            initial_user_msg, llm_config
+        )
+
+        if generated_title:
+            conversation_title = generated_title
+            logger.info(f'Generated title: {conversation_title}')
 
     logger.info(f'Saving metadata for conversation {conversation_id}')
     await conversation_store.save_metadata(
@@ -193,6 +217,9 @@ async def search_conversations(
     page_id: str | None = None,
     limit: int = 20,
 ) -> ConversationInfoResultSet:
+    # Flag to track if we should skip title generation
+    continue_without_title_generation = False
+    
     conversation_store = await ConversationStoreImpl.get_instance(
         config, get_user_id(request), get_github_user_id(request)
     )
@@ -215,6 +242,67 @@ async def search_conversations(
     running_conversations = await conversation_manager.get_running_agent_loops(
         get_user_id(request), set(conversation_ids)
     )
+
+    # Check if we need to update any titles for running conversations
+    if running_conversations:
+        from openhands.events.stream import EventStream
+        from openhands.core.config.llm_config import LLMConfig
+        from openhands.utils.conversation_summary import (
+            update_conversation_title_if_needed,
+        )
+
+        # Get settings to create LLM config
+        settings_store = await SettingsStoreImpl.get_instance(
+            config, get_user_id(request)
+        )
+        settings = await settings_store.load()
+
+        if settings:
+            # Create LLM config from settings
+            if not settings.llm_model:
+                logger.warning(
+                    "LLM model not found in settings, cannot generate conversation title"
+                )
+                # Skip title generation and continue with the rest of the function
+                continue_without_title_generation = True
+            
+            # Only proceed with title generation if we have a model
+            if not continue_without_title_generation:
+                # We've already checked that settings.llm_model is not None
+                assert settings.llm_model is not None
+                llm_config = LLMConfig(
+                    model=settings.llm_model,
+                    api_key=settings.llm_api_key,
+                    base_url=settings.llm_base_url,
+                )
+
+            # Update titles for running conversations with default titles
+            if not continue_without_title_generation:
+                for conversation_id in running_conversations:
+                    # Get the event stream
+                    event_stream = EventStream(conversation_id, file_store=config.file_store)
+
+                    # Update the title if needed
+                    await update_conversation_title_if_needed(
+                        conversation_id, conversation_store, event_stream, llm_config
+                    )
+
+    # Refresh metadata after potential updates
+    if running_conversations:
+        # Re-fetch the metadata to get updated titles
+        conversation_metadata_result_set = await conversation_store.search(
+            page_id, limit
+        )
+        filtered_results = [
+            conversation
+            for conversation in conversation_metadata_result_set.results
+            if hasattr(conversation, 'created_at')
+            and (
+                now - conversation.created_at.replace(tzinfo=timezone.utc)
+            ).total_seconds()
+            <= max_age
+        ]
+
     result = ConversationInfoResultSet(
         results=await wait_all(
             _get_conversation_info(
@@ -238,6 +326,52 @@ async def get_conversation(
     try:
         metadata = await conversation_store.get_metadata(conversation_id)
         is_running = await conversation_manager.is_agent_loop_running(conversation_id)
+
+        # Check if we need to update the title
+        if is_running:
+            # Get the event stream for the conversation
+            from openhands.events.stream import EventStream
+            from openhands.core.config.llm_config import LLMConfig
+            from openhands.utils.conversation_summary import (
+                update_conversation_title_if_needed,
+            )
+
+            # Get settings to create LLM config
+            settings_store = await SettingsStoreImpl.get_instance(
+                config, get_user_id(request)
+            )
+            settings = await settings_store.load()
+
+            if settings:
+                # Create LLM config from settings
+                if not settings.llm_model:
+                    logger.warning(
+                        "LLM model not found in settings, cannot generate conversation title"
+                    )
+                    conversation_info = await _get_conversation_info(
+                        metadata, is_running
+                    )
+                    return conversation_info
+
+                # We have already checked that settings.llm_model is not None
+                assert settings.llm_model is not None
+                llm_config = LLMConfig(
+                    model=settings.llm_model,
+                    api_key=settings.llm_api_key,
+                    base_url=settings.llm_base_url,
+                )
+
+                # Get the event stream
+                event_stream = EventStream(conversation_id, file_store=config.file_store)
+
+                # Update the title if needed
+                await update_conversation_title_if_needed(
+                    conversation_id, conversation_store, event_stream, llm_config
+                )
+
+                # Refresh metadata after potential update
+                metadata = await conversation_store.get_metadata(conversation_id)
+
         conversation_info = await _get_conversation_info(metadata, is_running)
         return conversation_info
     except FileNotFoundError:
@@ -294,9 +428,9 @@ async def _get_conversation_info(
             last_updated_at=conversation.last_updated_at,
             created_at=conversation.created_at,
             selected_repository=conversation.selected_repository,
-            status=ConversationStatus.RUNNING
-            if is_running
-            else ConversationStatus.STOPPED,
+            status=(
+                ConversationStatus.RUNNING if is_running else ConversationStatus.STOPPED
+            ),
         )
     except Exception as e:
         logger.error(
