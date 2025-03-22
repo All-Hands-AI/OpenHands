@@ -9,7 +9,12 @@ from openhands.core.exceptions import (
     MicroAgentValidationError,
 )
 from openhands.core.logger import openhands_logger as logger
-from openhands.microagent.types import MicroAgentMetadata, MicroAgentType
+from openhands.microagent.types import (
+    MicroAgentMetadata,
+    MicroAgentType,
+    TaskProgress,
+    TaskStep,
+)
 
 
 class BaseMicroAgent(BaseModel):
@@ -118,12 +123,204 @@ class RepoMicroAgent(BaseMicroAgent):
 
 
 class TaskMicroAgent(BaseMicroAgent):
-    """MicroAgent specialized for task-based operations."""
+    """MicroAgent specialized for task-based operations.
+
+    TaskMicroAgents help track and manage tasks by:
+    - Creating markdown files to track task progress
+    - Managing task steps with checkboxes
+    - Supporting task review and completion tracking
+    """
 
     def __init__(self, **data):
         super().__init__(**data)
         if self.type != MicroAgentType.TASK:
             raise ValueError('TaskMicroAgent must have type TASK')
+        self._progress = None
+
+    def _write_progress_file(self, file_path: Path) -> None:
+        """Write the current task progress to a markdown file.
+
+        Args:
+            file_path: Path to write the file to
+        """
+        if not self._progress:
+            raise ValueError('No task progress being tracked')
+
+        content = [
+            f'# {self._progress.title}\n',
+            f'{self._progress.description}\n',
+            '## Task Steps\n',
+        ]
+
+        for i, step in enumerate(self._progress.steps, 1):
+            checkbox = '- [x]' if step.completed else '- [ ]'
+            content.append(f'{checkbox} {i}. {step.description}\n')
+
+            for j, subtask in enumerate(step.subtasks, 1):
+                sub_checkbox = '- [x]' if subtask.completed else '- [ ]'
+                content.append(f'    {sub_checkbox} {i}.{j}. {subtask.description}\n')
+
+        content.extend(
+            [
+                '\n## Review Notes\n',
+                self._progress.review_notes or '_No review notes yet._\n',
+                '\n## Status\n',
+                f"Task Status: {'Completed' if self._progress.completed else 'In Progress'}\n",
+            ]
+        )
+
+        with open(file_path, 'w') as f:
+            f.write(''.join(content))
+
+    def create_progress_file(
+        self,
+        title: str,
+        description: str,
+        steps: list[Union[str, dict[str, list[str]]]],
+        output_dir: Path,
+    ) -> Path:
+        """Create a markdown file to track task progress.
+
+        Args:
+            title: Task title
+            description: Task description
+            steps: List of task steps to complete. Each step can be either:
+                  - A string for a simple step
+                  - A dict with a single key-value pair where:
+                    - key is the main step description
+                    - value is a list of subtask descriptions
+            output_dir: Directory to save the progress file
+
+        Returns:
+            Path to the created progress file
+
+        Example:
+            steps = [
+                "Simple step 1",
+                {"Complex step 2": ["Subtask 2.1", "Subtask 2.2"]},
+                "Simple step 3"
+            ]
+        """
+        task_steps = []
+        for step in steps:
+            if isinstance(step, str):
+                task_steps.append(TaskStep(description=step))
+            elif isinstance(step, dict):
+                if not step:  # Empty dict
+                    raise ValueError(
+                        'Each step must be either a string or a dict with subtasks'
+                    )
+                try:
+                    main_step, subtasks = next(iter(step.items()))
+                    if not isinstance(subtasks, list):
+                        raise ValueError(
+                            'Each step must be either a string or a dict with subtasks'
+                        )
+                    task_steps.append(
+                        TaskStep(
+                            description=main_step,
+                            subtasks=[
+                                TaskStep(description=subtask) for subtask in subtasks
+                            ],
+                        )
+                    )
+                except (StopIteration, TypeError, ValueError):
+                    raise ValueError(
+                        'Each step must be either a string or a dict with subtasks'
+                    )
+            else:
+                raise ValueError(
+                    'Each step must be either a string or a dict with subtasks'
+                )
+
+        self._progress = TaskProgress(
+            title=title,
+            description=description,
+            steps=task_steps,
+        )
+
+        # Create output directory and file
+        output_dir.mkdir(parents=True, exist_ok=True)
+        output_file = output_dir / f"{title.lower().replace(' ', '_')}_progress.md"
+
+        # Write initial content
+        self._write_progress_file(output_file)
+        return output_file
+
+    def update_step_status(
+        self,
+        step_index: int,
+        completed: bool,
+        file_path: Path,
+        subtask_index: int | None = None,
+    ) -> None:
+        """Update the completion status of a task step or subtask.
+
+        Args:
+            step_index: Index of the step to update (1-based)
+            completed: Whether the step is completed
+            file_path: Path to the progress file
+            subtask_index: Optional index of the subtask to update (1-based).
+                         If None, updates the main step status.
+        """
+        if not self._progress:
+            raise ValueError(
+                'No task progress being tracked. Create a progress file first.'
+            )
+
+        if not (1 <= step_index <= len(self._progress.steps)):
+            raise ValueError(f'Invalid step index {step_index}')
+
+        step = self._progress.steps[step_index - 1]
+
+        if subtask_index is not None:
+            if not step.subtasks:
+                raise ValueError(f'Step {step_index} has no subtasks')
+            if not (1 <= subtask_index <= len(step.subtasks)):
+                raise ValueError(
+                    f'Invalid subtask index {subtask_index} for step {step_index}'
+                )
+            step.subtasks[subtask_index - 1].completed = completed
+        else:
+            step.completed = completed
+
+        # Write updated content
+        self._write_progress_file(file_path)
+
+    def add_review_notes(self, notes: str, file_path: Path) -> None:
+        """Add review notes to the task progress.
+
+        Args:
+            notes: Review notes to add
+            file_path: Path to the progress file
+        """
+        if not self._progress:
+            raise ValueError(
+                'No task progress being tracked. Create a progress file first.'
+            )
+
+        # Update review notes
+        self._progress.review_notes = notes
+
+        # Write updated content
+        self._write_progress_file(file_path)
+
+    def mark_completed(self, file_path: Path) -> None:
+        """Mark the task as completed.
+
+        Args:
+            file_path: Path to the progress file
+        """
+        if not self._progress:
+            raise ValueError(
+                'No task progress being tracked. Create a progress file first.'
+            )
+
+        # Update completion status
+        self._progress.completed = True
+
+        # Write updated content
+        self._write_progress_file(file_path)
 
 
 def load_microagents_from_dir(

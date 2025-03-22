@@ -27,3 +27,21 @@ class TaskInput(BaseModel):
     name: str
     description: str
     required: bool = True
+
+
+class TaskStep(BaseModel):
+    """A step in a task with completion status."""
+
+    description: str
+    completed: bool = False
+    subtasks: list['TaskStep'] = []
+
+
+class TaskProgress(BaseModel):
+    """Progress tracking for a task."""
+
+    title: str
+    description: str
+    steps: list[TaskStep] = []
+    review_notes: str = ''
+    completed: bool = False
