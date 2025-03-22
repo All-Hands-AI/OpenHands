@@ -277,10 +277,6 @@ class AgentSession:
             return False
 
         if selected_repository and git_provider_tokens:
-            if self._status_callback:
-                self._status_callback(
-                    'info', 'STATUS$SETTING_UP_WORKSPACE', 'Setting up workspace...'
-                )
             await call_sync_from_async(
                 self.runtime.clone_repo,
                 git_provider_tokens,
