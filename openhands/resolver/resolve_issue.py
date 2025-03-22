@@ -242,6 +242,8 @@ async def process_issue(
         max_budget_per_task=4,
         max_iterations=max_iterations,
         sandbox=sandbox_config,
+        # https://github.com/Fazek007/OpenHandsForked/blob/029f8e11fd326b06349bde9aaa5e1d8ecfb3f4e6/openhands/runtime/utils/command.py#L37 if resolve_issue.py runs in container as root, the user_id become 0 unless we set it to False
+        run_as_openhands = False,
         # do not mount workspace
         workspace_base=workspace_base,
         workspace_mount_path=workspace_base,
