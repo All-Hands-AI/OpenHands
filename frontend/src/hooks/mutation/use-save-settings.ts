@@ -22,6 +22,7 @@ const saveSettingsMutationFn = async (settings: Partial<PostSettings>) => {
     enable_default_condenser: settings.ENABLE_DEFAULT_CONDENSER,
     enable_sound_notifications: settings.ENABLE_SOUND_NOTIFICATIONS,
     user_consents_to_analytics: settings.user_consents_to_analytics,
+    accept_tos: settings.ACCEPT_TOS,
   };
 
   await OpenHands.saveSettings(apiSettings);
