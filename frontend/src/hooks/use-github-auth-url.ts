@@ -8,6 +8,19 @@ interface UseGitHubAuthUrlConfig {
   gitHubClientId: GetConfigResponse["GITHUB_CLIENT_ID"] | null;
 }
 
+// Non-hook version for use in non-React contexts
+export const getGitHubAuthUrl = () => {
+  // Get config from localStorage or a global variable if available
+  const config = window.__OPENHANDS_CONFIG__;
+  if (config?.APP_MODE === "saas") {
+    return generateGitHubAuthUrl(
+      config.GITHUB_CLIENT_ID || "",
+      new URL(window.location.href),
+    );
+  }
+  return null;
+};
+
 export const useGitHubAuthUrl = (config: UseGitHubAuthUrlConfig) => {
   const { githubTokenIsSet } = useAuth();
 
