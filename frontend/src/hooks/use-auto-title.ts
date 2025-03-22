@@ -6,7 +6,6 @@ import { useUpdateConversation } from "./mutation/use-update-conversation";
 import { RootState } from "#/store";
 import OpenHands from "#/api/open-hands";
 import { useUserConversation } from "#/hooks/query/use-user-conversation";
-import { useParams } from "react-router";
 
 const defaultTitlePattern = /^Conversation [a-f0-9]+$/;
 
@@ -17,7 +16,7 @@ const defaultTitlePattern = /^Conversation [a-f0-9]+$/;
  */
 export function useAutoTitle() {
   const { conversationId } = useParams<{ conversationId: string }>();
-  const { data: conversation, isFetched } = useUserConversation(
+  const { data: conversation } = useUserConversation(
     conversationId ?? null,
   );
   const queryClient = useQueryClient();
@@ -27,7 +26,12 @@ export function useAutoTitle() {
   const messages = useSelector((state: RootState) => state.chat.messages);
 
   useEffect(() => {
-    if (!conversation || !conversationId || !messages || messages.length === 0) {
+    if (
+      !conversation ||
+      !conversationId ||
+      !messages ||
+      messages.length === 0
+    ) {
       return;
     }
 
