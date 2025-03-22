@@ -30,6 +30,7 @@ import {
 import { PostSettings, ProviderOptions } from "#/types/settings";
 import { HIDE_LLM_SETTINGS } from "#/utils/feature-flags";
 import { useAuth } from "#/context/auth-context";
+import { cn } from "@heroui/react";
 
 const REMOTE_RUNTIME_OPTIONS = [
   { key: 1, label: "1x (2 core, 8G)" },
@@ -82,6 +83,9 @@ function AccountSettings() {
   const [secrets, setSecrets] = React.useState(
     Object.entries(settings?.CUSTOM_SECRETS || {}),
   );
+
+  const [secretsToDelete, setSecretsToDelete] = React.useState<number[]>([]);
+
   const isLLMKeySet = settings?.LLM_API_KEY === "**********";
   const isAnalyticsEnabled = settings?.USER_CONSENTS_TO_ANALYTICS;
   const isAdvancedSettingsSet = determineWhetherToToggleAdvancedSettings();
@@ -100,6 +104,7 @@ function AccountSettings() {
 
   React.useEffect(() => {
     setSecrets(Object.entries(settings?.CUSTOM_SECRETS || {}));
+    setSecretsToDelete([]);
   }, [settings?.CUSTOM_SECRETS]);
 
   const formRef = React.useRef<HTMLFormElement>(null);
@@ -152,7 +157,7 @@ function AccountSettings() {
       const name = formData.get(`secret-name-${index}`)?.toString().trim();
       const value = formData.get(`secret-value-${index}`)?.toString();
 
-      if (name) {
+      if (name && !secretsToDelete.includes(index)) {
         secretsEntries[name] = value || "";
       }
     });
@@ -254,11 +259,10 @@ function AccountSettings() {
     setSecrets([...secrets, ["", ""]]);
   };
 
-  const handleRemoveSecret = (index: number) => {
-    setSecrets((prevSecrets) => {
-      const newSecrets = prevSecrets.filter((_, i) => i !== index);
-      return [...newSecrets];
-    });
+  const markSecretDeletion = (index: number, isSecretMarked: boolean) => {
+    if (isSecretMarked) {
+      setSecretsToDelete(secretsToDelete.filter((item) => item !== index));
+    } else setSecretsToDelete([...secretsToDelete, index]);
   };
 
   return (
@@ -546,42 +550,64 @@ function AccountSettings() {
               </button>
             </div>
             <div className="flex flex-col gap-4">
-              {secrets.map(([secretName, secretValue], index) => (
-                <div
-                  key={`${secretName}-${index}`}
-                  className="flex items-end gap-2"
-                >
-                  <SettingsInput
-                    name={`secret-name-${index}`}
-                    placeholder="Secret Name"
-                    defaultValue={secretName}
-                    className="w-[330px]"
-                    label="Secret Name"
-                    type="text"
-                  />
-                  <SettingsInput
-                    name={`secret-value-${index}`}
-                    type="password"
-                    placeholder={
-                      Object.keys(settings?.CUSTOM_SECRETS || {}).includes(
-                        secretName,
-                      )
-                        ? "**********"
-                        : ""
-                    }
-                    defaultValue={secretValue}
-                    className="w-[330px]"
-                    label="Secret Value"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveSecret(index)}
-                    className="flex items-center justify-center h-10 p-1 text-gray-400 hover:text-gray-300"
+              {secrets.map(([secretName, secretValue], index) => {
+                const isMarkedForDeletion = secretsToDelete.includes(index);
+
+                return (
+                  <div
+                    key={`${secretName}-${index}`}
+                    className={cn(
+                      "flex items-end gap-2",
+                      isMarkedForDeletion && "opacity-50",
+                    )}
                   >
-                    <CloseIcon className="h-5 w-5" />
-                  </button>
-                </div>
-              ))}
+                    <SettingsInput
+                      name={`secret-name-${index}`}
+                      placeholder="Secret Name"
+                      defaultValue={secretName}
+                      className="w-[330px]"
+                      label="Secret Name"
+                      type="text"
+                      isDisabled={isMarkedForDeletion}
+                    />
+                    <SettingsInput
+                      name={`secret-value-${index}`}
+                      type="password"
+                      placeholder={
+                        Object.keys(settings?.CUSTOM_SECRETS || {}).includes(
+                          secretName,
+                        )
+                          ? "**********"
+                          : ""
+                      }
+                      defaultValue={secretValue}
+                      className="w-[330px]"
+                      label="Secret Value"
+                      isDisabled={isMarkedForDeletion}
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        markSecretDeletion(index, isMarkedForDeletion)
+                      }
+                      className="flex items-center justify-center h-10 p-1 text-gray-400 hover:text-gray-300"
+                    >
+                      {isMarkedForDeletion ? (
+                        <span className="text-xs text-blue-400 hover:underline">
+                          Undo
+                        </span>
+                      ) : (
+                        <CloseIcon className="h-5 w-5" />
+                      )}
+                    </button>
+                  </div>
+                );
+              })}
+              {secretsToDelete.length > 0 && (
+                <p className="text-xs text-red-400 italic">
+                  Disabled secrets will be deleted when you save changes.
+                </p>
+              )}
             </div>
           </section>
 
