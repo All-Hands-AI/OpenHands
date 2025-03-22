@@ -45,7 +45,6 @@ zope-interface = "7.2"
 pathspec = "^0.12.1"
 google-cloud-aiplatform = "*"
 anthropic = {extras = ["vertex"], version = "*"}
-grep-ast = "0.3.3"
 tree-sitter = "^0.24.0"
 bashlex = "^0.18"
 pyjwt = "^2.9.0"
