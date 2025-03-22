@@ -52,6 +52,17 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: 'category',
+      label: 'Customization',
+      items: [
+        {
+          type: 'doc',
+          label: 'Repository Customization',
+          id: 'usage/customization/repository',
+        },
+      ],
+    },
+    {
+      type: 'category',
       label: 'Usage Methods',
       items: [
         {

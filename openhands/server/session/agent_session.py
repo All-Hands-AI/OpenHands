@@ -282,6 +282,7 @@ class AgentSession:
                 selected_repository,
                 selected_branch,
             )
+            await call_sync_from_async(self.runtime.maybe_run_setup_script)
 
         self.logger.debug(
             f'Runtime initialized with plugins: {[plugin.name for plugin in self.runtime.plugins]}'
