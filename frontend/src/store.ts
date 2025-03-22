@@ -3,7 +3,6 @@ import agentReducer from "./state/agent-slice";
 import browserReducer from "./state/browser-slice";
 import chatReducer from "./state/chat-slice";
 import codeReducer from "./state/code-slice";
-import conversationReducer from "./state/conversation-slice";
 import fileStateReducer from "./state/file-state-slice";
 import initialQueryReducer from "./state/initial-query-slice";
 import commandReducer from "./state/command-slice";
@@ -23,7 +22,6 @@ export const rootReducer = combineReducers({
   jupyter: jupyterReducer,
   securityAnalyzer: securityAnalyzerReducer,
   status: statusReducer,
-  conversation: conversationReducer,
   metrics: metricsReducer,
 });
 

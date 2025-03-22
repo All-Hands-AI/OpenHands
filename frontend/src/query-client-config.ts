@@ -2,7 +2,6 @@ import {
   QueryClientConfig,
   QueryCache,
   MutationCache,
-  QueryClient,
 } from "@tanstack/react-query";
 import { retrieveAxiosErrorMessage } from "./utils/retrieve-axios-error-message";
 import { displayErrorToast } from "./utils/custom-toast-handlers";
@@ -34,6 +33,3 @@ export const queryClientConfig: QueryClientConfig = {
     },
   }),
 };
-
-// Create a global query client instance that can be used for manual invalidation
-export const queryClient = new QueryClient(queryClientConfig);
