@@ -26,7 +26,6 @@ import {
   displaySuccessToast,
 } from "#/utils/custom-toast-handlers";
 import { PostSettings, ProviderOptions } from "#/types/settings";
-import { HIDE_LLM_SETTINGS } from "#/utils/feature-flags";
 import { useAuth } from "#/context/auth-context";
 
 const REMOTE_RUNTIME_OPTIONS = [
@@ -55,7 +54,8 @@ function AccountSettings() {
   const isSuccess = isSuccessfulSettings && isSuccessfulResources;
 
   const isSaas = config?.APP_MODE === "saas";
-  const shouldHandleSpecialSaasCase = HIDE_LLM_SETTINGS() && isSaas;
+  const shouldHandleSpecialSaasCase =
+    config?.FEATURE_FLAGS.HIDE_LLM_SETTINGS && isSaas;
 
   const determineWhetherToToggleAdvancedSettings = () => {
     if (shouldHandleSpecialSaasCase) return true;
