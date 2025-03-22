@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router";
+import { cn } from "@heroui/react";
 import PlusIcon from "#/icons/plus.svg?react";
 import CloseIcon from "#/icons/close.svg?react";
 import { BrandButton } from "#/components/features/settings/brand-button";
@@ -30,7 +31,6 @@ import {
 import { PostSettings, ProviderOptions } from "#/types/settings";
 import { HIDE_LLM_SETTINGS } from "#/utils/feature-flags";
 import { useAuth } from "#/context/auth-context";
-import { cn } from "@heroui/react";
 
 const REMOTE_RUNTIME_OPTIONS = [
   { key: 1, label: "1x (2 core, 8G)" },

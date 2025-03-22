@@ -20,6 +20,7 @@ export const DEFAULT_SETTINGS: Settings = {
     gitlab: "",
   },
   IS_NEW_USER: true,
+  CUSTOM_SECRETS: {},
 };
 
 /**
