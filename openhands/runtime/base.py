@@ -362,12 +362,23 @@ class Runtime(FileEditRuntimeMixin):
         self.run_action(action)
         return dir_name
 
+    def maybe_run_setup_script(self):
+        """Run .openhands/setup.sh if it exists in the workspace or repository."""
+        setup_script = '.openhands/setup.sh'
+        read_obs = self.read(FileReadAction(path=setup_script))
+        if isinstance(read_obs, ErrorObservation):
+            return
+
+        action = CmdRunAction(f'chmod +x {setup_script} && source {setup_script}')
+        obs = self.run_action(action)
+        if isinstance(obs, CmdOutputObservation) and obs.exit_code != 0:
+            self.log('error', f'Setup script failed: {obs.content}')
+
     def get_microagents_from_selected_repo(
         self, selected_repository: str | None
     ) -> list[BaseMicroAgent]:
         """Load microagents from the selected repository.
         If selected_repository is None, load microagents from the current workspace.
-
         This is the main entry point for loading microagents.
         """
 
