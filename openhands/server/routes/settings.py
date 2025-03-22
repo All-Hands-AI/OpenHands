@@ -44,7 +44,7 @@ async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
 
         custom_secrets = {}
         if settings.secrets_store.custom_secrets:
-            for secret_name, _ in settings.secrets_store.custom_secrets:
+            for secret_name, _ in settings.secrets_store.custom_secrets.items():
                 custom_secrets[secret_name] = ""
 
         settings_with_token_data = GETSettingsModel(
@@ -52,8 +52,6 @@ async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
             provider_tokens_set=provider_tokens_set,
             custom_secrets=custom_secrets
         )
-
-        print("loading", settings_with_token_data)
 
         settings_with_token_data.llm_api_key = settings.llm_api_key
         return settings_with_token_data
@@ -120,7 +118,6 @@ async def store_settings(
     settings: POSTSettingsModel,
 ) -> JSONResponse:
     
-    print("incoming settings", settings)
     # Check provider tokens are valid
     if settings.provider_tokens:
         # Remove extraneous token types
@@ -239,5 +236,4 @@ def convert_to_settings(settings_with_token_data: POSTSettingsModel) -> Settings
         )
 
 
-    print("final settings", settings)
     return settings

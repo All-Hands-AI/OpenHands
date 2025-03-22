@@ -104,13 +104,13 @@ class SecretStore(BaseModel):
         secrets = {}
         expose_secrets = info.context and info.context.get('expose_secrets', False)
 
-        for secret_name, secret_key in custom_secrets.items():
-            secrets[secret_name] = {
-                secret_key.get_secret_value()
-                if expose_secrets
-                else pydantic_encoder(secret_key)
-            }
-
+        if custom_secrets:
+            for secret_name, secret_key in custom_secrets.items():
+                secrets[secret_name] = (
+                    secret_key.get_secret_value()
+                    if expose_secrets
+                    else pydantic_encoder(secret_key)
+                )
         return secrets
 
     @model_validator(mode='before')
@@ -123,7 +123,6 @@ class SecretStore(BaseModel):
             raise ValueError('SecretStore must be initialized with a dictionary')
 
         new_data: dict[str, MappingProxyType | None] = {}
-
         if 'provider_tokens' in data:
             tokens = data['provider_tokens']
             if isinstance(

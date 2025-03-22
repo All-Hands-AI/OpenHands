@@ -64,10 +64,12 @@ class Settings(BaseModel):
             return data
 
         tokens = secrets_store.get('provider_tokens')
-        if not isinstance(tokens, dict):
-            return data
+        custom_secrets = secrets_store.get('custom_secrets')
 
-        data['secrets_store'] = SecretStore(provider_tokens=tokens)
+        data['secrets_store'] = SecretStore(
+            provider_tokens=tokens, custom_secrets=custom_secrets
+        )
+
         return data
 
     @field_serializer('secrets_store')
@@ -76,7 +78,10 @@ class Settings(BaseModel):
         return {
             'provider_tokens': secrets.provider_tokens_serializer(
                 secrets.provider_tokens, info
-            )
+            ),
+            'custom_secrets': secrets.custom_secrets_serializer(
+                secrets.custom_secrets, info
+            ),
         }
 
     @staticmethod
