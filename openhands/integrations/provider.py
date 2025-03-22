@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from enum import Enum
 from types import MappingProxyType
+from typing import Any, Coroutine, Literal, overload
 
 from pydantic import (
     BaseModel,
@@ -13,6 +14,9 @@ from pydantic import (
 )
 from pydantic.json import pydantic_encoder
 
+from openhands.events.action.action import Action
+from openhands.events.action.commands import CmdRunAction
+from openhands.events.stream import EventStream
 from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
 from openhands.integrations.service_types import (
@@ -130,15 +134,23 @@ class ProviderHandler:
     def __init__(
         self,
         provider_tokens: PROVIDER_TOKEN_TYPE,
+        external_auth_id: str | None = None,
         external_auth_token: SecretStr | None = None,
+        external_token_manager: bool = False,
     ):
+        if not isinstance(provider_tokens, MappingProxyType):
+            raise TypeError(
+                f'provider_tokens must be a MappingProxyType, got {type(provider_tokens).__name__}'
+            )
+
         self.service_class_map: dict[ProviderType, type[GitService]] = {
             ProviderType.GITHUB: GithubServiceImpl,
             ProviderType.GITLAB: GitLabServiceImpl,
         }
 
-        # Create immutable copy through SecretStore
+        self.external_auth_id = external_auth_id
         self.external_auth_token = external_auth_token
+        self.external_token_manager = external_token_manager
         self._provider_tokens = provider_tokens
 
     @property
@@ -152,8 +164,10 @@ class ProviderHandler:
         service_class = self.service_class_map[provider]
         return service_class(
             user_id=token.user_id,
+            external_auth_id=self.external_auth_id,
             external_auth_token=self.external_auth_token,
             token=token.token,
+            external_token_manager=self.external_token_manager,
         )
 
     async def get_user(self) -> User:
@@ -166,14 +180,12 @@ class ProviderHandler:
                 continue
         raise AuthenticationError('Need valid provider token')
 
-    async def get_latest_provider_tokens(self) -> dict[ProviderType, SecretStr]:
-        """Get latest token from services"""
-        tokens = {}
-        for provider in self.provider_tokens:
-            service = self._get_service(provider)
-            tokens[provider] = await service.get_latest_token()
-
-        return tokens
+    async def _get_latest_provider_token(
+        self, provider: ProviderType
+    ) -> SecretStr | None:
+        """Get latest token from service"""
+        service = self._get_service(provider)
+        return await service.get_latest_token()
 
     async def get_repositories(
         self, page: int, per_page: int, sort: str, installation_id: int | None
@@ -190,3 +202,120 @@ class ProviderHandler:
             except Exception:
                 continue
         return all_repos
+
+    async def set_event_stream_secrets(
+        self,
+        event_stream: EventStream,
+        env_vars: dict[ProviderType, SecretStr] | None = None,
+    ):
+        """
+        This ensures that the latest provider tokens are masked from the event stream
+        It is called when the provider tokens are first initialized in the runtime or when tokens are re-exported with the latest working ones
+
+        Args:
+            event_stream: Agent session's event stream
+            env_vars: Dict of providers and their tokens that require updating
+        """
+        if env_vars:
+            exposed_env_vars = self.expose_env_vars(env_vars)
+        else:
+            exposed_env_vars = await self.get_env_vars(expose_secrets=True)
+        event_stream.set_secrets(exposed_env_vars)
+
+    def expose_env_vars(
+        self, env_secrets: dict[ProviderType, SecretStr]
+    ) -> dict[str, str]:
+        """
+        Return string values instead of typed values for environment secrets
+        Called just before exporting secrets to runtime, or setting secrets in the event stream
+        """
+        exposed_envs = {}
+        for provider, token in env_secrets.items():
+            env_key = ProviderHandler.get_provider_env_key(provider)
+            exposed_envs[env_key] = token.get_secret_value()
+
+        return exposed_envs
+
+    @overload
+    def get_env_vars(
+        self,
+        expose_secrets: Literal[True],
+        providers: list[ProviderType] | None = ...,
+        get_latest: bool = False,
+    ) -> Coroutine[Any, Any, dict[str, str]]: ...
+
+    @overload
+    def get_env_vars(
+        self,
+        expose_secrets: Literal[False],
+        providers: list[ProviderType] | None = ...,
+        get_latest: bool = False,
+    ) -> Coroutine[Any, Any, dict[ProviderType, SecretStr]]: ...
+
+    async def get_env_vars(
+        self,
+        expose_secrets: bool = False,
+        providers: list[ProviderType] | None = None,
+        get_latest: bool = False,
+    ) -> dict[ProviderType, SecretStr] | dict[str, str]:
+        """
+        Retrieves the provider tokens from ProviderHandler object
+        This is used when initializing/exporting new provider tokens in the runtime
+
+        Args:
+            expose_secrets: Flag which returns strings instead of secrets
+            providers: Return provider tokens for the list passed in, otherwise return all available providers
+            get_latest: Get the latest working token for the providers if True, otherwise get the existing ones
+        """
+
+        if not self.provider_tokens:
+            return {}
+
+        env_vars: dict[ProviderType, SecretStr] = {}
+        all_providers = [provider for provider in ProviderType]
+        provider_list = providers if providers else all_providers
+
+        for provider in provider_list:
+            if provider in self.provider_tokens:
+                token = (
+                    self.provider_tokens[provider].token
+                    if self.provider_tokens
+                    else SecretStr('')
+                )
+
+                if get_latest:
+                    token = await self._get_latest_provider_token(provider)
+
+                if token:
+                    env_vars[provider] = token
+
+        if not expose_secrets:
+            return env_vars
+
+        return self.expose_env_vars(env_vars)
+
+    @classmethod
+    def check_cmd_action_for_provider_token_ref(
+        cls, event: Action
+    ) -> list[ProviderType]:
+        """
+        Detect if agent run action is using a provider token (e.g $GITHUB_TOKEN)
+        Returns a list of providers which are called by the agent
+        """
+
+        if not isinstance(event, CmdRunAction):
+            return []
+
+        called_providers = []
+        for provider in ProviderType:
+            if ProviderHandler.get_provider_env_key(provider) in event.command.lower():
+                called_providers.append(provider)
+
+        return called_providers
+
+    @classmethod
+    def get_provider_env_key(cls, provider: ProviderType) -> str:
+        """
+        Map ProviderType value to the environment variable name in the runtime
+        """
+        return f'{provider.value}_token'.lower()

@@ -93,6 +93,7 @@ class AgentController:
         ChangeAgentStateAction,
         AgentStateChangedObservation,
     )
+    _cached_first_user_message: MessageAction | None = None
 
     def __init__(
         self,
@@ -1206,15 +1207,19 @@ class AgentController:
         Returns:
             MessageAction | None: The first user message, or None if no user message found
         """
-        # Find the first user message from the appropriate starting point
-        user_messages = list(self.event_stream.get_events(start_id=self.state.start_id))
+        # Return cached message if any
+        if self._cached_first_user_message is not None:
+            return self._cached_first_user_message
 
-        # Get and return the first user message
-        return next(
+        # Find the first user message
+        self._cached_first_user_message = next(
             (
                 e
-                for e in user_messages
+                for e in self.event_stream.get_events(
+                    start_id=self.state.start_id,
+                )
                 if isinstance(e, MessageAction) and e.source == EventSource.USER
             ),
             None,
         )
+        return self._cached_first_user_message

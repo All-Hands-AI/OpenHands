@@ -1,4 +1,4 @@
-function loadFeatureFlag(
+export function loadFeatureFlag(
   flagName: string,
   defaultValue: boolean = false,
 ): boolean {
