@@ -21,7 +21,6 @@ import { useLogout } from "#/hooks/mutation/use-logout";
 import { useConfig } from "#/hooks/query/use-config";
 import { cn } from "#/utils/utils";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
-import { HIDE_LLM_SETTINGS } from "#/utils/feature-flags";
 import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 
 export function Sidebar() {
@@ -45,10 +44,11 @@ export function Sidebar() {
     React.useState(false);
 
   // TODO: Remove HIDE_LLM_SETTINGS check once released
-  const isSaas = HIDE_LLM_SETTINGS() && config?.APP_MODE === "saas";
+  const shouldHideLlmSettings =
+    config?.FEATURE_FLAGS.HIDE_LLM_SETTINGS && config?.APP_MODE === "saas";
 
   React.useEffect(() => {
-    if (isSaas) return;
+    if (shouldHideLlmSettings) return;
 
     if (location.pathname === "/settings") {
       setSettingsModalIsOpen(false);

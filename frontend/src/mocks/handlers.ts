@@ -129,7 +129,6 @@ const openHandsHandlers = [
 
     const url = new URL(request.url);
     const file = url.searchParams.get("file")?.toString();
-
     if (file) {
       return HttpResponse.json({ code: `Content of ${file}` });
     }
@@ -182,6 +181,10 @@ export const handlers = [
       GITHUB_CLIENT_ID: "fake-github-client-id",
       POSTHOG_CLIENT_KEY: "fake-posthog-client-key",
       STRIPE_PUBLISHABLE_KEY: "",
+      FEATURE_FLAGS: {
+        ENABLE_BILLING: mockSaas,
+        HIDE_LLM_SETTINGS: mockSaas,
+      },
     };
 
     return HttpResponse.json(config);
