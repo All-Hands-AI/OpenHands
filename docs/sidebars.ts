@@ -14,6 +14,11 @@ const sidebars: SidebarsConfig = {
       id: 'usage/getting-started',
     },
     {
+      type: 'doc',
+      label: 'Key Features',
+      id: 'usage/key-features',
+    },
+    {
       type: 'category',
       label: 'Prompting',
       items: [
@@ -170,6 +175,11 @@ const sidebars: SidebarsConfig = {
       type: 'category',
       label: 'For OpenHands Developers',
       items: [
+        {
+          type: 'doc',
+          label: 'Development Overview',
+          id: 'usage/how-to/development-overview',
+        },
         {
           type: 'category',
           label: 'Architecture',

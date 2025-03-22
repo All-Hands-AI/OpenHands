@@ -194,7 +194,9 @@ async def run_controller(
     if config.file_store is not None and config.file_store != 'memory':
         end_state = controller.get_state()
         # NOTE: the saved state does not include delegates events
-        end_state.save_to_session(event_stream.sid, event_stream.file_store)
+        end_state.save_to_session(
+            event_stream.sid, event_stream.file_store, event_stream.user_id
+        )
 
     await controller.close(set_stop_state=False)
 

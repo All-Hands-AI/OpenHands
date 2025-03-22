@@ -24,22 +24,20 @@ jobs:
   build:
     if: github.repository == 'All-Hands-AI/OpenHands'
     name: Build Docusaurus
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2204
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
+      - uses: useblacksmith/setup-node@v5
         with:
           node-version: 18
           cache: npm
           cache-dependency-path: docs/package-lock.json
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: useblacksmith/setup-python@v6
         with:
           python-version: '3.12'
-      - name: Generate Python Docs
-        run: rm -rf docs/modules/python && pip install pydoc-markdown && pydoc-markdown
       - name: Install dependencies
         run: cd docs && npm ci
       - name: Build website
@@ -54,7 +52,7 @@ jobs:
   deploy:
     if: github.ref == 'refs/heads/main' && github.repository == 'All-Hands-AI/OpenHands'
     name: Deploy to GitHub Pages
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2204
     # This job only runs on "main" so only run one of these jobs at a time
     # otherwise it will fail if one is already running
     concurrency:

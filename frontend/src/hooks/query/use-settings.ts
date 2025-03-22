@@ -44,13 +44,13 @@ export const useSettings = () => {
   });
 
   React.useEffect(() => {
-    if (query.data?.LLM_API_KEY) {
+    if (query.isFetched && query.data?.LLM_API_KEY) {
       posthog.capture("user_activated");
     }
-  }, [query.data?.LLM_API_KEY]);
+  }, [query.data?.LLM_API_KEY, query.isFetched]);
 
   React.useEffect(() => {
-    setGitHubTokenIsSet(!!query.data?.GITHUB_TOKEN_IS_SET);
+    if (query.isFetched) setGitHubTokenIsSet(!!query.data?.GITHUB_TOKEN_IS_SET);
   }, [query.data?.GITHUB_TOKEN_IS_SET, query.isFetched]);
 
   // We want to return the defaults if the settings aren't found so the user can still see the

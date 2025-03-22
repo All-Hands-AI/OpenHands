@@ -402,5 +402,26 @@
   "theme.unlistedContent.message": {
     "message": "此页面未列出。搜索引擎不会对其索引，只有拥有直接链接的用户才能访问。",
     "description": "The unlisted content banner message"
+  },
+  "Use AI to tackle the toil in your backlog. Our agents have all the same tools as a human developer: they can modify code, run commands, browse the web, call APIs, and yes-even copy code snippets from StackOverflow.": {
+    "message": "使用AI处理您积压的工作。我们的代理拥有与人类开发者相同的工具：它们可以修改代码、运行命令、浏览网页、调用API，甚至从StackOverflow复制代码片段。"
+  },
+  "Get started with OpenHands.": {
+    "message": "开始使用OpenHands"
+  },
+  "Most Popular Links": {
+    "message": "热门链接"
+  },
+  "Customizing OpenHands to a repository": {
+    "message": "为仓库定制OpenHands"
+  },
+  "Integrating OpenHands with Github": {
+    "message": "将OpenHands与Github集成"
+  },
+  "Recommended models to use": {
+    "message": "推荐使用的模型"
+  },
+  "Connecting OpenHands to your filesystem": {
+    "message": "将OpenHands连接到您的文件系统"
   }
 }

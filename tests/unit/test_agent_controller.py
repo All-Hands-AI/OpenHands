@@ -19,7 +19,8 @@ from openhands.events.event import RecallType
 from openhands.events.observation import (
     ErrorObservation,
 )
-from openhands.events.observation.agent import MicroagentObservation
+from openhands.events.observation.agent import RecallObservation
+from openhands.events.observation.empty import NullObservation
 from openhands.events.serialization import event_to_dict
 from openhands.llm import LLM
 from openhands.llm.metrics import Metrics, TokenUsage
@@ -192,7 +193,7 @@ async def test_run_controller_with_fatal_error(test_event_stream, mock_memory):
 
     def on_event_memory(event: Event):
         if isinstance(event, RecallAction):
-            microagent_obs = MicroagentObservation(
+            microagent_obs = RecallObservation(
                 content='Test microagent content',
                 recall_type=RecallType.KNOWLEDGE,
             )
@@ -249,7 +250,7 @@ async def test_run_controller_stop_with_stuck(test_event_stream, mock_memory):
 
     def on_event_memory(event: Event):
         if isinstance(event, RecallAction):
-            microagent_obs = MicroagentObservation(
+            microagent_obs = RecallObservation(
                 content='Test microagent content',
                 recall_type=RecallType.KNOWLEDGE,
             )
@@ -596,7 +597,7 @@ async def test_run_controller_max_iterations_has_metrics(
 
     def on_event_memory(event: Event):
         if isinstance(event, RecallAction):
-            microagent_obs = MicroagentObservation(
+            microagent_obs = RecallObservation(
                 content='Test microagent content',
                 recall_type=RecallType.KNOWLEDGE,
             )
@@ -718,7 +719,7 @@ async def test_run_controller_with_context_window_exceeded_with_truncation(
 
     def on_event_memory(event: Event):
         if isinstance(event, RecallAction):
-            microagent_obs = MicroagentObservation(
+            microagent_obs = RecallObservation(
                 content='Test microagent content',
                 recall_type=RecallType.KNOWLEDGE,
             )
@@ -795,7 +796,7 @@ async def test_run_controller_with_context_window_exceeded_without_truncation(
 
     def on_event_memory(event: Event):
         if isinstance(event, RecallAction):
-            microagent_obs = MicroagentObservation(
+            microagent_obs = RecallObservation(
                 content='Test microagent content',
                 recall_type=RecallType.KNOWLEDGE,
             )
@@ -845,10 +846,17 @@ async def test_run_controller_with_memory_error(test_event_stream):
     config = AppConfig()
     event_stream = test_event_stream
 
+    # Create a propert agent that returns an action without an ID
     agent = MagicMock(spec=Agent)
     agent.llm = MagicMock(spec=LLM)
     agent.llm.metrics = Metrics()
     agent.llm.config = config.get_llm_config()
+
+    # Create a real action to return from the mocked step function
+    def agent_step_fn(state):
+        return MessageAction(content='Agent returned a message')
+
+    agent.step = agent_step_fn
 
     runtime = MagicMock(spec=Runtime)
     runtime.event_stream = event_stream
@@ -856,12 +864,12 @@ async def test_run_controller_with_memory_error(test_event_stream):
     # Create a real Memory instance
     memory = Memory(event_stream=event_stream, sid='test-memory')
 
-    # Patch the _on_microagent_action method to raise our test exception
-    def mock_on_microagent_action(*args, **kwargs):
+    # Patch the _find_microagent_knowledge method to raise our test exception
+    def mock_find_microagent_knowledge(*args, **kwargs):
         raise RuntimeError('Test memory error')
 
     with patch.object(
-        memory, '_on_microagent_action', side_effect=mock_on_microagent_action
+        memory, '_find_microagent_knowledge', side_effect=mock_find_microagent_knowledge
     ):
         state = await run_controller(
             config=config,
@@ -985,6 +993,7 @@ async def test_first_user_message_with_identical_content():
     """
     Test that _first_user_message correctly identifies the first user message
     even when multiple messages have identical content but different IDs.
+    Also verifies that the result is properly cached.
 
     The issue we're checking is that the comparison (action == self._first_user_message())
     should correctly differentiate between messages with the same content but different IDs.
@@ -1030,4 +1039,132 @@ async def test_first_user_message_with_identical_content():
         second_message.id != first_user_message.id
     )  # This should be False, but may be True if there's a bug
 
+    # Verify caching behavior
+    assert (
+        controller._cached_first_user_message is not None
+    )  # Cache should be populated
+    assert (
+        controller._cached_first_user_message is first_user_message
+    )  # Cache should store the same object
+
+    # Mock get_events to verify it's not called again
+    with patch.object(event_stream, 'get_events') as mock_get_events:
+        cached_message = controller._first_user_message()
+        assert cached_message is first_user_message  # Should return cached object
+        mock_get_events.assert_not_called()  # Should not call get_events again
+
     await controller.close()
+
+
+async def test_agent_controller_processes_null_observation_with_cause():
+    """Test that AgentController processes NullObservation events with a cause value.
+
+    And that the agent's step method is called as a result.
+    """
+    # Create an in-memory file store and real event stream
+    file_store = InMemoryFileStore()
+    event_stream = EventStream(sid='test-session', file_store=file_store)
+
+    # Create a Memory instance - not used directly in this test but needed for setup
+    Memory(event_stream=event_stream, sid='test-session')
+
+    # Create a mock agent with necessary attributes
+    mock_agent = MagicMock(spec=Agent)
+    mock_agent.llm = MagicMock(spec=LLM)
+    mock_agent.llm.metrics = Metrics()
+    mock_agent.llm.config = AppConfig().get_llm_config()
+
+    # Create a controller with the mock agent
+    controller = AgentController(
+        agent=mock_agent,
+        event_stream=event_stream,
+        max_iterations=10,
+        sid='test-session',
+    )
+
+    # Patch the controller's step method to track calls
+    with patch.object(controller, 'step') as mock_step:
+        # Create and add the first user message (will have ID 0)
+        user_message = MessageAction(content='First user message')
+        user_message._source = EventSource.USER  # type: ignore[attr-defined]
+        event_stream.add_event(user_message, EventSource.USER)
+
+        # Give it a little time to process
+        await asyncio.sleep(0.3)
+
+        # Get all events from the stream
+        events = list(event_stream.get_events())
+
+        # Events in the stream:
+        # Event 0: MessageAction, ID: 0, Cause: None, Source: EventSource.USER, Content: First user message
+        # Event 1: RecallAction, ID: 1, Cause: None, Source: EventSource.USER, Content: N/A
+        # Event 2: NullObservation, ID: 2, Cause: 1, Source: EventSource.ENVIRONMENT, Content:
+        # Event 3: AgentStateChangedObservation, ID: 3, Cause: None, Source: EventSource.ENVIRONMENT, Content:
+
+        # Find the RecallAction event (should be automatically created)
+        recall_actions = [event for event in events if isinstance(event, RecallAction)]
+        assert len(recall_actions) > 0, 'No RecallAction was created'
+        recall_action = recall_actions[0]
+
+        # Find any NullObservation events
+        null_obs_events = [
+            event for event in events if isinstance(event, NullObservation)
+        ]
+        assert len(null_obs_events) > 0, 'No NullObservation was created'
+        null_observation = null_obs_events[0]
+
+        # Verify the NullObservation has a cause that points to the RecallAction
+        assert null_observation.cause is not None, 'NullObservation cause is None'
+        assert (
+            null_observation.cause == recall_action.id
+        ), f'Expected cause={recall_action.id}, got cause={null_observation.cause}'
+
+        # Verify the controller's should_step method returns True for this observation
+        assert controller.should_step(
+            null_observation
+        ), 'should_step should return True for this NullObservation'
+
+        # Verify the controller's step method was called
+        # This means the controller processed the NullObservation
+        assert mock_step.called, "Controller's step method was not called"
+
+        # Now test with a NullObservation that has cause=0
+        # Create a NullObservation with cause = 0 (pointing to the first user message)
+        null_observation_zero = NullObservation(content='Test observation with cause=0')
+        null_observation_zero._cause = 0  # type: ignore[attr-defined]
+
+        # Verify the controller's should_step method would return False for this observation
+        assert not controller.should_step(
+            null_observation_zero
+        ), 'should_step should return False for NullObservation with cause=0'
+
+
+def test_agent_controller_should_step_with_null_observation_cause_zero():
+    """Test that AgentController's should_step method returns False for NullObservation with cause = 0."""
+    # Create a mock event stream
+    file_store = InMemoryFileStore()
+    event_stream = EventStream(sid='test-session', file_store=file_store)
+
+    # Create a mock agent
+    mock_agent = MagicMock(spec=Agent)
+
+    # Create an agent controller
+    controller = AgentController(
+        agent=mock_agent,
+        event_stream=event_stream,
+        max_iterations=10,
+        sid='test-session',
+    )
+
+    # Create a NullObservation with cause = 0
+    # This should not happen, but if it does, the controller shouldn't step.
+    null_observation = NullObservation(content='Test observation')
+    null_observation._cause = 0  # type: ignore[attr-defined]
+
+    # Check if should_step returns False for this observation
+    result = controller.should_step(null_observation)
+
+    # It should return False since we only want to step on NullObservation with cause > 0
+    assert (
+        result is False
+    ), 'should_step should return False for NullObservation with cause = 0'

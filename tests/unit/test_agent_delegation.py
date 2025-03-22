@@ -19,7 +19,7 @@ from openhands.events.action import (
 )
 from openhands.events.action.agent import RecallAction
 from openhands.events.event import Event, RecallType
-from openhands.events.observation.agent import MicroagentObservation
+from openhands.events.observation.agent import RecallObservation
 from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm import LLM
 from openhands.llm.metrics import Metrics
@@ -86,10 +86,10 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
 
     def on_event(event: Event):
         if isinstance(event, RecallAction):
-            # create a MicroagentObservation
-            microagent_observation = MicroagentObservation(
+            # create a RecallObservation
+            microagent_observation = RecallObservation(
                 recall_type=RecallType.KNOWLEDGE,
-                content='microagent',
+                content='Found info',
             )
             microagent_observation._cause = event.id  # ignore attr-defined warning
             mock_event_stream.add_event(microagent_observation, EventSource.ENVIRONMENT)
@@ -111,14 +111,14 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
     # Give time for the async step() to execute
     await asyncio.sleep(1)
 
-    # Verify that a MicroagentObservation was added to the event stream
+    # Verify that a RecallObservation was added to the event stream
     events = list(mock_event_stream.get_events())
     assert (
         mock_event_stream.get_latest_event_id() == 3
     )  # Microagents and AgentChangeState
 
-    # a MicroagentObservation and an AgentDelegateAction should be in the list
-    assert any(isinstance(event, MicroagentObservation) for event in events)
+    # a RecallObservation and an AgentDelegateAction should be in the list
+    assert any(isinstance(event, RecallObservation) for event in events)
     assert any(isinstance(event, AgentDelegateAction) for event in events)
 
     # Verify that a delegate agent controller is created
