@@ -315,8 +315,8 @@ class ConversationMemory:
         message: Message
 
         if isinstance(obs, CmdOutputObservation):
-            # if it doesn't have tool call metadata, it was triggered by a user action
-            if obs.tool_call_metadata is None:
+            # Check if it was triggered by a user action (no response_id)
+            if not obs.response_id:
                 text = truncate_content(
                     f'\nObserved result of command executed by user:\n{obs.to_agent_observation()}',
                     max_message_chars,
@@ -504,12 +504,20 @@ class ConversationMemory:
             raise ValueError(f'Unknown observation type: {type(obs)}')
 
         # Update the message as tool response properly
-        if (tool_call_metadata := getattr(obs, 'tool_call_metadata', None)) is not None:
-            tool_call_id_to_message[tool_call_metadata.tool_call_id] = Message(
+        # Get the corresponding action to access tool_call_metadata
+        action = None
+        if obs.cause is not None:
+            for event in events:
+                if event.id == obs.cause and isinstance(event, Action):
+                    action = event
+                    break
+        
+        if action and action.tool_call_metadata and obs.response_id:
+            tool_call_id_to_message[action.tool_call_metadata.tool_call_id] = Message(
                 role='tool',
                 content=message.content,
-                tool_call_id=tool_call_metadata.tool_call_id,
-                name=tool_call_metadata.function_name,
+                tool_call_id=action.tool_call_metadata.tool_call_id,
+                name=action.tool_call_metadata.function_name,
             )
             # No need to return the observation message
             # because it will be added by get_action_message when all the corresponding

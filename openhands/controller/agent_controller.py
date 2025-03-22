@@ -487,22 +487,24 @@ class AgentController:
         # Runnable actions need an Observation
         # make sure there is an Observation with the tool call metadata to be recognized by the agent
         # otherwise the pending action is found in history, but it's incomplete without an obs with tool result
-        if self._pending_action and hasattr(self._pending_action, 'tool_call_metadata'):
-            # find out if there already is an observation with the same tool call metadata
+        if self._pending_action and hasattr(self._pending_action, 'tool_call_metadata') and self._pending_action.tool_call_metadata:
+            # find out if there already is an observation with the same response_id
+            # using reversed() since the observation we're looking for is likely near the end
             found_observation = False
-            for event in self.state.history:
+            response_id = self._pending_action.tool_call_metadata.model_response.id
+            for event in reversed(self.state.history):
                 if (
                     isinstance(event, Observation)
-                    and event.tool_call_metadata
-                    == self._pending_action.tool_call_metadata
+                    and hasattr(event, 'response_id')
+                    and event.response_id == response_id
                 ):
                     found_observation = True
                     break
 
-            # make a new ErrorObservation with the tool call metadata
+            # make a new ErrorObservation with the response_id
             if not found_observation:
                 obs = ErrorObservation(content='The action has not been executed.')
-                obs.tool_call_metadata = self._pending_action.tool_call_metadata
+                obs.response_id = response_id
                 obs._cause = self._pending_action.id  # type: ignore[attr-defined]
                 self.event_stream.add_event(obs, EventSource.AGENT)
 
