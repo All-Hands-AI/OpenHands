@@ -142,6 +142,17 @@ function AccountSettings() {
       : llmBaseUrl;
     const finalLlmApiKey = shouldHandleSpecialSaasCase ? undefined : llmApiKey;
 
+    const secretsEntries: Record<string, string> = {};
+
+    secrets.forEach((_, index) => {
+      const name = formData.get(`secret-name-${index}`)?.toString().trim();
+      const value = formData.get(`secret-value-${index}`)?.toString();
+
+      if (name) {
+        secretsEntries[name] = value || "";
+      }
+    });
+
     const newSettings = {
       provider_tokens:
         githubToken || gitlabToken
@@ -164,6 +175,7 @@ function AccountSettings() {
         remoteRuntimeResourceFactor ||
         DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
       CONFIRMATION_MODE: confirmationModeIsEnabled,
+      CUSTOM_SECRETS: secretsEntries,
     };
 
     saveSettings(newSettings, {
@@ -187,6 +199,7 @@ function AccountSettings() {
         github: "",
         gitlab: "",
       },
+      custom_secrets: {},
     };
 
     // we don't want the user to be able to modify these settings in SaaS
@@ -241,14 +254,6 @@ function AccountSettings() {
     setSecrets((prevSecrets) => {
       const newSecrets = prevSecrets.filter((_, i) => i !== index);
       return [...newSecrets];
-    });
-  };
-
-  const handleSecretsChange = (index: number, field: string, value: string) => {
-    setSecrets((prevSecrets) => {
-      const updatedSecrets = [...prevSecrets];
-      updatedSecrets[index][field === "name" ? 0 : 1] = value;
-      return updatedSecrets;
     });
   };
 
@@ -546,9 +551,6 @@ function AccountSettings() {
                     name={`secret-name-${index}`}
                     placeholder="Secret Name"
                     defaultValue={secretName}
-                    onChange={(value) =>
-                      handleSecretsChange(index, "name", value)
-                    }
                     className="w-[330px]"
                     label="Secret Name"
                     type="text"
@@ -558,9 +560,6 @@ function AccountSettings() {
                     type="password"
                     placeholder={secretValue ? "**********" : ""}
                     defaultValue={secretValue}
-                    onChange={(value) =>
-                      handleSecretsChange(index, "value", value)
-                    }
                     className="w-[330px]"
                     label="Secret Value"
                   />

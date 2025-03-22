@@ -42,12 +42,14 @@ export type ApiSettings = {
 
 export type PostSettings = Settings & {
   provider_tokens: Record<Provider, string>;
+  custom_secrets?: Record<string, string>;
   unset_tokens: boolean;
   user_consents_to_analytics: boolean | null;
 };
 
 export type PostApiSettings = ApiSettings & {
   provider_tokens: Record<string, string>;
+  custom_secrets?: Record<string, string>;
   unset_tokens: boolean;
   user_consents_to_analytics: boolean | null;
 };
