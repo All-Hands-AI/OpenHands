@@ -18,7 +18,7 @@ const defaultTitlePattern = /^Conversation [a-f0-9]+$/;
 
 export function Controls({ setSecurityOpen, showSecurityLock }: ControlsProps) {
   const params = useParams();
-  const { data: conversation } = useUserConversation(
+  const { data: conversation, isFetched } = useUserConversation(
     params.conversationId ?? null,
   );
 
@@ -29,10 +29,12 @@ export function Controls({ setSecurityOpen, showSecurityLock }: ControlsProps) {
     await OpenHands.updateUserConversation(params.conversationId, {
       title: "",
     });
+
     /*
-    queryClient.invalidateQueries({
-      queryKey: ["user", "conversation", params.conversationId],
-    });
+    queryClient.setQueryData(
+      ["user", "conversation", params.conversationId],
+      (oldData) => oldData ? { ...oldData, title: "gotcha" } : oldData
+    );
     */
   };
 
@@ -50,8 +52,21 @@ export function Controls({ setSecurityOpen, showSecurityLock }: ControlsProps) {
       return;
     }
     setAutogenerating(true);
-    autogenereateConversationTitle();
+    setTimeout(() => {
+      // FIXME: Sometimes the message isn't quite ready on the backend
+      autogenereateConversationTitle();
+    }, 1000);
   }, [latestUserMessage, conversation]);
+
+  React.useEffect(() => {
+    if (isFetched && !conversation) {
+      displayErrorToast(
+        "This conversation does not exist, or you do not have permission to access it.",
+      );
+      endSession();
+    }
+  }, [conversation, isFetched]);
+
 
   return (
     <div className="flex items-center justify-between">
