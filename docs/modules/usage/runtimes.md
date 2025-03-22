@@ -28,6 +28,8 @@ The `SANDBOX_RUNTIME_CONTAINER_IMAGE` from nikolaik is a pre-built runtime image
 that contains our Runtime server, as well as some basic utilities for Python and NodeJS.
 You can also [build your own runtime image](how-to/custom-sandbox-guide).
 
+For production or multi-user environments, we recommend implementing additional security measures. See our [Hardened Docker Installation](./hardened-docker.md) guide for details on securing your Docker deployment.
+
 ### Connecting to Your filesystem
 One useful feature here is the ability to connect to your local filesystem. To mount your filesystem into the runtime:
 1. Set `WORKSPACE_BASE`:

@@ -56,6 +56,11 @@ docker run -it --rm --pull=always \
     docker.all-hands.dev/all-hands-ai/openhands:0.29
 ```
 
+> [!WARNING]
+> The default Docker configuration above is designed for local development and binds to all network interfaces (0.0.0.0). 
+> For production or multi-user environments, see our [Hardened Docker Installation](https://docs.all-hands.dev/modules/usage/hardened-docker) guide 
+> to secure your deployment by restricting network binding and implementing additional security measures.
+
 You'll find OpenHands running at [http://localhost:3000](http://localhost:3000)!
 
 Finally, you'll need a model provider and API key.
