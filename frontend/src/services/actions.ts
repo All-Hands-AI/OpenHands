@@ -19,7 +19,6 @@ import {
 } from "#/types/message";
 import { handleObservationMessage } from "./observations";
 import { appendInput } from "#/state/command-slice";
-import { setLatestUserMessage } from "#/state/latest-user-message-slice";
 
 const messageActions = {
   [ActionType.BROWSE]: (message: ActionMessage) => {
@@ -97,10 +96,6 @@ export function handleActionMessage(message: ActionMessage) {
       usage: message.tool_call_metadata?.model_response?.usage ?? null,
     };
     store.dispatch(setMetrics(metrics));
-  }
-
-  if (message.action === ActionType.MESSAGE && message.source === "user") {
-    store.dispatch(setLatestUserMessage(message));
   }
 
   if (message.action === ActionType.RUN) {
