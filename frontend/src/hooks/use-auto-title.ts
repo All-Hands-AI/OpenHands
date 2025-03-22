@@ -16,9 +16,7 @@ const defaultTitlePattern = /^Conversation [a-f0-9]+$/;
  */
 export function useAutoTitle() {
   const { conversationId } = useParams<{ conversationId: string }>();
-  const { data: conversation } = useUserConversation(
-    conversationId ?? null,
-  );
+  const { data: conversation } = useUserConversation(conversationId ?? null);
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
   const { mutate: updateConversation } = useUpdateConversation();
