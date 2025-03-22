@@ -27,9 +27,9 @@ from openhands.resolver.utils import (
 
 
 def cleanup() -> None:
-    print('Cleaning up child processes...')
+    logger.info('Cleaning up child processes...')
     for process in mp.active_children():
-        print(f'Terminating child process: {process.name}')
+        logger.info(f'Terminating child process: {process.name}')
         process.terminate()
         process.join()
 
@@ -222,7 +222,7 @@ async def resolve_issues(
         await asyncio.gather(*[run_with_semaphore(task) for task in tasks])
 
     except KeyboardInterrupt:
-        print('KeyboardInterrupt received. Cleaning up...')
+        logger.info('KeyboardInterrupt received. Cleaning up...')
         cleanup()
 
     output_fp.close()
