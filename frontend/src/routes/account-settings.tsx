@@ -98,6 +98,10 @@ function AccountSettings() {
   const [resetSettingsModalIsOpen, setResetSettingsModalIsOpen] =
     React.useState(false);
 
+  React.useEffect(() => {
+    setSecrets(Object.entries(settings?.CUSTOM_SECRETS || {}));
+  }, [settings?.CUSTOM_SECRETS]);
+
   const formRef = React.useRef<HTMLFormElement>(null);
 
   const onSubmit = async (formData: FormData) => {
@@ -545,7 +549,7 @@ function AccountSettings() {
               {secrets.map(([secretName, secretValue], index) => (
                 <div
                   key={`${secretName}-${index}`}
-                  className="flex items-center gap-2"
+                  className="flex items-end gap-2"
                 >
                   <SettingsInput
                     name={`secret-name-${index}`}
@@ -558,7 +562,13 @@ function AccountSettings() {
                   <SettingsInput
                     name={`secret-value-${index}`}
                     type="password"
-                    placeholder={secretValue ? "**********" : ""}
+                    placeholder={
+                      Object.keys(settings?.CUSTOM_SECRETS || {}).includes(
+                        secretName,
+                      )
+                        ? "**********"
+                        : ""
+                    }
                     defaultValue={secretValue}
                     className="w-[330px]"
                     label="Secret Value"
@@ -566,7 +576,7 @@ function AccountSettings() {
                   <button
                     type="button"
                     onClick={() => handleRemoveSecret(index)}
-                    className="p-1 text-gray-400 hover:text-gray-300"
+                    className="flex items-center justify-center h-10 p-1 text-gray-400 hover:text-gray-300"
                   >
                     <CloseIcon className="h-5 w-5" />
                   </button>

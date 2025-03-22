@@ -123,3 +123,4 @@ class GETSettingsModel(Settings):
     """
 
     provider_tokens_set: dict[str, bool] | None = None
+    custom_secrets: dict[str, str] | None = None
