@@ -83,21 +83,18 @@ async def test_generate_conversation_title_exception():
 async def test_update_conversation_title_if_needed_no_default_title():
     """Test that a conversation with a non-default title is not updated."""
     # Setup
-    conversation_id = "12345abcde"
+    conversation_id = '12345abcde'
     mock_metadata = MagicMock()
-    mock_metadata.title = "Custom Title"  # Not a default title
-    
+    mock_metadata.title = 'Custom Title'  # Not a default title
+
     mock_conversation_store = MagicMock()
     mock_conversation_store.get_metadata = AsyncMock(return_value=mock_metadata)
-    
+
     # Execute
     result = await update_conversation_title_if_needed(
-        conversation_id, 
-        mock_conversation_store,
-        MagicMock(),
-        MagicMock()
+        conversation_id, mock_conversation_store, MagicMock(), MagicMock()
     )
-    
+
     # Assert
     assert result is False
     mock_conversation_store.get_metadata.assert_called_once_with(conversation_id)
@@ -108,24 +105,21 @@ async def test_update_conversation_title_if_needed_no_default_title():
 async def test_update_conversation_title_if_needed_default_title_no_message():
     """Test that a conversation with a default title but no user message is not updated."""
     # Setup
-    conversation_id = "12345abcde"
+    conversation_id = '12345abcde'
     mock_metadata = MagicMock()
-    mock_metadata.title = f"Conversation {conversation_id[:5]}"  # Default title
-    
+    mock_metadata.title = f'Conversation {conversation_id[:5]}'  # Default title
+
     mock_conversation_store = MagicMock()
     mock_conversation_store.get_metadata = AsyncMock(return_value=mock_metadata)
-    
+
     mock_event_stream = MagicMock()
     mock_event_stream.get_events = MagicMock(return_value=[])  # No events
-    
+
     # Execute
     result = await update_conversation_title_if_needed(
-        conversation_id, 
-        mock_conversation_store,
-        mock_event_stream,
-        MagicMock()
+        conversation_id, mock_conversation_store, mock_event_stream, MagicMock()
     )
-    
+
     # Assert
     assert result is False
     mock_conversation_store.get_metadata.assert_called_once_with(conversation_id)
@@ -136,36 +130,36 @@ async def test_update_conversation_title_if_needed_default_title_no_message():
 async def test_update_conversation_title_if_needed_success():
     """Test successful title update for a conversation with a default title and user message."""
     # Setup
-    conversation_id = "12345abcde"
+    conversation_id = '12345abcde'
     mock_metadata = MagicMock()
-    mock_metadata.title = f"Conversation {conversation_id[:5]}"  # Default title
-    
+    mock_metadata.title = f'Conversation {conversation_id[:5]}'  # Default title
+
     mock_conversation_store = MagicMock()
     mock_conversation_store.get_metadata = AsyncMock(return_value=mock_metadata)
     mock_conversation_store.save_metadata = AsyncMock()
-    
+
     # Create a mock message action
-    mock_message = MessageAction(content="Can you help me with Python?")
+    mock_message = MessageAction(content='Can you help me with Python?')
     mock_message.source = EventSource.USER
-    
+
     mock_event_stream = MagicMock()
     mock_event_stream.get_events = MagicMock(return_value=[mock_message])
-    
+
     # Mock the generate_conversation_title function
     with patch(
         'openhands.utils.conversation_summary.generate_conversation_title',
-        new=AsyncMock(return_value="Python Help Request")
+        new=AsyncMock(return_value='Python Help Request'),
     ):
         # Execute
         result = await update_conversation_title_if_needed(
-            conversation_id, 
+            conversation_id,
             mock_conversation_store,
             mock_event_stream,
-            LLMConfig(model='test-model')
+            LLMConfig(model='test-model'),
         )
-    
+
     # Assert
     assert result is True
     mock_conversation_store.get_metadata.assert_called_once_with(conversation_id)
     mock_conversation_store.save_metadata.assert_called_once()
-    assert mock_metadata.title == "Python Help Request"
+    assert mock_metadata.title == 'Python Help Request'

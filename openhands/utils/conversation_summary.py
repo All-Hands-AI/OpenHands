@@ -75,7 +75,7 @@ async def update_conversation_title_if_needed(
         # Get the conversation metadata
         metadata = await conversation_store.get_metadata(conversation_id)
         if not metadata:
-            logger.warning(f"No metadata found for conversation {conversation_id}")
+            logger.warning(f'No metadata found for conversation {conversation_id}')
             return False
 
         # Check if the title is a default title (contains the conversation ID)
@@ -86,7 +86,7 @@ async def update_conversation_title_if_needed(
         # If we don't have an event stream, we can't proceed
         if not event_stream:
             logger.warning(
-                f"No event stream provided for conversation {conversation_id}"
+                f'No event stream provided for conversation {conversation_id}'
             )
             return False
 
@@ -108,7 +108,7 @@ async def update_conversation_title_if_needed(
 
         # If we don't have an LLM config, we can't generate a title
         if not llm_config:
-            logger.warning(f"No LLM config provided for conversation {conversation_id}")
+            logger.warning(f'No LLM config provided for conversation {conversation_id}')
             return False
 
         # Generate a new title
@@ -119,9 +119,9 @@ async def update_conversation_title_if_needed(
         # Update the conversation metadata
         metadata.title = new_title
         await conversation_store.save_metadata(metadata)
-        logger.info(f"Updated title for conversation {conversation_id}: {new_title}")
+        logger.info(f'Updated title for conversation {conversation_id}: {new_title}')
         return True
 
     except Exception as e:
-        logger.error(f"Error updating conversation title: {e}")
+        logger.error(f'Error updating conversation title: {e}')
         return False

@@ -258,7 +258,7 @@ async def search_conversations(
             if not continue_without_title_generation:
                 for conversation_id in running_conversations:
                     # Get the event stream
-                    event_stream = EventStream(conversation_id, file_store=config.file_store)
+                    event_stream = EventStream(conversation_id, file_store)
 
                     # Update the title if needed
                     await update_conversation_title_if_needed(
@@ -340,7 +340,7 @@ async def get_conversation(
                 )
 
                 # Get the event stream
-                event_stream = EventStream(conversation_id, file_store=config.file_store)
+                event_stream = EventStream(conversation_id, file_store)
 
                 # Update the title if needed
                 await update_conversation_title_if_needed(
