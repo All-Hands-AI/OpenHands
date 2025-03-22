@@ -195,7 +195,14 @@ start-backend:
 # Start frontend
 start-frontend:
 	@echo "$(YELLOW)Starting frontend...$(RESET)"
-	@cd frontend && VITE_BACKEND_HOST=$(BACKEND_HOST_PORT) VITE_FRONTEND_PORT=$(FRONTEND_PORT) npm run dev -- --port $(FRONTEND_PORT) --host $(BACKEND_HOST)
+	@cd frontend && \
+	if grep -qi microsoft /proc/version 2>/dev/null; then \
+		echo "Detected WSL environment. Using 'dev_wsl'"; \
+		SCRIPT=dev_wsl; \
+	else \
+		SCRIPT=dev; \
+	fi; \
+	VITE_BACKEND_HOST=$(BACKEND_HOST_PORT) VITE_FRONTEND_PORT=$(FRONTEND_PORT) npm run $$SCRIPT -- --port $(FRONTEND_PORT) --host $(BACKEND_HOST)
 
 # Common setup for running the app (non-callable)
 _run_setup:
@@ -231,12 +238,6 @@ docker-run:
 		docker compose up $(OPTIONS); \
 	fi
 
-# Run the app (WSL mode)
-run-wsl:
-	@echo "$(YELLOW)Running the app in WSL mode...$(RESET)"
-	@$(MAKE) -s _run_setup
-	@cd frontend && echo "$(BLUE)Starting frontend with npm (WSL mode)...$(RESET)" && npm run dev_wsl -- --port $(FRONTEND_PORT)
-	@echo "$(GREEN)Application started successfully in WSL mode.$(RESET)"
 
 # Setup config.toml
 setup-config:
