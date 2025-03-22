@@ -19,7 +19,7 @@ import {
 } from "#/types/message";
 import { handleObservationMessage } from "./observations";
 import { appendInput } from "#/state/command-slice";
-import { autogenerateConversationTitle } from "./conversation-title-service";
+import { setLatestUserMessage } from "#/state/latest-user-message-slice";
 
 const messageActions = {
   [ActionType.BROWSE]: (message: ActionMessage) => {
@@ -100,13 +100,7 @@ export function handleActionMessage(message: ActionMessage) {
   }
 
   if (message.action === ActionType.MESSAGE && message.source === "user") {
-    // Get the conversation ID from the state
-    const conversationId = store.getState().conversation.id;
-
-    if (conversationId) {
-      // Auto-generate the conversation title if it doesn't match the default pattern
-      autogenerateConversationTitle(conversationId);
-    }
+    store.dispatch(setLatestUserMessage(message));
   }
 
   if (message.action === ActionType.RUN) {
