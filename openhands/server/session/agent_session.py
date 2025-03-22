@@ -123,36 +123,17 @@ class AgentSession:
                 selected_branch=selected_branch,
             )
 
-            replay_events = None
             if replay_json:
-                assert initial_message is None
-                data = json.loads(replay_json)
-                if not isinstance(data, list):
-                    raise ValueError(
-                        f'Expected a list in {replay_json}, got {type(data).__name__}'
-                    )
-                replay_events = []
-                for item in data:
-                    event = event_from_dict(item)
-                    if event.source == EventSource.ENVIRONMENT:
-                        # ignore ENVIRONMENT events as they are not issued by
-                        # the user or agent, and should not be replayed
-                        continue
-                    # cannot add an event with _id to event stream
-                    event._id = None  # type: ignore[attr-defined]
-                    replay_events.append(event)
-                self.controller = self._create_controller(
+                self._run_replay(
+                    initial_message,
+                    replay_json,
                     agent,
-                    config.security.confirmation_mode,
+                    config,
                     max_iterations,
-                    max_budget_per_task=max_budget_per_task,
-                    agent_to_llm_config=agent_to_llm_config,
-                    agent_configs=agent_configs,
-                    replay_events=replay_events[1:],
+                    max_budget_per_task,
+                    agent_to_llm_config,
+                    agent_configs,
                 )
-                assert isinstance(replay_events[0], MessageAction)
-                self.event_stream.add_event(replay_events[0], EventSource.USER)
-                self._starting = True
                 return
 
             self.controller = self._create_controller(
@@ -228,6 +209,52 @@ class AgentSession:
             self.runtime.close()
         if self.security_analyzer is not None:
             await self.security_analyzer.close()
+
+    def _run_replay(
+        self,
+        initial_message: MessageAction | None,
+        replay_json: str,
+        agent: Agent,
+        config: AppConfig,
+        max_iterations: int,
+        max_budget_per_task: float | None,
+        agent_to_llm_config: dict[str, LLMConfig] | None,
+        agent_configs: dict[str, AgentConfig] | None,
+    ):
+        """
+        Replays a trajectory from a JSON file. Note that once the replay session
+        finishes, the controller will continue to run with further user instructions,
+        so we still need to pass llm configs, budget, etc., even though the replay
+        itself does not call LLM or cost money.
+        """
+        assert initial_message is None
+        data = json.loads(replay_json)
+        if not isinstance(data, list):
+            raise ValueError(
+                f'Expected a list in {replay_json}, got {type(data).__name__}'
+            )
+        replay_events = []
+        for item in data:
+            event = event_from_dict(item)
+            if event.source == EventSource.ENVIRONMENT:
+                # ignore ENVIRONMENT events as they are not issued by
+                # the user or agent, and should not be replayed
+                continue
+            # cannot add an event with _id to event stream
+            event._id = None  # type: ignore[attr-defined]
+            replay_events.append(event)
+        self.controller = self._create_controller(
+            agent,
+            config.security.confirmation_mode,
+            max_iterations,
+            max_budget_per_task=max_budget_per_task,
+            agent_to_llm_config=agent_to_llm_config,
+            agent_configs=agent_configs,
+            replay_events=replay_events[1:],
+        )
+        assert isinstance(replay_events[0], MessageAction)
+        self.event_stream.add_event(replay_events[0], EventSource.USER)
+        self._starting = True
 
     def _create_security_analyzer(self, security_analyzer: str | None):
         """Creates a SecurityAnalyzer instance that will be used to analyze the agent actions
