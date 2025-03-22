@@ -43,7 +43,9 @@ function AppContent() {
   const { t } = useTranslation();
   const { data: settings } = useSettings();
   const { conversationId } = useConversation();
-  const { data: conversation, isFetched } = useUserConversation();
+  const { data: conversation, isFetched } = useUserConversation(
+    conversationId || null,
+  );
   const { initialPrompt, files } = useSelector(
     (state: RootState) => state.initialQuery,
   );
@@ -64,13 +66,13 @@ function AppContent() {
   );
 
   React.useEffect(() => {
-    if (isFetched && conversationId && !conversation) {
+    if (isFetched && !conversation) {
       displayErrorToast(
         "This conversation does not exist, or you do not have permission to access it.",
       );
       endSession();
     }
-  }, [conversation, isFetched, conversationId, endSession]);
+  }, [conversation, isFetched]);
 
   React.useEffect(() => {
     dispatch(clearMessages());
