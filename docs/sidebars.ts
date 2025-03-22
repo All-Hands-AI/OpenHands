@@ -14,6 +14,11 @@ const sidebars: SidebarsConfig = {
       id: 'usage/getting-started',
     },
     {
+      type: 'doc',
+      label: 'Key Features',
+      id: 'usage/key-features',
+    },
+    {
       type: 'category',
       label: 'Prompting',
       items: [
@@ -42,6 +47,17 @@ const sidebars: SidebarsConfig = {
               id: 'usage/prompting/microagents-public',
             },
           ],
+        },
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Customization',
+      items: [
+        {
+          type: 'doc',
+          label: 'Repository Customization',
+          id: 'usage/customization/repository',
         },
       ],
     },
@@ -170,6 +186,11 @@ const sidebars: SidebarsConfig = {
       type: 'category',
       label: 'For OpenHands Developers',
       items: [
+        {
+          type: 'doc',
+          label: 'Development Overview',
+          id: 'usage/how-to/development-overview',
+        },
         {
           type: 'category',
           label: 'Architecture',

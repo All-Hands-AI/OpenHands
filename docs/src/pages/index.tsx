@@ -2,15 +2,9 @@ import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
 import { HomepageHeader } from '../components/HomepageHeader/HomepageHeader';
 import { translate } from '@docusaurus/Translate';
-
-export function Header({ title, summary }): JSX.Element {
-  return (
-    <div>
-      <h1>{title}</h1>
-      <h2 style={{ fontSize: '3rem' }}>{summary}</h2>
-    </div>
-  );
-}
+import Translate from '@docusaurus/Translate';
+import Link from '@docusaurus/Link';
+import { Demo } from "../components/Demo/Demo";
 
 export default function Home(): JSX.Element {
   const { siteConfig } = useDocusaurusContext();
@@ -23,15 +17,34 @@ export default function Home(): JSX.Element {
       })}
     >
       <HomepageHeader />
-      <div style={{ textAlign: 'center', padding: '2rem' }}>
-        <br />
-        <h2>Most Popular Links</h2>
+
+      <div style={{ textAlign: 'center', padding: '1rem 0' }}>
+        <Demo />
+      </div>
+
+      <div style={{ textAlign: 'center', padding: '0.5rem 2rem 1.5rem' }}>
+        <h2><Translate>Most Popular Links</Translate></h2>
         <ul style={{ listStyleType: 'none'}}>
-          <li><a href="/modules/usage/Installation">How to Run OpenHands</a></li>
-          <li><a href="/modules/usage/prompting/microagents-repo">Customizing OpenHands to a repository</a></li>
-          <li><a href="/modules/usage/how-to/github-action">Integrating OpenHands with Github</a></li>
-          <li><a href="/modules/usage/llms#model-recommendations">Recommended models to use</a></li>
-          <li><a href="/modules/usage/runtimes#connecting-to-your-filesystem">Connecting OpenHands to your filesystem</a></li>
+          <li>
+            <Link to="/modules/usage/prompting/microagents-repo">
+              <Translate>Customizing OpenHands to a repository</Translate>
+            </Link>
+          </li>
+          <li>
+            <Link to="/modules/usage/how-to/github-action">
+              <Translate>Integrating OpenHands with Github</Translate>
+            </Link>
+          </li>
+          <li>
+            <Link to="/modules/usage/llms#model-recommendations">
+              <Translate>Recommended models to use</Translate>
+            </Link>
+          </li>
+          <li>
+            <Link to="/modules/usage/runtimes#connecting-to-your-filesystem">
+              <Translate>Connecting OpenHands to your filesystem</Translate>
+            </Link>
+          </li>
         </ul>
       </div>
     </Layout>

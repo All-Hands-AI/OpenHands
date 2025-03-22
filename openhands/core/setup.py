@@ -1,7 +1,7 @@
 import hashlib
 import os
 import uuid
-from typing import Tuple, Type
+from typing import Callable, Tuple, Type
 
 from pydantic import SecretStr
 
@@ -15,13 +15,14 @@ from openhands.core.config import (
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.events.event import Event
+from openhands.integrations.provider import ProviderToken, ProviderType, SecretStore
 from openhands.llm.llm import LLM
+from openhands.memory.memory import Memory
 from openhands.microagent.microagent import BaseMicroAgent
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
 from openhands.security import SecurityAnalyzer, options
 from openhands.storage import get_file_store
-from openhands.utils.async_utils import call_async_from_sync
 
 
 def create_runtime(
@@ -29,18 +30,19 @@ def create_runtime(
     sid: str | None = None,
     headless_mode: bool = True,
     agent: Agent | None = None,
-    selected_repository: str | None = None,
-    github_token: SecretStr | None = None,
 ) -> Runtime:
     """Create a runtime for the agent to run on.
 
-    config: The app config.
-    sid: (optional) The session id. IMPORTANT: please don't set this unless you know what you're doing.
-        Set it to incompatible value will cause unexpected behavior on RemoteRuntime.
-    headless_mode: Whether the agent is run in headless mode. `create_runtime` is typically called within evaluation scripts,
-        where we don't want to have the VSCode UI open, so it defaults to True.
-    selected_repository: (optional) The GitHub repository to use.
-    github_token: (optional) The GitHub token to use.
+    Args:
+        config: The app config.
+        sid: (optional) The session id. IMPORTANT: please don't set this unless you know what you're doing.
+            Set it to incompatible value will cause unexpected behavior on RemoteRuntime.
+        headless_mode: Whether the agent is run in headless mode. `create_runtime` is typically called within evaluation scripts,
+            where we don't want to have the VSCode UI open, so it defaults to True.
+        agent: (optional) The agent instance to use for configuring the runtime.
+
+    Returns:
+        The created Runtime instance (not yet connected or initialized).
     """
     # if sid is provided on the command line, use it as the name of the event stream
     # otherwise generate it on the basis of the configured jwt_secret
@@ -61,7 +63,7 @@ def create_runtime(
     if agent:
         agent_cls = type(agent)
     else:
-        agent_cls = openhands.agenthub.Agent.get_cls(config.default_agent)
+        agent_cls = Agent.get_cls(config.default_agent)
 
     # runtime and tools
     runtime_cls = get_runtime_cls(config.runtime)
@@ -74,35 +76,94 @@ def create_runtime(
         headless_mode=headless_mode,
     )
 
-    call_async_from_sync(runtime.connect)
+    logger.debug(
+        f'Runtime created with plugins: {[plugin.name for plugin in runtime.plugins]}'
+    )
 
+    return runtime
+
+
+def initialize_repository_for_runtime(
+    runtime: Runtime,
+    selected_repository: str | None = None,
+    github_token: SecretStr | None = None,
+) -> str | None:
+    """Initialize the repository for the runtime.
+
+    Args:
+        runtime: The runtime to initialize the repository for.
+        selected_repository: (optional) The GitHub repository to use.
+        github_token: (optional) The GitHub token to use.
+
+    Returns:
+        The repository directory path if a repository was cloned, None otherwise.
+    """
     # clone selected repository if provided
-    repo_directory = None
     github_token = (
         SecretStr(os.environ.get('GITHUB_TOKEN')) if not github_token else github_token
     )
-    if selected_repository and github_token:
+
+    secret_store = (
+        SecretStore(
+            provider_tokens={
+                ProviderType.GITHUB: ProviderToken(token=SecretStr(github_token))
+            }
+        )
+        if github_token
+        else None
+    )
+    provider_tokens = secret_store.provider_tokens if secret_store else None
+
+    repo_directory = None
+    if selected_repository and provider_tokens:
         logger.debug(f'Selected repository {selected_repository}.')
         repo_directory = runtime.clone_repo(
-            github_token,
+            provider_tokens,
             selected_repository,
             None,
         )
 
-    # load microagents from selected repository
-    if agent and agent.prompt_manager and selected_repository and repo_directory:
-        agent.prompt_manager.set_runtime_info(runtime)
+    return repo_directory
+
+
+def create_memory(
+    runtime: Runtime,
+    event_stream: EventStream,
+    sid: str,
+    selected_repository: str | None = None,
+    repo_directory: str | None = None,
+    status_callback: Callable | None = None,
+) -> Memory:
+    """Create a memory for the agent to use.
+
+    Args:
+        runtime: The runtime to use.
+        event_stream: The event stream it will subscribe to.
+        sid: The session id.
+        selected_repository: The repository to clone and start with, if any.
+        repo_directory: The repository directory, if any.
+        status_callback: Optional callback function to handle status updates.
+    """
+    memory = Memory(
+        event_stream=event_stream,
+        sid=sid,
+        status_callback=status_callback,
+    )
+
+    if runtime:
+        # sets available hosts
+        memory.set_runtime_info(runtime)
+
+        # loads microagents from repo/.openhands/microagents
         microagents: list[BaseMicroAgent] = runtime.get_microagents_from_selected_repo(
             selected_repository
         )
-        agent.prompt_manager.load_microagents(microagents)
-        agent.prompt_manager.set_repository_info(selected_repository, repo_directory)
+        memory.load_user_workspace_microagents(microagents)
 
-    logger.debug(
-        f'Runtime initialized with plugins: {[plugin.name for plugin in runtime.plugins]}'
-    )
+        if selected_repository and repo_directory:
+            memory.set_repository_info(selected_repository, repo_directory)
 
-    return runtime
+    return memory
 
 
 def create_agent(config: AppConfig) -> Agent:

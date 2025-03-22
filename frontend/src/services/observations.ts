@@ -95,6 +95,7 @@ export function handleObservationMessage(message: ObservationMessage) {
             observation,
             extras: {
               path: String(message.extras.path || ""),
+              impl_source: String(message.extras.impl_source || ""),
             },
           }),
         );
@@ -107,6 +108,7 @@ export function handleObservationMessage(message: ObservationMessage) {
             extras: {
               path: String(message.extras.path || ""),
               diff: String(message.extras.diff || ""),
+              impl_source: String(message.extras.impl_source || ""),
             },
           }),
         );
