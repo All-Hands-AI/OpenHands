@@ -8,6 +8,8 @@ import OpenHands from "#/api/open-hands";
 import { useUserConversation } from "#/hooks/query/use-user-conversation";
 import { useParams } from "react-router";
 
+const defaultTitlePattern = /^Conversation [a-f0-9]+$/;
+
 /**
  * Hook that monitors for the first agent message and triggers title generation.
  * This approach is more robust as it ensures the user message has been processed
@@ -40,8 +42,7 @@ export function useAutoTitle() {
       return;
     }
 
-    // Skip if we already have a meaningful title (not the default "Conversation" prefix)
-    if (conversation.title && !conversation.title.startsWith("Conversation ")) {
+    if (conversation.title && !defaultTitlePattern.test(conversation.title)) {
       return;
     }
 
