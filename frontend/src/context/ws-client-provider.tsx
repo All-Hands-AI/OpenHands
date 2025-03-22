@@ -119,7 +119,7 @@ export function WsClientProvider({
       EventLogger.error("WebSocket is not connected.");
       return;
     }
-    sioRef.current.emit("oh_action", event);
+    sioRef.current.emit("oh_user_action", event);
   }
 
   function handleConnect() {
