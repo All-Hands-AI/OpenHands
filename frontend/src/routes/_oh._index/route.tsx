@@ -1,15 +1,21 @@
 import React from "react";
 import { useDispatch } from "react-redux";
 import posthog from "posthog-js";
-import { setImportedProjectZip } from "#/state/initial-query-slice";
+import {
+  setImportedProjectZip,
+  setReplayJson,
+} from "#/state/initial-query-slice";
 import { convertZipToBase64 } from "#/utils/convert-zip-to-base64";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useConfig } from "#/hooks/query/use-config";
 import { ImportProjectSuggestionBox } from "../../components/features/suggestions/import-project-suggestion-box";
+import { ReplaySuggestionBox } from "../../components/features/suggestions/replay-suggestion-box";
 import { GitHubRepositoriesSuggestionBox } from "#/components/features/github/github-repositories-suggestion-box";
 import { HeroHeading } from "#/components/shared/hero-heading";
 import { TaskForm } from "#/components/shared/task-form";
+import { convertFileToText } from "#/utils/convert-file-to-text";
+import { ENABLE_TRAJECTORY_REPLAY } from "#/utils/feature-flags";
 
 function Home() {
   const dispatch = useDispatch();
@@ -52,6 +58,20 @@ function Home() {
               }
             }}
           />
+          {ENABLE_TRAJECTORY_REPLAY() && (
+            <ReplaySuggestionBox
+              onChange={async (event) => {
+                if (event.target.files) {
+                const json = event.target.files[0];
+                dispatch(setReplayJson(await convertFileToText(json)));
+                posthog.capture("json_file_uploaded");
+                formRef.current?.requestSubmit();
+              } else {
+                // TODO: handle error
+              }
+            }}
+          />
+          )}
         </div>
       </div>
     </div>
