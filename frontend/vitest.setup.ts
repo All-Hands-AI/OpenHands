@@ -2,6 +2,7 @@ import { afterAll, afterEach, beforeAll, vi } from "vitest";
 import { cleanup } from "@testing-library/react";
 import { server } from "#/mocks/node";
 import "@testing-library/jest-dom/vitest";
+import React from "react";
 
 HTMLCanvasElement.prototype.getContext = vi.fn();
 HTMLElement.prototype.scrollTo = vi.fn();
@@ -17,6 +18,26 @@ vi.mock("react-i18next", async (importOriginal) => ({
     },
   }),
 }));
+
+// Mock the HydratedRouter component from react-router/dom
+vi.mock("react-router/dom", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("react-router/dom")>();
+  const { createMemoryRouter, RouterProvider } = await import("react-router");
+  
+  return {
+    ...actual,
+    HydratedRouter: ({ children }: { children?: React.ReactNode }) => {
+      const router = createMemoryRouter([
+        {
+          path: "/",
+          element: children || null,
+        },
+      ]);
+      
+      return React.createElement(RouterProvider, { router });
+    },
+  };
+});
 
 // Mock requests during tests
 beforeAll(() => server.listen({ onUnhandledRequest: "bypass" }));
