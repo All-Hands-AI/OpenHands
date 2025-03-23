@@ -11,8 +11,9 @@ export const useCreateConversation = () => {
   const dispatch = useDispatch();
   const queryClient = useQueryClient();
 
-  const { selectedRepository, files, replayJson } =
-    useSelector((state: RootState) => state.initialQuery);
+  const { selectedRepository, files, replayJson } = useSelector(
+    (state: RootState) => state.initialQuery,
+  );
 
   return useMutation({
     mutationFn: async (variables: { q?: string }) => {

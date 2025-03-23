@@ -24,7 +24,9 @@ import { useGetTrajectory } from "#/hooks/mutation/use-get-trajectory";
 import { downloadTrajectory } from "#/utils/download-trajectory";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 
-function getEntryPoint(hasRepository: boolean | null,  hasReplayJson: boolean | null
+function getEntryPoint(
+  hasRepository: boolean | null,
+  hasReplayJson: boolean | null,
 ): string {
   if (hasRepository) return "github";
   if (hasReplayJson) return "replay";

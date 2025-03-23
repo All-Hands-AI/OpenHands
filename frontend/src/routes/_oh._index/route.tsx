@@ -1,8 +1,6 @@
 import React from "react";
 import posthog from "posthog-js";
-import {
-  setReplayJson,
-} from "#/state/initial-query-slice";
+import { setReplayJson } from "#/state/initial-query-slice";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useConfig } from "#/hooks/query/use-config";
@@ -49,15 +47,15 @@ function Home() {
             <ReplaySuggestionBox
               onChange={async (event) => {
                 if (event.target.files) {
-                const json = event.target.files[0];
-                dispatch(setReplayJson(await convertFileToText(json)));
-                posthog.capture("json_file_uploaded");
-                formRef.current?.requestSubmit();
-              } else {
-                // TODO: handle error
-              }
-            }}
-          />
+                  const json = event.target.files[0];
+                  dispatch(setReplayJson(await convertFileToText(json)));
+                  posthog.capture("json_file_uploaded");
+                  formRef.current?.requestSubmit();
+                } else {
+                  // TODO: handle error
+                }
+              }}
+            />
           )}
         </div>
       </div>
