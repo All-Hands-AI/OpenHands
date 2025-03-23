@@ -23,7 +23,7 @@ export function NavTab({ to, label, icon, isBeta }: NavTabProps) {
     >
       {({ isActive }) => (
         <>
-          <div className={cn(isActive && "text-primary")}>{icon}</div>
+          <div className={cn(isActive && "text-tab-highlight")}>{icon}</div>
           {label}
           {isBeta && <BetaBadge />}
         </>

@@ -9,7 +9,8 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: "#CFB755", // nice yellow
+        primary: "#C9B974", // nice yellow
+        "tab-highlight": "#CFB755", // highlight color for tabs
         base: "#0D0F11", // dark background also used for tooltips
         "base-secondary": "#24272E", // lighter background
         danger: "#E76A5E",
@@ -34,7 +35,8 @@ export default {
       themes: {
         dark: {
           colors: {
-            primary: "#CFB755",
+            primary: "#4465DB",
+            "tab-highlight": "#CFB755",
           },
         },
       },
