@@ -1,9 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { handleStatusMessage, handleActionMessage } from "#/services/actions";
+import { handleActionMessage } from "#/services/actions";
+import { handleStatusMessage } from "#/services/status-service";
 import store from "#/store";
 import { trackError } from "#/utils/error-handler";
 import ActionType from "#/types/action-type";
 import { ActionMessage } from "#/types/message";
+import { queryClient } from "#/entry.client";
+import { statusKeys } from "#/hooks/query/use-status";
 
 // Mock dependencies
 vi.mock("#/utils/error-handler", () => ({
@@ -16,13 +19,19 @@ vi.mock("#/store", () => ({
   },
 }));
 
+vi.mock("#/entry.client", () => ({
+  queryClient: {
+    setQueryData: vi.fn(),
+  },
+}));
+
 describe("Actions Service", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   describe("handleStatusMessage", () => {
-    it("should dispatch info messages to status state", () => {
+    it("should update status message in React Query", () => {
       const message = {
         type: "info",
         message: "Runtime is not available",
@@ -32,9 +41,10 @@ describe("Actions Service", () => {
 
       handleStatusMessage(message);
 
-      expect(store.dispatch).toHaveBeenCalledWith(expect.objectContaining({
-        payload: message,
-      }));
+      expect(queryClient.setQueryData).toHaveBeenCalledWith(
+        statusKeys.current(),
+        message
+      );
     });
 
     it("should log error messages and display them in chat", () => {

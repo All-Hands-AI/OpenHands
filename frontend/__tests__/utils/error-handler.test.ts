@@ -5,8 +5,8 @@ import {
   showErrorToast,
   showChatError,
 } from "#/utils/error-handler";
-import * as Actions from "#/services/actions";
 import * as CustomToast from "#/utils/custom-toast-handlers";
+import * as StatusService from "#/services/status-service";
 
 vi.mock("posthog-js", () => ({
   default: {
@@ -14,7 +14,7 @@ vi.mock("posthog-js", () => ({
   },
 }));
 
-vi.mock("#/services/actions", () => ({
+vi.mock("#/services/status-service", () => ({
   handleStatusMessage: vi.fn(),
 }));
 
@@ -177,7 +177,7 @@ describe("Error Handler", () => {
       );
 
       // Verify error message was shown in chat
-      expect(Actions.handleStatusMessage).toHaveBeenCalledWith({
+      expect(StatusService.handleStatusMessage).toHaveBeenCalledWith({
         type: "error",
         message: "Chat error",
         id: "123",

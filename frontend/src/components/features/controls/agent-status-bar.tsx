@@ -11,6 +11,7 @@ import {
 } from "#/context/ws-client-provider";
 import { useNotification } from "#/hooks/useNotification";
 import { browserTab } from "#/utils/browser-tab";
+import { useStatusMessage } from "#/hooks/query/use-status";
 
 const notificationStates = [
   AgentState.AWAITING_USER_INPUT,
@@ -21,7 +22,7 @@ const notificationStates = [
 export function AgentStatusBar() {
   const { t, i18n } = useTranslation();
   const { curAgentState } = useSelector((state: RootState) => state.agent);
-  const { curStatusMessage } = useSelector((state: RootState) => state.status);
+  const { statusMessage: curStatusMessage } = useStatusMessage();
   const { status } = useWsClient();
   const { notify } = useNotification();
 
