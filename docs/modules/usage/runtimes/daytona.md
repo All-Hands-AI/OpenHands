@@ -1,6 +1,6 @@
 # Daytona Runtime
 
-Another option is using [Daytona](https://www.daytona.io/) as a runtime provider:
+You can use [Daytona](https://www.daytona.io/) as a runtime provider:
 
 ## Step 1: Retrieve Your Daytona API Key
 1. Visit the [Daytona Dashboard](https://app.daytona.io/dashboard/keys).
