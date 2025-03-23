@@ -1,51 +1,47 @@
-import { StatusMessage } from "#/types/message";
-import { trackError } from "#/utils/error-handler";
+import { trackError } from "#/services/context-services/metrics-service";
 import { addErrorMessage } from "#/services/context-services/chat-service";
-import { setCurStatusMessage } from "#/state/status-slice";
-import store from "#/store";
 
-// Global reference to the status update function
-// This will be set by the StatusProvider when it mounts
-let updateStatusMessageFn: ((message: StatusMessage) => void) | null = null;
+// Function types
+type UpdateStatusFn = (message: {
+  id: string;
+  message: string;
+  type: "info" | "error" | "warning" | "success";
+}) => void;
 
-/**
- * Register the status update function
- * This should be called by the StatusProvider when it mounts
- */
-export function registerStatusService(
-  updateFn: (message: StatusMessage) => void,
-) {
-  updateStatusMessageFn = updateFn;
+// Module-level variables to store the actual functions
+let updateStatusImpl: UpdateStatusFn = () => {};
+
+// Register the functions from the context
+export function registerStatusFunctions({
+  updateStatus,
+}: {
+  updateStatus: UpdateStatusFn;
+}): void {
+  updateStatusImpl = updateStatus;
 }
 
-/**
- * Handle a status message
- * This is used by the actions service
- */
-export function handleStatusMessage(message: StatusMessage) {
-  if (message.type === "info") {
-    // If the context provider is registered, use it
-    if (updateStatusMessageFn) {
-      updateStatusMessageFn({
+// Export the service functions
+export const StatusService = {
+  updateStatus: (message: {
+    id: string;
+    message: string;
+    type: "info" | "error" | "warning" | "success";
+  }): void => {
+    updateStatusImpl(message);
+
+    // If it's an error, also track it and add it to the chat
+    if (message.type === "error") {
+      trackError({
+        message: message.message,
+        source: "chat",
+        metadata: { msgId: message.id },
+      });
+      addErrorMessage({
         ...message,
       });
     }
-    // For backward compatibility with tests, also dispatch to Redux
-    store.dispatch(
-      setCurStatusMessage({
-        ...message,
-      }),
-    );
-  } else if (message.type === "error") {
-    trackError({
-      message: message.message,
-      source: "chat",
-      metadata: { msgId: message.id },
-    });
-    store.dispatch(
-      addErrorMessage({
-        ...message,
-      }),
-    );
-  }
-}
+  },
+};
+
+// Re-export the service functions for convenience
+export const { updateStatus } = StatusService;

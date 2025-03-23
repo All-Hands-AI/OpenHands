@@ -177,9 +177,14 @@ The migration will proceed in the following order, with each step being complete
 
 ### In Progress
 - Client-only state evaluation and migration
-
-### Upcoming
 - Redux cleanup and removal
+
+### Completed Today
+- Removed Redux dependency from route.tsx
+- Fixed metrics service to work without Redux
+- Updated status service to work without Redux
+- Updated actions service to work without Redux
+- Updated observations service to work without Redux
 
 ## Risks and Mitigations
 

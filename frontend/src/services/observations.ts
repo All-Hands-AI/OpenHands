@@ -1,7 +1,4 @@
-import {
-  setUrl,
-  setScreenshotSrc,
-} from "#/services/context-services/browser-service";
+import { setUrl, setScreenshotSrc } from "#/services/context-services/browser-service";
 import { ObservationMessage } from "#/types/message";
 import { AgentState } from "#/types/agent-state";
 import { appendOutput } from "#/services/context-services/terminal-service";
@@ -9,14 +6,12 @@ import { appendJupyterOutput } from "#/state/jupyter-slice";
 import { updateAgentState } from "#/services/context-services/agent-state-service";
 import ObservationType from "#/types/observation-type";
 import {
-  addAssistantMessage,
   addAssistantObservation,
 } from "#/services/context-services/chat-service";
 
-export function handleObservationMessage(message: ObservationMessage) {
-  switch (message.observation) {
-    case ObservationType.RUN: {
-      if (message.extras.hidden) break;
+export function handleObservation(message: ObservationMessage) {
+  switch (message.type) {
+    case ObservationType.TERMINAL_OUTPUT: {
       let { content } = message;
 
       if (content.length > 5000) {
@@ -24,60 +19,45 @@ export function handleObservationMessage(message: ObservationMessage) {
         content = `${head}\r\n\n... (truncated ${message.content.length - 5000} characters) ...`;
       }
 
-      store.dispatch(appendOutput(content));
+      appendOutput(content);
       break;
     }
     case ObservationType.RUN_IPYTHON:
       // FIXME: render this as markdown
-      store.dispatch(appendJupyterOutput(message.content));
+      appendJupyterOutput(message.content);
       break;
     case ObservationType.BROWSE:
       if (message.extras?.screenshot) {
-        store.dispatch(setScreenshotSrc(message.extras?.screenshot));
+        setScreenshotSrc(message.extras?.screenshot as string);
       }
       if (message.extras?.url) {
-        store.dispatch(setUrl(message.extras.url));
+        setUrl(message.extras.url as string);
       }
       break;
     case ObservationType.AGENT_STATE_CHANGED:
       // Cast to AgentState since we know it's a valid agent state
       updateAgentState(message.extras.agent_state as AgentState);
       break;
-    case ObservationType.DELEGATE:
-      // TODO: better UI for delegation result (#2309)
-      if (message.content) {
-        addAssistantMessage(message.content);
-      }
-      break;
-    case ObservationType.READ:
-    case ObservationType.EDIT:
-    case ObservationType.THINK:
-    case ObservationType.NULL:
-      break; // We don't display the default message for these observations
-    default:
-      addAssistantMessage(message.message);
-      break;
-  }
-  if (!message.extras?.hidden) {
-    // Convert the message to the appropriate observation type
-    const { observation } = message;
-    const baseObservation = {
-      ...message,
-      source: "agent" as const,
-    };
+    case ObservationType.OBSERVATION:
+      {
+        // Base observation object
+        const baseObservation = {
+          id: message.id,
+          timestamp: message.timestamp,
+        };
 
-    switch (observation) {
-      case "agent_state_changed":
-        addAssistantObservation({
-          ...baseObservation,
-          observation: "agent_state_changed" as const,
-          extras: {
-            agent_state: (message.extras.agent_state as AgentState) || "idle",
-          },
-        });
-        break;
-      case "run":
-        store.dispatch(
+      // Handle different observation types
+      switch (message.extras.observation_type) {
+        case "agent_state":
+          addAssistantObservation({
+            ...baseObservation,
+            observation: "agent_state" as const,
+            extras: {
+              agent_state: (message.extras.agent_state as AgentState) || "idle",
+            },
+          });
+          break;
+        case "run":
           addAssistantObservation({
             ...baseObservation,
             observation: "run" as const,
@@ -86,66 +66,47 @@ export function handleObservationMessage(message: ObservationMessage) {
               metadata: message.extras.metadata,
               hidden: Boolean(message.extras.hidden),
             },
-          }),
-        );
-        break;
-      case "read":
-        store.dispatch(
+          });
+          break;
+        case "function_call":
           addAssistantObservation({
             ...baseObservation,
-            observation,
+            observation: "function_call" as const,
             extras: {
-              path: String(message.extras.path || ""),
+              name: String(message.extras.name || ""),
+              args: message.extras.args,
               impl_source: String(message.extras.impl_source || ""),
             },
-          }),
-        );
-        break;
-      case "edit":
-        store.dispatch(
+          });
+          break;
+        case "file_edit":
           addAssistantObservation({
             ...baseObservation,
-            observation,
+            observation: "file_edit" as const,
             extras: {
               path: String(message.extras.path || ""),
               diff: String(message.extras.diff || ""),
               impl_source: String(message.extras.impl_source || ""),
             },
-          }),
-        );
-        break;
-      case "run_ipython":
-        store.dispatch(
+          });
+          break;
+        case "file_read":
           addAssistantObservation({
             ...baseObservation,
-            observation: "run_ipython" as const,
+            observation: "file_read" as const,
             extras: {
-              code: String(message.extras.code || ""),
+              path: String(message.extras.path || ""),
+              content: String(message.extras.content || ""),
             },
-          }),
-        );
-        break;
-      case "delegate":
-        store.dispatch(
+          });
+          break;
+        case "browser":
           addAssistantObservation({
             ...baseObservation,
-            observation: "delegate" as const,
-            extras: {
-              outputs:
-                typeof message.extras.outputs === "object"
-                  ? (message.extras.outputs as Record<string, unknown>)
-                  : {},
-            },
-          }),
-        );
-        break;
-      case "browse":
-        store.dispatch(
-          addAssistantObservation({
-            ...baseObservation,
-            observation: "browse" as const,
+            observation: "browser" as const,
             extras: {
               url: String(message.extras.url || ""),
+              title: String(message.extras.title || ""),
               screenshot: String(message.extras.screenshot || ""),
               error: Boolean(message.extras.error),
               open_page_urls: Array.isArray(message.extras.open_page_urls)
@@ -154,46 +115,46 @@ export function handleObservationMessage(message: ObservationMessage) {
               active_page_index: Number(message.extras.active_page_index || 0),
               dom_object:
                 typeof message.extras.dom_object === "object"
-                  ? (message.extras.dom_object as Record<string, unknown>)
+                  ? message.extras.dom_object
                   : {},
               axtree_object:
                 typeof message.extras.axtree_object === "object"
-                  ? (message.extras.axtree_object as Record<string, unknown>)
+                  ? message.extras.axtree_object
                   : {},
               extra_element_properties:
                 typeof message.extras.extra_element_properties === "object"
-                  ? (message.extras.extra_element_properties as Record<
-                      string,
-                      unknown
-                    >)
+                  ? message.extras.extra_element_properties
                   : {},
               last_browser_action: String(
-                message.extras.last_browser_action || "",
+                message.extras.last_browser_action || ""
               ),
               last_browser_action_error:
-                message.extras.last_browser_action_error,
+                message.extras.last_browser_action_error || null,
               focused_element_bid: String(
-                message.extras.focused_element_bid || "",
+                message.extras.focused_element_bid || ""
               ),
             },
-          }),
-        );
-        break;
-      case "error":
-        store.dispatch(
+          });
+          break;
+        case "web_search":
           addAssistantObservation({
             ...baseObservation,
-            observation: "error" as const,
-            source: "user" as const,
+            observation: "web_search" as const,
             extras: {
-              error_id: message.extras.error_id,
+              query: String(message.extras.query || ""),
+              results: Array.isArray(message.extras.results)
+                ? message.extras.results
+                : [],
             },
-          }),
-        );
-        break;
-      default:
-        // For any unhandled observation types, just ignore them
-        break;
-    }
+          });
+          break;
+        default:
+          // Unknown observation type
+      }
+      }
+      break;
+    default:
+      // Unknown message type
+      break;
   }
 }

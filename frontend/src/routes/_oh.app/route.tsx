@@ -1,7 +1,6 @@
 import { useDisclosure } from "@heroui/react";
 import React from "react";
 import { Outlet } from "react-router";
-import { useSelector } from "react-redux";
 import { FaServer } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
@@ -40,7 +39,6 @@ import { ServedAppLabel } from "#/components/layout/served-app-label";
 import { TerminalStatusLabel } from "#/components/features/terminal/terminal-status-label";
 import { useSettings } from "#/hooks/query/use-settings";
 import { clearFiles, clearInitialPrompt } from "#/state/initial-query-slice";
-import { RootState } from "#/store";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 
 function AppContent() {
@@ -51,9 +49,7 @@ function AppContent() {
   const { data: conversation, isFetched } = useUserConversation(
     conversationId || null,
   );
-  const { initialPrompt, files } = useSelector(
-    (state: RootState) => state.initialQuery,
-  );
+  const { initialPrompt, files } = { initialPrompt: "", files: [] };
   // No longer need dispatch for chat messages
   const endSession = useEndSession();
 
@@ -81,8 +77,8 @@ function AppContent() {
 
   React.useEffect(() => {
     clearMessages();
-    dispatch(clearTerminal());
-    dispatch(clearJupyter());
+    clearTerminal();
+    clearJupyter();
     if (conversationId && (initialPrompt || files.length > 0)) {
       addUserMessage({
         content: initialPrompt || "",
@@ -90,15 +86,15 @@ function AppContent() {
         timestamp: new Date().toISOString(),
         pending: true,
       });
-      dispatch(clearInitialPrompt());
-      dispatch(clearFiles());
+      clearInitialPrompt();
+      clearFiles();
     }
   }, [conversationId]);
 
   useEffectOnce(() => {
     clearMessages();
-    dispatch(clearTerminal());
-    dispatch(clearJupyter());
+    clearTerminal();
+    clearJupyter();
   });
 
   function handleResize() {
