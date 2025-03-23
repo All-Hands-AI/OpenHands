@@ -36,7 +36,7 @@ function Home() {
             user={user || null}
           />
         </div>
-        <div className="w-full flex justify-start">
+        <div className="w-full flex justify-start mt-2 ml-2">
           <CodeNotInGitHubLink />
         </div>
       </div>
