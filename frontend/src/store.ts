@@ -8,7 +8,7 @@ import initialQueryReducer from "./state/initial-query-slice";
 import commandReducer from "./state/command-slice";
 import { jupyterReducer } from "./state/jupyter-slice";
 import securityAnalyzerReducer from "./state/security-analyzer-slice";
-import statusReducer from "./state/status-slice";
+// Status slice is now handled by React Query
 import metricsReducer from "./state/metrics-slice";
 
 export const rootReducer = combineReducers({
@@ -21,7 +21,7 @@ export const rootReducer = combineReducers({
   agent: agentReducer,
   jupyter: jupyterReducer,
   securityAnalyzer: securityAnalyzerReducer,
-  status: statusReducer,
+  // status slice removed (migrated to React Query)
   metrics: metricsReducer,
 });
 

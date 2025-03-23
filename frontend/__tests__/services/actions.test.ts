@@ -22,7 +22,7 @@ describe("Actions Service", () => {
   });
 
   describe("handleStatusMessage", () => {
-    it("should dispatch info messages to status state", () => {
+    it("should handle info messages without dispatching to Redux (now using React Query)", () => {
       const message = {
         type: "info",
         message: "Runtime is not available",
@@ -32,9 +32,8 @@ describe("Actions Service", () => {
 
       handleStatusMessage(message);
 
-      expect(store.dispatch).toHaveBeenCalledWith(expect.objectContaining({
-        payload: message,
-      }));
+      // We no longer dispatch to Redux for info messages
+      expect(store.dispatch).not.toHaveBeenCalled();
     });
 
     it("should log error messages and display them in chat", () => {

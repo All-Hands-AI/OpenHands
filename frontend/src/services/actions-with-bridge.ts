@@ -8,7 +8,7 @@ import { trackError } from "#/utils/error-handler";
 import { appendSecurityAnalyzerInput } from "#/state/security-analyzer-slice";
 import { setCode, setActiveFilepath } from "#/state/code-slice";
 import { appendJupyterInput } from "#/state/jupyter-slice";
-import { setCurStatusMessage } from "#/state/status-slice";
+// Status slice is now handled by React Query
 import { setMetrics } from "#/state/metrics-slice";
 // import store from "#/store"; // Not used directly, using bridge instead
 import ActionType from "#/types/action-type";
@@ -157,12 +157,8 @@ export function handleStatusMessageWithBridge(message: StatusMessage) {
   const bridge = getQueryReduxBridge();
 
   if (message.type === "info") {
-    bridge.conditionalDispatch(
-      "status",
-      setCurStatusMessage({
-        ...message,
-      }),
-    );
+    // Status slice is now handled by React Query
+    // The websocket events hook will update the React Query cache
   } else if (message.type === "error") {
     trackError({
       message: message.message,
