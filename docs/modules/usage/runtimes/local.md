@@ -8,7 +8,7 @@ The Local Runtime allows the OpenHands agent to execute actions directly on your
 
 ## Prerequisites
 
-Before using the Local Runtime, ensure you have the following dependencies installed:
+Before using the Local Runtime, ensure that:
 
 1. You have followed the [Development setup instructions](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
 2. tmux is available on your system.
