@@ -11,7 +11,7 @@ export const useCreateConversation = () => {
   const dispatch = useDispatch();
   const queryClient = useQueryClient();
 
-  const { selectedRepository, files, importedProjectZip, replayJson } =
+  const { selectedRepository, files, replayJson } =
     useSelector((state: RootState) => state.initialQuery);
 
   return useMutation({
@@ -20,7 +20,6 @@ export const useCreateConversation = () => {
         !variables.q?.trim() &&
         !selectedRepository &&
         files.length === 0 &&
-        !importedProjectZip &&
         !replayJson
       ) {
         throw new Error("No query provided");

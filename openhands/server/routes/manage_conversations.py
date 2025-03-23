@@ -7,6 +7,8 @@ from pydantic import BaseModel
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.message import MessageAction
+from openhands.events.event import EventSource
+from openhands.events.stream import EventStream
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
 )
@@ -26,6 +28,7 @@ from openhands.server.shared import (
     SettingsStoreImpl,
     config,
     conversation_manager,
+    file_store,
 )
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
@@ -97,10 +100,7 @@ async def _create_new_conversation(
         extra={'user_id': user_id, 'session_id': conversation_id},
     )
 
-    repository_title = (
-        selected_repository.split('/')[-1] if selected_repository else None
-    )
-    conversation_title = f'{repository_title or "Conversation"} {conversation_id[:5]}'
+    conversation_title = get_default_conversation_title(conversation_id)
 
     logger.info(f'Saving metadata for conversation {conversation_id}')
     await conversation_store.save_metadata(
@@ -249,16 +249,78 @@ async def get_conversation(
         return None
 
 
+def get_default_conversation_title(conversation_id: str) -> str:
+    """
+    Generate a default title for a conversation based on its ID.
+
+    Args:
+        conversation_id: The ID of the conversation
+
+    Returns:
+        A default title string
+    """
+    return f'Conversation {conversation_id[:5]}'
+
+
+async def auto_generate_title(conversation_id: str, user_id: str | None) -> str:
+    """
+    Auto-generate a title for a conversation based on the first user message.
+
+    Args:
+        conversation_id: The ID of the conversation
+        user_id: The ID of the user
+
+    Returns:
+        A generated title string
+    """
+    logger.info(f'Auto-generating title for conversation {conversation_id}')
+
+    try:
+        # Create an event stream for the conversation
+        event_stream = EventStream(conversation_id, file_store, user_id)
+
+        # Find the first user message
+        first_user_message = None
+        for event in event_stream.get_events():
+            if (
+                event.source == EventSource.USER
+                and isinstance(event, MessageAction)
+                and event.content
+                and event.content.strip()
+            ):
+                first_user_message = event.content
+                break
+
+        if first_user_message:
+            first_user_message = first_user_message.strip()
+            title = first_user_message[:15]
+            if len(first_user_message) > 15:
+                title += '...'
+            logger.info(f'Generated title: {title}')
+            return title
+    except Exception as e:
+        logger.error(f'Error generating title: {str(e)}')
+    return ''
+
+
 @app.patch('/conversations/{conversation_id}')
 async def update_conversation(
     request: Request, conversation_id: str, title: str = Body(embed=True)
 ) -> bool:
+    user_id = get_user_id(request)
     conversation_store = await ConversationStoreImpl.get_instance(
-        config, get_user_id(request), get_github_user_id(request)
+        config, user_id, get_github_user_id(request)
     )
     metadata = await conversation_store.get_metadata(conversation_id)
     if not metadata:
         return False
+
+    # If title is empty or unspecified, auto-generate it from the first user message
+    if not title or title.isspace():
+        title = await auto_generate_title(conversation_id, user_id)
+        if not title:
+            title = get_default_conversation_title(conversation_id)
+
     metadata.title = title
     await conversation_store.save_metadata(metadata)
     return True
@@ -292,7 +354,7 @@ async def _get_conversation_info(
     try:
         title = conversation.title
         if not title:
-            title = f'Conversation {conversation.conversation_id[:5]}'
+            title = get_default_conversation_title(conversation.conversation_id)
         return ConversationInfo(
             conversation_id=conversation.conversation_id,
             title=title,
