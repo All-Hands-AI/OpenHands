@@ -9,6 +9,7 @@ from openhands.events.observation import (
     RecallObservation,
 )
 from openhands.events.observation.agent import MicroagentKnowledge
+from openhands.events.observation.commands import MAX_CMD_OUTPUT_SIZE
 from openhands.events.serialization import (
     event_from_dict,
     event_to_dict,
@@ -29,23 +30,6 @@ def serialization_deserialization(
     ), f'The observation instance should be an instance of {cls}.'
     serialized_observation_dict = event_to_dict(observation_instance)
     serialized_observation_trajectory = event_to_trajectory(observation_instance)
-
-    # For CmdOutputObservation, we need to handle the MAX_CMD_OUTPUT_SIZE field
-    # which is added during initialization but not part of the original dict
-    if cls == CmdOutputObservation:
-        # Remove MAX_CMD_OUTPUT_SIZE from serialized dict for comparison
-        if (
-            'extras' in serialized_observation_dict
-            and 'MAX_CMD_OUTPUT_SIZE' in serialized_observation_dict['extras']
-        ):
-            del serialized_observation_dict['extras']['MAX_CMD_OUTPUT_SIZE']
-
-        # Also remove from trajectory dict
-        if (
-            'extras' in serialized_observation_trajectory
-            and 'MAX_CMD_OUTPUT_SIZE' in serialized_observation_trajectory['extras']
-        ):
-            del serialized_observation_trajectory['extras']['MAX_CMD_OUTPUT_SIZE']
 
     assert (
         serialized_observation_dict == original_observation_dict
@@ -155,11 +139,11 @@ def test_cmd_output_truncation():
 
     # The truncation algorithm might add a few extra characters due to the truncation message
     # We'll allow a small margin (1% of MAX_CMD_OUTPUT_SIZE) for the total content length
-    margin = int(CmdOutputObservation.MAX_CMD_OUTPUT_SIZE * 0.01)  # 1% margin
-    assert len(obs.content) <= CmdOutputObservation.MAX_CMD_OUTPUT_SIZE + margin
+    margin = int(MAX_CMD_OUTPUT_SIZE * 0.01)  # 1% margin
+    assert len(obs.content) <= MAX_CMD_OUTPUT_SIZE + margin
 
     # Verify the beginning and end of the content are preserved
-    half_size = CmdOutputObservation.MAX_CMD_OUTPUT_SIZE // 2
+    half_size = MAX_CMD_OUTPUT_SIZE // 2
     assert obs.content.startswith('a' * half_size)
     assert obs.content.endswith('a' * half_size)
 
