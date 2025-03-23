@@ -83,7 +83,7 @@ class LLMConfig(BaseModel):
     custom_tokenizer: str | None = Field(default=None)
     native_tool_calling: bool | None = Field(default=None)
     reasoning_effort: str | None = Field(default='high')
-    seed: int | None = Field(default=None)
+    seed: int | None = Field(default=42)
 
     model_config = {'extra': 'forbid'}
 
