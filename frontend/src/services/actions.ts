@@ -6,10 +6,10 @@ import {
 } from "#/state/chat-slice";
 import { trackError } from "#/utils/error-handler";
 import { appendSecurityAnalyzerInput } from "#/state/security-analyzer-slice";
-import { setCode, setActiveFilepath } from "#/state/code-slice";
 import { appendJupyterInput } from "#/state/jupyter-slice";
-// Status and metrics slices are now handled by React Query
+// Status, metrics, browser, and code slices are now handled by React Query
 import store from "#/store";
+import { queryClient } from "#/query-redux-bridge-init";
 import { getQueryReduxBridge } from "#/utils/query-redux-bridge";
 import ActionType from "#/types/action-type";
 import {
@@ -33,8 +33,16 @@ const messageActions = {
   },
   [ActionType.WRITE]: (message: ActionMessage) => {
     const { path, content } = message.args;
-    store.dispatch(setActiveFilepath(path));
-    store.dispatch(setCode(content));
+    // Update code state in React Query
+    const currentState = queryClient.getQueryData<{
+      code: string;
+      path: string;
+    }>(["code"]) || { code: "", path: "" };
+    queryClient.setQueryData(["code"], {
+      ...currentState,
+      path,
+      code: content,
+    });
   },
   [ActionType.MESSAGE]: (message: ActionMessage) => {
     if (message.source === "user") {
