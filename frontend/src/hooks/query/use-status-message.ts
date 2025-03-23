@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { StatusMessage } from "#/types/message";
 
@@ -13,11 +14,17 @@ export const statusMessageQueryKey = ["statusMessage"];
 export function useStatusMessage() {
   const queryClient = useQueryClient();
 
-  const { data: curStatusMessage = initialStatusMessage } = useQuery({
-    queryKey: statusMessageQueryKey,
-    queryFn: () =>
+  // Use a stable query function to avoid hydration mismatches
+  const queryFn = useMemo(
+    () => () =>
       queryClient.getQueryData<StatusMessage>(statusMessageQueryKey) ||
       initialStatusMessage,
+    [queryClient],
+  );
+
+  const { data: curStatusMessage = initialStatusMessage } = useQuery({
+    queryKey: statusMessageQueryKey,
+    queryFn,
     // We don't want to refetch this data automatically
     staleTime: Infinity,
     gcTime: Infinity,
@@ -25,8 +32,12 @@ export function useStatusMessage() {
     initialData: initialStatusMessage,
   });
 
-  const setStatusMessage = (message: StatusMessage) =>
-    queryClient.setQueryData(statusMessageQueryKey, message);
+  // Use a stable setter function
+  const setStatusMessage = useMemo(
+    () => (message: StatusMessage) =>
+      queryClient.setQueryData(statusMessageQueryKey, message),
+    [queryClient],
+  );
 
   return {
     curStatusMessage,

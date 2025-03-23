@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { showErrorToast } from "#/utils/error-handler";
@@ -19,6 +19,9 @@ const notificationStates = [
   AgentState.AWAITING_USER_CONFIRMATION,
 ];
 
+// Default status message for SSR to avoid hydration mismatches
+const defaultStatusMessage = AGENT_STATUS_MAP[AgentState.INIT].message;
+
 export function AgentStatusBar() {
   const { t, i18n } = useTranslation();
   const { curAgentState } = useSelector((state: RootState) => state.agent);
@@ -26,9 +29,13 @@ export function AgentStatusBar() {
   const { status } = useWsClient();
   const { notify } = useNotification();
 
-  const [statusMessage, setStatusMessage] = React.useState<string>("");
+  // Initialize with default message to ensure consistent server/client rendering
+  const [statusMessage, setStatusMessage] =
+    useState<string>(defaultStatusMessage);
+  const [isClient, setIsClient] = useState<boolean>(false);
 
-  const updateStatusMessage = () => {
+  // Use useCallback to create stable function references
+  const updateStatusMessage = useCallback(() => {
     let message = curStatusMessage.message || "";
     if (curStatusMessage?.id) {
       const id = curStatusMessage.id.trim();
@@ -49,15 +56,23 @@ export function AgentStatusBar() {
     } else {
       setStatusMessage(AGENT_STATUS_MAP[curAgentState].message);
     }
-  };
+  }, [curStatusMessage, curAgentState, i18n, t]);
 
-  React.useEffect(() => {
-    updateStatusMessage();
-  }, [curStatusMessage.id]);
+  // Mark when component is mounted on client
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
-  // Handle window focus/blur
-  React.useEffect(() => {
-    if (typeof window === "undefined") return undefined;
+  // Only update status message after client-side hydration
+  useEffect(() => {
+    if (isClient) {
+      updateStatusMessage();
+    }
+  }, [isClient, updateStatusMessage, curStatusMessage.id]);
+
+  // Handle window focus/blur - only on client
+  useEffect(() => {
+    if (!isClient) return undefined;
 
     const handleFocus = () => {
       browserTab.stopNotification();
@@ -68,9 +83,12 @@ export function AgentStatusBar() {
       window.removeEventListener("focus", handleFocus);
       browserTab.stopNotification();
     };
-  }, []);
+  }, [isClient]);
 
-  React.useEffect(() => {
+  // Handle agent state changes - only on client
+  useEffect(() => {
+    if (!isClient) return;
+
     if (status === WsClientProviderStatus.DISCONNECTED) {
       setStatusMessage("Connecting...");
     } else {
@@ -83,12 +101,12 @@ export function AgentStatusBar() {
         });
 
         // Update browser tab if window exists and is not focused
-        if (typeof document !== "undefined" && !document.hasFocus()) {
+        if (document && !document.hasFocus()) {
           browserTab.startNotification(message);
         }
       }
     }
-  }, [curAgentState, notify, t]);
+  }, [isClient, curAgentState, status, notify, t]);
 
   return (
     <div className="flex flex-col items-center">
