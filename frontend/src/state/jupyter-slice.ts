@@ -1,3 +1,6 @@
+// DEPRECATED: This file is scheduled for removal as part of the React Query migration.
+// It is kept temporarily to maintain backward compatibility until the migration is complete.
+
 import { createSlice } from "@reduxjs/toolkit";
 
 export type Cell = {

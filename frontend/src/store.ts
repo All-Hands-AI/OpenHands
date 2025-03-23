@@ -1,3 +1,6 @@
+// DEPRECATED: This file is scheduled for removal as part of the React Query migration.
+// It is kept temporarily to maintain backward compatibility until the migration is complete.
+
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import agentReducer from "./state/agent-slice";
 import browserReducer from "./state/browser-slice";
