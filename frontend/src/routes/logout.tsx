@@ -4,6 +4,7 @@ import { generateGitHubAuthUrl } from "#/utils/generate-github-auth-url";
 import { AllHandsLogoButton } from "#/components/shared/buttons/all-hands-logo-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import OpenHands from "#/api/open-hands";
+import { useConfig } from "#/hooks/query/use-config";
 
 // Hardcoded translations since we don't want to load i18n
 const translations = {
@@ -19,12 +20,22 @@ export default function LogoutPage() {
   const [isLoggingOut, setIsLoggingOut] = React.useState(true);
   const [hasLogoutError, setHasLogoutError] = React.useState(false);
   const hasAttemptedLogout = React.useRef(false);
+  const config = useConfig();
 
   // Generate GitHub auth URL once on mount
   const gitHubAuthUrl = React.useMemo(
     () => generateGitHubAuthUrl("github", new URL(window.location.href)),
     [],
   );
+
+  const handleLogoClick = React.useCallback(() => {
+    // In SaaS mode, redirect directly to GitHub auth
+    if (config.data?.APP_MODE === "saas" && gitHubAuthUrl) {
+      window.location.href = gitHubAuthUrl;
+    } else {
+      navigate("/");
+    }
+  }, [config.data?.APP_MODE, gitHubAuthUrl, navigate]);
 
   const performLogout = React.useCallback(async () => {
     // Only attempt logout once
@@ -53,11 +64,7 @@ export default function LogoutPage() {
   return (
     <div className="h-screen w-screen flex items-center justify-center bg-base">
       <div className="flex flex-col items-center gap-8 p-8 rounded-lg bg-neutral-800">
-        <AllHandsLogoButton
-          onClick={() => {
-            navigate("/");
-          }}
-        />
+        <AllHandsLogoButton onClick={handleLogoClick} />
         {isLoggingOut ? (
           <div className="flex flex-col items-center gap-4">
             <LoadingSpinner size="large" />
