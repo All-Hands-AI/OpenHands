@@ -1,5 +1,3 @@
-import { useGetUserConversationsQuery } from '../api/slices';
+import { useGetUserConversationsQuery } from "../api/slices";
 
-export const useUserConversations = () => {
-  return useGetUserConversationsQuery();
-};
+export const useUserConversations = () => useGetUserConversationsQuery();

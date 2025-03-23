@@ -1,5 +1,3 @@
-import { useGetBalanceQuery } from '../api/slices';
+import { useGetBalanceQuery } from "../api/slices";
 
-export const useBalance = () => {
-  return useGetBalanceQuery();
-};
+export const useBalance = () => useGetBalanceQuery();

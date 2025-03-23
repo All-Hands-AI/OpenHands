@@ -1,5 +1,3 @@
-import { useGetGitHubUserQuery } from '../api/slices';
+import { useGetGitHubUserQuery } from "../api/slices";
 
-export const useGithubUser = () => {
-  return useGetGitHubUserQuery();
-};
+export const useGithubUser = () => useGetGitHubUserQuery();

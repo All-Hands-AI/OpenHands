@@ -1,5 +1,3 @@
-import { useLogoutMutation } from '../api/slices';
+import { useLogoutMutation } from "../api/slices";
 
-export const useLogout = () => {
-  return useLogoutMutation();
-};
+export const useLogout = () => useLogoutMutation();

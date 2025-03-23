@@ -1,27 +1,30 @@
-import { apiService } from '../api-service';
-import { GetVSCodeUrlResponse, GetTrajectoryResponse } from '../open-hands.types';
+import { apiService } from "../api-service";
+import {
+  GetVSCodeUrlResponse,
+  GetTrajectoryResponse,
+} from "../open-hands.types";
 
 export const miscApiSlice = apiService.injectEndpoints({
   endpoints: (builder) => ({
     getVSCodeUrl: builder.query<GetVSCodeUrlResponse, string>({
       query: (conversationId) => ({
         url: `/api/conversations/${conversationId}/vscode-url`,
-        method: 'GET',
+        method: "GET",
       }),
       providesTags: (result, error, conversationId) => [
-        { type: 'VSCodeUrl', id: conversationId },
+        { type: "VSCodeUrl", id: conversationId },
       ],
     }),
     getRuntimeId: builder.query<{ runtime_id: string }, string>({
       query: (conversationId) => ({
         url: `/api/conversations/${conversationId}/config`,
-        method: 'GET',
+        method: "GET",
       }),
     }),
     getTrajectory: builder.query<GetTrajectoryResponse, string>({
       query: (conversationId) => ({
         url: `/api/conversations/${conversationId}/trajectory`,
-        method: 'GET',
+        method: "GET",
       }),
     }),
   }),

@@ -1,5 +1,8 @@
-import { apiService } from '../api-service';
-import { SaveFileSuccessResponse, FileUploadSuccessResponse } from '../open-hands.types';
+import { apiService } from "../api-service";
+import {
+  SaveFileSuccessResponse,
+  FileUploadSuccessResponse,
+} from "../open-hands.types";
 
 interface ListFilesParams {
   conversationId: string;
@@ -27,58 +30,63 @@ export const filesApiSlice = apiService.injectEndpoints({
     listFiles: builder.query<string[], ListFilesParams>({
       query: ({ conversationId, path }) => ({
         url: `/api/conversations/${conversationId}/list-files`,
-        method: 'GET',
+        method: "GET",
         params: { path },
       }),
       providesTags: (result, error, { conversationId, path }) => [
-        { type: 'Files', id: `${conversationId}:${path || 'root'}` },
+        { type: "Files", id: `${conversationId}:${path || "root"}` },
       ],
     }),
     getFile: builder.query<string, GetFileParams>({
       query: ({ conversationId, path }) => ({
         url: `/api/conversations/${conversationId}/select-file`,
-        method: 'GET',
+        method: "GET",
         params: { file: path },
       }),
       transformResponse: (response: { code: string }) => response.code,
       providesTags: (result, error, { conversationId, path }) => [
-        { type: 'File', id: `${conversationId}:${path}` },
+        { type: "File", id: `${conversationId}:${path}` },
       ],
     }),
     saveFile: builder.mutation<SaveFileSuccessResponse, SaveFileParams>({
       query: ({ conversationId, path, content }) => ({
         url: `/api/conversations/${conversationId}/save-file`,
-        method: 'POST',
+        method: "POST",
         data: {
           filePath: path,
           content,
         },
       }),
       invalidatesTags: (result, error, { conversationId, path }) => [
-        { type: 'File', id: `${conversationId}:${path}` },
-        { type: 'Files', id: `${conversationId}:${path.split('/').slice(0, -1).join('/') || 'root'}` },
+        { type: "File", id: `${conversationId}:${path}` },
+        {
+          type: "Files",
+          id: `${conversationId}:${path.split("/").slice(0, -1).join("/") || "root"}`,
+        },
       ],
     }),
-    uploadFiles: builder.mutation<FileUploadSuccessResponse, UploadFilesParams>({
-      query: ({ conversationId, files }) => {
-        const formData = new FormData();
-        files.forEach((file) => formData.append('files', file));
-        
-        return {
-          url: `/api/conversations/${conversationId}/upload-files`,
-          method: 'POST',
-          data: formData,
-        };
+    uploadFiles: builder.mutation<FileUploadSuccessResponse, UploadFilesParams>(
+      {
+        query: ({ conversationId, files }) => {
+          const formData = new FormData();
+          files.forEach((file) => formData.append("files", file));
+
+          return {
+            url: `/api/conversations/${conversationId}/upload-files`,
+            method: "POST",
+            data: formData,
+          };
+        },
+        invalidatesTags: (result, error, { conversationId }) => [
+          { type: "Files", id: `${conversationId}:root` },
+        ],
       },
-      invalidatesTags: (result, error, { conversationId }) => [
-        { type: 'Files', id: `${conversationId}:root` },
-      ],
-    }),
+    ),
     getWorkspaceZip: builder.query<Blob, string>({
       query: (conversationId) => ({
         url: `/api/conversations/${conversationId}/zip-directory`,
-        method: 'GET',
-        responseType: 'blob',
+        method: "GET",
+        responseType: "blob",
       }),
     }),
   }),

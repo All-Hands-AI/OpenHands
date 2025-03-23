@@ -1,4 +1,4 @@
-import { apiService } from '../api-service';
+import { apiService } from "../api-service";
 
 interface SearchRepositoriesParams {
   query: string;
@@ -9,8 +9,8 @@ export const githubApiSlice = apiService.injectEndpoints({
   endpoints: (builder) => ({
     getGitHubUser: builder.query<GitHubUser, void>({
       query: () => ({
-        url: '/api/github/user',
-        method: 'GET',
+        url: "/api/github/user",
+        method: "GET",
       }),
       transformResponse: (data: GitHubUser) => ({
         id: data.id,
@@ -20,25 +20,28 @@ export const githubApiSlice = apiService.injectEndpoints({
         name: data.name,
         email: data.email,
       }),
-      providesTags: ['User'],
+      providesTags: ["User"],
     }),
     getGitHubUserInstallationIds: builder.query<number[], void>({
       query: () => ({
-        url: '/api/github/installations',
-        method: 'GET',
+        url: "/api/github/installations",
+        method: "GET",
       }),
-      providesTags: ['Installations'],
+      providesTags: ["Installations"],
     }),
-    searchGitHubRepositories: builder.query<GitHubRepository[], SearchRepositoriesParams>({
+    searchGitHubRepositories: builder.query<
+      GitHubRepository[],
+      SearchRepositoriesParams
+    >({
       query: ({ query, per_page = 5 }) => ({
-        url: '/api/github/search/repositories',
-        method: 'GET',
+        url: "/api/github/search/repositories",
+        method: "GET",
         params: {
           query,
           per_page,
         },
       }),
-      providesTags: ['Repositories'],
+      providesTags: ["Repositories"],
     }),
   }),
 });

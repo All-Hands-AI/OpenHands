@@ -1,8 +1,8 @@
-import { useSelector } from 'react-redux';
-import { useListFilesQuery } from '../api/slices';
-import { useConversation } from '../context/conversation-context';
-import { RootState } from '../store';
-import { RUNTIME_INACTIVE_STATES } from '../types/agent-state';
+import { useSelector } from "react-redux";
+import { useListFilesQuery } from "../api/slices";
+import { useConversation } from "../context/conversation-context";
+import { RootState } from "../store";
+import { RUNTIME_INACTIVE_STATES } from "../types/agent-state";
 
 interface UseListFilesConfig {
   path?: string;
@@ -20,6 +20,6 @@ export const useListFiles = (config: UseListFilesConfig = DEFAULT_CONFIG) => {
 
   return useListFilesQuery(
     { conversationId, path: config?.path },
-    { skip: !(isActive && config?.enabled) }
+    { skip: !(isActive && config?.enabled) },
   );
 };

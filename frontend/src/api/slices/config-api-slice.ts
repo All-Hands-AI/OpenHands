@@ -1,35 +1,35 @@
-import { apiService } from '../api-service';
-import { GetConfigResponse } from '../open-hands.types';
+import { apiService } from "../api-service";
+import { GetConfigResponse } from "../open-hands.types";
 
 export const configApiSlice = apiService.injectEndpoints({
   endpoints: (builder) => ({
     getConfig: builder.query<GetConfigResponse, void>({
       query: () => ({
-        url: '/api/options/config',
-        method: 'GET',
+        url: "/api/options/config",
+        method: "GET",
       }),
-      providesTags: ['Config'],
+      providesTags: ["Config"],
     }),
     getModels: builder.query<string[], void>({
       query: () => ({
-        url: '/api/options/models',
-        method: 'GET',
+        url: "/api/options/models",
+        method: "GET",
       }),
-      providesTags: ['Config'],
+      providesTags: ["Config"],
     }),
     getAgents: builder.query<string[], void>({
       query: () => ({
-        url: '/api/options/agents',
-        method: 'GET',
+        url: "/api/options/agents",
+        method: "GET",
       }),
-      providesTags: ['Config'],
+      providesTags: ["Config"],
     }),
     getSecurityAnalyzers: builder.query<string[], void>({
       query: () => ({
-        url: '/api/options/security-analyzers',
-        method: 'GET',
+        url: "/api/options/security-analyzers",
+        method: "GET",
       }),
-      providesTags: ['Config'],
+      providesTags: ["Config"],
     }),
   }),
 });

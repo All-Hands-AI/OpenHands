@@ -1,5 +1,5 @@
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
-import { setupListeners } from '@reduxjs/toolkit/query';
+import { setupListeners } from "@reduxjs/toolkit/query";
 import agentReducer from "./state/agent-slice";
 import browserReducer from "./state/browser-slice";
 import chatReducer from "./state/chat-slice";

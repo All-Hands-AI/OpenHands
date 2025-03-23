@@ -1,4 +1,4 @@
-import { useGetSettingsQuery, useSaveSettingsMutation } from '../api/slices';
+import { useGetSettingsQuery, useSaveSettingsMutation } from "../api/slices";
 
 export const useSettings = () => {
   const { data, isLoading, error } = useGetSettingsQuery();

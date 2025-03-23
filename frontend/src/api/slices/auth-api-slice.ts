@@ -1,16 +1,16 @@
-import { apiService } from '../api-service';
-import { 
-  AuthenticateResponse, 
+import { apiService } from "../api-service";
+import {
+  AuthenticateResponse,
   GitHubAccessTokenResponse,
   Conversation,
   ResultSet,
   Feedback,
-  FeedbackResponse
-} from '../open-hands.types';
-import { GetConfigResponse } from '../open-hands.types';
+  FeedbackResponse,
+  GetConfigResponse,
+} from "../open-hands.types";
 
 interface AuthenticateParams {
-  appMode: GetConfigResponse['APP_MODE'];
+  appMode: GetConfigResponse["APP_MODE"];
 }
 
 interface SubmitFeedbackParams {
@@ -20,7 +20,7 @@ interface SubmitFeedbackParams {
 
 interface UpdateConversationParams {
   conversationId: string;
-  conversation: Partial<Omit<Conversation, 'conversation_id'>>;
+  conversation: Partial<Omit<Conversation, "conversation_id">>;
 }
 
 interface CreateConversationParams {
@@ -32,40 +32,45 @@ interface CreateConversationParams {
 export const authApiSlice = apiService.injectEndpoints({
   endpoints: (builder) => ({
     authenticate: builder.mutation<boolean, AuthenticateParams>({
-      query: ({ appMode }) => ({
-        url: '/api/authenticate',
-        method: 'POST',
+      query: () => ({
+        url: "/api/authenticate",
+        method: "POST",
       }),
-      transformResponse: (response: AuthenticateResponse, meta) => meta?.response?.status === 200,
+      transformResponse: (response: AuthenticateResponse, meta) =>
+        meta?.response?.status === 200,
     }),
     getGitHubAccessToken: builder.mutation<GitHubAccessTokenResponse, string>({
       query: (code) => ({
-        url: '/api/keycloak/callback',
-        method: 'POST',
+        url: "/api/keycloak/callback",
+        method: "POST",
         data: { code },
       }),
     }),
     getUserConversations: builder.query<Conversation[], void>({
       query: () => ({
-        url: '/api/conversations?limit=9',
-        method: 'GET',
+        url: "/api/conversations?limit=9",
+        method: "GET",
       }),
-      transformResponse: (response: ResultSet<Conversation>) => response.results,
-      providesTags: ['Conversations'],
+      transformResponse: (response: ResultSet<Conversation>) =>
+        response.results,
+      providesTags: ["Conversations"],
     }),
     getUserConversation: builder.query<Conversation | null, string>({
       query: (conversationId) => ({
         url: `/api/conversations/${conversationId}`,
-        method: 'GET',
+        method: "GET",
       }),
       providesTags: (result, error, conversationId) => [
-        { type: 'Conversation', id: conversationId },
+        { type: "Conversation", id: conversationId },
       ],
     }),
-    createConversation: builder.mutation<Conversation, CreateConversationParams>({
+    createConversation: builder.mutation<
+      Conversation,
+      CreateConversationParams
+    >({
       query: ({ selectedRepository, initialUserMsg, imageUrls }) => ({
-        url: '/api/conversations',
-        method: 'POST',
+        url: "/api/conversations",
+        method: "POST",
         data: {
           selected_repository: selectedRepository,
           selected_branch: undefined,
@@ -73,37 +78,37 @@ export const authApiSlice = apiService.injectEndpoints({
           image_urls: imageUrls,
         },
       }),
-      invalidatesTags: ['Conversations'],
+      invalidatesTags: ["Conversations"],
     }),
     updateConversation: builder.mutation<void, UpdateConversationParams>({
       query: ({ conversationId, conversation }) => ({
         url: `/api/conversations/${conversationId}`,
-        method: 'PATCH',
+        method: "PATCH",
         data: conversation,
       }),
       invalidatesTags: (result, error, { conversationId }) => [
-        { type: 'Conversation', id: conversationId },
-        'Conversations',
+        { type: "Conversation", id: conversationId },
+        "Conversations",
       ],
     }),
     deleteConversation: builder.mutation<void, string>({
       query: (conversationId) => ({
         url: `/api/conversations/${conversationId}`,
-        method: 'DELETE',
+        method: "DELETE",
       }),
-      invalidatesTags: ['Conversations'],
+      invalidatesTags: ["Conversations"],
     }),
     submitFeedback: builder.mutation<FeedbackResponse, SubmitFeedbackParams>({
       query: ({ conversationId, feedback }) => ({
         url: `/api/conversations/${conversationId}/submit-feedback`,
-        method: 'POST',
+        method: "POST",
         data: feedback,
       }),
     }),
     logout: builder.mutation<void, void>({
       query: () => ({
-        url: '/api/logout',
-        method: 'POST',
+        url: "/api/logout",
+        method: "POST",
       }),
     }),
   }),

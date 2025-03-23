@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useGetConfigQuery, useAuthenticateMutation } from '../api/slices';
+import { useEffect, useState } from "react";
+import { useGetConfigQuery, useAuthenticateMutation } from "../api/slices";
 
 export const useIsAuthed = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);

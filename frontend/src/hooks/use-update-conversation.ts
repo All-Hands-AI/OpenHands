@@ -1,5 +1,3 @@
-import { useUpdateConversationMutation } from '../api/slices';
+import { useUpdateConversationMutation } from "../api/slices";
 
-export const useUpdateConversation = () => {
-  return useUpdateConversationMutation();
-};
+export const useUpdateConversation = () => useUpdateConversationMutation();

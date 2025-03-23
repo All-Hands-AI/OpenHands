@@ -1,5 +1,3 @@
-import { useGetConfigQuery } from '../api/slices';
+import { useGetConfigQuery } from "../api/slices";
 
-export const useConfig = () => {
-  return useGetConfigQuery();
-};
+export const useConfig = () => useGetConfigQuery();
