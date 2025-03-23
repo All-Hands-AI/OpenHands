@@ -17,6 +17,10 @@ CMD_OUTPUT_METADATA_PS1_REGEX = re.compile(
     re.DOTALL | re.MULTILINE,
 )
 
+# Default max size for command output content
+# to prevent too large observations from being saved in the stream
+MAX_CMD_OUTPUT_SIZE: int = 50000
+
 
 class CmdOutputMetadata(BaseModel):
     """Additional metadata captured from PS1"""
@@ -100,11 +104,6 @@ class CmdOutputObservation(Observation):
     # Whether the command output should be hidden from the user
     hidden: bool = False
 
-    # Default max size for command output content
-    # This is set to 50000 characters to allow for reasonably large command outputs
-    # while still preventing extremely large outputs from consuming too much memory
-    MAX_CMD_OUTPUT_SIZE: int = 50000
-
     def __init__(
         self,
         content: str,
@@ -115,9 +114,8 @@ class CmdOutputObservation(Observation):
         **kwargs,
     ):
         # Truncate content before passing it to parent
-        truncated_content = self._truncate_if_needed(content)
+        truncated_content = self._maybe_truncate(content)
 
-        # Initialize the parent with the truncated content
         super().__init__(truncated_content)
 
         self.command = command
@@ -135,7 +133,7 @@ class CmdOutputObservation(Observation):
             self.metadata.pid = kwargs['command_id']
 
     @staticmethod
-    def _truncate_if_needed(content: str, max_size: int = MAX_CMD_OUTPUT_SIZE) -> str:
+    def _maybe_truncate(content: str, max_size: int = MAX_CMD_OUTPUT_SIZE) -> str:
         """Truncate the content if it's too large.
 
         This helps avoid storing unnecessarily large content in the event stream.
@@ -156,10 +154,10 @@ class CmdOutputObservation(Observation):
         original_length = len(content)
         truncated = (
             content[:half]
-            + f'\n[... Command output truncated: removed {original_length - max_size} characters from the middle ...]\n'
+            + '\n[... Observation truncated due to length ...]\n'
             + content[-half:]
         )
-        logger.info(
+        logger.debug(
             f'Truncated large command output: {original_length} -> {len(truncated)} chars'
         )
         return truncated
