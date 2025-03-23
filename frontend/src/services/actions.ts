@@ -5,7 +5,6 @@ import { updateStatus } from "#/services/context-services/status-service";
 import {
   addUserMessage,
   addAssistantMessage,
-  addAssistantAction,
   addErrorMessage,
 } from "#/services/context-services/chat-service";
 
@@ -13,7 +12,7 @@ export function handleActionMessage(message: ActionMessage) {
   // Handle different action types
   switch (message.type) {
     case ActionType.AGENT_STATE_CHANGED: {
-      updateAgentState(message.args.agent_state);
+      updateAgentState(message.args.agent_state as any);
       break;
     }
     case ActionType.TASK_COMPLETION: {
@@ -42,16 +41,16 @@ export function handleActionMessage(message: ActionMessage) {
     case ActionType.MESSAGE: {
       if (message.source === "user") {
         addUserMessage({
-          content: message.args.content,
+          content: message.args.content as string,
           imageUrls:
             typeof message.args.image_urls === "string"
-              ? [message.args.image_urls]
-              : message.args.image_urls,
+              ? [message.args.image_urls as string]
+              : (message.args.image_urls as string[]),
           timestamp: message.timestamp,
           pending: false,
         });
       } else if (message.source === "agent") {
-        addAssistantMessage(message.args.content);
+        addAssistantMessage(message.args.content as string);
       }
       break;
     }
