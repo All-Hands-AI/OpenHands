@@ -14,6 +14,11 @@ const sidebars: SidebarsConfig = {
       id: 'usage/getting-started',
     },
     {
+      type: 'doc',
+      label: 'Key Features',
+      id: 'usage/key-features',
+    },
+    {
       type: 'category',
       label: 'Prompting',
       items: [
@@ -42,6 +47,17 @@ const sidebars: SidebarsConfig = {
               id: 'usage/prompting/microagents-public',
             },
           ],
+        },
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Customization',
+      items: [
+        {
+          type: 'doc',
+          label: 'Repository Customization',
+          id: 'usage/customization/repository',
         },
       ],
     },
@@ -140,9 +156,40 @@ const sidebars: SidebarsConfig = {
           ],
         },
         {
-          type: 'doc',
+          type: 'category',
           label: 'Runtime Configuration',
-          id: 'usage/runtimes',
+          items: [
+            {
+              type: 'doc',
+              label: 'Overview',
+              id: 'usage/runtimes-index',
+            },
+            {
+              type: 'doc',
+              label: 'Docker Runtime',
+              id: 'usage/runtimes/docker',
+            },
+            {
+              type: 'doc',
+              label: 'Remote Runtime',
+              id: 'usage/runtimes/remote',
+            },
+            {
+              type: 'doc',
+              label: 'Modal Runtime',
+              id: 'usage/runtimes/modal',
+            },
+            {
+              type: 'doc',
+              label: 'Daytona Runtime',
+              id: 'usage/runtimes/daytona',
+            },
+            {
+              type: 'doc',
+              label: 'Local Runtime',
+              id: 'usage/runtimes/local',
+            },
+          ],
         },
         {
           type: 'doc',

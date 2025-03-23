@@ -57,7 +57,6 @@ def serialization_deserialization(
             and 'MAX_CMD_OUTPUT_SIZE' in serialized_observation_memory['extras']
         ):
             del serialized_observation_memory['extras']['MAX_CMD_OUTPUT_SIZE']
-
     assert (
         serialized_observation_dict == original_observation_dict
     ), 'The serialized observation should match the original observation dict.'
