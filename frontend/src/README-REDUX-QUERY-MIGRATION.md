@@ -15,7 +15,8 @@ The migration strategy allows for a slice-by-slice transition from Redux to Reac
    - `hooks/query/use-websocket-events.ts`: A hook that processes websocket events for React Query
 
 3. **React Query Hooks**:
-   - `hooks/query/use-chat-messages.ts`: An example hook that replaces the chat slice functionality
+   - `hooks/query/use-chat-messages.ts`: A hook that replaces the chat slice functionality
+   - `hooks/query/use-status-message.ts`: A hook that replaces the status slice functionality
 
 4. **Bridge-aware Action Handlers**:
    - `services/actions-with-bridge.ts`: Modified action handlers that respect migration flags
@@ -67,9 +68,10 @@ The migration strategy allows for a slice-by-slice transition from Redux to Reac
    }
    ```
 
-## Example Implementation
+## Example Implementations
 
-See `examples/MigrationExample.tsx` for a complete example of how to use the migration scaffolding.
+- `examples/MigrationExample.tsx`: A complete example of how to use the migration scaffolding with the chat slice
+- `examples/StatusSliceMigrationExample.tsx`: An example showing how to migrate the status slice
 
 ## Notes on Implementation
 
