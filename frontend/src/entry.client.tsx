@@ -11,14 +11,12 @@ import { hydrateRoot } from "react-dom/client";
 import { Provider } from "react-redux";
 import posthog from "posthog-js";
 import "./i18n";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import store from "./store";
-import { useConfig } from "./hooks/query/use-config";
+import { useGetConfigQuery } from "./api/slices";
 import { AuthProvider } from "./context/auth-context";
-import { queryClientConfig } from "./query-client-config";
 
 function PosthogInit() {
-  const { data: config } = useConfig();
+  const { data: config } = useGetConfigQuery();
 
   React.useEffect(() => {
     if (config?.POSTHOG_CLIENT_KEY) {
@@ -45,8 +43,6 @@ async function prepareApp() {
   }
 }
 
-export const queryClient = new QueryClient(queryClientConfig);
-
 prepareApp().then(() =>
   startTransition(() => {
     hydrateRoot(
@@ -54,10 +50,8 @@ prepareApp().then(() =>
       <StrictMode>
         <Provider store={store}>
           <AuthProvider>
-            <QueryClientProvider client={queryClient}>
-              <HydratedRouter />
-              <PosthogInit />
-            </QueryClientProvider>
+            <HydratedRouter />
+            <PosthogInit />
           </AuthProvider>
         </Provider>
       </StrictMode>,
