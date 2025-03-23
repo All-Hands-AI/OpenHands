@@ -12,6 +12,7 @@ import { ConversationCardContextMenu } from "./conversation-card-context-menu";
 import { cn } from "#/utils/utils";
 import { BaseModal } from "../../shared/modals/base-modal/base-modal";
 import { RootState } from "#/store";
+import { useVSCodeUrl } from "#/hooks/use-vscode-url";
 
 interface ConversationCardProps {
   onClick?: () => void;
@@ -88,6 +89,8 @@ export function ConversationCard({
     setContextMenuVisible(false);
   };
 
+  const { getVSCodeUrl } = useVSCodeUrl();
+
   const handleDownloadViaVSCode = async (
     event: React.MouseEvent<HTMLButtonElement>,
   ) => {
@@ -98,10 +101,7 @@ export function ConversationCard({
     // Fetch the VS Code URL from the API
     if (conversationId) {
       try {
-        const response = await fetch(
-          `/api/conversations/${conversationId}/vscode-url`,
-        );
-        const data = await response.json();
+        const data = await getVSCodeUrl(conversationId).unwrap();
 
         if (data.vscode_url) {
           window.open(data.vscode_url, "_blank");

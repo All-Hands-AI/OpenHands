@@ -14,6 +14,7 @@ import { renderWithProviders } from "test-utils";
 import { formatTimeDelta } from "#/utils/format-time-delta";
 import { ConversationCard } from "#/components/features/conversation-panel/conversation-card";
 import { clickOnEditButton } from "./utils";
+import * as vscodeHook from "#/hooks/use-vscode-url";
 
 describe("ConversationCard", () => {
   const onClick = vi.fn();
@@ -25,6 +26,13 @@ describe("ConversationCard", () => {
       open: vi.fn(),
       addEventListener: vi.fn(),
       removeEventListener: vi.fn(),
+    });
+    
+    // Mock the VSCode URL hook
+    vi.spyOn(vscodeHook, 'useVSCodeUrl').mockReturnValue({
+      getVSCodeUrl: vi.fn().mockReturnValue({
+        unwrap: () => Promise.resolve({ vscode_url: 'vscode://test-url' })
+      })
     });
   });
 
@@ -420,6 +428,39 @@ describe("ConversationCard", () => {
     );
 
     expect(screen.queryByTestId("ellipsis-button")).not.toBeInTheDocument();
+  });
+  
+  it("should open VSCode URL when clicking the download via VSCode button", async () => {
+    const user = userEvent.setup();
+    const getVSCodeUrlMock = vi.fn().mockReturnValue({
+      unwrap: () => Promise.resolve({ vscode_url: 'vscode://test-url' })
+    });
+    
+    vi.spyOn(vscodeHook, 'useVSCodeUrl').mockReturnValue({
+      getVSCodeUrl: getVSCodeUrlMock
+    });
+    
+    renderWithProviders(
+      <ConversationCard
+        onDelete={onDelete}
+        onChangeTitle={onChangeTitle}
+        title="Conversation 1"
+        selectedRepository={null}
+        lastUpdatedAt="2021-10-01T12:00:00Z"
+        conversationId="test-conversation-id"
+      />,
+    );
+    
+    const ellipsisButton = screen.getByTestId("ellipsis-button");
+    await user.click(ellipsisButton);
+    
+    const menu = screen.getByTestId("context-menu");
+    const vscodeButton = within(menu).getByTestId("download-vscode-button");
+    
+    await user.click(vscodeButton);
+    
+    expect(getVSCodeUrlMock).toHaveBeenCalledWith("test-conversation-id");
+    expect(window.open).toHaveBeenCalledWith("vscode://test-url", "_blank");
   });
 
   describe("state indicator", () => {
