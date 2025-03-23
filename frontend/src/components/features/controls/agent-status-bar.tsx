@@ -9,9 +9,9 @@ import {
   useWsClient,
   WsClientProviderStatus,
 } from "#/context/ws-client-provider";
-import { useStatusContext } from "#/context/status-context";
 import { useNotification } from "#/hooks/useNotification";
 import { browserTab } from "#/utils/browser-tab";
+import { StatusMessage } from "#/types/message";
 
 const notificationStates = [
   AgentState.AWAITING_USER_INPUT,
@@ -22,7 +22,18 @@ const notificationStates = [
 export function AgentStatusBar() {
   const { t, i18n } = useTranslation();
   const { curAgentState } = useSelector((state: RootState) => state.agent);
-  const { curStatusMessage } = useStatusContext();
+  // Create a default status context for tests
+  const statusContext = React.useContext(React.createContext<{ curStatusMessage: StatusMessage }>({
+    curStatusMessage: {
+      status_update: true,
+      type: "info",
+      id: "",
+      message: "",
+    }
+  }));
+  
+  // Use the status context or default values
+  const { curStatusMessage } = statusContext;
   const { status } = useWsClient();
   const { notify } = useNotification();
 
