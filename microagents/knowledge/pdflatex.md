@@ -1,5 +1,5 @@
 ---
-name: kubernetes
+name: latex
 type: knowledge
 version: 1.0.0
 agent: CodeActAgent
