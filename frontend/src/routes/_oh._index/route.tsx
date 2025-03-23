@@ -1,18 +1,13 @@
 import React from "react";
-import { useDispatch } from "react-redux";
-import posthog from "posthog-js";
-import { setImportedProjectZip } from "#/state/initial-query-slice";
-import { convertZipToBase64 } from "#/utils/convert-zip-to-base64";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useConfig } from "#/hooks/query/use-config";
-import { ImportProjectSuggestionBox } from "../../components/features/suggestions/import-project-suggestion-box";
 import { GitHubRepositoriesSuggestionBox } from "#/components/features/github/github-repositories-suggestion-box";
+import { CodeNotInGitHubLink } from "#/components/features/github/code-not-in-github-link";
 import { HeroHeading } from "#/components/shared/hero-heading";
 import { TaskForm } from "#/components/shared/task-form";
 
 function Home() {
-  const dispatch = useDispatch();
   const formRef = React.useRef<HTMLFormElement>(null);
 
   const { data: config } = useConfig();
@@ -40,18 +35,9 @@ function Home() {
             gitHubAuthUrl={gitHubAuthUrl}
             user={user || null}
           />
-          <ImportProjectSuggestionBox
-            onChange={async (event) => {
-              if (event.target.files) {
-                const zip = event.target.files[0];
-                dispatch(setImportedProjectZip(await convertZipToBase64(zip)));
-                posthog.capture("zip_file_uploaded");
-                formRef.current?.requestSubmit();
-              } else {
-                // TODO: handle error
-              }
-            }}
-          />
+        </div>
+        <div className="mt-4">
+          <CodeNotInGitHubLink />
         </div>
       </div>
     </div>
