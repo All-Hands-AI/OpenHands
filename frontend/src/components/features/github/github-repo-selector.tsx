@@ -5,12 +5,11 @@ import {
   AutocompleteItem,
   AutocompleteSection,
 } from "@heroui/react";
-import { useDispatch } from "react-redux";
 import posthog from "posthog-js";
 import { I18nKey } from "#/i18n/declaration";
-import { setSelectedRepository } from "#/state/initial-query-slice";
 import { useConfig } from "#/hooks/query/use-config";
 import { sanitizeQuery } from "#/utils/sanitize-query";
+import { useInitialQuery } from "#/hooks/query/use-initial-query";
 
 interface GitHubRepositorySelectorProps {
   onInputChange: (value: string) => void;
@@ -36,12 +35,12 @@ export function GitHubRepositorySelector({
     ...userRepositories,
   ];
 
-  const dispatch = useDispatch();
+  const { setSelectedRepository } = useInitialQuery();
 
   const handleRepoSelection = (id: string | null) => {
     const repo = allRepositories.find((r) => r.id.toString() === id);
     if (repo) {
-      dispatch(setSelectedRepository(repo.full_name));
+      setSelectedRepository(repo.full_name);
       posthog.capture("repository_selected");
       onSelect();
       setSelectedKey(id);
@@ -49,7 +48,7 @@ export function GitHubRepositorySelector({
   };
 
   const handleClearSelection = () => {
-    dispatch(setSelectedRepository(null));
+    setSelectedRepository(null);
   };
 
   const emptyContent = t(I18nKey.GITHUB$NO_RESULTS);

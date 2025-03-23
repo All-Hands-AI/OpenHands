@@ -17,6 +17,7 @@ import { useWsClient } from "#/context/ws-client-provider";
 import { Messages } from "./messages";
 import { ChatSuggestions } from "./chat-suggestions";
 import { ActionSuggestions } from "./action-suggestions";
+import { useInitialQuery } from "#/hooks/query/use-initial-query";
 
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
@@ -44,9 +45,7 @@ export function ChatInterface() {
   >("positive");
   const [feedbackModalIsOpen, setFeedbackModalIsOpen] = React.useState(false);
   const [messageToSend, setMessageToSend] = React.useState<string | null>(null);
-  const { selectedRepository } = useSelector(
-    (state: RootState) => state.initialQuery,
-  );
+  const { selectedRepository } = useInitialQuery();
   const params = useParams();
   const { mutate: getTrajectory } = useGetTrajectory();
 

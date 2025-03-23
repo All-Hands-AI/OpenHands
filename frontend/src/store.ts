@@ -4,15 +4,13 @@ import browserReducer from "./state/browser-slice";
 import chatReducer from "./state/chat-slice";
 import codeReducer from "./state/code-slice";
 import fileStateReducer from "./state/file-state-slice";
-import initialQueryReducer from "./state/initial-query-slice";
 import commandReducer from "./state/command-slice";
 import { jupyterReducer } from "./state/jupyter-slice";
 import securityAnalyzerReducer from "./state/security-analyzer-slice";
-// Status and metrics slices are now handled by React Query
+// Status, metrics, and initialQuery slices are now handled by React Query
 
 export const rootReducer = combineReducers({
   fileState: fileStateReducer,
-  initialQuery: initialQueryReducer,
   browser: browserReducer,
   chat: chatReducer,
   code: codeReducer,
@@ -20,7 +18,7 @@ export const rootReducer = combineReducers({
   agent: agentReducer,
   jupyter: jupyterReducer,
   securityAnalyzer: securityAnalyzerReducer,
-  // status and metrics slices removed (migrated to React Query)
+  // status, metrics, and initialQuery slices removed (migrated to React Query)
 });
 
 const store = configureStore({

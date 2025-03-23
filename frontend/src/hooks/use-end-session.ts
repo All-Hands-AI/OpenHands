@@ -5,17 +5,18 @@ import {
   setScreenshotSrc,
   setUrl,
 } from "#/state/browser-slice";
-import { clearSelectedRepository } from "#/state/initial-query-slice";
+import { useInitialQuery } from "#/hooks/query/use-initial-query";
 
 export const useEndSession = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { clearSelectedRepository } = useInitialQuery();
 
   /**
    * End the current session by clearing the token and redirecting to the home page.
    */
   const endSession = () => {
-    dispatch(clearSelectedRepository());
+    clearSelectedRepository();
 
     // Reset browser state to initial values
     dispatch(setUrl(browserInitialState.url));
