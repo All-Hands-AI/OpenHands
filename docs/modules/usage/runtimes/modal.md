@@ -1,6 +1,6 @@
 # Modal Runtime
 
-Our partners at [Modal](https://modal.com/) have also provided a runtime for OpenHands.
+Our partners at [Modal](https://modal.com/) have provided a runtime for OpenHands.
 
 To use the Modal Runtime, create an account, and then [create an API key.](https://modal.com/settings)
 
