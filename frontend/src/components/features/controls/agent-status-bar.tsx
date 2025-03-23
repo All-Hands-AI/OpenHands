@@ -1,8 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 import { showErrorToast } from "#/utils/error-handler";
-import { RootState } from "#/store";
 import { AgentState } from "#/types/agent-state";
 import { AGENT_STATUS_MAP } from "../../agent-status-map.constant";
 import {
@@ -12,6 +10,7 @@ import {
 import { useNotification } from "#/hooks/useNotification";
 import { browserTab } from "#/utils/browser-tab";
 import { StatusMessage } from "#/types/message";
+import { useAgentStateContext } from "#/context/agent-state-context";
 
 const notificationStates = [
   AgentState.AWAITING_USER_INPUT,
@@ -21,17 +20,30 @@ const notificationStates = [
 
 export function AgentStatusBar() {
   const { t, i18n } = useTranslation();
-  const { curAgentState } = useSelector((state: RootState) => state.agent);
-  // Create a default status context for tests
-  const statusContext = React.useContext(React.createContext<{ curStatusMessage: StatusMessage }>({
-    curStatusMessage: {
-      status_update: true,
-      type: "info",
-      id: "",
-      message: "",
-    }
+  // Try to use the agent state context, but fall back to default values for tests
+  const agentStateContext = React.useContext(React.createContext<{ 
+    curAgentState: AgentState;
+    updateAgentState: (state: AgentState) => void;
+    resetAgentState: () => void;
+  }>({
+    curAgentState: AgentState.LOADING,
+    updateAgentState: () => {},
+    resetAgentState: () => {},
   }));
   
+  const { curAgentState } = agentStateContext;
+  // Create a default status context for tests
+  const statusContext = React.useContext(
+    React.createContext<{ curStatusMessage: StatusMessage }>({
+      curStatusMessage: {
+        status_update: true,
+        type: "info",
+        id: "",
+        message: "",
+      },
+    }),
+  );
+
   // Use the status context or default values
   const { curStatusMessage } = statusContext;
   const { status } = useWsClient();

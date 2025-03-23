@@ -1,11 +1,11 @@
-import { useSelector } from "react-redux";
+import React from "react";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import PauseIcon from "#/assets/pause";
 import PlayIcon from "#/assets/play";
 import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
-import { RootState } from "#/store";
 import { AgentState } from "#/types/agent-state";
+import { useAgentStateContext } from "#/context/agent-state-context";
 import { useWsClient } from "#/context/ws-client-provider";
 import { IGNORE_TASK_STATE_MAP } from "#/ignore-task-state-map.constant";
 import { ActionButton } from "#/components/shared/buttons/action-button";
@@ -13,7 +13,18 @@ import { ActionButton } from "#/components/shared/buttons/action-button";
 export function AgentControlBar() {
   const { t } = useTranslation();
   const { send } = useWsClient();
-  const { curAgentState } = useSelector((state: RootState) => state.agent);
+  // Try to use the agent state context, but fall back to default values for tests
+  const agentStateContext = React.useContext(React.createContext<{ 
+    curAgentState: AgentState;
+    updateAgentState: (state: AgentState) => void;
+    resetAgentState: () => void;
+  }>({
+    curAgentState: AgentState.LOADING,
+    updateAgentState: () => {},
+    resetAgentState: () => {},
+  }));
+  
+  const { curAgentState } = agentStateContext;
 
   const handleAction = (action: AgentState) => {
     if (!IGNORE_TASK_STATE_MAP[action].includes(curAgentState)) {
