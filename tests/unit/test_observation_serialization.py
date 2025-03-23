@@ -123,6 +123,51 @@ def test_success_field_serialization():
     assert serialized['success'] is False
 
 
+def test_cmd_output_truncation():
+    """Test that large command outputs are truncated during initialization."""
+    # Create a large content string that exceeds MAX_CMD_OUTPUT_SIZE
+    large_content = "a" * 60000  # 60k characters
+    
+    # Create a CmdOutputObservation with the large content
+    obs = CmdOutputObservation(
+        content=large_content,
+        command='ls -R',
+        metadata=CmdOutputMetadata(
+            exit_code=0,
+        ),
+    )
+    
+    # Verify the content was truncated
+    assert len(obs.content) < 60000
+    assert len(obs.content) <= CmdOutputObservation.MAX_CMD_OUTPUT_SIZE
+    
+    # Verify the truncation message is included
+    assert "[... Command output truncated:" in obs.content
+    
+    # Verify the beginning and end of the content are preserved
+    assert obs.content.startswith("a" * (CmdOutputObservation.MAX_CMD_OUTPUT_SIZE // 2))
+    assert obs.content.endswith("a" * (CmdOutputObservation.MAX_CMD_OUTPUT_SIZE // 2))
+
+
+def test_cmd_output_no_truncation():
+    """Test that small command outputs are not truncated."""
+    # Create a content string that doesn't exceed MAX_CMD_OUTPUT_SIZE
+    small_content = "a" * 1000  # 1k characters
+    
+    # Create a CmdOutputObservation with the small content
+    obs = CmdOutputObservation(
+        content=small_content,
+        command='ls',
+        metadata=CmdOutputMetadata(
+            exit_code=0,
+        ),
+    )
+    
+    # Verify the content was not truncated
+    assert len(obs.content) == 1000
+    assert obs.content == small_content
+
+
 def test_legacy_serialization():
     original_observation_dict = {
         'id': 42,
