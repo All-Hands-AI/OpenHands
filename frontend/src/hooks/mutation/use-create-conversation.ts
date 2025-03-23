@@ -1,30 +1,21 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
 import posthog from "posthog-js";
-import { useDispatch, useSelector } from "react-redux";
 import OpenHands from "#/api/open-hands";
-import { setInitialPrompt } from "#/state/initial-query-slice";
-import { RootState } from "#/store";
+import { useFileStateContext } from "#/context/file-state-context";
 
 export const useCreateConversation = () => {
   const navigate = useNavigate();
-  const dispatch = useDispatch();
   const queryClient = useQueryClient();
-
-  const { selectedRepository, files } = useSelector(
-    (state: RootState) => state.initialQuery,
-  );
+  const { selectedRepository, files } = useFileStateContext();
 
   return useMutation({
-    mutationFn: async (variables: { q?: string }) => {
-      if (variables.q) dispatch(setInitialPrompt(variables.q));
-
-      return OpenHands.createConversation(
+    mutationFn: async (variables: { q?: string }) =>
+      OpenHands.createConversation(
         selectedRepository || undefined,
         variables.q,
         files,
-      );
-    },
+      ),
     onSuccess: async ({ conversation_id: conversationId }, { q }) => {
       posthog.capture("initial_query_submitted", {
         entry_point: "task_form",

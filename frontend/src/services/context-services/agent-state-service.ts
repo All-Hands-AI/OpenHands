@@ -1,6 +1,4 @@
 import { AgentState } from "#/types/agent-state";
-import { setCurrentAgentState } from "#/state/agent-slice";
-import store from "#/store";
 
 // Global reference to the agent state update function
 // This will be set by the AgentStateProvider when it mounts
@@ -26,6 +24,5 @@ export function updateAgentState(state: AgentState) {
     updateAgentStateFn(state);
   }
 
-  // For backward compatibility with tests, also dispatch to Redux
-  store.dispatch(setCurrentAgentState(state));
+  // Redux store has been removed in the React Query migration
 }

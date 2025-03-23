@@ -5,7 +5,8 @@ import {
 import { ObservationMessage } from "#/types/message";
 import { AgentState } from "#/types/agent-state";
 import { appendOutput } from "#/services/context-services/terminal-service";
-import { appendJupyterOutput } from "#/state/jupyter-slice";
+// Import from context service instead of Redux slice
+import { appendJupyterOutput } from "#/services/context-services/jupyter-service";
 import { updateAgentState } from "#/services/context-services/agent-state-service";
 import ObservationType from "#/types/observation-type";
 // Import will be restored when observation handling is implemented

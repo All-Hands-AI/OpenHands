@@ -1,4 +1,8 @@
-import { Command } from "#/state/command-slice";
+// Define Command type locally since it was removed from Redux state
+export type Command = {
+  content: string;
+  type: "input" | "output";
+};
 
 // Function types
 type AppendInputFn = (content: string) => void;

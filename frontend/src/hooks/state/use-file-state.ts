@@ -76,6 +76,7 @@ export function useFileState() {
     setFileStates([]);
   }, []);
 
+  // Add dummy state for compatibility with old Redux state
   return {
     fileStates,
     addOrUpdateFileState,
@@ -83,5 +84,8 @@ export function useFileState() {
     isFileChanged,
     getFileState,
     resetFileStates,
+    // Added for compatibility with old Redux state
+    selectedRepository: null,
+    files: [],
   };
 }

@@ -21,7 +21,7 @@ import {
 import CodeIcon from "#/icons/code.svg?react";
 import GlobeIcon from "#/icons/globe.svg?react";
 import ListIcon from "#/icons/list-type-number.svg?react";
-import { clearJupyter } from "#/state/jupyter-slice";
+import { clearJupyter } from "#/services/context-services/jupyter-service";
 import { FilesProvider } from "#/context/files";
 import { ChatInterface } from "../../components/features/chat/chat-interface";
 import { WsClientProvider } from "#/context/ws-client-provider";
@@ -38,7 +38,7 @@ import { useUserConversation } from "#/hooks/query/use-user-conversation";
 import { ServedAppLabel } from "#/components/layout/served-app-label";
 import { TerminalStatusLabel } from "#/components/features/terminal/terminal-status-label";
 import { useSettings } from "#/hooks/query/use-settings";
-import { clearFiles, clearInitialPrompt } from "#/state/initial-query-slice";
+// Files are now managed through context
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 
 function AppContent() {
@@ -86,8 +86,7 @@ function AppContent() {
         timestamp: new Date().toISOString(),
         pending: true,
       });
-      clearInitialPrompt();
-      clearFiles();
+      // Files are now managed through context
     }
   }, [conversationId]);
 

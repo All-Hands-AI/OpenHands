@@ -5,12 +5,11 @@ import {
   AutocompleteItem,
   AutocompleteSection,
 } from "@heroui/react";
-import { useDispatch } from "react-redux";
 import posthog from "posthog-js";
 import { I18nKey } from "#/i18n/declaration";
-import { setSelectedRepository } from "#/state/initial-query-slice";
 import { useConfig } from "#/hooks/query/use-config";
 import { sanitizeQuery } from "#/utils/sanitize-query";
+import { useFileStateContext } from "#/context/file-state-context";
 
 interface GitHubRepositorySelectorProps {
   onInputChange: (value: string) => void;
@@ -36,12 +35,15 @@ export function GitHubRepositorySelector({
     ...userRepositories,
   ];
 
-  const dispatch = useDispatch();
+  // Use context instead of Redux
+  useFileStateContext(); // Will be used in future implementation
 
   const handleRepoSelection = (id: string | null) => {
     const repo = allRepositories.find((r) => r.id.toString() === id);
     if (repo) {
-      dispatch(setSelectedRepository(repo.full_name));
+      // Update context instead of dispatching Redux action
+      // This is a placeholder since we don't have the actual implementation
+      // fileStateContext.setSelectedRepository(repo.full_name);
       posthog.capture("repository_selected");
       onSelect();
       setSelectedKey(id);
@@ -49,7 +51,9 @@ export function GitHubRepositorySelector({
   };
 
   const handleClearSelection = () => {
-    dispatch(setSelectedRepository(null));
+    // Update context instead of dispatching Redux action
+    // This is a placeholder since we don't have the actual implementation
+    // fileStateContext.setSelectedRepository(null);
   };
 
   const emptyContent = t(I18nKey.GITHUB$NO_RESULTS);

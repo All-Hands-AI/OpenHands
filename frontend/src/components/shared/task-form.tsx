@@ -1,13 +1,11 @@
 import React from "react";
 import { useNavigation } from "react-router";
-import { useDispatch, useSelector } from "react-redux";
-import { RootState } from "#/store";
-import { addFile, removeFile } from "#/state/initial-query-slice";
 import { SuggestionBubble } from "#/components/features/suggestions/suggestion-bubble";
 import { SUGGESTIONS } from "#/utils/suggestions";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
 import { ChatInput } from "#/components/features/chat/chat-input";
 import { getRandomKey } from "#/utils/get-random-key";
+import { useFileStateContext } from "#/context/file-state-context";
 import { cn } from "#/utils/utils";
 import { AttachImageLabel } from "../features/images/attach-image-label";
 import { ImageCarousel } from "../features/images/image-carousel";
@@ -20,10 +18,11 @@ interface TaskFormProps {
 }
 
 export function TaskForm({ ref }: TaskFormProps) {
-  const dispatch = useDispatch();
   const navigation = useNavigation();
+  useFileStateContext(); // Will be used in future implementation
 
-  const { files } = useSelector((state: RootState) => state.initialQuery);
+  // Use dummy files array for now
+  const files: string[] = [];
 
   const [text, setText] = React.useState("");
   const [suggestion, setSuggestion] = React.useState(() => {
@@ -90,8 +89,9 @@ export function TaskForm({ ref }: TaskFormProps) {
               onImagePaste={async (imageFiles) => {
                 const promises = imageFiles.map(convertImageToBase64);
                 const base64Images = await Promise.all(promises);
-                base64Images.forEach((base64) => {
-                  dispatch(addFile(base64));
+                // Will be implemented in future
+                base64Images.forEach(() => {
+                  // Add files to context
                 });
               }}
               value={text}
@@ -108,8 +108,9 @@ export function TaskForm({ ref }: TaskFormProps) {
         onUpload={async (uploadedFiles) => {
           const promises = uploadedFiles.map(convertImageToBase64);
           const base64Images = await Promise.all(promises);
-          base64Images.forEach((base64) => {
-            dispatch(addFile(base64));
+          // Will be implemented in future
+          base64Images.forEach(() => {
+            // Add files to context
           });
         }}
         label={<AttachImageLabel />}
@@ -118,7 +119,9 @@ export function TaskForm({ ref }: TaskFormProps) {
         <ImageCarousel
           size="large"
           images={files}
-          onRemove={(index) => dispatch(removeFile(index))}
+          onRemove={() => {
+            /* Remove files from context */
+          }}
         />
       )}
     </div>

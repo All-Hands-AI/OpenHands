@@ -1,13 +1,16 @@
 import React, { createContext, useContext, ReactNode } from "react";
 import { useFileState, FileState } from "#/hooks/state/use-file-state";
 
-interface FileStateContextType {
+export interface FileStateContextType {
   fileStates: FileState[];
   addOrUpdateFileState: (fileState: Omit<FileState, "changed">) => void;
   removeFileState: (path: string) => void;
   isFileChanged: (path: string) => boolean;
   getFileState: (path: string) => FileState | undefined;
   resetFileStates: () => void;
+  // Added for compatibility with old Redux state
+  selectedRepository: string | null;
+  files: string[];
 }
 
 const FileStateContext = createContext<FileStateContextType | undefined>(

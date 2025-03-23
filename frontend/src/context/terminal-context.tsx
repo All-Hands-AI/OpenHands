@@ -5,7 +5,7 @@ import React, {
   useCallback,
   useMemo,
 } from "react";
-import { Command } from "#/state/command-slice";
+import { Command } from "#/services/context-services/terminal-service";
 
 // Context type definition
 type TerminalContextType = {
