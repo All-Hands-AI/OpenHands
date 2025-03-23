@@ -89,7 +89,7 @@ class CodeActAgent(Agent):
 
         # Create a ConversationMemory instance
         self.conversation_memory = ConversationMemory(self.prompt_manager)
-
+        self.planning_interval = config.planning_interval
         self.condenser = Condenser.from_config(self.config.condenser)
         logger.debug(f'Using condenser: {type(self.condenser)}')
 

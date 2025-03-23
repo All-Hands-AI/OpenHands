@@ -61,6 +61,15 @@ TRAFFIC_CONTROL_REMINDER = (
     "Please click on resume button if you'd like to continue, or start a new task."
 )
 
+PLANNING_PROMPT = """Please create a step-by-step plan to solve the given task by analyzing the progress you have made so far and what additional steps you need to complete. In particular, you should do the following in your next action:
+1. Review the original task instructions carefully.
+2. Analyse the conversation history to identify the completed steps, the partially completed steps and the pending steps.
+3. Note down the important information relevant to the task that you have gathered from the completed steps.
+4. Based on progress so far, generate a concrete step-by-step plan to complete the remaining steps. However, if you think you have completed the task, STRICTLY follow the task instructions about generating your final answer using the finish tool.
+5. IMPORTANT: you should CONTINUE solving the task based on the above plan and the available tools. You should NEVER ask the user for help."""
+
+# 5. If you notice you've attempted the same approach multiple times without success, analyse other alternatives.
+
 
 class AgentController:
     id: str
@@ -681,6 +690,18 @@ class AgentController:
             action = self._replay_manager.step()
         else:
             try:
+                if (
+                    hasattr(self.agent, 'planning_interval')
+                    and self.agent.planning_interval is not None
+                ):
+                    if self.state.iteration % self.agent.planning_interval == 0:
+                        self.event_stream.add_event(
+                            MessageAction(
+                                content=PLANNING_PROMPT, wait_for_response=False
+                            ),
+                            EventSource.USER,
+                        )
+                        return
                 action = self.agent.step(self.state)
                 if action is None:
                     raise LLMNoActionError('No action was returned')
