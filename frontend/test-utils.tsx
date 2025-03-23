@@ -8,6 +8,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { I18nextProvider, initReactI18next } from "react-i18next";
 import i18n from "i18next";
 import { vi } from "vitest";
+import { createMemoryRouter, RouterProvider } from "react-router";
 import { AppStore, RootState, rootReducer } from "./src/store";
 import { AuthProvider } from "#/context/auth-context";
 import { ConversationProvider } from "#/context/conversation-context";
@@ -62,6 +63,14 @@ export function renderWithProviders(
     ...renderOptions
   }: ExtendedRenderOptions = {},
 ) {
+  // Create a basic router for testing
+  const router = createMemoryRouter([
+    {
+      path: "/",
+      element: ui,
+    },
+  ]);
+
   function Wrapper({ children }: PropsWithChildren) {
     return (
       <Provider store={store}>
@@ -74,12 +83,43 @@ export function renderWithProviders(
             }
           >
             <ConversationProvider>
-              <I18nextProvider i18n={i18n}>{children}</I18nextProvider>
+              <I18nextProvider i18n={i18n}>
+                {children}
+              </I18nextProvider>
             </ConversationProvider>
           </QueryClientProvider>
         </AuthProvider>
       </Provider>
     );
   }
-  return { store, ...render(ui, { wrapper: Wrapper, ...renderOptions }) };
+  
+  // For components that need RouterProvider, use this approach
+  if (renderOptions.wrapper) {
+    return { store, ...render(ui, { wrapper: Wrapper, ...renderOptions }) };
+  }
+  
+  // For components that need RouterProvider
+  return { 
+    store, 
+    ...render(
+      <Provider store={store}>
+        <AuthProvider initialGithubTokenIsSet>
+          <QueryClientProvider
+            client={
+              new QueryClient({
+                defaultOptions: { queries: { retry: false } },
+              })
+            }
+          >
+            <ConversationProvider>
+              <I18nextProvider i18n={i18n}>
+                <RouterProvider router={router} />
+              </I18nextProvider>
+            </ConversationProvider>
+          </QueryClientProvider>
+        </AuthProvider>
+      </Provider>,
+      renderOptions
+    ) 
+  };
 }

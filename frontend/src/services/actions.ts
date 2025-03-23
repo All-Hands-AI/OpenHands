@@ -8,7 +8,6 @@ import { trackError } from "#/utils/error-handler";
 import { appendSecurityAnalyzerInput } from "#/state/security-analyzer-slice";
 import { setCode, setActiveFilepath } from "#/state/code-slice";
 import { appendJupyterInput } from "#/state/jupyter-slice";
-import { setMetrics } from "#/state/metrics-slice";
 import store from "#/store";
 import ActionType from "#/types/action-type";
 import {
@@ -18,6 +17,7 @@ import {
 } from "#/types/message";
 import { handleObservationMessage } from "./observations";
 import { handleStatusMessage } from "./status-service";
+import { updateMetrics } from "./metrics-service";
 import { appendInput } from "#/state/command-slice";
 
 const messageActions = {
@@ -95,7 +95,7 @@ export function handleActionMessage(message: ActionMessage) {
       cost: message.llm_metrics?.accumulated_cost ?? null,
       usage: message.tool_call_metadata?.model_response?.usage ?? null,
     };
-    store.dispatch(setMetrics(metrics));
+    updateMetrics(metrics);
   }
 
   if (message.action === ActionType.RUN) {
