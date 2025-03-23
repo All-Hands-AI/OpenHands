@@ -19,6 +19,8 @@ import { ConversationPanelWrapper } from "../conversation-panel/conversation-pan
 import { useConfig } from "#/hooks/query/use-config";
 import { cn } from "#/utils/utils";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
+import { saveLastPage } from "#/utils/last-page";
+import { useAppLogout } from "#/hooks/use-app-logout";
 
 export function Sidebar() {
   const location = useLocation();
@@ -73,10 +75,12 @@ export function Sidebar() {
     endSession();
   };
 
+  const { handleLogout: appLogout } = useAppLogout();
+
   const handleLogout = () => {
-    // Clear GitHub token before navigating to logout page
-    localStorage.removeItem("gh_token");
-    navigate("/logout");
+    // Save the current page before logout
+    saveLastPage();
+    appLogout();
   };
 
   return (

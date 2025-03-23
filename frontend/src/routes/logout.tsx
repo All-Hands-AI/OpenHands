@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { generateGitHubAuthUrl } from "#/utils/generate-github-auth-url";
 import { AllHandsLogoButton } from "#/components/shared/buttons/all-hands-logo-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
+import OpenHands from "#/api/open-hands";
 
 // Hardcoded translations since we don't want to load i18n
 const translations = {
@@ -31,14 +32,15 @@ export default function LogoutPage() {
     hasAttemptedLogout.current = true;
 
     try {
-      // Only try the SaaS logout method
-      await fetch("/api/logout", { method: "POST" });
+      // Use the OpenHands API client for consistent headers and error handling
+      await OpenHands.logout();
 
       // Clear any auth-related data from localStorage
       localStorage.removeItem("gh_token");
 
       setIsLoggingOut(false);
     } catch (error) {
+      console.error('Logout error:', error);
       setHasLogoutError(true);
       setIsLoggingOut(false);
     }
