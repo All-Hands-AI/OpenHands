@@ -3,7 +3,7 @@ import store from "#/store";
 import { queryClient } from "#/query-redux-bridge-init";
 import { ObservationMessage } from "#/types/message";
 import { AgentState } from "#/types/agent-state";
-import { appendOutput } from "#/state/command-slice";
+// Command slice is now handled by React Query
 import { appendJupyterOutput } from "#/state/jupyter-slice";
 import ObservationType from "#/types/observation-type";
 import {
@@ -22,7 +22,21 @@ export function handleObservationMessage(message: ObservationMessage) {
         content = `${head}\r\n\n... (truncated ${message.content.length - 5000} characters) ...`;
       }
 
-      store.dispatch(appendOutput(content));
+      // Update command state in React Query
+      const currentState = queryClient.getQueryData<{
+        commands: Array<{ content: string; type: string }>;
+      }>(["command"]) || { commands: [] };
+
+      // eslint-disable-next-line no-console
+      console.log("[Command Debug] Handling RUN observation:", {
+        contentLength: content.length,
+        currentCommandsLength: currentState.commands.length,
+      });
+
+      queryClient.setQueryData(["command"], {
+        ...currentState,
+        commands: [...currentState.commands, { content, type: "output" }],
+      });
       break;
     }
     case ObservationType.RUN_IPYTHON:

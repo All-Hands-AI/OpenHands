@@ -11,7 +11,7 @@ import {
 } from "#/context/conversation-context";
 import { Controls } from "#/components/features/controls/controls";
 import { clearMessages, addUserMessage } from "#/state/chat-slice";
-import { clearTerminal } from "#/state/command-slice";
+import { useCommand } from "#/hooks/query/use-command";
 import { useEffectOnce } from "#/hooks/use-effect-once";
 import CodeIcon from "#/icons/code.svg?react";
 import GlobeIcon from "#/icons/globe.svg?react";
@@ -72,9 +72,11 @@ function AppContent() {
     }
   }, [conversation, isFetched]);
 
+  const { clearTerminal } = useCommand();
+
   React.useEffect(() => {
     dispatch(clearMessages());
-    dispatch(clearTerminal());
+    clearTerminal();
     dispatch(clearJupyter());
     if (conversationId && (initialPrompt || files.length > 0)) {
       dispatch(
@@ -92,7 +94,7 @@ function AppContent() {
 
   useEffectOnce(() => {
     dispatch(clearMessages());
-    dispatch(clearTerminal());
+    clearTerminal();
     dispatch(clearJupyter());
   });
 

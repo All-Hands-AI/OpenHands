@@ -18,7 +18,7 @@ import {
   StatusMessage,
 } from "#/types/message";
 import { handleObservationMessage } from "./observations";
-import { appendInput } from "#/state/command-slice";
+// Command slice is now handled by React Query
 
 const messageActions = {
   [ActionType.BROWSE]: (message: ActionMessage) => {
@@ -121,7 +121,24 @@ export function handleActionMessage(message: ActionMessage) {
   }
 
   if (message.action === ActionType.RUN) {
-    store.dispatch(appendInput(message.args.command));
+    // Update command state in React Query
+    const currentState = queryClient.getQueryData<{
+      commands: Array<{ content: string; type: string }>;
+    }>(["command"]) || { commands: [] };
+
+    // eslint-disable-next-line no-console
+    console.log("[Command Debug] Handling RUN action:", {
+      command: message.args.command,
+      currentCommandsLength: currentState.commands.length,
+    });
+
+    queryClient.setQueryData(["command"], {
+      ...currentState,
+      commands: [
+        ...currentState.commands,
+        { content: message.args.command, type: "input" },
+      ],
+    });
   }
 
   if ("args" in message && "security_risk" in message.args) {
