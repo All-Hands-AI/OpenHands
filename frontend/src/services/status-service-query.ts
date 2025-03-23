@@ -1,6 +1,7 @@
 import { StatusMessage } from "#/types/message";
 import { statusKeys } from "#/hooks/query/use-status";
 import { chatKeys } from "#/hooks/query/use-chat";
+import { trackError } from "#/utils/error-handler";
 
 // Get the query client
 const getQueryClient = () =>
@@ -63,6 +64,13 @@ export function handleStatusMessage(message: StatusMessage) {
   statusFunctions.setStatusMessage(message);
 
   if (message.type === "error") {
+    // Track the error for analytics
+    trackError({
+      message: message.message,
+      source: "chat",
+      metadata: { msgId: message.id },
+    });
+    
     const chatFunctions = getChatFunctions();
     if (chatFunctions) {
       chatFunctions.addErrorMessage({

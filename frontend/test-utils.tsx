@@ -8,20 +8,67 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { I18nextProvider, initReactI18next } from "react-i18next";
 import i18n from "i18next";
 import { vi } from "vitest";
-import { createMemoryRouter, RouterProvider } from "react-router";
 import { AppStore, RootState, rootReducer } from "./src/store";
 import { AuthProvider } from "#/context/auth-context";
 import { ConversationProvider } from "#/context/conversation-context";
 
-// Mock useParams before importing components
+// Mock react-router components for testing
 vi.mock("react-router", async () => {
   const actual =
     await vi.importActual<typeof import("react-router")>("react-router");
   return {
     ...actual,
     useParams: () => ({ conversationId: "test-conversation-id" }),
+    RouterProvider: ({ router }: { router?: any }) => {
+      if (router?.routes?.[0]?.element) {
+        return router.routes[0].element;
+      }
+      return <div>Mocked Router</div>;
+    }
   };
 });
+
+// Mock react-router/dist/development/dom-export to fix SSR errors
+vi.mock("react-router/dist/development/dom-export", () => {
+  return {
+    createHydratedRouter: () => ({
+      routes: [{ element: <div>Mocked Router</div> }]
+    }),
+    HydratedRouter: ({ children }: { children?: React.ReactNode }) => <>{children || <div>Mocked Router</div>}</>,
+    RouterProvider: ({ router, children }: { router?: any, children?: React.ReactNode }) => {
+      return <>{children || (router?.routes?.[0]?.element || <div>Mocked Router</div>)}</>;
+    }
+  };
+});
+
+// Mock the metrics hook
+vi.mock("#/hooks/query/use-metrics", () => ({
+  useMetrics: () => ({
+    metrics: {
+      cost: 0.123,
+      usage: {
+        prompt_tokens: 100,
+        completion_tokens: 200,
+        total_tokens: 300
+      }
+    },
+    updateMetrics: vi.fn()
+  })
+}));
+
+// Mock the status hook
+vi.mock("#/hooks/query/use-status", () => ({
+  useStatus: () => ({
+    status: {
+      runtimeActive: true,
+      runtimeConnected: true,
+      runtimeStatus: "connected",
+      runtimeVersion: "1.0.0",
+      wsConnected: true,
+    },
+    updateStatus: vi.fn()
+  })
+}));
 
 // Initialize i18n for tests
 i18n.use(initReactI18next).init({
@@ -52,6 +99,22 @@ interface ExtendedRenderOptions extends Omit<RenderOptions, "queries"> {
   store?: AppStore;
 }
 
+// Create a query client for testing
+const createTestQueryClient = () => new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+      cacheTime: 0,
+      staleTime: 0,
+    },
+  },
+  logger: {
+    log: console.log,
+    warn: console.warn,
+    error: () => {},
+  },
+});
+
 // Export our own customized renderWithProviders function that creates a new Redux store and renders a <Provider>
 // Note that this creates a separate Redux store instance for every test, rather than reusing the same store instance and resetting its state
 export function renderWithProviders(
@@ -63,25 +126,11 @@ export function renderWithProviders(
     ...renderOptions
   }: ExtendedRenderOptions = {},
 ) {
-  // Create a basic router for testing
-  const router = createMemoryRouter([
-    {
-      path: "/",
-      element: ui,
-    },
-  ]);
-
   function Wrapper({ children }: PropsWithChildren) {
     return (
       <Provider store={store}>
         <AuthProvider initialGithubTokenIsSet>
-          <QueryClientProvider
-            client={
-              new QueryClient({
-                defaultOptions: { queries: { retry: false } },
-              })
-            }
-          >
+          <QueryClientProvider client={createTestQueryClient()}>
             <ConversationProvider>
               <I18nextProvider i18n={i18n}>
                 {children}
@@ -93,33 +142,5 @@ export function renderWithProviders(
     );
   }
   
-  // For components that need RouterProvider, use this approach
-  if (renderOptions.wrapper) {
-    return { store, ...render(ui, { wrapper: Wrapper, ...renderOptions }) };
-  }
-  
-  // For components that need RouterProvider
-  return { 
-    store, 
-    ...render(
-      <Provider store={store}>
-        <AuthProvider initialGithubTokenIsSet>
-          <QueryClientProvider
-            client={
-              new QueryClient({
-                defaultOptions: { queries: { retry: false } },
-              })
-            }
-          >
-            <ConversationProvider>
-              <I18nextProvider i18n={i18n}>
-                <RouterProvider router={router} />
-              </I18nextProvider>
-            </ConversationProvider>
-          </QueryClientProvider>
-        </AuthProvider>
-      </Provider>,
-      renderOptions
-    ) 
-  };
+  return { store, ...render(ui, { wrapper: Wrapper, ...renderOptions }) };
 }

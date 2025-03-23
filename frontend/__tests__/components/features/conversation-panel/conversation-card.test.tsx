@@ -15,6 +15,21 @@ import { formatTimeDelta } from "#/utils/format-time-delta";
 import { ConversationCard } from "#/components/features/conversation-panel/conversation-card";
 import { clickOnEditButton } from "./utils";
 
+// Mock the useMetrics hook
+vi.mock("#/hooks/query/use-metrics", () => ({
+  useMetrics: () => ({
+    metrics: {
+      cost: 0.123,
+      usage: {
+        prompt_tokens: 100,
+        completion_tokens: 200,
+        total_tokens: 300
+      }
+    },
+    updateMetrics: vi.fn()
+  })
+}));
+
 describe("ConversationCard", () => {
   const onClick = vi.fn();
   const onDelete = vi.fn();
