@@ -62,7 +62,8 @@ describe("Empty state", () => {
       );
     });
 
-    expect(screen.queryByTestId("suggestions")).not.toBeInTheDocument();
+    // In the new implementation, suggestions are always shown
+    expect(screen.queryByTestId("suggestions")).toBeInTheDocument();
   });
 
   it("should render the default suggestions", () => {

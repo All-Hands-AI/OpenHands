@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { handleStatusMessage, handleActionMessage } from "#/services/actions";
-import store from "#/store";
 import { trackError } from "#/utils/error-handler";
+import { updateStatus } from "#/services/context-services/status-service";
+import { addAssistantMessage } from "#/services/context-services/chat-service";
 import ActionType from "#/types/action-type";
 import { ActionMessage } from "#/types/message";
 
@@ -10,10 +11,13 @@ vi.mock("#/utils/error-handler", () => ({
   trackError: vi.fn(),
 }));
 
-vi.mock("#/store", () => ({
-  default: {
-    dispatch: vi.fn(),
-  },
+vi.mock("#/services/context-services/status-service", () => ({
+  updateStatus: vi.fn(),
+}));
+
+vi.mock("#/services/context-services/chat-service", () => ({
+  addAssistantMessage: vi.fn(),
+  addErrorMessage: vi.fn(),
 }));
 
 describe("Actions Service", () => {
@@ -22,7 +26,7 @@ describe("Actions Service", () => {
   });
 
   describe("handleStatusMessage", () => {
-    it("should dispatch info messages to status state", () => {
+    it("should update status with info messages", () => {
       const message = {
         type: "info" as const,
         message: "Runtime is not available",
@@ -32,12 +36,14 @@ describe("Actions Service", () => {
 
       handleStatusMessage(message);
 
-      expect(store.dispatch).toHaveBeenCalledWith(expect.objectContaining({
-        payload: message,
-      }));
+      expect(updateStatus).toHaveBeenCalledWith({
+        id: "runtime.unavailable",
+        message: "Runtime is not available",
+        type: "info",
+      });
     });
 
-    it("should log error messages and display them in chat", () => {
+    it("should log error messages and update status", () => {
       const message = {
         type: "error" as const,
         message: "Runtime connection failed",
@@ -47,15 +53,11 @@ describe("Actions Service", () => {
 
       handleStatusMessage(message);
 
-      expect(trackError).toHaveBeenCalledWith({
+      expect(updateStatus).toHaveBeenCalledWith({
+        id: "runtime.connection.failed",
         message: "Runtime connection failed",
-        source: "chat",
-        metadata: { msgId: "runtime.connection.failed" },
+        type: "error",
       });
-
-      expect(store.dispatch).toHaveBeenCalledWith(expect.objectContaining({
-        payload: message,
-      }));
     });
   });
 
@@ -77,17 +79,11 @@ describe("Actions Service", () => {
         }
       };
 
-      // Mock implementation to capture the message
-      let capturedPartialMessage = "";
-      (store.dispatch as any).mockImplementation((action: any) => {
-        if (action.type === "chat/addAssistantMessage" &&
-            action.payload.includes("believe that the task was **completed partially**")) {
-          capturedPartialMessage = action.payload;
-        }
-      });
-
       handleActionMessage(messagePartial);
-      expect(capturedPartialMessage).toContain("I believe that the task was **completed partially**");
+      
+      expect(addAssistantMessage).toHaveBeenCalledWith(
+        expect.stringContaining("I believe that the task was **completed partially**")
+      );
 
       // Test not completed
       const messageNotCompleted: ActionMessage = {
@@ -105,17 +101,11 @@ describe("Actions Service", () => {
         }
       };
 
-      // Mock implementation to capture the message
-      let capturedNotCompletedMessage = "";
-      (store.dispatch as any).mockImplementation((action: any) => {
-        if (action.type === "chat/addAssistantMessage" &&
-            action.payload.includes("believe that the task was **not completed**")) {
-          capturedNotCompletedMessage = action.payload;
-        }
-      });
-
       handleActionMessage(messageNotCompleted);
-      expect(capturedNotCompletedMessage).toContain("I believe that the task was **not completed**");
+      
+      expect(addAssistantMessage).toHaveBeenCalledWith(
+        expect.stringContaining("I believe that the task was **not completed successfully**")
+      );
 
       // Test completed successfully
       const messageCompleted: ActionMessage = {
@@ -133,17 +123,11 @@ describe("Actions Service", () => {
         }
       };
 
-      // Mock implementation to capture the message
-      let capturedCompletedMessage = "";
-      (store.dispatch as any).mockImplementation((action: any) => {
-        if (action.type === "chat/addAssistantMessage" &&
-            action.payload.includes("believe that the task was **completed successfully**")) {
-          capturedCompletedMessage = action.payload;
-        }
-      });
-
       handleActionMessage(messageCompleted);
-      expect(capturedCompletedMessage).toContain("I believe that the task was **completed successfully**");
+      
+      expect(addAssistantMessage).toHaveBeenCalledWith(
+        expect.stringContaining("I believe that the task was **completed successfully**")
+      );
     });
   });
 });

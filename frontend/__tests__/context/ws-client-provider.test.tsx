@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
-import * as ChatSlice from "#/state/chat-slice";
+import * as ErrorHandler from "#/utils/error-handler";
 import {
   updateStatusWhenErrorMessagePresent,
   WsClientProvider,
@@ -10,37 +10,38 @@ import React from "react";
 
 describe("Propagate error message", () => {
   it("should do nothing when no message was passed from server", () => {
-    const addErrorMessageSpy = vi.spyOn(ChatSlice, "addErrorMessage");
+    const showChatErrorSpy = vi.spyOn(ErrorHandler, "showChatError");
     updateStatusWhenErrorMessagePresent(null)
     updateStatusWhenErrorMessagePresent(undefined)
     updateStatusWhenErrorMessagePresent({})
     updateStatusWhenErrorMessagePresent({message: null})
 
-    expect(addErrorMessageSpy).not.toHaveBeenCalled();
+    expect(showChatErrorSpy).not.toHaveBeenCalled();
   });
 
   it("should display error to user when present", () => {
     const message = "We have a problem!"
-    const addErrorMessageSpy = vi.spyOn(ChatSlice, "addErrorMessage")
+    const showChatErrorSpy = vi.spyOn(ErrorHandler, "showChatError")
     updateStatusWhenErrorMessagePresent({message})
 
-    expect(addErrorMessageSpy).toHaveBeenCalledWith({
+    expect(showChatErrorSpy).toHaveBeenCalledWith({
       message,
-      status_update: true,
-      type: 'error'
+      source: "websocket",
+      metadata: {},
+      msgId: undefined
      });
   });
 
   it("should display error including translation id when present", () => {
     const message = "We have a problem!"
-    const addErrorMessageSpy = vi.spyOn(ChatSlice, "addErrorMessage")
+    const showChatErrorSpy = vi.spyOn(ErrorHandler, "showChatError")
     updateStatusWhenErrorMessagePresent({message, data: {msg_id: '..id..'}})
 
-    expect(addErrorMessageSpy).toHaveBeenCalledWith({
+    expect(showChatErrorSpy).toHaveBeenCalledWith({
       message,
-      id: '..id..',
-      status_update: true,
-      type: 'error'
+      source: "websocket",
+      metadata: {msg_id: '..id..'},
+      msgId: '..id..'
      });
   });
 });
