@@ -218,6 +218,8 @@ export function useInitialQuery() {
   const setSelectedRepositoryMutation = useMutation({
     mutationFn: (repository: string | null) => Promise.resolve(repository),
     onMutate: async (repository) => {
+      console.log("Setting selected repository:", repository);
+
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: ["initialQuery"] });
 
@@ -226,12 +228,17 @@ export function useInitialQuery() {
         "initialQuery",
       ]);
 
+      console.log("Previous state:", previousState);
+
       // Update state
       if (previousState) {
-        queryClient.setQueryData<InitialQueryState>(["initialQuery"], {
+        const newState = {
           ...previousState,
           selectedRepository: repository,
-        });
+        };
+        console.log("New state:", newState);
+
+        queryClient.setQueryData<InitialQueryState>(["initialQuery"], newState);
       }
 
       return { previousState };
@@ -272,6 +279,13 @@ export function useInitialQuery() {
         queryClient.setQueryData(["initialQuery"], context.previousState);
       }
     },
+  });
+
+  // Log the current state for debugging
+  console.log("useInitialQuery state:", {
+    files: query.data?.files,
+    initialPrompt: query.data?.initialPrompt,
+    selectedRepository: query.data?.selectedRepository,
   });
 
   return {

@@ -234,6 +234,8 @@ class OpenHands {
       image_urls: imageUrls,
     };
 
+    console.log("API request body:", body);
+
     const { data } = await openHands.post<Conversation>(
       "/api/conversations",
       body,
