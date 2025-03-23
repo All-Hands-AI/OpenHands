@@ -3,14 +3,16 @@ import { useDispatch } from "react-redux";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { setInitialPrompt } from "#/state/initial-query-slice";
 
+const INITIAL_PROMPT = "Wait for me to upload files.";
+
 export function CodeNotInGitHubLink() {
   const dispatch = useDispatch();
   const { mutate: createConversation } = useCreateConversation();
 
   const handleStartFromScratch = () => {
     // Set the initial prompt and create a new conversation
-    dispatch(setInitialPrompt("Wait for me to upload files."));
-    createConversation({ q: "Wait for me to upload files." });
+    dispatch(setInitialPrompt(INITIAL_PROMPT));
+    createConversation({ q: INITIAL_PROMPT });
   };
 
   return (
