@@ -1,4 +1,4 @@
-import { setCurrentAgentState } from "#/state/agent-slice";
+// Agent slice is now handled by React Query
 import store from "#/store";
 import { queryClient } from "#/query-redux-bridge-init";
 import { ObservationMessage } from "#/types/message";
@@ -124,9 +124,24 @@ export function handleObservationMessage(message: ObservationMessage) {
         queryClient.setQueryData(["browser"], newState);
       }
       break;
-    case ObservationType.AGENT_STATE_CHANGED:
-      store.dispatch(setCurrentAgentState(message.extras.agent_state));
+    case ObservationType.AGENT_STATE_CHANGED: {
+      // Update agent state in React Query
+      const currentState = queryClient.getQueryData<{
+        curAgentState: AgentState;
+      }>(["agent"]) || { curAgentState: AgentState.LOADING };
+
+      // eslint-disable-next-line no-console
+      console.log("[Agent Debug] Handling AGENT_STATE_CHANGED observation:", {
+        previousState: currentState.curAgentState,
+        newState: message.extras.agent_state,
+      });
+
+      queryClient.setQueryData(["agent"], {
+        ...currentState,
+        curAgentState: message.extras.agent_state,
+      });
       break;
+    }
     case ObservationType.DELEGATE:
       // TODO: better UI for delegation result (#2309)
       if (message.content) {
