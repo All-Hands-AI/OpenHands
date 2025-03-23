@@ -5,6 +5,7 @@ SHELL=/usr/bin/env bash
 BACKEND_HOST ?= "127.0.0.1"
 BACKEND_PORT = 3000
 BACKEND_HOST_PORT = "$(BACKEND_HOST):$(BACKEND_PORT)"
+FRONTEND_HOST ?= "127.0.0.1"
 FRONTEND_PORT = 3001
 DEFAULT_WORKSPACE_DIR = "./workspace"
 DEFAULT_MODEL = "gpt-4o"
@@ -195,7 +196,14 @@ start-backend:
 # Start frontend
 start-frontend:
 	@echo "$(YELLOW)Starting frontend...$(RESET)"
-	@cd frontend && VITE_BACKEND_HOST=$(BACKEND_HOST_PORT) VITE_FRONTEND_PORT=$(FRONTEND_PORT) npm run dev -- --port $(FRONTEND_PORT) --host $(BACKEND_HOST)
+	@cd frontend && \
+	if grep -qi microsoft /proc/version 2>/dev/null; then \
+		echo "Detected WSL environment. Using 'dev_wsl'"; \
+		SCRIPT=dev_wsl; \
+	else \
+		SCRIPT=dev; \
+	fi; \
+	VITE_BACKEND_HOST=$(BACKEND_HOST_PORT) VITE_FRONTEND_PORT=$(FRONTEND_PORT) npm run $$SCRIPT -- --port $(FRONTEND_PORT) --host $(BACKEND_HOST)
 
 # Common setup for running the app (non-callable)
 _run_setup:
