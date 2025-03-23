@@ -1,8 +1,10 @@
-import { setUrl, setScreenshotSrc } from "#/state/browser-slice";
-import store from "#/store";
+import {
+  setUrl,
+  setScreenshotSrc,
+} from "#/services/context-services/browser-service";
 import { ObservationMessage } from "#/types/message";
 import { AgentState } from "#/types/agent-state";
-import { appendOutput } from "#/state/command-slice";
+import { appendOutput } from "#/services/context-services/terminal-service";
 import { appendJupyterOutput } from "#/state/jupyter-slice";
 import { updateAgentState } from "#/services/context-services/agent-state-service";
 import ObservationType from "#/types/observation-type";

@@ -10,9 +10,11 @@ import {
   useConversation,
 } from "#/context/conversation-context";
 import { Controls } from "#/components/features/controls/controls";
-import { clearTerminal } from "#/state/command-slice";
+import { clearTerminal } from "#/services/context-services/terminal-service";
 import { useEffectOnce } from "#/hooks/use-effect-once";
 import { ChatProvider } from "#/context/chat-context";
+import { TerminalProvider } from "#/context/terminal-context";
+import { BrowserProvider } from "#/context/browser-context";
 import {
   addUserMessage,
   clearMessages,
@@ -215,7 +217,11 @@ function App() {
   return (
     <ConversationProvider>
       <ChatProvider>
-        <AppContent />
+        <TerminalProvider>
+          <BrowserProvider>
+            <AppContent />
+          </BrowserProvider>
+        </TerminalProvider>
       </ChatProvider>
     </ConversationProvider>
   );

@@ -1,12 +1,9 @@
-import { useSelector } from "react-redux";
-import { RootState } from "#/store";
+import { useBrowserContext } from "#/context/browser-context";
 import { BrowserSnapshot } from "./browser-snapshot";
 import { EmptyBrowserMessage } from "./empty-browser-message";
 
 export function BrowserPanel() {
-  const { url, screenshotSrc } = useSelector(
-    (state: RootState) => state.browser,
-  );
+  const { url, screenshotSrc } = useBrowserContext();
 
   const imgSrc =
     screenshotSrc && screenshotSrc.startsWith("data:image/png;base64,")
