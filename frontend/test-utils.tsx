@@ -9,6 +9,7 @@ import { I18nextProvider, initReactI18next } from "react-i18next";
 import i18n from "i18next";
 import { vi } from "vitest";
 import { AppStore, RootState, rootReducer } from "./src/store";
+import { apiService } from "./src/api/api-service";
 import { AuthProvider } from "#/context/auth-context";
 import { ConversationProvider } from "#/context/conversation-context";
 
@@ -41,6 +42,8 @@ i18n.use(initReactI18next).init({
 const setupStore = (preloadedState?: Partial<RootState>): AppStore =>
   configureStore({
     reducer: rootReducer,
+    middleware: (getDefaultMiddleware) =>
+      getDefaultMiddleware().concat(apiService.middleware),
     preloadedState,
   });
 

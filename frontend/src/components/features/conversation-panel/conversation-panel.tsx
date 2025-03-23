@@ -3,11 +3,11 @@ import { NavLink, useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import { ConversationCard } from "./conversation-card";
-import { useUserConversations } from "#/hooks/query/use-user-conversations";
-import { useDeleteConversation } from "#/hooks/mutation/use-delete-conversation";
+import { useUserConversations } from "#/hooks/use-user-conversations";
+import { useDeleteConversation } from "#/hooks/use-delete-conversation";
 import { ConfirmDeleteModal } from "./confirm-delete-modal";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
-import { useUpdateConversation } from "#/hooks/mutation/use-update-conversation";
+import { useUpdateConversation } from "#/hooks/use-update-conversation";
 import { useEndSession } from "#/hooks/use-end-session";
 import { ExitConversationModal } from "./exit-conversation-modal";
 import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
@@ -32,10 +32,14 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
     string | null
   >(null);
 
-  const { data: conversations, isFetching, error } = useUserConversations();
+  const {
+    data: conversations,
+    isLoading: isFetching,
+    error,
+  } = useUserConversations();
 
-  const { mutate: deleteConversation } = useDeleteConversation();
-  const { mutate: updateConversation } = useUpdateConversation();
+  const [deleteConversation] = useDeleteConversation();
+  const [updateConversation] = useUpdateConversation();
 
   const handleDeleteProject = (conversationId: string) => {
     setConfirmDeleteModalVisible(true);
@@ -44,16 +48,13 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
 
   const handleConfirmDelete = () => {
     if (selectedConversationId) {
-      deleteConversation(
-        { conversationId: selectedConversationId },
-        {
-          onSuccess: () => {
-            if (cid === selectedConversationId) {
-              endSession();
-            }
-          },
-        },
-      );
+      deleteConversation(selectedConversationId)
+        .unwrap()
+        .then(() => {
+          if (cid === selectedConversationId) {
+            endSession();
+          }
+        });
     }
   };
 
@@ -64,7 +65,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
   ) => {
     if (oldTitle !== newTitle)
       updateConversation({
-        id: conversationId,
+        conversationId,
         conversation: { title: newTitle },
       });
   };

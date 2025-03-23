@@ -1,10 +1,5 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  QueryClientProvider,
-  QueryClient,
-  QueryClientConfig,
-} from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
 import { createRoutesStub } from "react-router";
 import React from "react";
@@ -12,8 +7,8 @@ import { ConversationPanel } from "#/components/features/conversation-panel/conv
 import OpenHands from "#/api/open-hands";
 import { AuthProvider } from "#/context/auth-context";
 import { clickOnEditButton } from "./utils";
-import { queryClientConfig } from "#/query-client-config";
 import { renderWithProviders } from "test-utils";
+import * as authApiSlice from "#/api/slices/auth-api-slice";
 
 describe("ConversationPanel", () => {
   const onCloseMock = vi.fn();
@@ -24,7 +19,7 @@ describe("ConversationPanel", () => {
     },
   ]);
 
-  const renderConversationPanel = (config?: QueryClientConfig) =>
+  const renderConversationPanel = () =>
     renderWithProviders(<RouterStub />, {
       preloadedState: {
         metrics: {
@@ -83,8 +78,27 @@ describe("ConversationPanel", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.restoreAllMocks();
-    // Setup default mock for getUserConversations
-    vi.spyOn(OpenHands, "getUserConversations").mockResolvedValue([...mockConversations]);
+    
+    // Mock RTK Query hooks
+    vi.spyOn(authApiSlice, 'useGetUserConversationsQuery').mockReturnValue({
+      data: [...mockConversations],
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    
+    vi.spyOn(authApiSlice, 'useDeleteConversationMutation').mockReturnValue([
+      vi.fn().mockReturnValue({
+        unwrap: () => Promise.resolve()
+      }),
+      { isLoading: false }
+    ]);
+    
+    vi.spyOn(authApiSlice, 'useUpdateConversationMutation').mockReturnValue([
+      vi.fn(),
+      { isLoading: false }
+    ]);
   });
 
   it("should render the conversations", async () => {
@@ -97,8 +111,13 @@ describe("ConversationPanel", () => {
   });
 
   it("should display an empty state when there are no conversations", async () => {
-    const getUserConversationsSpy = vi.spyOn(OpenHands, "getUserConversations");
-    getUserConversationsSpy.mockResolvedValue([]);
+    vi.spyOn(authApiSlice, 'useGetUserConversationsQuery').mockReturnValue({
+      data: [],
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    });
 
     renderConversationPanel();
 
@@ -107,10 +126,13 @@ describe("ConversationPanel", () => {
   });
 
   it("should handle an error when fetching conversations", async () => {
-    const getUserConversationsSpy = vi.spyOn(OpenHands, "getUserConversations");
-    getUserConversationsSpy.mockRejectedValue(
-      new Error("Failed to fetch conversations"),
-    );
+    vi.spyOn(authApiSlice, 'useGetUserConversationsQuery').mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+      error: { message: "Failed to fetch conversations" },
+      refetch: vi.fn(),
+    });
 
     renderConversationPanel();
 
@@ -148,18 +170,40 @@ describe("ConversationPanel", () => {
   it("should call endSession after deleting a conversation that is the current session", async () => {
     const user = userEvent.setup();
     const mockData = [...mockConversations];
-    const getUserConversationsSpy = vi.spyOn(OpenHands, "getUserConversations");
-    getUserConversationsSpy.mockImplementation(async () => mockData);
-
-    const deleteUserConversationSpy = vi.spyOn(OpenHands, "deleteUserConversation");
-    deleteUserConversationSpy.mockImplementation(async (id: string) => {
-      const index = mockData.findIndex(conv => conv.conversation_id === id);
-      if (index !== -1) {
-        mockData.splice(index, 1);
-      }
-      // Wait for React Query to update its cache
-      await new Promise(resolve => setTimeout(resolve, 0));
+    
+    // Mock the delete mutation to simulate successful deletion
+    const deleteMock = vi.fn().mockReturnValue({
+      unwrap: () => Promise.resolve()
     });
+    
+    vi.spyOn(authApiSlice, 'useDeleteConversationMutation').mockReturnValue([
+      deleteMock,
+      { isLoading: false }
+    ]);
+    
+    // After deletion, update the conversations list
+    vi.spyOn(authApiSlice, 'useGetUserConversationsQuery')
+      .mockReturnValueOnce({
+        data: mockData,
+        isLoading: false,
+        isError: false,
+        error: null,
+        refetch: vi.fn(),
+      })
+      .mockReturnValueOnce({
+        data: mockData,
+        isLoading: false,
+        isError: false,
+        error: null,
+        refetch: vi.fn(),
+      })
+      .mockReturnValue({
+        data: mockData.filter(conv => conv.conversation_id !== "2"),
+        isLoading: false,
+        isError: false,
+        error: null,
+        refetch: vi.fn(),
+      });
 
     renderConversationPanel();
 
@@ -176,6 +220,7 @@ describe("ConversationPanel", () => {
     await user.click(confirmButton);
 
     expect(screen.queryByText("Confirm")).not.toBeInTheDocument();
+    expect(deleteMock).toHaveBeenCalledWith("2");
 
     // Wait for the cards to update with a longer timeout
     await waitFor(() => {
@@ -188,43 +233,34 @@ describe("ConversationPanel", () => {
 
   it("should delete a conversation", async () => {
     const user = userEvent.setup();
-    const mockData = [
-      {
-        conversation_id: "1",
-        title: "Conversation 1",
-        selected_repository: null,
-        last_updated_at: "2021-10-01T12:00:00Z",
-        created_at: "2021-10-01T12:00:00Z",
-        status: "STOPPED" as const,
-      },
-      {
-        conversation_id: "2",
-        title: "Conversation 2",
-        selected_repository: null,
-        last_updated_at: "2021-10-02T12:00:00Z",
-        created_at: "2021-10-02T12:00:00Z",
-        status: "STOPPED" as const,
-      },
-      {
-        conversation_id: "3",
-        title: "Conversation 3",
-        selected_repository: null,
-        last_updated_at: "2021-10-03T12:00:00Z",
-        created_at: "2021-10-03T12:00:00Z",
-        status: "STOPPED" as const,
-      },
-    ];
-
-    const getUserConversationsSpy = vi.spyOn(OpenHands, "getUserConversations");
-    getUserConversationsSpy.mockImplementation(async () => mockData);
-
-    const deleteUserConversationSpy = vi.spyOn(OpenHands, "deleteUserConversation");
-    deleteUserConversationSpy.mockImplementation(async (id: string) => {
-      const index = mockData.findIndex(conv => conv.conversation_id === id);
-      if (index !== -1) {
-        mockData.splice(index, 1);
-      }
+    const mockData = [...mockConversations];
+    
+    // Mock the delete mutation to simulate successful deletion
+    const deleteMock = vi.fn().mockReturnValue({
+      unwrap: () => Promise.resolve()
     });
+    
+    vi.spyOn(authApiSlice, 'useDeleteConversationMutation').mockReturnValue([
+      deleteMock,
+      { isLoading: false }
+    ]);
+    
+    // After deletion, update the conversations list
+    vi.spyOn(authApiSlice, 'useGetUserConversationsQuery')
+      .mockReturnValueOnce({
+        data: mockData,
+        isLoading: false,
+        isError: false,
+        error: null,
+        refetch: vi.fn(),
+      })
+      .mockReturnValue({
+        data: mockData.filter(conv => conv.conversation_id !== "1"),
+        isLoading: false,
+        isError: false,
+        error: null,
+        refetch: vi.fn(),
+      });
 
     renderConversationPanel();
 
@@ -243,6 +279,7 @@ describe("ConversationPanel", () => {
     await user.click(confirmButton);
 
     expect(screen.queryByText("Confirm")).not.toBeInTheDocument();
+    expect(deleteMock).toHaveBeenCalledWith("1");
 
     // Wait for the cards to update
     await waitFor(() => {
@@ -252,10 +289,12 @@ describe("ConversationPanel", () => {
   });
 
   it("should rename a conversation", async () => {
-    const updateUserConversationSpy = vi.spyOn(
-      OpenHands,
-      "updateUserConversation",
-    );
+    const updateMock = vi.fn();
+    
+    vi.spyOn(authApiSlice, 'useUpdateConversationMutation').mockReturnValue([
+      updateMock,
+      { isLoading: false }
+    ]);
 
     const user = userEvent.setup();
     renderConversationPanel();
@@ -270,16 +309,19 @@ describe("ConversationPanel", () => {
     await user.tab();
 
     // Ensure the conversation is renamed
-    expect(updateUserConversationSpy).toHaveBeenCalledWith("1", {
-      title: "Conversation 1 Renamed",
+    expect(updateMock).toHaveBeenCalledWith({
+      conversationId: "1",
+      conversation: { title: "Conversation 1 Renamed" },
     });
   });
 
   it("should not rename a conversation when the name is unchanged", async () => {
-    const updateUserConversationSpy = vi.spyOn(
-      OpenHands,
-      "updateUserConversation",
-    );
+    const updateMock = vi.fn();
+    
+    vi.spyOn(authApiSlice, 'useUpdateConversationMutation').mockReturnValue([
+      updateMock,
+      { isLoading: false }
+    ]);
 
     const user = userEvent.setup();
     renderConversationPanel();
@@ -293,7 +335,7 @@ describe("ConversationPanel", () => {
     await user.tab();
 
     // Ensure the conversation is not renamed
-    expect(updateUserConversationSpy).not.toHaveBeenCalled();
+    expect(updateMock).not.toHaveBeenCalled();
 
     await clickOnEditButton(user, card);
 
@@ -301,12 +343,12 @@ describe("ConversationPanel", () => {
     await user.click(title);
     await user.tab();
 
-    expect(updateUserConversationSpy).toHaveBeenCalledTimes(1);
+    expect(updateMock).toHaveBeenCalledTimes(1);
 
     await user.click(title);
     await user.tab();
 
-    expect(updateUserConversationSpy).toHaveBeenCalledTimes(1);
+    expect(updateMock).toHaveBeenCalledTimes(1);
   });
 
   it("should call onClose after clicking a card", async () => {
@@ -322,8 +364,17 @@ describe("ConversationPanel", () => {
 
   it("should refetch data on rerenders", async () => {
     const user = userEvent.setup();
-    const getUserConversationsSpy = vi.spyOn(OpenHands, "getUserConversations");
-    getUserConversationsSpy.mockResolvedValue([...mockConversations]);
+    const refetchMock = vi.fn();
+    
+    // Mock the query hook to track refetch calls
+    vi.spyOn(authApiSlice, 'useGetUserConversationsQuery')
+      .mockReturnValue({
+        data: [...mockConversations],
+        isLoading: false,
+        isError: false,
+        error: null,
+        refetch: refetchMock,
+      });
 
     function PanelWithToggle() {
       const [isOpen, setIsOpen] = React.useState(true);
@@ -367,5 +418,8 @@ describe("ConversationPanel", () => {
     await user.click(toggleButton);
     const newCards = await screen.findAllByTestId("conversation-card");
     expect(newCards).toHaveLength(3);
+    
+    // RTK Query automatically refetches when components mount
+    expect(authApiSlice.useGetUserConversationsQuery).toHaveBeenCalledTimes(2);
   });
 });
