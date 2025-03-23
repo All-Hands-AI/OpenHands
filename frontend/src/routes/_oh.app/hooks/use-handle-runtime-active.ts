@@ -1,10 +1,8 @@
-import { useSelector } from "react-redux";
-import { RootState } from "#/store";
-
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
+import { useAgentStateContext } from "#/context/agent-state-context";
 
 export const useHandleRuntimeActive = () => {
-  const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const { curAgentState } = useAgentStateContext();
 
   const runtimeActive = !RUNTIME_INACTIVE_STATES.includes(curAgentState);
 

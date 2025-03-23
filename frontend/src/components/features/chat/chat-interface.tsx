@@ -1,4 +1,3 @@
-import { useSelector } from "react-redux";
 import React from "react";
 import posthog from "posthog-js";
 import { useParams } from "react-router";
@@ -6,8 +5,8 @@ import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
 import { TrajectoryActions } from "../trajectory/trajectory-actions";
 import { createChatMessage } from "#/services/chat-service";
 import { InteractiveChatBox } from "./interactive-chat-box";
-import { RootState } from "#/store";
 import { AgentState } from "#/types/agent-state";
+import { useFileStateContext } from "#/context/file-state-context";
 import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
 import { FeedbackModal } from "../feedback/feedback-modal";
 import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom";
@@ -46,9 +45,7 @@ export function ChatInterface() {
   >("positive");
   const [feedbackModalIsOpen, setFeedbackModalIsOpen] = React.useState(false);
   const [messageToSend, setMessageToSend] = React.useState<string | null>(null);
-  const { selectedRepository } = useSelector(
-    (state: RootState) => state.initialQuery,
-  );
+  const { selectedRepository } = useFileStateContext();
   const params = useParams();
   const { mutate: getTrajectory } = useGetTrajectory();
 
