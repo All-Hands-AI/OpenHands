@@ -22,6 +22,7 @@ interface ConversationCardProps {
   title: string;
   selectedRepository: string | null;
   lastUpdatedAt: string; // ISO 8601
+  createdAt?: string; // ISO 8601
   status?: ProjectStatus;
   variant?: "compact" | "default";
   conversationId?: string; // Optional conversation ID for VS Code URL
@@ -35,7 +36,10 @@ export function ConversationCard({
   isActive,
   title,
   selectedRepository,
+  // lastUpdatedAt is kept in props for backward compatibility
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   lastUpdatedAt,
+  createdAt,
   status = "STOPPED",
   variant = "default",
   conversationId,
@@ -205,7 +209,9 @@ export function ConversationCard({
             <ConversationRepoLink selectedRepository={selectedRepository} />
           )}
           <p className="text-xs text-neutral-400">
-            <time>{formatTimeDelta(new Date(lastUpdatedAt))} ago</time>
+            <time>
+              {formatTimeDelta(new Date(createdAt || lastUpdatedAt))} ago
+            </time>
           </p>
         </div>
       </div>
