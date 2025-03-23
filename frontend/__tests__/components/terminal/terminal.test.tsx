@@ -13,6 +13,7 @@ const renderTerminal = (commands: Command[] = []) =>
     },
   });
 
+// TODO: Update this test to use the new context-based approach instead of Redux
 describe.skip("Terminal", () => {
   global.ResizeObserver = vi.fn().mockImplementation(() => ({
     observe: vi.fn(),

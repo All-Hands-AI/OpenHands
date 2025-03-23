@@ -24,6 +24,7 @@ const renderFileExplorerWithRunningAgentState = () =>
     },
   });
 
+// TODO: Update this test to use the new context-based approach instead of Redux
 describe.skip("FileExplorer", () => {
   afterEach(() => {
     vi.clearAllMocks();

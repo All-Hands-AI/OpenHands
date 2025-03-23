@@ -15,6 +15,7 @@ import { clickOnEditButton } from "./utils";
 import { queryClientConfig } from "#/query-client-config";
 import { renderWithProviders } from "test-utils";
 
+// TODO: Update this test to use the new context-based approach instead of Redux
 describe.skip("ConversationPanel", () => {
   const onCloseMock = vi.fn();
   const RouterStub = createRoutesStub([

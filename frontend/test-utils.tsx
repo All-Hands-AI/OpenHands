@@ -41,13 +41,18 @@ i18n.use(initReactI18next).init({
 });
 
 // This type interface extends the default options for render from RTL
-interface ExtendedRenderOptions extends Omit<RenderOptions, "queries"> {}
+interface ExtendedRenderOptions extends Omit<RenderOptions, "queries"> {
+  // For backward compatibility with tests that still use preloadedState
+  preloadedState?: any;
+}
 
 // Export our own customized renderWithProviders function that sets up all the necessary providers
 export function renderWithProviders(
   ui: React.ReactElement,
   renderOptions: ExtendedRenderOptions = {},
 ) {
+  // Extract preloadedState from renderOptions to avoid passing it to render
+  const { preloadedState, ...restRenderOptions } = renderOptions;
   function Wrapper({ children }: PropsWithChildren) {
     return (
       <AuthProvider initialGithubTokenIsSet>
@@ -75,5 +80,5 @@ export function renderWithProviders(
       </AuthProvider>
     );
   }
-  return { ...render(ui, { wrapper: Wrapper, ...renderOptions }) };
+  return { ...render(ui, { wrapper: Wrapper, ...restRenderOptions }) };
 }

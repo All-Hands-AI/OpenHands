@@ -26,6 +26,7 @@ function Wrapper({ children }: WrapperProps) {
   return <div>{children}</div>;
 }
 
+// TODO: Update this test to use the new context-based approach instead of Redux
 describe.skip("useTerminal", () => {
   const mockTerminal = vi.hoisted(() => ({
     loadAddon: vi.fn(),
