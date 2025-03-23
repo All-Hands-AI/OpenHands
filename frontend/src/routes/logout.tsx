@@ -16,17 +16,23 @@ export default function LogoutPage() {
   return (
     <div className="h-screen w-screen flex items-center justify-center bg-base">
       <div className="flex flex-col items-center gap-8 p-8 rounded-lg bg-neutral-800">
-        <AllHandsLogoButton />
+        <AllHandsLogoButton
+          onClick={() => {
+            window.location.href = "/";
+          }}
+        />
         <h1 className="text-2xl font-bold text-neutral-200">
           {t("AUTH$LOGGED_OUT")}
         </h1>
         <div className="flex flex-col gap-4">
-          <a
-            href={gitHubAuthUrl}
-            className="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90 text-center"
-          >
-            {t("AUTH$LOG_IN_WITH_GITHUB")}
-          </a>
+          {gitHubAuthUrl && (
+            <a
+              href={gitHubAuthUrl}
+              className="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90 text-center"
+            >
+              {t("AUTH$LOG_IN_WITH_GITHUB")}
+            </a>
+          )}
         </div>
       </div>
     </div>
