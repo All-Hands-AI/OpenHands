@@ -87,6 +87,53 @@ If the required model does not exist in the list, you can toggle `Advanced` opti
 in the `Custom Model` text box.
 The `Advanced` options also allow you to specify a `Base URL` if required.
 
+### Getting an API Key
+
+OpenHands requires an API key to access language models. Here's how to get an API key from the recommended providers:
+
+#### Anthropic (Claude)
+
+1. **Create an Anthropic account**:
+   - Go to [console.anthropic.com](https://console.anthropic.com/) and sign up for an account if you don't already have one.
+
+2. **Generate an API key**:
+   - Once logged in, navigate to the [API Keys section](https://console.anthropic.com/settings/keys).
+   - Click "Create Key" and provide a name for your key.
+   - Select the appropriate key type (typically "Production" for regular use).
+   - Copy the generated API key immediately, as you won't be able to see it again.
+
+3. **Set up billing**:
+   - Go to [Billing settings](https://console.anthropic.com/settings/billing) to add a payment method.
+   - Consider setting usage limits to control costs.
+
+4. **Use in OpenHands**:
+   - In the OpenHands Settings, select `Anthropic` as the `LLM Provider`.
+   - Select a Claude model (e.g., `claude-3-5-sonnet-20241022`).
+   - Paste your API key in the `API Key` field.
+
+#### OpenAI
+
+1. **Create an OpenAI account**:
+   - Go to [platform.openai.com](https://platform.openai.com/) and sign up for an account if you don't already have one.
+
+2. **Generate an API key**:
+   - Once logged in, navigate to the [API Keys section](https://platform.openai.com/api-keys).
+   - Click "Create new secret key" and provide a name for your key.
+   - Copy the generated API key immediately, as you won't be able to see it again.
+
+3. **Set up billing**:
+   - Go to [Billing settings](https://platform.openai.com/account/billing/overview) to add a payment method.
+   - Consider setting usage limits to control costs.
+
+4. **Use in OpenHands**:
+   - In the OpenHands Settings, select `OpenAI` as the `LLM Provider`.
+   - Select a model (e.g., `gpt-4o`).
+   - Paste your API key in the `API Key` field.
+
+:::warning
+API usage incurs costs based on the models you use. Be sure to monitor your usage and set appropriate spending limits with your provider.
+:::
+
 Now you're ready to [get started with OpenHands](./getting-started).
 
 ## Versions
