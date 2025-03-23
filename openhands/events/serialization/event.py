@@ -170,13 +170,10 @@ def event_to_memory(event: 'Event', max_message_chars: int | None = None) -> dic
     """
     d = event_to_dict(event)
     
-    # Remove id and timestamp as they're not needed for memory
+    # Remove id, timestamp, and message as they're not needed for memory
     d.pop('id', None)
     d.pop('timestamp', None)
-    
-    # Truncate message content if needed
-    if 'message' in d and max_message_chars is not None:
-        d['message'] = truncate_content(d['message'], max_message_chars)
+    d.pop('message', None)
     
     # For CmdOutputObservation, remove MAX_CMD_OUTPUT_SIZE if present
     if 'observation' in d and d['observation'] == 'CmdOutputObservation' and 'extras' in d:
