@@ -34,6 +34,7 @@ class AsyncLLM(LLM):
             temperature=self.config.temperature,
             top_p=self.config.top_p,
             drop_params=self.config.drop_params,
+            seed=self.config.seed,
         )
 
         async_completion_unwrapped = self._async_completion
