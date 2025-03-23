@@ -81,6 +81,10 @@ export function useBrowser() {
       url,
     };
 
+    // Debug log
+    // eslint-disable-next-line no-console
+    console.log("[Browser Debug] Setting URL:", url, "New state:", newState);
+
     // Set the state synchronously
     queryClient.setQueryData<BrowserState>(["browser"], newState);
   };
@@ -98,6 +102,17 @@ export function useBrowser() {
       ...previousState,
       screenshotSrc,
     };
+
+    // Debug log
+    // eslint-disable-next-line no-console
+    console.log(
+      "[Browser Debug] Setting Screenshot:",
+      screenshotSrc
+        ? `Screenshot data present (length: ${screenshotSrc.length})`
+        : "Empty screenshot",
+      "New state:",
+      { ...newState, screenshotSrc: screenshotSrc ? "data present" : "empty" },
+    );
 
     // Set the state synchronously
     queryClient.setQueryData<BrowserState>(["browser"], newState);

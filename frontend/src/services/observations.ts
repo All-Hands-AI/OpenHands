@@ -30,27 +30,66 @@ export function handleObservationMessage(message: ObservationMessage) {
       store.dispatch(appendJupyterOutput(message.content));
       break;
     case ObservationType.BROWSE:
+      // eslint-disable-next-line no-console
+      console.log("[Browser Debug] Received BROWSE observation:", {
+        hasScreenshot: !!message.extras?.screenshot,
+        url: message.extras?.url,
+        screenshotLength: message.extras?.screenshot
+          ? message.extras.screenshot.length
+          : 0,
+      });
+
       if (message.extras?.screenshot) {
         // Update browser state in React Query
         const currentState = queryClient.getQueryData<{
           url: string;
           screenshotSrc: string;
         }>(["browser"]) || { url: "", screenshotSrc: "" };
-        queryClient.setQueryData(["browser"], {
+
+        // eslint-disable-next-line no-console
+        console.log(
+          "[Browser Debug] Current state before screenshot update:",
+          currentState,
+        );
+
+        const newState = {
           ...currentState,
           screenshotSrc: message.extras.screenshot,
+        };
+
+        // eslint-disable-next-line no-console
+        console.log("[Browser Debug] New state after screenshot update:", {
+          ...newState,
+          screenshotSrc: newState.screenshotSrc
+            ? `data present (length: ${newState.screenshotSrc.length})`
+            : "empty",
         });
+
+        queryClient.setQueryData(["browser"], newState);
       }
+
       if (message.extras?.url) {
         // Update browser state in React Query
         const currentState = queryClient.getQueryData<{
           url: string;
           screenshotSrc: string;
         }>(["browser"]) || { url: "", screenshotSrc: "" };
-        queryClient.setQueryData(["browser"], {
+
+        // eslint-disable-next-line no-console
+        console.log(
+          "[Browser Debug] Current state before URL update:",
+          currentState,
+        );
+
+        const newState = {
           ...currentState,
           url: message.extras.url,
-        });
+        };
+
+        // eslint-disable-next-line no-console
+        console.log("[Browser Debug] New state after URL update:", newState);
+
+        queryClient.setQueryData(["browser"], newState);
       }
       break;
     case ObservationType.AGENT_STATE_CHANGED:

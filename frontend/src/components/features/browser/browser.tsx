@@ -1,12 +1,17 @@
-import { useSelector } from "react-redux";
-import { RootState } from "#/store";
 import { BrowserSnapshot } from "./browser-snapshot";
 import { EmptyBrowserMessage } from "./empty-browser-message";
+import { useBrowser } from "#/hooks/query/use-browser";
 
 export function BrowserPanel() {
-  const { url, screenshotSrc } = useSelector(
-    (state: RootState) => state.browser,
-  );
+  const { url, screenshotSrc } = useBrowser();
+
+  // Debug log
+  // eslint-disable-next-line no-console
+  console.log("[Browser Debug] BrowserPanel rendering with:", {
+    url,
+    hasScreenshot: !!screenshotSrc,
+    screenshotLength: screenshotSrc ? screenshotSrc.length : 0,
+  });
 
   const imgSrc =
     screenshotSrc && screenshotSrc.startsWith("data:image/png;base64,")
