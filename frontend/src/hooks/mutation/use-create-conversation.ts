@@ -13,8 +13,6 @@ export const useCreateConversation = () => {
     mutationFn: async (variables: { q?: string }) => {
       if (variables.q) setInitialPrompt(variables.q);
 
-      console.log("Creating conversation with repository:", selectedRepository);
-
       return OpenHands.createConversation(
         selectedRepository || undefined,
         variables.q,
