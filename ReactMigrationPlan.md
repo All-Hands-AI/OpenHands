@@ -142,12 +142,58 @@ If issues arise during the migration:
 2. Implement feature flags to switch between implementations
 3. Roll back to React Query if critical issues are discovered
 
+## Progress Update
+
+### Completed Tasks
+
+- ✅ Created base API service using RTK Query
+- ✅ Configured the base URL, headers, and error handling
+- ✅ Integrated with the existing Redux store
+- ✅ Created API slices for different endpoints:
+  - Auth API slice
+  - Config API slice
+  - Files API slice
+  - GitHub API slice
+  - Settings API slice
+  - Billing API slice
+  - Misc API slice
+- ✅ Created custom hooks that use RTK Query:
+  - useConfig
+  - useListFiles
+  - useListFile
+  - useIsAuthed
+  - useSettings
+  - useBalance
+  - useVSCodeUrl
+  - useUserConversations
+  - useUserConversation
+  - useGithubUser
+  - useCreateConversation
+  - useDeleteConversation
+  - useUpdateConversation
+  - useSubmitFeedback
+  - useLogout
+  - useUploadFiles
+  - useCreateStripeCheckoutSession
+
+### In Progress
+
+- 🔄 Update components to use the new Redux hooks
+- 🔄 Update tests to use RTK Query instead of React Query
+
+### Remaining Tasks
+
+- ⬜ Remove React Query provider from the application
+- ⬜ Remove React Query dependencies
+- ⬜ Clean up any remaining React Query references
+- ⬜ Final testing and validation
+
 ## Timeline
 
-- Phase 1: 1 day
-- Phase 2: 2-3 days
-- Phase 3: 1-2 days
-- Phase 4: 2-3 days
-- Phase 5: 1 day
+- Phase 1 (Setup RTK Query API Service): ✅ Completed
+- Phase 2 (Migrate Query Hooks): ✅ Completed
+- Phase 3 (Migrate Mutation Hooks): ✅ Completed
+- Phase 4 (Update Components): 🔄 In Progress (2-3 days)
+- Phase 5 (Clean Up): ⬜ Not Started (1 day)
 
-Total estimated time: 7-10 days
+Estimated completion: 3-4 more days
