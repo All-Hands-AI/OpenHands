@@ -18,7 +18,8 @@ export function handleObservationMessage(message: ObservationMessage) {
       let { content } = message;
 
       // Content is already truncated in the backend (CmdOutputObservation._truncate_if_needed)
-      // to MAX_CMD_OUTPUT_SIZE (9500), but we'll do additional UI-level truncation for display
+      // to MAX_CMD_OUTPUT_SIZE (9500) to avoid storing unnecessarily large content,
+      // but we'll do additional UI-level truncation for display
       if (content.length > 5000) {
         const half = 2500; // Half of 5000
         content = `${content.slice(0, half)}\r\n\n... (truncated ${message.content.length - 5000} characters for display) ...\r\n\n${content.slice(-half)}`;
