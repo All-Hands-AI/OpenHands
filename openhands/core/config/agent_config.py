@@ -33,7 +33,7 @@ class AgentConfig(BaseModel):
     disabled_microagents: list[str] = Field(default_factory=list)
     enable_history_truncation: bool = Field(default=True)
     enable_som_visual_browsing: bool = Field(default=True)
-    planning_interval: int | None = Field(default=None)
+    planning_interval: int | None = Field(default=None)  # TODO: how to decide this?
     condenser: CondenserConfig = Field(default_factory=BrowserOutputCondenserConfig)
 
     model_config = {'extra': 'forbid'}
