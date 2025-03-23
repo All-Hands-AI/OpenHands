@@ -171,12 +171,12 @@ The migration will proceed in the following order, with each step being complete
 - Migrated status state to React Query context
 - Migrated metrics state to React Query context
 - Migrated agent state to React Query context
+- Migrated chat state to React Query context
 
 ### In Progress
-- Migrating chat state to React Query
+- Migrating terminal and browser state to React Query
 
 ### Upcoming
-- Terminal and browser state migration
 - Client-only state evaluation and migration
 - Redux cleanup and removal
 
