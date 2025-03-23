@@ -1,5 +1,4 @@
 import React from "react";
-import { useNavigate } from "react-router";
 import { generateGitHubAuthUrl } from "#/utils/generate-github-auth-url";
 import { AllHandsLogoButton } from "#/components/shared/buttons/all-hands-logo-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
@@ -15,7 +14,6 @@ const translations = {
 };
 
 export default function LogoutPage() {
-  const navigate = useNavigate();
   const [isLoggingOut, setIsLoggingOut] = React.useState(true);
   const [hasLogoutError, setHasLogoutError] = React.useState(false);
   const hasAttemptedLogout = React.useRef(false);
@@ -40,7 +38,7 @@ export default function LogoutPage() {
 
       setIsLoggingOut(false);
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error("Logout error:", error);
       setHasLogoutError(true);
       setIsLoggingOut(false);
     }
@@ -55,7 +53,9 @@ export default function LogoutPage() {
       <div className="flex flex-col items-center gap-8 p-8 rounded-lg bg-neutral-800">
         <AllHandsLogoButton
           onClick={() => {
-            navigate("/");
+            if (gitHubAuthUrl) {
+              window.location.href = gitHubAuthUrl;
+            }
           }}
         />
         {isLoggingOut ? (
