@@ -1,17 +1,22 @@
 import React from "react";
-import { useSelector } from "react-redux";
-import { RootState } from "#/store";
 import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom";
 import { JupyterCell } from "./jupyter-cell";
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
+import { useJupyter } from "#/hooks/query/use-jupyter";
 
 interface JupyterEditorProps {
   maxWidth: number;
 }
 
 export function JupyterEditor({ maxWidth }: JupyterEditorProps) {
-  const cells = useSelector((state: RootState) => state.jupyter?.cells ?? []);
+  const { cells } = useJupyter();
   const jupyterRef = React.useRef<HTMLDivElement>(null);
+
+  // Debug log
+  // eslint-disable-next-line no-console
+  console.log("[Jupyter Debug] Rendering jupyter with cells:", {
+    cellsLength: cells.length,
+  });
 
   const { hitBottom, scrollDomToBottom, onChatBodyScroll } =
     useScrollToBottom(jupyterRef);

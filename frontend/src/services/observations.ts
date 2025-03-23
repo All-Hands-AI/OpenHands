@@ -4,7 +4,7 @@ import { queryClient } from "#/query-redux-bridge-init";
 import { ObservationMessage } from "#/types/message";
 import { AgentState } from "#/types/agent-state";
 // Command slice is now handled by React Query
-import { appendJupyterOutput } from "#/state/jupyter-slice";
+// Jupyter slice is now handled by React Query
 import ObservationType from "#/types/observation-type";
 import {
   addAssistantMessage,
@@ -39,10 +39,28 @@ export function handleObservationMessage(message: ObservationMessage) {
       });
       break;
     }
-    case ObservationType.RUN_IPYTHON:
+    case ObservationType.RUN_IPYTHON: {
       // FIXME: render this as markdown
-      store.dispatch(appendJupyterOutput(message.content));
+      // Update jupyter state in React Query
+      const jupyterState = queryClient.getQueryData<{
+        cells: Array<{ content: string; type: string }>;
+      }>(["jupyter"]) || { cells: [] };
+
+      // eslint-disable-next-line no-console
+      console.log("[Jupyter Debug] Handling RUN_IPYTHON observation:", {
+        contentLength: message.content.length,
+        currentCellsLength: jupyterState.cells.length,
+      });
+
+      queryClient.setQueryData(["jupyter"], {
+        ...jupyterState,
+        cells: [
+          ...jupyterState.cells,
+          { content: message.content, type: "output" },
+        ],
+      });
       break;
+    }
     case ObservationType.BROWSE:
       // eslint-disable-next-line no-console
       console.log("[Browser Debug] Received BROWSE observation:", {

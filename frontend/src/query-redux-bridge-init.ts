@@ -22,6 +22,7 @@ export function initializeBridge() {
   getQueryReduxBridge().migrateSlice("code");
   getQueryReduxBridge().migrateSlice("fileState");
   getQueryReduxBridge().migrateSlice("command");
+  getQueryReduxBridge().migrateSlice("jupyter");
 }
 
 // Export a function to check if a slice is migrated

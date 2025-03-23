@@ -6,7 +6,7 @@ import {
 } from "#/state/chat-slice";
 import { trackError } from "#/utils/error-handler";
 import { appendSecurityAnalyzerInput } from "#/state/security-analyzer-slice";
-import { appendJupyterInput } from "#/state/jupyter-slice";
+// Jupyter slice is now handled by React Query
 // Status, metrics, browser, and code slices are now handled by React Query
 import store from "#/store";
 import { queryClient } from "#/query-redux-bridge-init";
@@ -63,7 +63,24 @@ const messageActions = {
   },
   [ActionType.RUN_IPYTHON]: (message: ActionMessage) => {
     if (message.args.confirmation_state !== "rejected") {
-      store.dispatch(appendJupyterInput(message.args.code));
+      // Update jupyter state in React Query
+      const currentState = queryClient.getQueryData<{
+        cells: Array<{ content: string; type: string }>;
+      }>(["jupyter"]) || { cells: [] };
+
+      // eslint-disable-next-line no-console
+      console.log("[Jupyter Debug] Handling RUN_IPYTHON action:", {
+        code: message.args.code,
+        currentCellsLength: currentState.cells.length,
+      });
+
+      queryClient.setQueryData(["jupyter"], {
+        ...currentState,
+        cells: [
+          ...currentState.cells,
+          { content: message.args.code, type: "input" },
+        ],
+      });
     }
   },
   [ActionType.FINISH]: (message: ActionMessage) => {
