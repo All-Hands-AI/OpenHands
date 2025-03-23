@@ -1,7 +1,7 @@
 import { useDisclosure } from "@heroui/react";
 import React from "react";
 import { Outlet } from "react-router";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { FaServer } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
@@ -10,9 +10,13 @@ import {
   useConversation,
 } from "#/context/conversation-context";
 import { Controls } from "#/components/features/controls/controls";
-import { clearMessages, addUserMessage } from "#/state/chat-slice";
 import { clearTerminal } from "#/state/command-slice";
 import { useEffectOnce } from "#/hooks/use-effect-once";
+import { ChatProvider } from "#/context/chat-context";
+import {
+  addUserMessage,
+  clearMessages,
+} from "#/services/context-services/chat-service";
 import CodeIcon from "#/icons/code.svg?react";
 import GlobeIcon from "#/icons/globe.svg?react";
 import ListIcon from "#/icons/list-type-number.svg?react";
@@ -48,7 +52,7 @@ function AppContent() {
   const { initialPrompt, files } = useSelector(
     (state: RootState) => state.initialQuery,
   );
-  const dispatch = useDispatch();
+  // No longer need dispatch for chat messages
   const endSession = useEndSession();
 
   const [width, setWidth] = React.useState(window.innerWidth);
@@ -74,25 +78,23 @@ function AppContent() {
   }, [conversation, isFetched]);
 
   React.useEffect(() => {
-    dispatch(clearMessages());
+    clearMessages();
     dispatch(clearTerminal());
     dispatch(clearJupyter());
     if (conversationId && (initialPrompt || files.length > 0)) {
-      dispatch(
-        addUserMessage({
-          content: initialPrompt || "",
-          imageUrls: files || [],
-          timestamp: new Date().toISOString(),
-          pending: true,
-        }),
-      );
+      addUserMessage({
+        content: initialPrompt || "",
+        imageUrls: files || [],
+        timestamp: new Date().toISOString(),
+        pending: true,
+      });
       dispatch(clearInitialPrompt());
       dispatch(clearFiles());
     }
   }, [conversationId]);
 
   useEffectOnce(() => {
-    dispatch(clearMessages());
+    clearMessages();
     dispatch(clearTerminal());
     dispatch(clearJupyter());
   });
@@ -212,7 +214,9 @@ function AppContent() {
 function App() {
   return (
     <ConversationProvider>
-      <AppContent />
+      <ChatProvider>
+        <AppContent />
+      </ChatProvider>
     </ConversationProvider>
   );
 }

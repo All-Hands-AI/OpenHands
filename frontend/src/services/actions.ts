@@ -3,7 +3,7 @@ import {
   addAssistantAction,
   addUserMessage,
   addErrorMessage,
-} from "#/state/chat-slice";
+} from "#/services/context-services/chat-service";
 import { trackError } from "#/utils/error-handler";
 import { appendSecurityAnalyzerInput } from "#/state/security-analyzer-slice";
 import { setCode, setActiveFilepath } from "#/state/code-slice";
@@ -23,12 +23,12 @@ import { appendInput } from "#/state/command-slice";
 const messageActions = {
   [ActionType.BROWSE]: (message: ActionMessage) => {
     if (!message.args.thought && message.message) {
-      store.dispatch(addAssistantMessage(message.message));
+      addAssistantMessage(message.message);
     }
   },
   [ActionType.BROWSE_INTERACTIVE]: (message: ActionMessage) => {
     if (!message.args.thought && message.message) {
-      store.dispatch(addAssistantMessage(message.message));
+      addAssistantMessage(message.message);
     }
   },
   [ActionType.WRITE]: (message: ActionMessage) => {
@@ -48,18 +48,18 @@ const messageActions = {
           timestamp: message.timestamp,
           pending: false,
         }),
-      );
+      )
     } else {
-      store.dispatch(addAssistantMessage(message.args.content));
+      addAssistantMessage(message.args.content))
     }
   },
   [ActionType.RUN_IPYTHON]: (message: ActionMessage) => {
     if (message.args.confirmation_state !== "rejected") {
-      store.dispatch(appendJupyterInput(message.args.code));
+      store.dispatch(appendJupyterInput(message.args.code))
     }
   },
   [ActionType.FINISH]: (message: ActionMessage) => {
-    store.dispatch(addAssistantMessage(message.args.final_thought));
+    addAssistantMessage(message.args.final_thought))
     let successPrediction = "";
     if (message.args.task_completed === "partial") {
       successPrediction =
@@ -73,9 +73,9 @@ const messageActions = {
     if (successPrediction) {
       // if final_thought is not empty, add a new line before the success prediction
       if (message.args.final_thought) {
-        store.dispatch(addAssistantMessage(`\n${successPrediction}`));
+        addAssistantMessage(`\n${successPrediction}`))
       } else {
-        store.dispatch(addAssistantMessage(successPrediction));
+        addAssistantMessage(successPrediction))
       }
     }
   },
@@ -96,56 +96,56 @@ export function handleActionMessage(message: ActionMessage) {
       usage: message.tool_call_metadata?.model_response?.usage ?? null,
     };
     // Use the metrics service to update metrics
-    updateMetricsService(metrics);
+    updateMetricsService(metrics)
   }
 
   if (message.action === ActionType.RUN) {
-    store.dispatch(appendInput(message.args.command));
+    store.dispatch(appendInput(message.args.command))
   }
 
   if ("args" in message && "security_risk" in message.args) {
-    store.dispatch(appendSecurityAnalyzerInput(message));
+    store.dispatch(appendSecurityAnalyzerInput(message))
   }
 
   if (message.source === "agent") {
     if (message.args && message.args.thought) {
-      store.dispatch(addAssistantMessage(message.args.thought));
+      addAssistantMessage(message.args.thought))
     }
     // Need to convert ActionMessage to RejectAction
     // @ts-expect-error TODO: fix
-    store.dispatch(addAssistantAction(message));
+    addAssistantAction(message))
   }
 
   if (message.action in messageActions) {
     const actionFn =
       messageActions[message.action as keyof typeof messageActions];
-    actionFn(message);
+    actionFn(message)
   }
 }
 
 export function handleStatusMessage(message: StatusMessage) {
   // Use the status service to handle the message
-  handleStatusMessageService(message);
+  handleStatusMessageService(message)
 }
 
 export function handleAssistantMessage(message: Record<string, unknown>) {
   if (message.action) {
-    handleActionMessage(message as unknown as ActionMessage);
+    handleActionMessage(message as unknown as ActionMessage)
   } else if (message.observation) {
-    handleObservationMessage(message as unknown as ObservationMessage);
+    handleObservationMessage(message as unknown as ObservationMessage)
   } else if (message.status_update) {
-    handleStatusMessage(message as unknown as StatusMessage);
+    handleStatusMessage(message as unknown as StatusMessage)
   } else {
     const errorMsg = "Unknown message type received";
     trackError({
       message: errorMsg,
       source: "chat",
       metadata: { raw_message: message },
-    });
+    })
     store.dispatch(
       addErrorMessage({
         message: errorMsg,
       }),
-    );
+    )
   }
 }

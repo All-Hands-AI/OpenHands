@@ -1,4 +1,4 @@
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import React from "react";
 import posthog from "posthog-js";
 import { useParams } from "react-router";
@@ -6,7 +6,6 @@ import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
 import { TrajectoryActions } from "../trajectory/trajectory-actions";
 import { createChatMessage } from "#/services/chat-service";
 import { InteractiveChatBox } from "./interactive-chat-box";
-import { addUserMessage } from "#/state/chat-slice";
 import { RootState } from "#/store";
 import { AgentState } from "#/types/agent-state";
 import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
@@ -17,6 +16,8 @@ import { useWsClient } from "#/context/ws-client-provider";
 import { Messages } from "./messages";
 import { ChatSuggestions } from "./chat-suggestions";
 import { ActionSuggestions } from "./action-suggestions";
+import { useChatContext } from "#/context/chat-context";
+import { useAgentStateContext } from "#/context/agent-state-context";
 
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
@@ -31,13 +32,14 @@ function getEntryPoint(hasRepository: boolean | null): string {
 
 export function ChatInterface() {
   const { send, isLoadingMessages } = useWsClient();
-  const dispatch = useDispatch();
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const { scrollDomToBottom, onChatBodyScroll, hitBottom } =
     useScrollToBottom(scrollRef);
 
-  const { messages } = useSelector((state: RootState) => state.chat);
-  const { curAgentState } = useSelector((state: RootState) => state.agent);
+  // Use the chat context instead of Redux
+  const { messages, addUserMessage } = useChatContext();
+  // Use the agent state context instead of Redux
+  const { curAgentState } = useAgentStateContext();
 
   const [feedbackPolarity, setFeedbackPolarity] = React.useState<
     "positive" | "negative"
@@ -67,7 +69,8 @@ export function ChatInterface() {
 
     const timestamp = new Date().toISOString();
     const pending = true;
-    dispatch(addUserMessage({ content, imageUrls, timestamp, pending }));
+    // Use the context function instead of dispatching to Redux
+    addUserMessage({ content, imageUrls, timestamp, pending });
     send(createChatMessage(content, imageUrls, timestamp));
     setMessageToSend(null);
   };

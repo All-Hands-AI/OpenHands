@@ -1,6 +1,6 @@
 import { StatusMessage } from "#/types/message";
 import { trackError } from "#/utils/error-handler";
-import { addErrorMessage } from "#/state/chat-slice";
+import { addErrorMessage } from "#/services/context-services/chat-service";
 import { setCurStatusMessage } from "#/state/status-slice";
 import store from "#/store";
 
@@ -34,7 +34,7 @@ export function handleStatusMessage(message: StatusMessage) {
     store.dispatch(
       setCurStatusMessage({
         ...message,
-      })
+      }),
     );
   } else if (message.type === "error") {
     trackError({

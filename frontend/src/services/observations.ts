@@ -1,15 +1,15 @@
-import { setCurrentAgentState } from "#/state/agent-slice";
 import { setUrl, setScreenshotSrc } from "#/state/browser-slice";
 import store from "#/store";
 import { ObservationMessage } from "#/types/message";
 import { AgentState } from "#/types/agent-state";
 import { appendOutput } from "#/state/command-slice";
 import { appendJupyterOutput } from "#/state/jupyter-slice";
+import { updateAgentState } from "#/services/context-services/agent-state-service";
 import ObservationType from "#/types/observation-type";
 import {
   addAssistantMessage,
   addAssistantObservation,
-} from "#/state/chat-slice";
+} from "#/services/context-services/chat-service";
 
 export function handleObservationMessage(message: ObservationMessage) {
   switch (message.observation) {
@@ -38,12 +38,13 @@ export function handleObservationMessage(message: ObservationMessage) {
       }
       break;
     case ObservationType.AGENT_STATE_CHANGED:
-      store.dispatch(setCurrentAgentState(message.extras.agent_state));
+      // Cast to AgentState since we know it's a valid agent state
+      updateAgentState(message.extras.agent_state as AgentState);
       break;
     case ObservationType.DELEGATE:
       // TODO: better UI for delegation result (#2309)
       if (message.content) {
-        store.dispatch(addAssistantMessage(message.content));
+        addAssistantMessage(message.content);
       }
       break;
     case ObservationType.READ:
@@ -52,7 +53,7 @@ export function handleObservationMessage(message: ObservationMessage) {
     case ObservationType.NULL:
       break; // We don't display the default message for these observations
     default:
-      store.dispatch(addAssistantMessage(message.message));
+      addAssistantMessage(message.message);
       break;
   }
   if (!message.extras?.hidden) {
@@ -65,15 +66,13 @@ export function handleObservationMessage(message: ObservationMessage) {
 
     switch (observation) {
       case "agent_state_changed":
-        store.dispatch(
-          addAssistantObservation({
-            ...baseObservation,
-            observation: "agent_state_changed" as const,
-            extras: {
-              agent_state: (message.extras.agent_state as AgentState) || "idle",
-            },
-          }),
-        );
+        addAssistantObservation({
+          ...baseObservation,
+          observation: "agent_state_changed" as const,
+          extras: {
+            agent_state: (message.extras.agent_state as AgentState) || "idle",
+          },
+        });
         break;
       case "run":
         store.dispatch(
