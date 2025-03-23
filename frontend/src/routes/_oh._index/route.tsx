@@ -24,19 +24,19 @@ function Home() {
       className="bg-base-secondary h-full rounded-xl flex flex-col items-center justify-center relative overflow-y-auto px-2"
     >
       <HeroHeading />
-      <div className="flex flex-col gap-8 w-full md:w-[600px] items-center">
+      <div className="flex flex-col gap-1 w-full mt-8 md:w-[600px] items-center">
         <div className="flex flex-col gap-2 w-full">
           <TaskForm ref={formRef} />
         </div>
 
-        <div className="flex gap-4 w-full flex-col md:flex-row">
+        <div className="flex gap-4 w-full flex-col md:flex-row mt-8">
           <GitHubRepositoriesSuggestionBox
             handleSubmit={() => formRef.current?.requestSubmit()}
             gitHubAuthUrl={gitHubAuthUrl}
             user={user || null}
           />
         </div>
-        <div className="w-full flex justify-start mt-2 pl-4">
+        <div className="w-full flex justify-start">
           <CodeNotInGitHubLink />
         </div>
       </div>
