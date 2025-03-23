@@ -4,7 +4,7 @@ import {
   ModalContent,
   ModalFooter,
   ModalHeader,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import React from "react";
 import { Action, FooterContent } from "./footer-content";
 import { HeaderContent } from "./header-content";
@@ -43,7 +43,7 @@ export function BaseModal({
       backdrop="blur"
       hideCloseButton
       size="sm"
-      className="bg-neutral-900 rounded-lg"
+      className="bg-base-secondary rounded-lg"
     >
       <ModalContent className={contentClassName}>
         {(closeModal) => (

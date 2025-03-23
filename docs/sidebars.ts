@@ -14,6 +14,11 @@ const sidebars: SidebarsConfig = {
       id: 'usage/getting-started',
     },
     {
+      type: 'doc',
+      label: 'Key Features',
+      id: 'usage/key-features',
+    },
+    {
       type: 'category',
       label: 'Prompting',
       items: [
@@ -42,7 +47,18 @@ const sidebars: SidebarsConfig = {
               id: 'usage/prompting/microagents-public',
             },
           ],
-        }
+        },
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Customization',
+      items: [
+        {
+          type: 'doc',
+          label: 'Repository Customization',
+          id: 'usage/customization/repository',
+        },
       ],
     },
     {
@@ -66,8 +82,25 @@ const sidebars: SidebarsConfig = {
         },
         {
           type: 'doc',
-          label: 'Github Actions',
+          label: 'Github Action',
           id: 'usage/how-to/github-action',
+        },
+        {
+          type: 'category',
+          label: 'Cloud',
+          items: [
+            {
+              type: 'doc',
+              label: 'Openhands Cloud',
+              id: 'usage/cloud/openhands-cloud',
+            },
+
+            {
+              type: 'doc',
+              label: 'Cloud GitHub Resolver',
+              id: 'usage/cloud/cloud-github-resolver',
+            },
+          ],
         },
       ],
     },
@@ -123,9 +156,40 @@ const sidebars: SidebarsConfig = {
           ],
         },
         {
-          type: 'doc',
+          type: 'category',
           label: 'Runtime Configuration',
-          id: 'usage/runtimes',
+          items: [
+            {
+              type: 'doc',
+              label: 'Overview',
+              id: 'usage/runtimes-index',
+            },
+            {
+              type: 'doc',
+              label: 'Docker Runtime',
+              id: 'usage/runtimes/docker',
+            },
+            {
+              type: 'doc',
+              label: 'Remote Runtime',
+              id: 'usage/runtimes/remote',
+            },
+            {
+              type: 'doc',
+              label: 'Modal Runtime',
+              id: 'usage/runtimes/modal',
+            },
+            {
+              type: 'doc',
+              label: 'Daytona Runtime',
+              id: 'usage/runtimes/daytona',
+            },
+            {
+              type: 'doc',
+              label: 'Local Runtime',
+              id: 'usage/runtimes/local',
+            },
+          ],
         },
         {
           type: 'doc',
@@ -153,6 +217,11 @@ const sidebars: SidebarsConfig = {
       type: 'category',
       label: 'For OpenHands Developers',
       items: [
+        {
+          type: 'doc',
+          label: 'Development Overview',
+          id: 'usage/how-to/development-overview',
+        },
         {
           type: 'category',
           label: 'Architecture',
@@ -185,7 +254,7 @@ const sidebars: SidebarsConfig = {
       type: 'doc',
       label: 'About',
       id: 'usage/about',
-    }
+    },
   ],
 };
 

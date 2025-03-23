@@ -16,7 +16,6 @@ import store from "./store";
 import { useConfig } from "./hooks/query/use-config";
 import { AuthProvider } from "./context/auth-context";
 import { queryClientConfig } from "./query-client-config";
-import { SettingsProvider } from "./context/settings-context";
 
 function PosthogInit() {
   const { data: config } = useConfig();
@@ -46,7 +45,7 @@ async function prepareApp() {
   }
 }
 
-const queryClient = new QueryClient(queryClientConfig);
+export const queryClient = new QueryClient(queryClientConfig);
 
 prepareApp().then(() =>
   startTransition(() => {
@@ -56,10 +55,8 @@ prepareApp().then(() =>
         <Provider store={store}>
           <AuthProvider>
             <QueryClientProvider client={queryClient}>
-              <SettingsProvider>
-                <HydratedRouter />
-                <PosthogInit />
-              </SettingsProvider>
+              <HydratedRouter />
+              <PosthogInit />
             </QueryClientProvider>
           </AuthProvider>
         </Provider>

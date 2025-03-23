@@ -19,19 +19,30 @@ class DockerRuntimeBuilder(RuntimeBuilder):
 
         version_info = self.docker_client.version()
         server_version = version_info.get('Version', '').replace('-', '.')
-        if tuple(map(int, server_version.split('.')[:2])) < (18, 9):
+        self.is_podman = (
+            version_info.get('Components')[0].get('Name').startswith('Podman')
+        )
+        if (
+            tuple(map(int, server_version.split('.')[:2])) < (18, 9)
+            and not self.is_podman
+        ):
             raise AgentRuntimeBuildError(
                 'Docker server version must be >= 18.09 to use BuildKit'
             )
 
+        if self.is_podman and tuple(map(int, server_version.split('.')[:2])) < (4, 9):
+            raise AgentRuntimeBuildError('Podman server version must be >= 4.9.0')
+
         self.rolling_logger = RollingLogger(max_lines=10)
 
     @staticmethod
-    def check_buildx():
+    def check_buildx(is_podman: bool = False):
         """Check if Docker Buildx is available"""
         try:
             result = subprocess.run(
-                ['docker', 'buildx', 'version'], capture_output=True, text=True
+                ['docker' if not is_podman else 'podman', 'buildx', 'version'],
+                capture_output=True,
+                text=True,
             )
             return result.returncode == 0
         except FileNotFoundError:
@@ -67,13 +78,19 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         """
         self.docker_client = docker.from_env()
         version_info = self.docker_client.version()
-        server_version = version_info.get('Version', '').replace('-', '.')
-        if tuple(map(int, server_version.split('.'))) < (18, 9):
+        server_version = version_info.get('Version', '').split('+')[0].replace('-', '.')
+        self.is_podman = (
+            version_info.get('Components')[0].get('Name').startswith('Podman')
+        )
+        if tuple(map(int, server_version.split('.'))) < (18, 9) and not self.is_podman:
             raise AgentRuntimeBuildError(
                 'Docker server version must be >= 18.09 to use BuildKit'
             )
 
-        if not DockerRuntimeBuilder.check_buildx():
+        if self.is_podman and tuple(map(int, server_version.split('.'))) < (4, 9):
+            raise AgentRuntimeBuildError('Podman server version must be >= 4.9.0')
+
+        if not DockerRuntimeBuilder.check_buildx(self.is_podman):
             # when running openhands in a container, there might not be a "docker"
             # binary available, in which case we need to download docker binary.
             # since the official openhands app image is built from debian, we use
@@ -110,7 +127,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         target_image_tag = tags[1].split(':')[1] if len(tags) > 1 else None
 
         buildx_cmd = [
-            'docker',
+            'docker' if not self.is_podman else 'podman',
             'buildx',
             'build',
             '--progress=plain',
@@ -139,7 +156,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         buildx_cmd.append(path)  # must be last!
 
         self.rolling_logger.start(
-            '================ DOCKER BUILD STARTED ================'
+            f'================ {buildx_cmd[0].upper()} BUILD STARTED ================'
         )
 
         try:
@@ -168,8 +185,12 @@ class DockerRuntimeBuilder(RuntimeBuilder):
                 )
 
         except subprocess.CalledProcessError as e:
-            logger.error(f'Image build failed:\n{e}')
+            logger.error(f'Image build failed:\n{e}')  # TODO: {e} is empty
             logger.error(f'Command output:\n{e.output}')
+            if self.rolling_logger.is_enabled():
+                logger.error(
+                    'Docker build output:\n' + self.rolling_logger.all_lines
+                )  # Show the error
             raise
 
         except subprocess.TimeoutExpired:

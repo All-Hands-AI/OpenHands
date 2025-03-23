@@ -10,6 +10,8 @@ class ServerConfig(ServerConfigInterface):
     app_mode = AppMode.OSS
     posthog_client_key = 'phc_3ESMmY9SgqEAGBB6sMGK5ayYHkeUuknH2vP6FmWH9RA'
     github_client_id = os.environ.get('GITHUB_APP_CLIENT_ID', '')
+    enable_billing = os.environ.get('ENABLE_BILLING', 'false') == 'true'
+    hide_llm_settings = os.environ.get('HIDE_LLM_SETTINGS', 'false') == 'true'
     settings_store_class: str = (
         'openhands.storage.settings.file_settings_store.FileSettingsStore'
     )
@@ -17,8 +19,7 @@ class ServerConfig(ServerConfigInterface):
         'openhands.storage.conversation.file_conversation_store.FileConversationStore'
     )
     conversation_manager_class: str = 'openhands.server.conversation_manager.standalone_conversation_manager.StandaloneConversationManager'
-
-    github_service_class: str = 'openhands.server.services.github_service.GitHubService'
+    monitoring_listener_class: str = 'openhands.server.monitoring.MonitoringListener'
 
     def verify_config(self):
         if self.config_cls:
@@ -29,6 +30,10 @@ class ServerConfig(ServerConfigInterface):
             'APP_MODE': self.app_mode,
             'GITHUB_CLIENT_ID': self.github_client_id,
             'POSTHOG_CLIENT_KEY': self.posthog_client_key,
+            'FEATURE_FLAGS': {
+                'ENABLE_BILLING': self.enable_billing,
+                'HIDE_LLM_SETTINGS': self.hide_llm_settings,
+            },
         }
 
         return config

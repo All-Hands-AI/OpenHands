@@ -1,9 +1,12 @@
+import json
 import logging
 from io import StringIO
+from unittest.mock import patch
 
 import pytest
 
 from openhands.core.config import AppConfig, LLMConfig
+from openhands.core.logger import OpenHandsLoggerAdapter, json_log_handler
 from openhands.core.logger import openhands_logger as openhands_logger
 
 
@@ -19,6 +22,15 @@ def test_handler():
     openhands_logger.removeHandler(handler)
 
 
+@pytest.fixture
+def json_handler():
+    stream = StringIO()
+    json_handler = json_log_handler(logging.INFO, _out=stream)
+    openhands_logger.addHandler(json_handler)
+    yield openhands_logger, stream
+    openhands_logger.removeHandler(json_handler)
+
+
 def test_openai_api_key_masking(test_handler):
     logger, stream = test_handler
 
@@ -26,7 +38,6 @@ def test_openai_api_key_masking(test_handler):
     message = f"OpenAI API key: api_key='{api_key}'and there's some stuff here"
     logger.info(message)
     log_output = stream.getvalue()
-    assert "api_key='******'" in log_output
     assert api_key not in log_output
 
 
@@ -36,7 +47,6 @@ def test_azure_api_key_masking(test_handler):
     message = f"Azure API key: api_key='{api_key}' and chatty chat with ' and \" and '"
     logger.info(message)
     log_output = stream.getvalue()
-    assert "api_key='******'" in log_output
     assert api_key not in log_output
 
 
@@ -46,7 +56,6 @@ def test_google_vertex_api_key_masking(test_handler):
     message = f"Google Vertex API key: api_key='{api_key}' or not"
     logger.info(message)
     log_output = stream.getvalue()
-    assert "api_key='******'" in log_output
     assert api_key not in log_output
 
 
@@ -56,7 +65,6 @@ def test_anthropic_api_key_masking(test_handler):
     message = f"Anthropic API key: api_key='{api_key}' and there's some 'stuff' here"
     logger.info(message)
     log_output = stream.getvalue()
-    assert "api_key='******'" in log_output
     assert api_key not in log_output
 
 
@@ -69,9 +77,6 @@ def test_llm_config_attributes_masking(test_handler):
     )
     logger.info(f'LLM Config: {llm_config}')
     log_output = stream.getvalue()
-    assert "api_key='******'" in log_output
-    assert "aws_access_key_id='******'" in log_output
-    assert "aws_secret_access_key='******'" in log_output
     assert 'sk-abc123' not in log_output
     assert 'AKIAIOSFODNN7EXAMPLE' not in log_output
     assert 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY' not in log_output
@@ -82,7 +87,6 @@ def test_app_config_attributes_masking(test_handler):
     app_config = AppConfig(e2b_api_key='e2b-xyz789')
     logger.info(f'App Config: {app_config}')
     log_output = stream.getvalue()
-    assert "e2b_api_key='******'" in log_output
     assert 'github_token' not in log_output
     assert 'e2b-xyz789' not in log_output
     assert 'ghp_abcdefghijklmnopqrstuvwxyz' not in log_output
@@ -90,7 +94,7 @@ def test_app_config_attributes_masking(test_handler):
 
 def test_sensitive_env_vars_masking(test_handler):
     logger, stream = test_handler
-    sensitive_data = {
+    environ = {
         'API_KEY': 'API_KEY_VALUE',
         'AWS_ACCESS_KEY_ID': 'AWS_ACCESS_KEY_ID_VALUE',
         'AWS_SECRET_ACCESS_KEY': 'AWS_SECRET_ACCESS_KEY_VALUE',
@@ -99,31 +103,85 @@ def test_sensitive_env_vars_masking(test_handler):
         'JWT_SECRET': 'JWT_SECRET_VALUE',
     }
 
-    log_message = ' '.join(
-        f"{attr}='{value}'" for attr, value in sensitive_data.items()
-    )
-    logger.info(log_message)
+    with patch.dict('openhands.core.logger.os.environ', environ, clear=True):
+        log_message = ' '.join(f"{attr}='{value}'" for attr, value in environ.items())
+        logger.info(log_message)
 
-    log_output = stream.getvalue()
-    for attr, value in sensitive_data.items():
-        assert f"{attr}='******'" in log_output
-        assert value not in log_output
+        log_output = stream.getvalue()
+        for _, value in environ.items():
+            assert value not in log_output
 
 
 def test_special_cases_masking(test_handler):
     logger, stream = test_handler
-    sensitive_data = {
+    environ = {
         'LLM_API_KEY': 'LLM_API_KEY_VALUE',
         'SANDBOX_ENV_GITHUB_TOKEN': 'SANDBOX_ENV_GITHUB_TOKEN_VALUE',
     }
 
-    log_message = ' '.join(
-        f"{attr}={value} with no single quotes' and something"
-        for attr, value in sensitive_data.items()
-    )
-    logger.info(log_message)
+    with patch.dict('openhands.core.logger.os.environ', environ, clear=True):
+        log_message = ' '.join(
+            f"{attr}={value} with no single quotes' and something"
+            for attr, value in environ.items()
+        )
+        logger.info(log_message)
 
-    log_output = stream.getvalue()
-    for attr, value in sensitive_data.items():
-        assert f"{attr}='******'" in log_output
-        assert value not in log_output
+        log_output = stream.getvalue()
+        for attr, value in environ.items():
+            assert value not in log_output
+
+
+class TestJsonOutput:
+    def test_info(self, json_handler):
+        logger, string_io = json_handler
+
+        logger.info('Test message')
+        output = json.loads(string_io.getvalue())
+        assert 'timestamp' in output
+        del output['timestamp']
+        assert output == {'message': 'Test message', 'level': 'INFO'}
+
+    def test_error(self, json_handler):
+        logger, string_io = json_handler
+
+        logger.error('Test message')
+        output = json.loads(string_io.getvalue())
+        del output['timestamp']
+        assert output == {'message': 'Test message', 'level': 'ERROR'}
+
+    def test_extra_fields(self, json_handler):
+        logger, string_io = json_handler
+
+        logger.info('Test message', extra={'key': '..val..'})
+        output = json.loads(string_io.getvalue())
+        del output['timestamp']
+        assert output == {
+            'key': '..val..',
+            'message': 'Test message',
+            'level': 'INFO',
+        }
+
+    def test_extra_fields_from_adapter(self, json_handler):
+        logger, string_io = json_handler
+        subject = OpenHandsLoggerAdapter(logger, extra={'context_field': '..val..'})
+        subject.info('Test message', extra={'log_fied': '..val..'})
+        output = json.loads(string_io.getvalue())
+        del output['timestamp']
+        assert output == {
+            'context_field': '..val..',
+            'log_fied': '..val..',
+            'message': 'Test message',
+            'level': 'INFO',
+        }
+
+    def test_extra_fields_from_adapter_can_override(self, json_handler):
+        logger, string_io = json_handler
+        subject = OpenHandsLoggerAdapter(logger, extra={'override': 'a'})
+        subject.info('Test message', extra={'override': 'b'})
+        output = json.loads(string_io.getvalue())
+        del output['timestamp']
+        assert output == {
+            'override': 'b',
+            'message': 'Test message',
+            'level': 'INFO',
+        }

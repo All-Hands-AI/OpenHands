@@ -1,4 +1,4 @@
-# OpenHands Github Issue Resolver 🙌
+# OpenHands Github & Gitlab Issue Resolver 🙌
 
 Need help resolving a GitHub issue but don't have the time to do it yourself? Let an AI agent help you out!
 
@@ -74,14 +74,24 @@ If you prefer to run the resolver programmatically instead of using GitHub Actio
 pip install openhands-ai
 ```
 
-2. Create a GitHub access token:
-   - Visit [GitHub's token settings](https://github.com/settings/personal-access-tokens/new)
-   - Create a fine-grained token with these scopes:
-     - "Content"
-     - "Pull requests"
-     - "Issues"
-     - "Workflows"
-   - If you don't have push access to the target repo, you can fork it first
+2. Create a GitHub or GitLab access token:
+   - Create a GitHub acces token
+      - Visit [GitHub's token settings](https://github.com/settings/personal-access-tokens/new)
+      - Create a fine-grained token with these scopes:
+      - "Content"
+      - "Pull requests"
+      - "Issues"
+      - "Workflows"
+      - If you don't have push access to the target repo, you can fork it first
+
+   - Create a GitLab acces token
+      - Visit [GitLab's token settings](https://gitlab.com/-/user_settings/personal_access_tokens)
+      - Create a fine-grained token with these scopes:
+      - 'api'
+      - 'read_api'
+      - 'read_user'
+      - 'read_repository'
+      - 'write_repository'
 
 3. Set up environment variables:
 
@@ -90,7 +100,12 @@ pip install openhands-ai
 # GitHub credentials
 
 export GITHUB_TOKEN="your-github-token"
-export GITHUB_USERNAME="your-github-username"  # Optional, defaults to token owner
+export GIT_USERNAME="your-github-username"  # Optional, defaults to token owner
+
+# GitLab credentials if you're using GitLab repo
+
+export GITLAB_TOKEN="your-gitlab-token"
+export GIT_USERNAME="your-gitlab-username"  # Optional, defaults to token owner
 
 # LLM configuration
 
@@ -106,13 +121,13 @@ Note: OpenHands works best with powerful models like Anthropic's Claude or OpenA
 The resolver can automatically attempt to fix a single issue in your repository using the following command:
 
 ```bash
-python -m openhands.resolver.resolve_issue --repo [OWNER]/[REPO] --issue-number [NUMBER]
+python -m openhands.resolver.resolve_issue --selected-repo [OWNER]/[REPO] --issue-number [NUMBER]
 ```
 
 For instance, if you want to resolve issue #100 in this repo, you would run:
 
 ```bash
-python -m openhands.resolver.resolve_issue --repo all-hands-ai/openhands --issue-number 100
+python -m openhands.resolver.resolve_issue --selected-repo all-hands-ai/openhands --issue-number 100
 ```
 
 The output will be written to the `output/` directory.
@@ -120,19 +135,19 @@ The output will be written to the `output/` directory.
 If you've installed the package from source using poetry, you can use:
 
 ```bash
-poetry run python openhands/resolver/resolve_issue.py --repo all-hands-ai/openhands --issue-number 100
+poetry run python openhands/resolver/resolve_issue.py --selected-repo all-hands-ai/openhands --issue-number 100
 ```
 
 For resolving multiple issues at once (e.g., in a batch process), you can use the `resolve_all_issues` command:
 
 ```bash
-python -m openhands.resolver.resolve_all_issues --repo [OWNER]/[REPO] --issue-numbers [NUMBERS]
+python -m openhands.resolver.resolve_all_issues --selected-repo [OWNER]/[REPO] --issue-numbers [NUMBERS]
 ```
 
 For example:
 
 ```bash
-python -m openhands.resolver.resolve_all_issues --repo all-hands-ai/openhands --issue-numbers 100,101,102
+python -m openhands.resolver.resolve_all_issues --selected-repo all-hands-ai/openhands --issue-numbers 100,101,102
 ```
 
 ## Responding to PR Comments
@@ -169,13 +184,13 @@ There are three ways you can upload:
 3. `ready` - create a non-draft PR that's ready for review
 
 ```bash
-python -m openhands.resolver.send_pull_request --issue-number ISSUE_NUMBER --github-username YOUR_GITHUB_USERNAME --pr-type draft
+python -m openhands.resolver.send_pull_request --issue-number ISSUE_NUMBER --username YOUR_GITHUB_OR_GITLAB_USERNAME --pr-type draft
 ```
 
 If you want to upload to a fork, you can do so by specifying the `fork-owner`:
 
 ```bash
-python -m openhands.resolver.send_pull_request --issue-number ISSUE_NUMBER --github-username YOUR_GITHUB_USERNAME --pr-type draft --fork-owner YOUR_GITHUB_USERNAME
+python -m openhands.resolver.send_pull_request --issue-number ISSUE_NUMBER --username YOUR_GITHUB_OR_GITLAB_USERNAME --pr-type draft --fork-owner YOUR_GITHUB_OR_GITLAB_USERNAME
 ```
 
 ## Providing Custom Instructions
@@ -184,5 +199,5 @@ You can customize how the AI agent approaches issue resolution by adding a `.ope
 
 ## Troubleshooting
 
-If you have any issues, please open an issue on this github repo, we're happy to help!
+If you have any issues, please open an issue on this github or gitlab repo, we're happy to help!
 Alternatively, you can [email us](mailto:contact@all-hands.dev) or join the OpenHands Slack workspace (see [the README](/README.md) for an invite link).

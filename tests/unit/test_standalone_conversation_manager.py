@@ -9,6 +9,7 @@ from openhands.core.config.app_config import AppConfig
 from openhands.server.conversation_manager.standalone_conversation_manager import (
     StandaloneConversationManager,
 )
+from openhands.server.monitoring import MonitoringListener
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.storage.memory import InMemoryFileStore
 
@@ -43,6 +44,8 @@ async def test_init_new_local_session():
     sio = get_mock_sio()
     get_running_agent_loops_mock = AsyncMock()
     get_running_agent_loops_mock.return_value = set()
+    is_agent_loop_running_mock = AsyncMock()
+    is_agent_loop_running_mock.return_value = True
     with (
         patch(
             'openhands.server.conversation_manager.standalone_conversation_manager.Session',
@@ -54,14 +57,24 @@ async def test_init_new_local_session():
         ),
     ):
         async with StandaloneConversationManager(
-            sio, AppConfig(), InMemoryFileStore()
+            sio, AppConfig(), InMemoryFileStore(), MonitoringListener()
         ) as conversation_manager:
             await conversation_manager.maybe_start_agent_loop(
                 'new-session-id', ConversationInitData(), 1
             )
-            await conversation_manager.join_conversation(
-                'new-session-id', 'new-session-id', ConversationInitData(), 1
-            )
+            with (
+                patch(
+                    'openhands.server.conversation_manager.standalone_conversation_manager.StandaloneConversationManager.is_agent_loop_running',
+                    is_agent_loop_running_mock,
+                ),
+            ):
+                await conversation_manager.join_conversation(
+                    'new-session-id',
+                    'new-session-id',
+                    ConversationInitData(),
+                    1,
+                    '12345',
+                )
     assert session_instance.initialize_agent.call_count == 1
     assert sio.enter_room.await_count == 1
 
@@ -75,6 +88,8 @@ async def test_join_local_session():
     sio = get_mock_sio()
     get_running_agent_loops_mock = AsyncMock()
     get_running_agent_loops_mock.return_value = set()
+    is_agent_loop_running_mock = AsyncMock()
+    is_agent_loop_running_mock.return_value = True
     with (
         patch(
             'openhands.server.conversation_manager.standalone_conversation_manager.Session',
@@ -86,17 +101,31 @@ async def test_join_local_session():
         ),
     ):
         async with StandaloneConversationManager(
-            sio, AppConfig(), InMemoryFileStore()
+            sio, AppConfig(), InMemoryFileStore(), MonitoringListener()
         ) as conversation_manager:
             await conversation_manager.maybe_start_agent_loop(
                 'new-session-id', ConversationInitData(), None
             )
-            await conversation_manager.join_conversation(
-                'new-session-id', 'new-session-id', ConversationInitData(), None
-            )
-            await conversation_manager.join_conversation(
-                'new-session-id', 'new-session-id', ConversationInitData(), None
-            )
+            with (
+                patch(
+                    'openhands.server.conversation_manager.standalone_conversation_manager.StandaloneConversationManager.is_agent_loop_running',
+                    is_agent_loop_running_mock,
+                ),
+            ):
+                await conversation_manager.join_conversation(
+                    'new-session-id',
+                    'new-session-id',
+                    ConversationInitData(),
+                    None,
+                    '12345',
+                )
+                await conversation_manager.join_conversation(
+                    'new-session-id',
+                    'new-session-id',
+                    ConversationInitData(),
+                    None,
+                    '12345',
+                )
     assert session_instance.initialize_agent.call_count == 1
     assert sio.enter_room.await_count == 2
 
@@ -121,13 +150,13 @@ async def test_add_to_local_event_stream():
         ),
     ):
         async with StandaloneConversationManager(
-            sio, AppConfig(), InMemoryFileStore()
+            sio, AppConfig(), InMemoryFileStore(), MonitoringListener()
         ) as conversation_manager:
             await conversation_manager.maybe_start_agent_loop(
                 'new-session-id', ConversationInitData(), 1
             )
             await conversation_manager.join_conversation(
-                'new-session-id', 'connection-id', ConversationInitData(), 1
+                'new-session-id', 'connection-id', ConversationInitData(), 1, '12345'
             )
             await conversation_manager.send_to_event_stream(
                 'connection-id', {'event_type': 'some_event'}
@@ -139,7 +168,7 @@ async def test_add_to_local_event_stream():
 async def test_cleanup_session_connections():
     sio = get_mock_sio()
     async with StandaloneConversationManager(
-        sio, AppConfig(), InMemoryFileStore()
+        sio, AppConfig(), InMemoryFileStore(), MonitoringListener()
     ) as conversation_manager:
         conversation_manager._local_connection_id_to_session_id.update(
             {

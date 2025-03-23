@@ -88,12 +88,10 @@ jobs:
         run: |
           python -m pip index versions openhands-ai > openhands_versions.txt
           OPENHANDS_VERSION=$(head -n 1 openhands_versions.txt | awk '{print $2}' | tr -d '()')
-          # Ensure requirements.txt ends with newline before appending
-          if [ -f requirements.txt ] && [ -s requirements.txt ]; then
-            sed -i -e '$a\' requirements.txt
-          fi
-          echo "openhands-ai==${OPENHANDS_VERSION}" >> requirements.txt
-          cat requirements.txt
+
+          # Create a new requirements.txt locally within the workflow, ensuring no reference to the repo's file
+          echo "openhands-ai==${OPENHANDS_VERSION}" > /tmp/requirements.txt
+          cat /tmp/requirements.txt
 
       - name: Cache pip dependencies
         if: |
@@ -111,9 +109,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.pythonLocation }}/lib/python3.12/site-packages/*
-          key: ${{ runner.os }}-pip-openhands-resolver-${{ hashFiles('requirements.txt') }}
+          key: ${{ runner.os }}-pip-openhands-resolver-${{ hashFiles('/tmp/requirements.txt') }}
           restore-keys: |
-            ${{ runner.os }}-pip-openhands-resolver-${{ hashFiles('requirements.txt') }}
+            ${{ runner.os }}-pip-openhands-resolver-${{ hashFiles('/tmp/requirements.txt') }}
 
       - name: Check required environment variables
         env:
@@ -177,7 +175,7 @@ jobs:
           echo "SANDBOX_ENV_BASE_CONTAINER_IMAGE=${{ inputs.base_container_image }}" >> $GITHUB_ENV
 
           # Set branch variables
-          echo "TARGET_BRANCH=${{ inputs.target_branch }}" >> $GITHUB_ENV
+          echo "TARGET_BRANCH=${{ inputs.target_branch || 'main' }}" >> $GITHUB_ENV
 
       - name: Comment on issue with start message
         uses: actions/github-script@v7
@@ -225,13 +223,14 @@ jobs:
             } else {
               console.log("Installing from requirements.txt...");
               await exec.exec("python -m pip install --upgrade pip");
-              await exec.exec("pip install -r requirements.txt");
+              await exec.exec("pip install -r /tmp/requirements.txt");
             }
 
       - name: Attempt to resolve issue
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN || github.token }}
           GITHUB_USERNAME: ${{ secrets.PAT_USERNAME || 'openhands-agent' }}
+          GIT_USERNAME: ${{ secrets.PAT_USERNAME || 'openhands-agent' }}
           LLM_MODEL: ${{ secrets.LLM_MODEL || inputs.LLM_MODEL }}
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
           LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
@@ -268,6 +267,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN || github.token }}
           GITHUB_USERNAME: ${{ secrets.PAT_USERNAME || 'openhands-agent' }}
+          GIT_USERNAME: ${{ secrets.PAT_USERNAME || 'openhands-agent' }}
           LLM_MODEL: ${{ secrets.LLM_MODEL || inputs.LLM_MODEL }}
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
           LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
@@ -277,6 +277,7 @@ jobs:
           if [ "${{ steps.check_result.outputs.RESOLUTION_SUCCESS }}" == "true" ]; then
             cd /tmp && python -m openhands.resolver.send_pull_request \
               --issue-number ${{ env.ISSUE_NUMBER }} \
+              --target-branch ${{ env.TARGET_BRANCH }} \
               --pr-type draft \
               --reviewer ${{ github.actor }} | tee pr_result.txt && \
               grep "draft created" pr_result.txt | sed 's/.*\///g' > pr_number.txt
@@ -294,11 +295,12 @@ jobs:
         if: always()
         env:
           AGENT_RESPONDED: ${{ env.AGENT_RESPONDED || 'false' }}
+          ISSUE_NUMBER: ${{ env.ISSUE_NUMBER }}
         with:
           github-token: ${{ secrets.PAT_TOKEN || github.token }}
           script: |
             const fs = require('fs');
-            const issueNumber = ${{ env.ISSUE_NUMBER }};
+            const issueNumber = process.env.ISSUE_NUMBER;
             let logContent = '';
 
             try {
@@ -329,13 +331,15 @@ jobs:
         if: always() # Comment on issue even if the previous steps fail
         env:
           AGENT_RESPONDED: ${{ env.AGENT_RESPONDED || 'false' }}
+          ISSUE_NUMBER: ${{ env.ISSUE_NUMBER }}
+          RESOLUTION_SUCCESS: ${{ steps.check_result.outputs.RESOLUTION_SUCCESS }}
         with:
           github-token: ${{ secrets.PAT_TOKEN || github.token }}
           script: |
             const fs = require('fs');
             const path = require('path');
-            const issueNumber = ${{ env.ISSUE_NUMBER }};
-            const success = ${{ steps.check_result.outputs.RESOLUTION_SUCCESS }};
+            const issueNumber = process.env.ISSUE_NUMBER;
+            const success = process.env.RESOLUTION_SUCCESS === 'true';
 
             let prNumber = '';
             let branchName = '';
@@ -400,10 +404,12 @@ jobs:
       - name: Fallback Error Comment
         uses: actions/github-script@v7
         if: ${{ env.AGENT_RESPONDED == 'false' }} # Only run if no conditions were met in previous steps
+        env:
+          ISSUE_NUMBER: ${{ env.ISSUE_NUMBER }}
         with:
           github-token: ${{ secrets.PAT_TOKEN || github.token }}
           script: |
-            const issueNumber = ${{ env.ISSUE_NUMBER }};
+            const issueNumber = process.env.ISSUE_NUMBER;
 
             github.rest.issues.createComment({
               issue_number: issueNumber,
