@@ -79,7 +79,7 @@ export function AgentStatusBar() {
   React.useEffect(() => {
     if (status === WsClientProviderStatus.DISCONNECTED) {
       setStatusMessage("Connecting...");
-      setIndicatorColor(IndicatorColor.RED); // Set indicator to red when connecting
+      setIndicatorColor(IndicatorColor.RED);
     } else {
       setStatusMessage(AGENT_STATUS_MAP[curAgentState].message);
       setIndicatorColor(AGENT_STATUS_MAP[curAgentState].indicator);
