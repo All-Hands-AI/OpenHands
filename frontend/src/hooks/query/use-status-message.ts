@@ -18,7 +18,7 @@ export function useStatusMessage() {
   const queryClient = useQueryClient();
 
   // Try to get the bridge, but don't throw if it's not initialized (for tests)
-  let bridge;
+  let bridge: ReturnType<typeof getQueryReduxBridge> | null = null;
   try {
     bridge = getQueryReduxBridge();
   } catch (error) {

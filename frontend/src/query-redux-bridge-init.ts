@@ -2,6 +2,7 @@ import { QueryClient } from "@tanstack/react-query";
 import {
   initQueryReduxBridge,
   getQueryReduxBridge,
+  SliceNames,
 } from "./utils/query-redux-bridge";
 import { queryClientConfig } from "./query-client-config";
 
@@ -18,7 +19,7 @@ export function initializeBridge() {
 }
 
 // Export a function to check if a slice is migrated
-export function isSliceMigrated(sliceName: string) {
+export function isSliceMigrated(sliceName: SliceNames) {
   try {
     return getQueryReduxBridge().isSliceMigrated(sliceName);
   } catch (error) {
