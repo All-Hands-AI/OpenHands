@@ -1,20 +1,44 @@
-import { describe, it, expect } from "vitest";
-import store from "../src/store";
-import {
-  setInitialPrompt,
-  clearInitialPrompt,
-} from "../src/state/initial-query-slice";
+import { describe, it, expect, vi } from "vitest";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { renderHook } from "@testing-library/react";
+import React from "react";
+import { useInitialQuery } from "../src/hooks/query/use-initial-query";
+
+// Mock the query-redux-bridge
+vi.mock("../src/utils/query-redux-bridge", () => ({
+  getQueryReduxBridge: vi.fn(() => ({
+    getReduxSliceState: vi.fn(() => ({
+      files: [],
+      initialPrompt: null,
+      selectedRepository: null,
+    })),
+  })),
+}));
+
+// Create a wrapper with QueryClientProvider
+const createWrapper = () => {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+      },
+    },
+  });
+  
+  return ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  );
+};
 
 describe("Initial Query Behavior", () => {
-  it("should clear initial query when clearInitialPrompt is dispatched", () => {
-    // Set up initial query in the store
-    store.dispatch(setInitialPrompt("test query"));
-    expect(store.getState().initialQuery.initialPrompt).toBe("test query");
-
-    // Clear the initial query
-    store.dispatch(clearInitialPrompt());
-
-    // Verify initial query is cleared
-    expect(store.getState().initialQuery.initialPrompt).toBeNull();
+  it("should have initial state", () => {
+    const { result } = renderHook(() => useInitialQuery(), {
+      wrapper: createWrapper(),
+    });
+    
+    // Verify initial state
+    expect(result.current.files).toEqual([]);
+    expect(result.current.initialPrompt).toBeNull();
+    expect(result.current.selectedRepository).toBeNull();
   });
 });

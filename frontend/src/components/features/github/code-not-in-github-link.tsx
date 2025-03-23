@@ -1,17 +1,16 @@
 import React from "react";
-import { useDispatch } from "react-redux";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
-import { setInitialPrompt } from "#/state/initial-query-slice";
+import { useInitialQuery } from "#/hooks/query/use-initial-query";
 
 const INITIAL_PROMPT = "";
 
 export function CodeNotInGitHubLink() {
-  const dispatch = useDispatch();
+  const { setInitialPrompt } = useInitialQuery();
   const { mutate: createConversation } = useCreateConversation();
 
   const handleStartFromScratch = () => {
     // Set the initial prompt and create a new conversation
-    dispatch(setInitialPrompt(INITIAL_PROMPT));
+    setInitialPrompt(INITIAL_PROMPT);
     createConversation({ q: INITIAL_PROMPT });
   };
 

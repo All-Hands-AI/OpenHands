@@ -1,7 +1,7 @@
 import { useDisclosure } from "@heroui/react";
 import React from "react";
 import { Outlet } from "react-router";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { FaServer } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
@@ -33,9 +33,9 @@ import { useUserConversation } from "#/hooks/query/use-user-conversation";
 import { ServedAppLabel } from "#/components/layout/served-app-label";
 import { TerminalStatusLabel } from "#/components/features/terminal/terminal-status-label";
 import { useSettings } from "#/hooks/query/use-settings";
-import { clearFiles, clearInitialPrompt } from "#/state/initial-query-slice";
-import { RootState } from "#/store";
+
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
+import { useInitialQuery } from "#/hooks/query/use-initial-query";
 
 function AppContent() {
   useConversationConfig();
@@ -45,9 +45,8 @@ function AppContent() {
   const { data: conversation, isFetched } = useUserConversation(
     conversationId || null,
   );
-  const { initialPrompt, files } = useSelector(
-    (state: RootState) => state.initialQuery,
-  );
+  const { initialPrompt, files, clearInitialPrompt, clearFiles } =
+    useInitialQuery();
   const dispatch = useDispatch();
   const endSession = useEndSession();
 
@@ -86,8 +85,8 @@ function AppContent() {
           pending: true,
         }),
       );
-      dispatch(clearInitialPrompt());
-      dispatch(clearFiles());
+      clearInitialPrompt();
+      clearFiles();
     }
   }, [conversationId]);
 
