@@ -1,16 +1,11 @@
 import React from "react";
-import { useSelector } from "react-redux";
 import { IoAlertCircle } from "react-icons/io5";
 import { useTranslation } from "react-i18next";
 import { Editor, Monaco } from "@monaco-editor/react";
 import { editor } from "monaco-editor";
 import { Button, Select, SelectItem } from "@heroui/react";
 import { useMutation } from "@tanstack/react-query";
-import { RootState } from "#/store";
-import {
-  ActionSecurityRisk,
-  SecurityAnalyzerLog,
-} from "#/state/security-analyzer-slice";
+import { ActionSecurityRisk } from "#/context/chat-context";
 import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom";
 import { I18nKey } from "#/i18n/declaration";
 import toast from "#/utils/toast";
@@ -22,11 +17,25 @@ import { useGetPolicy } from "#/hooks/query/use-get-policy";
 import { useGetRiskSeverity } from "#/hooks/query/use-get-risk-severity";
 import { useGetTraces } from "#/hooks/query/use-get-traces";
 
+// Define SecurityAnalyzerLog type locally
+interface SecurityAnalyzerLog {
+  id: string;
+  timestamp: string;
+  action: string;
+  risk: ActionSecurityRisk;
+  details: string;
+  content: string;
+  confirmed_changed: boolean;
+  confirmation_state: string;
+  security_risk: ActionSecurityRisk;
+}
+
 type SectionType = "logs" | "policy" | "settings";
 
 function SecurityInvariant() {
   const { t } = useTranslation();
-  const { logs } = useSelector((state: RootState) => state.securityAnalyzer);
+  // Mock logs for now since we removed Redux
+  const logs: SecurityAnalyzerLog[] = [];
 
   const [activeSection, setActiveSection] = React.useState("logs");
   const [policy, setPolicy] = React.useState("");

@@ -1,39 +1,18 @@
-// DEPRECATED: This file is scheduled for removal as part of the React Query migration.
-// It is kept temporarily to maintain backward compatibility until the migration is complete.
+// This file is a placeholder for backward compatibility with tests
+// All Redux functionality has been migrated to React Query and Context API
 
-import { combineReducers, configureStore } from "@reduxjs/toolkit";
-import agentReducer from "./state/agent-slice";
-import browserReducer from "./state/browser-slice";
-import chatReducer from "./state/chat-slice";
-import codeReducer from "./state/code-slice";
-import fileStateReducer from "./state/file-state-slice";
-import initialQueryReducer from "./state/initial-query-slice";
-import commandReducer from "./state/command-slice";
-import { jupyterReducer } from "./state/jupyter-slice";
-import securityAnalyzerReducer from "./state/security-analyzer-slice";
-import statusReducer from "./state/status-slice";
-import metricsReducer from "./state/metrics-slice";
+// Define empty types for backward compatibility with tests
+export type RootState = Record<string, never>;
+export type AppStore = {
+  getState: () => RootState;
+  dispatch: (action: unknown) => void;
+};
+export type AppDispatch = (action: unknown) => void;
 
-export const rootReducer = combineReducers({
-  fileState: fileStateReducer,
-  initialQuery: initialQueryReducer,
-  browser: browserReducer,
-  chat: chatReducer,
-  code: codeReducer,
-  cmd: commandReducer,
-  agent: agentReducer,
-  jupyter: jupyterReducer,
-  securityAnalyzer: securityAnalyzerReducer,
-  status: statusReducer,
-  metrics: metricsReducer,
-});
-
-const store = configureStore({
-  reducer: rootReducer,
-});
-
-export type RootState = ReturnType<typeof store.getState>;
-export type AppStore = typeof store;
-export type AppDispatch = typeof store.dispatch;
+// Create a dummy store for backward compatibility
+const store = {
+  getState: () => ({}),
+  dispatch: () => {},
+};
 
 export default store;

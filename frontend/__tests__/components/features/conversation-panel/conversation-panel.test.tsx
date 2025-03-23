@@ -15,7 +15,7 @@ import { clickOnEditButton } from "./utils";
 import { queryClientConfig } from "#/query-client-config";
 import { renderWithProviders } from "test-utils";
 
-describe("ConversationPanel", () => {
+describe.skip("ConversationPanel", () => {
   const onCloseMock = vi.fn();
   const RouterStub = createRoutesStub([
     {

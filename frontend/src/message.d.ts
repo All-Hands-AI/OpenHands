@@ -8,4 +8,5 @@ export type Message = {
   pending?: boolean;
   translationID?: string;
   eventID?: number;
+  id?: string; // Added for test compatibility
 };

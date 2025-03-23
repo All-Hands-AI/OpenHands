@@ -8,12 +8,10 @@
 import { HydratedRouter } from "react-router/dom";
 import React, { startTransition, StrictMode } from "react";
 import { hydrateRoot } from "react-dom/client";
-import { Provider } from "react-redux";
 import posthog from "posthog-js";
 import "./i18n";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import store from "./store";
 import { useConfig } from "./hooks/query/use-config";
 import { AuthProvider } from "./context/auth-context";
 import { FileStateProvider } from "./context/file-state-context";
@@ -80,23 +78,21 @@ prepareApp().then(() =>
     hydrateRoot(
       document,
       <StrictMode>
-        <Provider store={store}>
-          <AuthProvider>
-            <QueryClientProvider client={queryClient}>
-              <FileStateProvider>
-                <StatusProvider>
-                  <MetricsProvider>
-                    <AgentStateProvider>
-                      <HydratedRouter />
-                      <PosthogInit />
-                      <ReactQueryDevtoolsProduction />
-                    </AgentStateProvider>
-                  </MetricsProvider>
-                </StatusProvider>
-              </FileStateProvider>
-            </QueryClientProvider>
-          </AuthProvider>
-        </Provider>
+        <AuthProvider>
+          <QueryClientProvider client={queryClient}>
+            <FileStateProvider>
+              <StatusProvider>
+                <MetricsProvider>
+                  <AgentStateProvider>
+                    <HydratedRouter />
+                    <PosthogInit />
+                    <ReactQueryDevtoolsProduction />
+                  </AgentStateProvider>
+                </MetricsProvider>
+              </StatusProvider>
+            </FileStateProvider>
+          </QueryClientProvider>
+        </AuthProvider>
       </StrictMode>,
     );
   }),

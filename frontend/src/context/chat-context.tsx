@@ -13,7 +13,13 @@ import {
 } from "#/types/core/observations";
 import { OpenHandsAction } from "#/types/core/actions";
 import { OpenHandsEventType } from "#/types/core/base";
-import { ActionSecurityRisk } from "#/state/security-analyzer-slice";
+// Define ActionSecurityRisk enum here since we removed the Redux slice
+export enum ActionSecurityRisk {
+  UNKNOWN = -1,
+  LOW = 0,
+  MEDIUM = 1,
+  HIGH = 2,
+}
 
 // Constants
 const MAX_CONTENT_LENGTH = 1000;
@@ -56,6 +62,8 @@ type ChatContextType = {
   addAssistantObservation: (observation: OpenHandsObservation) => void;
   addErrorMessage: (payload: { id?: string; message: string }) => void;
   clearMessages: () => void;
+  updateMessage: (index: number, message: Partial<Message>) => void;
+  removeMessage: (index: number) => void;
 };
 
 // Create context with default values
@@ -67,6 +75,8 @@ const ChatContext = createContext<ChatContextType>({
   addAssistantObservation: () => {},
   addErrorMessage: () => {},
   clearMessages: () => {},
+  updateMessage: () => {},
+  removeMessage: () => {},
 });
 
 // Provider component
@@ -266,6 +276,31 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     setMessages([]);
   }, []);
 
+  // Add updateMessage method for tests
+  const updateMessage = useCallback(
+    (index: number, message: Partial<Message>) => {
+      setMessages((prevMessages) => {
+        const newMessages = [...prevMessages];
+        if (index >= 0 && index < newMessages.length) {
+          newMessages[index] = { ...newMessages[index], ...message };
+        }
+        return newMessages;
+      });
+    },
+    [],
+  );
+
+  // Add removeMessage method for tests
+  const removeMessage = useCallback((index: number) => {
+    setMessages((prevMessages) => {
+      const newMessages = [...prevMessages];
+      if (index >= 0 && index < newMessages.length) {
+        newMessages.splice(index, 1);
+      }
+      return newMessages;
+    });
+  }, []);
+
   // Register the functions with the chat service
   React.useEffect(() => {
     import("#/services/context-services/chat-service").then(
@@ -301,6 +336,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       addAssistantObservation,
       addErrorMessage,
       clearMessages,
+      updateMessage,
+      removeMessage,
     }),
     [
       messages,
@@ -310,6 +347,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       addAssistantObservation,
       addErrorMessage,
       clearMessages,
+      updateMessage,
+      removeMessage,
     ],
   );
 

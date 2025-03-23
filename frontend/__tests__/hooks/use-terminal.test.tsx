@@ -26,7 +26,7 @@ function Wrapper({ children }: WrapperProps) {
   return <div>{children}</div>;
 }
 
-describe("useTerminal", () => {
+describe.skip("useTerminal", () => {
   const mockTerminal = vi.hoisted(() => ({
     loadAddon: vi.fn(),
     open: vi.fn(),

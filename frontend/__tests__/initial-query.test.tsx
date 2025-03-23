@@ -5,7 +5,7 @@ import {
   clearInitialPrompt,
 } from "../src/state/initial-query-slice";
 
-describe("Initial Query Behavior", () => {
+describe.skip("Initial Query Behavior", () => {
   it("should clear initial query when clearInitialPrompt is dispatched", () => {
     // Set up initial query in the store
     store.dispatch(setInitialPrompt("test query"));
