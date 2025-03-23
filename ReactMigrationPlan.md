@@ -185,6 +185,11 @@ The migration will proceed in the following order, with each step being complete
 - Updated status service to work without Redux
 - Updated actions service to work without Redux
 - Updated observations service to work without Redux
+- Fixed tests for React Query migration
+  - Updated ws-client-provider tests to use new error handling approach
+  - Updated actions tests to use service-based approach instead of Redux
+  - Fixed browser tests to work with context-based state
+  - Updated chat-interface tests to match new implementation
 
 ## Risks and Mitigations
 
