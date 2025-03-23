@@ -136,6 +136,7 @@ export function WsClientProvider({
 
     // Cast event to ActionMessage - this is a temporary fix
     // In a future PR, we'll properly type the events
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     handleActionMessage(event as any);
   }
 

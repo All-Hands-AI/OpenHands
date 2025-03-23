@@ -12,6 +12,7 @@ export function handleActionMessage(message: ActionMessage) {
   // Handle different action types
   switch (message.type) {
     case ActionType.AGENT_STATE_CHANGED: {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       updateAgentState(message.args.agent_state as any);
       break;
     }
