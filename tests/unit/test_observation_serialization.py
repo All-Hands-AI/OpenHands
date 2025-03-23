@@ -133,7 +133,7 @@ def test_success_field_serialization():
 
 def test_cmd_output_truncation():
     """Test that large command outputs are truncated during initialization."""
-    # Create a large content string that exceeds MAX_CMD_OUTPUT_SIZE
+    # Create a large content string that exceeds MAX_CMD_OUTPUT_SIZE (50000 characters)
     large_content = 'a' * 60000  # 60k characters
 
     # Create a CmdOutputObservation with the large content
@@ -166,7 +166,8 @@ def test_cmd_output_truncation():
 
 def test_cmd_output_no_truncation():
     """Test that small command outputs are not truncated."""
-    # Create a content string that doesn't exceed MAX_CMD_OUTPUT_SIZE
+    # Create a content string that doesn't exceed MAX_CMD_OUTPUT_SIZE (50000 characters)
+    # We use a much smaller value for testing efficiency
     small_content = 'a' * 1000  # 1k characters
 
     # Create a CmdOutputObservation with the small content
