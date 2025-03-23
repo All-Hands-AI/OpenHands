@@ -43,7 +43,7 @@ export function useCommand() {
     // Otherwise, get initial data from Redux if bridge is available
     if (bridge) {
       try {
-        return bridge.getReduxSliceState<CommandState>("cmd");
+        return bridge.getReduxSliceState<CommandState>("command");
       } catch (error) {
         // If we can't get the state from Redux, return the initial state
         return initialCommand;
