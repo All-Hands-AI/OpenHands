@@ -20,6 +20,7 @@ const HANDLED_ACTIONS: OpenHandsEventType[] = [
   "write",
   "read",
   "browse",
+  "browse_interactive",
   "edit",
 ];
 
@@ -108,6 +109,8 @@ export const chatSlice = createSlice({
         text = `${action.payload.args.path}\n${content}`;
       } else if (actionID === "browse") {
         text = `Browsing ${action.payload.args.url}`;
+      } else if (actionID === "browse_interactive") {
+        text = `Interactive browsing: ${action.payload.args.browser_actions}`;
       }
       if (actionID === "run" || actionID === "run_ipython") {
         if (
@@ -189,6 +192,16 @@ export const chatSlice = createSlice({
           causeMessage.content = observation.payload.content;
         }
       } else if (observationID === "browse") {
+        let content = `**URL:** ${observation.payload.extras.url}\n`;
+        if (observation.payload.extras.error) {
+          content += `**Error:**\n${observation.payload.extras.error}\n`;
+        }
+        content += `**Output:**\n${observation.payload.content}`;
+        if (content.length > MAX_CONTENT_LENGTH) {
+          content = `${content.slice(0, MAX_CONTENT_LENGTH)}...`;
+        }
+        causeMessage.content = content;
+      } else if (observationID === "browse_interactive") {
         let content = `**URL:** ${observation.payload.extras.url}\n`;
         if (observation.payload.extras.error) {
           content += `**Error:**\n${observation.payload.extras.error}\n`;
