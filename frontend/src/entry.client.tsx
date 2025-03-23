@@ -12,9 +12,11 @@ import { Provider } from "react-redux";
 import posthog from "posthog-js";
 import "./i18n";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import store from "./store";
 import { useConfig } from "./hooks/query/use-config";
 import { AuthProvider } from "./context/auth-context";
+import { FileStateProvider } from "./context/file-state-context";
 import { queryClientConfig } from "./query-client-config";
 
 function PosthogInit() {
@@ -30,6 +32,29 @@ function PosthogInit() {
   }, [config]);
 
   return null;
+}
+
+/**
+ * Conditionally renders React Query Devtools in development mode
+ */
+function ReactQueryDevtoolsProduction() {
+  const [showDevtools, setShowDevtools] = React.useState(false);
+
+  React.useEffect(() => {
+    // Only show devtools in development
+    if (process.env.NODE_ENV === 'development') {
+      setShowDevtools(true);
+    } else {
+      // In production, only show devtools when pressing ctrl+shift+q
+      window.addEventListener('keydown', (event) => {
+        if (event.ctrlKey && event.shiftKey && event.key === 'q') {
+          setShowDevtools((prev) => !prev);
+        }
+      });
+    }
+  }, []);
+
+  return showDevtools ? <ReactQueryDevtools initialIsOpen={false} /> : null;
 }
 
 async function prepareApp() {
@@ -55,8 +80,11 @@ prepareApp().then(() =>
         <Provider store={store}>
           <AuthProvider>
             <QueryClientProvider client={queryClient}>
-              <HydratedRouter />
-              <PosthogInit />
+              <FileStateProvider>
+                <HydratedRouter />
+                <PosthogInit />
+                <ReactQueryDevtoolsProduction />
+              </FileStateProvider>
             </QueryClientProvider>
           </AuthProvider>
         </Provider>
