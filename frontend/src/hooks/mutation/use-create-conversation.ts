@@ -13,19 +13,39 @@ export const useCreateConversation = () => {
     mutationFn: async (variables: { q?: string }) => {
       if (variables.q) setInitialPrompt(variables.q);
 
-      console.log("Creating conversation with repository:", selectedRepository);
+      // Get the latest state directly from the query client
+      const latestState = queryClient.getQueryData<{
+        files: string[];
+        initialPrompt: string | null;
+        selectedRepository: string | null;
+      }>(["initialQuery"]);
+
+      const latestRepository =
+        latestState?.selectedRepository || selectedRepository;
+
+      // Use the latest repository from the query client
 
       return OpenHands.createConversation(
-        selectedRepository || undefined,
+        latestRepository || undefined,
         variables.q,
         files,
       );
     },
     onSuccess: async ({ conversation_id: conversationId }, { q }) => {
+      // Get the latest state again for analytics
+      const latestState = queryClient.getQueryData<{
+        files: string[];
+        initialPrompt: string | null;
+        selectedRepository: string | null;
+      }>(["initialQuery"]);
+
+      const latestRepository =
+        latestState?.selectedRepository || selectedRepository;
+
       posthog.capture("initial_query_submitted", {
         entry_point: "task_form",
         query_character_length: q?.length,
-        has_repository: !!selectedRepository,
+        has_repository: !!latestRepository,
         has_files: files.length > 0,
       });
       await queryClient.invalidateQueries({

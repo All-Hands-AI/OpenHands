@@ -234,7 +234,7 @@ class OpenHands {
       image_urls: imageUrls,
     };
 
-    console.log("API request body:", body);
+    // Send the request with the repository information
 
     const { data } = await openHands.post<Conversation>(
       "/api/conversations",

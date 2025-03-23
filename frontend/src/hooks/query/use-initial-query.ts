@@ -27,6 +27,7 @@ export function useInitialQuery() {
     bridge = getQueryReduxBridge();
   } catch (error) {
     // In tests, we might not have the bridge initialized
+    // eslint-disable-next-line no-console
     console.warn(
       "QueryReduxBridge not initialized, using default initial query state",
     );
@@ -226,42 +227,24 @@ export function useInitialQuery() {
     },
   });
 
-  // Mutation to set selected repository
-  const setSelectedRepositoryMutation = useMutation({
-    mutationFn: (repository: string | null) => Promise.resolve(repository),
-    onMutate: async (repository) => {
-      console.log("Setting selected repository:", repository);
+  // Function to directly set the selected repository (synchronous)
+  const setSelectedRepositorySync = (repository: string | null) => {
+    // Get current state
+    const previousState =
+      queryClient.getQueryData<InitialQueryState>(["initialQuery"]) ||
+      initialState;
 
-      // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ["initialQuery"] });
+    // Update state
+    const newState = {
+      ...previousState,
+      selectedRepository: repository,
+    };
 
-      // Get current state
-      const previousState = queryClient.getQueryData<InitialQueryState>([
-        "initialQuery",
-      ]);
+    // Set the state synchronously
+    queryClient.setQueryData<InitialQueryState>(["initialQuery"], newState);
+  };
 
-      console.log("Previous state:", previousState);
-
-      // Update state
-      if (previousState) {
-        const newState = {
-          ...previousState,
-          selectedRepository: repository,
-        };
-        console.log("New state:", newState);
-
-        queryClient.setQueryData<InitialQueryState>(["initialQuery"], newState);
-      }
-
-      return { previousState };
-    },
-    onError: (_, __, context) => {
-      // Restore previous state on error
-      if (context?.previousState) {
-        queryClient.setQueryData(["initialQuery"], context.previousState);
-      }
-    },
-  });
+  // We don't need the mutation anymore since we're using the sync function directly
 
   // Mutation to clear selected repository
   const clearSelectedRepositoryMutation = useMutation({
@@ -293,12 +276,7 @@ export function useInitialQuery() {
     },
   });
 
-  // Log the current state for debugging
-  console.log("useInitialQuery state:", {
-    files: query.data?.files,
-    initialPrompt: query.data?.initialPrompt,
-    selectedRepository: query.data?.selectedRepository,
-  });
+  // No need to log the state anymore
 
   return {
     // State
@@ -314,7 +292,7 @@ export function useInitialQuery() {
     clearFiles: clearFilesMutation.mutate,
     setInitialPrompt: setInitialPromptMutation.mutate,
     clearInitialPrompt: clearInitialPromptMutation.mutate,
-    setSelectedRepository: setSelectedRepositoryMutation.mutate,
+    setSelectedRepository: setSelectedRepositorySync, // Use the synchronous function directly
     clearSelectedRepository: clearSelectedRepositoryMutation.mutate,
   };
 }
