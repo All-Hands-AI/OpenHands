@@ -111,11 +111,10 @@ export function ConversationCard({
 
         if (data.vscode_url) {
           window.open(data.vscode_url, "_blank");
-        } else {
-          console.error("VS Code URL not available", data.error);
         }
+        // VS Code URL not available
       } catch (error) {
-        console.error("Failed to fetch VS Code URL", error);
+        // Failed to fetch VS Code URL
       }
     }
 
@@ -134,10 +133,12 @@ export function ConversationCard({
   }, [titleMode]);
 
   const hasContextMenu = !!(onDelete || onChangeTitle || showDisplayCostOption);
-  const timeBetweenUpdateAndCreation = new Date(lastUpdatedAt).getTime() - new Date(createdAt!).getTime();
-  const showUpdateTime = timeBetweenUpdateAndCreation > MAX_TIME_BETWEEN_CREATION_AND_UPDATE;
-  console.log("timeBetweenUpdateAndCreation", timeBetweenUpdateAndCreation);
-  console.log("showUpdateTime", showUpdateTime);
+  const timeBetweenUpdateAndCreation = createdAt
+    ? new Date(lastUpdatedAt).getTime() - new Date(createdAt).getTime()
+    : 0;
+  const showUpdateTime =
+    createdAt &&
+    timeBetweenUpdateAndCreation > MAX_TIME_BETWEEN_CREATION_AND_UPDATE;
 
   return (
     <>
@@ -217,14 +218,12 @@ export function ConversationCard({
           <p className="text-xs text-neutral-400">
             <span>Created </span>
             <time>
-              {formatTimeDelta(new Date(createdAt))} ago
+              {formatTimeDelta(new Date(createdAt || lastUpdatedAt))} ago
             </time>
             {showUpdateTime && (
               <>
                 <span>, updated </span>
-                <time>
-                  {formatTimeDelta(new Date(lastUpdatedAt))} ago
-                </time>
+                <time>{formatTimeDelta(new Date(lastUpdatedAt))} ago</time>
               </>
             )}
           </p>

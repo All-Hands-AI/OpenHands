@@ -1,12 +1,12 @@
 /**
- * Formats a date into a human-readable string representing the time delta between the given date and the current date.
+ * Formats a date into a compact string representing the time delta between the given date and the current date.
  * @param date The date to format
- * @returns A human-readable string representing the time delta between the given date and the current date
+ * @returns A compact string representing the time delta between the given date and the current date
  *
  * @example
  * // now is 2024-01-01T00:00:00Z
- * formatTimeDelta(new Date("2023-12-31T23:59:59Z")); // "1 second"
- * formatTimeDelta(new Date("2022-01-01T00:00:00Z")); // "2 years"
+ * formatTimeDelta(new Date("2023-12-31T23:59:59Z")); // "1s"
+ * formatTimeDelta(new Date("2022-01-01T00:00:00Z")); // "2y"
  */
 export const formatTimeDelta = (date: Date) => {
   const now = new Date();
