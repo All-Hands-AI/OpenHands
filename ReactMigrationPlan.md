@@ -155,12 +155,30 @@ The migration will follow these principles:
 
 The migration will proceed in the following order, with each step being completed, tested, and merged before moving to the next:
 
-1. Setup and utilities
-2. Simple server state (files, configurations)
-3. User-related state (conversations, settings)
-4. Complex state (chat, agent)
+1. Setup and utilities (COMPLETED)
+2. Simple server state (files, configurations) (COMPLETED)
+3. User-related state (conversations, settings) (COMPLETED)
+4. Complex state (chat, agent) (IN PROGRESS)
 5. Client-only state
 6. Cleanup and optimization
+
+## Progress
+
+### Completed
+- Enhanced React Query setup with improved error handling and devtools
+- Created utility functions for common React Query patterns
+- Migrated file state to React Query context
+- Migrated status state to React Query context
+- Migrated metrics state to React Query context
+- Migrated agent state to React Query context
+
+### In Progress
+- Migrating chat state to React Query
+
+### Upcoming
+- Terminal and browser state migration
+- Client-only state evaluation and migration
+- Redux cleanup and removal
 
 ## Risks and Mitigations
 
