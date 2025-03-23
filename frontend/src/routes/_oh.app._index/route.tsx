@@ -85,8 +85,8 @@ function FileViewer() {
               style={vscDarkPlus}
               customStyle={{
                 margin: 0,
-                padding: 0,
-                height: '100%',
+                padding: "10px",
+                height: "100%",
                 background: "#171717",
                 fontSize: "0.875rem",
                 borderRadius: 0,
