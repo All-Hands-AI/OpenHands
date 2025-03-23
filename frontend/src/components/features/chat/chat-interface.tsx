@@ -24,12 +24,8 @@ import { useGetTrajectory } from "#/hooks/mutation/use-get-trajectory";
 import { downloadTrajectory } from "#/utils/download-trajectory";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 
-function getEntryPoint(
-  hasRepository: boolean | null,
-  hasImportedProjectZip: boolean | null,
-): string {
+function getEntryPoint(hasRepository: boolean | null): string {
   if (hasRepository) return "github";
-  if (hasImportedProjectZip) return "zip";
   return "direct";
 }
 
@@ -48,7 +44,7 @@ export function ChatInterface() {
   >("positive");
   const [feedbackModalIsOpen, setFeedbackModalIsOpen] = React.useState(false);
   const [messageToSend, setMessageToSend] = React.useState<string | null>(null);
-  const { selectedRepository, importedProjectZip } = useSelector(
+  const { selectedRepository } = useSelector(
     (state: RootState) => state.initialQuery,
   );
   const params = useParams();
@@ -57,12 +53,8 @@ export function ChatInterface() {
   const handleSendMessage = async (content: string, files: File[]) => {
     if (messages.length === 0) {
       posthog.capture("initial_query_submitted", {
-        entry_point: getEntryPoint(
-          selectedRepository !== null,
-          importedProjectZip !== null,
-        ),
+        entry_point: getEntryPoint(selectedRepository !== null),
         query_character_length: content.length,
-        uploaded_zip_size: importedProjectZip?.length,
       });
     } else {
       posthog.capture("user_message_sent", {
