@@ -216,7 +216,11 @@ export function WsClientProviderWithBridge({
     [status, messageRateHandler.isUnderThreshold, events],
   );
 
-  return <WsClientContext.Provider value={value}>{children}</WsClientContext.Provider>;
+  return (
+    <WsClientContext.Provider value={value}>
+      {children}
+    </WsClientContext.Provider>
+  );
 }
 
 export function useWsClient() {

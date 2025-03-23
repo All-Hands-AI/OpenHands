@@ -11,9 +11,11 @@ import {
 } from "#/state/chat-slice";
 import { getQueryReduxBridge } from "#/utils/query-redux-bridge";
 
-export function handleObservationMessageWithBridge(message: ObservationMessage) {
+export function handleObservationMessageWithBridge(
+  message: ObservationMessage,
+) {
   const bridge = getQueryReduxBridge();
-  
+
   switch (message.observation) {
     case ObservationType.RUN: {
       if (message.extras.hidden) break;
@@ -29,23 +31,35 @@ export function handleObservationMessageWithBridge(message: ObservationMessage) 
     }
     case ObservationType.RUN_IPYTHON:
       // FIXME: render this as markdown
-      bridge.conditionalDispatch("jupyter", appendJupyterOutput(message.content));
+      bridge.conditionalDispatch(
+        "jupyter",
+        appendJupyterOutput(message.content),
+      );
       break;
     case ObservationType.BROWSE:
       if (message.extras?.screenshot) {
-        bridge.conditionalDispatch("browser", setScreenshotSrc(message.extras?.screenshot));
+        bridge.conditionalDispatch(
+          "browser",
+          setScreenshotSrc(message.extras?.screenshot),
+        );
       }
       if (message.extras?.url) {
         bridge.conditionalDispatch("browser", setUrl(message.extras.url));
       }
       break;
     case ObservationType.AGENT_STATE_CHANGED:
-      bridge.conditionalDispatch("agent", setCurrentAgentState(message.extras.agent_state));
+      bridge.conditionalDispatch(
+        "agent",
+        setCurrentAgentState(message.extras.agent_state),
+      );
       break;
     case ObservationType.DELEGATE:
       // TODO: better UI for delegation result (#2309)
       if (message.content) {
-        bridge.conditionalDispatch("chat", addAssistantMessage(message.content));
+        bridge.conditionalDispatch(
+          "chat",
+          addAssistantMessage(message.content),
+        );
       }
       break;
     case ObservationType.READ:

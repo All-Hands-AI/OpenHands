@@ -10,7 +10,7 @@ import { setCode, setActiveFilepath } from "#/state/code-slice";
 import { appendJupyterInput } from "#/state/jupyter-slice";
 import { setCurStatusMessage } from "#/state/status-slice";
 import { setMetrics } from "#/state/metrics-slice";
-import store from "#/store";
+// import store from "#/store"; // Not used directly, using bridge instead
 import ActionType from "#/types/action-type";
 import {
   ActionMessage,
@@ -56,18 +56,27 @@ const messageActions = {
         }),
       );
     } else {
-      bridge.conditionalDispatch("chat", addAssistantMessage(message.args.content));
+      bridge.conditionalDispatch(
+        "chat",
+        addAssistantMessage(message.args.content),
+      );
     }
   },
   [ActionType.RUN_IPYTHON]: (message: ActionMessage) => {
     if (message.args.confirmation_state !== "rejected") {
       const bridge = getQueryReduxBridge();
-      bridge.conditionalDispatch("jupyter", appendJupyterInput(message.args.code));
+      bridge.conditionalDispatch(
+        "jupyter",
+        appendJupyterInput(message.args.code),
+      );
     }
   },
   [ActionType.FINISH]: (message: ActionMessage) => {
     const bridge = getQueryReduxBridge();
-    bridge.conditionalDispatch("chat", addAssistantMessage(message.args.final_thought));
+    bridge.conditionalDispatch(
+      "chat",
+      addAssistantMessage(message.args.final_thought),
+    );
     let successPrediction = "";
     if (message.args.task_completed === "partial") {
       successPrediction =
@@ -81,9 +90,15 @@ const messageActions = {
     if (successPrediction) {
       // if final_thought is not empty, add a new line before the success prediction
       if (message.args.final_thought) {
-        bridge.conditionalDispatch("chat", addAssistantMessage(`\n${successPrediction}`));
+        bridge.conditionalDispatch(
+          "chat",
+          addAssistantMessage(`\n${successPrediction}`),
+        );
       } else {
-        bridge.conditionalDispatch("chat", addAssistantMessage(successPrediction));
+        bridge.conditionalDispatch(
+          "chat",
+          addAssistantMessage(successPrediction),
+        );
       }
     }
   },
@@ -91,7 +106,7 @@ const messageActions = {
 
 export function handleActionMessageWithBridge(message: ActionMessage) {
   const bridge = getQueryReduxBridge();
-  
+
   if (message.args?.hidden) {
     return;
   }
@@ -113,12 +128,18 @@ export function handleActionMessageWithBridge(message: ActionMessage) {
   }
 
   if ("args" in message && "security_risk" in message.args) {
-    bridge.conditionalDispatch("securityAnalyzer", appendSecurityAnalyzerInput(message));
+    bridge.conditionalDispatch(
+      "securityAnalyzer",
+      appendSecurityAnalyzerInput(message),
+    );
   }
 
   if (message.source === "agent") {
     if (message.args && message.args.thought) {
-      bridge.conditionalDispatch("chat", addAssistantMessage(message.args.thought));
+      bridge.conditionalDispatch(
+        "chat",
+        addAssistantMessage(message.args.thought),
+      );
     }
     // Need to convert ActionMessage to RejectAction
     // @ts-expect-error TODO: fix
@@ -134,7 +155,7 @@ export function handleActionMessageWithBridge(message: ActionMessage) {
 
 export function handleStatusMessageWithBridge(message: StatusMessage) {
   const bridge = getQueryReduxBridge();
-  
+
   if (message.type === "info") {
     bridge.conditionalDispatch(
       "status",
@@ -157,11 +178,15 @@ export function handleStatusMessageWithBridge(message: StatusMessage) {
   }
 }
 
-export function handleAssistantMessageWithBridge(message: Record<string, unknown>) {
+export function handleAssistantMessageWithBridge(
+  message: Record<string, unknown>,
+) {
   if (message.action) {
     handleActionMessageWithBridge(message as unknown as ActionMessage);
   } else if (message.observation) {
-    handleObservationMessageWithBridge(message as unknown as ObservationMessage);
+    handleObservationMessageWithBridge(
+      message as unknown as ObservationMessage,
+    );
   } else if (message.status_update) {
     handleStatusMessageWithBridge(message as unknown as StatusMessage);
   } else {

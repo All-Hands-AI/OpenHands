@@ -13,9 +13,12 @@ export function useChatMessages() {
   // Get initial state from Redux if this is the first time accessing the data
   const getInitialMessages = (): Message[] => {
     // If we already have data in React Query, use that
-    const existingData = queryClient.getQueryData<Message[]>(["chat", "messages"]);
+    const existingData = queryClient.getQueryData<Message[]>([
+      "chat",
+      "messages",
+    ]);
     if (existingData) return existingData;
-    
+
     // Otherwise, get initial data from Redux
     return bridge.getReduxSliceState<{ messages: Message[] }>("chat").messages;
   };
@@ -44,16 +47,17 @@ export function useChatMessages() {
         timestamp: payload.timestamp || new Date().toISOString(),
         pending: !!payload.pending,
       };
-      
+
       return Promise.resolve(message);
     },
     onMutate: async (payload) => {
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: ["chat", "messages"] });
-      
+
       // Get current messages
-      const previousMessages = queryClient.getQueryData<Message[]>(["chat", "messages"]) || [];
-      
+      const previousMessages =
+        queryClient.getQueryData<Message[]>(["chat", "messages"]) || [];
+
       // Create new message
       const message: Message = {
         type: "thought",
@@ -63,19 +67,25 @@ export function useChatMessages() {
         timestamp: payload.timestamp || new Date().toISOString(),
         pending: !!payload.pending,
       };
-      
+
       // Remove any pending messages
-      const filteredMessages = previousMessages.filter(m => !m.pending);
-      
+      const filteredMessages = previousMessages.filter((m) => !m.pending);
+
       // Add new message
-      queryClient.setQueryData(["chat", "messages"], [...filteredMessages, message]);
-      
+      queryClient.setQueryData(
+        ["chat", "messages"],
+        [...filteredMessages, message],
+      );
+
       return { previousMessages };
     },
     onError: (_, __, context) => {
       // Restore previous messages on error
       if (context?.previousMessages) {
-        queryClient.setQueryData(["chat", "messages"], context.previousMessages);
+        queryClient.setQueryData(
+          ["chat", "messages"],
+          context.previousMessages,
+        );
       }
     },
   });
@@ -91,16 +101,17 @@ export function useChatMessages() {
         timestamp: new Date().toISOString(),
         pending: false,
       };
-      
+
       return Promise.resolve(message);
     },
     onMutate: async (content) => {
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: ["chat", "messages"] });
-      
+
       // Get current messages
-      const previousMessages = queryClient.getQueryData<Message[]>(["chat", "messages"]) || [];
-      
+      const previousMessages =
+        queryClient.getQueryData<Message[]>(["chat", "messages"]) || [];
+
       // Create new message
       const message: Message = {
         type: "thought",
@@ -110,16 +121,22 @@ export function useChatMessages() {
         timestamp: new Date().toISOString(),
         pending: false,
       };
-      
+
       // Add new message
-      queryClient.setQueryData(["chat", "messages"], [...previousMessages, message]);
-      
+      queryClient.setQueryData(
+        ["chat", "messages"],
+        [...previousMessages, message],
+      );
+
       return { previousMessages };
     },
     onError: (_, __, context) => {
       // Restore previous messages on error
       if (context?.previousMessages) {
-        queryClient.setQueryData(["chat", "messages"], context.previousMessages);
+        queryClient.setQueryData(
+          ["chat", "messages"],
+          context.previousMessages,
+        );
       }
     },
   });
@@ -134,16 +151,17 @@ export function useChatMessages() {
         sender: "assistant",
         timestamp: new Date().toISOString(),
       };
-      
+
       return Promise.resolve(message);
     },
     onMutate: async (payload) => {
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: ["chat", "messages"] });
-      
+
       // Get current messages
-      const previousMessages = queryClient.getQueryData<Message[]>(["chat", "messages"]) || [];
-      
+      const previousMessages =
+        queryClient.getQueryData<Message[]>(["chat", "messages"]) || [];
+
       // Create new message
       const message: Message = {
         translationID: payload.id,
@@ -152,16 +170,22 @@ export function useChatMessages() {
         sender: "assistant",
         timestamp: new Date().toISOString(),
       };
-      
+
       // Add new message
-      queryClient.setQueryData(["chat", "messages"], [...previousMessages, message]);
-      
+      queryClient.setQueryData(
+        ["chat", "messages"],
+        [...previousMessages, message],
+      );
+
       return { previousMessages };
     },
     onError: (_, __, context) => {
       // Restore previous messages on error
       if (context?.previousMessages) {
-        queryClient.setQueryData(["chat", "messages"], context.previousMessages);
+        queryClient.setQueryData(
+          ["chat", "messages"],
+          context.previousMessages,
+        );
       }
     },
   });
@@ -172,19 +196,23 @@ export function useChatMessages() {
     onMutate: async () => {
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: ["chat", "messages"] });
-      
+
       // Get current messages
-      const previousMessages = queryClient.getQueryData<Message[]>(["chat", "messages"]) || [];
-      
+      const previousMessages =
+        queryClient.getQueryData<Message[]>(["chat", "messages"]) || [];
+
       // Clear messages
       queryClient.setQueryData(["chat", "messages"], []);
-      
+
       return { previousMessages };
     },
     onError: (_, __, context) => {
       // Restore previous messages on error
       if (context?.previousMessages) {
-        queryClient.setQueryData(["chat", "messages"], context.previousMessages);
+        queryClient.setQueryData(
+          ["chat", "messages"],
+          context.previousMessages,
+        );
       }
     },
   });
