@@ -13,14 +13,29 @@ export const useAppLogout = () => {
   const navigate = useNavigate();
 
   const handleLogout = async () => {
-    if (config?.APP_MODE === "saas") {
-      navigate("/logout");
-    } else {
-      saveUserSettings({ unset_github_token: true });
-      setGitHubTokenIsSet(false);
-      localStorage.removeItem("gh_token");
-      posthog.reset();
-      navigate("/");
+    try {
+      if (config?.APP_MODE === "saas") {
+        // First perform the logout
+        await logout();
+        // Then clear local state
+        setGitHubTokenIsSet(false);
+        localStorage.removeItem("gh_token");
+        posthog.reset();
+        // Finally navigate to logout page
+        navigate("/logout");
+      } else {
+        saveUserSettings({ unset_github_token: true });
+        setGitHubTokenIsSet(false);
+        localStorage.removeItem("gh_token");
+        posthog.reset();
+        navigate("/");
+      }
+    } catch (error) {
+      console.error("Logout failed:", error);
+      // Still navigate to logout page in case of error
+      if (config?.APP_MODE === "saas") {
+        navigate("/logout");
+      }
     }
   };
 
