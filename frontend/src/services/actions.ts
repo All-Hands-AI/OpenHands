@@ -8,7 +8,6 @@ import { trackError } from "#/utils/error-handler";
 import { appendSecurityAnalyzerInput } from "#/state/security-analyzer-slice";
 import { setCode, setActiveFilepath } from "#/state/code-slice";
 import { appendJupyterInput } from "#/state/jupyter-slice";
-import { setCurStatusMessage } from "#/state/status-slice";
 import { setMetrics } from "#/state/metrics-slice";
 import store from "#/store";
 import ActionType from "#/types/action-type";
@@ -19,6 +18,8 @@ import {
 } from "#/types/message";
 import { handleObservationMessage } from "./observations";
 import { appendInput } from "#/state/command-slice";
+import { statusMessageQueryKey } from "#/hooks/query/use-status-message";
+import { queryClient } from "#/entry.client";
 
 const messageActions = {
   [ActionType.BROWSE]: (message: ActionMessage) => {
@@ -124,11 +125,9 @@ export function handleActionMessage(message: ActionMessage) {
 
 export function handleStatusMessage(message: StatusMessage) {
   if (message.type === "info") {
-    store.dispatch(
-      setCurStatusMessage({
-        ...message,
-      }),
-    );
+    queryClient.setQueryData(statusMessageQueryKey, {
+      ...message,
+    });
   } else if (message.type === "error") {
     trackError({
       message: message.message,

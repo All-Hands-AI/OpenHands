@@ -4,6 +4,8 @@ import store from "#/store";
 import { trackError } from "#/utils/error-handler";
 import ActionType from "#/types/action-type";
 import { ActionMessage } from "#/types/message";
+import { queryClient } from "#/entry.client";
+import { statusMessageQueryKey } from "#/hooks/query/use-status-message";
 
 // Mock dependencies
 vi.mock("#/utils/error-handler", () => ({
@@ -13,6 +15,12 @@ vi.mock("#/utils/error-handler", () => ({
 vi.mock("#/store", () => ({
   default: {
     dispatch: vi.fn(),
+  },
+}));
+
+vi.mock("#/entry.client", () => ({
+  queryClient: {
+    setQueryData: vi.fn(),
   },
 }));
 
@@ -32,9 +40,10 @@ describe("Actions Service", () => {
 
       handleStatusMessage(message);
 
-      expect(store.dispatch).toHaveBeenCalledWith(expect.objectContaining({
-        payload: message,
-      }));
+      expect(queryClient.setQueryData).toHaveBeenCalledWith(
+        statusMessageQueryKey,
+        message
+      );
     });
 
     it("should log error messages and display them in chat", () => {
