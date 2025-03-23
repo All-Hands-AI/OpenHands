@@ -45,10 +45,8 @@ async function prepareApp() {
   }
 }
 
+// Create a stable query client instance
 export const queryClient = new QueryClient(queryClientConfig);
-
-// Create a variable to store the React root
-let appRoot: ReturnType<typeof hydrateRoot> | null = null;
 
 // Create the app element
 const App = (
@@ -64,26 +62,37 @@ const App = (
   </StrictMode>
 );
 
-// Function to hydrate or render the app
-const renderApp = () => {
-  // Check if we're in a browser environment
+// Use a module-level variable to track if hydration has been attempted
+let hasHydrated = false;
+
+// Function to hydrate the app
+const hydrateApp = () => {
+  // Only attempt hydration once
+  if (hasHydrated) return;
+  hasHydrated = true;
+
+  // Ensure we're in a browser environment
   if (typeof window === "undefined") return;
 
-  // Only hydrate once
-  if (!appRoot) {
+  // Use startTransition to avoid blocking the main thread
+  startTransition(() => {
     try {
-      appRoot = hydrateRoot(document, App);
+      // Find the root element - React Router might be looking for this specific element
+      const rootElement = document.getElementById("root");
+      if (rootElement) {
+        // Hydrate the root element instead of the entire document
+        hydrateRoot(rootElement, App);
+      } else {
+        // Fallback to document if root element is not found
+        hydrateRoot(document, App);
+      }
     } catch (error) {
-      // Log hydration errors but continue
+      // Log hydration errors but don't rethrow
       // eslint-disable-next-line no-console
-      console.error("Error hydrating app:", error);
+      console.error("Error during hydration:", error);
     }
-  }
+  });
 };
 
 // Initialize the app
-prepareApp().then(() => {
-  startTransition(() => {
-    renderApp();
-  });
-});
+prepareApp().then(hydrateApp);
