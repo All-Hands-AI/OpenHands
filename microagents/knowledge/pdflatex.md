@@ -15,7 +15,7 @@ PdfLatex is a tool that converts Latex sources into PDF. This is specifically ve
 apt-get install texlive-latex-base
 ```
 
-* Also install the recommended and extra fonts to avoid running into the error [1], when trying to use pdflatex on latex files with more fonts.
+* Also install the recommended and extra fonts to avoid running into errors, when trying to use pdflatex on latex files with more fonts.
 
 ```
 apt-get install texlive-fonts-recommended
