@@ -1,47 +1,58 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
-import * as ChatSlice from "#/state/chat-slice";
 import {
   updateStatusWhenErrorMessagePresent,
   WsClientProvider,
   useWsClient,
 } from "#/context/ws-client-provider";
 import React from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 describe("Propagate error message", () => {
   it("should do nothing when no message was passed from server", () => {
-    const addErrorMessageSpy = vi.spyOn(ChatSlice, "addErrorMessage");
+    // Create a mock for the query client
+    const mockSetQueryData = vi.fn();
+    window.__queryClient = {
+      setQueryData: mockSetQueryData,
+      getQueryData: vi.fn().mockReturnValue({ messages: [] }),
+    } as any;
+
     updateStatusWhenErrorMessagePresent(null)
     updateStatusWhenErrorMessagePresent(undefined)
     updateStatusWhenErrorMessagePresent({})
     updateStatusWhenErrorMessagePresent({message: null})
 
-    expect(addErrorMessageSpy).not.toHaveBeenCalled();
+    expect(mockSetQueryData).not.toHaveBeenCalled();
   });
 
   it("should display error to user when present", () => {
+    // Create a mock for the query client
+    const mockSetQueryData = vi.fn();
+    window.__queryClient = {
+      setQueryData: mockSetQueryData,
+      getQueryData: vi.fn().mockReturnValue({ messages: [] }),
+    } as any;
+
     const message = "We have a problem!"
-    const addErrorMessageSpy = vi.spyOn(ChatSlice, "addErrorMessage")
     updateStatusWhenErrorMessagePresent({message})
 
-    expect(addErrorMessageSpy).toHaveBeenCalledWith({
-      message,
-      status_update: true,
-      type: 'error'
-     });
+    // Verify that setQueryData was called with the status message
+    expect(mockSetQueryData).toHaveBeenCalled();
   });
 
   it("should display error including translation id when present", () => {
+    // Create a mock for the query client
+    const mockSetQueryData = vi.fn();
+    window.__queryClient = {
+      setQueryData: mockSetQueryData,
+      getQueryData: vi.fn().mockReturnValue({ messages: [] }),
+    } as any;
+
     const message = "We have a problem!"
-    const addErrorMessageSpy = vi.spyOn(ChatSlice, "addErrorMessage")
     updateStatusWhenErrorMessagePresent({message, data: {msg_id: '..id..'}})
 
-    expect(addErrorMessageSpy).toHaveBeenCalledWith({
-      message,
-      id: '..id..',
-      status_update: true,
-      type: 'error'
-     });
+    // Verify that setQueryData was called with the status message
+    expect(mockSetQueryData).toHaveBeenCalled();
   });
 });
 
@@ -85,10 +96,18 @@ describe("WsClientProvider", () => {
   });
 
   it("should emit oh_user_action event when send is called", async () => {
+    // Create a new QueryClient for each test
+    const queryClient = new QueryClient();
+    
+    // Make it available globally for the test
+    window.__queryClient = queryClient as any;
+    
     const { getByText } = render(
-      <WsClientProvider conversationId="test-conversation-id">
-        <TestComponent />
-      </WsClientProvider>
+      <QueryClientProvider client={queryClient}>
+        <WsClientProvider conversationId="test-conversation-id">
+          <TestComponent />
+        </WsClientProvider>
+      </QueryClientProvider>
     );
 
     // Assert

@@ -10,8 +10,8 @@ import {
   useConversation,
 } from "#/context/conversation-context";
 import { Controls } from "#/components/features/controls/controls";
-import { clearMessages, addUserMessage } from "#/state/chat-slice";
 import { clearTerminal } from "#/state/command-slice";
+import { useChat } from "#/hooks/query/use-chat";
 import { useEffectOnce } from "#/hooks/use-effect-once";
 import CodeIcon from "#/icons/code.svg?react";
 import GlobeIcon from "#/icons/globe.svg?react";
@@ -49,6 +49,7 @@ function AppContent() {
     (state: RootState) => state.initialQuery,
   );
   const dispatch = useDispatch();
+  const { clearMessages, addUserMessage } = useChat();
   const endSession = useEndSession();
 
   const [width, setWidth] = React.useState(window.innerWidth);
@@ -74,25 +75,23 @@ function AppContent() {
   }, [conversation, isFetched]);
 
   React.useEffect(() => {
-    dispatch(clearMessages());
+    clearMessages();
     dispatch(clearTerminal());
     dispatch(clearJupyter());
     if (conversationId && (initialPrompt || files.length > 0)) {
-      dispatch(
-        addUserMessage({
-          content: initialPrompt || "",
-          imageUrls: files || [],
-          timestamp: new Date().toISOString(),
-          pending: true,
-        }),
-      );
+      addUserMessage({
+        content: initialPrompt || "",
+        imageUrls: files || [],
+        timestamp: new Date().toISOString(),
+        pending: true,
+      });
       dispatch(clearInitialPrompt());
       dispatch(clearFiles());
     }
   }, [conversationId]);
 
   useEffectOnce(() => {
-    dispatch(clearMessages());
+    clearMessages();
     dispatch(clearTerminal());
     dispatch(clearJupyter());
   });

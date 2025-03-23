@@ -2,8 +2,7 @@ import { StatusMessage } from "#/types/message";
 import { trackError } from "#/utils/error-handler";
 import { queryClient } from "#/entry.client";
 import { statusKeys } from "#/hooks/query/use-status";
-import { addErrorMessage } from "#/state/chat-slice";
-import store from "#/store";
+import { chatKeys } from "#/hooks/query/use-chat";
 
 export function handleStatusMessage(message: StatusMessage) {
   if (message.type === "info") {
@@ -15,10 +14,23 @@ export function handleStatusMessage(message: StatusMessage) {
       source: "chat",
       metadata: { msgId: message.id },
     });
-    store.dispatch(
-      addErrorMessage({
-        ...message,
-      }),
-    );
+
+    // Get current chat state
+    const currentState = queryClient.getQueryData(chatKeys.messages()) || {
+      messages: [],
+    };
+    const newState = { ...currentState };
+
+    // Add error message
+    newState.messages.push({
+      translationID: message.id,
+      content: message.message,
+      type: "error",
+      sender: "assistant",
+      timestamp: new Date().toISOString(),
+    });
+
+    // Update chat state
+    queryClient.setQueryData(chatKeys.messages(), newState);
   }
 }

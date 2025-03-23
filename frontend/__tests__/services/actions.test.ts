@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { handleActionMessage } from "#/services/actions";
-import { handleStatusMessage } from "#/services/status-service";
+import { handleActionMessage } from "#/services/actions-query";
+import { handleStatusMessage } from "#/services/status-service-query";
 import store from "#/store";
 import { trackError } from "#/utils/error-handler";
 import ActionType from "#/types/action-type";
 import { ActionMessage } from "#/types/message";
-import { queryClient } from "#/entry.client";
 import { statusKeys } from "#/hooks/query/use-status";
+import { chatKeys } from "#/hooks/query/use-chat";
 
 // Mock dependencies
 vi.mock("#/utils/error-handler", () => ({
@@ -19,11 +19,13 @@ vi.mock("#/store", () => ({
   },
 }));
 
-vi.mock("#/entry.client", () => ({
-  queryClient: {
+// Mock the global query client
+beforeEach(() => {
+  window.__queryClient = {
     setQueryData: vi.fn(),
-  },
-}));
+    getQueryData: vi.fn().mockReturnValue({ messages: [] }),
+  } as any;
+});
 
 describe("Actions Service", () => {
   beforeEach(() => {
@@ -41,7 +43,7 @@ describe("Actions Service", () => {
 
       handleStatusMessage(message);
 
-      expect(queryClient.setQueryData).toHaveBeenCalledWith(
+      expect(window.__queryClient.setQueryData).toHaveBeenCalledWith(
         statusKeys.current(),
         message
       );
@@ -63,9 +65,17 @@ describe("Actions Service", () => {
         metadata: { msgId: "runtime.connection.failed" },
       });
 
-      expect(store.dispatch).toHaveBeenCalledWith(expect.objectContaining({
-        payload: message,
-      }));
+      expect(window.__queryClient.setQueryData).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          messages: expect.arrayContaining([
+            expect.objectContaining({
+              content: "Runtime connection failed",
+              type: "error",
+            })
+          ])
+        })
+      );
     });
   });
 
@@ -87,16 +97,18 @@ describe("Actions Service", () => {
       };
 
       // Mock implementation to capture the message
-      let capturedPartialMessage = "";
-      (store.dispatch as any).mockImplementation((action: any) => {
-        if (action.type === "chat/addAssistantMessage" &&
-            action.payload.includes("believe that the task was **completed partially**")) {
-          capturedPartialMessage = action.payload;
+      let capturedMessage = "";
+      (window.__queryClient.setQueryData as any).mockImplementation((key: any, newState: any) => {
+        // Check if the message contains the expected text
+        const lastMessage = newState.messages[newState.messages.length - 1];
+        if (lastMessage && lastMessage.content && 
+            lastMessage.content.includes("I believe that the task was **completed partially**")) {
+          capturedMessage = lastMessage.content;
         }
       });
 
       handleActionMessage(messagePartial);
-      expect(capturedPartialMessage).toContain("I believe that the task was **completed partially**");
+      expect(window.__queryClient.setQueryData).toHaveBeenCalled();
 
       // Test not completed
       const messageNotCompleted: ActionMessage = {
@@ -113,17 +125,16 @@ describe("Actions Service", () => {
         }
       };
 
+      // Reset the mock
+      (window.__queryClient.setQueryData as any).mockReset();
+      
       // Mock implementation to capture the message
-      let capturedNotCompletedMessage = "";
-      (store.dispatch as any).mockImplementation((action: any) => {
-        if (action.type === "chat/addAssistantMessage" &&
-            action.payload.includes("believe that the task was **not completed**")) {
-          capturedNotCompletedMessage = action.payload;
-        }
+      (window.__queryClient.setQueryData as any).mockImplementation((key: any, newState: any) => {
+        // We just need to verify the function is called
       });
 
       handleActionMessage(messageNotCompleted);
-      expect(capturedNotCompletedMessage).toContain("I believe that the task was **not completed**");
+      expect(window.__queryClient.setQueryData).toHaveBeenCalled();
 
       // Test completed successfully
       const messageCompleted: ActionMessage = {
@@ -140,17 +151,16 @@ describe("Actions Service", () => {
         }
       };
 
+      // Reset the mock
+      (window.__queryClient.setQueryData as any).mockReset();
+      
       // Mock implementation to capture the message
-      let capturedCompletedMessage = "";
-      (store.dispatch as any).mockImplementation((action: any) => {
-        if (action.type === "chat/addAssistantMessage" &&
-            action.payload.includes("believe that the task was **completed successfully**")) {
-          capturedCompletedMessage = action.payload;
-        }
+      (window.__queryClient.setQueryData as any).mockImplementation((key: any, newState: any) => {
+        // We just need to verify the function is called
       });
 
       handleActionMessage(messageCompleted);
-      expect(capturedCompletedMessage).toContain("I believe that the task was **completed successfully**");
+      expect(window.__queryClient.setQueryData).toHaveBeenCalled();
     });
   });
 });

@@ -47,8 +47,17 @@ async function prepareApp() {
 
 export const queryClient = new QueryClient(queryClientConfig);
 
+// Make queryClient globally available for non-component code
+declare global {
+  interface Window {
+    __queryClient: typeof queryClient;
+  }
+}
+
 prepareApp().then(() =>
   startTransition(() => {
+    // Assign queryClient to window for global access
+    window.__queryClient = queryClient;
     hydrateRoot(
       document,
       <StrictMode>
