@@ -7,6 +7,7 @@ import { AgentState } from "#/types/agent-state";
 import { ErrorObservation } from "#/types/core/observations";
 import { useEndSession } from "../../../hooks/use-end-session";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
+import { saveLastPage } from "#/utils/last-page";
 
 interface ServerError {
   error: boolean | string;
@@ -32,6 +33,8 @@ export const useHandleWSEvents = () => {
 
     if (isServerError(event)) {
       if (event.error_code === 401) {
+        // Save the last page before ending session
+        saveLastPage();
         displayErrorToast("Session expired.");
         endSession();
         return;

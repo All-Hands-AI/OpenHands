@@ -2,8 +2,8 @@ const LAST_PAGE_KEY = 'openhands_last_page';
 
 export const saveLastPage = () => {
   const currentPath = window.location.pathname;
-  // Don't save login/settings pages
-  if (!currentPath.includes('/settings') && currentPath !== '/') {
+  // Don't save login, logout, or settings pages
+  if (!currentPath.includes('/settings') && currentPath !== '/' && currentPath !== '/logout') {
     localStorage.setItem(LAST_PAGE_KEY, currentPath);
   }
 };
