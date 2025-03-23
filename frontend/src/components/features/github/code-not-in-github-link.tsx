@@ -3,7 +3,7 @@ import { useDispatch } from "react-redux";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { setInitialPrompt } from "#/state/initial-query-slice";
 
-const INITIAL_PROMPT = "Wait for me to upload files.";
+const INITIAL_PROMPT = "";
 
 export function CodeNotInGitHubLink() {
   const dispatch = useDispatch();
