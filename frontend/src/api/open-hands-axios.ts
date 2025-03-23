@@ -11,11 +11,16 @@ openHands.interceptors.response.use(
       error.response?.status === 401 || 
       error.response?.status === 403
     ) {
-      // Don't redirect if we're already on the auth endpoint or logout page
-      const currentPath = window.location.pathname + window.location.search;
-      if (!error.config.url?.includes('/api/authenticate') && !currentPath.includes('/logout')) {
+      // Don't handle auth errors on the logout page
+      if (window.location.pathname === '/logout') {
+        return Promise.reject(error);
+      }
+
+      // Don't redirect if we're already on the auth endpoint
+      if (!error.config.url?.includes('/api/authenticate')) {
         // Save the current page to localStorage if we're not on the home page
-        if (currentPath !== '/') {
+        const currentPath = window.location.pathname + window.location.search;
+        if (currentPath !== '/' && currentPath !== '/logout') {
           import('../utils/last-page').then(({ saveLastPage }) => {
             saveLastPage();
           });

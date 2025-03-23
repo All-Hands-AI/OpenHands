@@ -57,8 +57,14 @@ export function ErrorBoundary() {
 }
 
 export default function MainApp() {
-  const navigate = useNavigate();
   const { pathname } = useLocation();
+
+  // Special case for logout page - don't render anything
+  if (pathname === '/logout') {
+    return null;
+  }
+
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   useAuth(); // Keep the auth context active
   const { data: settings } = useSettings();
@@ -135,11 +141,6 @@ export default function MainApp() {
   // Handle redirection to last page after login
   React.useEffect(() => {
     const handleLastPageRedirect = async () => {
-      // Don't redirect if we're on the logout page
-      if (pathname.includes('/logout')) {
-        return;
-      }
-
       if (userIsAuthed && pathname === "/") {
         const { getLastPage, clearLastPage } = await import(
           "#/utils/last-page"
@@ -162,16 +163,6 @@ export default function MainApp() {
       }
     };
   }, [userIsAuthed, pathname, navigate]);
-
-  // Don't show the main layout or run auth checks on the logout page
-  if (pathname === '/logout') {
-    return <Outlet />;
-  }
-
-  // Don't run any auth checks if we're on the logout page
-  if (pathname.includes('/logout')) {
-    return null;
-  }
 
   return (
     <div
