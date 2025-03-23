@@ -56,7 +56,7 @@ export function useMetrics() {
   const query = useQuery({
     queryKey: ["metrics"],
     queryFn: () => getInitialMetrics(),
-    initialData: getInitialMetrics,
+    initialData: initialMetrics, // Use initialMetrics directly to ensure it's always defined
     staleTime: Infinity, // We manage updates manually through mutations
   });
 

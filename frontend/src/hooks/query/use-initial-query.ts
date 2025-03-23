@@ -58,7 +58,7 @@ export function useInitialQuery() {
   const query = useQuery({
     queryKey: ["initialQuery"],
     queryFn: () => getInitialQueryState(),
-    initialData: getInitialQueryState,
+    initialData: initialState, // Use initialState directly to ensure it's always defined
     staleTime: Infinity, // We manage updates manually through mutations
   });
 
