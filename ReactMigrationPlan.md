@@ -175,6 +175,9 @@ If issues arise during the migration:
   - useLogout
   - useUploadFiles
   - useCreateStripeCheckoutSession
+- ✅ Migrated components to use RTK Query:
+  - ConversationPanel component
+  - ConversationCard component
 
 ### In Progress
 
