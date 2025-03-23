@@ -8,7 +8,7 @@ export function CodeNotInGitHubLink() {
       closeDelay={100}
       className="max-w-md"
     >
-      <span className="text-sm text-neutral-400 cursor-pointer italic border-b border-dashed border-neutral-400">
+      <span className="text-xs text-neutral-400 cursor-pointer italic border-b border-dashed border-neutral-400">
         Code not in GitHub?
       </span>
     </Tooltip>
