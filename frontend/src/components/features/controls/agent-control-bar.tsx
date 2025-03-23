@@ -6,6 +6,7 @@ import PlayIcon from "#/assets/play";
 import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
 import { AgentState } from "#/types/agent-state";
 import { useAgentStateContext } from "#/context/agent-state-context";
+
 import { useWsClient } from "#/context/ws-client-provider";
 import { IGNORE_TASK_STATE_MAP } from "#/ignore-task-state-map.constant";
 import { ActionButton } from "#/components/shared/buttons/action-button";
@@ -13,17 +14,9 @@ import { ActionButton } from "#/components/shared/buttons/action-button";
 export function AgentControlBar() {
   const { t } = useTranslation();
   const { send } = useWsClient();
-  // Try to use the agent state context, but fall back to default values for tests
-  const agentStateContext = React.useContext(React.createContext<{ 
-    curAgentState: AgentState;
-    updateAgentState: (state: AgentState) => void;
-    resetAgentState: () => void;
-  }>({
-    curAgentState: AgentState.LOADING,
-    updateAgentState: () => {},
-    resetAgentState: () => {},
-  }));
-  
+  // Use the agent state context
+  const agentStateContext = useAgentStateContext();
+
   const { curAgentState } = agentStateContext;
 
   const handleAction = (action: AgentState) => {
