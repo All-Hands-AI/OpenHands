@@ -28,6 +28,8 @@ interface ConversationCardProps {
   conversationId?: string; // Optional conversation ID for VS Code URL
 }
 
+const MAX_TIME_BETWEEN_CREATION_AND_UPDATE = 1000 * 60 * 30; // 30 minutes
+
 export function ConversationCard({
   onClick,
   onDelete,
@@ -132,6 +134,10 @@ export function ConversationCard({
   }, [titleMode]);
 
   const hasContextMenu = !!(onDelete || onChangeTitle || showDisplayCostOption);
+  const timeBetweenUpdateAndCreation = new Date(lastUpdatedAt).getTime() - new Date(createdAt!).getTime();
+  const showUpdateTime = timeBetweenUpdateAndCreation > MAX_TIME_BETWEEN_CREATION_AND_UPDATE;
+  console.log("timeBetweenUpdateAndCreation", timeBetweenUpdateAndCreation);
+  console.log("showUpdateTime", showUpdateTime);
 
   return (
     <>
@@ -209,9 +215,18 @@ export function ConversationCard({
             <ConversationRepoLink selectedRepository={selectedRepository} />
           )}
           <p className="text-xs text-neutral-400">
+            <span>Created </span>
             <time>
-              {formatTimeDelta(new Date(createdAt || lastUpdatedAt))} ago
+              {formatTimeDelta(new Date(createdAt))} ago
             </time>
+            {showUpdateTime && (
+              <>
+                <span>, updated </span>
+                <time>
+                  {formatTimeDelta(new Date(lastUpdatedAt))} ago
+                </time>
+              </>
+            )}
           </p>
         </div>
       </div>

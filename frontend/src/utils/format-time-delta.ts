@@ -19,11 +19,10 @@ export const formatTimeDelta = (date: Date) => {
   const months = Math.floor(days / 30);
   const years = Math.floor(months / 12);
 
-  if (seconds < 60) return seconds === 1 ? "1 second" : `${seconds} seconds`;
-  if (minutes < 60) return minutes === 1 ? "1 minute" : `${minutes} minutes`;
-  if (hours < 24) return hours === 1 ? "1 hour" : `${hours} hours`;
-  if (days < 30) return days === 1 ? "1 day" : `${days} days`;
-  if (months < 12) return months === 1 ? "1 month" : `${months} months`;
-
-  return years === 1 ? "1 year" : `${years} years`;
+  if (seconds < 60) return `${seconds}s`;
+  if (minutes < 60) return `${minutes}m`;
+  if (hours < 24) return `${hours}h`;
+  if (days < 30) return `${days}d`;
+  if (months < 12) return `${months}mo`;
+  return `${years}y`;
 };
