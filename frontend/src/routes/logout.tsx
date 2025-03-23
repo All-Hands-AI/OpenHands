@@ -1,10 +1,11 @@
 import React from "react";
 import { BrandButton } from "#/components/features/settings/brand-button";
-import { openHands } from "#/api/open-hands-axios";
+import axios from "axios";
+import { openHands, removeAuthTokenHeader, removeGitHubTokenHeader } from "#/api/open-hands-axios";
 
 // Create a new axios instance just for the logout page
 // This ensures we don't share any interceptors or auth state
-const logoutPageAxios = openHands.create();
+const logoutPageAxios = axios.create();
 
 export default function LogoutPage() {
   const [isLoading, setIsLoading] = React.useState(true);
@@ -13,9 +14,9 @@ export default function LogoutPage() {
   React.useEffect(() => {
     const clearAuth = async () => {
       try {
-        // Clear any auth headers
-        delete logoutPageAxios.defaults.headers.common.Authorization;
-        delete logoutPageAxios.defaults.headers.common["X-GitHub-Token"];
+        // Clear auth headers from both axios instances
+        removeAuthTokenHeader();
+        removeGitHubTokenHeader();
         
         // Clear any local storage items that might trigger re-auth
         localStorage.removeItem("openhands_last_page");
