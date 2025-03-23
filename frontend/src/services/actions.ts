@@ -8,8 +8,8 @@ import { trackError } from "#/utils/error-handler";
 import { appendSecurityAnalyzerInput } from "#/state/security-analyzer-slice";
 import { setCode, setActiveFilepath } from "#/state/code-slice";
 import { appendJupyterInput } from "#/state/jupyter-slice";
-import { setCurStatusMessage } from "#/state/status-slice";
-import { setMetrics } from "#/state/metrics-slice";
+import { handleStatusMessage as handleStatusMessageService } from "#/services/context-services/status-service";
+import { updateMetrics as updateMetricsService } from "#/services/context-services/metrics-service";
 import store from "#/store";
 import ActionType from "#/types/action-type";
 import {
@@ -95,7 +95,8 @@ export function handleActionMessage(message: ActionMessage) {
       cost: message.llm_metrics?.accumulated_cost ?? null,
       usage: message.tool_call_metadata?.model_response?.usage ?? null,
     };
-    store.dispatch(setMetrics(metrics));
+    // Use the metrics service to update metrics
+    updateMetricsService(metrics);
   }
 
   if (message.action === ActionType.RUN) {
@@ -123,24 +124,8 @@ export function handleActionMessage(message: ActionMessage) {
 }
 
 export function handleStatusMessage(message: StatusMessage) {
-  if (message.type === "info") {
-    store.dispatch(
-      setCurStatusMessage({
-        ...message,
-      }),
-    );
-  } else if (message.type === "error") {
-    trackError({
-      message: message.message,
-      source: "chat",
-      metadata: { msgId: message.id },
-    });
-    store.dispatch(
-      addErrorMessage({
-        ...message,
-      }),
-    );
-  }
+  // Use the status service to handle the message
+  handleStatusMessageService(message);
 }
 
 export function handleAssistantMessage(message: Record<string, unknown>) {

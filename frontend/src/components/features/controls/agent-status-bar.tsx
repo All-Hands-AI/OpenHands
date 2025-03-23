@@ -9,6 +9,7 @@ import {
   useWsClient,
   WsClientProviderStatus,
 } from "#/context/ws-client-provider";
+import { useStatusContext } from "#/context/status-context";
 import { useNotification } from "#/hooks/useNotification";
 import { browserTab } from "#/utils/browser-tab";
 
@@ -21,7 +22,7 @@ const notificationStates = [
 export function AgentStatusBar() {
   const { t, i18n } = useTranslation();
   const { curAgentState } = useSelector((state: RootState) => state.agent);
-  const { curStatusMessage } = useSelector((state: RootState) => state.status);
+  const { curStatusMessage } = useStatusContext();
   const { status } = useWsClient();
   const { notify } = useNotification();
 

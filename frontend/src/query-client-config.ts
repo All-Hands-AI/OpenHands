@@ -32,7 +32,7 @@ export const queryClientConfig: QueryClientConfig = {
       retry: 0,
     },
   },
-  
+
   // Global error handling for queries
   queryCache: new QueryCache({
     onError: (error, query) => {
@@ -53,7 +53,7 @@ export const queryClientConfig: QueryClientConfig = {
       }
     },
   }),
-  
+
   // Global error handling for mutations
   mutationCache: new MutationCache({
     onError: (error, _, __, mutation) => {

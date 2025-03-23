@@ -36,16 +36,16 @@ export const useListFiles = (config: UseListFilesConfig = DEFAULT_CONFIG) => {
   });
 
   // Enhance the result with file state information
-  const enhancedData = query.data?.map(filePath => {
-    const fileState = fileStates.find(state => state.path === filePath);
+  const enhancedData = query.data?.map((filePath) => {
+    const fileState = fileStates.find((state) => state.path === filePath);
     return {
       path: filePath,
-      changed: fileState?.changed || false
+      changed: fileState?.changed || false,
     };
   });
 
   return {
     ...query,
-    enhancedData
+    enhancedData,
   };
 };

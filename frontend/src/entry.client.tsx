@@ -17,6 +17,8 @@ import store from "./store";
 import { useConfig } from "./hooks/query/use-config";
 import { AuthProvider } from "./context/auth-context";
 import { FileStateProvider } from "./context/file-state-context";
+import { StatusProvider } from "./context/status-context";
+import { MetricsProvider } from "./context/metrics-context";
 import { queryClientConfig } from "./query-client-config";
 
 function PosthogInit() {
@@ -42,12 +44,12 @@ function ReactQueryDevtoolsProduction() {
 
   React.useEffect(() => {
     // Only show devtools in development
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === "development") {
       setShowDevtools(true);
     } else {
       // In production, only show devtools when pressing ctrl+shift+q
-      window.addEventListener('keydown', (event) => {
-        if (event.ctrlKey && event.shiftKey && event.key === 'q') {
+      window.addEventListener("keydown", (event) => {
+        if (event.ctrlKey && event.shiftKey && event.key === "q") {
           setShowDevtools((prev) => !prev);
         }
       });
@@ -81,9 +83,13 @@ prepareApp().then(() =>
           <AuthProvider>
             <QueryClientProvider client={queryClient}>
               <FileStateProvider>
-                <HydratedRouter />
-                <PosthogInit />
-                <ReactQueryDevtoolsProduction />
+                <StatusProvider>
+                  <MetricsProvider>
+                    <HydratedRouter />
+                    <PosthogInit />
+                    <ReactQueryDevtoolsProduction />
+                  </MetricsProvider>
+                </StatusProvider>
               </FileStateProvider>
             </QueryClientProvider>
           </AuthProvider>

@@ -1,5 +1,4 @@
 import React from "react";
-import { useSelector } from "react-redux";
 import posthog from "posthog-js";
 import { formatTimeDelta } from "#/utils/format-time-delta";
 import { ConversationRepoLink } from "./conversation-repo-link";
@@ -11,7 +10,7 @@ import { EllipsisButton } from "./ellipsis-button";
 import { ConversationCardContextMenu } from "./conversation-card-context-menu";
 import { cn } from "#/utils/utils";
 import { BaseModal } from "../../shared/modals/base-modal/base-modal";
-import { RootState } from "#/store";
+import { useMetricsContext } from "#/context/metrics-context";
 
 interface ConversationCardProps {
   onClick?: () => void;
@@ -45,8 +44,8 @@ export function ConversationCard({
   const [metricsModalVisible, setMetricsModalVisible] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
-  // Subscribe to metrics data from Redux store
-  const metrics = useSelector((state: RootState) => state.metrics);
+  // Get metrics data from context
+  const { metrics } = useMetricsContext();
 
   const handleBlur = () => {
     if (inputRef.current?.value) {
@@ -106,10 +105,12 @@ export function ConversationCard({
         if (data.vscode_url) {
           window.open(data.vscode_url, "_blank");
         } else {
-          console.error("VS Code URL not available", data.error);
+          // VS Code URL not available
+          posthog.capture("vs_code_url_error", { error: data.error });
         }
       } catch (error) {
-        console.error("Failed to fetch VS Code URL", error);
+        // Failed to fetch VS Code URL
+        posthog.capture("vs_code_url_fetch_error", { error });
       }
     }
 
