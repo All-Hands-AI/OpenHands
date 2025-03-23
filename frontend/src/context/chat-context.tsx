@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useMemo,
+} from "react";
 import type { Message } from "#/message";
 import {
   OpenHandsObservation,
@@ -67,85 +73,33 @@ const ChatContext = createContext<ChatContextType>({
 export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [messages, setMessages] = useState<Message[]>([]);
 
-  // Register the functions with the chat service
-  React.useEffect(() => {
-    import("#/services/context-services/chat-service").then(
-      ({ registerChatFunctions }) => {
-        registerChatFunctions({
-          addUserMessage: (payload) => {
-            const message: Message = {
-              type: "thought",
-              sender: "user",
-              content: payload.content,
-              imageUrls: payload.imageUrls,
-              timestamp: payload.timestamp || new Date().toISOString(),
-              pending: !!payload.pending,
-            };
+  // Define all the functions first
+  const addUserMessage = useCallback(
+    (payload: {
+      content: string;
+      imageUrls: string[];
+      timestamp: string;
+      pending?: boolean;
+    }) => {
+      const message: Message = {
+        type: "thought",
+        sender: "user",
+        content: payload.content,
+        imageUrls: payload.imageUrls,
+        timestamp: payload.timestamp || new Date().toISOString(),
+        pending: !!payload.pending,
+      };
 
-            setMessages((prevMessages) => {
-              // Remove any pending messages
-              const filteredMessages = prevMessages.filter((m) => !m.pending);
-              return [...filteredMessages, message];
-            });
-          },
-          addAssistantMessage: (content) => {
-            const message: Message = {
-              type: "thought",
-              sender: "assistant",
-              content,
-              imageUrls: [],
-              timestamp: new Date().toISOString(),
-              pending: false,
-            };
+      setMessages((prevMessages) => {
+        // Remove any pending messages
+        const filteredMessages = prevMessages.filter((m) => !m.pending);
+        return [...filteredMessages, message];
+      });
+    },
+    [],
+  );
 
-            setMessages((prevMessages) => [...prevMessages, message]);
-          },
-          addAssistantAction,
-          addAssistantObservation,
-          addErrorMessage: (payload) => {
-            const { id, message } = payload;
-            const errorMessage: Message = {
-              translationID: id,
-              content: message,
-              type: "error",
-              sender: "assistant",
-              timestamp: new Date().toISOString(),
-            };
-
-            setMessages((prevMessages) => [...prevMessages, errorMessage]);
-          },
-          clearMessages: () => {
-            setMessages([]);
-          },
-          getMessages: () => messages,
-        });
-      },
-    );
-  }, []);
-
-  const addUserMessage = (payload: {
-    content: string;
-    imageUrls: string[];
-    timestamp: string;
-    pending?: boolean;
-  }) => {
-    const message: Message = {
-      type: "thought",
-      sender: "user",
-      content: payload.content,
-      imageUrls: payload.imageUrls,
-      timestamp: payload.timestamp || new Date().toISOString(),
-      pending: !!payload.pending,
-    };
-
-    setMessages((prevMessages) => {
-      // Remove any pending messages
-      const filteredMessages = prevMessages.filter((m) => !m.pending);
-      return [...filteredMessages, message];
-    });
-  };
-
-  const addAssistantMessage = (content: string) => {
+  const addAssistantMessage = useCallback((content: string) => {
     const message: Message = {
       type: "thought",
       sender: "assistant",
@@ -156,9 +110,9 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     };
 
     setMessages((prevMessages) => [...prevMessages, message]);
-  };
+  }, []);
 
-  const addAssistantAction = (action: OpenHandsAction) => {
+  const addAssistantAction = useCallback((action: OpenHandsAction) => {
     const actionID = action.action;
     if (!HANDLED_ACTIONS.includes(actionID)) {
       return;
@@ -202,124 +156,165 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     };
 
     setMessages((prevMessages) => [...prevMessages, message]);
-  };
+  }, []);
 
-  const addAssistantObservation = (observation: OpenHandsObservation) => {
-    const observationID = observation.observation;
-    if (!HANDLED_ACTIONS.includes(observationID)) {
-      return;
-    }
-
-    const translationID = `OBSERVATION_MESSAGE$${observationID.toUpperCase()}`;
-    const causeID = observation.cause;
-
-    setMessages((prevMessages) => {
-      // Find the message that caused this observation
-      const messageIndex = prevMessages.findIndex(
-        (message) => message.eventID === causeID,
-      );
-
-      if (messageIndex === -1) {
-        return prevMessages;
+  const addAssistantObservation = useCallback(
+    (observation: OpenHandsObservation) => {
+      const observationID = observation.observation;
+      if (!HANDLED_ACTIONS.includes(observationID)) {
+        return;
       }
 
-      // Create a copy of the messages array
-      const updatedMessages = [...prevMessages];
-      const causeMessage = { ...updatedMessages[messageIndex] };
+      const translationID = `OBSERVATION_MESSAGE$${observationID.toUpperCase()}`;
+      const causeID = observation.cause;
 
-      // Update the cause message
-      causeMessage.translationID = translationID;
+      setMessages((prevMessages) => {
+        // Find the message that caused this observation
+        const messageIndex = prevMessages.findIndex(
+          (message) => message.eventID === causeID,
+        );
 
-      // Set success property based on observation type
-      if (observationID === "run") {
-        const commandObs = observation as CommandObservation;
-        causeMessage.success = commandObs.extras.metadata.exit_code === 0;
-      } else if (observationID === "run_ipython") {
-        // For IPython, we consider it successful if there's no error message
-        const ipythonObs = observation as IPythonObservation;
-        causeMessage.success = !ipythonObs.content
-          .toLowerCase()
-          .includes("error:");
-      } else if (observationID === "read" || observationID === "edit") {
-        // For read/edit operations, we consider it successful if there's content and no error
-        if (observation.extras.impl_source === "oh_aci") {
-          causeMessage.success =
-            observation.content.length > 0 &&
-            !observation.content.startsWith("ERROR:\n");
-        } else {
-          causeMessage.success =
-            observation.content.length > 0 &&
-            !observation.content.toLowerCase().includes("error:");
+        if (messageIndex === -1) {
+          return prevMessages;
         }
-      }
 
-      // Update content based on observation type
-      if (observationID === "run" || observationID === "run_ipython") {
-        let { content } = observation;
-        if (content.length > MAX_CONTENT_LENGTH) {
-          content = `${content.slice(0, MAX_CONTENT_LENGTH)}...`;
+        // Create a copy of the messages array
+        const updatedMessages = [...prevMessages];
+        const causeMessage = { ...updatedMessages[messageIndex] };
+
+        // Update the cause message
+        causeMessage.translationID = translationID;
+
+        // Set success property based on observation type
+        if (observationID === "run") {
+          const commandObs = observation as CommandObservation;
+          causeMessage.success = commandObs.extras.metadata.exit_code === 0;
+        } else if (observationID === "run_ipython") {
+          // For IPython, we consider it successful if there's no error message
+          const ipythonObs = observation as IPythonObservation;
+          causeMessage.success = !ipythonObs.content
+            .toLowerCase()
+            .includes("error:");
+        } else if (observationID === "read" || observationID === "edit") {
+          // For read/edit operations, we consider it successful if there's content and no error
+          if (observation.extras.impl_source === "oh_aci") {
+            causeMessage.success =
+              observation.content.length > 0 &&
+              !observation.content.startsWith("ERROR:\n");
+          } else {
+            causeMessage.success =
+              observation.content.length > 0 &&
+              !observation.content.toLowerCase().includes("error:");
+          }
         }
-        content = `${
-          causeMessage.content
-        }\n\nOutput:\n\`\`\`\n${content.trim() || "[Command finished execution with no output]"}\n\`\`\``;
-        causeMessage.content = content; // Observation content includes the action
-      } else if (observationID === "read") {
-        causeMessage.content = `\`\`\`\n${observation.content}\n\`\`\``; // Content is already truncated by the ACI
-      } else if (observationID === "edit") {
-        if (causeMessage.success) {
-          causeMessage.content = `\`\`\`diff\n${observation.extras.diff}\n\`\`\``; // Content is already truncated by the ACI
-        } else {
-          causeMessage.content = observation.content;
+
+        // Update content based on observation type
+        if (observationID === "run" || observationID === "run_ipython") {
+          let { content } = observation;
+          if (content.length > MAX_CONTENT_LENGTH) {
+            content = `${content.slice(0, MAX_CONTENT_LENGTH)}...`;
+          }
+          content = `${
+            causeMessage.content
+          }\n\nOutput:\n\`\`\`\n${content.trim() || "[Command finished execution with no output]"}\n\`\`\``;
+          causeMessage.content = content; // Observation content includes the action
+        } else if (observationID === "read") {
+          causeMessage.content = `\`\`\`\n${observation.content}\n\`\`\``; // Content is already truncated by the ACI
+        } else if (observationID === "edit") {
+          if (causeMessage.success) {
+            causeMessage.content = `\`\`\`diff\n${observation.extras.diff}\n\`\`\``; // Content is already truncated by the ACI
+          } else {
+            causeMessage.content = observation.content;
+          }
+        } else if (observationID === "browse") {
+          let content = `**URL:** ${observation.extras.url}\n`;
+          if (observation.extras.error) {
+            content += `**Error:**\n${observation.extras.error}\n`;
+          }
+          content += `**Output:**\n${observation.content}`;
+          if (content.length > MAX_CONTENT_LENGTH) {
+            content = `${content.slice(0, MAX_CONTENT_LENGTH)}...`;
+          }
+          causeMessage.content = content;
         }
-      } else if (observationID === "browse") {
-        let content = `**URL:** ${observation.extras.url}\n`;
-        if (observation.extras.error) {
-          content += `**Error:**\n${observation.extras.error}\n`;
-        }
-        content += `**Output:**\n${observation.content}`;
-        if (content.length > MAX_CONTENT_LENGTH) {
-          content = `${content.slice(0, MAX_CONTENT_LENGTH)}...`;
-        }
-        causeMessage.content = content;
-      }
 
-      // Replace the old message with the updated one
-      updatedMessages[messageIndex] = causeMessage;
-      return updatedMessages;
-    });
-  };
+        // Replace the old message with the updated one
+        updatedMessages[messageIndex] = causeMessage;
+        return updatedMessages;
+      });
+    },
+    [],
+  );
 
-  const addErrorMessage = (payload: { id?: string; message: string }) => {
-    const { id, message } = payload;
-    const errorMessage: Message = {
-      translationID: id,
-      content: message,
-      type: "error",
-      sender: "assistant",
-      timestamp: new Date().toISOString(),
-    };
+  const addErrorMessage = useCallback(
+    (payload: { id?: string; message: string }) => {
+      const { id, message } = payload;
+      const errorMessage: Message = {
+        translationID: id,
+        content: message,
+        type: "error",
+        sender: "assistant",
+        timestamp: new Date().toISOString(),
+      };
 
-    setMessages((prevMessages) => [...prevMessages, errorMessage]);
-  };
+      setMessages((prevMessages) => [...prevMessages, errorMessage]);
+    },
+    [],
+  );
 
-  const clearMessages = () => {
+  const clearMessages = useCallback(() => {
     setMessages([]);
-  };
+  }, []);
+
+  // Register the functions with the chat service
+  React.useEffect(() => {
+    import("#/services/context-services/chat-service").then(
+      ({ registerChatFunctions }) => {
+        registerChatFunctions({
+          addUserMessage,
+          addAssistantMessage,
+          addAssistantAction,
+          addAssistantObservation,
+          addErrorMessage,
+          clearMessages,
+          getMessages: () => messages,
+        });
+      },
+    );
+  }, [
+    addUserMessage,
+    addAssistantMessage,
+    addAssistantAction,
+    addAssistantObservation,
+    addErrorMessage,
+    clearMessages,
+    messages,
+  ]);
+
+  // Create a memoized context value to prevent unnecessary re-renders
+  const contextValue = useMemo(
+    () => ({
+      messages,
+      addUserMessage,
+      addAssistantMessage,
+      addAssistantAction,
+      addAssistantObservation,
+      addErrorMessage,
+      clearMessages,
+    }),
+    [
+      messages,
+      addUserMessage,
+      addAssistantMessage,
+      addAssistantAction,
+      addAssistantObservation,
+      addErrorMessage,
+      clearMessages,
+    ],
+  );
 
   return (
-    <ChatContext.Provider
-      value={{
-        messages,
-        addUserMessage,
-        addAssistantMessage,
-        addAssistantAction,
-        addAssistantObservation,
-        addErrorMessage,
-        clearMessages,
-      }}
-    >
-      {children}
-    </ChatContext.Provider>
+    <ChatContext.Provider value={contextValue}>{children}</ChatContext.Provider>
   );
 }
 
