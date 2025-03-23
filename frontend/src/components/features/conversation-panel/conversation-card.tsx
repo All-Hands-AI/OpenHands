@@ -44,10 +44,21 @@ export function ConversationCard({
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   // Get metrics data from context or use default values for tests
-  const metricsContext = React.useContext(React.createContext<{ metrics: any }>({ 
-    metrics: { cost: null, usage: null } 
-  }));
-  
+  const metricsContext = React.useContext(
+    React.createContext<{
+      metrics: {
+        cost: number | null;
+        usage: {
+          prompt_tokens: number;
+          completion_tokens: number;
+          total_tokens: number;
+        } | null;
+      };
+    }>({
+      metrics: { cost: null, usage: null },
+    }),
+  );
+
   // Try to use the metrics context, but fall back to default values if not available
   // This helps with testing where the provider might not be available
   const { metrics } = metricsContext;

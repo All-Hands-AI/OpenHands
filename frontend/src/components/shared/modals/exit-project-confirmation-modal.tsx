@@ -1,7 +1,7 @@
-import { useDispatch } from "react-redux";
+// No longer need useDispatch since we're using the agent state service
 import { useEndSession } from "#/hooks/use-end-session";
-import { setCurrentAgentState } from "#/state/agent-slice";
 import { AgentState } from "#/types/agent-state";
+import { updateAgentState } from "#/services/context-services/agent-state-service";
 import { DangerModal } from "./confirmation-modals/danger-modal";
 import { ModalBackdrop } from "./modal-backdrop";
 
@@ -12,12 +12,12 @@ interface ExitProjectConfirmationModalProps {
 export function ExitProjectConfirmationModal({
   onClose,
 }: ExitProjectConfirmationModalProps) {
-  const dispatch = useDispatch();
+  // No longer need dispatch since we're using the agent state service
   const endSession = useEndSession();
 
   const handleEndSession = () => {
     onClose();
-    dispatch(setCurrentAgentState(AgentState.LOADING));
+    updateAgentState(AgentState.LOADING);
     endSession();
   };
 

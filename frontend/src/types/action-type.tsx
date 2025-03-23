@@ -38,13 +38,13 @@ enum ActionType {
 
   // Changes the state of the agent, e.g. to paused or running
   CHANGE_AGENT_STATE = "change_agent_state",
-  
+
   // Agent state has changed
   AGENT_STATE_CHANGED = "agent_state_changed",
-  
+
   // Task completion
   TASK_COMPLETION = "task_completion",
-  
+
   // Assistant action
   ASSISTANT_ACTION = "assistant_action",
 }

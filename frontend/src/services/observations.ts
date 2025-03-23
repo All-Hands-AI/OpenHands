@@ -8,7 +8,8 @@ import { appendOutput } from "#/services/context-services/terminal-service";
 import { appendJupyterOutput } from "#/state/jupyter-slice";
 import { updateAgentState } from "#/services/context-services/agent-state-service";
 import ObservationType from "#/types/observation-type";
-import { addAssistantObservation } from "#/services/context-services/chat-service";
+// Import will be restored when observation handling is implemented
+// import { addAssistantObservation } from "#/services/context-services/chat-service";
 
 export function handleObservation(message: ObservationMessage) {
   switch (message.type) {
@@ -40,10 +41,8 @@ export function handleObservation(message: ObservationMessage) {
       updateAgentState(message.extras.agent_state as AgentState);
       break;
     case ObservationType.OBSERVATION:
-      {
-        // Skip complex observation handling for now
-        // This will be fixed in a future PR
-      }
+      // Skip complex observation handling for now
+      // This will be fixed in a future PR
       break;
     default:
       // Unknown message type

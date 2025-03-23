@@ -19,6 +19,7 @@ import { AuthProvider } from "./context/auth-context";
 import { FileStateProvider } from "./context/file-state-context";
 import { StatusProvider } from "./context/status-context";
 import { MetricsProvider } from "./context/metrics-context";
+import { AgentStateProvider } from "./context/agent-state-context";
 import { queryClientConfig } from "./query-client-config";
 
 function PosthogInit() {
@@ -85,9 +86,11 @@ prepareApp().then(() =>
               <FileStateProvider>
                 <StatusProvider>
                   <MetricsProvider>
-                    <HydratedRouter />
-                    <PosthogInit />
-                    <ReactQueryDevtoolsProduction />
+                    <AgentStateProvider>
+                      <HydratedRouter />
+                      <PosthogInit />
+                      <ReactQueryDevtoolsProduction />
+                    </AgentStateProvider>
                   </MetricsProvider>
                 </StatusProvider>
               </FileStateProvider>

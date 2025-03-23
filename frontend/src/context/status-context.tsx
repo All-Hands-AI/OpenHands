@@ -22,7 +22,7 @@ export function StatusProvider({ children }: { children: ReactNode }) {
     registerStatusService((message) => {
       statusState.updateStatusMessage({
         ...message,
-        status_update: true
+        status_update: true,
       });
     });
   }, [statusState.updateStatusMessage]);

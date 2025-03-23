@@ -13,7 +13,7 @@ type TrackErrorFn = (error: {
 
 // Module-level variables to store the actual functions
 // This will be set by the metrics provider when it mounts
-let _trackErrorImpl: TrackErrorFn = () => {};
+let trackErrorImpl: TrackErrorFn = () => {};
 
 /**
  * Register the metrics update function
@@ -39,19 +39,19 @@ export function registerMetricsFunctions({
 }: {
   trackError: TrackErrorFn;
 }): void {
-  _trackErrorImpl = trackError;
+  trackErrorImpl = trackError;
 }
 
 // Export the service functions
 export const MetricsService = {
-  trackError: (error: {
+  trackError: (errorData: {
     message: string;
     source: string;
     metadata?: Record<string, unknown>;
   }): void => {
-    // Log error to console for debugging
-    // In a real implementation, we would call _trackErrorImpl(error)
+    // In a real implementation, we would call trackErrorImpl(errorData)
     // But for now, just log it to avoid test failures
+    trackErrorImpl(errorData);
   },
 };
 

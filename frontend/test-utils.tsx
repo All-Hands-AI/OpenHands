@@ -11,6 +11,10 @@ import { vi } from "vitest";
 import { AppStore, RootState, rootReducer } from "./src/store";
 import { AuthProvider } from "#/context/auth-context";
 import { ConversationProvider } from "#/context/conversation-context";
+import { ChatProvider } from "#/context/chat-context";
+import { TerminalProvider } from "#/context/terminal-context";
+import { BrowserProvider } from "#/context/browser-context";
+import { AgentStateProvider } from "#/context/agent-state-context";
 
 // Mock useParams before importing components
 vi.mock("react-router", async () => {
@@ -74,7 +78,15 @@ export function renderWithProviders(
             }
           >
             <ConversationProvider>
-              <I18nextProvider i18n={i18n}>{children}</I18nextProvider>
+              <AgentStateProvider>
+                <ChatProvider>
+                  <TerminalProvider>
+                    <BrowserProvider>
+                      <I18nextProvider i18n={i18n}>{children}</I18nextProvider>
+                    </BrowserProvider>
+                  </TerminalProvider>
+                </ChatProvider>
+              </AgentStateProvider>
             </ConversationProvider>
           </QueryClientProvider>
         </AuthProvider>

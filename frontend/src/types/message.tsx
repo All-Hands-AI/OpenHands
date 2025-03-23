@@ -11,7 +11,7 @@ export interface ActionMessage {
   type: string;
 
   // The arguments for the action
-  args: Record<string, any>;
+  args: Record<string, unknown>;
 
   // A friendly message that can be put in the chat log
   message: string;
@@ -39,7 +39,7 @@ export interface ActionMessage {
 export interface ObservationMessage {
   // The type of observation
   observation: string;
-  
+
   // The observation type for the switch statement
   type: string;
 
@@ -53,11 +53,11 @@ export interface ObservationMessage {
     metadata: Record<string, unknown>;
     error_id?: string;
     observation_type?: string;
-    agent_state?: any;
+    agent_state?: unknown;
     command?: string;
     hidden?: boolean;
     name?: string;
-    args?: any;
+    args?: unknown;
     impl_source?: string;
     path?: string;
     diff?: string;
@@ -72,11 +72,11 @@ export interface ObservationMessage {
     axtree_object?: Record<string, unknown>;
     extra_element_properties?: Record<string, unknown>;
     last_browser_action?: string;
-    last_browser_action_error?: any;
+    last_browser_action_error?: unknown;
     focused_element_bid?: string;
     query?: string;
-    results?: any[];
-    [key: string]: any;
+    results?: unknown[];
+    [key: string]: unknown;
   };
 
   // A friendly message that can be put in the chat log

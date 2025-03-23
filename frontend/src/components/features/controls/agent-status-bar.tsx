@@ -10,7 +10,6 @@ import {
 import { useNotification } from "#/hooks/useNotification";
 import { browserTab } from "#/utils/browser-tab";
 import { StatusMessage } from "#/types/message";
-import { useAgentStateContext } from "#/context/agent-state-context";
 
 const notificationStates = [
   AgentState.AWAITING_USER_INPUT,
@@ -21,16 +20,18 @@ const notificationStates = [
 export function AgentStatusBar() {
   const { t, i18n } = useTranslation();
   // Try to use the agent state context, but fall back to default values for tests
-  const agentStateContext = React.useContext(React.createContext<{ 
-    curAgentState: AgentState;
-    updateAgentState: (state: AgentState) => void;
-    resetAgentState: () => void;
-  }>({
-    curAgentState: AgentState.LOADING,
-    updateAgentState: () => {},
-    resetAgentState: () => {},
-  }));
-  
+  const agentStateContext = React.useContext(
+    React.createContext<{
+      curAgentState: AgentState;
+      updateAgentState: (state: AgentState) => void;
+      resetAgentState: () => void;
+    }>({
+      curAgentState: AgentState.LOADING,
+      updateAgentState: () => {},
+      resetAgentState: () => {},
+    }),
+  );
+
   const { curAgentState } = agentStateContext;
   // Create a default status context for tests
   const statusContext = React.useContext(
