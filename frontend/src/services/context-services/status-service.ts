@@ -20,6 +20,11 @@ export function registerStatusFunctions({
   updateStatusImpl = updateStatus;
 }
 
+// For backward compatibility
+export function registerStatusService(updateStatus: UpdateStatusFn): void {
+  updateStatusImpl = updateStatus;
+}
+
 // Export the service functions
 export const StatusService = {
   updateStatus: (message: {

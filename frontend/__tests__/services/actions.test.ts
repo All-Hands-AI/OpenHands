@@ -24,7 +24,7 @@ describe("Actions Service", () => {
   describe("handleStatusMessage", () => {
     it("should dispatch info messages to status state", () => {
       const message = {
-        type: "info",
+        type: "info" as const,
         message: "Runtime is not available",
         id: "runtime.unavailable",
         status_update: true as const,
@@ -39,7 +39,7 @@ describe("Actions Service", () => {
 
     it("should log error messages and display them in chat", () => {
       const message = {
-        type: "error",
+        type: "error" as const,
         message: "Runtime connection failed",
         id: "runtime.connection.failed",
         status_update: true as const,
@@ -68,6 +68,7 @@ describe("Actions Service", () => {
         source: "agent",
         message: "",
         timestamp: new Date().toISOString(),
+        type: ActionType.TASK_COMPLETION,
         args: {
           final_thought: "",
           task_completed: "partial",
@@ -95,6 +96,7 @@ describe("Actions Service", () => {
         source: "agent",
         message: "",
         timestamp: new Date().toISOString(),
+        type: ActionType.TASK_COMPLETION,
         args: {
           final_thought: "",
           task_completed: "false",
@@ -122,6 +124,7 @@ describe("Actions Service", () => {
         source: "agent",
         message: "",
         timestamp: new Date().toISOString(),
+        type: ActionType.TASK_COMPLETION,
         args: {
           final_thought: "",
           task_completed: "true",

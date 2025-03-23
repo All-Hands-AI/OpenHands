@@ -36,7 +36,7 @@ export function showChatError({
   handleStatusMessage({
     type: "error",
     message,
-    id: msgId,
+    id: msgId || `error-${Date.now()}`,
     status_update: true,
   });
 }

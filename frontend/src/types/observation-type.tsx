@@ -28,6 +28,12 @@ enum ObservationType {
 
   // A no-op observation
   NULL = "null",
+  
+  // Terminal output
+  TERMINAL_OUTPUT = "terminal_output",
+  
+  // Generic observation
+  OBSERVATION = "observation",
 }
 
 export default ObservationType;

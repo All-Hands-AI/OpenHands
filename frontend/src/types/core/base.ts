@@ -12,7 +12,13 @@ export type OpenHandsEventType =
   | "reject"
   | "think"
   | "finish"
-  | "error";
+  | "error"
+  | "agent_state"
+  | "function_call"
+  | "file_edit"
+  | "file_read"
+  | "browser"
+  | "web_search";
 
 interface OpenHandsBaseEvent {
   id: number;

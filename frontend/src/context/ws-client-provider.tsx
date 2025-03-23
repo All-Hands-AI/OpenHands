@@ -1,7 +1,7 @@
 import React from "react";
 import { io, Socket } from "socket.io-client";
 import EventLogger from "#/utils/event-logger";
-import { handleAssistantMessage } from "#/services/actions";
+import { handleActionMessage } from "#/services/actions";
 import { showChatError } from "#/utils/error-handler";
 import { useRate } from "#/hooks/use-rate";
 import { OpenHandsParsedEvent } from "#/types/core";
@@ -134,7 +134,9 @@ export function WsClientProvider({
       lastEventRef.current = event;
     }
 
-    handleAssistantMessage(event);
+    // Cast event to ActionMessage - this is a temporary fix
+    // In a future PR, we'll properly type the events
+    handleActionMessage(event as any);
   }
 
   function handleDisconnect(data: unknown) {

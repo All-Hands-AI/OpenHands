@@ -7,8 +7,11 @@ export interface ActionMessage {
   // The action to be taken
   action: string;
 
+  // The type of action
+  type: string;
+
   // The arguments for the action
-  args: Record<string, string>;
+  args: Record<string, any>;
 
   // A friendly message that can be put in the chat log
   message: string;
@@ -36,6 +39,9 @@ export interface ActionMessage {
 export interface ObservationMessage {
   // The type of observation
   observation: string;
+  
+  // The observation type for the switch statement
+  type: string;
 
   id: number;
   cause: number;
@@ -45,8 +51,32 @@ export interface ObservationMessage {
 
   extras: {
     metadata: Record<string, unknown>;
-    error_id: string;
-    [key: string]: string | Record<string, unknown>;
+    error_id?: string;
+    observation_type?: string;
+    agent_state?: any;
+    command?: string;
+    hidden?: boolean;
+    name?: string;
+    args?: any;
+    impl_source?: string;
+    path?: string;
+    diff?: string;
+    content?: string;
+    url?: string;
+    title?: string;
+    screenshot?: string;
+    error?: boolean;
+    open_page_urls?: string[];
+    active_page_index?: number;
+    dom_object?: Record<string, unknown>;
+    axtree_object?: Record<string, unknown>;
+    extra_element_properties?: Record<string, unknown>;
+    last_browser_action?: string;
+    last_browser_action_error?: any;
+    focused_element_bid?: string;
+    query?: string;
+    results?: any[];
+    [key: string]: any;
   };
 
   // A friendly message that can be put in the chat log
@@ -57,8 +87,8 @@ export interface ObservationMessage {
 }
 
 export interface StatusMessage {
-  status_update: true;
-  type: string;
-  id?: string;
+  status_update?: boolean;
+  type: "success" | "error" | "info" | "warning";
+  id: string;
   message: string;
 }

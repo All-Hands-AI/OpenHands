@@ -19,7 +19,12 @@ export function StatusProvider({ children }: { children: ReactNode }) {
 
   // Register the update function with the service
   useEffect(() => {
-    registerStatusService(statusState.updateStatusMessage);
+    registerStatusService((message) => {
+      statusState.updateStatusMessage({
+        ...message,
+        status_update: true
+      });
+    });
   }, [statusState.updateStatusMessage]);
 
   return (
