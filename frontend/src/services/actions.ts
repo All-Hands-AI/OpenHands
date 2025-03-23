@@ -8,9 +8,9 @@ import { trackError } from "#/utils/error-handler";
 import { appendSecurityAnalyzerInput } from "#/state/security-analyzer-slice";
 import { setCode, setActiveFilepath } from "#/state/code-slice";
 import { appendJupyterInput } from "#/state/jupyter-slice";
-// Status slice is now handled by React Query
-import { setMetrics } from "#/state/metrics-slice";
+// Status and metrics slices are now handled by React Query
 import store from "#/store";
+import { getQueryReduxBridge } from "#/utils/query-redux-bridge";
 import ActionType from "#/types/action-type";
 import {
   ActionMessage,
@@ -95,7 +95,21 @@ export function handleActionMessage(message: ActionMessage) {
       cost: message.llm_metrics?.accumulated_cost ?? null,
       usage: message.tool_call_metadata?.model_response?.usage ?? null,
     };
-    store.dispatch(setMetrics(metrics));
+    try {
+      const bridge = getQueryReduxBridge();
+      if (bridge.isSliceMigrated("metrics")) {
+        // If metrics slice is migrated, update React Query directly
+        bridge.syncReduxToQuery(["metrics"], metrics);
+      } else {
+        // Otherwise, dispatch to Redux (handled by the bridge)
+        bridge.conditionalDispatch("metrics", {
+          type: "metrics/setMetrics",
+          payload: metrics,
+        });
+      }
+    } catch (error) {
+      console.warn("Failed to update metrics:", error);
+    }
   }
 
   if (message.action === ActionType.RUN) {

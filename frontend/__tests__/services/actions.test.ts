@@ -4,6 +4,7 @@ import store from "#/store";
 import { trackError } from "#/utils/error-handler";
 import ActionType from "#/types/action-type";
 import { ActionMessage } from "#/types/message";
+import * as queryReduxBridge from "#/utils/query-redux-bridge";
 
 // Mock dependencies
 vi.mock("#/utils/error-handler", () => ({
@@ -14,6 +15,15 @@ vi.mock("#/store", () => ({
   default: {
     dispatch: vi.fn(),
   },
+}));
+
+// Mock QueryReduxBridge
+vi.mock("#/utils/query-redux-bridge", () => ({
+  getQueryReduxBridge: vi.fn(() => ({
+    isSliceMigrated: vi.fn(() => true),
+    syncReduxToQuery: vi.fn(),
+    conditionalDispatch: vi.fn(),
+  })),
 }));
 
 describe("Actions Service", () => {
@@ -59,6 +69,54 @@ describe("Actions Service", () => {
   });
 
   describe("handleActionMessage", () => {
+    it("should update metrics via React Query when metrics are available", () => {
+      const message: ActionMessage = {
+        id: 1,
+        action: ActionType.MESSAGE,
+        source: "agent",
+        message: "Test message",
+        timestamp: new Date().toISOString(),
+        args: {
+          content: "Test content",
+        },
+        llm_metrics: {
+          accumulated_cost: 0.05,
+        },
+        tool_call_metadata: {
+          model_response: {
+            usage: {
+              prompt_tokens: 100,
+              completion_tokens: 50,
+              total_tokens: 150,
+            }
+          }
+        }
+      };
+
+      const mockBridge = {
+        isSliceMigrated: vi.fn(() => true),
+        syncReduxToQuery: vi.fn(),
+        conditionalDispatch: vi.fn(),
+      };
+      
+      vi.mocked(queryReduxBridge.getQueryReduxBridge).mockReturnValue(mockBridge as any);
+
+      handleActionMessage(message);
+
+      expect(mockBridge.isSliceMigrated).toHaveBeenCalledWith("metrics");
+      expect(mockBridge.syncReduxToQuery).toHaveBeenCalledWith(
+        ["metrics"],
+        {
+          cost: 0.05,
+          usage: {
+            prompt_tokens: 100,
+            completion_tokens: 50,
+            total_tokens: 150,
+          }
+        }
+      );
+    });
+
     it("should use first-person perspective for task completion messages", () => {
       // Test partial completion
       const messagePartial: ActionMessage = {

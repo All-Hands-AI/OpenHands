@@ -14,8 +14,9 @@ export function initializeBridge() {
   // Initialize the bridge with the query client
   initQueryReduxBridge(queryClient);
 
-  // Mark the status slice as migrated to React Query
+  // Mark slices as migrated to React Query
   getQueryReduxBridge().migrateSlice("status");
+  getQueryReduxBridge().migrateSlice("metrics");
 }
 
 // Export a function to check if a slice is migrated

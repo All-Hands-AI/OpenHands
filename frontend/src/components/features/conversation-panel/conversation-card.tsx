@@ -1,5 +1,4 @@
 import React from "react";
-import { useSelector } from "react-redux";
 import posthog from "posthog-js";
 import { formatTimeDelta } from "#/utils/format-time-delta";
 import { ConversationRepoLink } from "./conversation-repo-link";
@@ -11,7 +10,7 @@ import { EllipsisButton } from "./ellipsis-button";
 import { ConversationCardContextMenu } from "./conversation-card-context-menu";
 import { cn } from "#/utils/utils";
 import { BaseModal } from "../../shared/modals/base-modal/base-modal";
-import { RootState } from "#/store";
+import { useMetrics } from "#/hooks/query/use-metrics";
 
 interface ConversationCardProps {
   onClick?: () => void;
@@ -45,8 +44,8 @@ export function ConversationCard({
   const [metricsModalVisible, setMetricsModalVisible] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
-  // Subscribe to metrics data from Redux store
-  const metrics = useSelector((state: RootState) => state.metrics);
+  // Subscribe to metrics data from React Query
+  const { metrics } = useMetrics();
 
   const handleBlur = () => {
     if (inputRef.current?.value) {
