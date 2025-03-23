@@ -1,14 +1,14 @@
-import { 
-  QueryClient, 
-  UseMutationOptions, 
-  UseMutationResult, 
-  UseQueryOptions, 
-  UseQueryResult, 
-  useMutation, 
-  useQuery 
-} from '@tanstack/react-query';
-import { AxiosError } from 'axios';
-import { queryClient } from '#/entry.client';
+import {
+  QueryClient,
+  UseMutationOptions,
+  UseMutationResult,
+  UseQueryOptions,
+  UseQueryResult,
+  useMutation,
+  useQuery,
+} from "@tanstack/react-query";
+import { AxiosError } from "axios";
+import { queryClient } from "#/entry.client";
 
 /**
  * Type for query options with default error type
@@ -17,24 +17,23 @@ export type QueryOptions<TData, TError = AxiosError> = UseQueryOptions<
   TData,
   TError,
   TData,
-  any
+  readonly unknown[]
 >;
 
 /**
  * Type for mutation options with default error type
  */
-export type MutationOptions<TData, TVariables, TError = AxiosError> = UseMutationOptions<
+export type MutationOptions<
   TData,
-  TError,
   TVariables,
-  any
->;
+  TError = AxiosError,
+> = UseMutationOptions<TData, TError, TVariables, unknown>;
 
 /**
  * Enhanced useQuery hook with default error type
  */
 export function useTypedQuery<TData, TError = AxiosError>(
-  options: QueryOptions<TData, TError>
+  options: QueryOptions<TData, TError>,
 ): UseQueryResult<TData, TError> {
   return useQuery<TData, TError, TData>(options);
 }
@@ -43,8 +42,8 @@ export function useTypedQuery<TData, TError = AxiosError>(
  * Enhanced useMutation hook with default error type
  */
 export function useTypedMutation<TData, TVariables, TError = AxiosError>(
-  options: MutationOptions<TData, TVariables, TError>
-): UseMutationResult<TData, TError, TVariables, any> {
+  options: MutationOptions<TData, TVariables, TError>,
+): UseMutationResult<TData, TError, TVariables, unknown> {
   return useMutation<TData, TError, TVariables>(options);
 }
 
@@ -60,7 +59,7 @@ export function invalidateQueries(queryKey: unknown[]): Promise<void> {
  */
 export function setQueryData<TData>(
   queryKey: unknown[],
-  data: TData | ((oldData: TData | undefined) => TData)
+  data: TData | ((oldData: TData | undefined) => TData),
 ): void {
   queryClient.setQueryData(queryKey, data);
 }
@@ -78,7 +77,7 @@ export function getQueryData<TData>(queryKey: unknown[]): TData | undefined {
 export function prefetchQuery<TData>(
   queryKey: unknown[],
   queryFn: () => Promise<TData>,
-  options?: { staleTime?: number; cacheTime?: number }
+  options?: { staleTime?: number; cacheTime?: number },
 ): Promise<void> {
   return queryClient.prefetchQuery({
     queryKey,
