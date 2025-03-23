@@ -304,14 +304,19 @@ class LocalRuntime(ActionExecutionClient):
             return port
         return port
 
+    @tenacity.retry(
+        wait=tenacity.wait_exponential(min=1, max=10),
+        stop=tenacity.stop_after_attempt(10) | stop_if_should_exit(),
+        before_sleep=lambda retry_state: logger.debug(
+            f'Waiting for server to be ready... (attempt {retry_state.attempt_number})'
+        ),
+    )
     def _wait_until_alive(self):
         """Wait until the server is ready to accept requests."""
         if self.server_process and self.server_process.poll() is not None:
             raise RuntimeError('Server process died')
 
         try:
-            import time
-            time.sleep(120)
             response = self.session.get(f'{self.api_url}/alive')
             response.raise_for_status()
             return True
