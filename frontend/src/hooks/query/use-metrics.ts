@@ -58,6 +58,9 @@ export function useMetrics() {
     queryFn: () => getInitialMetrics(),
     initialData: initialMetrics, // Use initialMetrics directly to ensure it's always defined
     staleTime: Infinity, // We manage updates manually through mutations
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 
   // Mutation to set metrics

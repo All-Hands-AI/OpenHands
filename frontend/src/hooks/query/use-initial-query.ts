@@ -60,6 +60,9 @@ export function useInitialQuery() {
     queryFn: () => getInitialQueryState(),
     initialData: initialState, // Use initialState directly to ensure it's always defined
     staleTime: Infinity, // We manage updates manually through mutations
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 
   // Mutation to add a file
