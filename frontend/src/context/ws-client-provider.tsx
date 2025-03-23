@@ -1,7 +1,7 @@
 import React from "react";
 import { io, Socket } from "socket.io-client";
 import EventLogger from "#/utils/event-logger";
-import { handleAssistantMessage } from "#/services/actions";
+import { handleAssistantMessage } from "#/services/actions-query";
 import { showChatError } from "#/utils/error-handler";
 import { useRate } from "#/hooks/use-rate";
 import { OpenHandsParsedEvent } from "#/types/core";
