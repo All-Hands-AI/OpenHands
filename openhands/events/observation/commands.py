@@ -100,8 +100,9 @@ class CmdOutputObservation(Observation):
     # Whether the command output should be hidden from the user
     hidden: bool = False
 
-    # Default max size for command output content - matching LLM config
-    MAX_CMD_OUTPUT_SIZE: int = 50000
+    # Default max size for command output content - reduced to avoid storing large content
+    # This should be smaller than the previous 50000 to avoid storing unnecessarily large content
+    MAX_CMD_OUTPUT_SIZE: int = 9500
 
     def __init__(
         self,
