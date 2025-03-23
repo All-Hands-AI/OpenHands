@@ -47,20 +47,43 @@ async function prepareApp() {
 
 export const queryClient = new QueryClient(queryClientConfig);
 
-prepareApp().then(() =>
-  startTransition(() => {
-    hydrateRoot(
-      document,
-      <StrictMode>
-        <Provider store={store}>
-          <AuthProvider>
-            <QueryClientProvider client={queryClient}>
-              <HydratedRouter />
-              <PosthogInit />
-            </QueryClientProvider>
-          </AuthProvider>
-        </Provider>
-      </StrictMode>,
-    );
-  }),
+// Create a variable to store the React root
+let appRoot: ReturnType<typeof hydrateRoot> | null = null;
+
+// Create the app element
+const App = (
+  <StrictMode>
+    <Provider store={store}>
+      <AuthProvider>
+        <QueryClientProvider client={queryClient}>
+          <HydratedRouter />
+          <PosthogInit />
+        </QueryClientProvider>
+      </AuthProvider>
+    </Provider>
+  </StrictMode>
 );
+
+// Function to hydrate or render the app
+const renderApp = () => {
+  // Check if we're in a browser environment
+  if (typeof window === "undefined") return;
+
+  // Only hydrate once
+  if (!appRoot) {
+    try {
+      appRoot = hydrateRoot(document, App);
+    } catch (error) {
+      // Log hydration errors but continue
+      // eslint-disable-next-line no-console
+      console.error("Error hydrating app:", error);
+    }
+  }
+};
+
+// Initialize the app
+prepareApp().then(() => {
+  startTransition(() => {
+    renderApp();
+  });
+});
