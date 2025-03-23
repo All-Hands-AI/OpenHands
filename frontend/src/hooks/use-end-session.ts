@@ -1,16 +1,11 @@
-import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router";
-import {
-  initialState as browserInitialState,
-  setScreenshotSrc,
-  setUrl,
-} from "#/state/browser-slice";
 import { useInitialQuery } from "#/hooks/query/use-initial-query";
+import { useBrowser } from "#/hooks/query/use-browser";
 
 export const useEndSession = () => {
   const navigate = useNavigate();
-  const dispatch = useDispatch();
   const { clearSelectedRepository } = useInitialQuery();
+  const { setUrl, setScreenshotSrc } = useBrowser();
 
   /**
    * End the current session by clearing the token and redirecting to the home page.
@@ -19,8 +14,8 @@ export const useEndSession = () => {
     clearSelectedRepository();
 
     // Reset browser state to initial values
-    dispatch(setUrl(browserInitialState.url));
-    dispatch(setScreenshotSrc(browserInitialState.screenshotSrc));
+    setUrl("https://github.com/All-Hands-AI/OpenHands");
+    setScreenshotSrc("");
 
     navigate("/");
   };

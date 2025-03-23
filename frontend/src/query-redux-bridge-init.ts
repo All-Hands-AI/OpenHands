@@ -18,6 +18,7 @@ export function initializeBridge() {
   getQueryReduxBridge().migrateSlice("status");
   getQueryReduxBridge().migrateSlice("metrics");
   getQueryReduxBridge().migrateSlice("initialQuery");
+  getQueryReduxBridge().migrateSlice("browser");
 }
 
 // Export a function to check if a slice is migrated

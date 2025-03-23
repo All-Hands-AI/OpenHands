@@ -1,6 +1,6 @@
 import { setCurrentAgentState } from "#/state/agent-slice";
-import { setUrl, setScreenshotSrc } from "#/state/browser-slice";
 import store from "#/store";
+import { queryClient } from "#/query-redux-bridge-init";
 import { ObservationMessage } from "#/types/message";
 import { AgentState } from "#/types/agent-state";
 import { appendOutput } from "#/state/command-slice";
@@ -31,10 +31,26 @@ export function handleObservationMessage(message: ObservationMessage) {
       break;
     case ObservationType.BROWSE:
       if (message.extras?.screenshot) {
-        store.dispatch(setScreenshotSrc(message.extras?.screenshot));
+        // Update browser state in React Query
+        const currentState = queryClient.getQueryData<{
+          url: string;
+          screenshotSrc: string;
+        }>(["browser"]) || { url: "", screenshotSrc: "" };
+        queryClient.setQueryData(["browser"], {
+          ...currentState,
+          screenshotSrc: message.extras.screenshot,
+        });
       }
       if (message.extras?.url) {
-        store.dispatch(setUrl(message.extras.url));
+        // Update browser state in React Query
+        const currentState = queryClient.getQueryData<{
+          url: string;
+          screenshotSrc: string;
+        }>(["browser"]) || { url: "", screenshotSrc: "" };
+        queryClient.setQueryData(["browser"], {
+          ...currentState,
+          url: message.extras.url,
+        });
       }
       break;
     case ObservationType.AGENT_STATE_CHANGED:
