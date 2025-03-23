@@ -1,6 +1,7 @@
 import os
 import subprocess
 import time
+import platform
 from dataclasses import dataclass
 
 from openhands.core.logger import openhands_logger as logger
@@ -50,7 +51,62 @@ class JupyterPlugin(Plugin):
                     'POETRY_VIRTUALENVS_PATH environment variable is not set. '
                     'This is required for the jupyter plugin to work with LocalRuntime.'
                 )
-            poetry_prefix = f'cd {code_repo_path}\n'
+            
+            # Check if running on Windows
+            is_windows = platform.system() == 'Windows'
+            if is_windows:
+                # Windows-specific command format
+                jupyter_launch_command = (
+                    f'cd /d "{code_repo_path}" && '
+                    f'set "POETRY_VIRTUALENVS_PATH={poetry_venvs_path}" && '
+                    f'set "PYTHONPATH={code_repo_path};%PYTHONPATH%" && '
+                    'poetry run jupyter kernelgateway '
+                    '--KernelGatewayApp.ip=0.0.0.0 '
+                    f'--KernelGatewayApp.port={self.kernel_gateway_port}'
+                )
+                logger.debug(f'Jupyter launch command (Windows): {jupyter_launch_command}')
+                
+                self.gateway_process = subprocess.Popen(
+                    jupyter_launch_command,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    shell=True,
+                    text=True,
+                )
+                
+                # Windows-specific stdout handling
+                output = ''
+                while should_continue():
+                    if self.gateway_process.stdout is None:
+                        time.sleep(1)
+                        continue
+                        
+                    line = self.gateway_process.stdout.readline()
+                    if not line:
+                        time.sleep(1)
+                        continue
+                        
+                    output += line
+                    if 'at' in line:
+                        break
+                    
+                    time.sleep(1)
+                    logger.debug('Waiting for jupyter kernel gateway to start...')
+                
+                logger.debug(
+                    f'Jupyter kernel gateway started at port {self.kernel_gateway_port}. Output: {output}'
+                )
+                
+                _obs = await self.run(
+                    IPythonRunCellAction(code='import sys; print(sys.executable)')
+                )
+                self.python_interpreter_path = _obs.content.strip()
+                return
+            else:
+                # Unix LocalRuntime (existing code)
+                poetry_prefix = f'cd {code_repo_path}\n'
+        
+        # Original Unix-based jupyter launch command (for container or Unix LocalRuntime)
         jupyter_launch_command = (
             f"{prefix}/bin/bash << 'EOF'\n"
             f'{poetry_prefix}'
