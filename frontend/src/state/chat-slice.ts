@@ -12,7 +12,9 @@ import { OpenHandsEventType } from "#/types/core/base";
 
 type SliceState = { messages: Message[] };
 
-const MAX_CONTENT_LENGTH = 1000;
+// Maximum length for displaying content in the UI
+// This should be smaller than the backend's MAX_CMD_OUTPUT_SIZE (50000)
+const MAX_CONTENT_LENGTH = 5000;
 
 const HANDLED_ACTIONS: OpenHandsEventType[] = [
   "run",
