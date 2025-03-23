@@ -1,8 +1,7 @@
 import React from "react";
 import { FaListUl } from "react-icons/fa";
 import { useDispatch } from "react-redux";
-import posthog from "posthog-js";
-import { NavLink, useLocation } from "react-router";
+import { NavLink, useLocation, useNavigate } from "react-router";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { UserActions } from "./user-actions";
 import { AllHandsLogoButton } from "#/components/shared/buttons/all-hands-logo-button";
@@ -17,14 +16,13 @@ import { setCurrentAgentState } from "#/state/agent-slice";
 import { AgentState } from "#/types/agent-state";
 import { TooltipButton } from "#/components/shared/buttons/tooltip-button";
 import { ConversationPanelWrapper } from "../conversation-panel/conversation-panel-wrapper";
-import { useLogout } from "#/hooks/mutation/use-logout";
 import { useConfig } from "#/hooks/query/use-config";
 import { cn } from "#/utils/utils";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
-import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 
 export function Sidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const dispatch = useDispatch();
   const endSession = useEndSession();
   const user = useGitHubUser();
@@ -35,8 +33,6 @@ export function Sidebar() {
     isError: settingsIsError,
     isFetching: isFetchingSettings,
   } = useSettings();
-  const { mutateAsync: logout } = useLogout();
-  const { mutate: saveUserSettings } = useSaveSettings();
 
   const [settingsModalIsOpen, setSettingsModalIsOpen] = React.useState(false);
 
@@ -77,10 +73,10 @@ export function Sidebar() {
     endSession();
   };
 
-  const handleLogout = async () => {
-    if (config?.APP_MODE === "saas") await logout();
-    else saveUserSettings({ unset_github_token: true });
-    posthog.reset();
+  const handleLogout = () => {
+    // Clear GitHub token before navigating to logout page
+    localStorage.removeItem("gh_token");
+    navigate("/logout");
   };
 
   return (
