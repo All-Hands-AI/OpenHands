@@ -7,6 +7,7 @@ from typing import Callable, cast
 
 from openhands.controller import AgentController
 from openhands.controller.agent import Agent
+from openhands.controller.replay import ReplayManager
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig, AppConfig, LLMConfig
 from openhands.core.exceptions import AgentRuntimeUnavailableError
@@ -14,7 +15,6 @@ from openhands.core.logger import OpenHandsLoggerAdapter
 from openhands.core.schema.agent import AgentState
 from openhands.events.action import ChangeAgentStateAction, MessageAction
 from openhands.events.event import Event, EventSource
-from openhands.events.serialization.event import event_from_dict
 from openhands.events.stream import EventStream
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderHandler
 from openhands.memory.memory import Memory
@@ -225,21 +225,7 @@ class AgentSession:
         itself does not call LLM or cost money.
         """
         assert initial_message is None
-        data = json.loads(replay_json)
-        if not isinstance(data, list):
-            raise ValueError(
-                f'Expected a list in {replay_json}, got {type(data).__name__}'
-            )
-        replay_events = []
-        for item in data:
-            event = event_from_dict(item)
-            if event.source == EventSource.ENVIRONMENT:
-                # ignore ENVIRONMENT events as they are not issued by
-                # the user or agent, and should not be replayed
-                continue
-            # cannot add an event with _id to event stream
-            event._id = None  # type: ignore[attr-defined]
-            replay_events.append(event)
+        replay_events = ReplayManager.get_replay_events(json.loads(replay_json))
         self.controller = self._create_controller(
             agent,
             config.security.confirmation_mode,
