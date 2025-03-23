@@ -124,7 +124,7 @@ class AgentSession:
             )
 
             if replay_json:
-                self._run_replay(
+                initial_message = self._run_replay(
                     initial_message,
                     replay_json,
                     agent,
@@ -134,16 +134,15 @@ class AgentSession:
                     agent_to_llm_config,
                     agent_configs,
                 )
-                return
-
-            self.controller = self._create_controller(
-                agent,
-                config.security.confirmation_mode,
-                max_iterations,
-                max_budget_per_task=max_budget_per_task,
-                agent_to_llm_config=agent_to_llm_config,
-                agent_configs=agent_configs,
-            )
+            else:
+                self.controller = self._create_controller(
+                    agent,
+                    config.security.confirmation_mode,
+                    max_iterations,
+                    max_budget_per_task=max_budget_per_task,
+                    agent_to_llm_config=agent_to_llm_config,
+                    agent_configs=agent_configs,
+                )
 
             repo_directory = None
             if self.runtime and runtime_connected and selected_repository:
@@ -218,7 +217,7 @@ class AgentSession:
         max_budget_per_task: float | None,
         agent_to_llm_config: dict[str, LLMConfig] | None,
         agent_configs: dict[str, AgentConfig] | None,
-    ):
+    ) -> MessageAction:
         """
         Replays a trajectory from a JSON file. Note that once the replay session
         finishes, the controller will continue to run with further user instructions,
@@ -251,8 +250,7 @@ class AgentSession:
             replay_events=replay_events[1:],
         )
         assert isinstance(replay_events[0], MessageAction)
-        self.event_stream.add_event(replay_events[0], EventSource.USER)
-        self._starting = True
+        return replay_events[0]
 
     def _create_security_analyzer(self, security_analyzer: str | None):
         """Creates a SecurityAnalyzer instance that will be used to analyze the agent actions
