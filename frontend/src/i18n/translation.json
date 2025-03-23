@@ -1,4 +1,34 @@
 {
+    "AUTH$LOGGED_OUT": {
+        "en": "You have been logged out",
+        "ja": "ログアウトしました",
+        "zh-CN": "您已退出登录",
+        "zh-TW": "您已登出",
+        "ko-KR": "로그아웃되었습니다",
+        "no": "Du har blitt logget ut",
+        "it": "Sei stato disconnesso",
+        "pt": "Você foi desconectado",
+        "es": "Has cerrado sesión",
+        "ar": "لقد تم تسجيل خروجك",
+        "fr": "Vous avez été déconnecté",
+        "tr": "Oturumunuz kapatıldı",
+        "de": "Sie wurden abgemeldet"
+    },
+    "AUTH$LOG_IN_WITH_GITHUB": {
+        "en": "Log in with GitHub",
+        "ja": "GitHubでログイン",
+        "zh-CN": "使用GitHub登录",
+        "zh-TW": "使用GitHub登入",
+        "ko-KR": "GitHub로 로그인",
+        "no": "Logg inn med GitHub",
+        "it": "Accedi con GitHub",
+        "pt": "Entrar com GitHub",
+        "es": "Iniciar sesión con GitHub",
+        "ar": "تسجيل الدخول باستخدام GitHub",
+        "fr": "Se connecter avec GitHub",
+        "tr": "GitHub ile giriş yap",
+        "de": "Mit GitHub anmelden"
+    },
     "APP$TITLE": {
         "en": "App",
         "ja": "アプリ",

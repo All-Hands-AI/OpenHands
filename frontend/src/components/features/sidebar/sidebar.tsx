@@ -81,6 +81,7 @@ export function Sidebar() {
     if (config?.APP_MODE === "saas") await logout();
     else saveUserSettings({ unset_github_token: true });
     posthog.reset();
+    window.location.href = "/logout";
   };
 
   return (

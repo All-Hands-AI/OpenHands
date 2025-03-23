@@ -3,6 +3,7 @@ import React from "react";
 interface AuthContextType {
   githubTokenIsSet: boolean;
   setGitHubTokenIsSet: (value: boolean) => void;
+  logout: () => void;
 }
 
 interface AuthContextProps extends React.PropsWithChildren {
@@ -16,12 +17,19 @@ function AuthProvider({ children, initialGithubTokenIsSet }: AuthContextProps) {
     !!initialGithubTokenIsSet,
   );
 
+  const logout = React.useCallback(() => {
+    setGitHubTokenIsSet(false);
+    // Clear any auth-related data from localStorage
+    localStorage.removeItem("gh_token");
+  }, [setGitHubTokenIsSet]);
+
   const value = React.useMemo(
     () => ({
       githubTokenIsSet,
       setGitHubTokenIsSet,
+      logout,
     }),
-    [githubTokenIsSet, setGitHubTokenIsSet],
+    [githubTokenIsSet, setGitHubTokenIsSet, logout],
   );
 
   return <AuthContext value={value}>{children}</AuthContext>;
