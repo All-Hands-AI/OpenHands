@@ -160,3 +160,26 @@ def truncate_content(content: str, max_chars: int | None = None) -> str:
         + '\n[... Observation truncated due to length ...]\n'
         + content[-half:]
     )
+
+
+def event_to_memory(event: 'Event', max_message_chars: int | None = None) -> dict:
+    """Convert an event to a memory-optimized dictionary representation.
+    
+    This is similar to event_to_dict but optimized for memory storage by removing
+    unnecessary fields and truncating content.
+    """
+    d = event_to_dict(event)
+    
+    # Remove id and timestamp as they're not needed for memory
+    d.pop('id', None)
+    d.pop('timestamp', None)
+    
+    # Truncate message content if needed
+    if 'message' in d and max_message_chars is not None:
+        d['message'] = truncate_content(d['message'], max_message_chars)
+    
+    # For CmdOutputObservation, remove MAX_CMD_OUTPUT_SIZE if present
+    if 'observation' in d and d['observation'] == 'CmdOutputObservation' and 'extras' in d:
+        d['extras'].pop('MAX_CMD_OUTPUT_SIZE', None)
+    
+    return d
