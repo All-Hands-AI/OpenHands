@@ -1,4 +1,5 @@
 import React from "react";
+import { useDispatch } from "react-redux";
 import posthog from "posthog-js";
 import { setReplayJson } from "#/state/initial-query-slice";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
@@ -13,6 +14,7 @@ import { convertFileToText } from "#/utils/convert-file-to-text";
 import { ENABLE_TRAJECTORY_REPLAY } from "#/utils/feature-flags";
 
 function Home() {
+  const dispatch = useDispatch();
   const formRef = React.useRef<HTMLFormElement>(null);
 
   const { data: config } = useConfig();
@@ -40,9 +42,6 @@ function Home() {
             gitHubAuthUrl={gitHubAuthUrl}
             user={user || null}
           />
-        </div>
-        <div className="w-full flex justify-start mt-2 ml-2">
-          <CodeNotInGitHubLink />
           {ENABLE_TRAJECTORY_REPLAY() && (
             <ReplaySuggestionBox
               onChange={async (event) => {
@@ -57,6 +56,9 @@ function Home() {
               }}
             />
           )}
+        </div>
+        <div className="w-full flex justify-start mt-2 ml-2">
+          <CodeNotInGitHubLink />
         </div>
       </div>
     </div>
