@@ -134,7 +134,7 @@ def test_cmd_output_truncation():
 
     # The truncated content might be slightly larger than MAX_CMD_OUTPUT_SIZE
     # due to the added truncation message
-    truncation_msg = '[... Command output truncated:'
+    truncation_msg = '[... Observation truncated due to length ...]'
     assert truncation_msg in obs.content
 
     # The truncation algorithm might add a few extra characters due to the truncation message
