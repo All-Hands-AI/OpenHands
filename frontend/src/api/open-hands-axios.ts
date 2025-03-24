@@ -2,6 +2,7 @@ import axios from "axios";
 import { saveLastPage } from "#/utils/last-page";
 
 export const openHands = axios.create();
+  baseURL: `${window.location.protocol}//${import.meta.env.VITE_BACKEND_BASE_URL || window?.location.host}`,
 
 // Add response interceptor to handle 401 and 403 errors
 openHands.interceptors.response.use(
