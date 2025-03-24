@@ -41,3 +41,8 @@ Frontend:
   - Available variables: VITE_BACKEND_HOST, VITE_USE_TLS, VITE_INSECURE_SKIP_VERIFY, VITE_FRONTEND_PORT
 - Internationalization:
   - Generate i18n declaration file: `npm run make-i18n`
+
+
+## Template for Github Pull Request
+
+If you are starting a pull request (PR), please follow the template in `.github/pull_request_template.md`.
