@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 interface InitialQueryState {
-  files: string[]; // base64 encoded images
+  files: string[];
   initialPrompt: string | null;
   selectedRepository: string | null;
 }

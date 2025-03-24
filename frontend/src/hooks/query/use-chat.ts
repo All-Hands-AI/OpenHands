@@ -56,7 +56,6 @@ export function addUserMessage(
     CHAT_QUERY_KEY,
   ) || { messages: [] };
 
-  // Remove any pending messages
   const updatedMessages = [...currentState.messages];
   let i = updatedMessages.length;
   while (i) {
@@ -67,14 +66,11 @@ export function addUserMessage(
     }
   }
 
-  // Add the new message
   updatedMessages.push(message);
 
-  // Update the query cache
   queryClient.setQueryData(CHAT_QUERY_KEY, { messages: updatedMessages });
 }
 
-// Add an assistant message
 export function addAssistantMessage(
   queryClient: ReturnType<typeof useQueryClient>,
   content: string,
@@ -93,11 +89,9 @@ export function addAssistantMessage(
   ) || { messages: [] };
   const updatedMessages = [...currentState.messages, message];
 
-  // Update the query cache
   queryClient.setQueryData(CHAT_QUERY_KEY, { messages: updatedMessages });
 }
 
-// Add an assistant action
 export function addAssistantAction(
   queryClient: ReturnType<typeof useQueryClient>,
   action: OpenHandsAction,
@@ -148,11 +142,9 @@ export function addAssistantAction(
   ) || { messages: [] };
   const updatedMessages = [...currentState.messages, message];
 
-  // Update the query cache
   queryClient.setQueryData(CHAT_QUERY_KEY, { messages: updatedMessages });
 }
 
-// Add an assistant observation
 export function addAssistantObservation(
   queryClient: ReturnType<typeof useQueryClient>,
   observation: OpenHandsObservation,
@@ -181,16 +173,13 @@ export function addAssistantObservation(
   const causeMessage = { ...updatedMessages[causeMessageIndex] };
   causeMessage.translationID = translationID;
 
-  // Set success property based on observation type
   if (observationID === "run") {
     const commandObs = observation as CommandObservation;
     causeMessage.success = commandObs.extras.metadata.exit_code === 0;
   } else if (observationID === "run_ipython") {
-    // For IPython, we consider it successful if there's no error message
     const ipythonObs = observation as IPythonObservation;
     causeMessage.success = !ipythonObs.content.toLowerCase().includes("error:");
   } else if (observationID === "read" || observationID === "edit") {
-    // For read/edit operations, we consider it successful if there's content and no error
     if (observation.extras.impl_source === "oh_aci") {
       causeMessage.success =
         observation.content.length > 0 &&
@@ -210,12 +199,12 @@ export function addAssistantObservation(
     content = `${
       causeMessage.content
     }\n\nOutput:\n\`\`\`\n${content.trim() || "[Command finished execution with no output]"}\n\`\`\``;
-    causeMessage.content = content; // Observation content includes the action
+    causeMessage.content = content;
   } else if (observationID === "read") {
-    causeMessage.content = `\`\`\`\n${observation.content}\n\`\`\``; // Content is already truncated by the ACI
+    causeMessage.content = `\`\`\`\n${observation.content}\n\`\`\``;
   } else if (observationID === "edit") {
     if (causeMessage.success) {
-      causeMessage.content = `\`\`\`diff\n${observation.extras.diff}\n\`\`\``; // Content is already truncated by the ACI
+      causeMessage.content = `\`\`\`diff\n${observation.extras.diff}\n\`\`\``;
     } else {
       causeMessage.content = observation.content;
     }
@@ -233,11 +222,9 @@ export function addAssistantObservation(
 
   updatedMessages[causeMessageIndex] = causeMessage;
 
-  // Update the query cache
   queryClient.setQueryData(CHAT_QUERY_KEY, { messages: updatedMessages });
 }
 
-// Add an error message
 export function addErrorMessage(
   queryClient: ReturnType<typeof useQueryClient>,
   payload: { id?: string; message: string },
@@ -257,11 +244,9 @@ export function addErrorMessage(
   ) || { messages: [] };
   const updatedMessages = [...currentState.messages, errorMessage];
 
-  // Update the query cache
   queryClient.setQueryData(CHAT_QUERY_KEY, { messages: updatedMessages });
 }
 
-// Clear all messages
 export function clearMessages(queryClient: ReturnType<typeof useQueryClient>) {
   queryClient.setQueryData(CHAT_QUERY_KEY, { messages: [] });
 }
