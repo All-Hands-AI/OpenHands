@@ -8,8 +8,9 @@ from openhands.core.config.utils import load_from_toml
 
 
 def test_extended_config_from_dict():
-    """
-    Test that ExtendedConfig.from_dict successfully creates an instance
+    """Test that ExtendedConfig.from_dict successfully creates an instance.
+
+    This test verifies that the from_dict method correctly creates an instance
     from a dictionary containing arbitrary extra keys.
     """
     data = {'foo': 'bar', 'baz': 123, 'flag': True}
@@ -24,9 +25,7 @@ def test_extended_config_from_dict():
 
 
 def test_extended_config_empty():
-    """
-    Test that an empty ExtendedConfig can be created and accessed.
-    """
+    """Test that an empty ExtendedConfig can be created and accessed."""
     ext_cfg = ExtendedConfig.from_dict({})
     assert ext_cfg.root == {}
 
@@ -36,9 +35,10 @@ def test_extended_config_empty():
 
 
 def test_extended_config_str_and_repr():
-    """
-    Test that __str__ and __repr__ return the correct string representations
-    of the ExtendedConfig instance.
+    """Test that __str__ and __repr__ return the correct string representations.
+
+    This test verifies that the string representations of the ExtendedConfig instance
+    include the expected key/value pairs.
     """
     data = {'alpha': 'test', 'beta': 42}
     ext_cfg = ExtendedConfig.from_dict(data)
@@ -54,9 +54,10 @@ def test_extended_config_str_and_repr():
 
 
 def test_extended_config_getitem_and_getattr():
-    """
-    Test that __getitem__ and __getattr__ can be used to access values
-    in the ExtendedConfig instance.
+    """Test that __getitem__ and __getattr__ can be used to access values.
+
+    This test verifies that values in the ExtendedConfig instance can be accessed
+    both via attribute access and dictionary-style access.
     """
     data = {'key1': 'value1', 'key2': 2}
     ext_cfg = ExtendedConfig.from_dict(data)
@@ -68,9 +69,7 @@ def test_extended_config_getitem_and_getattr():
 
 
 def test_extended_config_invalid_key():
-    """
-    Test that accessing a non-existent key via attribute access raises AttributeError.
-    """
+    """Test that accessing a non-existent key via attribute access raises AttributeError."""
     data = {'existing': 'yes'}
     ext_cfg = ExtendedConfig.from_dict(data)
 
@@ -82,9 +81,10 @@ def test_extended_config_invalid_key():
 
 
 def test_app_config_extended_from_toml(tmp_path: os.PathLike) -> None:
-    """
-    Test that the [extended] section in a TOML file is correctly loaded into
-    AppConfig.extended and that it accepts arbitrary keys.
+    """Test that the [extended] section in a TOML file is correctly loaded.
+
+    This test verifies that the [extended] section is loaded into AppConfig.extended
+    and that it accepts arbitrary keys.
     """
     # Create a temporary TOML file with multiple sections including [extended]
     config_content = """
@@ -101,7 +101,7 @@ custom2 = 42
 llm = "overridden"  # even a key like 'llm' is accepted in extended
 
 [agent]
-memory_enabled = true
+enable_prompt_extensions = true
 """
     config_file = tmp_path / 'config.toml'
     config_file.write_text(config_content)
@@ -118,8 +118,9 @@ memory_enabled = true
 
 
 def test_app_config_extended_default(tmp_path: os.PathLike) -> None:
-    """
-    Test that if there is no [extended] section in the TOML file,
+    """Test default behavior when no [extended] section exists.
+
+    This test verifies that if there is no [extended] section in the TOML file,
     AppConfig.extended remains its default (empty) ExtendedConfig.
     """
     config_content = """
@@ -131,7 +132,7 @@ model = "test-model"
 api_key = "toml-api-key"
 
 [agent]
-memory_enabled = true
+enable_prompt_extensions = true
 """
     config_file = tmp_path / 'config.toml'
     config_file.write_text(config_content)
@@ -144,8 +145,9 @@ memory_enabled = true
 
 
 def test_app_config_extended_random_keys(tmp_path: os.PathLike) -> None:
-    """
-    Test that the extended section accepts arbitrary keys,
+    """Test that the extended section accepts arbitrary keys.
+
+    This test verifies that the extended section accepts arbitrary keys,
     including ones not defined in any schema.
     """
     config_content = """

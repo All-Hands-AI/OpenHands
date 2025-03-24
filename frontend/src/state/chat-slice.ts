@@ -20,6 +20,7 @@ const HANDLED_ACTIONS: OpenHandsEventType[] = [
   "write",
   "read",
   "browse",
+  "browse_interactive",
   "edit",
 ];
 
@@ -108,6 +109,9 @@ export const chatSlice = createSlice({
         text = `${action.payload.args.path}\n${content}`;
       } else if (actionID === "browse") {
         text = `Browsing ${action.payload.args.url}`;
+      } else if (actionID === "browse_interactive") {
+        // Include the browser_actions in the content
+        text = `**Action:**\n\n\`\`\`python\n${action.payload.args.browser_actions}\n\`\`\``;
       }
       if (actionID === "run" || actionID === "run_ipython") {
         if (
@@ -127,6 +131,7 @@ export const chatSlice = createSlice({
         imageUrls: [],
         timestamp: new Date().toISOString(),
       };
+
       state.messages.push(message);
     },
 
@@ -159,9 +164,16 @@ export const chatSlice = createSlice({
           .includes("error:");
       } else if (observationID === "read" || observationID === "edit") {
         // For read/edit operations, we consider it successful if there's content and no error
-        causeMessage.success =
-          observation.payload.content.length > 0 &&
-          !observation.payload.content.toLowerCase().includes("error:");
+
+        if (observation.payload.extras.impl_source === "oh_aci") {
+          causeMessage.success =
+            observation.payload.content.length > 0 &&
+            !observation.payload.content.startsWith("ERROR:\n");
+        } else {
+          causeMessage.success =
+            observation.payload.content.length > 0 &&
+            !observation.payload.content.toLowerCase().includes("error:");
+        }
       }
 
       if (observationID === "run" || observationID === "run_ipython") {
@@ -184,11 +196,11 @@ export const chatSlice = createSlice({
       } else if (observationID === "browse") {
         let content = `**URL:** ${observation.payload.extras.url}\n`;
         if (observation.payload.extras.error) {
-          content += `**Error:**\n${observation.payload.extras.error}\n`;
+          content += `\n\n**Error:**\n${observation.payload.extras.error}\n`;
         }
-        content += `**Output:**\n${observation.payload.content}`;
+        content += `\n\n**Output:**\n${observation.payload.content}`;
         if (content.length > MAX_CONTENT_LENGTH) {
-          content = `${content.slice(0, MAX_CONTENT_LENGTH)}...`;
+          content = `${content.slice(0, MAX_CONTENT_LENGTH)}...(truncated)`;
         }
         causeMessage.content = content;
       }
