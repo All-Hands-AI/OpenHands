@@ -1,6 +1,5 @@
 import { trackError } from "#/utils/error-handler";
 import { queryClient } from "#/query-client-init";
-import { getQueryClientWrapper } from "#/utils/query-client-wrapper";
 import ActionType from "#/types/action-type";
 import {
   ActionMessage,
@@ -109,9 +108,8 @@ export function handleActionMessage(message: ActionMessage) {
       usage: message.tool_call_metadata?.model_response?.usage ?? null,
     };
     try {
-      const bridge = getQueryClientWrapper();
       // Update metrics in React Query
-      bridge.setQueryData(["metrics"], metrics);
+      queryClient.setQueryData(["metrics"], metrics);
     } catch (error) {
       console.warn("Failed to update metrics:", error);
     }

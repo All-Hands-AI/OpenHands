@@ -1,5 +1,4 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getQueryClientWrapper } from "#/utils/query-client-wrapper";
 
 interface InitialQueryState {
   files: string[]; // base64 encoded images
@@ -21,54 +20,23 @@ const initialState: InitialQueryState = {
 export function useInitialQuery() {
   const queryClient = useQueryClient();
 
-  // Try to get the bridge, but don't throw if it's not initialized (for tests)
-  let bridge: ReturnType<typeof getQueryClientWrapper> | null = null;
-  try {
-    bridge = getQueryClientWrapper();
-  } catch (error) {
-    // In tests, we might not have the bridge initialized
-    // eslint-disable-next-line no-console
-    console.warn(
-      "QueryReduxBridge not initialized, using default initial query state",
-    );
-  }
-
   // Get initial state from cache if this is the first time accessing the data
-  const getInitialQueryState = (): InitialQueryState => {
+  const getInitialInitialQueryState = (): InitialQueryState => {
     // If we already have data in React Query, use that
     const existingData = queryClient.getQueryData<InitialQueryState>([
       "initialQuery",
     ]);
     if (existingData) return existingData;
 
-    // Otherwise, get initial data from cache if bridge is available
-    if (bridge) {
-      try {
-        return bridge.getSliceState<InitialQueryState>("initialQuery");
-      } catch (error) {
-        // If we can.t get the state from cache, return the initial state
-        return initialState;
-      }
-    }
-
-    // If bridge is not available, return the initial state
+    // If no existing data, return the initial state
     return initialState;
   };
 
   // Query for initial query state
   const query = useQuery({
     queryKey: ["initialQuery"],
-    queryFn: () => {
-      // First check if we already have data in the query cache
-      const existingData = queryClient.getQueryData<InitialQueryState>([
-        "initialQuery",
-      ]);
-      if (existingData) return existingData;
-
-      // Otherwise get from the bridge or use initial state
-      return getInitialQueryState();
-    },
-    initialData: initialState, // Use initialState directly to ensure it's always defined
+    queryFn: () => getInitialInitialQueryState(),
+    initialData: initialState,
     staleTime: Infinity, // We manage updates manually through mutations
     refetchOnMount: false,
     refetchOnWindowFocus: false,

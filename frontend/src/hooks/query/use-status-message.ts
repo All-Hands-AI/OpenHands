@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getQueryClientWrapper } from "#/utils/query-client-wrapper";
+
 import { StatusMessage } from "#/types/message";
 
 // Initial status message
@@ -17,17 +17,6 @@ const initialStatusMessage: StatusMessage = {
 export function useStatusMessage() {
   const queryClient = useQueryClient();
 
-  // Try to get the bridge, but don't throw if it's not initialized (for tests)
-  let bridge: ReturnType<typeof getQueryClientWrapper> | null = null;
-  try {
-    bridge = getQueryClientWrapper();
-  } catch (error) {
-    // In tests, we might not have the bridge initialized
-    console.warn(
-      "QueryReduxBridge not initialized, using default status message",
-    );
-  }
-
   // Get initial state from cache if this is the first time accessing the data
   const getInitialStatusMessage = (): StatusMessage => {
     // If we already have data in React Query, use that
@@ -37,19 +26,7 @@ export function useStatusMessage() {
     ]);
     if (existingData) return existingData;
 
-    // Otherwise, get initial data from cache if bridge is available
-    if (bridge) {
-      try {
-        return bridge.getSliceState<{ curStatusMessage: StatusMessage }>(
-          "status",
-        ).curStatusMessage;
-      } catch (error) {
-        // If we can.t get the state from cache, return the initial state
-        return initialStatusMessage;
-      }
-    }
-
-    // If bridge is not available, return the initial state
+    // If no existing data, return the initial state
     return initialStatusMessage;
   };
 

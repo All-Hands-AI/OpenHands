@@ -1,5 +1,4 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getQueryClientWrapper } from "#/utils/query-client-wrapper";
 
 interface MetricsState {
   cost: number | null;
@@ -23,39 +22,20 @@ const initialMetrics: MetricsState = {
 export function useMetrics() {
   const queryClient = useQueryClient();
 
-  // Try to get the bridge, but don't throw if it's not initialized (for tests)
-  let bridge: ReturnType<typeof getQueryClientWrapper> | null = null;
-  try {
-    bridge = getQueryClientWrapper();
-  } catch (error) {
-    // In tests, we might not have the bridge initialized
-    console.warn("QueryClientWrapper not initialized, using default metrics");
-  }
-
   // Get initial state from cache if this is the first time accessing the data
-  const getInitialMetrics = (): MetricsState => {
+  const getInitialMetricsState = (): MetricsState => {
     // If we already have data in React Query, use that
     const existingData = queryClient.getQueryData<MetricsState>(["metrics"]);
     if (existingData) return existingData;
 
-    // Otherwise, get initial data from cache if bridge is available
-    if (bridge) {
-      try {
-        return bridge.getSliceState<MetricsState>("metrics");
-      } catch (error) {
-        // If we can.t get the state from cache, return the initial state
-        return initialMetrics;
-      }
-    }
-
-    // If bridge is not available, return the initial state
+    // If no existing data, return the initial state
     return initialMetrics;
   };
 
   // Query for metrics
   const query = useQuery({
     queryKey: ["metrics"],
-    queryFn: () => getInitialMetrics(),
+    queryFn: () => getInitialMetricsState(),
     initialData: initialMetrics, // Use initialMetrics directly to ensure it's always defined
     staleTime: Infinity, // We manage updates manually through mutations
     refetchOnMount: false,

@@ -1,5 +1,4 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { getQueryClientWrapper } from "#/utils/query-client-wrapper";
 
 interface FileStateState {
   changed: Record<string, boolean>;
@@ -17,37 +16,13 @@ const initialFileState: FileStateState = {
 export function useFileState() {
   const queryClient = useQueryClient();
 
-  // Try to get the bridge, but don't throw if it's not initialized (for tests)
-  let bridge: ReturnType<typeof getQueryClientWrapper> | null = null;
-  try {
-    bridge = getQueryClientWrapper();
-  } catch (error) {
-    // In tests, we might not have the bridge initialized
-    // eslint-disable-next-line no-console
-    console.warn(
-      "QueryClientWrapper not initialized, using default file state",
-    );
-  }
-
   // Get initial state from cache if this is the first time accessing the data
   const getInitialFileStateState = (): FileStateState => {
     // If we already have data in React Query, use that
-    const existingData = queryClient.getQueryData<FileStateState>([
-      "fileState",
-    ]);
+    const existingData = queryClient.getQueryData<FileStateState>(["file"]);
     if (existingData) return existingData;
 
-    // Otherwise, get initial data from cache if bridge is available
-    if (bridge) {
-      try {
-        return bridge.getSliceState<FileStateState>("fileState");
-      } catch (error) {
-        // If we can.t get the state from cache, return the initial state
-        return initialFileState;
-      }
-    }
-
-    // If bridge is not available, return the initial state
+    // If no existing data, return the initial state
     return initialFileState;
   };
 

@@ -8,27 +8,19 @@ import i18n from "i18next";
 import { vi } from "vitest";
 import { AuthProvider } from "#/context/auth-context";
 import { ConversationProvider } from "#/context/conversation-context";
-import { initQueryClientWrapper } from "#/utils/query-client-wrapper";
-
-// Mock the QueryClientWrapper module
-vi.mock("#/utils/query-client-wrapper", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("#/utils/query-client-wrapper")>();
-  
-  // Create a mock QueryClientWrapper class
-  const mockWrapper = {
-    updateQueryData: vi.fn(),
+// Mock the QueryClient
+vi.mock("#/query-client-init", () => {
+  // Create a mock QueryClient
+  const mockQueryClient = {
+    setQueryData: vi.fn(),
     getQueryData: vi.fn(),
     invalidateQuery: vi.fn(),
     resetQuery: vi.fn(),
-    getSliceState: vi.fn(),
-    setQueryData: vi.fn(),
   };
   
-  // Return the original module with mocked functions
+  // Return the mock QueryClient
   return {
-    ...actual,
-    initQueryClientWrapper: vi.fn(() => mockWrapper),
-    getQueryClientWrapper: vi.fn(() => mockWrapper),
+    queryClient: mockQueryClient,
   };
 });
 

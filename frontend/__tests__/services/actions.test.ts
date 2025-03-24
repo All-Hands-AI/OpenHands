@@ -3,7 +3,7 @@ import { handleStatusMessage, handleActionMessage } from "#/services/actions";
 import { trackError } from "#/utils/error-handler";
 import ActionType from "#/types/action-type";
 import { ActionMessage } from "#/types/message";
-import * as queryClientWrapper from "#/utils/query-client-wrapper";
+import { queryClient } from "#/query-client-init";
 import * as observations from "#/services/observations";
 
 // Mock dependencies
@@ -112,17 +112,12 @@ describe("Actions Service", () => {
         }
       };
 
-      const mockBridge = {
-        isSliceMigrated: vi.fn(() => true),
-        setQueryData: vi.fn(),
-        conditionalDispatch: vi.fn(),
-      };
-      
-      vi.mocked(queryClientWrapper.getQueryClientWrapper).mockReturnValue(mockBridge as any);
+      // Mock the queryClient
+      vi.mocked(queryClient.setQueryData).mockImplementation(vi.fn());
 
       handleActionMessage(message);
 
-      expect(mockBridge.setQueryData).toHaveBeenCalledWith(
+      expect(queryClient.setQueryData).toHaveBeenCalledWith(
         ["metrics"],
         {
           cost: 0.05,

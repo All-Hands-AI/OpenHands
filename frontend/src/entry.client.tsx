@@ -13,7 +13,7 @@ import "./i18n";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { useConfig } from "./hooks/query/use-config";
 import { AuthProvider } from "./context/auth-context";
-import { initializeQueryClient, queryClient } from "./query-client-init";
+import { queryClient } from "./query-client-init";
 
 function PosthogInit() {
   const { data: config } = useConfig();
@@ -44,9 +44,6 @@ async function prepareApp() {
 }
 
 prepareApp().then(() => {
-  // Initialize the query client wrapper
-  initializeQueryClient();
-
   startTransition(() => {
     hydrateRoot(
       document,
