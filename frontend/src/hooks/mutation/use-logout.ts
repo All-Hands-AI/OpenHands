@@ -9,10 +9,10 @@ export const useLogout = () => {
   const { data: config } = useConfig();
 
   return useMutation({
-    mutationFn: () => OpenHands.logout(config?.APP_MODE ?? "oss"),
-    onSuccess: async () => {
+    mutationFn: async () => {
       setGitHubTokenIsSet(false);
       await queryClient.invalidateQueries();
+      await OpenHands.logout(config?.APP_MODE ?? "oss");
     },
   });
 };

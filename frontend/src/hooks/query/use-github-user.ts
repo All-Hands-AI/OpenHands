@@ -37,7 +37,6 @@ export const useGitHubUser = () => {
 
   const handleLogout = async () => {
     await logout();
-    setGitHubTokenIsSet(false);
     posthog.reset();
   };
 
