@@ -1,6 +1,4 @@
 import { render, screen } from "@testing-library/react";
-import { Provider } from "react-redux";
-import { configureStore } from "@reduxjs/toolkit";
 import { vi, describe, it, expect } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
@@ -22,15 +20,6 @@ vi.mock("#/hooks/query/use-jupyter", () => ({
 import { JupyterEditor } from "#/components/features/jupyter/jupyter";
 
 describe("JupyterEditor", () => {
-  const mockStore = configureStore({
-    reducer: {
-      chat: () => ({}),
-      agent: () => ({}),
-      securityAnalyzer: () => ({}),
-    },
-    preloadedState: {},
-  });
-
   it("should have a scrollable container", () => {
     // Create a new QueryClient for each test
     const queryClient = new QueryClient({
@@ -43,11 +32,9 @@ describe("JupyterEditor", () => {
     
     render(
       <QueryClientProvider client={queryClient}>
-        <Provider store={mockStore}>
-          <div style={{ height: "100vh" }}>
-            <JupyterEditor maxWidth={800} />
-          </div>
-        </Provider>
+        <div style={{ height: "100vh" }}>
+          <JupyterEditor maxWidth={800} />
+        </div>
       </QueryClientProvider>
     );
 

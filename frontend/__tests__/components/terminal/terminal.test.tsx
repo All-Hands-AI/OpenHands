@@ -26,8 +26,10 @@ vi.mock("#/hooks/query/use-agent-state", () => ({
 const renderTerminal = (commands: Command[] = []) =>
   renderWithProviders(<Terminal secrets={[]} />, {
     preloadedState: {
+      // Initialize with empty chat messages in the query cache
       chat: { messages: [] },
-      // Agent state is now handled by the mocked useAgentState hook
+      // Command state would be initialized in the query cache if needed
+      // Agent state is handled by the mocked useAgentState hook
     },
   });
 

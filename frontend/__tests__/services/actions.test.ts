@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { handleStatusMessage, handleActionMessage } from "#/services/actions";
-import store from "#/store";
 import { trackError } from "#/utils/error-handler";
 import ActionType from "#/types/action-type";
 import { ActionMessage } from "#/types/message";
@@ -12,10 +11,14 @@ vi.mock("#/utils/error-handler", () => ({
   trackError: vi.fn(),
 }));
 
+// Create a mock store for backward compatibility
+const mockStore = {
+  dispatch: vi.fn(),
+  getState: vi.fn(),
+};
+
 vi.mock("#/store", () => ({
-  default: {
-    dispatch: vi.fn(),
-  },
+  default: mockStore,
 }));
 
 // Mock QueryReduxBridge
@@ -60,7 +63,7 @@ describe("Actions Service", () => {
       handleStatusMessage(message);
 
       // We no longer dispatch to Redux for info messages
-      expect(store.dispatch).not.toHaveBeenCalled();
+      expect(mockStore.dispatch).not.toHaveBeenCalled();
     });
 
     it("should log error messages and display them in chat", () => {

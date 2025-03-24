@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { screen, waitFor } from "@testing-library/react";
 import { renderWithQueryClient } from "../utils/test-utils";
-import * as ChatSlice from "#/state/chat-slice";
 import {
   updateStatusWhenErrorMessagePresent,
   WsClientProvider,
@@ -29,7 +28,7 @@ describe("Propagate error message", () => {
   beforeEach(() => {
     // Reset the mocks before each test
     vi.clearAllMocks();
-    vi.spyOn(ChatSlice, "addErrorMessage").mockImplementation(() => ({ type: "chat/addErrorMessage", payload: { message: "Test error" } }));
+    // We no longer need to mock Redux actions
   });
 
   it("should do nothing when no message was passed from server", () => {

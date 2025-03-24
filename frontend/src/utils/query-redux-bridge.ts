@@ -86,9 +86,11 @@ export class QueryClientWrapper {
    * @param _sliceName - The name of the slice to dispatch to (unused)
    * @param _action - The action to dispatch (unused)
    */
-  // eslint-disable-next-line class-methods-use-this, @typescript-eslint/no-unused-vars
+  // eslint-disable-next-line class-methods-use-this
   conditionalDispatch(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _sliceName: SliceNames,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _action: { type: string; payload?: unknown },
   ): void {
     // No-op - Redux is no longer used
