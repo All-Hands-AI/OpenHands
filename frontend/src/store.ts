@@ -57,7 +57,13 @@ const reactQueryMiddleware: Middleware = () => (next) => (action: unknown) => {
     switch (chatAction.type) {
       // Handle all chat-related actions
       case "chat/addUserMessage": {
-        const { content, imageUrls, timestamp, pending } = chatAction.payload;
+        const { content, imageUrls, timestamp, pending } =
+          chatAction.payload as {
+            content: string;
+            imageUrls: string[];
+            timestamp: string;
+            pending?: boolean;
+          };
         const message: Message = {
           type: "thought",
           sender: "user",
@@ -74,7 +80,7 @@ const reactQueryMiddleware: Middleware = () => (next) => (action: unknown) => {
         break;
       }
       case "chat/addAssistantMessage": {
-        const content = chatAction.payload;
+        const content = chatAction.payload as string;
         const message: Message = {
           type: "thought",
           sender: "assistant",
@@ -93,7 +99,7 @@ const reactQueryMiddleware: Middleware = () => (next) => (action: unknown) => {
       }
       case "chat/addAssistantAction": {
         const actionPayload = chatAction.payload as {
-          id: string;
+          id: number;
           action: string;
           args: Record<string, unknown>;
         };
@@ -104,11 +110,11 @@ const reactQueryMiddleware: Middleware = () => (next) => (action: unknown) => {
 
         // Basic handling for common action types
         if (actionPayload.args && actionPayload.args.thought) {
-          content = actionPayload.args.thought;
+          content = actionPayload.args.thought as string;
         } else if (actionType === "run" && actionPayload.args) {
-          content = `Command:\n\`${actionPayload.args.command}\``;
+          content = `Command:\n\`${actionPayload.args.command as string}\``;
         } else if (actionType === "run_ipython" && actionPayload.args) {
-          content = `\`\`\`\n${actionPayload.args.code}\n\`\`\``;
+          content = `\`\`\`\n${actionPayload.args.code as string}\n\`\`\``;
         }
 
         const message: Message = {

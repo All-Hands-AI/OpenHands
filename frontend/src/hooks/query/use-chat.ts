@@ -496,7 +496,11 @@ export function useChat() {
         action: action.action,
         args: action.args,
       });
-      addAssistantActionMutation.mutate(action);
+      // Instead of trying to convert to OpenHandsAction, just pass the action as is
+      // and let the middleware handle it
+      // We need to use any here because the types don't match exactly
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      addAssistantActionMutation.mutate(action as any);
     },
     addAssistantObservation: (observation: {
       id: string;
@@ -510,7 +514,11 @@ export function useChat() {
         observation: observation.observation,
         cause: observation.cause,
       });
-      addAssistantObservationMutation.mutate(observation);
+      // Instead of trying to convert to OpenHandsObservation, just pass the observation as is
+      // and let the middleware handle it
+      // We need to use any here because the types don't match exactly
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      addAssistantObservationMutation.mutate(observation as any);
     },
     addErrorMessage: (payload: { id?: string; message: string }) => {
       console.log("[useChat Debug] Adding error message:", payload);
