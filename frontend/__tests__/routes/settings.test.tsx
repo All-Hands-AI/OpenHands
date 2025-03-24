@@ -821,7 +821,6 @@ describe("Settings Screen", () => {
         ...MOCK_DEFAULT_USER_SETTINGS,
       };
       delete mockCopy.github_token_is_set;
-      delete mockCopy.unset_github_token;
       delete mockCopy.user_consents_to_analytics;
 
       expect(saveSettingsSpy).toHaveBeenCalledWith({

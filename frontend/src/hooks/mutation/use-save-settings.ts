@@ -23,7 +23,6 @@ const saveSettingsMutationFn = async (
     llm_api_key: settings.LLM_API_KEY?.trim() || undefined,
     remote_runtime_resource_factor: settings.REMOTE_RUNTIME_RESOURCE_FACTOR,
     provider_tokens: settings.provider_tokens,
-    unset_github_token: settings.unset_github_token,
     enable_default_condenser: settings.ENABLE_DEFAULT_CONDENSER,
     enable_sound_notifications: settings.ENABLE_SOUND_NOTIFICATIONS,
     user_consents_to_analytics: settings.user_consents_to_analytics,

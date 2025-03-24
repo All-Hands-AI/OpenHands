@@ -47,16 +47,7 @@ async def reset_settings(
     request: Request
 ) -> JSONResponse:
     """
-    Resets user settings. 
-
-    Sensitive info removed 
-
-        1. Personal access tokens
-        2. LLM API key
-
-    Defaults set
-        1. LLM Settings
-
+    Resets user settings.
     """
     try:
         settings_store = await SettingsStoreImpl.get_instance(
