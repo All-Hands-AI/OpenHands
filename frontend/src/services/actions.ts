@@ -169,9 +169,26 @@ export function handleActionMessage(message: ActionMessage) {
 }
 
 export function handleStatusMessage(message: StatusMessage) {
+  // eslint-disable-next-line no-console
+  console.log("[Status Debug] Handling status message:", {
+    type: message.type,
+    id: message.id,
+    message: message.message,
+  });
+
   if (message.type === "info") {
     // Status slice is now handled by React Query
     // The websocket events hook will update the React Query cache
+    // Update status message in React Query
+    try {
+      const queryClient = queryClient;
+      // eslint-disable-next-line no-console
+      console.log("[Status Debug] Updating status message in React Query");
+      queryClient.setQueryData(["status", "currentMessage"], message);
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error("[Status Debug] Failed to update status message:", error);
+    }
   } else if (message.type === "error") {
     trackError({
       message: message.message,

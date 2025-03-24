@@ -12,12 +12,6 @@ function Terminal({ secrets }: TerminalProps) {
   const { commands } = useCommand();
   const { curAgentState } = useAgentState();
 
-  // Debug log
-  // eslint-disable-next-line no-console
-  console.log("[Terminal Debug] Rendering terminal with commands:", {
-    commandsLength: commands.length,
-  });
-
   const ref = useTerminal({
     commands,
     secrets,
