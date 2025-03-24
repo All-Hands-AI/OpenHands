@@ -39,6 +39,12 @@ def generate_file_viewer_html(file_path: str) -> str:
             f"Supported extensions are: {', '.join(supported_extensions)}"
         )
 
+    # Check if the file exists
+    if not os.path.exists(file_path):
+        raise ValueError(
+            f'File not found locally: {file_path}. Please download the file to the local machine and try again.'
+        )
+
     # Read file content directly
     file_content = None
     mime_type = mimetypes.guess_type(file_path)[0] or 'application/octet-stream'

@@ -22,6 +22,7 @@ click('48', button='middle', modifiers=['Shift'])
 You can also use the browser to view pdf, png, jpg files.
 You should first check the content of /tmp/oh-server-url to get the server url, and then use it to view the file by `goto("{server_url}/view?path={absolute_file_path}")`.
 For example: `goto("http://localhost:8000/view?path=/workspace/test_document.pdf")`
+Note: The file should be downloaded to the local machine first before using the browser to view it.
 """
 
 _BROWSER_TOOL_DESCRIPTION = """
