@@ -29,7 +29,7 @@ class AgentConfig(BaseModel):
     enable_prompt_extensions: bool = Field(default=True)
     disabled_microagents: list[str] = Field(default_factory=list)
     enable_history_truncation: bool = Field(default=True)
-    enable_som_visual_browsing: bool = Field(default=False)
+    enable_som_visual_browsing: bool = Field(default=True)
     condenser: CondenserConfig = Field(default_factory=NoOpCondenserConfig)
 
     model_config = {'extra': 'forbid'}
