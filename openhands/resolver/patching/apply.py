@@ -97,17 +97,26 @@ def apply_diff(
                     hunk=hunk,
                 )
             if lines[old - 1] != line:
-                # Try to normalize whitespace by replacing multiple spaces with a single space
-                # This helps with patches that have different indentation levels
-                normalized_line = ' '.join(line.split())
-                normalized_source = ' '.join(lines[old - 1].split())
-                if normalized_line != normalized_source:
+                # For Makefiles, we need to preserve tabs since they are significant
+                if diff.header.new_path and diff.header.new_path.endswith('Makefile'):
                     raise HunkApplyException(
                         'context line {n}, "{line}" does not match "{sl}"'.format(
                             n=old, line=line, sl=lines[old - 1]
                         ),
                         hunk=hunk,
                     )
+                else:
+                    # Try to normalize whitespace by replacing multiple spaces with a single space
+                    # This helps with patches that have different indentation levels
+                    normalized_line = ' '.join(line.split())
+                    normalized_source = ' '.join(lines[old - 1].split())
+                    if normalized_line != normalized_source:
+                        raise HunkApplyException(
+                            'context line {n}, "{line}" does not match "{sl}"'.format(
+                                n=old, line=line, sl=lines[old - 1]
+                            ),
+                            hunk=hunk,
+                        )
 
     # for calculating the old line
     r = 0
