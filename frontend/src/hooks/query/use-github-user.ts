@@ -11,7 +11,7 @@ export const useGitHubUser = () => {
   const { githubTokenIsSet } = useAuth();
   const { setGitHubTokenIsSet } = useAuth();
   const { mutateAsync: logout } = useLogout();
-  const { mutate: saveUserSettings } = useSaveSettings();
+
   const { data: config } = useConfig();
 
   const user = useQuery({

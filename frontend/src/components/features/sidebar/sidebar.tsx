@@ -36,7 +36,7 @@ export function Sidebar() {
     isFetching: isFetchingSettings,
   } = useSettings();
   const { mutateAsync: logout } = useLogout();
-  const { mutate: saveUserSettings } = useSaveSettings();
+
 
   const [settingsModalIsOpen, setSettingsModalIsOpen] = React.useState(false);
 
