@@ -79,115 +79,30 @@ Always ensure the user provides this configuration information before proceeding
 server is running or take any further steps without confirmation.
 
 
-## Create a session to interact with the MCP server
+## Create a session to interact with the MCP server using the provided utility functions
 
-First, you may need to install the `mcp` library to interact with `pip install mcp` if it is not
-installed yet.
+The `call_tool` and `list_tools` functions provide a simple interface to interact with MCP servers. These functions automatically handle connections and cleanup for each request, making them robust and easy to use.
 
-Below is the sample code to create a session to use tools via the MCP server in Python:
+Also, those functions will automatically spawn the server, so please don't try to start the server manually.
+
+Below is the sample code to create a session to use tools via the MCP server in Python. Remember you
+don't need the import statement as the functions are already available.
 
 ```python
-from typing import List, Dict, Any, Optional, Literal
-from contextlib import AsyncExitStack
-from mcp import ClientSession, StdioServerParameters, stdio_client
+# We don't need to import the functions as they are already available
+config = {
+    "command": "your_command",
+    "args": ["--arg1", "--arg2"],
+    "env": {"ENV_VAR": "value"}
+}
 
-class MCPServerSession:
-    """
-    A lightweight wrapper around the MCP library for connecting to MCP servers
-    and calling tools, designed for use in interactive environments like IPython.
-    """
+# List available tools and check their signatures
+tools = await list_tools(config)
+print(tools)
 
-    def __init__(self,
-                 command: str,
-                 args: List[str] = None,
-                 env: Dict[str, str] = None,
-                 encoding: str = "utf-8",
-                 encoding_error_handler: Literal['strict', 'ignore', 'replace'] = "strict"):
-        """
-        Initialize an MCP server session with the provided parameters.
-
-        Args:
-            command: The command to run the server
-            args: Command line arguments
-            env: Environment variables
-            encoding: Encoding to use for stdio
-            encoding_error_handler: How to handle encoding errors
-        """
-        self.command = command
-        self.args = args or []
-        self.env = env
-        self.encoding = encoding
-        self.encoding_error_handler = encoding_error_handler
-
-        # Session state
-        self.session: Optional[ClientSession] = None
-        self.exit_stack = AsyncExitStack()
-        self.stdio = None
-        self.write = None
-        self.connected = False
-
-    async def connect(self):
-        """
-        Connect to the MCP server using the parameters provided at initialization.
-        """
-        if self.connected:
-            return
-
-        server_params = StdioServerParameters(
-            command=self.command,
-            args=self.args,
-            env=self.env,
-            encoding=self.encoding,
-            encoding_error_handler=self.encoding_error_handler
-        )
-
-        stdio_transport = await self.exit_stack.enter_async_context(stdio_client(server_params))
-        self.stdio, self.write = stdio_transport
-        self.session = await self.exit_stack.enter_async_context(ClientSession(self.stdio, self.write))
-
-        await self.session.initialize()
-        self.connected = True
-
-        return self
-
-    async def list_tools(self):
-        """
-        List all available tools from the MCP server.
-
-        Returns:
-            List of tool objects
-        """
-        if not self.connected:
-            await self.connect()
-
-        response = await self.session.list_tools()
-        return response.tools
-
-    async def call_tool(self, tool_name: str, input_data: Dict[str, Any]):
-        """
-        Call a specific tool on the MCP server.
-
-        Args:
-            tool_name: Name of the tool to call
-            input_data: Input data for the tool
-
-        Returns:
-            The tool's response
-        """
-        if not self.connected:
-            await self.connect()
-
-        response = await self.session.call_tool(tool_name, input_data)
-        return response
-
-    async def close(self):
-        """Clean up resources and close the connection."""
-        if self.connected:
-            await self.exit_stack.aclose()
-            self.session = None
-            self.stdio = None
-            self.write = None
-            self.connected = False
+# Call a specific tool
+result = await call_tool(config, "tool_name", {"param1": "value1"})
+print(result)
 ```
 
 You can adapt this code with the arguments provided by the user to create a session to interact with
