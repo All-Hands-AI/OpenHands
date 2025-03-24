@@ -1,7 +1,7 @@
 import { act, screen } from "@testing-library/react";
 import { renderWithProviders } from "test-utils";
 import { vi, describe, afterEach, it, expect } from "vitest";
-import { Command, appendInput, appendOutput } from "#/state/command-slice";
+import { Command, appendInput, appendOutput } from "#/types/migrated-types";
 import Terminal from "#/components/features/terminal/terminal";
 
 const renderTerminal = (commands: Command[] = []) =>
@@ -61,15 +61,15 @@ describe.skip("Terminal", () => {
     const { store } = renderTerminal();
 
     act(() => {
-      store.dispatch(appendInput("echo Hello"));
-      store.dispatch(appendOutput("Hello"));
+      store.dispatch(appendInput({ id: "1", input: "echo Hello" }));
+      store.dispatch(appendOutput({ id: "1", output: "Hello" }));
     });
 
     expect(mockTerminal.writeln).toHaveBeenNthCalledWith(1, "echo Hello");
     expect(mockTerminal.writeln).toHaveBeenNthCalledWith(2, "Hello");
 
     act(() => {
-      store.dispatch(appendInput("echo World"));
+      store.dispatch(appendInput({ id: "2", input: "echo World" }));
     });
 
     expect(mockTerminal.writeln).toHaveBeenNthCalledWith(3, "echo World");
@@ -85,7 +85,7 @@ describe.skip("Terminal", () => {
     expect(mockTerminal.writeln).toHaveBeenNthCalledWith(2, "Hello");
 
     act(() => {
-      store.dispatch(appendInput("echo Hello"));
+      store.dispatch(appendInput({ id: "3", input: "echo Hello" }));
     });
 
     expect(mockTerminal.writeln).toHaveBeenNthCalledWith(3, "echo Hello");
@@ -95,7 +95,7 @@ describe.skip("Terminal", () => {
     const { store } = renderTerminal();
 
     act(() => {
-      store.dispatch(appendInput("echo Hello"));
+      store.dispatch(appendInput({ id: "4", input: "echo Hello" }));
     });
 
     expect(mockTerminal.writeln).toHaveBeenCalledWith("echo Hello");
