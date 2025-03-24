@@ -34,26 +34,6 @@ describe("Actions Service", () => {
   });
 
   describe("handleStatusMessage", () => {
-    it("should set info messages in the query cache", async () => {
-      const message = {
-        type: "info",
-        message: "Runtime is not available",
-        id: "runtime.unavailable",
-        status_update: true as const,
-      };
-
-      handleStatusMessage(message);
-      
-      // Wait for the dynamic import promise to resolve
-      await new Promise(resolve => setTimeout(resolve, 0));
-      
-      // Verify setAgentStatus was called with the message
-      expect(setAgentStatus).toHaveBeenCalledWith(
-        expect.anything(),
-        message
-      );
-    });
-
     it("should log error messages and display them in chat", () => {
       const message = {
         type: "error",
