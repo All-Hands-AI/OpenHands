@@ -196,7 +196,7 @@ export const chatSlice = createSlice({
         if (observation.payload.extras.error) {
           content += `**Error:**\n${observation.payload.extras.error}\n`;
         }
-        content += `**Output:**\n${observation.payload.content}`;
+        content += `\n\n**Output:**\n${observation.payload.content}`;
         if (content.length > MAX_CONTENT_LENGTH) {
           content = `${content.slice(0, MAX_CONTENT_LENGTH)}...`;
         }
