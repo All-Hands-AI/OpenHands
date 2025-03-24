@@ -1,6 +1,7 @@
 import React from "react";
 import posthog from "posthog-js";
 import { useParams } from "react-router";
+import { useSelector } from "react-redux";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
 import { TrajectoryActions } from "../trajectory/trajectory-actions";
 import { createChatMessage } from "#/services/chat-service";
@@ -16,6 +17,7 @@ import { ChatSuggestions } from "./chat-suggestions";
 import { ActionSuggestions } from "./action-suggestions";
 import { useChatMessages } from "#/hooks/query/use-chat-messages";
 import { useAgentState } from "#/hooks/query/use-agent-state";
+import { RootState } from "#/store";
 
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
