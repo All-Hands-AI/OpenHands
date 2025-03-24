@@ -7,7 +7,8 @@ from openhands.integrations.provider import ProviderToken, ProviderType, SecretS
 from openhands.integrations.utils import validate_provider_token
 from openhands.server.auth import get_provider_tokens, get_user_id
 from openhands.server.settings import GETSettingsModel, POSTSettingsModel, Settings
-from openhands.server.shared import SettingsStoreImpl, config
+from openhands.server.shared import SettingsStoreImpl, config, server_config
+from openhands.server.types import AppMode
 
 app = APIRouter(prefix='/api')
 
@@ -61,8 +62,18 @@ async def reset_settings(
         settings_store = await SettingsStoreImpl.get_instance(
             config, get_user_id(request)
         )
-        
+
+        existing_settings = await settings_store.load()
         settings = Settings()
+        server_config_values = server_config.get_config()
+        is_hide_llm_settings_enabled = server_config_values.get("FEATURE_FLAGS", {}).get("HIDE_LLM_SETTINGS", False)
+        # We don't want the user to be able to modify these settings in SaaS
+        if (server_config.APP_MODE == AppMode.SAAS and is_hide_llm_settings_enabled):
+            if existing_settings:
+                settings.llm_api_key = existing_settings.llm_api_key
+                settings.llm_base_url = existing_settings.llm_base_url
+                settings.llm_model = existing_settings.llm_model
+
         await settings_store.store(settings)
         return JSONResponse(
             status_code=status.HTTP_200_OK,
