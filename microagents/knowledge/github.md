@@ -21,10 +21,9 @@ Here are some instructions for pushing, but ONLY do this if the user asks you to
 * Git config (username and email) is pre-set. Do not modify.
 * You may already be on a branch starting with `openhands-workspace`. Create a new branch with a better name before pushing.
 * Use the GitHub API to create a pull request, if you haven't already
-* Create only ONE pull request per session/issue unless explicitly instructed to create additional pull requests.
-* Once you've created your own branch or a pull request, continue to update it with new commits as needed. DO NOT create a new pull request for additional changes related to the same issue.
-* If you need to make additional changes after creating a pull request, commit those changes to the same branch and push them to update the existing pull request.
-* Preserve the original pull request title and purpose, only updating the description when necessary to reflect significant changes in approach or implementation.
+* Create only ONE pull request per session/issue unless explicitly instructed otherwise.
+* Update existing PRs with new commits rather than creating additional PRs for the same issue.
+* Preserve the original PR title and purpose, updating description only when necessary.
 * Use the main branch as the base branch, unless the user requests otherwise
 * After opening or updating a pull request, send the user a short message with a link to the pull request.
 * Prefer "Draft" pull requests when possible

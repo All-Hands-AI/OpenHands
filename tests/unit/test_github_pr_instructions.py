@@ -18,9 +18,8 @@ def test_system_prompt_contains_github_pr_instructions():
     # Check that the GitHub pull request instructions are in the system prompt
     assert '<GITHUB_PULL_REQUESTS>' in system_prompt
     assert 'Create only ONE pull request per session/issue' in system_prompt
-    assert 'DO NOT create a new pull request for additional changes' in system_prompt
-    assert 'commit those changes to the same branch' in system_prompt
-    assert 'Preserve the original pull request title and purpose' in system_prompt
+    assert 'Update existing PRs with new commits' in system_prompt
+    assert 'Preserve the original PR title and purpose' in system_prompt
 
 
 def test_github_microagent_contains_pr_instructions():
@@ -31,12 +30,5 @@ def test_github_microagent_contains_pr_instructions():
 
     # Check that the GitHub pull request instructions are in the microagent
     assert 'Create only ONE pull request per session/issue' in github_microagent_content
-    assert (
-        'DO NOT create a new pull request for additional changes'
-        in github_microagent_content
-    )
-    assert 'commit those changes to the same branch' in github_microagent_content
-    assert (
-        'Preserve the original pull request title and purpose'
-        in github_microagent_content
-    )
+    assert 'Update existing PRs with new commits' in github_microagent_content
+    assert 'Preserve the original PR title and purpose' in github_microagent_content
