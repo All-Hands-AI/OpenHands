@@ -14,12 +14,14 @@ from openhands.events.action import (
     CmdRunAction,
     IPythonRunCellAction,
     MessageAction,
+    RecallAction,
 )
 from openhands.events.observation import (
     AgentDelegateObservation,
     CmdOutputObservation,
     ErrorObservation,
     IPythonRunCellObservation,
+    RecallObservation,
     UserRejectObservation,
 )
 from openhands.events.observation.observation import Observation
@@ -143,6 +145,11 @@ class ProxyAgent(Agent):
                 max_message_chars,
             )
             message = Message(role='system', content=[TextContent(text=text)])
+        elif isinstance(observation, RecallObservation):
+            message = Message(
+                role='system',
+                content=[TextContent(text=str(observation))],
+            )
         else:
             raise ValueError(f'Unknown observation type: {type(observation)}')
 
@@ -177,6 +184,11 @@ class ProxyAgent(Agent):
                     TextContent(text=f'User executed the command:\n{action.command}')
                 ],
             )
+        elif isinstance(action, RecallAction):
+            text = str(action)
+            if action.thought:
+                text += '\nthought: ' + action.thought
+            message = Message(role='system', content=[TextContent(text=text)])
         else:
             raise ValueError(f'Unknown action type: {type(action)}')
 
