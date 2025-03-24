@@ -64,7 +64,19 @@ async def reset_settings(
         )
 
         existing_settings = await settings_store.load()
-        settings = Settings(llm_api_key="")
+        settings = Settings(language="en",
+                             agent="CodeActAgent",
+                             security_analyzer="",
+                             confirmation_mode=False,
+                             llm_model="anthropic/claude-3-5-sonnet-20241022",
+                             llm_api_key="",
+                             llm_base_url="",
+                             remote_runtime_resource_factor=1,
+                             enable_default_condenser=True,
+                             enable_sound_notifications=False,
+                             user_consents_to_analytics=False
+                    )
+        
         server_config_values = server_config.get_config()
         is_hide_llm_settings_enabled = server_config_values.get("FEATURE_FLAGS", {}).get("HIDE_LLM_SETTINGS", False)
         # We don't want the user to be able to modify these settings in SaaS
