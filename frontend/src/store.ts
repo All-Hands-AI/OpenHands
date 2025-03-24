@@ -1,11 +1,12 @@
-import { combineReducers, configureStore } from "@reduxjs/toolkit";
-import chatReducer from "./state/chat-slice";
-// browser, code, fileState, command, jupyter, securityAnalyzer, status, metrics, initialQuery, and agent slices are now handled by React Query
+import { configureStore } from "@reduxjs/toolkit";
+// All slices (chat, browser, code, fileState, command, jupyter, securityAnalyzer, status, metrics, initialQuery, and agent) are now handled by React Query
 
-export const rootReducer = combineReducers({
-  chat: chatReducer,
-  // browser, code, fileState, command, jupyter, securityAnalyzer, status, metrics, initialQuery, and agent slices removed (migrated to React Query)
-});
+// Dummy reducer to satisfy Redux requirements
+const dummyReducer = (state = {}, action: any) => state;
+
+export const rootReducer = {
+  dummy: dummyReducer
+};
 
 const store = configureStore({
   reducer: rootReducer,

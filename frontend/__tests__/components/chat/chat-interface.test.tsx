@@ -3,9 +3,7 @@ import type { Message } from "#/message";
 import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "test-utils";
-import { addUserMessage } from "#/state/chat-slice";
 import { SUGGESTIONS } from "#/utils/suggestions";
-import * as ChatSlice from "#/state/chat-slice";
 import { WsClientProviderStatus } from "#/context/ws-client-provider";
 import { ChatInterface } from "#/components/features/chat/chat-interface";
 import * as observations from "#/services/observations";
@@ -80,16 +78,14 @@ describe("Empty state", () => {
       pending: true,
     });
     
-    // Dispatch through Redux for backward compatibility
+    // Use the mock function directly instead of Redux
     act(() => {
-      store.dispatch(
-        addUserMessage({
-          content: "Hello",
-          imageUrls: [],
-          timestamp: new Date().toISOString(),
-          pending: true,
-        }),
-      );
+      mockAddUserMessage({
+        content: "Hello",
+        imageUrls: [],
+        timestamp: new Date().toISOString(),
+        pending: true,
+      });
     });
 
     // Force a re-render to reflect the updated messages
@@ -132,7 +128,7 @@ describe("Empty state", () => {
         status: WsClientProviderStatus.CONNECTED,
         isLoadingMessages: false,
       }));
-      const addUserMessageSpy = vi.spyOn(ChatSlice, "addUserMessage");
+      const addUserMessageSpy = vi.fn();
       const user = userEvent.setup();
       const { store } = renderWithProviders(<ChatInterface />, {
         preloadedState: {

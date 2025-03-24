@@ -17,7 +17,7 @@ export type SliceNames =
 
 // Track which slices have been migrated to React Query
 const migratedSlices: Record<SliceNames, boolean> = {
-  chat: false,
+  chat: true,
   agent: false,
   browser: false,
   code: false,
