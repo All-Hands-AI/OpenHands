@@ -38,11 +38,21 @@ i18n.use(initReactI18next).init({
   },
 });
 
-const setupStore = (preloadedState?: Partial<RootState>): AppStore =>
-  configureStore({
-    reducer: rootReducer,
+const setupStore = (preloadedState?: Partial<RootState>): AppStore => {
+  // Create a custom reducer that includes test-specific slices
+  const testReducer = {
+    ...rootReducer,
+    // Add test-specific reducers
+    agent: (state = { curAgentState: 'loading' }, action: any) => state,
+    cmd: (state = { commands: [] }, action: any) => state,
+    // Add other test-specific reducers as needed
+  };
+  
+  return configureStore({
+    reducer: testReducer as any,
     preloadedState,
   });
+};
 
 // This type interface extends the default options for render from RTL, as well
 // as allows the user to specify other things such as initialState, store.

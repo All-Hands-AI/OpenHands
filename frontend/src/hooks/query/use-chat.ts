@@ -62,20 +62,37 @@ export function useChat() {
       "chat",
       "messages",
     ]);
+    
+    console.log("[useChat Debug] getInitialMessages:", {
+      hasExistingData: !!existingData,
+      existingDataLength: existingData?.length || 0,
+      hasBridge: !!bridge
+    });
+    
     if (existingData) return existingData;
 
     // Otherwise, get initial data from Redux if bridge is available
     if (bridge) {
       try {
-        return bridge.getReduxSliceState<{ messages: Message[] }>("chat")
-          .messages;
+        const reduxMessages = bridge.getReduxSliceState<{ messages: Message[] }>("chat").messages;
+        console.log("[useChat Debug] Got messages from Redux:", {
+          count: reduxMessages.length,
+          messages: reduxMessages.map(m => ({
+            type: m.type,
+            sender: m.sender,
+            content: m.content?.substring(0, 30) + (m.content?.length > 30 ? "..." : "")
+          }))
+        });
+        return reduxMessages;
       } catch (error) {
+        console.log("[useChat Debug] Error getting messages from Redux:", error);
         // If we can't get the state from Redux, return the initial state
         return [];
       }
     }
 
     // If bridge is not available, return the initial state
+    console.log("[useChat Debug] Bridge not available, returning empty array");
     return [];
   };
 
@@ -431,14 +448,57 @@ export function useChat() {
     },
   });
 
+  // Add debug logging for messages
+  const messages = query.data || [];
+  console.log("[useChat Debug] Current messages:", {
+    count: messages.length,
+    messages: messages.map(m => ({
+      type: m.type,
+      sender: m.sender,
+      content: m.content?.substring(0, 50) + (m.content?.length > 50 ? "..." : ""),
+      timestamp: m.timestamp
+    }))
+  });
+
   return {
-    messages: query.data || [],
+    messages,
     isLoading: query.isLoading,
-    addUserMessage: addUserMessageMutation.mutate,
-    addAssistantMessage: addAssistantMessageMutation.mutate,
-    addAssistantAction: addAssistantActionMutation.mutate,
-    addAssistantObservation: addAssistantObservationMutation.mutate,
-    addErrorMessage: addErrorMessageMutation.mutate,
-    clearMessages: clearMessagesMutation.mutate,
+    addUserMessage: (payload: {
+      content: string;
+      imageUrls: string[];
+      timestamp: string;
+      pending?: boolean;
+    }) => {
+      console.log("[useChat Debug] Adding user message:", payload);
+      addUserMessageMutation.mutate(payload);
+    },
+    addAssistantMessage: (content: string) => {
+      console.log("[useChat Debug] Adding assistant message:", content);
+      addAssistantMessageMutation.mutate(content);
+    },
+    addAssistantAction: (action: any) => {
+      console.log("[useChat Debug] Adding assistant action:", {
+        id: action.id,
+        action: action.action,
+        args: action.args
+      });
+      addAssistantActionMutation.mutate(action);
+    },
+    addAssistantObservation: (observation: any) => {
+      console.log("[useChat Debug] Adding assistant observation:", {
+        id: observation.id,
+        observation: observation.observation,
+        cause: observation.cause
+      });
+      addAssistantObservationMutation.mutate(observation);
+    },
+    addErrorMessage: (payload: { id?: string; message: string }) => {
+      console.log("[useChat Debug] Adding error message:", payload);
+      addErrorMessageMutation.mutate(payload);
+    },
+    clearMessages: () => {
+      console.log("[useChat Debug] Clearing messages");
+      clearMessagesMutation.mutate();
+    },
   };
 }
