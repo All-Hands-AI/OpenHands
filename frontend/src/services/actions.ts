@@ -17,7 +17,6 @@ import {
   StatusMessage,
 } from "#/types/message";
 import { handleObservationMessage } from "./observations";
-import { setAgentStatus } from "#/hooks/query/use-agent-status";
 import { appendInput } from "#/state/command-slice";
 
 const messageActions = {
