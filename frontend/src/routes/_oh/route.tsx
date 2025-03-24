@@ -22,6 +22,7 @@ import { useBalance } from "#/hooks/query/use-balance";
 import { SetupPaymentModal } from "#/components/features/payment/setup-payment-modal";
 import { displaySuccessToast } from "#/utils/custom-toast-handlers";
 import { usePostLoginRedirect } from "#/hooks/use-post-login-redirect";
+import { saveLastPage } from "#/utils/last-page";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -140,6 +141,14 @@ export default function MainApp() {
 
   // Handle redirection to last page after login
   usePostLoginRedirect(userIsAuthed);
+
+  // Track page visits for last page functionality
+  React.useEffect(() => {
+    if (pathname && userIsAuthed) {
+      // Save the current page for future reference
+      saveLastPage();
+    }
+  }, [pathname, userIsAuthed]);
 
   return (
     <div
