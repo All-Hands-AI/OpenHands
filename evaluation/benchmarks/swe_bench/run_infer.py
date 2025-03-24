@@ -95,10 +95,11 @@ Follow these steps in order to resolve the issue:
    2.3 Run the reproduction script to confirm you are reproducing the issue.
    2.4 Adjust the reproduction script as necessary.
 
-3. ANALYSIS: Think carefully about the problem and propose 2-5 possible approaches to fix the issue.
-   3.1 From the possible file and method locations, select the most likely location to fix the issue.
-   3.2 Consider trade-offs between different solutions
-   3.3 Select the most promising approach and explain your reasoning
+3. FIX ANALYSIS: before editing the fix, state precisely what needs to be fixed.
+   3.1 Restate the problem, the location, the reproduction test and any caveats.
+   3.2 Think carefuly and propose 2-5 solutions.
+   3.3 Consider trade-offs between the different solutions.
+   3.4 Wait and from the possible solutions, select a most likely solution to fix the issue.
 
 4. IMMPLEMENTATION: Edit the source code to implement your chosen solution.
    4.1 Make minimal, focused changes to fix the issue
