@@ -4943,18 +4943,20 @@ realtime = ["websockets (>=13,<15)"]
 
 [[package]]
 name = "openhands-aci"
-version = "0.2.6"
+version = "0.2.7"
 description = "An Agent-Computer Interface (ACI) designed for software development agents OpenHands."
 optional = false
-python-versions = "^3.12"
+python-versions = "<4.0,>=3.12"
 groups = ["main"]
-files = []
-develop = false
+files = [
+    {file = "openhands_aci-0.2.7-py3-none-any.whl", hash = "sha256:6b36fa465db6643d909efdf40ec303d27a03e6c9f568447df4bc1d9fdd7104b2"},
+    {file = "openhands_aci-0.2.7.tar.gz", hash = "sha256:892c33d741e94b78ec65df178afe018869e6039ea484f7f232ee8c1bb4e440ef"},
+]
 
 [package.dependencies]
-binaryornot = "^0.4.4"
-cachetools = "^5.5.2"
-chardet = "^5.0.0"
+binaryornot = ">=0.4.4,<0.5.0"
+cachetools = ">=5.5.2,<6.0.0"
+charset-normalizer = ">=3.4.1,<4.0.0"
 flake8 = "*"
 gitpython = "*"
 grep-ast = "0.3.3"
@@ -4963,18 +4965,12 @@ networkx = "*"
 numpy = "*"
 pandas = "*"
 scipy = "*"
-tree-sitter = "^0.24.0"
-tree-sitter-javascript = "^0.23.1"
-tree-sitter-python = "^0.23.6"
-tree-sitter-ruby = "^0.23.1"
-tree-sitter-typescript = "^0.23.2"
-whatthepatch = "^1.0.6"
-
-[package.source]
-type = "git"
-url = "https://github.com/All-Hands-AI/openhands-aci.git"
-reference = "add-encoding-detection"
-resolved_reference = "040d9578d90894409f51ecca877b120fe696fe0b"
+tree-sitter = ">=0.24.0,<0.25.0"
+tree-sitter-javascript = ">=0.23.1,<0.24.0"
+tree-sitter-python = ">=0.23.6,<0.24.0"
+tree-sitter-ruby = ">=0.23.1,<0.24.0"
+tree-sitter-typescript = ">=0.23.2,<0.24.0"
+whatthepatch = ">=1.0.6,<2.0.0"
 
 [[package]]
 name = "opentelemetry-api"
@@ -9316,4 +9312,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "d3ec6b8a6c7e48420d76b7e17d5f1a3f253fa603205f90d4a8e4a614ab5e2c67"
+content-hash = "7c5c7d26747d7b42a1a7bbdc3b7e4d87bbbef851f3c51a022bf7a15082273e5a"
