@@ -199,7 +199,9 @@ export function ConversationCard({
                   onDelete={onDelete && handleDelete}
                   onEdit={onChangeTitle && handleEdit}
                   onDownloadViaVSCode={
-                    conversationId ? handleDownloadViaVSCode : undefined
+                    conversationId && showOptions
+                      ? handleDownloadViaVSCode
+                      : undefined
                   }
                   onDisplayCost={
                     showOptions ? handleDisplayCost : undefined
