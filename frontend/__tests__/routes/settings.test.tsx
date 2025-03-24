@@ -1,15 +1,6 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import { createRoutesStub } from "react-router";
-import {
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  test,
-  vi,
-} from "vitest";
+import { afterEach, beforeEach, describe, expect, it, test, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import userEvent, { UserEvent } from "@testing-library/user-event";
 import OpenHands from "#/api/open-hands";
@@ -20,7 +11,6 @@ import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
 import { PostApiSettings } from "#/types/settings";
 import * as ConsentHandlers from "#/utils/handle-capture-consent";
 import AccountSettings from "#/routes/account-settings";
-import * as FeatureFlags from "#/utils/feature-flags";
 
 const toggleAdvancedSettings = async (user: UserEvent) => {
   const advancedSwitch = await screen.findByTestId("advanced-settings-switch");
@@ -38,11 +28,6 @@ describe("Settings Screen", () => {
   vi.mock("#/hooks/use-app-logout", () => ({
     useAppLogout: vi.fn().mockReturnValue({ handleLogout: handleLogoutMock }),
   }));
-
-  beforeAll(() => {
-    // TODO: Remove this once we release
-    vi.spyOn(FeatureFlags, "HIDE_LLM_SETTINGS").mockReturnValue(true);
-  });
 
   afterEach(() => {
     vi.clearAllMocks();
@@ -87,6 +72,10 @@ describe("Settings Screen", () => {
         APP_MODE: "oss",
         GITHUB_CLIENT_ID: "123",
         POSTHOG_CLIENT_KEY: "456",
+        FEATURE_FLAGS: {
+          ENABLE_BILLING: false,
+          HIDE_LLM_SETTINGS: false,
+        },
       });
     });
 
@@ -123,7 +112,7 @@ describe("Settings Screen", () => {
       });
     });
 
-    it("should set asterik placeholder if the GitHub token is set", async () => {
+    it("should set '<hidden>' placeholder if the GitHub token is set", async () => {
       getSettingsSpy.mockResolvedValue({
         ...MOCK_DEFAULT_USER_SETTINGS,
         github_token_is_set: true,
@@ -133,7 +122,7 @@ describe("Settings Screen", () => {
 
       await waitFor(() => {
         const input = screen.getByTestId("github-token-input");
-        expect(input).toHaveProperty("placeholder", "**********");
+        expect(input).toHaveProperty("placeholder", "<hidden>");
       });
     });
 
@@ -206,6 +195,10 @@ describe("Settings Screen", () => {
         APP_MODE: "oss",
         GITHUB_CLIENT_ID: "123",
         POSTHOG_CLIENT_KEY: "456",
+        FEATURE_FLAGS: {
+          ENABLE_BILLING: false,
+          HIDE_LLM_SETTINGS: false,
+        },
       });
 
       renderSettingsScreen();
@@ -220,6 +213,10 @@ describe("Settings Screen", () => {
         GITHUB_CLIENT_ID: "123",
         POSTHOG_CLIENT_KEY: "456",
         APP_SLUG: "test-app",
+        FEATURE_FLAGS: {
+          ENABLE_BILLING: false,
+          HIDE_LLM_SETTINGS: false,
+        },
       });
 
       renderSettingsScreen();
@@ -231,6 +228,10 @@ describe("Settings Screen", () => {
         APP_MODE: "saas",
         GITHUB_CLIENT_ID: "123",
         POSTHOG_CLIENT_KEY: "456",
+        FEATURE_FLAGS: {
+          ENABLE_BILLING: false,
+          HIDE_LLM_SETTINGS: false,
+        },
       });
 
       renderSettingsScreen();
@@ -308,6 +309,10 @@ describe("Settings Screen", () => {
         APP_MODE: "oss",
         GITHUB_CLIENT_ID: "123",
         POSTHOG_CLIENT_KEY: "456",
+        FEATURE_FLAGS: {
+          ENABLE_BILLING: false,
+          HIDE_LLM_SETTINGS: false,
+        },
       });
     });
 
@@ -405,7 +410,7 @@ describe("Settings Screen", () => {
       });
     });
 
-    it("should set asterik placeholder if the LLM API key is set", async () => {
+    it("should set '<hidden>' placeholder if the LLM API key is set", async () => {
       getSettingsSpy.mockResolvedValueOnce({
         ...MOCK_DEFAULT_USER_SETTINGS,
         llm_api_key: "**********",
@@ -415,7 +420,7 @@ describe("Settings Screen", () => {
 
       await waitFor(() => {
         const input = screen.getByTestId("llm-api-key-input");
-        expect(input).toHaveProperty("placeholder", "**********");
+        expect(input).toHaveProperty("placeholder", "<hidden>");
       });
     });
 
@@ -449,6 +454,10 @@ describe("Settings Screen", () => {
           APP_MODE: "oss",
           GITHUB_CLIENT_ID: "123",
           POSTHOG_CLIENT_KEY: "456",
+          FEATURE_FLAGS: {
+            ENABLE_BILLING: false,
+            HIDE_LLM_SETTINGS: false,
+          },
         });
 
         renderSettingsScreen();
@@ -463,6 +472,10 @@ describe("Settings Screen", () => {
           APP_MODE: "saas",
           GITHUB_CLIENT_ID: "123",
           POSTHOG_CLIENT_KEY: "456",
+          FEATURE_FLAGS: {
+            ENABLE_BILLING: false,
+            HIDE_LLM_SETTINGS: false,
+          },
         });
 
         renderSettingsScreen();
@@ -474,6 +487,10 @@ describe("Settings Screen", () => {
           APP_MODE: "saas",
           GITHUB_CLIENT_ID: "123",
           POSTHOG_CLIENT_KEY: "456",
+          FEATURE_FLAGS: {
+            ENABLE_BILLING: false,
+            HIDE_LLM_SETTINGS: false,
+          },
         });
 
         getSettingsSpy.mockResolvedValue({
@@ -492,6 +509,10 @@ describe("Settings Screen", () => {
           APP_MODE: "saas",
           GITHUB_CLIENT_ID: "123",
           POSTHOG_CLIENT_KEY: "456",
+          FEATURE_FLAGS: {
+            ENABLE_BILLING: false,
+            HIDE_LLM_SETTINGS: false,
+          },
         });
 
         renderSettingsScreen();
@@ -506,6 +527,10 @@ describe("Settings Screen", () => {
           APP_MODE: "saas",
           GITHUB_CLIENT_ID: "123",
           POSTHOG_CLIENT_KEY: "456",
+          FEATURE_FLAGS: {
+            ENABLE_BILLING: false,
+            HIDE_LLM_SETTINGS: false,
+          },
         });
 
         getSettingsSpy.mockResolvedValue({
@@ -721,7 +746,7 @@ describe("Settings Screen", () => {
       expect(saveSettingsSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           llm_api_key: "", // empty because it's not set previously
-          github_token: undefined,
+          provider_tokens: undefined,
           language: "no",
         }),
       );
@@ -758,7 +783,7 @@ describe("Settings Screen", () => {
 
       expect(saveSettingsSpy).toHaveBeenCalledWith(
         expect.objectContaining({
-          github_token: undefined,
+          provider_tokens: undefined,
           llm_api_key: "", // empty because it's not set previously
           llm_model: "openai/gpt-4o",
         }),
@@ -801,7 +826,7 @@ describe("Settings Screen", () => {
 
       expect(saveSettingsSpy).toHaveBeenCalledWith({
         ...mockCopy,
-        github_token: undefined, // not set
+        provider_tokens: undefined, // not set
         llm_api_key: "", // reset as well
       });
       expect(screen.queryByTestId("reset-modal")).not.toBeInTheDocument();
@@ -982,6 +1007,10 @@ describe("Settings Screen", () => {
         APP_MODE: "saas",
         GITHUB_CLIENT_ID: "123",
         POSTHOG_CLIENT_KEY: "456",
+        FEATURE_FLAGS: {
+          ENABLE_BILLING: false,
+          HIDE_LLM_SETTINGS: true,
+        },
       });
     });
 

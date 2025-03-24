@@ -21,6 +21,8 @@ const getSettingsQueryFn = async () => {
     ENABLE_DEFAULT_CONDENSER: apiSettings.enable_default_condenser,
     ENABLE_SOUND_NOTIFICATIONS: apiSettings.enable_sound_notifications,
     USER_CONSENTS_TO_ANALYTICS: apiSettings.user_consents_to_analytics,
+    PROVIDER_TOKENS: apiSettings.provider_tokens,
+    IS_NEW_USER: false,
   };
 };
 
@@ -34,19 +36,21 @@ export const useSettings = () => {
     // would want to show the modal immediately if the
     // settings are not found
     retry: (_, error) => error.status !== 404,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 15, // 15 minutes
     meta: {
       disableToast: true,
     },
   });
 
   React.useEffect(() => {
-    if (query.data?.LLM_API_KEY) {
+    if (query.isFetched && query.data?.LLM_API_KEY) {
       posthog.capture("user_activated");
     }
-  }, [query.data?.LLM_API_KEY]);
+  }, [query.data?.LLM_API_KEY, query.isFetched]);
 
   React.useEffect(() => {
-    setGitHubTokenIsSet(!!query.data?.GITHUB_TOKEN_IS_SET);
+    if (query.isFetched) setGitHubTokenIsSet(!!query.data?.GITHUB_TOKEN_IS_SET);
   }, [query.data?.GITHUB_TOKEN_IS_SET, query.isFetched]);
 
   // We want to return the defaults if the settings aren't found so the user can still see the
