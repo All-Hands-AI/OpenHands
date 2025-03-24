@@ -114,6 +114,8 @@ async def run_controller(
                 runtime,
                 selected_repository=config.sandbox.selected_repo,
             )
+            # Run setup script if it exists
+            runtime.maybe_run_setup_script()
 
     event_stream = runtime.event_stream
 
