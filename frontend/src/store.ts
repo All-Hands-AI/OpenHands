@@ -1,6 +1,7 @@
 import { combineReducers, configureStore, Middleware } from "@reduxjs/toolkit";
 import { queryClient, isSliceMigrated } from "./query-redux-bridge-init";
 import type { Message } from "#/message";
+import chatReducer from "./state/chat-slice";
 
 // All slices are now handled by React Query
 
@@ -16,25 +17,9 @@ interface ChatState {
 }
 
 export const rootReducer = combineReducers({
-  // All slices have been migrated to React Query
-  // Adding a dummy chat reducer to handle actions during migration
-  chat: (state: ChatState | undefined, action: ChatAction) => {
-    // Create a default state if none is provided
-    const currentState = state || { messages: [] };
-    switch (action.type) {
-      case "chat/addUserMessage":
-      case "chat/addAssistantMessage":
-      case "chat/addAssistantAction":
-      case "chat/addAssistantObservation":
-      case "chat/addErrorMessage":
-      case "chat/clearMessages":
-        // These actions are now handled by the middleware
-        return currentState;
-      default:
-        // Handle any other actions
-        return currentState;
-    }
-  },
+  // All slices have been migrated to React Query except chat
+  // Using the real chat reducer from Redux
+  chat: chatReducer,
 });
 
 // Check if the chat slice is migrated to prevent double messages

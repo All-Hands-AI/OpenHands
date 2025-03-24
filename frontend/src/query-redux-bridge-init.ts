@@ -25,9 +25,10 @@ export function initializeBridge() {
   getQueryReduxBridge().migrateSlice("command");
   getQueryReduxBridge().migrateSlice("jupyter");
   getQueryReduxBridge().migrateSlice("agent");
-  // IMPORTANT: This is where we mark the chat slice as migrated
-  console.log("[DOUBLE_MSG_DEBUG] QueryReduxBridge marking chat slice as migrated");
-  getQueryReduxBridge().migrateSlice("chat");
+  // IMPORTANT: We are NOT migrating the chat slice for now
+  // Keeping it in Redux until we fix the double message issue
+  console.log("[DOUBLE_MSG_DEBUG] QueryReduxBridge NOT migrating chat slice - keeping in Redux");
+  // getQueryReduxBridge().migrateSlice("chat");
   getQueryReduxBridge().migrateSlice("securityAnalyzer");
 }
 
