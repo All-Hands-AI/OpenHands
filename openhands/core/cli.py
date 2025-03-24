@@ -1,186 +1,174 @@
-#!/usr/bin/env python3
 import asyncio
-import json
 import logging
-import os
 import sys
-import time
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from uuid import uuid4
 
-import uvicorn
-from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from termcolor import colored
 
-from openhands.core.agent_session import AgentSession
-from openhands.core.config import Config
-from openhands.core.event_stream import EventStream
-from openhands.core.memory import Memory, create_memory
-from openhands.core.microagent import MicroAgent
-from openhands.core.runtime import Runtime
-from openhands.core.sandbox import (
+import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
+from openhands.core.config import (
+    AppConfig,
+    parse_arguments,
+    setup_config_from_args,
+)
+from openhands.core.logger import openhands_logger as logger
+from openhands.core.loop import run_agent_until_done
+from openhands.core.schema import AgentState
+from openhands.core.setup import (
+    create_agent,
+    create_controller,
+    create_memory,
+    create_runtime,
     initialize_repository_for_runtime,
-    initialize_sandbox_for_runtime,
 )
-from openhands.core.session_manager import SessionManager
-from openhands.core.utils import (
-    get_frontend_dir,
-    get_frontend_dist_dir,
-    get_frontend_index_path,
-    get_frontend_port,
-    get_frontend_url,
-    get_host,
-    get_port,
-    get_use_tls,
+from openhands.events import EventSource, EventStreamSubscriber
+from openhands.events.action import (
+    Action,
+    ActionConfirmationStatus,
+    ChangeAgentStateAction,
+    CmdRunAction,
+    FileEditAction,
+    MessageAction,
 )
-
-logger = logging.getLogger(__name__)
-
-app = FastAPI()
-
-# Add CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+from openhands.events.event import Event
+from openhands.events.observation import (
+    AgentStateChangedObservation,
+    CmdOutputObservation,
+    FileEditObservation,
 )
-
-# Serve static files from the frontend dist directory
-frontend_dist_dir = get_frontend_dist_dir()
-if os.path.exists(frontend_dist_dir):
-    app.mount("/", StaticFiles(directory=frontend_dist_dir, html=True), name="static")
+from openhands.io import read_input, read_task
 
 
-@app.get("/api/health")
-async def health_check():
-    return {"status": "ok"}
+def display_message(message: str):
+    print(colored('🤖 ' + message + '\n', 'yellow'))
 
 
-@app.get("/api/config")
-async def get_config():
-    config = Config.get_instance()
-    return config.model_dump()
+def display_command(command: str):
+    print('❯ ' + colored(command + '\n', 'green'))
 
 
-@app.post("/api/config")
-async def update_config(request: Request):
-    config = Config.get_instance()
-    data = await request.json()
-    for key, value in data.items():
-        if hasattr(config, key):
-            setattr(config, key, value)
-    config.save()
-    return config.model_dump()
+def display_confirmation(confirmation_state: ActionConfirmationStatus):
+    if confirmation_state == ActionConfirmationStatus.CONFIRMED:
+        print(colored('✅ ' + confirmation_state + '\n', 'green'))
+    elif confirmation_state == ActionConfirmationStatus.REJECTED:
+        print(colored('❌ ' + confirmation_state + '\n', 'red'))
+    else:
+        print(colored('⏳ ' + confirmation_state + '\n', 'yellow'))
 
 
-@app.post("/api/reset_config")
-async def reset_config():
-    config = Config.get_instance()
-    config.reset()
-    return config.model_dump()
+def display_command_output(output: str):
+    lines = output.split('\n')
+    for line in lines:
+        if line.startswith('[Python Interpreter') or line.startswith('openhands@'):
+            # TODO: clean this up once we clean up terminal output
+            continue
+        print(colored(line, 'blue'))
+    print('\n')
 
 
-@app.get("/api/repositories")
-async def get_repositories():
-    config = Config.get_instance()
-    return {"repositories": config.sandbox.repositories}
+def display_file_edit(event: FileEditAction | FileEditObservation):
+    print(colored(str(event), 'green'))
 
 
-@app.post("/api/repositories")
-async def add_repository(request: Request):
-    config = Config.get_instance()
-    data = await request.json()
-    repo_url = data.get("url")
-    if not repo_url:
-        return JSONResponse(status_code=400, content={"error": "Repository URL is required"})
+def display_event(event: Event, config: AppConfig):
+    if isinstance(event, Action):
+        if hasattr(event, 'thought'):
+            display_message(event.thought)
+    if isinstance(event, MessageAction):
+        if event.source == EventSource.AGENT:
+            display_message(event.content)
+    if isinstance(event, CmdRunAction):
+        display_command(event.command)
+    if isinstance(event, CmdOutputObservation):
+        display_command_output(event.content)
+    if isinstance(event, FileEditAction):
+        display_file_edit(event)
+    if isinstance(event, FileEditObservation):
+        display_file_edit(event)
+    if hasattr(event, 'confirmation_state') and config.security.confirmation_mode:
+        display_confirmation(event.confirmation_state)
 
-    # Check if repository already exists
-    for repo in config.sandbox.repositories:
-        if repo.url == repo_url:
-            return JSONResponse(
-                status_code=400, content={"error": "Repository already exists"}
+
+async def main(loop: asyncio.AbstractEventLoop):
+    """Runs the agent in CLI mode."""
+
+    args = parse_arguments()
+
+    logger.setLevel(logging.WARNING)
+
+    # Load config from toml and override with command line arguments
+    config: AppConfig = setup_config_from_args(args)
+
+    # Read task from file, CLI args, or stdin
+    task_str = read_task(args, config.cli_multiline_input)
+
+    # If we have a task, create initial user action
+    initial_user_action = MessageAction(content=task_str) if task_str else None
+
+    sid = str(uuid4())
+    display_message(f'Session ID: {sid}')
+
+    agent = create_agent(config)
+
+    runtime = create_runtime(
+        config,
+        sid=sid,
+        headless_mode=True,
+        agent=agent,
+    )
+
+    controller, _ = create_controller(agent, runtime, config)
+
+    event_stream = runtime.event_stream
+
+    async def prompt_for_next_task():
+        # Run input() in a thread pool to avoid blocking the event loop
+        next_message = await loop.run_in_executor(
+            None, read_input, config.cli_multiline_input
+        )
+        if not next_message.strip():
+            await prompt_for_next_task()
+        if next_message == 'exit':
+            event_stream.add_event(
+                ChangeAgentStateAction(AgentState.STOPPED), EventSource.ENVIRONMENT
             )
+            return
+        action = MessageAction(content=next_message)
+        event_stream.add_event(action, EventSource.USER)
 
-    # Add repository
-    config.sandbox.add_repository(repo_url)
-    config.save()
-    return {"repositories": config.sandbox.repositories}
+    async def prompt_for_user_confirmation():
+        user_confirmation = await loop.run_in_executor(
+            None, lambda: input('Confirm action (possible security risk)? (y/n) >> ')
+        )
+        return user_confirmation.lower() == 'y'
 
+    async def on_event_async(event: Event):
+        display_event(event, config)
+        if isinstance(event, AgentStateChangedObservation):
+            if event.agent_state in [
+                AgentState.AWAITING_USER_INPUT,
+                AgentState.FINISHED,
+            ]:
+                await prompt_for_next_task()
+            if event.agent_state == AgentState.AWAITING_USER_CONFIRMATION:
+                user_confirmed = await prompt_for_user_confirmation()
+                if user_confirmed:
+                    event_stream.add_event(
+                        ChangeAgentStateAction(AgentState.USER_CONFIRMED),
+                        EventSource.USER,
+                    )
+                else:
+                    event_stream.add_event(
+                        ChangeAgentStateAction(AgentState.USER_REJECTED),
+                        EventSource.USER,
+                    )
 
-@app.delete("/api/repositories/{repo_id}")
-async def delete_repository(repo_id: str):
-    config = Config.get_instance()
-    config.sandbox.remove_repository(repo_id)
-    config.save()
-    return {"repositories": config.sandbox.repositories}
+    def on_event(event: Event) -> None:
+        loop.create_task(on_event_async(event))
 
+    event_stream.subscribe(EventStreamSubscriber.MAIN, on_event, str(uuid4()))
 
-@app.post("/api/repositories/{repo_id}/select")
-async def select_repository(repo_id: str):
-    config = Config.get_instance()
-    config.sandbox.select_repository(repo_id)
-    config.save()
-    return {"selected_repo": config.sandbox.selected_repo}
-
-
-@app.get("/api/repositories/{repo_id}/files")
-async def get_repository_files(repo_id: str):
-    config = Config.get_instance()
-    repo = config.sandbox.get_repository(repo_id)
-    if not repo:
-        return JSONResponse(status_code=404, content={"error": "Repository not found"})
-
-    # TODO: Implement file listing
-    return {"files": []}
-
-
-@app.get("/api/sessions")
-async def get_sessions():
-    session_manager = SessionManager.get_instance()
-    return {"sessions": session_manager.get_sessions()}
-
-
-@app.post("/api/sessions")
-async def create_session(request: Request):
-    data = await request.json()
-    session_id = data.get("session_id")
-    if not session_id:
-        return JSONResponse(status_code=400, content={"error": "Session ID is required"})
-
-    session_manager = SessionManager.get_instance()
-    session = session_manager.create_session(session_id)
-    return {"session": session}
-
-
-@app.delete("/api/sessions/{session_id}")
-async def delete_session(session_id: str):
-    session_manager = SessionManager.get_instance()
-    session_manager.delete_session(session_id)
-    return {"success": True}
-
-
-@app.websocket("/api/ws/{session_id}")
-async def websocket_endpoint(websocket: WebSocket, session_id: str):
-    await websocket.accept()
-    session_manager = SessionManager.get_instance()
-    session = session_manager.get_session(session_id)
-    if not session:
-        session = session_manager.create_session(session_id)
-
-    # Create event stream
-    event_stream = EventStream()
-    event_stream.add_websocket(websocket)
-
-    # Create runtime
-    config = Config.get_instance()
-    runtime = Runtime(config=config, event_stream=event_stream)
-
-    # Initialize sandbox if needed
-    initialize_sandbox_for_runtime(runtime)
+    await runtime.connect()
 
     # Initialize repository if needed
     repo_directory = None
@@ -189,67 +177,26 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
             runtime,
             selected_repository=config.sandbox.selected_repo,
         )
-        
-        # Run setup script if it exists
-        runtime.maybe_run_setup_script()
 
     # when memory is created, it will load the microagents from the selected repository
     memory = create_memory(
         runtime=runtime,
         event_stream=event_stream,
+        sid=sid,
+        selected_repository=config.sandbox.selected_repo,
         repo_directory=repo_directory,
     )
 
-    # Create agent session
-    agent_session = AgentSession(
-        session_id=session_id,
-        runtime=runtime,
-        memory=memory,
-        event_stream=event_stream,
+    if initial_user_action:
+        # If there's an initial user action, enqueue it and do not prompt again
+        event_stream.add_event(initial_user_action, EventSource.USER)
+    else:
+        # Otherwise prompt for the user's first message right away
+        asyncio.create_task(prompt_for_next_task())
+
+    await run_agent_until_done(
+        controller, runtime, memory, [AgentState.STOPPED, AgentState.ERROR]
     )
-
-    try:
-        # Start agent session
-        await agent_session.start()
-
-        # Process messages
-        while True:
-            try:
-                message = await websocket.receive_text()
-                data = json.loads(message)
-                await agent_session.process_message(data)
-            except WebSocketDisconnect:
-                logger.info(f"Client disconnected: {session_id}")
-                break
-            except Exception as e:
-                logger.exception(f"Error processing message: {e}")
-                await event_stream.send_error(str(e))
-    except Exception as e:
-        logger.exception(f"Error in websocket endpoint: {e}")
-    finally:
-        # Stop agent session
-        await agent_session.stop()
-        event_stream.remove_websocket(websocket)
-
-
-async def main(loop: asyncio.AbstractEventLoop):
-    config = Config.get_instance()
-    host = get_host()
-    port = get_port()
-    use_tls = get_use_tls()
-
-    # Start uvicorn server
-    config = uvicorn.Config(
-        app=app,
-        host=host,
-        port=port,
-        loop=loop,
-        log_level="info",
-        ssl_certfile=os.environ.get("SSL_CERTFILE") if use_tls else None,
-        ssl_keyfile=os.environ.get("SSL_KEYFILE") if use_tls else None,
-    )
-    server = uvicorn.Server(config)
-    await server.serve()
 
 
 if __name__ == '__main__':
