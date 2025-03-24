@@ -113,11 +113,12 @@ describe("Actions Service", () => {
       };
 
       // Mock the queryClient
-      vi.mocked(queryClient.setQueryData).mockImplementation(vi.fn());
+      const mockSetQueryData = vi.fn();
+      vi.spyOn(queryClient, 'setQueryData').mockImplementation(mockSetQueryData);
 
       handleActionMessage(message);
 
-      expect(queryClient.setQueryData).toHaveBeenCalledWith(
+      expect(mockSetQueryData).toHaveBeenCalledWith(
         ["metrics"],
         {
           cost: 0.05,
