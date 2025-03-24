@@ -202,6 +202,7 @@ Note:
         tabs = ''
         last_obs = None
         last_action = None
+        set_of_marks = None  # Initialize set_of_marks to None
 
         if len(state.history) == 1:
             # for visualwebarena, webarena and miniwob++ eval, we need to retrieve the initial observation already in browser env
@@ -217,6 +218,9 @@ Note:
                 # agent has responded, task finished.
                 return AgentFinishAction(outputs={'content': event.content})
             elif isinstance(event, Observation):
+                # Only process BrowserOutputObservation and skip other observation types
+                if not isinstance(event, BrowserOutputObservation):
+                    continue
                 last_obs = event
 
         if len(prev_actions) >= 1:  # ignore noop()

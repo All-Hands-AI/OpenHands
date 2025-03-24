@@ -27,13 +27,16 @@ class EventStreamSubscriber(str, Enum):
     RESOLVER = 'openhands_resolver'
     SERVER = 'server'
     RUNTIME = 'runtime'
+    MEMORY = 'memory'
     MAIN = 'main'
     TEST = 'test'
 
 
-async def session_exists(sid: str, file_store: FileStore) -> bool:
+async def session_exists(
+    sid: str, file_store: FileStore, user_id: str | None = None
+) -> bool:
     try:
-        await call_sync_from_async(file_store.list, get_conversation_dir(sid))
+        await call_sync_from_async(file_store.list, get_conversation_dir(sid, user_id))
         return True
     except FileNotFoundError:
         return False
@@ -56,6 +59,7 @@ class AsyncEventStreamWrapper:
 
 class EventStream:
     sid: str
+    user_id: str | None
     file_store: FileStore
     secrets: dict[str, str]
     # For each subscriber ID, there is a map of callback functions - useful
@@ -69,9 +73,10 @@ class EventStream:
     _thread_pools: dict[str, dict[str, ThreadPoolExecutor]]
     _thread_loops: dict[str, dict[str, asyncio.AbstractEventLoop]]
 
-    def __init__(self, sid: str, file_store: FileStore):
+    def __init__(self, sid: str, file_store: FileStore, user_id: str | None = None):
         self.sid = sid
         self.file_store = file_store
+        self.user_id = user_id
         self._stop_flag = threading.Event()
         self._queue: queue.Queue[Event] = queue.Queue()
         self._thread_pools = {}
@@ -89,10 +94,24 @@ class EventStream:
         self.__post_init__()
 
     def __post_init__(self) -> None:
+        events = []
+
         try:
-            events = self.file_store.list(get_conversation_events_dir(self.sid))
+            events_dir = get_conversation_events_dir(self.sid, self.user_id)
+            events += self.file_store.list(events_dir)
         except FileNotFoundError:
-            logger.debug(f'No events found for session {self.sid}')
+            logger.debug(f'No events found for session {self.sid} at {events_dir}')
+
+        if self.user_id:
+            # During transition to new location, try old location if user_id is set
+            # TODO: remove this code after 5/1/2025
+            try:
+                events_dir = get_conversation_events_dir(self.sid)
+                events += self.file_store.list(events_dir)
+            except FileNotFoundError:
+                logger.debug(f'No events found for session {self.sid} at {events_dir}')
+
+        if not events:
             self._cur_id = 0
             return
 
@@ -155,8 +174,8 @@ class EventStream:
 
         del self._subscribers[subscriber_id][callback_id]
 
-    def _get_filename_for_id(self, id: int) -> str:
-        return get_conversation_event_filename(self.sid, id)
+    def _get_filename_for_id(self, id: int, user_id: str | None) -> str:
+        return get_conversation_event_filename(self.sid, id, user_id)
 
     @staticmethod
     def _get_id_from_filename(filename: str) -> int:
@@ -222,10 +241,20 @@ class EventStream:
                 event_id += 1
 
     def get_event(self, id: int) -> Event:
-        filename = self._get_filename_for_id(id)
-        content = self.file_store.read(filename)
-        data = json.loads(content)
-        return event_from_dict(data)
+        filename = self._get_filename_for_id(id, self.user_id)
+        try:
+            content = self.file_store.read(filename)
+            data = json.loads(content)
+            return event_from_dict(data)
+        except FileNotFoundError:
+            logger.debug(f'File {filename} not found')
+            # TODO remove this block after 5/1/2025
+            if self.user_id:
+                filename = self._get_filename_for_id(id, None)
+                content = self.file_store.read(filename)
+                data = json.loads(content)
+                return event_from_dict(data)
+            raise
 
     def get_latest_event(self) -> Event:
         return self.get_event(self._cur_id - 1)
@@ -276,7 +305,9 @@ class EventStream:
         data = self._replace_secrets(data)
         event = event_from_dict(data)
         if event.id is not None:
-            self.file_store.write(self._get_filename_for_id(event.id), json.dumps(data))
+            self.file_store.write(
+                self._get_filename_for_id(event.id, self.user_id), json.dumps(data)
+            )
         self._queue.put(event)
 
     def set_secrets(self, secrets: dict[str, str]):
@@ -375,7 +406,7 @@ class EventStream:
         # Text search in event content if query provided
         if query:
             event_dict = event_to_dict(event)
-            event_str = str(event_dict).lower()
+            event_str = json.dumps(event_dict).lower()
             if query.lower() not in event_str:
                 return True
 

@@ -6,11 +6,9 @@ import { renderWithProviders } from "test-utils";
 import OpenHands from "#/api/open-hands";
 import SettingsScreen from "#/routes/settings";
 import { PaymentForm } from "#/components/features/payment/payment-form";
-import * as FeatureFlags from "#/utils/feature-flags";
 
 describe("Settings Billing", () => {
   const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
-  vi.spyOn(FeatureFlags, "BILLING_SETTINGS").mockReturnValue(true);
 
   const RoutesStub = createRoutesStub([
     {
@@ -37,6 +35,10 @@ describe("Settings Billing", () => {
       APP_MODE: "oss",
       GITHUB_CLIENT_ID: "123",
       POSTHOG_CLIENT_KEY: "456",
+      FEATURE_FLAGS: {
+        ENABLE_BILLING: false,
+        HIDE_LLM_SETTINGS: false,
+      },
     });
 
     renderSettingsScreen();
@@ -52,6 +54,10 @@ describe("Settings Billing", () => {
       APP_MODE: "saas",
       GITHUB_CLIENT_ID: "123",
       POSTHOG_CLIENT_KEY: "456",
+      FEATURE_FLAGS: {
+        ENABLE_BILLING: true,
+        HIDE_LLM_SETTINGS: false,
+      },
     });
 
     renderSettingsScreen();
@@ -69,6 +75,10 @@ describe("Settings Billing", () => {
       APP_MODE: "saas",
       GITHUB_CLIENT_ID: "123",
       POSTHOG_CLIENT_KEY: "456",
+      FEATURE_FLAGS: {
+        ENABLE_BILLING: true,
+        HIDE_LLM_SETTINGS: false,
+      },
     });
 
     renderSettingsScreen();
