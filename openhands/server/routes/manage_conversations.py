@@ -288,8 +288,8 @@ async def auto_generate_title(conversation_id: str, user_id: str | None) -> str:
 
         if first_user_message:
             first_user_message = first_user_message.strip()
-            title = first_user_message[:15]
-            if len(first_user_message) > 15:
+            title = first_user_message[:30]
+            if len(first_user_message) > 30:
                 title += '...'
             logger.info(f'Generated title: {title}')
             return title
