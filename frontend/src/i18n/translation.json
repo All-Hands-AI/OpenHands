@@ -4313,21 +4313,6 @@
         "es": "Navegación completada",
         "tr": "Gezinme tamamlandı"
     },
-    "OBSERVATION_MESSAGE$BROWSE_INTERACTIVE": {
-        "en": "Interactive browsing completed",
-        "zh-CN": "交互式浏览完成",
-        "zh-TW": "互動式瀏覽完成",
-        "ko-KR": "인터랙티브 브라우징 완료",
-        "ja": "インタラクティブブラウジング完了",
-        "no": "Interaktiv surfing fullført",
-        "ar": "اكتمل التصفح التفاعلي",
-        "de": "Interaktives Browsen abgeschlossen",
-        "fr": "Navigation interactive terminée",
-        "it": "Navigazione interattiva completata",
-        "pt": "Navegação interativa concluída",
-        "es": "Navegación interactiva completada",
-        "tr": "Etkileşimli tarama tamamlandı"
-    },
     "EXPANDABLE_MESSAGE$SHOW_DETAILS": {
         "en": "Show details",
         "zh-CN": "显示详情",
