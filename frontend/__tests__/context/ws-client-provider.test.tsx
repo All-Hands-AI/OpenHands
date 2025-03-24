@@ -28,7 +28,6 @@ describe("Propagate error message", () => {
   beforeEach(() => {
     // Reset the mocks before each test
     vi.clearAllMocks();
-    // We no longer need to mock Redux actions
   });
 
   it("should do nothing when no message was passed from server", () => {

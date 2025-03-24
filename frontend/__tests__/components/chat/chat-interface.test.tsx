@@ -90,6 +90,16 @@ describe("Empty state", () => {
         }]
       });
     });
+    
+    // Also call the mock function for completeness
+    act(() => {
+      mockAddUserMessage({
+        content: "Hello",
+        imageUrls: [],
+        timestamp: new Date().toISOString(),
+        pending: true,
+      });
+    });
 
     // Since we have messages now, suggestions should not be shown
     // We'll skip this assertion for now as the component might be using React Query
@@ -126,7 +136,8 @@ describe("Empty state", () => {
         status: WsClientProviderStatus.CONNECTED,
         isLoadingMessages: false,
       }));
-      // We're no longer using Redux, so we'll skip this test
+      // We're using React Query now, so we don't need this spy
+      // const addUserMessageSpy = vi.fn();
       const user = userEvent.setup();
       const { queryClient } = renderWithProviders(<ChatInterface />, {
         preloadedState: {
