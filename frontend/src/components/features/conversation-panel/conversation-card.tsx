@@ -203,9 +203,7 @@ export function ConversationCard({
                       ? handleDownloadViaVSCode
                       : undefined
                   }
-                  onDisplayCost={
-                    showOptions ? handleDisplayCost : undefined
-                  }
+                  onDisplayCost={showOptions ? handleDisplayCost : undefined}
                   position={variant === "compact" ? "top" : "bottom"}
                 />
               )}
