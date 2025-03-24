@@ -328,6 +328,11 @@ echo {end_marker}
                         logger.warning(f"Command '{command}' had no output for {self.NO_CHANGE_TIMEOUT_SECONDS} seconds")
                         output.append(f"[Command had no output for {self.NO_CHANGE_TIMEOUT_SECONDS} seconds]")
                         break
+                    # Check for hard timeout
+                    if time.time() - start_time >= timeout:
+                        logger.warning(f"Command '{command}' timed out after {timeout} seconds")
+                        output.append(f"[Command timed out after {timeout} seconds]")
+                        break
                     time.sleep(0.1)
                     continue
                 
@@ -374,6 +379,8 @@ echo {end_marker}
             
         if not command_complete:
             logger.warning(f"Command '{command}' did not complete properly within timeout")
+            # Add an explicit indicator that will be detected in execute()
+            output.append(f"[Command did not complete properly within {timeout} seconds]")
             if accumulated_output and in_command_output:
                 # Add any remaining output
                 for line in accumulated_output.splitlines():
@@ -426,9 +433,28 @@ echo {end_marker}
             # Add suffix if the command timed out
             if "[Command had no output for" in output:
                 metadata.suffix = (
-                    f"\n[The command may still be running. "
+                    f"\n[The command has no new output after {self.NO_CHANGE_TIMEOUT_SECONDS} seconds. "
                     f"You may wait longer to see additional output by sending empty command '', "
-                    f"or send input to interact with the current process.]"
+                    f"send other commands to interact with the current process, "
+                    f"or send keys to interrupt/kill the command.]"
+                )
+                metadata.exit_code = -1  # Indicate command is still running
+            elif "[Command timed out after" in output:
+                timeout_value = action.timeout if action.timeout else 30
+                metadata.suffix = (
+                    f"\n[The command timed out after {timeout_value} seconds. "
+                    f"You may wait longer to see additional output by sending empty command '', "
+                    f"send other commands to interact with the current process, "
+                    f"or send keys to interrupt/kill the command.]"
+                )
+                metadata.exit_code = -1  # Indicate command is still running
+            elif "[Command did not complete properly within" in output:
+                timeout_value = action.timeout if action.timeout else 30
+                metadata.suffix = (
+                    f"\n[The command did not complete properly within {timeout_value} seconds. "
+                    f"You may wait longer to see additional output by sending empty command '', "
+                    f"send other commands to interact with the current process, "
+                    f"or send keys to interrupt/kill the command.]"
                 )
                 metadata.exit_code = -1  # Indicate command is still running
 
