@@ -110,7 +110,8 @@ export const chatSlice = createSlice({
       } else if (actionID === "browse") {
         text = `Browsing ${action.payload.args.url}`;
       } else if (actionID === "browse_interactive") {
-        text = `Interactive browsing in progress...\n\n\`\`\`python\n${action.payload.args.browser_actions}\n\`\`\``;
+        // The translation will handle the browser_actions interpolation
+        text = "";
       }
       if (actionID === "run" || actionID === "run_ipython") {
         if (
@@ -130,6 +131,13 @@ export const chatSlice = createSlice({
         imageUrls: [],
         timestamp: new Date().toISOString(),
       };
+
+      // Add translation options for browse_interactive action
+      if (actionID === "browse_interactive") {
+        message.translationOptions = {
+          browser_actions: action.payload.args.browser_actions,
+        };
+      }
 
       state.messages.push(message);
     },

@@ -17,7 +17,7 @@ interface ExpandableMessageProps {
   message: string;
   type: string;
   success?: boolean;
-  expandedContent?: string;
+  translationOptions?: Record<string, string>;
 }
 
 export function ExpandableMessage({
@@ -25,21 +25,21 @@ export function ExpandableMessage({
   message,
   type,
   success,
-  expandedContent,
+  translationOptions,
 }: ExpandableMessageProps) {
   const { data: config } = useConfig();
   const { t, i18n } = useTranslation();
   const [showDetails, setShowDetails] = useState(true);
   const [headline, setHeadline] = useState("");
-  const [details, setDetails] = useState(expandedContent || message);
+  const [details, setDetails] = useState(message);
 
   useEffect(() => {
     if (id && i18n.exists(id)) {
       setHeadline(t(id));
-      setDetails(expandedContent || message);
+      setDetails(translationOptions ? t(id, translationOptions) : message);
       setShowDetails(false);
     }
-  }, [id, message, expandedContent, i18n.language]);
+  }, [id, message, translationOptions, i18n.language, t]);
 
   const statusIconClasses = "h-4 w-4 ml-2 inline";
 

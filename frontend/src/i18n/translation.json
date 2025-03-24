@@ -4194,19 +4194,19 @@
         "tr": "Web'de geziniyor"
     },
     "ACTION_MESSAGE$BROWSE_INTERACTIVE": {
-        "en": "Interactive browsing in progress...",
-        "zh-CN": "交互式浏览进行中...",
-        "zh-TW": "互動式瀏覽進行中...",
-        "ko-KR": "인터랙티브 브라우징 진행 중...",
-        "ja": "インタラクティブブラウジング進行中...",
-        "no": "Interaktiv surfing pågår...",
-        "ar": "التصفح التفاعلي قيد التقدم...",
-        "de": "Interaktives Browsen läuft...",
-        "fr": "Navigation interactive en cours...",
-        "it": "Navigazione interattiva in corso...",
-        "pt": "Navegação interativa em andamento...",
-        "es": "Navegación interactiva en progreso...",
-        "tr": "Etkileşimli tarama devam ediyor..."
+        "en": "Interactive browsing in progress...\n\n```python\n{{browser_actions}}\n```",
+        "zh-CN": "交互式浏览进行中...\n\n```python\n{{browser_actions}}\n```",
+        "zh-TW": "互動式瀏覽進行中...\n\n```python\n{{browser_actions}}\n```",
+        "ko-KR": "인터랙티브 브라우징 진행 중...\n\n```python\n{{browser_actions}}\n```",
+        "ja": "インタラクティブブラウジング進行中...\n\n```python\n{{browser_actions}}\n```",
+        "no": "Interaktiv surfing pågår...\n\n```python\n{{browser_actions}}\n```",
+        "ar": "التصفح التفاعلي قيد التقدم...\n\n```python\n{{browser_actions}}\n```",
+        "de": "Interaktives Browsen läuft...\n\n```python\n{{browser_actions}}\n```",
+        "fr": "Navigation interactive en cours...\n\n```python\n{{browser_actions}}\n```",
+        "it": "Navigazione interattiva in corso...\n\n```python\n{{browser_actions}}\n```",
+        "pt": "Navegação interativa em andamento...\n\n```python\n{{browser_actions}}\n```",
+        "es": "Navegación interactiva en progreso...\n\n```python\n{{browser_actions}}\n```",
+        "tr": "Etkileşimli tarama devam ediyor...\n\n```python\n{{browser_actions}}\n```"
     },
     "ACTION_MESSAGE$THINK": {
         "en": "Thinking",
