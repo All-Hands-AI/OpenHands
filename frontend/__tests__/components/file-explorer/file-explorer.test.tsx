@@ -7,6 +7,13 @@ import { AgentState } from "#/types/agent-state";
 import OpenHands from "#/api/open-hands";
 import { FileExplorer } from "#/components/features/file-explorer/file-explorer";
 
+// Mock the useAgentState hook
+vi.mock("#/hooks/query/use-agent-state", () => ({
+  useAgentState: () => ({
+    curAgentState: AgentState.RUNNING,
+  }),
+}));
+
 const toastSpy = vi.spyOn(toast, "error");
 const uploadFilesSpy = vi.spyOn(OpenHands, "uploadFiles");
 const getFilesSpy = vi.spyOn(OpenHands, "getFiles");
@@ -18,9 +25,7 @@ vi.mock("../../services/fileService", async () => ({
 const renderFileExplorerWithRunningAgentState = () =>
   renderWithProviders(<FileExplorer isOpen onToggle={() => {}} />, {
     preloadedState: {
-      agent: {
-        curAgentState: AgentState.RUNNING,
-      },
+      // Agent state is now handled by the mocked useAgentState hook
     },
   });
 

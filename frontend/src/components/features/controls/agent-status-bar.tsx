@@ -1,8 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 import { showErrorToast } from "#/utils/error-handler";
-import { RootState } from "#/store";
 import { AgentState } from "#/types/agent-state";
 import { AGENT_STATUS_MAP } from "../../agent-status-map.constant";
 import {
@@ -12,6 +10,7 @@ import {
 import { useNotification } from "#/hooks/useNotification";
 import { browserTab } from "#/utils/browser-tab";
 import { useStatusMessage } from "#/hooks/query/use-status-message";
+import { useAgentState } from "#/hooks/query/use-agent-state";
 
 const notificationStates = [
   AgentState.AWAITING_USER_INPUT,
@@ -21,7 +20,7 @@ const notificationStates = [
 
 export function AgentStatusBar() {
   const { t, i18n } = useTranslation();
-  const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const { curAgentState } = useAgentState();
   const { statusMessage: curStatusMessage } = useStatusMessage();
   const { status } = useWsClient();
   const { notify } = useNotification();

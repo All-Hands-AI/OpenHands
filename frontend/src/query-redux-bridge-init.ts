@@ -24,6 +24,7 @@ export function initializeBridge() {
   getQueryReduxBridge().migrateSlice("command");
   getQueryReduxBridge().migrateSlice("jupyter");
   getQueryReduxBridge().migrateSlice("securityAnalyzer");
+  getQueryReduxBridge().migrateSlice("agent");
 }
 
 // Export a function to check if a slice is migrated

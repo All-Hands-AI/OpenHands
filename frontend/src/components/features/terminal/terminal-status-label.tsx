@@ -1,13 +1,12 @@
-import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { cn } from "#/utils/utils";
 import { AgentState } from "#/types/agent-state";
-import { RootState } from "#/store";
+import { useAgentState } from "#/hooks/query/use-agent-state";
 import { I18nKey } from "#/i18n/declaration";
 
 export function TerminalStatusLabel() {
   const { t } = useTranslation();
-  const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const { curAgentState } = useAgentState();
 
   return (
     <div className="flex items-center gap-2">

@@ -1,10 +1,10 @@
-import { setCurrentAgentState } from "#/state/agent-slice";
 import store from "#/store";
 import { queryClient } from "#/query-redux-bridge-init";
 import { ObservationMessage } from "#/types/message";
 import { AgentState } from "#/types/agent-state";
 // Command slice is now handled by React Query
 // Jupyter slice is now handled by React Query
+// Agent slice is now handled by React Query
 import ObservationType from "#/types/observation-type";
 import {
   addAssistantMessage,
@@ -125,7 +125,10 @@ export function handleObservationMessage(message: ObservationMessage) {
       }
       break;
     case ObservationType.AGENT_STATE_CHANGED:
-      store.dispatch(setCurrentAgentState(message.extras.agent_state));
+      // Update agent state in React Query
+      queryClient.setQueryData(["agent"], {
+        curAgentState: message.extras.agent_state,
+      });
       break;
     case ObservationType.DELEGATE:
       // TODO: better UI for delegation result (#2309)

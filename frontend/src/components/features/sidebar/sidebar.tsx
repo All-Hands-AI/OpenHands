@@ -1,6 +1,5 @@
 import React from "react";
 import { FaListUl } from "react-icons/fa";
-import { useDispatch } from "react-redux";
 import posthog from "posthog-js";
 import { NavLink, useLocation } from "react-router";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
@@ -13,8 +12,8 @@ import { SettingsModal } from "#/components/shared/modals/settings/settings-moda
 import { useSettings } from "#/hooks/query/use-settings";
 import { ConversationPanel } from "../conversation-panel/conversation-panel";
 import { useEndSession } from "#/hooks/use-end-session";
-import { setCurrentAgentState } from "#/state/agent-slice";
 import { AgentState } from "#/types/agent-state";
+import { useAgentState } from "#/hooks/query/use-agent-state";
 import { TooltipButton } from "#/components/shared/buttons/tooltip-button";
 import { ConversationPanelWrapper } from "../conversation-panel/conversation-panel-wrapper";
 import { useLogout } from "#/hooks/mutation/use-logout";
@@ -25,7 +24,7 @@ import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 
 export function Sidebar() {
   const location = useLocation();
-  const dispatch = useDispatch();
+  const { setCurrentAgentState } = useAgentState();
   const endSession = useEndSession();
   const user = useGitHubUser();
   const { data: config } = useConfig();
@@ -73,7 +72,7 @@ export function Sidebar() {
   ]);
 
   const handleEndSession = () => {
-    dispatch(setCurrentAgentState(AgentState.LOADING));
+    setCurrentAgentState(AgentState.LOADING);
     endSession();
   };
 
