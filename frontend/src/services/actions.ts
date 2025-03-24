@@ -134,17 +134,6 @@ export function handleStatusMessage(message: StatusMessage) {
         ...message,
       }),
     );
-  } else {
-    // Import the queryClient dynamically to avoid circular dependencies
-    import("#/entry.client")
-      .then(({ queryClient }) => {
-        if (queryClient) {
-          setAgentStatus(queryClient, message);
-        }
-      })
-      .catch((error) => {
-        console.error("Failed to import queryClient:", error);
-      });
   }
 }
 
