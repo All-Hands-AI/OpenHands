@@ -42,7 +42,7 @@ async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
         )
 
 
-@app.post('reset-settings')
+@app.post('/reset-settings', response_model=dict[str, str])
 async def reset_settings(
     request: Request
 ) -> JSONResponse:
@@ -64,11 +64,11 @@ async def reset_settings(
         )
 
         existing_settings = await settings_store.load()
-        settings = Settings()
+        settings = Settings(llm_api_key="")
         server_config_values = server_config.get_config()
         is_hide_llm_settings_enabled = server_config_values.get("FEATURE_FLAGS", {}).get("HIDE_LLM_SETTINGS", False)
         # We don't want the user to be able to modify these settings in SaaS
-        if (server_config.APP_MODE == AppMode.SAAS and is_hide_llm_settings_enabled):
+        if (server_config.app_mode == AppMode.SAAS and is_hide_llm_settings_enabled):
             if existing_settings:
                 settings.llm_api_key = existing_settings.llm_api_key
                 settings.llm_base_url = existing_settings.llm_base_url

@@ -4,14 +4,14 @@ import OpenHands from "#/api/open-hands";
 import { PostSettings, PostApiSettings } from "#/types/settings";
 import { useSettings } from "../query/use-settings";
 
-const saveSettingsMutationFn = async (settings: Partial<PostSettings> | null) => {
+const saveSettingsMutationFn = async (
+  settings: Partial<PostSettings> | null,
+) => {
   // If settings is null, we're resetting
   if (settings === null) {
     await OpenHands.resetSettings();
     return;
   }
-
-  const resetLlmApiKey = settings.LLM_API_KEY === "";
 
   const apiSettings: Partial<PostApiSettings> = {
     llm_model: settings.LLM_MODEL,
@@ -20,9 +20,7 @@ const saveSettingsMutationFn = async (settings: Partial<PostSettings> | null) =>
     language: settings.LANGUAGE || DEFAULT_SETTINGS.LANGUAGE,
     confirmation_mode: settings.CONFIRMATION_MODE,
     security_analyzer: settings.SECURITY_ANALYZER,
-    llm_api_key: resetLlmApiKey
-      ? ""
-      : settings.LLM_API_KEY?.trim() || undefined,
+    llm_api_key: settings.LLM_API_KEY?.trim() || undefined,
     remote_runtime_resource_factor: settings.REMOTE_RUNTIME_RESOURCE_FACTOR,
     provider_tokens: settings.provider_tokens,
     unset_github_token: settings.unset_github_token,
@@ -46,18 +44,6 @@ export const useSaveSettings = () => {
       }
 
       const newSettings = { ...currentSettings, ...settings };
-
-      // Temp hack for reset logic
-      if (
-        settings.LLM_API_KEY === undefined &&
-        settings.LLM_BASE_URL === undefined &&
-        settings.LLM_MODEL === undefined
-      ) {
-        delete newSettings.LLM_API_KEY;
-        delete newSettings.LLM_BASE_URL;
-        delete newSettings.LLM_MODEL;
-      }
-
       await saveSettingsMutationFn(newSettings);
     },
     onSuccess: async () => {
