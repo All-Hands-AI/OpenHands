@@ -24,7 +24,7 @@ const createWrapper = () => {
       },
     },
   });
-  
+
   return ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
@@ -35,7 +35,7 @@ describe("Initial Query Behavior", () => {
     const { result } = renderHook(() => useInitialQuery(), {
       wrapper: createWrapper(),
     });
-    
+
     // Verify initial state
     expect(result.current.files).toEqual([]);
     expect(result.current.initialPrompt).toBeNull();

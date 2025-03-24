@@ -29,7 +29,7 @@ describe("JupyterEditor", () => {
         },
       },
     });
-    
+
     render(
       <QueryClientProvider client={queryClient}>
         <div style={{ height: "100vh" }}>
