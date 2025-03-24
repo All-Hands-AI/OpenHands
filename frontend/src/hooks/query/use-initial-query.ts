@@ -12,38 +12,29 @@ const initialState: InitialQueryState = {
   selectedRepository: null,
 };
 /**
- * Hook to access and manipulate initial query data using React Query
- * This replaces the Redux initialQuery slice functionality
+ * Hook to access and manipulate initial query data
  */
 export function useInitialQuery() {
   const queryClient = useQueryClient();
-  // Try to get the bridge, but don't throw if it's not initialized (for tests)
   const queryClient = useQueryClient();
-  // Get initial state from Redux if this is the first time accessing the data
   const getInitialQueryState = (): InitialQueryState => {
     // If we already have data in React Query, use that
     const existingData = queryClient.getQueryData<InitialQueryState>([
       "initialQuery",
     ]);
     if (existingData) return existingData;
-    // Otherwise, get initial data from Redux if bridge is available
-        // If we can't get the state from Redux, return the initial state
         return initialState;
-      }
-    }
-    // If bridge is not available, return the initial state
     return initialState;
   };
   // Query for initial query state
   const query = useQuery({
-    queryKey: ["initialQuery"],
+    queryKey: QueryKeys.initialQuery,
     queryFn: () => {
       // First check if we already have data in the query cache
       const existingData = queryClient.getQueryData<InitialQueryState>([
         "initialQuery",
       ]);
       if (existingData) return existingData;
-      // Otherwise get from the bridge or use initial state
       return getInitialQueryState();
     },
     initialData: initialState, // Use initialState directly to ensure it's always defined
@@ -57,25 +48,23 @@ export function useInitialQuery() {
     mutationFn: (file: string) => Promise.resolve(file),
     onMutate: async (file) => {
       // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ["initialQuery"] });
+      await queryClient.cancelQueries({ queryKey: QueryKeys.initialQuery });
       // Get current state
       const previousState = queryClient.getQueryData<InitialQueryState>([
         "initialQuery",
       ]);
       // Update state
       if (previousState) {
-        queryClient.setQueryData<InitialQueryState>(["initialQuery"], {
+        queryClient.setQueryData<InitialQueryState>(QueryKeys.initialQuery, {
           ...previousState,
           files: [...previousState.files, file],
         });
-      }
       return { previousState };
     },
     onError: (_, __, context) => {
       // Restore previous state on error
       if (context?.previousState) {
-        queryClient.setQueryData(["initialQuery"], context.previousState);
-      }
+        queryClient.setQueryData(QueryKeys.initialQuery, context.previousState);
     },
   });
   // Mutation to remove a file
@@ -83,7 +72,7 @@ export function useInitialQuery() {
     mutationFn: (index: number) => Promise.resolve(index),
     onMutate: async (index) => {
       // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ["initialQuery"] });
+      await queryClient.cancelQueries({ queryKey: QueryKeys.initialQuery });
       // Get current state
       const previousState = queryClient.getQueryData<InitialQueryState>([
         "initialQuery",
@@ -92,18 +81,16 @@ export function useInitialQuery() {
       if (previousState) {
         const newFiles = [...previousState.files];
         newFiles.splice(index, 1);
-        queryClient.setQueryData<InitialQueryState>(["initialQuery"], {
+        queryClient.setQueryData<InitialQueryState>(QueryKeys.initialQuery, {
           ...previousState,
           files: newFiles,
         });
-      }
       return { previousState };
     },
     onError: (_, __, context) => {
       // Restore previous state on error
       if (context?.previousState) {
-        queryClient.setQueryData(["initialQuery"], context.previousState);
-      }
+        queryClient.setQueryData(QueryKeys.initialQuery, context.previousState);
     },
   });
   // Mutation to clear files
@@ -111,25 +98,23 @@ export function useInitialQuery() {
     mutationFn: () => Promise.resolve(),
     onMutate: async () => {
       // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ["initialQuery"] });
+      await queryClient.cancelQueries({ queryKey: QueryKeys.initialQuery });
       // Get current state
       const previousState = queryClient.getQueryData<InitialQueryState>([
         "initialQuery",
       ]);
       // Update state
       if (previousState) {
-        queryClient.setQueryData<InitialQueryState>(["initialQuery"], {
+        queryClient.setQueryData<InitialQueryState>(QueryKeys.initialQuery, {
           ...previousState,
           files: [],
         });
-      }
       return { previousState };
     },
     onError: (_, __, context) => {
       // Restore previous state on error
       if (context?.previousState) {
-        queryClient.setQueryData(["initialQuery"], context.previousState);
-      }
+        queryClient.setQueryData(QueryKeys.initialQuery, context.previousState);
     },
   });
   // Mutation to set initial prompt
@@ -137,25 +122,23 @@ export function useInitialQuery() {
     mutationFn: (prompt: string) => Promise.resolve(prompt),
     onMutate: async (prompt) => {
       // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ["initialQuery"] });
+      await queryClient.cancelQueries({ queryKey: QueryKeys.initialQuery });
       // Get current state
       const previousState = queryClient.getQueryData<InitialQueryState>([
         "initialQuery",
       ]);
       // Update state
       if (previousState) {
-        queryClient.setQueryData<InitialQueryState>(["initialQuery"], {
+        queryClient.setQueryData<InitialQueryState>(QueryKeys.initialQuery, {
           ...previousState,
           initialPrompt: prompt,
         });
-      }
       return { previousState };
     },
     onError: (_, __, context) => {
       // Restore previous state on error
       if (context?.previousState) {
-        queryClient.setQueryData(["initialQuery"], context.previousState);
-      }
+        queryClient.setQueryData(QueryKeys.initialQuery, context.previousState);
     },
   });
   // Mutation to clear initial prompt
@@ -163,32 +146,30 @@ export function useInitialQuery() {
     mutationFn: () => Promise.resolve(),
     onMutate: async () => {
       // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ["initialQuery"] });
+      await queryClient.cancelQueries({ queryKey: QueryKeys.initialQuery });
       // Get current state
       const previousState = queryClient.getQueryData<InitialQueryState>([
         "initialQuery",
       ]);
       // Update state
       if (previousState) {
-        queryClient.setQueryData<InitialQueryState>(["initialQuery"], {
+        queryClient.setQueryData<InitialQueryState>(QueryKeys.initialQuery, {
           ...previousState,
           initialPrompt: null,
         });
-      }
       return { previousState };
     },
     onError: (_, __, context) => {
       // Restore previous state on error
       if (context?.previousState) {
-        queryClient.setQueryData(["initialQuery"], context.previousState);
-      }
+        queryClient.setQueryData(QueryKeys.initialQuery, context.previousState);
     },
   });
   // Function to directly set the selected repository (synchronous)
   const setSelectedRepositorySync = (repository: string | null) => {
     // Get current state
     const previousState =
-      queryClient.getQueryData<InitialQueryState>(["initialQuery"]) ||
+      queryClient.getQueryData<InitialQueryState>(QueryKeys.initialQuery) ||
       initialState;
     // Update state
     const newState = {
@@ -196,7 +177,7 @@ export function useInitialQuery() {
       selectedRepository: repository,
     };
     // Set the state synchronously
-    queryClient.setQueryData<InitialQueryState>(["initialQuery"], newState);
+    queryClient.setQueryData<InitialQueryState>(QueryKeys.initialQuery, newState);
   };
   // We don't need the mutation anymore since we're using the sync function directly
   // Mutation to clear selected repository
@@ -204,25 +185,23 @@ export function useInitialQuery() {
     mutationFn: () => Promise.resolve(),
     onMutate: async () => {
       // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ["initialQuery"] });
+      await queryClient.cancelQueries({ queryKey: QueryKeys.initialQuery });
       // Get current state
       const previousState = queryClient.getQueryData<InitialQueryState>([
         "initialQuery",
       ]);
       // Update state
       if (previousState) {
-        queryClient.setQueryData<InitialQueryState>(["initialQuery"], {
+        queryClient.setQueryData<InitialQueryState>(QueryKeys.initialQuery, {
           ...previousState,
           selectedRepository: null,
         });
-      }
       return { previousState };
     },
     onError: (_, __, context) => {
       // Restore previous state on error
       if (context?.previousState) {
-        queryClient.setQueryData(["initialQuery"], context.previousState);
-      }
+        queryClient.setQueryData(QueryKeys.initialQuery, context.previousState);
     },
   });
   // No need to log the state anymore

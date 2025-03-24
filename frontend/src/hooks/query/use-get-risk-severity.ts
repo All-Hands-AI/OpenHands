@@ -14,7 +14,6 @@ export const useGetRiskSeverity = (config?: UseGetRiskSeverityConfig) => {
   React.useEffect(() => {
     if (!isFetching && isSuccess && riskSeverity) {
       config?.onSuccess(riskSeverity);
-    }
   }, [isFetching, isSuccess, riskSeverity, config?.onSuccess]);
   return data;
 };

@@ -1,10 +1,6 @@
 import { queryClient } from "#/query-client-init";
 import { ObservationMessage } from "#/types/message";
 import { AgentState } from "#/types/agent-state";
-// Command slice is now handled by React Query
-// Jupyter slice is now handled by React Query
-// Agent slice is now handled by React Query
-// Chat slice is now handled by React Query
 import ObservationType from "#/types/observation-type";
 import { useChat } from "#/hooks/query/use-chat";
 

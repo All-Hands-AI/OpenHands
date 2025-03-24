@@ -51,7 +51,6 @@ export function useAgentState() {
       // Restore previous agent state on error
       if (context?.previousAgentState) {
         queryClient.setQueryData(agentQueryKey, context.previousAgentState);
-      }
     },
   });
 

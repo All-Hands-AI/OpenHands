@@ -13,33 +13,25 @@ const initialJupyter: JupyterState = {
 };
 /**
  * Hook to access and manipulate jupyter data using React Query
- * This replaces the Redux jupyter slice functionality
+ * Hook to access and manipulate state data
  */
 export function useJupyter() {
   const queryClient = useQueryClient();
-  // Try to get the bridge, but don't throw if it's not initialized (for tests)
   const queryClient = useQueryClient();
-  // Get initial state from Redux if this is the first time accessing the data
   const getInitialJupyterState = (): JupyterState => {
     // If we already have data in React Query, use that
-    const existingData = queryClient.getQueryData<JupyterState>(["jupyter"]);
+    const existingData = queryClient.getQueryData<JupyterState>(QueryKeys.jupyter);
     if (existingData) return existingData;
-    // Otherwise, get initial data from Redux if bridge is available
-        // If we can't get the state from Redux, return the initial state
         return initialJupyter;
-      }
-    }
-    // If bridge is not available, return the initial state
     return initialJupyter;
   };
   // Query for jupyter state
   const query = useQuery({
-    queryKey: ["jupyter"],
+    queryKey: QueryKeys.jupyter,
     queryFn: () => {
       // First check if we already have data in the query cache
-      const existingData = queryClient.getQueryData<JupyterState>(["jupyter"]);
+      const existingData = queryClient.getQueryData<JupyterState>(QueryKeys.jupyter);
       if (existingData) return existingData;
-      // Otherwise get from the bridge or use initial state
       return getInitialJupyterState();
     },
     initialData: initialJupyter, // Use initialJupyter directly to ensure it's always defined
@@ -52,7 +44,7 @@ export function useJupyter() {
   const appendJupyterInput = (content: string) => {
     // Get current state
     const previousState =
-      queryClient.getQueryData<JupyterState>(["jupyter"]) || initialJupyter;
+      queryClient.getQueryData<JupyterState>(QueryKeys.jupyter) || initialJupyter;
     // Update state
     const newState = {
       ...previousState,
@@ -65,13 +57,13 @@ export function useJupyter() {
       cellsLength: newState.cells.length,
     });
     // Set the state synchronously
-    queryClient.setQueryData<JupyterState>(["jupyter"], newState);
+    queryClient.setQueryData<JupyterState>(QueryKeys.jupyter, newState);
   };
   // Function to append jupyter output (synchronous)
   const appendJupyterOutput = (content: string) => {
     // Get current state
     const previousState =
-      queryClient.getQueryData<JupyterState>(["jupyter"]) || initialJupyter;
+      queryClient.getQueryData<JupyterState>(QueryKeys.jupyter) || initialJupyter;
     // Update state
     const newState = {
       ...previousState,
@@ -84,7 +76,7 @@ export function useJupyter() {
       cellsLength: newState.cells.length,
     });
     // Set the state synchronously
-    queryClient.setQueryData<JupyterState>(["jupyter"], newState);
+    queryClient.setQueryData<JupyterState>(QueryKeys.jupyter, newState);
   };
   // Function to clear jupyter (synchronous)
   const clearJupyter = () => {
@@ -96,7 +88,7 @@ export function useJupyter() {
     // eslint-disable-next-line no-console
     console.log("[Jupyter Debug] Clearing jupyter");
     // Set the state synchronously
-    queryClient.setQueryData<JupyterState>(["jupyter"], newState);
+    queryClient.setQueryData<JupyterState>(QueryKeys.jupyter, newState);
   };
   return {
     // State

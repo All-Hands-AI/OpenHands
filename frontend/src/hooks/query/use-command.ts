@@ -13,33 +13,25 @@ const initialCommand: CommandState = {
 };
 /**
  * Hook to access and manipulate command data using React Query
- * This replaces the Redux command slice functionality
+ * Hook to access and manipulate state data
  */
 export function useCommand() {
   const queryClient = useQueryClient();
-  // Try to get the bridge, but don't throw if it's not initialized (for tests)
   const queryClient = useQueryClient();
-  // Get initial state from Redux if this is the first time accessing the data
   const getInitialCommandState = (): CommandState => {
     // If we already have data in React Query, use that
-    const existingData = queryClient.getQueryData<CommandState>(["command"]);
+    const existingData = queryClient.getQueryData<CommandState>(QueryKeys.command);
     if (existingData) return existingData;
-    // Otherwise, get initial data from Redux if bridge is available
-        // If we can't get the state from Redux, return the initial state
         return initialCommand;
-      }
-    }
-    // If bridge is not available, return the initial state
     return initialCommand;
   };
   // Query for command state
   const query = useQuery({
-    queryKey: ["command"],
+    queryKey: QueryKeys.command,
     queryFn: () => {
       // First check if we already have data in the query cache
-      const existingData = queryClient.getQueryData<CommandState>(["command"]);
+      const existingData = queryClient.getQueryData<CommandState>(QueryKeys.command);
       if (existingData) return existingData;
-      // Otherwise get from the bridge or use initial state
       return getInitialCommandState();
     },
     initialData: initialCommand, // Use initialCommand directly to ensure it's always defined
@@ -52,7 +44,7 @@ export function useCommand() {
   const appendInput = (content: string) => {
     // Get current state
     const previousState =
-      queryClient.getQueryData<CommandState>(["command"]) || initialCommand;
+      queryClient.getQueryData<CommandState>(QueryKeys.command) || initialCommand;
     // Update state
     const newState = {
       ...previousState,
@@ -65,13 +57,13 @@ export function useCommand() {
     // eslint-disable-next-line no-console
     console.log("[Command Debug] Appending input:", { content, newState });
     // Set the state synchronously
-    queryClient.setQueryData<CommandState>(["command"], newState);
+    queryClient.setQueryData<CommandState>(QueryKeys.command, newState);
   };
   // Function to append output (synchronous)
   const appendOutput = (content: string) => {
     // Get current state
     const previousState =
-      queryClient.getQueryData<CommandState>(["command"]) || initialCommand;
+      queryClient.getQueryData<CommandState>(QueryKeys.command) || initialCommand;
     // Update state
     const newState = {
       ...previousState,
@@ -87,7 +79,7 @@ export function useCommand() {
       commandsLength: newState.commands.length,
     });
     // Set the state synchronously
-    queryClient.setQueryData<CommandState>(["command"], newState);
+    queryClient.setQueryData<CommandState>(QueryKeys.command, newState);
   };
   // Function to clear terminal (synchronous)
   const clearTerminal = () => {
@@ -99,7 +91,7 @@ export function useCommand() {
     // eslint-disable-next-line no-console
     console.log("[Command Debug] Clearing terminal");
     // Set the state synchronously
-    queryClient.setQueryData<CommandState>(["command"], newState);
+    queryClient.setQueryData<CommandState>(QueryKeys.command, newState);
   };
   return {
     // State

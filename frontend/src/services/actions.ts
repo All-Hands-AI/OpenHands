@@ -7,7 +7,6 @@ import {
   StatusMessage,
 } from "#/types/message";
 import { handleObservationMessage, getChatFunctions } from "./observations";
-// Command slice is now handled by React Query
 
 const messageActions = {
   [ActionType.BROWSE]: (message: ActionMessage) => {
@@ -159,7 +158,6 @@ export function handleActionMessage(message: ActionMessage) {
 
 export function handleStatusMessage(message: StatusMessage) {
   if (message.type === "info") {
-    // Status slice is now handled by React Query
     // The websocket events hook will update the React Query cache
   } else if (message.type === "error") {
     trackError({

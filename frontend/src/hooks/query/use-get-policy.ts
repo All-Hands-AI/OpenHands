@@ -14,7 +14,6 @@ export const useGetPolicy = (config?: UseGetPolicyConfig) => {
   React.useEffect(() => {
     if (!isFetching && isSuccess && policy) {
       config?.onSuccess(policy);
-    }
   }, [isFetching, isSuccess, policy, config?.onSuccess]);
   return data;
 };

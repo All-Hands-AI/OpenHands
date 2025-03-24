@@ -29,20 +29,17 @@ export const useGitHubUser = () => {
         user: user.data.login,
         mode: config?.APP_MODE || "oss",
       });
-    }
   }, [user.data]);
   const handleLogout = async () => {
     if (config?.APP_MODE === "saas") await logout();
     else {
       saveUserSettings({ unset_github_token: true });
       setGitHubTokenIsSet(false);
-    }
     posthog.reset();
   };
   React.useEffect(() => {
     if (user.isError) {
       handleLogout();
-    }
   }, [user.isError]);
   return user;
 };

@@ -22,37 +22,29 @@ const initialSecurityAnalyzer: SecurityAnalyzerState = {
 };
 /**
  * Hook to access and manipulate security analyzer data using React Query
- * This replaces the Redux securityAnalyzer slice functionality
+ * Hook to access and manipulate state data
  */
 export function useSecurityAnalyzer() {
   const queryClient = useQueryClient();
-  // Try to get the bridge, but don't throw if it's not initialized (for tests)
   const queryClient = useQueryClient();
-  // Get initial state from Redux if this is the first time accessing the data
   const getInitialSecurityAnalyzerState = (): SecurityAnalyzerState => {
     // If we already have data in React Query, use that
     const existingData = queryClient.getQueryData<SecurityAnalyzerState>([
       "securityAnalyzer",
     ]);
     if (existingData) return existingData;
-    // Otherwise, get initial data from Redux if bridge is available
-        // If we can't get the state from Redux, return the initial state
         return initialSecurityAnalyzer;
-      }
-    }
-    // If bridge is not available, return the initial state
     return initialSecurityAnalyzer;
   };
   // Query for security analyzer state
   const query = useQuery({
-    queryKey: ["securityAnalyzer"],
+    queryKey: QueryKeys.securityAnalyzer,
     queryFn: () => {
       // First check if we already have data in the query cache
       const existingData = queryClient.getQueryData<SecurityAnalyzerState>([
         "securityAnalyzer",
       ]);
       if (existingData) return existingData;
-      // Otherwise get from the bridge or use initial state
       return getInitialSecurityAnalyzerState();
     },
     initialData: initialSecurityAnalyzer, // Use initialSecurityAnalyzer directly to ensure it's always defined
@@ -67,7 +59,7 @@ export function useSecurityAnalyzer() {
   }) => {
     // Get current state
     const previousState =
-      queryClient.getQueryData<SecurityAnalyzerState>(["securityAnalyzer"]) ||
+      queryClient.getQueryData<SecurityAnalyzerState>(QueryKeys.securityAnalyzer) ||
       initialSecurityAnalyzer;
     // Safely access nested properties
     const args = message.payload?.args as Record<string, unknown> | undefined;
@@ -117,11 +109,9 @@ export function useSecurityAnalyzer() {
           }
           return stateLog;
         });
-      }
     } else {
       // Add new log
       newLogs = [...newLogs, log];
-    }
     // Update state
     const newState = {
       ...previousState,
@@ -129,7 +119,7 @@ export function useSecurityAnalyzer() {
     };
     // Set the state synchronously
     queryClient.setQueryData<SecurityAnalyzerState>(
-      ["securityAnalyzer"],
+      QueryKeys.securityAnalyzer,
       newState,
     );
   };

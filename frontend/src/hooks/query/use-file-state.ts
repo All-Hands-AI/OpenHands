@@ -9,26 +9,22 @@ const initialFileState: FileStateState = {
 };
 /**
  * Hook to access and manipulate file state data using React Query
- * This replaces the Redux fileState slice functionality
+ * Hook to access and manipulate state data
  */
 export function useFileState() {
   const queryClient = useQueryClient();
-  // Try to get the bridge, but don't throw if it's not initialized (for tests)
   const queryClient = useQueryClient();
-    }
-    // If bridge is not available, return the initial state
     return initialFileState;
   };
   // Query for file state
   const query = useQuery({
-    queryKey: ["fileState"],
+    queryKey: QueryKeys.fileState,
     queryFn: () => {
       // First check if we already have data in the query cache
       const existingData = queryClient.getQueryData<FileStateState>([
         "fileState",
       ]);
       if (existingData) return existingData;
-      // Otherwise get from the bridge or use initial state
       return getInitialFileStateState();
     },
     initialData: initialFileState, // Use initialFileState directly to ensure it's always defined
@@ -41,7 +37,7 @@ export function useFileState() {
   const setChanged = (path: string, changed: boolean) => {
     // Get current state
     const previousState =
-      queryClient.getQueryData<FileStateState>(["fileState"]) ||
+      queryClient.getQueryData<FileStateState>(QueryKeys.fileState) ||
       initialFileState;
     // Update state
     const newState = {
@@ -59,7 +55,7 @@ export function useFileState() {
       newState,
     });
     // Set the state synchronously
-    queryClient.setQueryData<FileStateState>(["fileState"], newState);
+    queryClient.setQueryData<FileStateState>(QueryKeys.fileState, newState);
   };
   return {
     // State

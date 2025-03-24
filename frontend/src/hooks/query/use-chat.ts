@@ -34,7 +34,6 @@ function getRiskText(risk: ActionSecurityRisk) {
  */
 export function useChat() {
   const queryClient = useQueryClient();
-  // Try to get the bridge, but don't throw if it's not initialized (for tests)
   const queryClient = useQueryClient();
     // eslint-disable-next-line no-console
   // Mutation to add a user message
@@ -65,17 +64,13 @@ export function useChat() {
         if (m.pending) {
           updatedMessages.splice(i, 1);
         }
-      }
       // Add the new message
       updatedMessages.push(message);
       // Update the query cache
-      queryClient.setQueryData(["chat"], { messages: updatedMessages });
-      // If Redux is still active, dispatch to keep it in sync
-        bridge.conditionalDispatch("chat", {
+      queryClient.setQueryData(QueryKeys.chat, { messages: updatedMessages });
           type: "chat/addUserMessage",
           payload,
         });
-      }
       return { messages: updatedMessages };
     },
   });
@@ -95,13 +90,10 @@ export function useChat() {
       ]) || { messages: [] };
       const updatedMessages = [...currentState.messages, message];
       // Update the query cache
-      queryClient.setQueryData(["chat"], { messages: updatedMessages });
-      // If Redux is still active, dispatch to keep it in sync
-        bridge.conditionalDispatch("chat", {
+      queryClient.setQueryData(QueryKeys.chat, { messages: updatedMessages });
           type: "chat/addAssistantMessage",
           payload: content,
         });
-      }
       return { messages: updatedMessages };
     },
   });
@@ -111,11 +103,10 @@ export function useChat() {
       const actionID = action.action;
       if (!HANDLED_ACTIONS.includes(actionID)) {
         return (
-          queryClient.getQueryData<{ messages: Message[] }>(["chat"]) || {
+          queryClient.getQueryData<{ messages: Message[] }>(QueryKeys.chat) || {
             messages: [],
           }
         );
-      }
       const translationID = `ACTION_MESSAGE$${actionID.toUpperCase()}`;
       let text = "";
       if (actionID === "run") {
@@ -130,7 +121,6 @@ export function useChat() {
         text = `${action.args.path}\n${content}`;
       } else if (actionID === "browse") {
         text = `Browsing ${action.args.url}`;
-      }
       if (actionID === "run" || actionID === "run_ipython") {
         if (action.args.confirmation_state === "awaiting_confirmation") {
           text += `\n\n${getRiskText(
@@ -139,7 +129,6 @@ export function useChat() {
         }
       } else if (actionID === "think") {
         text = action.args.thought;
-      }
       const message: Message = {
         type: "action",
         sender: "assistant",
@@ -154,13 +143,10 @@ export function useChat() {
       ]) || { messages: [] };
       const updatedMessages = [...currentState.messages, message];
       // Update the query cache
-      queryClient.setQueryData(["chat"], { messages: updatedMessages });
-      // If Redux is still active, dispatch to keep it in sync
-        bridge.conditionalDispatch("chat", {
+      queryClient.setQueryData(QueryKeys.chat, { messages: updatedMessages });
           type: "chat/addAssistantAction",
           payload: action,
         });
-      }
       return { messages: updatedMessages };
     },
   });
@@ -170,11 +156,10 @@ export function useChat() {
       const observationID = observation.observation;
       if (!HANDLED_ACTIONS.includes(observationID)) {
         return (
-          queryClient.getQueryData<{ messages: Message[] }>(["chat"]) || {
+          queryClient.getQueryData<{ messages: Message[] }>(QueryKeys.chat) || {
             messages: [],
           }
         );
-      }
       const translationID = `OBSERVATION_MESSAGE$${observationID.toUpperCase()}`;
       const causeID = observation.cause;
       const currentState = queryClient.getQueryData<{ messages: Message[] }>([
@@ -186,7 +171,6 @@ export function useChat() {
       );
       if (causeMessageIndex === -1) {
         return { messages: updatedMessages };
-      }
       const causeMessage = { ...updatedMessages[causeMessageIndex] };
       causeMessage.translationID = translationID;
       // Set success property based on observation type
@@ -210,7 +194,6 @@ export function useChat() {
             observation.content.length > 0 &&
             !observation.content.toLowerCase().includes("error:");
         }
-      }
       if (observationID === "run" || observationID === "run_ipython") {
         let { content } = observation;
         if (content.length > MAX_CONTENT_LENGTH) {
@@ -238,16 +221,12 @@ export function useChat() {
           content = `${content.slice(0, MAX_CONTENT_LENGTH)}...`;
         }
         causeMessage.content = content;
-      }
       updatedMessages[causeMessageIndex] = causeMessage;
       // Update the query cache
-      queryClient.setQueryData(["chat"], { messages: updatedMessages });
-      // If Redux is still active, dispatch to keep it in sync
-        bridge.conditionalDispatch("chat", {
+      queryClient.setQueryData(QueryKeys.chat, { messages: updatedMessages });
           type: "chat/addAssistantObservation",
           payload: observation,
         });
-      }
       return { messages: updatedMessages };
     },
   });
@@ -267,13 +246,10 @@ export function useChat() {
       ]) || { messages: [] };
       const updatedMessages = [...currentState.messages, errorMessage];
       // Update the query cache
-      queryClient.setQueryData(["chat"], { messages: updatedMessages });
-      // If Redux is still active, dispatch to keep it in sync
-        bridge.conditionalDispatch("chat", {
+      queryClient.setQueryData(QueryKeys.chat, { messages: updatedMessages });
           type: "chat/addErrorMessage",
           payload,
         });
-      }
       return { messages: updatedMessages };
     },
   });
@@ -281,12 +257,9 @@ export function useChat() {
   const clearMessagesMutation = useMutation({
     mutationFn: async () => {
       // Update the query cache
-      queryClient.setQueryData(["chat"], { messages: [] });
-      // If Redux is still active, dispatch to keep it in sync
-        bridge.conditionalDispatch("chat", {
+      queryClient.setQueryData(QueryKeys.chat, { messages: [] });
           type: "chat/clearMessages",
         });
-      }
       return { messages: [] };
     },
   });

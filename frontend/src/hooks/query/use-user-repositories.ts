@@ -22,7 +22,6 @@ export const useUserRepositories = () => {
   React.useEffect(() => {
     if (!isFetchingNextPage && isSuccess && hasNextPage) {
       fetchNextPage();
-    }
   }, [isFetchingNextPage, isSuccess, hasNextPage, fetchNextPage]);
   return repos;
 };

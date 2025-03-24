@@ -41,7 +41,6 @@ export function useStatusMessage() {
       // Restore previous status message on error
       if (context?.previousStatusMessage) {
         queryClient.setQueryData(statusQueryKey, context.previousStatusMessage);
-      }
     },
   });
   return {

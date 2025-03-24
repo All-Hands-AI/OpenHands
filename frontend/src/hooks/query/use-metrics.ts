@@ -15,19 +15,16 @@ const initialMetrics: MetricsState = {
 };
 /**
  * Hook to access and manipulate metrics data using React Query
- * This replaces the Redux metrics slice functionality
+ * Hook to access and manipulate state data
  */
 export function useMetrics() {
   const queryClient = useQueryClient();
-  // Try to get the bridge, but don't throw if it's not initialized (for tests)
   const queryClient = useQueryClient();
-    }
-    // If bridge is not available, return the initial state
     return initialMetrics;
   };
   // Query for metrics
   const query = useQuery({
-    queryKey: ["metrics"],
+    queryKey: QueryKeys.metrics,
     queryFn: () => getInitialMetrics(),
     initialData: initialMetrics, // Use initialMetrics directly to ensure it's always defined
     staleTime: Infinity, // We manage updates manually through mutations
@@ -41,21 +38,20 @@ export function useMetrics() {
     onMutate: async (metrics) => {
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({
-        queryKey: ["metrics"],
+        queryKey: QueryKeys.metrics,
       });
       // Get current metrics
       const previousMetrics = queryClient.getQueryData<MetricsState>([
         "metrics",
       ]);
       // Update metrics
-      queryClient.setQueryData(["metrics"], metrics);
+      queryClient.setQueryData(QueryKeys.metrics, metrics);
       return { previousMetrics };
     },
     onError: (_, __, context) => {
       // Restore previous metrics on error
       if (context?.previousMetrics) {
-        queryClient.setQueryData(["metrics"], context.previousMetrics);
-      }
+        queryClient.setQueryData(QueryKeys.metrics, context.previousMetrics);
     },
   });
   return {

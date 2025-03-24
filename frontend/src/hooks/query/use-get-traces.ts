@@ -15,7 +15,6 @@ export const useGetTraces = (config?: UseGetTracesConfig) => {
   React.useEffect(() => {
     if (!isFetching && isSuccess && traces) {
       config?.onSuccess(traces);
-    }
   }, [isFetching, isSuccess, traces, config?.onSuccess]);
   return data;
 };

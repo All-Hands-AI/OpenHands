@@ -20,24 +20,20 @@ const initialCode: CodeState = {
 };
 /**
  * Hook to access and manipulate code data using React Query
- * This replaces the Redux code slice functionality
+ * Hook to access and manipulate state data
  */
 export function useCode() {
   const queryClient = useQueryClient();
-  // Try to get the bridge, but don't throw if it's not initialized (for tests)
   const queryClient = useQueryClient();
-    }
-    // If bridge is not available, return the initial state
     return initialCode;
   };
   // Query for code state
   const query = useQuery({
-    queryKey: ["code"],
+    queryKey: QueryKeys.code,
     queryFn: () => {
       // First check if we already have data in the query cache
-      const existingData = queryClient.getQueryData<CodeState>(["code"]);
+      const existingData = queryClient.getQueryData<CodeState>(QueryKeys.code);
       if (existingData) return existingData;
-      // Otherwise get from the bridge or use initial state
       return getInitialCodeState();
     },
     initialData: initialCode, // Use initialCode directly to ensure it's always defined
@@ -50,59 +46,59 @@ export function useCode() {
   const setCode = (code: string) => {
     // Get current state
     const previousState =
-      queryClient.getQueryData<CodeState>(["code"]) || initialCode;
+      queryClient.getQueryData<CodeState>(QueryKeys.code) || initialCode;
     // Update state
     const newState = {
       ...previousState,
       code,
     };
     // Set the state synchronously
-    queryClient.setQueryData<CodeState>(["code"], newState);
+    queryClient.setQueryData<CodeState>(QueryKeys.code, newState);
   };
   // Function to set active filepath (synchronous)
   const setActiveFilepath = (path: string) => {
     // Get current state
     const previousState =
-      queryClient.getQueryData<CodeState>(["code"]) || initialCode;
+      queryClient.getQueryData<CodeState>(QueryKeys.code) || initialCode;
     // Update state
     const newState = {
       ...previousState,
       path,
     };
     // Set the state synchronously
-    queryClient.setQueryData<CodeState>(["code"], newState);
+    queryClient.setQueryData<CodeState>(QueryKeys.code, newState);
   };
   // Function to set refresh ID (synchronous)
   const setRefreshID = (refreshID: number) => {
     // Get current state
     const previousState =
-      queryClient.getQueryData<CodeState>(["code"]) || initialCode;
+      queryClient.getQueryData<CodeState>(QueryKeys.code) || initialCode;
     // Update state
     const newState = {
       ...previousState,
       refreshID,
     };
     // Set the state synchronously
-    queryClient.setQueryData<CodeState>(["code"], newState);
+    queryClient.setQueryData<CodeState>(QueryKeys.code, newState);
   };
   // Function to set file states (synchronous)
   const setFileStates = (fileStates: FileState[]) => {
     // Get current state
     const previousState =
-      queryClient.getQueryData<CodeState>(["code"]) || initialCode;
+      queryClient.getQueryData<CodeState>(QueryKeys.code) || initialCode;
     // Update state
     const newState = {
       ...previousState,
       fileStates,
     };
     // Set the state synchronously
-    queryClient.setQueryData<CodeState>(["code"], newState);
+    queryClient.setQueryData<CodeState>(QueryKeys.code, newState);
   };
   // Function to add or update file state (synchronous)
   const addOrUpdateFileState = (fileState: FileState) => {
     // Get current state
     const previousState =
-      queryClient.getQueryData<CodeState>(["code"]) || initialCode;
+      queryClient.getQueryData<CodeState>(QueryKeys.code) || initialCode;
     // Filter out the file state with the same path
     const newFileStates = previousState.fileStates.filter(
       (fs) => fs.path !== fileState.path,
@@ -115,13 +111,13 @@ export function useCode() {
       fileStates: newFileStates,
     };
     // Set the state synchronously
-    queryClient.setQueryData<CodeState>(["code"], newState);
+    queryClient.setQueryData<CodeState>(QueryKeys.code, newState);
   };
   // Function to remove file state (synchronous)
   const removeFileState = (path: string) => {
     // Get current state
     const previousState =
-      queryClient.getQueryData<CodeState>(["code"]) || initialCode;
+      queryClient.getQueryData<CodeState>(QueryKeys.code) || initialCode;
     // Filter out the file state with the given path
     const newFileStates = previousState.fileStates.filter(
       (fs) => fs.path !== path,
@@ -132,7 +128,7 @@ export function useCode() {
       fileStates: newFileStates,
     };
     // Set the state synchronously
-    queryClient.setQueryData<CodeState>(["code"], newState);
+    queryClient.setQueryData<CodeState>(QueryKeys.code, newState);
   };
   return {
     // State
