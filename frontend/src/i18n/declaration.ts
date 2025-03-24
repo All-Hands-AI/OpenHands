@@ -1,5 +1,7 @@
 // this file generate by script, don't modify it manually!!!
 export enum I18nKey {
+  BUTTON$COPY = "BUTTON$COPY",
+  BUTTON$COPIED = "BUTTON$COPIED",
   APP$TITLE = "APP$TITLE",
   BROWSER$TITLE = "BROWSER$TITLE",
   BROWSER$EMPTY_MESSAGE = "BROWSER$EMPTY_MESSAGE",

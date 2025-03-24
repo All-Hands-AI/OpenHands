@@ -1,4 +1,34 @@
 {
+    "BUTTON$COPY": {
+        "en": "Copy to clipboard",
+        "ja": "クリップボードにコピー",
+        "zh-CN": "复制到剪贴板",
+        "zh-TW": "複製到剪貼簿",
+        "ko-KR": "클립보드에 복사",
+        "no": "Kopier til utklippstavle",
+        "it": "Copia negli appunti",
+        "pt": "Copiar para área de transferência",
+        "es": "Copiar al portapapeles",
+        "ar": "نسخ إلى الحافظة",
+        "fr": "Copier dans le presse-papiers",
+        "tr": "Panoya kopyala",
+        "de": "In die Zwischenablage kopieren"
+    },
+    "BUTTON$COPIED": {
+        "en": "Copied to clipboard",
+        "ja": "クリップボードにコピーしました",
+        "zh-CN": "已复制到剪贴板",
+        "zh-TW": "已複製到剪貼簿",
+        "ko-KR": "클립보드에 복사됨",
+        "no": "Kopiert til utklippstavle",
+        "it": "Copiato negli appunti",
+        "pt": "Copiado para área de transferência",
+        "es": "Copiado al portapapeles",
+        "ar": "تم النسخ إلى الحافظة",
+        "fr": "Copié dans le presse-papiers",
+        "tr": "Panoya kopyalandı",
+        "de": "In die Zwischenablage kopiert"
+    },
     "APP$TITLE": {
         "en": "App",
         "ja": "アプリ",
