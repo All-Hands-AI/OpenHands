@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
 import { getQueryReduxBridge } from "#/utils/query-redux-bridge";
 
 interface InitialQueryState {
@@ -15,284 +15,97 @@ const initialState: InitialQueryState = {
 };
 
 /**
- * Hook to access and manipulate initial query data using React Query
- * This replaces the Redux initialQuery slice functionality
+ * Hook to access and manipulate initial query data
+ * This replaces the Redux initialQuery slice functionality without using React Query
  */
 export function useInitialQuery() {
-  const queryClient = useQueryClient();
+  const [state, setState] = useState<InitialQueryState>(initialState);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Try to get the bridge, but don't throw if it's not initialized (for tests)
-  let bridge: ReturnType<typeof getQueryReduxBridge> | null = null;
-  try {
-    bridge = getQueryReduxBridge();
-  } catch (error) {
-    // In tests, we might not have the bridge initialized
-    // eslint-disable-next-line no-console
-    console.warn(
-      "QueryReduxBridge not initialized, using default initial query state",
-    );
-  }
-
-  // Get initial state from Redux if this is the first time accessing the data
-  const getInitialQueryState = (): InitialQueryState => {
-    // If we already have data in React Query, use that
-    const existingData = queryClient.getQueryData<InitialQueryState>([
-      "initialQuery",
-    ]);
-    if (existingData) return existingData;
-
-    // Otherwise, get initial data from Redux if bridge is available
-    if (bridge) {
-      try {
-        return bridge.getReduxSliceState<InitialQueryState>("initialQuery");
-      } catch (error) {
-        // If we can't get the state from Redux, return the initial state
-        return initialState;
-      }
+  // Initialize from Redux on mount
+  useEffect(() => {
+    try {
+      const bridge = getQueryReduxBridge();
+      const reduxState = bridge.getReduxSliceState<InitialQueryState>("initialQuery");
+      setState(reduxState);
+    } catch (error) {
+      // If we can't get the state from Redux, use the initial state
+      console.warn("Could not get initial query state from Redux, using default");
+    } finally {
+      setIsLoading(false);
     }
+  }, []);
 
-    // If bridge is not available, return the initial state
-    return initialState;
+  // File operations
+  const addFile = (file: string) => {
+    setState((prev) => ({
+      ...prev,
+      files: [...prev.files, file],
+    }));
   };
 
-  // Query for initial query state
-  const query = useQuery({
-    queryKey: ["initialQuery"],
-    queryFn: () => {
-      // First check if we already have data in the query cache
-      const existingData = queryClient.getQueryData<InitialQueryState>([
-        "initialQuery",
-      ]);
-      if (existingData) return existingData;
+  const removeFile = (index: number) => {
+    setState((prev) => {
+      const newFiles = [...prev.files];
+      newFiles.splice(index, 1);
+      return {
+        ...prev,
+        files: newFiles,
+      };
+    });
+  };
 
-      // Otherwise get from the bridge or use initial state
-      return getInitialQueryState();
-    },
-    initialData: initialState, // Use initialState directly to ensure it's always defined
-    staleTime: Infinity, // We manage updates manually through mutations
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-  });
+  const clearFiles = () => {
+    setState((prev) => ({
+      ...prev,
+      files: [],
+    }));
+  };
 
-  // Mutation to add a file
-  const addFileMutation = useMutation({
-    mutationFn: (file: string) => Promise.resolve(file),
-    onMutate: async (file) => {
-      // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ["initialQuery"] });
+  // Initial prompt operations
+  const setInitialPrompt = (prompt: string) => {
+    setState((prev) => ({
+      ...prev,
+      initialPrompt: prompt,
+    }));
+  };
 
-      // Get current state
-      const previousState = queryClient.getQueryData<InitialQueryState>([
-        "initialQuery",
-      ]);
+  const clearInitialPrompt = () => {
+    setState((prev) => ({
+      ...prev,
+      initialPrompt: null,
+    }));
+  };
 
-      // Update state
-      if (previousState) {
-        queryClient.setQueryData<InitialQueryState>(["initialQuery"], {
-          ...previousState,
-          files: [...previousState.files, file],
-        });
-      }
-
-      return { previousState };
-    },
-    onError: (_, __, context) => {
-      // Restore previous state on error
-      if (context?.previousState) {
-        queryClient.setQueryData(["initialQuery"], context.previousState);
-      }
-    },
-  });
-
-  // Mutation to remove a file
-  const removeFileMutation = useMutation({
-    mutationFn: (index: number) => Promise.resolve(index),
-    onMutate: async (index) => {
-      // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ["initialQuery"] });
-
-      // Get current state
-      const previousState = queryClient.getQueryData<InitialQueryState>([
-        "initialQuery",
-      ]);
-
-      // Update state
-      if (previousState) {
-        const newFiles = [...previousState.files];
-        newFiles.splice(index, 1);
-        queryClient.setQueryData<InitialQueryState>(["initialQuery"], {
-          ...previousState,
-          files: newFiles,
-        });
-      }
-
-      return { previousState };
-    },
-    onError: (_, __, context) => {
-      // Restore previous state on error
-      if (context?.previousState) {
-        queryClient.setQueryData(["initialQuery"], context.previousState);
-      }
-    },
-  });
-
-  // Mutation to clear files
-  const clearFilesMutation = useMutation({
-    mutationFn: () => Promise.resolve(),
-    onMutate: async () => {
-      // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ["initialQuery"] });
-
-      // Get current state
-      const previousState = queryClient.getQueryData<InitialQueryState>([
-        "initialQuery",
-      ]);
-
-      // Update state
-      if (previousState) {
-        queryClient.setQueryData<InitialQueryState>(["initialQuery"], {
-          ...previousState,
-          files: [],
-        });
-      }
-
-      return { previousState };
-    },
-    onError: (_, __, context) => {
-      // Restore previous state on error
-      if (context?.previousState) {
-        queryClient.setQueryData(["initialQuery"], context.previousState);
-      }
-    },
-  });
-
-  // Mutation to set initial prompt
-  const setInitialPromptMutation = useMutation({
-    mutationFn: (prompt: string) => Promise.resolve(prompt),
-    onMutate: async (prompt) => {
-      // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ["initialQuery"] });
-
-      // Get current state
-      const previousState = queryClient.getQueryData<InitialQueryState>([
-        "initialQuery",
-      ]);
-
-      // Update state
-      if (previousState) {
-        queryClient.setQueryData<InitialQueryState>(["initialQuery"], {
-          ...previousState,
-          initialPrompt: prompt,
-        });
-      }
-
-      return { previousState };
-    },
-    onError: (_, __, context) => {
-      // Restore previous state on error
-      if (context?.previousState) {
-        queryClient.setQueryData(["initialQuery"], context.previousState);
-      }
-    },
-  });
-
-  // Mutation to clear initial prompt
-  const clearInitialPromptMutation = useMutation({
-    mutationFn: () => Promise.resolve(),
-    onMutate: async () => {
-      // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ["initialQuery"] });
-
-      // Get current state
-      const previousState = queryClient.getQueryData<InitialQueryState>([
-        "initialQuery",
-      ]);
-
-      // Update state
-      if (previousState) {
-        queryClient.setQueryData<InitialQueryState>(["initialQuery"], {
-          ...previousState,
-          initialPrompt: null,
-        });
-      }
-
-      return { previousState };
-    },
-    onError: (_, __, context) => {
-      // Restore previous state on error
-      if (context?.previousState) {
-        queryClient.setQueryData(["initialQuery"], context.previousState);
-      }
-    },
-  });
-
-  // Function to directly set the selected repository (synchronous)
-  const setSelectedRepositorySync = (repository: string | null) => {
-    // Get current state
-    const previousState =
-      queryClient.getQueryData<InitialQueryState>(["initialQuery"]) ||
-      initialState;
-
-    // Update state
-    const newState = {
-      ...previousState,
+  // Repository operations
+  const setSelectedRepository = (repository: string | null) => {
+    setState((prev) => ({
+      ...prev,
       selectedRepository: repository,
-    };
-
-    // Set the state synchronously
-    queryClient.setQueryData<InitialQueryState>(["initialQuery"], newState);
+    }));
   };
 
-  // We don't need the mutation anymore since we're using the sync function directly
-
-  // Mutation to clear selected repository
-  const clearSelectedRepositoryMutation = useMutation({
-    mutationFn: () => Promise.resolve(),
-    onMutate: async () => {
-      // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ["initialQuery"] });
-
-      // Get current state
-      const previousState = queryClient.getQueryData<InitialQueryState>([
-        "initialQuery",
-      ]);
-
-      // Update state
-      if (previousState) {
-        queryClient.setQueryData<InitialQueryState>(["initialQuery"], {
-          ...previousState,
-          selectedRepository: null,
-        });
-      }
-
-      return { previousState };
-    },
-    onError: (_, __, context) => {
-      // Restore previous state on error
-      if (context?.previousState) {
-        queryClient.setQueryData(["initialQuery"], context.previousState);
-      }
-    },
-  });
-
-  // No need to log the state anymore
+  const clearSelectedRepository = () => {
+    setState((prev) => ({
+      ...prev,
+      selectedRepository: null,
+    }));
+  };
 
   return {
     // State
-    files: query.data?.files || initialState.files,
-    initialPrompt: query.data?.initialPrompt || initialState.initialPrompt,
-    selectedRepository:
-      query.data?.selectedRepository || initialState.selectedRepository,
-    isLoading: query.isLoading,
+    files: state.files,
+    initialPrompt: state.initialPrompt,
+    selectedRepository: state.selectedRepository,
+    isLoading,
 
     // Actions
-    addFile: addFileMutation.mutate,
-    removeFile: removeFileMutation.mutate,
-    clearFiles: clearFilesMutation.mutate,
-    setInitialPrompt: setInitialPromptMutation.mutate,
-    clearInitialPrompt: clearInitialPromptMutation.mutate,
-    setSelectedRepository: setSelectedRepositorySync, // Use the synchronous function directly
-    clearSelectedRepository: clearSelectedRepositoryMutation.mutate,
+    addFile,
+    removeFile,
+    clearFiles,
+    setInitialPrompt,
+    clearInitialPrompt,
+    setSelectedRepository,
+    clearSelectedRepository,
   };
 }

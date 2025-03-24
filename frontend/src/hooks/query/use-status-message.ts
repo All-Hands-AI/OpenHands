@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
 import { getQueryReduxBridge } from "#/utils/query-redux-bridge";
 import { StatusMessage } from "#/types/message";
 
@@ -11,107 +11,48 @@ const initialStatusMessage: StatusMessage = {
 };
 
 /**
- * Hook to access and manipulate status messages using React Query
- * This replaces the Redux status slice functionality
+ * Hook to access and manipulate status messages
+ * This replaces the Redux status slice functionality without using React Query
  */
 export function useStatusMessage() {
-  const queryClient = useQueryClient();
+  const [statusMessage, setStatusMessageState] = useState<StatusMessage>(initialStatusMessage);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Try to get the bridge, but don't throw if it's not initialized (for tests)
-  let bridge: ReturnType<typeof getQueryReduxBridge> | null = null;
-  try {
-    bridge = getQueryReduxBridge();
-  } catch (error) {
-    // In tests, we might not have the bridge initialized
-    console.warn(
-      "QueryReduxBridge not initialized, using default status message",
-    );
-  }
-
-  // Get initial state from Redux if this is the first time accessing the data
-  const getInitialStatusMessage = (): StatusMessage => {
-    // If we already have data in React Query, use that
-    const existingData = queryClient.getQueryData<StatusMessage>([
-      "status",
-      "currentMessage",
-    ]);
-    if (existingData) return existingData;
-
-    // Otherwise, get initial data from Redux if bridge is available
-    if (bridge) {
-      try {
-        return bridge.getReduxSliceState<{ curStatusMessage: StatusMessage }>(
-          "status",
-        ).curStatusMessage;
-      } catch (error) {
-        // If we can't get the state from Redux, return the initial state
-        return initialStatusMessage;
-      }
+  // Initialize from Redux on mount
+  useEffect(() => {
+    try {
+      const bridge = getQueryReduxBridge();
+      const reduxState = bridge.getReduxSliceState<{ curStatusMessage: StatusMessage }>("status");
+      setStatusMessageState(reduxState.curStatusMessage);
+    } catch (error) {
+      // If we can't get the state from Redux, use the initial state
+      console.warn("Could not get status message from Redux, using default");
+    } finally {
+      setIsLoading(false);
     }
+  }, []);
 
-    // If bridge is not available, return the initial state
-    return initialStatusMessage;
+  // Function to update status message
+  const setStatusMessage = (newStatusMessage: StatusMessage) => {
+    // eslint-disable-next-line no-console
+    console.log("[Status Debug] Setting status message:", {
+      id: newStatusMessage.id,
+      message: newStatusMessage.message,
+      type: newStatusMessage.type,
+    });
+    
+    setStatusMessageState(newStatusMessage);
+    
+    // eslint-disable-next-line no-console
+    console.log("[Status Debug] Successfully set status message:", {
+      id: newStatusMessage.id,
+      message: newStatusMessage.message,
+    });
   };
 
-  // Query for status message
-  const query = useQuery({
-    queryKey: ["status", "currentMessage"],
-    queryFn: () => getInitialStatusMessage(),
-    initialData: getInitialStatusMessage,
-    staleTime: Infinity, // We manage updates manually through mutations
-  });
-
-  // Mutation to set current status message
-  const setStatusMessageMutation = useMutation({
-    mutationFn: (statusMessage: StatusMessage) =>
-      Promise.resolve(statusMessage),
-    onMutate: async (statusMessage) => {
-      // eslint-disable-next-line no-console
-      console.log("[Status Debug] Setting status message via mutation:", {
-        id: statusMessage.id,
-        message: statusMessage.message,
-        type: statusMessage.type,
-      });
-
-      // Cancel any outgoing refetches
-      await queryClient.cancelQueries({
-        queryKey: ["status", "currentMessage"],
-      });
-
-      // Get current status message
-      const previousStatusMessage = queryClient.getQueryData<StatusMessage>([
-        "status",
-        "currentMessage",
-      ]);
-
-      // Update status message
-      queryClient.setQueryData(["status", "currentMessage"], statusMessage);
-
-      return { previousStatusMessage };
-    },
-    onError: (_, __, context) => {
-      // eslint-disable-next-line no-console
-      console.error("[Status Debug] Error setting status message");
-      // Restore previous status message on error
-      if (context?.previousStatusMessage) {
-        queryClient.setQueryData(
-          ["status", "currentMessage"],
-          context.previousStatusMessage,
-        );
-      }
-    },
-    onSuccess: (statusMessage) => {
-      // eslint-disable-next-line no-console
-      console.log("[Status Debug] Successfully set status message:", {
-        id: statusMessage.id,
-        message: statusMessage.message,
-      });
-    },
-  });
-
   return {
-    statusMessage: query.data || initialStatusMessage,
-    isLoading: query.isLoading,
-    setStatusMessage: setStatusMessageMutation.mutate,
+    statusMessage,
+    isLoading,
+    setStatusMessage,
   };
 }

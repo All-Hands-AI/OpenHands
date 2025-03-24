@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
 import { getQueryReduxBridge } from "#/utils/query-redux-bridge";
 
 interface MetricsState {
@@ -17,82 +17,35 @@ const initialMetrics: MetricsState = {
 };
 
 /**
- * Hook to access and manipulate metrics data using React Query
- * This replaces the Redux metrics slice functionality
+ * Hook to access and manipulate metrics data
+ * This replaces the Redux metrics slice functionality without using React Query
  */
 export function useMetrics() {
-  const queryClient = useQueryClient();
+  const [metrics, setMetricsState] = useState<MetricsState>(initialMetrics);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Try to get the bridge, but don't throw if it's not initialized (for tests)
-  let bridge: ReturnType<typeof getQueryReduxBridge> | null = null;
-  try {
-    bridge = getQueryReduxBridge();
-  } catch (error) {
-    // In tests, we might not have the bridge initialized
-    console.warn("QueryReduxBridge not initialized, using default metrics");
-  }
-
-  // Get initial state from Redux if this is the first time accessing the data
-  const getInitialMetrics = (): MetricsState => {
-    // If we already have data in React Query, use that
-    const existingData = queryClient.getQueryData<MetricsState>(["metrics"]);
-    if (existingData) return existingData;
-
-    // Otherwise, get initial data from Redux if bridge is available
-    if (bridge) {
-      try {
-        return bridge.getReduxSliceState<MetricsState>("metrics");
-      } catch (error) {
-        // If we can't get the state from Redux, return the initial state
-        return initialMetrics;
-      }
+  // Initialize from Redux on mount
+  useEffect(() => {
+    try {
+      const bridge = getQueryReduxBridge();
+      const reduxState = bridge.getReduxSliceState<MetricsState>("metrics");
+      setMetricsState(reduxState);
+    } catch (error) {
+      // If we can't get the state from Redux, use the initial state
+      console.warn("Could not get metrics from Redux, using default");
+    } finally {
+      setIsLoading(false);
     }
+  }, []);
 
-    // If bridge is not available, return the initial state
-    return initialMetrics;
+  // Function to update metrics
+  const setMetrics = (newMetrics: MetricsState) => {
+    setMetricsState(newMetrics);
   };
 
-  // Query for metrics
-  const query = useQuery({
-    queryKey: ["metrics"],
-    queryFn: () => getInitialMetrics(),
-    initialData: initialMetrics, // Use initialMetrics directly to ensure it's always defined
-    staleTime: Infinity, // We manage updates manually through mutations
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-  });
-
-  // Mutation to set metrics
-  const setMetricsMutation = useMutation({
-    mutationFn: (metrics: MetricsState) => Promise.resolve(metrics),
-    onMutate: async (metrics) => {
-      // Cancel any outgoing refetches
-      await queryClient.cancelQueries({
-        queryKey: ["metrics"],
-      });
-
-      // Get current metrics
-      const previousMetrics = queryClient.getQueryData<MetricsState>([
-        "metrics",
-      ]);
-
-      // Update metrics
-      queryClient.setQueryData(["metrics"], metrics);
-
-      return { previousMetrics };
-    },
-    onError: (_, __, context) => {
-      // Restore previous metrics on error
-      if (context?.previousMetrics) {
-        queryClient.setQueryData(["metrics"], context.previousMetrics);
-      }
-    },
-  });
-
   return {
-    metrics: query.data || initialMetrics,
-    isLoading: query.isLoading,
-    setMetrics: setMetricsMutation.mutate,
+    metrics,
+    isLoading,
+    setMetrics,
   };
 }
