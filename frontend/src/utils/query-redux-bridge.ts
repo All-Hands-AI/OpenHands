@@ -46,7 +46,9 @@ export class QueryReduxBridge {
    */
   // Using this.queryClient to satisfy class-methods-use-this rule
   migrateSlice(sliceName: SliceNames): void {
-    console.log(`[QueryReduxBridge Debug] Migrating slice: ${sliceName}`);
+    console.log(`[DOUBLE_MSG_DEBUG] QueryReduxBridge migrating slice: ${sliceName}`, {
+      timestamp: new Date().toISOString()
+    });
     migratedSlices[sliceName] = true;
     // Access this.queryClient to use 'this'
     this.queryClient.getQueryCache();
@@ -59,7 +61,14 @@ export class QueryReduxBridge {
   isSliceMigrated(sliceName: SliceNames): boolean {
     // Access this.queryClient to use 'this'
     this.queryClient.getQueryCache();
-    return migratedSlices[sliceName];
+    const isMigrated = migratedSlices[sliceName];
+    if (sliceName === "chat") {
+      console.log(`[DOUBLE_MSG_DEBUG] QueryReduxBridge.isSliceMigrated check for ${sliceName}:`, {
+        isMigrated,
+        timestamp: new Date().toISOString()
+      });
+    }
+    return isMigrated;
   }
 
   /**

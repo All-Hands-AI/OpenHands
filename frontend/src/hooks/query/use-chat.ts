@@ -42,6 +42,10 @@ function getRiskText(risk: ActionSecurityRisk) {
  * This replaces the Redux chat slice functionality
  */
 export function useChat() {
+  console.log("[DOUBLE_MSG_DEBUG] useChat hook initializing", {
+    timestamp: new Date().toISOString()
+  });
+  
   const queryClient = useQueryClient();
 
   // Try to get the bridge, but don't throw if it's not initialized (for tests)

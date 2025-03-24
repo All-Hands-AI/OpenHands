@@ -1,5 +1,5 @@
 import { combineReducers, configureStore, Middleware } from "@reduxjs/toolkit";
-import { queryClient } from "./query-redux-bridge-init";
+import { queryClient, isSliceMigrated } from "./query-redux-bridge-init";
 import type { Message } from "#/message";
 
 // All slices are now handled by React Query
@@ -37,6 +37,8 @@ export const rootReducer = combineReducers({
   },
 });
 
+// Check if the chat slice is migrated to prevent double messages
+
 // Create a middleware to intercept Redux actions and update React Query
 const reactQueryMiddleware: Middleware = () => (next) => (action: unknown) => {
   // Cast action to ChatAction for our internal use
@@ -48,12 +50,19 @@ const reactQueryMiddleware: Middleware = () => (next) => (action: unknown) => {
     timestamp: new Date().toISOString()
   });
 
-  // Handle chat actions
+  // Check if the chat slice is migrated
+  const chatSliceMigrated = isSliceMigrated("chat");
+  console.log("[DOUBLE_MSG_DEBUG] Redux Middleware chat slice migrated:", chatSliceMigrated);
+
+  // Handle chat actions only if the chat slice is NOT migrated
+  // This prevents double messages when the chat slice is migrated to React Query
   if (
+    !chatSliceMigrated &&
     chatAction.type &&
     typeof chatAction.type === "string" &&
     chatAction.type.startsWith("chat/")
   ) {
+    console.log("[DOUBLE_MSG_DEBUG] Redux Middleware processing chat action (slice NOT migrated)");
     // Get current messages from React Query
     const currentMessages =
       queryClient.getQueryData<Message[]>(["chat", "messages"]) || [];
@@ -215,6 +224,10 @@ const reactQueryMiddleware: Middleware = () => (next) => (action: unknown) => {
   }
 
   // Continue with the normal Redux flow
+  console.log("[DOUBLE_MSG_DEBUG] Redux Middleware passing action to next middleware:", {
+    type: chatAction.type,
+    timestamp: new Date().toISOString()
+  });
   return next(action);
 };
 
