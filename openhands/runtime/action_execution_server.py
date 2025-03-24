@@ -20,7 +20,7 @@ from zipfile import ZipFile
 
 from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.security import APIKeyHeader
 from openhands_aci.editor.editor import OHEditor
 from openhands_aci.editor.exceptions import ToolError
@@ -58,6 +58,7 @@ from openhands.runtime.browser import browse
 from openhands.runtime.browser.browser_env import BrowserEnv
 from openhands.runtime.plugins import ALL_PLUGINS, JupyterPlugin, Plugin, VSCodePlugin
 from openhands.runtime.utils.bash import BashSession
+from openhands.runtime.utils.file_viewer import generate_file_viewer_html
 from openhands.runtime.utils.files import insert_lines, read_lines
 from openhands.runtime.utils.memory_monitor import MemoryMonitor
 from openhands.runtime.utils.runtime_init import init_user_and_working_directory
@@ -531,6 +532,15 @@ if __name__ == '__main__':
     # example: python client.py 8000 --working-dir /workspace --plugins JupyterRequirement
     args = parser.parse_args()
 
+    port_path = ''
+    if os.environ.get('LOCAL_RUNTIME_MODE') == '1':
+        port_path = '/tmp/oh-server-url'
+    else:
+        port_path = '/openhands/oh-server-url'
+    os.makedirs(os.path.dirname(port_path), exist_ok=True)
+    with open(port_path, 'w') as f:
+        f.write(f'http://127.0.0.1:{args.port}')
+
     plugins_to_load: list[Plugin] = []
     if args.plugins:
         for plugin in args.plugins:
@@ -810,6 +820,43 @@ if __name__ == '__main__':
         except Exception as e:
             logger.error(f'Error listing files: {e}')
             return []
+
+    @app.get('/view')
+    async def view_file(path: str):
+        """View a file using an embedded viewer.
+
+        Args:
+            path (str): The absolute path of the file to view.
+
+        Returns:
+            HTMLResponse: An HTML page with an appropriate viewer for the file.
+        """
+        if not os.path.isabs(path):
+            return HTMLResponse(
+                content=f'<h1>Error: Path must be absolute</h1><p>{path}</p>',
+                status_code=400,
+            )
+
+        if not os.path.exists(path):
+            return HTMLResponse(
+                content=f'<h1>Error: File not found</h1><p>{path}</p>', status_code=404
+            )
+
+        if os.path.isdir(path):
+            return HTMLResponse(
+                content=f'<h1>Error: Path is a directory</h1><p>{path}</p>',
+                status_code=400,
+            )
+
+        try:
+            html_content = generate_file_viewer_html(path)
+            return HTMLResponse(content=html_content)
+
+        except Exception as e:
+            logger.error(f'Error serving file viewer: {str(e)}')
+            return HTMLResponse(
+                content=f'<h1>Error viewing file</h1><p>{str(e)}</p>', status_code=500
+            )
 
     logger.debug(f'Starting action execution API on port {args.port}')
     run(app, host='0.0.0.0', port=args.port)
