@@ -1,3 +1,4 @@
+import json
 import os
 import re
 import time
@@ -228,17 +229,23 @@ class BashSession:
         # Configure bash to use simple PS1 and disable PS2
         if self.pane is not None:
             # Properly escape the JSON in PS1 to ensure it can be parsed
-            ps1_json = json.dumps({
-                "pid": "$!",
-                "exit_code": "$?",
-                "username": "\\u",
-                "hostname": "\\h",
-                "working_dir": "$(pwd)",
-                "py_interpreter_path": "$(which python 2>/dev/null || echo \"\")"
-            })
-            self.pane.send_keys(
-                f'export PROMPT_COMMAND=\'export PS1="\n###PS1JSON###\n{ps1_json}\n###PS1END###\n"\'; export PS2=""\'
+            ps1_json = json.dumps(
+                {
+                    'pid': '$!',
+                    'exit_code': '$?',
+                    'username': '\\u',
+                    'hostname': '\\h',
+                    'working_dir': '$(pwd)',
+                    'py_interpreter_path': '$(which python 2>/dev/null || echo "")',
+                }
             )
+            # Build the PS1 command with proper escaping
+            ps1_command = (
+                'export PROMPT_COMMAND=\'export PS1="\\n###PS1JSON###\\n'
+                f'{ps1_json}'
+                '\\n###PS1END###\\n"\'; export PS2=""\''
+            )
+            self.pane.send_keys(ps1_command)
         time.sleep(0.1)  # Wait for command to take effect
         self._clear_screen()
 
