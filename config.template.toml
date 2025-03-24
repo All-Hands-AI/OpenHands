@@ -300,6 +300,9 @@ llm_config = 'gpt3'
 # Enable GPU support in the runtime
 #enable_gpu = false
 
+# The extra volumes for bind mounts (e.g., {"/path/to/host-app": {"bind" = "/path/to/runtime", "mode" = "rw"}})
+#runtime_extra_volumes = {}
+
 # Additional Docker runtime kwargs
 #docker_runtime_kwargs = {}
 

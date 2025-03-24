@@ -280,7 +280,7 @@ class DockerRuntime(ActionExecutionClient):
                 name=self.container_name,
                 detach=True,
                 environment=environment,
-                volumes=volumes,
+                volumes=volumes | self.config.sandbox.runtime_extra_volumes,
                 device_requests=(
                     [docker.types.DeviceRequest(capabilities=[['gpu']], count=-1)]
                     if self.config.sandbox.enable_gpu

@@ -36,6 +36,11 @@ class SandboxConfig(BaseModel):
         remote_runtime_resource_factor: Factor to scale the resource allocation for remote runtime.
             Must be one of [1, 2, 4, 8]. Will only be used if the runtime is remote.
         enable_gpu: Whether to enable GPU.
+        runtime_extra_volumes: The extra volumes for bind mounts.
+            This is a dictionary which key must be a path in the host to mount,
+            while which value must be a dictionary representing path in the runtime container.
+            The value must be contains a two keys, "bind" and "mode". "bind" means path string, while "mode" means file mode like "rw".
+            This can be used to mount `/var/run/docker.sock` to perform Docker outside of Docker.
         docker_runtime_kwargs: Additional keyword arguments to pass to the Docker runtime when running containers.
             This should be a JSON string that will be parsed into a dictionary.
     """
@@ -73,6 +78,7 @@ class SandboxConfig(BaseModel):
     close_delay: int = Field(default=15)
     remote_runtime_resource_factor: int = Field(default=1)
     enable_gpu: bool = Field(default=False)
+    runtime_extra_volumes: dict[str, dict[str, str]] = Field(default_factory=dict)
     docker_runtime_kwargs: dict | None = Field(default=None)
     selected_repo: str | None = Field(default=None)
 
