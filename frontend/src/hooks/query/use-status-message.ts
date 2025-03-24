@@ -15,13 +15,6 @@ export function setAgentStatus(
   queryClient: ReturnType<typeof useQueryClient>,
   statusMessage: StatusMessage,
 ) {
-  // eslint-disable-next-line no-console
-  console.log("[Status Debug] Setting status message:", {
-    id: statusMessage.id,
-    message: statusMessage.message,
-    type: statusMessage.type,
-  });
-
   queryClient.setQueryData(STATUS_QUERY_KEY, statusMessage);
 }
 

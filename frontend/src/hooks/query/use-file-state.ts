@@ -62,14 +62,6 @@ export function useFileState() {
       },
     };
 
-    // Debug log
-    // eslint-disable-next-line no-console
-    console.log("[FileState Debug] Setting changed state:", {
-      path,
-      changed,
-      newState,
-    });
-
     // Set the state synchronously
     queryClient.setQueryData<FileStateState>(["fileState"], newState);
   };

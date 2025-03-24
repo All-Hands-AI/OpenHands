@@ -61,13 +61,6 @@ export function useJupyter() {
       cells: [...previousState.cells, { content, type: "input" as const }],
     };
 
-    // Debug log
-    // eslint-disable-next-line no-console
-    console.log("[Jupyter Debug] Appending input:", {
-      content,
-      cellsLength: newState.cells.length,
-    });
-
     // Set the state synchronously
     queryClient.setQueryData<JupyterState>(["jupyter"], newState);
   };
@@ -84,13 +77,6 @@ export function useJupyter() {
       cells: [...previousState.cells, { content, type: "output" as const }],
     };
 
-    // Debug log
-    // eslint-disable-next-line no-console
-    console.log("[Jupyter Debug] Appending output:", {
-      contentLength: content.length,
-      cellsLength: newState.cells.length,
-    });
-
     // Set the state synchronously
     queryClient.setQueryData<JupyterState>(["jupyter"], newState);
   };
@@ -101,10 +87,6 @@ export function useJupyter() {
     const newState = {
       cells: [],
     };
-
-    // Debug log
-    // eslint-disable-next-line no-console
-    console.log("[Jupyter Debug] Clearing jupyter");
 
     // Set the state synchronously
     queryClient.setQueryData<JupyterState>(["jupyter"], newState);

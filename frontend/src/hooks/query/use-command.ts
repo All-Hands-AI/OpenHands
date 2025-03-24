@@ -64,10 +64,6 @@ export function useCommand() {
       ],
     };
 
-    // Debug log
-    // eslint-disable-next-line no-console
-    console.log("[Command Debug] Appending input:", { content, newState });
-
     // Set the state synchronously
     queryClient.setQueryData<CommandState>(["command"], newState);
   };
@@ -87,13 +83,6 @@ export function useCommand() {
       ],
     };
 
-    // Debug log
-    // eslint-disable-next-line no-console
-    console.log("[Command Debug] Appending output:", {
-      content,
-      commandsLength: newState.commands.length,
-    });
-
     // Set the state synchronously
     queryClient.setQueryData<CommandState>(["command"], newState);
   };
@@ -104,10 +93,6 @@ export function useCommand() {
     const newState = {
       commands: [],
     };
-
-    // Debug log
-    // eslint-disable-next-line no-console
-    console.log("[Command Debug] Clearing terminal");
 
     // Set the state synchronously
     queryClient.setQueryData<CommandState>(["command"], newState);
