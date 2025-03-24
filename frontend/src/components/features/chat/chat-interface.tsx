@@ -1,4 +1,3 @@
-import { useSelector } from "react-redux";
 import React from "react";
 import posthog from "posthog-js";
 import { useParams } from "react-router";
@@ -6,7 +5,6 @@ import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
 import { TrajectoryActions } from "../trajectory/trajectory-actions";
 import { createChatMessage } from "#/services/chat-service";
 import { InteractiveChatBox } from "./interactive-chat-box";
-import { RootState } from "#/store";
 import { AgentState } from "#/types/agent-state";
 import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
 import { FeedbackModal } from "../feedback/feedback-modal";
@@ -17,6 +15,7 @@ import { Messages } from "./messages";
 import { ChatSuggestions } from "./chat-suggestions";
 import { ActionSuggestions } from "./action-suggestions";
 import { useChatMessages } from "#/hooks/query/use-chat-messages";
+import { useAgentState } from "#/hooks/query/use-agent-state";
 
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
@@ -36,7 +35,7 @@ export function ChatInterface() {
     useScrollToBottom(scrollRef);
 
   const { messages, addUserMessage } = useChatMessages();
-  const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const { agentState } = useAgentState();
 
   const [feedbackPolarity, setFeedbackPolarity] = React.useState<
     "positive" | "negative"
@@ -103,8 +102,8 @@ export function ChatInterface() {
   };
 
   const isWaitingForUserInput =
-    curAgentState === AgentState.AWAITING_USER_INPUT ||
-    curAgentState === AgentState.FINISHED;
+    agentState === AgentState.AWAITING_USER_INPUT ||
+    agentState === AgentState.FINISHED;
 
   return (
     <div className="h-full flex flex-col justify-between">
@@ -127,7 +126,7 @@ export function ChatInterface() {
           <Messages
             messages={messages}
             isAwaitingUserConfirmation={
-              curAgentState === AgentState.AWAITING_USER_CONFIRMATION
+              agentState === AgentState.AWAITING_USER_CONFIRMATION
             }
           />
         )}
@@ -152,7 +151,7 @@ export function ChatInterface() {
           />
 
           <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0">
-            {curAgentState === AgentState.RUNNING && <TypingIndicator />}
+            {agentState === AgentState.RUNNING && <TypingIndicator />}
           </div>
 
           {!hitBottom && <ScrollToBottomButton onClick={scrollDomToBottom} />}
@@ -162,10 +161,10 @@ export function ChatInterface() {
           onSubmit={handleSendMessage}
           onStop={handleStop}
           isDisabled={
-            curAgentState === AgentState.LOADING ||
-            curAgentState === AgentState.AWAITING_USER_CONFIRMATION
+            agentState === AgentState.LOADING ||
+            agentState === AgentState.AWAITING_USER_CONFIRMATION
           }
-          mode={curAgentState === AgentState.RUNNING ? "stop" : "submit"}
+          mode={agentState === AgentState.RUNNING ? "stop" : "submit"}
           value={messageToSend ?? undefined}
           onChange={setMessageToSend}
         />
