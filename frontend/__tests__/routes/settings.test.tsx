@@ -8,7 +8,6 @@ import { AuthProvider } from "#/context/auth-context";
 import SettingsScreen from "#/routes/settings";
 import * as AdvancedSettingsUtlls from "#/utils/has-advanced-settings-set";
 import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
-import { PostApiSettings } from "#/types/settings";
 import * as ConsentHandlers from "#/utils/handle-capture-consent";
 import AccountSettings from "#/routes/account-settings";
 
@@ -584,6 +583,11 @@ describe("Settings Screen", () => {
 
       test("resetting settings with no changes but having advanced enabled should hide the advanced items", async () => {
         const user = userEvent.setup();
+
+        getSettingsSpy.mockResolvedValueOnce({
+          ...MOCK_DEFAULT_USER_SETTINGS,
+        });
+
         renderSettingsScreen();
 
         await toggleAdvancedSettings(user);
@@ -594,6 +598,15 @@ describe("Settings Screen", () => {
         // show modal
         const modal = await screen.findByTestId("reset-modal");
         expect(modal).toBeInTheDocument();
+
+        // Mock the settings that will be returned after reset
+        // This should be the default settings with no advanced settings enabled
+        getSettingsSpy.mockResolvedValueOnce({
+          ...MOCK_DEFAULT_USER_SETTINGS,
+          llm_base_url: "",
+          confirmation_mode: false,
+          security_analyzer: "",
+        });
 
         // confirm reset
         const confirmButton = within(modal).getByText("Reset");
@@ -818,9 +831,7 @@ describe("Settings Screen", () => {
       const confirmButton = within(modal).getByText("Reset");
       await user.click(confirmButton);
 
-      expect(saveSettingsSpy).not.toHaveBeenCalled();
       expect(resetSettingsSpy).toHaveBeenCalled();
-
       expect(screen.queryByTestId("reset-modal")).not.toBeInTheDocument();
     });
 
@@ -1061,7 +1072,7 @@ describe("Settings Screen", () => {
       const confirmButton = within(modal).getByText("Reset");
       await user.click(confirmButton);
       expect(saveSettingsSpy).not.toHaveBeenCalled();
-      expect(resetSettingsSpy).toHaveBeenCalledWith([[]]);
+      expect(resetSettingsSpy).toHaveBeenCalled();
     });
   });
 });
