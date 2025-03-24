@@ -63,11 +63,13 @@ class AmortizedForgettingCondenser(RollingCondenser):
 
         events_to_keep = head + tail
 
-        event = CondensationAction()
-        event.forgotten_event_ids = [
-            event.id for event in view if event not in events_to_keep
-        ]
-        event.considered_event_ids = [event.id for event in view]
+        event = CondensationAction(
+            forgotten_event_ids=[
+                event.id for event in view if event not in events_to_keep
+            ],
+            considered_event_ids=[event.id for event in view],
+            condenser_cls=self.__class__.__name__,
+        )
 
         return Condensation(action=event)
 

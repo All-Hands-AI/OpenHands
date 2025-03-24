@@ -117,18 +117,17 @@ class LLMAttentionCondenser(RollingCondenser):
                 response_ids.append(event.id)
 
         # Now that we've found the right number of events to keep, convert this into a list of events to forget.
-        forgotten_event_ids = [
-            event.id
-            for event in view
-            if event.id not in response_ids and event.id not in head_event_ids
-        ]
-        considered_event_ids = [
-            event.id for event in view if event.id not in head_event_ids
-        ]
-
-        event = CondensationAction()
-        event.forgotten_event_ids = forgotten_event_ids
-        event.considered_event_ids = considered_event_ids
+        event = CondensationAction(
+            forgotten_event_ids=[
+                event.id
+                for event in view
+                if event.id not in response_ids and event.id not in head_event_ids
+            ],
+            considered_event_ids=[
+                event.id for event in view if event.id not in head_event_ids
+            ],
+            condenser_cls=self.__class__.__name__,
+        )
 
         return Condensation(action=event)
 

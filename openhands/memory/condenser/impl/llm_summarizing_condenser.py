@@ -135,6 +135,7 @@ INTENT: Fix precision while maintaining FITS compliance"""
 
         return Condensation(
             action=CondensationAction(
+                condenser_cls=self.__class__.__name__,
                 forgotten_event_ids=[event.id for event in forgotten_events],
                 considered_event_ids=[event.id for event in view],
                 summary=summary,

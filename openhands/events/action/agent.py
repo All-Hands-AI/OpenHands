@@ -134,6 +134,9 @@ class CondensationAction(Action):
 
     action: str = ActionType.CONDENSATION
 
+    condenser_cls: str = ''
+    """The class of the condenser producing the condensation."""
+
     forgotten_event_ids: list[int] = field(default_factory=list)
     """The IDs of the events that are being forgotten (removed from the `View` given to the LLM)."""
 
