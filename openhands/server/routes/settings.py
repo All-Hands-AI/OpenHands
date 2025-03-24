@@ -51,9 +51,10 @@ async def unset_settings_tokens(
         )
 
         existing_settings = await settings_store.load()
-        settings = existing_settings.model_copy(update={'secrets_store': SecretStore()})
-
-        await settings_store.store(settings)
+        if existing_settings:
+            settings = existing_settings.model_copy(update={'secrets_store': SecretStore()})
+            await settings_store.store(settings)
+            
         return JSONResponse(
             status_code=status.HTTP_200_OK,
             content={'message': 'Settings stored'},
@@ -88,7 +89,7 @@ async def reset_settings(
                              remote_runtime_resource_factor=1,
                              enable_default_condenser=True,
                              enable_sound_notifications=False,
-                             user_consents_to_analytics=existing_settings.user_consents_to_analytics
+                             user_consents_to_analytics=existing_settings.user_consents_to_analytics if existing_settings else False
                     )
         
         server_config_values = server_config.get_config()
