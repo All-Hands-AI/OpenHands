@@ -10,13 +10,16 @@ openHands.interceptors.response.use(
     if (error.response?.status === 401) {
       // Save the last page before redirecting
       saveLastPage();
-    } else if (error.response?.status === 403 && error.response?.data?.tos_not_accepted) {
+    } else if (
+      error.response?.status === 403 &&
+      error.response?.data?.tos_not_accepted
+    ) {
       // Save the last page before redirecting to TOS
       saveLastPage();
-      window.location.href = '/tos';
+      window.location.href = "/tos";
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 export const setAuthTokenHeader = (token: string) => {

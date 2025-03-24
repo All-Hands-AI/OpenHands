@@ -24,7 +24,6 @@ import { useAppLogout } from "#/hooks/use-app-logout";
 
 export function Sidebar() {
   const location = useLocation();
-  const navigate = useNavigate();
   const dispatch = useDispatch();
   const endSession = useEndSession();
   const user = useGitHubUser();
