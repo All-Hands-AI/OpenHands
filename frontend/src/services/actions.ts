@@ -1,9 +1,3 @@
-import {
-  addAssistantMessage,
-  addAssistantAction,
-  addUserMessage,
-  addErrorMessage,
-} from "#/state/chat-slice";
 import { trackError } from "#/utils/error-handler";
 import { appendSecurityAnalyzerInput } from "#/state/security-analyzer-slice";
 import { setCode, setActiveFilepath } from "#/state/code-slice";
@@ -18,16 +12,21 @@ import {
 } from "#/types/message";
 import { handleObservationMessage } from "./observations";
 import { appendInput } from "#/state/command-slice";
+import { queryClient } from "#/entry.client";
+import {
+  addAssistantMessage as addAssistantMessageToChat,
+  addErrorMessage as addErrorMessageToChat,
+} from "#/hooks/query/use-chat-messages";
 
 const messageActions = {
   [ActionType.BROWSE]: (message: ActionMessage) => {
     if (!message.args.thought && message.message) {
-      store.dispatch(addAssistantMessage(message.message));
+      addAssistantMessageToChat(queryClient, message.message);
     }
   },
   [ActionType.BROWSE_INTERACTIVE]: (message: ActionMessage) => {
     if (!message.args.thought && message.message) {
-      store.dispatch(addAssistantMessage(message.message));
+      addAssistantMessageToChat(queryClient, message.message);
     }
   },
   [ActionType.WRITE]: (message: ActionMessage) => {
@@ -37,19 +36,9 @@ const messageActions = {
   },
   [ActionType.MESSAGE]: (message: ActionMessage) => {
     if (message.source === "user") {
-      store.dispatch(
-        addUserMessage({
-          content: message.args.content,
-          imageUrls:
-            typeof message.args.image_urls === "string"
-              ? [message.args.image_urls]
-              : message.args.image_urls,
-          timestamp: message.timestamp,
-          pending: false,
-        }),
-      );
+      // This case is handled by the chat interface directly
     } else {
-      store.dispatch(addAssistantMessage(message.args.content));
+      addAssistantMessageToChat(queryClient, message.args.content);
     }
   },
   [ActionType.RUN_IPYTHON]: (message: ActionMessage) => {
@@ -58,7 +47,7 @@ const messageActions = {
     }
   },
   [ActionType.FINISH]: (message: ActionMessage) => {
-    store.dispatch(addAssistantMessage(message.args.final_thought));
+    addAssistantMessageToChat(queryClient, message.args.final_thought);
     let successPrediction = "";
     if (message.args.task_completed === "partial") {
       successPrediction =
@@ -72,9 +61,9 @@ const messageActions = {
     if (successPrediction) {
       // if final_thought is not empty, add a new line before the success prediction
       if (message.args.final_thought) {
-        store.dispatch(addAssistantMessage(`\n${successPrediction}`));
+        addAssistantMessageToChat(queryClient, `\n${successPrediction}`);
       } else {
-        store.dispatch(addAssistantMessage(successPrediction));
+        addAssistantMessageToChat(queryClient, successPrediction);
       }
     }
   },
@@ -107,11 +96,9 @@ export function handleActionMessage(message: ActionMessage) {
 
   if (message.source === "agent") {
     if (message.args && message.args.thought) {
-      store.dispatch(addAssistantMessage(message.args.thought));
+      addAssistantMessageToChat(queryClient, message.args.thought);
     }
-    // Need to convert ActionMessage to RejectAction
-    // @ts-expect-error TODO: fix
-    store.dispatch(addAssistantAction(message));
+    // TODO: Handle action messages in React Query
   }
 
   if (message.action in messageActions) {
@@ -128,11 +115,9 @@ export function handleStatusMessage(message: StatusMessage) {
       source: "chat",
       metadata: { msgId: message.id },
     });
-    store.dispatch(
-      addErrorMessage({
-        ...message,
-      }),
-    );
+    addErrorMessageToChat(queryClient, {
+      ...message,
+    });
   }
 }
 

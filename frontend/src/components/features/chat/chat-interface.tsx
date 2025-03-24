@@ -1,4 +1,4 @@
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import React from "react";
 import posthog from "posthog-js";
 import { useParams } from "react-router";
@@ -6,7 +6,6 @@ import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
 import { TrajectoryActions } from "../trajectory/trajectory-actions";
 import { createChatMessage } from "#/services/chat-service";
 import { InteractiveChatBox } from "./interactive-chat-box";
-import { addUserMessage } from "#/state/chat-slice";
 import { RootState } from "#/store";
 import { AgentState } from "#/types/agent-state";
 import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
@@ -17,6 +16,7 @@ import { useWsClient } from "#/context/ws-client-provider";
 import { Messages } from "./messages";
 import { ChatSuggestions } from "./chat-suggestions";
 import { ActionSuggestions } from "./action-suggestions";
+import { useChatMessages } from "#/hooks/query/use-chat-messages";
 
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
@@ -31,12 +31,11 @@ function getEntryPoint(hasRepository: boolean | null): string {
 
 export function ChatInterface() {
   const { send, isLoadingMessages } = useWsClient();
-  const dispatch = useDispatch();
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const { scrollDomToBottom, onChatBodyScroll, hitBottom } =
     useScrollToBottom(scrollRef);
 
-  const { messages } = useSelector((state: RootState) => state.chat);
+  const { messages, addUserMessage } = useChatMessages();
   const { curAgentState } = useSelector((state: RootState) => state.agent);
 
   const [feedbackPolarity, setFeedbackPolarity] = React.useState<
@@ -67,7 +66,7 @@ export function ChatInterface() {
 
     const timestamp = new Date().toISOString();
     const pending = true;
-    dispatch(addUserMessage({ content, imageUrls, timestamp, pending }));
+    addUserMessage({ content, imageUrls, timestamp, pending });
     send(createChatMessage(content, imageUrls, timestamp));
     setMessageToSend(null);
   };
