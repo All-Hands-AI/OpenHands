@@ -16,11 +16,11 @@ export const useLogout = () => {
       // Call logout endpoint
       await OpenHands.logout(config?.APP_MODE ?? "oss");
       
-      // Update token state
-      setGitHubTokenIsSet(false);
+      // Remove settings from cache so it will be refetched with new token state
+      queryClient.removeQueries({ queryKey: ["settings"] });
       
-      // Refetch settings to get updated token state
-      await queryClient.invalidateQueries({ queryKey: ["settings"] });
+      // Update token state - this will trigger a settings refetch since it's part of the query key
+      setGitHubTokenIsSet(false);
     },
   });
 };
