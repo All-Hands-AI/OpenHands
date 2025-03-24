@@ -539,7 +539,7 @@ def main() -> None:
 
     parser = argparse.ArgumentParser(description='Resolve a single issue.')
     parser.add_argument(
-        '--repo',
+        '--selected-repo',
         type=str,
         required=True,
         help='repository to resolve issues in form of `owner/repo`.',
@@ -638,9 +638,9 @@ def main() -> None:
             f'ghcr.io/all-hands-ai/runtime:{openhands.__version__}-nikolaik'
         )
 
-    parts = my_args.repo.rsplit('/', 1)
+    parts = my_args.selected_repo.rsplit('/', 1)
     if len(parts) < 2:
-        raise ValueError('Invalid repo name')
+        raise ValueError('Invalid repository format. Expected owner/repo')
     owner, repo = parts
 
     token = my_args.token or os.getenv('GITHUB_TOKEN') or os.getenv('GITLAB_TOKEN')
@@ -651,7 +651,7 @@ def main() -> None:
     if not token:
         raise ValueError('Token is required.')
 
-    platform = identify_token(token, repo)
+    platform = identify_token(token, my_args.selected_repo)
     if platform == Platform.INVALID:
         raise ValueError('Token is invalid.')
 
