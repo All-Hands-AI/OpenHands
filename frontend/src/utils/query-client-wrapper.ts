@@ -61,34 +61,10 @@ export class QueryClientWrapper {
   }
 
   /**
-   * Check if a slice has been migrated to React Query
-   * @param _sliceName - The name of the slice to check (unused)
-   */
-  // eslint-disable-next-line class-methods-use-this, @typescript-eslint/no-unused-vars
-  isSliceMigrated(_sliceName?: SliceNames): boolean {
-    return true;
-  }
-
-  /**
    * Set data for a query
    */
   setQueryData<T>(queryKey: unknown[], data: T): void {
     this.queryClient.setQueryData(queryKey, data);
-  }
-
-  /**
-   * Legacy method for backward compatibility
-   * @param _sliceName - The name of the slice (unused)
-   * @param _action - The action (unused)
-   */
-  // eslint-disable-next-line class-methods-use-this
-  conditionalDispatch(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    _sliceName: SliceNames,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    _action: { type: string; payload?: unknown },
-  ): void {
-    // No-op
   }
 }
 
