@@ -17,7 +17,7 @@ interface ConversationCardProps {
   onClick?: () => void;
   onDelete?: () => void;
   onChangeTitle?: (title: string) => void;
-  showDisplayCostOption?: boolean;
+  showOptions?: boolean;
   isActive?: boolean;
   title: string;
   selectedRepository: string | null;
@@ -34,7 +34,7 @@ export function ConversationCard({
   onClick,
   onDelete,
   onChangeTitle,
-  showDisplayCostOption,
+  showOptions,
   isActive,
   title,
   selectedRepository,
@@ -132,7 +132,7 @@ export function ConversationCard({
     }
   }, [titleMode]);
 
-  const hasContextMenu = !!(onDelete || onChangeTitle || showDisplayCostOption);
+  const hasContextMenu = !!(onDelete || onChangeTitle || showOptions);
   const timeBetweenUpdateAndCreation = createdAt
     ? new Date(lastUpdatedAt).getTime() - new Date(createdAt).getTime()
     : 0;
@@ -179,31 +179,35 @@ export function ConversationCard({
             )}
           </div>
 
-          <div className="flex items-center gap-2 relative">
+          <div className="flex items-center">
             <ConversationStateIndicator status={status} />
             {hasContextMenu && (
-              <EllipsisButton
-                onClick={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  setContextMenuVisible((prev) => !prev);
-                }}
-              />
+              <div className="pl-2">
+                <EllipsisButton
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    setContextMenuVisible((prev) => !prev);
+                  }}
+                />
+              </div>
             )}
-            {contextMenuVisible && (
-              <ConversationCardContextMenu
-                onClose={() => setContextMenuVisible(false)}
-                onDelete={onDelete && handleDelete}
-                onEdit={onChangeTitle && handleEdit}
-                onDownloadViaVSCode={
-                  conversationId ? handleDownloadViaVSCode : undefined
-                }
-                onDisplayCost={
-                  showDisplayCostOption ? handleDisplayCost : undefined
-                }
-                position={variant === "compact" ? "top" : "bottom"}
-              />
-            )}
+            <div className="relative">
+              {contextMenuVisible && (
+                <ConversationCardContextMenu
+                  onClose={() => setContextMenuVisible(false)}
+                  onDelete={onDelete && handleDelete}
+                  onEdit={onChangeTitle && handleEdit}
+                  onDownloadViaVSCode={
+                    conversationId && showOptions
+                      ? handleDownloadViaVSCode
+                      : undefined
+                  }
+                  onDisplayCost={showOptions ? handleDisplayCost : undefined}
+                  position={variant === "compact" ? "top" : "bottom"}
+                />
+              )}
+            </div>
           </div>
         </div>
 
