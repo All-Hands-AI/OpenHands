@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 interface MetricsState {
   cost: number | null;
@@ -15,6 +15,19 @@ const initialMetrics: MetricsState = {
   usage: null,
 };
 
+// Query key for metrics
+export const METRICS_QUERY_KEY = ["metrics"];
+
+/**
+ * Helper function to set metrics
+ */
+export function setMetrics(
+  queryClient: ReturnType<typeof useQueryClient>,
+  metrics: MetricsState,
+) {
+  queryClient.setQueryData(METRICS_QUERY_KEY, metrics);
+}
+
 /**
  * Hook to access and manipulate metrics data using React Query
  * This provides the metrics slice functionality
@@ -22,57 +35,33 @@ const initialMetrics: MetricsState = {
 export function useMetrics() {
   const queryClient = useQueryClient();
 
-  // Get initial state from cache if this is the first time accessing the data
-  const getInitialMetricsState = (): MetricsState => {
-    // If we already have data in React Query, use that
-    const existingData = queryClient.getQueryData<MetricsState>(["metrics"]);
-    if (existingData) return existingData;
-
-    // If no existing data, return the initial state
-    return initialMetrics;
-  };
-
   // Query for metrics
   const query = useQuery({
-    queryKey: ["metrics"],
-    queryFn: () => getInitialMetricsState(),
-    initialData: initialMetrics, // Use initialMetrics directly to ensure it's always defined
-    staleTime: Infinity, // We manage updates manually through mutations
+    queryKey: METRICS_QUERY_KEY,
+    queryFn: () => {
+      // If we already have data in React Query, use that
+      const existingData =
+        queryClient.getQueryData<MetricsState>(METRICS_QUERY_KEY);
+      if (existingData) return existingData;
+
+      // If no existing data, return the initial state
+      return initialMetrics;
+    },
+    initialData: initialMetrics,
+    staleTime: Infinity, // We manage updates manually
     refetchOnMount: false,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   });
 
-  // Mutation to set metrics
-  const setMetricsMutation = useMutation({
-    mutationFn: (metrics: MetricsState) => Promise.resolve(metrics),
-    onMutate: async (metrics) => {
-      // Cancel any outgoing refetches
-      await queryClient.cancelQueries({
-        queryKey: ["metrics"],
-      });
-
-      // Get current metrics
-      const previousMetrics = queryClient.getQueryData<MetricsState>([
-        "metrics",
-      ]);
-
-      // Update metrics
-      queryClient.setQueryData(["metrics"], metrics);
-
-      return { previousMetrics };
-    },
-    onError: (_, __, context) => {
-      // Restore previous metrics on error
-      if (context?.previousMetrics) {
-        queryClient.setQueryData(["metrics"], context.previousMetrics);
-      }
-    },
-  });
+  // Create a setter function that components can use
+  const setMetricsState = (newMetrics: MetricsState) => {
+    setMetrics(queryClient, newMetrics);
+  };
 
   return {
     metrics: query.data || initialMetrics,
     isLoading: query.isLoading,
-    setMetrics: setMetricsMutation.mutate,
+    setMetrics: setMetricsState,
   };
 }
