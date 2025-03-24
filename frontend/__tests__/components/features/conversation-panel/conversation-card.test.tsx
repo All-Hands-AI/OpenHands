@@ -273,7 +273,7 @@ describe("ConversationCard", () => {
     expect(onClick).not.toHaveBeenCalled();
   });
 
-  it("should show display cost button only when showDisplayCostOption is true", async () => {
+  it("should show display cost button only when showOptions is true", async () => {
     const user = userEvent.setup();
     const { rerender } = renderWithProviders(
       <ConversationCard
@@ -302,7 +302,7 @@ describe("ConversationCard", () => {
       <ConversationCard
         onDelete={onDelete}
         onChangeTitle={onChangeTitle}
-        showDisplayCostOption
+        showOptions
         isActive
         title="Conversation 1"
         selectedRepository={null}
@@ -328,7 +328,7 @@ describe("ConversationCard", () => {
         title="Conversation 1"
         selectedRepository={null}
         lastUpdatedAt="2021-10-01T12:00:00Z"
-        showDisplayCostOption
+        showOptions
       />,
     );
 
