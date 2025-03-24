@@ -5,7 +5,7 @@ import { useConfig } from "./use-config";
 import OpenHands from "#/api/open-hands";
 import { useAuth } from "#/context/auth-context";
 import { useLogout } from "../mutation/use-logout";
-import { useSaveSettings } from "../mutation/use-save-settings";
+
 
 export const useGitHubUser = () => {
   const { githubTokenIsSet } = useAuth();
@@ -36,11 +36,8 @@ export const useGitHubUser = () => {
   }, [user.data]);
 
   const handleLogout = async () => {
-    if (config?.APP_MODE === "saas") await logout();
-    else {
-      saveUserSettings({ unset_github_token: true });
-      setGitHubTokenIsSet(false);
-    }
+    await logout();
+    setGitHubTokenIsSet(false);
     posthog.reset();
   };
 
