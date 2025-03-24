@@ -42,8 +42,8 @@ async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
 
 
 @app.post('/unset-settings-tokens', response_model=dict[str, str])
-async def reset_settings(
-    request
+async def unset_settings_tokens(
+    request: Request
 ) -> JSONResponse:
     try:
         settings_store = await SettingsStoreImpl.get_instance(
