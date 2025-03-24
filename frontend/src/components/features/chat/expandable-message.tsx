@@ -37,7 +37,7 @@ export function ExpandableMessage({
       setDetails(message);
       setShowDetails(false);
     }
-  }, [id, message, i18n.language, t]);
+  }, [id, message, i18n.language]);
 
   const statusIconClasses = "h-4 w-4 ml-2 inline";
 
