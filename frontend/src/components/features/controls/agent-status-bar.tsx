@@ -28,6 +28,12 @@ export function AgentStatusBar() {
   const [statusMessage, setStatusMessage] = React.useState<string>("");
 
   const updateStatusMessage = () => {
+    // Handle the case where curStatusMessage might be null or undefined
+    if (!curStatusMessage) {
+      setStatusMessage(AGENT_STATUS_MAP[curAgentState].message);
+      return;
+    }
+
     let message = curStatusMessage.message || "";
     if (curStatusMessage?.id) {
       const id = curStatusMessage.id.trim();
@@ -52,7 +58,7 @@ export function AgentStatusBar() {
 
   React.useEffect(() => {
     updateStatusMessage();
-  }, [curStatusMessage.id]);
+  }, [curStatusMessage]);
 
   // Handle window focus/blur
   React.useEffect(() => {
@@ -89,11 +95,14 @@ export function AgentStatusBar() {
     }
   }, [curAgentState, notify, t]);
 
+  // Default to LOADING state if curAgentState is undefined
+  const agentState = curAgentState || AgentState.LOADING;
+
   return (
     <div className="flex flex-col items-center">
       <div className="flex items-center bg-base-secondary px-2 py-1 text-gray-400 rounded-[100px] text-sm gap-[6px]">
         <div
-          className={`w-2 h-2 rounded-full animate-pulse ${AGENT_STATUS_MAP[curAgentState].indicator}`}
+          className={`w-2 h-2 rounded-full animate-pulse ${AGENT_STATUS_MAP[agentState].indicator}`}
         />
         <span className="text-sm text-stone-400">{t(statusMessage)}</span>
       </div>

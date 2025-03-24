@@ -216,10 +216,10 @@ export function ConversationCard({
         testID="metrics-modal"
       >
         <div className="space-y-2">
-          {metrics?.cost !== null && (
+          {metrics?.cost !== null && metrics?.cost !== undefined && (
             <p>Total Cost: ${metrics.cost.toFixed(4)}</p>
           )}
-          {metrics?.usage !== null && (
+          {metrics?.usage !== null && metrics?.usage !== undefined && (
             <>
               <p>Tokens Used:</p>
               <ul className="list-inside space-y-1 ml-2">
