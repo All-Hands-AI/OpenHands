@@ -1,24 +1,14 @@
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import agentReducer from "./state/agent-slice";
-import browserReducer from "./state/browser-slice";
 import chatReducer from "./state/chat-slice";
-import codeReducer from "./state/code-slice";
-import fileStateReducer from "./state/file-state-slice";
-import commandReducer from "./state/command-slice";
-import { jupyterReducer } from "./state/jupyter-slice";
 import securityAnalyzerReducer from "./state/security-analyzer-slice";
-// Status, metrics, and initialQuery slices are now handled by React Query
+// browser, code, fileState, command, jupyter, status, metrics, and initialQuery slices are now handled by React Query
 
 export const rootReducer = combineReducers({
-  fileState: fileStateReducer,
-  browser: browserReducer,
   chat: chatReducer,
-  code: codeReducer,
-  cmd: commandReducer,
   agent: agentReducer,
-  jupyter: jupyterReducer,
   securityAnalyzer: securityAnalyzerReducer,
-  // status, metrics, and initialQuery slices removed (migrated to React Query)
+  // browser, code, fileState, command, jupyter, status, metrics, and initialQuery slices removed (migrated to React Query)
 });
 
 const store = configureStore({

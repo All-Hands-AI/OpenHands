@@ -20,31 +20,15 @@ vi.mock("#/hooks/query/use-jupyter", () => ({
 }));
 
 import { JupyterEditor } from "#/components/features/jupyter/jupyter";
-import { jupyterReducer } from "#/state/jupyter-slice";
 
 describe("JupyterEditor", () => {
   const mockStore = configureStore({
     reducer: {
-      fileState: () => ({}),
-      initalQuery: () => ({}),
-      browser: () => ({}),
       chat: () => ({}),
-      code: () => ({}),
-      cmd: () => ({}),
       agent: () => ({}),
-      jupyter: jupyterReducer,
       securityAnalyzer: () => ({}),
-      status: () => ({}),
     },
-    preloadedState: {
-      jupyter: {
-        cells: Array(20).fill({
-          content: "Test cell content",
-          type: "input",
-          output: "Test output",
-        }),
-      },
-    },
+    preloadedState: {},
   });
 
   it("should have a scrollable container", () => {

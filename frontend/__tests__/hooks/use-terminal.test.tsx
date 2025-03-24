@@ -3,7 +3,7 @@ import { render } from "@testing-library/react";
 import { afterEach } from "node:test";
 import { ReactNode } from "react";
 import { useTerminal } from "#/hooks/use-terminal";
-import { Command } from "#/state/command-slice";
+import { Command } from "#/hooks/query/use-command";
 
 interface TestTerminalComponentProps {
   commands: Command[];

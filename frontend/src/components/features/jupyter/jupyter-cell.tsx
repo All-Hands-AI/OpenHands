@@ -1,5 +1,5 @@
 import React from "react";
-import { Cell } from "#/state/jupyter-slice";
+import { Cell } from "#/hooks/query/use-jupyter";
 import { JupyterLine, parseCellContent } from "#/utils/parse-cell-content";
 import { JupytrerCellInput } from "./jupyter-cell-input";
 import { JupyterCellOutput } from "./jupyter-cell-output";
