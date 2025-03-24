@@ -41,10 +41,10 @@ export function ChatInterface() {
   const { messages } = useChat();
   const { curAgentState } = useAgent();
 
-  // Add debug logging
-  console.log("[ChatInterface Debug] Rendering with:", {
+  // Add debug logging for double message issue
+  console.log("[DOUBLE_MSG_DEBUG] ChatInterface component rendering:", {
     messageCount: messages.length,
-    agentState: curAgentState,
+    timestamp: new Date().toISOString()
   });
 
   const [feedbackPolarity, setFeedbackPolarity] = React.useState<

@@ -92,11 +92,12 @@ export class QueryReduxBridge {
   ): void {
     const isMigrated = this.isSliceMigrated(sliceName);
     console.log(
-      `[QueryReduxBridge Debug] Conditional dispatch for ${sliceName}:`,
+      `[DOUBLE_MSG_DEBUG] QueryReduxBridge conditionalDispatch for ${sliceName}:`,
       {
         actionType: action.type,
         isMigrated,
         willDispatch: !isMigrated,
+        timestamp: new Date().toISOString()
       },
     );
 

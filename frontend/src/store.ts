@@ -42,7 +42,11 @@ const reactQueryMiddleware: Middleware = () => (next) => (action: unknown) => {
   // Cast action to ChatAction for our internal use
   const chatAction = action as ChatAction;
   // Log all actions for debugging
-  console.log("[Redux Middleware] Action:", chatAction.type);
+  console.log("[DOUBLE_MSG_DEBUG] Redux Middleware received action:", {
+    type: chatAction.type,
+    isChatAction: chatAction.type && typeof chatAction.type === "string" && chatAction.type.startsWith("chat/"),
+    timestamp: new Date().toISOString()
+  });
 
   // Handle chat actions
   if (
@@ -72,7 +76,15 @@ const reactQueryMiddleware: Middleware = () => (next) => (action: unknown) => {
           timestamp,
           pending: !!pending,
         };
-        console.log("[Redux Middleware] Adding user message to React Query");
+        console.log(
+          "[DOUBLE_MSG_DEBUG] Redux Middleware adding user message:", {
+            messageId: `user-${timestamp}`,
+            content: content.substring(0, 30) + (content.length > 30 ? "..." : ""),
+            currentMessagesCount: currentMessages.length,
+            newMessagesCount: currentMessages.length + 1,
+            timestamp: new Date().toISOString()
+          }
+        );
         queryClient.setQueryData(
           ["chat", "messages"],
           [...currentMessages, message],
@@ -89,7 +101,13 @@ const reactQueryMiddleware: Middleware = () => (next) => (action: unknown) => {
           timestamp: new Date().toISOString(),
         };
         console.log(
-          "[Redux Middleware] Adding assistant message to React Query",
+          "[DOUBLE_MSG_DEBUG] Redux Middleware adding assistant message:", {
+            messageId: `assistant-${new Date().toISOString()}`,
+            content: content.substring(0, 30) + (content.length > 30 ? "..." : ""),
+            currentMessagesCount: currentMessages.length,
+            newMessagesCount: currentMessages.length + 1,
+            timestamp: new Date().toISOString()
+          }
         );
         queryClient.setQueryData(
           ["chat", "messages"],

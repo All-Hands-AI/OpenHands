@@ -11,7 +11,7 @@ export const queryClient = new QueryClient(queryClientConfig);
 
 // Initialize the bridge
 export function initializeBridge() {
-  console.log("[QueryReduxBridge Debug] Initializing bridge");
+  console.log("[DOUBLE_MSG_DEBUG] QueryReduxBridge initializing bridge");
   // Initialize the bridge with the query client
   initQueryReduxBridge(queryClient);
 
@@ -25,6 +25,8 @@ export function initializeBridge() {
   getQueryReduxBridge().migrateSlice("command");
   getQueryReduxBridge().migrateSlice("jupyter");
   getQueryReduxBridge().migrateSlice("agent");
+  // IMPORTANT: This is where we mark the chat slice as migrated
+  console.log("[DOUBLE_MSG_DEBUG] QueryReduxBridge marking chat slice as migrated");
   getQueryReduxBridge().migrateSlice("chat");
   getQueryReduxBridge().migrateSlice("securityAnalyzer");
 }
@@ -32,9 +34,22 @@ export function initializeBridge() {
 // Export a function to check if a slice is migrated
 export function isSliceMigrated(sliceName: SliceNames) {
   try {
-    return getQueryReduxBridge().isSliceMigrated(sliceName);
+    const isMigrated = getQueryReduxBridge().isSliceMigrated(sliceName);
+    if (sliceName === "chat") {
+      console.log("[DOUBLE_MSG_DEBUG] isSliceMigrated check for chat:", {
+        isMigrated,
+        timestamp: new Date().toISOString()
+      });
+    }
+    return isMigrated;
   } catch (error) {
     // If the bridge is not initialized, return false
+    if (sliceName === "chat") {
+      console.log("[DOUBLE_MSG_DEBUG] isSliceMigrated check for chat failed:", {
+        error: error instanceof Error ? error.message : String(error),
+        timestamp: new Date().toISOString()
+      });
+    }
     return false;
   }
 }

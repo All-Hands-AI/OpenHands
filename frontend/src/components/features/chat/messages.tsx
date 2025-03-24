@@ -12,11 +12,11 @@ interface MessagesProps {
 
 export const Messages: React.FC<MessagesProps> = React.memo(
   ({ messages, isAwaitingUserConfirmation }) => {
-    // Add debug logging
-    console.log("[Messages Debug] Rendering with:", {
+    // Add debug logging for double message issue
+    console.log("[DOUBLE_MSG_DEBUG] Messages component rendering:", {
       messageCount: messages.length,
-      isAwaitingUserConfirmation,
       messageTypes: messages.map((m) => `${m.sender}:${m.type}`),
+      timestamp: new Date().toISOString()
     });
 
     return messages.map((message, index) => {

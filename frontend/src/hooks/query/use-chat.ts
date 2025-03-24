@@ -151,6 +151,15 @@ export function useChat() {
       // Remove any pending messages
       const filteredMessages = previousMessages.filter((m) => !m.pending);
 
+      // Log before updating messages
+      console.log("[DOUBLE_MSG_DEBUG] addUserMessageMutation updating query cache:", {
+        messageId: `user-${message.timestamp}`,
+        content: message.content.substring(0, 30) + (message.content.length > 30 ? "..." : ""),
+        currentMessagesCount: filteredMessages.length,
+        newMessagesCount: filteredMessages.length + 1,
+        timestamp: new Date().toISOString()
+      });
+      
       // Update messages
       queryClient.setQueryData(
         ["chat", "messages"],
@@ -184,6 +193,11 @@ export function useChat() {
       return Promise.resolve(message);
     },
     onMutate: async (content) => {
+      console.log("[DOUBLE_MSG_DEBUG] addAssistantMessageMutation.onMutate:", {
+        content: content.substring(0, 30) + (content.length > 30 ? "..." : ""),
+        timestamp: new Date().toISOString()
+      });
+      
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: ["chat", "messages"] });
 
@@ -458,16 +472,17 @@ export function useChat() {
 
   // Add debug logging for messages
   const messages = query.data || [];
-  console.log("[useChat Debug] Current messages:", {
+  console.log("[DOUBLE_MSG_DEBUG] useChat hook returning messages:", {
     count: messages.length,
     messages: messages.map((m) => ({
       type: m.type,
       sender: m.sender,
       content: m.content
-        ? m.content.substring(0, 50) + (m.content.length > 50 ? "..." : "")
+        ? m.content.substring(0, 30) + (m.content.length > 30 ? "..." : "")
         : "",
       timestamp: m.timestamp,
     })),
+    timestamp: new Date().toISOString()
   });
 
   return {
@@ -479,11 +494,18 @@ export function useChat() {
       timestamp: string;
       pending?: boolean;
     }) => {
-      console.log("[useChat Debug] Adding user message:", payload);
+      console.log("[DOUBLE_MSG_DEBUG] useChat.addUserMessage called:", {
+        messageId: `user-${payload.timestamp}`,
+        content: payload.content.substring(0, 30) + (payload.content.length > 30 ? "..." : ""),
+        timestamp: new Date().toISOString()
+      });
       addUserMessageMutation.mutate(payload);
     },
     addAssistantMessage: (content: string) => {
-      console.log("[useChat Debug] Adding assistant message:", content);
+      console.log("[DOUBLE_MSG_DEBUG] useChat.addAssistantMessage called:", {
+        content: content.substring(0, 30) + (content.length > 30 ? "..." : ""),
+        timestamp: new Date().toISOString()
+      });
       addAssistantMessageMutation.mutate(content);
     },
     addAssistantAction: (action: {
