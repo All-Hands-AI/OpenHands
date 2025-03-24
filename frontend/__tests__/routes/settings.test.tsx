@@ -832,7 +832,9 @@ describe("Settings Screen", () => {
       await user.click(confirmButton);
 
       expect(resetSettingsSpy).toHaveBeenCalled();
-      expect(screen.queryByTestId("reset-modal")).not.toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.queryByTestId("reset-modal")).not.toBeInTheDocument();
+      });
     });
 
     it("should cancel the reset when the 'Cancel' button is clicked", async () => {
