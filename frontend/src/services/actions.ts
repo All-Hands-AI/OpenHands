@@ -55,12 +55,6 @@ const messageActions = {
         cells: Array<{ content: string; type: string }>;
       }>(["jupyter"]) || { cells: [] };
 
-      // eslint-disable-next-line no-console
-      console.log("[Jupyter Debug] Handling RUN_IPYTHON action:", {
-        code: message.args.code,
-        currentCellsLength: currentState.cells.length,
-      });
-
       queryClient.setQueryData(["jupyter"], {
         ...currentState,
         cells: [
@@ -121,12 +115,6 @@ export function handleActionMessage(message: ActionMessage) {
       commands: Array<{ content: string; type: string }>;
     }>(["command"]) || { commands: [] };
 
-    // eslint-disable-next-line no-console
-    console.log("[Command Debug] Handling RUN action:", {
-      command: message.args.command,
-      currentCommandsLength: currentState.commands.length,
-    });
-
     queryClient.setQueryData(["command"], {
       ...currentState,
       commands: [
@@ -158,24 +146,14 @@ export function handleActionMessage(message: ActionMessage) {
 }
 
 export function handleStatusMessage(message: StatusMessage) {
-  // eslint-disable-next-line no-console
-  console.log("[Status Debug] Handling status message:", {
-    type: message.type,
-    id: message.id,
-    message: message.message,
-  });
-
   if (message.type === "info") {
     // Status slice is now handled by React Query
     // The websocket events hook will update the React Query cache
     // Update status message in React Query
     try {
-      // eslint-disable-next-line no-console
-      console.log("[Status Debug] Updating status message in React Query");
       queryClient.setQueryData(["status", "currentMessage"], message);
     } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error("[Status Debug] Failed to update status message:", error);
+      console.error("Failed to update status message:", error);
     }
   } else if (message.type === "error") {
     trackError({

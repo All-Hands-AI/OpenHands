@@ -12,12 +12,6 @@ export function JupyterEditor({ maxWidth }: JupyterEditorProps) {
   const { cells } = useJupyter();
   const jupyterRef = React.useRef<HTMLDivElement>(null);
 
-  // Debug log
-  // eslint-disable-next-line no-console
-  console.log("[Jupyter Debug] Rendering jupyter with cells:", {
-    cellsLength: cells.length,
-  });
-
   const { hitBottom, scrollDomToBottom, onChatBodyScroll } =
     useScrollToBottom(jupyterRef);
 

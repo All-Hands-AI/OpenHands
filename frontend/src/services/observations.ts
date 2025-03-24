@@ -79,12 +79,6 @@ export function handleObservationMessage(message: ObservationMessage) {
         commands: Array<{ content: string; type: string }>;
       }>(["command"]) || { commands: [] };
 
-      // eslint-disable-next-line no-console
-      console.log("[Command Debug] Handling RUN observation:", {
-        contentLength: content.length,
-        currentCommandsLength: currentState.commands.length,
-      });
-
       queryClient.setQueryData(["command"], {
         ...currentState,
         commands: [...currentState.commands, { content, type: "output" }],
@@ -98,12 +92,6 @@ export function handleObservationMessage(message: ObservationMessage) {
         cells: Array<{ content: string; type: string }>;
       }>(["jupyter"]) || { cells: [] };
 
-      // eslint-disable-next-line no-console
-      console.log("[Jupyter Debug] Handling RUN_IPYTHON observation:", {
-        contentLength: message.content.length,
-        currentCellsLength: jupyterState.cells.length,
-      });
-
       queryClient.setQueryData(["jupyter"], {
         ...jupyterState,
         cells: [
@@ -114,15 +102,6 @@ export function handleObservationMessage(message: ObservationMessage) {
       break;
     }
     case ObservationType.BROWSE:
-      // eslint-disable-next-line no-console
-      console.log("[Browser Debug] Received BROWSE observation:", {
-        hasScreenshot: !!message.extras?.screenshot,
-        url: message.extras?.url,
-        screenshotLength: message.extras?.screenshot
-          ? message.extras.screenshot.length
-          : 0,
-      });
-
       if (message.extras?.screenshot) {
         // Update browser state in React Query
         const currentState = queryClient.getQueryData<{
@@ -130,24 +109,10 @@ export function handleObservationMessage(message: ObservationMessage) {
           screenshotSrc: string;
         }>(["browser"]) || { url: "", screenshotSrc: "" };
 
-        // eslint-disable-next-line no-console
-        console.log(
-          "[Browser Debug] Current state before screenshot update:",
-          currentState,
-        );
-
         const newState = {
           ...currentState,
           screenshotSrc: message.extras.screenshot,
         };
-
-        // eslint-disable-next-line no-console
-        console.log("[Browser Debug] New state after screenshot update:", {
-          ...newState,
-          screenshotSrc: newState.screenshotSrc
-            ? `data present (length: ${newState.screenshotSrc.length})`
-            : "empty",
-        });
 
         queryClient.setQueryData(["browser"], newState);
       }
@@ -159,19 +124,10 @@ export function handleObservationMessage(message: ObservationMessage) {
           screenshotSrc: string;
         }>(["browser"]) || { url: "", screenshotSrc: "" };
 
-        // eslint-disable-next-line no-console
-        console.log(
-          "[Browser Debug] Current state before URL update:",
-          currentState,
-        );
-
         const newState = {
           ...currentState,
           url: message.extras.url,
         };
-
-        // eslint-disable-next-line no-console
-        console.log("[Browser Debug] New state after URL update:", newState);
 
         queryClient.setQueryData(["browser"], newState);
       }
