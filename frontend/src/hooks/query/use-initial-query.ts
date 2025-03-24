@@ -6,19 +6,14 @@ interface InitialQueryState {
   selectedRepository: string | null;
 }
 
-// Initial state
 const initialState: InitialQueryState = {
   files: [],
   initialPrompt: null,
   selectedRepository: null,
 };
 
-// Query key for initial query
 export const INITIAL_QUERY_KEY = ["initialQuery"];
 
-/**
- * Helper functions to update initial query state
- */
 export function updateInitialQueryState(
   queryClient: ReturnType<typeof useQueryClient>,
   updater: (state: InitialQueryState) => InitialQueryState,
@@ -30,33 +25,24 @@ export function updateInitialQueryState(
   queryClient.setQueryData(INITIAL_QUERY_KEY, newState);
 }
 
-/**
- * Hook to access and manipulate initial query data using React Query
- * This provides the initialQuery slice functionality
- */
 export function useInitialQuery() {
   const queryClient = useQueryClient();
 
-  // Query for initial query state
   const query = useQuery({
     queryKey: INITIAL_QUERY_KEY,
     queryFn: () => {
-      // If we already have data in React Query, use that
       const existingData =
         queryClient.getQueryData<InitialQueryState>(INITIAL_QUERY_KEY);
       if (existingData) return existingData;
-
-      // If no existing data, return the initial state
       return initialState;
     },
     initialData: initialState,
-    staleTime: Infinity, // We manage updates manually
+    staleTime: Infinity,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   });
 
-  // Create setter functions that components can use
   const addFile = (file: string) => {
     updateInitialQueryState(queryClient, (state) => ({
       ...state,
@@ -111,14 +97,12 @@ export function useInitialQuery() {
   };
 
   return {
-    // State
     files: query.data?.files || initialState.files,
     initialPrompt: query.data?.initialPrompt || initialState.initialPrompt,
     selectedRepository:
       query.data?.selectedRepository || initialState.selectedRepository,
     isLoading: query.isLoading,
 
-    // Actions
     addFile,
     removeFile,
     clearFiles,

@@ -19,7 +19,6 @@ const HANDLED_ACTIONS: OpenHandsEventType[] = [
   "browse",
 ];
 
-// Query key for chat messages
 export const CHAT_QUERY_KEY = ["chat"];
 
 function getRiskText(risk: ActionSecurityRisk) {
@@ -35,12 +34,6 @@ function getRiskText(risk: ActionSecurityRisk) {
       return "Unknown Risk";
   }
 }
-
-/**
- * Helper functions to update chat state
- */
-
-// Add a user message
 export function addUserMessage(
   queryClient: ReturnType<typeof useQueryClient>,
   payload: {
@@ -273,13 +266,9 @@ export function clearMessages(queryClient: ReturnType<typeof useQueryClient>) {
   queryClient.setQueryData(CHAT_QUERY_KEY, { messages: [] });
 }
 
-/**
- * Hook for managing chat messages using React Query
- */
 export function useChat() {
   const queryClient = useQueryClient();
 
-  // Query for chat messages
   const query = useQuery({
     queryKey: CHAT_QUERY_KEY,
     queryFn: () => ({ messages: [] }),
