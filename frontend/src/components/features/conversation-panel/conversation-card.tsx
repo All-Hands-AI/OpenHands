@@ -179,31 +179,35 @@ export function ConversationCard({
             )}
           </div>
 
-          <div className="flex items-center gap-2 relative">
+          <div className="flex items-center">
             <ConversationStateIndicator status={status} />
             {hasContextMenu && (
-              <EllipsisButton
-                onClick={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  setContextMenuVisible((prev) => !prev);
-                }}
-              />
+              <div className="pl-2">
+                <EllipsisButton
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    setContextMenuVisible((prev) => !prev);
+                  }}
+                />
+              </div>
             )}
-            {contextMenuVisible && (
-              <ConversationCardContextMenu
-                onClose={() => setContextMenuVisible(false)}
-                onDelete={onDelete && handleDelete}
-                onEdit={onChangeTitle && handleEdit}
-                onDownloadViaVSCode={
-                  conversationId ? handleDownloadViaVSCode : undefined
-                }
-                onDisplayCost={
-                  showDisplayCostOption ? handleDisplayCost : undefined
-                }
-                position={variant === "compact" ? "top" : "bottom"}
-              />
-            )}
+            <div className="relative">
+              {contextMenuVisible && (
+                <ConversationCardContextMenu
+                  onClose={() => setContextMenuVisible(false)}
+                  onDelete={onDelete && handleDelete}
+                  onEdit={onChangeTitle && handleEdit}
+                  onDownloadViaVSCode={
+                    conversationId ? handleDownloadViaVSCode : undefined
+                  }
+                  onDisplayCost={
+                    showDisplayCostOption ? handleDisplayCost : undefined
+                  }
+                  position={variant === "compact" ? "top" : "bottom"}
+                />
+              )}
+            </div>
           </div>
         </div>
 
