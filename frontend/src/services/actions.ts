@@ -181,7 +181,6 @@ export function handleStatusMessage(message: StatusMessage) {
     // The websocket events hook will update the React Query cache
     // Update status message in React Query
     try {
-      const queryClient = queryClient;
       // eslint-disable-next-line no-console
       console.log("[Status Debug] Updating status message in React Query");
       queryClient.setQueryData(["status", "currentMessage"], message);
