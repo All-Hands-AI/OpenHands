@@ -346,6 +346,15 @@ class OpenHands {
   static async logout(): Promise<void> {
     await openHands.post("/api/logout");
   }
+
+  /**
+   * Accept the Terms of Service
+   * @returns true if successful, false otherwise
+   */
+  static async acceptTOS(): Promise<boolean> {
+    const response = await openHands.post("/api/accept_tos");
+    return response.status === 200;
+  }
 }
 
 export default OpenHands;

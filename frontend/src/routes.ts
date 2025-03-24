@@ -8,6 +8,7 @@ import {
 export default [
   layout("routes/_no-sidebar/route.tsx", [
     route("logout", "routes/logout.tsx"),
+    route("tos", "routes/tos.tsx"),
   ]),
   layout("routes/_oh/route.tsx", [
     index("routes/_oh._index/route.tsx"),
