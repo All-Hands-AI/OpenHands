@@ -33,6 +33,13 @@ export function AgentStatusBar() {
       setStatusMessage(AGENT_STATUS_MAP[curAgentState].message);
       return;
     }
+    
+    // eslint-disable-next-line no-console
+    console.log("[Status Debug] Updating status message in UI:", {
+      statusMessageId: curStatusMessage.id,
+      statusMessage: curStatusMessage.message,
+      agentState: curAgentState,
+    });
 
     let message = curStatusMessage.message || "";
     if (curStatusMessage?.id) {
@@ -50,15 +57,25 @@ export function AgentStatusBar() {
       return;
     }
     if (curAgentState === AgentState.LOADING && message.trim()) {
+      // eslint-disable-next-line no-console
+      console.log(
+        "[Status Debug] Setting status message from info message:",
+        message,
+      );
       setStatusMessage(message);
     } else {
+      // eslint-disable-next-line no-console
+      console.log(
+        "[Status Debug] Setting status message from agent state:",
+        AGENT_STATUS_MAP[curAgentState].message,
+      );
       setStatusMessage(AGENT_STATUS_MAP[curAgentState].message);
     }
   };
 
   React.useEffect(() => {
     updateStatusMessage();
-  }, [curStatusMessage]);
+  }, [curStatusMessage?.id, curStatusMessage?.message]);
 
   // Handle window focus/blur
   React.useEffect(() => {

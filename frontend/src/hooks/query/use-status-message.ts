@@ -66,6 +66,13 @@ export function useStatusMessage() {
     mutationFn: (statusMessage: StatusMessage) =>
       Promise.resolve(statusMessage),
     onMutate: async (statusMessage) => {
+      // eslint-disable-next-line no-console
+      console.log("[Status Debug] Setting status message via mutation:", {
+        id: statusMessage.id,
+        message: statusMessage.message,
+        type: statusMessage.type,
+      });
+
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({
         queryKey: ["status", "currentMessage"],
@@ -83,6 +90,8 @@ export function useStatusMessage() {
       return { previousStatusMessage };
     },
     onError: (_, __, context) => {
+      // eslint-disable-next-line no-console
+      console.error("[Status Debug] Error setting status message");
       // Restore previous status message on error
       if (context?.previousStatusMessage) {
         queryClient.setQueryData(
@@ -90,6 +99,13 @@ export function useStatusMessage() {
           context.previousStatusMessage,
         );
       }
+    },
+    onSuccess: (statusMessage) => {
+      // eslint-disable-next-line no-console
+      console.log("[Status Debug] Successfully set status message:", {
+        id: statusMessage.id,
+        message: statusMessage.message,
+      });
     },
   });
 
