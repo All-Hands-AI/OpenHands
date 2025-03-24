@@ -1,14 +1,11 @@
-// See https://redux.js.org/usage/writing-tests#setting-up-a-reusable-test-render-function for more information
+// Test utilities for rendering components with providers
 
 import React, { PropsWithChildren } from "react";
-import { Provider } from "react-redux";
-import { configureStore } from "@reduxjs/toolkit";
 import { RenderOptions, render } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { I18nextProvider, initReactI18next } from "react-i18next";
 import i18n from "i18next";
 import { vi } from "vitest";
-import { AppStore, RootState, rootReducer } from "./src/store";
 import { AuthProvider } from "#/context/auth-context";
 import { ConversationProvider } from "#/context/conversation-context";
 
@@ -38,48 +35,44 @@ i18n.use(initReactI18next).init({
   },
 });
 
-const setupStore = (preloadedState?: Partial<RootState>): AppStore =>
-  configureStore({
-    reducer: rootReducer,
-    preloadedState,
-  });
+// Create a test query client
+const createTestQueryClient = () => new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+      staleTime: Infinity,
+    },
+  },
+  logger: {
+    log: console.log,
+    warn: console.warn,
+    error: () => {},
+  },
+});
 
-// This type interface extends the default options for render from RTL, as well
-// as allows the user to specify other things such as initialState, store.
+// This type interface extends the default options for render from RTL
 interface ExtendedRenderOptions extends Omit<RenderOptions, "queries"> {
-  preloadedState?: Partial<RootState>;
-  store?: AppStore;
+  queryClient?: QueryClient;
 }
 
-// Export our own customized renderWithProviders function that creates a new Redux store and renders a <Provider>
-// Note that this creates a separate Redux store instance for every test, rather than reusing the same store instance and resetting its state
+// Export our own customized renderWithProviders function
 export function renderWithProviders(
   ui: React.ReactElement,
   {
-    preloadedState = {},
-    // Automatically create a store instance if no store was passed in
-    store = setupStore(preloadedState),
+    queryClient = createTestQueryClient(),
     ...renderOptions
   }: ExtendedRenderOptions = {},
 ) {
   function Wrapper({ children }: PropsWithChildren) {
     return (
-      <Provider store={store}>
-        <AuthProvider initialGithubTokenIsSet>
-          <QueryClientProvider
-            client={
-              new QueryClient({
-                defaultOptions: { queries: { retry: false } },
-              })
-            }
-          >
-            <ConversationProvider>
-              <I18nextProvider i18n={i18n}>{children}</I18nextProvider>
-            </ConversationProvider>
-          </QueryClientProvider>
-        </AuthProvider>
-      </Provider>
+      <AuthProvider initialGithubTokenIsSet>
+        <QueryClientProvider client={queryClient}>
+          <ConversationProvider>
+            <I18nextProvider i18n={i18n}>{children}</I18nextProvider>
+          </ConversationProvider>
+        </QueryClientProvider>
+      </AuthProvider>
     );
   }
-  return { store, ...render(ui, { wrapper: Wrapper, ...renderOptions }) };
+  return { queryClient, ...render(ui, { wrapper: Wrapper, ...renderOptions }) };
 }

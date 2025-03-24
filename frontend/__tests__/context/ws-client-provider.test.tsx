@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { screen, waitFor } from "@testing-library/react";
 import { renderWithQueryClient } from "../utils/test-utils";
-import * as ChatSlice from "#/state/chat-slice";
+// ChatSlice imports removed
 import {
   updateStatusWhenErrorMessagePresent,
   WsClientProvider,

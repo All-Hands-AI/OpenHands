@@ -4,12 +4,10 @@ import { retrieveGitHubAppRepositories } from "#/api/github";
 import { useAppInstallations } from "./use-app-installations";
 import { useConfig } from "./use-config";
 import { useAuth } from "#/context/auth-context";
-
 export const useAppRepositories = () => {
   const { githubTokenIsSet } = useAuth();
   const { data: config } = useConfig();
   const { data: installations } = useAppInstallations();
-
   const repos = useInfiniteQuery({
     queryKey: ["repositories", githubTokenIsSet, installations],
     queryFn: async ({
@@ -18,11 +16,9 @@ export const useAppRepositories = () => {
       pageParam: { installationIndex: number | null; repoPage: number | null };
     }) => {
       const { repoPage, installationIndex } = pageParam;
-
       if (!installations) {
         throw new Error("Missing installation list");
       }
-
       return retrieveGitHubAppRepositories(
         installationIndex || 0,
         installations,
@@ -38,11 +34,9 @@ export const useAppRepositories = () => {
           repoPage: lastPage.nextPage,
         };
       }
-
       if (lastPage.installationIndex !== null) {
         return { installationIndex: lastPage.installationIndex, repoPage: 1 };
       }
-
       return null;
     },
     enabled:
@@ -53,7 +47,6 @@ export const useAppRepositories = () => {
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 15, // 15 minutes
   });
-
   // TODO: Once we create our custom dropdown component, we should fetch data onEndReached
   // (nextui autocomplete doesn't support onEndReached nor is it compatible for extending)
   const { isSuccess, isFetchingNextPage, hasNextPage, fetchNextPage } = repos;
@@ -62,6 +55,5 @@ export const useAppRepositories = () => {
       fetchNextPage();
     }
   }, [isFetchingNextPage, isSuccess, hasNextPage, fetchNextPage]);
-
   return repos;
 };

@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getQueryReduxBridge } from "#/utils/query-redux-bridge";
-
+import { QueryKeys } from "./query-keys";
 interface MetricsState {
   cost: number | null;
   usage: {
@@ -9,49 +8,23 @@ interface MetricsState {
     total_tokens: number;
   } | null;
 }
-
 // Initial metrics state
 const initialMetrics: MetricsState = {
   cost: null,
   usage: null,
 };
-
 /**
  * Hook to access and manipulate metrics data using React Query
  * This replaces the Redux metrics slice functionality
  */
 export function useMetrics() {
   const queryClient = useQueryClient();
-
   // Try to get the bridge, but don't throw if it's not initialized (for tests)
-  let bridge: ReturnType<typeof getQueryReduxBridge> | null = null;
-  try {
-    bridge = getQueryReduxBridge();
-  } catch (error) {
-    // In tests, we might not have the bridge initialized
-    console.warn("QueryReduxBridge not initialized, using default metrics");
-  }
-
-  // Get initial state from Redux if this is the first time accessing the data
-  const getInitialMetrics = (): MetricsState => {
-    // If we already have data in React Query, use that
-    const existingData = queryClient.getQueryData<MetricsState>(["metrics"]);
-    if (existingData) return existingData;
-
-    // Otherwise, get initial data from Redux if bridge is available
-    if (bridge) {
-      try {
-        return bridge.getReduxSliceState<MetricsState>("metrics");
-      } catch (error) {
-        // If we can't get the state from Redux, return the initial state
-        return initialMetrics;
-      }
+  const queryClient = useQueryClient();
     }
-
     // If bridge is not available, return the initial state
     return initialMetrics;
   };
-
   // Query for metrics
   const query = useQuery({
     queryKey: ["metrics"],
@@ -62,7 +35,6 @@ export function useMetrics() {
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   });
-
   // Mutation to set metrics
   const setMetricsMutation = useMutation({
     mutationFn: (metrics: MetricsState) => Promise.resolve(metrics),
@@ -71,15 +43,12 @@ export function useMetrics() {
       await queryClient.cancelQueries({
         queryKey: ["metrics"],
       });
-
       // Get current metrics
       const previousMetrics = queryClient.getQueryData<MetricsState>([
         "metrics",
       ]);
-
       // Update metrics
       queryClient.setQueryData(["metrics"], metrics);
-
       return { previousMetrics };
     },
     onError: (_, __, context) => {
@@ -89,7 +58,6 @@ export function useMetrics() {
       }
     },
   });
-
   return {
     metrics: query.data || initialMetrics,
     isLoading: query.isLoading,

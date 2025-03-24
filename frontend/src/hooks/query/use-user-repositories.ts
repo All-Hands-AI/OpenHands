@@ -3,11 +3,9 @@ import React from "react";
 import { retrieveGitHubUserRepositories } from "#/api/github";
 import { useConfig } from "./use-config";
 import { useAuth } from "#/context/auth-context";
-
 export const useUserRepositories = () => {
   const { githubTokenIsSet } = useAuth();
   const { data: config } = useConfig();
-
   const repos = useInfiniteQuery({
     queryKey: ["repositories", githubTokenIsSet],
     queryFn: async ({ pageParam }) =>
@@ -18,7 +16,6 @@ export const useUserRepositories = () => {
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 15, // 15 minutes
   });
-
   // TODO: Once we create our custom dropdown component, we should fetch data onEndReached
   // (nextui autocomplete doesn't support onEndReached nor is it compatible for extending)
   const { isSuccess, isFetchingNextPage, hasNextPage, fetchNextPage } = repos;
@@ -27,6 +24,5 @@ export const useUserRepositories = () => {
       fetchNextPage();
     }
   }, [isFetchingNextPage, isSuccess, hasNextPage, fetchNextPage]);
-
   return repos;
 };

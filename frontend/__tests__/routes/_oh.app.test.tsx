@@ -6,7 +6,7 @@ import App from "#/routes/_oh.app/route";
 import OpenHands from "#/api/open-hands";
 import * as CustomToast from "#/utils/custom-toast-handlers";
 import { QueryClient } from "@tanstack/react-query";
-import { initQueryReduxBridge } from "#/utils/query-redux-bridge";
+import { initializeQueryClient } from "#/query-client-init";
 
 describe("App", () => {
   const errorToastSpy = vi.spyOn(CustomToast, "displayErrorToast");

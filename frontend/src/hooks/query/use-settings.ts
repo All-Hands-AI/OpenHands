@@ -4,10 +4,8 @@ import posthog from "posthog-js";
 import OpenHands from "#/api/open-hands";
 import { useAuth } from "#/context/auth-context";
 import { DEFAULT_SETTINGS } from "#/services/settings";
-
 const getSettingsQueryFn = async () => {
   const apiSettings = await OpenHands.getSettings();
-
   return {
     LLM_MODEL: apiSettings.llm_model,
     LLM_BASE_URL: apiSettings.llm_base_url,
@@ -25,10 +23,8 @@ const getSettingsQueryFn = async () => {
     IS_NEW_USER: false,
   };
 };
-
 export const useSettings = () => {
   const { setGitHubTokenIsSet, githubTokenIsSet } = useAuth();
-
   const query = useQuery({
     queryKey: ["settings", githubTokenIsSet],
     queryFn: getSettingsQueryFn,
@@ -42,17 +38,14 @@ export const useSettings = () => {
       disableToast: true,
     },
   });
-
   React.useEffect(() => {
     if (query.isFetched && query.data?.LLM_API_KEY) {
       posthog.capture("user_activated");
     }
   }, [query.data?.LLM_API_KEY, query.isFetched]);
-
   React.useEffect(() => {
     if (query.isFetched) setGitHubTokenIsSet(!!query.data?.GITHUB_TOKEN_IS_SET);
   }, [query.data?.GITHUB_TOKEN_IS_SET, query.isFetched]);
-
   // We want to return the defaults if the settings aren't found so the user can still see the
   // options to make their initial save. We don't set the defaults in `initialData` above because
   // that would prepopulate the data to the cache and mess with expectations. Read more:
@@ -62,7 +55,5 @@ export const useSettings = () => {
       ...query,
       data: DEFAULT_SETTINGS,
     };
-  }
-
   return query;
 };

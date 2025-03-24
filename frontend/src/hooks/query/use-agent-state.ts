@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getQueryReduxBridge } from "#/utils/query-redux-bridge";
+import { QueryKeys } from "./query-keys";
 import { AgentState } from "#/types/agent-state";
 
 interface AgentStateData {
@@ -13,44 +13,15 @@ const initialAgentState: AgentStateData = {
 
 /**
  * Hook to access and manipulate agent state using React Query
- * This replaces the Redux agent slice functionality
  */
 export function useAgentState() {
   const queryClient = useQueryClient();
-
-  // Try to get the bridge, but don't throw if it's not initialized (for tests)
-  let bridge: ReturnType<typeof getQueryReduxBridge> | null = null;
-  try {
-    bridge = getQueryReduxBridge();
-  } catch (error) {
-    // In tests, we might not have the bridge initialized
-    console.warn("QueryReduxBridge not initialized, using default agent state");
-  }
-
-  // Get initial state from Redux if this is the first time accessing the data
-  const getInitialAgentState = (): AgentStateData => {
-    // If we already have data in React Query, use that
-    const existingData = queryClient.getQueryData<AgentStateData>(["agent"]);
-    if (existingData) return existingData;
-
-    // Otherwise, get initial data from Redux if bridge is available
-    if (bridge) {
-      try {
-        return bridge.getReduxSliceState<AgentStateData>("agent");
-      } catch (error) {
-        // If we can't get the state from Redux, return the initial state
-        return initialAgentState;
-      }
-    }
-
-    // If bridge is not available, return the initial state
-    return initialAgentState;
-  };
+  const agentQueryKey = QueryKeys.agent;
 
   // Query for agent state
   const query = useQuery({
-    queryKey: ["agent"],
-    queryFn: () => getInitialAgentState(),
+    queryKey: agentQueryKey,
+    queryFn: () => initialAgentState,
     initialData: initialAgentState,
     staleTime: Infinity, // We manage updates manually through mutations
     refetchOnMount: false,
@@ -65,23 +36,21 @@ export function useAgentState() {
     onMutate: async (agentState) => {
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({
-        queryKey: ["agent"],
+        queryKey: agentQueryKey,
       });
-
+      
       // Get current agent state
-      const previousAgentState = queryClient.getQueryData<AgentStateData>([
-        "agent",
-      ]);
-
+      const previousAgentState = queryClient.getQueryData<AgentStateData>(agentQueryKey);
+      
       // Update agent state
-      queryClient.setQueryData(["agent"], { curAgentState: agentState });
-
+      queryClient.setQueryData(agentQueryKey, { curAgentState: agentState });
+      
       return { previousAgentState };
     },
     onError: (_, __, context) => {
       // Restore previous agent state on error
       if (context?.previousAgentState) {
-        queryClient.setQueryData(["agent"], context.previousAgentState);
+        queryClient.setQueryData(agentQueryKey, context.previousAgentState);
       }
     },
   });

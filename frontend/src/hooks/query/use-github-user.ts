@@ -6,14 +6,12 @@ import OpenHands from "#/api/open-hands";
 import { useAuth } from "#/context/auth-context";
 import { useLogout } from "../mutation/use-logout";
 import { useSaveSettings } from "../mutation/use-save-settings";
-
 export const useGitHubUser = () => {
   const { githubTokenIsSet } = useAuth();
   const { setGitHubTokenIsSet } = useAuth();
   const { mutateAsync: logout } = useLogout();
   const { mutate: saveUserSettings } = useSaveSettings();
   const { data: config } = useConfig();
-
   const user = useQuery({
     queryKey: ["user", githubTokenIsSet],
     queryFn: OpenHands.getGitHubUser,
@@ -22,7 +20,6 @@ export const useGitHubUser = () => {
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 15, // 15 minutes
   });
-
   React.useEffect(() => {
     if (user.data) {
       posthog.identify(user.data.login, {
@@ -34,7 +31,6 @@ export const useGitHubUser = () => {
       });
     }
   }, [user.data]);
-
   const handleLogout = async () => {
     if (config?.APP_MODE === "saas") await logout();
     else {
@@ -43,12 +39,10 @@ export const useGitHubUser = () => {
     }
     posthog.reset();
   };
-
   React.useEffect(() => {
     if (user.isError) {
       handleLogout();
     }
   }, [user.isError]);
-
   return user;
 };

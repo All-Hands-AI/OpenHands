@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { handleStatusMessage, handleActionMessage } from "#/services/actions";
-import store from "#/store";
+// store import removed
 import { trackError } from "#/utils/error-handler";
 import ActionType from "#/types/action-type";
 import { ActionMessage } from "#/types/message";
-import * as queryReduxBridge from "#/utils/query-redux-bridge";
+// queryReduxBridge import removed
 import * as observations from "#/services/observations";
 
 // Mock dependencies

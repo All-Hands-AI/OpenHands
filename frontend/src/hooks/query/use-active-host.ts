@@ -5,13 +5,10 @@ import { openHands } from "#/api/open-hands-axios";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
 import { useConversation } from "#/context/conversation-context";
 import { useAgentState } from "#/hooks/query/use-agent-state";
-
 export const useActiveHost = () => {
   const { curAgentState } = useAgentState();
   const [activeHost, setActiveHost] = React.useState<string | null>(null);
-
   const { conversationId } = useConversation();
-
   const { data } = useQuery({
     queryKey: [conversationId, "hosts"],
     queryFn: async () => {
@@ -26,15 +23,10 @@ export const useActiveHost = () => {
       disableToast: true,
     },
   });
-
   const apps = useQueries({
     queries: data.hosts.map((host) => ({
       queryKey: [conversationId, "hosts", host],
       queryFn: async () => {
-        try {
-          await axios.get(host);
-          return host;
-        } catch (e) {
           return "";
         }
       },
@@ -44,13 +36,10 @@ export const useActiveHost = () => {
       },
     })),
   });
-
   const appsData = apps.map((app) => app.data);
-
   React.useEffect(() => {
     const successfulApp = appsData.find((app) => app);
     setActiveHost(successfulApp || "");
   }, [appsData]);
-
   return { activeHost };
 };

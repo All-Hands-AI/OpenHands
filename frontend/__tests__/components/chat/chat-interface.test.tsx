@@ -3,9 +3,9 @@ import type { Message } from "#/message";
 import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "test-utils";
-import { addUserMessage } from "#/state/chat-slice";
+import { useChat } from "#/hooks/query/use-chat";
 import { SUGGESTIONS } from "#/utils/suggestions";
-import * as ChatSlice from "#/state/chat-slice";
+// ChatSlice imports removed
 import { WsClientProviderStatus } from "#/context/ws-client-provider";
 import { ChatInterface } from "#/components/features/chat/chat-interface";
 import * as observations from "#/services/observations";

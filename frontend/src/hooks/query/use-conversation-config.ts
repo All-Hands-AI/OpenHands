@@ -6,11 +6,9 @@ import {
 } from "#/context/ws-client-provider";
 import { useConversation } from "#/context/conversation-context";
 import OpenHands from "#/api/open-hands";
-
 export const useConversationConfig = () => {
   const { status } = useWsClient();
   const { conversationId } = useConversation();
-
   const query = useQuery({
     queryKey: ["conversation_config", conversationId],
     queryFn: () => {
@@ -21,11 +19,9 @@ export const useConversationConfig = () => {
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 15, // 15 minutes
   });
-
   React.useEffect(() => {
     if (query.data) {
       const { runtime_id: runtimeId } = query.data;
-
       // eslint-disable-next-line no-console
       console.log(
         "Runtime ID: %c%s",
@@ -34,6 +30,5 @@ export const useConversationConfig = () => {
       );
     }
   }, [query.data]);
-
   return query;
 };

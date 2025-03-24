@@ -1,4 +1,4 @@
-import { queryClient } from "#/query-redux-bridge-init";
+import { queryClient } from "#/query-client-init";
 import { ObservationMessage } from "#/types/message";
 import { AgentState } from "#/types/agent-state";
 // Command slice is now handled by React Query
