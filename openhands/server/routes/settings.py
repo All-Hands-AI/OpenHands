@@ -88,7 +88,7 @@ async def reset_settings(
                              remote_runtime_resource_factor=1,
                              enable_default_condenser=True,
                              enable_sound_notifications=False,
-                             user_consents_to_analytics=False
+                             user_consents_to_analytics=existing_settings.user_consents_to_analytics
                     )
         
         server_config_values = server_config.get_config()

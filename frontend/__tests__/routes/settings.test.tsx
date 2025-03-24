@@ -20,6 +20,7 @@ const toggleAdvancedSettings = async (user: UserEvent) => {
 describe("Settings Screen", () => {
   const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
   const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+  const resetSettingsSpy = vi.spyOn(OpenHands, "resetSettings");
   const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
 
   const { handleLogoutMock } = vi.hoisted(() => ({
@@ -817,17 +818,9 @@ describe("Settings Screen", () => {
       const confirmButton = within(modal).getByText("Reset");
       await user.click(confirmButton);
 
-      const mockCopy: Partial<PostApiSettings> = {
-        ...MOCK_DEFAULT_USER_SETTINGS,
-      };
-      delete mockCopy.github_token_is_set;
-      delete mockCopy.user_consents_to_analytics;
+      expect(saveSettingsSpy).not.toHaveBeenCalled();
+      expect(resetSettingsSpy).toHaveBeenCalled();
 
-      expect(saveSettingsSpy).toHaveBeenCalledWith({
-        ...mockCopy,
-        provider_tokens: undefined, // not set
-        llm_api_key: "", // reset as well
-      });
       expect(screen.queryByTestId("reset-modal")).not.toBeInTheDocument();
     });
 
@@ -884,32 +877,6 @@ describe("Settings Screen", () => {
       await user.click(saveButton);
 
       expect(handleCaptureConsentSpy).toHaveBeenCalledWith(false);
-    });
-
-    it("should not reset analytics consent when resetting to defaults", async () => {
-      const user = userEvent.setup();
-      getSettingsSpy.mockResolvedValue({
-        ...MOCK_DEFAULT_USER_SETTINGS,
-        user_consents_to_analytics: true,
-      });
-
-      renderSettingsScreen();
-
-      const analyticsConsentInput = await screen.findByTestId(
-        "enable-analytics-switch",
-      );
-      expect(analyticsConsentInput).toBeChecked();
-
-      const resetButton = await screen.findByText("Reset to defaults");
-      await user.click(resetButton);
-
-      const modal = await screen.findByTestId("reset-modal");
-      const confirmButton = within(modal).getByText("Reset");
-      await user.click(confirmButton);
-
-      expect(saveSettingsSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ user_consents_to_analytics: undefined }),
-      );
     });
 
     it("should render the security analyzer input if the confirmation mode is enabled", async () => {
@@ -1093,14 +1060,8 @@ describe("Settings Screen", () => {
       const modal = await screen.findByTestId("reset-modal");
       const confirmButton = within(modal).getByText("Reset");
       await user.click(confirmButton);
-
-      expect(saveSettingsSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          llm_api_key: undefined,
-          llm_base_url: undefined,
-          llm_model: undefined,
-        }),
-      );
+      expect(saveSettingsSpy).not.toHaveBeenCalled();
+      expect(resetSettingsSpy).toHaveBeenCalledWith([[]]);
     });
   });
 });
