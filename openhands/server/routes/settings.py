@@ -13,7 +13,6 @@ from openhands.server.types import AppMode
 app = APIRouter(prefix='/api')
 
 
-
 @app.get('/settings', response_model=GETSettingsModel)
 async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
     try:
@@ -42,6 +41,30 @@ async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
         )
 
 
+@app.post('/unset-settings-tokens', response_model=dict[str, str])
+async def reset_settings(
+    request
+) -> JSONResponse:
+    try:
+        settings_store = await SettingsStoreImpl.get_instance(
+            config, get_user_id(request)
+        )
+
+        existing_settings = await settings_store.load()
+        settings = existing_settings.model_copy(update={'secrets_store': SecretStore()})
+
+        await settings_store.store(settings)
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={'message': 'Settings stored'},
+        )
+    
+    except Exception as e:
+        logger.warning(f'Something went wrong unsetting tokens: {e}')
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={'error': 'Something went wrong unsetting tokens'},
+        )
 @app.post('/reset-settings', response_model=dict[str, str])
 async def reset_settings(
     request: Request
