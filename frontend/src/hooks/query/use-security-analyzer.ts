@@ -82,12 +82,13 @@ export function useSecurityAnalyzer() {
           "logs",
         ]) || [];
 
-      const content = 
-          payload.args.command ||
-          payload.args.code ||
-          payload.args.content ||
-          payload.message || "";
-          
+      const content =
+        payload.args.command ||
+        payload.args.code ||
+        payload.args.content ||
+        payload.message ||
+        "";
+
       const log: SecurityAnalyzerLog = {
         id: payload.id,
         content,

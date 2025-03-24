@@ -11,6 +11,7 @@ export const queryClient = new QueryClient(queryClientConfig);
 
 // Initialize the bridge
 export function initializeBridge() {
+  console.log("[QueryReduxBridge Debug] Initializing bridge");
   // Initialize the bridge with the query client
   initQueryReduxBridge(queryClient);
 

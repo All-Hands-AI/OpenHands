@@ -41,6 +41,12 @@ export function ChatInterface() {
   const { messages } = useChat();
   const { curAgentState } = useAgent();
 
+  // Add debug logging
+  console.log("[ChatInterface Debug] Rendering with:", {
+    messageCount: messages.length,
+    agentState: curAgentState,
+  });
+
   const [feedbackPolarity, setFeedbackPolarity] = React.useState<
     "positive" | "negative"
   >("positive");
@@ -51,6 +57,12 @@ export function ChatInterface() {
   const { mutate: getTrajectory } = useGetTrajectory();
 
   const handleSendMessage = async (content: string, files: File[]) => {
+    console.log("[ChatInterface Debug] Sending message:", {
+      content: content.substring(0, 50) + (content.length > 50 ? "..." : ""),
+      filesCount: files.length,
+      currentMessageCount: messages.length,
+    });
+
     if (messages.length === 0) {
       posthog.capture("initial_query_submitted", {
         entry_point: getEntryPoint(selectedRepository !== null),
@@ -67,7 +79,9 @@ export function ChatInterface() {
 
     const timestamp = new Date().toISOString();
     const pending = true;
+    console.log("[ChatInterface Debug] Dispatching addUserMessage");
     dispatch(addUserMessage({ content, imageUrls, timestamp, pending }));
+    console.log("[ChatInterface Debug] Sending message to WebSocket");
     send(createChatMessage(content, imageUrls, timestamp));
     setMessageToSend(null);
   };

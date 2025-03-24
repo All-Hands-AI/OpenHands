@@ -20,7 +20,7 @@ vi.mock("#/hooks/query/use-jupyter", () => ({
 }));
 
 import { JupyterEditor } from "#/components/features/jupyter/jupyter";
-import { jupyterReducer } from "#/state/jupyter-slice";
+import { Cell } from "#/types/migrated-types";
 
 describe("JupyterEditor", () => {
   const mockStore = configureStore({
@@ -32,7 +32,7 @@ describe("JupyterEditor", () => {
       code: () => ({}),
       cmd: () => ({}),
       agent: () => ({}),
-      jupyter: jupyterReducer,
+      jupyter: () => ({}),
       securityAnalyzer: () => ({}),
       status: () => ({}),
     },

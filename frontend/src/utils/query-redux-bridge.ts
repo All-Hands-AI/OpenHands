@@ -46,6 +46,7 @@ export class QueryReduxBridge {
    */
   // Using this.queryClient to satisfy class-methods-use-this rule
   migrateSlice(sliceName: SliceNames): void {
+    console.log(`[QueryReduxBridge Debug] Migrating slice: ${sliceName}`);
     migratedSlices[sliceName] = true;
     // Access this.queryClient to use 'this'
     this.queryClient.getQueryCache();
@@ -89,7 +90,17 @@ export class QueryReduxBridge {
     sliceName: SliceNames,
     action: { type: string; payload?: unknown },
   ): void {
-    if (!this.isSliceMigrated(sliceName)) {
+    const isMigrated = this.isSliceMigrated(sliceName);
+    console.log(
+      `[QueryReduxBridge Debug] Conditional dispatch for ${sliceName}:`,
+      {
+        actionType: action.type,
+        isMigrated,
+        willDispatch: !isMigrated,
+      },
+    );
+
+    if (!isMigrated) {
       store.dispatch(action);
     }
   }

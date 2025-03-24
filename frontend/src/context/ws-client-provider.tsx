@@ -126,6 +126,14 @@ export function WsClientProvider({
   }
 
   function handleMessage(event: Record<string, unknown>) {
+    console.log("[WsClient Debug] Received message:", {
+      id: event.id,
+      action: event.action,
+      source: event.source,
+      isOpenHandsEvent: isOpenHandsEvent(event),
+      isMessageAction: isOpenHandsEvent(event) && isMessageAction(event),
+    });
+
     if (isOpenHandsEvent(event) && isMessageAction(event)) {
       messageRateHandler.record(new Date().getTime());
     }
@@ -134,6 +142,7 @@ export function WsClientProvider({
       lastEventRef.current = event;
     }
 
+    console.log("[WsClient Debug] Forwarding to handleAssistantMessage");
     handleAssistantMessage(event);
   }
 
