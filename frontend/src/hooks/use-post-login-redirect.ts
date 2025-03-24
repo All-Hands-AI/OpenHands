@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router';
-import { getLastPage, clearLastPage } from '../utils/last-page';
+import { useEffect } from "react";
+import { useNavigate } from "react-router";
+import { getLastPage, clearLastPage } from "../utils/last-page";
 
 export const usePostLoginRedirect = (isLoggedIn: boolean) => {
   const navigate = useNavigate();

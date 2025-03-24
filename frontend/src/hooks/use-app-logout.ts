@@ -1,8 +1,8 @@
+import { useNavigate } from "react-router";
+import posthog from "posthog-js";
 import { useSaveSettings } from "./mutation/use-save-settings";
 import { useConfig } from "./query/use-config";
-import { useNavigate } from "react-router";
 import { useAuth } from "#/context/auth-context";
-import posthog from "posthog-js";
 
 export const useAppLogout = () => {
   const { data: config } = useConfig();

@@ -1,4 +1,5 @@
 import React from "react";
+import { saveLastPage } from "../utils/last-page";
 
 interface AuthContextType {
   githubTokenIsSet: boolean;
@@ -20,7 +21,6 @@ function AuthProvider({ children, initialGithubTokenIsSet }: AuthContextProps) {
   const logout = React.useCallback(() => {
     setGitHubTokenIsSet(false);
     // Save the last page before logging out
-    const { saveLastPage } = require("../utils/last-page");
     saveLastPage();
     // Clear any auth-related data from localStorage
     localStorage.removeItem("gh_token");

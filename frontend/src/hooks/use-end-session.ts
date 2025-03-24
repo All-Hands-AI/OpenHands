@@ -6,7 +6,6 @@ import {
   setUrl,
 } from "#/state/browser-slice";
 import { clearSelectedRepository } from "#/state/initial-query-slice";
-import { saveLastPage } from "#/utils/last-page";
 
 export const useEndSession = () => {
   const navigate = useNavigate();
@@ -17,7 +16,7 @@ export const useEndSession = () => {
    */
   const endSession = () => {
     // Save the last page before ending session
-    //saveLastPage();
+    // saveLastPage();
 
     dispatch(clearSelectedRepository());
 

@@ -1,7 +1,7 @@
 import React from "react";
 import { FaListUl } from "react-icons/fa";
 import { useDispatch } from "react-redux";
-import { NavLink, useLocation, useNavigate } from "react-router";
+import { NavLink, useLocation } from "react-router";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { UserActions } from "./user-actions";
 import { AllHandsLogoButton } from "#/components/shared/buttons/all-hands-logo-button";
