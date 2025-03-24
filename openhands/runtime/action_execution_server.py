@@ -31,6 +31,7 @@ from starlette.background import BackgroundTask
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from uvicorn import run
 
+from openhands.core.exceptions import BrowserUnavailableException
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     Action,
@@ -159,7 +160,9 @@ class ActionExecutor:
         self.lock = asyncio.Lock()
         self.plugins: dict[str, Plugin] = {}
         self.file_editor = OHEditor(workspace_root=self._initial_cwd)
-        self.browser = BrowserEnv(browsergym_eval_env)
+        self.browser: BrowserEnv | None = None
+        self.browser_init_task: asyncio.Task | None = None
+        self.browsergym_eval_env = browsergym_eval_env
         self.start_time = time.time()
         self.last_execution_time = self.start_time
         self._initialized = False
@@ -183,6 +186,38 @@ class ActionExecutor:
     def initial_cwd(self):
         return self._initial_cwd
 
+    async def _init_browser_async(self):
+        """Initialize the browser asynchronously."""
+        logger.debug('Initializing browser asynchronously')
+        try:
+            self.browser = BrowserEnv(self.browsergym_eval_env)
+            logger.debug('Browser initialized asynchronously')
+        except Exception as e:
+            logger.error(f'Failed to initialize browser: {e}')
+            self.browser = None
+
+    async def _ensure_browser_ready(self):
+        """Ensure the browser is ready for use."""
+        if self.browser is None:
+            if self.browser_init_task is None:
+                # Start browser initialization if it hasn't been started
+                self.browser_init_task = asyncio.create_task(self._init_browser_async())
+            elif self.browser_init_task.done():
+                # If the task is done but browser is still None, restart initialization
+                self.browser_init_task = asyncio.create_task(self._init_browser_async())
+
+            # Wait for browser to be initialized
+            if self.browser_init_task:
+                logger.debug('Waiting for browser to be ready...')
+                await self.browser_init_task
+
+            # Check if browser was successfully initialized
+            if self.browser is None:
+                raise BrowserUnavailableException('Browser initialization failed')
+
+        # If we get here, the browser is ready
+        logger.debug('Browser is ready')
+
     async def ainit(self):
         # bash needs to be initialized first
         logger.debug('Initializing bash session')
@@ -190,16 +225,20 @@ class ActionExecutor:
             work_dir=self._initial_cwd,
             username=self.username,
             no_change_timeout_seconds=int(
-                os.environ.get('NO_CHANGE_TIMEOUT_SECONDS', 30)
+                os.environ.get('NO_CHANGE_TIMEOUT_SECONDS', 10)
             ),
             max_memory_mb=self.max_memory_gb * 1024 if self.max_memory_gb else None,
         )
         self.bash_session.initialize()
         logger.debug('Bash session initialized')
 
+        # Start browser initialization in the background
+        self.browser_init_task = asyncio.create_task(self._init_browser_async())
+        logger.debug('Browser initialization started in background')
+
         await wait_all(
             (self._init_plugin(plugin) for plugin in self.plugins_to_load),
-            timeout=30,
+            timeout=60,
         )
         logger.debug('All plugins initialized')
 
@@ -459,16 +498,19 @@ class ActionExecutor:
         )
 
     async def browse(self, action: BrowseURLAction) -> Observation:
+        await self._ensure_browser_ready()
         return await browse(action, self.browser)
 
     async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
+        await self._ensure_browser_ready()
         return await browse(action, self.browser)
 
     def close(self):
         self.memory_monitor.stop_monitoring()
         if self.bash_session is not None:
             self.bash_session.close()
-        self.browser.close()
+        if self.browser is not None:
+            self.browser.close()
 
 
 if __name__ == '__main__':

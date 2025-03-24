@@ -27,9 +27,9 @@ from openhands.resolver.utils import (
 
 
 def cleanup() -> None:
-    print('Cleaning up child processes...')
+    logger.info('Cleaning up child processes...')
     for process in mp.active_children():
-        print(f'Terminating child process: {process.name}')
+        logger.info(f'Terminating child process: {process.name}')
         process.terminate()
         process.join()
 
@@ -222,7 +222,7 @@ async def resolve_issues(
         await asyncio.gather(*[run_with_semaphore(task) for task in tasks])
 
     except KeyboardInterrupt:
-        print('KeyboardInterrupt received. Cleaning up...')
+        logger.info('KeyboardInterrupt received. Cleaning up...')
         cleanup()
 
     output_fp.close()
@@ -234,7 +234,7 @@ def main() -> None:
         description='Resolve multiple issues from Github or Gitlab.'
     )
     parser.add_argument(
-        '--repo',
+        '--selected-repo',
         type=str,
         required=True,
         help='Github or Gitlab repository to resolve issues in form of `owner/repo`.',
@@ -333,7 +333,7 @@ def main() -> None:
             f'ghcr.io/all-hands-ai/runtime:{openhands.__version__}-nikolaik'
         )
 
-    owner, repo = my_args.repo.split('/')
+    owner, repo = my_args.selected_repo.split('/')
     token = my_args.token or os.getenv('GITHUB_TOKEN') or os.getenv('GITLAB_TOKEN')
     username = my_args.username if my_args.username else os.getenv('GIT_USERNAME')
     if not username:
@@ -342,7 +342,7 @@ def main() -> None:
     if not token:
         raise ValueError('Token is required.')
 
-    platform = identify_token(token)
+    platform = identify_token(token, my_args.selected_repo)
     if platform == Platform.INVALID:
         raise ValueError('Token is invalid.')
 

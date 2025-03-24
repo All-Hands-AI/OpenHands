@@ -3308,6 +3308,21 @@
         "tr": "Konteyner başlatıldı.",
         "ja": "コンテナが開始されました"
     },
+    "STATUS$SETTING_UP_WORKSPACE": {
+        "en": "Setting up workspace...",
+        "zh-CN": "正在设置工作区...",
+        "zh-TW": "正在設置工作區...",
+        "de": "Arbeitsbereich wird eingerichtet...",
+        "ko-KR": "작업 공간을 설정하는 중...",
+        "no": "Setter opp arbeidsområde...",
+        "it": "Configurazione dell'area di lavoro...",
+        "pt": "Configurando espaço de trabalho...",
+        "es": "Configurando espacio de trabajo...",
+        "ar": "جاري إعداد مساحة العمل...",
+        "fr": "Configuration de l'espace de travail...",
+        "tr": "Çalışma alanı ayarlanıyor...",
+        "ja": "ワークスペースを設定中..."
+    },
     "ACCOUNT_SETTINGS_MODAL$DISCONNECT": {
         "en": "Disconnect",
         "es": "Desconectar",
@@ -4177,6 +4192,21 @@
         "pt": "Navegando na web",
         "es": "Navegando en la web",
         "tr": "Web'de geziniyor"
+    },
+    "ACTION_MESSAGE$BROWSE_INTERACTIVE": {
+        "en": "Interactive browsing in progress...",
+        "zh-CN": "交互式浏览进行中...",
+        "zh-TW": "互動式瀏覽進行中...",
+        "ko-KR": "인터랙티브 브라우징 진행 중...",
+        "ja": "インタラクティブブラウジング進行中...",
+        "no": "Interaktiv surfing pågår...",
+        "ar": "التصفح التفاعلي قيد التقدم...",
+        "de": "Interaktives Browsen läuft...",
+        "fr": "Navigation interactive en cours...",
+        "it": "Navigazione interattiva in corso...",
+        "pt": "Navegação interativa em andamento...",
+        "es": "Navegación interactiva en progreso...",
+        "tr": "Etkileşimli tarama devam ediyor..."
     },
     "ACTION_MESSAGE$THINK": {
         "en": "Thinking",
