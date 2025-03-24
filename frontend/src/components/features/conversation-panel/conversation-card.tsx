@@ -17,7 +17,7 @@ interface ConversationCardProps {
   onClick?: () => void;
   onDelete?: () => void;
   onChangeTitle?: (title: string) => void;
-  showDisplayCostOption?: boolean;
+  showOptions?: boolean;
   isActive?: boolean;
   title: string;
   selectedRepository: string | null;
@@ -34,7 +34,7 @@ export function ConversationCard({
   onClick,
   onDelete,
   onChangeTitle,
-  showDisplayCostOption,
+  showOptions,
   isActive,
   title,
   selectedRepository,
@@ -132,7 +132,7 @@ export function ConversationCard({
     }
   }, [titleMode]);
 
-  const hasContextMenu = !!(onDelete || onChangeTitle || showDisplayCostOption);
+  const hasContextMenu = !!(onDelete || onChangeTitle || showOptions);
   const timeBetweenUpdateAndCreation = createdAt
     ? new Date(lastUpdatedAt).getTime() - new Date(createdAt).getTime()
     : 0;
@@ -199,11 +199,11 @@ export function ConversationCard({
                   onDelete={onDelete && handleDelete}
                   onEdit={onChangeTitle && handleEdit}
                   onDownloadViaVSCode={
-                    conversationId ? handleDownloadViaVSCode : undefined
+                    conversationId && showOptions
+                      ? handleDownloadViaVSCode
+                      : undefined
                   }
-                  onDisplayCost={
-                    showDisplayCostOption ? handleDisplayCost : undefined
-                  }
+                  onDisplayCost={showOptions ? handleDisplayCost : undefined}
                   position={variant === "compact" ? "top" : "bottom"}
                 />
               )}
