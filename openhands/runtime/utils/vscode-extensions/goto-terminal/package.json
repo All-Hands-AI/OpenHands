@@ -1,0 +1,23 @@
+{
+    "name": "openhands-goto-terminal",
+    "displayName": "OpenHands Goto Terminal",
+    "description": "Automatically opens a terminal when the URL contains ?goto=terminal",
+    "version": "0.0.1",
+    "publisher": "openhands",
+    "engines": {
+        "vscode": "^1.94.0"
+    },
+    "categories": [
+        "Other"
+    ],
+    "activationEvents": [
+        "onStartupFinished"
+    ],
+    "main": "./extension.js",
+    "contributes": {
+        "commands": [{
+            "command": "openhands-goto-terminal.openTerminal",
+            "title": "Open Terminal (OpenHands)"
+        }]
+    }
+}
