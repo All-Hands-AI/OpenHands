@@ -62,30 +62,38 @@ export function useChat() {
       "chat",
       "messages",
     ]);
-    
+
     console.log("[useChat Debug] getInitialMessages:", {
       hasExistingData: !!existingData,
       existingDataLength: existingData?.length || 0,
-      hasBridge: !!bridge
+      hasBridge: !!bridge,
     });
-    
+
     if (existingData) return existingData;
 
     // Otherwise, get initial data from Redux if bridge is available
     if (bridge) {
       try {
-        const reduxMessages = bridge.getReduxSliceState<{ messages: Message[] }>("chat").messages;
+        const reduxMessages = bridge.getReduxSliceState<{
+          messages: Message[];
+        }>("chat").messages;
         console.log("[useChat Debug] Got messages from Redux:", {
           count: reduxMessages.length,
-          messages: reduxMessages.map(m => ({
+          messages: reduxMessages.map((m) => ({
             type: m.type,
             sender: m.sender,
-            content: m.content?.substring(0, 30) + (m.content?.length > 30 ? "..." : "")
-          }))
+            content: m.content
+              ? m.content.substring(0, 30) +
+                (m.content.length > 30 ? "..." : "")
+              : "",
+          })),
         });
         return reduxMessages;
       } catch (error) {
-        console.log("[useChat Debug] Error getting messages from Redux:", error);
+        console.log(
+          "[useChat Debug] Error getting messages from Redux:",
+          error,
+        );
         // If we can't get the state from Redux, return the initial state
         return [];
       }
@@ -452,12 +460,14 @@ export function useChat() {
   const messages = query.data || [];
   console.log("[useChat Debug] Current messages:", {
     count: messages.length,
-    messages: messages.map(m => ({
+    messages: messages.map((m) => ({
       type: m.type,
       sender: m.sender,
-      content: m.content?.substring(0, 50) + (m.content?.length > 50 ? "..." : ""),
-      timestamp: m.timestamp
-    }))
+      content: m.content
+        ? m.content.substring(0, 50) + (m.content.length > 50 ? "..." : "")
+        : "",
+      timestamp: m.timestamp,
+    })),
   });
 
   return {
@@ -476,19 +486,29 @@ export function useChat() {
       console.log("[useChat Debug] Adding assistant message:", content);
       addAssistantMessageMutation.mutate(content);
     },
-    addAssistantAction: (action: any) => {
+    addAssistantAction: (action: {
+      id: string;
+      action: string;
+      args: Record<string, unknown>;
+    }) => {
       console.log("[useChat Debug] Adding assistant action:", {
         id: action.id,
         action: action.action,
-        args: action.args
+        args: action.args,
       });
       addAssistantActionMutation.mutate(action);
     },
-    addAssistantObservation: (observation: any) => {
+    addAssistantObservation: (observation: {
+      id: string;
+      observation: string;
+      cause: string;
+      content?: string;
+      extras?: Record<string, unknown>;
+    }) => {
       console.log("[useChat Debug] Adding assistant observation:", {
         id: observation.id,
         observation: observation.observation,
-        cause: observation.cause
+        cause: observation.cause,
       });
       addAssistantObservationMutation.mutate(observation);
     },

@@ -35,30 +35,65 @@ export const addUserMessage = (payload: {
   imageUrls: string[];
   timestamp: string;
   pending?: boolean;
-}) => ({
-  type: "chat/addUserMessage",
-  payload,
-});
+}) => {
+  console.log("[MigratedTypes Debug] addUserMessage called:", {
+    content:
+      payload.content.substring(0, 50) +
+      (payload.content.length > 50 ? "..." : ""),
+    hasImageUrls: payload.imageUrls.length > 0,
+    timestamp: payload.timestamp,
+    pending: payload.pending,
+  });
+  return {
+    type: "chat/addUserMessage",
+    payload,
+  };
+};
 
-export const addAssistantMessage = (content: string) => ({
-  type: "chat/addAssistantMessage",
-  payload: content,
-});
+export const addAssistantMessage = (content: string) => {
+  console.log("[MigratedTypes Debug] addAssistantMessage called:", {
+    content: content.substring(0, 50) + (content.length > 50 ? "..." : ""),
+  });
+  return {
+    type: "chat/addAssistantMessage",
+    payload: content,
+  };
+};
 
-export const addAssistantAction = (action: unknown) => ({
-  type: "chat/addAssistantAction",
-  payload: action,
-});
+export const addAssistantAction = (action: unknown) => {
+  console.log("[MigratedTypes Debug] addAssistantAction called:", {
+    action: (action as { action?: string })?.action,
+    id: (action as { id?: string })?.id,
+  });
+  return {
+    type: "chat/addAssistantAction",
+    payload: action,
+  };
+};
 
-export const addAssistantObservation = (observation: unknown) => ({
-  type: "chat/addAssistantObservation",
-  payload: observation,
-});
+export const addAssistantObservation = (observation: unknown) => {
+  console.log("[MigratedTypes Debug] addAssistantObservation called:", {
+    observation: (observation as { observation?: string })?.observation,
+    id: (observation as { id?: string })?.id,
+  });
+  return {
+    type: "chat/addAssistantObservation",
+    payload: observation,
+  };
+};
 
-export const addErrorMessage = (payload: { id?: string; message: string }) => ({
-  type: "chat/addErrorMessage",
-  payload,
-});
+export const addErrorMessage = (payload: { id?: string; message: string }) => {
+  console.log("[MigratedTypes Debug] addErrorMessage called:", {
+    id: payload.id,
+    message:
+      payload.message.substring(0, 50) +
+      (payload.message.length > 50 ? "..." : ""),
+  });
+  return {
+    type: "chat/addErrorMessage",
+    payload,
+  };
+};
 
 export const clearMessages = () => ({
   type: "chat/clearMessages",

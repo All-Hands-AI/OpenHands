@@ -6,6 +6,7 @@ import {
   appendSecurityAnalyzerInput,
 } from "#/types/migrated-types";
 import { trackError } from "#/utils/error-handler";
+import { OpenHandsAction } from "#/types/core/actions";
 // Jupyter slice is now handled by React Query
 // Status, metrics, browser, and code slices are now handled by React Query
 import store from "#/store";
@@ -45,7 +46,17 @@ const messageActions = {
     });
   },
   [ActionType.MESSAGE]: (message: ActionMessage) => {
+    console.log("[Actions Debug] Handling MESSAGE action:", {
+      source: message.source,
+      content: message.args.content
+        ? message.args.content.substring(0, 50) +
+          (message.args.content.length > 50 ? "..." : "")
+        : "",
+      hasImageUrls: !!message.args.image_urls,
+    });
+
     if (message.source === "user") {
+      console.log("[Actions Debug] Dispatching addUserMessage");
       store.dispatch(
         addUserMessage({
           content: message.args.content,
@@ -58,6 +69,7 @@ const messageActions = {
         }),
       );
     } else {
+      console.log("[Actions Debug] Dispatching addAssistantMessage");
       store.dispatch(addAssistantMessage(message.args.content));
     }
   },
@@ -107,7 +119,18 @@ const messageActions = {
 };
 
 export function handleActionMessage(message: ActionMessage) {
+  console.log("[Actions Debug] Handling action message:", {
+    action: message.action,
+    source: message.source,
+    hasThought: !!message.args?.thought,
+    message: message.message
+      ? message.message.substring(0, 50) +
+        (message.message.length > 50 ? "..." : "")
+      : "",
+  });
+
   if (message.args?.hidden) {
+    console.log("[Actions Debug] Skipping hidden message");
     return;
   }
 
@@ -163,10 +186,17 @@ export function handleActionMessage(message: ActionMessage) {
   }
 
   if (message.source === "agent") {
+    console.log("[Actions Debug] Processing agent message");
     if (message.args && message.args.thought) {
+      console.log(
+        "[Actions Debug] Dispatching agent thought:",
+        message.args.thought.substring(0, 50) +
+          (message.args.thought.length > 50 ? "..." : ""),
+      );
       store.dispatch(addAssistantMessage(message.args.thought));
     }
     // Need to convert ActionMessage to RejectAction
+    console.log("[Actions Debug] Dispatching assistant action");
     store.dispatch(addAssistantAction(message as unknown as OpenHandsAction));
   }
 
@@ -196,13 +226,23 @@ export function handleStatusMessage(message: StatusMessage) {
 }
 
 export function handleAssistantMessage(message: Record<string, unknown>) {
+  console.log("[Actions Debug] Received assistant message:", {
+    hasAction: !!message.action,
+    hasObservation: !!message.observation,
+    hasStatusUpdate: !!message.status_update,
+    messageKeys: Object.keys(message),
+  });
+
   if (message.action) {
     handleActionMessage(message as unknown as ActionMessage);
   } else if (message.observation) {
+    console.log("[Actions Debug] Handling observation message");
     handleObservationMessage(message as unknown as ObservationMessage);
   } else if (message.status_update) {
+    console.log("[Actions Debug] Handling status message");
     handleStatusMessage(message as unknown as StatusMessage);
   } else {
+    console.log("[Actions Debug] Unknown message type received:", message);
     const errorMsg = "Unknown message type received";
     trackError({
       message: errorMsg,
