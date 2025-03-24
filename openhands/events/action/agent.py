@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict
+from typing import Any
 
 from openhands.core.schema import ActionType
 from openhands.events.action.action import Action
@@ -119,7 +119,7 @@ class AgentCondensationAction(Action):
 
     start_id: int
     end_id: int
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
     action: str = ActionType.CONDENSE
 
     @property
