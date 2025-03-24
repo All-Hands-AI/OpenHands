@@ -13,7 +13,7 @@ class ExtendedConfig(RootModel[Dict[str, Any]]):
 
     def __str__(self) -> str:
         # Use the root dict to build a string representation.
-        root_dict: Dict[str, Any] = self.root_value
+        root_dict: Dict[str, Any] = self.model_dump()
         attr_str = [f'{k}={repr(v)}' for k, v in root_dict.items()]
         return f'ExtendedConfig({", ".join(attr_str)})'
 
@@ -27,13 +27,13 @@ class ExtendedConfig(RootModel[Dict[str, Any]]):
 
     def __getitem__(self, key: str) -> Any:
         # Provide dictionary-like access via the root dict.
-        root_dict: Dict[str, Any] = self.root_value
+        root_dict: Dict[str, Any] = self.model_dump()
         return root_dict[key]
 
     def __getattr__(self, key: str) -> Any:
         # Fallback for attribute access using the root dict.
         try:
-            root_dict: Dict[str, Any] = self.root_value
+            root_dict: Dict[str, Any] = self.model_dump()
             return root_dict[key]
         except KeyError as e:
             raise AttributeError(
