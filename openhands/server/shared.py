@@ -11,6 +11,7 @@ from openhands.server.conversation_manager.conversation_manager import (
 )
 from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.monitoring import MonitoringListener
+from openhands.server.routes.manage_conversations import get_default_conversation_title
 from openhands.storage import get_file_store
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
@@ -68,7 +69,7 @@ async def _get_conversation_info(
     try:
         title = conversation.title
         if not title:
-            title = f'Conversation {conversation.conversation_id[:5]}'
+            title = get_default_conversation_title(conversation.conversation_id)
         return ConversationInfo(
             conversation_id=conversation.conversation_id,
             title=title,

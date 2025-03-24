@@ -226,7 +226,7 @@ class ActionExecutor:
             work_dir=self._initial_cwd,
             username=self.username,
             no_change_timeout_seconds=int(
-                os.environ.get('NO_CHANGE_TIMEOUT_SECONDS', 30)
+                os.environ.get('NO_CHANGE_TIMEOUT_SECONDS', 10)
             ),
             max_memory_mb=self.max_memory_gb * 1024 if self.max_memory_gb else None,
         )
@@ -239,7 +239,7 @@ class ActionExecutor:
 
         await wait_all(
             (self._init_plugin(plugin) for plugin in self.plugins_to_load),
-            timeout=30,
+            timeout=60,
         )
         logger.debug('All plugins initialized')
 

@@ -26,7 +26,7 @@ export function NavTab({ to, label, icon, isBeta, isLoading }: NavTabProps) {
       {({ isActive }) => (
         <>
           <div className="flex items-center gap-2">
-            <div className={cn(isActive && "text-primary")}>{icon}</div>
+            <div className={cn(isActive && "text-logo")}>{icon}</div>
             {label}
             {isBeta && <BetaBadge />}
           </div>
