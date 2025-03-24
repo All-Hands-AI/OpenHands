@@ -1,11 +1,22 @@
 import os
+from typing import Any, List, TypedDict
 
 import boto3
 import botocore
-from mypy_boto3_s3.client import S3Client
-from mypy_boto3_s3.type_defs import GetObjectOutputTypeDef, ListObjectsV2OutputTypeDef
 
 from openhands.storage.files import FileStore
+
+
+class S3ObjectDict(TypedDict):
+    Key: str
+
+
+class GetObjectOutputDict(TypedDict):
+    Body: Any
+
+
+class ListObjectsV2OutputDict(TypedDict):
+    Contents: List[S3ObjectDict] | None
 
 
 class S3FileStore(FileStore):
@@ -17,7 +28,7 @@ class S3FileStore(FileStore):
         if bucket_name is None:
             bucket_name = os.environ['AWS_S3_BUCKET']
         self.bucket: str = bucket_name
-        self.client: S3Client = boto3.client(
+        self.client: Any = boto3.client(
             's3',
             aws_access_key_id=access_key,
             aws_secret_access_key=secret_key,
@@ -46,7 +57,7 @@ class S3FileStore(FileStore):
 
     def read(self, path: str) -> str:
         try:
-            response: GetObjectOutputTypeDef = self.client.get_object(
+            response: GetObjectOutputDict = self.client.get_object(
                 Bucket=self.bucket, Key=path
             )
             with response['Body'] as stream:  # type: ignore
@@ -84,7 +95,7 @@ class S3FileStore(FileStore):
         # prefix="foo", delimiter="/"  yields  []  # :(
         results: set[str] = set()
         prefix_len = len(path)
-        response: ListObjectsV2OutputTypeDef = self.client.list_objects_v2(
+        response: ListObjectsV2OutputDict = self.client.list_objects_v2(
             Bucket=self.bucket, Prefix=path
         )
         contents = response.get('Contents')
