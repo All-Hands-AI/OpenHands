@@ -1,5 +1,6 @@
+import logging
 import os
-from typing import Callable, Optional
+from typing import Callable
 from urllib.parse import urlparse
 
 import requests
@@ -15,6 +16,7 @@ from openhands.core.exceptions import (
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
+from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.runtime.builder.remote import RemoteRuntimeBuilder
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
@@ -42,10 +44,11 @@ class RemoteRuntime(ActionExecutionClient):
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
-        status_callback: Optional[Callable] = None,
+        status_callback: Callable | None = None,
         attach_to_existing: bool = False,
         headless_mode: bool = True,
-        github_user_id: str | None = None,
+        user_id: str | None = None,
+        git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
     ):
         super().__init__(
             config,
@@ -56,7 +59,8 @@ class RemoteRuntime(ActionExecutionClient):
             status_callback,
             attach_to_existing,
             headless_mode,
-            github_user_id,
+            user_id,
+            git_provider_tokens,
         )
         if self.config.sandbox.api_key is None:
             raise ValueError(
@@ -425,10 +429,11 @@ class RemoteRuntime(ActionExecutionClient):
             return self._send_action_server_request_impl(method, url, **kwargs)
 
         retry_decorator = tenacity.retry(
-            retry=tenacity.retry_if_exception_type(ConnectionError),
+            retry=tenacity.retry_if_exception_type(requests.ConnectionError),
             stop=tenacity.stop_after_attempt(3)
             | stop_if_should_exit()
             | self._stop_if_closed,
+            before_sleep=tenacity.before_sleep_log(logger, logging.WARNING),
             wait=tenacity.wait_exponential(multiplier=1, min=4, max=60),
         )
         return retry_decorator(self._send_action_server_request_impl)(

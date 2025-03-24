@@ -1,4 +1,4 @@
-from typing import Callable, Optional
+from typing import Callable
 
 from openhands.core.config import AppConfig
 from openhands.events.action import (
@@ -27,7 +27,7 @@ class E2BRuntime(Runtime):
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         sandbox: E2BSandbox | None = None,
-        status_callback: Optional[Callable] = None,
+        status_callback: Callable | None = None,
     ):
         super().__init__(
             config,
