@@ -13,6 +13,7 @@ export function setChatMessages(
   queryClient: ReturnType<typeof useQueryClient>,
   messages: Message[],
 ) {
+  console.log("Setting chat messages:", messages);
   queryClient.setQueryData(CHAT_MESSAGES_QUERY_KEY, messages);
 }
 
@@ -30,8 +31,10 @@ export function addUserMessage(
     pending?: boolean;
   },
 ) {
+  console.log("Adding user message:", payload);
   const messages =
     queryClient.getQueryData<Message[]>(CHAT_MESSAGES_QUERY_KEY) || [];
+  console.log("Current messages before adding user message:", messages);
 
   const message: Message = {
     type: "thought",
@@ -58,8 +61,10 @@ export function addAssistantMessage(
   queryClient: ReturnType<typeof useQueryClient>,
   content: string,
 ) {
+  console.log("Adding assistant message:", content);
   const messages =
     queryClient.getQueryData<Message[]>(CHAT_MESSAGES_QUERY_KEY) || [];
+  console.log("Current messages before adding assistant message:", messages);
 
   const message: Message = {
     type: "thought",
@@ -125,6 +130,8 @@ export function useChatMessages(): {
   // Get the current messages from the query cache
   const messages =
     queryClient.getQueryData<Message[]>(CHAT_MESSAGES_QUERY_KEY) || [];
+  
+  console.log("useChatMessages hook - current messages:", messages);
 
   // Create setter functions that components can use
   const addUserMessageFn = (payload: {
@@ -133,18 +140,22 @@ export function useChatMessages(): {
     timestamp: string;
     pending?: boolean;
   }) => {
+    console.log("useChatMessages hook - addUserMessage called with:", payload);
     addUserMessage(queryClient, payload);
   };
 
   const addAssistantMessageFn = (content: string) => {
+    console.log("useChatMessages hook - addAssistantMessage called with:", content);
     addAssistantMessage(queryClient, content);
   };
 
   const addErrorMessageFn = (payload: { id?: string; message: string }) => {
+    console.log("useChatMessages hook - addErrorMessage called with:", payload);
     addErrorMessage(queryClient, payload);
   };
 
   const clearMessagesFn = () => {
+    console.log("useChatMessages hook - clearMessages called");
     clearMessages(queryClient);
   };
 

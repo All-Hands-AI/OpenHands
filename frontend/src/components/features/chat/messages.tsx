@@ -11,8 +11,12 @@ interface MessagesProps {
 }
 
 export const Messages: React.FC<MessagesProps> = React.memo(
-  ({ messages, isAwaitingUserConfirmation }) =>
-    messages.map((message, index) => {
+  ({ messages, isAwaitingUserConfirmation }) => {
+    console.log("Messages component rendering with messages:", messages);
+    console.log("isAwaitingUserConfirmation:", isAwaitingUserConfirmation);
+    
+    return messages.map((message, index) => {
+      console.log(`Rendering message ${index}:`, message);
       const shouldShowConfirmationButtons =
         messages.length - 1 === index &&
         message.sender === "assistant" &&
@@ -44,7 +48,8 @@ export const Messages: React.FC<MessagesProps> = React.memo(
           {shouldShowConfirmationButtons && <ConfirmationButtons />}
         </ChatMessage>
       );
-    }),
+    });
+  }
 );
 
 Messages.displayName = "Messages";

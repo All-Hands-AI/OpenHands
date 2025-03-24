@@ -37,7 +37,9 @@ export function ChatInterface() {
     useScrollToBottom(scrollRef);
 
   const { messages, addUserMessage } = useChatMessages();
+  console.log("ChatInterface - messages from useChatMessages:", messages);
   const { agentState } = useAgentState();
+  console.log("ChatInterface - agentState:", agentState);
 
   const [feedbackPolarity, setFeedbackPolarity] = React.useState<
     "positive" | "negative"

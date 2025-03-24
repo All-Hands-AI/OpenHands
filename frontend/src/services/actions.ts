@@ -20,12 +20,16 @@ import {
 
 const messageActions = {
   [ActionType.BROWSE]: (message: ActionMessage) => {
+    console.log("BROWSE action received:", message);
     if (!message.args.thought && message.message) {
+      console.log("Adding BROWSE message to chat:", message.message);
       addAssistantMessageToChat(queryClient, message.message);
     }
   },
   [ActionType.BROWSE_INTERACTIVE]: (message: ActionMessage) => {
+    console.log("BROWSE_INTERACTIVE action received:", message);
     if (!message.args.thought && message.message) {
+      console.log("Adding BROWSE_INTERACTIVE message to chat:", message.message);
       addAssistantMessageToChat(queryClient, message.message);
     }
   },
@@ -35,9 +39,12 @@ const messageActions = {
     store.dispatch(setCode(content));
   },
   [ActionType.MESSAGE]: (message: ActionMessage) => {
+    console.log("MESSAGE action received:", message);
     if (message.source === "user") {
+      console.log("User message - handled by chat interface directly");
       // This case is handled by the chat interface directly
     } else {
+      console.log("Adding assistant message to chat:", message.args.content);
       addAssistantMessageToChat(queryClient, message.args.content);
     }
   },
@@ -47,6 +54,8 @@ const messageActions = {
     }
   },
   [ActionType.FINISH]: (message: ActionMessage) => {
+    console.log("FINISH action received:", message);
+    console.log("Adding final thought to chat:", message.args.final_thought);
     addAssistantMessageToChat(queryClient, message.args.final_thought);
     let successPrediction = "";
     if (message.args.task_completed === "partial") {
@@ -61,8 +70,10 @@ const messageActions = {
     if (successPrediction) {
       // if final_thought is not empty, add a new line before the success prediction
       if (message.args.final_thought) {
+        console.log("Adding success prediction with newline:", successPrediction);
         addAssistantMessageToChat(queryClient, `\n${successPrediction}`);
       } else {
+        console.log("Adding success prediction:", successPrediction);
         addAssistantMessageToChat(queryClient, successPrediction);
       }
     }
@@ -122,23 +133,27 @@ export function handleStatusMessage(message: StatusMessage) {
 }
 
 export function handleAssistantMessage(message: Record<string, unknown>) {
+  console.log("handleAssistantMessage received:", message);
+  
   if (message.action) {
+    console.log("Processing action message:", message.action);
     handleActionMessage(message as unknown as ActionMessage);
   } else if (message.observation) {
+    console.log("Processing observation message:", message.observation);
     handleObservationMessage(message as unknown as ObservationMessage);
   } else if (message.status_update) {
+    console.log("Processing status message:", message.status_update);
     handleStatusMessage(message as unknown as StatusMessage);
   } else {
+    console.log("Unknown message type received:", message);
     const errorMsg = "Unknown message type received";
     trackError({
       message: errorMsg,
       source: "chat",
       metadata: { raw_message: message },
     });
-    store.dispatch(
-      addErrorMessage({
-        message: errorMsg,
-      }),
-    );
+    addErrorMessageToChat(queryClient, {
+      message: errorMsg,
+    });
   }
 }
