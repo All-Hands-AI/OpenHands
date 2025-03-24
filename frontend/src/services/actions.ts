@@ -39,14 +39,9 @@ const messageActions = {
     store.dispatch(setCode(content));
   },
   [ActionType.MESSAGE]: (message: ActionMessage) => {
-    console.log("MESSAGE action received:", message);
-    if (message.source === "user") {
-      console.log("User message - handled by chat interface directly");
-      // This case is handled by the chat interface directly
-    } else {
-      console.log("Adding assistant message to chat:", message.args.content);
-      addAssistantMessageToChat(queryClient, message.args.content);
-    }
+    console.log("MESSAGE action received in actions.ts - SKIPPING to avoid duplicates");
+    // Messages are now handled directly in the ws-client-provider
+    // This prevents duplicate messages
   },
   [ActionType.RUN_IPYTHON]: (message: ActionMessage) => {
     if (message.args.confirmation_state !== "rejected") {

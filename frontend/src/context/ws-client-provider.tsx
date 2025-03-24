@@ -13,6 +13,7 @@ import {
 import { StatusMessage } from "#/types/message";
 import { setAgentStatus } from "#/hooks/query/use-agent-status";
 import { setAgentState } from "#/hooks/query/use-agent-state";
+import { addAssistantMessage } from "#/hooks/query/use-chat-messages";
 import { AgentState } from "#/types/agent-state";
 
 const isOpenHandsEvent = (event: unknown): event is OpenHandsParsedEvent =>
@@ -139,6 +140,8 @@ export function WsClientProvider({
   }
 
   function handleMessage(event: Record<string, unknown>) {
+    console.log("WS handleMessage received event:", event);
+    
     if (isStatusMessage(event)) {
       // Handle status message
       setAgentStatus(queryClient, event);
@@ -148,15 +151,34 @@ export function WsClientProvider({
         setAgentState(queryClient, event.agent_state as AgentState);
       }
     }
-    if (isOpenHandsEvent(event) && isMessageAction(event)) {
-      messageRateHandler.record(new Date().getTime());
+    
+    // Handle message actions directly in the provider
+    if (isOpenHandsEvent(event)) {
+      if (isMessageAction(event)) {
+        messageRateHandler.record(new Date().getTime());
+        
+        // Handle user and assistant messages
+        if (isAssistantMessage(event) && event.args?.content) {
+          console.log("WS provider adding assistant message:", event.args.content);
+          addAssistantMessage(queryClient, event.args.content as string);
+        }
+        
+        // User messages are handled by the chat interface directly
+        if (isUserMessage(event)) {
+          console.log("WS provider detected user message - handled by chat interface");
+        }
+      }
     }
+    
     setEvents((prevEvents) => [...prevEvents, event]);
     if (!Number.isNaN(parseInt(event.id as string, 10))) {
       lastEventRef.current = event;
     }
 
-    handleAssistantMessage(event);
+    // For other types of messages, use the existing handler
+    if (!isMessageAction(event)) {
+      handleAssistantMessage(event);
+    }
   }
 
   function handleDisconnect(data: unknown) {

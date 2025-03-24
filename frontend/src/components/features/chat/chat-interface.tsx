@@ -53,6 +53,8 @@ export function ChatInterface() {
   const { mutate: getTrajectory } = useGetTrajectory();
 
   const handleSendMessage = async (content: string, files: File[]) => {
+    console.log("ChatInterface - handleSendMessage called with content:", content);
+    
     if (messages.length === 0) {
       posthog.capture("initial_query_submitted", {
         entry_point: getEntryPoint(selectedRepository !== null),
@@ -69,7 +71,11 @@ export function ChatInterface() {
 
     const timestamp = new Date().toISOString();
     const pending = true;
+    
+    console.log("ChatInterface - adding user message:", { content, imageUrls, timestamp, pending });
     addUserMessage({ content, imageUrls, timestamp, pending });
+    
+    console.log("ChatInterface - sending message to server");
     send(createChatMessage(content, imageUrls, timestamp));
     setMessageToSend(null);
   };
