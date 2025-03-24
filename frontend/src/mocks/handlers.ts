@@ -301,4 +301,10 @@ export const handlers = [
   }),
 
   http.post("/api/logout", () => HttpResponse.json(null, { status: 200 })),
+
+  http.post("/api/reset-settings", async () => {
+    await delay();
+    MOCK_USER_PREFERENCES.settings = { ...MOCK_DEFAULT_USER_SETTINGS };
+    return HttpResponse.json(null, { status: 200 });
+  }),
 ];

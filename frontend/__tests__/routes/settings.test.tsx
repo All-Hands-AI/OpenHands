@@ -831,9 +831,26 @@ describe("Settings Screen", () => {
       const confirmButton = within(modal).getByText("Reset");
       await user.click(confirmButton);
 
-      expect(resetSettingsSpy).toHaveBeenCalled();
+      await waitFor(() => {
+        expect(resetSettingsSpy).toHaveBeenCalled();
+      });
+
+      // Mock the settings response after reset
+      getSettingsSpy.mockResolvedValueOnce({
+        ...MOCK_DEFAULT_USER_SETTINGS,
+        llm_base_url: "",
+        confirmation_mode: false,
+        security_analyzer: "",
+      });
+
+      // Wait for the mutation to complete and the modal to be removed
       await waitFor(() => {
         expect(screen.queryByTestId("reset-modal")).not.toBeInTheDocument();
+        expect(screen.queryByTestId("llm-custom-model-input")).not.toBeInTheDocument();
+        expect(screen.queryByTestId("base-url-input")).not.toBeInTheDocument();
+        expect(screen.queryByTestId("agent-input")).not.toBeInTheDocument();
+        expect(screen.queryByTestId("security-analyzer-input")).not.toBeInTheDocument();
+        expect(screen.queryByTestId("enable-confirmation-mode-switch")).not.toBeInTheDocument();
       });
     });
 

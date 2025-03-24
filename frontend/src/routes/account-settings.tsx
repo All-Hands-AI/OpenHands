@@ -173,7 +173,7 @@ function AccountSettings() {
       onSuccess: () => {
         displaySuccessToast("Settings reset");
         setResetSettingsModalIsOpen(false);
-        setLlmConfigMode(isAdvancedSettingsSet ? "advanced" : "basic");
+        setLlmConfigMode("basic");
       },
     });
   };

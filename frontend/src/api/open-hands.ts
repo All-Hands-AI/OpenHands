@@ -275,8 +275,8 @@ class OpenHands {
    * Reset user settings in server
    */
   static async resetSettings(): Promise<boolean> {
-    const { data } = await openHands.post("/api/reset-settings");
-    return data.status === 200;
+    const response = await openHands.post("/api/reset-settings");
+    return response.status === 200;
   }
 
   static async createCheckoutSession(amount: number): Promise<string> {
