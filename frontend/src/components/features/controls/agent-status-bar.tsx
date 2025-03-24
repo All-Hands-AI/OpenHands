@@ -33,7 +33,6 @@ export function AgentStatusBar() {
       setStatusMessage(AGENT_STATUS_MAP[curAgentState].message);
       return;
     }
-    
     // eslint-disable-next-line no-console
     console.log("[Status Debug] Updating status message in UI:", {
       statusMessageId: curStatusMessage.id,
