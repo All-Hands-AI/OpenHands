@@ -10,7 +10,7 @@ import {
   useConversation,
 } from "#/context/conversation-context";
 import { Controls } from "#/components/features/controls/controls";
-import { clearMessages, addUserMessage } from "#/state/chat-slice";
+import { clearMessages, addUserMessage } from "#/types/migrated-types";
 import { useCommand } from "#/hooks/query/use-command";
 import { useEffectOnce } from "#/hooks/use-effect-once";
 import CodeIcon from "#/icons/code.svg?react";

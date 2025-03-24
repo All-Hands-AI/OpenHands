@@ -3,9 +3,9 @@ import {
   addAssistantAction,
   addUserMessage,
   addErrorMessage,
-} from "#/state/chat-slice";
+  appendSecurityAnalyzerInput,
+} from "#/types/migrated-types";
 import { trackError } from "#/utils/error-handler";
-import { appendSecurityAnalyzerInput } from "#/state/security-analyzer-slice";
 // Jupyter slice is now handled by React Query
 // Status, metrics, browser, and code slices are now handled by React Query
 import store from "#/store";
@@ -167,8 +167,7 @@ export function handleActionMessage(message: ActionMessage) {
       store.dispatch(addAssistantMessage(message.args.thought));
     }
     // Need to convert ActionMessage to RejectAction
-    // @ts-expect-error TODO: fix
-    store.dispatch(addAssistantAction(message));
+    store.dispatch(addAssistantAction(message as unknown as OpenHandsAction));
   }
 
   if (message.action in messageActions) {

@@ -1,16 +1,15 @@
 import React from "react";
-import { useSelector } from "react-redux";
 import { IoAlertCircle } from "react-icons/io5";
 import { useTranslation } from "react-i18next";
 import { Editor, Monaco } from "@monaco-editor/react";
 import { editor } from "monaco-editor";
 import { Button, Select, SelectItem } from "@heroui/react";
 import { useMutation } from "@tanstack/react-query";
-import { RootState } from "#/store";
+import { useSecurityAnalyzer } from "#/hooks/query/use-security-analyzer";
 import {
   ActionSecurityRisk,
   SecurityAnalyzerLog,
-} from "#/state/security-analyzer-slice";
+} from "#/types/migrated-types";
 import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom";
 import { I18nKey } from "#/i18n/declaration";
 import toast from "#/utils/toast";
@@ -26,7 +25,7 @@ type SectionType = "logs" | "policy" | "settings";
 
 function SecurityInvariant() {
   const { t } = useTranslation();
-  const { logs } = useSelector((state: RootState) => state.securityAnalyzer);
+  const { logs } = useSecurityAnalyzer();
 
   const [activeSection, setActiveSection] = React.useState("logs");
   const [policy, setPolicy] = React.useState("");

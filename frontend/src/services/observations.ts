@@ -9,7 +9,7 @@ import ObservationType from "#/types/observation-type";
 import {
   addAssistantMessage,
   addAssistantObservation,
-} from "#/state/chat-slice";
+} from "#/types/migrated-types";
 
 export function handleObservationMessage(message: ObservationMessage) {
   switch (message.observation) {

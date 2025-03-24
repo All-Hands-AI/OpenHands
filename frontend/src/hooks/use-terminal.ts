@@ -1,7 +1,7 @@
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 import React from "react";
-import { Command } from "#/state/command-slice";
+import { Command } from "#/types/migrated-types";
 import { getTerminalCommand } from "#/services/terminal-service";
 import { parseTerminalOutput } from "#/utils/parse-terminal-output";
 import { useWsClient } from "#/context/ws-client-provider";

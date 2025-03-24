@@ -1,8 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 import { showErrorToast } from "#/utils/error-handler";
-import { RootState } from "#/store";
+import { useAgent } from "#/hooks/query/use-agent";
 import { AgentState } from "#/types/agent-state";
 import { AGENT_STATUS_MAP } from "../../agent-status-map.constant";
 import {
@@ -21,7 +20,7 @@ const notificationStates = [
 
 export function AgentStatusBar() {
   const { t, i18n } = useTranslation();
-  const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const { curAgentState } = useAgent();
   const { statusMessage: curStatusMessage } = useStatusMessage();
   const { status } = useWsClient();
   const { notify } = useNotification();

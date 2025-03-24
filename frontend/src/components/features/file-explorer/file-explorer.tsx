@@ -1,10 +1,9 @@
 import React from "react";
-import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
 import { ExplorerTree } from "#/components/features/file-explorer/explorer-tree";
 import toast from "#/utils/toast";
-import { RootState } from "#/store";
+import { useAgent } from "#/hooks/query/use-agent";
 import { I18nKey } from "#/i18n/declaration";
 import { useListFiles } from "#/hooks/query/use-list-files";
 import { cn } from "#/utils/utils";
@@ -21,7 +20,7 @@ interface FileExplorerProps {
 export function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
   const { t } = useTranslation();
 
-  const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const { curAgentState } = useAgent();
 
   const { data: paths, refetch, error } = useListFiles();
   const { data: vscodeUrl } = useVSCodeUrl({

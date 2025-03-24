@@ -1,4 +1,4 @@
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import React from "react";
 import posthog from "posthog-js";
 import { useParams } from "react-router";
@@ -6,8 +6,9 @@ import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
 import { TrajectoryActions } from "../trajectory/trajectory-actions";
 import { createChatMessage } from "#/services/chat-service";
 import { InteractiveChatBox } from "./interactive-chat-box";
-import { addUserMessage } from "#/state/chat-slice";
-import { RootState } from "#/store";
+import { addUserMessage } from "#/types/migrated-types";
+import { useChat } from "#/hooks/query/use-chat";
+import { useAgent } from "#/hooks/query/use-agent";
 import { AgentState } from "#/types/agent-state";
 import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
 import { FeedbackModal } from "../feedback/feedback-modal";
@@ -37,8 +38,8 @@ export function ChatInterface() {
   const { scrollDomToBottom, onChatBodyScroll, hitBottom } =
     useScrollToBottom(scrollRef);
 
-  const { messages } = useSelector((state: RootState) => state.chat);
-  const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const { messages } = useChat();
+  const { curAgentState } = useAgent();
 
   const [feedbackPolarity, setFeedbackPolarity] = React.useState<
     "positive" | "negative"
