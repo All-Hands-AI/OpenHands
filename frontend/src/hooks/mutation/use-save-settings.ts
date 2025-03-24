@@ -4,7 +4,13 @@ import OpenHands from "#/api/open-hands";
 import { PostSettings, PostApiSettings } from "#/types/settings";
 import { useSettings } from "../query/use-settings";
 
-const saveSettingsMutationFn = async (settings: Partial<PostSettings>) => {
+const saveSettingsMutationFn = async (settings: Partial<PostSettings> | null) => {
+  // If settings is null, we're resetting
+  if (settings === null) {
+    await OpenHands.resetSettings();
+    return;
+  }
+
   const resetLlmApiKey = settings.LLM_API_KEY === "";
 
   const apiSettings: Partial<PostApiSettings> = {
@@ -33,7 +39,12 @@ export const useSaveSettings = () => {
   const { data: currentSettings } = useSettings();
 
   return useMutation({
-    mutationFn: async (settings: Partial<PostSettings>) => {
+    mutationFn: async (settings: Partial<PostSettings> | null) => {
+      if (settings === null) {
+        await saveSettingsMutationFn(null);
+        return;
+      }
+
       const newSettings = { ...currentSettings, ...settings };
 
       // Temp hack for reset logic
