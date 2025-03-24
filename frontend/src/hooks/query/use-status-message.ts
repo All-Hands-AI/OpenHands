@@ -92,7 +92,6 @@ export function useStatusMessage() {
     onError: (_, __, context) => {
       // eslint-disable-next-line no-console
       console.error("[Status Debug] Error setting status message");
-      
       // Restore previous status message on error
       if (context?.previousStatusMessage) {
         queryClient.setQueryData(

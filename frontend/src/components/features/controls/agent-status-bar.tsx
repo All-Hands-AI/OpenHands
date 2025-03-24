@@ -52,11 +52,17 @@ export function AgentStatusBar() {
     }
     if (curAgentState === AgentState.LOADING && message.trim()) {
       // eslint-disable-next-line no-console
-      console.log("[Status Debug] Setting status message from info message:", message);
+      console.log(
+        "[Status Debug] Setting status message from info message:",
+        message,
+      );
       setStatusMessage(message);
     } else {
       // eslint-disable-next-line no-console
-      console.log("[Status Debug] Setting status message from agent state:", AGENT_STATUS_MAP[curAgentState].message);
+      console.log(
+        "[Status Debug] Setting status message from agent state:",
+        AGENT_STATUS_MAP[curAgentState].message,
+      );
       setStatusMessage(AGENT_STATUS_MAP[curAgentState].message);
     }
   };
