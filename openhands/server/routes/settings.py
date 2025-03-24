@@ -148,39 +148,35 @@ async def store_settings(
                     existing_settings.user_consents_to_analytics
                 )
 
-            # Handle token updates immutably
-            if settings.unset_github_token:
-                settings = settings.model_copy(update={'secrets_store': SecretStore()})
+            # Only merge if not unsetting tokens
+            if settings.provider_tokens:
+                if existing_settings.secrets_store:
+                    existing_providers = [
+                        provider.value
+                        for provider in existing_settings.secrets_store.provider_tokens
+                    ]
 
-            else:  # Only merge if not unsetting tokens
-                if settings.provider_tokens:
-                    if existing_settings.secrets_store:
-                        existing_providers = [
-                            provider.value
-                            for provider in existing_settings.secrets_store.provider_tokens
-                        ]
-
-                        # Merge incoming settings store with the existing one
-                        for provider, token_value in settings.provider_tokens.items():
-                            if provider in existing_providers and not token_value:
-                                provider_type = ProviderType(provider)
-                                existing_token = (
-                                    existing_settings.secrets_store.provider_tokens.get(
-                                        provider_type
-                                    )
+                    # Merge incoming settings store with the existing one
+                    for provider, token_value in settings.provider_tokens.items():
+                        if provider in existing_providers and not token_value:
+                            provider_type = ProviderType(provider)
+                            existing_token = (
+                                existing_settings.secrets_store.provider_tokens.get(
+                                    provider_type
                                 )
-                                if existing_token and existing_token.token:
-                                    settings.provider_tokens[provider] = (
-                                        existing_token.token.get_secret_value()
-                                    )
-                else:  # nothing passed in means keep current settings
-                    provider_tokens = existing_settings.secrets_store.provider_tokens
-                    settings.provider_tokens = {
-                        provider.value: data.token.get_secret_value()
-                        if data.token
-                        else None
-                        for provider, data in provider_tokens.items()
-                    }
+                            )
+                            if existing_token and existing_token.token:
+                                settings.provider_tokens[provider] = (
+                                    existing_token.token.get_secret_value()
+                                )
+            else:  # nothing passed in means keep current settings
+                provider_tokens = existing_settings.secrets_store.provider_tokens
+                settings.provider_tokens = {
+                    provider.value: data.token.get_secret_value()
+                    if data.token
+                    else None
+                    for provider, data in provider_tokens.items()
+                }
 
         # Update sandbox config with new settings
         if settings.remote_runtime_resource_factor is not None:
