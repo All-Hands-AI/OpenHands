@@ -1,5 +1,8 @@
 import { QueryClient } from "@tanstack/react-query";
-import { initQueryClientWrapper, SliceNames } from "./utils/query-client-wrapper";
+import {
+  initQueryClientWrapper,
+  SliceNames,
+} from "./utils/query-client-wrapper";
 import { queryClientConfig } from "./query-client-config";
 
 // Create a query client

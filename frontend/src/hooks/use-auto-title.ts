@@ -32,7 +32,7 @@ export function useAutoTitle() {
     }
 
     const typedMessages = messages as Message[];
-    
+
     const hasAgentMessage = typedMessages.some(
       (message) => message.sender === "assistant",
     );

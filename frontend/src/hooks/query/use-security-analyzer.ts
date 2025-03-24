@@ -55,9 +55,7 @@ export function useSecurityAnalyzer() {
     // Otherwise, get initial data from cache if bridge is available
     if (bridge) {
       try {
-        return bridge.getSliceState<SecurityAnalyzerState>(
-          "securityAnalyzer",
-        );
+        return bridge.getSliceState<SecurityAnalyzerState>("securityAnalyzer");
       } catch (error) {
         // If we can.t get the state from cache, return the initial state
         return initialSecurityAnalyzer;

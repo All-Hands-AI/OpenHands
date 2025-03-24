@@ -36,7 +36,9 @@ export function useCode() {
   } catch (error) {
     // In tests, we might not have the bridge initialized
     // eslint-disable-next-line no-console
-    console.warn("QueryClientWrapper not initialized, using default code state");
+    console.warn(
+      "QueryClientWrapper not initialized, using default code state",
+    );
   }
 
   // Get initial state from cache if this is the first time accessing the data

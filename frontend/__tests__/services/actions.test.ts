@@ -3,7 +3,7 @@ import { handleStatusMessage, handleActionMessage } from "#/services/actions";
 import { trackError } from "#/utils/error-handler";
 import ActionType from "#/types/action-type";
 import { ActionMessage } from "#/types/message";
-import * as queryReduxBridge from "#/utils/query-redux-bridge";
+import * as queryClientWrapper from "#/utils/query-client-wrapper";
 import * as observations from "#/services/observations";
 
 // Mock dependencies
@@ -21,11 +21,11 @@ vi.mock("#/store", () => ({
   default: mockStore,
 }));
 
-// Mock QueryReduxBridge
-vi.mock("#/utils/query-redux-bridge", () => ({
-  getQueryReduxBridge: vi.fn(() => ({
+// Mock QueryClientWrapper
+vi.mock("#/utils/query-client-wrapper", () => ({
+  getQueryClientWrapper: vi.fn(() => ({
     isSliceMigrated: vi.fn(() => true),
-    syncReduxToQuery: vi.fn(),
+    setQueryData: vi.fn(),
     conditionalDispatch: vi.fn(),
   })),
 }));
@@ -114,16 +114,15 @@ describe("Actions Service", () => {
 
       const mockBridge = {
         isSliceMigrated: vi.fn(() => true),
-        syncReduxToQuery: vi.fn(),
+        setQueryData: vi.fn(),
         conditionalDispatch: vi.fn(),
       };
       
-      vi.mocked(queryReduxBridge.getQueryReduxBridge).mockReturnValue(mockBridge as any);
+      vi.mocked(queryClientWrapper.getQueryClientWrapper).mockReturnValue(mockBridge as any);
 
       handleActionMessage(message);
 
-      expect(mockBridge.isSliceMigrated).toHaveBeenCalledWith("metrics");
-      expect(mockBridge.syncReduxToQuery).toHaveBeenCalledWith(
+      expect(mockBridge.setQueryData).toHaveBeenCalledWith(
         ["metrics"],
         {
           cost: 0.05,

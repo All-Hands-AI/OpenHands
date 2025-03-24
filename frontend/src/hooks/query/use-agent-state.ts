@@ -24,7 +24,9 @@ export function useAgentState() {
     bridge = getQueryClientWrapper();
   } catch (error) {
     // In tests, we might not have the bridge initialized
-    console.warn("QueryClientWrapper not initialized, using default agent state");
+    console.warn(
+      "QueryClientWrapper not initialized, using default agent state",
+    );
   }
 
   // Get initial state from cache if this is the first time accessing the data

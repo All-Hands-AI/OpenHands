@@ -6,7 +6,7 @@ import App from "#/routes/_oh.app/route";
 import OpenHands from "#/api/open-hands";
 import * as CustomToast from "#/utils/custom-toast-handlers";
 import { QueryClient } from "@tanstack/react-query";
-import { initQueryReduxBridge } from "#/utils/query-redux-bridge";
+import { initQueryClientWrapper } from "#/utils/query-client-wrapper";
 
 describe("App", () => {
   const errorToastSpy = vi.spyOn(CustomToast, "displayErrorToast");
@@ -20,9 +20,9 @@ describe("App", () => {
   }));
 
   beforeAll(() => {
-    // Initialize the QueryReduxBridge for tests
+    // Initialize the QueryClientWrapper for tests
     const queryClient = new QueryClient();
-    initQueryReduxBridge(queryClient);
+    initQueryClientWrapper(queryClient);
     
     vi.mock("#/hooks/use-end-session", () => ({
       useEndSession: vi.fn(() => endSessionMock),

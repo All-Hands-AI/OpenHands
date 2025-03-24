@@ -24,7 +24,9 @@ export function useFileState() {
   } catch (error) {
     // In tests, we might not have the bridge initialized
     // eslint-disable-next-line no-console
-    console.warn("QueryClientWrapper not initialized, using default file state");
+    console.warn(
+      "QueryClientWrapper not initialized, using default file state",
+    );
   }
 
   // Get initial state from cache if this is the first time accessing the data
