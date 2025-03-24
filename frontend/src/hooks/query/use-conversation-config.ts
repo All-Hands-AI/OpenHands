@@ -18,6 +18,8 @@ export const useConversationConfig = () => {
       return OpenHands.getRuntimeId(conversationId);
     },
     enabled: status !== WsClientProviderStatus.DISCONNECTED && !!conversationId,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 15, // 15 minutes
   });
 
   React.useEffect(() => {

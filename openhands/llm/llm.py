@@ -8,7 +8,6 @@ from typing import Any, Callable
 import requests
 
 from openhands.core.config import LLMConfig
-from openhands.utils.ensure_httpx_close import ensure_httpx_close
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
@@ -236,11 +235,17 @@ class LLM(RetryMixin, DebugMixin):
             # NOTE: this setting is global; unlike drop_params, it cannot be overridden in the litellm completion partial
             litellm.modify_params = self.config.modify_params
 
+            # if we're not using litellm proxy, remove the extra_body
+            if 'litellm_proxy' not in self.config.model:
+                kwargs.pop('extra_body', None)
+
             # Record start time for latency measurement
             start_time = time.time()
-            with ensure_httpx_close():
-                # we don't support streaming here, thus we get a ModelResponse
-                resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
+            # we don't support streaming here, thus we get a ModelResponse
+            logger.debug(
+                f'LLM: calling litellm completion with model: {self.config.model}, base_url: {self.config.base_url}, args: {args}, kwargs: {kwargs}'
+            )
+            resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
 
             # Calculate and record latency
             latency = time.time() - start_time
@@ -251,7 +256,8 @@ class LLM(RetryMixin, DebugMixin):
 
             # if we mocked function calling, and we have tools, convert the response back to function calling format
             if mock_function_calling and mock_fncall_tools is not None:
-                assert len(resp.choices) == 1
+                logger.debug(f'Response choices: {len(resp.choices)}')
+                assert len(resp.choices) >= 1
                 non_fncall_response_message = resp.choices[0].message
                 fn_call_messages_with_response = (
                     convert_non_fncall_messages_to_fncall_messages(
@@ -418,6 +424,8 @@ class LLM(RetryMixin, DebugMixin):
                     self.model_info['max_tokens'], int
                 ):
                     self.config.max_output_tokens = self.model_info['max_tokens']
+            if 'claude-3-7-sonnet' in self.config.model:
+                self.config.max_output_tokens = 64000  # litellm set max to 128k, but that requires a header to be set
 
         # Initialize function calling capability
         # Check if model name is in our supported list

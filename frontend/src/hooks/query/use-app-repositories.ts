@@ -50,6 +50,8 @@ export const useAppRepositories = () => {
       Array.isArray(installations) &&
       installations.length > 0 &&
       config?.APP_MODE === "saas",
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 15, // 15 minutes
   });
 
   // TODO: Once we create our custom dropdown component, we should fetch data onEndReached
