@@ -179,12 +179,12 @@ class GitlabIssueHandler(IssueHandlerInterface):
         return all_comments if all_comments else None
 
     def branch_exists(self, branch_name: str) -> bool:
-        print(f'Checking if branch {branch_name} exists...')
+        logger.info(f'Checking if branch {branch_name} exists...')
         response = httpx.get(
             f'{self.base_url}/repository/branches/{branch_name}', headers=self.headers
         )
         exists = response.status_code == 200
-        print(f'Branch {branch_name} exists: {exists}')
+        logger.info(f'Branch {branch_name} exists: {exists}')
         return exists
 
     def get_branch_name(self, base_branch_name: str) -> str:
@@ -261,8 +261,8 @@ class GitlabIssueHandler(IssueHandlerInterface):
                 json=review_data,
             )
             if review_response.status_code != 200:
-                print(
-                    f'Warning: Failed to request review from {reviewer}: {review_response.text}'
+                logger.warning(
+                    f'Failed to request review from {reviewer}: {review_response.text}'
                 )
 
     def send_comment_msg(self, issue_number: int, msg: str) -> None:
@@ -279,11 +279,11 @@ class GitlabIssueHandler(IssueHandlerInterface):
             comment_url, headers=self.headers, json=comment_data
         )
         if comment_response.status_code != 201:
-            print(
+            logger.error(
                 f'Failed to post comment: {comment_response.status_code} {comment_response.text}'
             )
         else:
-            print(f'Comment added to the PR: {msg}')
+            logger.info(f'Comment added to the PR: {msg}')
 
     def get_context_from_external_issues_references(
         self,

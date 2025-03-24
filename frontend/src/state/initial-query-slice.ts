@@ -4,14 +4,12 @@ type SliceState = {
   files: string[]; // base64 encoded images
   initialPrompt: string | null;
   selectedRepository: string | null;
-  importedProjectZip: string | null; // base64 encoded zip
 };
 
 const initialState: SliceState = {
   files: [],
   initialPrompt: null,
   selectedRepository: null,
-  importedProjectZip: null,
 };
 
 export const selectedFilesSlice = createSlice({
@@ -39,9 +37,6 @@ export const selectedFilesSlice = createSlice({
     clearSelectedRepository(state) {
       state.selectedRepository = null;
     },
-    setImportedProjectZip(state, action: PayloadAction<string | null>) {
-      state.importedProjectZip = action.payload;
-    },
   },
 });
 
@@ -53,6 +48,5 @@ export const {
   clearInitialPrompt,
   setSelectedRepository,
   clearSelectedRepository,
-  setImportedProjectZip,
 } = selectedFilesSlice.actions;
 export default selectedFilesSlice.reducer;

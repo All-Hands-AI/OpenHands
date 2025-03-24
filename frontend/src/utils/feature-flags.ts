@@ -1,4 +1,4 @@
-function loadFeatureFlag(
+export function loadFeatureFlag(
   flagName: string,
   defaultValue: boolean = false,
 ): boolean {
@@ -11,8 +11,3 @@ function loadFeatureFlag(
     return defaultValue;
   }
 }
-
-export const BILLING_SETTINGS = () =>
-  true || loadFeatureFlag("BILLING_SETTINGS");
-export const HIDE_LLM_SETTINGS = () =>
-  true || loadFeatureFlag("HIDE_LLM_SETTINGS");

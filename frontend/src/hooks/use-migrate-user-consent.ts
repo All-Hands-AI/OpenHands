@@ -1,9 +1,9 @@
 import React from "react";
-import { useCurrentSettings } from "#/context/settings-context";
 import { handleCaptureConsent } from "#/utils/handle-capture-consent";
+import { useSaveSettings } from "./mutation/use-save-settings";
 
 export const useMigrateUserConsent = () => {
-  const { saveUserSettings } = useCurrentSettings();
+  const { mutate: saveUserSettings } = useSaveSettings();
 
   /**
    * Migrate user consent to the settings store on the server.
