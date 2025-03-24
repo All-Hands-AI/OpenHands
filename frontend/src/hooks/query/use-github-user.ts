@@ -5,13 +5,13 @@ import { useConfig } from "./use-config";
 import OpenHands from "#/api/open-hands";
 import { useAuth } from "#/context/auth-context";
 import { useLogout } from "../mutation/use-logout";
-import { useCurrentSettings } from "#/context/settings-context";
+import { useSaveSettings } from "../mutation/use-save-settings";
 
 export const useGitHubUser = () => {
   const { githubTokenIsSet } = useAuth();
   const { setGitHubTokenIsSet } = useAuth();
   const { mutateAsync: logout } = useLogout();
-  const { saveUserSettings } = useCurrentSettings();
+  const { mutate: saveUserSettings } = useSaveSettings();
   const { data: config } = useConfig();
 
   const user = useQuery({
@@ -19,6 +19,8 @@ export const useGitHubUser = () => {
     queryFn: OpenHands.getGitHubUser,
     enabled: githubTokenIsSet && !!config?.APP_MODE,
     retry: false,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 15, // 15 minutes
   });
 
   React.useEffect(() => {
@@ -36,7 +38,7 @@ export const useGitHubUser = () => {
   const handleLogout = async () => {
     if (config?.APP_MODE === "saas") await logout();
     else {
-      await saveUserSettings({ unset_github_token: true });
+      saveUserSettings({ unset_github_token: true });
       setGitHubTokenIsSet(false);
     }
     posthog.reset();

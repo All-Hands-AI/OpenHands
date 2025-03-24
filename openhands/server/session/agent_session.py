@@ -1,21 +1,24 @@
 import asyncio
+import json
 import time
 from logging import LoggerAdapter
-from typing import Callable
-
-from pydantic import SecretStr
+from types import MappingProxyType
+from typing import Callable, cast
 
 from openhands.controller import AgentController
 from openhands.controller.agent import Agent
+from openhands.controller.replay import ReplayManager
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig, AppConfig, LLMConfig
 from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import OpenHandsLoggerAdapter
 from openhands.core.schema.agent import AgentState
 from openhands.events.action import ChangeAgentStateAction, MessageAction
-from openhands.events.event import EventSource
+from openhands.events.event import Event, EventSource
 from openhands.events.stream import EventStream
-from openhands.microagent import BaseMicroAgent
+from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderHandler
+from openhands.memory.memory import Memory
+from openhands.microagent.microagent import BaseMicroAgent
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
 from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
@@ -36,6 +39,7 @@ class AgentSession:
     """
 
     sid: str
+    user_id: str | None
     event_stream: EventStream
     file_store: FileStore
     controller: AgentController | None = None
@@ -52,7 +56,7 @@ class AgentSession:
         sid: str,
         file_store: FileStore,
         status_callback: Callable | None = None,
-        github_user_id: str | None = None,
+        user_id: str | None = None,
     ):
         """Initializes a new instance of the Session class
 
@@ -62,12 +66,12 @@ class AgentSession:
         """
 
         self.sid = sid
-        self.event_stream = EventStream(sid, file_store)
+        self.event_stream = EventStream(sid, file_store, user_id)
         self.file_store = file_store
         self._status_callback = status_callback
-        self.github_user_id = github_user_id
+        self.user_id = user_id
         self.logger = OpenHandsLoggerAdapter(
-            extra={'session_id': sid, 'user_id': github_user_id}
+            extra={'session_id': sid, 'user_id': user_id}
         )
 
     async def start(
@@ -76,13 +80,14 @@ class AgentSession:
         config: AppConfig,
         agent: Agent,
         max_iterations: int,
+        git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
         max_budget_per_task: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
-        github_token: SecretStr | None = None,
         selected_repository: str | None = None,
         selected_branch: str | None = None,
         initial_message: MessageAction | None = None,
+        replay_json: str | None = None,
     ):
         """Starts the Agent session
         Parameters:
@@ -113,25 +118,44 @@ class AgentSession:
                 runtime_name=runtime_name,
                 config=config,
                 agent=agent,
-                github_token=github_token,
+                git_provider_tokens=git_provider_tokens,
                 selected_repository=selected_repository,
                 selected_branch=selected_branch,
             )
 
-            self.controller = self._create_controller(
-                agent,
-                config.security.confirmation_mode,
-                max_iterations,
-                max_budget_per_task=max_budget_per_task,
-                agent_to_llm_config=agent_to_llm_config,
-                agent_configs=agent_configs,
-            )
-            if github_token:
-                self.event_stream.set_secrets(
-                    {
-                        'github_token': github_token.get_secret_value(),
-                    }
+            if replay_json:
+                initial_message = self._run_replay(
+                    initial_message,
+                    replay_json,
+                    agent,
+                    config,
+                    max_iterations,
+                    max_budget_per_task,
+                    agent_to_llm_config,
+                    agent_configs,
                 )
+            else:
+                self.controller = self._create_controller(
+                    agent,
+                    config.security.confirmation_mode,
+                    max_iterations,
+                    max_budget_per_task=max_budget_per_task,
+                    agent_to_llm_config=agent_to_llm_config,
+                    agent_configs=agent_configs,
+                )
+
+            repo_directory = None
+            if self.runtime and runtime_connected and selected_repository:
+                repo_directory = selected_repository.split('/')[-1]
+            self.memory = await self._create_memory(
+                selected_repository=selected_repository,
+                repo_directory=repo_directory,
+            )
+
+            if git_provider_tokens:
+                provider_handler = ProviderHandler(provider_tokens=git_provider_tokens)
+                await provider_handler.set_event_stream_secrets(self.event_stream)
+
             if not self._closed:
                 if initial_message:
                     self.event_stream.add_event(initial_message, EventSource.USER)
@@ -176,12 +200,43 @@ class AgentSession:
             self.event_stream.close()
         if self.controller is not None:
             end_state = self.controller.get_state()
-            end_state.save_to_session(self.sid, self.file_store)
+            end_state.save_to_session(self.sid, self.file_store, self.user_id)
             await self.controller.close()
         if self.runtime is not None:
             self.runtime.close()
         if self.security_analyzer is not None:
             await self.security_analyzer.close()
+
+    def _run_replay(
+        self,
+        initial_message: MessageAction | None,
+        replay_json: str,
+        agent: Agent,
+        config: AppConfig,
+        max_iterations: int,
+        max_budget_per_task: float | None,
+        agent_to_llm_config: dict[str, LLMConfig] | None,
+        agent_configs: dict[str, AgentConfig] | None,
+    ) -> MessageAction:
+        """
+        Replays a trajectory from a JSON file. Note that once the replay session
+        finishes, the controller will continue to run with further user instructions,
+        so we still need to pass llm configs, budget, etc., even though the replay
+        itself does not call LLM or cost money.
+        """
+        assert initial_message is None
+        replay_events = ReplayManager.get_replay_events(json.loads(replay_json))
+        self.controller = self._create_controller(
+            agent,
+            config.security.confirmation_mode,
+            max_iterations,
+            max_budget_per_task=max_budget_per_task,
+            agent_to_llm_config=agent_to_llm_config,
+            agent_configs=agent_configs,
+            replay_events=replay_events[1:],
+        )
+        assert isinstance(replay_events[0], MessageAction)
+        return replay_events[0]
 
     def _create_security_analyzer(self, security_analyzer: str | None):
         """Creates a SecurityAnalyzer instance that will be used to analyze the agent actions
@@ -201,7 +256,7 @@ class AgentSession:
         runtime_name: str,
         config: AppConfig,
         agent: Agent,
-        github_token: SecretStr | None = None,
+        git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
         selected_repository: str | None = None,
         selected_branch: str | None = None,
     ) -> bool:
@@ -221,29 +276,36 @@ class AgentSession:
 
         self.logger.debug(f'Initializing runtime `{runtime_name}` now...')
         runtime_cls = get_runtime_cls(runtime_name)
-        env_vars = (
-            {
-                'GITHUB_TOKEN': github_token.get_secret_value(),
-            }
-            if github_token
-            else None
-        )
 
-        kwargs = {}
         if runtime_cls == RemoteRuntime:
-            kwargs['github_user_id'] = self.github_user_id
+            self.runtime = runtime_cls(
+                config=config,
+                event_stream=self.event_stream,
+                sid=self.sid,
+                plugins=agent.sandbox_plugins,
+                status_callback=self._status_callback,
+                headless_mode=False,
+                attach_to_existing=False,
+                git_provider_tokens=git_provider_tokens,
+                user_id=self.user_id,
+            )
+        else:
+            provider_handler = ProviderHandler(
+                provider_tokens=git_provider_tokens
+                or cast(PROVIDER_TOKEN_TYPE, MappingProxyType({}))
+            )
+            env_vars = await provider_handler.get_env_vars(expose_secrets=True)
 
-        self.runtime = runtime_cls(
-            config=config,
-            event_stream=self.event_stream,
-            sid=self.sid,
-            plugins=agent.sandbox_plugins,
-            status_callback=self._status_callback,
-            headless_mode=False,
-            attach_to_existing=False,
-            env_vars=env_vars,
-            **kwargs,
-        )
+            self.runtime = runtime_cls(
+                config=config,
+                event_stream=self.event_stream,
+                sid=self.sid,
+                plugins=agent.sandbox_plugins,
+                status_callback=self._status_callback,
+                headless_mode=False,
+                attach_to_existing=False,
+                env_vars=env_vars,
+            )
 
         # FIXME: this sleep is a terrible hack.
         # This is to give the websocket a second to connect, so that
@@ -260,25 +322,14 @@ class AgentSession:
                 )
             return False
 
-        repo_directory = None
-        if selected_repository:
-            repo_directory = await call_sync_from_async(
+        if selected_repository and git_provider_tokens:
+            await call_sync_from_async(
                 self.runtime.clone_repo,
-                github_token,
+                git_provider_tokens,
                 selected_repository,
                 selected_branch,
             )
-
-        if agent.prompt_manager:
-            agent.prompt_manager.set_runtime_info(self.runtime)
-            microagents: list[BaseMicroAgent] = await call_sync_from_async(
-                self.runtime.get_microagents_from_selected_repo, selected_repository
-            )
-            agent.prompt_manager.load_microagents(microagents)
-            if selected_repository and repo_directory:
-                agent.prompt_manager.set_repository_info(
-                    selected_repository, repo_directory
-                )
+            await call_sync_from_async(self.runtime.maybe_run_setup_script)
 
         self.logger.debug(
             f'Runtime initialized with plugins: {[plugin.name for plugin in self.runtime.plugins]}'
@@ -293,6 +344,7 @@ class AgentSession:
         max_budget_per_task: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
+        replay_events: list[Event] | None = None,
     ) -> AgentController:
         """Creates an AgentController instance
 
@@ -338,9 +390,33 @@ class AgentSession:
             headless_mode=False,
             status_callback=self._status_callback,
             initial_state=self._maybe_restore_state(),
+            replay_events=replay_events,
         )
 
         return controller
+
+    async def _create_memory(
+        self, selected_repository: str | None, repo_directory: str | None
+    ) -> Memory:
+        memory = Memory(
+            event_stream=self.event_stream,
+            sid=self.sid,
+            status_callback=self._status_callback,
+        )
+
+        if self.runtime:
+            # sets available hosts and other runtime info
+            memory.set_runtime_info(self.runtime)
+
+            # loads microagents from repo/.openhands/microagents
+            microagents: list[BaseMicroAgent] = await call_sync_from_async(
+                self.runtime.get_microagents_from_selected_repo, selected_repository
+            )
+            memory.load_user_workspace_microagents(microagents)
+
+            if selected_repository and repo_directory:
+                memory.set_repository_info(selected_repository, repo_directory)
+        return memory
 
     def _maybe_restore_state(self) -> State | None:
         """Helper method to handle state restore logic."""
@@ -350,7 +426,9 @@ class AgentSession:
         # Use a heuristic to figure out if we should have a state:
         # if we have events in the stream.
         try:
-            restored_state = State.restore_from_session(self.sid, self.file_store)
+            restored_state = State.restore_from_session(
+                self.sid, self.file_store, self.user_id
+            )
             self.logger.debug(f'Restored state from session, sid: {self.sid}')
         except Exception as e:
             if self.event_stream.get_latest_event_id() > 0:
