@@ -64,7 +64,9 @@ class SecretStore(BaseModel):
         default_factory=lambda: MappingProxyType({})
     )
 
-    custom_secrets: CUSTOM_SECRETS_TYPE | None = Field(default_factory=None)
+    custom_secrets: CUSTOM_SECRETS_TYPE = Field(
+        default_factory=lambda: MappingProxyType({})
+    )
 
     model_config = {
         'frozen': True,
@@ -129,7 +131,7 @@ class SecretStore(BaseModel):
                 tokens, dict
             ):  # Ensure conversion happens only for dict inputs
                 converted_tokens = {}
-                for key, value in tokens.items():                    
+                for key, value in tokens.items():
                     try:
                         provider_type = (
                             ProviderType(key) if isinstance(key, str) else key
@@ -154,8 +156,7 @@ class SecretStore(BaseModel):
                         converted_secrets[key] = value
 
                 new_data['custom_secrets'] = MappingProxyType(converted_secrets)
-        else:
-            new_data['custom_secrets'] = None
+
         return new_data
 
 
