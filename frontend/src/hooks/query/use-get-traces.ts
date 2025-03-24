@@ -3,6 +3,7 @@ import React from "react";
 import InvariantService from "#/api/invariant-service";
 type ResponseData = object;
 interface UseGetTracesConfig {
+
   onSuccess: (data: ResponseData) => void;
 }
 export const useGetTraces = (config?: UseGetTracesConfig) => {
@@ -17,4 +18,6 @@ export const useGetTraces = (config?: UseGetTracesConfig) => {
       config?.onSuccess(traces);
   }, [isFetching, isSuccess, traces, config?.onSuccess]);
   return data;
+      }
 };
+}

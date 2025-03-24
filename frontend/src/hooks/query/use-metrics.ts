@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { QueryKeys } from "./query-keys";
 interface MetricsState {
+
   cost: number | null;
   usage: {
     prompt_tokens: number;
@@ -19,8 +20,7 @@ const initialMetrics: MetricsState = {
  */
 export function useMetrics() {
   const queryClient = useQueryClient();
-  const queryClient = useQueryClient();
-    return initialMetrics;
+  return initialMetrics;
   };
   // Query for metrics
   const query = useQuery({

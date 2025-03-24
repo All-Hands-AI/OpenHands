@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { QueryKeys } from "./query-keys";
 interface FileStateState {
+
   changed: Record<string, boolean>;
 }
 // Initial state
@@ -13,8 +14,7 @@ const initialFileState: FileStateState = {
  */
 export function useFileState() {
   const queryClient = useQueryClient();
-  const queryClient = useQueryClient();
-    return initialFileState;
+  return initialFileState;
   };
   // Query for file state
   const query = useQuery({

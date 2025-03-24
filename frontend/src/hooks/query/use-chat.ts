@@ -2,6 +2,7 @@ import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
 import { Message } from "#/message";
 import { ActionSecurityRisk } from "#/hooks/query/use-security-analyzer";
 import {
+
   OpenHandsObservation,
   CommandObservation,
   IPythonObservation,
@@ -9,6 +10,7 @@ import {
 import { OpenHandsAction } from "#/types/core/actions";
 import { OpenHandsEventType } from "#/types/core/base";
 import { QueryKeys } from "./query-keys";
+
 const MAX_CONTENT_LENGTH = 1000;
 const HANDLED_ACTIONS: OpenHandsEventType[] = [
   "run",
@@ -33,7 +35,6 @@ function getRiskText(risk: ActionSecurityRisk) {
  * Hook for managing chat messages using React Query
  */
 export function useChat() {
-  const queryClient = useQueryClient();
   const queryClient = useQueryClient();
     // eslint-disable-next-line no-console
   // Mutation to add a user message
@@ -68,10 +69,8 @@ export function useChat() {
       updatedMessages.push(message);
       // Update the query cache
       queryClient.setQueryData(QueryKeys.chat, { messages: updatedMessages });
-          type: "chat/addUserMessage",
-          payload,
-        });
       return { messages: updatedMessages };
+      }
     },
   });
   // Mutation to add an assistant message
@@ -148,6 +147,7 @@ export function useChat() {
           payload: action,
         });
       return { messages: updatedMessages };
+      }
     },
   });
   // Mutation to add an assistant observation
@@ -171,6 +171,7 @@ export function useChat() {
       );
       if (causeMessageIndex === -1) {
         return { messages: updatedMessages };
+      }
       const causeMessage = { ...updatedMessages[causeMessageIndex] };
       causeMessage.translationID = translationID;
       // Set success property based on observation type
@@ -228,6 +229,7 @@ export function useChat() {
           payload: observation,
         });
       return { messages: updatedMessages };
+      }
     },
   });
   // Mutation to add an error message
@@ -273,4 +275,8 @@ export function useChat() {
     addErrorMessage: addErrorMessageMutation.mutate,
     clearMessages: clearMessagesMutation.mutate,
   };
+}
+}
+}
+}
 }

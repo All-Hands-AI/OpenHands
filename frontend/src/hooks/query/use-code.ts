@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { QueryKeys } from "./query-keys";
+
 export interface FileState {
   path: string;
   savedContent: string;
@@ -24,8 +25,7 @@ const initialCode: CodeState = {
  */
 export function useCode() {
   const queryClient = useQueryClient();
-  const queryClient = useQueryClient();
-    return initialCode;
+  return initialCode;
   };
   // Query for code state
   const query = useQuery({

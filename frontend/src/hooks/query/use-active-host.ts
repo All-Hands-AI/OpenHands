@@ -1,10 +1,10 @@
 import { useQueries, useQuery } from "@tanstack/react-query";
-import axios from "axios";
 import React from "react";
 import { openHands } from "#/api/open-hands-axios";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
 import { useConversation } from "#/context/conversation-context";
 import { useAgentState } from "#/hooks/query/use-agent-state";
+
 export const useActiveHost = () => {
   const { curAgentState } = useAgentState();
   const [activeHost, setActiveHost] = React.useState<string | null>(null);
@@ -26,10 +26,7 @@ export const useActiveHost = () => {
   const apps = useQueries({
     queries: data.hosts.map((host) => ({
       queryKey: [conversationId, "hosts", host],
-      queryFn: async () => {
-          return "";
-        }
-      },
+      queryFn: async () => "",
       refetchInterval: 3000,
       meta: {
         disableToast: true,

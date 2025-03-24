@@ -24,7 +24,8 @@ export function useBrowser() {
     queryKey: browserQueryKey,
     queryFn: () => {
       // First check if we already have data in the query cache
-      const existingData = queryClient.getQueryData<BrowserState>(browserQueryKey);
+      const existingData =
+        queryClient.getQueryData<BrowserState>(browserQueryKey);
       if (existingData) return existingData;
       // Otherwise use initial state
       return initialBrowser;

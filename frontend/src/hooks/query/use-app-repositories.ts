@@ -4,6 +4,7 @@ import { retrieveGitHubAppRepositories } from "#/api/github";
 import { useAppInstallations } from "./use-app-installations";
 import { useConfig } from "./use-config";
 import { useAuth } from "#/context/auth-context";
+
 export const useAppRepositories = () => {
   const { githubTokenIsSet } = useAuth();
   const { data: config } = useConfig();
@@ -18,6 +19,7 @@ export const useAppRepositories = () => {
       const { repoPage, installationIndex } = pageParam;
       if (!installations) {
         throw new Error("Missing installation list");
+      }
       return retrieveGitHubAppRepositories(
         installationIndex || 0,
         installations,
@@ -32,8 +34,11 @@ export const useAppRepositories = () => {
           installationIndex: lastPage.installationIndex,
           repoPage: lastPage.nextPage,
         };
+      }
       if (lastPage.installationIndex !== null) {
         return { installationIndex: lastPage.installationIndex, repoPage: 1 };
+      }
+      }
       return null;
     },
     enabled:
@@ -50,6 +55,8 @@ export const useAppRepositories = () => {
   React.useEffect(() => {
     if (!isFetchingNextPage && isSuccess && hasNextPage) {
       fetchNextPage();
+    }
   }, [isFetchingNextPage, isSuccess, hasNextPage, fetchNextPage]);
   return repos;
+      }
 };

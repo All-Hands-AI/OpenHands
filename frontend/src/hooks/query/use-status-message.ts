@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { StatusMessage } from "#/types/message";
 import { QueryKeys } from "./query-keys";
+
 // Initial status message
 const initialStatusMessage: StatusMessage = {
   status_update: true,
@@ -48,4 +49,5 @@ export function useStatusMessage() {
     isLoading: query.isLoading,
     setStatusMessage: setStatusMessageMutation.mutate,
   };
+}
 }

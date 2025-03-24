@@ -3,6 +3,7 @@ import React from "react";
 import InvariantService from "#/api/invariant-service";
 type ResponseData = number;
 interface UseGetRiskSeverityConfig {
+
   onSuccess: (data: ResponseData) => void;
 }
 export const useGetRiskSeverity = (config?: UseGetRiskSeverityConfig) => {
@@ -16,4 +17,6 @@ export const useGetRiskSeverity = (config?: UseGetRiskSeverityConfig) => {
       config?.onSuccess(riskSeverity);
   }, [isFetching, isSuccess, riskSeverity, config?.onSuccess]);
   return data;
+      }
 };
+}

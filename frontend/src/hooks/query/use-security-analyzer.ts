@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { QueryKeys } from "./query-keys";
+
 export enum ActionSecurityRisk {
   UNKNOWN = -1,
   LOW = 0,
@@ -26,7 +27,6 @@ const initialSecurityAnalyzer: SecurityAnalyzerState = {
  */
 export function useSecurityAnalyzer() {
   const queryClient = useQueryClient();
-  const queryClient = useQueryClient();
   const getInitialSecurityAnalyzerState = (): SecurityAnalyzerState => {
     // If we already have data in React Query, use that
     const existingData = queryClient.getQueryData<SecurityAnalyzerState>([
@@ -34,7 +34,7 @@ export function useSecurityAnalyzer() {
     ]);
     if (existingData) return existingData;
         return initialSecurityAnalyzer;
-    return initialSecurityAnalyzer;
+  return initialSecurityAnalyzer;
   };
   // Query for security analyzer state
   const query = useQuery({
@@ -108,6 +108,7 @@ export function useSecurityAnalyzer() {
             };
           }
           return stateLog;
+      }
         });
     } else {
       // Add new log
@@ -130,4 +131,6 @@ export function useSecurityAnalyzer() {
     // Actions
     appendSecurityAnalyzerInput,
   };
+}
+}
 }

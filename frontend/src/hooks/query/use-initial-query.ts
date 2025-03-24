@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { QueryKeys } from "./query-keys";
 interface InitialQueryState {
+
   files: string[]; // base64 encoded images
   initialPrompt: string | null;
   selectedRepository: string | null;
@@ -16,7 +17,6 @@ const initialState: InitialQueryState = {
  */
 export function useInitialQuery() {
   const queryClient = useQueryClient();
-  const queryClient = useQueryClient();
   const getInitialQueryState = (): InitialQueryState => {
     // If we already have data in React Query, use that
     const existingData = queryClient.getQueryData<InitialQueryState>([
@@ -24,7 +24,6 @@ export function useInitialQuery() {
     ]);
     if (existingData) return existingData;
         return initialState;
-    return initialState;
   };
   // Query for initial query state
   const query = useQuery({
@@ -60,6 +59,7 @@ export function useInitialQuery() {
           files: [...previousState.files, file],
         });
       return { previousState };
+      }
     },
     onError: (_, __, context) => {
       // Restore previous state on error
@@ -86,6 +86,7 @@ export function useInitialQuery() {
           files: newFiles,
         });
       return { previousState };
+      }
     },
     onError: (_, __, context) => {
       // Restore previous state on error
@@ -110,6 +111,7 @@ export function useInitialQuery() {
           files: [],
         });
       return { previousState };
+      }
     },
     onError: (_, __, context) => {
       // Restore previous state on error
@@ -134,6 +136,7 @@ export function useInitialQuery() {
           initialPrompt: prompt,
         });
       return { previousState };
+      }
     },
     onError: (_, __, context) => {
       // Restore previous state on error
@@ -158,6 +161,7 @@ export function useInitialQuery() {
           initialPrompt: null,
         });
       return { previousState };
+      }
     },
     onError: (_, __, context) => {
       // Restore previous state on error
@@ -197,6 +201,7 @@ export function useInitialQuery() {
           selectedRepository: null,
         });
       return { previousState };
+      }
     },
     onError: (_, __, context) => {
       // Restore previous state on error
@@ -221,4 +226,16 @@ export function useInitialQuery() {
     setSelectedRepository: setSelectedRepositorySync, // Use the synchronous function directly
     clearSelectedRepository: clearSelectedRepositoryMutation.mutate,
   };
+}
+}
+}
+}
+}
+}
+}
+}
+}
+}
+}
+}
 }

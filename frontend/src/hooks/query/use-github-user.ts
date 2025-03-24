@@ -6,6 +6,7 @@ import OpenHands from "#/api/open-hands";
 import { useAuth } from "#/context/auth-context";
 import { useLogout } from "../mutation/use-logout";
 import { useSaveSettings } from "../mutation/use-save-settings";
+
 export const useGitHubUser = () => {
   const { githubTokenIsSet } = useAuth();
   const { setGitHubTokenIsSet } = useAuth();
@@ -42,4 +43,8 @@ export const useGitHubUser = () => {
       handleLogout();
   }, [user.isError]);
   return user;
+      }
 };
+}
+}
+}

@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { QueryKeys } from "./query-keys";
+
 export type Command = {
   content: string;
   type: "input" | "output";
@@ -17,12 +18,12 @@ const initialCommand: CommandState = {
  */
 export function useCommand() {
   const queryClient = useQueryClient();
-  const queryClient = useQueryClient();
   const getInitialCommandState = (): CommandState => {
     // If we already have data in React Query, use that
-    const existingData = queryClient.getQueryData<CommandState>(QueryKeys.command);
+    const existingData = queryClient.getQueryData<CommandState>(
+      QueryKeys.command,
+    );
     if (existingData) return existingData;
-        return initialCommand;
     return initialCommand;
   };
   // Query for command state
@@ -30,7 +31,9 @@ export function useCommand() {
     queryKey: QueryKeys.command,
     queryFn: () => {
       // First check if we already have data in the query cache
-      const existingData = queryClient.getQueryData<CommandState>(QueryKeys.command);
+      const existingData = queryClient.getQueryData<CommandState>(
+        QueryKeys.command,
+      );
       if (existingData) return existingData;
       return getInitialCommandState();
     },
@@ -44,7 +47,8 @@ export function useCommand() {
   const appendInput = (content: string) => {
     // Get current state
     const previousState =
-      queryClient.getQueryData<CommandState>(QueryKeys.command) || initialCommand;
+      queryClient.getQueryData<CommandState>(QueryKeys.command) ||
+      initialCommand;
     // Update state
     const newState = {
       ...previousState,
@@ -63,7 +67,8 @@ export function useCommand() {
   const appendOutput = (content: string) => {
     // Get current state
     const previousState =
-      queryClient.getQueryData<CommandState>(QueryKeys.command) || initialCommand;
+      queryClient.getQueryData<CommandState>(QueryKeys.command) ||
+      initialCommand;
     // Update state
     const newState = {
       ...previousState,

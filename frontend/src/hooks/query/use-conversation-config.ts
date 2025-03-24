@@ -1,11 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import React from "react";
 import {
+
   useWsClient,
   WsClientProviderStatus,
 } from "#/context/ws-client-provider";
 import { useConversation } from "#/context/conversation-context";
 import OpenHands from "#/api/open-hands";
+
 export const useConversationConfig = () => {
   const { status } = useWsClient();
   const { conversationId } = useConversation();
@@ -30,4 +32,6 @@ export const useConversationConfig = () => {
       );
   }, [query.data]);
   return query;
+      }
 };
+}

@@ -3,6 +3,7 @@ import React from "react";
 import { retrieveGitHubUserRepositories } from "#/api/github";
 import { useConfig } from "./use-config";
 import { useAuth } from "#/context/auth-context";
+
 export const useUserRepositories = () => {
   const { githubTokenIsSet } = useAuth();
   const { data: config } = useConfig();
@@ -24,4 +25,6 @@ export const useUserRepositories = () => {
       fetchNextPage();
   }, [isFetchingNextPage, isSuccess, hasNextPage, fetchNextPage]);
   return repos;
+      }
 };
+}

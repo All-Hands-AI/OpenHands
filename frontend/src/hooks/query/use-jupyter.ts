@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { QueryKeys } from "./query-keys";
+
 export type Cell = {
   content: string;
   type: "input" | "output";
@@ -17,12 +18,13 @@ const initialJupyter: JupyterState = {
  */
 export function useJupyter() {
   const queryClient = useQueryClient();
-  const queryClient = useQueryClient();
   const getInitialJupyterState = (): JupyterState => {
     // If we already have data in React Query, use that
-    const existingData = queryClient.getQueryData<JupyterState>(QueryKeys.jupyter);
+    const existingData = queryClient.getQueryData<JupyterState>(
+      QueryKeys.jupyter,
+    );
     if (existingData) return existingData;
-        return initialJupyter;
+    return initialJupyter;
     return initialJupyter;
   };
   // Query for jupyter state
@@ -30,7 +32,9 @@ export function useJupyter() {
     queryKey: QueryKeys.jupyter,
     queryFn: () => {
       // First check if we already have data in the query cache
-      const existingData = queryClient.getQueryData<JupyterState>(QueryKeys.jupyter);
+      const existingData = queryClient.getQueryData<JupyterState>(
+        QueryKeys.jupyter,
+      );
       if (existingData) return existingData;
       return getInitialJupyterState();
     },
@@ -44,7 +48,8 @@ export function useJupyter() {
   const appendJupyterInput = (content: string) => {
     // Get current state
     const previousState =
-      queryClient.getQueryData<JupyterState>(QueryKeys.jupyter) || initialJupyter;
+      queryClient.getQueryData<JupyterState>(QueryKeys.jupyter) ||
+      initialJupyter;
     // Update state
     const newState = {
       ...previousState,
@@ -63,7 +68,8 @@ export function useJupyter() {
   const appendJupyterOutput = (content: string) => {
     // Get current state
     const previousState =
-      queryClient.getQueryData<JupyterState>(QueryKeys.jupyter) || initialJupyter;
+      queryClient.getQueryData<JupyterState>(QueryKeys.jupyter) ||
+      initialJupyter;
     // Update state
     const newState = {
       ...previousState,

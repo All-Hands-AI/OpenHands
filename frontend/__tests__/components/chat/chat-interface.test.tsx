@@ -5,7 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "test-utils";
 import { useChat } from "#/hooks/query/use-chat";
 import { SUGGESTIONS } from "#/utils/suggestions";
-// ChatSlice imports removed
+
 import { WsClientProviderStatus } from "#/context/ws-client-provider";
 import { ChatInterface } from "#/components/features/chat/chat-interface";
 import * as observations from "#/services/observations";

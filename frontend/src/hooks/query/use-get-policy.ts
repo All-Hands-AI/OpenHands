@@ -3,6 +3,7 @@ import React from "react";
 import InvariantService from "#/api/invariant-service";
 type ResponseData = string;
 interface UseGetPolicyConfig {
+
   onSuccess: (data: ResponseData) => void;
 }
 export const useGetPolicy = (config?: UseGetPolicyConfig) => {
@@ -16,4 +17,6 @@ export const useGetPolicy = (config?: UseGetPolicyConfig) => {
       config?.onSuccess(policy);
   }, [isFetching, isSuccess, policy, config?.onSuccess]);
   return data;
+      }
 };
+}
