@@ -23,7 +23,7 @@ describe("App", () => {
     // Initialize the QueryReduxBridge for tests
     const queryClient = new QueryClient();
     initQueryReduxBridge(queryClient);
-    
+
     vi.mock("#/hooks/use-end-session", () => ({
       useEndSession: vi.fn(() => endSessionMock),
     }));

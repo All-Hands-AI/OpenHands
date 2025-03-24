@@ -114,7 +114,7 @@ describe("Actions Service", () => {
         syncReduxToQuery: vi.fn(),
         conditionalDispatch: vi.fn(),
       };
-      
+
       vi.mocked(queryReduxBridge.getQueryReduxBridge).mockReturnValue(mockBridge as any);
 
       handleActionMessage(message);
@@ -153,7 +153,7 @@ describe("Actions Service", () => {
       mockAddAssistantMessage.mockReset();
 
       handleActionMessage(messagePartial);
-      
+
       // Check if the addAssistantMessage was called with the right message
       expect(mockAddAssistantMessage).toHaveBeenCalledWith(
         expect.stringContaining("I believe that the task was **completed partially**")
@@ -178,7 +178,7 @@ describe("Actions Service", () => {
       mockAddAssistantMessage.mockReset();
 
       handleActionMessage(messageNotCompleted);
-      
+
       // Check if the addAssistantMessage was called with the right message
       expect(mockAddAssistantMessage).toHaveBeenCalledWith(
         expect.stringContaining("I believe that the task was **not completed**")
@@ -203,7 +203,7 @@ describe("Actions Service", () => {
       mockAddAssistantMessage.mockReset();
 
       handleActionMessage(messageCompleted);
-      
+
       // Check if the addAssistantMessage was called with the right message
       expect(mockAddAssistantMessage).toHaveBeenCalledWith(
         expect.stringContaining("I believe that the task was **completed successfully**")

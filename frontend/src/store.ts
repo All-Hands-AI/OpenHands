@@ -2,10 +2,10 @@ import { configureStore } from "@reduxjs/toolkit";
 // All slices (chat, browser, code, fileState, command, jupyter, securityAnalyzer, status, metrics, initialQuery, and agent) are now handled by React Query
 
 // Dummy reducer to satisfy Redux requirements
-const dummyReducer = (state = {}, action: any) => state;
+const dummyReducer = (state = {}) => state;
 
 export const rootReducer = {
-  dummy: dummyReducer
+  dummy: dummyReducer,
 };
 
 const store = configureStore({

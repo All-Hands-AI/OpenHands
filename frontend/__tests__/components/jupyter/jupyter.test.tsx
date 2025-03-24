@@ -40,7 +40,7 @@ describe("JupyterEditor", () => {
         },
       },
     });
-    
+
     render(
       <QueryClientProvider client={queryClient}>
         <Provider store={mockStore}>

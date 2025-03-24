@@ -71,7 +71,7 @@ import { useWebsocketEvents } from '#/hooks/query/use-websocket-events';
 function YourComponent() {
   // This hook will process websocket events for React Query
   useWebsocketEvents();
-  
+
   // Rest of your component
   return (
     // ...
@@ -100,16 +100,16 @@ function ChatComponent() {
   // Instead of using useSelector and useDispatch
   // const messages = useSelector((state) => state.chat.messages);
   // const dispatch = useDispatch();
-  
+
   // Use the React Query hook
-  const { 
-    messages, 
-    addUserMessage, 
-    addAssistantMessage, 
-    addErrorMessage, 
-    clearMessages 
+  const {
+    messages,
+    addUserMessage,
+    addAssistantMessage,
+    addErrorMessage,
+    clearMessages
   } = useChatMessages();
-  
+
   // Rest of your component using the new API
   return (
     // ...

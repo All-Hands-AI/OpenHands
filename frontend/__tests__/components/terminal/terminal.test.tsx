@@ -26,7 +26,7 @@ vi.mock("#/hooks/query/use-agent-state", () => ({
 const renderTerminal = (commands: Command[] = []) =>
   renderWithProviders(<Terminal secrets={[]} />, {
     preloadedState: {
-      chat: { messages: [] },
+      dummy: {},
       // Agent state is now handled by the mocked useAgentState hook
     },
   });

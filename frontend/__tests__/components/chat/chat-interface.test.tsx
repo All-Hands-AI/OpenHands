@@ -60,10 +60,10 @@ describe("Empty state", () => {
   it("should render suggestions if empty", () => {
     // Start with empty messages
     mockChatMessages.length = 0;
-    
+
     const { store } = renderWithProviders(<ChatInterface />, {
       preloadedState: {
-        chat: { messages: [] },
+        dummy: {},
       },
     });
 
@@ -77,7 +77,7 @@ describe("Empty state", () => {
       timestamp: new Date().toISOString(),
       pending: true,
     });
-    
+
     // Use the mock function directly instead of Redux
     act(() => {
       mockAddUserMessage({
@@ -102,7 +102,7 @@ describe("Empty state", () => {
   it("should render the default suggestions", () => {
     renderWithProviders(<ChatInterface />, {
       preloadedState: {
-        chat: { messages: [] },
+        dummy: {},
       },
     });
 
@@ -132,7 +132,7 @@ describe("Empty state", () => {
       const user = userEvent.setup();
       const { store } = renderWithProviders(<ChatInterface />, {
         preloadedState: {
-          chat: { messages: [] },
+          dummy: {},
         },
       });
 
@@ -145,7 +145,8 @@ describe("Empty state", () => {
       // user message loaded to input
       expect(addUserMessageSpy).not.toHaveBeenCalled();
       expect(screen.queryByTestId("suggestions")).toBeInTheDocument();
-      expect(store.getState().chat.messages).toHaveLength(0);
+      // Using mock instead of Redux store since we're using React Query now
+      expect(mockChatMessages).toHaveLength(0);
       expect(input).toHaveValue(displayedSuggestions[0].textContent);
     },
   );
@@ -161,7 +162,7 @@ describe("Empty state", () => {
       const user = userEvent.setup();
       const { rerender } = renderWithProviders(<ChatInterface />, {
         preloadedState: {
-          chat: { messages: [] },
+          dummy: {},
         },
       });
 
