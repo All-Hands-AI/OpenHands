@@ -12,6 +12,7 @@ from openhands.server.shared import SettingsStoreImpl, config
 app = APIRouter(prefix='/api')
 
 
+
 @app.get('/settings', response_model=GETSettingsModel)
 async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
     try:
@@ -39,6 +40,41 @@ async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
             content={'error': 'Invalid token'},
         )
 
+
+@app.post('reset-settings')
+async def reset_settings(
+    request: Request
+) -> JSONResponse:
+    """
+    Resets user settings. 
+
+    Sensitive info removed 
+
+        1. Personal access tokens
+        2. LLM API key
+
+    Defaults set
+        1. LLM Settings
+
+    """
+    try:
+        settings_store = await SettingsStoreImpl.get_instance(
+            config, get_user_id(request)
+        )
+        
+        settings = Settings()
+        await settings_store.store(settings)
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={'message': 'Settings stored'},
+        )
+    
+    except Exception as e:
+        logger.warning(f'Something went wrong resetting settings: {e}')
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={'error': 'Something went wrong resetting settings'},
+        )
 
 @app.post('/settings', response_model=dict[str, str])
 async def store_settings(
