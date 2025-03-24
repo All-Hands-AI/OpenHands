@@ -19,7 +19,8 @@ CMD_OUTPUT_METADATA_PS1_REGEX = re.compile(
 
 # Default max size for command output content
 # to prevent too large observations from being saved in the stream
-MAX_CMD_OUTPUT_SIZE: int = 50000
+# This matches the default max_message_chars in LLMConfig
+MAX_CMD_OUTPUT_SIZE: int = 30000
 
 
 class CmdOutputMetadata(BaseModel):

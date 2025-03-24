@@ -322,6 +322,9 @@ class ConversationMemory:
                     max_message_chars,
                 )
             else:
+                # Note: CmdOutputObservation content is already truncated at initialization,
+                # but we keep this truncation in case the observation content has been
+                # modified after initialization
                 text = truncate_content(obs.to_agent_observation(), max_message_chars)
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, IPythonRunCellObservation):
