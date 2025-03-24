@@ -110,7 +110,7 @@ export const chatSlice = createSlice({
       } else if (actionID === "browse") {
         text = `Browsing ${action.payload.args.url}`;
       } else if (actionID === "browse_interactive") {
-        text = `Interactive browsing: ${action.payload.args.browser_actions}`;
+        text = `Interactive browsing in progress...`;
       }
       if (actionID === "run" || actionID === "run_ipython") {
         if (
@@ -130,6 +130,11 @@ export const chatSlice = createSlice({
         imageUrls: [],
         timestamp: new Date().toISOString(),
       };
+
+      // Add expandedContent for browse_interactive action
+      if (actionID === "browse_interactive") {
+        message.expandedContent = `\`\`\`python\n${action.payload.args.browser_actions}\n\`\`\``;
+      }
       state.messages.push(message);
     },
 
