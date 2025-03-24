@@ -4,6 +4,7 @@ import store from "#/store";
 import { trackError } from "#/utils/error-handler";
 import ActionType from "#/types/action-type";
 import { ActionMessage } from "#/types/message";
+import { setAgentStatus } from "#/hooks/query/use-agent-status";
 
 // Mock dependencies
 vi.mock("#/utils/error-handler", () => ({
@@ -16,13 +17,24 @@ vi.mock("#/store", () => ({
   },
 }));
 
+vi.mock("#/hooks/query/use-agent-status", () => ({
+  setAgentStatus: vi.fn(),
+}));
+
+// Mock dynamic import
+vi.mock("#/entry.client", () => ({
+  queryClient: {
+    setQueryData: vi.fn(),
+  },
+}));
+
 describe("Actions Service", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   describe("handleStatusMessage", () => {
-    it("should dispatch info messages to status state", () => {
+    it("should set info messages in the query cache", async () => {
       const message = {
         type: "info",
         message: "Runtime is not available",
@@ -31,10 +43,15 @@ describe("Actions Service", () => {
       };
 
       handleStatusMessage(message);
-
-      expect(store.dispatch).toHaveBeenCalledWith(expect.objectContaining({
-        payload: message,
-      }));
+      
+      // Wait for the dynamic import promise to resolve
+      await new Promise(resolve => setTimeout(resolve, 0));
+      
+      // Verify setAgentStatus was called with the message
+      expect(setAgentStatus).toHaveBeenCalledWith(
+        expect.anything(),
+        message
+      );
     });
 
     it("should log error messages and display them in chat", () => {

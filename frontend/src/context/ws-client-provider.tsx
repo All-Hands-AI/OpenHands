@@ -11,6 +11,7 @@ import {
   UserMessageAction,
 } from "#/types/core/actions";
 import { StatusMessage } from "#/types/message";
+import { setAgentStatus } from "#/hooks/query/use-agent-status";
 
 const isOpenHandsEvent = (event: unknown): event is OpenHandsParsedEvent =>
   typeof event === "object" &&
@@ -137,8 +138,8 @@ export function WsClientProvider({
 
   function handleMessage(event: Record<string, unknown>) {
     if (isStatusMessage(event)) {
-      console.warn("Status message received", event);
-      queryClient.setQueryData(["_STATE", "status"], event);
+      // Handle status message
+      setAgentStatus(queryClient, event);
     }
     if (isOpenHandsEvent(event) && isMessageAction(event)) {
       messageRateHandler.record(new Date().getTime());

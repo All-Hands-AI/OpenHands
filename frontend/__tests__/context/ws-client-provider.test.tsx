@@ -7,6 +7,7 @@ import {
   useWsClient,
 } from "#/context/ws-client-provider";
 import React from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 describe("Propagate error message", () => {
   it("should do nothing when no message was passed from server", () => {
@@ -85,10 +86,15 @@ describe("WsClientProvider", () => {
   });
 
   it("should emit oh_user_action event when send is called", async () => {
+    // Create a new QueryClient for the test
+    const queryClient = new QueryClient();
+    
     const { getByText } = render(
-      <WsClientProvider conversationId="test-conversation-id">
-        <TestComponent />
-      </WsClientProvider>
+      <QueryClientProvider client={queryClient}>
+        <WsClientProvider conversationId="test-conversation-id">
+          <TestComponent />
+        </WsClientProvider>
+      </QueryClientProvider>
     );
 
     // Assert
