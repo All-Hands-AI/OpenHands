@@ -196,21 +196,11 @@ export const chatSlice = createSlice({
       } else if (observationID === "browse") {
         let content = `**URL:** ${observation.payload.extras.url}\n`;
         if (observation.payload.extras.error) {
-          content += `**Error:**\n${observation.payload.extras.error}\n`;
+          content += `\n\n**Error:**\n${observation.payload.extras.error}\n`;
         }
         content += `\n\n**Output:**\n${observation.payload.content}`;
         if (content.length > MAX_CONTENT_LENGTH) {
-          content = `${content.slice(0, MAX_CONTENT_LENGTH)}...`;
-        }
-        causeMessage.content = content;
-      } else if (observationID === "browse_interactive") {
-        let content = `**URL:** ${observation.payload.extras.url}\n`;
-        if (observation.payload.extras.error) {
-          content += `**Error:**\n${observation.payload.extras.error}\n`;
-        }
-        content += `\n\n**Outputs are displayed in the browser tab**`;
-        if (content.length > MAX_CONTENT_LENGTH) {
-          content = `${content.slice(0, MAX_CONTENT_LENGTH)}...`;
+          content = `${content.slice(0, MAX_CONTENT_LENGTH)}...(truncated)`;
         }
         causeMessage.content = content;
       }
