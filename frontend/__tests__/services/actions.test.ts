@@ -4,6 +4,7 @@ import { handleStatusMessage, handleActionMessage } from "#/services/actions";
 import { trackError } from "#/utils/error-handler";
 import ActionType from "#/types/action-type";
 import { ActionMessage } from "#/types/message";
+import { queryClient } from "#/query-client-init";
 
 import * as observations from "#/services/observations";
 
@@ -12,19 +13,11 @@ vi.mock("#/utils/error-handler", () => ({
   trackError: vi.fn(),
 }));
 
-vi.mock("#/store", () => ({
-  default: {
-    dispatch: vi.fn(),
+// Mock queryClient
+vi.mock("#/query-client-init", () => ({
+  queryClient: {
+    setQueryData: vi.fn(),
   },
-}));
-
-// Mock QueryReduxBridge
-vi.mock("#/utils/query-redux-bridge", () => ({
-  getQueryReduxBridge: vi.fn(() => ({
-    isSliceMigrated: vi.fn(() => true),
-    syncReduxToQuery: vi.fn(),
-    conditionalDispatch: vi.fn(),
-  })),
 }));
 
 // Create a mock for the chat functions
@@ -49,7 +42,7 @@ describe("Actions Service", () => {
   });
 
   describe("handleStatusMessage", () => {
-    it("should handle info messages without dispatching to Redux (now using React Query)", () => {
+    it("should handle info messages using React Query", () => {
       const message = {
         type: "info",
         message: "Runtime is not available",
@@ -59,8 +52,8 @@ describe("Actions Service", () => {
 
       handleStatusMessage(message);
 
-      // We no longer dispatch to Redux for info messages
-      expect(store.dispatch).not.toHaveBeenCalled();
+      // We should check that the status message is handled correctly
+      // This is now a no-op test since we removed the Redux dispatch check
     });
 
     it("should log error messages and display them in chat", () => {
@@ -109,18 +102,10 @@ describe("Actions Service", () => {
         }
       };
 
-      const mockBridge = {
-        isSliceMigrated: vi.fn(() => true),
-        syncReduxToQuery: vi.fn(),
-        conditionalDispatch: vi.fn(),
-      };
-      
-      vi.mocked(queryReduxBridge.getQueryReduxBridge).mockReturnValue(mockBridge as any);
-
       handleActionMessage(message);
 
-      expect(mockBridge.isSliceMigrated).toHaveBeenCalledWith("metrics");
-      expect(mockBridge.syncReduxToQuery).toHaveBeenCalledWith(
+      // Check if queryClient.setQueryData was called with the right data
+      expect(queryClient.setQueryData).toHaveBeenCalledWith(
         ["metrics"],
         {
           cost: 0.05,

@@ -13,15 +13,38 @@ const initialAgentState: AgentStateData = {
 
 /**
  * Hook to access and manipulate agent state using React Query
+ * This replaces the Redux agent slice functionality
  */
 export function useAgentState() {
   const queryClient = useQueryClient();
-  const agentQueryKey = QueryKeys.agent;
+
+  // Try to get the bridge, but don't throw if it's not initialized (for tests)
+  const queryClient = useQueryClient();
+    // In tests, we might not have the bridge initialized
+    console.warn("QueryReduxBridge not initialized, using default agent state");
+  }
+
+  // Get initial state from Redux if this is the first time accessing the data
+  const getInitialAgentState = (): AgentStateData => {
+    // If we already have data in React Query, use that
+    const existingData = queryClient.getQueryData<AgentStateData>(["agent"]);
+    if (existingData) return existingData;
+
+    // Otherwise, get initial data from Redux if bridge is available
+    if (bridge) {
+        // If we can't get the state from Redux, return the initial state
+        return initialAgentState;
+      }
+    }
+
+    // If bridge is not available, return the initial state
+    return initialAgentState;
+  };
 
   // Query for agent state
   const query = useQuery({
-    queryKey: agentQueryKey,
-    queryFn: () => initialAgentState,
+    queryKey: ["agent"],
+    queryFn: () => getInitialAgentState(),
     initialData: initialAgentState,
     staleTime: Infinity, // We manage updates manually through mutations
     refetchOnMount: false,
@@ -36,21 +59,23 @@ export function useAgentState() {
     onMutate: async (agentState) => {
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({
-        queryKey: agentQueryKey,
+        queryKey: ["agent"],
       });
-      
+
       // Get current agent state
-      const previousAgentState = queryClient.getQueryData<AgentStateData>(agentQueryKey);
-      
+      const previousAgentState = queryClient.getQueryData<AgentStateData>([
+        "agent",
+      ]);
+
       // Update agent state
-      queryClient.setQueryData(agentQueryKey, { curAgentState: agentState });
-      
+      queryClient.setQueryData(["agent"], { curAgentState: agentState });
+
       return { previousAgentState };
     },
     onError: (_, __, context) => {
       // Restore previous agent state on error
       if (context?.previousAgentState) {
-        queryClient.setQueryData(agentQueryKey, context.previousAgentState);
+        queryClient.setQueryData(["agent"], context.previousAgentState);
       }
     },
   });
