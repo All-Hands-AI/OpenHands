@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { getQueryReduxBridge } from "#/utils/query-redux-bridge";
+import { getQueryClientWrapper } from "#/utils/query-client-wrapper";
 
 export type Command = {
   content: string;
@@ -17,15 +17,15 @@ const initialCommand: CommandState = {
 
 /**
  * Hook to access and manipulate command data using React Query
- * This replaces the Redux command slice functionality
+ * This provides the command slice functionality
  */
 export function useCommand() {
   const queryClient = useQueryClient();
 
   // Try to get the bridge, but don't throw if it's not initialized (for tests)
-  let bridge: ReturnType<typeof getQueryReduxBridge> | null = null;
+  let bridge: ReturnType<typeof getQueryClientWrapper> | null = null;
   try {
-    bridge = getQueryReduxBridge();
+    bridge = getQueryClientWrapper();
   } catch (error) {
     // In tests, we might not have the bridge initialized
     // eslint-disable-next-line no-console
@@ -34,18 +34,18 @@ export function useCommand() {
     );
   }
 
-  // Get initial state from Redux if this is the first time accessing the data
+  // Get initial state from cache if this is the first time accessing the data
   const getInitialCommandState = (): CommandState => {
     // If we already have data in React Query, use that
     const existingData = queryClient.getQueryData<CommandState>(["command"]);
     if (existingData) return existingData;
 
-    // Otherwise, get initial data from Redux if bridge is available
+    // Otherwise, get initial data from cache if bridge is available
     if (bridge) {
       try {
-        return bridge.getReduxSliceState<CommandState>("command");
+        return bridge.getSliceState<CommandState>("command");
       } catch (error) {
-        // If we can't get the state from Redux, return the initial state
+        // If we can.t get the state from cache, return the initial state
         return initialCommand;
       }
     }

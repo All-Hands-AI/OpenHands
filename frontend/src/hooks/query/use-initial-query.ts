@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getQueryReduxBridge } from "#/utils/query-redux-bridge";
+import { getQueryClientWrapper } from "#/utils/query-client-wrapper";
 
 interface InitialQueryState {
   files: string[]; // base64 encoded images
@@ -16,15 +16,15 @@ const initialState: InitialQueryState = {
 
 /**
  * Hook to access and manipulate initial query data using React Query
- * This replaces the Redux initialQuery slice functionality
+ * This provides the initialQuery slice functionality
  */
 export function useInitialQuery() {
   const queryClient = useQueryClient();
 
   // Try to get the bridge, but don't throw if it's not initialized (for tests)
-  let bridge: ReturnType<typeof getQueryReduxBridge> | null = null;
+  let bridge: ReturnType<typeof getQueryClientWrapper> | null = null;
   try {
-    bridge = getQueryReduxBridge();
+    bridge = getQueryClientWrapper();
   } catch (error) {
     // In tests, we might not have the bridge initialized
     // eslint-disable-next-line no-console
@@ -33,7 +33,7 @@ export function useInitialQuery() {
     );
   }
 
-  // Get initial state from Redux if this is the first time accessing the data
+  // Get initial state from cache if this is the first time accessing the data
   const getInitialQueryState = (): InitialQueryState => {
     // If we already have data in React Query, use that
     const existingData = queryClient.getQueryData<InitialQueryState>([
@@ -41,12 +41,12 @@ export function useInitialQuery() {
     ]);
     if (existingData) return existingData;
 
-    // Otherwise, get initial data from Redux if bridge is available
+    // Otherwise, get initial data from cache if bridge is available
     if (bridge) {
       try {
-        return bridge.getReduxSliceState<InitialQueryState>("initialQuery");
+        return bridge.getSliceState<InitialQueryState>("initialQuery");
       } catch (error) {
-        // If we can't get the state from Redux, return the initial state
+        // If we can.t get the state from cache, return the initial state
         return initialState;
       }
     }

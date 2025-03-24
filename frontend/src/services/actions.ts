@@ -1,7 +1,6 @@
 import { trackError } from "#/utils/error-handler";
-// Security analyzer, jupyter, status, metrics, browser, code, and chat slices are now handled by React Query
-import { queryClient } from "#/query-redux-bridge-init";
-import { getQueryReduxBridge } from "#/utils/query-redux-bridge";
+import { queryClient } from "#/query-client-init";
+import { getQueryClientWrapper } from "#/utils/query-client-wrapper";
 import ActionType from "#/types/action-type";
 import {
   ActionMessage,
@@ -110,17 +109,9 @@ export function handleActionMessage(message: ActionMessage) {
       usage: message.tool_call_metadata?.model_response?.usage ?? null,
     };
     try {
-      const bridge = getQueryReduxBridge();
-      if (bridge.isSliceMigrated("metrics")) {
-        // If metrics slice is migrated, update React Query directly
-        bridge.syncReduxToQuery(["metrics"], metrics);
-      } else {
-        // Otherwise, dispatch to Redux (handled by the bridge)
-        bridge.conditionalDispatch("metrics", {
-          type: "metrics/setMetrics",
-          payload: metrics,
-        });
-      }
+      const bridge = getQueryClientWrapper();
+      // Update metrics in React Query
+      bridge.setQueryData(["metrics"], metrics);
     } catch (error) {
       console.warn("Failed to update metrics:", error);
     }

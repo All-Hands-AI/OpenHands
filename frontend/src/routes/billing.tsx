@@ -2,7 +2,7 @@ import { redirect, useSearchParams } from "react-router";
 import React from "react";
 import { PaymentForm } from "#/components/features/payment/payment-form";
 import { GetConfigResponse } from "#/api/open-hands.types";
-import { queryClient } from "#/query-redux-bridge-init";
+import { queryClient } from "#/query-client-init";
 import {
   displayErrorToast,
   displaySuccessToast,

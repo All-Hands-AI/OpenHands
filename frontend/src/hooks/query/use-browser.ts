@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { getQueryReduxBridge } from "#/utils/query-redux-bridge";
+import { getQueryClientWrapper } from "#/utils/query-client-wrapper";
 
 interface BrowserState {
   url: string;
@@ -14,15 +14,15 @@ const initialBrowser: BrowserState = {
 
 /**
  * Hook to access and manipulate browser data using React Query
- * This replaces the Redux browser slice functionality
+ * This provides the browser slice functionality
  */
 export function useBrowser() {
   const queryClient = useQueryClient();
 
   // Try to get the bridge, but don't throw if it's not initialized (for tests)
-  let bridge: ReturnType<typeof getQueryReduxBridge> | null = null;
+  let bridge: ReturnType<typeof getQueryClientWrapper> | null = null;
   try {
-    bridge = getQueryReduxBridge();
+    bridge = getQueryClientWrapper();
   } catch (error) {
     // In tests, we might not have the bridge initialized
     // eslint-disable-next-line no-console
@@ -31,18 +31,18 @@ export function useBrowser() {
     );
   }
 
-  // Get initial state from Redux if this is the first time accessing the data
+  // Get initial state from cache if this is the first time accessing the data
   const getInitialBrowserState = (): BrowserState => {
     // If we already have data in React Query, use that
     const existingData = queryClient.getQueryData<BrowserState>(["browser"]);
     if (existingData) return existingData;
 
-    // Otherwise, get initial data from Redux if bridge is available
+    // Otherwise, get initial data from cache if bridge is available
     if (bridge) {
       try {
-        return bridge.getReduxSliceState<BrowserState>("browser");
+        return bridge.getSliceState<BrowserState>("browser");
       } catch (error) {
-        // If we can't get the state from Redux, return the initial state
+        // If we can.t get the state from cache, return the initial state
         return initialBrowser;
       }
     }
