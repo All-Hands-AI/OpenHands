@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import React from "react";
 import InvariantService from "#/api/invariant-service";
+
 type ResponseData = number;
 interface UseGetRiskSeverityConfig {
   onSuccess: (data: ResponseData) => void;

@@ -4,6 +4,7 @@ import posthog from "posthog-js";
 import OpenHands from "#/api/open-hands";
 import { useAuth } from "#/context/auth-context";
 import { DEFAULT_SETTINGS } from "#/services/settings";
+
 const getSettingsQueryFn = async () => {
   const apiSettings = await OpenHands.getSettings();
   return {
@@ -55,5 +56,7 @@ export const useSettings = () => {
       ...query,
       data: DEFAULT_SETTINGS,
     };
+  }
+
   return query;
 };

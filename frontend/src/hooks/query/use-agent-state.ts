@@ -38,13 +38,14 @@ export function useAgentState() {
       await queryClient.cancelQueries({
         queryKey: agentQueryKey,
       });
-      
+
       // Get current agent state
-      const previousAgentState = queryClient.getQueryData<AgentStateData>(agentQueryKey);
-      
+      const previousAgentState =
+        queryClient.getQueryData<AgentStateData>(agentQueryKey);
+
       // Update agent state
       queryClient.setQueryData(agentQueryKey, { curAgentState: agentState });
-      
+
       return { previousAgentState };
     },
     onError: (_, __, context) => {

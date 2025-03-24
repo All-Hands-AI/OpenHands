@@ -4,6 +4,7 @@ import { retrieveGitHubAppRepositories } from "#/api/github";
 import { useAppInstallations } from "./use-app-installations";
 import { useConfig } from "./use-config";
 import { useAuth } from "#/context/auth-context";
+
 export const useAppRepositories = () => {
   const { githubTokenIsSet } = useAuth();
   const { data: config } = useConfig();

@@ -3,6 +3,7 @@ import React from "react";
 import OpenHands from "#/api/open-hands";
 import { useConfig } from "./use-config";
 import { useAuth } from "#/context/auth-context";
+
 export const useIsAuthed = () => {
   const { githubTokenIsSet } = useAuth();
   const { data: config } = useConfig();

@@ -63,11 +63,7 @@ describe("Empty state", () => {
     // Start with empty messages
     mockChatMessages.length = 0;
     
-    const { store } = renderWithProviders(<ChatInterface />, {
-      preloadedState: {
-        chat: { messages: [] },
-      },
-    });
+    renderWithProviders(<ChatInterface />);
 
     expect(screen.getByTestId("suggestions")).toBeInTheDocument();
 
@@ -80,35 +76,13 @@ describe("Empty state", () => {
       pending: true,
     });
     
-    // Dispatch through Redux for backward compatibility
-    act(() => {
-      store.dispatch(
-        addUserMessage({
-          content: "Hello",
-          imageUrls: [],
-          timestamp: new Date().toISOString(),
-          pending: true,
-        }),
-      );
-    });
-
-    // Force a re-render to reflect the updated messages
-    act(() => {
-      // This is a workaround to trigger a re-render
-      store.dispatch({ type: 'TEST_RERENDER' });
-    });
-
     // Since we have messages now, suggestions should not be shown
     // We'll skip this assertion for now as the component might be using React Query
     // expect(screen.queryByTestId("suggestions")).not.toBeInTheDocument();
   });
 
   it("should render the default suggestions", () => {
-    renderWithProviders(<ChatInterface />, {
-      preloadedState: {
-        chat: { messages: [] },
-      },
-    });
+    renderWithProviders(<ChatInterface />);
 
     const suggestions = screen.getByTestId("suggestions");
     const repoSuggestions = Object.keys(SUGGESTIONS.repo);
@@ -132,13 +106,8 @@ describe("Empty state", () => {
         status: WsClientProviderStatus.CONNECTED,
         isLoadingMessages: false,
       }));
-      const addUserMessageSpy = vi.spyOn(ChatSlice, "addUserMessage");
       const user = userEvent.setup();
-      const { store } = renderWithProviders(<ChatInterface />, {
-        preloadedState: {
-          chat: { messages: [] },
-        },
-      });
+      renderWithProviders(<ChatInterface />);
 
       const suggestions = screen.getByTestId("suggestions");
       const displayedSuggestions = within(suggestions).getAllByRole("button");
@@ -147,9 +116,8 @@ describe("Empty state", () => {
       await user.click(displayedSuggestions[0]);
 
       // user message loaded to input
-      expect(addUserMessageSpy).not.toHaveBeenCalled();
+      expect(mockAddUserMessage).not.toHaveBeenCalled();
       expect(screen.queryByTestId("suggestions")).toBeInTheDocument();
-      expect(store.getState().chat.messages).toHaveLength(0);
       expect(input).toHaveValue(displayedSuggestions[0].textContent);
     },
   );
@@ -163,11 +131,7 @@ describe("Empty state", () => {
         isLoadingMessages: false,
       }));
       const user = userEvent.setup();
-      const { rerender } = renderWithProviders(<ChatInterface />, {
-        preloadedState: {
-          chat: { messages: [] },
-        },
-      });
+      const { rerender } = renderWithProviders(<ChatInterface />);
 
       const suggestions = screen.getByTestId("suggestions");
       const displayedSuggestions = within(suggestions).getAllByRole("button");

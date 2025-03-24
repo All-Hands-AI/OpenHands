@@ -29,7 +29,6 @@ describe("Propagate error message", () => {
   beforeEach(() => {
     // Reset the mocks before each test
     vi.clearAllMocks();
-    vi.spyOn(ChatSlice, "addErrorMessage").mockImplementation(() => ({ type: "chat/addErrorMessage", payload: { message: "Test error" } }));
   });
 
   it("should do nothing when no message was passed from server", () => {
