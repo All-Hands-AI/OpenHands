@@ -34,7 +34,7 @@ import { TerminalStatusLabel } from "#/components/features/terminal/terminal-sta
 import { useSettings } from "#/hooks/query/use-settings";
 
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
-import { useInitialQuery } from "#/hooks/query/use-initial-query";
+import { useInitialQuery } from "#/hooks/query/simplified/use-initial-query";
 
 function AppContent() {
   useConversationConfig();

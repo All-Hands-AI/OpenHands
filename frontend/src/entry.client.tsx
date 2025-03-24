@@ -16,6 +16,7 @@ import store from "./store";
 import { useConfig } from "./hooks/query/use-config";
 import { AuthProvider } from "./context/auth-context";
 import { initializeBridge, queryClient } from "./query-redux-bridge-init";
+import { AppStateProvider } from "./hooks/query/simplified/use-state-context";
 
 function PosthogInit() {
   const { data: config } = useConfig();
@@ -58,8 +59,10 @@ prepareApp().then(() => {
         <Provider store={store}>
           <AuthProvider>
             <QueryClientProvider client={queryClient}>
-              <HydratedRouter />
-              <PosthogInit />
+              <AppStateProvider>
+                <HydratedRouter />
+                <PosthogInit />
+              </AppStateProvider>
             </QueryClientProvider>
           </AuthProvider>
         </Provider>

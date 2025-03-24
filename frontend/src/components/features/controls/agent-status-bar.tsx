@@ -9,8 +9,8 @@ import {
 } from "#/context/ws-client-provider";
 import { useNotification } from "#/hooks/useNotification";
 import { browserTab } from "#/utils/browser-tab";
-import { useStatusMessage } from "#/hooks/query/use-status-message";
-import { useAgentState } from "#/hooks/query/use-agent-state";
+import { useStatusMessage } from "#/hooks/query/simplified/use-status-message";
+import { useAgentState } from "#/hooks/query/simplified/use-agent-state";
 
 const notificationStates = [
   AgentState.AWAITING_USER_INPUT,
