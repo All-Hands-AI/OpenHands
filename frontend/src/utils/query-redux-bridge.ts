@@ -1,7 +1,6 @@
 import { QueryClient } from "@tanstack/react-query";
-import store from "#/store";
 
-// Feature flags to control which slices are migrated to React Query
+// Legacy type definitions kept for backward compatibility
 export type SliceNames =
   | "chat"
   | "agent"
@@ -15,26 +14,11 @@ export type SliceNames =
   | "status"
   | "metrics";
 
-// Track which slices have been migrated to React Query
-const migratedSlices: Record<SliceNames, boolean> = {
-  chat: false,
-  agent: false,
-  browser: false,
-  code: false,
-  command: false,
-  fileState: false,
-  initialQuery: false,
-  jupyter: false,
-  securityAnalyzer: false,
-  status: false,
-  metrics: false,
-};
-
 /**
- * QueryReduxBridge provides utilities to help migrate from Redux to React Query
- * while maintaining compatibility with existing code.
+ * QueryClient wrapper that provides a simplified API for managing state
+ * This replaces the previous Redux-Query bridge with a pure React Query implementation
  */
-export class QueryReduxBridge {
+export class QueryClientWrapper {
   private queryClient: QueryClient;
 
   constructor(queryClient: QueryClient) {
@@ -42,94 +26,49 @@ export class QueryReduxBridge {
   }
 
   /**
-   * Mark a slice as migrated to React Query
+   * Update React Query data for a query
    */
-  // Using this.queryClient to satisfy class-methods-use-this rule
-  migrateSlice(sliceName: SliceNames): void {
-    migratedSlices[sliceName] = true;
-    // Access this.queryClient to use 'this'
-    this.queryClient.getQueryCache();
-  }
-
-  /**
-   * Check if a slice has been migrated to React Query
-   */
-  // Using this.queryClient to satisfy class-methods-use-this rule
-  isSliceMigrated(sliceName: SliceNames): boolean {
-    // Access this.queryClient to use 'this'
-    this.queryClient.getQueryCache();
-    return migratedSlices[sliceName];
-  }
-
-  /**
-   * Get the current state of a slice from Redux
-   */
-  // Using this.queryClient to satisfy class-methods-use-this rule
-  getReduxSliceState<T>(sliceName: SliceNames): T {
-    // Access this.queryClient to use 'this'
-    this.queryClient.getQueryCache();
-    // Using type assertion to handle the dynamic slice name
-    const state = store.getState();
-    return state[sliceName as keyof typeof state] as T;
-  }
-
-  /**
-   * Update React Query data for a migrated slice
-   * This should be called when Redux state changes and we want to sync to React Query
-   */
-  syncReduxToQuery<T>(queryKey: unknown[], data: T): void {
+  updateQueryData<T>(queryKey: unknown[], data: T): void {
     this.queryClient.setQueryData(queryKey, data);
   }
 
   /**
-   * Dispatch a Redux action only if the slice hasn't been migrated
-   * This prevents duplicate updates when a slice is migrated
+   * Get React Query data for a query
    */
-  conditionalDispatch(
-    sliceName: SliceNames,
-    action: { type: string; payload?: unknown },
-  ): void {
-    if (!this.isSliceMigrated(sliceName)) {
-      store.dispatch(action);
-    }
+  getQueryData<T>(queryKey: unknown[]): T | undefined {
+    return this.queryClient.getQueryData<T>(queryKey);
   }
 
   /**
-   * Create a React Query mutation that also updates Redux if needed
-   * This helps maintain backward compatibility during migration
+   * Invalidate a query to trigger a refetch
    */
-  createHybridMutation<TData, TVariables>(
-    sliceName: SliceNames,
-    mutationFn: (variables: TVariables) => Promise<TData>,
-    reduxAction: (data: TData) => { type: string; payload?: unknown },
-  ) {
-    return {
-      mutationFn,
-      onSuccess: (data: TData) => {
-        // If the slice is still using Redux, dispatch the action
-        if (!this.isSliceMigrated(sliceName)) {
-          store.dispatch(reduxAction(data));
-        }
-      },
-    };
+  invalidateQuery(queryKey: unknown[]): void {
+    this.queryClient.invalidateQueries({ queryKey });
+  }
+
+  /**
+   * Reset a query to its initial state
+   */
+  resetQuery(queryKey: unknown[]): void {
+    this.queryClient.resetQueries({ queryKey });
   }
 }
 
 // Export a singleton instance
-let queryReduxBridge: QueryReduxBridge | null = null;
+let queryClientWrapper: QueryClientWrapper | null = null;
 
 export function initQueryReduxBridge(
   queryClient: QueryClient,
-): QueryReduxBridge {
-  queryReduxBridge = new QueryReduxBridge(queryClient);
-  return queryReduxBridge;
+): QueryClientWrapper {
+  queryClientWrapper = new QueryClientWrapper(queryClient);
+  return queryClientWrapper;
 }
 
-export function getQueryReduxBridge(): QueryReduxBridge {
-  if (!queryReduxBridge) {
+export function getQueryReduxBridge(): QueryClientWrapper {
+  if (!queryClientWrapper) {
     throw new Error(
-      "QueryReduxBridge not initialized. Call initQueryReduxBridge first.",
+      "QueryClientWrapper not initialized. Call initQueryReduxBridge first.",
     );
   }
-  return queryReduxBridge;
+  return queryClientWrapper;
 }

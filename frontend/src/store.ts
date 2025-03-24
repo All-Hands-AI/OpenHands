@@ -1,18 +1,11 @@
-import { combineReducers, configureStore } from "@reduxjs/toolkit";
-import chatReducer from "./state/chat-slice";
-// browser, code, fileState, command, jupyter, securityAnalyzer, status, metrics, initialQuery, and agent slices are now handled by React Query
+// This file is kept for backward compatibility with any imports that might still exist
+// All state management has been migrated to React Query
 
-export const rootReducer = combineReducers({
-  chat: chatReducer,
-  // browser, code, fileState, command, jupyter, securityAnalyzer, status, metrics, initialQuery, and agent slices removed (migrated to React Query)
-});
+// Define empty types for backward compatibility
+export type RootState = Record<string, never>;
+export type AppStore = Record<string, never>;
+export type AppDispatch = () => void;
 
-const store = configureStore({
-  reducer: rootReducer,
-});
-
-export type RootState = ReturnType<typeof store.getState>;
-export type AppStore = typeof store;
-export type AppDispatch = typeof store.dispatch;
-
+// Export an empty object as the store
+const store = {};
 export default store;

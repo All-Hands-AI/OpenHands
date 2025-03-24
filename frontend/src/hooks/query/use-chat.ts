@@ -8,7 +8,6 @@ import {
 } from "#/types/core/observations";
 import { OpenHandsAction } from "#/types/core/actions";
 import { OpenHandsEventType } from "#/types/core/base";
-import { getQueryReduxBridge } from "#/utils/query-redux-bridge";
 
 const MAX_CONTENT_LENGTH = 1000;
 
@@ -40,30 +39,10 @@ function getRiskText(risk: ActionSecurityRisk) {
 export function useChat() {
   const queryClient = useQueryClient();
 
-  // Try to get the bridge, but don't throw if it's not initialized (for tests)
-  let bridge: ReturnType<typeof getQueryReduxBridge> | undefined;
-  try {
-    bridge = getQueryReduxBridge();
-  } catch (e) {
-    // eslint-disable-next-line no-console
-    console.warn("QueryReduxBridge not initialized, using default chat state");
-  }
-
-  // Get initial state from Redux if available
-  const getInitialChatState = (): { messages: Message[] } => {
-    if (bridge && !bridge.isSliceMigrated("chat")) {
-      const reduxState = bridge.getReduxSliceState("chat") as
-        | { messages: Message[] }
-        | undefined;
-      return reduxState || { messages: [] };
-    }
-    return { messages: [] };
-  };
-
   // Query for chat messages
   const query = useQuery({
     queryKey: ["chat"],
-    queryFn: () => getInitialChatState(),
+    queryFn: () => ({ messages: [] }),
     initialData: { messages: [] },
   });
 
@@ -105,14 +84,6 @@ export function useChat() {
       // Update the query cache
       queryClient.setQueryData(["chat"], { messages: updatedMessages });
 
-      // If Redux is still active, dispatch to keep it in sync
-      if (bridge && !bridge.isSliceMigrated("chat")) {
-        bridge.conditionalDispatch("chat", {
-          type: "chat/addUserMessage",
-          payload,
-        });
-      }
-
       return { messages: updatedMessages };
     },
   });
@@ -136,14 +107,6 @@ export function useChat() {
 
       // Update the query cache
       queryClient.setQueryData(["chat"], { messages: updatedMessages });
-
-      // If Redux is still active, dispatch to keep it in sync
-      if (bridge && !bridge.isSliceMigrated("chat")) {
-        bridge.conditionalDispatch("chat", {
-          type: "chat/addAssistantMessage",
-          payload: content,
-        });
-      }
 
       return { messages: updatedMessages };
     },
@@ -204,14 +167,6 @@ export function useChat() {
 
       // Update the query cache
       queryClient.setQueryData(["chat"], { messages: updatedMessages });
-
-      // If Redux is still active, dispatch to keep it in sync
-      if (bridge && !bridge.isSliceMigrated("chat")) {
-        bridge.conditionalDispatch("chat", {
-          type: "chat/addAssistantAction",
-          payload: action,
-        });
-      }
 
       return { messages: updatedMessages };
     },
@@ -305,14 +260,6 @@ export function useChat() {
       // Update the query cache
       queryClient.setQueryData(["chat"], { messages: updatedMessages });
 
-      // If Redux is still active, dispatch to keep it in sync
-      if (bridge && !bridge.isSliceMigrated("chat")) {
-        bridge.conditionalDispatch("chat", {
-          type: "chat/addAssistantObservation",
-          payload: observation,
-        });
-      }
-
       return { messages: updatedMessages };
     },
   });
@@ -338,14 +285,6 @@ export function useChat() {
       // Update the query cache
       queryClient.setQueryData(["chat"], { messages: updatedMessages });
 
-      // If Redux is still active, dispatch to keep it in sync
-      if (bridge && !bridge.isSliceMigrated("chat")) {
-        bridge.conditionalDispatch("chat", {
-          type: "chat/addErrorMessage",
-          payload,
-        });
-      }
-
       return { messages: updatedMessages };
     },
   });
@@ -355,13 +294,6 @@ export function useChat() {
     mutationFn: async () => {
       // Update the query cache
       queryClient.setQueryData(["chat"], { messages: [] });
-
-      // If Redux is still active, dispatch to keep it in sync
-      if (bridge && !bridge.isSliceMigrated("chat")) {
-        bridge.conditionalDispatch("chat", {
-          type: "chat/clearMessages",
-        });
-      }
 
       return { messages: [] };
     },

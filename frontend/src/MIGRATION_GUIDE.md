@@ -1,154 +1,85 @@
 # Redux to React Query Migration Guide
 
-This guide outlines the process for migrating from Redux to React Query in our application.
+This document outlines the completed migration from Redux to React Query in our application.
 
 ## Overview
 
-The migration strategy allows for a gradual transition from Redux to React Query, with the ability to migrate one slice at a time without breaking the application. This is achieved through a bridge that coordinates between Redux and React Query.
+The application has been fully migrated from Redux to React Query. All state management is now handled by React Query, and Redux dependencies have been removed.
 
 ## Key Components
 
-1. **QueryReduxBridge**: A utility class that manages the migration state and coordinates between Redux and React Query.
-2. **Websocket Integration**: Modified to respect migration flags and update the appropriate state management system.
-3. **React Query Hooks**: New hooks that replace Redux slice functionality.
+1. **QueryClientWrapper**: A utility class that provides a simplified API for managing state with React Query.
+2. **React Query Hooks**: Custom hooks that provide state management functionality for different parts of the application.
 
-## Migration Steps
+## Architecture
 
-### 1. Initialize the Bridge
+The application now uses a pure React Query architecture:
 
-In your main application file (e.g., `App.tsx`), initialize the bridge:
+1. **State Management**: All state is managed through React Query's cache
+2. **Data Fetching**: API calls are handled through React Query's query and mutation hooks
+3. **Real-time Updates**: WebSocket events update the React Query cache directly
+
+## Using React Query in the Application
+
+### 1. Initialize the Query Client
+
+The query client is initialized in `query-redux-bridge-init.ts`:
 
 ```tsx
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { initQueryReduxBridge } from '#/utils/query-redux-bridge';
+import { QueryClient } from '@tanstack/react-query';
+import { queryClientConfig } from './query-client-config';
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: false,
-    },
-  },
-  ...queryClientConfig,
-});
+// Create a query client
+export const queryClient = new QueryClient(queryClientConfig);
 
-// Initialize the bridge
-initQueryReduxBridge(queryClient);
-
-function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      {/* Your app components */}
-    </QueryClientProvider>
-  );
+// Initialize the client wrapper
+export function initializeBridge() {
+  initQueryReduxBridge(queryClient);
 }
 ```
 
-### 2. Replace the WebSocket Provider
+### 2. Use React Query Hooks
 
-Replace the original WebSocket provider with the bridge-aware version:
-
-```tsx
-import { WsClientProviderWithBridge } from '#/context/ws-client-provider-with-bridge';
-
-// Instead of
-// <WsClientProvider conversationId={conversationId}>
-//   {children}
-// </WsClientProvider>
-
-// Use
-<WsClientProviderWithBridge conversationId={conversationId}>
-  {children}
-</WsClientProviderWithBridge>
-```
-
-### 3. Add the WebSocket Events Hook
-
-Add the WebSocket events hook to your application to handle events for React Query:
+Each feature has its own custom hook that provides state management:
 
 ```tsx
-import { useWebsocketEvents } from '#/hooks/query/use-websocket-events';
-
-function YourComponent() {
-  // This hook will process websocket events for React Query
-  useWebsocketEvents();
-  
-  // Rest of your component
-  return (
-    // ...
-  );
-}
-```
-
-### 4. Migrate Individual Slices
-
-For each Redux slice you want to migrate:
-
-1. Create a React Query hook that replaces the slice functionality
-2. Mark the slice as migrated
-3. Update components to use the new hook instead of Redux
-
-Example for migrating the chat slice:
-
-```tsx
-import { useChatMessages } from '#/hooks/query/use-chat-messages';
-import { getQueryReduxBridge } from '#/utils/query-redux-bridge';
-
-// Mark the slice as migrated
-getQueryReduxBridge().migrateSlice('chat');
+import { useChat } from '#/hooks/query/use-chat';
 
 function ChatComponent() {
-  // Instead of using useSelector and useDispatch
-  // const messages = useSelector((state) => state.chat.messages);
-  // const dispatch = useDispatch();
-  
-  // Use the React Query hook
   const { 
     messages, 
     addUserMessage, 
     addAssistantMessage, 
     addErrorMessage, 
     clearMessages 
-  } = useChatMessages();
+  } = useChat();
   
-  // Rest of your component using the new API
+  // Use the hook's methods and state
   return (
     // ...
   );
 }
 ```
 
-## Testing the Migration
+### 3. WebSocket Integration
 
-To test the migration of a single slice:
+WebSocket events are processed and update the React Query cache directly:
 
-1. Create the React Query hook for the slice
-2. Mark the slice as migrated using `getQueryReduxBridge().migrateSlice('sliceName')`
-3. Update a single component to use the new hook
-4. Test the application to ensure it works correctly
-5. If issues arise, you can easily revert by removing the migration flag
+```tsx
+import { useQueryClient } from '@tanstack/react-query';
 
-## Troubleshooting
+function processWebSocketEvent(event) {
+  const queryClient = useQueryClient();
+  
+  // Update the appropriate query data
+  queryClient.setQueryData(['queryKey'], newData);
+}
+```
 
-### Duplicate Updates
+## Benefits of the Migration
 
-If you see duplicate updates (e.g., chat messages appearing twice), check:
-
-1. Ensure you're using the bridge-aware WebSocket provider
-2. Verify the slice is properly marked as migrated
-3. Check that components aren't mixing Redux and React Query for the same slice
-
-### Console Errors
-
-If you encounter console errors:
-
-1. Check for race conditions between Redux and React Query
-2. Ensure the WebSocket events hook is properly mounted
-3. Verify that the QueryReduxBridge is initialized before any components try to use it
-
-## Complete Migration
-
-Once all slices are migrated:
-
-1. Remove the Redux store and related code
-2. Simplify the bridge code to remove Redux dependencies
-3. Update the WebSocket provider to directly update React Query without the bridge
+1. **Simplified State Management**: React Query handles caching, refetching, and background updates
+2. **Reduced Boilerplate**: No need for actions, reducers, and selectors
+3. **Improved Performance**: Automatic request deduplication and caching
+4. **Better Developer Experience**: Hooks-based API is more intuitive and easier to use
+5. **Smaller Bundle Size**: Removed Redux dependencies reduce the application size
