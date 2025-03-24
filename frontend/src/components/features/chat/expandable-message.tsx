@@ -17,7 +17,6 @@ interface ExpandableMessageProps {
   message: string;
   type: string;
   success?: boolean;
-  translationOptions?: Record<string, string>;
 }
 
 export function ExpandableMessage({
@@ -25,7 +24,6 @@ export function ExpandableMessage({
   message,
   type,
   success,
-  translationOptions,
 }: ExpandableMessageProps) {
   const { data: config } = useConfig();
   const { t, i18n } = useTranslation();
@@ -36,10 +34,10 @@ export function ExpandableMessage({
   useEffect(() => {
     if (id && i18n.exists(id)) {
       setHeadline(t(id));
-      setDetails(translationOptions ? t(id, translationOptions) : message);
+      setDetails(message);
       setShowDetails(false);
     }
-  }, [id, message, translationOptions, i18n.language, t]);
+  }, [id, message, i18n.language, t]);
 
   const statusIconClasses = "h-4 w-4 ml-2 inline";
 
