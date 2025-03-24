@@ -20,7 +20,10 @@ const saveSettingsMutationFn = async (
     language: settings.LANGUAGE || DEFAULT_SETTINGS.LANGUAGE,
     confirmation_mode: settings.CONFIRMATION_MODE,
     security_analyzer: settings.SECURITY_ANALYZER,
-    llm_api_key: settings.LLM_API_KEY?.trim() || undefined,
+    llm_api_key:
+      settings.LLM_API_KEY === ""
+        ? ""
+        : settings.LLM_API_KEY?.trim() || undefined,
     remote_runtime_resource_factor: settings.REMOTE_RUNTIME_RESOURCE_FACTOR,
     provider_tokens: settings.provider_tokens,
     enable_default_condenser: settings.ENABLE_DEFAULT_CONDENSER,
