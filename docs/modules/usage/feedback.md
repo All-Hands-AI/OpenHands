@@ -36,7 +36,7 @@ At this time, we will follow the following release process:
 1. All people who contributed public feedback will receive an email describing the data release and being given an opportunity to opt out.
 2. The person or people in charge of the data release will perform quality control of the data, removing low-quality feedback,
 removing email submitter email addresses, and attempting to remove any sensitive information.
-3. The data will be released publicly under the MIT license through commonly used sites such as github or Hugging Face.
+3. The data will be released publicly under the MIT license through commonly used sites such as GitHub or Hugging Face.
 
 ### What if I want my data deleted?
 
