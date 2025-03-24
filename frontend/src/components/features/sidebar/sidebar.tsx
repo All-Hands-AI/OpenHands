@@ -22,7 +22,6 @@ import { useConfig } from "#/hooks/query/use-config";
 import { cn } from "#/utils/utils";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 
-
 export function Sidebar() {
   const location = useLocation();
   const dispatch = useDispatch();
@@ -36,7 +35,6 @@ export function Sidebar() {
     isFetching: isFetchingSettings,
   } = useSettings();
   const { mutateAsync: logout } = useLogout();
-
 
   const [settingsModalIsOpen, setSettingsModalIsOpen] = React.useState(false);
 

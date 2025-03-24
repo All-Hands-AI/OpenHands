@@ -6,10 +6,8 @@ import OpenHands from "#/api/open-hands";
 import { useAuth } from "#/context/auth-context";
 import { useLogout } from "../mutation/use-logout";
 
-
 export const useGitHubUser = () => {
   const { githubTokenIsSet } = useAuth();
-  const { setGitHubTokenIsSet } = useAuth();
   const { mutateAsync: logout } = useLogout();
 
   const { data: config } = useConfig();

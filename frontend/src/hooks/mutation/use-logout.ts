@@ -12,13 +12,13 @@ export const useLogout = () => {
     mutationFn: async () => {
       // Pause all queries that depend on githubTokenIsSet
       queryClient.setQueryData(["user"], null);
-      
+
       // Call logout endpoint
       await OpenHands.logout(config?.APP_MODE ?? "oss");
-      
+
       // Remove settings from cache so it will be refetched with new token state
       queryClient.removeQueries({ queryKey: ["settings"] });
-      
+
       // Update token state - this will trigger a settings refetch since it's part of the query key
       setGitHubTokenIsSet(false);
     },

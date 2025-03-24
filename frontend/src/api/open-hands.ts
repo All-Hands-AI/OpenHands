@@ -352,7 +352,8 @@ class OpenHands {
   }
 
   static async logout(appMode: GetConfigResponse["APP_MODE"]): Promise<void> {
-    const endpoint = appMode === "saas" ? "/api/logout" : "/api/unset-settings-tokens";
+    const endpoint =
+      appMode === "saas" ? "/api/logout" : "/api/unset-settings-tokens";
     await openHands.post(endpoint);
   }
 }
