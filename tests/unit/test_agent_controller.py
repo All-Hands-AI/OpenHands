@@ -993,6 +993,7 @@ async def test_first_user_message_with_identical_content():
     """
     Test that _first_user_message correctly identifies the first user message
     even when multiple messages have identical content but different IDs.
+    Also verifies that the result is properly cached.
 
     The issue we're checking is that the comparison (action == self._first_user_message())
     should correctly differentiate between messages with the same content but different IDs.
@@ -1037,6 +1038,20 @@ async def test_first_user_message_with_identical_content():
     assert (
         second_message.id != first_user_message.id
     )  # This should be False, but may be True if there's a bug
+
+    # Verify caching behavior
+    assert (
+        controller._cached_first_user_message is not None
+    )  # Cache should be populated
+    assert (
+        controller._cached_first_user_message is first_user_message
+    )  # Cache should store the same object
+
+    # Mock get_events to verify it's not called again
+    with patch.object(event_stream, 'get_events') as mock_get_events:
+        cached_message = controller._first_user_message()
+        assert cached_message is first_user_message  # Should return cached object
+        mock_get_events.assert_not_called()  # Should not call get_events again
 
     await controller.close()
 

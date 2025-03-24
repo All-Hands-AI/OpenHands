@@ -84,7 +84,10 @@ class Session:
         await self.agent_session.close()
 
     async def initialize_agent(
-        self, settings: Settings, initial_message: MessageAction | None
+        self,
+        settings: Settings,
+        initial_message: MessageAction | None,
+        replay_json: str | None,
     ):
         self.agent_session.event_stream.add_event(
             AgentStateChangedObservation('', AgentState.LOADING),
@@ -133,11 +136,11 @@ class Session:
 
         agent = Agent.get_cls(agent_cls)(llm, agent_config)
 
-        provider_token = None
+        git_provider_tokens = None
         selected_repository = None
         selected_branch = None
         if isinstance(settings, ConversationInitData):
-            provider_token = settings.provider_token
+            git_provider_tokens = settings.git_provider_tokens
             selected_repository = settings.selected_repository
             selected_branch = settings.selected_branch
 
@@ -150,10 +153,11 @@ class Session:
                 max_budget_per_task=self.config.max_budget_per_task,
                 agent_to_llm_config=self.config.get_agent_to_llm_config_map(),
                 agent_configs=self.config.get_agent_configs(),
-                github_token=provider_token,
+                git_provider_tokens=git_provider_tokens,
                 selected_repository=selected_repository,
                 selected_branch=selected_branch,
                 initial_message=initial_message,
+                replay_json=replay_json,
             )
         except Exception as e:
             self.logger.exception(f'Error creating agent_session: {e}')

@@ -10,7 +10,7 @@ OpenHands uses LiteLLM to make calls to Google's chat models. You can find their
 When running OpenHands, you'll need to set the following in the OpenHands UI through the Settings:
 - `LLM Provider` to `Gemini`
 - `LLM Model` to the model you will be using.
-If the model is not in the list, toggle `Advanced` options, and enter it in `Custom Model` (e.g. gemini/&lt;model-name&gt; like `gemini/gemini-1.5-pro`).
+If the model is not in the list, toggle `Advanced` options, and enter it in `Custom Model` (e.g. gemini/&lt;model-name&gt; like `gemini/gemini-2.0-flash`).
 - `API Key` to your Gemini API key
 
 ## VertexAI - Google Cloud Platform Configs
