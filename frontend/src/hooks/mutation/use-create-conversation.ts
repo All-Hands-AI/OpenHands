@@ -11,21 +11,12 @@ export const useCreateConversation = () => {
   const dispatch = useDispatch();
   const queryClient = useQueryClient();
 
-  const { selectedRepository, files, importedProjectZip } = useSelector(
+  const { selectedRepository, files } = useSelector(
     (state: RootState) => state.initialQuery,
   );
 
   return useMutation({
     mutationFn: async (variables: { q?: string }) => {
-      if (
-        !variables.q?.trim() &&
-        !selectedRepository &&
-        files.length === 0 &&
-        !importedProjectZip
-      ) {
-        throw new Error("No query provided");
-      }
-
       if (variables.q) dispatch(setInitialPrompt(variables.q));
 
       return OpenHands.createConversation(

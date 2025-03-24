@@ -605,6 +605,7 @@ class AgentController:
         llm = LLM(config=llm_config, retry_listener=self._notify_on_llm_retry)
         delegate_agent = agent_cls(llm=llm, config=agent_config)
         state = State(
+            session_id=self.id.removesuffix('-delegate'),
             inputs=action.inputs or {},
             local_iteration=0,
             iteration=self.state.iteration,
@@ -873,6 +874,7 @@ class AgentController:
         # If state is None, we create a brand new state and still load the event stream so we can restore the history
         if state is None:
             self.state = State(
+                session_id=self.id.removesuffix('-delegate'),
                 inputs={},
                 max_iterations=max_iterations,
                 confirmation_mode=confirmation_mode,
@@ -897,10 +899,13 @@ class AgentController:
         # Always load from the event stream to avoid losing history
         self._init_history()
 
-    def get_trajectory(self) -> list[dict]:
+    def get_trajectory(self, include_screenshots: bool = False) -> list[dict]:
         # state history could be partially hidden/truncated before controller is closed
         assert self._closed
-        return [event_to_trajectory(event) for event in self.state.history]
+        return [
+            event_to_trajectory(event, include_screenshots)
+            for event in self.state.history
+        ]
 
     def _init_history(self) -> None:
         """Initializes the agent's history from the event stream.

@@ -7,6 +7,7 @@ interface ConversationCardContextMenuProps {
   onClose: () => void;
   onDelete?: (event: React.MouseEvent<HTMLButtonElement>) => void;
   onEdit?: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  onDisplayCost?: (event: React.MouseEvent<HTMLButtonElement>) => void;
   onDownloadViaVSCode?: (event: React.MouseEvent<HTMLButtonElement>) => void;
   position?: "top" | "bottom";
 }
@@ -15,6 +16,7 @@ export function ConversationCardContextMenu({
   onClose,
   onDelete,
   onEdit,
+  onDisplayCost,
   onDownloadViaVSCode,
   position = "bottom",
 }: ConversationCardContextMenuProps) {
@@ -46,6 +48,14 @@ export function ConversationCardContextMenu({
           onClick={onDownloadViaVSCode}
         >
           Download via VS Code
+        </ContextMenuListItem>
+      )}
+      {onDisplayCost && (
+        <ContextMenuListItem
+          testId="display-cost-button"
+          onClick={onDisplayCost}
+        >
+          Display Cost
         </ContextMenuListItem>
       )}
     </ContextMenu>
