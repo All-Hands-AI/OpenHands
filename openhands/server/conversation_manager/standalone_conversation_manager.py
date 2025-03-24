@@ -252,6 +252,7 @@ class StandaloneConversationManager(ConversationManager):
         settings: Settings,
         user_id: str | None,
         initial_user_msg: MessageAction | None = None,
+        replay_json: str | None = None,
         github_user_id: str | None = None,
     ) -> EventStream:
         logger.info(f'maybe_start_agent_loop:{sid}', extra={'session_id': sid})
@@ -284,7 +285,9 @@ class StandaloneConversationManager(ConversationManager):
                 user_id=user_id,
             )
             self._local_agent_loops_by_sid[sid] = session
-            asyncio.create_task(session.initialize_agent(settings, initial_user_msg))
+            asyncio.create_task(
+                session.initialize_agent(settings, initial_user_msg, replay_json)
+            )
             # This does not get added when resuming an existing conversation
             try:
                 session.agent_session.event_stream.subscribe(
