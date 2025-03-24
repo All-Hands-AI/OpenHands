@@ -108,7 +108,9 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
               title={project.title}
               selectedRepository={project.selected_repository}
               lastUpdatedAt={project.last_updated_at}
+              createdAt={project.created_at}
               status={project.status}
+              conversationId={project.conversation_id}
             />
           )}
         </NavLink>

@@ -17,25 +17,31 @@ interface ConversationCardProps {
   onClick?: () => void;
   onDelete?: () => void;
   onChangeTitle?: (title: string) => void;
-  showDisplayCostOption?: boolean;
+  showOptions?: boolean;
   isActive?: boolean;
   title: string;
   selectedRepository: string | null;
   lastUpdatedAt: string; // ISO 8601
+  createdAt?: string; // ISO 8601
   status?: ProjectStatus;
   variant?: "compact" | "default";
   conversationId?: string; // Optional conversation ID for VS Code URL
 }
 
+const MAX_TIME_BETWEEN_CREATION_AND_UPDATE = 1000 * 60 * 30; // 30 minutes
+
 export function ConversationCard({
   onClick,
   onDelete,
   onChangeTitle,
-  showDisplayCostOption,
+  showOptions,
   isActive,
   title,
   selectedRepository,
+  // lastUpdatedAt is kept in props for backward compatibility
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   lastUpdatedAt,
+  createdAt,
   status = "STOPPED",
   variant = "default",
   conversationId,
@@ -105,11 +111,10 @@ export function ConversationCard({
 
         if (data.vscode_url) {
           window.open(data.vscode_url, "_blank");
-        } else {
-          console.error("VS Code URL not available", data.error);
         }
+        // VS Code URL not available
       } catch (error) {
-        console.error("Failed to fetch VS Code URL", error);
+        // Failed to fetch VS Code URL
       }
     }
 
@@ -127,7 +132,13 @@ export function ConversationCard({
     }
   }, [titleMode]);
 
-  const hasContextMenu = !!(onDelete || onChangeTitle || showDisplayCostOption);
+  const hasContextMenu = !!(onDelete || onChangeTitle || showOptions);
+  const timeBetweenUpdateAndCreation = createdAt
+    ? new Date(lastUpdatedAt).getTime() - new Date(createdAt).getTime()
+    : 0;
+  const showUpdateTime =
+    createdAt &&
+    timeBetweenUpdateAndCreation > MAX_TIME_BETWEEN_CREATION_AND_UPDATE;
 
   return (
     <>
@@ -168,31 +179,35 @@ export function ConversationCard({
             )}
           </div>
 
-          <div className="flex items-center gap-2 relative">
+          <div className="flex items-center">
             <ConversationStateIndicator status={status} />
             {hasContextMenu && (
-              <EllipsisButton
-                onClick={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  setContextMenuVisible((prev) => !prev);
-                }}
-              />
+              <div className="pl-2">
+                <EllipsisButton
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    setContextMenuVisible((prev) => !prev);
+                  }}
+                />
+              </div>
             )}
-            {contextMenuVisible && (
-              <ConversationCardContextMenu
-                onClose={() => setContextMenuVisible(false)}
-                onDelete={onDelete && handleDelete}
-                onEdit={onChangeTitle && handleEdit}
-                onDownloadViaVSCode={
-                  conversationId ? handleDownloadViaVSCode : undefined
-                }
-                onDisplayCost={
-                  showDisplayCostOption ? handleDisplayCost : undefined
-                }
-                position={variant === "compact" ? "top" : "bottom"}
-              />
-            )}
+            <div className="relative">
+              {contextMenuVisible && (
+                <ConversationCardContextMenu
+                  onClose={() => setContextMenuVisible(false)}
+                  onDelete={onDelete && handleDelete}
+                  onEdit={onChangeTitle && handleEdit}
+                  onDownloadViaVSCode={
+                    conversationId && showOptions
+                      ? handleDownloadViaVSCode
+                      : undefined
+                  }
+                  onDisplayCost={showOptions ? handleDisplayCost : undefined}
+                  position={variant === "compact" ? "top" : "bottom"}
+                />
+              )}
+            </div>
           </div>
         </div>
 
@@ -205,7 +220,16 @@ export function ConversationCard({
             <ConversationRepoLink selectedRepository={selectedRepository} />
           )}
           <p className="text-xs text-neutral-400">
-            <time>{formatTimeDelta(new Date(lastUpdatedAt))} ago</time>
+            <span>Created </span>
+            <time>
+              {formatTimeDelta(new Date(createdAt || lastUpdatedAt))} ago
+            </time>
+            {showUpdateTime && (
+              <>
+                <span>, updated </span>
+                <time>{formatTimeDelta(new Date(lastUpdatedAt))} ago</time>
+              </>
+            )}
           </p>
         </div>
       </div>
