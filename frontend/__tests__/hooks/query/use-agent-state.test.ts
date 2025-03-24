@@ -30,13 +30,13 @@ describe("useAgentState", () => {
     // Mock the bridge to return a state
     (getQueryReduxBridge as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
       getReduxSliceState: vi.fn().mockReturnValue({
-        curAgentState: AgentState.READY,
+        curAgentState: AgentState.RUNNING,
       }),
     });
 
     const { result } = renderHook(() => useAgentState());
 
-    expect(result.current.curAgentState).toBe(AgentState.READY);
+    expect(result.current.curAgentState).toBe(AgentState.RUNNING);
   });
 
   it("should update state when setCurrentAgentState is called", () => {
@@ -54,10 +54,10 @@ describe("useAgentState", () => {
 
     // Update state
     act(() => {
-      result.current.setCurrentAgentState(AgentState.READY);
+      result.current.setCurrentAgentState(AgentState.RUNNING);
     });
 
     // Check updated state
-    expect(result.current.curAgentState).toBe(AgentState.READY);
+    expect(result.current.curAgentState).toBe(AgentState.RUNNING);
   });
 });

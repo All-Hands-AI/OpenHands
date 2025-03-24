@@ -2,6 +2,7 @@ import { useStatusMessage } from "#/hooks/query/use-status-message";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { getQueryReduxBridge } from "#/utils/query-redux-bridge";
+import { StatusMessage } from "#/types/message";
 
 // Mock the query-redux-bridge
 vi.mock("#/utils/query-redux-bridge", () => ({
@@ -73,7 +74,7 @@ describe("useStatusMessage", () => {
     expect(result.current.statusMessage.message).toBe("");
 
     // Update state
-    const newStatusMessage = {
+    const newStatusMessage: StatusMessage = {
       status_update: true,
       type: "info",
       id: "new.id",

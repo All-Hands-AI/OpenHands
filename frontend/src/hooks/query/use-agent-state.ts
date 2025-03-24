@@ -17,10 +17,13 @@ export function useAgentState() {
   useEffect(() => {
     try {
       const bridge = getQueryReduxBridge();
-      const reduxState = bridge.getReduxSliceState<{ curAgentState: AgentState }>("agent");
+      const reduxState = bridge.getReduxSliceState<{
+        curAgentState: AgentState;
+      }>("agent");
       setAgentState(reduxState.curAgentState);
     } catch (error) {
       // If we can't get the state from Redux, use the initial state
+      // eslint-disable-next-line no-console
       console.warn("Could not get agent state from Redux, using default");
     } finally {
       setIsLoading(false);

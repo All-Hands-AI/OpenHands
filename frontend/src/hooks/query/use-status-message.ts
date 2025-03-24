@@ -15,17 +15,21 @@ const initialStatusMessage: StatusMessage = {
  * This replaces the Redux status slice functionality without using React Query
  */
 export function useStatusMessage() {
-  const [statusMessage, setStatusMessageState] = useState<StatusMessage>(initialStatusMessage);
+  const [statusMessage, setStatusMessageState] =
+    useState<StatusMessage>(initialStatusMessage);
   const [isLoading, setIsLoading] = useState(true);
 
   // Initialize from Redux on mount
   useEffect(() => {
     try {
       const bridge = getQueryReduxBridge();
-      const reduxState = bridge.getReduxSliceState<{ curStatusMessage: StatusMessage }>("status");
+      const reduxState = bridge.getReduxSliceState<{
+        curStatusMessage: StatusMessage;
+      }>("status");
       setStatusMessageState(reduxState.curStatusMessage);
     } catch (error) {
       // If we can't get the state from Redux, use the initial state
+      // eslint-disable-next-line no-console
       console.warn("Could not get status message from Redux, using default");
     } finally {
       setIsLoading(false);
@@ -40,9 +44,9 @@ export function useStatusMessage() {
       message: newStatusMessage.message,
       type: newStatusMessage.type,
     });
-    
+
     setStatusMessageState(newStatusMessage);
-    
+
     // eslint-disable-next-line no-console
     console.log("[Status Debug] Successfully set status message:", {
       id: newStatusMessage.id,

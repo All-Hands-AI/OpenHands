@@ -26,11 +26,15 @@ export function useInitialQuery() {
   useEffect(() => {
     try {
       const bridge = getQueryReduxBridge();
-      const reduxState = bridge.getReduxSliceState<InitialQueryState>("initialQuery");
+      const reduxState =
+        bridge.getReduxSliceState<InitialQueryState>("initialQuery");
       setState(reduxState);
     } catch (error) {
       // If we can't get the state from Redux, use the initial state
-      console.warn("Could not get initial query state from Redux, using default");
+      // eslint-disable-next-line no-console
+      console.warn(
+        "Could not get initial query state from Redux, using default",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -94,9 +98,10 @@ export function useInitialQuery() {
 
   return {
     // State
-    files: state.files,
-    initialPrompt: state.initialPrompt,
-    selectedRepository: state.selectedRepository,
+    files: state?.files || initialState.files,
+    initialPrompt: state?.initialPrompt || initialState.initialPrompt,
+    selectedRepository:
+      state?.selectedRepository || initialState.selectedRepository,
     isLoading,
 
     // Actions

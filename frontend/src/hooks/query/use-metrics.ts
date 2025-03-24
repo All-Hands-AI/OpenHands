@@ -32,6 +32,7 @@ export function useMetrics() {
       setMetricsState(reduxState);
     } catch (error) {
       // If we can't get the state from Redux, use the initial state
+      // eslint-disable-next-line no-console
       console.warn("Could not get metrics from Redux, using default");
     } finally {
       setIsLoading(false);
@@ -43,8 +44,14 @@ export function useMetrics() {
     setMetricsState(newMetrics);
   };
 
+  // Ensure metrics always has valid values to prevent null reference errors
+  const safeMetrics = {
+    cost: metrics?.cost ?? null,
+    usage: metrics?.usage ?? null,
+  };
+
   return {
-    metrics,
+    metrics: safeMetrics,
     isLoading,
     setMetrics,
   };
