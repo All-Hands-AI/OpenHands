@@ -17,7 +17,6 @@ export const useEndSession = () => {
   const endSession = () => {
     // Save the last page before ending session
     // saveLastPage();
-
     dispatch(clearSelectedRepository());
 
     // Reset browser state to initial values
