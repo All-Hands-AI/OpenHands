@@ -6,7 +6,6 @@ from typing import Any
 from pydantic import BaseModel
 
 from openhands.events import Event, EventSource
-from openhands.events.observation.observation import Observation
 from openhands.events.serialization.action import action_from_dict
 from openhands.events.serialization.observation import observation_from_dict
 from openhands.events.serialization.utils import remove_fields
@@ -35,7 +34,6 @@ UNDERSCORE_KEYS = [
 ]
 
 DELETE_FROM_TRAJECTORY_EXTRAS = {
-    'screenshot',
     'dom_object',
     'axtree_object',
     'active_page_index',
@@ -45,7 +43,10 @@ DELETE_FROM_TRAJECTORY_EXTRAS = {
     'extra_element_properties',
 }
 
-DELETE_FROM_MEMORY_EXTRAS = DELETE_FROM_TRAJECTORY_EXTRAS | {'open_pages_urls'}
+DELETE_FROM_TRAJECTORY_EXTRAS_AND_SCREENSHOTS = DELETE_FROM_TRAJECTORY_EXTRAS | {
+    'screenshot',
+    'set_of_marks',
+}
 
 
 def event_from_dict(data: dict[str, Any]) -> 'Event':
@@ -136,30 +137,15 @@ def event_to_dict(event: 'Event') -> dict:
     return d
 
 
-def event_to_trajectory(event: 'Event') -> dict:
+def event_to_trajectory(event: 'Event', include_screenshots: bool = False) -> dict:
     d = event_to_dict(event)
     if 'extras' in d:
-        remove_fields(d['extras'], DELETE_FROM_TRAJECTORY_EXTRAS)
-    return d
-
-
-def event_to_memory(event: 'Event', max_message_chars: int) -> dict:
-    d = event_to_dict(event)
-    d.pop('id', None)
-    d.pop('cause', None)
-    d.pop('timestamp', None)
-    d.pop('message', None)
-    d.pop('image_urls', None)
-
-    # runnable actions have some extra fields used in the BE/FE, which should not be sent to the LLM
-    if 'args' in d:
-        d['args'].pop('blocking', None)
-        d['args'].pop('confirmation_state', None)
-
-    if 'extras' in d:
-        remove_fields(d['extras'], DELETE_FROM_MEMORY_EXTRAS)
-    if isinstance(event, Observation) and 'content' in d:
-        d['content'] = truncate_content(d['content'], max_message_chars)
+        remove_fields(
+            d['extras'],
+            DELETE_FROM_TRAJECTORY_EXTRAS
+            if include_screenshots
+            else DELETE_FROM_TRAJECTORY_EXTRAS_AND_SCREENSHOTS,
+        )
     return d
 
 

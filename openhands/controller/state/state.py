@@ -1,9 +1,11 @@
 import base64
+import os
 import pickle
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
+import openhands
 from openhands.controller.state.task import RootTask
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema import AgentState
@@ -71,6 +73,7 @@ class State:
     """
 
     root_task: RootTask = field(default_factory=RootTask)
+    session_id: str = ''
     # global iteration for the current task
     iteration: int = 0
     # local iteration for the current subtask
@@ -201,3 +204,14 @@ class State:
             if isinstance(event, MessageAction) and event.source == EventSource.USER:
                 return event
         return None
+
+    def to_llm_metadata(self, agent_name: str) -> dict:
+        return {
+            'session_id': self.session_id,
+            'trace_version': openhands.__version__,
+            'tags': [
+                f'agent:{agent_name}',
+                f'web_host:{os.environ.get("WEB_HOST", "unspecified")}',
+                f'openhands_version:{openhands.__version__}',
+            ],
+        }
