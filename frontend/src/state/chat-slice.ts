@@ -111,7 +111,7 @@ export const chatSlice = createSlice({
         text = `Browsing ${action.payload.args.url}`;
       } else if (actionID === "browse_interactive") {
         // Include the browser_actions in the content
-        text = `Interactive browsing in progress...\n\n\`\`\`python\n${action.payload.args.browser_actions}\n\`\`\``;
+        text = `**Action:**\n\n\`\`\`python\n${action.payload.args.browser_actions}\n\`\`\``;
       }
       if (actionID === "run" || actionID === "run_ipython") {
         if (
