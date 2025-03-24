@@ -7,6 +7,7 @@ import { AgentState } from "#/types/agent-state";
 import { ErrorObservation } from "#/types/core/observations";
 import { useEndSession } from "../../../hooks/use-end-session";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
+import { useSecurityAnalyzer } from "#/hooks/query/use-security-analyzer";
 
 interface ServerError {
   error: boolean | string;
@@ -23,6 +24,7 @@ export const useHandleWSEvents = () => {
   const { events, send } = useWsClient();
   const endSession = useEndSession();
   const dispatch = useDispatch();
+  const { appendSecurityAnalyzerInput } = useSecurityAnalyzer();
 
   React.useEffect(() => {
     if (!events.length) {
@@ -61,5 +63,15 @@ export const useHandleWSEvents = () => {
         }),
       );
     }
-  }, [events.length]);
+
+    // Handle security analyzer events
+    if (
+      "args" in event &&
+      typeof event.args === "object" &&
+      event.args !== null &&
+      "security_risk" in event.args
+    ) {
+      appendSecurityAnalyzerInput({ payload: event });
+    }
+  }, [events.length, appendSecurityAnalyzerInput]);
 };

@@ -21,7 +21,6 @@ const renderTerminal = (commands: Command[] = []) =>
     preloadedState: {
       chat: { messages: [] },
       agent: { curAgentState: AgentState.LOADING },
-      securityAnalyzer: { logs: [] },
     },
   });
 

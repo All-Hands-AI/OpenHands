@@ -5,9 +5,7 @@ import {
   addErrorMessage,
 } from "#/state/chat-slice";
 import { trackError } from "#/utils/error-handler";
-import { appendSecurityAnalyzerInput } from "#/state/security-analyzer-slice";
-// Jupyter slice is now handled by React Query
-// Status, metrics, browser, and code slices are now handled by React Query
+// Security analyzer, jupyter, status, metrics, browser, and code slices are now handled by React Query
 import store from "#/store";
 import { queryClient } from "#/query-redux-bridge-init";
 import { getQueryReduxBridge } from "#/utils/query-redux-bridge";
@@ -159,7 +157,8 @@ export function handleActionMessage(message: ActionMessage) {
   }
 
   if ("args" in message && "security_risk" in message.args) {
-    store.dispatch(appendSecurityAnalyzerInput(message));
+    // Security analyzer is now handled by React Query
+    // This will be handled by the websocket event handler
   }
 
   if (message.source === "agent") {
