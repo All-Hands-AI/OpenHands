@@ -5,6 +5,7 @@ import { trackError } from "#/utils/error-handler";
 import ActionType from "#/types/action-type";
 import { ActionMessage } from "#/types/message";
 import * as queryReduxBridge from "#/utils/query-redux-bridge";
+import * as observations from "#/services/observations";
 
 // Mock dependencies
 vi.mock("#/utils/error-handler", () => ({
@@ -24,6 +25,22 @@ vi.mock("#/utils/query-redux-bridge", () => ({
     syncReduxToQuery: vi.fn(),
     conditionalDispatch: vi.fn(),
   })),
+}));
+
+// Create a mock for the chat functions
+const mockAddErrorMessage = vi.fn();
+const mockAddAssistantMessage = vi.fn();
+
+// Mock the getChatFunctions method
+vi.spyOn(observations, "getChatFunctions").mockImplementation(() => ({
+  addErrorMessage: mockAddErrorMessage,
+  addAssistantMessage: mockAddAssistantMessage,
+  addAssistantAction: vi.fn(),
+  addAssistantObservation: vi.fn(),
+  addUserMessage: vi.fn(),
+  clearMessages: vi.fn(),
+  messages: [],
+  isLoading: false,
 }));
 
 describe("Actions Service", () => {
@@ -62,9 +79,8 @@ describe("Actions Service", () => {
         metadata: { msgId: "runtime.connection.failed" },
       });
 
-      expect(store.dispatch).toHaveBeenCalledWith(expect.objectContaining({
-        payload: message,
-      }));
+      // Now we should check if the React Query function was called instead of Redux
+      expect(mockAddErrorMessage).toHaveBeenCalledWith(message);
     });
   });
 
@@ -133,17 +149,15 @@ describe("Actions Service", () => {
         }
       };
 
-      // Mock implementation to capture the message
-      let capturedPartialMessage = "";
-      (store.dispatch as any).mockImplementation((action: any) => {
-        if (action.type === "chat/addAssistantMessage" &&
-            action.payload.includes("believe that the task was **completed partially**")) {
-          capturedPartialMessage = action.payload;
-        }
-      });
+      // Reset the mock before testing
+      mockAddAssistantMessage.mockReset();
 
       handleActionMessage(messagePartial);
-      expect(capturedPartialMessage).toContain("I believe that the task was **completed partially**");
+      
+      // Check if the addAssistantMessage was called with the right message
+      expect(mockAddAssistantMessage).toHaveBeenCalledWith(
+        expect.stringContaining("I believe that the task was **completed partially**")
+      );
 
       // Test not completed
       const messageNotCompleted: ActionMessage = {
@@ -160,17 +174,15 @@ describe("Actions Service", () => {
         }
       };
 
-      // Mock implementation to capture the message
-      let capturedNotCompletedMessage = "";
-      (store.dispatch as any).mockImplementation((action: any) => {
-        if (action.type === "chat/addAssistantMessage" &&
-            action.payload.includes("believe that the task was **not completed**")) {
-          capturedNotCompletedMessage = action.payload;
-        }
-      });
+      // Reset the mock before testing
+      mockAddAssistantMessage.mockReset();
 
       handleActionMessage(messageNotCompleted);
-      expect(capturedNotCompletedMessage).toContain("I believe that the task was **not completed**");
+      
+      // Check if the addAssistantMessage was called with the right message
+      expect(mockAddAssistantMessage).toHaveBeenCalledWith(
+        expect.stringContaining("I believe that the task was **not completed**")
+      );
 
       // Test completed successfully
       const messageCompleted: ActionMessage = {
@@ -187,17 +199,15 @@ describe("Actions Service", () => {
         }
       };
 
-      // Mock implementation to capture the message
-      let capturedCompletedMessage = "";
-      (store.dispatch as any).mockImplementation((action: any) => {
-        if (action.type === "chat/addAssistantMessage" &&
-            action.payload.includes("believe that the task was **completed successfully**")) {
-          capturedCompletedMessage = action.payload;
-        }
-      });
+      // Reset the mock before testing
+      mockAddAssistantMessage.mockReset();
 
       handleActionMessage(messageCompleted);
-      expect(capturedCompletedMessage).toContain("I believe that the task was **completed successfully**");
+      
+      // Check if the addAssistantMessage was called with the right message
+      expect(mockAddAssistantMessage).toHaveBeenCalledWith(
+        expect.stringContaining("I believe that the task was **completed successfully**")
+      );
     });
   });
 });
