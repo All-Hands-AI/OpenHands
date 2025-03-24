@@ -1,9 +1,5 @@
 import { QueryClient } from "@tanstack/react-query";
-import {
-  initQueryReduxBridge,
-  getQueryReduxBridge,
-  SliceNames,
-} from "./utils/query-redux-bridge";
+import { initQueryReduxBridge, SliceNames } from "./utils/query-redux-bridge";
 import { queryClientConfig } from "./query-client-config";
 
 // Create a query client
@@ -16,6 +12,7 @@ export function initializeBridge() {
 }
 
 // Export a function to check if a slice is migrated (always returns true now)
-export function isSliceMigrated(sliceName: SliceNames) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function isSliceMigrated(_sliceName?: SliceNames) {
   return true;
 }
