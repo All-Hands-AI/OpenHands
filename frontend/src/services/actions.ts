@@ -1,12 +1,5 @@
-import {
-  addAssistantMessage,
-  addAssistantAction,
-  addUserMessage,
-  addErrorMessage,
-} from "#/state/chat-slice";
 import { trackError } from "#/utils/error-handler";
-// Security analyzer, jupyter, status, metrics, browser, and code slices are now handled by React Query
-import store from "#/store";
+// Security analyzer, jupyter, status, metrics, browser, code, and chat slices are now handled by React Query
 import { queryClient } from "#/query-redux-bridge-init";
 import { getQueryReduxBridge } from "#/utils/query-redux-bridge";
 import ActionType from "#/types/action-type";
@@ -15,18 +8,18 @@ import {
   ObservationMessage,
   StatusMessage,
 } from "#/types/message";
-import { handleObservationMessage } from "./observations";
+import { handleObservationMessage, getChatFunctions } from "./observations";
 // Command slice is now handled by React Query
 
 const messageActions = {
   [ActionType.BROWSE]: (message: ActionMessage) => {
     if (!message.args.thought && message.message) {
-      store.dispatch(addAssistantMessage(message.message));
+      getChatFunctions().addAssistantMessage(message.message);
     }
   },
   [ActionType.BROWSE_INTERACTIVE]: (message: ActionMessage) => {
     if (!message.args.thought && message.message) {
-      store.dispatch(addAssistantMessage(message.message));
+      getChatFunctions().addAssistantMessage(message.message);
     }
   },
   [ActionType.WRITE]: (message: ActionMessage) => {
@@ -44,19 +37,17 @@ const messageActions = {
   },
   [ActionType.MESSAGE]: (message: ActionMessage) => {
     if (message.source === "user") {
-      store.dispatch(
-        addUserMessage({
-          content: message.args.content,
-          imageUrls:
-            typeof message.args.image_urls === "string"
-              ? [message.args.image_urls]
-              : message.args.image_urls,
-          timestamp: message.timestamp,
-          pending: false,
-        }),
-      );
+      getChatFunctions().addUserMessage({
+        content: message.args.content,
+        imageUrls:
+          typeof message.args.image_urls === "string"
+            ? [message.args.image_urls]
+            : message.args.image_urls,
+        timestamp: message.timestamp,
+        pending: false,
+      });
     } else {
-      store.dispatch(addAssistantMessage(message.args.content));
+      getChatFunctions().addAssistantMessage(message.args.content);
     }
   },
   [ActionType.RUN_IPYTHON]: (message: ActionMessage) => {
@@ -82,7 +73,7 @@ const messageActions = {
     }
   },
   [ActionType.FINISH]: (message: ActionMessage) => {
-    store.dispatch(addAssistantMessage(message.args.final_thought));
+    getChatFunctions().addAssistantMessage(message.args.final_thought);
     let successPrediction = "";
     if (message.args.task_completed === "partial") {
       successPrediction =
@@ -96,9 +87,9 @@ const messageActions = {
     if (successPrediction) {
       // if final_thought is not empty, add a new line before the success prediction
       if (message.args.final_thought) {
-        store.dispatch(addAssistantMessage(`\n${successPrediction}`));
+        getChatFunctions().addAssistantMessage(`\n${successPrediction}`);
       } else {
-        store.dispatch(addAssistantMessage(successPrediction));
+        getChatFunctions().addAssistantMessage(successPrediction);
       }
     }
   },
@@ -163,11 +154,11 @@ export function handleActionMessage(message: ActionMessage) {
 
   if (message.source === "agent") {
     if (message.args && message.args.thought) {
-      store.dispatch(addAssistantMessage(message.args.thought));
+      getChatFunctions().addAssistantMessage(message.args.thought);
     }
     // Need to convert ActionMessage to RejectAction
     // @ts-expect-error TODO: fix
-    store.dispatch(addAssistantAction(message));
+    getChatFunctions().addAssistantAction(message);
   }
 
   if (message.action in messageActions) {
@@ -187,11 +178,9 @@ export function handleStatusMessage(message: StatusMessage) {
       source: "chat",
       metadata: { msgId: message.id },
     });
-    store.dispatch(
-      addErrorMessage({
-        ...message,
-      }),
-    );
+    getChatFunctions().addErrorMessage({
+      ...message,
+    });
   }
 }
 
@@ -209,10 +198,8 @@ export function handleAssistantMessage(message: Record<string, unknown>) {
       source: "chat",
       metadata: { raw_message: message },
     });
-    store.dispatch(
-      addErrorMessage({
-        message: errorMsg,
-      }),
-    );
+    getChatFunctions().addErrorMessage({
+      message: errorMsg,
+    });
   }
 }

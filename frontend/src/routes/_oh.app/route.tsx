@@ -1,7 +1,6 @@
 import { useDisclosure } from "@heroui/react";
 import React from "react";
 import { Outlet } from "react-router";
-import { useDispatch } from "react-redux";
 import { FaServer } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
@@ -10,7 +9,7 @@ import {
   useConversation,
 } from "#/context/conversation-context";
 import { Controls } from "#/components/features/controls/controls";
-import { clearMessages, addUserMessage } from "#/state/chat-slice";
+import { useChat } from "#/hooks/query/use-chat";
 import { useCommand } from "#/hooks/query/use-command";
 import { useEffectOnce } from "#/hooks/use-effect-once";
 import CodeIcon from "#/icons/code.svg?react";
@@ -47,8 +46,8 @@ function AppContent() {
   );
   const { initialPrompt, files, clearInitialPrompt, clearFiles } =
     useInitialQuery();
-  const dispatch = useDispatch();
   const endSession = useEndSession();
+  const { clearMessages, addUserMessage } = useChat();
 
   const [width, setWidth] = React.useState(window.innerWidth);
 
@@ -76,25 +75,23 @@ function AppContent() {
   const { clearJupyter } = useJupyter();
 
   React.useEffect(() => {
-    dispatch(clearMessages());
+    clearMessages();
     clearTerminal();
     clearJupyter();
     if (conversationId && (initialPrompt || files.length > 0)) {
-      dispatch(
-        addUserMessage({
-          content: initialPrompt || "",
-          imageUrls: files || [],
-          timestamp: new Date().toISOString(),
-          pending: true,
-        }),
-      );
+      addUserMessage({
+        content: initialPrompt || "",
+        imageUrls: files || [],
+        timestamp: new Date().toISOString(),
+        pending: true,
+      });
       clearInitialPrompt();
       clearFiles();
     }
   }, [conversationId]);
 
   useEffectOnce(() => {
-    dispatch(clearMessages());
+    clearMessages();
     clearTerminal();
     clearJupyter();
   });

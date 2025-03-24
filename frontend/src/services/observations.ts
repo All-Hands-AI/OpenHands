@@ -1,15 +1,70 @@
-import store from "#/store";
 import { queryClient } from "#/query-redux-bridge-init";
 import { ObservationMessage } from "#/types/message";
 import { AgentState } from "#/types/agent-state";
 // Command slice is now handled by React Query
 // Jupyter slice is now handled by React Query
 // Agent slice is now handled by React Query
+// Chat slice is now handled by React Query
 import ObservationType from "#/types/observation-type";
-import {
-  addAssistantMessage,
-  addAssistantObservation,
-} from "#/state/chat-slice";
+import { useChat } from "#/hooks/query/use-chat";
+
+// Create a singleton instance of the chat hook functions
+let chatFunctions: ReturnType<typeof useChat> | null = null;
+
+// This function will be called by the app to initialize the chat functions
+export function initChatFunctions(functions: ReturnType<typeof useChat>) {
+  chatFunctions = functions;
+}
+
+// Helper function to get chat functions, with fallback for tests
+export function getChatFunctions() {
+  if (!chatFunctions) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      "Chat functions not initialized, using direct query client access",
+    );
+    // Create a minimal implementation for tests or before initialization
+    return {
+      addAssistantMessage: (content: string) => {
+        const currentState = queryClient.getQueryData<{ messages: unknown[] }>([
+          "chat",
+        ]) || { messages: [] };
+        queryClient.setQueryData(["chat"], {
+          messages: [
+            ...currentState.messages,
+            {
+              type: "thought",
+              sender: "assistant",
+              content,
+              imageUrls: [],
+              timestamp: new Date().toISOString(),
+              pending: false,
+            },
+          ],
+        });
+      },
+      addAssistantObservation: () => {
+        // This is a simplified version - in tests we don't need the full implementation
+        // The real implementation is in the useChat hook
+      },
+      addAssistantAction: () => {
+        // Simplified version
+      },
+      addUserMessage: () => {
+        // Simplified version
+      },
+      addErrorMessage: () => {
+        // Simplified version
+      },
+      clearMessages: () => {
+        // Simplified version
+      },
+      messages: [],
+      isLoading: false,
+    };
+  }
+  return chatFunctions;
+}
 
 export function handleObservationMessage(message: ObservationMessage) {
   switch (message.observation) {
@@ -133,7 +188,7 @@ export function handleObservationMessage(message: ObservationMessage) {
     case ObservationType.DELEGATE:
       // TODO: better UI for delegation result (#2309)
       if (message.content) {
-        store.dispatch(addAssistantMessage(message.content));
+        getChatFunctions().addAssistantMessage(message.content);
       }
       break;
     case ObservationType.READ:
@@ -142,7 +197,7 @@ export function handleObservationMessage(message: ObservationMessage) {
     case ObservationType.NULL:
       break; // We don't display the default message for these observations
     default:
-      store.dispatch(addAssistantMessage(message.message));
+      getChatFunctions().addAssistantMessage(message.message);
       break;
   }
   if (!message.extras?.hidden) {
@@ -155,130 +210,113 @@ export function handleObservationMessage(message: ObservationMessage) {
 
     switch (observation) {
       case "agent_state_changed":
-        store.dispatch(
-          addAssistantObservation({
-            ...baseObservation,
-            observation: "agent_state_changed" as const,
-            extras: {
-              agent_state: (message.extras.agent_state as AgentState) || "idle",
-            },
-          }),
-        );
+        getChatFunctions().addAssistantObservation({
+          ...baseObservation,
+          observation: "agent_state_changed" as const,
+          extras: {
+            agent_state: (message.extras.agent_state as AgentState) || "idle",
+          },
+        });
         break;
       case "run":
-        store.dispatch(
-          addAssistantObservation({
-            ...baseObservation,
-            observation: "run" as const,
-            extras: {
-              command: String(message.extras.command || ""),
-              metadata: message.extras.metadata,
-              hidden: Boolean(message.extras.hidden),
-            },
-          }),
-        );
+        getChatFunctions().addAssistantObservation({
+          ...baseObservation,
+          observation: "run" as const,
+          extras: {
+            command: String(message.extras.command || ""),
+            metadata: message.extras.metadata,
+            hidden: Boolean(message.extras.hidden),
+          },
+        });
         break;
       case "read":
-        store.dispatch(
-          addAssistantObservation({
-            ...baseObservation,
-            observation,
-            extras: {
-              path: String(message.extras.path || ""),
-              impl_source: String(message.extras.impl_source || ""),
-            },
-          }),
-        );
+        getChatFunctions().addAssistantObservation({
+          ...baseObservation,
+          observation,
+          extras: {
+            path: String(message.extras.path || ""),
+            impl_source: String(message.extras.impl_source || ""),
+          },
+        });
         break;
       case "edit":
-        store.dispatch(
-          addAssistantObservation({
-            ...baseObservation,
-            observation,
-            extras: {
-              path: String(message.extras.path || ""),
-              diff: String(message.extras.diff || ""),
-              impl_source: String(message.extras.impl_source || ""),
-            },
-          }),
-        );
+        getChatFunctions().addAssistantObservation({
+          ...baseObservation,
+          observation,
+          extras: {
+            path: String(message.extras.path || ""),
+            diff: String(message.extras.diff || ""),
+            impl_source: String(message.extras.impl_source || ""),
+          },
+        });
         break;
       case "run_ipython":
-        store.dispatch(
-          addAssistantObservation({
-            ...baseObservation,
-            observation: "run_ipython" as const,
-            extras: {
-              code: String(message.extras.code || ""),
-            },
-          }),
-        );
+        getChatFunctions().addAssistantObservation({
+          ...baseObservation,
+          observation: "run_ipython" as const,
+          extras: {
+            code: String(message.extras.code || ""),
+          },
+        });
         break;
       case "delegate":
-        store.dispatch(
-          addAssistantObservation({
-            ...baseObservation,
-            observation: "delegate" as const,
-            extras: {
-              outputs:
-                typeof message.extras.outputs === "object"
-                  ? (message.extras.outputs as Record<string, unknown>)
-                  : {},
-            },
-          }),
-        );
+        getChatFunctions().addAssistantObservation({
+          ...baseObservation,
+          observation: "delegate" as const,
+          extras: {
+            outputs:
+              typeof message.extras.outputs === "object"
+                ? (message.extras.outputs as Record<string, unknown>)
+                : {},
+          },
+        });
         break;
       case "browse":
-        store.dispatch(
-          addAssistantObservation({
-            ...baseObservation,
-            observation: "browse" as const,
-            extras: {
-              url: String(message.extras.url || ""),
-              screenshot: String(message.extras.screenshot || ""),
-              error: Boolean(message.extras.error),
-              open_page_urls: Array.isArray(message.extras.open_page_urls)
-                ? message.extras.open_page_urls
-                : [],
-              active_page_index: Number(message.extras.active_page_index || 0),
-              dom_object:
-                typeof message.extras.dom_object === "object"
-                  ? (message.extras.dom_object as Record<string, unknown>)
-                  : {},
-              axtree_object:
-                typeof message.extras.axtree_object === "object"
-                  ? (message.extras.axtree_object as Record<string, unknown>)
-                  : {},
-              extra_element_properties:
-                typeof message.extras.extra_element_properties === "object"
-                  ? (message.extras.extra_element_properties as Record<
-                      string,
-                      unknown
-                    >)
-                  : {},
-              last_browser_action: String(
-                message.extras.last_browser_action || "",
-              ),
-              last_browser_action_error:
-                message.extras.last_browser_action_error,
-              focused_element_bid: String(
-                message.extras.focused_element_bid || "",
-              ),
-            },
-          }),
-        );
+        getChatFunctions().addAssistantObservation({
+          ...baseObservation,
+          observation: "browse" as const,
+          extras: {
+            url: String(message.extras.url || ""),
+            screenshot: String(message.extras.screenshot || ""),
+            error: Boolean(message.extras.error),
+            open_page_urls: Array.isArray(message.extras.open_page_urls)
+              ? message.extras.open_page_urls
+              : [],
+            active_page_index: Number(message.extras.active_page_index || 0),
+            dom_object:
+              typeof message.extras.dom_object === "object"
+                ? (message.extras.dom_object as Record<string, unknown>)
+                : {},
+            axtree_object:
+              typeof message.extras.axtree_object === "object"
+                ? (message.extras.axtree_object as Record<string, unknown>)
+                : {},
+            extra_element_properties:
+              typeof message.extras.extra_element_properties === "object"
+                ? (message.extras.extra_element_properties as Record<
+                    string,
+                    unknown
+                  >)
+                : {},
+            last_browser_action: String(
+              message.extras.last_browser_action || "",
+            ),
+            last_browser_action_error: message.extras.last_browser_action_error,
+            focused_element_bid: String(
+              message.extras.focused_element_bid || "",
+            ),
+          },
+        });
         break;
       case "error":
-        store.dispatch(
-          addAssistantObservation({
-            ...baseObservation,
-            observation: "error" as const,
-            source: "user" as const,
-            extras: {
-              error_id: message.extras.error_id,
-            },
-          }),
-        );
+        getChatFunctions().addAssistantObservation({
+          ...baseObservation,
+          observation: "error" as const,
+          source: "user" as const,
+          extras: {
+            error_id: message.extras.error_id,
+          },
+        });
         break;
       default:
         // For any unhandled observation types, just ignore them

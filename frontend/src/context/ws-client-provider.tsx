@@ -9,6 +9,8 @@ import {
   AssistantMessageAction,
   UserMessageAction,
 } from "#/types/core/actions";
+import { useChat } from "#/hooks/query/use-chat";
+import { initChatFunctions } from "#/services/observations";
 
 const isOpenHandsEvent = (event: unknown): event is OpenHandsParsedEvent =>
   typeof event === "object" &&
@@ -110,6 +112,12 @@ export function WsClientProvider({
   );
   const [events, setEvents] = React.useState<Record<string, unknown>[]>([]);
   const lastEventRef = React.useRef<Record<string, unknown> | null>(null);
+
+  // Get chat functions and initialize them for the services
+  const chatFunctions = useChat();
+  React.useEffect(() => {
+    initChatFunctions(chatFunctions);
+  }, [chatFunctions]);
 
   const messageRateHandler = useRate({ threshold: 250 });
 
