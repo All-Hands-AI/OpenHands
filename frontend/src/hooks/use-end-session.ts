@@ -6,6 +6,7 @@ import {
   setUrl,
 } from "#/state/browser-slice";
 import { clearSelectedRepository } from "#/state/initial-query-slice";
+import { clearLastPage } from "#/utils/last-page";
 
 export const useEndSession = () => {
   const navigate = useNavigate();
@@ -15,8 +16,9 @@ export const useEndSession = () => {
    * End the current session by clearing the token and redirecting to the home page.
    */
   const endSession = () => {
-    // Save the last page before ending session
-    // saveLastPage();
+    // Clear the last page when starting a new project
+    clearLastPage();
+    
     dispatch(clearSelectedRepository());
 
     // Reset browser state to initial values
