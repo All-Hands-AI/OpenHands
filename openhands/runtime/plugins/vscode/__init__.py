@@ -17,6 +17,8 @@ class VSCodeRequirement(PluginRequirement):
 
 class VSCodePlugin(Plugin):
     name: str = 'vscode'
+    vscode_port: int | None = None
+    vscode_connection_token: str | None = None
 
     async def initialize(self, username: str):
         if username not in ['root', 'openhands']:
