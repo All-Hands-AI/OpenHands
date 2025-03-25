@@ -22,6 +22,7 @@ LANGUAGES = {
     'fr': 'French',
     'zh-Hans': 'Simplified Chinese',
     'pt-BR': 'Brazilian Portuguese',
+    'ja': 'Japanese',
 }
 
 

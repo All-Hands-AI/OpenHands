@@ -1,54 +1,53 @@
-
-
-# 🏛️ Architecture du Système
+# 🏛️ システムアーキテクチャ
 
 <div style={{ textAlign: 'center' }}>
   <img src="https://github.com/All-Hands-AI/OpenHands/assets/16201837/97d747e3-29d8-4ccb-8d34-6ad1adb17f38" alt="OpenHands System Architecture Diagram Jul 4 2024" />
-  <p><em>Diagramme de l'Architecture du Système OpenHands (4 juillet 2024)</em></p>
+  <p><em>OpenHands システムアーキテクチャ図 (2024年7月4日)</em></p>
 </div>
 
-Ceci est une vue d'ensemble de haut niveau de l'architecture du système. Le système est divisé en deux composants principaux : le frontend et le backend. Le frontend est responsable de la gestion des interactions utilisateur et de l'affichage des résultats. Le backend est responsable de la gestion de la logique métier et de l'exécution des agents.
+これはシステムアーキテクチャの高レベルな概要です。システムはフロントエンドとバックエンドの2つの主要コンポーネントに分かれています。フロントエンドはユーザーインタラクションを処理し、結果を表示する役割を担います。バックエンドはビジネスロジックを処理し、エージェントを実行する役割を担います。
 
-# Architecture du Frontend {#frontend-architecture-fr}
+# フロントエンドアーキテクチャ {#frontend-architecture-ja}
 
 ![system_architecture.svg](/img/system_architecture.svg)
 
-Cette vue d'ensemble est simplifiée pour montrer les principaux composants et leurs interactions. Pour une vue plus détaillée de l'architecture du backend, voir la section Architecture du Backend ci-dessous.
+この概要は、主要なコンポーネントとそれらの相互作用を示すために簡略化されています。バックエンドアーキテクチャのより詳細なビューについては、以下のバックエンドアーキテクチャのセクションを参照してください。
 
-# Architecture du Backend {#backend-architecture-fr}
+# バックエンドアーキテクチャ {#backend-architecture-ja}
 
-_**Avertissement** : L'architecture du backend est en cours de développement et est sujette à changement. Le diagramme suivant montre l'architecture actuelle du backend basée sur le commit indiqué dans le pied de page du diagramme._
+_**免責事項**: バックエンドアーキテクチャは現在進行中の作業であり、変更される可能性があります。以下の図は、図のフッターに示されているコミットに基づくバックエンドの現在のアーキテクチャを示しています。_
 
 ![backend_architecture.svg](/img/backend_architecture.svg)
 
 <details>
-  <summary>Mise à jour de ce Diagramme</summary>
+  <summary>この図の更新</summary>
   <div>
-    La génération du diagramme d'architecture du backend est partiellement automatisée.
-    Le diagramme est généré à partir des indications de type dans le code en utilisant l'outil py2puml. Le diagramme est ensuite manuellement revu, ajusté et exporté en PNG et SVG.
+    バックエンドアーキテクチャ図の生成は部分的に自動化されています。
+    この図は、py2pumlツールを使用してコード内の型ヒントから生成されます。
+    その後、図は手動でレビュー、調整され、PNGとSVGにエクスポートされます。
 
-    ## Prérequis
+    ## 前提条件
 
-    - Environnement python fonctionnel dans lequel openhands est exécutable
-    (selon les instructions du fichier README.md à la racine du dépôt)
-    - [py2puml](https://github.com/lucsorel/py2puml) installé
+    - openhandsが実行可能なPython環境
+    (リポジトリのルートにあるREADME.mdファイルの指示に従って)
+    - [py2puml](https://github.com/lucsorel/py2puml)がインストールされていること
 
-## Étapes
+## 手順
 
-1.  Générer automatiquement le diagramme en exécutant la commande suivante depuis la racine du dépôt :
+1.  リポジトリのルートから以下のコマンドを実行して、図を自動生成します:
     `py2puml openhands openhands > docs/architecture/backend_architecture.puml`
 
-2.  Ouvrir le fichier généré dans un éditeur PlantUML, par ex. Visual Studio Code avec l'extension PlantUML ou [PlantText](https://www.planttext.com/)
+2.  生成されたファイルをPlantUMLエディタで開きます。例えば、PlantUML拡張機能を使用したVisual Studio Codeや[PlantText](https://www.planttext.com/)など。
 
-3.  Revoir le PUML généré et effectuer tous les ajustements nécessaires au diagramme (ajouter les parties manquantes, corriger les erreurs, améliorer le positionnement).
-    _py2puml crée le diagramme en se basant sur les indications de type dans le code, donc des indications manquantes ou incorrectes peuvent entraîner un diagramme incomplet ou incorrect._
+3.  生成されたPUMLをレビューし、図に必要な調整を行います(欠落部分の追加、ミスの修正、位置の改善など)。
+    _py2pumlは、コード内の型ヒントに基づいて図を作成するため、型ヒントが欠落していたり正しくない場合、図が不完全または不正確になることがあります。_
 
-4.  Revoir la différence entre le nouveau diagramme et le précédent et vérifier manuellement si les changements sont corrects.
-    _S'assurer de ne pas supprimer des parties qui ont été ajoutées manuellement au diagramme par le passé et qui sont toujours pertinentes._
+4.  新旧の図の差分をレビューし、変更が正しいかどうかを手動で確認します。
+    _過去に図に手動で追加され、現在も関連性のある部分を削除しないように注意してください。_
 
-5.  Ajouter le hash du commit qui a été utilisé pour générer le diagramme dans le pied de page du diagramme.
+5.  図のフッターに、図の生成に使用されたコミットのコミットハッシュを追加します。
 
-6.  Exporter le diagramme sous forme de fichiers PNG et SVG et remplacer les diagrammes existants dans le répertoire `docs/architecture`. Cela peut être fait avec (par ex. [PlantText](https://www.planttext.com/))
+6.  図をPNGとSVGファイルとしてエクスポートし、`docs/architecture`ディレクトリ内の既存の図を置き換えます。これは(例えば[PlantText](https://www.planttext.com/))で行うことができます。
 
   </div>
 </details>

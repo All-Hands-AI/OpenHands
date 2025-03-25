@@ -1,28 +1,27 @@
+# OpenHands について
 
+## 研究戦略
 
-# À propos d'OpenHands
+LLM を使用して本番レベルのアプリケーションを完全に複製することは複雑な endeavor です。私たちの戦略は以下の通りです:
 
-## Stratégie de recherche
+- **コア技術研究:** コード生成と処理の技術的側面を理解し改善するための基礎研究に注力します。
+- **タスク計画:** バグ検出、コードベース管理、最適化の機能を開発します。
+- **評価:** 私たちのエージェントをより良く理解し改善するための包括的な評価指標を確立します。
 
-La réplication complète d'applications de niveau production avec des LLM est une entreprise complexe. Notre stratégie implique :
+## デフォルトエージェント
 
-1. **Recherche technique fondamentale :** Se concentrer sur la recherche fondamentale pour comprendre et améliorer les aspects techniques de la génération et de la gestion du code
-2. **Capacités spécialisées :** Améliorer l'efficacité des composants de base grâce à la curation des données, aux méthodes d'entraînement, et plus encore
-3. **Planification des tâches :** Développer des capacités pour la détection des bugs, la gestion des bases de code et l'optimisation
-4. **Évaluation :** Établir des métriques d'évaluation complètes pour mieux comprendre et améliorer nos modèles
+現在のデフォルトエージェントは、コードの生成とファイル処理が可能な [CodeActAgent](agents) です。
 
-## Agent par défaut
+## 構築技術
 
-Notre Agent par défaut est actuellement le [CodeActAgent](agents), qui est capable de générer du code et de gérer des fichiers.
-
-## Construit avec
-
-OpenHands est construit en utilisant une combinaison de frameworks et de bibliothèques puissants, fournissant une base solide pour son développement. Voici les principales technologies utilisées dans le projet :
+OpenHands は、強力なフレームワークとライブラリを組み合わせて構築されており、開発のための堅牢な基盤を提供しています。
+プロジェクトで使用されている主要な技術は以下の通りです:
 
 ![FastAPI](https://img.shields.io/badge/FastAPI-black?style=for-the-badge) ![uvicorn](https://img.shields.io/badge/uvicorn-black?style=for-the-badge) ![LiteLLM](https://img.shields.io/badge/LiteLLM-black?style=for-the-badge) ![Docker](https://img.shields.io/badge/Docker-black?style=for-the-badge) ![Ruff](https://img.shields.io/badge/Ruff-black?style=for-the-badge) ![MyPy](https://img.shields.io/badge/MyPy-black?style=for-the-badge) ![LlamaIndex](https://img.shields.io/badge/LlamaIndex-black?style=for-the-badge) ![React](https://img.shields.io/badge/React-black?style=for-the-badge)
 
-Veuillez noter que la sélection de ces technologies est en cours et que des technologies supplémentaires peuvent être ajoutées ou des technologies existantes peuvent être supprimées à mesure que le projet évolue. Nous nous efforçons d'adopter les outils les plus appropriés et les plus efficaces pour améliorer les capacités d'OpenHands.
+これらの技術の選択は進行中であり、プロジェクトの進化に伴って新しい技術が追加されたり、既存の技術が削除されたりする可能性があることに注意してください。
+私たちは OpenHands の機能を強化するために、最も適切で効率的なツールを採用するよう努めています。
 
-## Licence
+## ライセンス
 
-Distribué sous la [Licence](https://github.com/All-Hands-AI/OpenHands/blob/main/LICENSE) MIT.
+MIT [ライセンス](https://github.com/All-Hands-AI/OpenHands/blob/main/LICENSE) の下で配布されています。

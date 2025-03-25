@@ -1,41 +1,40 @@
+# ✅ フィードバックの提供
 
+OpenHandsを使用する際、うまくいく場合もあれば、そうでない場合もあります。開発チームにフィードバックを提供し、おそらくより重要なことですが、コーディングエージェントのトレーニング例のオープンなコーパスを作成するために、OpenHandsを使用する際にフィードバックを提供することをお勧めします -- Share-OpenHands!
 
-# ✅ Fournir des commentaires
+## 📝 フィードバックの提供方法
 
-Lorsque vous utilisez OpenHands, vous rencontrerez des cas où les choses fonctionnent bien, et d'autres où elles ne fonctionnent pas. Nous vous encourageons à fournir des commentaires lorsque vous utilisez OpenHands pour aider à donner des retours à l'équipe de développement, et peut-être plus important encore, créer un corpus ouvert d'exemples d'entraînement d'agents de codage -- Share-OpenHands !
-
-## 📝 Comment fournir des commentaires
-
-Fournir des commentaires est facile ! Lorsque vous utilisez OpenHands, vous pouvez appuyer sur le bouton pouce vers le haut ou pouce vers le bas à tout moment pendant votre interaction. Vous serez invité à fournir votre adresse e-mail (par exemple, afin que nous puissions vous contacter si nous voulons poser des questions de suivi), et vous pouvez choisir si vous souhaitez fournir des commentaires publiquement ou en privé.
+フィードバックの提供は簡単です! OpenHandsを使用している際、インタラクションの任意のポイントで親指を上または下に向けるボタンを押すことができます。メールアドレスの入力を求められます (例: フォローアップの質問をしたい場合に連絡できるように)。また、フィードバックを公開するか非公開にするかを選択できます。
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/5rFx-StMVV0?si=svo7xzp6LhGK_GXr" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
-## 📜 Utilisation des données et confidentialité
+## 📜 データの使用とプライバシー
 
-### Paramètres de partage des données
+### データ共有設定
 
-Lorsque vous soumettez des données, vous pouvez les soumettre publiquement ou en privé.
+データを送信する際、公開または非公開で送信できます。
 
-* Les données **publiques** seront distribuées sous la licence MIT, comme OpenHands lui-même, et pourront être utilisées par la communauté pour entraîner et tester des modèles. Évidemment, les commentaires que vous pouvez rendre publics seront plus précieux pour la communauté dans son ensemble, donc lorsque vous ne traitez pas d'informations sensibles, nous vous encourageons à choisir cette option !
-* Les données **privées** ne seront partagées qu'avec l'équipe OpenHands dans le but d'améliorer OpenHands.
+- **公開**データは、OpenHands自体と同様にMITライセンスの下で配布され、コミュニティがモデルのトレーニングとテストに使用できます。明らかに、公開できるフィードバックは、コミュニティ全体にとってより価値があるでしょう。機密情報を扱っていない場合は、このオプションを選択することをお勧めします!
+- **非公開**データは、OpenHandsの改善を目的としてOpenHandsチームが利用できるようになります。ただし、一意のIDを持つリンクが作成され、他の人と公開で共有できます。
 
-### Qui collecte et stocke les données ?
+### データの収集と保存は誰が行うのか?
 
-Les données sont collectées et stockées par [All Hands AI](https://all-hands.dev), une entreprise fondée par les mainteneurs d'OpenHands pour soutenir et améliorer OpenHands.
+データは、OpenHandsのメンテナーによって設立されたOpenHandsのサポートと改善を目的とする企業である[All Hands AI](https://all-hands.dev)によって収集および保存されます。
 
-### Comment les données publiques seront-elles publiées ?
+### 公開データはどのようにリリースされるのか?
 
-Les données publiques seront publiées lorsque nous atteindrons des jalons fixes, tels que 1 000 exemples publics, 10 000 exemples publics, etc.
-À ce moment-là, nous suivrons le processus de publication suivant :
+公開データは、1,000件の公開例、10,000件の公開例などの固定されたマイルストーンに達した時点でリリースされます。
+その際、以下のリリースプロセスに従います:
 
-1. Toutes les personnes qui ont contribué à des commentaires publics recevront un e-mail décrivant la publication des données et auront la possibilité de se retirer.
-2. La ou les personnes en charge de la publication des données effectueront un contrôle de la qualité des données, en supprimant les commentaires de mauvaise qualité, en supprimant les adresses e-mail des soumissionnaires et en essayant de supprimer toute information sensible.
-3. Les données seront publiées publiquement sous la licence MIT via des sites couramment utilisés tels que GitHub ou Hugging Face.
+1. 公開フィードバックを提供したすべての人に、データのリリースについて説明し、オプトアウトする機会を与えるメールが送信されます。
+2. データリリースを担当する人は、データの品質管理を行い、低品質のフィードバックを削除し、
+提出者のメールアドレスを削除し、機密情報を削除するよう試みます。
+3. データは、GitHubやHugging Faceなどの一般的に使用されているサイトを通じて、MITライセンスの下で公開されます。
 
-### Que faire si je veux que mes données soient supprimées ?
+### データを削除したい場合はどうすればよいですか?
 
-Pour les données sur les serveurs d'All Hands AI, nous sommes heureux de les supprimer sur demande :
+All Hands AIのサーバー上のデータについては、リクエストに応じて削除いたします:
 
-**Une pièce de données :** Si vous souhaitez supprimer une pièce de données, nous ajouterons prochainement un mécanisme pour supprimer les pièces de données en utilisant le lien et le mot de passe qui s'affichent sur l'interface lorsque vous soumettez des données.
+**1つのデータ:** 1つのデータを削除したい場合、データ送信時にインターフェイスに表示されるリンクとパスワードを使用してデータを削除するメカニズムを近日中に追加する予定です。
 
-**Toutes les données :** Si vous souhaitez que toutes vos données soient supprimées, ou si vous n'avez pas l'ID et le mot de passe que vous avez reçus lors de la soumission des données, veuillez contacter `contact@all-hands.dev` à partir de l'adresse e-mail que vous avez enregistrée lorsque vous avez initialement soumis les données.
+**すべてのデータ:** すべてのデータを削除したい場合、またはデータ送信時に受け取ったIDとパスワードがない場合は、元のデータ送信時に登録したメールアドレスから`contact@all-hands.dev`までご連絡ください。

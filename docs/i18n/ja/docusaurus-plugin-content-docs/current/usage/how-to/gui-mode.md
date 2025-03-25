@@ -1,127 +1,116 @@
+# GUIモード
 
+OpenHandsは、AI アシスタントとやり取りするためのグラフィカルユーザーインターフェース（GUI）モードを提供しています。
 
-# Mode Interface Graphique
+## インストールとセットアップ
 
-## Introduction
+1. インストール手順に従って、OpenHandsをインストールします。
+2. コマンドを実行した後、[http://localhost:3000](http://localhost:3000)でOpenHandsにアクセスします。
 
-OpenHands fournit un mode Interface Graphique (GUI) convivial pour interagir avec l'assistant IA. Ce mode offre une façon intuitive de configurer l'environnement, gérer les paramètres et communiquer avec l'IA.
+## GUIでのやり取り
 
-## Installation et Configuration
+### 初期設定
 
-1. Suivez les instructions du guide [Installation](../installation) pour installer OpenHands.
+1. 初回起動時に、設定ページが表示されます。
+2. ドロップダウンメニューから`LLM Provider`と`LLM Model`を選択します。必要なモデルがリストにない場合は、`Advanced`オプションを切り替えて、正しいプレフィックスを付けて`Custom Model`テキストボックスに入力します。
+3. 選択したプロバイダーに対応する`API Key`を入力します。
+4. `Save Changes`をクリックして設定を適用します。
 
-2. Après avoir exécuté la commande, accédez à OpenHands à l'adresse [http://localhost:3000](http://localhost:3000).
+### GitHubトークンの設定
 
-## Interagir avec l'Interface Graphique
+OpenHandsは、利用可能な場合、自動的に`GITHUB_TOKEN`をシェル環境にエクスポートします。これは2つの方法で行われます。
 
-### Configuration Initiale
+**ローカルインストール**: ユーザーが直接GitHubトークンを入力します。
+<details>
+  <summary>GitHubトークンの設定</summary>
 
-1. Lors du premier lancement, vous verrez une fenêtre modale de paramètres.
-2. Sélectionnez un `Fournisseur LLM` et un `Modèle LLM` dans les menus déroulants.
-3. Entrez la `Clé API` correspondante pour le fournisseur choisi.
-4. Cliquez sur "Enregistrer" pour appliquer les paramètres.
+  1. **Personal Access Token（PAT）の生成**:
+   - GitHubで、Settings > Developer Settings > Personal Access Tokens > Tokens (classic)に移動します。
+   - **New token (classic)**
+     - 必要なスコープ:
+     - `repo`（プライベートリポジトリの完全な制御）
+   - **Fine-Grained Tokens**
+     - All Repositories（特定のリポジトリを選択できますが、これはリポジトリ検索の結果に影響します）
+     - Minimal Permissions（検索用に**Meta Data = Read-only**を選択し、ブランチ作成用に**Pull Requests = Read and Write**、**Content = Read and Write**を選択します）
+  2. **OpenHandsにトークンを入力**:
+   - 設定ボタン（歯車アイコン）をクリックします。
+   - `GitHub Settings`セクションに移動します。
+   - `GitHub Token`フィールドにトークンを貼り付けます。
+   - `Save Changes`をクリックして変更を適用します。
+</details>
 
-### Configuration du Jeton GitHub
+<details>
+  <summary>組織のトークンポリシー</summary>
 
-OpenHands exporte automatiquement un `GITHUB_TOKEN` vers l'environnement shell s'il est disponible. Cela peut se produire de deux manières :
+  組織のリポジトリを使用する場合は、追加の設定が必要になる場合があります。
 
-1. **Localement (OSS)** : L'utilisateur saisit directement son jeton GitHub
-2. **En ligne (SaaS)** : Le jeton est obtenu via l'authentification OAuth GitHub
+  1. **組織の要件を確認**:
+   - 組織の管理者は、特定のトークンポリシーを適用することがあります。
+   - 一部の組織では、SSOを有効にしてトークンを作成する必要があります。
+   - 組織の[トークンポリシー設定](https://docs.github.com/en/organizations/managing-programmatic-access-to-your-organization/setting-a-personal-access-token-policy-for-your-organization)を確認してください。
+  2. **組織へのアクセスを確認**:
+   - GitHubのトークン設定に移動します。
+   - `Organization access`の下で組織を探します。
+   - 必要に応じて、組織の横にある`Enable SSO`をクリックします。
+   - SSOの認証プロセスを完了します。
+</details>
 
-#### Configuration d'un Jeton GitHub Local
+<details>
+  <summary>トラブルシューティング</summary>
 
-1. **Générer un Personal Access Token (PAT)** :
-   - Allez dans Paramètres GitHub > Paramètres développeur > Personal Access Tokens > Tokens (classique)
-   - Cliquez sur "Générer un nouveau jeton (classique)"
-   - Portées requises :
-     - `repo` (Contrôle total des dépôts privés)
-     - `workflow` (Mettre à jour les workflows GitHub Action)
-     - `read:org` (Lire les données de l'organisation)
+  一般的な問題と解決策:
 
-2. **Entrer le Jeton dans OpenHands** :
-   - Cliquez sur le bouton Paramètres (icône d'engrenage) en haut à droite
-   - Accédez à la section "GitHub"
-   - Collez votre jeton dans le champ "Jeton GitHub"
-   - Cliquez sur "Enregistrer" pour appliquer les modifications
+  - **トークンが認識されない**:
+     - トークンが設定に正しく保存されていることを確認します。
+     - トークンの有効期限が切れていないことを確認します。
+     - トークンに必要なスコープがあることを確認します。
+     - トークンを再生成してみてください。
 
-#### Politiques de Jetons Organisationnels
+  - **組織へのアクセスが拒否された**:
+     - SSOが必要だが有効になっていないかどうかを確認します。
+     - 組織のメンバーシップを確認します。
+     - トークンポリシーがアクセスをブロックしている場合は、組織の管理者に連絡してください。
 
-Si vous travaillez avec des dépôts organisationnels, une configuration supplémentaire peut être nécessaire :
+  - **トークンが機能することを確認**:
+     - トークンが有効な場合、アプリにグリーンのチェックマークが表示されます。
+     - リポジトリにアクセスして、権限を確認してみてください。
+     - ブラウザのコンソールでエラーメッセージを確認してください。
+</details>
 
-1. **Vérifier les Exigences de l'Organisation** :
-   - Les administrateurs de l'organisation peuvent appliquer des politiques de jetons spécifiques
-   - Certaines organisations exigent que les jetons soient créés avec SSO activé
-   - Consultez les [paramètres de politique de jetons](https://docs.github.com/en/organizations/managing-programmatic-access-to-your-organization/setting-a-personal-access-token-policy-for-your-organization) de votre organisation
+**OpenHands Cloud**: トークンはGitHub OAuth認証を通じて取得されます。
 
-2. **Vérifier l'Accès à l'Organisation** :
-   - Allez dans les paramètres de votre jeton sur GitHub
-   - Recherchez l'organisation sous "Accès à l'organisation"
-   - Si nécessaire, cliquez sur "Activer SSO" à côté de votre organisation
-   - Terminez le processus d'autorisation SSO
+<details>
+  <summary>OAuth認証</summary>
 
-#### Authentification OAuth (Mode En Ligne)
+  OpenHands Cloudを使用する場合、GitHub OAuthフローは以下の権限を要求します:
+   - リポジトリアクセス（読み取り/書き込み）
+   - ワークフロー管理
+   - 組織の読み取りアクセス
 
-Lorsque vous utilisez OpenHands en mode en ligne, le flux OAuth GitHub :
+  OpenHandsを認証するには:
+   - プロンプトが表示されたら、`Sign in with GitHub`をクリックします。
+   - 要求された権限を確認します。
+   - OpenHandsがGitHubアカウントにアクセスすることを承認します。
+   - 組織を使用している場合は、プロンプトが表示されたら組織へのアクセスを承認します。
+</details>
 
-1. Demande les autorisations suivantes :
-   - Accès au dépôt (lecture/écriture)
-   - Gestion des workflows
-   - Accès en lecture à l'organisation
+### 高度な設定
 
-2. Étapes d'authentification :
-   - Cliquez sur "Se connecter avec GitHub" lorsque vous y êtes invité
-   - Examinez les autorisations demandées
-   - Autorisez OpenHands à accéder à votre compte GitHub
-   - Si vous utilisez une organisation, autorisez l'accès à l'organisation si vous y êtes invité
+1. 設定ページ内で、`Advanced`オプションを切り替えて追加の設定にアクセスします。
+2. `Custom Model`テキストボックスを使用して、リストにないモデルを手動で入力します。
+3. LLMプロバイダーで必要な場合は、`Base URL`を指定します。
 
-#### Dépannage
+### AIとのやり取り
 
-Problèmes courants et solutions :
+1. 入力ボックスにプロンプトを入力します。
+2. 送信ボタンをクリックするか、Enterキーを押してメッセージを送信します。
+3. AIは入力を処理し、チャットウィンドウに応答を提供します。
+4. フォローアップの質問をしたり、追加情報を提供したりして、会話を続けることができます。
 
-1. **Jeton Non Reconnu** :
-   - Assurez-vous que le jeton est correctement enregistré dans les paramètres
-   - Vérifiez que le jeton n'a pas expiré
-   - Vérifiez que le jeton a les portées requises
-   - Essayez de régénérer le jeton
+## 効果的な使用のためのヒント
 
-2. **Accès à l'Organisation Refusé** :
-   - Vérifiez si SSO est requis mais non activé
-   - Vérifiez l'appartenance à l'organisation
-   - Contactez l'administrateur de l'organisation si les politiques de jetons bloquent l'accès
+- [プロンプトのベストプラクティス](../prompting/prompting-best-practices)で説明されているように、要求を具体的にすることで、最も正確で役立つ応答を得ることができます。
+- ワークスペースパネルを使用して、プロジェクト構造を探索します。
+- [LLMsセクション](usage/llms/llms.md)で説明されているように、推奨モデルの1つを使用します。
 
-3. **Vérifier que le Jeton Fonctionne** :
-   - L'application affichera une coche verte si le jeton est valide
-   - Essayez d'accéder à un dépôt pour confirmer les autorisations
-   - Vérifiez la console du navigateur pour tout message d'erreur
-   - Utilisez le bouton "Tester la connexion" dans les paramètres s'il est disponible
-
-### Paramètres Avancés
-
-1. Basculez sur `Options Avancées` pour accéder aux paramètres supplémentaires.
-2. Utilisez la zone de texte `Modèle Personnalisé` pour saisir manuellement un modèle s'il ne figure pas dans la liste.
-3. Spécifiez une `URL de Base` si requis par votre fournisseur LLM.
-
-### Interface Principale
-
-L'interface principale se compose de plusieurs composants clés :
-
-1. **Fenêtre de Chat** : La zone centrale où vous pouvez voir l'historique de conversation avec l'assistant IA.
-2. **Zone de Saisie** : Située en bas de l'écran, utilisez-la pour taper vos messages ou commandes à l'IA.
-3. **Bouton Envoyer** : Cliquez dessus pour envoyer votre message à l'IA.
-4. **Bouton Paramètres** : Une icône d'engrenage qui ouvre la fenêtre modale des paramètres, vous permettant d'ajuster votre configuration à tout moment.
-5. **Panneau Espace de Travail** : Affiche les fichiers et dossiers de votre espace de travail, vous permettant de naviguer et de visualiser les fichiers, ou les commandes passées de l'agent ou l'historique de navigation web.
-
-### Interagir avec l'IA
-
-1. Tapez votre question, demande ou description de tâche dans la zone de saisie.
-2. Cliquez sur le bouton d'envoi ou appuyez sur Entrée pour soumettre votre message.
-3. L'IA traitera votre saisie et fournira une réponse dans la fenêtre de chat.
-4. Vous pouvez poursuivre la conversation en posant des questions de suivi ou en fournissant des informations supplémentaires.
-
-## Conseils pour une Utilisation Efficace
-
-1. Soyez précis dans vos demandes pour obtenir les réponses les plus précises et utiles, comme décrit dans les [meilleures pratiques d'incitation](../prompting/prompting-best-practices).
-2. Utilisez le panneau d'espace de travail pour explorer la structure de votre projet.
-3. Utilisez l'un des modèles recommandés, comme décrit dans la section [LLMs](usage/llms/llms.md).
-
-N'oubliez pas que le mode Interface Graphique d'OpenHands est conçu pour rendre votre interaction avec l'assistant IA aussi fluide et intuitive que possible. N'hésitez pas à explorer ses fonctionnalités pour maximiser votre productivité.
+OpenHandsのGUIモードは、AIアシスタントとのやり取りをできるだけスムーズで直感的にすることを目的としています。生産性を最大限に高めるために、ぜひその機能を探ってみてください。

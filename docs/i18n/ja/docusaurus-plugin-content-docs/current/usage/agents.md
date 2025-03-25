@@ -1,25 +1,23 @@
-
-
-# 🧠 Agent Principal et Capacités
+# 🧠 メインエージェントと機能
 
 ## CodeActAgent
 
-### Description
+### 説明
 
-Cet agent implémente l'idée de CodeAct ([article](https://arxiv.org/abs/2402.01030), [tweet](https://twitter.com/xingyaow_/status/1754556835703751087)) qui consolide les **act**ions des agents LLM dans un espace d'action de **code** unifié à la fois pour la _simplicité_ et la _performance_.
+このエージェントは、CodeActのアイデア ([論文](https://arxiv.org/abs/2402.01030), [ツイート](https://twitter.com/xingyaow_/status/1754556835703751087)) を実装しており、LLMエージェントの**行動**を、_シンプルさ_と_パフォーマンス_の両方のために、統一された**コード**行動空間に統合します。
 
-L'idée conceptuelle est illustrée ci-dessous. À chaque tour, l'agent peut :
+概念的なアイデアは以下の図に示されています。各ターンで、エージェントは以下のことができます。
 
-1. **Converser** : Communiquer avec les humains en langage naturel pour demander des clarifications, des confirmations, etc.
-2. **CodeAct** : Choisir d'effectuer la tâche en exécutant du code
+1. **会話**: 明確化、確認などのために、自然言語で人間とコミュニケーションをとる。
+2. **CodeAct**: コードを実行してタスクを実行することを選択する
 
-- Exécuter n'importe quelle commande Linux `bash` valide
-- Exécuter n'importe quel code `Python` valide avec [un interpréteur Python interactif](https://ipython.org/). Ceci est simulé via une commande `bash`, voir le système de plugin ci-dessous pour plus de détails.
+- 任意の有効なLinux `bash`コマンドを実行する
+- [対話型Pythonインタープリター](https://ipython.org/)で任意の有効な`Python`コードを実行する。これは`bash`コマンドを通してシミュレートされます。詳細はプラグインシステムを参照してください。
 
 ![image](https://github.com/All-Hands-AI/OpenHands/assets/38853559/92b622e3-72ad-4a61-8f41-8c040b6d5fb3)
 
-### Démo
+### デモ
 
 https://github.com/All-Hands-AI/OpenHands/assets/38853559/f592a192-e86c-4f48-ad31-d69282d5f6ac
 
-_Exemple de CodeActAgent avec `gpt-4-turbo-2024-04-09` effectuant une tâche de science des données (régression linéaire)_.
+_データサイエンスタスク（線形回帰）を実行する`gpt-4-turbo-2024-04-09`を使用したCodeActAgentの例_。

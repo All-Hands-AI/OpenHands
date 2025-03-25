@@ -1,53 +1,35 @@
+# CLI モード
 
+OpenHands は対話型の CLI モードで実行できます。これにより、ユーザーはコマンドラインから対話型セッションを開始できます。
 
-# Mode CLI
+このモードは、非対話型でスクリプティングに適した [ヘッドレスモード](headless-mode) とは異なります。
 
-OpenHands peut être exécuté en mode CLI interactif, ce qui permet aux utilisateurs de démarrer une session interactive via la ligne de commande.
+## Python を使用する場合
 
-Ce mode est différent du [mode headless](headless-mode), qui est non interactif et mieux adapté aux scripts.
+コマンドラインから対話型の OpenHands セッションを開始するには:
 
-## Avec Python
-
-Pour démarrer une session OpenHands interactive via la ligne de commande, suivez ces étapes :
-
-1. Assurez-vous d'avoir suivi les [instructions de configuration de développement](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
-
-2. Exécutez la commande suivante :
+1. [開発セットアップの手順](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md) に従っていることを確認してください。
+2. 以下のコマンドを実行します:
 
 ```bash
 poetry run python -m openhands.core.cli
 ```
 
-Cette commande démarrera une session interactive où vous pourrez saisir des tâches et recevoir des réponses d'OpenHands.
+このコマンドを実行すると、タスクを入力して OpenHands からレスポンスを受け取ることができる対話型セッションが開始されます。
 
-Vous devrez vous assurer de définir votre modèle, votre clé API et d'autres paramètres via des variables d'environnement
-[ou le fichier `config.toml`](https://github.com/All-Hands-AI/OpenHands/blob/main/config.template.toml).
+環境変数 [または `config.toml` ファイル](https://github.com/All-Hands-AI/OpenHands/blob/main/config.template.toml) を使用して、モデル、API キー、その他の設定を確実に設定する必要があります。
 
+## Docker を使用する場合
 
-## Avec Docker
+Docker で OpenHands を CLI モードで実行するには:
 
-Pour exécuter OpenHands en mode CLI avec Docker, suivez ces étapes :
+1. ターミナルで以下の環境変数を設定します:
 
-1. Définissez `WORKSPACE_BASE` sur le répertoire que vous voulez qu'OpenHands modifie :
+- `WORKSPACE_BASE` を OpenHands に編集させたいディレクトリに設定 (例: `export WORKSPACE_BASE=$(pwd)/workspace`)。
+- `LLM_MODEL` を使用するモデルに設定 (例: `export LLM_MODEL="anthropic/claude-3-5-sonnet-20241022"`)。
+- `LLM_API_KEY` を API キーに設定 (例: `export LLM_API_KEY="sk_test_12345"`)。
 
-```bash
-WORKSPACE_BASE=$(pwd)/workspace
-```
-
-2. Définissez `LLM_MODEL` sur le modèle que vous voulez utiliser :
-
-```bash
-LLM_MODEL="anthropic/claude-3-5-sonnet-20241022"
-
-```
-
-3. Définissez `LLM_API_KEY` sur votre clé API :
-
-```bash
-LLM_API_KEY="sk_test_12345"
-```
-
-4. Exécutez la commande Docker suivante :
+2. 以下の Docker コマンドを実行します:
 
 ```bash
 docker run -it \
@@ -59,54 +41,55 @@ docker run -it \
     -e LLM_MODEL=$LLM_MODEL \
     -v $WORKSPACE_BASE:/opt/workspace_base \
     -v /var/run/docker.sock:/var/run/docker.sock \
+    -v ~/.openhands-state:/.openhands-state \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app-$(date +%Y%m%d%H%M%S) \
     docker.all-hands.dev/all-hands-ai/openhands:0.29 \
     python -m openhands.core.cli
 ```
 
-Cette commande démarrera une session interactive dans Docker où vous pourrez saisir des tâches et recevoir des réponses d'OpenHands.
+このコマンドを実行すると、Docker 内で対話型セッションが開始され、タスクを入力して OpenHands からレスポンスを受け取ることができます。
 
-## Exemples de commandes CLI et de sorties attendues
+## CLI コマンドと期待される出力の例
 
-Voici quelques exemples de commandes CLI et leurs sorties attendues :
+CLI コマンドとその期待される出力の例を以下に示します:
 
-### Exemple 1 : Tâche simple
+### 例1: シンプルなタスク
 
 ```bash
-How can I help? >> Écrivez un script Python qui affiche "Hello, World!"
+>> "Hello, World!" と出力する Python スクリプトを書いてください
 ```
 
-Sortie attendue :
+期待される出力:
 
 ```bash
-🤖 Bien sûr ! Voici un script Python qui affiche "Hello, World!" :
+🤖 はい! "Hello, World!" と出力する Python スクリプトは以下のようになります:
 
 ❯ print("Hello, World!")
 ```
 
-### Exemple 2 : Commande Bash
+### 例2: Bash コマンド
 
 ```bash
-How can I help? >> Créez un répertoire nommé "test_dir"
+>> "test_dir" という名前のディレクトリを作成してください
 ```
 
-Sortie attendue :
+期待される出力:
 
 ```bash
-🤖 Création d'un répertoire nommé "test_dir" :
+🤖 "test_dir" という名前のディレクトリを作成します:
 
 ❯ mkdir test_dir
 ```
 
-### Exemple 3 : Gestion des erreurs
+### 例3: エラー処理
 
 ```bash
-How can I help? >> Supprimez un fichier inexistant
+>> 存在しないファイルを削除してください
 ```
 
-Sortie attendue :
+期待される出力:
 
 ```bash
-🤖 Une erreur s'est produite. Veuillez réessayer.
+🤖 エラーが発生しました。もう一度お試しください。
 ```

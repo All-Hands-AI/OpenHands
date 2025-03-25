@@ -1,45 +1,45 @@
+以下に翻訳結果を示します。
 
+# 📦 Dockerランタイム
 
-# 📦 Runtime Docker
+OpenHands Dockerランタイムは、AIエージェントのアクションを安全かつ柔軟に実行できるようにするコアコンポーネントです。
+Dockerを使用してサンドボックス化された環境を作成し、ホストシステムを危険にさらすことなく任意のコードを安全に実行できます。
 
-Le Runtime Docker d'OpenHands est le composant principal qui permet l'exécution sécurisée et flexible des actions des agents d'IA.
-Il crée un environnement en bac à sable (sandbox) en utilisant Docker, où du code arbitraire peut être exécuté en toute sécurité sans risquer le système hôte.
+## サンドボックス化されたランタイムが必要な理由
 
-## Pourquoi avons-nous besoin d'un runtime en bac à sable ?
+OpenHandsでは、いくつかの理由から、信頼できないコードを安全で隔離された環境で実行する必要があります。
 
-OpenHands doit exécuter du code arbitraire dans un environnement sécurisé et isolé pour plusieurs raisons :
+1. セキュリティ: 信頼できないコードを実行すると、ホストシステムに重大なリスクを及ぼす可能性があります。サンドボックス化された環境では、悪意のあるコードがホストシステムのリソースにアクセスしたり、変更したりすることを防ぐことができます。
+2. 一貫性: サンドボックス化された環境では、異なるマシンやセットアップ間でコードの実行が一貫していることが保証され、「自分のマシンでは動作する」という問題が解消されます。
+3. リソース制御: サンドボックス化により、リソースの割り当てと使用をより適切に制御でき、暴走プロセスがホストシステムに影響を与えることを防ぐことができます。
+4. 分離: 異なるプロジェクトやユーザーは、ホストシステムや他のプロジェクトに干渉することなく、分離された環境で作業できます。
+5. 再現性: サンドボックス化された環境では、実行環境が一貫しており制御可能であるため、バグや問題を再現しやすくなります。
 
-1. Sécurité : L'exécution de code non fiable peut poser des risques importants pour le système hôte. Un environnement en bac à sable empêche le code malveillant d'accéder ou de modifier les ressources du système hôte
-2. Cohérence : Un environnement en bac à sable garantit que l'exécution du code est cohérente sur différentes machines et configurations, éliminant les problèmes du type "ça fonctionne sur ma machine"
-3. Contrôle des ressources : Le bac à sable permet un meilleur contrôle de l'allocation et de l'utilisation des ressources, empêchant les processus incontrôlés d'affecter le système hôte
-4. Isolation : Différents projets ou utilisateurs peuvent travailler dans des environnements isolés sans interférer les uns avec les autres ou avec le système hôte
-5. Reproductibilité : Les environnements en bac à sable facilitent la reproduction des bugs et des problèmes, car l'environnement d'exécution est cohérent et contrôlable
+## ランタイムの仕組み
 
-## Comment fonctionne le Runtime ?
-
-Le système Runtime d'OpenHands utilise une architecture client-serveur implémentée avec des conteneurs Docker. Voici un aperçu de son fonctionnement :
+OpenHandsランタイムシステムは、Dockerコンテナを使用してクライアント-サーバーアーキテクチャを実装しています。以下は、その仕組みの概要です。
 
 ```mermaid
 graph TD
-    A[Image Docker personnalisée fournie par l'utilisateur] --> B[Backend OpenHands]
-    B -->|Construit| C[Image OH Runtime]
-    C -->|Lance| D[Exécuteur d'actions]
-    D -->|Initialise| E[Navigateur]
-    D -->|Initialise| F[Shell Bash]
-    D -->|Initialise| G[Plugins]
-    G -->|Initialise| L[Serveur Jupyter]
+    A[ユーザー提供のカスタムDockerイメージ] --> B[OpenHandsバックエンド]
+    B -->|ビルド| C[OHランタイムイメージ]
+    C -->|起動| D[アクション実行サーバー]
+    D -->|初期化| E[ブラウザ]
+    D -->|初期化| F[Bashシェル]
+    D -->|初期化| G[プラグイン]
+    G -->|初期化| L[Jupyterサーバー]
 
-    B -->|Génère| H[Agent]
-    B -->|Génère| I[EventStream]
-    I <--->|Exécute l'action pour
-    obtenir l'observation
-    via l'API REST
+    B -->|生成| H[エージェント]
+    B -->|生成| I[EventStream]
+    I <--->|REST APIを介して
+    アクションを実行し
+    観測結果を取得
     | D
 
-    H -->|Génère l'action| I
-    I -->|Obtient l'observation| H
+    H -->|アクション生成| I
+    I -->|観測結果取得| H
 
-    subgraph "Conteneur Docker"
+    subgraph "Dockerコンテナ"
     D
     E
     F
@@ -48,91 +48,82 @@ graph TD
     end
 ```
 
-1. Entrée utilisateur : L'utilisateur fournit une image Docker de base personnalisée
-2. Construction de l'image : OpenHands construit une nouvelle image Docker (l'"image OH runtime") basée sur l'image fournie par l'utilisateur. Cette nouvelle image inclut le code spécifique à OpenHands, principalement le "client runtime"
-3. Lancement du conteneur : Lorsqu'OpenHands démarre, il lance un conteneur Docker en utilisant l'image OH runtime
-4. Initialisation du serveur d'exécution des actions : Le serveur d'exécution des actions initialise un `ActionExecutor` à l'intérieur du conteneur, mettant en place les composants nécessaires comme un shell bash et chargeant les plugins spécifiés
-5. Communication : Le backend OpenHands (`openhands/runtime/impl/eventstream/eventstream_runtime.py`) communique avec le serveur d'exécution des actions via une API RESTful, envoyant des actions et recevant des observations
-6. Exécution des actions : Le client runtime reçoit les actions du backend, les exécute dans l'environnement en bac à sable et renvoie les observations
-7. Retour des observations : Le serveur d'exécution des actions renvoie les résultats d'exécution au backend OpenHands sous forme d'observations
+1. ユーザー入力: ユーザーがカスタムベースDockerイメージを提供します。
+2. イメージのビルド: OpenHandsは、ユーザー提供のイメージをベースに新しいDockerイメージ（「OHランタイムイメージ」）をビルドします。この新しいイメージには、主に「ランタイムクライアント」であるOpenHands固有のコードが含まれます。
+3. コンテナの起動: OpenHandsが起動すると、OHランタイムイメージを使用してDockerコンテナが起動します。
+4. アクション実行サーバーの初期化: アクション実行サーバーは、コンテナ内で`ActionExecutor`を初期化し、Bashシェルなどの必要なコンポーネントをセットアップし、指定されたプラグインをロードします。
+5. 通信: OpenHandsバックエンド（`openhands/runtime/impl/eventstream/eventstream_runtime.py`）は、RESTful APIを介してアクション実行サーバーと通信し、アクションを送信し、観測結果を受信します。
+6. アクションの実行: ランタイムクライアントはバックエンドからアクションを受信し、サンドボックス化された環境内でそれらを実行し、観測結果を送り返します。
+7. 観測結果の返却: アクション実行サーバーは、実行結果を観測結果としてOpenHandsバックエンドに送り返します。
 
+クライアントの役割:
 
-Le rôle du client :
-- Il agit comme un intermédiaire entre le backend OpenHands et l'environnement en bac à sable
-- Il exécute différents types d'actions (commandes shell, opérations sur les fichiers, code Python, etc.) en toute sécurité dans le conteneur
-- Il gère l'état de l'environnement en bac à sable, y compris le répertoire de travail courant et les plugins chargés
-- Il formate et renvoie les observations au backend, assurant une interface cohérente pour le traitement des résultats
+- OpenHandsバックエンドとサンドボックス化された環境の間の仲介役を果たします。
+- コンテナ内で様々なタイプのアクション（シェルコマンド、ファイル操作、Pythonコードなど）を安全に実行します。
+- 現在の作業ディレクトリやロードされたプラグインなど、サンドボックス化された環境の状態を管理します。
+- 観測結果をフォーマットしてバックエンドに返し、結果を処理するための一貫したインターフェースを確保します。
 
+## OpenHandsがOHランタイムイメージをビルドおよび管理する方法
 
-## Comment OpenHands construit et maintient les images OH Runtime
+OpenHandsのランタイムイメージのビルドと管理に対するアプローチは、本番環境と開発環境の両方でDockerイメージを効率的、一貫性のある、柔軟な方法で作成および維持することを保証します。
 
-L'approche d'OpenHands pour la construction et la gestion des images runtime assure l'efficacité, la cohérence et la flexibilité dans la création et la maintenance des images Docker pour les environnements de production et de développement.
+詳細に興味がある場合は、[関連コード](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/utils/runtime_build.py)をチェックしてください。
 
-Consultez le [code pertinent](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/utils/runtime_build.py) si vous souhaitez plus de détails.
+### イメージタグ付けシステム
 
-### Système de balises d'images
+OpenHandsは、再現性と柔軟性のバランスを取るために、ランタイムイメージに3つのタグシステムを使用しています。
+タグは以下の2つの形式のいずれかになります。
 
-OpenHands utilise un système à trois balises pour ses images runtime afin d'équilibrer la reproductibilité et la flexibilité.
-Les balises peuvent être dans l'un des 2 formats suivants :
+- **バージョン付きタグ**: `oh_v{openhands_version}_{base_image}` (例: `oh_v0.9.9_nikolaik_s_python-nodejs_t_python3.12-nodejs22`)
+- **ロックタグ**: `oh_v{openhands_version}_{16_digit_lock_hash}` (例: `oh_v0.9.9_1234567890abcdef`)
+- **ソースタグ**: `oh_v{openhands_version}_{16_digit_lock_hash}_{16_digit_source_hash}`
+  (例: `oh_v0.9.9_1234567890abcdef_1234567890abcdef`)
 
-- **Balise versionnée** : `oh_v{openhands_version}_{base_image}` (ex : `oh_v0.9.9_nikolaik_s_python-nodejs_t_python3.12-nodejs22`)
-- **Balise de verrouillage** : `oh_v{openhands_version}_{16_digit_lock_hash}` (ex : `oh_v0.9.9_1234567890abcdef`)
-- **Balise source** : `oh_v{openhands_version}_{16_digit_lock_hash}_{16_digit_source_hash}`
-  (ex : `oh_v0.9.9_1234567890abcdef_1234567890abcdef`)
+#### ソースタグ - 最も具体的
 
+これは、ソースディレクトリのディレクトリハッシュのMD5の最初の16桁です。これにより、openhandsソースのみのハッシュが得られます。
 
-#### Balise source - La plus spécifique
+#### ロックタグ
 
-Il s'agit des 16 premiers chiffres du MD5 du hash du répertoire pour le répertoire source. Cela donne un hash
-uniquement pour la source d'openhands
+このハッシュは、以下のMD5の最初の16桁から構築されます。
 
+- イメージがビルドされたベースイメージの名前（例: `nikolaik/python-nodejs:python3.12-nodejs22`）
+- イメージに含まれる`pyproject.toml`の内容
+- イメージに含まれる`poetry.lock`の内容
 
-#### Balise de verrouillage
+これにより、ソースコードとは無関係に、Openhandsの依存関係のハッシュが効果的に得られます。
 
-Ce hash est construit à partir des 16 premiers chiffres du MD5 de :
-- Le nom de l'image de base sur laquelle l'image a été construite (ex : `nikolaik/python-nodejs:python3.12-nodejs22`)
-- Le contenu du `pyproject.toml` inclus dans l'image.
-- Le contenu du `poetry.lock` inclus dans l'image.
+#### バージョン付きタグ - 最も一般的
 
-Cela donne effectivement un hash pour les dépendances d'Openhands indépendamment du code source.
+このタグは、openhandsのバージョンとベースイメージ名（タグ標準に適合するように変換されたもの）を連結したものです。
 
-#### Balise versionnée - La plus générique
+#### ビルドプロセス
 
-Cette balise est une concaténation de la version d'openhands et du nom de l'image de base (transformé pour s'adapter au standard des balises).
+イメージを生成する際...
 
-#### Processus de construction
+- **再ビルドなし**: OpenHandsは最初に、同じ**最も具体的なソースタグ**を持つイメージが存在するかどうかをチェックします。そのようなイメージが存在する場合、ビルドは実行されず、既存のイメージが使用されます。
+- **最速の再ビルド**: 次に、OpenHandsは**一般的なロックタグ**を持つイメージが存在するかどうかをチェックします。そのようなイメージが存在する場合、OpenHandsはそれに基づいて新しいイメージをビルドし、現在のソースコードをコピーする最終操作を除くすべてのインストール手順（`poetry install`や`apt-get`など）をバイパスします。新しいイメージには**ソース**タグのみが付けられます。
+- **まあまあの再ビルド**: **ソース**タグも**ロック**タグも存在しない場合、**バージョン付き**タグイメージに基づいてイメージがビルドされます。バージョン付きタグイメージでは、ほとんどの依存関係がすでにインストールされているため、時間を節約できます。
+- **最も遅い再ビルド**: 3つのタグのすべてが存在しない場合、ベースイメージに基づいて新しいイメージがビルドされます（これは遅い操作です）。この新しいイメージには、**ソース**、**ロック**、**バージョン付き**の各タグが付けられます。
 
-Lors de la génération d'une image...
+このタグ付けアプローチにより、OpenHandsは開発環境と本番環境の両方を効率的に管理できます。
 
-- **Pas de reconstruction** : OpenHands vérifie d'abord si une image avec la même **balise source la plus spécifique** existe. S'il existe une telle image,
-  aucune construction n'est effectuée - l'image existante est utilisée.
-- **Reconstruction la plus rapide** : OpenHands vérifie ensuite si une image avec la **balise de verrouillage générique** existe. S'il existe une telle image,
-  OpenHands construit une nouvelle image basée sur celle-ci, en contournant toutes les étapes d'installation (comme `poetry install` et
-  `apt-get`) sauf une opération finale pour copier le code source actuel. La nouvelle image est balisée avec une
-  balise **source** uniquement.
-- **Reconstruction correcte** : Si ni une balise **source** ni une balise **de verrouillage** n'existe, une image sera construite sur la base de l'image avec la balise **versionnée**.
-  Dans l'image avec la balise versionnée, la plupart des dépendances devraient déjà être installées, ce qui permet de gagner du temps.
-- **Reconstruction la plus lente** : Si les trois balises n'existent pas, une toute nouvelle image est construite à partir de
-  l'image de base (ce qui est une opération plus lente). Cette nouvelle image est balisée avec toutes les balises **source**, **de verrouillage** et **versionnée**.
+1. 同一のソースコードとDockerfileは、常に同じイメージを生成します（ハッシュベースのタグを介して）。
+2. 小さな変更が発生した場合、システムはイメージを迅速に再ビルドできます（最近の互換性のあるイメージを活用することで）。
+3. **ロック**タグ（例: `runtime:oh_v0.9.3_1234567890abcdef`）は、特定のベースイメージ、依存関係、およびOpenHandsバージョンの組み合わせに対する最新のビルドを常に指します。
 
-Cette approche de balisage permet à OpenHands de gérer efficacement les environnements de développement et de production.
+## ランタイムプラグインシステム
 
-1. Un code source et un Dockerfile identiques produisent toujours la même image (via des balises basées sur des hashs)
-2. Le système peut reconstruire rapidement les images lorsque des changements mineurs se produisent (en s'appuyant sur des images compatibles récentes)
-3. La balise **de verrouillage** (ex : `runtime:oh_v0.9.3_1234567890abcdef`) pointe toujours vers la dernière version pour une combinaison particulière d'image de base, de dépendances et de version d'OpenHands
+OpenHandsランタイムは、機能を拡張し、ランタイム環境をカスタマイズできるプラグインシステムをサポートしています。プラグインは、ランタイムクライアントの起動時に初期化されます。
 
-## Système de plugins du Runtime
+独自のプラグインを実装したい場合は、[Jupyterプラグインの例](https://github.com/All-Hands-AI/OpenHands/blob/ecf4aed28b0cf7c18d4d8ff554883ba182fc6bdd/openhands/runtime/plugins/jupyter/__init__.py#L21-L55)をチェックしてください。
 
-Le Runtime d'OpenHands prend en charge un système de plugins qui permet d'étendre les fonctionnalités et de personnaliser l'environnement d'exécution. Les plugins sont initialisés lorsque le client runtime démarre.
+*プラグインシステムの詳細はまだ作成中です - 貢献を歓迎します！*
 
-Consultez [un exemple de plugin Jupyter ici](https://github.com/All-Hands-AI/OpenHands/blob/ecf4aed28b0cf7c18d4d8ff554883ba182fc6bdd/openhands/runtime/plugins/jupyter/__init__.py#L21-L55) si vous souhaitez implémenter votre propre plugin.
+プラグインシステムの主な側面:
 
-*Plus de détails sur le système de plugins sont encore en construction - les contributions sont les bienvenues !*
-
-Aspects clés du système de plugins :
-
-1. Définition des plugins : Les plugins sont définis comme des classes Python qui héritent d'une classe de base `Plugin`
-2. Enregistrement des plugins : Les plugins disponibles sont enregistrés dans un dictionnaire `ALL_PLUGINS`
-3. Spécification des plugins : Les plugins sont associés à `Agent.sandbox_plugins: list[PluginRequirement]`. Les utilisateurs peuvent spécifier quels plugins charger lors de l'initialisation du runtime
-4. Initialisation : Les plugins sont initialisés de manière asynchrone lorsque le client runtime démarre
-5. Utilisation : Le client runtime peut utiliser les plugins initialisés pour étendre ses capacités (par exemple, le JupyterPlugin pour exécuter des cellules IPython)
+1. プラグインの定義: プラグインは、基本の`Plugin`クラスを継承するPythonクラスとして定義されます。
+2. プラグインの登録: 利用可能なプラグインは、`ALL_PLUGINS`辞書に登録されます。
+3. プラグインの指定: プラグインは、`Agent.sandbox_plugins: list[PluginRequirement]`に関連付けられます。ユーザーは、ランタイムを初期化するときにロードするプラグインを指定できます。
+4. 初期化: プラグインは、ランタイムクライアントの起動時に非同期で初期化されます。
+5. 使用: ランタイムクライアントは、初期化されたプラグインを使用して機能を拡張できます（例: IPythonセルを実行するためのJupyterPlugin）。

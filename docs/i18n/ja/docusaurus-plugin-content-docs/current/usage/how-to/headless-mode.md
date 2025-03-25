@@ -1,47 +1,32 @@
+# ヘッドレスモード
 
+OpenHandsは、Webアプリケーションを起動せずに、単一のコマンドで実行できます。
+これにより、OpenHandsを使用してスクリプトを作成したり、タスクを自動化したりするのが簡単になります。
 
-# Mode sans interface
+これは、インタラクティブで、アクティブな開発に適した[CLIモード](cli-mode)とは異なります。
 
-Vous pouvez exécuter OpenHands avec une seule commande, sans démarrer l'application web.
-Cela facilite l'écriture de scripts et l'automatisation des tâches avec OpenHands.
+## Pythonを使用する場合
 
-Ceci est différent du [Mode CLI](cli-mode), qui est interactif et mieux adapté au développement actif.
-
-## Avec Python
-
-Pour exécuter OpenHands en mode sans interface avec Python,
-[suivez les instructions de configuration de développement](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md),
-puis exécutez :
-
+PythonでOpenHandsをヘッドレスモードで実行するには:
+1. [開発セットアップの手順](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md)に従っていることを確認してください。
+2. 以下のコマンドを実行します:
 ```bash
 poetry run python -m openhands.core.main -t "write a bash script that prints hi"
 ```
 
-Vous devrez vous assurer de définir votre modèle, votre clé API et d'autres paramètres via des variables d'environnement
-[ou le fichier `config.toml`](https://github.com/All-Hands-AI/OpenHands/blob/main/config.template.toml).
+モデル、APIキー、その他の設定は、環境変数[または`config.toml`ファイル](https://github.com/All-Hands-AI/OpenHands/blob/main/config.template.toml)を介して設定する必要があります。
 
-## Avec Docker
+## Dockerを使用する場合
 
-1. Définissez `WORKSPACE_BASE` sur le répertoire que vous voulez qu'OpenHands modifie :
+DockerでOpenHandsをヘッドレスモードで実行するには:
 
-```bash
-WORKSPACE_BASE=$(pwd)/workspace
-```
+1. ターミナルで以下の環境変数を設定します:
 
-2. Définissez `LLM_MODEL` sur le modèle que vous voulez utiliser :
+- `WORKSPACE_BASE`をOpenHandsが編集するディレクトリに設定 (例: `export WORKSPACE_BASE=$(pwd)/workspace`)。
+- `LLM_MODEL`を使用するモデルに設定 (例: `export LLM_MODEL="anthropic/claude-3-5-sonnet-20241022"`)。
+- `LLM_API_KEY`をAPIキーに設定 (例: `export LLM_API_KEY="sk_test_12345"`)。
 
-```bash
-LLM_MODEL="anthropic/claude-3-5-sonnet-20241022"
-
-```
-
-3. Définissez `LLM_API_KEY` sur votre clé API :
-
-```bash
-LLM_API_KEY="sk_test_12345"
-```
-
-4. Exécutez la commande Docker suivante :
+2. 以下のDockerコマンドを実行します:
 
 ```bash
 docker run -it \
@@ -54,8 +39,17 @@ docker run -it \
     -e LOG_ALL_EVENTS=true \
     -v $WORKSPACE_BASE:/opt/workspace_base \
     -v /var/run/docker.sock:/var/run/docker.sock \
+    -v ~/.openhands-state:/.openhands-state \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app-$(date +%Y%m%d%H%M%S) \
     docker.all-hands.dev/all-hands-ai/openhands:0.29 \
-    python -m openhands.core.main -t "write a bash script that prints hi" --no-auto-continue
+    python -m openhands.core.main -t "write a bash script that prints hi"
 ```
+
+## 高度なヘッドレス設定
+
+ヘッドレスモードで利用可能なすべての設定オプションを表示するには、`--help`フラグを付けてPythonコマンドを実行します。
+
+### 追加のログ
+
+ヘッドレスモードでエージェントのすべてのアクションをログに記録するには、ターミナルで`export LOG_ALL_EVENTS=true`を実行します。

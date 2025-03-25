@@ -1,51 +1,50 @@
+# OpenHands GitHub Actionの使用方法
 
+このガイドでは、OpenHands自体のリポジトリ内および独自のプロジェクトの両方で、OpenHands GitHub Actionを使用する方法について説明します。
 
-# Utilisation de l'Action GitHub OpenHands
+## OpenHands リポジトリ内でのActionの使用
 
-Ce guide explique comment utiliser l'Action GitHub OpenHands, à la fois dans le dépôt OpenHands et dans vos propres projets.
+リポジトリ内でOpenHands GitHub Actionを使用するには、以下の手順を実行します。
 
-## Utilisation de l'Action dans le dépôt OpenHands
+1. リポジトリ内にissueを作成します。
+2. issueに`fix-me`ラベルを追加するか、`@openhands-agent`で始まるコメントをissueに残します。
 
-Pour utiliser l'Action GitHub OpenHands dans un dépôt, vous pouvez :
+アクションは自動的にトリガーされ、issueの解決を試みます。
 
-1. Créer un ticket dans le dépôt.
-2. Ajouter l'étiquette `fix-me` au ticket ou laisser un commentaire sur le ticket commençant par `@openhands-agent`.
+## 新しいリポジトリへのActionのインストール
 
-L'action se déclenchera automatiquement et tentera de résoudre le ticket.
+独自のリポジトリにOpenHands GitHub Actionをインストールするには、[OpenHands Resolverの README](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/resolver/README.md)に従ってください。
 
-## Installation de l'Action dans un nouveau dépôt
+## 使用のヒント
 
-Pour installer l'Action GitHub OpenHands dans votre propre dépôt, suivez le [README pour le Resolver OpenHands](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/resolver/README.md).
+### 反復的な解決
 
-## Conseils d'utilisation
+1. リポジトリ内にissueを作成します。
+2. issueに`fix-me`ラベルを追加するか、`@openhands-agent`で始まるコメントを残します。
+3. プルリクエストを確認して、issueを解決する試みをレビューします。
+4. 一般的なコメント、レビューコメント、またはインラインスレッドコメントを通じてフィードバックをフォローアップします。
+5. プルリクエストに`fix-me`ラベルを追加するか、`@openhands-agent`で始まる特定のコメントに対処します。
 
-### Résolution itérative
+### ラベルとマクロ
 
-1. Créez un ticket dans le dépôt.
-2. Ajoutez l'étiquette `fix-me` au ticket, ou laissez un commentaire commençant par `@openhands-agent`
-3. Examinez la tentative de résolution du ticket en vérifiant la pull request
-4. Faites un suivi avec des commentaires via des commentaires généraux, des commentaires de revue ou des commentaires de fil en ligne
-5. Ajoutez l'étiquette `fix-me` à la pull request, ou adressez un commentaire spécifique en commençant par `@openhands-agent`
+- ラベル（`fix-me`）：OpenHandsに**全体の** issueまたはプルリクエストへの対処を要求します。
+- マクロ（`@openhands-agent`）：OpenHandsにissue/プルリクエストの説明と**特定のコメント**のみを考慮するように要求します。
 
-### Étiquette versus Macro
+## 高度な設定
 
-- Étiquette (`fix-me`) : Demande à OpenHands de traiter le ticket ou la pull request dans son **intégralité**.
-- Macro (`@openhands-agent`) : Demande à OpenHands de ne considérer que la description du ticket/de la pull request et **le commentaire spécifique**.
+### カスタムリポジトリ設定の追加
 
-## Paramètres avancés
+[resolverのREADME](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/resolver/README.md#providing-custom-instructions)に従って、OpenHandsにカスタムの指示を提供できます。
 
-### Ajouter des paramètres de dépôt personnalisés
+### カスタム構成
 
-Vous pouvez fournir des instructions personnalisées pour OpenHands en suivant le [README pour le resolver](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/resolver/README.md#providing-custom-instructions).
+GitHub resolverは、自動的に有効な[リポジトリシークレット](https://docs.github.com/en/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions?tool=webui#creating-secrets-for-a-repository)または[リポジトリ変数](https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/store-information-in-variables#creating-configuration-variables-for-a-repository)をチェックして、その動作をカスタマイズします。
+設定可能なカスタマイズオプションは次のとおりです。
 
-### Configurations personnalisées
-
-Le resolver Github vérifiera automatiquement les [secrets de dépôt](https://docs.github.com/en/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions?tool=webui#creating-secrets-for-a-repository) ou les [variables de dépôt](https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/store-information-in-variables#creating-configuration-variables-for-a-repository) valides pour personnaliser son comportement.
-Les options de personnalisation que vous pouvez définir sont :
-
-| **Nom de l'attribut**            | **Type** | **Objectif**                                                                                                | **Exemple**                                          |
-|----------------------------------| -------- |-------------------------------------------------------------------------------------------------------------|------------------------------------------------------|
-| `LLM_MODEL`                      | Variable | Définir le LLM à utiliser avec OpenHands                                                                    | `LLM_MODEL="anthropic/claude-3-5-sonnet-20241022"`   |
-| `OPENHANDS_MAX_ITER`             | Variable | Définir la limite maximale pour les itérations de l'agent                                                   | `OPENHANDS_MAX_ITER=10`                              |
-| `OPENHANDS_MACRO`                | Variable | Personnaliser la macro par défaut pour invoquer le resolver                                                 | `OPENHANDS_MACRO=@resolveit`                         |
-| `OPENHANDS_BASE_CONTAINER_IMAGE` | Variable | Sandbox personnalisé ([en savoir plus](https://docs.all-hands.dev/modules/usage/how-to/custom-sandbox-guide))| `OPENHANDS_BASE_CONTAINER_IMAGE="custom_image"`      |
+| **属性名**                        | **タイプ** | **目的**                                                                                                 | **例**                                              |
+| -------------------------------- | -------- | -------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| `LLM_MODEL`                      | Variable | OpenHandsで使用するLLMを設定                                                                                 | `LLM_MODEL="anthropic/claude-3-5-sonnet-20241022"` |
+| `OPENHANDS_MAX_ITER`             | Variable | エージェントの反復の最大制限を設定                                                                                   | `OPENHANDS_MAX_ITER=10`                            |
+| `OPENHANDS_MACRO`                | Variable | リゾルバを呼び出すためのデフォルトマクロをカスタマイズ                                                                         | `OPENHANDS_MACRO=@resolveit`                       |
+| `OPENHANDS_BASE_CONTAINER_IMAGE` | Variable | カスタムSandbox（[詳細](https://docs.all-hands.dev/modules/usage/how-to/custom-sandbox-guide)）                 | `OPENHANDS_BASE_CONTAINER_IMAGE="custom_image"`    |
+| `TARGET_BRANCH`                  | Variable | `main`以外のブランチにマージ                                                                                     | `TARGET_BRANCH="dev"`                              |

@@ -1,50 +1,62 @@
+# カスタムサンドボックス
 
+サンドボックスは、エージェントがタスクを実行する場所です。コンピュータ上で直接コマンドを実行する（これはリスクがある可能性があります）代わりに、エージェントはDockerコンテナ内でそれらを実行します。
 
-# Sandbox Personnalisé
+デフォルトのOpenHandsサンドボックス（[nikolaik/python-nodejs](https://hub.docker.com/r/nikolaik/python-nodejs)の`python-nodejs:python3.12-nodejs22`）にはPythonやNode.jsなどのパッケージがインストールされていますが、デフォルトでインストールする必要のある他のソフトウェアがある場合があります。
 
-Le sandbox est l'endroit où l'agent effectue ses tâches. Au lieu d'exécuter des commandes directement sur votre ordinateur (ce qui pourrait être risqué), l'agent les exécute à l'intérieur d'un conteneur Docker.
+カスタマイズには2つのオプションがあります:
 
-Le sandbox OpenHands par défaut (`python-nodejs:python3.12-nodejs22` de [nikolaik/python-nodejs](https://hub.docker.com/r/nikolaik/python-nodejs)) est livré avec certains paquets installés tels que Python et Node.js mais peut nécessiter l'installation d'autres logiciels par défaut.
+- 必要なソフトウェアがインストールされている既存のイメージを使用する。
+- 独自のカスタムDockerイメージを作成する。
 
-Vous avez deux options pour la personnalisation :
+最初のオプションを選択した場合は、`Dockerイメージの作成`セクションをスキップできます。
 
-1. Utiliser une image existante avec les logiciels requis.
-2. Créer votre propre image Docker personnalisée.
+## Dockerイメージの作成
 
-Si vous choisissez la première option, vous pouvez passer la section `Créer Votre Image Docker`.
+カスタムDockerイメージを作成するには、Debianベースである必要があります。
 
-## Créer Votre Image Docker
-
-Pour créer une image Docker personnalisée, elle doit être basée sur Debian.
-
-Par exemple, si vous voulez qu'OpenHands ait `ruby` installé, créez un `Dockerfile` avec le contenu suivant :
+たとえば、OpenHandsに`ruby`をインストールしたい場合は、次の内容で`Dockerfile`を作成できます:
 
 ```dockerfile
-FROM debian:latest
+FROM nikolaik/python-nodejs:python3.12-nodejs22
 
-# Installer les paquets requis
+# 必要なパッケージをインストール
 RUN apt-get update && apt-get install -y ruby
 ```
 
-Enregistrez ce fichier dans un dossier. Ensuite, construisez votre image Docker (par exemple, nommée custom-image) en naviguant vers le dossier dans le terminal et en exécutant :
+または、Ruby固有のベースイメージを使用することもできます:
+
+```dockerfile
+FROM ruby:latest
+```
+
+このファイルをフォルダに保存します。次に、ターミナルでフォルダに移動し、次のコマンドを実行して、Dockerイメージ（たとえば、custom-imageという名前）をビルドします:
 
 ```bash
 docker build -t custom-image .
 ```
 
-Cela produira une nouvelle image appelée `custom-image`, qui sera disponible dans Docker.
+これにより、`custom-image`という新しいイメージが作成され、Dockerで利用できるようになります。
 
-> Notez que dans la configuration décrite dans ce document, OpenHands s'exécutera en tant qu'utilisateur "openhands" à l'intérieur du sandbox et donc tous les paquets installés via le docker file devraient être disponibles pour tous les utilisateurs du système, pas seulement root.
+## Dockerコマンドの使用
 
-## Utilisation du Workflow de Développement
+[dockerコマンド](/modules/usage/installation#start-the-app)を使用してOpenHandsを実行する場合は、`-e SANDBOX_RUNTIME_CONTAINER_IMAGE=...`を`-e SANDBOX_BASE_CONTAINER_IMAGE=<カスタムイメージ名>`に置き換えます:
 
-### Configuration
+```commandline
+docker run -it --rm --pull=always \
+    -e SANDBOX_BASE_CONTAINER_IMAGE=custom-image \
+    ...
+```
 
-Tout d'abord, assurez-vous de pouvoir exécuter OpenHands en suivant les instructions dans [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
+## 開発ワークフローの使用
 
-### Spécifier l'Image de Base du Sandbox
+### セットアップ
 
-Dans le fichier `config.toml` dans le répertoire OpenHands, définissez `base_container_image` sur l'image que vous souhaitez utiliser. Cela peut être une image que vous avez déjà extraite ou une que vous avez construite :
+まず、[Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md)の手順に従って、OpenHandsを実行できることを確認してください。
+
+### ベースサンドボックスイメージの指定
+
+OpenHandsディレクトリ内の`config.toml`ファイルで、`base_container_image`を使用するイメージに設定します。これは、すでにプルしたイメージまたは構築したイメージにすることができます:
 
 ```bash
 [core]
@@ -53,10 +65,28 @@ Dans le fichier `config.toml` dans le répertoire OpenHands, définissez `base_c
 base_container_image="custom-image"
 ```
 
-### Exécution
+### その他の設定オプション
 
-Exécutez OpenHands en exécutant ```make run``` dans le répertoire de niveau supérieur.
+`config.toml`ファイルは、サンドボックスをカスタマイズするためのいくつかの他のオプションをサポートしています:
 
-## Explication Technique
+```toml
+[core]
+# ランタイムのビルド時に追加の依存関係をインストールする
+# 有効なシェルコマンドを含めることができる
+# これらのコマンドのいずれかでPythonインタープリターへのパスが必要な場合は、$OH_INTERPRETER_PATH変数を使用できる
+runtime_extra_deps = """
+pip install numpy pandas
+apt-get update && apt-get install -y ffmpeg
+"""
 
-Veuillez vous référer à la [section image docker personnalisée de la documentation d'exécution](https://docs.all-hands.dev/modules/usage/architecture/runtime#advanced-how-openhands-builds-and-maintains-od-runtime-images) pour plus de détails.
+# ランタイムの環境変数を設定する
+# ランタイムで使用可能である必要がある設定に役立つ
+runtime_startup_env_vars = { DATABASE_URL = "postgresql://user:pass@localhost/db" }
+
+# マルチアーキテクチャビルドのプラットフォームを指定する（例: "linux/amd64"または"linux/arm64"）
+platform = "linux/amd64"
+```
+
+### 実行
+
+トップレベルのディレクトリで```make run```を実行して、OpenHandsを実行します。

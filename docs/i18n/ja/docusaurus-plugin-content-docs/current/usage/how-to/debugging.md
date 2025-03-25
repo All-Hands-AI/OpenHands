@@ -1,12 +1,8 @@
+以下は、OpenHandsのデバッグに関する入門書です。開発目的で使用してください。
 
+## サーバー / VSCode
 
-# Débogage
-
-Ce qui suit est destiné à servir d'introduction au débogage d'OpenHands à des fins de développement.
-
-## Serveur / VSCode
-
-Le `launch.json` suivant permettra de déboguer les éléments agent, contrôleur et serveur, mais pas le bac à sable (qui s'exécute dans docker). Il ignorera toutes les modifications à l'intérieur du répertoire `workspace/` :
+以下の`launch.json`は、エージェント、コントローラー、サーバー要素のデバッグを可能にしますが、サンドボックス（Dockerの中で動作する）はデバッグできません。`workspace/`ディレクトリ内の変更は無視されます。
 
 ```
 {
@@ -38,7 +34,7 @@ Le `launch.json` suivant permettra de déboguer les éléments agent, contrôleu
 }
 ```
 
-Des configurations de débogage plus spécifiques qui incluent plus de paramètres peuvent être spécifiées :
+より具体的なデバッグ設定では、より多くのパラメータを指定できます。
 
 ```
     ...
@@ -49,7 +45,7 @@ Des configurations de débogage plus spécifiques qui incluent plus de paramètr
       "module": "openhands.core.main",
       "args": [
         "-t",
-        "Demandez-moi quelle est votre tâche.",
+        "Ask me what your task is.",
         "-d",
         "${workspaceFolder}/workspace",
         "-c",
@@ -64,10 +60,10 @@ Des configurations de débogage plus spécifiques qui incluent plus de paramètr
     ...
 ```
 
-Les valeurs dans l'extrait ci-dessus peuvent être mises à jour de telle sorte que :
+上記のスニペットの値は、以下のように更新できます。
 
-    * *t* : la tâche
-    * *d* : le répertoire de l'espace de travail openhands
-    * *c* : l'agent
-    * *l* : la configuration LLM (prédéfinie dans config.toml)
-    * *n* : le nom de la session (par exemple, le nom du flux d'événements)
+    * *t*: タスク
+    * *d*: openhandsワークスペースディレクトリ
+    * *c*: エージェント
+    * *l*: LLM設定（config.tomlで事前定義）
+    * *n*: セッション名（例：eventstream名）

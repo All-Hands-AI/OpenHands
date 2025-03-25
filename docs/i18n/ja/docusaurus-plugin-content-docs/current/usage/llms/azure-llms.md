@@ -1,44 +1,38 @@
-# Azure OpenAI
+# Azure
 
-OpenHandsは、AzureのチャットモデルへのAPIコールにLiteLLMを使用します。Azureをプロバイダーとして使用する方法については、[こちら](https://docs.litellm.ai/docs/providers/azure)のドキュメントを参照してください。
+OpenHands は LiteLLM を使用して Azure のチャットモデルを呼び出します。Azure をプロバイダとして使用する方法については、[こちら](https://docs.litellm.ai/docs/providers/azure)のドキュメントをご覧ください。
 
-## Azure OpenAIの設定
+## Azure OpenAI 設定
 
-OpenHandsを実行する際、[docker runコマンド](../installation#running-openhands)で`-e`を使用して以下の環境変数を設定する必要があります：
+OpenHands を実行する際には、以下の環境変数を [docker run コマンド](../installation#running-openhands) で `-e` を使用して設定する必要があります。
 
 ```
-LLM_API_VERSION="<api-version>"              # 例："2023-05-15"
+LLM_API_VERSION="<api-version>"              # 例: "2023-05-15"
 ```
 
-例：
+例:
 ```bash
 docker run -it --pull=always \
     -e LLM_API_VERSION="2023-05-15"
     ...
 ```
 
-次に、OpenHandsのUIで設定メニューから以下の項目を設定します：
+その後、OpenHands UI の設定で以下を行います。
 
 :::note
-AzureのデプロイメントページにあるChatGPTデプロイメント名が必要です。これは以下で
-&lt;deployment-name&gt;として参照されています。
+Azure の deployments ページで ChatGPT のデプロイメント名を確認する必要があります。以下では &lt;deployment-name&gt; と表記しています。
 :::
 
-* `Advanced Options`を有効にする
-* `Custom Model`を`azure/<deployment-name>`に設定
-* `Base URL`をAzure APIのベースURL（例：`https://example-endpoint.openai.azure.com`）に設定
-* `API Key`をAzure APIキーに設定
+1. `Advanced` オプションを有効にします。
+2. 以下を設定します:
+   - `Custom Model` を azure/&lt;deployment-name&gt; に設定
+   - `Base URL` を Azure API の Base URL に設定 (例: `https://example-endpoint.openai.azure.com`)
+   - `API Key` を Azure API キーに設定
 
-## 埋め込み（Embeddings）
+### Azure OpenAI 設定
 
-OpenHandsは埋め込みにllama-indexを使用します。Azureに関するドキュメントは[こちら](https://docs.llamaindex.ai/en/stable/api_reference/embeddings/azure_openai/)を参照してください。
-
-### Azure OpenAIの設定
-
-OpenHandsを実行する際、[docker runコマンド](../installation#running-openhands)で`-e`を使用して以下の環境変数を設定します：
+OpenHands を実行する際には、以下の環境変数を [docker run コマンド](../installation#running-openhands) で `-e` を使用して設定します。
 
 ```
-LLM_EMBEDDING_MODEL="azureopenai"
-LLM_EMBEDDING_DEPLOYMENT_NAME="<your-embedding-deployment-name>"   # 例："TextEmbedding...<etc>"
-LLM_API_VERSION="<api-version>"                                    # 例："2024-02-15-preview"
+LLM_API_VERSION="<api-version>"                                    # 例: "2024-02-15-preview"
 ```
