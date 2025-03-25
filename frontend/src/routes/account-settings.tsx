@@ -457,7 +457,7 @@ function AccountSettings() {
                       <KeyStatusIcon isSet={!!isGitLabTokenSet} />
                     )
                   }
-                  placeholder={isGitLabTokenSet ? "**********" : ""}
+                  placeholder={isGitHubTokenSet ? "<hidden>" : ""}
                 />
 
                 <p data-testId="gitlab-token-help-anchor" className="text-xs">
