@@ -23,7 +23,6 @@ from openhands.events.observation import (
 from openhands.events.observation.error import ErrorObservation
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.events.stream import EventStreamSubscriber
-from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.llm.llm import LLM
 from openhands.server.session.agent_session import AgentSession
 from openhands.server.session.conversation_init_data import ConversationInitData
@@ -85,7 +84,10 @@ class Session:
         await self.agent_session.close()
 
     async def initialize_agent(
-        self, settings: Settings, initial_message: MessageAction | None
+        self,
+        settings: Settings,
+        initial_message: MessageAction | None,
+        replay_json: str | None,
     ):
         self.agent_session.event_stream.add_event(
             AgentStateChangedObservation('', AgentState.LOADING),
@@ -155,6 +157,7 @@ class Session:
                 selected_repository=selected_repository,
                 selected_branch=selected_branch,
                 initial_message=initial_message,
+                replay_json=replay_json,
             )
         except Exception as e:
             self.logger.exception(f'Error creating agent_session: {e}')
