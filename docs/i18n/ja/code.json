@@ -3,23 +3,23 @@
     "message": "OpenHands"
   },
   "footer.docs": {
-    "message": "Documents"
+    "message": "ドキュメント"
   },
   "footer.community": {
-    "message": "Communauté"
+    "message": "コミュニティ"
   },
   "footer.copyright": {
     "message": "© {year} OpenHands"
   },
   "faq.title": {
-    "message": "Questions Fréquemment Posées",
+    "message": "よくある質問",
     "description": "FAQ Title"
   },
   "faq.description": {
-    "message": "Questions Fréquemment Posées"
+    "message": "よくある質問"
   },
   "faq.section.title.1": {
-    "message": "Qu'est-ce qu'OpenHands ?",
+    "message": "OpenHandsとは何ですか？",
     "description": "First Section Title"
   },
   "faq.section.highlight": {
@@ -27,63 +27,63 @@
     "description": "Highlight Text"
   },
   "faq.section.description.1": {
-    "message": "est un ingénieur logiciel autonome qui peut résoudre des tâches d'ingénierie logicielle et de navigation web à tout moment. Il peut exécuter des requêtes en sciences des données, telles que \"Trouver le nombre de demandes de pull à l'repository OpenHands dans les derniers mois\", et des tâches d'ingénierie logicielle, comme \"Veuillez ajouter des tests à ce fichier et vérifier si tous les tests passent. Si ce n'est pas le cas, réparez le fichier.\"",
+    "message": "はソフトウェアエンジニアリングとウェブナビゲーションのタスクをいつでも解決できる自律型ソフトウェアエンジニアです。「過去数ヶ月間のOpenHandsリポジトリへのプルリクエスト数を調べる」などのデータサイエンスクエリや、「このファイルにテストを追加して、すべてのテストが通るか確認してください。通らない場合は、ファイルを修正してください」などのソフトウェアエンジニアリングタスクを実行できます。",
     "description": "Description for OpenHands"
   },
   "faq.section.description.2": {
-    "message": "De plus, OpenHands est une plateforme et communauté pour les développeurs d'agents qui souhaitent tester et évaluer de nouveaux agents.",
+    "message": "さらに、OpenHandsは新しいエージェントをテストおよび評価したいエージェント開発者向けのプラットフォームとコミュニティでもあります。",
     "description": "Further Description for OpenHands"
   },
   "faq.section.title.2": {
-    "message": "Support",
+    "message": "サポート",
     "description": "Support Section Title"
   },
   "faq.section.support.answer": {
-    "message": "Si vous rencontrez un problème que d'autres utilisateurs peuvent également avoir, merci de le signaler sur {githubLink}. Si vous avez des difficultés à l'installation ou des questions générales, rejoignez-vous sur {discordLink} ou {slackLink}.",
+    "message": "他のユーザーも同様に発生する可能性のある問題が発生した場合は、{githubLink}で報告してください。インストールに関する問題や一般的な質問がある場合は、{discordLink}または{slackLink}にご参加ください。",
     "description": "Support Answer"
   },
   "faq.section.title.3": {
-    "message": "Comment résoudre un problème sur GitHub avec OpenHands ?",
+    "message": "OpenHandsでGitHubの問題を解決するには？",
     "description": "GitHub Issue Section Title"
   },
   "faq.section.github.steps.intro": {
-    "message": "Pour résoudre un problème sur GitHub en utilisant OpenHands, envoyez une commande à OpenHands demandant qu'il suit des étapes comme les suivantes :",
+    "message": "OpenHandsを使用してGitHubの問題を解決するには、以下のようなステップを実行するようOpenHandsにコマンドを送信します：",
     "description": "GitHub Steps Introduction"
   },
   "faq.section.github.step1": {
-    "message": "Lisez l'issue https://github.com/All-Hands-AI/OpenHands/issues/1611",
+    "message": "イシュー https://github.com/All-Hands-AI/OpenHands/issues/1611 を読む",
     "description": "GitHub Step 1"
   },
   "faq.section.github.step2": {
-    "message": "Cloner le dépôt et vérifier une nouvelle branche",
+    "message": "リポジトリをクローンして新しいブランチをチェックアウトする",
     "description": "GitHub Step 2"
   },
   "faq.section.github.step3": {
-    "message": "Sur la base des instructions dans la description de l'issue, modifiez les fichiers pour résoudre le problème",
+    "message": "イシューの説明に基づいて、問題を解決するためにファイルを修正する",
     "description": "GitHub Step 3"
   },
   "faq.section.github.step4": {
-    "message": "Pousser le résultat à GitHub en utilisant la variable d'environnement GITHUB_TOKEN",
+    "message": "GITHUB_TOKEN環境変数を使用して結果をGitHubにプッシュする",
     "description": "GitHub Step 4"
   },
   "faq.section.github.step5": {
-    "message": "Dites-moi le lien que je dois utiliser pour envoyer une demande de pull",
+    "message": "プルリクエストを送信するために使用するリンクを教えてください",
     "description": "GitHub Step 5"
   },
   "faq.section.github.steps.preRun": {
-    "message": "Avant de lancer OpenHands, vous pouvez faire :",
+    "message": "OpenHandsを起動する前に、以下を実行できます：",
     "description": "GitHub Steps Pre-Run"
   },
   "faq.section.github.steps.tokenInfo": {
-    "message": "où XXX est un jeton GitHub que vous avez créé et qui a les autorisations pour pousser dans le dépôt OpenHands. Si vous n'avez pas d'autorisations de modification du dépôt OpenHands, vous devrez peut-être changer cela en :",
+    "message": "ここでXXXはあなたが作成したGitHubトークンで、OpenHandsリポジトリにプッシュする権限を持っています。OpenHandsリポジトリの変更権限がない場合は、次のように変更する必要があるかもしれません：",
     "description": "GitHub Steps Token Info"
   },
   "faq.section.github.steps.usernameInfo": {
-    "message": "où USERNAME est votre nom GitHub.",
+    "message": "ここでUSERNAMEはあなたのGitHubユーザー名です。",
     "description": "GitHub Steps Username Info"
   },
   "faq.section.title.4": {
-    "message": "Comment OpenHands est-il différent de Devin ?",
+    "message": "OpenHandsはDevinとどう違いますか？",
     "description": "Devin Section Title"
   },
   "faq.section.openhands.linkText": {
@@ -91,337 +91,337 @@
     "description": "Devin Link Text"
   },
   "faq.section.openhands.description": {
-    "message": "est un produit commercial par Cognition Inc., qui a servi d'inspiration initiale pour OpenHands. Les deux visent à bien faire le travail d'ingénierie logicielle, mais vous pouvez télécharger, utiliser et modifier OpenHands, tandis que Devin peut être utilisé uniquement via le site de Cognition. De plus, OpenHands a évolué au-delà de l'inspiration initiale, et est maintenant un écosystème communautaire pour le développement d'agents en général, et nous serions ravis de vous voir rejoindre et",
+    "message": "はCognition Inc.の商用製品で、OpenHandsの最初のインスピレーションとなりました。どちらもソフトウェアエンジニアリングの仕事をうまくこなすことを目指していますが、OpenHandsはダウンロード、使用、修正が可能である一方、DevinはCognitionのサイトを通じてのみ使用できます。さらに、OpenHandsは最初のインスピレーションを超えて進化し、現在はエージェント開発全般のためのコミュニティエコシステムとなっており、あなたの参加と",
     "description": "Devin Description"
   },
   "faq.section.openhands.contribute": {
-    "message": "contribuer",
+    "message": "貢献",
     "description": "Contribute Link"
   },
   "faq.section.title.5": {
-    "message": "Comment OpenHands est-il différent de ChatGPT ?",
+    "message": "OpenHandsはChatGPTとどう違いますか？",
     "description": "ChatGPT Section Title"
   },
   "faq.section.chatgpt.description": {
-    "message": "ChatGPT vous pouvez accéder en ligne, il ne se connecte pas aux fichiers locaux et ses capacités d'exécution du code sont limitées. Alors qu'il peut écrire du code, mais c'est difficile à tester ou à exécuter.",
+    "message": "ChatGPTはオンラインでアクセスでき、ローカルファイルに接続せず、コード実行能力も限られています。コードを書くことはできますが、テストや実行が難しいです。",
     "description": "ChatGPT Description"
   },
   "homepage.description": {
-    "message": "Génération d'code AI pour l'ingénierie logicielle.",
+    "message": "ソフトウェアエンジニアリングのためのAIコード生成。",
     "description": "The homepage description"
   },
   "homepage.getStarted": {
-    "message": "Commencer"
+    "message": "はじめる"
   },
   "welcome.message": {
-    "message": "Bienvenue à OpenHands, un système d'IA autonome ingénieur logiciel capable d'exécuter des tâches d'ingénierie complexes et de collaborer activement avec les utilisateurs sur les projets de développement logiciel."
+    "message": "OpenHandsへようこそ。複雑なエンジニアリングタスクを実行し、ソフトウェア開発プロジェクトでユーザーと積極的に協力できる自律型AIソフトウェアエンジニアシステムです。"
   },
   "theme.ErrorPageContent.title": {
-    "message": "Cette page a planté.",
+    "message": "このページはクラッシュしました。",
     "description": "The title of the fallback page when the page crashed"
   },
   "theme.BackToTopButton.buttonAriaLabel": {
-    "message": "Retourner en haut de la page",
+    "message": "ページの先頭に戻る",
     "description": "The ARIA label for the back to top button"
   },
   "theme.blog.archive.title": {
-    "message": "Archives",
+    "message": "アーカイブ",
     "description": "The page & hero title of the blog archive page"
   },
   "theme.blog.archive.description": {
-    "message": "Archives",
+    "message": "アーカイブ",
     "description": "The page & hero description of the blog archive page"
   },
   "theme.blog.paginator.navAriaLabel": {
-    "message": "Pagination des listes d'articles du blog",
+    "message": "ブログ記事リストのページネーション",
     "description": "The ARIA label for the blog pagination"
   },
   "theme.blog.paginator.newerEntries": {
-    "message": "Nouvelles entrées",
+    "message": "新しい記事",
     "description": "The label used to navigate to the newer blog posts page (previous page)"
   },
   "theme.blog.paginator.olderEntries": {
-    "message": "Anciennes entrées",
+    "message": "古い記事",
     "description": "The label used to navigate to the older blog posts page (next page)"
   },
   "theme.blog.post.paginator.navAriaLabel": {
-    "message": "Pagination des articles du blog",
+    "message": "ブログ記事のページネーション",
     "description": "The ARIA label for the blog posts pagination"
   },
   "theme.blog.post.paginator.newerPost": {
-    "message": "Article plus récent",
+    "message": "新しい記事",
     "description": "The blog post button label to navigate to the newer/previous post"
   },
   "theme.blog.post.paginator.olderPost": {
-    "message": "Article plus ancien",
+    "message": "古い記事",
     "description": "The blog post button label to navigate to the older/next post"
   },
   "theme.blog.post.plurals": {
-    "message": "Un article|{count} articles",
+    "message": "1記事|{count}記事",
     "description": "Pluralized label for \"{count} posts\". Use as much plural forms (separated by \"|\") as your language support (see https://www.unicode.org/cldr/cldr-aux/charts/34/supplemental/language_plural_rules.html)"
   },
   "theme.blog.tagTitle": {
-    "message": "{nPosts} tags avec « {tagName} »",
+    "message": "「{tagName}」のタグが付いた{nPosts}",
     "description": "The title of the page for a blog tag"
   },
   "theme.tags.tagsPageLink": {
-    "message": "Voir tous les tags",
+    "message": "すべてのタグを表示",
     "description": "The label of the link targeting the tag list page"
   },
   "theme.colorToggle.ariaLabel": {
-    "message": "Basculer entre le mode sombre et clair (actuellement {mode})",
+    "message": "ダークモードとライトモードを切り替える（現在は{mode}）",
     "description": "The ARIA label for the navbar color mode toggle"
   },
   "theme.colorToggle.ariaLabel.mode.dark": {
-    "message": "mode sombre",
+    "message": "ダークモード",
     "description": "The name for the dark color mode"
   },
   "theme.colorToggle.ariaLabel.mode.light": {
-    "message": "mode clair",
+    "message": "ライトモード",
     "description": "The name for the light color mode"
   },
   "theme.docs.breadcrumbs.navAriaLabel": {
-    "message": "Bouton de navigation des liens de la page",
+    "message": "パンくずリストナビゲーション",
     "description": "The ARIA label for the breadcrumbs"
   },
   "theme.docs.DocCard.categoryDescription.plurals": {
-    "message": "1 élément|{count} éléments",
+    "message": "1項目|{count}項目",
     "description": "The default description for a category card in the generated index about how many items this category includes"
   },
   "theme.docs.paginator.navAriaLabel": {
-    "message": "Pages de documentation",
+    "message": "ドキュメントページ",
     "description": "The ARIA label for the docs pagination"
   },
   "theme.docs.paginator.previous": {
-    "message": "Précédent",
+    "message": "前へ",
     "description": "The label used to navigate to the previous doc"
   },
   "theme.docs.paginator.next": {
-    "message": "Suivant",
+    "message": "次へ",
     "description": "The label used to navigate to the next doc"
   },
   "theme.docs.tagDocListPageTitle.nDocsTagged": {
-    "message": "Un document tagué|{count} documents tagués",
+    "message": "1つのドキュメントにタグ付け|{count}のドキュメントにタグ付け",
     "description": "Pluralized label for \"{count} docs tagged\". Use as much plural forms (separated by \"|\") as your language support (see https://www.unicode.org/cldr/cldr-aux/charts/34/supplemental/language_plural_rules.html)"
   },
   "theme.docs.tagDocListPageTitle": {
-    "message": "{nDocsTagged} avec \"{tagName}\"",
+    "message": "\"{tagName}\"で{nDocsTagged}",
     "description": "The title of the page for a docs tag"
   },
   "theme.docs.versionBadge.label": {
-    "message": "Version: {versionLabel}"
+    "message": "バージョン: {versionLabel}"
   },
   "theme.docs.versions.unreleasedVersionLabel": {
-    "message": "Ceci est la documentation de la prochaine version {versionLabel} de {siteTitle}.",
+    "message": "これは{siteTitle}の次期バージョン{versionLabel}のドキュメントです。",
     "description": "The label used to tell the user that he's browsing an unreleased doc version"
   },
   "theme.docs.versions.unmaintainedVersionLabel": {
-    "message": "Ceci est la documentation de {siteTitle} {versionLabel}, qui n'est plus activement maintenue.",
+    "message": "これは{siteTitle} {versionLabel}のドキュメントで、現在はアクティブにメンテナンスされていません。",
     "description": "The label used to tell the user that he's browsing an unmaintained doc version"
   },
   "theme.docs.versions.latestVersionSuggestionLabel": {
-    "message": "Pour une documentation à jour, consultez la {latestVersionLink} ({versionLabel}).",
+    "message": "最新のドキュメントについては、{latestVersionLink}（{versionLabel}）をご覧ください。",
     "description": "The label used to tell the user to check the latest version"
   },
   "theme.docs.versions.latestVersionLinkLabel": {
-    "message": "dernière version",
+    "message": "最新バージョン",
     "description": "The label used for the latest version suggestion link label"
   },
   "theme.common.editThisPage": {
-    "message": "Éditer cette page",
+    "message": "このページを編集",
     "description": "The link label to edit the current page"
   },
   "theme.common.headingLinkTitle": {
-    "message": "Lien direct vers {heading}",
+    "message": "{heading}への直接リンク",
     "description": "Title for link to heading"
   },
   "theme.lastUpdated.atDate": {
-    "message": " le {date}",
+    "message": " {date}に",
     "description": "The words used to describe on which date a page has been last updated"
   },
   "theme.lastUpdated.byUser": {
-    "message": " par {user}",
+    "message": " {user}によって",
     "description": "The words used to describe by who the page has been last updated"
   },
   "theme.lastUpdated.lastUpdatedAtBy": {
-    "message": "Dernière mise à jour{atDate}{byUser}",
+    "message": "最終更新{atDate}{byUser}",
     "description": "The sentence used to display when a page has been last updated, and by who"
   },
   "theme.navbar.mobileVersionsDropdown.label": {
-    "message": "Versions",
+    "message": "バージョン",
     "description": "The label for the navbar versions dropdown on mobile view"
   },
   "theme.NotFound.title": {
-    "message": "Page introuvable",
+    "message": "ページが見つかりません",
     "description": "The title of the 404 page"
   },
   "theme.tags.tagsListLabel": {
-    "message": "Tags :",
+    "message": "タグ：",
     "description": "The label alongside a tag list"
   },
   "theme.admonition.caution": {
-    "message": "prudence",
+    "message": "注意",
     "description": "The default label used for the Caution admonition (:::caution)"
   },
   "theme.admonition.danger": {
-    "message": "danger",
+    "message": "危険",
     "description": "The default label used for the Danger admonition (:::danger)"
   },
   "theme.admonition.info": {
-    "message": "information",
+    "message": "情報",
     "description": "The default label used for the Info admonition (:::info)"
   },
   "theme.admonition.note": {
-    "message": "remarque",
+    "message": "メモ",
     "description": "The default label used for the Note admonition (:::note)"
   },
   "theme.admonition.tip": {
-    "message": "astuce",
+    "message": "ヒント",
     "description": "The default label used for the Tip admonition (:::tip)"
   },
   "theme.admonition.warning": {
-    "message": "prudence",
+    "message": "警告",
     "description": "The default label used for the Warning admonition (:::warning)"
   },
   "theme.AnnouncementBar.closeButtonAriaLabel": {
-    "message": "Fermer",
+    "message": "閉じる",
     "description": "The ARIA label for close button of announcement bar"
   },
   "theme.blog.sidebar.navAriaLabel": {
-    "message": "Navigation vers les articles récents du blog",
+    "message": "最近のブログ記事ナビゲーション",
     "description": "The ARIA label for recent posts in the blog sidebar"
   },
   "theme.CodeBlock.copied": {
-    "message": "Copié",
+    "message": "コピーしました",
     "description": "The copied button label on code blocks"
   },
   "theme.CodeBlock.copyButtonAriaLabel": {
-    "message": "Copier le code",
+    "message": "コードをコピー",
     "description": "The ARIA label for copy code blocks button"
   },
   "theme.CodeBlock.copy": {
-    "message": "Copier",
+    "message": "コピー",
     "description": "The copy button label on code blocks"
   },
   "theme.CodeBlock.wordWrapToggle": {
-    "message": "Activer/désactiver le retour à la ligne",
+    "message": "折り返し表示の切り替え",
     "description": "The title attribute for toggle word wrapping button of code block lines"
   },
   "theme.DocSidebarItem.expandCategoryAriaLabel": {
-    "message": "Développer la catégorie '{label}' de la barre latérale",
+    "message": "サイドバーカテゴリ「{label}」を展開",
     "description": "The ARIA label to expand the sidebar category"
   },
   "theme.DocSidebarItem.collapseCategoryAriaLabel": {
-    "message": "Réduire la catégorie '{label}' de la barre latérale",
+    "message": "サイドバーカテゴリ「{label}」を折りたたむ",
     "description": "The ARIA label to collapse the sidebar category"
   },
   "theme.NavBar.navAriaLabel": {
-    "message": "Main",
+    "message": "メイン",
     "description": "The ARIA label for the main navigation"
   },
   "theme.navbar.mobileLanguageDropdown.label": {
-    "message": "Langues",
+    "message": "言語",
     "description": "The label for the mobile language switcher dropdown"
   },
   "theme.NotFound.p1": {
-    "message": "Nous n'avons pas trouvé ce que vous recherchez.",
+    "message": "お探しのものが見つかりませんでした。",
     "description": "The first paragraph of the 404 page"
   },
   "theme.NotFound.p2": {
-    "message": "Veuillez contacter le propriétaire du site qui vous a lié à l'URL d'origine et leur faire savoir que leur lien est cassé.",
+    "message": "元のURLにリンクしたサイトの所有者に連絡して、リンクが切れていることを知らせてください。",
     "description": "The 2nd paragraph of the 404 page"
   },
   "theme.TOCCollapsible.toggleButtonLabel": {
-    "message": "Sur cette page",
+    "message": "このページの内容",
     "description": "The label used by the button on the collapsible TOC component"
   },
   "theme.blog.post.readMore": {
-    "message": "Lire plus",
+    "message": "もっと読む",
     "description": "The label used in blog post item excerpts to link to full blog posts"
   },
   "theme.blog.post.readMoreLabel": {
-    "message": "En savoir plus sur {title}",
+    "message": "{title}についてもっと読む",
     "description": "The ARIA label for the link to full blog posts from excerpts"
   },
   "theme.blog.post.readingTime.plurals": {
-    "message": "Une minute de lecture|{readingTime} minutes de lecture",
+    "message": "1分で読めます|{readingTime}分で読めます",
     "description": "Pluralized label for \"{readingTime} min read\". Use as much plural forms (separated by \"|\") as your language support (see https://www.unicode.org/cldr/cldr-aux/charts/34/supplemental/language_plural_rules.html)"
   },
   "theme.docs.breadcrumbs.home": {
-    "message": "Page d'accueil",
+    "message": "ホームページ",
     "description": "The ARIA label for the home page in the breadcrumbs"
   },
   "theme.docs.sidebar.collapseButtonTitle": {
-    "message": "Réduire le menu latéral",
+    "message": "サイドバーを折りたたむ",
     "description": "The title attribute for collapse button of doc sidebar"
   },
   "theme.docs.sidebar.collapseButtonAriaLabel": {
-    "message": "Réduire le menu latérale",
+    "message": "サイドバーを折りたたむ",
     "description": "The title attribute for collapse button of doc sidebar"
   },
   "theme.docs.sidebar.navAriaLabel": {
-    "message": "Barre de navigation latérale des docs",
+    "message": "ドキュメントサイドバーナビゲーション",
     "description": "The ARIA label for the sidebar navigation"
   },
   "theme.docs.sidebar.closeSidebarButtonAriaLabel": {
-    "message": "Fermer la barre de navigation",
+    "message": "ナビゲーションバーを閉じる",
     "description": "The ARIA label for close button of mobile sidebar"
   },
   "theme.navbar.mobileSidebarSecondaryMenu.backButtonLabel": {
-    "message": "← Retour au menu principal",
+    "message": "← メインメニューに戻る",
     "description": "The label of the back button to return to main menu, inside the mobile navbar sidebar secondary menu (notably used to display the docs sidebar)"
   },
   "theme.docs.sidebar.toggleSidebarButtonAriaLabel": {
-    "message": "Ouvrir/fermer la barre de navigation",
+    "message": "ナビゲーションバーの開閉",
     "description": "The ARIA label for hamburger menu button of mobile navigation"
   },
   "theme.docs.sidebar.expandButtonTitle": {
-    "message": "Déplier le menu latéral",
+    "message": "サイドバーを展開",
     "description": "The ARIA label and title attribute for expand button of doc sidebar"
   },
   "theme.docs.sidebar.expandButtonAriaLabel": {
-    "message": "Déployer le menu latérale",
+    "message": "サイドバーを展開",
     "description": "The ARIA label and title attribute for expand button of doc sidebar"
   },
   "theme.ErrorPageContent.tryAgain": {
-    "message": "Réessayer",
+    "message": "再試行",
     "description": "The label of the button to try again rendering when the React error boundary captures an error"
   },
   "theme.common.skipToMainContent": {
-    "message": "Aller directement au contenu principal",
+    "message": "メインコンテンツに直接移動",
     "description": "The skip to content label used for accessibility, allowing to rapidly navigate to main content with keyboard tab/enter navigation"
   },
   "theme.tags.tagsPageTitle": {
-    "message": "Tags",
+    "message": "タグ",
     "description": "The title of the tag list page"
   },
   "theme.unlistedContent.title": {
-    "message": "Page non répertoriée",
+    "message": "非公開ページ",
     "description": "The unlisted content banner title"
   },
   "theme.unlistedContent.message": {
-    "message": "Cette page n'est pas répertoriée. Les moteurs de recherche ne l'indexeront pas, et seuls les utilisateurs ayant un lien direct peuvent y accéder.",
+    "message": "このページは非公開です。検索エンジンにインデックスされず、直接リンクを持つユーザーのみがアクセスできます。",
     "description": "The unlisted content banner message"
   },
   "Use AI to tackle the toil in your backlog. Our agents have all the same tools as a human developer: they can modify code, run commands, browse the web, call APIs, and yes-even copy code snippets from StackOverflow.": {
-    "message": "Utilisez l'IA pour gérer les tâches répétitives de votre backlog. Nos agents disposent des mêmes outils qu'un développeur humain : ils peuvent modifier du code, exécuter des commandes, naviguer sur le web, appeler des API et même copier des extraits de code depuis StackOverflow."
+    "message": "AIを使用してバックログの作業を効率化しましょう。私たちのエージェントは人間の開発者と同じツールを持っています：コードの修正、コマンドの実行、ウェブの閲覧、APIの呼び出し、そしてStackOverflowからのコードスニペットのコピーさえも可能です。"
   },
   "Get started with OpenHands.": {
-    "message": "Commencer avec OpenHands"
+    "message": "OpenHandsを始める"
   },
   "Most Popular Links": {
-    "message": "Liens Populaires"
+    "message": "人気のリンク"
   },
   "Customizing OpenHands to a repository": {
-    "message": "Personnaliser OpenHands pour un dépôt"
+    "message": "リポジトリ向けにOpenHandsをカスタマイズする"
   },
   "Integrating OpenHands with Github": {
-    "message": "Intégrer OpenHands avec Github"
+    "message": "OpenHandsをGithubと統合する"
   },
   "Recommended models to use": {
-    "message": "Modèles recommandés"
+    "message": "推奨モデル"
   },
   "Connecting OpenHands to your filesystem": {
-    "message": "Connecter OpenHands à votre système de fichiers"
+    "message": "OpenHandsをファイルシステムに接続する"
   }
 }
