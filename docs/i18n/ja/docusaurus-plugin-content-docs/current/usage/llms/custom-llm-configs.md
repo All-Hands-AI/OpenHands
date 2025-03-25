@@ -1,89 +1,89 @@
-# Configurations LLM personnalisées
+# カスタムLLM設定
 
-OpenHands permet de définir plusieurs configurations LLM nommées dans votre fichier `config.toml`. Cette fonctionnalité vous permet d'utiliser différentes configurations LLM pour différents usages, comme utiliser un modèle moins coûteux pour les tâches qui ne nécessitent pas de réponses de haute qualité, ou utiliser différents modèles avec différents paramètres pour des agents spécifiques.
+OpenHandsでは、`config.toml`ファイルで複数の名前付きLLM設定を定義できます。この機能により、高品質な応答が不要なタスクには低コストのモデルを使用したり、特定のエージェントに対して異なるパラメータを持つ異なるモデルを使用したりするなど、異なる用途に応じて異なるLLM設定を使用できます。
 
-## Comment ça fonctionne
+## 仕組み
 
-Les configurations LLM nommées sont définies dans le fichier `config.toml` en utilisant des sections qui commencent par `llm.`. Par exemple :
+名前付きLLM設定は、`config.toml`ファイルで`llm.`で始まるセクションを使用して定義されます。例：
 
 ```toml
-# Configuration LLM par défaut
+# デフォルトのLLM設定
 [llm]
 model = "gpt-4"
-api_key = "votre-clé-api"
+api_key = "あなたのAPIキー"
 temperature = 0.0
 
-# Configuration LLM personnalisée pour un modèle moins coûteux
+# 低コストモデル用のカスタムLLM設定
 [llm.gpt3]
 model = "gpt-3.5-turbo"
-api_key = "votre-clé-api"
+api_key = "あなたのAPIキー"
 temperature = 0.2
 
-# Une autre configuration personnalisée avec des paramètres différents
-[llm.haute-creativite]
+# 異なるパラメータを持つ別のカスタム設定
+[llm.high-creativity]
 model = "gpt-4"
-api_key = "votre-clé-api"
+api_key = "あなたのAPIキー"
 temperature = 0.8
 top_p = 0.9
 ```
 
-Chaque configuration nommée hérite de tous les paramètres de la section `[llm]` par défaut et peut remplacer n'importe lequel de ces paramètres. Vous pouvez définir autant de configurations personnalisées que nécessaire.
+各名前付き設定は、デフォルトの`[llm]`セクションからすべてのパラメータを継承し、これらのパラメータを上書きできます。必要な数のカスタム設定を定義できます。
 
-## Utilisation des configurations personnalisées
+## カスタム設定の使用
 
-### Avec les agents
+### エージェントでの使用
 
-Vous pouvez spécifier quelle configuration LLM un agent doit utiliser en définissant le paramètre `llm_config` dans la section de configuration de l'agent :
+エージェントの設定セクションで`llm_config`パラメータを設定することで、エージェントが使用するLLM設定を指定できます：
 
 ```toml
 [agent.RepoExplorerAgent]
-# Utiliser la configuration GPT-3 moins coûteuse pour cet agent
+# このエージェントには低コストのGPT-3設定を使用
 llm_config = 'gpt3'
 
 [agent.CodeWriterAgent]
-# Utiliser la configuration haute créativité pour cet agent
-llm_config = 'haute-creativite'
+# このエージェントには高創造性の設定を使用
+llm_config = 'high-creativity'
 ```
 
-### Options de configuration
+### 設定オプション
 
-Chaque configuration LLM nommée prend en charge toutes les mêmes options que la configuration LLM par défaut. Celles-ci incluent :
+各名前付きLLM設定は、デフォルトのLLM設定と同じすべてのオプションをサポートしています。これらには以下が含まれます：
 
-- Sélection du modèle (`model`)
-- Configuration de l'API (`api_key`, `base_url`, etc.)
-- Paramètres du modèle (`temperature`, `top_p`, etc.)
-- Paramètres de nouvelle tentative (`num_retries`, `retry_multiplier`, etc.)
-- Limites de jetons (`max_input_tokens`, `max_output_tokens`)
-- Et toutes les autres options de configuration LLM
+- モデルの選択（`model`）
+- API設定（`api_key`、`base_url`など）
+- モデルパラメータ（`temperature`、`top_p`など）
+- リトライパラメータ（`num_retries`、`retry_multiplier`など）
+- トークン制限（`max_input_tokens`、`max_output_tokens`）
+- その他すべてのLLM設定オプション
 
-Pour une liste complète des options disponibles, consultez la section Configuration LLM dans la documentation des [Options de configuration](../configuration-options).
+利用可能なオプションの完全なリストについては、[設定オプション](../configuration-options)のドキュメントのLLM設定セクションを参照してください。
 
-## Cas d'utilisation
+## ユースケース
 
-Les configurations LLM personnalisées sont particulièrement utiles dans plusieurs scénarios :
+カスタムLLM設定は、以下のようなシナリオで特に有用です：
 
-- **Optimisation des coûts** : Utiliser des modèles moins coûteux pour les tâches qui ne nécessitent pas de réponses de haute qualité, comme l'exploration de dépôt ou les opérations simples sur les fichiers.
-- **Réglage spécifique aux tâches** : Configurer différentes valeurs de température et de top_p pour les tâches qui nécessitent différents niveaux de créativité ou de déterminisme.
-- **Différents fournisseurs** : Utiliser différents fournisseurs LLM ou points d'accès API pour différentes tâches.
-- **Tests et développement** : Basculer facilement entre différentes configurations de modèles pendant le développement et les tests.
+- **コスト最適化**：リポジトリの探索やシンプルなファイル操作など、高品質な応答が不要なタスクには低コストのモデルを使用
+- **タスク固有の調整**：異なるレベルの創造性や決定論的な応答が必要なタスクに対して、異なるtemperatureやtop_p値を設定
+- **異なるプロバイダー**：異なるタスクに対して異なるLLMプロバイダーやAPIエンドポイントを使用
+- **テストと開発**：開発とテスト中に異なるモデル設定を簡単に切り替え
 
-## Exemple : Optimisation des coûts
+## 例：コスト最適化
 
-Un exemple pratique d'utilisation des configurations LLM personnalisées pour optimiser les coûts :
+コスト最適化のためのカスタムLLM設定の実践的な例：
 
 ```toml
-# Configuration par défaut utilisant GPT-4 pour des réponses de haute qualité
+# 高品質な応答用のGPT-4を使用するデフォルト設定
 [llm]
 model = "gpt-4"
-api_key = "votre-clé-api"
+api_key = "あなたのAPIキー"
 temperature = 0.0
 
-# Configuration moins coûteuse pour l'exploration de dépôt
+# リポジトリ探索用の低コスト設定
 [llm.repo-explorer]
 model = "gpt-3.5-turbo"
 temperature = 0.2
 
-# Configuration pour la génération de code
+# コード生成用の設定
 [llm.code-gen]
 model = "gpt-4"
 temperature = 0.0
@@ -96,11 +96,11 @@ llm_config = 'repo-explorer'
 llm_config = 'code-gen'
 ```
 
-Dans cet exemple :
-- L'exploration de dépôt utilise un modèle moins coûteux car il s'agit principalement de comprendre et de naviguer dans le code
-- La génération de code utilise GPT-4 avec une limite de jetons plus élevée pour générer des blocs de code plus importants
-- La configuration par défaut reste disponible pour les autres tâches
+この例では：
+- リポジトリ探索は主にコードの理解とナビゲーションなので、低コストモデルを使用
+- コード生成は、より大きなコードブロックを生成するためにGPT-4とより高いトークン制限を使用
+- デフォルト設定は他のタスクで引き続き利用可能
 
 :::note
-Les configurations LLM personnalisées ne sont disponibles que lors de l'utilisation d'OpenHands en mode développement, via `main.py` ou `cli.py`. Lors de l'exécution via `docker run`, veuillez utiliser les options de configuration standard.
+カスタムLLM設定は、`main.py`または`cli.py`を介して開発モードでOpenHandsを使用する場合にのみ利用可能です。`docker run`を介して実行する場合は、標準の設定オプションを使用してください。
 :::
