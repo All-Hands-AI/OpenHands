@@ -22,7 +22,6 @@ from litellm.types.router import ModelInfo as RouterModelInfo
 from litellm.types.utils import CostPerToken, ModelResponse, Usage
 from litellm.types.utils import ModelInfo as UtilsModelInfo
 from litellm.utils import create_pretrained_tokenizer
-from openai.types.chat import ChatCompletion, ChatCompletionChunk
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message
@@ -264,10 +263,8 @@ class LLM(RetryMixin, DebugMixin):
             # if we mocked function calling, and we have tools, convert the response back to function calling format
             if mock_function_calling and mock_fncall_tools is not None:
                 assert len(resp.choices) == 1
-                if isinstance(
-                    resp.choices[0], (ChatCompletion.Choice, ChatCompletionChunk.Choice)
-                ):
-                    non_fncall_response_message = resp.choices[0].message
+                if isinstance(resp.choices[0], dict) and 'message' in resp.choices[0]:
+                    non_fncall_response_message = resp.choices[0]['message']
                     fn_call_messages_with_response = (
                         convert_non_fncall_messages_to_fncall_messages(
                             messages + [dict(non_fncall_response_message)],
@@ -276,7 +273,7 @@ class LLM(RetryMixin, DebugMixin):
                     )
                     fn_call_response_message = fn_call_messages_with_response[-1]
                     fn_call_response_message = dict(fn_call_response_message)
-                    resp.choices[0].message = fn_call_response_message
+                    resp.choices[0]['message'] = fn_call_response_message
 
             message_back: str = resp['choices'][0]['message']['content'] or ''
             tool_calls: list[ChatCompletionMessageToolCall] = resp['choices'][0][
