@@ -5207,6 +5207,36 @@
         "tr": "Bakiye Ekle",
         "de": "Guthaben hinzufügen"
     },
+    "PAYMENT$ADD_CREDIT": {
+        "en": "Add credit",
+        "ja": "クレジットを追加",
+        "zh-CN": "添加信用",
+        "zh-TW": "添加信用",
+        "ko-KR": "크레딧 추가",
+        "no": "Legg til kreditt",
+        "it": "Aggiungi credito",
+        "pt": "Adicionar crédito",
+        "es": "Añadir crédito",
+        "ar": "إضافة رصيد",
+        "fr": "Ajouter du crédit",
+        "tr": "Kredi ekle",
+        "de": "Guthaben hinzufügen"
+    },
+    "PAYMENT$MANAGE_CREDITS": {
+        "en": "Manage Credits",
+        "ja": "クレジットを管理",
+        "zh-CN": "管理信用",
+        "zh-TW": "管理信用",
+        "ko-KR": "크레딧 관리",
+        "no": "Administrer kreditt",
+        "it": "Gestisci crediti",
+        "pt": "Gerenciar créditos",
+        "es": "Administrar créditos",
+        "ar": "إدارة الرصيد",
+        "fr": "Gérer les crédits",
+        "tr": "Kredileri yönet",
+        "de": "Guthaben verwalten"
+    },
     "PAYMENT$SUCCESS": {
         "en": "Payment successful",
         "ja": "支払い成功",
