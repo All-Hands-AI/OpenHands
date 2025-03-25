@@ -266,7 +266,6 @@ class Memory:
         """Store runtime info (web hosts, ports, etc.)."""
         # e.g. { '127.0.0.1': 8080 }
         utc_now = datetime.now(timezone.utc)
-
         date = str(utc_now.date())
 
         if runtime.web_hosts or runtime.additional_agent_instructions:
