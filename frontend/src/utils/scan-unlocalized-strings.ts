@@ -3,10 +3,15 @@ import path from "path";
 
 // Patterns that indicate a string might need localization
 const STRING_PATTERNS = [
-  /['"`]([^'"`\n]+)['"`]/g, // Matches any quoted strings except empty ones and newlines
+  // Only match strings that are likely to be user-facing text
+  // Look for strings with spaces, punctuation, or multiple words
+  /['"`]([A-Z][a-z]+([ \t][A-Za-z][a-z]+)+)['"`]/g, // Capitalized phrases with spaces
+  /['"`]([A-Za-z][a-z]+([ \t][a-z]+){2,})['"`]/g, // Lowercase phrases with multiple spaces
+  /['"`]([^'"`\n]+\?|[^'"`\n]+\.|[^'"`\n]+!)['"`]/g, // Strings ending with punctuation
 ];
 
 // Patterns that indicate a string is already localized
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const LOCALIZED_PATTERNS = [
   /t\(['"`][\w$.]+['"`]\)/, // t('KEY')
   /useTranslation\(/, // useTranslation()
@@ -27,7 +32,7 @@ const IGNORE_PATHS = [
   "package.json",
   "package-lock.json",
   "tsconfig.json",
-  
+
   // Internal code that doesn't need localization
   "mocks", // Mock data
   "assets", // SVG paths and CSS classes
@@ -55,6 +60,25 @@ const IGNORE_PATHS = [
   "utils/settings-utils.ts", // Settings utilities
   "utils/suggestions", // Suggestion utilities
   "utils/utils.ts", // General utilities
+  "utils/base64-to-blob.ts", // Blob utilities
+  "utils/download-json.ts", // JSON download utilities
+  "utils/download-trajectory.ts", // Trajectory download utilities
+  "utils/format-ms.ts", // Time formatting
+  "utils/map-provider.ts", // Provider mapping
+  "utils/retrieve-axios-error-message.ts", // Error handling
+  "utils/verified-models.ts", // Model verification
+  "components/agent-status-map.constant.ts", // Agent status constants
+  "components/extension-icon-map.constant.tsx", // Icon mapping
+  "components/features/browser", // Browser components
+  "components/features/controls", // Control components
+  "components/features/terminal", // Terminal components
+  "components/features/jupyter", // Jupyter components
+  "components/features/file-explorer", // File explorer components
+  "components/shared/modals/security", // Security modals
+  "components/shared/modals/base-modal", // Base modal components
+  "components/shared/inputs", // Input components
+  "components/shared/loading-spinner.tsx", // Loading spinner
+  "query-client-config.ts", // Query client configuration
 ];
 
 // Extensions to scan
@@ -77,13 +101,33 @@ function isCommonDevelopmentString(str: string): boolean {
     /^[a-zA-Z0-9_-]+$/, // Simple identifiers
     /^\d+(\.\d+)?$/, // Numbers
     /^#[0-9a-fA-F]{3,6}$/, // Color codes
+    /^@[a-zA-Z0-9/-]+$/, // Import paths
+    /^#\/[a-zA-Z0-9/-]+$/, // Alias imports
+    /^[a-zA-Z0-9/-]+\/[a-zA-Z0-9/-]+$/, // Module paths
+    /^flex(\s+[a-zA-Z0-9-]+)*$/, // Tailwind flex classes
+    /^w-(\[[^\]]+\]|\S+)$/, // Tailwind width classes
+    /^h-(\[[^\]]+\]|\S+)$/, // Tailwind height classes
+    /^p-(\[[^\]]+\]|\S+)$/, // Tailwind padding classes
+    /^m-(\[[^\]]+\]|\S+)$/, // Tailwind margin classes
+    /^border(\s+[a-zA-Z0-9-]+)*$/, // Tailwind border classes
+    /^bg-(\[[^\]]+\]|\S+)$/, // Tailwind background classes
+    /^text-(\[[^\]]+\]|\S+)$/, // Tailwind text classes
+    /^rounded(\s+[a-zA-Z0-9-]+)*$/, // Tailwind rounded classes
+    /^gap-(\[[^\]]+\]|\S+)$/, // Tailwind gap classes
+    /^items-(\[[^\]]+\]|\S+)$/, // Tailwind items classes
+    /^justify-(\[[^\]]+\]|\S+)$/, // Tailwind justify classes
+    /^overflow-(\[[^\]]+\]|\S+)$/, // Tailwind overflow classes
+    /^transition(\s+[a-zA-Z0-9-]+)*$/, // Tailwind transition classes
+    /^hover:(\S+)$/, // Tailwind hover classes
+    /^focus-within:(\S+)$/, // Tailwind focus-within classes
+    /^data:image\/[a-zA-Z0-9;,]+$/, // Data URLs
+    /^application\/[a-zA-Z0-9-]+$/, // MIME types
+    /^mm:ss$/, // Time format
+    /^[a-zA-Z0-9]+\/[a-zA-Z0-9-]+$/, // Provider/model format
   ];
-  
-  return commonPatterns.some(pattern => pattern.test(str));
+
+  return commonPatterns.some((pattern) => pattern.test(str));
 }
-
-
-
 export function scanFileForUnlocalizedStrings(filePath: string): string[] {
   const content = fs.readFileSync(filePath, "utf-8");
   const unlocalizedStrings: string[] = [];
