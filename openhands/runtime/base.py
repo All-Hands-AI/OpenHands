@@ -69,6 +69,7 @@ STATUS_MESSAGES = {
     'STATUS$PREPARING_CONTAINER': 'Preparing container...',
     'STATUS$CONTAINER_STARTED': 'Container started.',
     'STATUS$WAITING_FOR_CLIENT': 'Waiting for client...',
+    'STATUS$SETTING_UP_WORKSPACE': 'Setting up workspace...',
 }
 
 
@@ -335,6 +336,11 @@ class Runtime(FileEditRuntimeMixin):
                 'github_token and selected_repository must be provided to clone a repository'
             )
 
+        if self.status_callback:
+            self.status_callback(
+                'info', 'STATUS$SETTING_UP_WORKSPACE', 'Setting up workspace...'
+            )
+
         github_token: SecretStr = git_provider_tokens[ProviderType.GITHUB].token
         url = f'https://{github_token.get_secret_value()}@github.com/{selected_repository}.git'
         dir_name = selected_repository.split('/')[-1]
@@ -368,6 +374,11 @@ class Runtime(FileEditRuntimeMixin):
         read_obs = self.read(FileReadAction(path=setup_script))
         if isinstance(read_obs, ErrorObservation):
             return
+
+        if self.status_callback:
+            self.status_callback(
+                'info', 'STATUS$SETTING_UP_WORKSPACE', 'Setting up workspace...'
+            )
 
         action = CmdRunAction(f'chmod +x {setup_script} && source {setup_script}')
         obs = self.run_action(action)

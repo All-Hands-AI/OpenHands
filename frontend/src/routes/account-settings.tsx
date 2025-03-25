@@ -288,7 +288,7 @@ function AccountSettings() {
                   startContent={
                     isLLMKeySet && <KeyStatusIcon isSet={isLLMKeySet} />
                   }
-                  placeholder={isLLMKeySet ? "**********" : ""}
+                  placeholder={isLLMKeySet ? "<hidden>" : ""}
                 />
               )}
 
@@ -297,7 +297,7 @@ function AccountSettings() {
                   testId="llm-api-key-help-anchor"
                   text="Don't know your API key?"
                   linkText="Click here for instructions"
-                  href="https://docs.all-hands.dev/modules/usage/llms"
+                  href="https://docs.all-hands.dev/modules/usage/installation#getting-an-api-key"
                 />
               )}
 
@@ -407,9 +407,9 @@ function AccountSettings() {
                       <KeyStatusIcon isSet={!!isGitHubTokenSet} />
                     )
                   }
-                  placeholder={isGitHubTokenSet ? "**********" : ""}
+                  placeholder={isGitHubTokenSet ? "<hidden>" : ""}
                 />
-                <p data-testId="github-token-help-anchor" className="text-xs">
+                <p data-testid="github-token-help-anchor" className="text-xs">
                   {" "}
                   Generate a token on{" "}
                   <b>
