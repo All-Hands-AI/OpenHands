@@ -242,31 +242,48 @@ export function ConversationCard({
       >
         <div className="space-y-2">
           {metrics?.cost !== null && (
-            <p>Total Cost: ${metrics.cost.toFixed(4)}</p>
+            <div className="rounded-md p-3 mb-3">
+              <p className="text-lg font-semibold text-neutral-200">
+                Total Cost: <span className="text-blue-400">${metrics.cost.toFixed(4)}</span>
+              </p>
+            </div>
           )}
           {metrics?.usage !== null && (
             <>
-              <p>Tokens Used:</p>
-              <ul className="list-inside space-y-1 ml-2">
-                <li>- Total Input Tokens: {metrics.usage.prompt_tokens.toLocaleString()}
-                  <ul className="ml-4 space-y-1">
-                    <li>- Cache Hit: {metrics.usage.cache_read_tokens.toLocaleString()}</li>
-                    <li>- Cache Write: {metrics.usage.cache_write_tokens.toLocaleString()}</li>
-                  </ul>
-                </li>
-                <li>
-                  - Total Output Tokens: {metrics.usage.completion_tokens.toLocaleString()}
-                </li>
-                <li>
-                  - Total Tokens:{" "}
-                  {(metrics.usage.prompt_tokens +
-                    metrics.usage.completion_tokens).toLocaleString()}
-                </li>
-              </ul>
+              <p className="text-lg font-semibold mb-2 text-neutral-200">Tokens Used:</p>
+              <div className="rounded-md p-3">
+                <div className="grid gap-3">
+                  <div className="flex justify-between items-center border-b border-neutral-700 pb-2">
+                    <span className="text-neutral-300">Total Input Tokens:</span>
+                    <span className="font-semibold text-green-400">{metrics.usage.prompt_tokens.toLocaleString()}</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 pl-4 text-sm">
+                    <span className="text-neutral-400">Cache Hit:</span>
+                    <span className="text-right text-neutral-300">{metrics.usage.cache_read_tokens.toLocaleString()}</span>
+                    <span className="text-neutral-400">Cache Write:</span>
+                    <span className="text-right text-neutral-300">{metrics.usage.cache_write_tokens.toLocaleString()}</span>
+                  </div>
+
+                  <div className="flex justify-between items-center border-b border-neutral-700 pb-2">
+                    <span className="text-neutral-300">Total Output Tokens:</span>
+                    <span className="font-semibold text-purple-400">{metrics.usage.completion_tokens.toLocaleString()}</span>
+                  </div>
+
+                  <div className="flex justify-between items-center pt-1">
+                    <span className="text-neutral-200 font-semibold">Total Tokens:</span>
+                    <span className="font-bold text-blue-400">
+                      {(metrics.usage.prompt_tokens + metrics.usage.completion_tokens).toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </>
           )}
           {!metrics?.cost && !metrics?.usage && (
-            <p className="text-neutral-400">No metrics data available</p>
+            <div className="bg-neutral-800 rounded-md p-4 text-center">
+              <p className="text-neutral-400">No metrics data available</p>
+            </div>
           )}
         </div>
       </BaseModal>
