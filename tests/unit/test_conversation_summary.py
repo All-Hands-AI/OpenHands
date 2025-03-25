@@ -139,7 +139,8 @@ async def test_update_conversation_title_if_needed_success():
     mock_conversation_store.save_metadata = AsyncMock()
 
     # Create a mock message action
-    mock_message = MessageAction(content='Can you help me with Python?')
+    mock_message = MagicMock(spec=MessageAction)
+    mock_message.content = 'Can you help me with Python?'
     mock_message.source = EventSource.USER
 
     mock_event_stream = MagicMock()
