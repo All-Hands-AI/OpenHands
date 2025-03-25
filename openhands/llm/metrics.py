@@ -129,6 +129,12 @@ class Metrics:
         # use the property so older picked objects that lack the field won't crash
         self.token_usages += other.token_usages
         self.response_latencies += other.response_latencies
+        
+        # Also merge accumulated token usage
+        self._accumulated_token_usage.prompt_tokens += other._accumulated_token_usage.prompt_tokens
+        self._accumulated_token_usage.completion_tokens += other._accumulated_token_usage.completion_tokens
+        self._accumulated_token_usage.cache_read_tokens += other._accumulated_token_usage.cache_read_tokens
+        self._accumulated_token_usage.cache_write_tokens += other._accumulated_token_usage.cache_write_tokens
 
     def get(self) -> dict:
         """Return the metrics in a dictionary."""
@@ -147,6 +153,11 @@ class Metrics:
         self._costs = []
         self._response_latencies = []
         self._token_usages = []
+        # Reset accumulated token usage
+        self._accumulated_token_usage.prompt_tokens = 0
+        self._accumulated_token_usage.completion_tokens = 0
+        self._accumulated_token_usage.cache_read_tokens = 0
+        self._accumulated_token_usage.cache_write_tokens = 0
 
     def log(self):
         """Log the metrics."""
