@@ -172,9 +172,6 @@ class Memory:
                 microagent_knowledge=microagent_knowledge,
                 content='Added workspace context',
                 date=self.runtime_info.date if self.runtime_info is not None else '',
-                utc_time=self.runtime_info.utc_time
-                if self.runtime_info is not None
-                else '',
             )
             return obs
         return None
@@ -271,17 +268,15 @@ class Memory:
         utc_now = datetime.now(timezone.utc)
 
         date = str(utc_now.date())
-        utc_time = str(utc_now.time())
 
         if runtime.web_hosts or runtime.additional_agent_instructions:
             self.runtime_info = RuntimeInfo(
                 available_hosts=runtime.web_hosts,
                 additional_agent_instructions=runtime.additional_agent_instructions,
                 date=date,
-                utc_time=utc_time,
             )
         else:
-            self.runtime_info = RuntimeInfo(date=date, utc_time=utc_time)
+            self.runtime_info = RuntimeInfo(date=date)
 
     def send_error_message(self, message_id: str, message: str):
         """Sends an error message if the callback function was provided."""
