@@ -110,7 +110,7 @@ Follow these steps to resolve the issue:
      * The functions you changed
    - If any tests fail, revise your implementation until all tests pass
 
-Be thorough in your exploration, testing, and reasoning. It's fine if your thinking process is lengthy - quality and completeness are more important than brevity.
+Be thorough in your exploration, testing, and reasoning. Use the "think" tool as you go through the steps above to brainstorm and document your thought process and decisions. It's fine if your thinking process is lengthy - quality and completeness are more important than brevity.
 """
 
     if RUN_WITH_BROWSING:
