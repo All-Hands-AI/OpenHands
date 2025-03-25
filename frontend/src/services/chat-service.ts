@@ -11,3 +11,21 @@ export function createChatMessage(
   };
   return event;
 }
+
+export function createUserFeedback(
+  feedbackType: "positive" | "negative",
+  targetType: "message" | "trajectory",
+  targetId?: number,
+  content?: string
+) {
+  const event = {
+    action: ActionType.USER_FEEDBACK,
+    args: { 
+      feedback_type: feedbackType,
+      target_type: targetType,
+      target_id: targetId,
+      content
+    },
+  };
+  return event;
+}

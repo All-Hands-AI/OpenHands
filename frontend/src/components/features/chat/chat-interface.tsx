@@ -4,19 +4,21 @@ import posthog from "posthog-js";
 import { useParams } from "react-router";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
 import { TrajectoryActions } from "../trajectory/trajectory-actions";
-import { createChatMessage } from "#/services/chat-service";
+import { createChatMessage, createUserFeedback } from "#/services/chat-service";
 import { InteractiveChatBox } from "./interactive-chat-box";
 import { addUserMessage } from "#/state/chat-slice";
 import { RootState } from "#/store";
 import { AgentState } from "#/types/agent-state";
 import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
-import { FeedbackModal } from "../feedback/feedback-modal";
 import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom";
 import { TypingIndicator } from "./typing-indicator";
 import { useWsClient } from "#/context/ws-client-provider";
 import { Messages } from "./messages";
 import { ChatSuggestions } from "./chat-suggestions";
 import { ActionSuggestions } from "./action-suggestions";
+import { useTranslation } from "react-i18next";
+import hotToast from "react-hot-toast";
+import { I18nKey } from "#/i18n/declaration";
 
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
@@ -43,10 +45,6 @@ export function ChatInterface() {
   const { messages } = useSelector((state: RootState) => state.chat);
   const { curAgentState } = useSelector((state: RootState) => state.agent);
 
-  const [feedbackPolarity, setFeedbackPolarity] = React.useState<
-    "positive" | "negative"
-  >("positive");
-  const [feedbackModalIsOpen, setFeedbackModalIsOpen] = React.useState(false);
   const [messageToSend, setMessageToSend] = React.useState<string | null>(null);
   const { selectedRepository, replayJson } = useSelector(
     (state: RootState) => state.initialQuery,
@@ -85,11 +83,20 @@ export function ChatInterface() {
     send(generateAgentStateChangeEvent(AgentState.STOPPED));
   };
 
-  const onClickShareFeedbackActionButton = async (
+  const { t } = useTranslation();
+
+  const onClickShareFeedbackActionButton = (
     polarity: "positive" | "negative",
   ) => {
-    setFeedbackModalIsOpen(true);
-    setFeedbackPolarity(polarity);
+    // Just send the feedback action
+    send(createUserFeedback(polarity, "trajectory"));
+    
+    // Show a toast notification to confirm feedback was sent
+    hotToast.success(
+      polarity === "positive" 
+        ? t("FEEDBACK$POSITIVE_SENT") || "Positive feedback sent" 
+        : t("FEEDBACK$NEGATIVE_SENT") || "Negative feedback sent"
+    );
   };
 
   const onClickExportTrajectoryButton = () => {
@@ -180,11 +187,7 @@ export function ChatInterface() {
         />
       </div>
 
-      <FeedbackModal
-        isOpen={feedbackModalIsOpen}
-        onClose={() => setFeedbackModalIsOpen(false)}
-        polarity={feedbackPolarity}
-      />
+      {/* Feedback modal removed */}
     </div>
   );
 }
