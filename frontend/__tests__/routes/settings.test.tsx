@@ -112,7 +112,7 @@ describe("Settings Screen", () => {
       });
     });
 
-    it("should set asterik placeholder if the GitHub token is set", async () => {
+    it("should set '<hidden>' placeholder if the GitHub token is set", async () => {
       getSettingsSpy.mockResolvedValue({
         ...MOCK_DEFAULT_USER_SETTINGS,
         github_token_is_set: true,
@@ -122,7 +122,7 @@ describe("Settings Screen", () => {
 
       await waitFor(() => {
         const input = screen.getByTestId("github-token-input");
-        expect(input).toHaveProperty("placeholder", "**********");
+        expect(input).toHaveProperty("placeholder", "<hidden>");
       });
     });
 
@@ -410,7 +410,7 @@ describe("Settings Screen", () => {
       });
     });
 
-    it("should set asterik placeholder if the LLM API key is set", async () => {
+    it("should set '<hidden>' placeholder if the LLM API key is set", async () => {
       getSettingsSpy.mockResolvedValueOnce({
         ...MOCK_DEFAULT_USER_SETTINGS,
         llm_api_key: "**********",
@@ -420,7 +420,7 @@ describe("Settings Screen", () => {
 
       await waitFor(() => {
         const input = screen.getByTestId("llm-api-key-input");
-        expect(input).toHaveProperty("placeholder", "**********");
+        expect(input).toHaveProperty("placeholder", "<hidden>");
       });
     });
 
