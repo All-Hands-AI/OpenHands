@@ -11,10 +11,10 @@ from openhands.storage.files import FileStore
 
 class GoogleCloudFileStore(FileStore):
     def __init__(self, bucket_name: str | None = None) -> None:
-        """
-        Create a new FileStore. If GOOGLE_APPLICATION_CREDENTIALS is defined in the
-        environment it will be used for authentication. Otherwise access will be
-        anonymous.
+        """Create a new FileStore.
+
+        If GOOGLE_APPLICATION_CREDENTIALS is defined in the environment it will be used
+        for authentication. Otherwise access will be anonymous.
         """
         if bucket_name is None:
             bucket_name = os.environ['GOOGLE_CLOUD_BUCKET_NAME']
