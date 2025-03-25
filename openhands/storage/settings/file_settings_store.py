@@ -19,6 +19,10 @@ class FileSettingsStore(SettingsStore):
     async def load(self) -> Settings | None:
         try:
             json_str = await call_sync_from_async(self.file_store.read, self.path)
+            if not isinstance(json_str, (str, bytes, bytearray)):
+                raise TypeError(
+                    f'Expected str, bytes or bytearray, got {type(json_str)}'
+                )
             kwargs = json.loads(json_str)
             settings = Settings(**kwargs)
             return settings

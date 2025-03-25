@@ -409,9 +409,16 @@ class AgentSession:
             memory.set_runtime_info(self.runtime)
 
             # loads microagents from repo/.openhands/microagents
-            microagents: list[BaseMicroAgent] = await call_sync_from_async(
+            microagents_obj = await call_sync_from_async(
                 self.runtime.get_microagents_from_selected_repo, selected_repository
             )
+            if not isinstance(microagents_obj, list):
+                raise TypeError(
+                    f'Expected list from get_microagents_from_selected_repo, got {type(microagents_obj)}'
+                )
+            microagents: list[BaseMicroAgent] = [
+                agent for agent in microagents_obj if isinstance(agent, BaseMicroAgent)
+            ]
             memory.load_user_workspace_microagents(microagents)
 
             if selected_repository and repo_directory:

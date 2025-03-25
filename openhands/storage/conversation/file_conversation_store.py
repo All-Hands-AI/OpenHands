@@ -37,6 +37,8 @@ class FileConversationStore(ConversationStore):
     async def get_metadata(self, conversation_id: str) -> ConversationMetadata:
         path = self.get_conversation_metadata_filename(conversation_id)
         json_str = await call_sync_from_async(self.file_store.read, path)
+        if not isinstance(json_str, (str, bytes, bytearray)):
+            raise TypeError(f'Expected str, bytes or bytearray, got {type(json_str)}')
 
         # Temp: force int to str to stop pydandic being, well... pedantic
         json_obj = json.loads(json_str)
