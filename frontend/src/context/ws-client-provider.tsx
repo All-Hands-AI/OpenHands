@@ -9,6 +9,8 @@ import {
   AssistantMessageAction,
   UserMessageAction,
 } from "#/types/core/actions";
+import { AgentStateChangeObservation } from "#/types/core/observations";
+import { useAgentState } from "#/hooks/state/use-agent-state";
 
 const isOpenHandsEvent = (event: unknown): event is OpenHandsParsedEvent =>
   typeof event === "object" &&
@@ -38,6 +40,11 @@ const isMessageAction = (
   event: OpenHandsParsedEvent,
 ): event is UserMessageAction | AssistantMessageAction =>
   isUserMessage(event) || isAssistantMessage(event);
+
+const isAgentStateChangeObseration = (
+  event: OpenHandsParsedEvent,
+): event is AgentStateChangeObservation =>
+  "observation" in event && event.observation === "agent_state_changed";
 
 export enum WsClientProviderStatus {
   CONNECTED,
@@ -104,6 +111,7 @@ export function WsClientProvider({
   conversationId,
   children,
 }: React.PropsWithChildren<WsClientProviderProps>) {
+  const { setAgentState } = useAgentState();
   const sioRef = React.useRef<Socket | null>(null);
   const [status, setStatus] = React.useState(
     WsClientProviderStatus.DISCONNECTED,
@@ -126,6 +134,10 @@ export function WsClientProvider({
   }
 
   function handleMessage(event: Record<string, unknown>) {
+    if (isOpenHandsEvent(event) && isAgentStateChangeObseration(event)) {
+      setAgentState(event.extras.agent_state);
+    }
+
     if (isOpenHandsEvent(event) && isMessageAction(event)) {
       messageRateHandler.record(new Date().getTime());
     }

@@ -1,10 +1,8 @@
 import React from "react";
-import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
 import { ExplorerTree } from "#/components/features/file-explorer/explorer-tree";
 import toast from "#/utils/toast";
-import { RootState } from "#/store";
 import { I18nKey } from "#/i18n/declaration";
 import { useListFiles } from "#/hooks/query/use-list-files";
 import { cn } from "#/utils/utils";
@@ -12,6 +10,7 @@ import { FileExplorerHeader } from "./file-explorer-header";
 import { useVSCodeUrl } from "#/hooks/query/use-vscode-url";
 import { BrandButton } from "../settings/brand-button";
 import VSCodeIcon from "#/assets/vscode-alt.svg?react";
+import { useAgentState } from "#/hooks/state/use-agent-state";
 
 interface FileExplorerProps {
   isOpen: boolean;
@@ -20,12 +19,11 @@ interface FileExplorerProps {
 
 export function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
   const { t } = useTranslation();
-
-  const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const { agentState } = useAgentState();
 
   const { data: paths, refetch, error } = useListFiles();
   const { data: vscodeUrl } = useVSCodeUrl({
-    enabled: !RUNTIME_INACTIVE_STATES.includes(curAgentState),
+    enabled: !RUNTIME_INACTIVE_STATES.includes(agentState),
   });
 
   const handleOpenVSCode = () => {
@@ -42,14 +40,14 @@ export function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
   };
 
   const refreshWorkspace = () => {
-    if (!RUNTIME_INACTIVE_STATES.includes(curAgentState)) {
+    if (!RUNTIME_INACTIVE_STATES.includes(agentState)) {
       refetch();
     }
   };
 
   React.useEffect(() => {
     refreshWorkspace();
-  }, [curAgentState]);
+  }, [agentState]);
 
   return (
     <div data-testid="file-explorer" className="relative h-full">
@@ -83,7 +81,7 @@ export function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
               type="button"
               variant="secondary"
               className="w-full text-content border-content"
-              isDisabled={RUNTIME_INACTIVE_STATES.includes(curAgentState)}
+              isDisabled={RUNTIME_INACTIVE_STATES.includes(agentState)}
               onClick={handleOpenVSCode}
               startContent={<VSCodeIcon width={20} height={20} />}
             >

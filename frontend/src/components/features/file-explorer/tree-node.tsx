@@ -1,12 +1,10 @@
 import React from "react";
-import { useSelector } from "react-redux";
-
 import { useFiles } from "#/context/files";
 import { cn } from "#/utils/utils";
 import { useListFiles } from "#/hooks/query/use-list-files";
 import { useListFile } from "#/hooks/query/use-list-file";
 import { Filename } from "./filename";
-import { RootState } from "#/store";
+import { useAgentState } from "#/hooks/state/use-agent-state";
 
 interface TreeNodeProps {
   path: string;
@@ -16,7 +14,7 @@ interface TreeNodeProps {
 function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
   const { setFileContent, setSelectedPath, files, selectedPath } = useFiles();
   const [isOpen, setIsOpen] = React.useState(defaultOpen);
-  const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const { agentState } = useAgentState();
 
   const isDirectory = path.endsWith("/");
 
@@ -39,7 +37,7 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
     if (selectedPath === path && !isDirectory) {
       refetch();
     }
-  }, [curAgentState, selectedPath, path, isDirectory]);
+  }, [agentState, selectedPath, path, isDirectory]);
 
   const fileParts = path.split("/");
   const filename =

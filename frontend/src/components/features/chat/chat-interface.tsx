@@ -23,6 +23,7 @@ import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { useGetTrajectory } from "#/hooks/mutation/use-get-trajectory";
 import { downloadTrajectory } from "#/utils/download-trajectory";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
+import { useAgentState } from "#/hooks/state/use-agent-state";
 
 function getEntryPoint(
   hasRepository: boolean | null,
@@ -35,13 +36,13 @@ function getEntryPoint(
 
 export function ChatInterface() {
   const { send, isLoadingMessages } = useWsClient();
+  const { agentState } = useAgentState();
   const dispatch = useDispatch();
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const { scrollDomToBottom, onChatBodyScroll, hitBottom } =
     useScrollToBottom(scrollRef);
 
   const { messages } = useSelector((state: RootState) => state.chat);
-  const { curAgentState } = useSelector((state: RootState) => state.agent);
 
   const [feedbackPolarity, setFeedbackPolarity] = React.useState<
     "positive" | "negative"
@@ -112,8 +113,8 @@ export function ChatInterface() {
   };
 
   const isWaitingForUserInput =
-    curAgentState === AgentState.AWAITING_USER_INPUT ||
-    curAgentState === AgentState.FINISHED;
+    agentState === AgentState.AWAITING_USER_INPUT ||
+    agentState === AgentState.FINISHED;
 
   return (
     <div className="h-full flex flex-col justify-between">
@@ -136,7 +137,7 @@ export function ChatInterface() {
           <Messages
             messages={messages}
             isAwaitingUserConfirmation={
-              curAgentState === AgentState.AWAITING_USER_CONFIRMATION
+              agentState === AgentState.AWAITING_USER_CONFIRMATION
             }
           />
         )}
@@ -161,7 +162,7 @@ export function ChatInterface() {
           />
 
           <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0">
-            {curAgentState === AgentState.RUNNING && <TypingIndicator />}
+            {agentState === AgentState.RUNNING && <TypingIndicator />}
           </div>
 
           {!hitBottom && <ScrollToBottomButton onClick={scrollDomToBottom} />}
@@ -171,10 +172,10 @@ export function ChatInterface() {
           onSubmit={handleSendMessage}
           onStop={handleStop}
           isDisabled={
-            curAgentState === AgentState.LOADING ||
-            curAgentState === AgentState.AWAITING_USER_CONFIRMATION
+            agentState === AgentState.LOADING ||
+            agentState === AgentState.AWAITING_USER_CONFIRMATION
           }
-          mode={curAgentState === AgentState.RUNNING ? "stop" : "submit"}
+          mode={agentState === AgentState.RUNNING ? "stop" : "submit"}
           value={messageToSend ?? undefined}
           onChange={setMessageToSend}
         />

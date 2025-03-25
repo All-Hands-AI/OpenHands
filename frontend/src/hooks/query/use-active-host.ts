@@ -1,16 +1,14 @@
 import { useQueries, useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import React from "react";
-import { useSelector } from "react-redux";
 import { openHands } from "#/api/open-hands-axios";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
-import { RootState } from "#/store";
 import { useConversation } from "#/context/conversation-context";
+import { useAgentState } from "../state/use-agent-state";
 
 export const useActiveHost = () => {
-  const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const { agentState } = useAgentState();
   const [activeHost, setActiveHost] = React.useState<string | null>(null);
-
   const { conversationId } = useConversation();
 
   const { data } = useQuery({
@@ -21,7 +19,7 @@ export const useActiveHost = () => {
       );
       return { hosts: Object.keys(response.data.hosts) };
     },
-    enabled: !RUNTIME_INACTIVE_STATES.includes(curAgentState),
+    enabled: !RUNTIME_INACTIVE_STATES.includes(agentState),
     initialData: { hosts: [] },
     meta: {
       disableToast: true,

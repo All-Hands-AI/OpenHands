@@ -2,7 +2,6 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { showErrorToast } from "#/utils/error-handler";
-import { RootState } from "#/store";
 import { AgentState } from "#/types/agent-state";
 import {
   AGENT_STATUS_MAP,
@@ -14,6 +13,8 @@ import {
 } from "#/context/ws-client-provider";
 import { useNotification } from "#/hooks/useNotification";
 import { browserTab } from "#/utils/browser-tab";
+import { useAgentState } from "#/hooks/state/use-agent-state";
+import { RootState } from "#/store";
 
 const notificationStates = [
   AgentState.AWAITING_USER_INPUT,
@@ -23,8 +24,8 @@ const notificationStates = [
 
 export function AgentStatusBar() {
   const { t, i18n } = useTranslation();
-  const { curAgentState } = useSelector((state: RootState) => state.agent);
   const { curStatusMessage } = useSelector((state: RootState) => state.status);
+  const { agentState } = useAgentState();
   const { status } = useWsClient();
   const { notify } = useNotification();
 
@@ -46,10 +47,10 @@ export function AgentStatusBar() {
       });
       return;
     }
-    if (curAgentState === AgentState.LOADING && message.trim()) {
+    if (agentState === AgentState.LOADING && message.trim()) {
       setStatusMessage(message);
     } else {
-      setStatusMessage(AGENT_STATUS_MAP[curAgentState].message);
+      setStatusMessage(AGENT_STATUS_MAP[agentState].message);
     }
   };
 
@@ -73,7 +74,7 @@ export function AgentStatusBar() {
   }, []);
 
   const [indicatorColor, setIndicatorColor] = React.useState<string>(
-    AGENT_STATUS_MAP[curAgentState].indicator,
+    AGENT_STATUS_MAP[agentState].indicator,
   );
 
   React.useEffect(() => {
@@ -81,12 +82,12 @@ export function AgentStatusBar() {
       setStatusMessage("Connecting...");
       setIndicatorColor(IndicatorColor.RED);
     } else {
-      setStatusMessage(AGENT_STATUS_MAP[curAgentState].message);
-      setIndicatorColor(AGENT_STATUS_MAP[curAgentState].indicator);
-      if (notificationStates.includes(curAgentState)) {
-        const message = t(AGENT_STATUS_MAP[curAgentState].message);
-        notify(t(AGENT_STATUS_MAP[curAgentState].message), {
-          body: t(`Agent state changed to ${curAgentState}`),
+      setStatusMessage(AGENT_STATUS_MAP[agentState].message);
+      setIndicatorColor(AGENT_STATUS_MAP[agentState].indicator);
+      if (notificationStates.includes(agentState)) {
+        const message = t(AGENT_STATUS_MAP[agentState].message);
+        notify(t(AGENT_STATUS_MAP[agentState].message), {
+          body: t(`Agent state changed to ${agentState}`),
           playSound: true,
         });
 
@@ -96,7 +97,7 @@ export function AgentStatusBar() {
         }
       }
     }
-  }, [curAgentState, status, notify, t]);
+  }, [agentState, status, notify, t]);
 
   return (
     <div className="flex flex-col items-center">

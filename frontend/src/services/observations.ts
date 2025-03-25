@@ -1,4 +1,3 @@
-import { setCurrentAgentState } from "#/state/agent-slice";
 import { setUrl, setScreenshotSrc } from "#/state/browser-slice";
 import store from "#/store";
 import { ObservationMessage } from "#/types/message";
@@ -37,9 +36,6 @@ export function handleObservationMessage(message: ObservationMessage) {
       if (message.extras?.url) {
         store.dispatch(setUrl(message.extras.url));
       }
-      break;
-    case ObservationType.AGENT_STATE_CHANGED:
-      store.dispatch(setCurrentAgentState(message.extras.agent_state));
       break;
     case ObservationType.DELEGATE:
       // TODO: better UI for delegation result (#2309)

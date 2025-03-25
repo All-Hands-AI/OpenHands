@@ -1,9 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
-import { useSelector } from "react-redux";
 import OpenHands from "#/api/open-hands";
 import { useConversation } from "#/context/conversation-context";
-import { RootState } from "#/store";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
+import { useAgentState } from "../state/use-agent-state";
 
 interface UseListFilesConfig {
   path?: string;
@@ -16,8 +15,8 @@ const DEFAULT_CONFIG: UseListFilesConfig = {
 
 export const useListFiles = (config: UseListFilesConfig = DEFAULT_CONFIG) => {
   const { conversationId } = useConversation();
-  const { curAgentState } = useSelector((state: RootState) => state.agent);
-  const isActive = !RUNTIME_INACTIVE_STATES.includes(curAgentState);
+  const { agentState } = useAgentState();
+  const isActive = !RUNTIME_INACTIVE_STATES.includes(agentState);
 
   return useQuery({
     queryKey: ["files", conversationId, config?.path],
