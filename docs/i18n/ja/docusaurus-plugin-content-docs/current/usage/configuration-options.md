@@ -1,387 +1,381 @@
-# Options de configuration
+# 設定オプション
 
-Ce guide détaille toutes les options de configuration disponibles pour OpenHands, vous aidant à personnaliser son comportement et à l'intégrer avec d'autres services.
+このガイドでは、OpenHandsで利用可能なすべての設定オプションを詳しく説明し、その動作をカスタマイズし、他のサービスと統合するのに役立ちます。
 
 :::note
-Si vous exécutez en [Mode GUI](https://docs.all-hands.dev/modules/usage/how-to/gui-mode), les paramètres disponibles dans l'interface utilisateur des paramètres auront toujours
-la priorité.
+[GUIモード](https://docs.all-hands.dev/modules/usage/how-to/gui-mode)で実行している場合、設定UIで利用可能な設定が常に優先されます。
 :::
 
 ---
 
-# Table des matières
+# 目次
 
-1. [Configuration de base](#core-configuration)
-   - [Clés API](#api-keys)
-   - [Espace de travail](#workspace)
-   - [Débogage et journalisation](#debugging-and-logging)
-   - [Trajectoires](#trajectories)
-   - [Stockage de fichiers](#file-store)
-   - [Gestion des tâches](#task-management)
-   - [Configuration du bac à sable](#sandbox-configuration)
-   - [Divers](#miscellaneous)
-2. [Configuration LLM](#llm-configuration)
-   - [Informations d'identification AWS](#aws-credentials)
-   - [Configuration de l'API](#api-configuration)
-   - [Fournisseur LLM personnalisé](#custom-llm-provider)
-   - [Embeddings](#embeddings)
-   - [Gestion des messages](#message-handling)
-   - [Sélection du modèle](#model-selection)
-   - [Nouvelles tentatives](#retrying)
-   - [Options avancées](#advanced-options)
-3. [Configuration de l'agent](#agent-configuration)
-   - [Configuration de la mémoire](#memory-configuration)
-   - [Configuration LLM](#llm-configuration-1)
-   - [Configuration de l'espace d'action](#actionspace-configuration)
-   - [Utilisation du micro-agent](#microagent-usage)
-4. [Configuration du bac à sable](#sandbox-configuration-1)
-   - [Exécution](#execution)
-   - [Image de conteneur](#container-image)
-   - [Mise en réseau](#networking)
-   - [Linting et plugins](#linting-and-plugins)
-   - [Dépendances et environnement](#dependencies-and-environment)
-   - [Évaluation](#evaluation)
-5. [Configuration de sécurité](#security-configuration)
-   - [Mode de confirmation](#confirmation-mode)
-   - [Analyseur de sécurité](#security-analyzer)
+1. [基本設定](#core-configuration)
+   - [APIキー](#api-keys)
+   - [ワークスペース](#workspace)
+   - [デバッグとロギング](#debugging-and-logging)
+   - [トラジェクトリ](#trajectories)
+   - [ファイルストア](#file-store)
+   - [タスク管理](#task-management)
+   - [サンドボックス設定](#sandbox-configuration)
+   - [その他](#miscellaneous)
+2. [LLM設定](#llm-configuration)
+   - [AWS認証情報](#aws-credentials)
+   - [API設定](#api-configuration)
+   - [カスタムLLMプロバイダー](#custom-llm-provider)
+   - [埋め込み](#embeddings)
+   - [メッセージ処理](#message-handling)
+   - [モデル選択](#model-selection)
+   - [リトライ](#retrying)
+   - [詳細オプション](#advanced-options)
+3. [エージェント設定](#agent-configuration)
+   - [メモリ設定](#memory-configuration)
+   - [LLM設定](#llm-configuration-1)
+   - [アクションスペース設定](#actionspace-configuration)
+   - [マイクロエージェントの使用](#microagent-usage)
+4. [サンドボックス設定](#sandbox-configuration-1)
+   - [実行](#execution)
+   - [コンテナイメージ](#container-image)
+   - [ネットワーキング](#networking)
+   - [リンティングとプラグイン](#linting-and-plugins)
+   - [依存関係と環境](#dependencies-and-environment)
+   - [評価](#evaluation)
+5. [セキュリティ設定](#security-configuration)
+   - [確認モード](#confirmation-mode)
+   - [セキュリティアナライザー](#security-analyzer)
 
 ---
 
-## Configuration de base
+## 基本設定
 
-Les options de configuration de base sont définies dans la section `[core]` du fichier `config.toml`.
+基本設定オプションは`config.toml`ファイルの`[core]`セクションで定義されます。
 
-**Clés API**
+**APIキー**
 - `e2b_api_key`
-  - Type : `str`
-  - Valeur par défaut : `""`
-  - Description : Clé API pour E2B
+  - 型: `str`
+  - デフォルト値: `""`
+  - 説明: E2BのAPIキー
 
 - `modal_api_token_id`
-  - Type : `str`
-  - Valeur par défaut : `""`
-  - Description : ID du jeton API pour Modal
+  - 型: `str`
+  - デフォルト値: `""`
+  - 説明: ModalのAPIトークンID
 
 - `modal_api_token_secret`
-  - Type : `str`
-  - Valeur par défaut : `""`
-  - Description : Secret du jeton API pour Modal
+  - 型: `str`
+  - デフォルト値: `""`
+  - 説明: ModalのAPIトークンシークレット
 
-**Espace de travail**
+**ワークスペース**
 - `workspace_base`
-  - Type : `str`
-  - Valeur par défaut : `"./workspace"`
-  - Description : Chemin de base pour l'espace de travail
+  - 型: `str`
+  - デフォルト値: `"./workspace"`
+  - 説明: ワークスペースのベースパス
 
 - `cache_dir`
-  - Type : `str`
-  - Valeur par défaut : `"/tmp/cache"`
-  - Description : Chemin du répertoire de cache
+  - 型: `str`
+  - デフォルト値: `"/tmp/cache"`
+  - 説明: キャッシュディレクトリのパス
 
-**Débogage et journalisation**
+**デバッグとロギング**
 - `debug`
-  - Type : `bool`
-  - Valeur par défaut : `false`
-  - Description : Activer le débogage
+  - 型: `bool`
+  - デフォルト値: `false`
+  - 説明: デバッグを有効にする
 
 - `disable_color`
-  - Type : `bool`
-  - Valeur par défaut : `false`
-  - Description : Désactiver la couleur dans la sortie du terminal
+  - 型: `bool`
+  - デフォルト値: `false`
+  - 説明: ターミナル出力のカラー表示を無効にする
 
-**Trajectoires**
+**トラジェクトリ**
 - `save_trajectory_path`
-  - Type : `str`
-  - Valeur par défaut : `"./trajectories"`
-  - Description : Chemin pour stocker les trajectoires (peut être un dossier ou un fichier). Si c'est un dossier, les trajectoires seront enregistrées dans un fichier nommé avec l'ID de session et l'extension .json, dans ce dossier.
+  - 型: `str`
+  - デフォルト値: `"./trajectories"`
+  - 説明: トラジェクトリを保存するパス（フォルダまたはファイル）。フォルダの場合、トラジェクトリはセッションIDと.json拡張子を持つファイルとしてそのフォルダに保存されます。
 
-**Stockage de fichiers**
+**ファイルストア**
 - `file_store_path`
-  - Type : `str`
-  - Valeur par défaut : `"/tmp/file_store"`
-  - Description : Chemin de stockage des fichiers
+  - 型: `str`
+  - デフォルト値: `"/tmp/file_store"`
+  - 説明: ファイルストアのパス
 
 - `file_store`
-  - Type : `str`
-  - Valeur par défaut : `"memory"`
-  - Description : Type de stockage de fichiers
+  - 型: `str`
+  - デフォルト値: `"memory"`
+  - 説明: ファイルストアのタイプ
 
 - `file_uploads_allowed_extensions`
-  - Type : `list of str`
-  - Valeur par défaut : `[".*"]`
-  - Description : Liste des extensions de fichiers autorisées pour les téléchargements
+  - 型: `list of str`
+  - デフォルト値: `[".*"]`
+  - 説明: アップロードを許可するファイル拡張子のリスト
 
 - `file_uploads_max_file_size_mb`
-  - Type : `int`
-  - Valeur par défaut : `0`
-  - Description : Taille maximale des fichiers pour les téléchargements, en mégaoctets
+  - 型: `int`
+  - デフォルト値: `0`
+  - 説明: アップロードの最大ファイルサイズ（メガバイト）
 
 - `file_uploads_restrict_file_types`
-  - Type : `bool`
-  - Valeur par défaut : `false`
-  - Description : Restreindre les types de fichiers pour les téléchargements de fichiers
+  - 型: `bool`
+  - デフォルト値: `false`
+  - 説明: ファイルアップロードのファイルタイプを制限する
 
-- `file_uploads_allowed_extensions`
-  - Type : `list of str`
-  - Valeur par défaut : `[".*"]`
-  - Description : Liste des extensions de fichiers autorisées pour les téléchargements
-
-**Gestion des tâches**
+**タスク管理**
 - `max_budget_per_task`
-  - Type : `float`
-  - Valeur par défaut : `0.0`
-  - Description : Budget maximal par tâche (0.0 signifie aucune limite)
+  - 型: `float`
+  - デフォルト値: `0.0`
+  - 説明: タスクごとの最大予算（0.0は制限なし）
 
 - `max_iterations`
-  - Type : `int`
-  - Valeur par défaut : `100`
-  - Description : Nombre maximal d'itérations
+  - 型: `int`
+  - デフォルト値: `100`
+  - 説明: 最大イテレーション数
 
-**Configuration du bac à sable**
+**サンドボックス設定**
 - `workspace_mount_path_in_sandbox`
-  - Type : `str`
-  - Valeur par défaut : `"/workspace"`
-  - Description : Chemin de montage de l'espace de travail dans le bac à sable
+  - 型: `str`
+  - デフォルト値: `"/workspace"`
+  - 説明: サンドボックス内のワークスペースマウントパス
 
 - `workspace_mount_path`
-  - Type : `str`
-  - Valeur par défaut : `""`
-  - Description : Chemin de montage de l'espace de travail
+  - 型: `str`
+  - デフォルト値: `""`
+  - 説明: ワークスペースマウントパス
 
 - `workspace_mount_rewrite`
-  - Type : `str`
-  - Valeur par défaut : `""`
-  - Description : Chemin pour réécrire le chemin de montage de l'espace de travail. Vous pouvez généralement ignorer cela, cela fait référence à des cas spéciaux d'exécution à l'intérieur d'un autre conteneur.
+  - 型: `str`
+  - デフォルト値: `""`
+  - 説明: ワークスペースマウントパスを書き換えるパス。通常は無視できます。別のコンテナ内での実行の特殊なケースを参照します。
 
-**Divers**
+**その他**
 - `run_as_openhands`
-  - Type : `bool`
-  - Valeur par défaut : `true`
-  - Description : Exécuter en tant qu'OpenHands
+  - 型: `bool`
+  - デフォルト値: `true`
+  - 説明: OpenHandsとして実行する
 
 - `runtime`
-  - Type : `str`
-  - Valeur par défaut : `"docker"`
-  - Description : Environnement d'exécution
+  - 型: `str`
+  - デフォルト値: `"docker"`
+  - 説明: 実行環境
 
 - `default_agent`
-  - Type : `str`
-  - Valeur par défaut : `"CodeActAgent"`
-  - Description : Nom de l'agent par défaut
+  - 型: `str`
+  - デフォルト値: `"CodeActAgent"`
+  - 説明: デフォルトのエージェント名
 
 - `jwt_secret`
-  - Type : `str`
-  - Valeur par défaut : `uuid.uuid4().hex`
-  - Description : Secret JWT pour l'authentification. Veuillez le définir sur votre propre valeur.
+  - 型: `str`
+  - デフォルト値: `uuid.uuid4().hex`
+  - 説明: 認証用のJWTシークレット。独自の値に設定してください。
 
-## Configuration LLM
+## LLM設定
 
-Les options de configuration LLM (Large Language Model) sont définies dans la section `[llm]` du fichier `config.toml`.
+LLM（大規模言語モデル）設定オプションは`config.toml`ファイルの`[llm]`セクションで定義されます。
 
-Pour les utiliser avec la commande docker, passez `-e LLM_<option>`. Exemple : `-e LLM_NUM_RETRIES`.
+dockerコマンドで使用する場合は、`-e LLM_<option>`として渡します。例：`-e LLM_NUM_RETRIES`
 
 :::note
-Pour les configurations de développement, vous pouvez également définir des configurations LLM personnalisées. Voir [Configurations LLM personnalisées](./llms/custom-llm-configs) pour plus de détails.
+開発設定では、カスタムLLM設定も定義できます。詳細は[カスタムLLM設定](./llms/custom-llm-configs)を参照してください。
 :::
 
-**Informations d'identification AWS**
+**AWS認証情報**
 - `aws_access_key_id`
-  - Type : `str`
-  - Valeur par défaut : `""`
-  - Description : ID de clé d'accès AWS
+  - 型: `str`
+  - デフォルト値: `""`
+  - 説明: AWSアクセスキーID
 
 - `aws_region_name`
-  - Type : `str`
-  - Valeur par défaut : `""`
-  - Description : Nom de la région AWS
+  - 型: `str`
+  - デフォルト値: `""`
+  - 説明: AWSリージョン名
 
 - `aws_secret_access_key`
-  - Type : `str`
-  - Valeur par défaut : `""`
-  - Description : Clé d'accès secrète AWS
+  - 型: `str`
+  - デフォルト値: `""`
+  - 説明: AWSシークレットアクセスキー
 
-**Configuration de l'API**
+**API設定**
 - `api_key`
-  - Type : `str`
-  - Valeur par défaut : `None`
-  - Description : Clé API à utiliser
+  - 型: `str`
+  - デフォルト値: `None`
+  - 説明: 使用するAPIキー
 
 - `base_url`
-  - Type : `str`
-  - Valeur par défaut : `""`
-  - Description : URL de base de l'API
+  - 型: `str`
+  - デフォルト値: `""`
+  - 説明: APIのベースURL
 
 - `api_version`
-  - Type : `str`
-  - Valeur par défaut : `""`
-  - Description : Version de l'API
+  - 型: `str`
+  - デフォルト値: `""`
+  - 説明: APIバージョン
 
 - `input_cost_per_token`
-  - Type : `float`
-  - Valeur par défaut : `0.0`
-  - Description : Coût par jeton d'entrée
+  - 型: `float`
+  - デフォルト値: `0.0`
+  - 説明: 入力トークンあたりのコスト
 
 - `output_cost_per_token`
-  - Type : `float`
-  - Valeur par défaut : `0.0`
-  - Description : Coût par jeton de sortie
+  - 型: `float`
+  - デフォルト値: `0.0`
+  - 説明: 出力トークンあたりのコスト
 
-**Fournisseur LLM personnalisé**
+**カスタムLLMプロバイダー**
 - `custom_llm_provider`
-  - Type : `str`
-  - Valeur par défaut : `""`
-  - Description : Fournisseur LLM personnalisé
+  - 型: `str`
+  - デフォルト値: `""`
+  - 説明: カスタムLLMプロバイダー
 
-**Embeddings**
+**埋め込み**
 - `embedding_base_url`
-  - Type : `str`
-  - Valeur par défaut : `""`
-  - Description : URL de base de l'API d'embedding
+  - 型: `str`
+  - デフォルト値: `""`
+  - 説明: 埋め込みAPIのベースURL
 
 - `embedding_deployment_name`
-  - Type : `str`
-  - Valeur par défaut : `""`
-  - Description : Nom du déploiement d'embedding
+  - 型: `str`
+  - デフォルト値: `""`
+  - 説明: 埋め込みデプロイメント名
 
 - `embedding_model`
-  - Type : `str`
-  - Valeur par défaut : `"local"`
-  - Description : Modèle d'embedding à utiliser
+  - 型: `str`
+  - デフォルト値: `"local"`
+  - 説明: 使用する埋め込みモデル
 
-**Gestion des messages**
+**メッセージ処理**
 - `max_message_chars`
-  - Type : `int`
-  - Valeur par défaut : `30000`
-  - Description : Le nombre maximum approximatif de caractères dans le contenu d'un événement inclus dans l'invite au LLM. Les observations plus grandes sont tronquées.
+  - 型: `int`
+  - デフォルト値: `30000`
+  - 説明: LLMプロンプトに含まれるイベントコンテンツの最大文字数（概算）。より大きな観察は切り捨てられます。
 
 - `max_input_tokens`
-  - Type : `int`
-  - Valeur par défaut : `0`
-  - Description : Nombre maximal de jetons d'entrée
+  - 型: `int`
+  - デフォルト値: `0`
+  - 説明: 最大入力トークン数
 
 - `max_output_tokens`
-  - Type : `int`
-  - Valeur par défaut : `0`
-  - Description : Nombre maximal de jetons de sortie
+  - 型: `int`
+  - デフォルト値: `0`
+  - 説明: 最大出力トークン数
 
-**Sélection du modèle**
+**モデル選択**
 - `model`
-  - Type : `str`
-  - Valeur par défaut : `"claude-3-5-sonnet-20241022"`
-  - Description : Modèle à utiliser
+  - 型: `str`
+  - デフォルト値: `"claude-3-5-sonnet-20241022"`
+  - 説明: 使用するモデル
 
-**Nouvelles tentatives**
+**リトライ**
 - `num_retries`
-  - Type : `int`
-  - Valeur par défaut : `8`
-  - Description : Nombre de nouvelles tentatives à effectuer
+  - 型: `int`
+  - デフォルト値: `8`
+  - 説明: リトライ回数
 
 - `retry_max_wait`
-  - Type : `int`
-  - Valeur par défaut : `120`
-  - Description : Temps d'attente maximal (en secondes) entre les tentatives de nouvelle tentative
+  - 型: `int`
+  - デフォルト値: `120`
+  - 説明: リトライ間の最大待機時間（秒）
 
 - `retry_min_wait`
-  - Type : `int`
-  - Valeur par défaut : `15`
-  - Description : Temps d'attente minimal (en secondes) entre les tentatives de nouvelle tentative
+  - 型: `int`
+  - デフォルト値: `15`
+  - 説明: リトライ間の最小待機時間（秒）
 
 - `retry_multiplier`
-  - Type : `float`
-  - Valeur par défaut : `2.0`
-  - Description : Multiplicateur pour le calcul du backoff exponentiel
+  - 型: `float`
+  - デフォルト値: `2.0`
+  - 説明: 指数バックオフ計算の乗数
 
-**Options avancées**
+**詳細オプション**
 - `drop_params`
-  - Type : `bool`
-  - Valeur par défaut : `false`
-  - Description : Supprimer tous les paramètres non mappés (non pris en charge) sans provoquer d'exception
+  - 型: `bool`
+  - デフォルト値: `false`
+  - 説明: マッピングされていない（サポートされていない）パラメータを例外を発生させずに削除する
 
 - `caching_prompt`
-  - Type : `bool`
-  - Valeur par défaut : `true`
-  - Description : Utiliser la fonctionnalité de mise en cache des invites si elle est fournie par le LLM et prise en charge
+  - 型: `bool`
+  - デフォルト値: `true`
+  - 説明: LLMによって提供され、サポートされている場合、プロンプトキャッシュ機能を使用する
 
 - `ollama_base_url`
-  - Type : `str`
-  - Valeur par défaut : `""`
-  - Description : URL de base pour l'API OLLAMA
+  - 型: `str`
+  - デフォルト値: `""`
+  - 説明: OLLAMA APIのベースURL
 
 - `temperature`
-  - Type : `float`
-  - Valeur par défaut : `0.0`
-  - Description : Température pour l'API
+  - 型: `float`
+  - デフォルト値: `0.0`
+  - 説明: APIの温度パラメータ
 
 - `timeout`
-  - Type : `int`
-  - Valeur par défaut : `0`
-  - Description : Délai d'expiration pour l'API
+  - 型: `int`
+  - デフォルト値: `0`
+  - 説明: APIのタイムアウト
 
 - `top_p`
-  - Type : `float`
-  - Valeur par défaut : `1.0`
-  - Description : Top p pour l'API
+  - 型: `float`
+  - デフォルト値: `1.0`
+  - 説明: APIのtop_pパラメータ
 
 - `disable_vision`
-  - Type : `bool`
-  - Valeur par défaut : `None`
-  - Description : Si le modèle est capable de vision, cette option permet de désactiver le traitement des images (utile pour réduire les coûts)
+  - 型: `bool`
+  - デフォルト値: `None`
+  - 説明: モデルがビジョン機能を持つ場合、この設定で画像処理を無効にできます（コスト削減に有用）
 
-## Configuration de l'agent
+## エージェント設定
 
-Les options de configuration de l'agent sont définies dans les sections `[agent]` et `[agent.<agent_name>]` du fichier `config.toml`.
+エージェント設定オプションは`config.toml`ファイルの`[agent]`および`[agent.<agent_name>]`セクションで定義されます。
 
-**Configuration de la mémoire**
+**メモリ設定**
 - `memory_enabled`
-  - Type : `bool`
-  - Valeur par défaut : `false`
-  - Description : Si la mémoire à long terme (embeddings) est activée
+  - 型: `bool`
+  - デフォルト値: `false`
+  - 説明: 長期メモリ（埋め込み）が有効かどうか
 
 - `memory_max_threads`
-  - Type : `int`
-  - Valeur par défaut : `3`
-  - Description : Le nombre maximum de threads indexant en même temps pour les embeddings
+  - 型: `int`
+  - デフォルト値: `3`
+  - 説明: 埋め込みのために同時にインデックスを作成する最大スレッド数
 
-**Configuration LLM**
+**LLM設定**
 - `llm_config`
-  - Type : `str`
-  - Valeur par défaut : `'your-llm-config-group'`
-  - Description : Le nom de la configuration LLM à utiliser
+  - 型: `str`
+  - デフォルト値: `'your-llm-config-group'`
+  - 説明: 使用するLLM設定の名前
 
-**Configuration de l'espace d'action**
+**アクションスペース設定**
 - `function_calling`
-  - Type : `bool`
-  - Valeur par défaut : `true`
-  - Description : Si l'appel de fonction est activé
+  - 型: `bool`
+  - デフォルト値: `true`
+  - 説明: 関数呼び出しが有効かどうか
 
 - `codeact_enable_browsing`
-  - Type : `bool`
-  - Valeur par défaut : `false`
-  - Description : Si le délégué de navigation est activé dans l'espace d'action (fonctionne uniquement avec l'appel de fonction)
+  - 型: `bool`
+  - デフォルト値: `false`
+  - 説明: アクションスペースでブラウジングデリゲートが有効かどうか（関数呼び出しでのみ機能）
 
 - `codeact_enable_llm_editor`
-  - Type : `bool`
-  - Valeur par défaut : `false`
-  - Description : Si l'éditeur LLM est activé dans l'espace d'action (fonctionne uniquement avec l'appel de fonction)
+  - 型: `bool`
+  - デフォルト値: `false`
+  - 説明: アクションスペースでLLMエディタが有効かどうか（関数呼び出しでのみ機能）
 
-**Utilisation du micro-agent**
+**マイクロエージェントの使用**
 - `enable_prompt_extensions`
-  - Type : `bool`
-  - Valeur par défaut : `true`
-  - Description : Indique si l'utilisation des micro-agents est activée ou non
+  - 型: `bool`
+  - デフォルト値: `true`
+  - 説明: マイクロエージェントの使用が有効かどうか
 
 - `disabled_microagents`
-  - Type : `list of str`
-  - Valeur par défaut : `None`
-  - Description : Liste des micro-agents à désactiver
+  - 型: `list of str`
+  - デフォルト値: `None`
+  - 説明: 無効にするマイクロエージェントのリスト
 
-### Exécution
+### 実行
 - `timeout`
-  - Type : `int`
-  - Valeur par défaut : `120`
-  - Description : Délai d'expiration du bac à sable, en secondes
+  - 型: `int`
+  - デフォルト値: `120`
+  - 説明: サンドボックスのタイムアウト（秒）
 
 - `user_id`
-  - Type : `int`
-  - Valeur par défaut : `1000`
-  - Description : ID de l'utilisateur du bac à sable
+  - 型: `int`
+  - デフォルト値: `1000`
+  - 説明: サンドボックスのユーザーID
