@@ -1,4 +1,4 @@
-import { setCurrentAgentState } from "#/state/agent-slice";
+import { useQueryClient } from "@tanstack/react-query";
 import { setUrl, setScreenshotSrc } from "#/state/browser-slice";
 import store from "#/store";
 import { ObservationMessage } from "#/types/message";
@@ -11,7 +11,7 @@ import {
   addAssistantObservation,
 } from "#/state/chat-slice";
 
-export function handleObservationMessage(message: ObservationMessage) {
+export function handleObservationMessage(message: ObservationMessage, queryClient?: ReturnType<typeof useQueryClient>) {
   switch (message.observation) {
     case ObservationType.RUN: {
       if (message.extras.hidden) break;
@@ -39,7 +39,9 @@ export function handleObservationMessage(message: ObservationMessage) {
       }
       break;
     case ObservationType.AGENT_STATE_CHANGED:
-      store.dispatch(setCurrentAgentState(message.extras.agent_state));
+      if (queryClient) {
+        queryClient.setQueryData(["_STATE", "agent"], message.extras.agent_state);
+      }
       break;
     case ObservationType.DELEGATE:
       // TODO: better UI for delegation result (#2309)

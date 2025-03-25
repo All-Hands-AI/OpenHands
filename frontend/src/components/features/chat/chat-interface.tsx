@@ -1,4 +1,5 @@
 import { useDispatch, useSelector } from "react-redux";
+import { useAgentState } from "#/hooks/query/use-agent-state";
 import React from "react";
 import posthog from "posthog-js";
 import { useParams } from "react-router";
@@ -41,7 +42,7 @@ export function ChatInterface() {
     useScrollToBottom(scrollRef);
 
   const { messages } = useSelector((state: RootState) => state.chat);
-  const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const curAgentState = useAgentState();
 
   const [feedbackPolarity, setFeedbackPolarity] = React.useState<
     "positive" | "negative"

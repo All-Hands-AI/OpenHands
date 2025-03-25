@@ -13,7 +13,7 @@ import { SettingsModal } from "#/components/shared/modals/settings/settings-moda
 import { useSettings } from "#/hooks/query/use-settings";
 import { ConversationPanel } from "../conversation-panel/conversation-panel";
 import { useEndSession } from "#/hooks/use-end-session";
-import { setCurrentAgentState } from "#/state/agent-slice";
+
 import { AgentState } from "#/types/agent-state";
 import { TooltipButton } from "#/components/shared/buttons/tooltip-button";
 import { ConversationPanelWrapper } from "../conversation-panel/conversation-panel-wrapper";
@@ -73,7 +73,7 @@ export function Sidebar() {
   ]);
 
   const handleEndSession = () => {
-    dispatch(setCurrentAgentState(AgentState.LOADING));
+    // Agent state will be updated through WebSocket
     endSession();
   };
 
