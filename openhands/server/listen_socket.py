@@ -58,6 +58,8 @@ async def connect(connection_id: str, environ):
         f'Connected to conversation {conversation_id} with connection_id {connection_id}. Replaying event stream...'
     )
     agent_state_changed = None
+    if event_stream is None:
+        raise ConnectionRefusedError('Failed to join conversation')
     async_stream = AsyncEventStreamWrapper(event_stream, latest_event_id + 1)
     async for event in async_stream:
         logger.info(f'oh_event: {event.__class__.__name__}')
@@ -76,7 +78,14 @@ async def connect(connection_id: str, environ):
 
 
 @sio.event
+async def oh_user_action(connection_id: str, data: dict):
+    await conversation_manager.send_to_event_stream(connection_id, data)
+
+
+@sio.event
 async def oh_action(connection_id: str, data: dict):
+    # TODO: Remove this handler once all clients are updated to use oh_user_action
+    # Keeping for backward compatibility with in-progress sessions
     await conversation_manager.send_to_event_stream(connection_id, data)
 
 

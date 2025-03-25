@@ -96,6 +96,7 @@ export function SettingsForm({ settings, models, onClose }: SettingsFormProps) {
             label="API Key"
             type="password"
             className="w-[680px]"
+            placeholder={isLLMKeySet ? "<hidden>" : ""}
             startContent={isLLMKeySet && <KeyStatusIcon isSet={isLLMKeySet} />}
           />
 

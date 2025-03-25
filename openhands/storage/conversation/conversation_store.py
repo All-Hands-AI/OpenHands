@@ -49,12 +49,12 @@ class ConversationStore(ABC):
         page_id: str | None = None,
         limit: int = 20,
     ) -> ConversationMetadataResultSet:
-        """Search conversations"""
+        """Search conversations."""
 
     async def get_all_metadata(
         self, conversation_ids: Iterable[str]
     ) -> list[ConversationMetadata]:
-        """Get metadata for multiple conversations in parallel"""
+        """Get metadata for multiple conversations in parallel."""
         return await wait_all([self.get_metadata(cid) for cid in conversation_ids])
 
     @classmethod
@@ -62,4 +62,4 @@ class ConversationStore(ABC):
     async def get_instance(
         cls, config: AppConfig, user_id: str | None, github_user_id: str | None
     ) -> ConversationStore:
-        """Get a store for the user represented by the token given"""
+        """Get a store for the user represented by the token given."""
