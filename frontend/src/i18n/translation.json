@@ -117,7 +117,8 @@
         "ar": "نسخ إلى الحافظة",
         "fr": "Copier dans le presse-papiers",
         "tr": "Panoya kopyala",
-        "de": "In die Zwischenablage kopieren"
+        "de": "In die Zwischenablage kopieren",
+        "fa": "کپی به کلیپ‌بورد"
     },
     "BUTTON$COPIED": {
         "en": "Copied to clipboard",
@@ -132,7 +133,8 @@
         "ar": "تم النسخ إلى الحافظة",
         "fr": "Copié dans le presse-papiers",
         "tr": "Panoya kopyalandı",
-        "de": "In die Zwischenablage kopiert"
+        "de": "In die Zwischenablage kopiert",
+        "fa": "در کلیپ‌بورد کپی شد"
     },
     "APP$TITLE": {
         "en": "App",
@@ -2870,7 +2872,8 @@
         "pt": "Ou",
         "ar": "أو",
         "no": "Eller",
-        "tr": "veya"
+        "tr": "veya",
+        "fa": "یا"
     },
     "SUGGESTIONS$TEST_COVERAGE": {
         "en": "Increase my test coverage",
@@ -2900,7 +2903,8 @@
         "pt": "Mesclar automaticamente PRs do Dependabot",
         "ar": "دمج تلقائي لطلبات سحب Dependabot",
         "no": "Auto-flett Dependabot PRs",
-        "tr": "Otomatik birleştirme"
+        "tr": "Otomatik birleştirme",
+        "fa": "ادغام خودکار درخواست‌های Dependabot"
     },
     "CHAT_INTERFACE$AGENT_STOPPED_MESSAGE": {
         "en": "Agent has stopped.",
@@ -4280,7 +4284,8 @@
         "it": "Screenshot del browser",
         "pt": "Captura de tela do navegador",
         "es": "Captura de pantalla del navegador",
-        "tr": "Tarayıcı ekran görüntüsü"
+        "tr": "Tarayıcı ekran görüntüsü",
+        "fa": "تصویر صفحه مرورگر"
     },
     "ERROR_TOAST$CLOSE_BUTTON_LABEL": {
         "en": "Close",
