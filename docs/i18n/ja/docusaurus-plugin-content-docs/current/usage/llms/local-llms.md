@@ -1,25 +1,23 @@
-
-
-# LLM local avec Ollama
+# OllamaによるローカルLLM
 
 :::warning
-Lors de l'utilisation d'un LLM local, OpenHands peut avoir des fonctionnalités limitées.
+ローカルLLMを使用する場合、OpenHandsの機能が制限される可能性があります。
 :::
 
-Assurez-vous que le serveur Ollama est opérationnel.
-Pour des instructions détaillées sur le démarrage, référez-vous à [ici](https://github.com/ollama/ollama).
+Ollamaサーバーが動作していることを確認してください。
+起動方法の詳細な手順については、[こちら](https://github.com/ollama/ollama)を参照してください。
 
-Ce guide suppose que vous avez démarré ollama avec `ollama serve`. Si vous exécutez ollama différemment (par exemple dans docker), les instructions peuvent nécessiter des modifications. Veuillez noter que si vous utilisez WSL, la configuration par défaut d'ollama bloque les requêtes provenant des conteneurs docker. Voir [ici](#configuring-ollama-service-wsl-fr).
+このガイドでは、`ollama serve`でollamaを起動していることを前提としています。ollamaを異なる方法（例：docker内）で実行している場合、手順の修正が必要になる場合があります。WSLを使用している場合、ollamaのデフォルト設定ではdockerコンテナからのリクエストがブロックされることに注意してください。[こちら](#configuring-ollama-service-wsl-ja)を参照してください。
 
-## Récupérer les modèles
+## モデルの取得
 
-Les noms des modèles Ollama peuvent être trouvés [ici](https://ollama.com/library). Pour un petit exemple, vous pouvez utiliser le modèle `codellama:7b`. Les modèles plus gros auront généralement de meilleures performances.
+Ollamaのモデル名は[こちら](https://ollama.com/library)で確認できます。小さな例として、`codellama:7b`モデルを使用できます。より大きなモデルは一般的により良いパフォーマンスを示します。
 
 ```bash
 ollama pull codellama:7b
 ```
 
-Vous pouvez vérifier quels modèles vous avez téléchargés comme ceci :
+ダウンロードしたモデルは以下のように確認できます：
 
 ```bash
 ~$ ollama list
@@ -29,11 +27,11 @@ mistral:7b-instruct-v0.2-q4_K_M eb14864c7427    4.4 GB  2 weeks ago
 starcoder2:latest               f67ae0f64584    1.7 GB  19 hours ago
 ```
 
-## Exécuter OpenHands avec Docker
+## Dockerを使用したOpenHandsの実行
 
-### Démarrer OpenHands
-Utilisez les instructions [ici](../getting-started) pour démarrer OpenHands en utilisant Docker.
-Mais lorsque vous exécutez `docker run`, vous devrez ajouter quelques arguments supplémentaires :
+### OpenHandsの起動
+Dockerを使用してOpenHandsを起動するには[こちら](../getting-started)の手順を使用してください。
+ただし、`docker run`を実行する際に、以下の追加引数が必要です：
 
 ```bash
 docker run # ...
@@ -42,24 +40,22 @@ docker run # ...
     # ...
 ```
 
-LLM_OLLAMA_BASE_URL est optionnel. Si vous le définissez, il sera utilisé pour afficher
-les modèles installés disponibles dans l'interface utilisateur.
+LLM_OLLAMA_BASE_URLはオプションです。設定すると、UIでインストール済みの利用可能なモデルを
+表示するために使用されます。
 
+### Webアプリケーションの設定
 
-### Configurer l'application Web
+`openhands`を実行する際、OpenHandsのUIで設定メニューから以下の項目を設定する必要があります：
+- モデルを"ollama/&lt;model-name&gt;"に設定
+- ベースURLを`http://host.docker.internal:11434`に設定
+- APIキーはオプションで、`ollama`などの任意の文字列を使用できます。
 
-Lors de l'exécution d'`openhands`, vous devrez définir les éléments suivants dans l'interface utilisateur d'OpenHands via les paramètres :
-- le modèle à "ollama/&lt;nom-du-modèle&gt;"
-- l'URL de base à `http://host.docker.internal:11434`
-- la clé API est optionnelle, vous pouvez utiliser n'importe quelle chaîne, comme `ollama`.
+## 開発モードでのOpenHandsの実行
 
+### ソースからのビルド
 
-## Exécuter OpenHands en mode développement
-
-### Compiler à partir du code source
-
-Utilisez les instructions dans [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md) pour compiler OpenHands.
-Assurez-vous que `config.toml` est présent en exécutant `make setup-config` qui en créera un pour vous. Dans `config.toml`, entrez ce qui suit :
+[Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md)の手順を使用してOpenHandsをビルドしてください。
+`make setup-config`を実行して`config.toml`が存在することを確認してください。これにより新しいファイルが作成されます。`config.toml`に以下を入力してください：
 
 ```
 [core]
@@ -68,89 +64,86 @@ workspace_base="./workspace"
 [llm]
 embedding_model="local"
 ollama_base_url="http://localhost:11434"
-
 ```
 
-Terminé ! Vous pouvez maintenant démarrer OpenHands avec : `make run`. Vous devriez maintenant pouvoir vous connecter à `http://localhost:3000/`
+完了です！これで`make run`でOpenHandsを起動できます。`http://localhost:3000/`に接続できるはずです。
 
-### Configurer l'application Web
+### Webアプリケーションの設定
 
-Dans l'interface utilisateur d'OpenHands, cliquez sur la roue des paramètres dans le coin inférieur gauche.
-Ensuite, dans le champ `Model`, entrez `ollama/codellama:7b`, ou le nom du modèle que vous avez récupéré précédemment.
-S'il n'apparaît pas dans la liste déroulante, activez `Advanced Settings` et tapez-le. Veuillez noter : vous avez besoin du nom du modèle tel qu'il est listé par `ollama list`, avec le préfixe `ollama/`.
+OpenHandsのUIで、左下の設定アイコンをクリックしてください。
+次に、`Model`フィールドに`ollama/codellama:7b`、または先ほど取得したモデル名を入力してください。
+ドロップダウンリストに表示されない場合は、`Advanced Settings`を有効にして入力してください。注意：`ollama list`で表示されるモデル名に`ollama/`プレフィックスを付けた名前が必要です。
 
-Dans le champ API Key, entrez `ollama` ou n'importe quelle valeur, puisque vous n'avez pas besoin d'une clé particulière.
+APIキーフィールドには、特定のキーは必要ないため、`ollama`または任意の値を入力してください。
 
-Dans le champ Base URL, entrez `http://localhost:11434`.
+Base URLフィールドには、`http://localhost:11434`を入力してください。
 
-Et maintenant vous êtes prêt à démarrer !
+これで準備完了です！
 
-## Configurer le service ollama (WSL) {#configuring-ollama-service-wsl-fr}
+## ollamaサービスの設定（WSL） {#configuring-ollama-service-wsl-ja}
 
-La configuration par défaut d'ollama dans WSL ne sert que localhost. Cela signifie que vous ne pouvez pas y accéder depuis un conteneur docker. Par ex. cela ne fonctionnera pas avec OpenHands. Testons d'abord qu'ollama fonctionne correctement.
+WSLでのollamaのデフォルト設定では、localhostのみを提供します。これは、dockerコンテナからアクセスできないことを意味します。例えば、OpenHandsでは動作しません。まず、ollamaが正しく動作しているかテストしましょう。
 
 ```bash
-ollama list # obtenir la liste des modèles installés
-curl http://localhost:11434/api/generate -d '{"model":"[NOM]","prompt":"hi"}'
-#ex. curl http://localhost:11434/api/generate -d '{"model":"codellama:7b","prompt":"hi"}'
-#ex. curl http://localhost:11434/api/generate -d '{"model":"codellama","prompt":"hi"}' #le tag est optionnel s'il n'y en a qu'un
+ollama list # インストール済みモデルのリストを取得
+curl http://localhost:11434/api/generate -d '{"model":"[NAME]","prompt":"hi"}'
+#例：curl http://localhost:11434/api/generate -d '{"model":"codellama:7b","prompt":"hi"}'
+#例：curl http://localhost:11434/api/generate -d '{"model":"codellama","prompt":"hi"}' #タグは1つしかない場合はオプション
 ```
 
-Une fois cela fait, testez qu'il autorise les requêtes "extérieures", comme celles provenant d'un conteneur docker.
+これが完了したら、dockerコンテナなどからの「外部」リクエストを許可するかテストします。
 
 ```bash
-docker ps # obtenir la liste des conteneurs docker en cours d'exécution, pour un test plus précis choisissez le conteneur sandbox OpenHands.
-docker exec [ID CONTENEUR] curl http://host.docker.internal:11434/api/generate -d '{"model":"[NOM]","prompt":"hi"}'
-#ex. docker exec cd9cc82f7a11 curl http://host.docker.internal:11434/api/generate -d '{"model":"codellama","prompt":"hi"}'
+docker ps # 実行中のdockerコンテナのリストを取得、より正確なテストのためにOpenHandsのsandboxコンテナを選択
+docker exec [CONTAINER ID] curl http://host.docker.internal:11434/api/generate -d '{"model":"[NAME]","prompt":"hi"}'
+#例：docker exec cd9cc82f7a11 curl http://host.docker.internal:11434/api/generate -d '{"model":"codellama","prompt":"hi"}'
 ```
 
-## Résoudre le problème
+## 問題の解決
 
-Maintenant, faisons en sorte que cela fonctionne. Modifiez /etc/systemd/system/ollama.service avec des privilèges sudo. (Le chemin peut varier selon la distribution Linux)
+では、これを動作させましょう。sudo権限で/etc/systemd/system/ollama.serviceを編集します。（パスはLinuxディストリビューションによって異なる場合があります）
 
 ```bash
 sudo vi /etc/systemd/system/ollama.service
 ```
 
-ou
+または
 
 ```bash
 sudo nano /etc/systemd/system/ollama.service
 ```
 
-Dans le bloc [Service], ajoutez ces lignes
+[Service]ブロックに以下の行を追加します
 
 ```
 Environment="OLLAMA_HOST=0.0.0.0:11434"
 Environment="OLLAMA_ORIGINS=*"
 ```
 
-Ensuite, sauvegardez, rechargez la configuration et redémarrez le service.
+次に、保存して設定をリロードし、サービスを再起動します。
 
 ```bash
 sudo systemctl daemon-reload
 sudo systemctl restart ollama
 ```
 
-Enfin, testez qu'ollama est accessible depuis le conteneur
+最後に、コンテナからollamaにアクセスできることをテストします
 
 ```bash
-ollama list # obtenir la liste des modèles installés
-docker ps # obtenir la liste des conteneurs docker en cours d'exécution, pour un test plus précis choisissez le conteneur sandbox OpenHands.
-docker exec [ID CONTENEUR] curl http://host.docker.internal:11434/api/generate -d '{"model":"[NOM]","prompt":"hi"}'
+ollama list # インストール済みモデルのリストを取得
+docker ps # 実行中のdockerコンテナのリストを取得、より正確なテストのためにOpenHandsのsandboxコンテナを選択
+docker exec [CONTAINER ID] curl http://host.docker.internal:11434/api/generate -d '{"model":"[NAME]","prompt":"hi"}'
 ```
 
+# LM StudioによるローカルLLM
 
-# LLM local avec LM Studio
+LM Studioの設定手順：
+1. LM Studioを開く
+2. ローカルサーバータブに移動
+3. "サーバーを起動"ボタンをクリック
+4. ドロップダウンリストから使用したいモデルを選択
 
-Étapes pour configurer LM Studio :
-1. Ouvrez LM Studio
-2. Allez dans l'onglet Serveur local.
-3. Cliquez sur le bouton "Démarrer le serveur".
-4. Sélectionnez le modèle que vous souhaitez utiliser dans la liste déroulante.
-
-
-Définissez les configurations suivantes :
+以下の設定を行います：
 ```bash
 LLM_MODEL="openai/lmstudio"
 LLM_BASE_URL="http://localhost:1234/v1"
@@ -167,9 +160,9 @@ docker run # ...
     # ...
 ```
 
-Vous devriez maintenant pouvoir vous connecter à `http://localhost:3000/`
+これで`http://localhost:3000/`に接続できるはずです。
 
-Dans l'environnement de développement, vous pouvez définir les configurations suivantes dans le fichier `config.toml` :
+開発環境では、`config.toml`ファイルで以下の設定を行うことができます：
 
 ```
 [core]
@@ -181,11 +174,11 @@ base_url="http://localhost:1234/v1"
 custom_llm_provider="openai"
 ```
 
-Terminé ! Vous pouvez maintenant démarrer OpenHands avec : `make run` sans Docker. Vous devriez maintenant pouvoir vous connecter à `http://localhost:3000/`
+完了です！これでDockerなしで`make run`を使用してOpenHandsを起動できます。`http://localhost:3000/`に接続できるはずです。
 
-# Note
+# 注意
 
-Pour WSL, exécutez les commandes suivantes dans cmd pour configurer le mode réseau en miroir :
+WSLの場合、cmdで以下のコマンドを実行してミラーネットワークモードを設定してください：
 
 ```
 python -c  "print('[wsl2]\nnetworkingMode=mirrored',file=open(r'%UserProfile%\.wslconfig','w'))"
