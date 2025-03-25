@@ -308,6 +308,8 @@ class ActionExecutor:
     ) -> CmdOutputObservation | ErrorObservation:
         assert self.bash_session is not None
         obs = await call_sync_from_async(self.bash_session.execute, action)
+        if not isinstance(obs, (CmdOutputObservation, ErrorObservation)):
+            raise TypeError(f"Expected CmdOutputObservation or ErrorObservation, got {type(obs)}")
         return obs
 
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:

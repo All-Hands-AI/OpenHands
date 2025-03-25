@@ -73,18 +73,25 @@ async def list_files(request: Request, conversation_id: str, path: str | None = 
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={'error': f'Error listing files: {e}'},
         )
+    if not isinstance(file_list, list):
+        raise TypeError(f"Expected list from runtime.list_files, got {type(file_list)}")
+        
     if path:
-        file_list = [os.path.join(path, f) for f in file_list]
+        file_list = [os.path.join(path, str(f)) for f in file_list]
 
-    file_list = [f for f in file_list if f not in FILES_TO_IGNORE]
+    file_list = [str(f) for f in file_list if str(f) not in FILES_TO_IGNORE]
 
     async def filter_for_gitignore(file_list, base_path):
         gitignore_path = os.path.join(base_path, '.gitignore')
         try:
             read_action = FileReadAction(gitignore_path)
             observation = await call_sync_from_async(runtime.run_action, read_action)
+            if not isinstance(observation, (FileReadObservation, ErrorObservation)):
+                raise TypeError(f"Expected FileReadObservation or ErrorObservation, got {type(observation)}")
+            if not hasattr(observation, 'content'):
+                raise TypeError(f"Observation {type(observation)} has no content attribute")
             spec = PathSpec.from_lines(
-                GitWildMatchPattern, observation.content.splitlines()
+                GitWildMatchPattern, str(observation.content).splitlines()
             )
         except Exception as e:
             logger.warning(e)
