@@ -261,7 +261,7 @@ each of which has a corresponding port:
     assert '<RUNTIME_INFORMATION>' in result
     assert 'example.com (port 8080)' in result
     assert 'You know everything about this runtime.' in result
-    assert "Today's datetime is 02/12/1232 (UTC)."
+    assert "Today's date is 02/12/1232 (UTC)."
 
     # Clean up
     os.remove(os.path.join(prompt_dir, 'additional_info.j2'))
