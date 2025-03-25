@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "test-utils";
 import { GitRepositorySelector } from "#/components/features/github/github-repo-selector";
 import OpenHands from "#/api/open-hands";
+import { Provider } from "#/types/settings";
 
 describe("GitRepositorySelector", () => {
   const onInputChangeMock = vi.fn();
@@ -15,7 +16,6 @@ describe("GitRepositorySelector", () => {
         onSelect={onSelectMock}
         publicRepositories={[]}
         userRepositories={[]}
-        selectedProvider="github"
       />,
     );
 
@@ -43,7 +43,6 @@ describe("GitRepositorySelector", () => {
         onSelect={onSelectMock}
         publicRepositories={[]}
         userRepositories={[]}
-        selectedProvider="github"
       />,
     );
 
@@ -55,11 +54,13 @@ describe("GitRepositorySelector", () => {
       {
         id: 1,
         full_name: "test/repo1",
+        git_provider: "github" as Provider,
         stargazers_count: 100,
       },
       {
         id: 2,
         full_name: "test/repo2",
+        git_provider: "github" as Provider,
         stargazers_count: 200,
       },
     ];
@@ -76,7 +77,6 @@ describe("GitRepositorySelector", () => {
         onSelect={onSelectMock}
         publicRepositories={[]}
         userRepositories={[]}
-        selectedProvider="github"
       />,
     );
 

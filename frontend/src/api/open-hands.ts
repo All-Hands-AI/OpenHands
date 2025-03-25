@@ -14,6 +14,7 @@ import {
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
 import { ApiSettings, PostApiSettings } from "#/types/settings";
+import { GitHubUser, GitRepository } from "#/types/github";
 
 class OpenHands {
   /**

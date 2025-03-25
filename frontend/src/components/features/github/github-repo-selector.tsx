@@ -11,6 +11,7 @@ import { I18nKey } from "#/i18n/declaration";
 import { setSelectedRepository } from "#/state/initial-query-slice";
 import { useConfig } from "#/hooks/query/use-config";
 import { sanitizeQuery } from "#/utils/sanitize-query";
+import { GitRepository } from "#/types/github";
 
 interface GitRepositorySelectorProps {
   onInputChange: (value: string) => void;

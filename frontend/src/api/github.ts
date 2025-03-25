@@ -1,3 +1,4 @@
+import { GitRepository } from "#/types/github";
 import { extractNextPageFromLink } from "#/utils/extract-next-page-from-link";
 import { openHands } from "./open-hands-axios";
 

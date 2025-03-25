@@ -1,3 +1,5 @@
+import { Provider } from "#/types/settings";
+
 interface GitHubErrorReponse {
   message: string;
   documentation_url: string;
@@ -16,6 +18,7 @@ interface GitHubUser {
 interface GitRepository {
   id: number;
   full_name: string;
+  git_provider: Provider;
   stargazers_count?: number;
   link_header?: string;
 }
