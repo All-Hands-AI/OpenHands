@@ -217,8 +217,8 @@ class ProviderHandler:
                     query, per_page, sort, order
                 )
                 all_repos.extend(service_repos)
-            except Exception as e:
-                print('except searching', e)
+            except Exception:
+                continue
 
         return all_repos
 
@@ -227,8 +227,8 @@ class ProviderHandler:
             return None
 
         provider_domains = {
-            ProviderType.GITHUB: "github.com",
-            ProviderType.GITLAB: "gitlab.com"
+            ProviderType.GITHUB: 'github.com',
+            ProviderType.GITLAB: 'gitlab.com',
         }
 
         for provider in self.provider_tokens:
@@ -239,10 +239,7 @@ class ProviderHandler:
                     if git_token and provider in provider_domains:
                         domain = provider_domains[provider]
                         return f'https://{git_token.get_secret_value()}@{domain}/{repository}.git'
-            except Exception as e:
-                # Log the error for debugging but continue trying other providers
-                from openhands.core.logger import openhands_logger as logger
-                logger.debug(f'Error getting remote URL for {provider}: {str(e)}')
+            except Exception:
                 continue
         return None
 
