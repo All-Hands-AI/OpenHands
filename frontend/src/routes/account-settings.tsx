@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
+import { I18nKey } from "#/i18n/declaration";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { HelpLink } from "#/components/features/settings/help-link";
 import { KeyStatusIcon } from "#/components/features/settings/key-status-icon";
@@ -161,7 +162,7 @@ function AccountSettings() {
     saveSettings(newSettings, {
       onSuccess: () => {
         handleCaptureConsent(userConsentsToAnalytics);
-        displaySuccessToast("Settings saved");
+        displaySuccessToast(t(I18nKey.SETTINGS$SAVED));
         setLlmConfigMode(isAdvancedSettingsSet ? "advanced" : "basic");
       },
       onError: (error) => {
@@ -187,7 +188,7 @@ function AccountSettings() {
 
     saveSettings(newSettings, {
       onSuccess: () => {
-        displaySuccessToast("Settings reset");
+        displaySuccessToast(t(I18nKey.SETTINGS$RESET));
         setResetSettingsModalIsOpen(false);
         setLlmConfigMode(isAdvancedSettingsSet ? "advanced" : "basic");
       },
@@ -261,7 +262,7 @@ function AccountSettings() {
                 <SettingsInput
                   testId="llm-custom-model-input"
                   name="llm-custom-model-input"
-                  label="Custom Model"
+                  label={t(I18nKey.SETTINGS$CUSTOM_MODEL)}
                   defaultValue={settings.LLM_MODEL}
                   placeholder="anthropic/claude-3-5-sonnet-20241022"
                   type="text"
@@ -297,8 +298,8 @@ function AccountSettings() {
               {!shouldHandleSpecialSaasCase && (
                 <HelpLink
                   testId="llm-api-key-help-anchor"
-                  text="Don't know your API key?"
-                  linkText="Click here for instructions"
+                  text={t(I18nKey.SETTINGS$DONT_KNOW_API_KEY)}
+                  linkText={t(I18nKey.SETTINGS$CLICK_FOR_INSTRUCTIONS)}
                   href="https://docs.all-hands.dev/modules/usage/llms"
                 />
               )}
@@ -365,7 +366,7 @@ function AccountSettings() {
                   <SettingsDropdownInput
                     testId="security-analyzer-input"
                     name="security-analyzer-input"
-                    label="Security Analyzer"
+                    label={t(I18nKey.SETTINGS$SECURITY_ANALYZER)}
                     items={
                       resources?.securityAnalyzers.map((analyzer) => ({
                         key: analyzer,
