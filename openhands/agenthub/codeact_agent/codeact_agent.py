@@ -116,9 +116,10 @@ class CodeActAgent(Agent):
         if latest_user_message and latest_user_message.content.strip() == '/exit':
             return AgentFinishAction()
 
-        # prepare what we want to send to the LLM
-
-        # Condense the events from the state.
+        # Condense the events from the state. If we get a view we'll pass those
+        # to the conversation manager for processing, but if we get a condensation
+        # event we'll just return that instead of an action. The controller will
+        # immediately ask the agent to step again with the new view.
         condensed_history: list[Event] = []
         match self.condenser.condensed_history(state):
             case View(events=events):

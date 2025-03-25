@@ -34,6 +34,11 @@ CONDENSER_REGISTRY: dict[type[CondenserConfig], type[Condenser]] = {}
 
 
 class View(BaseModel):
+    """Linearly ordered view of events.
+
+    Produced by a condenser to indicate the included events are ready to process as LLM input.
+    """
+
     events: list[Event]
 
     def __len__(self) -> int:
@@ -63,6 +68,8 @@ class View(BaseModel):
 
 
 class Condensation(BaseModel):
+    """Produced by a condenser to indicate the history has been condensed."""
+
     action: CondensationAction
 
 
@@ -73,10 +80,7 @@ class Condenser(ABC):
 
     Agents can use condensers to reduce the amount of events they need to consider when deciding which action to take. To use a condenser, agents can call the `condensed_history` method on the current `State` being considered and use the results instead of the full history.
 
-    Example usage::
-
-        condenser = Condenser.from_config(condenser_config)
-        events = condenser.condensed_history(state)
+    If the condenser returns a `Condensation` instead of a `View`, the agent should return `Condensation.action` instead of producing its own action. On the next agent step the condenser will use that condensation event to produce a new `View`.
     """
 
     def __init__(self):
@@ -125,7 +129,7 @@ class Condenser(ABC):
             events: A list of events representing the entire history of the agent.
 
         Returns:
-            list[Event]: An event sequence representing a condensed history of the agent.
+            View | Condensation: A condensed view of the events or an event indicating the history has been condensed.
         """
 
     def condensed_history(self, state: State) -> View | Condensation:
