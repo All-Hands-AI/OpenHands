@@ -226,14 +226,23 @@ class ProviderHandler:
         if not repository:
             return None
 
+        provider_domains = {
+            ProviderType.GITHUB: "github.com",
+            ProviderType.GITLAB: "gitlab.com"
+        }
+
         for provider in self.provider_tokens:
             try:
                 service = self._get_service(provider)
                 if service.does_repo_exist(repository):
                     git_token = self.provider_tokens[provider].token
-                    if git_token:
-                        return f'https://{git_token.get_secret_value()}@github.com/{repository}.git'
-            except Exception:
+                    if git_token and provider in provider_domains:
+                        domain = provider_domains[provider]
+                        return f'https://{git_token.get_secret_value()}@{domain}/{repository}.git'
+            except Exception as e:
+                # Log the error for debugging but continue trying other providers
+                from openhands.core.logger import openhands_logger as logger
+                logger.debug(f'Error getting remote URL for {provider}: {str(e)}')
                 continue
         return None
 
