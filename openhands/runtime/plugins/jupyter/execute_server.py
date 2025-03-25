@@ -49,14 +49,9 @@ def strip_ansi(o: str) -> str:
     return stripped
 
 
-from typing import TypeVar, cast
+from typing import cast
 from tornado.websocket import WebSocketClientConnection
 
-T = TypeVar('T')
-
-def assert_not_none(x: T | None) -> T:
-    assert x is not None
-    return x
 
 class JupyterKernel:
     def __init__(self, url_suffix: str, convid: str, lang: str = 'python') -> None:
@@ -135,7 +130,7 @@ class JupyterKernel:
                     else:
                         raise ConnectionRefusedError('Failed to connect to kernel')
 
-        kernel_id = assert_not_none(kernel_id)
+        assert kernel_id is not None
 
         # Connect to websocket
         ws_req = HTTPRequest(
@@ -150,12 +145,8 @@ class JupyterKernel:
         logging.info('Connected to kernel websocket')
 
         # Setup heartbeat
-        callback = self.heartbeat_callback
-        if callback:
-            try:
-                callback.stop()
-            except Exception:
-                pass
+        if self.heartbeat_callback:
+            self.heartbeat_callback.stop()
         callback = PeriodicCallback(
             self._send_heartbeat, self.heartbeat_interval
         )

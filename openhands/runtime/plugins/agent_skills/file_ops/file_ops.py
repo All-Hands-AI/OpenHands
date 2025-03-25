@@ -265,11 +265,11 @@ def scroll_down() -> None:
     global CURRENT_FILE, CURRENT_LINE, WINDOW
     _check_current_file()
 
-    with open(str(CURRENT_FILE)) as file:
-        total_lines = max(1, sum(1 for _ in file))
     if CURRENT_FILE is None:
         _output_error('No file open. Use the open_file function first.')
         return
+    with open(str(CURRENT_FILE)) as file:
+        total_lines = max(1, sum(1 for _ in file))
     CURRENT_LINE = _clamp(CURRENT_LINE + WINDOW, 1, total_lines)
     output = _cur_file_header(CURRENT_FILE, total_lines)
     output += _print_window(
@@ -287,11 +287,11 @@ def scroll_up() -> None:
     global CURRENT_FILE, CURRENT_LINE, WINDOW
     _check_current_file()
 
-    with open(str(CURRENT_FILE)) as file:
-        total_lines = max(1, sum(1 for _ in file))
     if CURRENT_FILE is None:
         _output_error('No file open. Use the open_file function first.')
         return
+    with open(str(CURRENT_FILE)) as file:
+        total_lines = max(1, sum(1 for _ in file))
     CURRENT_LINE = _clamp(CURRENT_LINE - WINDOW, 1, total_lines)
     output = _cur_file_header(CURRENT_FILE, total_lines)
     output += _print_window(
