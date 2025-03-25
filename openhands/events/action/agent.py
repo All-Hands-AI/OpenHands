@@ -133,4 +133,6 @@ class CondensationAction(Action):
 
     @property
     def message(self) -> str:
-        return f'Summary: {self.summary}'
+        if self.summary:
+            return f'Summary: {self.summary}'
+        return f'Condenser {self.condenser_cls} is dropping the events: {self.forgotten_event_ids}.'
