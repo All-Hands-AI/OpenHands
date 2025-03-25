@@ -26,6 +26,7 @@ from openhands.events.observation import (
 )
 from openhands.runtime.base import Runtime
 from openhands.server.auth import get_github_user_id, get_user_id
+from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.file_config import (
     FILES_TO_IGNORE,
     MAX_FILE_SIZE_MB,
@@ -34,11 +35,12 @@ from openhands.server.file_config import (
 )
 from openhands.server.shared import (
     ConversationStoreImpl,
-    _get_conversation_info,
     config,
     conversation_manager,
 )
 from openhands.storage.conversation.conversation_store import ConversationStore
+from openhands.storage.data_models.conversation_metadata import ConversationMetadata
+from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.utils.async_utils import call_sync_from_async
 
 app = APIRouter(prefix='/api/conversations/{conversation_id}')
@@ -414,3 +416,29 @@ async def get_cwd(
         cwd = os.path.join(cwd, repo_dir)
 
     return cwd
+
+
+async def _get_conversation_info(
+    conversation: ConversationMetadata,
+    is_running: bool,
+) -> ConversationInfo | None:
+    try:
+        title = conversation.title
+        if not title:
+            title = f'Conversation {conversation.conversation_id[:5]}'
+        return ConversationInfo(
+            conversation_id=conversation.conversation_id,
+            title=title,
+            last_updated_at=conversation.last_updated_at,
+            created_at=conversation.created_at,
+            selected_repository=conversation.selected_repository,
+            status=ConversationStatus.RUNNING
+            if is_running
+            else ConversationStatus.STOPPED,
+        )
+    except Exception as e:
+        logger.error(
+            f'Error loading conversation {conversation.conversation_id}: {str(e)}',
+            extra={'session_id': conversation.conversation_id},
+        )
+        return None
