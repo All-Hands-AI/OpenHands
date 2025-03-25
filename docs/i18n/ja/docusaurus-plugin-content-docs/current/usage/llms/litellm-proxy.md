@@ -8,10 +8,10 @@ OpenHandsでLiteLLMプロキシを使用するには、以下の手順が必要�
 
 1. LiteLLMプロキシサーバーを設定する（[LiteLLMのドキュメント](https://docs.litellm.ai/docs/proxy/quick_start)を参照）
 2. OpenHandsを実行する際、OpenHandsのUIで設定メニューから以下の項目を設定する必要があります：
-  * `Advanced Options`を有効にする
-  * `Custom Model`にプレフィックス`litellm_proxy/`と使用するモデルを設定（例：`litellm_proxy/anthropic.claude-3-5-sonnet-20241022-v2:0`）
-  * `Base URL`をLiteLLMプロキシのURL（例：`https://your-litellm-proxy.com`）に設定
-  * `API Key`をLiteLLMプロキシのAPIキーに設定
+  * `詳細設定`を有効にする
+  * `カスタムモデル`にプレフィックス`litellm_proxy/`と使用するモデルを設定（例：`litellm_proxy/anthropic.claude-3-5-sonnet-20241022-v2:0`）
+  * `ベースURL`をLiteLLMプロキシのURL（例：`https://your-litellm-proxy.com`）に設定
+  * `APIキー`をLiteLLMプロキシのAPIキーに設定
 
 ## サポートされているモデル
 
