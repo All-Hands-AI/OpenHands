@@ -81,7 +81,9 @@ def event_from_dict(data: dict[str, Any]) -> 'Event':
                     ]
                     # Set accumulated token usage if available
                     if 'accumulated_token_usage' in value:
-                        metrics._accumulated_token_usage = TokenUsage(**value.get('accumulated_token_usage'))
+                        metrics._accumulated_token_usage = TokenUsage(
+                            **value.get('accumulated_token_usage', {})
+                        )
                 value = metrics
             setattr(evt, '_' + key, value)
     return evt

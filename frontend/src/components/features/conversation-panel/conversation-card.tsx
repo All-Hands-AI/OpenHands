@@ -248,13 +248,11 @@ export function ConversationCard({
             <>
               <p>Tokens Used:</p>
               <ul className="list-inside space-y-1 ml-2">
-                <li>- Total Input Tokens: {metrics.usage.prompt_tokens}</li>
-                <li>
-                  - Input Tokens (Cache Hit): {metrics.usage.cache_read_tokens}
-                </li>
-                <li>
-                  - Input Tokens (Cache Write):{" "}
-                  {metrics.usage.cache_write_tokens}
+                <li>- Total Input Tokens: {metrics.usage.prompt_tokens}
+                  <ul className="ml-4 space-y-1">
+                    <li>Cache Hit: {metrics.usage.cache_read_tokens}</li>
+                    <li>Cache Write: {metrics.usage.cache_write_tokens}</li>
+                  </ul>
                 </li>
                 <li>
                   - Total Output Tokens: {metrics.usage.completion_tokens}

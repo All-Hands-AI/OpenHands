@@ -20,13 +20,13 @@ class ResponseLatency(BaseModel):
 class TokenUsage(BaseModel):
     """Metric tracking detailed token usage per completion call."""
 
-    model: str
-    prompt_tokens: int
-    completion_tokens: int
-    cache_read_tokens: int
-    cache_write_tokens: int
-    response_id: str
-    
+    model: str = Field(default='')
+    prompt_tokens: int = Field(default=0)
+    completion_tokens: int = Field(default=0)
+    cache_read_tokens: int = Field(default=0)
+    cache_write_tokens: int = Field(default=0)
+    response_id: str = Field(default='')
+
     def __add__(self, other: 'TokenUsage') -> 'TokenUsage':
         """Add two TokenUsage instances together."""
         return TokenUsage(
@@ -127,7 +127,7 @@ class Metrics:
             response_id=response_id,
         )
         self._token_usages.append(usage)
-        
+
         # Update accumulated token usage using the __add__ operator
         self._accumulated_token_usage = self._accumulated_token_usage + TokenUsage(
             model=self.model_name,
@@ -145,9 +145,11 @@ class Metrics:
         # use the property so older picked objects that lack the field won't crash
         self.token_usages += other.token_usages
         self.response_latencies += other.response_latencies
-        
+
         # Merge accumulated token usage using the __add__ operator
-        self._accumulated_token_usage = self._accumulated_token_usage + other._accumulated_token_usage
+        self._accumulated_token_usage = (
+            self._accumulated_token_usage + other._accumulated_token_usage
+        )
 
     def get(self) -> dict:
         """Return the metrics in a dictionary."""
