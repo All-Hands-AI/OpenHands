@@ -299,7 +299,7 @@ class EventStream:
         self._clean_up_subscriber(subscriber_id, callback_id)
 
     def add_event(self, event: Event, source: EventSource) -> None:
-        if hasattr(event, '_id') and event.id is not None:
+        if event.id != Event.INVALID_ID:
             raise ValueError(
                 f'Event already has an ID:{event.id}. It was probably added back to the EventStream from inside a handler, triggering a loop.'
             )
