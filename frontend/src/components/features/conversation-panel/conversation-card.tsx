@@ -255,7 +255,7 @@ export function ConversationCard({
 
                 {metrics?.usage !== null && (
                   <>
-                    <div className="flex justify-between items-center border-b border-neutral-700 pb-2">
+                    <div className="flex justify-between items-center pb-2">
                       <span>Total Input Tokens:</span>
                       <span className="font-semibold">
                         {metrics.usage.prompt_tokens.toLocaleString()}
