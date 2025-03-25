@@ -52,7 +52,7 @@ def test_bash_server(temp_dir, runtime_cls, run_as_openhands):
         assert obs.exit_code == -1
         assert 'Serving HTTP on 0.0.0.0 port 8080' in obs.content
         assert (
-            "[The command timed out after 1 seconds. You may wait longer to see additional output by sending empty command '', send other commands to interact with the current process, or send keys to interrupt/kill the command.]"
+            "[The command timed out after 1.0 seconds. You may wait longer to see additional output by sending empty command '', send other commands to interact with the current process, or send keys to interrupt/kill the command.]"
             in obs.metadata.suffix
         )
 
