@@ -100,7 +100,7 @@ class GitHubService(GitService):
         )
 
     async def get_repositories(
-        self, page: int, per_page: int, sort: str, installation_id: int | None
+        self, sort: str, installation_id: int | None
     ) -> list[Repository]:
         params = {'page': str(page), 'per_page': str(per_page)}
         if installation_id:

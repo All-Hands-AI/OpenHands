@@ -118,7 +118,7 @@ class GitLabService(GitService):
         return repos
 
     async def get_repositories(
-        self, page: int, per_page: int, sort: str, installation_id: int | None
+        self, sort: str, installation_id: int | None
     ) -> list[Repository]:
         if installation_id:
             return []  # Not implementing installation_token case yet

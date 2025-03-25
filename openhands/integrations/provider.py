@@ -198,7 +198,7 @@ class ProviderHandler:
             try:
                 service = self._get_service(provider)
                 service_repos = await service.get_repositories(
-                    page, per_page, sort, installation_id
+                    sort, installation_id
                 )
                 all_repos.extend(service_repos)
             except Exception:
