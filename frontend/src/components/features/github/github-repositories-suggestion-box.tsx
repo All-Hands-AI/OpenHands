@@ -11,9 +11,6 @@ import { sanitizeQuery } from "#/utils/sanitize-query";
 import { useDebounce } from "#/hooks/use-debounce";
 import { BrandButton } from "../settings/brand-button";
 import GitHubLogo from "#/assets/branding/github-logo.svg?react";
-import { ProviderSelector } from "./providers-selector";
-import { Provider } from "#/types/settings";
-import { useAuth } from "#/context/auth-context";
 
 interface GitRepositoriesSuggestionBoxProps {
   handleSubmit: () => void;
@@ -28,29 +25,15 @@ export function GitRepositoriesSuggestionBox({
 }: GitRepositoriesSuggestionBoxProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { providerTokensSet } = useAuth();
   const [searchQuery, setSearchQuery] = React.useState<string>("");
-  const [selectedProvider, setSelectedProvider] =
-    React.useState<Provider | null>(
-      providerTokensSet.length === 1 ? providerTokensSet[0] : null,
-    );
-
-  React.useEffect(() => {
-    if (providerTokensSet.length === 1) {
-      setSelectedProvider(providerTokensSet[0]);
-    } else {
-      setSelectedProvider(null);
-    }
-  }, [providerTokensSet]);
 
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   // TODO: Use `useQueries` to fetch all repositories in parallel
   const { data: appRepositories } = useAppRepositories();
-  const { data: userRepositories } = useUserRepositories(selectedProvider);
+  const { data: userRepositories } = useUserRepositories();
   const { data: searchedRepos } = useSearchRepositories(
     sanitizeQuery(debouncedSearchQuery),
-    selectedProvider,
   );
 
   const repositories =
@@ -73,23 +56,12 @@ export function GitRepositoriesSuggestionBox({
       title={t(I18nKey.LANDING$OPEN_REPO)}
       content={
         isLoggedIn ? (
-          <>
-            {providerTokensSet.length !== 1 && (
-              <ProviderSelector
-                selectedProvider={selectedProvider}
-                setSelectedProvider={setSelectedProvider}
-              />
-            )}
-            {selectedProvider && (
-              <GitRepositorySelector
-                onInputChange={setSearchQuery}
-                onSelect={handleSubmit}
-                publicRepositories={searchedRepos || []}
-                userRepositories={repositories}
-                selectedProvider={selectedProvider}
-              />
-            )}
-          </>
+          <GitRepositorySelector
+            onInputChange={setSearchQuery}
+            onSelect={handleSubmit}
+            publicRepositories={searchedRepos || []}
+            userRepositories={repositories}
+          />
         ) : (
           <BrandButton
             testId="connect-to-github"

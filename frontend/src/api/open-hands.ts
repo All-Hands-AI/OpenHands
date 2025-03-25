@@ -13,7 +13,7 @@ import {
   GetTrajectoryResponse,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
-import { ApiSettings, PostApiSettings, Provider } from "#/types/settings";
+import { ApiSettings, PostApiSettings } from "#/types/settings";
 
 class OpenHands {
   /**
@@ -320,7 +320,6 @@ class OpenHands {
   }
 
   static async searchGitHubRepositories(
-    selected_provider: Provider | null,
     query: string,
     per_page = 5,
   ): Promise<GitRepository[]> {
@@ -328,7 +327,6 @@ class OpenHands {
       "/api/user/search/repositories",
       {
         params: {
-          selected_provider,
           query,
           per_page,
         },

@@ -3,20 +3,18 @@ import React from "react";
 import { retrieveUserGitRepositories } from "#/api/github";
 import { useConfig } from "./use-config";
 import { useAuth } from "#/context/auth-context";
-import { Provider } from "#/types/settings";
 
-export const useUserRepositories = (selectedProvider: Provider | null) => {
+export const useUserRepositories = () => {
   const { providersAreSet } = useAuth();
   const { data: config } = useConfig();
 
   const repos = useInfiniteQuery({
-    queryKey: ["repositories", providersAreSet, selectedProvider],
+    queryKey: ["repositories", providersAreSet],
     queryFn: async ({ pageParam }) =>
-      retrieveUserGitRepositories(pageParam, 100, selectedProvider),
+      retrieveUserGitRepositories(pageParam, 100),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => lastPage.nextPage,
-    enabled:
-      providersAreSet && config?.APP_MODE === "oss" && !!selectedProvider,
+    enabled: providersAreSet && config?.APP_MODE === "oss",
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 15, // 15 minutes
   });
