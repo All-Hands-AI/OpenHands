@@ -58,6 +58,8 @@ async def connect(connection_id: str, environ):
         f'Connected to conversation {conversation_id} with connection_id {connection_id}. Replaying event stream...'
     )
     agent_state_changed = None
+    if event_stream is None:
+        raise ConnectionRefusedError('Failed to join conversation')
     async_stream = AsyncEventStreamWrapper(event_stream, latest_event_id + 1)
     async for event in async_stream:
         logger.info(f'oh_event: {event.__class__.__name__}')
