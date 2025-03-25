@@ -121,6 +121,8 @@ def initialize_repository_for_runtime(
         repo_directory = call_async_from_sync(
             runtime.clone_repo, GENERAL_TIMEOUT, github_token, selected_repository, None
         )
+        # Run setup script if it exists
+        runtime.maybe_run_setup_script()
 
     return repo_directory
 

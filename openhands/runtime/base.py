@@ -69,6 +69,7 @@ STATUS_MESSAGES = {
     'STATUS$PREPARING_CONTAINER': 'Preparing container...',
     'STATUS$CONTAINER_STARTED': 'Container started.',
     'STATUS$WAITING_FOR_CLIENT': 'Waiting for client...',
+    'STATUS$SETTING_UP_WORKSPACE': 'Setting up workspace...',
 }
 
 
@@ -335,6 +336,11 @@ class Runtime(FileEditRuntimeMixin):
         if not remote_repo_url:
             raise ValueError('Missing either Git token or valid repository')
 
+        if self.status_callback:
+            self.status_callback(
+                'info', 'STATUS$SETTING_UP_WORKSPACE', 'Setting up workspace...'
+            )
+
         dir_name = selected_repository.split('/')[-1]
 
         # Generate a random branch name to avoid conflicts
@@ -360,12 +366,28 @@ class Runtime(FileEditRuntimeMixin):
         self.run_action(action)
         return dir_name
 
+    def maybe_run_setup_script(self):
+        """Run .openhands/setup.sh if it exists in the workspace or repository."""
+        setup_script = '.openhands/setup.sh'
+        read_obs = self.read(FileReadAction(path=setup_script))
+        if isinstance(read_obs, ErrorObservation):
+            return
+
+        if self.status_callback:
+            self.status_callback(
+                'info', 'STATUS$SETTING_UP_WORKSPACE', 'Setting up workspace...'
+            )
+
+        action = CmdRunAction(f'chmod +x {setup_script} && source {setup_script}')
+        obs = self.run_action(action)
+        if isinstance(obs, CmdOutputObservation) and obs.exit_code != 0:
+            self.log('error', f'Setup script failed: {obs.content}')
+
     def get_microagents_from_selected_repo(
         self, selected_repository: str | None
     ) -> list[BaseMicroAgent]:
         """Load microagents from the selected repository.
         If selected_repository is None, load microagents from the current workspace.
-
         This is the main entry point for loading microagents.
         """
 

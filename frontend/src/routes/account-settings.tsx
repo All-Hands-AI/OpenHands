@@ -297,7 +297,7 @@ function AccountSettings() {
                   startContent={
                     isLLMKeySet && <KeyStatusIcon isSet={isLLMKeySet} />
                   }
-                  placeholder={isLLMKeySet ? "**********" : ""}
+                  placeholder={isLLMKeySet ? "<hidden>" : ""}
                 />
               )}
 
@@ -416,10 +416,9 @@ function AccountSettings() {
                       <KeyStatusIcon isSet={!!isGitHubTokenSet} />
                     )
                   }
-                  placeholder={isGitHubTokenSet ? "**********" : ""}
+                  placeholder={isGitHubTokenSet ? "<hidden>" : ""}
                 />
-
-                <p data-testId="github-token-help-anchor" className="text-xs">
+                <p data-testid="github-token-help-anchor" className="text-xs">
                   {" "}
                   Generate a token on{" "}
                   <b>

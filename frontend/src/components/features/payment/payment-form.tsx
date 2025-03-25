@@ -63,8 +63,8 @@ export function PaymentForm() {
           name="top-up-input"
           onChange={handleTopUpInputChange}
           type="text"
-          label="Top-up amount"
-          placeholder="Specify an amount to top up your credits"
+          label="Add funds"
+          placeholder="Specify an amount (USD) to add to your account"
           className="w-[680px]"
         />
 
