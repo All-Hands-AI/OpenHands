@@ -1,4 +1,3 @@
-import json
 import os
 import re
 import time
@@ -214,7 +213,7 @@ class BashSession:
         # Set history limit to a large number to avoid losing history
         # https://unix.stackexchange.com/questions/43414/unlimited-history-in-tmux
         self.session.set_option('history-limit', str(self.HISTORY_LIMIT), _global=True)
-        self.session.history_limit = str(self.HISTORY_LIMIT)
+        self.session.history_limit = self.HISTORY_LIMIT
         # We need to create a new pane because the initial pane's history limit is (default) 2000
         _initial_window = self.session.attached_window
         self.window = self.session.new_window(
@@ -227,25 +226,9 @@ class BashSession:
         _initial_window.kill_window()
 
         # Configure bash to use simple PS1 and disable PS2
-        if self.pane is not None:
-            # Properly escape the JSON in PS1 to ensure it can be parsed
-            ps1_json = json.dumps(
-                {
-                    'pid': '$!',
-                    'exit_code': '$?',
-                    'username': '\\u',
-                    'hostname': '\\h',
-                    'working_dir': '$(pwd)',
-                    'py_interpreter_path': '$(which python 2>/dev/null || echo "")',
-                }
-            )
-            # Build the PS1 command with proper escaping
-            ps1_command = (
-                'export PROMPT_COMMAND=\'export PS1="\\n###PS1JSON###\\n'
-                f'{ps1_json}'
-                '\\n###PS1END###\\n"\'; export PS2=""\''
-            )
-            self.pane.send_keys(ps1_command)
+        self.pane.send_keys(
+            f'export PROMPT_COMMAND=\'export PS1="{self.PS1}"\'; export PS2=""'
+        )
         time.sleep(0.1)  # Wait for command to take effect
         self._clear_screen()
 
@@ -269,9 +252,7 @@ class BashSession:
             map(
                 # avoid double newlines
                 lambda line: line.rstrip(),
-                self.pane.cmd('capture-pane', '-J', '-pS', '-').stdout
-                if self.pane is not None
-                else [],
+                self.pane.cmd('capture-pane', '-J', '-pS', '-').stdout,
             )
         )
         return content
@@ -295,10 +276,9 @@ class BashSession:
 
     def _clear_screen(self) -> None:
         """Clear the tmux pane screen and history."""
-        if self.pane is not None:
-            self.pane.send_keys('C-l', enter=False)
-            time.sleep(0.1)
-            self.pane.cmd('clear-history')
+        self.pane.send_keys('C-l', enter=False)
+        time.sleep(0.1)
+        self.pane.cmd('clear-history')
 
     def _get_command_output(
         self,
@@ -571,21 +551,20 @@ class BashSession:
         # Send actual command/inputs to the pane
         if command != '':
             is_special_key = self._is_special_key(command)
-            if self.pane is not None:
-                if is_input:
-                    logger.debug(f'SENDING INPUT TO RUNNING PROCESS: {command!r}')
-                    self.pane.send_keys(
-                        command,
-                        enter=not is_special_key,
-                    )
-                else:
-                    # convert command to raw string
-                    command = escape_bash_special_chars(command)
-                    logger.debug(f'SENDING COMMAND: {command!r}')
-                    self.pane.send_keys(
-                        command,
-                        enter=not is_special_key,
-                    )
+            if is_input:
+                logger.debug(f'SENDING INPUT TO RUNNING PROCESS: {command!r}')
+                self.pane.send_keys(
+                    command,
+                    enter=not is_special_key,
+                )
+            else:
+                # convert command to raw string
+                command = escape_bash_special_chars(command)
+                logger.debug(f'SENDING COMMAND: {command!r}')
+                self.pane.send_keys(
+                    command,
+                    enter=not is_special_key,
+                )
 
         # Loop until the command completes or times out
         while should_continue():
