@@ -25,7 +25,7 @@ import {
   displayErrorToast,
   displaySuccessToast,
 } from "#/utils/custom-toast-handlers";
-import { PostSettings, ProviderOptions } from "#/types/settings";
+import { ProviderOptions } from "#/types/settings";
 import { useAuth } from "#/context/auth-context";
 
 const REMOTE_RUNTIME_OPTIONS = [
@@ -175,28 +175,11 @@ function AccountSettings() {
   };
 
   const handleReset = () => {
-    const newSettings: Partial<PostSettings> = {
-      ...DEFAULT_SETTINGS,
-      LLM_API_KEY: "", // reset LLM API key
-      provider_tokens: {
-        github: "",
-        gitlab: "",
-      },
-    };
-
-    // we don't want the user to be able to modify these settings in SaaS
-    // and we should make sure they aren't included in the reset
-    if (shouldHandleSpecialSaasCase) {
-      delete newSettings.LLM_API_KEY;
-      delete newSettings.LLM_BASE_URL;
-      delete newSettings.LLM_MODEL;
-    }
-
-    saveSettings(newSettings, {
+    saveSettings(null, {
       onSuccess: () => {
         displaySuccessToast("Settings reset");
         setResetSettingsModalIsOpen(false);
-        setLlmConfigMode(isAdvancedSettingsSet ? "advanced" : "basic");
+        setLlmConfigMode("basic");
       },
     });
   };

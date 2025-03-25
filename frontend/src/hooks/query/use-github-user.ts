@@ -5,13 +5,11 @@ import { useConfig } from "./use-config";
 import OpenHands from "#/api/open-hands";
 import { useAuth } from "#/context/auth-context";
 import { useLogout } from "../mutation/use-logout";
-import { useSaveSettings } from "../mutation/use-save-settings";
 
 export const useGitHubUser = () => {
   const { providersAreSet, providerTokensSet } = useAuth();
-  const { setProvidersAreSet } = useAuth();
   const { mutateAsync: logout } = useLogout();
-  const { mutate: saveUserSettings } = useSaveSettings();
+
   const { data: config } = useConfig();
 
   const user = useQuery({
@@ -36,11 +34,7 @@ export const useGitHubUser = () => {
   }, [user.data]);
 
   const handleLogout = async () => {
-    if (config?.APP_MODE === "saas") await logout();
-    else {
-      await saveUserSettings({ unset_tokens: true });
-      setProvidersAreSet(false);
-    }
+    await logout();
     posthog.reset();
   };
 

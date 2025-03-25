@@ -107,7 +107,6 @@ class POSTSettingsModel(Settings):
     Settings for POST requests
     """
 
-    unset_tokens: bool | None = None
     # Override provider_tokens to accept string tokens from frontend
     provider_tokens: dict[str, str] = {}
 

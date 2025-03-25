@@ -208,14 +208,6 @@ export const handlers = [
       let newSettings: Partial<PostApiSettings> = {};
       if (typeof body === "object") {
         newSettings = { ...body };
-
-        if (newSettings.provider_tokens_set) {
-          newSettings.provider_tokens_set = {
-            github: false,
-            gitlab: false,
-          };
-          delete newSettings.unset_tokens;
-        }
       }
 
       const fullSettings = {
@@ -311,4 +303,10 @@ export const handlers = [
   }),
 
   http.post("/api/logout", () => HttpResponse.json(null, { status: 200 })),
+
+  http.post("/api/reset-settings", async () => {
+    await delay();
+    MOCK_USER_PREFERENCES.settings = { ...MOCK_DEFAULT_USER_SETTINGS };
+    return HttpResponse.json(null, { status: 200 });
+  }),
 ];
