@@ -1,88 +1,54 @@
----
-sidebar_position: 2
----
-
-# 🔧 インストール
-
-OpenHandsをインストールする方法は複数あります。以下のオプションから選択してください：
-
-## Dockerを使用する（推奨）
-
-最も簡単な方法は、公式のDockerイメージを使用することです：
-
-```bash
-docker pull ghcr.io/all-hands-ai/openhands:latest
-```
-
-そして、以下のコマンドで実行します：
-
-```bash
-WORKSPACE_BASE=$(pwd)/workspace
-docker run -it \
-    --pull=always \
-    -e SANDBOX_USER_ID=$(id -u) \
-    -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
-    -v $WORKSPACE_BASE:/opt/workspace_base \
-    -v /var/run/docker.sock:/var/run/docker.sock \
-    -p 3000:3000 \
-    --add-host host.docker.internal:host-gateway \
-    --name openhands-app-$(date +%Y%m%d%H%M%S) \
-    ghcr.io/all-hands-ai/openhands:latest
-```
-
-## ソースからビルドする
-
-開発版を使用したい場合は、ソースからビルドすることができます：
-
-```bash
-# リポジトリのクローン
-git clone https://github.com/All-Hands-AI/OpenHands.git
-cd OpenHands
-
-# 依存関係のインストール
-make build
-
-# 開発サーバーの起動
-make dev
-```
-
-## Pythonパッケージとして使用
-
-OpenHandsをPythonパッケージとして使用することもできます：
-
-```bash
-pip install openhands
-```
-
-そして、以下のようにPythonコードで使用します：
-
-```python
-from openhands import OpenHandsClient
-
-client = OpenHandsClient(
-    api_key="your-api-key",
-    model="gpt-4",
-    workspace="/path/to/workspace"
-)
-
-result = client.execute_task("新しいPythonファイルを作成してください")
-print(result.output)
-```
+# インストール
 
 ## システム要件
 
-- Docker 26.0.0以降（Dockerを使用する場合）
-- Python 3.9以降（Pythonパッケージとして使用する場合）
-- Linux、macOS、またはWindows（WSL2）
-- 最小4GB RAM
-- インターネット接続（LLMとの通信用）
+* Docker 26.0.0+ または Docker Desktop 4.31.0+
+* Linux または Mac OS を使用する必要があります
+  * Windowsを使用している場合は、[WSL](https://learn.microsoft.com/en-us/windows/wsl/install)を使用する必要があります
 
-## トラブルシューティング
+## アプリケーションの起動
 
-インストール中に問題が発生した場合は、以下を確認してください：
+OpenHandsを実行する最も簡単な方法は、Dockerを使用することです：
 
-1. Dockerが正しくインストールされ、実行されていることを確認
-2. 必要なポートが利用可能であることを確認（デフォルトでは3000番ポート）
-3. システム要件を満たしていることを確認
+```bash
+docker pull docker.all-hands.dev/all-hands-ai/runtime:0.29-nikolaik
 
-詳細なトラブルシューティングについては、[トラブルシューティングガイド](/ja/modules/usage/troubleshooting/troubleshooting)を参照してください。
+docker run -it --rm --pull=always \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.29-nikolaik \
+    -e LOG_ALL_EVENTS=true \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    -p 3000:3000 \
+    --add-host host.docker.internal:host-gateway \
+    --name openhands-app \
+    docker.all-hands.dev/all-hands-ai/openhands:0.29
+```
+
+また、[ヘッドレススクリプトモード](https://docs.all-hands.dev/modules/usage/how-to/headless-mode)、[対話型CLI](https://docs.all-hands.dev/modules/usage/how-to/cli-mode)、または[OpenHands GitHub Action](https://docs.all-hands.dev/modules/usage/how-to/github-action)としても実行できます。
+
+## 設定
+
+上記のコマンドを実行すると、OpenHandsは[http://localhost:3000](http://localhost:3000)で実行されています。
+
+OpenHandsを起動すると、設定モーダルが表示されます。`LLMプロバイダー`と`LLMモデル`を選択し、対応する`APIキー`を入力する**必要があります**。
+これらの設定は、UIの`設定`ボタン（歯車アイコン）を選択することでいつでも変更できます。
+
+必要な`LLMモデル`がリストに存在しない場合は、`詳細オプション`を有効にして、`カスタムモデル`テキストボックスに適切なプレフィックスを付けて手動で入力できます。
+`詳細オプション`では、必要に応じて`ベースURL`も指定できます。
+
+<div style={{ display: 'flex', justifyContent: 'center', gap: '20px' }}>
+  <img src="/img/settings-screenshot.png" alt="settings-modal" width="340" />
+  <img src="/img/settings-advanced.png" alt="settings-modal" width="335" />
+</div>
+
+## バージョン
+
+上記のコマンドは、OpenHandsの最新の安定版を取得します。他のオプションもあります：
+- 特定のバージョンを使用する場合は、`docker.all-hands.dev/all-hands-ai/openhands:$VERSION`を使用し、$VERSIONをバージョン番号に置き換えてください。
+- semverを使用しており、メジャー、マイナー、パッチバージョンのタグを公開しています。したがって、`0.9`は最新の`0.9.x`バージョンを、`0`は最新の`0.x.x`バージョンを指します。
+- 最新の開発バージョンを使用する場合は、`docker.all-hands.dev/all-hands-ai/openhands:main`を使用できます。このバージョンは不安定であり、テストまたは開発目的でのみ推奨されます。
+
+安定性の要件と必要な機能に応じて、適切なタグを選択できます。
+
+開発ワークフローについては、[Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md)を参照してください。
+
+問題が発生した場合は、[トラブルシューティングガイド](https://docs.all-hands.dev/modules/usage/troubleshooting)を参照してください。
