@@ -1,0 +1,8 @@
+{
+    "userDataProfilesMigration": true,
+    "profileAssociations": {
+        "workspaces": {},
+        "emptyWindows": {}
+    },
+    "profileAssociationsMigration": true
+}
