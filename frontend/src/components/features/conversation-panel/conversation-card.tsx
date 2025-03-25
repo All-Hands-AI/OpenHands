@@ -281,7 +281,7 @@ export function ConversationCard({
             </>
           )}
           {!metrics?.cost && !metrics?.usage && (
-            <div className="bg-neutral-800 rounded-md p-4 text-center">
+            <div className="rounded-md p-4 text-center">
               <p className="text-neutral-400">No metrics data available</p>
             </div>
           )}
