@@ -1,19 +1,4 @@
 {
-    "BROWSER$SCREENSHOT_ALT": {
-        "en": "Browser Screenshot",
-        "ja": "ブラウザのスクリーンショット",
-        "zh-CN": "浏览器截图",
-        "zh-TW": "瀏覽器截圖",
-        "ko-KR": "브라우저 스크린샷",
-        "no": "Nettleser skjermbilde",
-        "it": "Screenshot del browser",
-        "pt": "Captura de tela do navegador",
-        "es": "Captura de pantalla del navegador",
-        "ar": "لقطة شاشة المتصفح",
-        "fr": "Capture d'écran du navigateur",
-        "tr": "Tarayıcı ekran görüntüsü",
-        "de": "Browser-Screenshot"
-    },
     "ACTION$PUSH_TO_BRANCH": {
         "en": "Push to Branch",
         "ja": "ブランチにプッシュ",

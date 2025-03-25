@@ -69,6 +69,18 @@ function isLikelyTranslationKey(str: string): boolean {
   return /^[A-Z0-9_$.]+$/.test(str) || str.includes(".");
 }
 
+function isCommonDevelopmentString(str: string): boolean {
+  // Common strings that don't need localization
+  const commonPatterns = [
+    /^https?:\/\//, // URLs
+    /^[a-zA-Z0-9]+\.[a-zA-Z0-9]+$/, // File extensions, class names
+    /^[a-zA-Z0-9_-]+$/, // Simple identifiers
+    /^\d+(\.\d+)?$/, // Numbers
+    /^#[0-9a-fA-F]{3,6}$/, // Color codes
+  ];
+  
+  return commonPatterns.some(pattern => pattern.test(str));
+}
 
 
 
