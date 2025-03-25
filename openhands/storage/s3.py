@@ -101,7 +101,7 @@ class S3FileStore(FileStore):
         contents = response.get('Contents')
         if not contents:
             return []
-        paths = [obj['Key'] for obj in response['Contents']]
+        paths = [obj['Key'] for obj in contents]
         for sub_path in paths:
             if sub_path == path:
                 continue
