@@ -11,7 +11,7 @@ from openhands.utils.tenacity_stop import stop_if_should_exit
 class RequestHTTPError(requests.HTTPError):
     """Exception raised when an error occurs in a request with details."""
 
-    def __init__(self, *args, detail=None, **kwargs):
+    def __init__(self, *args: Any, detail: Any = None, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.detail = detail
 
@@ -22,7 +22,7 @@ class RequestHTTPError(requests.HTTPError):
         return s
 
 
-def is_retryable_error(exception):
+def is_retryable_error(exception: Any) -> bool:
     return (
         isinstance(exception, requests.HTTPError)
         and exception.response.status_code == 429
@@ -56,4 +56,4 @@ def send_request(
             response=e.response,
             detail=_json.get('detail') if _json is not None else None,
         ) from e
-    return response
+    return response  # type: ignore
