@@ -29,7 +29,6 @@ const saveSettingsMutationFn = async (
     enable_sound_notifications: settings.ENABLE_SOUND_NOTIFICATIONS,
     user_consents_to_analytics: settings.user_consents_to_analytics,
     provider_tokens: settings.provider_tokens,
-    unset_tokens: settings.unset_tokens,
   };
 
   await OpenHands.saveSettings(apiSettings);
