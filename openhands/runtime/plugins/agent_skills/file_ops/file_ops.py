@@ -38,7 +38,7 @@ def _output_error(error_msg: str) -> bool:
     return False
 
 
-def _is_valid_filename(file_name) -> bool:
+def _is_valid_filename(file_name: str) -> bool:
     if not file_name or not isinstance(file_name, str) or not file_name.strip():
         return False
     invalid_chars = '<>:"/\\|?*'
@@ -53,7 +53,7 @@ def _is_valid_filename(file_name) -> bool:
     return True
 
 
-def _is_valid_path(path) -> bool:
+def _is_valid_path(path: str) -> bool:
     if not path or not isinstance(path, str):
         return False
     try:
@@ -62,7 +62,7 @@ def _is_valid_path(path) -> bool:
         return False
 
 
-def _create_paths(file_name) -> bool:
+def _create_paths(file_name: str) -> bool:
     try:
         dirname = os.path.dirname(file_name)
         if dirname:
@@ -81,7 +81,7 @@ def _check_current_file(file_path: str | None = None) -> bool:
     return True
 
 
-def _clamp(value, min_value, max_value):
+def _clamp(value: int | float, min_value: int | float, max_value: int | float) -> int | float:
     return max(min_value, min(value, max_value))
 
 
@@ -112,8 +112,12 @@ def _lint_file(file_path: str) -> tuple[str | None, int | None]:
 
 
 def _print_window(
-    file_path, targeted_line, window, return_str=False, ignore_window=False
-):
+    file_path: str,
+    targeted_line: int,
+    window: int,
+    return_str: bool = False,
+    ignore_window: bool = False
+) -> str | None:
     global CURRENT_LINE
     _check_current_file(file_path)
     with open(file_path) as file:
@@ -166,9 +170,10 @@ def _print_window(
             return output
         else:
             print(output)
+            return None
 
 
-def _cur_file_header(current_file, total_lines) -> str:
+def _cur_file_header(current_file: str | None, total_lines: int) -> str:
     if not current_file:
         return ''
     return f'[File: {os.path.abspath(current_file)} ({total_lines} lines total)]\n'

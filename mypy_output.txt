@@ -1,0 +1,217 @@
+openhands/utils/import_utils.py:7:1: error: Function is missing a return type
+annotation  [no-untyped-def]
+    def import_from(qual_name: str):
+    ^
+openhands/utils/import_utils.py:22:5: error: Returning Any from function
+declared to return "type[T]"  [no-any-return]
+        return impl_class
+        ^~~~~~~~~~~~~~~~~
+openhands/runtime/impl/docker/containers.py:4:1: error: Function is missing a
+return type annotation  [no-untyped-def]
+    def stop_all_containers(prefix: str):
+    ^
+openhands/utils/search_utils.py:19:1: error: Function is missing a type
+annotation for one or more arguments  [no-untyped-def]
+    async def iterate(fn: Callable, **kwargs) -> AsyncIterator:
+    ^
+openhands/storage/conversation/conversation_validator.py:9:5: error: Function
+is missing a return type annotation  [no-untyped-def]
+        async def validate(self, conversation_id: str, cookies_str: str):
+        ^
+openhands/runtime/utils/log_streamer.py:28:5: error: Function is missing a
+return type annotation  [no-untyped-def]
+        def _stream_logs(self):
+        ^
+openhands/runtime/utils/log_streamer.py:28:5: note: Use "-> None" if function does not return a value
+openhands/runtime/utils/log_streamer.py:40:5: error: Function is missing a type
+annotation  [no-untyped-def]
+        def __del__(self):
+        ^
+openhands/runtime/utils/log_streamer.py:44:5: error: Function is missing a
+return type annotation  [no-untyped-def]
+        def close(self, timeout: float = 5.0):
+        ^
+openhands/runtime/plugins/agent_skills/file_ops/file_ops.py:41:1: error:
+Function is missing a type annotation for one or more arguments 
+[no-untyped-def]
+    def _is_valid_filename(file_name) -> bool:
+    ^
+openhands/runtime/plugins/agent_skills/file_ops/file_ops.py:56:1: error:
+Function is missing a type annotation for one or more arguments 
+[no-untyped-def]
+    def _is_valid_path(path) -> bool:
+    ^
+openhands/runtime/plugins/agent_skills/file_ops/file_ops.py:65:1: error:
+Function is missing a type annotation for one or more arguments 
+[no-untyped-def]
+    def _create_paths(file_name) -> bool:
+    ^
+openhands/runtime/plugins/agent_skills/file_ops/file_ops.py:84:1: error:
+Function is missing a type annotation  [no-untyped-def]
+    def _clamp(value, min_value, max_value):
+    ^
+openhands/runtime/plugins/agent_skills/file_ops/file_ops.py:114:1: error:
+Function is missing a type annotation  [no-untyped-def]
+    def _print_window(
+    ^
+openhands/runtime/plugins/agent_skills/file_ops/file_ops.py:171:1: error:
+Function is missing a type annotation for one or more arguments 
+[no-untyped-def]
+    def _cur_file_header(current_file, total_lines) -> str:
+    ^
+openhands/runtime/impl/e2b/filestore.py:5:5: error: Function is missing a type
+annotation  [no-untyped-def]
+        def __init__(self, filesystem):
+        ^
+openhands/runtime/impl/e2b/filestore.py:12:9: error: Returning Any from
+function declared to return "str"  [no-any-return]
+            return self.filesystem.read(path)
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+openhands/runtime/impl/e2b/filestore.py:15:9: error: Returning Any from
+function declared to return "list[str]"  [no-any-return]
+            return self.filesystem.list(path)
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+openhands/runtime/utils/system.py:18:1: error: Function is missing a type
+annotation for one or more arguments  [no-untyped-def]
+    def find_available_tcp_port(min_port=30000, max_port=39999, max_attemp...
+    ^
+openhands/security/invariant/nodes.py:35:5: error: Signature of "__rich_repr__"
+incompatible with supertype "BaseModel"  [override]
+        def __rich_repr__(
+        ^
+openhands/security/invariant/nodes.py:35:5: note:      Superclass:
+openhands/security/invariant/nodes.py:35:5: note:          def __rich_repr__(self: Representation) -> Iterable[Any | tuple[Any] | tuple[str, Any] | tuple[str, Any, Any]]
+openhands/security/invariant/nodes.py:35:5: note:      Subclass:
+openhands/security/invariant/nodes.py:35:5: note:          def __rich_repr__(self) -> Iterable[Any | tuple[Any] | tuple[str, Any] | tuple[str, Any, Any]]
+openhands/llm/metrics.py:132:5: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def reset(self):
+        ^
+openhands/llm/metrics.py:132:5: note: Use "-> None" if function does not return a value
+openhands/llm/metrics.py:138:5: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def log(self):
+        ^
+openhands/llm/metrics.py:146:5: error: Function is missing a type annotation 
+[no-untyped-def]
+        def __repr__(self):
+        ^
+openhands/core/config/extended_config.py:12:6: error: Dataclass attribute may
+only be overridden by another attribute  [misc]
+        @property
+         ^
+openhands/core/config/extended_config.py:13:5: error: Cannot override writeable
+attribute with read-only property  [override]
+        def root(self) -> dict:  # type annotation to help mypy
+        ^
+openhands/core/config/extended_config.py:13:5: error: Signature of "root"
+incompatible with supertype "RootModel"  [override]
+        def root(self) -> dict:  # type annotation to help mypy
+        ^
+openhands/core/config/extended_config.py:13:5: note:      Superclass:
+openhands/core/config/extended_config.py:13:5: note:          RootModelRootType
+openhands/core/config/extended_config.py:13:5: note:      Subclass:
+openhands/core/config/extended_config.py:13:5: note:          dict[Any, Any]
+openhands/utils/async_utils.py:10:1: error: Function is missing a return type
+annotation  [no-untyped-def]
+    async def call_sync_from_async(fn: Callable, *args, **kwargs):
+    ^
+openhands/utils/async_utils.py:10:1: error: Function is missing a type
+annotation for one or more arguments  [no-untyped-def]
+    async def call_sync_from_async(fn: Callable, *args, **kwargs):
+    ^
+openhands/utils/async_utils.py:22:1: error: Function is missing a return type
+annotation  [no-untyped-def]
+    def call_async_from_sync(
+    ^
+openhands/utils/async_utils.py:22:1: error: Function is missing a type
+annotation for one or more arguments  [no-untyped-def]
+    def call_async_from_sync(
+    ^
+openhands/utils/async_utils.py:35:5: error: Function is missing a return type
+annotation  [no-untyped-def]
+        async def arun():
+        ^
+openhands/utils/async_utils.py:40:5: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def run():
+        ^
+openhands/utils/async_utils.py:54:1: error: Function is missing a return type
+annotation  [no-untyped-def]
+    async def call_coro_in_bg_thread(
+    ^
+openhands/utils/async_utils.py:54:1: error: Function is missing a type
+annotation for one or more arguments  [no-untyped-def]
+    async def call_coro_in_bg_thread(
+    ^
+openhands/utils/async_utils.py:93:5: error: Function is missing a type
+annotation  [no-untyped-def]
+        def __init__(self, exceptions):
+        ^
+openhands/utils/async_utils.py:96:5: error: Function is missing a type
+annotation  [no-untyped-def]
+        def __str__(self):
+        ^
+openhands/__init__.py:6:1: error: Function is missing a return type annotation 
+[no-untyped-def]
+    def get_version():
+    ^
+openhands/server/static.py:5:5: error: Function is missing a return type
+annotation  [no-untyped-def]
+        async def get_response(self, path: str, scope):
+        ^
+openhands/server/static.py:5:5: error: Function is missing a type annotation
+for one or more arguments  [no-untyped-def]
+        async def get_response(self, path: str, scope):
+        ^
+openhands/runtime/plugins/jupyter/execute_server.py:53:5: error: Function is
+missing a type annotation  [no-untyped-def]
+        def __init__(self, url_suffix, convid, lang='python'):
+        ^
+openhands/runtime/plugins/jupyter/execute_server.py:68:5: error: Function is
+missing a return type annotation  [no-untyped-def]
+        async def initialize(self):
+        ^
+openhands/runtime/plugins/jupyter/execute_server.py:68:5: note: Use "-> None" if function does not return a value
+openhands/runtime/plugins/jupyter/execute_server.py:79:5: error: Function is
+missing a return type annotation  [no-untyped-def]
+        async def _send_heartbeat(self):
+        ^
+openhands/runtime/plugins/jupyter/execute_server.py:79:5: note: Use "-> None" if function does not return a value
+openhands/runtime/plugins/jupyter/execute_server.py:94:5: error: Function is
+missing a return type annotation  [no-untyped-def]
+        async def _connect(self):
+        ^
+openhands/runtime/plugins/jupyter/execute_server.py:94:5: note: Use "-> None" if function does not return a value
+openhands/runtime/plugins/jupyter/execute_server.py:141:5: error: Function is
+missing a type annotation  [no-untyped-def]
+        async def execute(self, code, timeout=120):
+        ^
+openhands/runtime/plugins/jupyter/execute_server.py:175:9: error: Function is
+missing a return type annotation  [no-untyped-def]
+            async def wait_for_messages():
+            ^
+openhands/runtime/plugins/jupyter/execute_server.py:210:9: error: Function is
+missing a return type annotation  [no-untyped-def]
+            async def interrupt_kernel():
+            ^
+openhands/runtime/plugins/jupyter/execute_server.py:210:9: note: Use "-> None" if function does not return a value
+openhands/runtime/plugins/jupyter/execute_server.py:237:5: error: Function is
+missing a return type annotation  [no-untyped-def]
+        async def shutdown_async(self):
+        ^
+openhands/runtime/plugins/jupyter/execute_server.py:237:5: note: Use "-> None" if function does not return a value
+openhands/runtime/plugins/jupyter/execute_server.py:251:5: error: Function is
+missing a type annotation  [no-untyped-def]
+        def initialize(self, jupyter_kernel):
+        ^
+openhands/runtime/plugins/jupyter/execute_server.py:254:5: error: Function is
+missing a return type annotation  [no-untyped-def]
+        async def post(self):
+        ^
+openhands/runtime/plugins/jupyter/execute_server.py:254:5: note: Use "-> None" if function does not return a value
+openhands/runtime/plugins/jupyter/execute_server.py:268:1: error: Function is
+missing a return type annotation  [no-untyped-def]
+    def make_app():
+    ^
+Interrupted

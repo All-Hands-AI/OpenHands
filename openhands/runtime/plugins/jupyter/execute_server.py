@@ -50,11 +50,11 @@ def strip_ansi(o: str) -> str:
 
 
 class JupyterKernel:
-    def __init__(self, url_suffix, convid, lang='python'):
+    def __init__(self, url_suffix: str, convid: str, lang: str = 'python') -> None:
         self.base_url = f'http://{url_suffix}'
         self.base_ws_url = f'ws://{url_suffix}'
         self.lang = lang
-        self.kernel_id = None
+        self.kernel_id: str | None = None
         self.ws = None
         self.convid = convid
         logging.info(
@@ -62,10 +62,10 @@ class JupyterKernel:
         )
 
         self.heartbeat_interval = 10000  # 10 seconds
-        self.heartbeat_callback = None
+        self.heartbeat_callback: PeriodicCallback | None = None
         self.initialized = False
 
-    async def initialize(self):
+    async def initialize(self) -> None:
         await self.execute(r'%colors nocolor')
         # pre-defined tools
         self.tools_to_run: list[str] = [
@@ -76,7 +76,7 @@ class JupyterKernel:
             logging.info(f'Tool [{tool}] initialized:\n{res}')
         self.initialized = True
 
-    async def _send_heartbeat(self):
+    async def _send_heartbeat(self) -> None:
         if not self.ws:
             return
         try:
@@ -91,7 +91,7 @@ class JupyterKernel:
                     'ConnectionRefusedError: Failed to reconnect to kernel websocket - Is the kernel still running?'
                 )
 
-    async def _connect(self):
+    async def _connect(self) -> None:
         if self.ws:
             self.ws.close()
             self.ws = None
@@ -138,7 +138,7 @@ class JupyterKernel:
         stop=stop_after_attempt(3),
         wait=wait_fixed(2),
     )
-    async def execute(self, code, timeout=120):
+    async def execute(self, code: str, timeout: int = 120) -> str:
         if not self.ws:
             await self._connect()
 
@@ -170,9 +170,9 @@ class JupyterKernel:
         )
         logging.info(f'Executed code in jupyter kernel:\n{res}')
 
-        outputs = []
+        outputs: list[str] = []
 
-        async def wait_for_messages():
+        async def wait_for_messages() -> bool:
             execution_done = False
             while not execution_done:
                 assert self.ws is not None
@@ -207,7 +207,7 @@ class JupyterKernel:
                     execution_done = True
             return execution_done
 
-        async def interrupt_kernel():
+        async def interrupt_kernel() -> None:
             client = AsyncHTTPClient()
             interrupt_response = await client.fetch(
                 f'{self.base_url}/api/kernels/{self.kernel_id}/interrupt',
@@ -234,7 +234,7 @@ class JupyterKernel:
             logging.info(f'OUTPUT:\n{ret}')
         return ret
 
-    async def shutdown_async(self):
+    async def shutdown_async(self) -> None:
         if self.kernel_id:
             client = AsyncHTTPClient()
             await client.fetch(
@@ -248,10 +248,10 @@ class JupyterKernel:
 
 
 class ExecuteHandler(tornado.web.RequestHandler):
-    def initialize(self, jupyter_kernel):
+    def initialize(self, jupyter_kernel: JupyterKernel) -> None:
         self.jupyter_kernel = jupyter_kernel
 
-    async def post(self):
+    async def post(self) -> None:
         data = json_decode(self.request.body)
         code = data.get('code')
 
@@ -265,10 +265,10 @@ class ExecuteHandler(tornado.web.RequestHandler):
         self.write(output)
 
 
-def make_app():
+def make_app() -> tornado.web.Application:
     jupyter_kernel = JupyterKernel(
         f"localhost:{os.environ.get('JUPYTER_GATEWAY_PORT')}",
-        os.environ.get('JUPYTER_GATEWAY_KERNEL_ID'),
+        os.environ.get('JUPYTER_GATEWAY_KERNEL_ID', ''),
     )
     asyncio.get_event_loop().run_until_complete(jupyter_kernel.initialize())
 

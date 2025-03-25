@@ -2,7 +2,7 @@ from openhands.storage.files import FileStore
 
 
 class E2BFileStore(FileStore):
-    def __init__(self, filesystem):
+    def __init__(self, filesystem: object) -> None:
         self.filesystem = filesystem
 
     def write(self, path: str, contents: str | bytes) -> None:
