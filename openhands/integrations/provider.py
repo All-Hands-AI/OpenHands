@@ -184,8 +184,6 @@ class ProviderHandler:
 
     async def get_repositories(
         self,
-        page: int,
-        per_page: int,
         sort: str,
         installation_id: int | None,
     ) -> list[Repository]:

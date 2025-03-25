@@ -166,7 +166,7 @@ class GitLabService(GitService):
                 id=repo.get('id'),
                 full_name=repo.get('path_with_namespace'),
                 stargazers_count=repo.get('star_count'),
-                link_header='',  # No need for link header since we handle pagination internally
+                link_header=None,  # No need for link header since we handle pagination internally
                 git_provider=ProviderType.GITLAB
             )
             for repo in all_repos

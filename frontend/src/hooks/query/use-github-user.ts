@@ -8,14 +8,14 @@ import { useLogout } from "../mutation/use-logout";
 import { useSaveSettings } from "../mutation/use-save-settings";
 
 export const useGitHubUser = () => {
-  const { providersAreSet } = useAuth();
+  const { providersAreSet, providerTokensSet } = useAuth();
   const { setProvidersAreSet } = useAuth();
   const { mutateAsync: logout } = useLogout();
   const { mutate: saveUserSettings } = useSaveSettings();
   const { data: config } = useConfig();
 
   const user = useQuery({
-    queryKey: ["user", providersAreSet],
+    queryKey: ["user", providerTokensSet],
     queryFn: OpenHands.getGitHubUser,
     enabled: providersAreSet && !!config?.APP_MODE,
     retry: false,

@@ -5,11 +5,12 @@ import { useConfig } from "./use-config";
 import { useAuth } from "#/context/auth-context";
 
 export const useUserRepositories = () => {
-  const { providersAreSet } = useAuth();
+  const { providerTokensSet, providersAreSet } = useAuth();
   const { data: config } = useConfig();
 
+  console.log("providers set");
   const repos = useInfiniteQuery({
-    queryKey: ["repositories", providersAreSet],
+    queryKey: ["repositories", providerTokensSet],
     queryFn: async ({ pageParam }) =>
       retrieveUserGitRepositories(pageParam, 100),
     initialPageParam: 1,

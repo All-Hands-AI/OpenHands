@@ -136,7 +136,7 @@ class GitHubService(GitService):
                 id=repo.get('id'),
                 full_name=repo.get('full_name'),
                 stargazers_count=repo.get('stargazers_count'),
-                link_header='',  # No need for link header since we handle pagination internally
+                link_header=None,  # No need for link header since we handle pagination internally
                 git_provider=ProviderType.GITHUB
             )
             for repo in all_repos
