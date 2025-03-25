@@ -18,7 +18,7 @@ datasets = "*"
 pandas = "*"
 litellm = "^1.60.0"
 google-generativeai = "*" # To use litellm with Gemini Pro API
-google-api-python-client = "*" # For Google Sheets API
+google-api-python-client = "^2.164.0" # For Google Sheets API
 google-auth-httplib2 = "*" # For Google Sheets authentication
 google-auth-oauthlib = "*" # For Google Sheets OAuth
 termcolor = "*"
@@ -100,6 +100,11 @@ reportlab = "*"
 concurrency = ["gevent"]
 
 
+
+
+
+
+
 [tool.poetry.group.runtime.dependencies]
 jupyterlab = "*"
 notebook = "*"
@@ -129,6 +134,11 @@ ignore = ["D1"]
 convention = "google"
 
 
+
+
+
+
+
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"
 whatthepatch = "*"
@@ -147,6 +157,7 @@ browsergym = "0.10.2"
 browsergym-webarena = "0.10.2"
 browsergym-miniwob = "0.10.2"
 browsergym-visualwebarena = "0.10.2"
+boto3-stubs = {extras = ["s3"], version = "^1.37.19"}
 
 [tool.poetry-dynamic-versioning]
 enable = true
