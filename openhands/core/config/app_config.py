@@ -134,4 +134,5 @@ class AppConfig(BaseModel):
     def model_post_init(self, __context):
         """Post-initialization hook, called when the instance is created with only default values."""
         super().model_post_init(__context)
-        AppConfig.defaults_dict = model_defaults_to_dict(self)
+        if not AppConfig.defaults_dict:  # Only set defaults_dict if it's empty
+            AppConfig.defaults_dict = model_defaults_to_dict(self)
