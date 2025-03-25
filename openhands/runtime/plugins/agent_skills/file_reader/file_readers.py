@@ -113,7 +113,7 @@ def _prepare_image_messages(
                 {'type': 'text', 'text': task},
                 {
                     'type': 'image_url',
-                    'image_url': f'data:image/jpeg;base64,{base64_image}',
+                    'image_url': {'url': f'data:image/jpeg;base64,{base64_image}'},
                 },
             ],
         }
