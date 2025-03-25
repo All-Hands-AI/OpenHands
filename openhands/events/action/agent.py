@@ -20,21 +20,6 @@ class ChangeAgentStateAction(Action):
         return f'Agent state changed to {self.agent_state}'
 
 
-@dataclass
-class AgentSummarizeAction(Action):
-    summary: str
-    action: str = ActionType.SUMMARIZE
-
-    @property
-    def message(self) -> str:
-        return self.summary
-
-    def __str__(self) -> str:
-        ret = '**AgentSummarizeAction**\n'
-        ret += f'SUMMARY: {self.summary}'
-        return ret
-
-
 class AgentFinishTaskCompleted(Enum):
     FALSE = 'false'
     PARTIAL = 'partial'
