@@ -399,13 +399,18 @@ class ConversationMemory:
                 else:
                     repo_info = None
 
+                date = obs.date
+                utc_time = obs.utc_time
+
                 if obs.runtime_hosts or obs.additional_agent_instructions:
                     runtime_info = RuntimeInfo(
                         available_hosts=obs.runtime_hosts,
                         additional_agent_instructions=obs.additional_agent_instructions,
+                        date=date,
+                        utc_time=utc_time,
                     )
                 else:
-                    runtime_info = None
+                    runtime_info = RuntimeInfo(date=date, utc_time=utc_time)
 
                 repo_instructions = (
                     obs.repo_instructions if obs.repo_instructions else ''
