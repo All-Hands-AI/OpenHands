@@ -265,15 +265,20 @@ class DockerRuntime(ActionExecutionClient):
         # Add Docker socket mount if enabled via environment variable or config
         env_docker_socket_enabled = os.environ.get('SANDBOX_DOCKER_SOCKET_ENABLED', '').lower() == 'true'
         docker_socket_enabled = env_docker_socket_enabled or self.config.sandbox.docker_socket_enabled
+        
+        # Get Docker socket path from environment variable or config
+        env_docker_socket_path = os.environ.get('SANDBOX_DOCKER_SOCKET_PATH', '')
+        docker_socket_path = env_docker_socket_path or self.config.sandbox.docker_socket_path
+        
         if docker_socket_enabled:
-            volumes['/var/run/docker.sock'] = {
-                'bind': '/var/run/docker.sock',
+            volumes[docker_socket_path] = {
+                'bind': docker_socket_path,
                 'mode': 'rw',
             }
             if env_docker_socket_enabled:
-                logger.debug('Docker socket mount enabled via SANDBOX_DOCKER_SOCKET_ENABLED environment variable')
+                logger.debug(f'Docker socket mount enabled via environment variable: {docker_socket_path}')
             else:
-                logger.debug('Docker socket mount enabled via configuration')
+                logger.debug(f'Docker socket mount enabled via configuration: {docker_socket_path}')
         
         # If no volumes are configured, set to None
         if not volumes:
@@ -285,7 +290,7 @@ class DockerRuntime(ActionExecutionClient):
         if docker_socket_enabled:
             self.log(
                 'debug',
-                'Docker socket mounted: /var/run/docker.sock -> /var/run/docker.sock',
+                f'Docker socket mounted: {docker_socket_path} -> {docker_socket_path}',
             )
 
         command = get_action_execution_server_startup_command(
@@ -370,10 +375,15 @@ class DockerRuntime(ActionExecutionClient):
         )
         env_docker_socket_enabled = os.environ.get('SANDBOX_DOCKER_SOCKET_ENABLED', '').lower() == 'true'
         docker_socket_enabled = env_docker_socket_enabled or self.config.sandbox.docker_socket_enabled
+        
+        # Get Docker socket path from environment variable or config
+        env_docker_socket_path = os.environ.get('SANDBOX_DOCKER_SOCKET_PATH', '')
+        docker_socket_path = env_docker_socket_path or self.config.sandbox.docker_socket_path
+        
         if docker_socket_enabled:
             self.log(
                 'debug',
-                'Docker socket should be mounted: /var/run/docker.sock -> /var/run/docker.sock',
+                f'Docker socket should be mounted: {docker_socket_path} -> {docker_socket_path}',
             )
 
     @tenacity.retry(

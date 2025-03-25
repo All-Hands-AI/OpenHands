@@ -76,6 +76,7 @@ class SandboxConfig(BaseModel):
     docker_runtime_kwargs: dict | None = Field(default=None)
     selected_repo: str | None = Field(default=None)
     docker_socket_enabled: bool = Field(default=False)
+    docker_socket_path: str = Field(default='/var/run/docker.sock')
 
     model_config = {'extra': 'forbid'}
 
