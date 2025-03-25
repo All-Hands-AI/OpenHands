@@ -81,7 +81,7 @@ def _check_current_file(file_path: str | None = None) -> bool:
     return True
 
 
-def _clamp(value: int | float, min_value: int | float, max_value: int | float) -> int | float:
+def _clamp(value: int, min_value: int, max_value: int) -> int:
     return max(min_value, min(value, max_value))
 
 
@@ -117,7 +117,7 @@ def _print_window(
     window: int,
     return_str: bool = False,
     ignore_window: bool = False
-) -> str | None:
+) -> str:
     global CURRENT_LINE
     _check_current_file(file_path)
     with open(file_path) as file:
@@ -170,7 +170,7 @@ def _print_window(
             return output
         else:
             print(output)
-            return None
+            return ''
 
 
 def _cur_file_header(current_file: str | None, total_lines: int) -> str:

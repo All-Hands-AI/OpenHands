@@ -103,7 +103,7 @@ def _base64_video(file_path: str, frame_interval: int = 10) -> list[str]:
     return base64_frames
 
 
-def _prepare_image_messages(task: str, base64_image: str) -> list[dict[str, list[dict[str, str | dict[str, dict[str, str]]]] | str]]:
+def _prepare_image_messages(task: str, base64_image: str) -> list[dict[str, list[dict[str, str | dict[str, str]]] | str]]:
     return [
         {
             'role': 'user',
@@ -111,7 +111,7 @@ def _prepare_image_messages(task: str, base64_image: str) -> list[dict[str, list
                 {'type': 'text', 'text': task},
                 {
                     'type': 'image_url',
-                    'image_url': {'url': f'data:image/jpeg;base64,{base64_image}'},
+                    'image_url': f'data:image/jpeg;base64,{base64_image}',
                 },
             ],
         }
