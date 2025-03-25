@@ -161,6 +161,7 @@ class GitHubService(GitService):
                 id=repo.get('id'),
                 full_name=repo.get('full_name'),
                 stargazers_count=repo.get('stargazers_count'),
+                git_provider=ProviderType.GITHUB
             )
             for repo in repos
         ]

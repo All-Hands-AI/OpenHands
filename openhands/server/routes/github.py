@@ -128,7 +128,6 @@ async def get_github_installation_ids(
 
 @app.get('/search/repositories', response_model=list[Repository])
 async def search_repositories(
-    selected_provider: str,
     query: str,
     per_page: int = 5,
     sort: str = 'stars',
@@ -142,10 +141,8 @@ async def search_repositories(
             provider_tokens=provider_tokens, external_auth_token=access_token
         )
         try:
-            provider = ProviderType(selected_provider)
-
             repos: list[Repository] = await client.search_repositories(
-                provider, query, per_page, sort, order
+                query, per_page, sort, order
             )
             return repos
 
