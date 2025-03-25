@@ -84,7 +84,6 @@ ruff = "0.11.0"
 mypy = "1.15.0"
 pre-commit = "4.2.0"
 build = "*"
-mypy-boto3-s3 = "1.37.0"
 
 [tool.poetry.group.test.dependencies]
 pytest = "*"
@@ -99,6 +98,8 @@ reportlab = "*"
 
 [tool.coverage.run]
 concurrency = ["gevent"]
+
+
 
 
 [tool.poetry.group.runtime.dependencies]
@@ -130,6 +131,8 @@ ignore = ["D1"]
 convention = "google"
 
 
+
+
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"
 whatthepatch = "*"
@@ -148,6 +151,7 @@ browsergym = "0.10.2"
 browsergym-webarena = "0.10.2"
 browsergym-miniwob = "0.10.2"
 browsergym-visualwebarena = "0.10.2"
+boto3-stubs = "^1.37.19"
 
 [tool.poetry-dynamic-versioning]
 enable = true
