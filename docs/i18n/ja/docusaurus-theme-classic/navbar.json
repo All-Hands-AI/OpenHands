@@ -8,15 +8,15 @@
     "description": "The alt text of navbar logo"
   },
   "item.label.Docs": {
-    "message": "Docs",
+    "message": "ドキュメント",
     "description": "Navbar item with label Docs"
   },
   "item.label.Codebase": {
-    "message": "Codebase",
+    "message": "コードベース",
     "description": "Navbar item with label Codebase"
   },
   "item.label.FAQ": {
-    "message": "FAQ",
+    "message": "よくある質問",
     "description": "Navbar item with label FAQ"
   },
   "item.label.GitHub": {
