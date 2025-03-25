@@ -5,8 +5,9 @@ OpenHandsは、OpenRouterのチャットモデルへのAPIコールにLiteLLMを
 ## 設定
 
 OpenHandsを実行する際、OpenHandsのUIで設定メニューから以下の項目を設定する必要があります：
-* `LLM Provider`を`OpenRouter`に設定
-* `LLM Model`を使用するモデルに設定。
+
+* `LLMプロバイダー`を`OpenRouter`に設定
+* `LLMモデル`を使用するモデルに設定。
 [OpenRouterのモデルの完全なリストはこちら](https://openrouter.ai/models)を参照してください。
-モデルがリストにない場合は、`Advanced Options`を有効にし、`Custom Model`に入力してください（例：openrouter/&lt;model-name&gt;として`openrouter/anthropic/claude-3.5-sonnet`）。
-* `API Key`をOpenRouter APIキーに設定。
+モデルがリストにない場合は、`詳細設定`を有効にし、`カスタムモデル`に入力してください（例：openrouter/&lt;model-name&gt;として`openrouter/anthropic/claude-3.5-sonnet`）。
+* `APIキー`をOpenRouter APIキーに設定。
