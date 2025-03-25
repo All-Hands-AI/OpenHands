@@ -104,7 +104,7 @@ class GitHubService(GitService):
     ) -> list[Repository]:
         MAX_REPOS = 1000
         PER_PAGE = 100  # Maximum allowed by GitHub API
-        all_repos = []
+        all_repos: list[dict]= []
         page = 1
 
         while len(all_repos) < MAX_REPOS:
@@ -136,7 +136,6 @@ class GitHubService(GitService):
                 id=repo.get('id'),
                 full_name=repo.get('full_name'),
                 stargazers_count=repo.get('stargazers_count'),
-                link_header=None,  # No need for link header since we handle pagination internally
                 git_provider=ProviderType.GITHUB
             )
             for repo in all_repos

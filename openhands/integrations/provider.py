@@ -195,9 +195,7 @@ class ProviderHandler:
         for provider in self.provider_tokens:
             try:
                 service = self._get_service(provider)
-                service_repos = await service.get_repositories(
-                    sort, installation_id
-                )
+                service_repos = await service.get_repositories(sort, installation_id)
                 all_repos.extend(service_repos)
             except Exception:
                 continue

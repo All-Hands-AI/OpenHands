@@ -36,10 +36,10 @@ class User(BaseModel):
 class Repository(BaseModel):
     id: int
     full_name: str
+    git_provider: ProviderType
     stargazers_count: int | None = None
     link_header: str | None = None
     pushed_at: str | None = None  # ISO 8601 format date string
-    git_provider: ProviderType
 
 
 class AuthenticationError(ValueError):
@@ -88,8 +88,6 @@ class GitService(Protocol):
 
     async def get_repositories(
         self,
-        page: int,
-        per_page: int,
         sort: str,
         installation_id: int | None,
     ) -> list[Repository]:

@@ -125,7 +125,7 @@ class GitLabService(GitService):
         
         MAX_REPOS = 1000
         PER_PAGE = 100  # Maximum allowed by GitLab API
-        all_repos = []
+        all_repos: list[dict] = []
         page = 1
 
         url = f'{self.BASE_URL}/projects'
@@ -166,7 +166,6 @@ class GitLabService(GitService):
                 id=repo.get('id'),
                 full_name=repo.get('path_with_namespace'),
                 stargazers_count=repo.get('star_count'),
-                link_header=None,  # No need for link header since we handle pagination internally
                 git_provider=ProviderType.GITLAB
             )
             for repo in all_repos
