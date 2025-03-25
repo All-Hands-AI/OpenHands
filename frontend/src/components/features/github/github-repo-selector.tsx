@@ -39,7 +39,9 @@ export function GitRepositorySelector({
   ];
 
   // Group repositories by provider
-  const groupedUserRepos = userRepositories.reduce<Record<Provider, GitRepository[]>>(
+  const groupedUserRepos = userRepositories.reduce<
+    Record<Provider, GitRepository[]>
+  >(
     (acc, repo) => {
       if (!acc[repo.git_provider]) {
         acc[repo.git_provider] = [];
@@ -47,10 +49,12 @@ export function GitRepositorySelector({
       acc[repo.git_provider].push(repo);
       return acc;
     },
-    {} as Record<Provider, GitRepository[]>
+    {} as Record<Provider, GitRepository[]>,
   );
 
-  const groupedPublicRepos = publicRepositories.reduce<Record<Provider, GitRepository[]>>(
+  const groupedPublicRepos = publicRepositories.reduce<
+    Record<Provider, GitRepository[]>
+  >(
     (acc, repo) => {
       if (!acc[repo.git_provider]) {
         acc[repo.git_provider] = [];
@@ -58,7 +62,7 @@ export function GitRepositorySelector({
       acc[repo.git_provider].push(repo);
       return acc;
     },
-    {} as Record<Provider, GitRepository[]>
+    {} as Record<Provider, GitRepository[]>,
   );
 
   const dispatch = useDispatch();
@@ -136,7 +140,7 @@ export function GitRepositorySelector({
               </AutocompleteItem>
             ))}
           </AutocompleteSection>
-        ) : null
+        ) : null,
       )}
       {Object.entries(groupedPublicRepos).map(([provider, repos]) =>
         repos.length > 0 ? (
@@ -159,7 +163,7 @@ export function GitRepositorySelector({
               </AutocompleteItem>
             ))}
           </AutocompleteSection>
-        ) : null
+        ) : null,
       )}
     </Autocomplete>
   );
