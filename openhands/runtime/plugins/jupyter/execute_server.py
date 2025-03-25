@@ -161,19 +161,13 @@ class JupyterKernel:
     async def execute(self, code: str, timeout: int = 120) -> str:
         # Connect to kernel if needed
         if not self.ws:
-            try:
-                await self._connect()
-            except ConnectionRefusedError:
-                return '[Failed to connect to kernel]'
-
-        ws = self.ws
-        if not ws:
-            return '[Failed to connect to kernel]'
+            await self._connect()
+            
+        assert self.ws is not None
 
         # Send code to kernel
         msg_id = uuid4().hex
-        try:
-            res = await ws.write_message(
+        res = await self.ws.write_message(
                 json_encode(
                     {
                         'header': {

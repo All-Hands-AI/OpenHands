@@ -72,13 +72,13 @@ def _create_paths(file_name: str) -> bool:
         return False
 
 
-def _check_current_file(file_path: str | None = None) -> tuple[bool, str]:
+def _check_current_file(file_path: str | None = None) -> bool:
     global CURRENT_FILE
     if not file_path:
         file_path = CURRENT_FILE
     if not file_path or not os.path.isfile(file_path):
-        return False, 'No file open. Use the open_file function first.'
-    return True, file_path
+        return _output_error('No file open. Use the open_file function first.')
+    return True
 
 
 def _clamp(value: int, min_value: int, max_value: int) -> int:
@@ -119,10 +119,9 @@ def _print_window(
     ignore_window: bool = False,
 ) -> str:
     global CURRENT_LINE
-    ok, checked_path = _check_current_file(file_path)
-    if not ok:
-        return checked_path
-    with open(checked_path) as file:
+    if not _check_current_file(file_path):
+        return ''
+    with open(file_path) as file:
         content = file.read()
 
         # Ensure the content ends with a newline character
