@@ -1,22 +1,20 @@
+# LiteLLM プロキシ
 
+OpenHandsは、様々なLLMプロバイダーにアクセスするために[LiteLLMプロキシ](https://docs.litellm.ai/docs/proxy/quick_start)の使用をサポートしています。
 
-# Proxy LiteLLM
+## 設定
 
-OpenHands prend en charge l'utilisation du [proxy LiteLLM](https://docs.litellm.ai/docs/proxy/quick_start) pour accéder à divers fournisseurs de LLM.
+OpenHandsでLiteLLMプロキシを使用するには、以下の手順が必要です：
 
-## Configuration
+1. LiteLLMプロキシサーバーを設定する（[LiteLLMのドキュメント](https://docs.litellm.ai/docs/proxy/quick_start)を参照）
+2. OpenHandsを実行する際、OpenHandsのUIで設定メニューから以下の項目を設定する必要があります：
+  * `Advanced Options`を有効にする
+  * `Custom Model`にプレフィックス`litellm_proxy/`と使用するモデルを設定（例：`litellm_proxy/anthropic.claude-3-5-sonnet-20241022-v2:0`）
+  * `Base URL`をLiteLLMプロキシのURL（例：`https://your-litellm-proxy.com`）に設定
+  * `API Key`をLiteLLMプロキシのAPIキーに設定
 
-Pour utiliser le proxy LiteLLM avec OpenHands, vous devez :
+## サポートされているモデル
 
-1. Configurer un serveur proxy LiteLLM (voir la [documentation LiteLLM](https://docs.litellm.ai/docs/proxy/quick_start))
-2. Lors de l'exécution d'OpenHands, vous devrez définir les éléments suivants dans l'interface utilisateur d'OpenHands via les paramètres :
-  * Activer les `Options avancées`
-  * `Custom Model` au préfixe `litellm_proxy/` + le modèle que vous utiliserez (par exemple, `litellm_proxy/anthropic.claude-3-5-sonnet-20241022-v2:0`)
-  * `Base URL` à l'URL de votre proxy LiteLLM (par exemple, `https://your-litellm-proxy.com`)
-  * `API Key` à votre clé API du proxy LiteLLM
+サポートされているモデルは、LiteLLMプロキシの設定に依存します。OpenHandsは、LiteLLMプロキシが処理するように設定されているすべてのモデルをサポートします。
 
-## Modèles pris en charge
-
-Les modèles pris en charge dépendent de la configuration de votre proxy LiteLLM. OpenHands prend en charge tous les modèles que votre proxy LiteLLM est configuré pour gérer.
-
-Reportez-vous à la configuration de votre proxy LiteLLM pour obtenir la liste des modèles disponibles et leurs noms.
+利用可能なモデルとその名前のリストについては、LiteLLMプロキシの設定を参照してください。
