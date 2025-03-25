@@ -1,10 +1,10 @@
-# Azure
+# Azure OpenAI
 
 OpenHandsは、AzureのチャットモデルへのAPIコールにLiteLLMを使用します。Azureをプロバイダーとして使用する方法については、[こちら](https://docs.litellm.ai/docs/providers/azure)のドキュメントを参照してください。
 
 ## Azure OpenAIの設定
 
-OpenHandsを実行する際、[docker runコマンド](/modules/usage/installation#start-the-app)で`-e`を使用して以下の環境変数を設定する必要があります：
+OpenHandsを実行する際、[docker runコマンド](../installation#running-openhands)で`-e`を使用して以下の環境変数を設定する必要があります：
 
 ```
 LLM_API_VERSION="<api-version>"              # 例："2023-05-15"
@@ -35,7 +35,7 @@ OpenHandsは埋め込みにllama-indexを使用します。Azureに関するド�
 
 ### Azure OpenAIの設定
 
-OpenHandsを実行する際、[docker runコマンド](/modules/usage/installation#start-the-app)で`-e`を使用して以下の環境変数を設定します：
+OpenHandsを実行する際、[docker runコマンド](../installation#running-openhands)で`-e`を使用して以下の環境変数を設定します：
 
 ```
 LLM_EMBEDDING_MODEL="azureopenai"
