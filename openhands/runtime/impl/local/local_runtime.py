@@ -306,6 +306,10 @@ class LocalRuntime(ActionExecutionClient):
                         json={'action': event_to_dict(action)},
                     )
                 )
+                if not hasattr(response, 'json'):
+                    raise TypeError(
+                        f'Expected response with json() method, got {type(response)}'
+                    )
                 json_data = response.json()
                 if not isinstance(json_data, dict):
                     raise TypeError(
