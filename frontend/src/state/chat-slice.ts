@@ -22,6 +22,7 @@ const HANDLED_ACTIONS: OpenHandsEventType[] = [
   "browse",
   "browse_interactive",
   "edit",
+  "user_feedback",
 ];
 
 function getRiskText(risk: ActionSecurityRisk) {
@@ -229,11 +230,11 @@ export const chatSlice = createSlice({
       action: PayloadAction<{
         messageId: number;
         feedbackType: "positive" | "negative";
-      }>
+      }>,
     ) {
       const { messageId, feedbackType } = action.payload;
       const messageIndex = state.messages.findIndex(
-        (message) => message.eventID === messageId
+        (message) => message.eventID === messageId,
       );
       if (messageIndex !== -1) {
         state.messages[messageIndex].feedback = feedbackType;

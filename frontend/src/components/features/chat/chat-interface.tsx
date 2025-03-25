@@ -2,6 +2,8 @@ import { useDispatch, useSelector } from "react-redux";
 import React from "react";
 import posthog from "posthog-js";
 import { useParams } from "react-router";
+// import { useTranslation } from "react-i18next";
+import hotToast from "react-hot-toast";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
 import { TrajectoryActions } from "../trajectory/trajectory-actions";
 import { createChatMessage, createUserFeedback } from "#/services/chat-service";
@@ -16,9 +18,6 @@ import { useWsClient } from "#/context/ws-client-provider";
 import { Messages } from "./messages";
 import { ChatSuggestions } from "./chat-suggestions";
 import { ActionSuggestions } from "./action-suggestions";
-import { useTranslation } from "react-i18next";
-import hotToast from "react-hot-toast";
-import { I18nKey } from "#/i18n/declaration";
 
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
@@ -83,19 +82,20 @@ export function ChatInterface() {
     send(generateAgentStateChangeEvent(AgentState.STOPPED));
   };
 
-  const { t } = useTranslation();
+  // We'll use the translation function in the future
+  // const { t } = useTranslation();
 
   const onClickShareFeedbackActionButton = (
     polarity: "positive" | "negative",
   ) => {
     // Just send the feedback action
     send(createUserFeedback(polarity, "trajectory"));
-    
+
     // Show a toast notification to confirm feedback was sent
     hotToast.success(
-      polarity === "positive" 
-        ? t("FEEDBACK$POSITIVE_SENT") || "Positive feedback sent" 
-        : t("FEEDBACK$NEGATIVE_SENT") || "Negative feedback sent"
+      polarity === "positive"
+        ? "Positive feedback sent"
+        : "Negative feedback sent",
     );
   };
 
