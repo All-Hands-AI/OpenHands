@@ -26,6 +26,17 @@ class TokenUsage(BaseModel):
     cache_read_tokens: int
     cache_write_tokens: int
     response_id: str
+    
+    def __add__(self, other: 'TokenUsage') -> 'TokenUsage':
+        """Add two TokenUsage instances together."""
+        return TokenUsage(
+            model=self.model,
+            prompt_tokens=self.prompt_tokens + other.prompt_tokens,
+            completion_tokens=self.completion_tokens + other.completion_tokens,
+            cache_read_tokens=self.cache_read_tokens + other.cache_read_tokens,
+            cache_write_tokens=self.cache_write_tokens + other.cache_write_tokens,
+            response_id=self.response_id,
+        )
 
 
 class Metrics:
@@ -107,20 +118,25 @@ class Metrics:
         response_id: str,
     ) -> None:
         """Add a single usage record."""
-        self._token_usages.append(
-            TokenUsage(
-                model=self.model_name,
-                prompt_tokens=prompt_tokens,
-                completion_tokens=completion_tokens,
-                cache_read_tokens=cache_read_tokens,
-                cache_write_tokens=cache_write_tokens,
-                response_id=response_id,
-            )
+        usage = TokenUsage(
+            model=self.model_name,
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
+            cache_read_tokens=cache_read_tokens,
+            cache_write_tokens=cache_write_tokens,
+            response_id=response_id,
         )
-        self._accumulated_token_usage.prompt_tokens += prompt_tokens
-        self._accumulated_token_usage.completion_tokens += completion_tokens
-        self._accumulated_token_usage.cache_read_tokens += cache_read_tokens
-        self._accumulated_token_usage.cache_write_tokens += cache_write_tokens
+        self._token_usages.append(usage)
+        
+        # Update accumulated token usage using the __add__ operator
+        self._accumulated_token_usage = self._accumulated_token_usage + TokenUsage(
+            model=self.model_name,
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
+            cache_read_tokens=cache_read_tokens,
+            cache_write_tokens=cache_write_tokens,
+            response_id='',
+        )
 
     def merge(self, other: 'Metrics') -> None:
         """Merge 'other' metrics into this one."""
@@ -130,11 +146,8 @@ class Metrics:
         self.token_usages += other.token_usages
         self.response_latencies += other.response_latencies
         
-        # Also merge accumulated token usage
-        self._accumulated_token_usage.prompt_tokens += other._accumulated_token_usage.prompt_tokens
-        self._accumulated_token_usage.completion_tokens += other._accumulated_token_usage.completion_tokens
-        self._accumulated_token_usage.cache_read_tokens += other._accumulated_token_usage.cache_read_tokens
-        self._accumulated_token_usage.cache_write_tokens += other._accumulated_token_usage.cache_write_tokens
+        # Merge accumulated token usage using the __add__ operator
+        self._accumulated_token_usage = self._accumulated_token_usage + other._accumulated_token_usage
 
     def get(self) -> dict:
         """Return the metrics in a dictionary."""
@@ -153,11 +166,15 @@ class Metrics:
         self._costs = []
         self._response_latencies = []
         self._token_usages = []
-        # Reset accumulated token usage
-        self._accumulated_token_usage.prompt_tokens = 0
-        self._accumulated_token_usage.completion_tokens = 0
-        self._accumulated_token_usage.cache_read_tokens = 0
-        self._accumulated_token_usage.cache_write_tokens = 0
+        # Reset accumulated token usage with a new instance
+        self._accumulated_token_usage = TokenUsage(
+            model=self.model_name,
+            prompt_tokens=0,
+            completion_tokens=0,
+            cache_read_tokens=0,
+            cache_write_tokens=0,
+            response_id='',
+        )
 
     def log(self):
         """Log the metrics."""
