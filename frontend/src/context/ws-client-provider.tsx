@@ -1,6 +1,5 @@
 import React from "react";
 import { io, Socket } from "socket.io-client";
-import { useQueryClient } from "@tanstack/react-query";
 import EventLogger from "#/utils/event-logger";
 import { handleAssistantMessage } from "#/services/actions";
 import { showChatError } from "#/utils/error-handler";
@@ -11,6 +10,7 @@ import {
   UserMessageAction,
 } from "#/types/core/actions";
 import { StatusMessage } from "#/types/message";
+import { useStatusMessage } from "#/hooks/state/use-status-message";
 
 const isOpenHandsEvent = (event: unknown): event is OpenHandsParsedEvent =>
   typeof event === "object" &&
@@ -113,7 +113,7 @@ export function WsClientProvider({
   conversationId,
   children,
 }: React.PropsWithChildren<WsClientProviderProps>) {
-  const queryClient = useQueryClient();
+  const { setStatusMessage } = useStatusMessage();
   const sioRef = React.useRef<Socket | null>(null);
   const [status, setStatus] = React.useState(
     WsClientProviderStatus.DISCONNECTED,
@@ -137,8 +137,7 @@ export function WsClientProvider({
 
   function handleMessage(event: Record<string, unknown>) {
     if (isStatusMessage(event)) {
-      console.warn("Status message received", event);
-      queryClient.setQueryData(["_STATE", "status"], event);
+      setStatusMessage(event);
     }
     if (isOpenHandsEvent(event) && isMessageAction(event)) {
       messageRateHandler.record(new Date().getTime());
