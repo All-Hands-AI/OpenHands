@@ -1,43 +1,41 @@
+# プロンプトのベストプラクティス
 
+OpenHands AIソフトウェア開発者と作業する際は、明確で効果的なプロンプトを提供することが重要です。このガイドでは、最も正確で有用な応答を生成するプロンプトを作成するためのベストプラクティスを説明します。
 
-# Meilleures pratiques pour les prompts
+## 良いプロンプトの特徴
 
-Lorsque vous travaillez avec le développeur de logiciels OpenHands AI, il est crucial de fournir des prompts clairs et efficaces. Ce guide décrit les meilleures pratiques pour créer des prompts qui produiront les réponses les plus précises et les plus utiles.
+良いプロンプトは以下の特徴を持ちます：
 
-## Caractéristiques des bons prompts
+1. **具体的**：追加する機能やどのエラーを修正するのかを正確に説明します。
+2. **場所を特定**：既知の場合、コードベースのどの部分を修正する必要があるかを説明します。
+3. **適切なサイズ**：1つの機能のサイズに収まり、通常は100行のコードを超えません。
 
-Les bons prompts sont :
+## 例
 
-1. **Concrets** : Ils expliquent exactement quelle fonctionnalité doit être ajoutée ou quelle erreur doit être corrigée.
-2. **Spécifiques à l'emplacement** : Si connu, ils expliquent les emplacements dans la base de code qui doivent être modifiés.
-3. **Correctement dimensionnés** : Ils doivent avoir la taille d'une seule fonctionnalité, ne dépassant généralement pas 100 lignes de code.
+### 良いプロンプトの例
 
-## Exemples
+1. "`utils/math_operations.py`に、数値のリストを入力として受け取り、その平均を返す`calculate_average`関数を追加してください。"
 
-### Exemples de bons prompts
+2. "`frontend/src/components/UserProfile.tsx`の42行目で発生しているTypeErrorを修正してください。エラーは、undefinedのプロパティにアクセスしようとしていることを示唆しています。"
 
-1. "Ajoutez une fonction `calculate_average` dans `utils/math_operations.py` qui prend une liste de nombres en entrée et renvoie leur moyenne."
+3. "登録フォームのメールフィールドに入力バリデーションを実装してください。`frontend/src/components/RegistrationForm.tsx`を更新して、送信前にメールが有効な形式かどうかを確認するようにしてください。"
 
-2. "Corrigez le TypeError dans `frontend/src/components/UserProfile.tsx` se produisant à la ligne 42. L'erreur suggère que nous essayons d'accéder à une propriété de undefined."
+### 悪いプロンプトの例
 
-3. "Implémentez la validation des entrées pour le champ email dans le formulaire d'inscription. Mettez à jour `frontend/src/components/RegistrationForm.tsx` pour vérifier si l'email est dans un format valide avant la soumission."
+1. "コードを改善してください。"（曖昧すぎて、具体性がない）
 
-### Exemples de mauvais prompts
+2. "バックエンド全体を別のフレームワークを使用して書き直してください。"（サイズが適切でない）
 
-1. "Améliorez le code." (Trop vague, pas concret)
+3. "ユーザー認証のどこかにバグがあります。見つけて修正できますか？"（具体性と場所の情報が不足）
 
-2. "Réécrivez tout le backend pour utiliser un framework différent." (Pas correctement dimensionné)
+## 効果的なプロンプトのためのヒント
 
-3. "Il y a un bug quelque part dans l'authentification des utilisateurs. Pouvez-vous le trouver et le corriger ?" (Manque de spécificité et d'informations de localisation)
+1. 望む結果や解決すべき問題について、できるだけ具体的に説明してください。
+2. ファイルパスや関連する行番号など、利用可能な場合はコンテキストを提供してください。
+3. 大きなタスクを、より小さく管理可能なプロンプトに分割してください。
+4. 関連するエラーメッセージやログをすべて含めてください。
+5. コンテキストから明らかでない場合は、プログラミング言語やフレームワークを指定してください。
 
-## Conseils pour des prompts efficaces
+プロンプトが具体的で情報量が多いほど、AIはOpenHandsソフトウェアの開発や修正をより適切に支援できることを忘れないでください。
 
-1. Soyez aussi précis que possible sur le résultat souhaité ou le problème à résoudre.
-2. Fournissez du contexte, y compris les chemins de fichiers et les numéros de ligne pertinents si disponibles.
-3. Décomposez les grandes tâches en prompts plus petits et gérables.
-4. Incluez tous les messages d'erreur ou logs pertinents.
-5. Spécifiez le langage de programmation ou le framework s'il n'est pas évident d'après le contexte.
-
-N'oubliez pas, plus votre prompt est précis et informatif, mieux l'IA pourra vous aider à développer ou à modifier le logiciel OpenHands.
-
-Voir [Démarrer avec OpenHands](../getting-started) pour plus d'exemples de prompts utiles.
+より多くの有用なプロンプトの例については、[OpenHandsを始める](../getting-started)をご覧ください。
