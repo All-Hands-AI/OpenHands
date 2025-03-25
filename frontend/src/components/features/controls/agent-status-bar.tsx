@@ -11,6 +11,7 @@ import {
 } from "#/context/ws-client-provider";
 import { useNotification } from "#/hooks/useNotification";
 import { browserTab } from "#/utils/browser-tab";
+import { useStatus } from "#/hooks/query/use-status";
 
 const notificationStates = [
   AgentState.AWAITING_USER_INPUT,
@@ -21,38 +22,38 @@ const notificationStates = [
 export function AgentStatusBar() {
   const { t, i18n } = useTranslation();
   const { curAgentState } = useSelector((state: RootState) => state.agent);
-  const { curStatusMessage } = useSelector((state: RootState) => state.status);
+  const statusMessage = useStatus();
   const { status } = useWsClient();
   const { notify } = useNotification();
 
-  const [statusMessage, setStatusMessage] = React.useState<string>("");
+  const [displayMessage, setDisplayMessage] = React.useState<string>("");
 
   const updateStatusMessage = () => {
-    let message = curStatusMessage.message || "";
-    if (curStatusMessage?.id) {
-      const id = curStatusMessage.id.trim();
+    let message = statusMessage?.message || "";
+    if (statusMessage?.id) {
+      const id = statusMessage.id.trim();
       if (i18n.exists(id)) {
-        message = t(curStatusMessage.id.trim()) || message;
+        message = t(statusMessage.id.trim()) || message;
       }
     }
-    if (curStatusMessage?.type === "error") {
+    if (statusMessage?.type === "error") {
       showErrorToast({
         message,
         source: "agent-status",
-        metadata: { ...curStatusMessage },
+        metadata: { ...statusMessage },
       });
       return;
     }
     if (curAgentState === AgentState.LOADING && message.trim()) {
-      setStatusMessage(message);
+      setDisplayMessage(message);
     } else {
-      setStatusMessage(AGENT_STATUS_MAP[curAgentState].message);
+      setDisplayMessage(AGENT_STATUS_MAP[curAgentState].message);
     }
   };
 
   React.useEffect(() => {
     updateStatusMessage();
-  }, [curStatusMessage.id]);
+  }, [statusMessage?.id]);
 
   // Handle window focus/blur
   React.useEffect(() => {
@@ -71,9 +72,9 @@ export function AgentStatusBar() {
 
   React.useEffect(() => {
     if (status === WsClientProviderStatus.DISCONNECTED) {
-      setStatusMessage("Connecting...");
+      setDisplayMessage("Connecting...");
     } else {
-      setStatusMessage(AGENT_STATUS_MAP[curAgentState].message);
+      setDisplayMessage(AGENT_STATUS_MAP[curAgentState].message);
       if (notificationStates.includes(curAgentState)) {
         const message = t(AGENT_STATUS_MAP[curAgentState].message);
         notify(t(AGENT_STATUS_MAP[curAgentState].message), {
@@ -95,7 +96,7 @@ export function AgentStatusBar() {
         <div
           className={`w-2 h-2 rounded-full animate-pulse ${AGENT_STATUS_MAP[curAgentState].indicator}`}
         />
-        <span className="text-sm text-stone-400">{t(statusMessage)}</span>
+        <span className="text-sm text-stone-400">{t(displayMessage)}</span>
       </div>
     </div>
   );

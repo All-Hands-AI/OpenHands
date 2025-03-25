@@ -1,5 +1,6 @@
 import React from "react";
 import { io, Socket } from "socket.io-client";
+import { useQueryClient } from "@tanstack/react-query";
 import EventLogger from "#/utils/event-logger";
 import { handleAssistantMessage } from "#/services/actions";
 import { showChatError } from "#/utils/error-handler";
@@ -9,6 +10,7 @@ import {
   AssistantMessageAction,
   UserMessageAction,
 } from "#/types/core/actions";
+import { StatusMessage } from "#/types/message";
 
 const isOpenHandsEvent = (event: unknown): event is OpenHandsParsedEvent =>
   typeof event === "object" &&
@@ -38,6 +40,9 @@ const isMessageAction = (
   event: OpenHandsParsedEvent,
 ): event is UserMessageAction | AssistantMessageAction =>
   isUserMessage(event) || isAssistantMessage(event);
+
+const isStatusMessage = (event: OpenHandsParsedEvent): event is StatusMessage =>
+  "type" in event && event.type === "status" && "message" in event;
 
 export enum WsClientProviderStatus {
   CONNECTED,
@@ -104,6 +109,7 @@ export function WsClientProvider({
   conversationId,
   children,
 }: React.PropsWithChildren<WsClientProviderProps>) {
+  const queryClient = useQueryClient();
   const sioRef = React.useRef<Socket | null>(null);
   const [status, setStatus] = React.useState(
     WsClientProviderStatus.DISCONNECTED,
@@ -132,6 +138,11 @@ export function WsClientProvider({
     setEvents((prevEvents) => [...prevEvents, event]);
     if (!Number.isNaN(parseInt(event.id as string, 10))) {
       lastEventRef.current = event;
+    }
+
+    // Handle status messages with TanStack Query
+    if (isOpenHandsEvent(event) && isStatusMessage(event)) {
+      queryClient.setQueryData(["_STATE", "status"], event);
     }
 
     handleAssistantMessage(event);
