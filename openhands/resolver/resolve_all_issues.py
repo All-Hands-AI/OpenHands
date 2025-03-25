@@ -254,6 +254,12 @@ def main() -> None:
         help='Github or Gitlab username to access the repository.',
     )
     parser.add_argument(
+        '--base-container-image',
+        type=str,
+        default=None,
+        help='Base container image to use for testing.',
+    )
+    parser.add_argument(
         '--runtime-container-image',
         type=str,
         default=None,
@@ -329,9 +335,7 @@ def main() -> None:
 
     my_args = parser.parse_args()
 
-    # TODO: fix. Hard cording for testing. use ruby image
-    # TODO: use args
-    base_container_image = 'ruby:3.2.2'
+    base_container_image = my_args.base_container_image
 
     runtime_container_image = my_args.runtime_container_image
     if runtime_container_image is None:
