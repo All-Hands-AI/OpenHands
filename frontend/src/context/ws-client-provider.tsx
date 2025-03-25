@@ -9,6 +9,7 @@ import {
   AssistantMessageAction,
   UserMessageAction,
 } from "#/types/core/actions";
+import { useMetrics } from "#/hooks/state/use-metrics";
 
 const isOpenHandsEvent = (event: unknown): event is OpenHandsParsedEvent =>
   typeof event === "object" &&
@@ -38,6 +39,37 @@ const isMessageAction = (
   event: OpenHandsParsedEvent,
 ): event is UserMessageAction | AssistantMessageAction =>
   isUserMessage(event) || isAssistantMessage(event);
+
+const isValidObject = (obj: unknown): obj is Record<string, unknown> =>
+  typeof obj === "object" && obj !== null;
+
+const isMetricsEvent = (
+  event: Record<string, unknown>,
+): event is { llm_metrics: { accumulated_cost: number } } =>
+  "llm_metrics" in event &&
+  isValidObject(event.llm_metrics) &&
+  "accumulated_cost" in event.llm_metrics &&
+  typeof event.llm_metrics.accumulated_cost === "number";
+
+const hasUsageToolCallMetadata = (
+  event: Record<string, unknown>,
+): event is {
+  tool_call_metadata: {
+    model_response: {
+      usage: {
+        prompt_tokens: number;
+        completion_tokens: number;
+        total_tokens: number;
+      };
+    };
+  };
+} =>
+  "tool_call_metadata" in event &&
+  isValidObject(event.tool_call_metadata) &&
+  "model_response" in event.tool_call_metadata &&
+  isValidObject(event.tool_call_metadata.model_response) &&
+  "usage" in event.tool_call_metadata.model_response &&
+  isValidObject(event.tool_call_metadata.model_response.usage);
 
 export enum WsClientProviderStatus {
   CONNECTED,
@@ -104,6 +136,7 @@ export function WsClientProvider({
   conversationId,
   children,
 }: React.PropsWithChildren<WsClientProviderProps>) {
+  const { setMetrics } = useMetrics();
   const sioRef = React.useRef<Socket | null>(null);
   const [status, setStatus] = React.useState(
     WsClientProviderStatus.DISCONNECTED,
@@ -129,6 +162,29 @@ export function WsClientProvider({
     if (isOpenHandsEvent(event) && isMessageAction(event)) {
       messageRateHandler.record(new Date().getTime());
     }
+
+    if (isMetricsEvent(event) || hasUsageToolCallMetadata(event)) {
+      console.warn(event);
+      let cost = 0;
+      if (isMetricsEvent(event)) {
+        cost = event.llm_metrics.accumulated_cost;
+      }
+
+      let usage = {
+        prompt_tokens: 0,
+        completion_tokens: 0,
+        total_tokens: 0,
+      };
+      if (hasUsageToolCallMetadata(event)) {
+        usage = event.tool_call_metadata.model_response.usage;
+      }
+
+      setMetrics({
+        cost,
+        usage,
+      });
+    }
+
     setEvents((prevEvents) => [...prevEvents, event]);
     if (!Number.isNaN(parseInt(event.id as string, 10))) {
       lastEventRef.current = event;
