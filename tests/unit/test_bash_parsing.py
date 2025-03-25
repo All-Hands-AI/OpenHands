@@ -168,7 +168,7 @@ def test_unclosed_backtick():
         assert result == [command]
     except TypeError as e:
         # This is the error we're trying to fix
-        assert False, f'TypeError was raised: {e}'
+        raise e
 
     # Also test with the original command from the issue (with placeholder org/repo)
     curl_command = 'curl -X POST "https://api.github.com/repos/example-org/example-repo/pulls" \\ -H "Authorization: Bearer $GITHUB_TOKEN" \\ -H "Accept: application/vnd.github.v3+json" \\ -d \'{ "title": "XXX", "head": "XXX", "base": "main", "draft": false }\' `echo unclosed'
@@ -177,7 +177,7 @@ def test_unclosed_backtick():
         result = split_bash_commands(curl_command)
         assert result == [curl_command]
     except TypeError as e:
-        assert False, f'TypeError was raised with curl command: {e}'
+        raise e
 
 
 @pytest.fixture
