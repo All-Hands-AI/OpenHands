@@ -1,3 +1,5 @@
+import re
+from typing import Any
 from openhands.core.exceptions import LLMMalformedActionError
 from openhands.events.action.action import Action
 from openhands.events.action.agent import (
@@ -42,7 +44,7 @@ actions = (
 ACTION_TYPE_TO_CLASS = {action_class.action: action_class for action_class in actions}  # type: ignore[attr-defined]
 
 
-def handle_action_deprecated_args(args: dict) -> dict:
+def handle_action_deprecated_args(args: dict[str, Any]) -> dict[str, Any]:
     # keep_prompt has been deprecated in https://github.com/All-Hands-AI/OpenHands/pull/4881
     if 'keep_prompt' in args:
         args.pop('keep_prompt')
@@ -126,4 +128,5 @@ def action_from_dict(action: dict) -> Action:
         raise LLMMalformedActionError(
             f'action={action} has the wrong arguments: {str(e)}'
         )
+    assert isinstance(decoded_action, Action)
     return decoded_action
