@@ -3,7 +3,7 @@ import path from "path";
 
 // Patterns that indicate a string might need localization
 const STRING_PATTERNS = [
-  /['"`]([\w\s?]+)['"`]/g, // Matches quoted strings with words
+  /['"`]([^'"`\n]+)['"`]/g, // Matches any quoted strings except empty ones and newlines
 ];
 
 // Patterns that indicate a string is already localized
@@ -16,6 +16,7 @@ const LOCALIZED_PATTERNS = [
 
 // Files/directories to ignore
 const IGNORE_PATHS = [
+  // Build and dependency files
   "node_modules",
   "dist",
   ".git",
@@ -26,6 +27,34 @@ const IGNORE_PATHS = [
   "package.json",
   "package-lock.json",
   "tsconfig.json",
+  
+  // Internal code that doesn't need localization
+  "mocks", // Mock data
+  "assets", // SVG paths and CSS classes
+  "types", // Type definitions and constants
+  "state", // Redux state management
+  "api", // API endpoints
+  "services", // Internal services
+  "hooks", // React hooks
+  "context", // React context
+  "store", // Redux store
+  "routes.ts", // Route definitions
+  "root.tsx", // Root component
+  "entry.client.tsx", // Client entry point
+  "utils/scan-unlocalized-strings.ts", // This file itself
+  "utils/browser-tab.ts", // Browser tab utilities
+  "utils/custom-toast-handlers.tsx", // Toast handlers
+  "utils/error-handler.ts", // Error handlers
+  "utils/extract-model-and-provider.ts", // Model utilities
+  "utils/feature-flags.ts", // Feature flags
+  "utils/format-time-delta.ts", // Time formatting
+  "utils/gget-formatted-datetime.ts", // Date formatting
+  "utils/has-advanced-settings-set.ts", // Settings utilities
+  "utils/organize-models-and-providers.ts", // Model utilities
+  "utils/parse-cell-content.ts", // Cell parsing
+  "utils/settings-utils.ts", // Settings utilities
+  "utils/suggestions", // Suggestion utilities
+  "utils/utils.ts", // General utilities
 ];
 
 // Extensions to scan
@@ -40,28 +69,14 @@ function isLikelyTranslationKey(str: string): boolean {
   return /^[A-Z0-9_$.]+$/.test(str) || str.includes(".");
 }
 
-function isCommonDevelopmentString(str: string): boolean {
-  // Common strings that don't need translation
-  const commonPatterns = [
-    /^[a-z-]+$/, // CSS classes
-    /^[A-Z][a-z]+$/, // Component names
-    /^\d+$/, // Numbers
-    /^https?:/, // URLs
-    /^[<>{}()[\]]+$/, // Syntax characters
-    /^[a-z]+:\/\//, // Protocol patterns
-    /^#/, // Color codes or anchors
-  ];
-  return commonPatterns.some((pattern) => pattern.test(str));
-}
+
+
 
 export function scanFileForUnlocalizedStrings(filePath: string): string[] {
   const content = fs.readFileSync(filePath, "utf-8");
   const unlocalizedStrings: string[] = [];
 
-  // Skip files that are clearly localized
-  if (LOCALIZED_PATTERNS.some((pattern) => pattern.test(content))) {
-    return [];
-  }
+  // Don't skip files just because they have some localization - they might have mixed content
 
   // Check each pattern
   STRING_PATTERNS.forEach((pattern) => {
