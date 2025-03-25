@@ -88,7 +88,7 @@ export function GitRepositorySelector({
       data-testid="github-repo-selector"
       name="repo"
       aria-label="Git Repository"
-      placeholder={t(I18nKey.LANDING$SELECT_GITHUB_REPO)}
+      placeholder={t(I18nKey.LANDING$SELECT_GIT_REPO)}
       isVirtualized={false}
       selectedKey={selectedKey}
       inputProps={{

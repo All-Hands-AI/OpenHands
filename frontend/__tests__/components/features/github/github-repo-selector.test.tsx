@@ -20,7 +20,7 @@ describe("GitRepositorySelector", () => {
     );
 
     expect(
-      screen.getByPlaceholderText("LANDING$SELECT_GITHUB_REPO"),
+      screen.getByPlaceholderText("LANDING$SELECT_GIT_REPO"),
     ).toBeInTheDocument();
   });
 
