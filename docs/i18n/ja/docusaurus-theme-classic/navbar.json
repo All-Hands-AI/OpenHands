@@ -4,16 +4,20 @@
     "description": "The title in the navbar"
   },
   "logo.alt": {
-    "message": "OpenHands ロゴ",
+    "message": "OpenHands",
     "description": "The alt text of navbar logo"
   },
-  "item.label.Tutorial": {
-    "message": "チュートリアル",
-    "description": "Navbar item with label Tutorial"
+  "item.label.Docs": {
+    "message": "Docs",
+    "description": "Navbar item with label Docs"
   },
-  "item.label.Blog": {
-    "message": "ブログ",
-    "description": "Navbar item with label Blog"
+  "item.label.Codebase": {
+    "message": "Codebase",
+    "description": "Navbar item with label Codebase"
+  },
+  "item.label.FAQ": {
+    "message": "FAQ",
+    "description": "Navbar item with label FAQ"
   },
   "item.label.GitHub": {
     "message": "GitHub",

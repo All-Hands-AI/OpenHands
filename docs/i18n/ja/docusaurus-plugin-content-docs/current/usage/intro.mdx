@@ -4,11 +4,11 @@ sidebar_position: 1
 
 # 💻 OpenHands
 
-OpenHands は、複雑なエンジニアリングタスクを実行し、ソフトウェア開発プロジェクトでユーザーと積極的に協力する**自律型AIソフトウェアエンジニア**です。
-このプロジェクトは完全にオープンソースなので、自由に使用・改変することができます。
+OpenHands est un **ingénieur logiciel IA autonome** capable d'exécuter des tâches d'ingénierie complexes et de collaborer activement avec les utilisateurs sur des projets de développement logiciel.
+Ce projet est entièrement open-source, vous pouvez donc l'utiliser et le modifier comme bon vous semble.
 
 :::tip
-[GitHub](https://github.com/All-Hands-AI/OpenHands) で OpenHands のコードベースを探索するか、コミュニティに参加してください！
+Explorez le code source d'OpenHands sur [GitHub](https://github.com/All-Hands-AI/OpenHands) ou rejoignez l'une de nos communautés !
 
 <a href="https://github.com/All-Hands-AI/OpenHands/graphs/contributors">
   <img
@@ -44,27 +44,27 @@ OpenHands は、複雑なエンジニアリングタスクを実行し、ソフ�
 <br></br>
 <a href="https://join.slack.com/t/openhands-ai/shared_invite/zt-2ngejmfw6-9gW4APWOC9XUp1n~SiQ6iw">
   <img
-    src="https://img.shields.io/badge/Slack-参加する-red?logo=slack&logoColor=white&style=for-the-badge"
-    alt="Slackコミュニティに参加"
+    src="https://img.shields.io/badge/Slack-Join%20Us-red?logo=slack&logoColor=white&style=for-the-badge"
+    alt="Join our Slack community"
   />
 </a>
 <a href="https://discord.gg/ESHStjSjD4">
   <img
-    src="https://img.shields.io/badge/Discord-参加する-purple?logo=discord&logoColor=white&style=for-the-badge"
-    alt="Discordコミュニティに参加"
+    src="https://img.shields.io/badge/Discord-Join%20Us-purple?logo=discord&logoColor=white&style=for-the-badge"
+    alt="Join our Discord community"
   />
 </a>
 :::
 
-## 🛠️ はじめに
+## 🛠️ Pour commencer
 
-OpenHands を実行する最も簡単な方法は、Dockerコンテナ内で実行することです。Docker バージョン `26.0.0` 以降で最適に動作します。
-Linux、Mac OS、またはWindows上のWSLを使用する必要があります。
+La manière la plus simple d'exécuter OpenHands est à l'intérieur d'un conteneur Docker. Il fonctionne mieux avec la version la plus récente de Docker, `26.0.0`.
+Vous devez utiliser Linux, Mac OS ou WSL sur Windows.
 
-Dockerコンテナ内でOpenHandsを起動するには、ターミナルで以下のコマンドを実行します：
+Pour démarrer OpenHands dans un conteneur docker, exécutez les commandes suivantes dans votre terminal :
 
 :::warning
-以下のコマンドを実行すると、`./workspace` 内のファイルが変更または削除される可能性があります。
+Lorsque vous exécutez la commande suivante, les fichiers dans `./workspace` peuvent être modifiés ou supprimés.
 :::
 
 ```bash
@@ -81,20 +81,20 @@ docker run -it \
     ghcr.io/all-hands-ai/openhands:main
 ```
 
-OpenHandsは [http://localhost:3000](http://localhost:3000) で実行され、`./workspace` にアクセスできます。OpenHandsにコードを操作させるには、コードを `./workspace` に配置してください。
+Vous trouverez OpenHands fonctionnant à l'adresse [http://localhost:3000](http://localhost:3000) avec accès à `./workspace`. Pour qu'OpenHands fonctionne sur votre code, placez-le dans `./workspace`.
 
-OpenHandsはこのワークスペースフォルダのみにアクセスします。安全なDockerサンドボックス内で実行され、システムの他の部分には影響を与えません。
+OpenHands n'aura accès qu'à ce dossier de workspace. Le reste de votre système ne sera pas affecté car il s'exécute dans un bac à sable sécurisé de docker.
 
 :::tip
-**（不安定！）**最新バージョンを使用したい場合は、イメージとして `ghcr.io/all-hands-ai/openhands:main` を使用してください（最後の行）。
+Si vous souhaitez utiliser la version **(instable !)** la plus récente, vous pouvez utiliser `ghcr.io/all-hands-ai/openhands:main` comme image (dernière ligne).
 :::
 
-開発ワークフローについては、[Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md) を参照してください。
+Pour le workflow de développement, consultez [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
 
-問題が発生しましたか？[トラブルシューティングガイド](https://docs.all-hands.dev/modules/usage/troubleshooting)をご確認ください。
+Avez-vous des problèmes ? Consultez notre [Guide de dépannage](https://docs.all-hands.dev/modules/usage/troubleshooting).
 
 :::warning
-OpenHandsは現在開発中ですが、エンドツーエンドのシステムがどのように機能するかを確認するためにアルファ版を実行することができます。
+OpenHands est actuellement en cours de développement, mais vous pouvez déjà exécuter la version alpha pour voir le système de bout en bout en action.
 :::
 
 [contributors-shield]: https://img.shields.io/github/contributors/All-Hands-AI/OpenHands?style=for-the-badge

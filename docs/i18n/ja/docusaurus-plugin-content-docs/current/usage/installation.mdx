@@ -1,14 +1,16 @@
-# インストール
 
-## システム要件
 
-* Docker 26.0.0+ または Docker Desktop 4.31.0+
-* Linux または Mac OS を使用する必要があります
-  * Windowsを使用している場合は、[WSL](https://learn.microsoft.com/en-us/windows/wsl/install)を使用する必要があります
+# Installation
 
-## アプリケーションの起動
+## Configuration système requise
 
-OpenHandsを実行する最も簡単な方法は、Dockerを使用することです：
+* Docker version 26.0.0+ ou Docker Desktop 4.31.0+.
+* Vous devez utiliser Linux ou Mac OS.
+  * Si vous êtes sous Windows, vous devez utiliser [WSL](https://learn.microsoft.com/en-us/windows/wsl/install).
+
+## Démarrer l'application
+
+La façon la plus simple d'exécuter OpenHands est avec Docker.
 
 ```bash
 docker pull docker.all-hands.dev/all-hands-ai/runtime:0.29-nikolaik
@@ -23,32 +25,33 @@ docker run -it --rm --pull=always \
     docker.all-hands.dev/all-hands-ai/openhands:0.29
 ```
 
-また、[ヘッドレススクリプトモード](https://docs.all-hands.dev/modules/usage/how-to/headless-mode)、[対話型CLI](https://docs.all-hands.dev/modules/usage/how-to/cli-mode)、または[OpenHands GitHub Action](https://docs.all-hands.dev/modules/usage/how-to/github-action)としても実行できます。
+Vous pouvez également exécuter OpenHands en mode [headless scriptable](https://docs.all-hands.dev/modules/usage/how-to/headless-mode), en tant que [CLI interactive](https://docs.all-hands.dev/modules/usage/how-to/cli-mode), ou en utilisant l'[Action GitHub OpenHands](https://docs.all-hands.dev/modules/usage/how-to/github-action).
 
-## 設定
+## Configuration
 
-上記のコマンドを実行すると、OpenHandsは[http://localhost:3000](http://localhost:3000)で実行されています。
+Après avoir exécuté la commande ci-dessus, vous trouverez OpenHands en cours d'exécution à l'adresse [http://localhost:3000](http://localhost:3000).
 
-OpenHandsを起動すると、設定モーダルが表示されます。`LLMプロバイダー`と`LLMモデル`を選択し、対応する`APIキー`を入力する**必要があります**。
-これらの設定は、UIの`設定`ボタン（歯車アイコン）を選択することでいつでも変更できます。
+Au lancement d'OpenHands, vous verrez une fenêtre modale de paramètres. Vous **devez** sélectionner un `Fournisseur LLM` et un `Modèle LLM`, et entrer une `Clé API` correspondante.
+Ces paramètres peuvent être modifiés à tout moment en sélectionnant le bouton `Paramètres` (icône d'engrenage) dans l'interface utilisateur.
 
-必要な`LLMモデル`がリストに存在しない場合は、`詳細オプション`を有効にして、`カスタムモデル`テキストボックスに適切なプレフィックスを付けて手動で入力できます。
-`詳細オプション`では、必要に応じて`ベースURL`も指定できます。
+Si le `Modèle LLM` requis n'existe pas dans la liste, vous pouvez activer les `Options avancées` et l'entrer manuellement avec le préfixe correct
+dans la zone de texte `Modèle personnalisé`.
+Les `Options avancées` vous permettent également de spécifier une `URL de base` si nécessaire.
 
 <div style={{ display: 'flex', justifyContent: 'center', gap: '20px' }}>
   <img src="/img/settings-screenshot.png" alt="settings-modal" width="340" />
   <img src="/img/settings-advanced.png" alt="settings-modal" width="335" />
 </div>
 
-## バージョン
+## Versions
 
-上記のコマンドは、OpenHandsの最新の安定版を取得します。他のオプションもあります：
-- 特定のバージョンを使用する場合は、`docker.all-hands.dev/all-hands-ai/openhands:$VERSION`を使用し、$VERSIONをバージョン番号に置き換えてください。
-- semverを使用しており、メジャー、マイナー、パッチバージョンのタグを公開しています。したがって、`0.9`は最新の`0.9.x`バージョンを、`0`は最新の`0.x.x`バージョンを指します。
-- 最新の開発バージョンを使用する場合は、`docker.all-hands.dev/all-hands-ai/openhands:main`を使用できます。このバージョンは不安定であり、テストまたは開発目的でのみ推奨されます。
+La commande ci-dessus récupère la version stable la plus récente d'OpenHands. Vous avez également d'autres options :
+- Pour une version spécifique, utilisez `docker.all-hands.dev/all-hands-ai/openhands:$VERSION`, en remplaçant $VERSION par le numéro de version.
+- Nous utilisons semver et publions des tags majeurs, mineurs et de patch. Ainsi, `0.9` pointera automatiquement vers la dernière version `0.9.x`, et `0` pointera vers la dernière version `0.x.x`.
+- Pour la version de développement la plus à jour, vous pouvez utiliser `docker.all-hands.dev/all-hands-ai/openhands:main`. Cette version est instable et n'est recommandée qu'à des fins de test ou de développement.
 
-安定性の要件と必要な機能に応じて、適切なタグを選択できます。
+Vous pouvez choisir le tag qui convient le mieux à vos besoins en fonction des exigences de stabilité et des fonctionnalités souhaitées.
 
-開発ワークフローについては、[Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md)を参照してください。
+Pour le workflow de développement, consultez [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
 
-問題が発生した場合は、[トラブルシューティングガイド](https://docs.all-hands.dev/modules/usage/troubleshooting)を参照してください。
+Vous rencontrez des problèmes ? Consultez notre [Guide de dépannage](https://docs.all-hands.dev/modules/usage/troubleshooting).
