@@ -74,8 +74,8 @@ async def list_files(request: Request, conversation_id: str, path: str | None = 
             content={'error': f'Error listing files: {e}'},
         )
     if not isinstance(file_list, list):
-        raise TypeError(f"Expected list from runtime.list_files, got {type(file_list)}")
-        
+        raise TypeError(f'Expected list from runtime.list_files, got {type(file_list)}')
+
     if path:
         file_list = [os.path.join(path, str(f)) for f in file_list]
 
@@ -87,9 +87,13 @@ async def list_files(request: Request, conversation_id: str, path: str | None = 
             read_action = FileReadAction(gitignore_path)
             observation = await call_sync_from_async(runtime.run_action, read_action)
             if not isinstance(observation, (FileReadObservation, ErrorObservation)):
-                raise TypeError(f"Expected FileReadObservation or ErrorObservation, got {type(observation)}")
+                raise TypeError(
+                    f'Expected FileReadObservation or ErrorObservation, got {type(observation)}'
+                )
             if not hasattr(observation, 'content'):
-                raise TypeError(f"Observation {type(observation)} has no content attribute")
+                raise TypeError(
+                    f'Observation {type(observation)} has no content attribute'
+                )
             spec = PathSpec.from_lines(
                 GitWildMatchPattern, str(observation.content).splitlines()
             )

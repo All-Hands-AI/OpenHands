@@ -308,7 +308,9 @@ class LocalRuntime(ActionExecutionClient):
                 )
                 json_data = response.json()
                 if not isinstance(json_data, dict):
-                    raise TypeError(f"Expected dict from response.json(), got {type(json_data)}")
+                    raise TypeError(
+                        f'Expected dict from response.json(), got {type(json_data)}'
+                    )
                 return observation_from_dict(json_data)
             except requests.exceptions.ConnectionError:
                 raise AgentRuntimeDisconnectedError('Server connection lost')
