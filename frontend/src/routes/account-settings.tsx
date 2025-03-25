@@ -297,7 +297,7 @@ function AccountSettings() {
                   testId="llm-api-key-help-anchor"
                   text="Don't know your API key?"
                   linkText="Click here for instructions"
-                  href="https://docs.all-hands.dev/modules/usage/llms"
+                  href="https://docs.all-hands.dev/modules/usage/installation#getting-an-api-key"
                 />
               )}
 
