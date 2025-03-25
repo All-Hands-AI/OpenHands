@@ -208,18 +208,19 @@ class ProviderHandler:
         per_page: int,
         sort: str,
         order: str,
-    ): 
+    ):
         all_repos: list[Repository] = []
         for provider in self.provider_tokens:
             try:
                 service = self._get_service(provider)
-                service_repos = await service.search_repositories(query, per_page, sort, order)
+                service_repos = await service.search_repositories(
+                    query, per_page, sort, order
+                )
                 all_repos.extend(service_repos)
             except Exception as e:
-                print("except searching", e)
+                print('except searching', e)
 
         return all_repos
-
 
     async def get_remote_repository_url(self, repository: str) -> str | None:
         if not repository:
