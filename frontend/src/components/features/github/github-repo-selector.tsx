@@ -12,6 +12,7 @@ import { setSelectedRepository } from "#/state/initial-query-slice";
 import { useConfig } from "#/hooks/query/use-config";
 import { sanitizeQuery } from "#/utils/sanitize-query";
 import { GitRepository } from "#/types/github";
+import { Provider } from "#/types/settings";
 
 interface GitRepositorySelectorProps {
   onInputChange: (value: string) => void;
@@ -36,6 +37,29 @@ export function GitRepositorySelector({
     ),
     ...userRepositories,
   ];
+
+  // Group repositories by provider
+  const groupedUserRepos = userRepositories.reduce<Record<Provider, GitRepository[]>>(
+    (acc, repo) => {
+      if (!acc[repo.git_provider]) {
+        acc[repo.git_provider] = [];
+      }
+      acc[repo.git_provider].push(repo);
+      return acc;
+    },
+    {} as Record<Provider, GitRepository[]>
+  );
+
+  const groupedPublicRepos = publicRepositories.reduce<Record<Provider, GitRepository[]>>(
+    (acc, repo) => {
+      if (!acc[repo.git_provider]) {
+        acc[repo.git_provider] = [];
+      }
+      acc[repo.git_provider].push(repo);
+      return acc;
+    },
+    {} as Record<Provider, GitRepository[]>
+  );
 
   const dispatch = useDispatch();
 
@@ -94,36 +118,48 @@ export function GitRepositorySelector({
             </a>
           </AutocompleteItem> // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ) as any)}
-      {userRepositories.length > 0 && (
-        <AutocompleteSection showDivider title={t(I18nKey.GITHUB$YOUR_REPOS)}>
-          {userRepositories.map((repo) => (
-            <AutocompleteItem
-              data-testid="github-repo-item"
-              key={repo.id}
-              className="data-[selected=true]:bg-default-100"
-              textValue={repo.full_name}
-            >
-              {repo.full_name}
-            </AutocompleteItem>
-          ))}
-        </AutocompleteSection>
+      {Object.entries(groupedUserRepos).map(([provider, repos]) =>
+        repos.length > 0 ? (
+          <AutocompleteSection
+            key={`user-${provider}`}
+            showDivider
+            title={`${t(I18nKey.GITHUB$YOUR_REPOS)} - ${provider}`}
+          >
+            {repos.map((repo) => (
+              <AutocompleteItem
+                data-testid="github-repo-item"
+                key={repo.id}
+                className="data-[selected=true]:bg-default-100"
+                textValue={repo.full_name}
+              >
+                {repo.full_name}
+              </AutocompleteItem>
+            ))}
+          </AutocompleteSection>
+        ) : null
       )}
-      {publicRepositories.length > 0 && (
-        <AutocompleteSection showDivider title={t(I18nKey.GITHUB$PUBLIC_REPOS)}>
-          {publicRepositories.map((repo) => (
-            <AutocompleteItem
-              data-testid="github-repo-item"
-              key={repo.id}
-              className="data-[selected=true]:bg-default-100"
-              textValue={repo.full_name}
-            >
-              {repo.full_name}
-              <span className="ml-1 text-gray-400">
-                ({repo.stargazers_count || 0}⭐)
-              </span>
-            </AutocompleteItem>
-          ))}
-        </AutocompleteSection>
+      {Object.entries(groupedPublicRepos).map(([provider, repos]) =>
+        repos.length > 0 ? (
+          <AutocompleteSection
+            key={`public-${provider}`}
+            showDivider
+            title={`${t(I18nKey.GITHUB$PUBLIC_REPOS)} - ${provider}`}
+          >
+            {repos.map((repo) => (
+              <AutocompleteItem
+                data-testid="github-repo-item"
+                key={repo.id}
+                className="data-[selected=true]:bg-default-100"
+                textValue={repo.full_name}
+              >
+                {repo.full_name}
+                <span className="ml-1 text-gray-400">
+                  ({repo.stargazers_count || 0}⭐)
+                </span>
+              </AutocompleteItem>
+            ))}
+          </AutocompleteSection>
+        ) : null
       )}
     </Autocomplete>
   );
