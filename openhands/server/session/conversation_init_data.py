@@ -1,4 +1,3 @@
-from types import MappingProxyType
 from pydantic import Field
 
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
