@@ -58,7 +58,7 @@ describe("Settings Screen", () => {
     renderSettingsScreen();
 
     await waitFor(() => {
-      screen.getByText("LLM Settings");
+      screen.getByText("SETTINGS$LLM_SETTINGS");
       screen.getByText("GitHub Settings");
       screen.getByText("Additional Settings");
       screen.getByText("Reset to defaults");

@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router";
+import { useTranslation } from "react-i18next";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { HelpLink } from "#/components/features/settings/help-link";
 import { KeyStatusIcon } from "#/components/features/settings/key-status-icon";
@@ -33,6 +34,7 @@ const REMOTE_RUNTIME_OPTIONS = [
 ];
 
 function AccountSettings() {
+  const { t } = useTranslation();
   const {
     data: settings,
     isFetching: isFetchingSettings,
@@ -235,7 +237,7 @@ function AccountSettings() {
             >
               <div className="flex items-center gap-7">
                 <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">
-                  LLM Settings
+                  {t("SETTINGS$LLM_SETTINGS")}
                 </h2>
                 {!shouldHandleSpecialSaasCase && (
                   <SettingsSwitch
