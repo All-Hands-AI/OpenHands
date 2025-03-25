@@ -80,7 +80,7 @@ class Event:
     def timeout(self) -> float | None:
         if hasattr(self, '_timeout'):
             timeout_val = getattr(self, '_timeout')
-            return int(timeout_val) if timeout_val is not None else None
+            return float(timeout_val) if timeout_val is not None else None
         return None
 
     def set_hard_timeout(self, value: float | None, blocking: bool = True) -> None:
