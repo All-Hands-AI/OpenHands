@@ -123,6 +123,11 @@ class GitLabService(GitService):
         if installation_id:
             return []  # Not implementing installation_token case yet
         
+        MAX_REPOS = 1000
+        PER_PAGE = 100  # Maximum allowed by GitLab API
+        all_repos = []
+        page = 1
+
         url = f'{self.BASE_URL}/projects'
         # Map GitHub's sort values to GitLab's order_by values
         order_by = {
@@ -132,28 +137,40 @@ class GitLabService(GitService):
             'full_name': 'name'
         }.get(sort, 'last_activity_at')
 
-        params = {
-            'page': str(page),
-            'per_page': str(per_page),
-            'order_by': order_by,
-            'sort': 'desc',  # GitLab uses sort for direction (asc/desc)
-            'owned': 1,  # Use 1 instead of True
-            'membership': 1  # Use 1 instead of True
-        }
-        response, headers = await self._fetch_data(url, params)
-        
-        next_link: str = headers.get('Link', '')
-        repos = [
+        while len(all_repos) < MAX_REPOS:
+            params = {
+                'page': str(page),
+                'per_page': str(PER_PAGE),
+                'order_by': order_by,
+                'sort': 'desc',  # GitLab uses sort for direction (asc/desc)
+                'owned': 1,  # Use 1 instead of True
+                'membership': 1  # Use 1 instead of True
+            }
+            response, headers = await self._fetch_data(url, params)
+
+            if not response:  # No more repositories
+                break
+
+            all_repos.extend(response)
+            page += 1
+
+            # Check if we've reached the last page
+            link_header = headers.get('Link', '')
+            if 'rel="next"' not in link_header:
+                break
+
+        # Trim to MAX_REPOS if needed and convert to Repository objects
+        all_repos = all_repos[:MAX_REPOS]
+        return [
             Repository(
                 id=repo.get('id'),
                 full_name=repo.get('path_with_namespace'),
                 stargazers_count=repo.get('star_count'),
-                link_header=next_link,
+                link_header='',  # No need for link header since we handle pagination internally
                 git_provider=ProviderType.GITLAB
             )
-            for repo in response
+            for repo in all_repos
         ]
-        return repos
 
     async def does_repo_exist(self, repository: str) -> bool:
         url = f'{self.BASE_URL}/projects/{repository}'

@@ -102,28 +102,45 @@ class GitHubService(GitService):
     async def get_repositories(
         self, sort: str, installation_id: int | None
     ) -> list[Repository]:
-        params = {'page': str(page), 'per_page': str(per_page)}
-        if installation_id:
-            url = f'{self.BASE_URL}/user/installations/{installation_id}/repositories'
-            response, headers = await self._fetch_data(url, params)
-            response = response.get('repositories', [])
-        else:
-            url = f'{self.BASE_URL}/user/repos'
-            params['sort'] = sort
-            response, headers = await self._fetch_data(url, params)
+        MAX_REPOS = 1000
+        PER_PAGE = 100  # Maximum allowed by GitHub API
+        all_repos = []
+        page = 1
 
-        next_link: str = headers.get('Link', '')
-        repos = [
+        while len(all_repos) < MAX_REPOS:
+            params = {'page': str(page), 'per_page': str(PER_PAGE)}
+            if installation_id:
+                url = f'{self.BASE_URL}/user/installations/{installation_id}/repositories'
+                response, headers = await self._fetch_data(url, params)
+                response = response.get('repositories', [])
+            else:
+                url = f'{self.BASE_URL}/user/repos'
+                params['sort'] = sort
+                response, headers = await self._fetch_data(url, params)
+
+            if not response:  # No more repositories
+                break
+
+            all_repos.extend(response)
+            page += 1
+
+            # Check if we've reached the last page
+            link_header = headers.get('Link', '')
+            if 'rel="next"' not in link_header:
+                break
+
+        # Trim to MAX_REPOS if needed and convert to Repository objects
+        all_repos = all_repos[:MAX_REPOS]
+        return [
             Repository(
                 id=repo.get('id'),
                 full_name=repo.get('full_name'),
                 stargazers_count=repo.get('stargazers_count'),
-                link_header=next_link,
+                link_header='',  # No need for link header since we handle pagination internally
                 git_provider=ProviderType.GITHUB
             )
-            for repo in response
+            for repo in all_repos
         ]
-        return repos
 
     async def get_installation_ids(self) -> list[int]:
         url = f'{self.BASE_URL}/user/installations'
