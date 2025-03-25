@@ -1,6 +1,7 @@
 import React from "react";
 import { useSelector } from "react-redux";
 import posthog from "posthog-js";
+import { useTranslation } from "react-i18next";
 import { formatTimeDelta } from "#/utils/format-time-delta";
 import { ConversationRepoLink } from "./conversation-repo-link";
 import {
@@ -12,6 +13,7 @@ import { ConversationCardContextMenu } from "./conversation-card-context-menu";
 import { cn } from "#/utils/utils";
 import { BaseModal } from "../../shared/modals/base-modal/base-modal";
 import { RootState } from "#/store";
+import { I18nKey } from "#/i18n/declaration";
 
 interface ConversationCardProps {
   onClick?: () => void;
@@ -46,6 +48,7 @@ export function ConversationCard({
   variant = "default",
   conversationId,
 }: ConversationCardProps) {
+  const { t } = useTranslation();
   const [contextMenuVisible, setContextMenuVisible] = React.useState(false);
   const [titleMode, setTitleMode] = React.useState<"view" | "edit">("view");
   const [metricsModalVisible, setMetricsModalVisible] = React.useState(false);
@@ -237,7 +240,7 @@ export function ConversationCard({
       <BaseModal
         isOpen={metricsModalVisible}
         onOpenChange={setMetricsModalVisible}
-        title="Metrics Information"
+        title={t(I18nKey.CONVERSATION$METRICS_INFO)}
         testID="metrics-modal"
       >
         <div className="space-y-2">

@@ -341,7 +341,7 @@ describe("ConversationCard", () => {
     await user.click(displayCostButton);
 
     // Verify if metrics modal is displayed by checking for the modal content
-    expect(screen.getByText("Metrics Information")).toBeInTheDocument();
+    expect(screen.getByTestId("metrics-modal")).toBeInTheDocument();
   });
 
   it("should not display the edit or delete options if the handler is not provided", async () => {

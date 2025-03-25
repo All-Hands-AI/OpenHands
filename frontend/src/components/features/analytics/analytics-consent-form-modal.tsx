@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import {
   BaseModalTitle,
   BaseModalDescription,
@@ -7,7 +8,6 @@ import { ModalBody } from "#/components/shared/modals/modal-body";
 import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 import { handleCaptureConsent } from "#/utils/handle-capture-consent";
 import { BrandButton } from "../settings/brand-button";
-import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 
 interface AnalyticsConsentFormModalProps {
