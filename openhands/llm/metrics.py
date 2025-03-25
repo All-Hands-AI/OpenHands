@@ -42,6 +42,14 @@ class Metrics:
         self._response_latencies: list[ResponseLatency] = []
         self.model_name = model_name
         self._token_usages: list[TokenUsage] = []
+        self._accumulated_token_usage: TokenUsage = TokenUsage(
+            model=model_name,
+            prompt_tokens=0,
+            completion_tokens=0,
+            cache_read_tokens=0,
+            cache_write_tokens=0,
+            response_id='',
+        )
 
     @property
     def accumulated_cost(self) -> float:
@@ -109,6 +117,10 @@ class Metrics:
                 response_id=response_id,
             )
         )
+        self._accumulated_token_usage.prompt_tokens += prompt_tokens
+        self._accumulated_token_usage.completion_tokens += completion_tokens
+        self._accumulated_token_usage.cache_read_tokens += cache_read_tokens
+        self._accumulated_token_usage.cache_write_tokens += cache_write_tokens
 
     def merge(self, other: 'Metrics') -> None:
         """Merge 'other' metrics into this one."""
@@ -122,6 +134,7 @@ class Metrics:
         """Return the metrics in a dictionary."""
         return {
             'accumulated_cost': self._accumulated_cost,
+            'accumulated_token_usage': self._accumulated_token_usage.model_dump(),
             'costs': [cost.model_dump() for cost in self._costs],
             'response_latencies': [
                 latency.model_dump() for latency in self._response_latencies
