@@ -228,12 +228,14 @@ class OpenHands {
     selectedRepository?: string,
     initialUserMsg?: string,
     imageUrls?: string[],
+    replayJson?: string,
   ): Promise<Conversation> {
     const body = {
       selected_repository: selectedRepository,
       selected_branch: undefined,
       initial_user_msg: initialUserMsg,
       image_urls: imageUrls,
+      replay_json: replayJson,
     };
 
     const { data } = await openHands.post<Conversation>(

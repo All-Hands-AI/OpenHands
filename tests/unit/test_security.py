@@ -605,11 +605,11 @@ async def test_check_usertask(
 
         if is_appropriate == 'No':
             assert len(event_list) == 2
-            assert type(event_list[0]) == MessageAction
-            assert type(event_list[1]) == ChangeAgentStateAction
+            assert isinstance(event_list[0], MessageAction)
+            assert isinstance(event_list[1], ChangeAgentStateAction)
         elif is_appropriate == 'Yes':
             assert len(event_list) == 1
-            assert type(event_list[0]) == MessageAction
+            assert isinstance(event_list[0], MessageAction)
 
 
 @pytest.mark.parametrize(
@@ -667,8 +667,8 @@ async def test_check_fillaction(
 
         if is_harmful == 'Yes':
             assert len(event_list) == 2
-            assert type(event_list[0]) == BrowseInteractiveAction
-            assert type(event_list[1]) == ChangeAgentStateAction
+            assert isinstance(event_list[0], BrowseInteractiveAction)
+            assert isinstance(event_list[1], ChangeAgentStateAction)
         elif is_harmful == 'No':
             assert len(event_list) == 1
-            assert type(event_list[0]) == BrowseInteractiveAction
+            assert isinstance(event_list[0], BrowseInteractiveAction)
