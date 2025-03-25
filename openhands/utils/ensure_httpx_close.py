@@ -57,12 +57,11 @@ def ensure_httpx_close() -> Iterator[None]:
                 self.client.close()
                 self.client = None
 
-        def __iter__(self) -> Iterator[Any]:
+        def __iter__(self, *args, **kwargs):
             # We have to override this as debuggers invoke it causing the client to reopen
             if self.client:
-                # Convert client to list first since it's not directly iterable
-                return iter(list(self.client.__dict__.items()))
-            return iter([])
+                return self.client.iter(*args, **kwargs)
+            return object.__getattribute__(self, 'iter')(*args, **kwargs)
 
         @property
         def is_closed(self) -> bool:

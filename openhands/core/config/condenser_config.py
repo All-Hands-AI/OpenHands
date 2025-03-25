@@ -200,7 +200,7 @@ def condenser_config_from_toml_section(
             f'Invalid condenser configuration: {e}. Using NoOpCondenserConfig.'
         )
         # Default to NoOpCondenserConfig if config fails
-        config = NoOpCondenserConfig()
+        config = NoOpCondenserConfig(type='noop')
         condenser_mapping['condenser'] = config
 
     return condenser_mapping
