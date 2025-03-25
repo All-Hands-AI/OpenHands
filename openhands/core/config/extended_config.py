@@ -33,7 +33,7 @@ class ExtendedConfig(RootModel[dict[str, Any]]):
     def __getattr__(self, key: str) -> Any:
         # Fallback for attribute access using the root dict.
         try:
-            root_dict: Dict[str, Any] = self.model_dump()
+            root_dict: dict[str, Any] = self.model_dump()
             return root_dict[key]
         except KeyError as e:
             raise AttributeError(
