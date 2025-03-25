@@ -42,6 +42,8 @@ class ActionType(str, Enum):
     """Delegates a task to another agent.
     """
 
+    SUMMARIZE = 'summarize'
+
     THINK = 'think'
     """Logs a thought.
     """
