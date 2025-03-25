@@ -1,22 +1,18 @@
-
-
 # Groq
 
-OpenHands utilise LiteLLM pour faire des appels aux modèles de chat sur Groq. Vous pouvez trouver leur documentation sur l'utilisation de Groq comme fournisseur [ici](https://docs.litellm.ai/docs/providers/groq).
+OpenHandsは、GroqのチャットモデルへのAPIコールにLiteLLMを使用します。Groqをプロバイダーとして使用する方法については、[こちら](https://docs.litellm.ai/docs/providers/groq)のドキュメントを参照してください。
 
-## Configuration
+## 設定
 
-Lorsque vous exécutez OpenHands, vous devrez définir les éléments suivants dans l'interface utilisateur d'OpenHands via les paramètres :
-* `LLM Provider` à `Groq`
-* `LLM Model` au modèle que vous utiliserez. [Visitez ici pour voir la liste des modèles hébergés par Groq](https://console.groq.com/docs/models). Si le modèle n'est pas dans la liste, activez les `Advanced Options` et entrez-le dans `Custom Model` (par exemple, groq/&lt;model-name&gt; comme `groq/llama3-70b-8192`).
-* `API key` à votre clé API Groq. Pour trouver ou créer votre clé API Groq, [voir ici](https://console.groq.com/keys).
+OpenHandsを実行する際、OpenHandsのUIで設定メニューから以下の項目を設定する必要があります：
+* `LLM Provider`を`Groq`に設定
+* `LLM Model`を使用するモデルに設定。[Groqがホストするモデルのリストはこちら](https://console.groq.com/docs/models)を参照してください。モデルがリストにない場合は、`Advanced Options`を有効にし、`Custom Model`に入力してください（例：groq/&lt;model-name&gt;として`groq/llama3-70b-8192`）。
+* `API key`をGroq APIキーに設定。Groq APIキーの確認または作成については、[こちら](https://console.groq.com/keys)を参照してください。
 
+## OpenAI互換エンドポイントとしてのGroqの使用
 
-
-## Utilisation de Groq comme point de terminaison compatible OpenAI
-
-Le point de terminaison Groq pour la complétion de chat est [principalement compatible OpenAI](https://console.groq.com/docs/openai). Par conséquent, vous pouvez accéder aux modèles Groq comme vous le feriez pour n'importe quel point de terminaison compatible OpenAI. Vous pouvez définir les éléments suivants dans l'interface utilisateur d'OpenHands via les paramètres :
-* Activer les `Advanced Options`
-* `Custom Model` au préfixe `openai/` + le modèle que vous utiliserez (par exemple, `openai/llama3-70b-8192`)
-* `Base URL` à `https://api.groq.com/openai/v1`
-* `API Key` à votre clé API Groq
+Groqのチャット補完エンドポイントは[主にOpenAI互換](https://console.groq.com/docs/openai)です。そのため、他のOpenAI互換エンドポイントと同様の方法でGroqのモデルにアクセスできます。OpenHandsのUIで設定メニューから以下の項目を設定します：
+* `Advanced Options`を有効にする
+* `Custom Model`にプレフィックス`openai/`と使用するモデルを設定（例：`openai/llama3-70b-8192`）
+* `Base URL`を`https://api.groq.com/openai/v1`に設定
+* `API Key`をGroq APIキーに設定
