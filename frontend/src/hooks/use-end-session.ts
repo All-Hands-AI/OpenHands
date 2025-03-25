@@ -1,13 +1,10 @@
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router";
-import {
-  initialState as browserInitialState,
-  setScreenshotSrc,
-  setUrl,
-} from "#/state/browser-slice";
 import { clearSelectedRepository } from "#/state/initial-query-slice";
+import { DEFAULT_BROWSER_DATA, useBrowser } from "./state/use-browser";
 
 export const useEndSession = () => {
+  const { setScreenshotSrc, setUrl } = useBrowser();
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -18,8 +15,8 @@ export const useEndSession = () => {
     dispatch(clearSelectedRepository());
 
     // Reset browser state to initial values
-    dispatch(setUrl(browserInitialState.url));
-    dispatch(setScreenshotSrc(browserInitialState.screenshotSrc));
+    setUrl(DEFAULT_BROWSER_DATA.url);
+    setScreenshotSrc(DEFAULT_BROWSER_DATA.screenshotSrc);
 
     navigate("/");
   };

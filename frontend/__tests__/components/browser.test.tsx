@@ -1,4 +1,7 @@
 import { describe, it, expect, afterEach, vi } from "vitest";
+import { screen } from "@testing-library/react";
+import { renderWithProviders } from "../../test-utils";
+import { BrowserPanel } from "#/components/features/browser/browser";
 
 // Mock useParams before importing components
 vi.mock("react-router", async () => {
@@ -23,38 +26,37 @@ vi.mock("react-i18next", async () => {
   };
 });
 
-import { screen } from "@testing-library/react";
-import { renderWithProviders } from "../../test-utils";
-import { BrowserPanel } from "#/components/features/browser/browser";
+const { useBrowserMock } = vi.hoisted(() => ({
+  useBrowserMock: vi.fn(),
+}));
+
+vi.mock("#/hooks/state/use-browser", async () => ({
+  useBrowser: useBrowserMock,
+}));
 
 describe("Browser", () => {
   afterEach(() => {
     vi.clearAllMocks();
   });
+
   it("renders a message if no screenshotSrc is provided", () => {
-    renderWithProviders(<BrowserPanel />, {
-      preloadedState: {
-        browser: {
-          url: "https://example.com",
-          screenshotSrc: "",
-        },
-      },
+    useBrowserMock.mockReturnValue({
+      url: "https://example.com",
+      screenshotSrc: "",
     });
+    renderWithProviders(<BrowserPanel />);
 
     // i18n empty message key
     expect(screen.getByText("BROWSER$NO_PAGE_LOADED")).toBeInTheDocument();
   });
 
   it("renders the url and a screenshot", () => {
-    renderWithProviders(<BrowserPanel />, {
-      preloadedState: {
-        browser: {
-          url: "https://example.com",
-          screenshotSrc:
-            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mN0uGvyHwAFCAJS091fQwAAAABJRU5ErkJggg==",
-        },
-      },
+    useBrowserMock.mockReturnValue({
+      url: "https://example.com",
+      screenshotSrc:
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mN0uGvyHwAFCAJS091fQwAAAABJRU5ErkJggg==",
     });
+    renderWithProviders(<BrowserPanel />);
 
     expect(screen.getByText("https://example.com")).toBeInTheDocument();
     expect(screen.getByAltText(/browser screenshot/i)).toBeInTheDocument();

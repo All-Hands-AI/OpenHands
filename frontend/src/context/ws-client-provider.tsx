@@ -9,6 +9,11 @@ import {
   AssistantMessageAction,
   UserMessageAction,
 } from "#/types/core/actions";
+import {
+  BrowseInteractiveObservation,
+  BrowseObservation,
+} from "#/types/core/observations";
+import { useBrowser } from "#/hooks/state/use-browser";
 
 const isOpenHandsEvent = (event: unknown): event is OpenHandsParsedEvent =>
   typeof event === "object" &&
@@ -38,6 +43,14 @@ const isMessageAction = (
   event: OpenHandsParsedEvent,
 ): event is UserMessageAction | AssistantMessageAction =>
   isUserMessage(event) || isAssistantMessage(event);
+
+const isBrowserObservation = (
+  event: OpenHandsParsedEvent,
+): event is BrowseObservation | BrowseInteractiveObservation =>
+  "source" in event &&
+  "observation" in event &&
+  (event.observation === "browse" ||
+    event.observation === "browse_interactive");
 
 export enum WsClientProviderStatus {
   CONNECTED,
@@ -104,6 +117,7 @@ export function WsClientProvider({
   conversationId,
   children,
 }: React.PropsWithChildren<WsClientProviderProps>) {
+  const { setScreenshotSrc, setUrl } = useBrowser();
   const sioRef = React.useRef<Socket | null>(null);
   const [status, setStatus] = React.useState(
     WsClientProviderStatus.DISCONNECTED,
@@ -132,6 +146,11 @@ export function WsClientProvider({
     setEvents((prevEvents) => [...prevEvents, event]);
     if (!Number.isNaN(parseInt(event.id as string, 10))) {
       lastEventRef.current = event;
+    }
+
+    if (isOpenHandsEvent(event) && isBrowserObservation(event)) {
+      if (event.extras.url) setUrl(event.extras.url);
+      if (event.extras.screenshot) setScreenshotSrc(event.extras.screenshot);
     }
 
     handleAssistantMessage(event);

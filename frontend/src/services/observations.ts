@@ -1,5 +1,4 @@
 import { setCurrentAgentState } from "#/state/agent-slice";
-import { setUrl, setScreenshotSrc } from "#/state/browser-slice";
 import store from "#/store";
 import { ObservationMessage } from "#/types/message";
 import { AgentState } from "#/types/agent-state";
@@ -28,15 +27,6 @@ export function handleObservationMessage(message: ObservationMessage) {
     case ObservationType.RUN_IPYTHON:
       // FIXME: render this as markdown
       store.dispatch(appendJupyterOutput(message.content));
-      break;
-    case ObservationType.BROWSE:
-    case ObservationType.BROWSE_INTERACTIVE:
-      if (message.extras?.screenshot) {
-        store.dispatch(setScreenshotSrc(message.extras?.screenshot));
-      }
-      if (message.extras?.url) {
-        store.dispatch(setUrl(message.extras.url));
-      }
       break;
     case ObservationType.AGENT_STATE_CHANGED:
       store.dispatch(setCurrentAgentState(message.extras.agent_state));
