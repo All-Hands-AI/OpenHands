@@ -314,9 +314,7 @@ class GitHubService(GitService):
         try:
             await self._fetch_data(url)
             return True
-        except AuthenticationError:
-            return False
-        except UnknownException:
+        except Exception:
             return False
 
 

@@ -8,7 +8,6 @@ export const useUserRepositories = () => {
   const { providerTokensSet, providersAreSet } = useAuth();
   const { data: config } = useConfig();
 
-  console.log("providers set");
   const repos = useInfiniteQuery({
     queryKey: ["repositories", providerTokensSet],
     queryFn: async ({ pageParam }) =>

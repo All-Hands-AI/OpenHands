@@ -234,7 +234,8 @@ class ProviderHandler:
         for provider in self.provider_tokens:
             try:
                 service = self._get_service(provider)
-                if service.does_repo_exist(repository):
+                repo_exists = await service.does_repo_exist(repository)
+                if repo_exists:
                     git_token = self.provider_tokens[provider].token
                     if git_token and provider in provider_domains:
                         domain = provider_domains[provider]

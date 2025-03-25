@@ -2,6 +2,7 @@ import os
 from typing import Any
 
 import httpx
+from urllib.parse import quote_plus 
 from pydantic import SecretStr
 
 from openhands.integrations.service_types import (
@@ -173,15 +174,14 @@ class GitLabService(GitService):
         ]
 
     async def does_repo_exist(self, repository: str) -> bool:
-        url = f'{self.BASE_URL}/projects/{repository}'
+        encoded_repo = quote_plus(repository)
+        url = f'{self.BASE_URL}/projects/{encoded_repo}'
         try:
             await self._fetch_data(url)
             return True
-        except AuthenticationError:
+        except Exception as e:
+            print(e)
             return False
-        except UnknownException:
-            return False
-
 
 
 gitlab_service_cls = os.environ.get(
