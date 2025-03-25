@@ -1,13 +1,14 @@
+from typing import Protocol
+
 from openhands.storage.files import FileStore
 
-
-from typing import Protocol
 
 class E2BFilesystem(Protocol):
     def write(self, path: str, contents: str | bytes) -> None: ...
     def read(self, path: str) -> str: ...
     def list(self, path: str) -> list[str]: ...
     def delete(self, path: str) -> None: ...
+
 
 class E2BFileStore(FileStore):
     def __init__(self, filesystem: E2BFilesystem) -> None:

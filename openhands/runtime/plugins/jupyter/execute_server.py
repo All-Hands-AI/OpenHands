@@ -77,24 +77,26 @@ class JupyterKernel:
         self.initialized = True
 
     async def _send_heartbeat(self) -> None:
-        if not self.ws:
-            return
-        try:
-            self.ws.ping()
-            # logging.info('Heartbeat sent...')
-        except tornado.iostream.StreamClosedError:
-            # logging.info('Heartbeat failed, reconnecting...')
+        if self.ws:
             try:
-                await self._connect()
-            except ConnectionRefusedError:
-                logging.info(
-                    'ConnectionRefusedError: Failed to reconnect to kernel websocket - Is the kernel still running?'
-                )
+                self.ws.ping()
+                # logging.info('Heartbeat sent...')
+            except tornado.iostream.StreamClosedError:
+                # logging.info('Heartbeat failed, reconnecting...')
+                try:
+                    await self._connect()
+                except ConnectionRefusedError:
+                    logging.info(
+                        'ConnectionRefusedError: Failed to reconnect to kernel websocket - Is the kernel still running?'
+                    )
 
     async def _connect(self) -> None:
+        # Close existing connection if any
         if self.ws:
-            self.ws.close()
-            self.ws = None
+            try:
+                self.ws.close()
+            finally:
+                self.ws = None
 
         client = AsyncHTTPClient()
         if not self.kernel_id:
@@ -112,10 +114,10 @@ class JupyterKernel:
                 except Exception:
                     # kernels are not ready yet
                     n_tries -= 1
-                    await asyncio.sleep(1)
-
-            if n_tries == 0:
-                raise ConnectionRefusedError('Failed to connect to kernel')
+                    if n_tries > 0:
+                        await asyncio.sleep(1)
+                    else:
+                        raise ConnectionRefusedError('Failed to connect to kernel')
 
         ws_req = HTTPRequest(
             url='{}/api/kernels/{}/channels'.format(
@@ -143,7 +145,10 @@ class JupyterKernel:
             await self._connect()
 
         msg_id = uuid4().hex
-        assert self.ws is not None
+        # At this point self.ws should be connected, but check again to be safe
+        if not self.ws:
+            raise ConnectionRefusedError('WebSocket connection is not established')
+
         res = await self.ws.write_message(
             json_encode(
                 {
@@ -235,6 +240,14 @@ class JupyterKernel:
         return ret
 
     async def shutdown_async(self) -> None:
+        # First close the websocket if it exists
+        if self.ws:
+            try:
+                self.ws.close()
+            finally:
+                self.ws = None
+
+        # Then delete the kernel if it exists
         if self.kernel_id:
             client = AsyncHTTPClient()
             await client.fetch(
@@ -242,9 +255,6 @@ class JupyterKernel:
                 method='DELETE',
             )
             self.kernel_id = None
-            if self.ws:
-                self.ws.close()
-                self.ws = None
 
 
 class ExecuteHandler(tornado.web.RequestHandler):
