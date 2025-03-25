@@ -11,7 +11,7 @@ export const useCreateConversation = () => {
   const dispatch = useDispatch();
   const queryClient = useQueryClient();
 
-  const { selectedRepository, files, importedProjectZip } = useSelector(
+  const { selectedRepository, files, replayJson } = useSelector(
     (state: RootState) => state.initialQuery,
   );
 
@@ -21,7 +21,7 @@ export const useCreateConversation = () => {
         !variables.q?.trim() &&
         !selectedRepository &&
         files.length === 0 &&
-        !importedProjectZip
+        !replayJson
       ) {
         throw new Error("No query provided");
       }
@@ -32,6 +32,7 @@ export const useCreateConversation = () => {
         selectedRepository || undefined,
         variables.q,
         files,
+        replayJson || undefined,
       );
     },
     onSuccess: async ({ conversation_id: conversationId }, { q }) => {
@@ -40,6 +41,7 @@ export const useCreateConversation = () => {
         query_character_length: q?.length,
         has_repository: !!selectedRepository,
         has_files: files.length > 0,
+        has_replay_json: !!replayJson,
       });
       await queryClient.invalidateQueries({
         queryKey: ["user", "conversations"],
