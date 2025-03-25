@@ -7,7 +7,6 @@ import {
 import { trackError } from "#/utils/error-handler";
 import { appendSecurityAnalyzerInput } from "#/state/security-analyzer-slice";
 import { setCode, setActiveFilepath } from "#/state/code-slice";
-import { appendJupyterInput } from "#/state/jupyter-slice";
 import { setCurStatusMessage } from "#/state/status-slice";
 import { setMetrics } from "#/state/metrics-slice";
 import store from "#/store";
@@ -51,11 +50,6 @@ const messageActions = {
       );
     } else {
       store.dispatch(addAssistantMessage(message.args.content));
-    }
-  },
-  [ActionType.RUN_IPYTHON]: (message: ActionMessage) => {
-    if (message.args.confirmation_state !== "rejected") {
-      store.dispatch(appendJupyterInput(message.args.code));
     }
   },
   [ActionType.FINISH]: (message: ActionMessage) => {

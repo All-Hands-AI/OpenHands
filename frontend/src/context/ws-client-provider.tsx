@@ -7,8 +7,11 @@ import { useRate } from "#/hooks/use-rate";
 import { OpenHandsParsedEvent } from "#/types/core";
 import {
   AssistantMessageAction,
+  IPythonAction,
   UserMessageAction,
 } from "#/types/core/actions";
+import { useJupyter } from "#/hooks/state/use-jupyter";
+import { IPythonObservation } from "#/types/core/observations";
 
 const isOpenHandsEvent = (event: unknown): event is OpenHandsParsedEvent =>
   typeof event === "object" &&
@@ -38,6 +41,14 @@ const isMessageAction = (
   event: OpenHandsParsedEvent,
 ): event is UserMessageAction | AssistantMessageAction =>
   isUserMessage(event) || isAssistantMessage(event);
+
+const isIPythonAction = (event: OpenHandsParsedEvent): event is IPythonAction =>
+  "observation" in event && event.observation === "run_ipython";
+
+const isIPythonObservation = (
+  event: OpenHandsParsedEvent,
+): event is IPythonObservation =>
+  "observation" in event && event.observation === "run_ipython";
 
 export enum WsClientProviderStatus {
   CONNECTED,
@@ -104,6 +115,7 @@ export function WsClientProvider({
   conversationId,
   children,
 }: React.PropsWithChildren<WsClientProviderProps>) {
+  const { addInputCell, addOutputCell } = useJupyter();
   const sioRef = React.useRef<Socket | null>(null);
   const [status, setStatus] = React.useState(
     WsClientProviderStatus.DISCONNECTED,
@@ -129,6 +141,19 @@ export function WsClientProvider({
     if (isOpenHandsEvent(event) && isMessageAction(event)) {
       messageRateHandler.record(new Date().getTime());
     }
+
+    if (
+      isOpenHandsEvent(event) &&
+      isIPythonAction(event) &&
+      event.args.confirmation_state !== "rejected"
+    ) {
+      addInputCell(event.args.code);
+    }
+
+    if (isOpenHandsEvent(event) && isIPythonObservation(event)) {
+      addOutputCell(event.content);
+    }
+
     setEvents((prevEvents) => [...prevEvents, event]);
     if (!Number.isNaN(parseInt(event.id as string, 10))) {
       lastEventRef.current = event;

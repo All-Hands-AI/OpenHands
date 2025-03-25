@@ -16,7 +16,6 @@ import { useEffectOnce } from "#/hooks/use-effect-once";
 import CodeIcon from "#/icons/code.svg?react";
 import GlobeIcon from "#/icons/globe.svg?react";
 import ListIcon from "#/icons/list-type-number.svg?react";
-import { clearJupyter } from "#/state/jupyter-slice";
 import { FilesProvider } from "#/context/files";
 import { ChatInterface } from "../../components/features/chat/chat-interface";
 import { WsClientProvider } from "#/context/ws-client-provider";
@@ -36,9 +35,11 @@ import { useSettings } from "#/hooks/query/use-settings";
 import { clearFiles, clearInitialPrompt } from "#/state/initial-query-slice";
 import { RootState } from "#/store";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
+import { useJupyter } from "#/hooks/state/use-jupyter";
 
 function AppContent() {
   useConversationConfig();
+  const { clearCells } = useJupyter();
   const { t } = useTranslation();
   const { data: settings } = useSettings();
   const { conversationId } = useConversation();
@@ -76,7 +77,7 @@ function AppContent() {
   React.useEffect(() => {
     dispatch(clearMessages());
     dispatch(clearTerminal());
-    dispatch(clearJupyter());
+    clearCells();
     if (conversationId && (initialPrompt || files.length > 0)) {
       dispatch(
         addUserMessage({
@@ -94,7 +95,7 @@ function AppContent() {
   useEffectOnce(() => {
     dispatch(clearMessages());
     dispatch(clearTerminal());
-    dispatch(clearJupyter());
+    clearCells();
   });
 
   function handleResize() {

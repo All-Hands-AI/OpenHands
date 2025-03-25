@@ -4,7 +4,6 @@ import store from "#/store";
 import { ObservationMessage } from "#/types/message";
 import { AgentState } from "#/types/agent-state";
 import { appendOutput } from "#/state/command-slice";
-import { appendJupyterOutput } from "#/state/jupyter-slice";
 import ObservationType from "#/types/observation-type";
 import {
   addAssistantMessage,
@@ -25,10 +24,6 @@ export function handleObservationMessage(message: ObservationMessage) {
       store.dispatch(appendOutput(content));
       break;
     }
-    case ObservationType.RUN_IPYTHON:
-      // FIXME: render this as markdown
-      store.dispatch(appendJupyterOutput(message.content));
-      break;
     case ObservationType.BROWSE:
     case ObservationType.BROWSE_INTERACTIVE:
       if (message.extras?.screenshot) {
