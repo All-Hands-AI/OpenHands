@@ -48,7 +48,6 @@ docker pull docker.all-hands.dev/all-hands-ai/runtime:0.29-nikolaik
 docker run -it --rm --pull=always \
     -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.29-nikolaik \
     -e LOG_ALL_EVENTS=true \
-    -e LLM_SEED=42 \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v ~/.openhands-state:/.openhands-state \
     -p 3000:3000 \
