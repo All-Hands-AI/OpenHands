@@ -1,50 +1,48 @@
+# 🤖 LLMバックエンド
 
+OpenHandsは、LiteLLMがサポートするすべてのLLMに接続できます。ただし、機能するには強力なモデルが必要です。
 
-# 🤖 Backends LLM
+## モデルの推奨事項
 
-OpenHands peut se connecter à n'importe quel LLM supporté par LiteLLM. Cependant, il nécessite un modèle puissant pour fonctionner.
+コーディングタスクに対する言語モデルの評価（SWE-benchデータセットを使用）に基づいて、モデル選択に関するいくつかの推奨事項を提供できます。分析の一部は、[LLMを比較したこのブログ記事](https://www.all-hands.dev/blog/evaluation-of-llms-as-coding-agents-on-swe-bench-at-30x-speed)と[より最近の結果を含むこのブログ記事](https://www.all-hands.dev/blog/openhands-codeact-21-an-open-state-of-the-art-software-development-agent)で確認できます。
 
-## Recommandations de modèles
+モデルを選択する際は、出力の品質とコストの両方を考慮してください。結果の要約は以下の通りです：
 
-Sur la base de nos évaluations des modèles de langage pour les tâches de codage (en utilisant le jeu de données SWE-bench), nous pouvons fournir quelques recommandations pour la sélection des modèles. Certaines analyses peuvent être trouvées dans [cet article de blog comparant les LLM](https://www.all-hands.dev/blog/evaluation-of-llms-as-coding-agents-on-swe-bench-at-30x-speed) et [cet article de blog avec des résultats plus récents](https://www.all-hands.dev/blog/openhands-codeact-21-an-open-state-of-the-art-software-development-agent).
+- Claude 3.5 Sonnetが圧倒的に優れており、OpenHandsのデフォルトエージェントでSWE-Bench Verifiedの53%の解決率を達成しています。
+- GPT-4oは遅れを取っており、o1-miniは実際にGPT-4oよりもわずかに低いパフォーマンスを示しました。結果を少し分析したところ、o1は時々「考えすぎ」て、タスクを完了できるのに追加の環境設定タスクを実行していたようです。
+- 最後に、最も強力なオープンモデルはLlama 3.1 405 BとDeepseek-v2.5で、合理的なパフォーマンスを示し、一部のクローズドモデルを上回りました。
 
-Lors du choix d'un modèle, considérez à la fois la qualité des sorties et les coûts associés. Voici un résumé des résultats :
+詳細については、[完全な記事](https://www.all-hands.dev/blog/evaluation-of-llms-as-coding-agents-on-swe-bench-at-30x-speed)を参照してください。
 
-- Claude 3.5 Sonnet est le meilleur de loin, atteignant un taux de résolution de 53% sur SWE-Bench Verified avec l'agent par défaut dans OpenHands.
-- GPT-4o est à la traîne, et o1-mini a en fait obtenu des performances légèrement inférieures à celles de GPT-4o. Nous avons analysé les résultats un peu, et brièvement, il semblait que o1 "réfléchissait trop" parfois, effectuant des tâches de configuration d'environnement supplémentaires alors qu'il aurait pu simplement aller de l'avant et terminer la tâche.
-- Enfin, les modèles ouverts les plus puissants étaient Llama 3.1 405 B et deepseek-v2.5, et ils ont obtenu des performances raisonnables, surpassant même certains des modèles fermés.
+これらの結果とコミュニティからのフィードバックに基づいて、以下のモデルがOpenHandsで合理的に機能することが確認されています：
 
-Veuillez vous référer à [l'article complet](https://www.all-hands.dev/blog/evaluation-of-llms-as-coding-agents-on-swe-bench-at-30x-speed) pour plus de détails.
-
-Sur la base de ces résultats et des commentaires de la communauté, il a été vérifié que les modèles suivants fonctionnent raisonnablement bien avec OpenHands :
-
-- claude-3-5-sonnet (recommandé)
+- claude-3-5-sonnet（推奨）
 - gpt-4 / gpt-4o
 - llama-3.1-405b
 - deepseek-v2.5
 
 :::warning
-OpenHands enverra de nombreuses invites au LLM que vous configurez. La plupart de ces LLM sont payants, alors assurez-vous de définir des limites de dépenses et de surveiller l'utilisation.
+OpenHandsは、設定したLLMに多くのプロンプトを送信します。これらのLLMのほとんどは有料なので、支出制限を設定し、使用状況を監視してください。
 :::
 
-Si vous avez réussi à exécuter OpenHands avec des LLM spécifiques qui ne figurent pas dans la liste, veuillez les ajouter à la liste vérifiée. Nous vous encourageons également à ouvrir une PR pour partager votre processus de configuration afin d'aider les autres utilisant le même fournisseur et LLM !
+リストにない特定のLLMでOpenHandsの実行に成功した場合は、検証済みリストに追加してください。また、同じプロバイダーとLLMを使用する他のユーザーを支援するため、設定プロセスを共有するPRを開くことをお勧めします！
 
-Pour une liste complète des fournisseurs et des modèles disponibles, veuillez consulter la [documentation litellm](https://docs.litellm.ai/docs/providers).
+利用可能なプロバイダーとモデルの完全なリストについては、[litellmのドキュメント](https://docs.litellm.ai/docs/providers)を参照してください。
 
 :::note
-La plupart des modèles locaux et open source actuels ne sont pas aussi puissants. Lors de l'utilisation de tels modèles, vous pouvez constater de longs temps d'attente entre les messages, des réponses médiocres ou des erreurs concernant du JSON mal formé. OpenHands ne peut être aussi puissant que les modèles qui le pilotent. Cependant, si vous en trouvez qui fonctionnent, veuillez les ajouter à la liste vérifiée ci-dessus.
+現在のほとんどのローカルおよびオープンソースモデルは、それほど強力ではありません。このようなモデルを使用する場合、メッセージ間の長い待機時間、品質の低い応答、または不正なJSONに関するエラーが発生する可能性があります。OpenHandsは、それを駆動するモデルと同じくらい強力にしかなりません。ただし、機能するモデルを見つけた場合は、上記の検証済みリストに追加してください。
 :::
 
-## Configuration LLM
+## LLM設定
 
-Les éléments suivants peuvent être définis dans l'interface utilisateur d'OpenHands via les paramètres :
+以下の項目は、OpenHandsのUIで設定メニューから設定できます：
 
-- `Fournisseur LLM`
-- `Modèle LLM`
-- `Clé API`
-- `URL de base` (via `Paramètres avancés`)
+- `LLMプロバイダー`
+- `LLMモデル`
+- `APIキー`
+- `ベースURL`（`詳細設定`から）
 
-Il existe certains paramètres qui peuvent être nécessaires pour certains LLM/fournisseurs et qui ne peuvent pas être définis via l'interface utilisateur. Au lieu de cela, ils peuvent être définis via des variables d'environnement passées à la [commande docker run](/modules/usage/installation#start-the-app) en utilisant `-e` :
+一部のLLM/プロバイダーで必要となる可能性があるが、UIでは設定できないパラメータがあります。これらは代わりに、[docker runコマンド](/modules/usage/installation#start-the-app)に`-e`を使用して環境変数として渡すことができます：
 
 - `LLM_API_VERSION`
 - `LLM_EMBEDDING_MODEL`
@@ -53,7 +51,7 @@ Il existe certains paramètres qui peuvent être nécessaires pour certains LLM/
 - `LLM_DISABLE_VISION`
 - `LLM_CACHING_PROMPT`
 
-Nous avons quelques guides pour exécuter OpenHands avec des fournisseurs de modèles spécifiques :
+特定のモデルプロバイダーでOpenHandsを実行するためのガイドがいくつかあります：
 
 - [Azure](llms/azure-llms)
 - [Google](llms/google-llms)
@@ -62,18 +60,18 @@ Nous avons quelques guides pour exécuter OpenHands avec des fournisseurs de mod
 - [OpenAI](llms/openai-llms)
 - [OpenRouter](llms/openrouter)
 
-### Nouvelles tentatives d'API et limites de débit
+### APIリトライとレート制限
 
-Les fournisseurs de LLM ont généralement des limites de débit, parfois très basses, et peuvent nécessiter de nouvelles tentatives. OpenHands réessaiera automatiquement les requêtes s'il reçoit une erreur de limite de débit (code d'erreur 429), une erreur de connexion API ou d'autres erreurs transitoires.
+LLMプロバイダーは通常、レート制限を持っており、時には非常に低い制限で、リトライが必要になる場合があります。OpenHandsは、レート制限エラー（エラーコード429）、API接続エラー、またはその他の一時的なエラーを受信した場合、自動的にリクエストを再試行します。
 
-Vous pouvez personnaliser ces options selon vos besoins pour le fournisseur que vous utilisez. Consultez leur documentation et définissez les variables d'environnement suivantes pour contrôler le nombre de nouvelles tentatives et le temps entre les tentatives :
+使用しているプロバイダーのニーズに応じて、これらのオプションをカスタマイズできます。プロバイダーのドキュメントを確認し、以下の環境変数を設定してリトライ回数とリトライ間の待機時間を制御してください：
 
-- `LLM_NUM_RETRIES` (Par défaut 8)
-- `LLM_RETRY_MIN_WAIT` (Par défaut 15 secondes)
-- `LLM_RETRY_MAX_WAIT` (Par défaut 120 secondes)
-- `LLM_RETRY_MULTIPLIER` (Par défaut 2)
+- `LLM_NUM_RETRIES`（デフォルト8）
+- `LLM_RETRY_MIN_WAIT`（デフォルト15秒）
+- `LLM_RETRY_MAX_WAIT`（デフォルト120秒）
+- `LLM_RETRY_MULTIPLIER`（デフォルト2）
 
-Si vous exécutez OpenHands en mode développement, vous pouvez également définir ces options dans le fichier `config.toml` :
+OpenHandsを開発モードで実行している場合、これらのオプションを`config.toml`ファイルで設定することもできます：
 
 ```toml
 [llm]
