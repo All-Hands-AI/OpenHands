@@ -77,13 +77,13 @@ class Event:
         return None
 
     @property
-    def timeout(self) -> int | None:
+    def timeout(self) -> float | None:
         if hasattr(self, '_timeout'):
             timeout_val = getattr(self, '_timeout')
             return int(timeout_val) if timeout_val is not None else None
         return None
 
-    def set_hard_timeout(self, value: int | None, blocking: bool = True) -> None:
+    def set_hard_timeout(self, value: float | None, blocking: bool = True) -> None:
         """Set the timeout for the event.
 
         NOTE, this is a hard timeout, meaning that the event will be blocked
