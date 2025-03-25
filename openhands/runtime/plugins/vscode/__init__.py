@@ -41,7 +41,7 @@ class VSCodePlugin(Plugin):
             'EOF'
         )
 
-        # zzz...
+        # zzx
         #f'exec /openhands/.openvscode-server/bin/openvscode-server --host 0.0.0.0 --connection-token {self.vscode_connection_token} --port {self.vscode_port} --disable-workspace-trust\n'
         self.gateway_process = subprocess.Popen(
             cmd,
