@@ -4,12 +4,13 @@ from typing import Type, TypeVar
 T = TypeVar('T')
 
 
-def import_from(qual_name: str):
+def import_from(qual_name: str) -> type:
     """Import the value from the qualified name given"""
     parts = qual_name.split('.')
     module_name = '.'.join(parts[:-1])
     module = importlib.import_module(module_name)
     result = getattr(module, parts[-1])
+    assert isinstance(result, type), f"Expected {qual_name} to be a type, got {type(result)}"
     return result
 
 

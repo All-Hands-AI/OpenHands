@@ -7,7 +7,7 @@ GENERAL_TIMEOUT: int = 15
 EXECUTOR = ThreadPoolExecutor()
 
 
-async def call_sync_from_async(fn: Callable, *args, **kwargs):
+async def call_sync_from_async(fn: Callable[..., object], *args: object, **kwargs: object) -> object:
     """
     Shorthand for running a function in the default background thread pool executor
     and awaiting the result. The nature of synchronous code is that the future
@@ -20,8 +20,11 @@ async def call_sync_from_async(fn: Callable, *args, **kwargs):
 
 
 def call_async_from_sync(
-    corofn: Callable, timeout: float = GENERAL_TIMEOUT, *args, **kwargs
-):
+    corofn: Callable[..., Coroutine[object, object, object]], 
+    timeout: float = GENERAL_TIMEOUT, 
+    *args: object, 
+    **kwargs: object
+) -> object:
     """
     Shorthand for running a coroutine in the default background thread pool executor
     and awaiting the result
@@ -32,12 +35,12 @@ def call_async_from_sync(
     if not asyncio.iscoroutinefunction(corofn):
         raise ValueError('corofn is not a coroutine function')
 
-    async def arun():
+    async def arun() -> object:
         coro = corofn(*args, **kwargs)
         result = await coro
         return result
 
-    def run():
+    def run() -> object:
         loop_for_thread = asyncio.new_event_loop()
         try:
             asyncio.set_event_loop(loop_for_thread)
@@ -52,10 +55,13 @@ def call_async_from_sync(
 
 
 async def call_coro_in_bg_thread(
-    corofn: Callable, timeout: float = GENERAL_TIMEOUT, *args, **kwargs
-):
+    corofn: Callable[..., Coroutine[object, object, object]], 
+    timeout: float = GENERAL_TIMEOUT, 
+    *args: object, 
+    **kwargs: object
+) -> object:
     """Function for running a coroutine in a background thread."""
-    await call_sync_from_async(call_async_from_sync, corofn, timeout, *args, **kwargs)
+    return await call_sync_from_async(call_async_from_sync, corofn, timeout, *args, **kwargs)
 
 
 async def wait_all(
@@ -90,8 +96,8 @@ async def wait_all(
 
 
 class AsyncException(Exception):
-    def __init__(self, exceptions):
+    def __init__(self, exceptions: list[Exception]) -> None:
         self.exceptions = exceptions
 
-    def __str__(self):
+    def __str__(self) -> str:
         return '\n'.join(str(e) for e in self.exceptions)
