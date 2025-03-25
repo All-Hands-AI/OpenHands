@@ -25,7 +25,6 @@ from pydantic import BaseModel
 
 @app.get('/repositories', response_model=list[Repository])
 async def get_user_repositories(
-    selected_provider: str = 'github',
     page: int = 1,
     per_page: int = 10,
     sort: str = 'pushed',
@@ -40,10 +39,9 @@ async def get_user_repositories(
         )
 
         try:
-            provider = ProviderType(selected_provider)
 
             repos: list[Repository] = await client.get_repositories(
-                provider, page, per_page, sort, installation_id
+                page, per_page, sort, installation_id
             )
             return repos
 

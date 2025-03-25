@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from enum import Enum
 from types import MappingProxyType
 from typing import Any, Coroutine, Literal, overload
 
@@ -22,14 +21,10 @@ from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
 from openhands.integrations.service_types import (
     AuthenticationError,
     GitService,
+    ProviderType,
     Repository,
     User,
 )
-
-
-class ProviderType(Enum):
-    GITHUB = 'github'
-    GITLAB = 'gitlab'
 
 
 class ProviderToken(BaseModel):
@@ -189,7 +184,6 @@ class ProviderHandler:
 
     async def get_repositories(
         self,
-        selected_provider: ProviderType,
         page: int,
         per_page: int,
         sort: str,
@@ -199,9 +193,18 @@ class ProviderHandler:
         Get repositories from a selected providers with pagination support
         """
 
-        provider = self._get_service(selected_provider)
-        repos = await provider.get_repositories(page, per_page, sort, installation_id)
-        return repos
+        all_repos: list[Repository] = []
+        for provider in self.provider_tokens:
+            try:
+                service = self._get_service(provider)
+                service_repos = await service.get_repositories(
+                    page, per_page, sort, installation_id
+                )
+                all_repos.extend(service_repos)
+            except Exception:
+                continue
+
+        return all_repos
 
     async def search_repositories(
         self,

@@ -9,6 +9,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.service_types import (
     AuthenticationError,
     GitService,
+    ProviderType,
     Repository,
     SuggestedTask,
     TaskType,
@@ -118,6 +119,7 @@ class GitHubService(GitService):
                 full_name=repo.get('full_name'),
                 stargazers_count=repo.get('stargazers_count'),
                 link_header=next_link,
+                git_provider=ProviderType.GITHUB
             )
             for repo in response
         ]
