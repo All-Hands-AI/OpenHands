@@ -10,7 +10,9 @@ def import_from(qual_name: str) -> type:
     module_name = '.'.join(parts[:-1])
     module = importlib.import_module(module_name)
     result = getattr(module, parts[-1])
-    assert isinstance(result, type), f"Expected {qual_name} to be a type, got {type(result)}"
+    assert isinstance(
+        result, type
+    ), f'Expected {qual_name} to be a type, got {type(result)}'
     return result
 
 

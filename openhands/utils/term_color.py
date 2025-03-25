@@ -22,4 +22,7 @@ def colorize(text: str, color: TermColor = TermColor.WARNING) -> str:
     Returns:
         str: Colored text
     """
-    return colored(text, color.value)
+    # colored() returns a string with ANSI color codes
+    result = colored(text, color.value)
+    assert isinstance(result, str)
+    return result

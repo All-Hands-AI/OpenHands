@@ -7,7 +7,9 @@ GENERAL_TIMEOUT: int = 15
 EXECUTOR = ThreadPoolExecutor()
 
 
-async def call_sync_from_async(fn: Callable[..., object], *args: object, **kwargs: object) -> object:
+async def call_sync_from_async(
+    fn: Callable[..., object], *args: object, **kwargs: object
+) -> object:
     """
     Shorthand for running a function in the default background thread pool executor
     and awaiting the result. The nature of synchronous code is that the future
@@ -20,10 +22,10 @@ async def call_sync_from_async(fn: Callable[..., object], *args: object, **kwarg
 
 
 def call_async_from_sync(
-    corofn: Callable[..., Coroutine[object, object, object]], 
-    timeout: float = GENERAL_TIMEOUT, 
-    *args: object, 
-    **kwargs: object
+    corofn: Callable[..., Coroutine[object, object, object]],
+    timeout: float = GENERAL_TIMEOUT,
+    *args: object,
+    **kwargs: object,
 ) -> object:
     """
     Shorthand for running a coroutine in the default background thread pool executor
@@ -55,13 +57,15 @@ def call_async_from_sync(
 
 
 async def call_coro_in_bg_thread(
-    corofn: Callable[..., Coroutine[object, object, object]], 
-    timeout: float = GENERAL_TIMEOUT, 
-    *args: object, 
-    **kwargs: object
+    corofn: Callable[..., Coroutine[object, object, object]],
+    timeout: float = GENERAL_TIMEOUT,
+    *args: object,
+    **kwargs: object,
 ) -> object:
     """Function for running a coroutine in a background thread."""
-    return await call_sync_from_async(call_async_from_sync, corofn, timeout, *args, **kwargs)
+    return await call_sync_from_async(
+        call_async_from_sync, corofn, timeout, *args, **kwargs
+    )
 
 
 async def wait_all(

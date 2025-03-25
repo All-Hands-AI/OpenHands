@@ -19,8 +19,8 @@ from typing import Any, Callable, Iterator, TypeVar
 
 import httpx
 
-
 T = TypeVar('T')
+
 
 @contextlib.contextmanager
 def ensure_httpx_close() -> Iterator[None]:
@@ -69,14 +69,17 @@ def ensure_httpx_close() -> Iterator[None]:
             # Check if closed
             if self.client is None:
                 return True
-            return self.client.is_closed
+            # Convert to bool to ensure we return a bool
+            return bool(self.client.is_closed)
 
-    # We need to ignore the type error here because we're monkey patching
-    httpx.Client = ClientProxy  # type: ignore
+    # We need to monkey patch the Client class to track instances
+    # This is a hack until LiteLLM fixes their client lifecycle management
+    original_client = httpx.Client
+    httpx.Client = ClientProxy
     try:
         yield
     finally:
-        httpx.Client = wrapped_class  # type: ignore
+        httpx.Client = original_client
         while proxys:
             proxy = proxys.pop()
             proxy.close()
