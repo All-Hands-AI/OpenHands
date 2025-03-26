@@ -47,6 +47,11 @@ class WindowsBashSession:
         
         # PowerShell process
         self.process = None
+        
+        # Store the last command for interactive input handling
+        self.prev_status = None
+        self.prev_output = ''
+        self._closed = False
 
     def _run_simple_command(self, command: str, cwd: Optional[str] = None) -> str:
         """Run a simple command directly using subprocess."""
@@ -157,8 +162,14 @@ class WindowsBashSession:
         
         return "".join(output)
 
-    def _send_command(self, command: str, timeout: int = 30) -> str:
-        """Send a command and return its output."""
+    def _is_special_key(self, command: str) -> bool:
+        """Check if the command is a special key."""
+        # Special keys are of the form C-<key>
+        _command = command.strip()
+        return _command.startswith('C-') and len(_command) == 3
+
+    def _send_command(self, command: str, timeout: int = 30) -> tuple[str, bool, bool]:
+        """Send a command and return its output and timeout status."""
         if not self._initialized:
             raise RuntimeError("PowerShell session is not initialized")
 
@@ -178,11 +189,12 @@ class WindowsBashSession:
 Write-Host "{start_marker}"
 try {{
     $output = & {{ {command} }} 2>&1
-    $LASTEXITCODE
+    $exitCode = $LASTEXITCODE
+    Write-Host "OH_EXIT_CODE_$exitCode"
     $output | ForEach-Object {{ Write-Host $_ }}
 }} catch {{
     Write-Host "ERROR: $_"
-    exit 1
+    Write-Host "OH_EXIT_CODE_1"
 }}
 Write-Host "{end_marker}"
 """
@@ -194,7 +206,7 @@ Write-Host "{end_marker}"
             logger.info(f"Command sent to PowerShell: {command}")
         except Exception as e:
             logger.error(f"Error sending command to PowerShell: {str(e)}")
-            return f"Error sending command: {str(e)}"
+            return f"Error sending command: {str(e)}", False, False
                 
         # Track directory changes
         command_lower = command.lower().strip()
@@ -216,6 +228,9 @@ Write-Host "{end_marker}"
         start_time = time.time()
         last_change_time = start_time
         accumulated_output = ""
+        exit_code = 0
+        timed_out = False
+        no_output_timeout = False
 
         while should_continue() and not command_complete and time.time() - start_time < timeout:
             try:
@@ -228,12 +243,15 @@ Write-Host "{end_marker}"
                     # Check timeouts
                     if time.time() - last_change_time >= self.NO_CHANGE_TIMEOUT_SECONDS:
                         logger.warning(f"Command '{command}' had no output for {self.NO_CHANGE_TIMEOUT_SECONDS} seconds")
-                        output.append(f"[Command had no output for {self.NO_CHANGE_TIMEOUT_SECONDS} seconds]")
+                        timed_out = True
+                        no_output_timeout = True
+                        exit_code = -1
                         break
                     # Check for hard timeout
                     if time.time() - start_time >= timeout:
                         logger.warning(f"Command '{command}' timed out after {timeout} seconds")
-                        output.append(f"[Command timed out after {timeout} seconds]")
+                        timed_out = True
+                        exit_code = -1
                         break
                     time.sleep(0.1)
                     continue
@@ -245,6 +263,16 @@ Write-Host "{end_marker}"
                     # Split at the start marker and keep everything after
                     parts = accumulated_output.split(start_marker, 1)
                     accumulated_output = parts[1].lstrip()  # Remove leading whitespace
+                    
+                # Check for exit code
+                if "OH_EXIT_CODE_" in accumulated_output and in_command_output:
+                    exit_code_line = accumulated_output.split("OH_EXIT_CODE_", 1)[1].split("\n", 1)[0]
+                    try:
+                        exit_code = int(exit_code_line)
+                    except ValueError:
+                        exit_code = 1
+                    # Remove the exit code line from accumulated output
+                    accumulated_output = accumulated_output.split("OH_EXIT_CODE_", 1)[1].split("\n", 1)[1]
                     
                 # Check for end marker (only if we're collecting command output)
                 if end_marker in accumulated_output and in_command_output:
@@ -274,9 +302,6 @@ Write-Host "{end_marker}"
                 break
 
         if not command_complete:
-            logger.warning(f"Command '{command}' did not complete properly within timeout")
-            # Add an explicit indicator that will be detected in execute()
-            output.append(f"[Command did not complete properly within {timeout} seconds]")
             if accumulated_output and in_command_output:
                 # Add any remaining output
                 for line in accumulated_output.splitlines():
@@ -285,7 +310,7 @@ Write-Host "{end_marker}"
         # Join the collected output lines
         result = "\n".join(output)
         logger.info(f"Command output: {result[:100]}{'...' if len(result) > 100 else ''}")
-        return result
+        return result, timed_out, no_output_timeout
 
     def execute(self, action: CmdRunAction) -> CmdOutputObservation | ErrorObservation:
         """Execute a command in the PowerShell session."""
@@ -313,46 +338,38 @@ Write-Host "{end_marker}"
             # For Git config commands, run directly using subprocess which is more reliable
             if command.startswith("git config"):
                 output = self._run_simple_command(command)
+                timed_out = False
+                no_output_timeout = False
+                exit_code = 0
             else:
                 # Execute the command with timeout from the action or default
                 timeout = action.timeout if action.timeout else 30
                 logger.info(f"Executing command: {command} with timeout: {timeout}")
-                output = self._send_command(command, timeout=timeout)
+                output, timed_out, no_output_timeout = self._send_command(command, timeout=timeout)
+                exit_code = -1 if timed_out else 0
             
             # Create metadata
             metadata = CmdOutputMetadata()
             metadata.working_dir = self._cwd
-            
-            # Determine exit code - not available in this implementation
-            metadata.exit_code = 0
+            metadata.exit_code = exit_code
             
             # Add suffix if the command timed out
-            if "[Command had no output for" in output:
-                metadata.suffix = (
-                    f"\n[The command has no new output after {self.NO_CHANGE_TIMEOUT_SECONDS} seconds. "
-                    f"You may wait longer to see additional output by sending empty command '', "
-                    f"send other commands to interact with the current process, "
-                    f"or send keys to interrupt/kill the command.]"
-                )
-                metadata.exit_code = -1  # Indicate command is still running
-            elif "[Command timed out after" in output:
-                timeout_value = action.timeout if action.timeout else 30
-                metadata.suffix = (
-                    f"\n[The command timed out after {timeout_value} seconds. "
-                    f"You may wait longer to see additional output by sending empty command '', "
-                    f"send other commands to interact with the current process, "
-                    f"or send keys to interrupt/kill the command.]"
-                )
-                metadata.exit_code = -1  # Indicate command is still running
-            elif "[Command did not complete properly within" in output:
-                timeout_value = action.timeout if action.timeout else 30
-                metadata.suffix = (
-                    f"\n[The command did not complete properly within {timeout_value} seconds. "
-                    f"You may wait longer to see additional output by sending empty command '', "
-                    f"send other commands to interact with the current process, "
-                    f"or send keys to interrupt/kill the command.]"
-                )
-                metadata.exit_code = -1  # Indicate command is still running
+            if timed_out:
+                if no_output_timeout:
+                    metadata.suffix = (
+                        f"\n[The command has no new output after {self.NO_CHANGE_TIMEOUT_SECONDS} seconds. "
+                        f"You may wait longer to see additional output by sending empty command '', "
+                        f"send other commands to interact with the current process, "
+                        f"or send keys to interrupt/kill the command.]"
+                    )
+                else:
+                    timeout_value = action.timeout if action.timeout else 30
+                    metadata.suffix = (
+                        f"\n[The command timed out after {timeout_value} seconds. "
+                        f"You may wait longer to see additional output by sending empty command '', "
+                        f"send other commands to interact with the current process, "
+                        f"or send keys to interrupt/kill the command.]"
+                    )
 
             return CmdOutputObservation(
                 content=output,
@@ -368,6 +385,9 @@ Write-Host "{end_marker}"
 
     def close(self):
         """Clean up the PowerShell session."""
+        if self._closed:
+            return
+            
         # Signal the reader thread to stop
         if self._reader_thread and self._reader_thread.is_alive():
             self._stop_reader.set()
@@ -381,6 +401,8 @@ Write-Host "{end_marker}"
             except subprocess.TimeoutExpired:
                 self.process.kill()
             self.process = None
+            
+        self._closed = True
 
     @property
     def cwd(self):
