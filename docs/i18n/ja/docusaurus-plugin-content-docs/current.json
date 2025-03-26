@@ -30,5 +30,45 @@
   "sidebar.docsSidebar.category.Architecture": {
     "message": "アーキテクチャ",
     "description": "The label for category Architecture in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Running OpenHands": {
+    "message": "OpenHandsの実行",
+    "description": "The label for document Running OpenHands in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Getting Started": {
+    "message": "はじめに",
+    "description": "The label for document Getting Started in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Key Features": {
+    "message": "主な機能",
+    "description": "The label for document Key Features in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.Customization": {
+    "message": "カスタマイズ",
+    "description": "The label for category Customization in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.Usage Methods": {
+    "message": "使用方法",
+    "description": "The label for category Usage Methods in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.Advanced Configuration": {
+    "message": "高度な設定",
+    "description": "The label for category Advanced Configuration in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Troubleshooting": {
+    "message": "トラブルシューティング",
+    "description": "The label for document Troubleshooting in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Feedback": {
+    "message": "フィードバック",
+    "description": "The label for document Feedback in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.For OpenHands Developers": {
+    "message": "OpenHands開発者向け",
+    "description": "The label for category For OpenHands Developers in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.About": {
+    "message": "概要",
+    "description": "The label for document About in sidebar docsSidebar"
   }
 }

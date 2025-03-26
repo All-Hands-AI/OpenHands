@@ -22,5 +22,13 @@
   "item.label.GitHub": {
     "message": "GitHub",
     "description": "Navbar item with label GitHub"
+  },
+  "item.label.User Guides": {
+    "message": "ユーザーガイド",
+    "description": "Navbar item with label User Guides"
+  },
+  "item.label.Company": {
+    "message": "会社情報",
+    "description": "Navbar item with label Company"
   }
 }
