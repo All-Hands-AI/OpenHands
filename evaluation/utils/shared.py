@@ -573,6 +573,7 @@ def get_default_sandbox_config_for_eval() -> SandboxConfig:
         # large enough timeout, since some testcases take very long to run
         timeout=300,
         api_key=os.environ.get('ALLHANDS_API_KEY', None),
+        runtime_startup_env_vars={'NO_CHANGE_TIMEOUT_SECONDS': '30'},
         remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL'),
         keep_runtime_alive=False,
         remote_runtime_init_timeout=3600,
