@@ -435,7 +435,7 @@ def test_amortized_forgetting_condenser_gives_expected_view_size():
     max_size = 12
     condenser = AmortizedForgettingCondenser(max_size=max_size)
 
-    events = [create_test_event(f'Event {i}') for i in range(max_size * 10)]
+    events = [create_test_event(f'Event {i}', id=i) for i in range(max_size * 10)]
 
     harness = RollingCondenserTestHarness(condenser)
 
@@ -449,7 +449,7 @@ def test_amortized_forgetting_condenser_keeps_first_and_last_events():
     keep_first = 4
     condenser = AmortizedForgettingCondenser(max_size=max_size, keep_first=keep_first)
 
-    events = [create_test_event(f'Event {i}') for i in range(max_size * 10)]
+    events = [create_test_event(f'Event {i}', id=i) for i in range(max_size * 10)]
 
     # To ensure the most recent event is always recorded, track it in a non-local variable udpated
     # with a closure we'll pass to the view generator as a callback.

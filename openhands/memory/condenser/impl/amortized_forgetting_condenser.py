@@ -62,9 +62,7 @@ class AmortizedForgettingCondenser(RollingCondenser):
         tail = view[-events_from_tail:]
 
         event_ids_to_keep = {event.id for event in head + tail}
-        event_ids_to_forget = [
-            event.id for event in view if event.id not in event_ids_to_keep
-        ]
+        event_ids_to_forget = {event.id for event in view} - event_ids_to_keep
 
         event = CondensationAction(
             forgotten_events_start_id=min(event_ids_to_forget),
