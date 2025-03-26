@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { screen, waitFor } from "@testing-library/react";
-import { renderWithQueryClient } from "../utils/test-utils";
+import { waitFor, render } from "@testing-library/react";
+import React from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   updateStatusWhenErrorMessagePresent,
   WsClientProvider,
   useWsClient,
 } from "#/context/ws-client-provider";
-import React from "react";
 import * as observations from "#/services/observations";
 
 // Create a mock for the addErrorMessage function
@@ -31,35 +31,38 @@ describe("Propagate error message", () => {
   });
 
   it("should do nothing when no message was passed from server", () => {
-    updateStatusWhenErrorMessagePresent(null)
-    updateStatusWhenErrorMessagePresent(undefined)
-    updateStatusWhenErrorMessagePresent({})
-    updateStatusWhenErrorMessagePresent({message: null})
+    updateStatusWhenErrorMessagePresent(null);
+    updateStatusWhenErrorMessagePresent(undefined);
+    updateStatusWhenErrorMessagePresent({});
+    updateStatusWhenErrorMessagePresent({ message: null });
 
     expect(mockAddErrorMessage).not.toHaveBeenCalled();
   });
 
   it("should display error to user when present", () => {
-    const message = "We have a problem!"
-    updateStatusWhenErrorMessagePresent({message})
+    const message = "We have a problem!";
+    updateStatusWhenErrorMessagePresent({ message });
 
     expect(mockAddErrorMessage).toHaveBeenCalledWith({
       message,
       status_update: true,
-      type: 'error'
-     });
+      type: "error",
+    });
   });
 
   it("should display error including translation id when present", () => {
-    const message = "We have a problem!"
-    updateStatusWhenErrorMessagePresent({message, data: {msg_id: '..id..'}})
+    const message = "We have a problem!";
+    updateStatusWhenErrorMessagePresent({
+      message,
+      data: { msg_id: "..id.." },
+    });
 
     expect(mockAddErrorMessage).toHaveBeenCalledWith({
       message,
-      id: '..id..',
+      id: "..id..",
       status_update: true,
-      type: 'error'
-     });
+      type: "error",
+    });
   });
 });
 
@@ -69,24 +72,22 @@ const mockOn = vi.fn();
 const mockOff = vi.fn();
 const mockDisconnect = vi.fn();
 
-vi.mock("socket.io-client", () => {
-  return {
-    io: vi.fn(() => ({
-      emit: mockEmit,
-      on: mockOn,
-      off: mockOff,
-      disconnect: mockDisconnect,
-      io: {
-        opts: {
-          query: {},
-        },
+vi.mock("socket.io-client", () => ({
+  io: vi.fn(() => ({
+    emit: mockEmit,
+    on: mockOn,
+    off: mockOff,
+    disconnect: mockDisconnect,
+    io: {
+      opts: {
+        query: {},
       },
-    })),
-  };
-});
+    },
+  })),
+}));
 
 // Mock component to test the hook
-const TestComponent = () => {
+function TestComponent() {
   const { send } = useWsClient();
 
   React.useEffect(() => {
@@ -95,7 +96,7 @@ const TestComponent = () => {
   }, [send]);
 
   return <div>Test Component</div>;
-};
+}
 
 describe("WsClientProvider", () => {
   beforeEach(() => {
@@ -103,18 +104,27 @@ describe("WsClientProvider", () => {
   });
 
   it("should emit oh_user_action event when send is called", async () => {
-    const { getByText } = renderWithQueryClient(
-      <WsClientProvider conversationId="test-conversation-id">
-        <TestComponent />
-      </WsClientProvider>
-    );
+    const { getByText } = render(<TestComponent />, {
+      wrapper: ({ children }) => (
+        <QueryClientProvider client={new QueryClient()}>
+          <WsClientProvider conversationId="test-conversation-id">
+            {children}
+          </WsClientProvider>
+        </QueryClientProvider>
+      ),
+    });
 
     // Assert
     expect(getByText("Test Component")).toBeInTheDocument();
 
     // Wait for the emit call to happen (useEffect needs time to run)
-    await waitFor(() => {
-      expect(mockEmit).toHaveBeenCalledWith("oh_user_action", { type: "test_event" });
-    }, { timeout: 1000 });
+    await waitFor(
+      () => {
+        expect(mockEmit).toHaveBeenCalledWith("oh_user_action", {
+          type: "test_event",
+        });
+      },
+      { timeout: 1000 },
+    );
   });
 });

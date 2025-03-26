@@ -4,12 +4,14 @@ interface InitialQueryState {
   files: string[];
   initialPrompt: string | null;
   selectedRepository: string | null;
+  replayJson: string | null;
 }
 
 const initialState: InitialQueryState = {
   files: [],
   initialPrompt: null,
   selectedRepository: null,
+  replayJson: null,
 };
 
 export const INITIAL_QUERY_KEY = ["initialQuery"];
@@ -96,12 +98,20 @@ export function useInitialQuery() {
     }));
   };
 
+  const setReplayJson = (replayJson: string | null) => {
+    updateInitialQueryState(queryClient, (state) => ({
+      ...state,
+      replayJson,
+    }));
+  };
+
   return {
     files: query.data?.files || initialState.files,
     initialPrompt: query.data?.initialPrompt || initialState.initialPrompt,
     selectedRepository:
       query.data?.selectedRepository || initialState.selectedRepository,
     isLoading: query.isLoading,
+    replayJson: query.data?.replayJson || initialState.replayJson,
 
     addFile,
     removeFile,
@@ -110,5 +120,6 @@ export function useInitialQuery() {
     clearInitialPrompt,
     setSelectedRepository,
     clearSelectedRepository,
+    setReplayJson,
   };
 }

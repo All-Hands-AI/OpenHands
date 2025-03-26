@@ -24,8 +24,12 @@ import { useGetTrajectory } from "#/hooks/mutation/use-get-trajectory";
 import { downloadTrajectory } from "#/utils/download-trajectory";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 
-function getEntryPoint(hasRepository: boolean | null): string {
+function getEntryPoint(
+  hasRepository: boolean | null,
+  hasReplayJson: boolean | null,
+): string {
   if (hasRepository) return "github";
+  if (hasReplayJson) return "replay";
   return "direct";
 }
 
@@ -43,15 +47,19 @@ export function ChatInterface() {
   >("positive");
   const [feedbackModalIsOpen, setFeedbackModalIsOpen] = React.useState(false);
   const [messageToSend, setMessageToSend] = React.useState<string | null>(null);
-  const { selectedRepository } = useInitialQuery();
+  const { selectedRepository, replayJson } = useInitialQuery();
   const params = useParams();
   const { mutate: getTrajectory } = useGetTrajectory();
 
   const handleSendMessage = async (content: string, files: File[]) => {
     if (messages.length === 0) {
       posthog.capture("initial_query_submitted", {
-        entry_point: getEntryPoint(selectedRepository !== null),
+        entry_point: getEntryPoint(
+          selectedRepository !== null,
+          replayJson !== null,
+        ),
         query_character_length: content.length,
+        replay_json_size: replayJson?.length,
       });
     } else {
       posthog.capture("user_message_sent", {

@@ -102,6 +102,7 @@ export function handleObservationMessage(message: ObservationMessage) {
       break;
     }
     case ObservationType.BROWSE:
+    case ObservationType.BROWSE_INTERACTIVE:
       if (message.extras?.screenshot) {
         // Update browser state in React Query
         const currentState = queryClient.getQueryData<{
@@ -260,6 +261,46 @@ export function handleObservationMessage(message: ObservationMessage) {
             ),
           },
         });
+        break;
+      case "browse_interactive":
+        store.dispatch(
+          addAssistantObservation({
+            ...baseObservation,
+            observation: "browse_interactive" as const,
+            extras: {
+              url: String(message.extras.url || ""),
+              screenshot: String(message.extras.screenshot || ""),
+              error: Boolean(message.extras.error),
+              open_page_urls: Array.isArray(message.extras.open_page_urls)
+                ? message.extras.open_page_urls
+                : [],
+              active_page_index: Number(message.extras.active_page_index || 0),
+              dom_object:
+                typeof message.extras.dom_object === "object"
+                  ? (message.extras.dom_object as Record<string, unknown>)
+                  : {},
+              axtree_object:
+                typeof message.extras.axtree_object === "object"
+                  ? (message.extras.axtree_object as Record<string, unknown>)
+                  : {},
+              extra_element_properties:
+                typeof message.extras.extra_element_properties === "object"
+                  ? (message.extras.extra_element_properties as Record<
+                      string,
+                      unknown
+                    >)
+                  : {},
+              last_browser_action: String(
+                message.extras.last_browser_action || "",
+              ),
+              last_browser_action_error:
+                message.extras.last_browser_action_error,
+              focused_element_bid: String(
+                message.extras.focused_element_bid || "",
+              ),
+            },
+          }),
+        );
         break;
       case "error":
         getChatFunctions().addAssistantObservation({

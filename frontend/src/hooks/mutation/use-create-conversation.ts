@@ -7,7 +7,8 @@ import { useInitialQuery } from "#/hooks/query/use-initial-query";
 export const useCreateConversation = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { selectedRepository, files, setInitialPrompt } = useInitialQuery();
+  const { selectedRepository, files, replayJson, setInitialPrompt } =
+    useInitialQuery();
 
   return useMutation({
     mutationFn: async (variables: { q?: string }) => {
@@ -29,6 +30,7 @@ export const useCreateConversation = () => {
         latestRepository || undefined,
         variables.q,
         files,
+        replayJson || undefined,
       );
     },
     onSuccess: async ({ conversation_id: conversationId }, { q }) => {
@@ -47,6 +49,7 @@ export const useCreateConversation = () => {
         query_character_length: q?.length,
         has_repository: !!latestRepository,
         has_files: files.length > 0,
+        has_replay_json: !!replayJson,
       });
       await queryClient.invalidateQueries({
         queryKey: ["user", "conversations"],
