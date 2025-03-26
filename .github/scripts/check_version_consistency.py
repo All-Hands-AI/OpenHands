@@ -29,13 +29,13 @@ def find_version_references(directory: str) -> Tuple[Set[str], Set[str]]:
                         # Find all openhands version references
                         matches = version_pattern_openhands.findall(content)
                         if matches:
-                            print(f"Found openhands version {matches} in {file_path}")
+                            print(f'Found openhands version {matches} in {file_path}')
                             openhands_versions.update(matches)
 
                         # Find all runtime version references
                         matches = version_pattern_runtime.findall(content)
                         if matches:
-                            print(f"Found runtime version {matches} in {file_path}")
+                            print(f'Found runtime version {matches} in {file_path}')
                             runtime_versions.update(matches)
                 except Exception as e:
                     print(f'Error reading {file_path}: {e}', file=sys.stderr)
@@ -45,11 +45,11 @@ def find_version_references(directory: str) -> Tuple[Set[str], Set[str]]:
 
 def main():
     repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-    print(f"Checking version consistency in {repo_root}")
+    print(f'Checking version consistency in {repo_root}')
     openhands_versions, runtime_versions = find_version_references(repo_root)
 
-    print(f"Found openhands versions: {sorted(openhands_versions)}")
-    print(f"Found runtime versions: {sorted(runtime_versions)}")
+    print(f'Found openhands versions: {sorted(openhands_versions)}')
+    print(f'Found runtime versions: {sorted(runtime_versions)}')
 
     exit_code = 0
 
