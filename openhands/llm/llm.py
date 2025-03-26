@@ -223,8 +223,14 @@ class LLM(RetryMixin, DebugMixin):
                     kwargs['stop'] = STOP_WORDS
 
                 mock_fncall_tools = kwargs.pop('tools')
-                # tool_choice should not be specified when mocking function calling
-                kwargs.pop('tool_choice', None)
+                if 'openhands-lm' in self.config.model:
+                    # If we don't have this, we might run into issue when serving openhands-lm
+                    # using SGLang
+                    # BadRequestError: litellm.BadRequestError: OpenAIException - Error code: 400 - {'object': 'error', 'message': '400', 'type': 'Failed to parse fc related info to json format!', 'param': None, 'code': 400}
+                    kwargs['tool_choice'] = 'none'
+                else:
+                    # tool_choice should not be specified when mocking function calling
+                    kwargs.pop('tool_choice', None)
 
             # if we have no messages, something went very wrong
             if not messages:
