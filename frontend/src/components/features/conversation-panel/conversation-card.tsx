@@ -243,31 +243,67 @@ export function ConversationCard({
         title={t(I18nKey.CONVERSATION$METRICS_INFO)}
         testID="metrics-modal"
       >
-        <div className="space-y-2">
-          {metrics?.cost !== null && (
-            <p>
-              {t("CONVERSATION$TOTAL_COST")}
-              {metrics.cost.toFixed(4)}
-            </p>
+        <div className="space-y-4">
+          {(metrics?.cost !== null || metrics?.usage !== null) && (
+            <div className="rounded-md p-3">
+              <div className="grid gap-3">
+                {metrics?.cost !== null && (
+                  <div className="flex justify-between items-center border-b border-neutral-700 pb-2">
+                    <span className="text-lg font-semibold">
+                      {t("CONVERSATION$TOTAL_COST")}
+                    </span>
+                    <span className="font-semibold">
+                      ${metrics.cost.toFixed(4)}
+                    </span>
+                  </div>
+                )}
+
+                {metrics?.usage !== null && (
+                  <>
+                    <div className="flex justify-between items-center pb-2">
+                      <span>{t("CONVERSATION$INPUT")}:</span>
+                      <span className="font-semibold">
+                        {metrics.usage.prompt_tokens.toLocaleString()}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 pl-4 text-sm">
+                      <span className="text-neutral-400">Cache Hit:</span>
+                      <span className="text-right">
+                        {metrics.usage.cache_read_tokens.toLocaleString()}
+                      </span>
+                      <span className="text-neutral-400">Cache Write:</span>
+                      <span className="text-right">
+                        {metrics.usage.cache_write_tokens.toLocaleString()}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between items-center border-b border-neutral-700 pb-2">
+                      <span>{t("CONVERSATION$OUTPUT")}:</span>
+                      <span className="font-semibold">
+                        {metrics.usage.completion_tokens.toLocaleString()}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between items-center pt-1">
+                      <span className="font-semibold">{t("CONVERSATION$TOTAL")}:</span>
+                      <span className="font-bold">
+                        {(
+                          metrics.usage.prompt_tokens +
+                          metrics.usage.completion_tokens
+                        ).toLocaleString()}
+                      </span>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
           )}
-          {metrics?.usage !== null && (
-            <>
-              <p>{t("CONVERSATION$TOKENS_USED")}</p>
-              <ul className="list-inside space-y-1 ml-2">
-                <li>
-                  {t("CONVERSATION$INPUT")} {metrics.usage.prompt_tokens}
-                </li>
-                <li>
-                  {t("CONVERSATION$OUTPUT")} {metrics.usage.completion_tokens}
-                </li>
-                <li>
-                  {t("CONVERSATION$TOTAL")} {metrics.usage.total_tokens}
-                </li>
-              </ul>
-            </>
-          )}
+
           {!metrics?.cost && !metrics?.usage && (
-            <p className="text-neutral-400">{t("CONVERSATION$NO_METRICS")}</p>
+            <div className="rounded-md p-4 text-center">
+              <p className="text-neutral-400">{t("CONVERSATION$NO_METRICS")}</p>
+            </div>
           )}
         </div>
       </BaseModal>
