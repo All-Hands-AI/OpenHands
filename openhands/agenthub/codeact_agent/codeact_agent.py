@@ -79,10 +79,13 @@ class CodeActAgent(Agent):
             prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
         )
 
-        # Create a ConversationMemory instance
-        self.conversation_memory = ConversationMemory(self.config, self.prompt_manager)
-
         self.condenser = Condenser.from_config(self.config.condenser)
+
+        # Create a ConversationMemory instance
+        self.conversation_memory = ConversationMemory(
+            self.config, self.prompt_manager, self.condenser
+        )
+
         logger.debug(f'Using condenser: {type(self.condenser)}')
 
     def reset(self) -> None:
@@ -176,7 +179,7 @@ class CodeActAgent(Agent):
 
         # Use ConversationMemory to process events
         messages = self.conversation_memory.process_events(
-            condensed_history=events,
+            history=events,
             initial_messages=messages,
             max_message_chars=self.llm.config.max_message_chars,
             vision_is_active=self.llm.vision_is_active(),

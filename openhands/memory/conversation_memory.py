@@ -17,6 +17,7 @@ from openhands.events.action import (
     IPythonRunCellAction,
     MessageAction,
 )
+from openhands.events.action.agent import AgentCondensationAction, CondenserStrategy
 from openhands.events.event import Event, RecallType
 from openhands.events.observation import (
     AgentCondensationObservation,
@@ -36,19 +37,23 @@ from openhands.events.observation.agent import (
 from openhands.events.observation.error import ErrorObservation
 from openhands.events.observation.observation import Observation
 from openhands.events.serialization.event import truncate_content
+from openhands.memory.condenser.condenser import Condenser
 from openhands.utils.prompt import PromptManager, RepositoryInfo, RuntimeInfo
 
 
 class ConversationMemory:
     """Processes event history into a coherent conversation for the agent."""
 
-    def __init__(self, config: AgentConfig, prompt_manager: PromptManager):
+    def __init__(
+        self, config: AgentConfig, prompt_manager: PromptManager, condenser: Condenser
+    ):
         self.agent_config = config
         self.prompt_manager = prompt_manager
+        self.condenser = condenser
 
     def process_events(
         self,
-        condensed_history: list[Event],
+        history: list[Event],
         initial_messages: list[Message],
         max_message_chars: int | None = None,
         vision_is_active: bool = False,
@@ -65,7 +70,7 @@ class ConversationMemory:
             vision_is_active: Whether vision is active in the LLM. If True, image URLs will be included.
         """
 
-        events = condensed_history
+        events = self.read_view(history)
 
         # log visual browsing status
         logger.debug(f'Visual browsing: {self.agent_config.enable_som_visual_browsing}')
@@ -578,3 +583,76 @@ class ConversationMemory:
                 ):
                     return True
         return False
+
+    def read_view(self, history: list[Event]) -> list[Event]:
+        """Returns the events that are visible to the agent."""
+        return [
+            event
+            for event in history
+            if event.id not in self.forgotten_event_ids(history)
+        ]
+
+    def forgotten_event_ids(self, history: list[Event]) -> set[int]:
+        """Returns the ids of the events that are not in the view of the history.
+
+        For all but ATTENTION strategy, they are between start_id and end_id.
+        For ATTENTION strategy, they are the events that are not in the selected_ids.
+        """
+        # find the latest AgentCondensationAction in the history
+        condensation_action = self.condensation_actions(history)[-1]
+
+        if condensation_action.strategy == CondenserStrategy.ATTENTION:
+            if (
+                condensation_action.selected_ids is None
+                or len(condensation_action.selected_ids) == 0
+            ):
+                return {event.id for event in history}
+            return {
+                event.id
+                for event in history
+                if event.id not in condensation_action.selected_ids
+            }
+        else:
+            # for all other strategies, the forgotten events are the events inside the range [start_id, end_id]
+            # as long as they're not AgentCondensationActions
+            return {
+                event.id
+                for event in history
+                if event.id >= condensation_action.start_id
+                and event.id <= condensation_action.end_id
+                and not isinstance(event, AgentCondensationAction)
+            }
+
+    def considered_event_ids(self, history: list[Event]) -> list[int]:
+        """Returns the ids of the events that are considered by the condenser
+          in the step that produced the latest AgentCondensationAction.
+
+        For ATTENTION strategy, it returns the selected_ids.
+        For all other strategies, it returns the events in history that have not been forgotten.
+        Since forgotten_events already excludes AgentCondensationActions, we can take the
+        difference between all event IDs and forgotten event IDs.
+        """
+        # find the latest AgentCondensationAction
+        condensation_action = self.condensation_actions(history)[-1]
+
+        if condensation_action.strategy == CondenserStrategy.ATTENTION:
+            if (
+                condensation_action.selected_ids is None
+                or len(condensation_action.selected_ids) == 0
+            ):
+                return [event.id for event in history]
+            return condensation_action.selected_ids
+        else:
+            # Get all event IDs and forgotten event IDs
+            all_ids = {event.id for event in history}
+
+            # Return the difference (events that are not forgotten)
+            return list(all_ids - self.forgotten_event_ids(history))
+
+    def condensation_actions(
+        self, history: list[Event]
+    ) -> list[AgentCondensationAction]:
+        """Returns the list of AgentCondensationActions in the history."""
+        return [
+            event for event in history if isinstance(event, AgentCondensationAction)
+        ]
