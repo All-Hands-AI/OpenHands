@@ -13,8 +13,8 @@ def find_version_references(directory: str) -> Tuple[Set[str], Set[str]]:
     version_pattern_runtime = re.compile(r'runtime:(\d{1})\.(\d{2})')
 
     for root, _, files in os.walk(directory):
-        # Skip .git directory
-        if '.git' in root:
+        # Skip .git directory and i18n directories
+        if '.git' in root or '/i18n/' in root:
             continue
 
         for file in files:
