@@ -1,5 +1,5 @@
 """
-Windows-specific implementation of command execution using Windows ConPTY.
+Windows-specific implementation of command execution using PowerShell.
 """
 
 import os
@@ -10,16 +10,6 @@ import subprocess
 import sys
 from typing import Optional, List
 import uuid
-
-try:
-    import winpty
-    HAS_WINPTY = True
-except ImportError:
-    try:
-        import pwinpty
-        HAS_WINPTY = True
-    except ImportError:
-        HAS_WINPTY = False
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import CmdRunAction
@@ -32,7 +22,7 @@ from openhands.utils.shutdown_listener import should_continue
 
 
 class WindowsBashSession:
-    """A Windows-compatible version of BashSession that uses Windows command processor."""
+    """A Windows-compatible version of BashSession that uses PowerShell."""
 
     POLL_INTERVAL = 0.5
 
@@ -55,23 +45,14 @@ class WindowsBashSession:
         self._output_queue = queue.Queue()
         self._stop_reader = threading.Event()
         
-        # Check for ConPTY support
-        if not HAS_WINPTY:
-            logger.warning("Neither winpty nor pwinpty is installed. Falling back to subprocess implementation.")
-            self._use_winpty = False
-        else:
-            self._use_winpty = True
-            
-        # Either winpty.PTY or subprocess.Popen
-        self.pty = None
+        # PowerShell process
         self.process = None
 
     def _run_simple_command(self, command: str, cwd: Optional[str] = None) -> str:
-        """Run a simple command directly using subprocess (no ConPTY)."""
+        """Run a simple command directly using subprocess."""
         try:
             result = subprocess.run(
-                command,
-                shell=True,
+                ["powershell.exe", "-Command", command],
                 text=True,
                 capture_output=True,
                 cwd=cwd or self._cwd
@@ -82,103 +63,58 @@ class WindowsBashSession:
             return f"Error: {str(e)}"
 
     def initialize(self):
-        """Initialize the Windows command session."""
+        """Initialize the PowerShell session."""
         if self._initialized:
             return
 
-        if self._use_winpty:
-            try:
-                # Use the ConPTY approach
-                logger.info("Initializing Windows ConPTY session...")
-                if 'winpty' in sys.modules:
-                    # Using the winpty package
-                    self.pty = winpty.PTY(cols=120, rows=30)
-                    self.pty.spawn('cmd.exe')
-                    logger.info("ConPTY object created successfully with winpty")
-                else:
-                    # Using the pwinpty package
-                    self.pty = pwinpty.PtyProcess.spawn('cmd.exe')
-                    logger.info("ConPTY object created successfully with pwinpty")
-                
-                # Start reader thread
-                self._start_reader_thread()
-                
-                # Change to working directory - using a direct method that doesn't check initialization
-                self._send_raw_command(f"cd /d \"{self.work_dir}\"")
-                
-                logger.info(f"Windows ConPTY session initialized with work dir: {self.work_dir}")
-            except Exception as e:
-                logger.error(f"Failed to initialize ConPTY: {str(e)}")
-                self._use_winpty = False
-                
-        if not self._use_winpty:
-            # Fallback to subprocess approach
-            logger.info("Initializing Windows subprocess session...")
-            try:
-                self.process = subprocess.Popen(
-                    ["cmd.exe"],
-                    stdin=subprocess.PIPE,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT,
-                    text=True,
-                    bufsize=1,
-                    cwd=self.work_dir
-                )
-                
-                # Start reader thread
-                self._start_reader_thread()
-                
-                # No need to change directory as we start in the right directory
-                
-                logger.info(f"Windows subprocess session initialized with work dir: {self.work_dir}")
-            except Exception as e:
-                logger.error(f"Failed to initialize subprocess: {str(e)}")
-                raise RuntimeError(f"Failed to initialize Windows command session: {str(e)}")
+        logger.info("Initializing PowerShell session...")
+        try:
+            # Start PowerShell process with specific configuration
+            self.process = subprocess.Popen(
+                ["powershell.exe", "-NoLogo", "-NoExit", "-Command", "-"],
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1,
+                cwd=self.work_dir
+            )
+            
+            # Start reader thread
+            self._start_reader_thread()
+            
+            # Configure PowerShell prompt and behavior
+            self._send_raw_command("$OutputEncoding = [System.Text.Encoding]::UTF8")
+            self._send_raw_command("$PSDefaultParameterValues['*:Encoding'] = 'utf8'")
+            self._send_raw_command("$ProgressPreference = 'SilentlyContinue'")
+            self._send_raw_command("$ErrorActionPreference = 'Continue'")
+            
+            # Set up custom prompt for better output parsing
+            self._send_raw_command('function prompt { "OH_PS1_$pwd> " }')
+            
+            logger.info(f"PowerShell session initialized with work dir: {self.work_dir}")
+        except Exception as e:
+            logger.error(f"Failed to initialize PowerShell: {str(e)}")
+            raise RuntimeError(f"Failed to initialize PowerShell session: {str(e)}")
         
         # Now we can mark as initialized
         self._initialized = True
         
         # Clear screen to ensure we start with a clean environment
-        if self._use_winpty:
-            self._send_raw_command("cls")
-        else:
-            self.process.stdin.write("cls\r\n")
-            self.process.stdin.flush()
-            # Clear any output from the queue
-            while not self._output_queue.empty():
-                self._output_queue.get(block=False)
+        self._send_raw_command("Clear-Host")
+        # Clear any output from the queue
+        while not self._output_queue.empty():
+            self._output_queue.get(block=False)
 
     def _start_reader_thread(self):
         """Start the thread to read output from the process."""
         self._stop_reader = threading.Event()
-        if self._use_winpty:
-            self._reader_thread = threading.Thread(target=self._winpty_reader_thread, daemon=True)
-        else:
-            self._reader_thread = threading.Thread(target=self._subprocess_reader_thread, daemon=True)
+        self._reader_thread = threading.Thread(target=self._reader_thread_func, daemon=True)
         self._reader_thread.start()
         logger.info("Reader thread started")
 
-    def _winpty_reader_thread(self):
-        """Thread function to read from the ConPTY process."""
-        try:
-            while not self._stop_reader.is_set() and self.pty:
-                try:
-                    # Read available data
-                    data = self.pty.read()
-                    if data:
-                        # Queue the data
-                        logger.debug(f"ConPTY read data: {repr(data[:100])}{'...' if len(data) > 100 else ''}")
-                        self._output_queue.put(data)
-                    else:
-                        time.sleep(0.01)
-                except Exception as e:
-                    logger.warning(f"Error reading from ConPTY: {str(e)}")
-                    time.sleep(0.1)
-        except Exception as e:
-            logger.error(f"Error in ConPTY reader thread: {str(e)}")
-
-    def _subprocess_reader_thread(self):
-        """Thread function to read from the subprocess."""
+    def _reader_thread_func(self):
+        """Thread function to read from the PowerShell process."""
         try:
             while not self._stop_reader.is_set() and self.process and self.process.poll() is None:
                 char = self.process.stdout.read(1)
@@ -188,7 +124,7 @@ class WindowsBashSession:
                 else:
                     time.sleep(0.01)
         except Exception as e:
-            logger.error(f"Error in subprocess reader thread: {str(e)}")
+            logger.error(f"Error in PowerShell reader thread: {str(e)}")
 
     def _send_raw_command(self, command: str, wait_time: float = 2.0) -> str:
         """Send a raw command without checking initialization - used during setup."""
@@ -199,21 +135,13 @@ class WindowsBashSession:
             self._output_queue.get(block=False)
             
         # Send the command directly
-        if self._use_winpty:
-            try:
-                self.pty.write(command + "\r\n")
-                logger.info(f"Raw command sent to ConPTY: {command}")
-            except Exception as e:
-                logger.error(f"Error sending raw command to ConPTY: {str(e)}")
-                return f"Error sending command: {str(e)}"
-        else:
-            try:
-                self.process.stdin.write(command + "\r\n")
-                self.process.stdin.flush()
-                logger.info(f"Raw command sent to subprocess: {command}")
-            except Exception as e:
-                logger.error(f"Error sending raw command to subprocess: {str(e)}")
-                return f"Error sending command: {str(e)}"
+        try:
+            self.process.stdin.write(command + "\r\n")
+            self.process.stdin.flush()
+            logger.info(f"Raw command sent to PowerShell: {command}")
+        except Exception as e:
+            logger.error(f"Error sending raw command to PowerShell: {str(e)}")
+            return f"Error sending command: {str(e)}"
         
         # Wait a short time to allow command to complete        
         time.sleep(wait_time)
@@ -232,7 +160,7 @@ class WindowsBashSession:
     def _send_command(self, command: str, timeout: int = 30) -> str:
         """Send a command and return its output."""
         if not self._initialized:
-            raise RuntimeError("Windows session is not initialized")
+            raise RuntimeError("PowerShell session is not initialized")
 
         logger.info(f"Sending command: {command}")
         
@@ -240,63 +168,37 @@ class WindowsBashSession:
         while not self._output_queue.empty():
             self._output_queue.get(block=False)
         
-        # Generate truly unique markers (don't use the command hash)
+        # Generate truly unique markers
         uid = str(uuid.uuid4()).replace('-', '')[:8]
         start_marker = f"OH_START_{uid}"
         end_marker = f"OH_END_{uid}"
         
-        # We'll use a file to capture the output - more reliable than echo
-        # We'll use a temporary batch file to execute the command and capture its output
-        temp_script = f"""
-@echo off
-echo {start_marker}
-{command}
-echo {end_marker}
+        # Create a PowerShell script to execute the command and capture output
+        ps_script = f"""
+Write-Host "{start_marker}"
+try {{
+    $output = & {{ {command} }} 2>&1
+    $LASTEXITCODE
+    $output | ForEach-Object {{ Write-Host $_ }}
+}} catch {{
+    Write-Host "ERROR: $_"
+    exit 1
+}}
+Write-Host "{end_marker}"
 """
-        # Temp file path
-        temp_file = os.path.join(self._cwd, f"oh_cmd_{uid}.bat")
         
-        # Write the temporary batch file
+        # Send the script
         try:
-            with open(temp_file, 'w') as f:
-                f.write(temp_script)
+            self.process.stdin.write(ps_script + "\r\n")
+            self.process.stdin.flush()
+            logger.info(f"Command sent to PowerShell: {command}")
         except Exception as e:
-            logger.error(f"Error creating temp batch file: {str(e)}")
-            return f"Error creating temp batch file: {str(e)}"
-        
-        # Prepare the command to run the batch file
-        batch_command = f"\"{temp_file}\""
-        
-        # Send the command
-        if self._use_winpty:
-            try:
-                self.pty.write(batch_command + "\r\n")
-                logger.info(f"Batch command sent to ConPTY: {batch_command}")
-            except Exception as e:
-                logger.error(f"Error sending batch command to ConPTY: {str(e)}")
-                # Try to clean up
-                try:
-                    os.remove(temp_file)
-                except:
-                    pass
-                return f"Error sending command: {str(e)}"
-        else:
-            try:
-                self.process.stdin.write(batch_command + "\r\n")
-                self.process.stdin.flush()
-                logger.info(f"Batch command sent to subprocess: {batch_command}")
-            except Exception as e:
-                logger.error(f"Error sending batch command to subprocess: {str(e)}")
-                # Try to clean up
-                try:
-                    os.remove(temp_file)
-                except:
-                    pass
-                return f"Error sending command: {str(e)}"
+            logger.error(f"Error sending command to PowerShell: {str(e)}")
+            return f"Error sending command: {str(e)}"
                 
         # Track directory changes
         command_lower = command.lower().strip()
-        if command_lower.startswith("cd ") or command_lower.startswith("chdir "):
+        if command_lower.startswith("cd ") or command_lower.startswith("set-location "):
             # Extract the target directory from the command
             parts = command.split(None, 1)
             if len(parts) > 1:
@@ -371,12 +273,6 @@ echo {end_marker}
                 output.append(f"[Error processing output: {str(e)}]")
                 break
 
-        # Clean up the temp file
-        try:
-            os.remove(temp_file)
-        except Exception as e:
-            logger.warning(f"Failed to remove temp batch file: {str(e)}")
-            
         if not command_complete:
             logger.warning(f"Command '{command}' did not complete properly within timeout")
             # Add an explicit indicator that will be detected in execute()
@@ -392,9 +288,9 @@ echo {end_marker}
         return result
 
     def execute(self, action: CmdRunAction) -> CmdOutputObservation | ErrorObservation:
-        """Execute a command in the Windows session."""
+        """Execute a command in the PowerShell session."""
         if not self._initialized:
-            raise RuntimeError("Windows session is not initialized")
+            raise RuntimeError("PowerShell session is not initialized")
 
         command = action.command.strip()
         if not command:
@@ -407,11 +303,11 @@ echo {end_marker}
         try:
             # Handle special cases and command translations
             if "alias git=" in command:
-                # Windows doesn't support Bash aliases, so we just ignore this
-                command = "echo 'Windows does not support Bash aliases. Git will be used as normal.'"
+                # PowerShell doesn't support Bash aliases, so we just ignore this
+                command = "Write-Host 'PowerShell does not support Bash aliases. Git will be used as normal.'"
             elif "git --no-pager" in command:
                 # This is typically part of a git configuration command
-                # We need to adapt it for Windows
+                # We need to adapt it for PowerShell
                 command = command.replace(" && alias git=\"git --no-pager\"", "")
             
             # For Git config commands, run directly using subprocess which is more reliable
@@ -471,19 +367,14 @@ echo {end_marker}
             )
 
     def close(self):
-        """Clean up the Windows session."""
+        """Clean up the PowerShell session."""
         # Signal the reader thread to stop
         if self._reader_thread and self._reader_thread.is_alive():
             self._stop_reader.set()
             self._reader_thread.join(timeout=2)
         
         # Close the process
-        if self._use_winpty and self.pty:
-            try:
-                self.pty.close()
-            except Exception as e:
-                logger.error(f"Error closing ConPTY: {str(e)}")
-        elif self.process:
+        if self.process:
             try:
                 self.process.terminate()
                 self.process.wait(timeout=5)
