@@ -298,9 +298,11 @@ class ProviderHandler:
         # for the user when the socket event for connect is sent
         if ProviderType.GITHUB not in env_vars and get_latest:
             logger.info('Force refresh runtime token')
-            env_vars[ProviderType.GITHUB] = await self._get_latest_provider_token(
-                ProviderType.GITHUB
+            service = GithubServiceImpl(
+                external_auth_id=self.external_auth_id,
+                external_token_manager=self.external_token_manager,
             )
+            env_vars[ProviderType.GITHUB] = await service.get_latest_token()
 
         if not expose_secrets:
             return env_vars
