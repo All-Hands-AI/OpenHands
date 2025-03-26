@@ -1,159 +1,157 @@
+# マイクロエージェント
 
+OpenHandsは、特定のタスクやコンテキストを効率的に処理するために、特殊なマイクロエージェントを利用しています。これらのマイクロエージェントは、特定のシナリオに特化した動作と知識を提供する小さな目的指向のコンポーネントです。
 
-# Micro-Agents
+## 概要
 
-OpenHands utilise des micro-agents spécialisés pour gérer efficacement des tâches et des contextes spécifiques. Ces micro-agents sont de petits composants ciblés qui fournissent un comportement et des connaissances spécialisés pour des scénarios particuliers.
+マイクロエージェントは、`openhands/agenthub/codeact_agent/micro/`ディレクトリ下のマークダウンファイルで定義されます。各マイクロエージェントは以下の設定を持ちます：
 
-## Aperçu
+- 一意の名前
+- エージェントのタイプ（通常はCodeActAgent）
+- エージェントを起動するトリガーキーワード
+- 特定の指示と能力
 
-Les micro-agents sont définis dans des fichiers markdown sous le répertoire `openhands/agenthub/codeact_agent/micro/`. Chaque micro-agent est configuré avec :
+## 利用可能なマイクロエージェント
 
-- Un nom unique
-- Le type d'agent (généralement CodeActAgent)
-- Des mots-clés déclencheurs qui activent l'agent
-- Des instructions et des capacités spécifiques
+### GitHubエージェント
+**ファイル**: `github.md`
+**トリガー**: `github`, `git`
 
-## Micro-Agents Disponibles
+GitHubエージェントは、GitHub APIとのインタラクションとリポジトリ管理に特化しています。これは：
+- API認証用の`GITHUB_TOKEN`にアクセスできる
+- リポジトリとのインタラクションに厳密なガイドラインに従う
+- ブランチとプルリクエストを管理する
+- Webブラウザでのインタラクションの代わりにGitHub APIを使用する
 
-### Agent GitHub
-**Fichier** : `github.md`
-**Déclencheurs** : `github`, `git`
+主な機能：
+- ブランチ保護（main/masterへの直接プッシュを防止）
+- 自動PRの作成
+- Git設定の管理
+- GitHub操作のためのAPI中心のアプローチ
 
-L'agent GitHub se spécialise dans les interactions avec l'API GitHub et la gestion des dépôts. Il :
-- A accès à un `GITHUB_TOKEN` pour l'authentification API
-- Suit des directives strictes pour les interactions avec les dépôts
-- Gère les branches et les pull requests
-- Utilise l'API GitHub au lieu des interactions avec le navigateur web
+### NPMエージェント
+**ファイル**: `npm.md`
+**トリガー**: `npm`
 
-Fonctionnalités clés :
-- Protection des branches (empêche les push directs vers main/master)
-- Création automatisée de PR
-- Gestion de la configuration Git
-- Approche API-first pour les opérations GitHub
+npmパッケージの管理に特化し、特に以下に焦点を当てています：
+- 非対話的なシェル操作
+- Unixの'yes'コマンドを使用した自動確認の管理
+- パッケージインストールの自動化
 
-### Agent NPM
-**Fichier** : `npm.md`
-**Déclencheurs** : `npm`
+### カスタムマイクロエージェント
 
-Se spécialise dans la gestion des packages npm avec un focus spécifique sur :
-- Les opérations shell non interactives
-- La gestion automatisée des confirmations en utilisant la commande Unix 'yes'
-- L'automatisation de l'installation des packages
-
-### Micro-Agents Personnalisés
-
-Vous pouvez créer vos propres micro-agents en ajoutant de nouveaux fichiers markdown dans le répertoire des micro-agents. Chaque fichier doit suivre cette structure :
+マイクロエージェントディレクトリに新しいマークダウンファイルを追加することで、独自のマイクロエージェントを作成できます。各ファイルは次の構造に従う必要があります：
 
 ```markdown
 ---
-name: nom_de_l_agent
+name: エージェント名
 agent: CodeActAgent
 triggers:
-- mot_declencheur1
-- mot_declencheur2
+- トリガー1
+- トリガー2
 ---
 
-Instructions et capacités pour le micro-agent...
+マイクロエージェントの指示と能力...
 ```
 
-## Bonnes Pratiques
+## ベストプラクティス
 
-Lorsque vous travaillez avec des micro-agents :
+マイクロエージェントを使用する際は：
 
-1. **Utilisez les déclencheurs appropriés** : Assurez-vous que vos commandes incluent les mots-clés déclencheurs pertinents pour activer le bon micro-agent
-2. **Suivez les directives de l'agent** : Chaque agent a des instructions et des limitations spécifiques - respectez-les pour des résultats optimaux
-3. **Approche API-First** : Lorsque c'est possible, utilisez les endpoints d'API plutôt que les interfaces web
-4. **Automatisation conviviale** : Concevez des commandes qui fonctionnent bien dans des environnements non interactifs
+1. **適切なトリガーを使用する**: コマンドに関連するトリガーキーワードを含めて、正しいマイクロエージェントを起動するようにします
+2. **エージェントのガイドラインに従う**: 各エージェントには特定の指示と制限があります - 最適な結果を得るためにそれらに従ってください
+3. **API中心のアプローチ**: 可能な場合は、Webインターフェースではなく、APIエンドポイントを使用します
+4. **自動化に優しい**: 非対話的な環境でうまく機能するコマンドを設計します
 
-## Intégration
+## 統合
 
-Les micro-agents sont automatiquement intégrés dans le workflow d'OpenHands. Ils :
-- Surveillent les commandes entrantes pour détecter leurs mots-clés déclencheurs
-- S'activent lorsque des déclencheurs pertinents sont détectés
-- Appliquent leurs connaissances et capacités spécialisées
-- Suivent leurs directives et restrictions spécifiques
+マイクロエージェントは自動的にOpenHandsのワークフローに統合されます。これらは：
+- 着信コマンドをモニタリングしてトリガーキーワードを検出する
+- 関連するトリガーが検出されたときに起動する
+- 特殊な知識と能力を適用する
+- 特定のガイドラインと制限に従う
 
-## Exemple d'utilisation
+## 使用例
 
 ```bash
-# Exemple d'agent GitHub
+# GitHubエージェントの例
 git checkout -b feature-branch
 git commit -m "Add new feature"
 git push origin feature-branch
 
-# Exemple d'agent NPM
+# NPMエージェントの例
 yes | npm install package-name
 ```
 
-Pour plus d'informations sur des agents spécifiques, reportez-vous à leurs fichiers de documentation individuels dans le répertoire des micro-agents.
+特定のエージェントの詳細については、マイクロエージェントディレクトリ内の個別のドキュメントファイルを参照してください。
 
-## Contribuer un Micro-Agent
+## マイクロエージェントの貢献
 
-Pour contribuer un nouveau micro-agent à OpenHands, suivez ces directives :
+OpenHandsに新しいマイクロエージェントを貢献するには、次のガイドラインに従ってください：
 
-### 1. Planification de votre Micro-Agent
+### 1. マイクロエージェントの計画
 
-Avant de créer un micro-agent, considérez :
-- Quel problème ou cas d'utilisation spécifique va-t-il adresser ?
-- Quelles capacités ou connaissances uniques devrait-il avoir ?
-- Quels mots-clés déclencheurs ont du sens pour l'activer ?
-- Quelles contraintes ou directives devrait-il suivre ?
+マイクロエージェントを作成する前に、以下を検討してください：
+- どの特定の問題やユースケースに対処するのか？
+- どのようなユニークな能力や知識を持つべきか？
+- どのトリガーキーワードを使用するのが適切か？
+- どのような制約やガイドラインに従うべきか？
 
-### 2. Structure du fichier
+### 2. ファイル構造
 
-Créez un nouveau fichier markdown dans `openhands/agenthub/codeact_agent/micro/` avec un nom descriptif (par ex., `docker.md` pour un agent axé sur Docker).
+`openhands/agenthub/codeact_agent/micro/`に新しいマークダウンファイルを作成し、説明的な名前を付けます（例：Dockerに特化したエージェントの場合は`docker.md`）。
 
-### 3. Composants requis
+### 3. 必要なコンポーネント
 
-Votre fichier de micro-agent doit inclure :
+マイクロエージェントファイルには以下を含める必要があります：
 
-1. **Front Matter** : Métadonnées YAML au début du fichier :
+1. **フロントマター**: ファイルの先頭にYAMLメタデータ：
 ```markdown
 ---
-name: nom_de_votre_agent
+name: エージェント名
 agent: CodeActAgent
 triggers:
-- mot_declencheur1
-- mot_declencheur2
+- トリガー1
+- トリガー2
 ---
 ```
 
-2. **Instructions** : Directives claires et spécifiques pour le comportement de l'agent :
+2. **指示**: エージェントの動作に関する明確で具体的な指示：
 ```markdown
-Vous êtes responsable de [tâche/domaine spécifique].
+あなたは[特定のタスク/ドメイン]を担当しています。
 
-Responsabilités clés :
-1. [Responsabilité 1]
-2. [Responsabilité 2]
+主な責任：
+1. [責任1]
+2. [責任2]
 
-Directives :
-- [Directive 1]
-- [Directive 2]
+ガイドライン：
+- [ガイドライン1]
+- [ガイドライン2]
 
-Exemples d'utilisation :
-[Exemple 1]
-[Exemple 2]
+使用例：
+[例1]
+[例2]
 ```
 
-### 4. Bonnes pratiques pour le développement de Micro-Agents
+### 4. マイクロエージェント開発のベストプラクティス
 
-1. **Portée claire** : Gardez l'agent concentré sur un domaine ou une tâche spécifique
-2. **Instructions explicites** : Fournissez des directives claires et sans ambiguïté
-3. **Exemples utiles** : Incluez des exemples pratiques de cas d'utilisation courants
-4. **Sécurité d'abord** : Incluez les avertissements et contraintes nécessaires
-5. **Conscience de l'intégration** : Considérez comment l'agent interagit avec les autres composants
+1. **明確な範囲**: エージェントを特定のドメインまたはタスクに集中させる
+2. **明示的な指示**: 明確で曖昧さのない指示を提供する
+3. **有用な例**: 一般的なユースケースの実用的な例を含める
+4. **セキュリティ第一**: 必要な警告と制約を含める
+5. **統合の認識**: エージェントが他のコンポーネントとどのように相互作用するかを考慮する
 
-### 5. Tester votre Micro-Agent
+### 5. マイクロエージェントのテスト
 
-Avant de soumettre :
-1. Testez l'agent avec divers prompts
-2. Vérifiez que les mots-clés déclencheurs activent correctement l'agent
-3. Assurez-vous que les instructions sont claires et complètes
-4. Vérifiez les conflits potentiels avec les agents existants
+提出前に：
+1. さまざまなプロンプトでエージェントをテストする
+2. トリガーキーワードがエージェントを正しく起動することを確認する
+3. 指示が明確で完全であることを確認する
+4. 既存のエージェントとの潜在的な競合を確認する
 
-### 6. Exemple d'implémentation
+### 6. 実装例
 
-Voici un modèle pour un nouveau micro-agent :
+新しいマイクロエージェントのテンプレートを以下に示します：
 
 ```markdown
 ---
@@ -161,23 +159,23 @@ name: docker
 agent: CodeActAgent
 triggers:
 - docker
-- conteneur
+- コンテナ
 ---
 
-Vous êtes responsable de la gestion des conteneurs Docker et de la création de Dockerfiles.
+あなたはDockerコンテナの管理とDockerfileの作成を担当しています。
 
-Responsabilités clés :
-1. Créer et modifier des Dockerfiles
-2. Gérer le cycle de vie des conteneurs
-3. Gérer les configurations Docker Compose
+主な責任：
+1. Dockerfileの作成と変更
+2. コンテナのライフサイクル管理
+3. Docker Compose設定の管理
 
-Directives :
-- Utilisez toujours des images de base officielles lorsque possible
-- Incluez les considérations de sécurité nécessaires
-- Suivez les bonnes pratiques Docker pour l'optimisation des couches
+ガイドライン：
+- 可能な限り公式のベースイメージを使用する
+- 必要なセキュリティの考慮事項を含める
+- レイヤー最適化のためのDockerベストプラクティスに従う
 
-Exemples :
-1. Créer un Dockerfile :
+例：
+1. Dockerfileの作成：
    ```dockerfile
    FROM node:18-alpine
    WORKDIR /app
@@ -187,7 +185,7 @@ Exemples :
    CMD ["npm", "start"]
    ```
 
-2. Utilisation de Docker Compose :
+2. Docker Composeの使用：
    ```yaml
    version: '3'
    services:
@@ -197,19 +195,19 @@ Exemples :
          - "3000:3000"
    ```
 
-N'oubliez pas de :
-- Valider la syntaxe du Dockerfile
-- Vérifier les vulnérabilités de sécurité
-- Optimiser le temps de build et la taille de l'image
+忘れずに：
+- Dockerfileの構文を検証する
+- セキュリティの脆弱性を確認する
+- ビルド時間とイメージサイズを最適化する
 ```
 
-### 7. Processus de soumission
+### 7. 提出プロセス
 
-1. Créez votre fichier de micro-agent dans le bon répertoire
-2. Testez minutieusement
-3. Soumettez une pull request avec :
-   - Le nouveau fichier de micro-agent
-   - La documentation mise à jour si nécessaire
-   - La description du but et des capacités de l'agent
+1. 適切なディレクトリにマイクロエージェントファイルを作成する
+2. 徹底的にテストする
+3. 以下を含むプルリクエストを提出する：
+   - 新しいマイクロエージェントファイル
+   - 必要に応じて更新されたドキュメント
+   - エージェントの目的と能力の説明
 
-N'oubliez pas que les micro-agents sont un moyen puissant d'étendre les capacités d'OpenHands dans des domaines spécifiques. Des agents bien conçus peuvent améliorer significativement la capacité du système à gérer des tâches spécialisées.
+マイクロエージェントは、特定のドメインでOpenHandsの能力を拡張する強力な方法であることを忘れないでください。適切に設計されたエージェントは、特殊なタスクを処理するシステムの能力を大幅に向上させることができます。

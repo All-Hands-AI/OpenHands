@@ -1,25 +1,22 @@
-
-
-# ⬆️ Guide de mise à niveau
+# ⬆️ アップグレードガイド
 
 ## 0.8.0 (2024-07-13)
 
-### Changements de configuration importants
+### 重要な設定変更
 
-Dans cette version, nous avons introduit quelques changements importants dans les configurations backend.
-Si vous avez uniquement utilisé OpenHands via l'interface frontend (interface web), aucune action n'est nécessaire.
+このバージョンでは、バックエンドの設定にいくつかの重要な変更を導入しました。
+OpenHandsをフロントエンドインターフェース（Webインターフェース）のみで使用していた場合、特に対応は必要ありません。
 
-Voici une liste des changements importants dans les configurations. Ils ne s'appliquent qu'aux utilisateurs qui
-utilisent OpenHands CLI via `main.py`. Pour plus de détails, voir [#2756](https://github.com/All-Hands-AI/OpenHands/pull/2756).
+以下は、設定の重要な変更点のリストです。これらは`main.py`経由でOpenHands CLIを使用しているユーザーにのみ適用されます。
+詳細については、[#2756](https://github.com/All-Hands-AI/OpenHands/pull/2756)を参照してください。
 
-#### Suppression de l'option --model-name de main.py
+#### main.pyの--model-nameオプションの削除
 
-Veuillez noter que l'option `--model-name`, ou `-m`, n'existe plus. Vous devez configurer les
-configurations LLM dans `config.toml` ou via des variables d'environnement.
+`--model-name`オプション（または`-m`）は廃止されました。LLMの設定は`config.toml`または環境変数で行う必要があります。
 
-#### Les groupes de configuration LLM doivent être des sous-groupes de 'llm'
+#### LLM設定グループは'llm'のサブグループである必要がある
 
-Avant la version 0.8, vous pouviez utiliser un nom arbitraire pour la configuration LLM dans `config.toml`, par exemple :
+0.8より前のバージョンでは、`config.toml`内のLLM設定に任意の名前を使用できました。例:
 
 ```toml
 [gpt-4o]
@@ -27,9 +24,8 @@ model="gpt-4o"
 api_key="<your_api_key>"
 ```
 
-puis utiliser l'argument CLI `--llm-config` pour spécifier le groupe de configuration LLM souhaité
-par nom. Cela ne fonctionne plus. Au lieu de cela, le groupe de configuration doit être sous le groupe `llm`,
-par exemple :
+その後、CLI引数の`--llm-config`を使用して、名前で目的のLLM設定グループを指定できました。
+これは機能しなくなりました。代わりに、設定グループは`llm`グループの下にある必要があります。例:
 
 ```toml
 [llm.gpt-4o]
@@ -37,13 +33,11 @@ model="gpt-4o"
 api_key="<your_api_key>"
 ```
 
-Si vous avez un groupe de configuration nommé `llm`, il n'est pas nécessaire de le modifier, il sera utilisé
-comme groupe de configuration LLM par défaut.
+`llm`という名前の設定グループがある場合は、変更する必要はありません。デフォルトのLLM設定グループとして使用されます。
 
-#### Le groupe 'agent' ne contient plus le champ 'name'
+#### 'agent'グループには'name'フィールドが含まれなくなった
 
-Avant la version 0.8, vous pouviez avoir ou non un groupe de configuration nommé `agent` qui
-ressemblait à ceci :
+0.8より前のバージョンでは、以下のような`agent`という名前の設定グループがあってもなくてもよかったです:
 
 ```toml
 [agent]
@@ -51,12 +45,11 @@ name="CodeActAgent"
 memory_max_threads=2
 ```
 
-Notez que le champ `name` est maintenant supprimé. Au lieu de cela, vous devez mettre le champ `default_agent`
-sous le groupe `core`, par exemple :
+`name`フィールドは削除されたことに注意してください。代わりに、`core`グループの下に`default_agent`フィールドを置く必要があります。例:
 
 ```toml
 [core]
-# autres configurations
+# その他の設定
 default_agent='CodeActAgent'
 
 [agent]
@@ -67,6 +60,6 @@ memory_max_threads=2
 llm_config='gpt-4o'
 ```
 
-Notez que, comme pour les sous-groupes `llm`, vous pouvez également définir des sous-groupes `agent`.
-De plus, un agent peut être associé à un groupe de configuration LLM spécifique. Pour plus
-de détails, voir les exemples dans `config.template.toml`.
+`llm`サブグループと同様に、`agent`サブグループも定義できることに注意してください。
+さらに、エージェントを特定のLLM設定グループに関連付けることができます。
+詳細については、`config.template.toml`の例を参照してください。

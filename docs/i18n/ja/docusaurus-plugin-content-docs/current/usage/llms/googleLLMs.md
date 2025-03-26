@@ -1,28 +1,28 @@
 # Google Gemini/Vertex LLM
 
-## Complétion
+## 補完
 
-OpenHands utilise LiteLLM pour les appels de complétion. Les ressources suivantes sont pertinentes pour utiliser OpenHands avec les LLMs de Google :
+OpenHandsはLiteLLMを使用して補完リクエストを行います。以下のリソースは、OpenHandsをGoogleのLLMと一緒に使用する際に関連があります。
 
 - [Gemini - Google AI Studio](https://docs.litellm.ai/docs/providers/gemini)
 - [VertexAI - Google Cloud Platform](https://docs.litellm.ai/docs/providers/vertex)
 
-### Configurations de Gemini - Google AI Studio
+### Gemini - Google AI Studioの設定
 
-Pour utiliser Gemini via Google AI Studio lors de l'exécution de l'image Docker d'OpenHands, vous devez définir les variables d'environnement suivantes en utilisant `-e` :
+OpenHandsのDockerイメージを実行する際にGoogle AI Studio経由でGeminiを使用するには、以下の環境変数を`-e`を使って設定する必要があります。
 
 ```
-GEMINI_API_KEY="<votre-cle-api-google>"
+GEMINI_API_KEY="<your-google-api-key>"
 LLM_MODEL="gemini/gemini-1.5-pro"
 ```
 
-### Configurations de Vertex AI - Google Cloud Platform
+### Vertex AI - Google Cloud Platformの設定
 
-Pour utiliser Vertex AI via Google Cloud Platform lors de l'exécution de l'image Docker d'OpenHands, vous devez définir les variables d'environnement suivantes en utilisant `-e` :
+OpenHandsのDockerイメージを実行する際にGoogle Cloud Platform経由でVertex AIを使用するには、以下の環境変数を`-e`を使って設定する必要があります。
 
 ```
-GOOGLE_APPLICATION_CREDENTIALS="<dump-json-du-compte-de-service-gcp-json>"
-VERTEXAI_PROJECT="<votre-id-de-projet-gcp>"
-VERTEXAI_LOCATION="<votre-localisation-gcp>"
-LLM_MODEL="vertex_ai/<modele-llm-desire>"
+GOOGLE_APPLICATION_CREDENTIALS="<gcp-service-account-json-dump>"
+VERTEXAI_PROJECT="<your-gcp-project-id>"
+VERTEXAI_LOCATION="<your-gcp-location>"
+LLM_MODEL="vertex_ai/<desired-llm-model>"
 ```

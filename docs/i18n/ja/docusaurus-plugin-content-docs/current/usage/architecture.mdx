@@ -2,49 +2,49 @@
 sidebar_position: 4
 ---
 
-# 🏛️ Aperçu de l'Architecture Système
+# 🏛️ システムアーキテクチャの概要
 
-Voici un aperçu de haut niveau de l'architecture du système. Le système est divisé en deux composants principaux : le frontend et le backend. Le frontend est responsable de la gestion des interactions avec l'utilisateur et de l'affichage des résultats. Le backend est responsable de la gestion de la logique métier et de l'exécution des agents.
+以下は、システムアーキテクチャの高レベルな概要です。システムは主に2つのコンポーネントに分かれています: フロントエンドとバックエンドです。フロントエンドはユーザーとのインタラクションの管理と結果の表示を担当します。バックエンドはビジネスロジックの管理とエージェントの実行を担当します。
 
 ![system_architecture.svg](/img/system_architecture.svg)
 
-Cet aperçu est simplifié pour montrer les principaux composants et leurs interactions. Pour une vue plus détaillée de l'architecture du backend, consultez la section [Architecture du Backend](#backend-architecture-fr).
+この概要は、主要なコンポーネントとそれらの相互作用を示すために簡略化されています。バックエンドアーキテクチャのより詳細なビューについては、[バックエンドアーキテクチャ](#backend-architecture-ja)のセクションを参照してください。
 
-# Architecture du Backend {#backend-architecture-fr}
+# バックエンドアーキテクチャ {#backend-architecture-ja}
 
-_**Avertissement**: L'architecture du backend est en cours de développement et est sujette à modifications. Le schéma suivant montre l'architecture actuelle du backend basée sur le commit indiqué dans le pied de page du schéma._
+_**注意**: バックエンドアーキテクチャは開発中であり、変更される可能性があります。以下の図は、図のフッターに示されているコミットに基づく現在のバックエンドアーキテクチャを示しています。_
 
 ![backend_architecture.svg](/img/backend_architecture.svg)
 
 <details>
-  <summary>Mise à jour de ce Schéma</summary>
+  <summary>この図の更新</summary>
   <div>
-    La génération du schéma d'architecture du backend est partiellement automatisée.
-    Le schéma est généré à partir des annotations de type dans le code en utilisant l'outil py2puml.
-    Le schéma est ensuite revu manuellement, ajusté et exporté en PNG et SVG.
+    バックエンドアーキテクチャ図の生成は部分的に自動化されています。
+    図はpy2pumlツールを使用してコード内の型アノテーションから生成されます。
+    その後、図は手動でレビューされ、調整され、PNGとSVGにエクスポートされます。
 
-    ## Prérequis
+    ## 前提条件
 
-    - Un environnement Python dans lequel openhands est exécutable
-    (selon les instructions du fichier README.md à la racine du dépôt)
-    - [py2puml](https://github.com/lucsorel/py2puml) installé
+    - openhandsが実行可能なPython環境
+    (リポジトリのルートにあるREADME.mdファイルの指示に従って)
+    - [py2puml](https://github.com/lucsorel/py2puml)がインストールされていること
 
-## Étapes
+## 手順
 
-1.  Générez automatiquement le schéma en exécutant la commande suivante depuis la racine du dépôt :
+1.  リポジトリのルートから以下のコマンドを実行して、図を自動的に生成します:
     `py2puml openhands openhands > docs/architecture/backend_architecture.puml`
 
-2.  Ouvrez le fichier généré dans un éditeur PlantUML, par exemple Visual Studio Code avec l'extension PlantUML ou [PlantText](https://www.planttext.com/)
+2.  生成されたファイルをPlantUMLエディタ(Visual Studio CodeのPlantUML拡張機能や[PlantText](https://www.planttext.com/)など)で開きます。
 
-3.  Révisez le PUML généré et apportez toutes les modifications nécessaires au schéma (ajoutez les parties manquantes, corrigez les erreurs, améliorez l'agencement).
-    _py2puml crée le schéma à partir des annotations de type dans le code, donc les annotations de type manquantes ou incorrectes peuvent entraîner un schéma incomplet ou incorrect._
+3.  生成されたPUMLを確認し、図に必要な変更を加えます(欠落している部分を追加し、エラーを修正し、レイアウトを改善します)。
+    _py2pumlはコード内の型アノテーションから図を作成するため、型アノテーションが欠落していたり正しくない場合、図が不完全または不正確になる可能性があります。_
 
-4.  Examinez la différence entre le nouveau schéma et le précédent et vérifiez manuellement si les modifications sont correctes.
-    _Assurez-vous de ne pas supprimer les parties ajoutées manuellement au schéma par le passé et qui sont toujours pertinentes._
+4.  新しい図と以前の図の違いを確認し、変更が正しいかどうかを手動で確認します。
+    _過去に図に手動で追加され、現在も関連性のある部分を削除しないように注意してください。_
 
-5.  Ajoutez le hash du commit qui a été utilisé pour générer le schéma dans le pied de page du schéma.
+5.  図の生成に使用されたコミットのハッシュを図のフッターに追加します。
 
-6.  Exporte le schéma sous forme de fichiers PNG et SVG et remplacez les schémas existants dans le répertoire `docs/architecture`. Cela peut être fait avec (par exemple [PlantText](https://www.planttext.com/))
+6.  図をPNGファイルとSVGファイルにエクスポートし、`docs/architecture`ディレクトリ内の既存の図を置き換えます。これは(例えば[PlantText](https://www.planttext.com/)を使用して)行うことができます。
 
   </div>
 </details>

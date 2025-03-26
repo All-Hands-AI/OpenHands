@@ -1,66 +1,64 @@
+# リポジトリ固有の動作のカスタマイズ
 
+OpenHandsは、リポジトリ固有のコンテキストとガイダンスを提供することで、特定のリポジトリでより効果的に機能するようにカスタマイズできます。このセクションでは、OpenHandsをプロジェクトに最適化する方法について説明します。
 
-# Personnalisation du comportement de l'agent
+## リポジトリの設定
 
-OpenHands peut être personnalisé pour fonctionner plus efficacement avec des dépôts spécifiques en fournissant un contexte et des directives propres à chaque dépôt. Cette section explique comment optimiser OpenHands pour votre projet.
+リポジトリのルートに`.openhands`ディレクトリを作成することで、OpenHandsの動作をリポジトリ用にカスタマイズできます。最低限、このディレクトリには`.openhands/microagents/repo.md`ファイルが含まれている必要があります。このファイルには、エージェントがこのリポジトリで作業するたびに与えられる指示が含まれています。
 
-## Configuration du dépôt
+以下の情報を含めることをお勧めします。
+1. **リポジトリの概要**: プロジェクトの目的とアーキテクチャの簡単な説明
+2. **ディレクトリ構造**: 主要なディレクトリとその目的
+3. **開発ガイドライン**: プロジェクト固有のコーディング標準と慣行
+4. **テスト要件**: テストの実行方法と必要なテストの種類
+5. **セットアップ手順**: プロジェクトのビルドと実行に必要な手順
 
-Vous pouvez personnaliser le comportement d'OpenHands pour votre dépôt en créant un répertoire `.openhands` à la racine de votre dépôt. Au minimum, il doit contenir le fichier `.openhands/microagents/repo.md`, qui comprend les instructions qui seront données à l'agent chaque fois qu'il travaillera avec ce dépôt.
-
-Nous vous suggérons d'inclure les informations suivantes :
-1. **Aperçu du dépôt** : Une brève description de l'objectif et de l'architecture de votre projet
-2. **Structure des répertoires** : Les répertoires clés et leurs objectifs
-3. **Directives de développement** : Les normes et pratiques de codage spécifiques au projet
-4. **Exigences de test** : Comment exécuter les tests et quels types de tests sont requis
-5. **Instructions de configuration** : Les étapes nécessaires pour construire et exécuter le projet
-
-### Exemple de configuration de dépôt
-Exemple de fichier `.openhands/microagents/repo.md` :
+### リポジトリ設定の例
+`.openhands/microagents/repo.md`ファイルの例:
 ```
-Repository: MonProjet
-Description: Une application web pour la gestion des tâches
+Repository: MyProject
+Description: タスク管理用のWebアプリケーション
 
-Structure des répertoires :
-- src/ : Code principal de l'application
-- tests/ : Fichiers de test
-- docs/ : Documentation
+ディレクトリ構造:
+- src/: アプリケーションのメインコード
+- tests/: テストファイル
+- docs/: ドキュメンテーション
 
-Configuration :
-- Exécutez `npm install` pour installer les dépendances
-- Utilisez `npm run dev` pour le développement
-- Exécutez `npm test` pour les tests
+セットアップ:
+- `npm install`を実行して依存関係をインストールします
+- 開発には`npm run dev`を使用します
+- テストには`npm test`を実行します
 
-Directives :
-- Suivez la configuration ESLint
-- Écrivez des tests pour toutes les nouvelles fonctionnalités
-- Utilisez TypeScript pour le nouveau code
+ガイドライン:
+- ESLint設定に従ってください
+- 新機能にはすべてテストを書いてください 
+- 新しいコードにはTypeScriptを使用してください
 ```
 
-### Personnalisation des prompts
+### プロンプトのカスタマイズ
 
-Lorsque vous travaillez avec un dépôt personnalisé :
+カスタマイズされたリポジトリで作業する場合:
 
-1. **Référencez les normes du projet** : Mentionnez les normes ou les modèles de codage spécifiques utilisés dans votre projet
-2. **Incluez le contexte** : Faites référence à la documentation pertinente ou aux implémentations existantes
-3. **Spécifiez les exigences de test** : Incluez les exigences de test spécifiques au projet dans vos prompts
+1. **プロジェクトの標準を参照する**: プロジェクトで使用されている特定のコーディング標準やパターンに言及する
+2. **コンテキストを含める**: 関連するドキュメンテーションや既存の実装を参照する
+3. **テスト要件を指定する**: プロジェクト固有のテスト要件をプロンプトに含める
 
-Exemple de prompt personnalisé :
+カスタムプロンプトの例:
 ```
-Ajoutez une nouvelle fonctionnalité d'achèvement des tâches à src/components/TaskList.tsx en suivant nos modèles de composants existants.
-Incluez des tests unitaires dans tests/components/ et mettez à jour la documentation dans docs/features/.
-Le composant doit utiliser notre style partagé de src/styles/components.
+既存のコンポーネントパターンに従って、src/components/TaskList.tsxにタスク完了の新機能を追加してください。
+tests/components/にユニットテストを含め、docs/features/のドキュメントを更新してください。
+コンポーネントはsrc/styles/componentsの共有スタイルを使用する必要があります。
 ```
 
-### Meilleures pratiques pour la personnalisation du dépôt
+### リポジトリカスタマイズのベストプラクティス
 
-1. **Gardez les instructions à jour** : Mettez régulièrement à jour votre répertoire `.openhands` au fur et à mesure de l'évolution de votre projet
-2. **Soyez spécifique** : Incluez des chemins, des modèles et des exigences spécifiques à votre projet
-3. **Documentez les dépendances** : Énumérez tous les outils et dépendances nécessaires au développement
-4. **Incluez des exemples** : Fournissez des exemples de bons modèles de code de votre projet
-5. **Spécifiez les conventions** : Documentez les conventions de nommage, l'organisation des fichiers et les préférences de style de code
+1. **指示を最新に保つ**: プロジェクトの進化に合わせて、`.openhands`ディレクトリを定期的に更新する
+2. **具体的にする**: プロジェクト固有のパス、パターン、要件を含める
+3. **依存関係を文書化する**: 開発に必要なすべてのツールと依存関係を列挙する
+4. **例を含める**: プロジェクトからの良いコード例を提供する
+5. **規約を指定する**: 命名規則、ファイル構成、コードスタイルの好みを文書化する
 
-En personnalisant OpenHands pour votre dépôt, vous obtiendrez des résultats plus précis et cohérents qui s'alignent sur les normes et les exigences de votre projet.
+OpenHandsをリポジトリ用にカスタマイズすることで、プロジェクトの標準と要件に沿ったより正確で一貫した結果が得られます。
 
-## Autres microagents
-Vous pouvez créer d'autres instructions dans le répertoire `.openhands/microagents/` qui seront envoyées à l'agent si un mot-clé particulier est trouvé, comme `test`, `frontend` ou `migration`. Voir [Microagents](microagents.md) pour plus d'informations.
+## その他のマイクロエージェント
+`.openhands/microagents/`ディレクトリに、`test`、`frontend`、`migration`などの特定のキーワードが見つかった場合にエージェントに送信される追加の指示を作成できます。詳細については、[Microagents](microagents.md)を参照してください。

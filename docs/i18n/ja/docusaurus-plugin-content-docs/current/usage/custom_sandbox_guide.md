@@ -1,68 +1,68 @@
-# 💿 Comment Créer un Soutien Docker sur Mesure
+# 💿 カスタム Docker サポートを作成する方法
 
-Le sandbox par défaut OpenHands est équipé d'une configuration ubuntu minimaliste. Votre cas d'utilisation pourrait nécessiter des logiciels installés par défaut. Cet article vous enseignera comment réaliser cela en utilisant une image docker personnalisée.
+デフォルトの OpenHands サンドボックスは、最小限の ubuntu 構成で提供されています。ユースケースによっては、デフォルトでインストールされているソフトウェアが必要になる場合があります。この記事では、カスタム docker イメージを使用してこれを実現する方法について説明します。
 
-## Configuration
+## セットアップ
 
-Assurez-vous de pouvoir utiliser OpenHands en suivant la documentation [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
+[Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md) のドキュメントに従って、OpenHands を使用できるようにしてください。
 
-## Créer Votre Image Docker
+## カスタム Docker イメージの作成
 
-Ensuite, vous devez créer votre image docker personnalisée qui doit être basée sur debian/ubuntu. Par exemple, si nous souhaitons que OpenHands ait accès au "node" binaire, nous utiliserions ce Dockerfile:
+次に、debian/ubuntu ベースのカスタム docker イメージを作成する必要があります。たとえば、OpenHands で "node" バイナリにアクセスできるようにしたい場合は、次のような Dockerfile を使用します:
 
 ```bash
-# Commencez avec l'image ubuntu la plus récente
+# 最新の ubuntu イメージから開始
 FROM ubuntu:latest
 
-# Effectuez les mises à jour nécessaires
+# 必要なアップデートを実行
 RUN apt-get update && apt-get install
 
-# Installez nodejs
+# nodejs をインストール
 RUN apt-get install -y nodejs
 ```
 
-Ensuite, construisez votre image docker avec le nom de votre choix. Par exemple "image_personnalisée". Pour cela, créez un répertoire et placez le fichier à l'intérieur avec le nom "Dockerfile", puis dans le répertoire exécutez cette commande:
+次に、選択した名前でカスタム docker イメージをビルドします。たとえば、"custom_image" とします。そのためには、ディレクトリを作成し、"Dockerfile" という名前のファイルをその中に配置し、ディレクトリ内でこのコマンドを実行します:
 
 ```bash
-docker build -t image_personnalisée .
+docker build -t custom_image .
 ```
 
-Cela produira une nouvelle image appelée ```image_personnalisée``` qui sera disponible dans Docker Engine.
+これにより、```custom_image``` という名前の新しいイメージが作成され、Docker Engine で利用できるようになります。
 
-> Remarque: Dans la configuration décrite ici, OpenHands va fonctionner en tant que utilisateur "openhands" à l'intérieur du sandbox et donc tous les packages installés via le Dockerfile seront disponibles pour tous les utilisateurs sur le système, pas seulement root.
+> 注: ここで説明する設定では、OpenHands はサンドボックス内で "openhands" ユーザーとして動作するため、Dockerfile 経由でインストールされたパッケージは、root だけでなくシステム上のすべてのユーザーが利用できるようになります。
 >
-> L'installation avec apt-get ci-dessus installe nodejs pour tous les utilisateurs.
+> 上記の apt-get によるインストールでは、すべてのユーザー向けに nodejs がインストールされます。
 
-## Spécifiez votre image personnalisée dans le fichier config.toml
+## config.toml ファイルでカスタムイメージを指定
 
-La configuration OpenHands se fait via le fichier de niveau supérieur ```config.toml``` .
-Créez un fichier ```config.toml``` dans le répertoire OpenHands et entrez ces contenus:
+OpenHands の設定は、トップレベルの ```config.toml``` ファイルを介して行われます。
+OpenHands ディレクトリに ```config.toml``` ファイルを作成し、次の内容を入力します:
 
 ```toml
 [core]
 workspace_base="./workspace"
 run_as_openhands=true
 [sandbox]
-base_container_image="image_personnalisée"
+base_container_image="custom_image"
 ```
 
-> Assurez-vous que ```base_container_image``` est défini sur le nom de votre image personnalisée précédente.
+> ```base_container_image``` が前述のカスタムイメージ名に設定されていることを確認してください。
 
-## Exécution
+## 実行
 
-Exécutez OpenHands en exécutant ```make run``` dans le répertoire racine.
+ルートディレクトリで ```make run``` を実行して OpenHands を起動します。
 
-Naviguez vers ```localhost:3001``` et vérifiez si vos dépendances souhaitées sont disponibles.
+```localhost:3001``` に移動し、目的の依存関係が利用可能かどうかを確認します。
 
-Dans le cas de l'exemple ci-dessus, la commande ```node -v``` dans la console produit ```v18.19.1```
+上記の例の場合、コンソールで ```node -v``` コマンドを実行すると ```v18.19.1``` が出力されます。
 
-Félicitations !
+おめでとうございます！
 
-## Explication technique
+## 技術的な説明
 
-Lorsqu'une image personnalisée est utilisée pour la première fois, elle ne sera pas trouvée et donc elle sera construite (à l'exécution ultérieure, l'image construite sera trouvée et renvoyée).
+カスタムイメージが初めて使用される場合、イメージが見つからないため、ビルドされます (その後の実行では、ビルドされたイメージが見つかり、返されます)。
 
-L'image personnalisée est construite avec [_build_sandbox_image()](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/docker/image_agnostic_util.py#L29), qui crée un fichier docker en utilisant votre image personnalisée comme base et configure ensuite l'environnement pour OpenHands, comme ceci:
+カスタムイメージは [_build_sandbox_image()](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/docker/image_agnostic_util.py#L29) でビルドされます。これは、カスタムイメージをベースとして使用して docker ファイルを作成し、次のように OpenHands の環境を設定します:
 
 ```python
 dockerfile_content = (
@@ -78,22 +78,22 @@ dockerfile_content = (
     ).strip()
 ```
 
-> Remarque: Le nom de l'image est modifié via [_get_new_image_name()](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/docker/image_agnostic_util.py#L63) et c'est ce nom modifié qui sera recherché lors des exécutions ultérieures.
+> 注: イメージ名は [_get_new_image_name()](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/docker/image_agnostic_util.py#L63) で変更され、この変更された名前が後続の実行時に検索されます。
 
-## Dépannage / Erreurs
+## トラブルシューティング / エラー
 
-### Erreur: ```useradd: UID 1000 est non unique```
-Si vous voyez cette erreur dans la sortie de la console, il s'agit du fait que OpenHands essaie de créer le utilisateur openhands dans le sandbox avec un ID d'utilisateur de 1000, cependant cet ID d'utilisateur est déjà utilisé dans l'image (pour une raison inconnue). Pour résoudre ce problème, changez la valeur du champ user_id dans le fichier config.toml en une valeur différente:
+### エラー: ```useradd: UID 1000 は一意ではありません```
+このエラーがコンソール出力に表示される場合、OpenHands がサンドボックス内に UID 1000 で openhands ユーザーを作成しようとしていますが、この UID は (何らかの理由で) イメージ内ですでに使用されているためです。この問題を解決するには、config.toml ファイルの user_id フィールドの値を別の値に変更します:
 
 ```toml
 [core]
 workspace_base="./workspace"
 run_as_openhands=true
 [sandbox]
-base_container_image="image_personnalisée"
+base_container_image="custom_image"
 user_id="1001"
 ```
 
-### Erreurs de port d'utilisation
+### ポート使用エラー
 
-Si vous voyez un message d'erreur indiquant que le port est utilisé ou indisponible, essayez de supprimer toutes les containers docker en cours d'exécution (exécutez `docker ps` et `docker rm` des containers concernés) puis ré-exécutez ```make run```
+ポートが使用中または利用不可であることを示すエラーメッセージが表示される場合は、実行中のすべての docker コンテナを削除してみてください (`docker ps` を実行し、関連するコンテナに対して `docker rm` を実行します)。その後、```make run``` を再実行します。

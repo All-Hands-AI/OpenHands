@@ -1,37 +1,37 @@
 # Azure OpenAI LLM
 
-## Complétion
+## 補完
 
-OpenHands utilise LiteLLM pour les appels de complétion. Vous pouvez trouver leur documentation sur Azure [ici](https://docs.litellm.ai/docs/providers/azure)
+OpenHandsはLiteLLMを使用して補完リクエストを行います。Azureに関するドキュメントは[こちら](https://docs.litellm.ai/docs/providers/azure)にあります。
 
-### Configurations openai Azure
+### Azure OpenAI の設定
 
-Lors de l'exécution de l'image Docker OpenHands, vous devrez définir les variables d'environnement suivantes en utilisant `-e` :
+OpenHands Dockerイメージを実行する際には、以下の環境変数を `-e` を使用して設定する必要があります：
 
 ```
-LLM_BASE_URL="<azure-api-base-url>"          # e.g. "https://openai-gpt-4-test-v-1.openai.azure.com/"
+LLM_BASE_URL="<azure-api-base-url>"          # 例: "https://openai-gpt-4-test-v-1.openai.azure.com/"
 LLM_API_KEY="<azure-api-key>"
 LLM_MODEL="azure/<your-gpt-deployment-name>"
-LLM_API_VERSION = "<api-version>"          # e.g. "2024-02-15-preview"
+LLM_API_VERSION = "<api-version>"          # 例: "2024-02-15-preview"
 ```
 
 :::note
-Vous pouvez trouver le nom de votre déploiement ChatGPT sur la page des déploiements sur Azure. Par défaut ou initialement, il pourrait être le même que le nom du modèle de chat (par exemple 'GPT4-1106-preview'), mais il n'est pas obligé de l'être. Exécutez OpenHands, et une fois chargé dans le navigateur, allez dans Paramètres et définissez le modèle comme suit : "azure/&lt;your-actual-gpt-deployment-name&gt;". Si ce n'est pas dans la liste, entrez votre propre texte et enregistrez-le.
+ChatGPTデプロイメント名は、Azureのデプロイメントページで確認できます。デフォルトまたは初期状態では、チャットモデル名（例えば'GPT4-1106-preview'）と同じ場合がありますが、必ずしもそうである必要はありません。OpenHandsを実行し、ブラウザに読み込まれたら、設定に移動し、モデルを次のように設定します："azure/&lt;your-actual-gpt-deployment-name&gt;"。リストにない場合は、独自のテキストを入力して保存します。
 :::
 
 ## Embeddings
 
-OpenHands utilise llama-index pour les embeddings. Vous pouvez trouver leur documentation sur Azure [ici](https://docs.llamaindex.ai/en/stable/api_reference/embeddings/azure_openai/)
+OpenHandsはllama-indexを使用してembeddingsを生成します。Azureに関するドキュメントは[こちら](https://docs.llamaindex.ai/en/stable/api_reference/embeddings/azure_openai/)にあります。
 
-### Configurations openai Azure
+### Azure OpenAI の設定
 
-Le modèle utilisé pour les embeddings Azure OpenAI est "text-embedding-ada-002".
-Vous avez besoin du nom de déploiement correct pour ce modèle dans votre compte Azure.
+Azure OpenAI embeddingsで使用されるモデルは "text-embedding-ada-002" です。
+Azureアカウントでこのモデルの正しいデプロイメント名が必要です。
 
-Lors de l'exécution d'OpenHands dans Docker, définissez les variables d'environnement suivantes en utilisant `-e` :
+DockerでOpenHandsを実行する際には、以下の環境変数を `-e` を使用して設定してください：
 
 ```
 LLM_EMBEDDING_MODEL="azureopenai"
-LLM_EMBEDDING_DEPLOYMENT_NAME = "<your-embedding-deployment-name>"        # e.g. "TextEmbedding...<etc>"
-LLM_API_VERSION = "<api-version>"         # e.g. "2024-02-15-preview"
+LLM_EMBEDDING_DEPLOYMENT_NAME = "<your-embedding-deployment-name>"        # 例: "TextEmbedding...<etc>"
+LLM_API_VERSION = "<api-version>"         # 例: "2024-02-15-preview"
 ```
