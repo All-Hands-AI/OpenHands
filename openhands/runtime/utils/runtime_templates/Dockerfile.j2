@@ -134,10 +134,14 @@ RUN \
     touch /openhands/code/openhands/__init__.py
 
 COPY ./code/pyproject.toml ./code/poetry.lock /openhands/code/
-# COPY ./code/openhands/runtime/plugins/vscode/settings.json /workspace/.vscode/settings.json
+
+COPY ./code/openhands/runtime/plugins/vscode/settings.json /workspace/.vscode/settings.json
+RUN chmod -R a+rwx /workspace/.vscode/settings.json
+
 # COPY ./code/openhands/runtime/plugins/vscode/settings.json /home/openhands/.openvscode-server/data/Machine/settings.json
 # COPY ./code/openhands/runtime/plugins/vscode/settings.json /home/openhands/.openvscode-server/data/User/settings.json
-RUN chmod -R a+rwx /home/openhands/.openvscode-server
+# COPY ./code/openhands/runtime/plugins/vscode/settings.json /openhands/vscode_user_data/settings.json
+# RUN mkdir /openhands/vscode_user_data/logs
 
 {{ install_dependencies() }}
 
@@ -151,10 +155,15 @@ RUN chmod -R a+rwx /home/openhands/.openvscode-server
 # ================================================================
 RUN if [ -d /openhands/code/openhands ]; then rm -rf /openhands/code/openhands; fi
 COPY ./code/pyproject.toml ./code/poetry.lock /openhands/code/
-# COPY ./code/openhands/runtime/plugins/vscode/settings.json /workspace/.vscode/settings.json
+
+COPY ./code/openhands/runtime/plugins/vscode/settings.json /workspace/.vscode/settings.json
+RUN chmod -R a+rwx /workspace/.vscode/settings.json
+
 # COPY ./code/openhands/runtime/plugins/vscode/settings.json /home/openhands/.openvscode-server/data/Machine/settings.json
 # COPY ./code/openhands/runtime/plugins/vscode/settings.json /home/openhands/.openvscode-server/data/User/settings.json
-RUN chmod -R a+rwx /home/openhands/.openvscode-server
+# COPY ./code/openhands/runtime/plugins/vscode/settings.json /openhands/vscode_user_data/settings.json
+# RUN mkdir /openhands/vscode_user_data/logs
+
 COPY ./code/openhands /openhands/code/openhands
 RUN chmod a+rwx /openhands/code/openhands/__init__.py
 

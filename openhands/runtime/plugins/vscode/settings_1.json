@@ -1,0 +1,8 @@
+{
+    "workbench.startupEditor": "none",
+    "workbench.colorTheme": "Default Dark Modern",
+    "workbench.welcomePage.walkthroughs.openOnInstall": false,
+    "workbench.settings.applyToAllProfiles": [
+        "workbench.startupEditor"
+    ]
+}
