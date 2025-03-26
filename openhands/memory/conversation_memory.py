@@ -597,9 +597,13 @@ class ConversationMemory:
 
         For all but ATTENTION strategy, they are between start_id and end_id.
         For ATTENTION strategy, they are the events that are not in the selected_ids.
+        If there are no condensation actions, nothing has been forgotten.
         """
         # find the latest AgentCondensationAction in the history
-        condensation_action = self.condensation_actions(history)[-1]
+        condensation_actions = self.condensation_actions(history)
+        if not condensation_actions:
+            return set()
+        condensation_action = condensation_actions[-1]
 
         if condensation_action.strategy == CondenserStrategy.ATTENTION:
             if (
@@ -623,7 +627,7 @@ class ConversationMemory:
                 and not isinstance(event, AgentCondensationAction)
             }
 
-    def considered_event_ids(self, history: list[Event]) -> list[int]:
+    def considered_event_ids(self, history: list[Event]) -> set[int]:
         """Returns the ids of the events that are considered by the condenser
           in the step that produced the latest AgentCondensationAction.
 
@@ -631,23 +635,27 @@ class ConversationMemory:
         For all other strategies, it returns the events in history that have not been forgotten.
         Since forgotten_events already excludes AgentCondensationActions, we can take the
         difference between all event IDs and forgotten event IDs.
+        If there are no condensation actions, all events are considered.
         """
-        # find the latest AgentCondensationAction
-        condensation_action = self.condensation_actions(history)[-1]
+        # find the latest AgentCondensationAction in the history
+        condensation_actions = self.condensation_actions(history)
+        if not condensation_actions:
+            return {event.id for event in history}
+        condensation_action = condensation_actions[-1]
 
         if condensation_action.strategy == CondenserStrategy.ATTENTION:
             if (
                 condensation_action.selected_ids is None
                 or len(condensation_action.selected_ids) == 0
             ):
-                return [event.id for event in history]
-            return condensation_action.selected_ids
+                return {event.id for event in history}
+            return set(condensation_action.selected_ids)
         else:
             # Get all event IDs and forgotten event IDs
             all_ids = {event.id for event in history}
 
             # Return the difference (events that are not forgotten)
-            return list(all_ids - self.forgotten_event_ids(history))
+            return all_ids - self.forgotten_event_ids(history)
 
     def condensation_actions(
         self, history: list[Event]
