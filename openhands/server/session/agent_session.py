@@ -1,4 +1,5 @@
 import asyncio
+import json
 import time
 from logging import LoggerAdapter
 from types import MappingProxyType
@@ -6,13 +7,14 @@ from typing import Callable, cast
 
 from openhands.controller import AgentController
 from openhands.controller.agent import Agent
+from openhands.controller.replay import ReplayManager
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig, AppConfig, LLMConfig
 from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import OpenHandsLoggerAdapter
 from openhands.core.schema.agent import AgentState
 from openhands.events.action import ChangeAgentStateAction, MessageAction
-from openhands.events.event import EventSource
+from openhands.events.event import Event, EventSource
 from openhands.events.stream import EventStream
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderHandler
 from openhands.memory.memory import Memory
@@ -85,6 +87,7 @@ class AgentSession:
         selected_repository: str | None = None,
         selected_branch: str | None = None,
         initial_message: MessageAction | None = None,
+        replay_json: str | None = None,
     ):
         """Starts the Agent session
         Parameters:
@@ -120,14 +123,26 @@ class AgentSession:
                 selected_branch=selected_branch,
             )
 
-            self.controller = self._create_controller(
-                agent,
-                config.security.confirmation_mode,
-                max_iterations,
-                max_budget_per_task=max_budget_per_task,
-                agent_to_llm_config=agent_to_llm_config,
-                agent_configs=agent_configs,
-            )
+            if replay_json:
+                initial_message = self._run_replay(
+                    initial_message,
+                    replay_json,
+                    agent,
+                    config,
+                    max_iterations,
+                    max_budget_per_task,
+                    agent_to_llm_config,
+                    agent_configs,
+                )
+            else:
+                self.controller = self._create_controller(
+                    agent,
+                    config.security.confirmation_mode,
+                    max_iterations,
+                    max_budget_per_task=max_budget_per_task,
+                    agent_to_llm_config=agent_to_llm_config,
+                    agent_configs=agent_configs,
+                )
 
             repo_directory = None
             if self.runtime and runtime_connected and selected_repository:
@@ -191,6 +206,37 @@ class AgentSession:
             self.runtime.close()
         if self.security_analyzer is not None:
             await self.security_analyzer.close()
+
+    def _run_replay(
+        self,
+        initial_message: MessageAction | None,
+        replay_json: str,
+        agent: Agent,
+        config: AppConfig,
+        max_iterations: int,
+        max_budget_per_task: float | None,
+        agent_to_llm_config: dict[str, LLMConfig] | None,
+        agent_configs: dict[str, AgentConfig] | None,
+    ) -> MessageAction:
+        """
+        Replays a trajectory from a JSON file. Note that once the replay session
+        finishes, the controller will continue to run with further user instructions,
+        so we still need to pass llm configs, budget, etc., even though the replay
+        itself does not call LLM or cost money.
+        """
+        assert initial_message is None
+        replay_events = ReplayManager.get_replay_events(json.loads(replay_json))
+        self.controller = self._create_controller(
+            agent,
+            config.security.confirmation_mode,
+            max_iterations,
+            max_budget_per_task=max_budget_per_task,
+            agent_to_llm_config=agent_to_llm_config,
+            agent_configs=agent_configs,
+            replay_events=replay_events[1:],
+        )
+        assert isinstance(replay_events[0], MessageAction)
+        return replay_events[0]
 
     def _create_security_analyzer(self, security_analyzer: str | None):
         """Creates a SecurityAnalyzer instance that will be used to analyze the agent actions
@@ -298,6 +344,7 @@ class AgentSession:
         max_budget_per_task: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
+        replay_events: list[Event] | None = None,
     ) -> AgentController:
         """Creates an AgentController instance
 
@@ -343,6 +390,7 @@ class AgentSession:
             headless_mode=False,
             status_callback=self._status_callback,
             initial_state=self._maybe_restore_state(),
+            replay_events=replay_events,
         )
 
         return controller
