@@ -55,6 +55,36 @@ docker run -it --rm --pull=always \
     --name openhands-app \
     docker.all-hands.dev/all-hands-ai/openhands:0.30
 ```
+For Windows (Command Prompt)
+```
+docker pull docker.all-hands.dev/all-hands-ai/runtime:0.30-nikolaik
+
+docker run -it --rm --pull=always ^
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.30-nikolaik ^
+    -e LOG_ALL_EVENTS=true ^
+    -v "C:/Users/your-username/.openhands-state:/openhands-state" ^
+    -v "//var/run/docker.sock:/var/run/docker.sock" ^
+    -p 3000:3000 ^
+    --add-host host.docker.internal:host-gateway ^
+    --name openhands-app ^
+    docker.all-hands.dev/all-hands-ai/openhands:0.30
+
+```
+For Windows (PowerShell)
+```
+docker pull docker.all-hands.dev/all-hands-ai/runtime:0.30-nikolaik
+
+docker run -it --rm --pull=always `
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.30-nikolaik `
+    -e LOG_ALL_EVENTS=true `
+    -v "C:/Users/your-username/.openhands-state:/openhands-state" `
+    -v "//var/run/docker.sock:/var/run/docker.sock" `
+    -p 3000:3000 `
+    --add-host host.docker.internal:host-gateway `
+    --name openhands-app `
+    docker.all-hands.dev/all-hands-ai/openhands:0.30
+```
+
 
 > [!WARNING]
 > On a public network? See our [Hardened Docker Installation](https://docs.all-hands.dev/modules/usage/runtimes/docker#hardened-docker-installation) guide
