@@ -286,7 +286,9 @@ export function ConversationCard({
                     </div>
 
                     <div className="flex justify-between items-center pt-1">
-                      <span className="font-semibold">{t("CONVERSATION$TOTAL")}:</span>
+                      <span className="font-semibold">
+                        {t("CONVERSATION$TOTAL")}:
+                      </span>
                       <span className="font-bold">
                         {(
                           metrics.usage.prompt_tokens +
