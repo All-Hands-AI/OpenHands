@@ -1,31 +1,36 @@
 import fs from "fs";
 import path from "path";
+import * as parser from "@babel/parser";
+import _traverse from "@babel/traverse";
+import type { NodePath } from "@babel/traverse";
+import * as t from "@babel/types";
 
-// Patterns that indicate a string might need localization
-const STRING_PATTERNS = [
-  // Only match strings that are likely to be user-facing text
-  // Look for strings with spaces, punctuation, or multiple words
-  /['"`]([A-Z][a-z]+([ \t][A-Za-z][a-z]+)+)['"`]/g, // Capitalized phrases with spaces
-  /['"`]([A-Za-z][a-z]+([ \t][a-z]+){2,})['"`]/g, // Lowercase phrases with multiple spaces
-  /['"`]([^'"`\n]+\?|[^'"`\n]+\.|[^'"`\n]+!)['"`]/g, // Strings ending with punctuation
-  /['"`]([A-Za-z][a-z]+[ \t]+(from|in|not[ \t]+in)[ \t]+[A-Za-z][a-z]+)['"`]/g, // Phrases with prepositions
-  /['"`]([A-Za-z][a-z]+[ \t]+[A-Za-z][a-z]+)['"`]/g, // Two words with space between
+// Fix for ESM import
+const traverse = _traverse.default;
 
-  // Additional patterns for UI text in JSX
-  /(>[ \t]*([A-Z][a-z]+([ \t][A-Za-z][a-z]+)+)[ \t]*<)/g, // Text between JSX tags starting with capital letter
-  /(>[ \t]*([A-Za-z][a-z]+([ \t][A-Za-z][a-z]+)+\?)[ \t]*[{<])/g, // Text between JSX tags ending with question mark
-
-  // Special case for JSX text fragments
-  /(>[ \t]*([A-Za-z][a-z]+[ \t]+[a-z]+[ \t]+[a-z]+[ \t]*\?)[ \t]*\{)/g, // Text like "Code not in GitHub?" followed by JSX expression
-];
-
-// Patterns that indicate a string is already localized
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const LOCALIZED_PATTERNS = [
-  /t\(['"`][\w$.]+['"`]\)/, // t('KEY')
-  /useTranslation\(/, // useTranslation()
-  /<Trans>/, // <Trans>
-  /['"`][\w$.]+['"`]/, // Just a key like 'KEY.SUBKEY'
+// Attributes that typically don't contain user-facing text
+const NON_TEXT_ATTRIBUTES = [
+  "className",
+  "testId",
+  "id",
+  "name",
+  "type",
+  "href",
+  "src",
+  "alt",
+  "placeholder",
+  "rel",
+  "target",
+  "style",
+  "onClick",
+  "onChange",
+  "onSubmit",
+  "data-testid",
+  "aria-label",
+  "aria-labelledby",
+  "aria-describedby",
+  "aria-hidden",
+  "role",
 ];
 
 // Files/directories to ignore
@@ -55,39 +60,9 @@ const IGNORE_PATHS = [
   "routes.ts", // Route definitions
   "root.tsx", // Root component
   "entry.client.tsx", // Client entry point
-  "utils/scan-unlocalized-strings.ts", // This file itself
-  "utils/browser-tab.ts", // Browser tab utilities
-  "utils/custom-toast-handlers.tsx", // Toast handlers
-  "utils/error-handler.ts", // Error handlers
-  "utils/extract-model-and-provider.ts", // Model utilities
-  "utils/feature-flags.ts", // Feature flags
-  "utils/format-time-delta.ts", // Time formatting
-  "utils/gget-formatted-datetime.ts", // Date formatting
-  "utils/has-advanced-settings-set.ts", // Settings utilities
-  "utils/organize-models-and-providers.ts", // Model utilities
-  "utils/parse-cell-content.ts", // Cell parsing
-  "utils/settings-utils.ts", // Settings utilities
-  "utils/suggestions", // Suggestion utilities
-  "utils/utils.ts", // General utilities
-  "utils/base64-to-blob.ts", // Blob utilities
-  "utils/download-json.ts", // JSON download utilities
-  "utils/download-trajectory.ts", // Trajectory download utilities
-  "utils/format-ms.ts", // Time formatting
-  "utils/map-provider.ts", // Provider mapping
-  "utils/retrieve-axios-error-message.ts", // Error handling
-  "utils/verified-models.ts", // Model verification
-  "components/agent-status-map.constant.ts", // Agent status constants
-  "components/extension-icon-map.constant.tsx", // Icon mapping
-  "components/features/browser", // Browser components
-  "components/features/controls", // Control components
-  "components/features/terminal", // Terminal components
-  "components/features/jupyter", // Jupyter components
-  "components/features/file-explorer", // File explorer components
-  "components/shared/modals/security", // Security modals
-  "components/shared/modals/base-modal", // Base modal components
-  "components/shared/inputs", // Input components
-  "components/shared/loading-spinner.tsx", // Loading spinner
-  "query-client-config.ts", // Query client configuration
+  "utils/scan-unlocalized-strings.ts", // Original scanner
+  "utils/scan-unlocalized-strings-new.ts", // This file
+  "utils/scan-unlocalized-strings-ast.ts", // AST scanner
 ];
 
 // Extensions to scan
@@ -133,64 +108,192 @@ function isCommonDevelopmentString(str: string): boolean {
     /^application\/[a-zA-Z0-9-]+$/, // MIME types
     /^mm:ss$/, // Time format
     /^[a-zA-Z0-9]+\/[a-zA-Z0-9-]+$/, // Provider/model format
+    /^noopener noreferrer$/, // Common rel attribute values
+    /^noreferrer noopener$/, // Common rel attribute values
   ];
 
   return commonPatterns.some((pattern) => pattern.test(str));
 }
-export function scanFileForUnlocalizedStrings(filePath: string): string[] {
-  const content = fs.readFileSync(filePath, "utf-8");
-  const unlocalizedStrings: string[] = [];
 
-  // Don't skip files just because they have some localization - they might have mixed content
+function isLikelyUserFacingText(str: string): boolean {
+  if (!str || str.length <= 2 || !(/[a-zA-Z]/.test(str))) {
+    return false;
+  }
+  
+  if (isLikelyTranslationKey(str) || isCommonDevelopmentString(str)) {
+    return false;
+  }
+  
+  // Check if it's likely user-facing text
+  // 1. Contains multiple words with spaces
+  // 2. Contains punctuation like question marks, periods, or exclamation marks
+  // 3. Starts with a capital letter and has multiple words
+  const hasMultipleWords = /\s+/.test(str) && str.split(/\s+/).length > 1;
+  const hasPunctuation = /[?!.]/.test(str);
+  const isCapitalizedPhrase = /^[A-Z]/.test(str) && hasMultipleWords;
+  
+  return hasMultipleWords || hasPunctuation || isCapitalizedPhrase;
+}
 
-  // Special case for specific strings we know need localization
-  const specialCases = [
-    "Additional Settings",
-    "Disconnect from GitHub",
-    "Code not in GitHub?",
-  ];
+function isTranslationCall(node: t.Node): boolean {
+  // Check for t('KEY') pattern
+  if (
+    t.isCallExpression(node) &&
+    t.isIdentifier(node.callee) &&
+    node.callee.name === 't' &&
+    node.arguments.length > 0
+  ) {
+    return true;
+  }
+  
+  // Check for useTranslation() pattern
+  if (
+    t.isCallExpression(node) &&
+    t.isIdentifier(node.callee) &&
+    node.callee.name === 'useTranslation'
+  ) {
+    return true;
+  }
+  
+  // Check for <Trans> component
+  if (
+    t.isJSXElement(node) &&
+    t.isJSXIdentifier(node.openingElement.name) &&
+    node.openingElement.name.name === 'Trans'
+  ) {
+    return true;
+  }
+  
+  return false;
+}
 
-  // Check for special cases first
-  specialCases.forEach((specialCase) => {
-    if (content.includes(specialCase)) {
-      unlocalizedStrings.push(specialCase);
+function isInTranslationContext(path: NodePath<t.Node>): boolean {
+  let current: NodePath<t.Node> | null = path;
+  
+  while (current) {
+    if (isTranslationCall(current.node)) {
+      return true;
     }
-  });
+    current = current.parentPath;
+  }
+  
+  return false;
+}
 
-  // Check each pattern
-  STRING_PATTERNS.forEach((pattern, index) => {
-    const matches = content.matchAll(pattern);
-    for (const match of matches) {
-      // For JSX patterns (the last patterns)
-      if (index >= STRING_PATTERNS.length - 3) {
-        const str = match[2]?.trim();
-        if (
-          str &&
-          str.length > 2 &&
-          /[a-zA-Z]/.test(str) && // Contains at least one letter
-          !isLikelyTranslationKey(str) &&
-          !isCommonDevelopmentString(str)
-        ) {
-          unlocalizedStrings.push(str);
+export function scanFileForUnlocalizedStrings(filePath: string): string[] {
+  try {
+    const content = fs.readFileSync(filePath, 'utf-8');
+    const unlocalizedStrings: string[] = [];
+    
+    // Skip files that are too large
+    if (content.length > 1000000) {
+      console.warn(`Skipping large file: ${filePath}`);
+      return [];
+    }
+    
+    try {
+      // Parse the file
+      const ast = parser.parse(content, {
+        sourceType: 'module',
+        plugins: ['jsx', 'typescript', 'classProperties', 'decorators-legacy'],
+      });
+      
+      // Traverse the AST
+      traverse(ast, {
+        // Find JSX text content
+        JSXText(path) {
+          const text = path.node.value.trim();
+          if (text && isLikelyUserFacingText(text) && !isInTranslationContext(path)) {
+            unlocalizedStrings.push(text);
+          }
+        },
+        
+        // Find string literals in JSX attributes
+        JSXAttribute(path) {
+          const attrName = path.node.name.name.toString();
+          
+          // Skip attributes that typically don't contain user-facing text
+          if (NON_TEXT_ATTRIBUTES.includes(attrName)) {
+            return;
+          }
+          
+          // Check the attribute value
+          const value = path.node.value;
+          if (t.isStringLiteral(value)) {
+            const text = value.value.trim();
+            if (text && isLikelyUserFacingText(text) && !isInTranslationContext(path)) {
+              unlocalizedStrings.push(text);
+            }
+          }
+        },
+        
+        // Find string literals
+        StringLiteral(path) {
+          // Skip if parent is a JSX attribute (handled separately)
+          if (t.isJSXAttribute(path.parent)) {
+            return;
+          }
+          
+          // Skip if it's part of an import statement
+          if (t.isImportDeclaration(path.parent) || t.isExportDeclaration(path.parent)) {
+            return;
+          }
+          
+          const text = path.node.value.trim();
+          if (text && isLikelyUserFacingText(text) && !isInTranslationContext(path)) {
+            unlocalizedStrings.push(text);
+          }
+        },
+        
+        // Find template literals
+        TemplateLiteral(path) {
+          // Skip if it's a tagged template literal
+          if (t.isTaggedTemplateExpression(path.parent)) {
+            return;
+          }
+          
+          // Get the full template string if it's simple
+          if (path.node.quasis.length === 1) {
+            const text = path.node.quasis[0].value.raw.trim();
+            if (text && isLikelyUserFacingText(text) && !isInTranslationContext(path)) {
+              unlocalizedStrings.push(text);
+            }
+          }
         }
-      } else {
-        // For the general patterns
-        const str = match[1]?.trim();
-        if (
-          str &&
-          str.length > 2 &&
-          /[a-zA-Z]/.test(str) && // Contains at least one letter
-          !isLikelyTranslationKey(str) &&
-          !isCommonDevelopmentString(str)
-        ) {
-          unlocalizedStrings.push(str);
+      });
+    } catch (error) {
+      // If parsing fails, fall back to regex-based scanning
+      console.warn(`Failed to parse ${filePath}, falling back to regex scanning: ${error}`);
+      
+      // Simple regex to find potential text strings
+      const stringRegex = /['"`]([^'"`\n]{3,})['"`]/g;
+      const jsxTextRegex = />([\s]*[A-Za-z][\w\s.,!?]+)[\s]*</g;
+      
+      let match;
+      
+      // Find string literals
+      while ((match = stringRegex.exec(content)) !== null) {
+        const text = match[1].trim();
+        if (text && isLikelyUserFacingText(text)) {
+          unlocalizedStrings.push(text);
+        }
+      }
+      
+      // Find JSX text content
+      while ((match = jsxTextRegex.exec(content)) !== null) {
+        const text = match[1].trim();
+        if (text && isLikelyUserFacingText(text)) {
+          unlocalizedStrings.push(text);
         }
       }
     }
-  });
-
-  // Remove duplicates
-  return [...new Set(unlocalizedStrings)];
+    
+    // Filter out duplicates
+    return [...new Set(unlocalizedStrings)];
+  } catch (error) {
+    console.error(`Error scanning file ${filePath}:`, error);
+    return [];
+  }
 }
 
 export function scanDirectoryForUnlocalizedStrings(
