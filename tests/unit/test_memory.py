@@ -319,4 +319,3 @@ async def test_memory_with_agent_microagents():
     assert observation.microagent_knowledge[0].name == 'flarglebargle'
     assert observation.microagent_knowledge[0].trigger == 'flarglebargle'
     assert 'magic word' in observation.microagent_knowledge[0].content
-
