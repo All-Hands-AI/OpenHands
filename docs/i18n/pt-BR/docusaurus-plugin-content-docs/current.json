@@ -14,5 +14,61 @@
     "sidebar.apiSidebar.category.Backend": {
         "message": "Backend",
         "description": "The label for category Backend in sidebar apiSidebar"
+    },
+    "sidebar.docsSidebar.category.User Guides": {
+        "message": "Guias do Usuário",
+        "description": "The label for category User Guides in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.category.Running OpenHands": {
+        "message": "Executando OpenHands",
+        "description": "The label for category Running OpenHands in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.category.Prompting": {
+        "message": "Prompting",
+        "description": "The label for category Prompting in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.category.Architecture": {
+        "message": "Arquitetura",
+        "description": "The label for category Architecture in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.doc.Running OpenHands": {
+        "message": "Executando OpenHands",
+        "description": "The label for document Running OpenHands in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.doc.Getting Started": {
+        "message": "Começando",
+        "description": "The label for document Getting Started in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.doc.Key Features": {
+        "message": "Recursos Principais",
+        "description": "The label for document Key Features in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.category.Customization": {
+        "message": "Personalização",
+        "description": "The label for category Customization in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.category.Usage Methods": {
+        "message": "Métodos de Uso",
+        "description": "The label for category Usage Methods in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.category.Advanced Configuration": {
+        "message": "Configuração Avançada",
+        "description": "The label for category Advanced Configuration in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.doc.Troubleshooting": {
+        "message": "Solução de Problemas",
+        "description": "The label for document Troubleshooting in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.doc.Feedback": {
+        "message": "Feedback",
+        "description": "The label for document Feedback in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.category.For OpenHands Developers": {
+        "message": "Para Desenvolvedores OpenHands",
+        "description": "The label for category For OpenHands Developers in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.doc.About": {
+        "message": "Sobre",
+        "description": "The label for document About in sidebar docsSidebar"
     }
 }

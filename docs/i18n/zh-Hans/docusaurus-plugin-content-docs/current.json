@@ -12,7 +12,63 @@
     "description": "The label for category 🚧 故障排除 in sidebar docsSidebar"
   },
   "sidebar.apiSidebar.category.Backend": {
-    "message": "Backend",
+    "message": "后端",
     "description": "The label for category Backend in sidebar apiSidebar"
+  },
+  "sidebar.docsSidebar.category.User Guides": {
+    "message": "用户指南",
+    "description": "The label for category User Guides in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.Running OpenHands": {
+    "message": "运行 OpenHands",
+    "description": "The label for category Running OpenHands in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.Prompting": {
+    "message": "提示",
+    "description": "The label for category Prompting in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.Architecture": {
+    "message": "架构",
+    "description": "The label for category Architecture in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Running OpenHands": {
+    "message": "运行 OpenHands",
+    "description": "The label for document Running OpenHands in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Getting Started": {
+    "message": "入门",
+    "description": "The label for document Getting Started in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Key Features": {
+    "message": "主要功能",
+    "description": "The label for document Key Features in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.Customization": {
+    "message": "自定义",
+    "description": "The label for category Customization in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.Usage Methods": {
+    "message": "使用方法",
+    "description": "The label for category Usage Methods in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.Advanced Configuration": {
+    "message": "高级配置",
+    "description": "The label for category Advanced Configuration in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Troubleshooting": {
+    "message": "故障排除",
+    "description": "The label for document Troubleshooting in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Feedback": {
+    "message": "反馈",
+    "description": "The label for document Feedback in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.For OpenHands Developers": {
+    "message": "OpenHands 开发者",
+    "description": "The label for category For OpenHands Developers in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.About": {
+    "message": "关于",
+    "description": "The label for document About in sidebar docsSidebar"
   }
 }
