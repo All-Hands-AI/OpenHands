@@ -30,7 +30,7 @@ app = APIRouter(prefix='/api/conversations/{conversation_id}')
 
 
 @app.get('/list-files')
-async def list_files(request: Request, conversation_id: str, path: str | None = None):
+async def list_files(request: Request, path: str | None = None):
     """List files in the specified path.
 
     This function retrieves a list of files from the agent's runtime file store,
@@ -142,7 +142,7 @@ async def select_file(file: str, request: Request):
 
 
 @app.get('/zip-directory')
-def zip_current_workspace(request: Request, conversation_id: str):
+def zip_current_workspace(request: Request):
     try:
         logger.debug('Zipping workspace')
         runtime: Runtime = request.state.conversation.runtime
