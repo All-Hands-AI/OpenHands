@@ -86,7 +86,7 @@ Follow these steps in order to resolve the issue:
 1. EXPLORATION: find the files that are related to the problem and possible solutions
    1.1 Use `grep` to search for relevant methods, classes, keywords and error messages.
    1.2 Identify all files related to the problem statement.
-   1.3 Propose the methods and files to fixe the issue and explain why.
+   1.3 Propose the methods and files to fix the issue and explain why.
    1.4 From the possible file locations, select the most likely location to fix the issue.
 
 2. TEST CREATION: before implementing any fix, create a script to reproduce and verify the issue.
@@ -95,22 +95,23 @@ Follow these steps in order to resolve the issue:
    2.3 Run the reproduction script to confirm you are reproducing the issue.
    2.4 Adjust the reproduction script as necessary.
 
-3. FIX ANALYSIS: before editing the fix, state precisely what needs to be fixed.
-   3.1 Restate the problem, the location, the reproduction test and any caveats.
-   3.2 Think carefuly and propose 2-5 solutions.
-   3.3 Consider trade-offs between the different solutions.
-   3.4 Wait and from the possible solutions, select a most likely solution to fix the issue.
+3. FIX ANALYSIS: state clearly the problem and how to fix it
+   3.1 State clearly what the problem is.
+   3.2 State clearly where the problem is located.
+   3.3 State clearly how the test reproduces the issue.
+   3.4 State clearly the best practices to take into account in the fix.
+   3.5 State clearly how to fix the problem.
 
-4. IMMPLEMENTATION: Edit the source code to implement your chosen solution.
-   4.1 Make minimal, focused changes to fix the issue
+4. FIX IMPLEMENTATION: Edit the source code to implement your chosen solution.
+   4.1 Make minimal, focused changes to fix the issue.
 
 5. VERIFICATION: Test your implementation thoroughly.
-   5.1 Run your reproduction script to verify the fix works
-   5.2 Add edge cases to your test script to ensure comprehensive coverage
-   5.3 Run existing tests related to the modified code to ensure you haven't broken anything
+   5.1 Run your reproduction script to verify the fix works.
+   5.2 Add edge cases to your test script to ensure comprehensive coverage.
+   5.3 Run existing tests related to the modified code to ensure you haven't broken anything.
 
 6. FINAL REVIEW: Carefully re-read the problem description and compare your changes with the base commit {instance["base_commit"]}.
-   6.1 Ensure you've fully addressed all requirements
+   6.1 Ensure you've fully addressed all requirements.
    6.2 Run any tests in the repository related to:
      * The issue you are fixing
      * The files you modified
