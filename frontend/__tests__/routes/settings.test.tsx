@@ -60,7 +60,7 @@ describe("Settings Screen", () => {
     await waitFor(() => {
       screen.getByText("SETTINGS$LLM_SETTINGS");
       screen.getByText("GitHub Settings");
-      screen.getByText("Additional Settings");
+      screen.getByText("ACCOUNT_SETTINGS$ADDITIONAL_SETTINGS");
       screen.getByText("Reset to defaults");
       screen.getByText("Save Changes");
     });
@@ -153,7 +153,7 @@ describe("Settings Screen", () => {
 
       renderSettingsScreen();
 
-      const button = await screen.findByText("Disconnect from GitHub");
+      const button = await screen.findByText("ACCOUNT_SETTINGS$DISCONNECT_FROM_GITHUB");
       expect(button).toBeInTheDocument();
       expect(button).toBeDisabled();
     });
@@ -165,7 +165,7 @@ describe("Settings Screen", () => {
       });
 
       renderSettingsScreen();
-      const button = await screen.findByText("Disconnect from GitHub");
+      const button = await screen.findByText("ACCOUNT_SETTINGS$DISCONNECT_FROM_GITHUB");
       expect(button).toBeInTheDocument();
       expect(button).toBeEnabled();
 
@@ -184,7 +184,7 @@ describe("Settings Screen", () => {
 
       renderSettingsScreen();
 
-      const button = await screen.findByText("Disconnect from GitHub");
+      const button = await screen.findByText("ACCOUNT_SETTINGS$DISCONNECT_FROM_GITHUB");
       await user.click(button);
 
       expect(handleLogoutMock).toHaveBeenCalled();

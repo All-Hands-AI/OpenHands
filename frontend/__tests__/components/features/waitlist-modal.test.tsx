@@ -24,7 +24,7 @@ describe("WaitlistModal", () => {
     const user = userEvent.setup();
     render(<WaitlistModal ghTokenIsSet={false} githubAuthUrl={null} />);
     const checkbox = screen.getByRole("checkbox");
-    const button = screen.getByRole("button", { name: "Connect to GitHub" });
+    const button = screen.getByRole("button", { name: "GITHUB$CONNECT_TO_GITHUB" });
 
     expect(button).toBeDisabled();
 
@@ -45,7 +45,7 @@ describe("WaitlistModal", () => {
     const checkbox = screen.getByRole("checkbox");
     await user.click(checkbox);
 
-    const button = screen.getByRole("button", { name: "Connect to GitHub" });
+    const button = screen.getByRole("button", { name: "GITHUB$CONNECT_TO_GITHUB" });
     await user.click(button);
 
     expect(handleCaptureConsentSpy).toHaveBeenCalledWith(true);
