@@ -15,10 +15,8 @@ CI パイプラインのような制御された環境で役立ちます。
 
 OpenHands は以下のようなさまざまなランタイム環境をサポートしています。
 
-- **Docker ランタイム** - 分離のために Docker コンテナを使用するデフォルトのランタイム（ほとんどのユーザーにお勧め）
-- **OpenHands リモートランタイム** - 並列実行用のクラウドベースのランタイム（ベータ版）
-- **Modal ランタイム** - パートナーである Modal 社が提供するランタイム
-- **Daytona ランタイム** - Daytona 社が提供するランタイム
-- **ローカルランタイム** - Docker を使用せずにローカルマシン上で直接実行
-
-詳細については、[英語のドキュメント](/modules/usage/runtimes-index)を参照してください。
+- [Docker ランタイム](./runtimes/docker.md) - 分離のために Docker コンテナを使用するデフォルトのランタイム（ほとんどのユーザーにお勧め）
+- [OpenHands リモートランタイム](./runtimes/remote.md) - 並列実行用のクラウドベースのランタイム（ベータ版）
+- [Modal ランタイム](./runtimes/modal.md) - パートナーである Modal 社が提供するランタイム
+- [Daytona ランタイム](./runtimes/daytona.md) - Daytona 社が提供するランタイム
+- [ローカルランタイム](./runtimes/local.md) - Docker を使用せずにローカルマシン上で直接実行
