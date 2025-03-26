@@ -297,7 +297,9 @@ class ProviderHandler:
         # when it really is. We need to share information about current providers set
         # for the user when the socket event for connect is sent
         if ProviderType.GITHUB not in env_vars and get_latest:
-            logger.info('Force refresh runtime token')
+            logger.info(
+                f'Force refresh runtime token for user: {self.external_auth_id}'
+            )
             service = GithubServiceImpl(
                 external_auth_id=self.external_auth_id,
                 external_token_manager=self.external_token_manager,
