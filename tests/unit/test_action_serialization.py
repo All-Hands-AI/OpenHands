@@ -13,6 +13,7 @@ from openhands.events.action import (
     RecallAction,
 )
 from openhands.events.action.action import ActionConfirmationStatus
+from openhands.events.action.agent import CondenserStrategy
 from openhands.events.action.files import FileEditSource, FileReadSource
 from openhands.events.serialization import (
     event_from_dict,
@@ -353,18 +354,6 @@ def test_agent_microagent_action_serialization_deserialization():
     serialization_deserialization(original_action_dict, RecallAction)
 
 
-def test_agent_condensation_action_serialization_deserialization():
-    original_action_dict = {
-        'action': 'condense',
-        'args': {
-            'start_id': 10,
-            'end_id': 20,
-            'metadata': {'summary': 'Condensed history', 'tokens': 1500},
-        },
-    }
-    serialization_deserialization(original_action_dict, AgentCondensationAction)
-
-
 def test_file_read_action_legacy_serialization():
     original_action_dict = {
         'action': 'read',
@@ -409,3 +398,69 @@ def test_file_read_action_legacy_serialization():
     # Read-specific arguments in serialized form
     assert event_dict['args']['start'] == 0
     assert event_dict['args']['end'] == -1
+
+
+def test_agent_condensation_action_serialization_deserialization():
+    # Test SUMMARY strategy
+    summary_action_dict = {
+        'action': 'condense',
+        'args': {
+            'strategy': 'summary',
+            'start_id': 10,
+            'end_id': 20,
+            'summary': 'Condensed history summary',
+            'selected_event_ids': None,
+        },
+    }
+    serialization_deserialization(summary_action_dict, AgentCondensationAction)
+
+    # Test FORGET strategy
+    forget_action_dict = {
+        'action': 'condense',
+        'args': {
+            'strategy': 'forget',
+            'start_id': 5,
+            'end_id': 15,
+            'summary': None,
+            'selected_event_ids': None,
+        },
+    }
+    serialization_deserialization(forget_action_dict, AgentCondensationAction)
+
+    # Test ATTENTION strategy
+    attention_action_dict = {
+        'action': 'condense',
+        'args': {
+            'strategy': 'attention',
+            'start_id': 10,
+            'end_id': 30,
+            'summary': None,
+            'selected_event_ids': [10, 15, 20, 25, 30],
+        },
+    }
+    serialization_deserialization(attention_action_dict, AgentCondensationAction)
+
+    # Test MASK strategy
+    mask_action_dict = {
+        'action': 'condense',
+        'args': {
+            'strategy': 'mask',
+            'start_id': 42,
+            'end_id': 42,
+            'summary': '<MASKED>',
+            'selected_event_ids': None,
+        },
+    }
+    serialization_deserialization(mask_action_dict, AgentCondensationAction)
+
+    # Test empty summary but with strategy explicitly set
+    forget_explicit_action_dict = {
+        'action': 'condense',
+        'args': {'strategy': 'forget', 'start_id': 100, 'end_id': 200},
+    }
+
+    event = event_from_dict(forget_explicit_action_dict)
+    assert isinstance(event, AgentCondensationAction)
+    assert event.strategy == CondenserStrategy.FORGET
+    assert event.summary is None or event.summary == ''
+    assert event.selected_event_ids is None or len(event.selected_event_ids) == 0
