@@ -1,4 +1,4 @@
-# Key Features
+# 主な機能
 
 ![overview](https://www.all-hands.dev/assets/product/product-slide-1.webp)
 

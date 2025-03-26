@@ -70,5 +70,141 @@
   "sidebar.docsSidebar.doc.About": {
     "message": "概要",
     "description": "The label for document About in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Best Practices": {
+    "message": "ベストプラクティス",
+    "description": "The label for document Best Practices in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.Microagents": {
+    "message": "マイクロエージェント",
+    "description": "The label for category Microagents in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Overview": {
+    "message": "概要",
+    "description": "The label for document Overview in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Repository": {
+    "message": "リポジトリ",
+    "description": "The label for document Repository in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Public": {
+    "message": "パブリック",
+    "description": "The label for document Public in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Repository Customization": {
+    "message": "リポジトリのカスタマイズ",
+    "description": "The label for document Repository Customization in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.GUI Mode": {
+    "message": "GUIモード",
+    "description": "The label for document GUI Mode in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.CLI Mode": {
+    "message": "CLIモード",
+    "description": "The label for document CLI Mode in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Headless Mode": {
+    "message": "ヘッドレスモード",
+    "description": "The label for document Headless Mode in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Github Action": {
+    "message": "GitHub アクション",
+    "description": "The label for document Github Action in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.Cloud": {
+    "message": "クラウド",
+    "description": "The label for category Cloud in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Openhands Cloud": {
+    "message": "OpenHands クラウド",
+    "description": "The label for document Openhands Cloud in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Cloud GitHub Resolver": {
+    "message": "クラウド GitHub リゾルバー",
+    "description": "The label for document Cloud GitHub Resolver in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.LLM Configuration": {
+    "message": "LLM 設定",
+    "description": "The label for category LLM Configuration in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.Providers": {
+    "message": "プロバイダー",
+    "description": "The label for category Providers in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Azure": {
+    "message": "Azure",
+    "description": "The label for document Azure in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Google": {
+    "message": "Google",
+    "description": "The label for document Google in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Groq": {
+    "message": "Groq",
+    "description": "The label for document Groq in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.LiteLLM Proxy": {
+    "message": "LiteLLM プロキシ",
+    "description": "The label for document LiteLLM Proxy in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.OpenAI": {
+    "message": "OpenAI",
+    "description": "The label for document OpenAI in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.OpenRouter": {
+    "message": "OpenRouter",
+    "description": "The label for document OpenRouter in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.Runtime Configuration": {
+    "message": "ランタイム設定",
+    "description": "The label for category Runtime Configuration in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Docker Runtime": {
+    "message": "Docker ランタイム",
+    "description": "The label for document Docker Runtime in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Remote Runtime": {
+    "message": "リモートランタイム",
+    "description": "The label for document Remote Runtime in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Modal Runtime": {
+    "message": "Modal ランタイム",
+    "description": "The label for document Modal Runtime in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Daytona Runtime": {
+    "message": "Daytona ランタイム",
+    "description": "The label for document Daytona Runtime in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Local Runtime": {
+    "message": "ローカルランタイム",
+    "description": "The label for document Local Runtime in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Configuration Options": {
+    "message": "設定オプション",
+    "description": "The label for document Configuration Options in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Custom Sandbox": {
+    "message": "カスタムサンドボックス",
+    "description": "The label for document Custom Sandbox in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Development Overview": {
+    "message": "開発概要",
+    "description": "The label for document Development Overview in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Backend": {
+    "message": "バックエンド",
+    "description": "The label for document Backend in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Runtime": {
+    "message": "ランタイム",
+    "description": "The label for document Runtime in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Debugging": {
+    "message": "デバッグ",
+    "description": "The label for document Debugging in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Evaluation": {
+    "message": "評価",
+    "description": "The label for document Evaluation in sidebar docsSidebar"
   }
 }

@@ -70,5 +70,141 @@
   "sidebar.docsSidebar.doc.About": {
     "message": "关于",
     "description": "The label for document About in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Best Practices": {
+    "message": "最佳实践",
+    "description": "The label for document Best Practices in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.Microagents": {
+    "message": "微代理",
+    "description": "The label for category Microagents in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Overview": {
+    "message": "概述",
+    "description": "The label for document Overview in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Repository": {
+    "message": "仓库",
+    "description": "The label for document Repository in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Public": {
+    "message": "公共",
+    "description": "The label for document Public in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Repository Customization": {
+    "message": "仓库自定义",
+    "description": "The label for document Repository Customization in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.GUI Mode": {
+    "message": "GUI 模式",
+    "description": "The label for document GUI Mode in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.CLI Mode": {
+    "message": "CLI 模式",
+    "description": "The label for document CLI Mode in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Headless Mode": {
+    "message": "无头模式",
+    "description": "The label for document Headless Mode in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Github Action": {
+    "message": "GitHub Action",
+    "description": "The label for document Github Action in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.Cloud": {
+    "message": "云",
+    "description": "The label for category Cloud in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Openhands Cloud": {
+    "message": "OpenHands 云",
+    "description": "The label for document Openhands Cloud in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Cloud GitHub Resolver": {
+    "message": "云 GitHub 解析器",
+    "description": "The label for document Cloud GitHub Resolver in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.LLM Configuration": {
+    "message": "LLM 配置",
+    "description": "The label for category LLM Configuration in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.Providers": {
+    "message": "提供商",
+    "description": "The label for category Providers in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Azure": {
+    "message": "Azure",
+    "description": "The label for document Azure in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Google": {
+    "message": "Google",
+    "description": "The label for document Google in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Groq": {
+    "message": "Groq",
+    "description": "The label for document Groq in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.LiteLLM Proxy": {
+    "message": "LiteLLM 代理",
+    "description": "The label for document LiteLLM Proxy in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.OpenAI": {
+    "message": "OpenAI",
+    "description": "The label for document OpenAI in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.OpenRouter": {
+    "message": "OpenRouter",
+    "description": "The label for document OpenRouter in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.Runtime Configuration": {
+    "message": "运行时配置",
+    "description": "The label for category Runtime Configuration in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Docker Runtime": {
+    "message": "Docker 运行时",
+    "description": "The label for document Docker Runtime in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Remote Runtime": {
+    "message": "远程运行时",
+    "description": "The label for document Remote Runtime in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Modal Runtime": {
+    "message": "Modal 运行时",
+    "description": "The label for document Modal Runtime in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Daytona Runtime": {
+    "message": "Daytona 运行时",
+    "description": "The label for document Daytona Runtime in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Local Runtime": {
+    "message": "本地运行时",
+    "description": "The label for document Local Runtime in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Configuration Options": {
+    "message": "配置选项",
+    "description": "The label for document Configuration Options in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Custom Sandbox": {
+    "message": "自定义沙箱",
+    "description": "The label for document Custom Sandbox in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Development Overview": {
+    "message": "开发概述",
+    "description": "The label for document Development Overview in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Backend": {
+    "message": "后端",
+    "description": "The label for document Backend in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Runtime": {
+    "message": "运行时",
+    "description": "The label for document Runtime in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Debugging": {
+    "message": "调试",
+    "description": "The label for document Debugging in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Evaluation": {
+    "message": "评估",
+    "description": "The label for document Evaluation in sidebar docsSidebar"
   }
 }
