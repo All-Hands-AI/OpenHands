@@ -1,8 +1,5 @@
 {
-  "label": "Python",
-  "position": 2,
-  "link": {
-    "type": "generated-index",
-    "description": "OpenHands Python APIのドキュメント"
-  }
+  "items": ["python/python"],
+  "label": "バックエンド",
+  "type": "categorie"
 }
