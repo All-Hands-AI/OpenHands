@@ -165,6 +165,7 @@ class LLM(RetryMixin, DebugMixin):
             timeout=self.config.timeout,
             top_p=self.config.top_p,
             drop_params=self.config.drop_params,
+            seed=self.config.seed,
             **kwargs,
         )
 
