@@ -70,7 +70,29 @@ function shouldIgnorePath(filePath: string): boolean {
 
 function isLikelyTranslationKey(str: string): boolean {
   // Translation keys typically use dots, underscores, or are all caps
-  return /^[A-Z0-9_$.]+$/.test(str) || str.includes(".");
+  // Also check for the pattern with $ which is used in our translation keys
+  return (
+    /^[A-Z0-9_$.]+$/.test(str) ||
+    str.includes(".") ||
+    /[A-Z0-9_]+\$[A-Z0-9_]+/.test(str)
+  );
+}
+
+// Check if a string is a raw translation key that should be wrapped in t()
+function isRawTranslationKey(str: string): boolean {
+  // Check for our specific translation key pattern (e.g., "SETTINGS$GITHUB_SETTINGS")
+  // Exclude specific keys that are already properly used with i18next.t() in the code
+  const excludedKeys = [
+    "STATUS$ERROR_LLM_OUT_OF_CREDITS",
+    "ERROR$GENERIC",
+    "GITHUB$AUTH_SCOPE",
+  ];
+
+  if (excludedKeys.includes(str)) {
+    return false;
+  }
+
+  return /^[A-Z0-9_]+\$[A-Z0-9_]+$/.test(str);
 }
 
 function isCommonDevelopmentString(str: string): boolean {
@@ -247,6 +269,11 @@ function isLikelyUserFacingText(str: string): boolean {
     return false;
   }
 
+  // Check if it's a raw translation key that should be wrapped in t()
+  if (isRawTranslationKey(str)) {
+    return true;
+  }
+
   if (isLikelyTranslationKey(str) || isCommonDevelopmentString(str)) {
     return false;
   }
@@ -273,6 +300,9 @@ function isLikelyUserFacingText(str: string): boolean {
     "Fireworks AI",
     "Cloudflare Workers AI",
     "Voyage AI",
+    "Beta",
+    "documentation",
+    "Language",
   ];
 
   if (knownUIStrings.includes(str)) {

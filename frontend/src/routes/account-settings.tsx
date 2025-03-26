@@ -235,7 +235,7 @@ function AccountSettings() {
                     defaultIsToggled={isAdvancedSettingsSet}
                     onToggle={onToggleAdvancedMode}
                   >
-                    Advanced
+                    {t("SETTINGS$ADVANCED")}
                   </SettingsSwitch>
                 )}
               </div>
@@ -262,7 +262,7 @@ function AccountSettings() {
                 <SettingsInput
                   testId="base-url-input"
                   name="base-url-input"
-                  label="Base URL"
+                  label={t("SETTINGS$BASE_URL")}
                   defaultValue={settings.LLM_BASE_URL}
                   placeholder="https://api.openai.com"
                   type="text"
@@ -297,7 +297,7 @@ function AccountSettings() {
                 <SettingsDropdownInput
                   testId="agent-input"
                   name="agent-input"
-                  label="Agent"
+                  label={t("SETTINGS$AGENT")}
                   items={
                     resources?.agents.map((agent) => ({
                       key: agent,
@@ -346,7 +346,7 @@ function AccountSettings() {
                   name="enable-memory-condenser-switch"
                   defaultIsToggled={!!settings.ENABLE_DEFAULT_CONDENSER}
                 >
-                  Enable memory condensation
+                  {t("SETTINGS$ENABLE_MEMORY_CONDENSATION")}
                 </SettingsSwitch>
               )}
 
@@ -449,7 +449,7 @@ function AccountSettings() {
             <SettingsDropdownInput
               testId="language-input"
               name="language-input"
-              label="Language"
+              label={t("SETTINGS$LANGUAGE")}
               items={AvailableLanguages.map((language) => ({
                 key: language.value,
                 label: language.label,
