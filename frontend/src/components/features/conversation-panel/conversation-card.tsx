@@ -246,7 +246,9 @@ export function ConversationCard({
               <div className="grid gap-3">
                 {metrics?.cost !== null && (
                   <div className="flex justify-between items-center border-b border-neutral-700 pb-2">
-                    <span className="text-lg font-semibold">Total Cost (USD):</span>
+                    <span className="text-lg font-semibold">
+                      Total Cost (USD):
+                    </span>
                     <span className="font-semibold">
                       ${metrics.cost.toFixed(4)}
                     </span>
