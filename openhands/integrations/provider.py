@@ -269,7 +269,9 @@ class ProviderHandler:
             get_latest: Get the latest working token for the providers if True, otherwise get the existing ones
         """
 
-        if not self.provider_tokens:
+        # TODO: We should remove `not get_latest` in the future. More
+        # details about the error this fixes is in the next comment below
+        if not self.provider_tokens and not get_latest:
             return {}
 
         env_vars: dict[ProviderType, SecretStr] = {}
