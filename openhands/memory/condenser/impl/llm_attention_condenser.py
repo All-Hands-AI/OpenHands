@@ -54,7 +54,7 @@ class LLMAttentionCondenser(RollingCondenser):
 
         for event in events:
             if isinstance(event, CondensationAction):
-                forgotten_event_ids.extend(event.forgotten_event_ids)
+                forgotten_event_ids.extend(event.forgotten)
             else:
                 result_events.append(event)
 
@@ -123,10 +123,6 @@ class LLMAttentionCondenser(RollingCondenser):
                 for event in view
                 if event.id not in response_ids and event.id not in head_event_ids
             ],
-            considered_event_ids=[
-                event.id for event in view if event.id not in head_event_ids
-            ],
-            condenser_cls=self.__class__.__name__,
         )
 
         return Condensation(action=event)

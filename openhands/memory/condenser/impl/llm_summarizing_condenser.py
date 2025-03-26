@@ -43,7 +43,7 @@ class LLMSummarizingCondenser(RollingCondenser):
 
         for event in events:
             if isinstance(event, CondensationAction):
-                forgotten_event_ids.extend(event.forgotten_event_ids)
+                forgotten_event_ids.extend(event.forgotten)
             else:
                 result_events.append(event)
 
@@ -135,9 +135,8 @@ INTENT: Fix precision while maintaining FITS compliance"""
 
         return Condensation(
             action=CondensationAction(
-                condenser_cls=self.__class__.__name__,
-                forgotten_event_ids=[event.id for event in forgotten_events],
-                considered_event_ids=[event.id for event in view],
+                forgotten_events_start_id=min(event.id for event in forgotten_events),
+                forgotten_events_end_id=max(event.id for event in forgotten_events),
                 summary=summary,
             )
         )

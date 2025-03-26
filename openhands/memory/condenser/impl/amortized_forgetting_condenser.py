@@ -44,7 +44,7 @@ class AmortizedForgettingCondenser(RollingCondenser):
 
         for event in events:
             if isinstance(event, CondensationAction):
-                forgotten_event_ids.extend(event.forgotten_event_ids)
+                forgotten_event_ids.extend(event.forgotten)
             else:
                 result_events.append(event)
 
@@ -61,14 +61,14 @@ class AmortizedForgettingCondenser(RollingCondenser):
         events_from_tail = target_size - len(head)
         tail = view[-events_from_tail:]
 
-        events_to_keep = head + tail
+        event_ids_to_keep = {event.id for event in head + tail}
+        event_ids_to_forget = [
+            event.id for event in view if event.id not in event_ids_to_keep
+        ]
 
         event = CondensationAction(
-            forgotten_event_ids=[
-                event.id for event in view if event not in events_to_keep
-            ],
-            considered_event_ids=[event.id for event in view],
-            condenser_cls=self.__class__.__name__,
+            forgotten_events_start_id=min(event_ids_to_forget),
+            forgotten_events_end_id=max(event_ids_to_forget),
         )
 
         return Condensation(action=event)
