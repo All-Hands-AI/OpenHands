@@ -229,7 +229,7 @@ export function ConversationCard({
             </time>
             {showUpdateTime && (
               <>
-                <span>, updated </span>
+                <span>{t("CONVERSATION$UPDATED")} </span>
                 <time>{formatTimeDelta(new Date(lastUpdatedAt))} ago</time>
               </>
             )}
@@ -245,20 +245,20 @@ export function ConversationCard({
       >
         <div className="space-y-2">
           {metrics?.cost !== null && (
-            <p>Total Cost: ${metrics.cost.toFixed(4)}</p>
+            <p>{t("CONVERSATION$TOTAL_COST")}{metrics.cost.toFixed(4)}</p>
           )}
           {metrics?.usage !== null && (
             <>
-              <p>Tokens Used:</p>
+              <p>{t("CONVERSATION$TOKENS_USED")}</p>
               <ul className="list-inside space-y-1 ml-2">
-                <li>- Input: {metrics.usage.prompt_tokens}</li>
-                <li>- Output: {metrics.usage.completion_tokens}</li>
-                <li>- Total: {metrics.usage.total_tokens}</li>
+                <li>{t("CONVERSATION$INPUT")} {metrics.usage.prompt_tokens}</li>
+                <li>{t("CONVERSATION$OUTPUT")} {metrics.usage.completion_tokens}</li>
+                <li>{t("CONVERSATION$TOTAL")} {metrics.usage.total_tokens}</li>
               </ul>
             </>
           )}
           {!metrics?.cost && !metrics?.usage && (
-            <p className="text-neutral-400">No metrics data available</p>
+            <p className="text-neutral-400">{t("CONVERSATION$NO_METRICS")}</p>
           )}
         </div>
       </BaseModal>

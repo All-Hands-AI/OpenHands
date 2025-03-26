@@ -28,11 +28,6 @@ import {
   displaySuccessToast,
 } from "#/utils/custom-toast-handlers";
 
-const REMOTE_RUNTIME_OPTIONS = [
-  { key: 1, label: "1x (2 core, 8G)" },
-  { key: 2, label: "2x (4 core, 16G)" },
-];
-
 function AccountSettings() {
   const { t } = useTranslation();
   const {
@@ -312,9 +307,9 @@ function AccountSettings() {
                   name="runtime-settings-input"
                   label={
                     <>
-                      Runtime Settings (
+                      {t("SETTINGS$RUNTIME_SETTINGS")}
                       <a href="mailto:contact@all-hands.dev">
-                        get in touch for access
+                        {t("SETTINGS$GET_IN_TOUCH")}
                       </a>
                       )
                     </>
@@ -499,7 +494,7 @@ function AccountSettings() {
             data-testid="reset-modal"
             className="bg-base-secondary p-4 rounded-xl flex flex-col gap-4 border border-tertiary"
           >
-            <p>Are you sure you want to reset all settings?</p>
+            <p>{t("SETTINGS$RESET_CONFIRMATION")}</p>
             <div className="w-full flex gap-2">
               <BrandButton
                 type="button"

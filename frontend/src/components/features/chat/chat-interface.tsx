@@ -37,6 +37,7 @@ function getEntryPoint(
 export function ChatInterface() {
   const { send, isLoadingMessages } = useWsClient();
   const dispatch = useDispatch();
+  const { t } = useTranslation();
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const { scrollDomToBottom, onChatBodyScroll, hitBottom } =
     useScrollToBottom(scrollRef);
@@ -95,19 +96,19 @@ export function ChatInterface() {
 
   const onClickExportTrajectoryButton = () => {
     if (!params.conversationId) {
-      displayErrorToast("ConversationId unknown, cannot download trajectory");
+      displayErrorToast(t("CONVERSATION$DOWNLOAD_ERROR"));
       return;
     }
 
     getTrajectory(params.conversationId, {
       onSuccess: async (data) => {
         await downloadTrajectory(
-          params.conversationId ?? "unknown",
+          params.conversationId ?? t("CONVERSATION$UNKNOWN"),
           data.trajectory,
         );
       },
       onError: (error) => {
-        displayErrorToast(error.message);
+        displayErrorToast(t("CONVERSATION$DOWNLOAD_ERROR"));
       },
     });
   };
