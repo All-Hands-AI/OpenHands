@@ -106,6 +106,8 @@ def event_to_dict(event: 'Event') -> dict:
             d['source'] = d['source'].value
         if key == 'recall_type' and 'recall_type' in d:
             d['recall_type'] = d['recall_type'].value
+        if key == 'strategy' and 'strategy' in d:
+            d['strategy'] = d['strategy'].value
         if key == 'tool_call_metadata' and 'tool_call_metadata' in d:
             d['tool_call_metadata'] = d['tool_call_metadata'].model_dump()
         if key == 'llm_metrics' and 'llm_metrics' in d:

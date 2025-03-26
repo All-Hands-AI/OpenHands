@@ -7,6 +7,7 @@ from openhands.events.action.agent import (
     AgentRejectAction,
     AgentThinkAction,
     ChangeAgentStateAction,
+    CondenserStrategy,
     RecallAction,
 )
 from openhands.events.action.browse import BrowseInteractiveAction, BrowseURLAction
@@ -82,6 +83,17 @@ def handle_action_deprecated_args(args: dict) -> dict:
     return args
 
 
+def handle_condenser_strategy(args: dict) -> dict:
+    if 'strategy' in args and isinstance(args['strategy'], str):
+        try:
+            args['strategy'] = CondenserStrategy(args['strategy'])
+        except ValueError:
+            # fallback to none
+            args['strategy'] = CondenserStrategy.NONE
+
+    return args
+
+
 def action_from_dict(action: dict) -> Action:
     if not isinstance(action, dict):
         raise LLMMalformedActionError('action must be a dictionary')
@@ -113,6 +125,9 @@ def action_from_dict(action: dict) -> Action:
 
     # handle deprecated args
     args = handle_action_deprecated_args(args)
+
+    # handle condenser
+    args = handle_condenser_strategy(args)
 
     try:
         decoded_action = action_class(**args)

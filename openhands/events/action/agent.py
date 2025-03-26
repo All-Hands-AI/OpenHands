@@ -7,6 +7,14 @@ from openhands.events.action.action import Action
 from openhands.events.event import RecallType
 
 
+class CondenserStrategy(Enum):
+    NONE = 'none'
+    FORGET = 'forget'
+    SUMMARY = 'summary'
+    ATTENTION = 'attention'
+    MASK = 'mask'
+
+
 @dataclass
 class ChangeAgentStateAction(Action):
     """Fake action, just to notify the client that a task state has changed."""
@@ -113,14 +121,25 @@ class AgentDelegateAction(Action):
 class AgentCondensationAction(Action):
     """Action to record condensation of the agent's history.
 
-    This action stores information about a condensation event, including the range of events
-    that were condensed and, if available, a summary of the condensed events.
+    This action stores information about a condensation event, using different strategies.
+    - NONE: No condensation (placeholder)
+    - FORGET: Simple range-based forgetting (start_id to end_id)
+    - SUMMARY: Text summarization of events in range (summary)
+    - ATTENTION: LLM-selected important events (non-contiguous)
+    - MASK: Content masking/replacement
     """
 
+    # Generic fields
+    action: str = ActionType.CONDENSE
+    strategy: CondenserStrategy = CondenserStrategy.NONE
+
+    # Common tracking fields (useful for all non-none strategies)
     start_id: int = -1
     end_id: int = -1
-    summary: str = ''
-    action: str = ActionType.CONDENSE
+
+    # Strategy-specific fields
+    summary: str = ''  # for SUMMARY, MASK
+    selected_ids: list[int] | None = None  # for ATTENTION
 
     @property
     def message(self) -> str:
@@ -128,9 +147,16 @@ class AgentCondensationAction(Action):
 
     def __str__(self) -> str:
         ret = '**AgentCondensationAction**\n'
+        ret += f'STRATEGY: {self.strategy}\n'
         ret += f'RANGE: [{self.start_id}..{self.end_id}]\n'
-        if self.summary:
-            ret += f'SUMMARY: {self.summary}'
+
+        if (
+            self.strategy in [CondenserStrategy.SUMMARY, CondenserStrategy.MASK]
+            and self.summary
+        ):
+            ret += f'SUMMARY: {self.summary}\n'
+        elif self.strategy == CondenserStrategy.ATTENTION and self.selected_ids:
+            ret += f'SELECTED_IDS: {self.selected_ids}\n'
         return ret
 
 
