@@ -14,6 +14,7 @@ from pydantic import (
 )
 from pydantic.json import pydantic_encoder
 
+from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.action import Action
 from openhands.events.action.commands import CmdRunAction
 from openhands.events.stream import EventStream
@@ -294,8 +295,9 @@ class ProviderHandler:
         # when it really is. We need to share information about current providers set
         # for the user when the socket event for connect is sent
         if ProviderType.GITHUB not in env_vars and get_latest:
+            logger.info('Force refresh runtime token')
             env_vars[ProviderType.GITHUB] = await self._get_latest_provider_token(
-                provider
+                ProviderType.GITHUB
             )
 
         if not expose_secrets:
