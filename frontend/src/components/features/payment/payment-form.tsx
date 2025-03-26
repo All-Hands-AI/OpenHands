@@ -64,7 +64,7 @@ export function PaymentForm() {
           onChange={handleTopUpInputChange}
           type="text"
           label="Add funds"
-          placeholder="Specify an amount (USD) to add to your account"
+          placeholder="Specify an amount in USD to add - min $10"
           className="w-[680px]"
         />
 
