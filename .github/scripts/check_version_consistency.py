@@ -41,7 +41,11 @@ def find_version_references(directory: str) -> Tuple[Set[str], Set[str]]:
 
 def main():
     repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+    print(f"Checking version consistency in {repo_root}")
     openhands_versions, runtime_versions = find_version_references(repo_root)
+
+    print(f"Found openhands versions: {sorted(openhands_versions)}")
+    print(f"Found runtime versions: {sorted(runtime_versions)}")
 
     exit_code = 0
 
