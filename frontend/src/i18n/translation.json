@@ -4904,7 +4904,7 @@
     },
     "BROWSER$NO_PAGE_LOADED": {
         "en": "No page loaded.",
-        "ja": "ページが読み込まれていません。",
+        "ja": "ブラウザは空です",
         "zh-CN": "页面未加载",
         "zh-TW": "未載入任何頁面。",
         "de": "Keine Seite geladen.",
@@ -4915,8 +4915,7 @@
         "es": "Ninguna página cargada.",
         "ar": "لم يتم تحميل أي صفحة.",
         "fr": "Aucune page chargée.",
-        "tr": "Sayfa yüklenmedi.",
-        "ja": "ブラウザは空です"
+        "tr": "Sayfa yüklenmedi."
     },
     "USER$AVATAR_PLACEHOLDER": {
         "en": "user avatar placeholder",
@@ -5297,6 +5296,21 @@
         "tr": "Sabrınız için teşekkür ederiz. Size mümkün olan en kısa sürede erişim sağlamak için çok çalışıyoruz.",
         "de": "Vielen Dank für Ihre Geduld. Wir arbeiten hart daran, Ihnen so schnell wie möglich Zugang zu gewähren."
     },
+    "WAITLIST$ALMOST_THERE": {
+        "en": "Almost there!",
+        "ja": "もう少しです！",
+        "zh-CN": "即将完成！",
+        "zh-TW": "即將完成！",
+        "ko-KR": "거의 다 왔습니다!",
+        "no": "Nesten der!",
+        "it": "Ci siamo quasi!",
+        "pt": "Quase lá!",
+        "es": "¡Casi listo!",
+        "ar": "اقتربنا!",
+        "fr": "Presque là !",
+        "tr": "Neredeyse tamam!",
+        "de": "Fast geschafft!"
+    },
     "PAYMENT$SUCCESS": {
         "en": "Payment successful",
         "ja": "支払い成功",
@@ -5341,20 +5355,5 @@
         "fr": "Application servie",
         "tr": "Sunulan Uygulama",
         "de": "Bereitgestellte Anwendung"
-    },
-    "WAITLIST$ALMOST_THERE": {
-        "en": "Almost there! We'll notify you when your account is ready.",
-        "ja": "もう少しです！アカウントの準備ができたらお知らせします。",
-        "zh-CN": "即将完成！我们会在您的账户准备好时通知您。",
-        "zh-TW": "即將完成！我們會在您的帳戶準備好時通知您。",
-        "ko-KR": "거의 다 왔습니다! 계정이 준비되면 알려드리겠습니다.",
-        "no": "Nesten der! Vi vil varsle deg når kontoen din er klar.",
-        "it": "Ci siamo quasi! Ti avviseremo quando il tuo account sarà pronto.",
-        "pt": "Quase lá! Notificaremos você quando sua conta estiver pronta.",
-        "es": "¡Casi listo! Le notificaremos cuando su cuenta esté lista.",
-        "ar": "اقتربنا! سنخطرك عندما يكون حسابك جاهزًا.",
-        "fr": "Presque terminé ! Nous vous informerons lorsque votre compte sera prêt.",
-        "tr": "Neredeyse tamam! Hesabınız hazır olduğunda size haber vereceğiz.",
-        "de": "Fast geschafft! Wir benachrichtigen Sie, wenn Ihr Konto bereit ist."
     }
 }

@@ -29,9 +29,7 @@ export function WaitlistMessage({ content }: WaitlistMessageProps) {
         </p>
       )}
       {content === "waitlist" && (
-        <p className="text-sm">
-          {t(I18nKey.WAITLIST$PATIENCE_MESSAGE)}
-        </p>
+        <p className="text-sm">{t(I18nKey.WAITLIST$PATIENCE_MESSAGE)}</p>
       )}
     </div>
   );
