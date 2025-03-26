@@ -2,7 +2,7 @@ import { createRoutesStub } from "react-router";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "test-utils";
 import { screen, waitFor } from "@testing-library/react";
-import App from "#/routes/_oh.app/route";
+import App from "#/routes/conversation";
 import OpenHands from "#/api/open-hands";
 import * as CustomToast from "#/utils/custom-toast-handlers";
 
