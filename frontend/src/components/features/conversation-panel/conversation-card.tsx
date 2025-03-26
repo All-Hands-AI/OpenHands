@@ -245,15 +245,24 @@ export function ConversationCard({
       >
         <div className="space-y-2">
           {metrics?.cost !== null && (
-            <p>{t("CONVERSATION$TOTAL_COST")}{metrics.cost.toFixed(4)}</p>
+            <p>
+              {t("CONVERSATION$TOTAL_COST")}
+              {metrics.cost.toFixed(4)}
+            </p>
           )}
           {metrics?.usage !== null && (
             <>
               <p>{t("CONVERSATION$TOKENS_USED")}</p>
               <ul className="list-inside space-y-1 ml-2">
-                <li>{t("CONVERSATION$INPUT")} {metrics.usage.prompt_tokens}</li>
-                <li>{t("CONVERSATION$OUTPUT")} {metrics.usage.completion_tokens}</li>
-                <li>{t("CONVERSATION$TOTAL")} {metrics.usage.total_tokens}</li>
+                <li>
+                  {t("CONVERSATION$INPUT")} {metrics.usage.prompt_tokens}
+                </li>
+                <li>
+                  {t("CONVERSATION$OUTPUT")} {metrics.usage.completion_tokens}
+                </li>
+                <li>
+                  {t("CONVERSATION$TOTAL")} {metrics.usage.total_tokens}
+                </li>
               </ul>
             </>
           )}

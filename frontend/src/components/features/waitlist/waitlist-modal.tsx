@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
 import { JoinWaitlistAnchor } from "./join-waitlist-anchor";
 import { WaitlistMessage } from "./waitlist-message";
@@ -8,7 +9,6 @@ import { TOSCheckbox } from "./tos-checkbox";
 import { handleCaptureConsent } from "#/utils/handle-capture-consent";
 import { BrandButton } from "../settings/brand-button";
 import GitHubLogo from "#/assets/branding/github-logo.svg?react";
-import { useTranslation } from "react-i18next";
 
 interface WaitlistModalProps {
   ghTokenIsSet: boolean;

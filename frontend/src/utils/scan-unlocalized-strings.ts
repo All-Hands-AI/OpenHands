@@ -1,11 +1,12 @@
 import fs from "fs";
-import path from "path";
+import nodePath from "path";
 import * as parser from "@babel/parser";
 import * as _traverse from "@babel/traverse";
 import type { NodePath } from "@babel/traverse";
 import * as t from "@babel/types";
 
 // Fix for ESM/CJS compatibility
+// @ts-ignore - This is a workaround for ESM/CJS compatibility
 const traverse = (_traverse as any).default || _traverse;
 
 // Attributes that typically don't contain user-facing text
@@ -199,14 +200,14 @@ function isCommonDevelopmentString(str: string): boolean {
 }
 
 function isLikelyUserFacingText(str: string): boolean {
-  if (!str || str.length <= 2 || !(/[a-zA-Z]/.test(str))) {
+  if (!str || str.length <= 2 || !/[a-zA-Z]/.test(str)) {
     return false;
   }
-  
+
   if (isLikelyTranslationKey(str) || isCommonDevelopmentString(str)) {
     return false;
   }
-  
+
   // Check if it's likely user-facing text
   // 1. Contains multiple words with spaces
   // 2. Contains punctuation like question marks, periods, or exclamation marks
@@ -214,7 +215,7 @@ function isLikelyUserFacingText(str: string): boolean {
   const hasMultipleWords = /\s+/.test(str) && str.split(/\s+/).length > 1;
   const hasPunctuation = /[?!.]/.test(str);
   const isCapitalizedPhrase = /^[A-Z]/.test(str) && hasMultipleWords;
-  
+
   return hasMultipleWords || hasPunctuation || isCapitalizedPhrase;
 }
 
@@ -223,146 +224,171 @@ function isTranslationCall(node: t.Node): boolean {
   if (
     t.isCallExpression(node) &&
     t.isIdentifier(node.callee) &&
-    node.callee.name === 't' &&
+    node.callee.name === "t" &&
     node.arguments.length > 0
   ) {
     return true;
   }
-  
+
   // Check for useTranslation() pattern
   if (
     t.isCallExpression(node) &&
     t.isIdentifier(node.callee) &&
-    node.callee.name === 'useTranslation'
+    node.callee.name === "useTranslation"
   ) {
     return true;
   }
-  
+
   // Check for <Trans> component
   if (
     t.isJSXElement(node) &&
     t.isJSXIdentifier(node.openingElement.name) &&
-    node.openingElement.name.name === 'Trans'
+    node.openingElement.name.name === "Trans"
   ) {
     return true;
   }
-  
+
   return false;
 }
 
-function isInTranslationContext(path: NodePath<t.Node>): boolean {
-  let current: NodePath<t.Node> | null = path;
-  
+function isInTranslationContext(nodePath: NodePath<t.Node>): boolean {
+  let current: NodePath<t.Node> | null = nodePath;
+
   while (current) {
     if (isTranslationCall(current.node)) {
       return true;
     }
     current = current.parentPath;
   }
-  
+
   return false;
 }
 
 export function scanFileForUnlocalizedStrings(filePath: string): string[] {
   try {
-    const content = fs.readFileSync(filePath, 'utf-8');
+    const content = fs.readFileSync(filePath, "utf-8");
     const unlocalizedStrings: string[] = [];
-    
+
     // Skip files that are too large
     if (content.length > 1000000) {
+      // eslint-disable-next-line no-console
       console.warn(`Skipping large file: ${filePath}`);
       return [];
     }
-    
+
     try {
       // Parse the file
       const ast = parser.parse(content, {
-        sourceType: 'module',
-        plugins: ['jsx', 'typescript', 'classProperties', 'decorators-legacy'],
+        sourceType: "module",
+        plugins: ["jsx", "typescript", "classProperties", "decorators-legacy"],
       });
-      
+
       // Traverse the AST
       traverse(ast, {
         // Find JSX text content
-        JSXText(path) {
-          const text = path.node.value.trim();
-          if (text && isLikelyUserFacingText(text) && !isInTranslationContext(path)) {
+        JSXText(nodePath: NodePath<t.JSXText>) {
+          const text = nodePath.node.value.trim();
+          if (
+            text &&
+            isLikelyUserFacingText(text) &&
+            !isInTranslationContext(nodePath)
+          ) {
             unlocalizedStrings.push(text);
           }
         },
-        
+
         // Find string literals in JSX attributes
-        JSXAttribute(path) {
-          const attrName = path.node.name.name.toString();
-          
+        JSXAttribute(nodePath: NodePath<t.JSXAttribute>) {
+          const attrName = nodePath.node.name.name.toString();
+
           // Skip attributes that typically don't contain user-facing text
           if (NON_TEXT_ATTRIBUTES.includes(attrName)) {
             return;
           }
-          
+
           // Check the attribute value
-          const value = path.node.value;
+          const { value } = nodePath.node;
           if (t.isStringLiteral(value)) {
             const text = value.value.trim();
-            if (text && isLikelyUserFacingText(text) && !isInTranslationContext(path)) {
+            if (
+              text &&
+              isLikelyUserFacingText(text) &&
+              !isInTranslationContext(nodePath)
+            ) {
               unlocalizedStrings.push(text);
             }
           }
         },
-        
+
         // Find string literals
-        StringLiteral(path) {
+        StringLiteral(nodePath: NodePath<t.StringLiteral>) {
           // Skip if parent is a JSX attribute (handled separately)
-          if (t.isJSXAttribute(path.parent)) {
+          if (t.isJSXAttribute(nodePath.parent)) {
             return;
           }
-          
+
           // Skip if it's part of an import statement
-          if (t.isImportDeclaration(path.parent) || t.isExportDeclaration(path.parent)) {
+          if (
+            t.isImportDeclaration(nodePath.parent) ||
+            t.isExportDeclaration(nodePath.parent)
+          ) {
             return;
           }
-          
-          const text = path.node.value.trim();
-          if (text && isLikelyUserFacingText(text) && !isInTranslationContext(path)) {
+
+          const text = nodePath.node.value.trim();
+          if (
+            text &&
+            isLikelyUserFacingText(text) &&
+            !isInTranslationContext(nodePath)
+          ) {
             unlocalizedStrings.push(text);
           }
         },
-        
+
         // Find template literals
-        TemplateLiteral(path) {
+        TemplateLiteral(nodePath: NodePath<t.TemplateLiteral>) {
           // Skip if it's a tagged template literal
-          if (t.isTaggedTemplateExpression(path.parent)) {
+          if (t.isTaggedTemplateExpression(nodePath.parent)) {
             return;
           }
-          
+
           // Get the full template string if it's simple
-          if (path.node.quasis.length === 1) {
-            const text = path.node.quasis[0].value.raw.trim();
-            if (text && isLikelyUserFacingText(text) && !isInTranslationContext(path)) {
+          if (nodePath.node.quasis.length === 1) {
+            const text = nodePath.node.quasis[0].value.raw.trim();
+            if (
+              text &&
+              isLikelyUserFacingText(text) &&
+              !isInTranslationContext(nodePath)
+            ) {
               unlocalizedStrings.push(text);
             }
           }
-        }
+        },
       });
     } catch (error) {
       // If parsing fails, fall back to regex-based scanning
-      console.warn(`Failed to parse ${filePath}, falling back to regex scanning: ${error}`);
-      
+      // eslint-disable-next-line no-console
+      console.warn(
+        `Failed to parse ${filePath}, falling back to regex scanning: ${error}`,
+      );
+
       // Simple regex to find potential text strings
       const stringRegex = /['"`]([^'"`\n]{3,})['"`]/g;
       const jsxTextRegex = />([\s]*[A-Za-z][\w\s.,!?]+)[\s]*</g;
-      
-      let match;
-      
+
+      let match: RegExpExecArray | null;
+
       // Find string literals
+      // eslint-disable-next-line no-cond-assign
       while ((match = stringRegex.exec(content)) !== null) {
         const text = match[1].trim();
         if (text && isLikelyUserFacingText(text)) {
           unlocalizedStrings.push(text);
         }
       }
-      
+
       // Find JSX text content
+      // eslint-disable-next-line no-cond-assign
       while ((match = jsxTextRegex.exec(content)) !== null) {
         const text = match[1].trim();
         if (text && isLikelyUserFacingText(text)) {
@@ -370,10 +396,11 @@ export function scanFileForUnlocalizedStrings(filePath: string): string[] {
         }
       }
     }
-    
+
     // Filter out duplicates
     return [...new Set(unlocalizedStrings)];
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error(`Error scanning file ${filePath}:`, error);
     return [];
   }
@@ -388,14 +415,14 @@ export function scanDirectoryForUnlocalizedStrings(
     const entries = fs.readdirSync(currentPath, { withFileTypes: true });
 
     for (const entry of entries) {
-      const fullPath = path.join(currentPath, entry.name);
+      const fullPath = nodePath.join(currentPath, entry.name);
 
       if (!shouldIgnorePath(fullPath)) {
         if (entry.isDirectory()) {
           scanDir(fullPath);
         } else if (
           entry.isFile() &&
-          SCAN_EXTENSIONS.includes(path.extname(fullPath))
+          SCAN_EXTENSIONS.includes(nodePath.extname(fullPath))
         ) {
           const unlocalized = scanFileForUnlocalizedStrings(fullPath);
           if (unlocalized.length > 0) {

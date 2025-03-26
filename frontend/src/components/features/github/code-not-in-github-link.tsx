@@ -1,8 +1,8 @@
 import React from "react";
 import { useDispatch } from "react-redux";
+import { useTranslation } from "react-i18next";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { setInitialPrompt } from "#/state/initial-query-slice";
-import { useTranslation } from "react-i18next";
 
 const INITIAL_PROMPT = "";
 

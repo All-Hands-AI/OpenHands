@@ -24,6 +24,7 @@ import { displaySuccessToast } from "#/utils/custom-toast-handlers";
 
 export function ErrorBoundary() {
   const error = useRouteError();
+  const { t } = useTranslation();
 
   if (isRouteErrorResponse(error)) {
     return (

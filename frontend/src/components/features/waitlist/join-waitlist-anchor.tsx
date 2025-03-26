@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 
 export function JoinWaitlistAnchor() {
   const { t } = useTranslation();
-  
+
   return (
     <a
       href="https://www.all-hands.dev/join-waitlist"

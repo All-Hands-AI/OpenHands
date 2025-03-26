@@ -155,8 +155,9 @@ function AccountSettings() {
       SECURITY_ANALYZER:
         formData.get("security-analyzer-input")?.toString() || "",
       REMOTE_RUNTIME_RESOURCE_FACTOR:
-        remoteRuntimeResourceFactor ||
-        DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
+        remoteRuntimeResourceFactor !== null
+          ? Number(remoteRuntimeResourceFactor)
+          : DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
       CONFIRMATION_MODE: confirmationModeIsEnabled,
     };
 

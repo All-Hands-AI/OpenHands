@@ -2,6 +2,7 @@ import { useDispatch, useSelector } from "react-redux";
 import React from "react";
 import posthog from "posthog-js";
 import { useParams } from "react-router";
+import { useTranslation } from "react-i18next";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
 import { TrajectoryActions } from "../trajectory/trajectory-actions";
 import { createChatMessage } from "#/services/chat-service";
@@ -17,7 +18,6 @@ import { useWsClient } from "#/context/ws-client-provider";
 import { Messages } from "./messages";
 import { ChatSuggestions } from "./chat-suggestions";
 import { ActionSuggestions } from "./action-suggestions";
-import { useTranslation } from "react-i18next";
 
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
@@ -107,7 +107,7 @@ export function ChatInterface() {
           data.trajectory,
         );
       },
-      onError: (error) => {
+      onError: () => {
         displayErrorToast(t("CONVERSATION$DOWNLOAD_ERROR"));
       },
     });
