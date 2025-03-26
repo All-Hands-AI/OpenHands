@@ -8,6 +8,15 @@ const STRING_PATTERNS = [
   /['"`]([A-Z][a-z]+([ \t][A-Za-z][a-z]+)+)['"`]/g, // Capitalized phrases with spaces
   /['"`]([A-Za-z][a-z]+([ \t][a-z]+){2,})['"`]/g, // Lowercase phrases with multiple spaces
   /['"`]([^'"`\n]+\?|[^'"`\n]+\.|[^'"`\n]+!)['"`]/g, // Strings ending with punctuation
+  /['"`]([A-Za-z][a-z]+[ \t]+(from|in|not[ \t]+in)[ \t]+[A-Za-z][a-z]+)['"`]/g, // Phrases with prepositions
+  /['"`]([A-Za-z][a-z]+[ \t]+[A-Za-z][a-z]+)['"`]/g, // Two words with space between
+
+  // Additional patterns for UI text in JSX
+  /(>[ \t]*([A-Z][a-z]+([ \t][A-Za-z][a-z]+)+)[ \t]*<)/g, // Text between JSX tags starting with capital letter
+  /(>[ \t]*([A-Za-z][a-z]+([ \t][A-Za-z][a-z]+)+\?)[ \t]*[{<])/g, // Text between JSX tags ending with question mark
+
+  // Special case for JSX text fragments
+  /(>[ \t]*([A-Za-z][a-z]+[ \t]+[a-z]+[ \t]+[a-z]+[ \t]*\?)[ \t]*\{)/g, // Text like "Code not in GitHub?" followed by JSX expression
 ];
 
 // Patterns that indicate a string is already localized
@@ -134,24 +143,54 @@ export function scanFileForUnlocalizedStrings(filePath: string): string[] {
 
   // Don't skip files just because they have some localization - they might have mixed content
 
+  // Special case for specific strings we know need localization
+  const specialCases = [
+    "Additional Settings",
+    "Disconnect from GitHub",
+    "Code not in GitHub?",
+  ];
+
+  // Check for special cases first
+  specialCases.forEach((specialCase) => {
+    if (content.includes(specialCase)) {
+      unlocalizedStrings.push(specialCase);
+    }
+  });
+
   // Check each pattern
-  STRING_PATTERNS.forEach((pattern) => {
+  STRING_PATTERNS.forEach((pattern, index) => {
     const matches = content.matchAll(pattern);
     for (const match of matches) {
-      const str = match[1].trim();
-      if (
-        str &&
-        str.length > 2 &&
-        /[a-zA-Z]/.test(str) && // Contains at least one letter
-        !isLikelyTranslationKey(str) &&
-        !isCommonDevelopmentString(str)
-      ) {
-        unlocalizedStrings.push(str);
+      // For JSX patterns (the last patterns)
+      if (index >= STRING_PATTERNS.length - 3) {
+        const str = match[2]?.trim();
+        if (
+          str &&
+          str.length > 2 &&
+          /[a-zA-Z]/.test(str) && // Contains at least one letter
+          !isLikelyTranslationKey(str) &&
+          !isCommonDevelopmentString(str)
+        ) {
+          unlocalizedStrings.push(str);
+        }
+      } else {
+        // For the general patterns
+        const str = match[1]?.trim();
+        if (
+          str &&
+          str.length > 2 &&
+          /[a-zA-Z]/.test(str) && // Contains at least one letter
+          !isLikelyTranslationKey(str) &&
+          !isCommonDevelopmentString(str)
+        ) {
+          unlocalizedStrings.push(str);
+        }
       }
     }
   });
 
-  return unlocalizedStrings;
+  // Remove duplicates
+  return [...new Set(unlocalizedStrings)];
 }
 
 export function scanDirectoryForUnlocalizedStrings(
