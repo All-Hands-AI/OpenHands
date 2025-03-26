@@ -68,12 +68,12 @@ ollama_base_url="http://localhost:11434"
 
 ```
 
-以上で完了です！これで`make run`でOpenHandsを起動できます。`http://localhost:3000/`に接続できるはずです。
+これで完了です！`make run`でOpenHandsを起動できるようになりました。`http://localhost:3000/`に接続できるはずです。
 
 ### Webアプリケーションの設定
 
 OpenHands UIで、左下の設定ホイールをクリックします。
-そして、`Model`入力に`ollama/codellama:7b`、または先ほどプルしたモデルの名前を入力します。
+次に、`Model`入力に`ollama/codellama:7b`、または先ほどプルしたモデルの名前を入力します。
 ドロップダウンに表示されない場合は、`Advanced Settings`を有効にして入力してください。注意：`ollama list`で表示されるモデル名に、接頭辞`ollama/`を付ける必要があります。
 
 APIキーフィールドには、特定のキーが不要なので、`ollama`または任意の値を入力します。
@@ -84,7 +84,7 @@ APIキーフィールドには、特定のキーが不要なので、`ollama`ま
 
 ## ollamaサービスの設定（WSL） {#configuring-ollama-service-wsl-ja}
 
-WSLのollamaのデフォルト設定では、localhostのみにサービスを提供します。つまり、dockerコンテナからアクセスできません。例えば、OpenHandsでは動作しません。まず、ollamaが正しく実行されているかテストしましょう。
+WSLのollamaのデフォルト設定では、localhostのみにサービスを提供します。つまり、dockerコンテナからアクセスできません。例えば、OpenHandsでは動作しません。まず、ollamaが正しく実行されていることをテストしましょう。
 
 ```bash
 ollama list # インストール済みモデルのリストを取得
@@ -103,7 +103,7 @@ docker exec [CONTAINER ID] curl http://host.docker.internal:11434/api/generate -
 
 ## 修正方法
 
-動作させるために修正しましょう。sudo権限で/etc/systemd/system/ollama.serviceを編集します。（パスはLinuxの種類によって異なる場合があります）
+それでは、動作するようにしましょう。sudo権限で/etc/systemd/system/ollama.serviceを編集します。（パスはLinuxの種類によって異なる場合があります）
 
 ```bash
 sudo vi /etc/systemd/system/ollama.service
@@ -115,14 +115,14 @@ sudo vi /etc/systemd/system/ollama.service
 sudo nano /etc/systemd/system/ollama.service
 ```
 
-[Service]ブラケットに以下の行を追加します
+[Service]ブラケットにこれらの行を追加します
 
 ```
 Environment="OLLAMA_HOST=0.0.0.0:11434"
 Environment="OLLAMA_ORIGINS=*"
 ```
 
-保存し、設定をリロードしてサービスを再起動します。
+そして保存し、設定をリロードしてサービスを再起動します。
 
 ```bash
 sudo systemctl daemon-reload
@@ -138,7 +138,7 @@ docker exec [CONTAINER ID] curl http://host.docker.internal:11434/api/generate -
 ```
 
 
-# LM StudioでローカルLLM
+# ローカルLLMとLM Studio
 
 LM Studioのセットアップ手順：
 1. LM Studioを開きます
@@ -164,7 +164,7 @@ docker run # ...
     # ...
 ```
 
-これで`http://localhost:3000/`に接続できるはずです。
+これで、`http://localhost:3000/`に接続できるはずです。
 
 開発環境では、`config.toml`ファイルに以下の設定を行うことができます：
 
@@ -178,11 +178,11 @@ base_url="http://localhost:1234/v1"
 custom_llm_provider="openai"
 ```
 
-以上で完了です！これで`make run`でDockerなしでOpenHandsを起動できます。`http://localhost:3000/`に接続できるはずです。
+完了です！これで、Dockerなしで`make run`を実行してOpenHandsを起動できます。`http://localhost:3000/`に接続できるはずです。
 
 # 注意
 
-WSLの場合、cmdで以下のコマンドを実行し、ネットワークモードをミラーに設定します：
+WSLの場合、cmdで以下のコマンドを実行して、ネットワークモードをミラーに設定します：
 
 ```
 python -c  "print('[wsl2]\nnetworkingMode=mirrored',file=open(r'%UserProfile%\.wslconfig','w'))"
