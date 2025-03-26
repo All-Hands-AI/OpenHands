@@ -15,7 +15,7 @@ export async function downloadTrajectory(
     suggestedName: `trajectory-${conversationId}.json`,
     types: [
       {
-        description: "JSON File",
+        description: "JSON File", // This is a file type description, not user-facing text
         accept: {
           "application/json": [".json"],
         },

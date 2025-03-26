@@ -274,7 +274,7 @@ function AccountSettings() {
                 <SettingsInput
                   testId="llm-api-key-input"
                   name="llm-api-key-input"
-                  label="API Key"
+                  label={t("SETTINGS_FORM$API_KEY")}
                   type="password"
                   className="w-[680px]"
                   startContent={
@@ -336,7 +336,7 @@ function AccountSettings() {
                   defaultIsToggled={!!settings.CONFIRMATION_MODE}
                   isBeta
                 >
-                  Enable confirmation mode
+                  {t("SETTINGS$ENABLE_CONFIRMATION_MODE")}
                 </SettingsSwitch>
               )}
 
@@ -373,7 +373,7 @@ function AccountSettings() {
 
           <section className="flex flex-col gap-6">
             <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">
-              GitHub Settings
+              {t("SETTINGS$GITHUB_SETTINGS")}
             </h2>
             {isSaas && hasAppSlug && (
               <Link
@@ -382,7 +382,7 @@ function AccountSettings() {
                 rel="noreferrer noopener"
               >
                 <BrandButton type="button" variant="secondary">
-                  Configure GitHub Repositories
+                  {t("SETTINGS$CONFIGURE_GITHUB_REPOSITORIES")}
                 </BrandButton>
               </Link>
             )}
@@ -391,7 +391,7 @@ function AccountSettings() {
                 <SettingsInput
                   testId="github-token-input"
                   name="github-token-input"
-                  label="GitHub Token"
+                  label={t("SETTINGS$GITHUB_TOKEN")}
                   type="password"
                   className="w-[680px]"
                   startContent={
@@ -403,7 +403,7 @@ function AccountSettings() {
                 />
                 <p data-testid="github-token-help-anchor" className="text-xs">
                   {" "}
-                  Generate a token on{" "}
+                  {t("SETTINGS$GENERATE_TOKEN_ON")}{" "}
                   <b>
                     {" "}
                     <a
@@ -415,7 +415,7 @@ function AccountSettings() {
                       GitHub
                     </a>{" "}
                   </b>
-                  or see the{" "}
+                  {t("SETTINGS$OR_SEE_THE")}{" "}
                   <b>
                     <a
                       href="https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token"
@@ -463,7 +463,7 @@ function AccountSettings() {
               name="enable-analytics-switch"
               defaultIsToggled={!!isAnalyticsEnabled}
             >
-              Enable analytics
+              {t("SETTINGS$ENABLE_ANALYTICS")}
             </SettingsSwitch>
 
             <SettingsSwitch
@@ -471,7 +471,7 @@ function AccountSettings() {
               name="enable-sound-notifications-switch"
               defaultIsToggled={!!settings.ENABLE_SOUND_NOTIFICATIONS}
             >
-              Enable sound notifications
+              {t("SETTINGS$ENABLE_SOUND_NOTIFICATIONS")}
             </SettingsSwitch>
           </section>
         </div>
@@ -483,7 +483,7 @@ function AccountSettings() {
           variant="secondary"
           onClick={() => setResetSettingsModalIsOpen(true)}
         >
-          Reset to defaults
+          {t("SETTINGS$RESET_TO_DEFAULTS")}
         </BrandButton>
         <BrandButton
           type="button"
@@ -492,7 +492,7 @@ function AccountSettings() {
             formRef.current?.requestSubmit();
           }}
         >
-          Save Changes
+          {t("SETTINGS$SAVE_CHANGES")}
         </BrandButton>
       </footer>
 

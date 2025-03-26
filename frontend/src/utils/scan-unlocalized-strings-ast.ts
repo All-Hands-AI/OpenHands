@@ -104,7 +104,140 @@ function isCommonDevelopmentString(str: string): boolean {
     /^application\/[a-zA-Z0-9-]+$/, // MIME types
     /^mm:ss$/, // Time format
     /^[a-zA-Z0-9]+\/[a-zA-Z0-9-]+$/, // Provider/model format
+    /^!\[image]\(data:image\/png;base64,$/, // Markdown image with base64 data
+    /^\?notification$/, // URL parameter for notifications
   ];
+
+  // Skip provider names and file type descriptions
+  if (
+    str === "JSON File" ||
+    str === "Azure AI Studio" ||
+    str === "AWS SageMaker" ||
+    str === "AWS Bedrock" ||
+    str === "Mistral AI" ||
+    str === "Perplexity AI" ||
+    str === "Fireworks AI" ||
+    str === "Cloudflare Workers AI" ||
+    str === "Voyage AI" ||
+    str.includes("AI") ||
+    str.includes("OpenAI") ||
+    str.includes("VertexAI") ||
+    str.includes("PaLM") ||
+    str.includes("Gemini") ||
+    str.includes("Anthropic") ||
+    str.includes("Anyscale") ||
+    str.includes("Databricks") ||
+    str.includes("Ollama") ||
+    str.includes("FriendliAI") ||
+    str.includes("Groq") ||
+    str.includes("DeepInfra") ||
+    str.includes("AI21") ||
+    str.includes("Replicate") ||
+    str.includes("OpenRouter")
+  ) {
+    return true;
+  }
+
+  // Check if the string is a CSS class or style
+  if (
+    // CSS units
+    str.includes("px") ||
+    str.includes("rem") ||
+    str.includes("em") ||
+    str.includes("vh") ||
+    str.includes("vw") ||
+    str.includes("vmin") ||
+    str.includes("vmax") ||
+    str.includes("ch") ||
+    str.includes("ex") ||
+    str.includes("fr") ||
+    str.includes("deg") ||
+    str.includes("rad") ||
+    str.includes("turn") ||
+    str.includes("grad") ||
+    str.includes("ms") ||
+    str.includes("s") ||
+    // CSS values
+    str.includes("#") || // Color codes
+    str.includes("rgb") ||
+    str.includes("rgba") ||
+    str.includes("hsl") ||
+    str.includes("hsla") ||
+    // Tailwind classes
+    str.includes("border") ||
+    str.includes("rounded") ||
+    str.includes("flex") ||
+    str.includes("grid") ||
+    str.includes("transition") ||
+    str.includes("duration") ||
+    str.includes("ease") ||
+    str.includes("hover:") ||
+    str.includes("focus:") ||
+    str.includes("active:") ||
+    str.includes("disabled:") ||
+    str.includes("placeholder:") ||
+    str.includes("text-") ||
+    str.includes("bg-") ||
+    str.includes("w-") ||
+    str.includes("h-") ||
+    str.includes("p-") ||
+    str.includes("m-") ||
+    str.includes("gap-") ||
+    str.includes("items-") ||
+    str.includes("justify-") ||
+    str.includes("self-") ||
+    str.includes("overflow-") ||
+    str.includes("cursor-") ||
+    str.includes("opacity-") ||
+    str.includes("z-") ||
+    str.includes("top-") ||
+    str.includes("right-") ||
+    str.includes("bottom-") ||
+    str.includes("left-") ||
+    str.includes("inset-") ||
+    str.includes("font-") ||
+    str.includes("tracking-") ||
+    str.includes("leading-") ||
+    str.includes("whitespace-") ||
+    str.includes("break-") ||
+    str.includes("truncate") ||
+    str.includes("shadow-") ||
+    str.includes("ring-") ||
+    str.includes("outline-") ||
+    str.includes("animate-") ||
+    str.includes("transform") ||
+    str.includes("rotate-") ||
+    str.includes("scale-") ||
+    str.includes("skew-") ||
+    str.includes("translate-") ||
+    str.includes("origin-") ||
+    str.includes("first-of-type:") ||
+    str.includes("last-of-type:") ||
+    str.includes("group-data-") ||
+    str.includes("max-") ||
+    str.includes("min-") ||
+    str.includes("px-") ||
+    str.includes("py-") ||
+    str.includes("mx-") ||
+    str.includes("my-") ||
+    str.includes("grow") ||
+    str.includes("shrink") ||
+    str.includes("resize-") ||
+    str.includes("underline") ||
+    str.includes("italic") ||
+    str.includes("normal") ||
+    // CSS properties
+    str.includes("solid") ||
+    str.includes("absolute") ||
+    str.includes("relative") ||
+    str.includes("sticky") ||
+    str.includes("fixed") ||
+    str.includes("static") ||
+    // Common CSS class patterns
+    /^[a-z0-9-]+(\s+[a-z0-9-]+)*$/.test(str) // CSS classes are typically lowercase with hyphens
+  ) {
+    return true;
+  }
 
   return commonPatterns.some((pattern) => pattern.test(str));
 }
@@ -118,6 +251,34 @@ function isLikelyUserFacingText(str: string): boolean {
     return false;
   }
 
+  // Special case for known UI strings that should be localized
+  const knownUIStrings = [
+    "GitHub Settings",
+    "API Key",
+    "Base URL",
+    "Agent",
+    "Settings",
+    "Advanced",
+    "Enable confirmation mode",
+    "Enable memory condensation",
+    "GitHub Token",
+    "Configure GitHub Repositories",
+    "Save Changes",
+    "JSON File",
+    "Azure AI Studio",
+    "AWS SageMaker",
+    "AWS Bedrock",
+    "Mistral AI",
+    "Perplexity AI",
+    "Fireworks AI",
+    "Cloudflare Workers AI",
+    "Voyage AI",
+  ];
+
+  if (knownUIStrings.includes(str)) {
+    return true;
+  }
+
   // Check if it's likely user-facing text
   // 1. Contains multiple words with spaces
   // 2. Contains punctuation like question marks, periods, or exclamation marks
@@ -126,7 +287,26 @@ function isLikelyUserFacingText(str: string): boolean {
   const hasPunctuation = /[?!.]/.test(str);
   const isCapitalizedPhrase = /^[A-Z]/.test(str) && hasMultipleWords;
 
-  return hasMultipleWords || hasPunctuation || isCapitalizedPhrase;
+  // Additional check for "Title Case" phrases (multiple words with capital letters)
+  const isTitleCase = hasMultipleWords && /\s[A-Z]/.test(str);
+
+  // Check for product names (often have capital letters in the middle)
+  const hasInternalCapitals = /[a-z][A-Z]/.test(str);
+
+  // Check for UI element text (buttons, labels, etc.)
+  const isUIElementText =
+    /^(Save|Cancel|Submit|Delete|Add|Edit|Remove|Update|Create|View|Download|Upload|Login|Logout|Sign In|Sign Out|Register|Search|Filter|Sort|Next|Previous|Back|Continue|Finish|Done|Apply|Reset|Clear|Close|Open|Show|Hide|Enable|Disable)(\s+\w+)*$/.test(
+      str,
+    );
+
+  return (
+    hasMultipleWords ||
+    hasPunctuation ||
+    isCapitalizedPhrase ||
+    isTitleCase ||
+    hasInternalCapitals ||
+    isUIElementText
+  );
 }
 
 function isTranslationCall(node: t.Node): boolean {
@@ -221,6 +401,26 @@ export function scanFileForUnlocalizedStrings(filePath: string): string[] {
 
           // Skip attributes that typically don't contain user-facing text
           if (NON_TEXT_ATTRIBUTES.includes(attrName)) {
+            return;
+          }
+
+          // Skip className attributes as they contain CSS classes
+          if (attrName === "className" || attrName === "class") {
+            return;
+          }
+
+          // Skip style attributes
+          if (attrName === "style") {
+            return;
+          }
+
+          // Skip data-* attributes
+          if (attrName.startsWith("data-")) {
+            return;
+          }
+
+          // Skip event handler attributes
+          if (attrName.startsWith("on")) {
             return;
           }
 
