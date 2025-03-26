@@ -5,7 +5,7 @@ import warnings
 from functools import partial
 from typing import Any, Callable
 
-import requests
+import httpx
 
 from openhands.core.config import LLMConfig
 
@@ -165,6 +165,7 @@ class LLM(RetryMixin, DebugMixin):
             timeout=self.config.timeout,
             top_p=self.config.top_p,
             drop_params=self.config.drop_params,
+            seed=self.config.seed,
             **kwargs,
         )
 
@@ -346,7 +347,7 @@ class LLM(RetryMixin, DebugMixin):
         if self.config.model.startswith('litellm_proxy/'):
             # IF we are using LiteLLM proxy, get model info from LiteLLM proxy
             # GET {base_url}/v1/model/info with litellm_model_id as path param
-            response = requests.get(
+            response = httpx.get(
                 f'{self.config.base_url}/v1/model/info',
                 headers={
                     'Authorization': f'Bearer {self.config.api_key.get_secret_value() if self.config.api_key else None}'

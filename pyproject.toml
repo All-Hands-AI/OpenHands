@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "openhands-ai"
-version = "0.29.1"
+version = "0.30.0"
 description = "OpenHands: Code Less, Make More"
 authors = ["OpenHands"]
 license = "MIT"
@@ -18,7 +18,7 @@ datasets = "*"
 pandas = "*"
 litellm = "^1.60.0"
 google-generativeai = "*" # To use litellm with Gemini Pro API
-google-api-python-client = "*" # For Google Sheets API
+google-api-python-client = "^2.164.0" # For Google Sheets API
 google-auth-httplib2 = "*" # For Google Sheets authentication
 google-auth-oauthlib = "*" # For Google Sheets OAuth
 termcolor = "*"
@@ -45,7 +45,6 @@ zope-interface = "7.2"
 pathspec = "^0.12.1"
 google-cloud-aiplatform = "*"
 anthropic = {extras = ["vertex"], version = "*"}
-grep-ast = "0.3.3"
 tree-sitter = "^0.24.0"
 bashlex = "^0.18"
 pyjwt = "^2.9.0"
@@ -82,7 +81,7 @@ python-json-logger = "^3.2.1"
 [tool.poetry.group.dev.dependencies]
 ruff = "0.11.0"
 mypy = "1.15.0"
-pre-commit = "4.1.0"
+pre-commit = "4.2.0"
 build = "*"
 
 [tool.poetry.group.test.dependencies]
@@ -98,7 +97,6 @@ reportlab = "*"
 
 [tool.coverage.run]
 concurrency = ["gevent"]
-
 
 [tool.poetry.group.runtime.dependencies]
 jupyterlab = "*"
@@ -128,7 +126,6 @@ ignore = ["D1"]
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
-
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"
 whatthepatch = "*"
@@ -147,6 +144,7 @@ browsergym = "0.10.2"
 browsergym-webarena = "0.10.2"
 browsergym-miniwob = "0.10.2"
 browsergym-visualwebarena = "0.10.2"
+boto3-stubs = {extras = ["s3"], version = "^1.37.19"}
 
 [tool.poetry-dynamic-versioning]
 enable = true

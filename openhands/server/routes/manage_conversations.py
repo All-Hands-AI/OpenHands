@@ -43,6 +43,7 @@ class InitSessionRequest(BaseModel):
     selected_branch: str | None = None
     initial_user_msg: str | None = None
     image_urls: list[str] | None = None
+    replay_json: str | None = None
 
 
 async def _create_new_conversation(
@@ -52,6 +53,7 @@ async def _create_new_conversation(
     selected_branch: str | None,
     initial_user_msg: str | None,
     image_urls: list[str] | None,
+    replay_json: str | None,
     attach_convo_id: bool = False,
 ):
     logger.info(
@@ -132,6 +134,7 @@ async def _create_new_conversation(
         conversation_init_data,
         user_id,
         initial_user_msg=initial_message_action,
+        replay_json=replay_json,
     )
     logger.info(f'Finished initializing conversation {conversation_id}')
 
@@ -151,6 +154,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     selected_branch = data.selected_branch
     initial_user_msg = data.initial_user_msg
     image_urls = data.image_urls or []
+    replay_json = data.replay_json
 
     try:
         # Create conversation with initial message
@@ -161,6 +165,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
             selected_branch,
             initial_user_msg,
             image_urls,
+            replay_json,
         )
 
         return JSONResponse(
@@ -288,8 +293,8 @@ async def auto_generate_title(conversation_id: str, user_id: str | None) -> str:
 
         if first_user_message:
             first_user_message = first_user_message.strip()
-            title = first_user_message[:15]
-            if len(first_user_message) > 15:
+            title = first_user_message[:30]
+            if len(first_user_message) > 30:
                 title += '...'
             logger.info(f'Generated title: {title}')
             return title

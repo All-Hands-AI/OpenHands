@@ -4,12 +4,14 @@ type SliceState = {
   files: string[]; // base64 encoded images
   initialPrompt: string | null;
   selectedRepository: string | null;
+  replayJson: string | null;
 };
 
 const initialState: SliceState = {
   files: [],
   initialPrompt: null,
   selectedRepository: null,
+  replayJson: null,
 };
 
 export const selectedFilesSlice = createSlice({
@@ -37,6 +39,9 @@ export const selectedFilesSlice = createSlice({
     clearSelectedRepository(state) {
       state.selectedRepository = null;
     },
+    setReplayJson(state, action: PayloadAction<string | null>) {
+      state.replayJson = action.payload;
+    },
   },
 });
 
@@ -48,5 +53,6 @@ export const {
   clearInitialPrompt,
   setSelectedRepository,
   clearSelectedRepository,
+  setReplayJson,
 } = selectedFilesSlice.actions;
 export default selectedFilesSlice.reducer;
