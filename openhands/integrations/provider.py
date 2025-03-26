@@ -289,6 +289,15 @@ class ProviderHandler:
                 if token:
                     env_vars[provider] = token
 
+        # TODO: we have an error where reinitializing the runtime doesn't happen with
+        # the provider tokens; thus the code above believes that github isn't a provider
+        # when it really is. We need to share information about current providers set
+        # for the user when the socket event for connect is sent
+        if ProviderType.GITHUB not in env_vars and get_latest:
+            env_vars[ProviderType.GITHUB] = await self._get_latest_provider_token(
+                provider
+            )
+
         if not expose_secrets:
             return env_vars
 
