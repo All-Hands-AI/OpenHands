@@ -5581,7 +5581,7 @@
         "fr": "Êtes-vous sûr de vouloir réinitialiser tous les paramètres ?",
         "tr": "Tüm ayarları sıfırlamak istediğinizden emin misiniz?"
     },
-    "ERROR$GENERIC": {
+    "ERROR$GENERIC_OOPS": {
         "en": "Oops! An error occurred!",
         "ja": "おっと！エラーが発生しました！",
         "zh-CN": "哎呀！发生了错误！",

@@ -12,7 +12,7 @@ export const queryClientConfig: QueryClientConfig = {
   queryCache: new QueryCache({
     onError: (error, query) => {
       if (!query.meta?.disableToast) {
-        const errorMessage = retrieveAxiosErrorMessage(error);
+        const errorMessage = retrieveAxiosErrorMessage(error, i18next.t);
 
         if (!shownErrors.has(errorMessage)) {
           displayErrorToast(errorMessage || i18next.t("ERROR$GENERIC"));
@@ -28,7 +28,7 @@ export const queryClientConfig: QueryClientConfig = {
   mutationCache: new MutationCache({
     onError: (error, _, __, mutation) => {
       if (!mutation?.meta?.disableToast) {
-        const message = retrieveAxiosErrorMessage(error);
+        const message = retrieveAxiosErrorMessage(error, i18next.t);
         displayErrorToast(message);
       }
     },

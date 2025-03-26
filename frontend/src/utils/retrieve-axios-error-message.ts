@@ -3,15 +3,16 @@ import {
   isAxiosErrorWithErrorField,
   isAxiosErrorWithMessageField,
 } from "./type-guards";
-import { useTranslation } from "react-i18next";
-
-const { t } = useTranslation();
 
 /**
  * Retrieve the error message from an Axios error
  * @param error The error to render a toast for
+ * @param t Translation function
  */
-export const retrieveAxiosErrorMessage = (error: AxiosError) => {
+export const retrieveAxiosErrorMessage = (
+  error: AxiosError,
+  t: (key: string) => string,
+) => {
   let errorMessage: string | null = null;
 
   if (isAxiosErrorWithErrorField(error) && error.response?.data.error) {

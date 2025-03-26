@@ -28,6 +28,13 @@ import {
   displaySuccessToast,
 } from "#/utils/custom-toast-handlers";
 
+// Define REMOTE_RUNTIME_OPTIONS for testing
+const REMOTE_RUNTIME_OPTIONS = [
+  { key: "1", label: "Standard" },
+  { key: "2", label: "Enhanced" },
+  { key: "4", label: "Premium" },
+];
+
 function AccountSettings() {
   const { t } = useTranslation();
   const {
@@ -160,7 +167,7 @@ function AccountSettings() {
         setLlmConfigMode(isAdvancedSettingsSet ? "advanced" : "basic");
       },
       onError: (error) => {
-        const errorMessage = retrieveAxiosErrorMessage(error);
+        const errorMessage = retrieveAxiosErrorMessage(error, t);
         displayErrorToast(errorMessage);
       },
     });
