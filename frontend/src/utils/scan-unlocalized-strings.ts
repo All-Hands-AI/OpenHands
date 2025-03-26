@@ -6,8 +6,8 @@ import type { NodePath } from "@babel/traverse";
 import * as t from "@babel/types";
 
 // Fix for ESM/CJS compatibility
-// @ts-ignore - This is a workaround for ESM/CJS compatibility
-const traverse = (_traverse as any).default || _traverse;
+// @ts-expect-error - This is a workaround for ESM/CJS compatibility
+const traverse = (_traverse as unknown).default || _traverse;
 
 // Attributes that typically don't contain user-facing text
 const NON_TEXT_ATTRIBUTES = [
@@ -251,8 +251,8 @@ function isTranslationCall(node: t.Node): boolean {
   return false;
 }
 
-function isInTranslationContext(nodePath: NodePath<t.Node>): boolean {
-  let current: NodePath<t.Node> | null = nodePath;
+function isInTranslationContext(currentNodePath: NodePath<t.Node>): boolean {
+  let current: NodePath<t.Node> | null = currentNodePath;
 
   while (current) {
     if (isTranslationCall(current.node)) {
@@ -286,20 +286,20 @@ export function scanFileForUnlocalizedStrings(filePath: string): string[] {
       // Traverse the AST
       traverse(ast, {
         // Find JSX text content
-        JSXText(nodePath: NodePath<t.JSXText>) {
-          const text = nodePath.node.value.trim();
+        JSXText(jsxTextPath: NodePath<t.JSXText>) {
+          const text = jsxTextPath.node.value.trim();
           if (
             text &&
             isLikelyUserFacingText(text) &&
-            !isInTranslationContext(nodePath)
+            !isInTranslationContext(jsxTextPath)
           ) {
             unlocalizedStrings.push(text);
           }
         },
 
         // Find string literals in JSX attributes
-        JSXAttribute(nodePath: NodePath<t.JSXAttribute>) {
-          const attrName = nodePath.node.name.name.toString();
+        JSXAttribute(jsxAttrPath: NodePath<t.JSXAttribute>) {
+          const attrName = jsxAttrPath.node.name.name.toString();
 
           // Skip attributes that typically don't contain user-facing text
           if (NON_TEXT_ATTRIBUTES.includes(attrName)) {
@@ -307,13 +307,13 @@ export function scanFileForUnlocalizedStrings(filePath: string): string[] {
           }
 
           // Check the attribute value
-          const { value } = nodePath.node;
+          const { value } = jsxAttrPath.node;
           if (t.isStringLiteral(value)) {
             const text = value.value.trim();
             if (
               text &&
               isLikelyUserFacingText(text) &&
-              !isInTranslationContext(nodePath)
+              !isInTranslationContext(jsxAttrPath)
             ) {
               unlocalizedStrings.push(text);
             }
@@ -321,44 +321,44 @@ export function scanFileForUnlocalizedStrings(filePath: string): string[] {
         },
 
         // Find string literals
-        StringLiteral(nodePath: NodePath<t.StringLiteral>) {
+        StringLiteral(strLiteralPath: NodePath<t.StringLiteral>) {
           // Skip if parent is a JSX attribute (handled separately)
-          if (t.isJSXAttribute(nodePath.parent)) {
+          if (t.isJSXAttribute(strLiteralPath.parent)) {
             return;
           }
 
           // Skip if it's part of an import statement
           if (
-            t.isImportDeclaration(nodePath.parent) ||
-            t.isExportDeclaration(nodePath.parent)
+            t.isImportDeclaration(strLiteralPath.parent) ||
+            t.isExportDeclaration(strLiteralPath.parent)
           ) {
             return;
           }
 
-          const text = nodePath.node.value.trim();
+          const text = strLiteralPath.node.value.trim();
           if (
             text &&
             isLikelyUserFacingText(text) &&
-            !isInTranslationContext(nodePath)
+            !isInTranslationContext(strLiteralPath)
           ) {
             unlocalizedStrings.push(text);
           }
         },
 
         // Find template literals
-        TemplateLiteral(nodePath: NodePath<t.TemplateLiteral>) {
+        TemplateLiteral(templatePath: NodePath<t.TemplateLiteral>) {
           // Skip if it's a tagged template literal
-          if (t.isTaggedTemplateExpression(nodePath.parent)) {
+          if (t.isTaggedTemplateExpression(templatePath.parent)) {
             return;
           }
 
           // Get the full template string if it's simple
-          if (nodePath.node.quasis.length === 1) {
-            const text = nodePath.node.quasis[0].value.raw.trim();
+          if (templatePath.node.quasis.length === 1) {
+            const text = templatePath.node.quasis[0].value.raw.trim();
             if (
               text &&
               isLikelyUserFacingText(text) &&
-              !isInTranslationContext(nodePath)
+              !isInTranslationContext(templatePath)
             ) {
               unlocalizedStrings.push(text);
             }

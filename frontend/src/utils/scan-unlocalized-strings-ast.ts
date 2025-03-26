@@ -1,5 +1,5 @@
 import fs from "fs";
-import path from "path";
+import nodePath from "path";
 import * as parser from "@babel/parser";
 import traverse from "@babel/traverse";
 import type { NodePath } from "@babel/traverse";
@@ -161,8 +161,8 @@ function isTranslationCall(node: t.Node): boolean {
   return false;
 }
 
-function isInTranslationContext(path: NodePath<t.Node>): boolean {
-  let current: NodePath<t.Node> | null = path;
+function isInTranslationContext(currentNodePath: NodePath<t.Node>): boolean {
+  let current: NodePath<t.Node> | null = currentNodePath;
 
   while (current) {
     if (isTranslationCall(current.node)) {
@@ -181,11 +181,14 @@ export function scanFileForUnlocalizedStrings(filePath: string): string[] {
 
     // Skip files that are too large
     if (content.length > 1000000) {
+      // eslint-disable-next-line no-console
       console.warn(`Skipping large file: ${filePath}`);
       return [];
     }
 
     // Check if file is using translations
+    // We could use this to optimize scanning, but currently not used
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const hasTranslationImport =
       content.includes("useTranslation") ||
       content.includes("I18nKey") ||
@@ -201,20 +204,20 @@ export function scanFileForUnlocalizedStrings(filePath: string): string[] {
       // Traverse the AST
       traverse(ast, {
         // Find JSX text content
-        JSXText(path) {
-          const text = path.node.value.trim();
+        JSXText(jsxTextPath) {
+          const text = jsxTextPath.node.value.trim();
           if (
             text &&
             isLikelyUserFacingText(text) &&
-            !isInTranslationContext(path)
+            !isInTranslationContext(jsxTextPath)
           ) {
             unlocalizedStrings.push(text);
           }
         },
 
         // Find string literals in JSX attributes
-        JSXAttribute(path) {
-          const attrName = path.node.name.name.toString();
+        JSXAttribute(jsxAttrPath) {
+          const attrName = jsxAttrPath.node.name.name.toString();
 
           // Skip attributes that typically don't contain user-facing text
           if (NON_TEXT_ATTRIBUTES.includes(attrName)) {
@@ -222,13 +225,13 @@ export function scanFileForUnlocalizedStrings(filePath: string): string[] {
           }
 
           // Check the attribute value
-          const { value } = path.node;
+          const { value } = jsxAttrPath.node;
           if (t.isStringLiteral(value)) {
             const text = value.value.trim();
             if (
               text &&
               isLikelyUserFacingText(text) &&
-              !isInTranslationContext(path)
+              !isInTranslationContext(jsxAttrPath)
             ) {
               unlocalizedStrings.push(text);
             }
@@ -236,44 +239,44 @@ export function scanFileForUnlocalizedStrings(filePath: string): string[] {
         },
 
         // Find string literals
-        StringLiteral(path) {
+        StringLiteral(strLiteralPath) {
           // Skip if parent is a JSX attribute (handled separately)
-          if (t.isJSXAttribute(path.parent)) {
+          if (t.isJSXAttribute(strLiteralPath.parent)) {
             return;
           }
 
           // Skip if it's part of an import statement
           if (
-            t.isImportDeclaration(path.parent) ||
-            t.isExportDeclaration(path.parent)
+            t.isImportDeclaration(strLiteralPath.parent) ||
+            t.isExportDeclaration(strLiteralPath.parent)
           ) {
             return;
           }
 
-          const text = path.node.value.trim();
+          const text = strLiteralPath.node.value.trim();
           if (
             text &&
             isLikelyUserFacingText(text) &&
-            !isInTranslationContext(path)
+            !isInTranslationContext(strLiteralPath)
           ) {
             unlocalizedStrings.push(text);
           }
         },
 
         // Find template literals
-        TemplateLiteral(path) {
+        TemplateLiteral(templatePath) {
           // Skip if it's a tagged template literal
-          if (t.isTaggedTemplateExpression(path.parent)) {
+          if (t.isTaggedTemplateExpression(templatePath.parent)) {
             return;
           }
 
           // Get the full template string if it's simple
-          if (path.node.quasis.length === 1) {
-            const text = path.node.quasis[0].value.raw.trim();
+          if (templatePath.node.quasis.length === 1) {
+            const text = templatePath.node.quasis[0].value.raw.trim();
             if (
               text &&
               isLikelyUserFacingText(text) &&
-              !isInTranslationContext(path)
+              !isInTranslationContext(templatePath)
             ) {
               unlocalizedStrings.push(text);
             }
@@ -282,6 +285,7 @@ export function scanFileForUnlocalizedStrings(filePath: string): string[] {
       });
     } catch (error) {
       // If parsing fails, fall back to regex-based scanning
+      // eslint-disable-next-line no-console
       console.warn(
         `Failed to parse ${filePath}, falling back to regex scanning: ${error}`,
       );
@@ -290,9 +294,10 @@ export function scanFileForUnlocalizedStrings(filePath: string): string[] {
       const stringRegex = /['"`]([^'"`\n]{3,})['"`]/g;
       const jsxTextRegex = />([\s]*[A-Za-z][\w\s.,!?]+)[\s]*</g;
 
-      let match;
+      let match: RegExpExecArray | null;
 
       // Find string literals
+      // eslint-disable-next-line no-cond-assign
       while ((match = stringRegex.exec(content)) !== null) {
         const text = match[1].trim();
         if (text && isLikelyUserFacingText(text)) {
@@ -301,6 +306,7 @@ export function scanFileForUnlocalizedStrings(filePath: string): string[] {
       }
 
       // Find JSX text content
+      // eslint-disable-next-line no-cond-assign
       while ((match = jsxTextRegex.exec(content)) !== null) {
         const text = match[1].trim();
         if (text && isLikelyUserFacingText(text)) {
@@ -312,6 +318,7 @@ export function scanFileForUnlocalizedStrings(filePath: string): string[] {
     // Filter out duplicates
     return [...new Set(unlocalizedStrings)];
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error(`Error scanning file ${filePath}:`, error);
     return [];
   }
@@ -326,14 +333,14 @@ export function scanDirectoryForUnlocalizedStrings(
     const entries = fs.readdirSync(currentPath, { withFileTypes: true });
 
     for (const entry of entries) {
-      const fullPath = path.join(currentPath, entry.name);
+      const fullPath = nodePath.join(currentPath, entry.name);
 
       if (!shouldIgnorePath(fullPath)) {
         if (entry.isDirectory()) {
           scanDir(fullPath);
         } else if (
           entry.isFile() &&
-          SCAN_EXTENSIONS.includes(path.extname(fullPath))
+          SCAN_EXTENSIONS.includes(nodePath.extname(fullPath))
         ) {
           const unlocalized = scanFileForUnlocalizedStrings(fullPath);
           if (unlocalized.length > 0) {

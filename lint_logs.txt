@@ -1,0 +1,224 @@
+﻿2025-03-26T13:50:13.2742625Z Current runner version: '2.323.0'
+2025-03-26T13:50:13.2746911Z Runner name: 'blacksmith-01jq9bexwqghbzrv9msmq2ezah-4vcpu'
+2025-03-26T13:50:13.2747644Z Runner group name: 'Default'
+2025-03-26T13:50:13.2748363Z Machine name: 'localhost'
+2025-03-26T13:50:13.2750968Z ##[group]GITHUB_TOKEN Permissions
+2025-03-26T13:50:13.2752787Z Actions: write
+2025-03-26T13:50:13.2753326Z Attestations: write
+2025-03-26T13:50:13.2753733Z Checks: write
+2025-03-26T13:50:13.2754204Z Contents: write
+2025-03-26T13:50:13.2754758Z Deployments: write
+2025-03-26T13:50:13.2755259Z Discussions: write
+2025-03-26T13:50:13.2755784Z Issues: write
+2025-03-26T13:50:13.2756162Z Metadata: read
+2025-03-26T13:50:13.2756645Z Models: read
+2025-03-26T13:50:13.2757167Z Packages: write
+2025-03-26T13:50:13.2757662Z Pages: write
+2025-03-26T13:50:13.2758084Z PullRequests: write
+2025-03-26T13:50:13.2758557Z RepositoryProjects: write
+2025-03-26T13:50:13.2759085Z SecurityEvents: write
+2025-03-26T13:50:13.2759523Z Statuses: write
+2025-03-26T13:50:13.2760345Z ##[endgroup]
+2025-03-26T13:50:13.2762294Z Secret source: Actions
+2025-03-26T13:50:13.2762956Z Prepare workflow directory
+2025-03-26T13:50:13.2952726Z Prepare all required actions
+2025-03-26T13:50:13.2974494Z Getting action download info
+2025-03-26T13:50:13.5408755Z Download action repository 'actions/checkout@v4' (SHA:11bd71901bbe5b1630ceea73d27597364c9af683)
+2025-03-26T13:50:13.9800174Z Download action repository 'useblacksmith/setup-node@v5' (SHA:65c6ca86fdeb0ab3d85e78f57e4f6a7e4780b391)
+2025-03-26T13:50:14.4574209Z Complete job name: Lint frontend
+2025-03-26T13:50:14.4900237Z A job started hook has been configured by the self-hosted runner administrator
+2025-03-26T13:50:14.5018932Z ##[group]Run '/setup.sh'
+2025-03-26T13:50:14.5040359Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2025-03-26T13:50:14.5041768Z ##[endgroup]
+2025-03-26T13:50:14.5207323Z System setup complete for blacksmith-01jq9bexwqghbzrv9msmq2ezah-4vcpu on production-assuring-anteater-6175b270
+2025-03-26T13:50:14.5397415Z ##[group]Run actions/checkout@v4
+2025-03-26T13:50:14.5398335Z with:
+2025-03-26T13:50:14.5398929Z   repository: All-Hands-AI/OpenHands
+2025-03-26T13:50:14.5399898Z   token: ***
+2025-03-26T13:50:14.5400622Z   ssh-strict: true
+2025-03-26T13:50:14.5401305Z   ssh-user: git
+2025-03-26T13:50:14.5401997Z   persist-credentials: true
+2025-03-26T13:50:14.5402838Z   clean: true
+2025-03-26T13:50:14.5403456Z   sparse-checkout-cone-mode: true
+2025-03-26T13:50:14.5404221Z   fetch-depth: 1
+2025-03-26T13:50:14.5405033Z   fetch-tags: false
+2025-03-26T13:50:14.5405753Z   show-progress: true
+2025-03-26T13:50:14.5406463Z   lfs: false
+2025-03-26T13:50:14.5407082Z   submodules: false
+2025-03-26T13:50:14.5407807Z   set-safe-directory: true
+2025-03-26T13:50:14.5408735Z env:
+2025-03-26T13:50:14.5409470Z   GITHUB_REPO_NAME: All-Hands-AI/OpenHands
+2025-03-26T13:50:14.5410313Z ##[endgroup]
+2025-03-26T13:50:14.6757788Z Syncing repository: All-Hands-AI/OpenHands
+2025-03-26T13:50:14.6759775Z ##[group]Getting Git version info
+2025-03-26T13:50:14.6760729Z Working directory is '/home/runner/_work/OpenHands/OpenHands'
+2025-03-26T13:50:14.6762257Z [command]/usr/bin/git version
+2025-03-26T13:50:14.6835407Z git version 2.46.0
+2025-03-26T13:50:14.6852638Z ##[endgroup]
+2025-03-26T13:50:14.6860920Z Temporarily overriding HOME='/home/runner/_work/_temp/4a1a9fa0-3a96-4ab2-9e67-2f25789be311' before making global git config changes
+2025-03-26T13:50:14.6862877Z Adding repository directory to the temporary git global config as a safe directory
+2025-03-26T13:50:14.6864464Z [command]/usr/bin/git config --global --add safe.directory /home/runner/_work/OpenHands/OpenHands
+2025-03-26T13:50:14.6890251Z Deleting the contents of '/home/runner/_work/OpenHands/OpenHands'
+2025-03-26T13:50:14.6892457Z ##[group]Initializing the repository
+2025-03-26T13:50:14.6894443Z [command]/usr/bin/git init /home/runner/_work/OpenHands/OpenHands
+2025-03-26T13:50:14.6944109Z hint: Using 'master' as the name for the initial branch. This default branch name
+2025-03-26T13:50:14.6945534Z hint: is subject to change. To configure the initial branch name to use in all
+2025-03-26T13:50:14.6946883Z hint: of your new repositories, which will suppress this warning, call:
+2025-03-26T13:50:14.6947770Z hint:
+2025-03-26T13:50:14.6948403Z hint: 	git config --global init.defaultBranch <name>
+2025-03-26T13:50:14.6949113Z hint:
+2025-03-26T13:50:14.6949866Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2025-03-26T13:50:14.6950936Z hint: 'development'. The just-created branch can be renamed via this command:
+2025-03-26T13:50:14.6951791Z hint:
+2025-03-26T13:50:14.6952355Z hint: 	git branch -m <name>
+2025-03-26T13:50:14.6953222Z Initialized empty Git repository in /home/runner/_work/OpenHands/OpenHands/.git/
+2025-03-26T13:50:14.6955190Z [command]/usr/bin/git remote add origin https://github.com/All-Hands-AI/OpenHands
+2025-03-26T13:50:14.6985181Z ##[endgroup]
+2025-03-26T13:50:14.6986099Z ##[group]Disabling automatic garbage collection
+2025-03-26T13:50:14.6987198Z [command]/usr/bin/git config --local gc.auto 0
+2025-03-26T13:50:14.7009167Z ##[endgroup]
+2025-03-26T13:50:14.7010467Z ##[group]Setting up auth
+2025-03-26T13:50:14.7012212Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2025-03-26T13:50:14.7033557Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2025-03-26T13:50:14.7306751Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2025-03-26T13:50:14.7332281Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2025-03-26T13:50:14.7513824Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2025-03-26T13:50:14.7545234Z ##[endgroup]
+2025-03-26T13:50:14.7546528Z ##[group]Fetching the repository
+2025-03-26T13:50:14.7550910Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +3230ed5b5469c4be35766d09e4dcdfeee1177ef4:refs/remotes/pull/7485/merge
+2025-03-26T13:50:17.2799134Z From https://github.com/All-Hands-AI/OpenHands
+2025-03-26T13:50:17.2799481Z  * [new ref]         3230ed5b5469c4be35766d09e4dcdfeee1177ef4 -> pull/7485/merge
+2025-03-26T13:50:17.2824802Z ##[endgroup]
+2025-03-26T13:50:17.2825112Z ##[group]Determining the checkout info
+2025-03-26T13:50:17.2826464Z ##[endgroup]
+2025-03-26T13:50:17.2829780Z [command]/usr/bin/git sparse-checkout disable
+2025-03-26T13:50:17.2862177Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2025-03-26T13:50:17.2880012Z ##[group]Checking out the ref
+2025-03-26T13:50:17.2882304Z [command]/usr/bin/git checkout --progress --force refs/remotes/pull/7485/merge
+2025-03-26T13:50:17.5244077Z Note: switching to 'refs/remotes/pull/7485/merge'.
+2025-03-26T13:50:17.5244428Z 
+2025-03-26T13:50:17.5244615Z You are in 'detached HEAD' state. You can look around, make experimental
+2025-03-26T13:50:17.5245016Z changes and commit them, and you can discard any commits you make in this
+2025-03-26T13:50:17.5245411Z state without impacting any branches by switching back to a branch.
+2025-03-26T13:50:17.5245647Z 
+2025-03-26T13:50:17.5245816Z If you want to create a new branch to retain commits you create, you may
+2025-03-26T13:50:17.5246261Z do so (now or later) by using -c with the switch command. Example:
+2025-03-26T13:50:17.5246502Z 
+2025-03-26T13:50:17.5246879Z   git switch -c <new-branch-name>
+2025-03-26T13:50:17.5247146Z 
+2025-03-26T13:50:17.5247258Z Or undo this operation with:
+2025-03-26T13:50:17.5247406Z 
+2025-03-26T13:50:17.5247496Z   git switch -
+2025-03-26T13:50:17.5247635Z 
+2025-03-26T13:50:17.5247850Z Turn off this advice by setting config variable advice.detachedHead to false
+2025-03-26T13:50:17.5248093Z 
+2025-03-26T13:50:17.5248383Z HEAD is now at 3230ed5 Merge 3b77d57079440d6f9307b37173275d4c68860d8f into 1230b229b5a010b3c0ac9e3e909fec6547d81252
+2025-03-26T13:50:17.5259726Z ##[endgroup]
+2025-03-26T13:50:17.5285314Z [command]/usr/bin/git log -1 --format=%H
+2025-03-26T13:50:17.5301451Z 3230ed5b5469c4be35766d09e4dcdfeee1177ef4
+2025-03-26T13:50:17.5431930Z ##[group]Run useblacksmith/setup-node@v5
+2025-03-26T13:50:17.5432115Z with:
+2025-03-26T13:50:17.5432244Z   node-version: 20
+2025-03-26T13:50:17.5432373Z   always-auth: false
+2025-03-26T13:50:17.5432504Z   check-latest: false
+2025-03-26T13:50:17.5432710Z   token: ***
+2025-03-26T13:50:17.5432831Z env:
+2025-03-26T13:50:17.5432977Z   GITHUB_REPO_NAME: All-Hands-AI/OpenHands
+2025-03-26T13:50:17.5433136Z ##[endgroup]
+2025-03-26T13:50:17.6715486Z Found in cache @ /opt/hostedtoolcache/node/20.16.0/x64
+2025-03-26T13:50:17.6720464Z ##[group]Environment details
+2025-03-26T13:50:17.9249623Z node: v20.16.0
+2025-03-26T13:50:17.9249799Z npm: 10.8.1
+2025-03-26T13:50:17.9249923Z yarn: 1.22.22
+2025-03-26T13:50:17.9250255Z ##[endgroup]
+2025-03-26T13:50:17.9329231Z ##[group]Run cd frontend
+2025-03-26T13:50:17.9329417Z [36;1mcd frontend[0m
+2025-03-26T13:50:17.9329580Z [36;1mnpm install --frozen-lockfile[0m
+2025-03-26T13:50:17.9354262Z shell: /usr/bin/bash -e {0}
+2025-03-26T13:50:17.9354421Z env:
+2025-03-26T13:50:17.9354556Z   GITHUB_REPO_NAME: All-Hands-AI/OpenHands
+2025-03-26T13:50:17.9354726Z ##[endgroup]
+2025-03-26T13:50:20.0690848Z npm warn deprecated rimraf@3.0.2: Rimraf versions prior to v4 are no longer supported
+2025-03-26T13:50:20.7846113Z npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+2025-03-26T13:50:22.0025625Z npm warn deprecated @humanwhocodes/object-schema@2.0.3: Use @eslint/object-schema instead
+2025-03-26T13:50:22.0244755Z npm warn deprecated @humanwhocodes/config-array@0.13.0: Use @eslint/config-array instead
+2025-03-26T13:50:22.5698998Z npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+2025-03-26T13:50:23.8850546Z npm warn deprecated eslint@8.57.1: This version is no longer supported. Please see https://eslint.org/version-support for other options.
+2025-03-26T13:50:25.5939741Z 
+2025-03-26T13:50:25.5940301Z > openhands-frontend@0.30.0 prepare
+2025-03-26T13:50:25.5940696Z > cd .. && husky frontend/.husky
+2025-03-26T13:50:25.5940875Z 
+2025-03-26T13:50:25.6328549Z 
+2025-03-26T13:50:25.6328853Z added 1254 packages, and audited 1255 packages in 8s
+2025-03-26T13:50:25.6329059Z 
+2025-03-26T13:50:25.6330093Z 344 packages are looking for funding
+2025-03-26T13:50:25.6330430Z   run `npm fund` for details
+2025-03-26T13:50:25.6374565Z 
+2025-03-26T13:50:25.6375202Z 6 moderate severity vulnerabilities
+2025-03-26T13:50:25.6375475Z 
+2025-03-26T13:50:25.6375757Z To address issues that do not require attention, run:
+2025-03-26T13:50:25.6376195Z   npm audit fix
+2025-03-26T13:50:25.6376334Z 
+2025-03-26T13:50:25.6376665Z To address all issues (including breaking changes), run:
+2025-03-26T13:50:25.6377366Z   npm audit fix --force
+2025-03-26T13:50:25.6377587Z 
+2025-03-26T13:50:25.6377729Z Run `npm audit` for details.
+2025-03-26T13:50:25.6651933Z ##[group]Run cd frontend
+2025-03-26T13:50:25.6652113Z [36;1mcd frontend[0m
+2025-03-26T13:50:25.6652249Z [36;1mnpm run lint[0m
+2025-03-26T13:50:25.6652389Z [36;1mnpm run make-i18n && tsc[0m
+2025-03-26T13:50:25.6672644Z shell: /usr/bin/bash -e {0}
+2025-03-26T13:50:25.6672795Z env:
+2025-03-26T13:50:25.6672933Z   GITHUB_REPO_NAME: All-Hands-AI/OpenHands
+2025-03-26T13:50:25.6673089Z ##[endgroup]
+2025-03-26T13:50:25.7331598Z 
+2025-03-26T13:50:25.7332762Z > openhands-frontend@0.30.0 prelint
+2025-03-26T13:50:25.7332981Z > npm run make-i18n
+2025-03-26T13:50:25.7333069Z 
+2025-03-26T13:50:25.7971130Z 
+2025-03-26T13:50:25.7971475Z > openhands-frontend@0.30.0 make-i18n
+2025-03-26T13:50:25.7971722Z > node scripts/make-i18n-translations.cjs
+2025-03-26T13:50:25.7971849Z 
+2025-03-26T13:50:25.8243226Z 
+2025-03-26T13:50:25.8243874Z > openhands-frontend@0.30.0 lint
+2025-03-26T13:50:25.8244291Z > eslint src --ext .ts,.tsx,.js && prettier --check src/**/*.{ts,tsx}
+2025-03-26T13:50:25.8244522Z 
+2025-03-26T13:50:33.6117798Z 
+2025-03-26T13:50:33.6120197Z /home/runner/_work/OpenHands/OpenHands/frontend/src/utils/scan-unlocalized-strings-ast.ts
+2025-03-26T13:50:33.6148738Z ##[error]  164:33  error    'path' is already declared in the upper scope on line 2 column 8  @typescript-eslint/no-shadow
+2025-03-26T13:50:33.6155880Z ##[warning]  184:7   warning  Unexpected console statement                                      no-console
+2025-03-26T13:50:33.6157818Z ##[error]  189:11  error    'hasTranslationImport' is assigned a value but never used         @typescript-eslint/no-unused-vars
+2025-03-26T13:50:33.6158654Z ##[error]  204:17  error    'path' is already declared in the upper scope on line 2 column 8  @typescript-eslint/no-shadow
+2025-03-26T13:50:33.6159411Z ##[error]  216:22  error    'path' is already declared in the upper scope on line 2 column 8  @typescript-eslint/no-shadow
+2025-03-26T13:50:33.6160169Z ##[error]  239:23  error    'path' is already declared in the upper scope on line 2 column 8  @typescript-eslint/no-shadow
+2025-03-26T13:50:33.6161391Z ##[error]  264:25  error    'path' is already declared in the upper scope on line 2 column 8  @typescript-eslint/no-shadow
+2025-03-26T13:50:33.6162425Z ##[warning]  285:7   warning  Unexpected console statement                                      no-console
+2025-03-26T13:50:33.6163200Z ##[error]  296:15  error    Unexpected assignment within a 'while' statement                  no-cond-assign
+2025-03-26T13:50:33.6163943Z ##[error]  304:15  error    Unexpected assignment within a 'while' statement                  no-cond-assign
+2025-03-26T13:50:33.6164659Z ##[warning]  315:5   warning  Unexpected console statement                                      no-console
+2025-03-26T13:50:33.6165085Z 
+2025-03-26T13:50:33.6165782Z /home/runner/_work/OpenHands/OpenHands/frontend/src/utils/scan-unlocalized-strings.ts
+2025-03-26T13:50:33.6166824Z ##[error]    9:1   error  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+2025-03-26T13:50:33.6167744Z ##[error]   10:32  error  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+2025-03-26T13:50:33.6168645Z ##[error]  254:33  error  'nodePath' is already declared in the upper scope on line 2 column 8                                                 @typescript-eslint/no-shadow
+2025-03-26T13:50:33.6170278Z ##[error]  289:17  error  'nodePath' is already declared in the upper scope on line 2 column 8                                                 @typescript-eslint/no-shadow
+2025-03-26T13:50:33.6171410Z ##[error]  301:22  error  'nodePath' is already declared in the upper scope on line 2 column 8                                                 @typescript-eslint/no-shadow
+2025-03-26T13:50:33.6172964Z ##[error]  324:23  error  'nodePath' is already declared in the upper scope on line 2 column 8                                                 @typescript-eslint/no-shadow
+2025-03-26T13:50:33.6174691Z ##[error]  349:25  error  'nodePath' is already declared in the upper scope on line 2 column 8                                                 @typescript-eslint/no-shadow
+2025-03-26T13:50:33.6175413Z 
+2025-03-26T13:50:33.6175782Z ✖ 18 problems (15 errors, 3 warnings)
+2025-03-26T13:50:33.6175891Z 
+2025-03-26T13:50:33.7181479Z ##[error]Process completed with exit code 1.
+2025-03-26T13:50:33.7239962Z Post job cleanup.
+2025-03-26T13:50:33.7973326Z [command]/usr/bin/git version
+2025-03-26T13:50:33.7997908Z git version 2.46.0
+2025-03-26T13:50:33.8024263Z Temporarily overriding HOME='/home/runner/_work/_temp/32fa7118-982f-4a5a-b580-ae4f7fed4763' before making global git config changes
+2025-03-26T13:50:33.8026459Z Adding repository directory to the temporary git global config as a safe directory
+2025-03-26T13:50:33.8027528Z [command]/usr/bin/git config --global --add safe.directory /home/runner/_work/OpenHands/OpenHands
+2025-03-26T13:50:33.8047774Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2025-03-26T13:50:33.8068881Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2025-03-26T13:50:33.8255246Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2025-03-26T13:50:33.8270356Z http.https://github.com/.extraheader
+2025-03-26T13:50:33.8278364Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2025-03-26T13:50:33.8299512Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2025-03-26T13:50:33.8537758Z Cleaning up orphan processes
