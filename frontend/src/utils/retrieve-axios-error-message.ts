@@ -3,6 +3,9 @@ import {
   isAxiosErrorWithErrorField,
   isAxiosErrorWithMessageField,
 } from "./type-guards";
+import { useTranslation } from "react-i18next";
+
+const { t } = useTranslation();
 
 /**
  * Retrieve the error message from an Axios error
@@ -22,5 +25,5 @@ export const retrieveAxiosErrorMessage = (error: AxiosError) => {
     errorMessage = error.message;
   }
 
-  return errorMessage || "An error occurred";
+  return errorMessage || t("ERROR$GENERIC");
 };

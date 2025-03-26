@@ -8,6 +8,7 @@ import { TOSCheckbox } from "./tos-checkbox";
 import { handleCaptureConsent } from "#/utils/handle-capture-consent";
 import { BrandButton } from "../settings/brand-button";
 import GitHubLogo from "#/assets/branding/github-logo.svg?react";
+import { useTranslation } from "react-i18next";
 
 interface WaitlistModalProps {
   ghTokenIsSet: boolean;
@@ -18,6 +19,7 @@ export function WaitlistModal({
   ghTokenIsSet,
   githubAuthUrl,
 }: WaitlistModalProps) {
+  const { t } = useTranslation();
   const [isTosAccepted, setIsTosAccepted] = React.useState(false);
 
   const handleGitHubAuth = () => {
@@ -44,7 +46,7 @@ export function WaitlistModal({
             className="w-full"
             startContent={<GitHubLogo width={20} height={20} />}
           >
-            Connect to GitHub
+            {t("GITHUB$CONNECT_TO_GITHUB")}
           </BrandButton>
         )}
         {ghTokenIsSet && <JoinWaitlistAnchor />}

@@ -434,13 +434,13 @@ function AccountSettings() {
               onClick={handleLogout}
               isDisabled={!isGitHubTokenSet}
             >
-              Disconnect from GitHub
+              {t("ACCOUNT_SETTINGS$DISCONNECT_FROM_GITHUB")}
             </BrandButton>
           </section>
 
           <section className="flex flex-col gap-6">
             <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">
-              Additional Settings
+              {t("ACCOUNT_SETTINGS$ADDITIONAL_SETTINGS")}
             </h2>
 
             <SettingsDropdownInput

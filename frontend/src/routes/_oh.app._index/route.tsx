@@ -10,7 +10,7 @@ export function ErrorBoundary() {
 
   return (
     <div className="w-full h-full border border-danger rounded-b-xl flex flex-col items-center justify-center gap-2 bg-red-500/5">
-      <h1 className="text-3xl font-bold">Oops! An error occurred!</h1>
+      <h1 className="text-3xl font-bold">{t("ERROR$GENERIC")}</h1>
       {error instanceof Error && <pre>{error.message}</pre>}
     </div>
   );

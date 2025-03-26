@@ -1,37 +1,9 @@
 import fs from "fs";
 import path from "path";
 import * as parser from "@babel/parser";
-import * as _traverse from "@babel/traverse";
+import traverse from "@babel/traverse";
 import type { NodePath } from "@babel/traverse";
 import * as t from "@babel/types";
-
-// Fix for ESM/CJS compatibility
-const traverse = (_traverse as any).default || _traverse;
-
-// Attributes that typically don't contain user-facing text
-const NON_TEXT_ATTRIBUTES = [
-  "className",
-  "testId",
-  "id",
-  "name",
-  "type",
-  "href",
-  "src",
-  "alt",
-  "placeholder",
-  "rel",
-  "target",
-  "style",
-  "onClick",
-  "onChange",
-  "onSubmit",
-  "data-testid",
-  "aria-label",
-  "aria-labelledby",
-  "aria-describedby",
-  "aria-hidden",
-  "role",
-];
 
 // Files/directories to ignore
 const IGNORE_PATHS = [
@@ -61,12 +33,36 @@ const IGNORE_PATHS = [
   "root.tsx", // Root component
   "entry.client.tsx", // Client entry point
   "utils/scan-unlocalized-strings.ts", // Original scanner
-  "utils/scan-unlocalized-strings-new.ts", // This file
-  "utils/scan-unlocalized-strings-ast.ts", // AST scanner
+  "utils/scan-unlocalized-strings-ast.ts", // This file itself
 ];
 
 // Extensions to scan
 const SCAN_EXTENSIONS = [".ts", ".tsx", ".js", ".jsx"];
+
+// Attributes that typically don't contain user-facing text
+const NON_TEXT_ATTRIBUTES = [
+  "className",
+  "testId",
+  "id",
+  "name",
+  "type",
+  "href",
+  "src",
+  "alt",
+  "placeholder",
+  "rel",
+  "target",
+  "style",
+  "onClick",
+  "onChange",
+  "onSubmit",
+  "data-testid",
+  "aria-label",
+  "aria-labelledby",
+  "aria-describedby",
+  "aria-hidden",
+  "role",
+];
 
 function shouldIgnorePath(filePath: string): boolean {
   return IGNORE_PATHS.some((ignore) => filePath.includes(ignore));
@@ -108,91 +104,6 @@ function isCommonDevelopmentString(str: string): boolean {
     /^application\/[a-zA-Z0-9-]+$/, // MIME types
     /^mm:ss$/, // Time format
     /^[a-zA-Z0-9]+\/[a-zA-Z0-9-]+$/, // Provider/model format
-    /^noopener noreferrer$/, // Common rel attribute values
-    /^noreferrer noopener$/, // Common rel attribute values
-    /^cursor-(\[[^\]]+\]|\S+)$/, // Tailwind cursor classes
-    /^absolute$/, // CSS position
-    /^relative$/, // CSS position
-    /^sticky$/, // CSS position
-    /^fixed$/, // CSS position
-    /^animate-(\[[^\]]+\]|\S+)$/, // Animation classes
-    /^opacity-(\[[^\]]+\]|\S+)$/, // Opacity classes
-    /^disabled:(\S+)$/, // Disabled state classes
-    /^first-of-type:(\S+)$/, // First of type classes
-    /^last-of-type:(\S+)$/, // Last of type classes
-    /^group-data-\[[^\]]+\]:(\S+)$/, // Group data classes
-    /^placeholder:(\S+)$/, // Placeholder classes
-    /^self-(\[[^\]]+\]|\S+)$/, // Self classes
-    /^max-[wh]-(\[[^\]]+\]|\S+)$/, // Max width/height classes
-    /^min-[wh]-(\[[^\]]+\]|\S+)$/, // Min width/height classes
-    /^px-(\[[^\]]+\]|\S+)$/, // Padding x classes
-    /^py-(\[[^\]]+\]|\S+)$/, // Padding y classes
-    /^mx-(\[[^\]]+\]|\S+)$/, // Margin x classes
-    /^my-(\[[^\]]+\]|\S+)$/, // Margin y classes
-    /^top-(\[[^\]]+\]|\S+)$/, // Top classes
-    /^right-(\[[^\]]+\]|\S+)$/, // Right classes
-    /^bottom-(\[[^\]]+\]|\S+)$/, // Bottom classes
-    /^left-(\[[^\]]+\]|\S+)$/, // Left classes
-    /^z-(\[[^\]]+\]|\S+)$/, // Z-index classes
-    /^font-(\[[^\]]+\]|\S+)$/, // Font classes
-    /^leading-(\[[^\]]+\]|\S+)$/, // Line height classes
-    /^tracking-(\[[^\]]+\]|\S+)$/, // Letter spacing classes
-    /^underline(\s+[a-zA-Z0-9-]+)*$/, // Underline classes
-    /^italic$/, // Italic class
-    /^normal$/, // Normal class
-    /^duration-(\[[^\]]+\]|\S+)$/, // Duration classes
-    /^ease-(\[[^\]]+\]|\S+)$/, // Easing classes
-    /^ring-(\[[^\]]+\]|\S+)$/, // Ring classes
-    /^outline-(\[[^\]]+\]|\S+)$/, // Outline classes
-    /^resize-(\[[^\]]+\]|\S+)$/, // Resize classes
-    /^grow$/, // Grow class
-    /^grow-(\[[^\]]+\]|\S+)$/, // Grow classes
-    /^shrink$/, // Shrink class
-    /^shrink-(\[[^\]]+\]|\S+)$/, // Shrink classes
-    /^[0-9]+px(\s+[a-zA-Z0-9-]+)*$/, // Pixel dimensions
-    /^[0-9]+rem(\s+[a-zA-Z0-9-]+)*$/, // Rem dimensions
-    /^[0-9]+em(\s+[a-zA-Z0-9-]+)*$/, // Em dimensions
-    /^[0-9]+%(\s+[a-zA-Z0-9-]+)*$/, // Percentage dimensions
-    /^[0-9]+vh(\s+[a-zA-Z0-9-]+)*$/, // Viewport height dimensions
-    /^[0-9]+vw(\s+[a-zA-Z0-9-]+)*$/, // Viewport width dimensions
-    /^[0-9]+fr(\s+[a-zA-Z0-9-]+)*$/, // Grid fraction dimensions
-    /^[0-9]+ch(\s+[a-zA-Z0-9-]+)*$/, // Character dimensions
-    /^[0-9]+ex(\s+[a-zA-Z0-9-]+)*$/, // Ex dimensions
-    /^[0-9]+vmin(\s+[a-zA-Z0-9-]+)*$/, // Viewport min dimensions
-    /^[0-9]+vmax(\s+[a-zA-Z0-9-]+)*$/, // Viewport max dimensions
-    /^[0-9]+s(\s+[a-zA-Z0-9-]+)*$/, // Seconds
-    /^[0-9]+ms(\s+[a-zA-Z0-9-]+)*$/, // Milliseconds
-    /^[0-9]+deg(\s+[a-zA-Z0-9-]+)*$/, // Degrees
-    /^[0-9]+rad(\s+[a-zA-Z0-9-]+)*$/, // Radians
-    /^[0-9]+turn(\s+[a-zA-Z0-9-]+)*$/, // Turns
-    /^[0-9]+grad(\s+[a-zA-Z0-9-]+)*$/, // Gradians
-    /^[0-9]+dpi(\s+[a-zA-Z0-9-]+)*$/, // DPI
-    /^[0-9]+dpcm(\s+[a-zA-Z0-9-]+)*$/, // DPCM
-    /^[0-9]+dppx(\s+[a-zA-Z0-9-]+)*$/, // DPPX
-    /^[0-9]+x(\s+[a-zA-Z0-9-]+)*$/, // X
-    /^[0-9]+x[0-9]+$/, // Dimensions like 2x4
-    /^[0-9]+:[0-9]+$/, // Ratios like 16:9
-    /^[0-9]+\/[0-9]+$/, // Fractions like 1/2
-    /^[0-9]+\+[0-9]+$/, // Additions like 1+2
-    /^[0-9]+-[0-9]+$/, // Ranges like 1-2
-    /^[0-9]+\*[0-9]+$/, // Multiplications like 1*2
-    /^[0-9]+\^[0-9]+$/, // Powers like 1^2
-    /^[0-9]+\([0-9]+\)$/, // Function calls like 1(2)
-    /^[0-9]+\[[0-9]+\]$/, // Array accesses like 1[2]
-    /^[0-9]+\{[0-9]+\}$/, // Object accesses like 1{2}
-    /^[0-9]+\([a-zA-Z0-9]+\)$/, // Function calls like 1(a)
-    /^[0-9]+\[[a-zA-Z0-9]+\]$/, // Array accesses like 1[a]
-    /^[0-9]+\{[a-zA-Z0-9]+\}$/, // Object accesses like 1{a}
-    /^[a-zA-Z0-9]+\([0-9]+\)$/, // Function calls like a(2)
-    /^[a-zA-Z0-9]+\[[0-9]+\]$/, // Array accesses like a[2]
-    /^[a-zA-Z0-9]+\{[0-9]+\}$/, // Object accesses like a{2}
-    /^[a-zA-Z0-9]+\([a-zA-Z0-9]+\)$/, // Function calls like a(b)
-    /^[a-zA-Z0-9]+\[[a-zA-Z0-9]+\]$/, // Array accesses like a[b]
-    /^[a-zA-Z0-9]+\{[a-zA-Z0-9]+\}$/, // Object accesses like a{b}
-    /^[0-9]+x\s+\([0-9]+\s+core,\s+[0-9]+G\)$/, // Runtime options like "1x (2 core, 8G)"
-    /^JSON File$/, // File type labels
-    /^!\[image\]\(data:image\/png;base64,$/, // Image data URLs
-    /^\?notification$/, // URL parameters
   ];
 
   return commonPatterns.some((pattern) => pattern.test(str));
@@ -273,6 +184,11 @@ export function scanFileForUnlocalizedStrings(filePath: string): string[] {
       console.warn(`Skipping large file: ${filePath}`);
       return [];
     }
+    
+    // Check if file is using translations
+    const hasTranslationImport = content.includes('useTranslation') || 
+                                content.includes('I18nKey') ||
+                                content.includes('<Trans');
     
     try {
       // Parse the file

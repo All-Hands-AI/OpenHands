@@ -41,7 +41,7 @@ export function ErrorBoundary() {
   if (error instanceof Error) {
     return (
       <div>
-        <h1>Uh oh, an error occurred!</h1>
+        <h1>{t("ERROR$GENERIC")}</h1>
         <pre>{error.message}</pre>
       </div>
     );
@@ -49,7 +49,7 @@ export function ErrorBoundary() {
 
   return (
     <div>
-      <h1>Uh oh, an unknown error occurred!</h1>
+      <h1>{t("ERROR$UNKNOWN")}</h1>
     </div>
   );
 }

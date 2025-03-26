@@ -1,12 +1,12 @@
-import fs from "fs";
-import path from "path";
-import * as parser from "@babel/parser";
-import * as _traverse from "@babel/traverse";
-import type { NodePath } from "@babel/traverse";
-import * as t from "@babel/types";
+// Script to scan for unlocalized strings
+import fs from 'fs';
+import path from 'path';
+import * as parser from '@babel/parser';
+import _traverse from '@babel/traverse';
+import * as t from '@babel/types';
 
-// Fix for ESM/CJS compatibility
-const traverse = (_traverse as any).default || _traverse;
+// Fix for ESM import
+const traverse = _traverse.default;
 
 // Attributes that typically don't contain user-facing text
 const NON_TEXT_ATTRIBUTES = [
@@ -61,23 +61,23 @@ const IGNORE_PATHS = [
   "root.tsx", // Root component
   "entry.client.tsx", // Client entry point
   "utils/scan-unlocalized-strings.ts", // Original scanner
-  "utils/scan-unlocalized-strings-new.ts", // This file
   "utils/scan-unlocalized-strings-ast.ts", // AST scanner
+  "scan-strings.js", // This file
 ];
 
 // Extensions to scan
 const SCAN_EXTENSIONS = [".ts", ".tsx", ".js", ".jsx"];
 
-function shouldIgnorePath(filePath: string): boolean {
+function shouldIgnorePath(filePath) {
   return IGNORE_PATHS.some((ignore) => filePath.includes(ignore));
 }
 
-function isLikelyTranslationKey(str: string): boolean {
+function isLikelyTranslationKey(str) {
   // Translation keys typically use dots, underscores, or are all caps
   return /^[A-Z0-9_$.]+$/.test(str) || str.includes(".");
 }
 
-function isCommonDevelopmentString(str: string): boolean {
+function isCommonDevelopmentString(str) {
   // Common strings that don't need localization
   const commonPatterns = [
     /^https?:\/\//, // URLs
@@ -110,95 +110,18 @@ function isCommonDevelopmentString(str: string): boolean {
     /^[a-zA-Z0-9]+\/[a-zA-Z0-9-]+$/, // Provider/model format
     /^noopener noreferrer$/, // Common rel attribute values
     /^noreferrer noopener$/, // Common rel attribute values
+    /^underline(\s+[a-zA-Z0-9-]+)*$/, // Tailwind underline classes
     /^cursor-(\[[^\]]+\]|\S+)$/, // Tailwind cursor classes
-    /^absolute$/, // CSS position
-    /^relative$/, // CSS position
-    /^sticky$/, // CSS position
-    /^fixed$/, // CSS position
-    /^animate-(\[[^\]]+\]|\S+)$/, // Animation classes
-    /^opacity-(\[[^\]]+\]|\S+)$/, // Opacity classes
-    /^disabled:(\S+)$/, // Disabled state classes
-    /^first-of-type:(\S+)$/, // First of type classes
-    /^last-of-type:(\S+)$/, // Last of type classes
-    /^group-data-\[[^\]]+\]:(\S+)$/, // Group data classes
-    /^placeholder:(\S+)$/, // Placeholder classes
-    /^self-(\[[^\]]+\]|\S+)$/, // Self classes
-    /^max-[wh]-(\[[^\]]+\]|\S+)$/, // Max width/height classes
-    /^min-[wh]-(\[[^\]]+\]|\S+)$/, // Min width/height classes
-    /^px-(\[[^\]]+\]|\S+)$/, // Padding x classes
-    /^py-(\[[^\]]+\]|\S+)$/, // Padding y classes
-    /^mx-(\[[^\]]+\]|\S+)$/, // Margin x classes
-    /^my-(\[[^\]]+\]|\S+)$/, // Margin y classes
-    /^top-(\[[^\]]+\]|\S+)$/, // Top classes
-    /^right-(\[[^\]]+\]|\S+)$/, // Right classes
-    /^bottom-(\[[^\]]+\]|\S+)$/, // Bottom classes
-    /^left-(\[[^\]]+\]|\S+)$/, // Left classes
-    /^z-(\[[^\]]+\]|\S+)$/, // Z-index classes
-    /^font-(\[[^\]]+\]|\S+)$/, // Font classes
-    /^leading-(\[[^\]]+\]|\S+)$/, // Line height classes
-    /^tracking-(\[[^\]]+\]|\S+)$/, // Letter spacing classes
-    /^underline(\s+[a-zA-Z0-9-]+)*$/, // Underline classes
-    /^italic$/, // Italic class
-    /^normal$/, // Normal class
-    /^duration-(\[[^\]]+\]|\S+)$/, // Duration classes
-    /^ease-(\[[^\]]+\]|\S+)$/, // Easing classes
-    /^ring-(\[[^\]]+\]|\S+)$/, // Ring classes
-    /^outline-(\[[^\]]+\]|\S+)$/, // Outline classes
-    /^resize-(\[[^\]]+\]|\S+)$/, // Resize classes
-    /^grow$/, // Grow class
-    /^grow-(\[[^\]]+\]|\S+)$/, // Grow classes
-    /^shrink$/, // Shrink class
-    /^shrink-(\[[^\]]+\]|\S+)$/, // Shrink classes
-    /^[0-9]+px(\s+[a-zA-Z0-9-]+)*$/, // Pixel dimensions
-    /^[0-9]+rem(\s+[a-zA-Z0-9-]+)*$/, // Rem dimensions
-    /^[0-9]+em(\s+[a-zA-Z0-9-]+)*$/, // Em dimensions
-    /^[0-9]+%(\s+[a-zA-Z0-9-]+)*$/, // Percentage dimensions
-    /^[0-9]+vh(\s+[a-zA-Z0-9-]+)*$/, // Viewport height dimensions
-    /^[0-9]+vw(\s+[a-zA-Z0-9-]+)*$/, // Viewport width dimensions
-    /^[0-9]+fr(\s+[a-zA-Z0-9-]+)*$/, // Grid fraction dimensions
-    /^[0-9]+ch(\s+[a-zA-Z0-9-]+)*$/, // Character dimensions
-    /^[0-9]+ex(\s+[a-zA-Z0-9-]+)*$/, // Ex dimensions
-    /^[0-9]+vmin(\s+[a-zA-Z0-9-]+)*$/, // Viewport min dimensions
-    /^[0-9]+vmax(\s+[a-zA-Z0-9-]+)*$/, // Viewport max dimensions
-    /^[0-9]+s(\s+[a-zA-Z0-9-]+)*$/, // Seconds
-    /^[0-9]+ms(\s+[a-zA-Z0-9-]+)*$/, // Milliseconds
-    /^[0-9]+deg(\s+[a-zA-Z0-9-]+)*$/, // Degrees
-    /^[0-9]+rad(\s+[a-zA-Z0-9-]+)*$/, // Radians
-    /^[0-9]+turn(\s+[a-zA-Z0-9-]+)*$/, // Turns
-    /^[0-9]+grad(\s+[a-zA-Z0-9-]+)*$/, // Gradians
-    /^[0-9]+dpi(\s+[a-zA-Z0-9-]+)*$/, // DPI
-    /^[0-9]+dpcm(\s+[a-zA-Z0-9-]+)*$/, // DPCM
-    /^[0-9]+dppx(\s+[a-zA-Z0-9-]+)*$/, // DPPX
-    /^[0-9]+x(\s+[a-zA-Z0-9-]+)*$/, // X
-    /^[0-9]+x[0-9]+$/, // Dimensions like 2x4
-    /^[0-9]+:[0-9]+$/, // Ratios like 16:9
-    /^[0-9]+\/[0-9]+$/, // Fractions like 1/2
-    /^[0-9]+\+[0-9]+$/, // Additions like 1+2
-    /^[0-9]+-[0-9]+$/, // Ranges like 1-2
-    /^[0-9]+\*[0-9]+$/, // Multiplications like 1*2
-    /^[0-9]+\^[0-9]+$/, // Powers like 1^2
-    /^[0-9]+\([0-9]+\)$/, // Function calls like 1(2)
-    /^[0-9]+\[[0-9]+\]$/, // Array accesses like 1[2]
-    /^[0-9]+\{[0-9]+\}$/, // Object accesses like 1{2}
-    /^[0-9]+\([a-zA-Z0-9]+\)$/, // Function calls like 1(a)
-    /^[0-9]+\[[a-zA-Z0-9]+\]$/, // Array accesses like 1[a]
-    /^[0-9]+\{[a-zA-Z0-9]+\}$/, // Object accesses like 1{a}
-    /^[a-zA-Z0-9]+\([0-9]+\)$/, // Function calls like a(2)
-    /^[a-zA-Z0-9]+\[[0-9]+\]$/, // Array accesses like a[2]
-    /^[a-zA-Z0-9]+\{[0-9]+\}$/, // Object accesses like a{2}
-    /^[a-zA-Z0-9]+\([a-zA-Z0-9]+\)$/, // Function calls like a(b)
-    /^[a-zA-Z0-9]+\[[a-zA-Z0-9]+\]$/, // Array accesses like a[b]
-    /^[a-zA-Z0-9]+\{[a-zA-Z0-9]+\}$/, // Object accesses like a{b}
-    /^[0-9]+x\s+\([0-9]+\s+core,\s+[0-9]+G\)$/, // Runtime options like "1x (2 core, 8G)"
-    /^JSON File$/, // File type labels
-    /^!\[image\]\(data:image\/png;base64,$/, // Image data URLs
-    /^\?notification$/, // URL parameters
+    /^tracking-(\[[^\]]+\]|\S+)$/, // Tailwind tracking classes
+    /^leading-(\[[^\]]+\]|\S+)$/, // Tailwind leading classes
+    /^font-(\[[^\]]+\]|\S+)$/, // Tailwind font classes
+    /^text-(\[[^\]]+\]|\S+)$/, // Tailwind text classes
   ];
 
   return commonPatterns.some((pattern) => pattern.test(str));
 }
 
-function isLikelyUserFacingText(str: string): boolean {
+function isLikelyUserFacingText(str) {
   if (!str || str.length <= 2 || !(/[a-zA-Z]/.test(str))) {
     return false;
   }
@@ -218,7 +141,7 @@ function isLikelyUserFacingText(str: string): boolean {
   return hasMultipleWords || hasPunctuation || isCapitalizedPhrase;
 }
 
-function isTranslationCall(node: t.Node): boolean {
+function isTranslationCall(node) {
   // Check for t('KEY') pattern
   if (
     t.isCallExpression(node) &&
@@ -250,8 +173,8 @@ function isTranslationCall(node: t.Node): boolean {
   return false;
 }
 
-function isInTranslationContext(path: NodePath<t.Node>): boolean {
-  let current: NodePath<t.Node> | null = path;
+function isInTranslationContext(path) {
+  let current = path;
   
   while (current) {
     if (isTranslationCall(current.node)) {
@@ -263,10 +186,10 @@ function isInTranslationContext(path: NodePath<t.Node>): boolean {
   return false;
 }
 
-export function scanFileForUnlocalizedStrings(filePath: string): string[] {
+function scanFileForUnlocalizedStrings(filePath) {
   try {
     const content = fs.readFileSync(filePath, 'utf-8');
-    const unlocalizedStrings: string[] = [];
+    const unlocalizedStrings = [];
     
     // Skip files that are too large
     if (content.length > 1000000) {
@@ -379,12 +302,10 @@ export function scanFileForUnlocalizedStrings(filePath: string): string[] {
   }
 }
 
-export function scanDirectoryForUnlocalizedStrings(
-  dirPath: string,
-): Map<string, string[]> {
-  const results = new Map<string, string[]>();
+function scanDirectoryForUnlocalizedStrings(dirPath) {
+  const results = new Map();
 
-  function scanDir(currentPath: string) {
+  function scanDir(currentPath) {
     const entries = fs.readdirSync(currentPath, { withFileTypes: true });
 
     for (const entry of entries) {
@@ -409,3 +330,22 @@ export function scanDirectoryForUnlocalizedStrings(
   scanDir(dirPath);
   return results;
 }
+
+// Run the scanner
+console.log('Scanning for unlocalized strings...');
+const results = scanDirectoryForUnlocalizedStrings('./src');
+
+// Print the results
+console.log('\nUnlocalized strings found:');
+let totalStrings = 0;
+
+// Sort results by file path
+const sortedResults = new Map([...results.entries()].sort());
+
+for (const [filePath, strings] of sortedResults) {
+  console.log(`\n${filePath}:`);
+  strings.forEach(str => console.log(`  - "${str}"`));
+  totalStrings += strings.length;
+}
+
+console.log(`\nTotal: ${totalStrings} unlocalized strings in ${sortedResults.size} files`);
