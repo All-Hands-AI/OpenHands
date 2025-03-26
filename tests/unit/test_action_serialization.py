@@ -409,7 +409,7 @@ def test_agent_condensation_action_serialization_deserialization():
             'start_id': 10,
             'end_id': 20,
             'summary': 'Condensed history summary',
-            'selected_event_ids': None,
+            'selected_ids': None,
         },
     }
     serialization_deserialization(summary_action_dict, AgentCondensationAction)
@@ -422,7 +422,7 @@ def test_agent_condensation_action_serialization_deserialization():
             'start_id': 5,
             'end_id': 15,
             'summary': None,
-            'selected_event_ids': None,
+            'selected_ids': None,
         },
     }
     serialization_deserialization(forget_action_dict, AgentCondensationAction)
@@ -435,7 +435,7 @@ def test_agent_condensation_action_serialization_deserialization():
             'start_id': 10,
             'end_id': 30,
             'summary': None,
-            'selected_event_ids': [10, 15, 20, 25, 30],
+            'selected_ids': [10, 15, 20, 25, 30],
         },
     }
     serialization_deserialization(attention_action_dict, AgentCondensationAction)
@@ -448,7 +448,7 @@ def test_agent_condensation_action_serialization_deserialization():
             'start_id': 42,
             'end_id': 42,
             'summary': '<MASKED>',
-            'selected_event_ids': None,
+            'selected_ids': None,
         },
     }
     serialization_deserialization(mask_action_dict, AgentCondensationAction)
@@ -463,4 +463,4 @@ def test_agent_condensation_action_serialization_deserialization():
     assert isinstance(event, AgentCondensationAction)
     assert event.strategy == CondenserStrategy.FORGET
     assert event.summary is None or event.summary == ''
-    assert event.selected_event_ids is None or len(event.selected_event_ids) == 0
+    assert event.selected_ids is None or len(event.selected_ids) == 0
