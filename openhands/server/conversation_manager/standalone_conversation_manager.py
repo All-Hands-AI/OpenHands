@@ -395,23 +395,40 @@ class StandaloneConversationManager(ConversationManager):
     def _create_conversation_update_callback(
         self, user_id: str | None, github_user_id: str | None, conversation_id: str
     ) -> Callable:
-        def callback(*args, **kwargs):
+        def callback(event, *args, **kwargs):
             call_async_from_sync(
                 self._update_timestamp_for_conversation,
                 GENERAL_TIMEOUT,
                 user_id,
                 github_user_id,
                 conversation_id,
+                event,
             )
 
         return callback
 
     async def _update_timestamp_for_conversation(
-        self, user_id: str, github_user_id: str, conversation_id: str
+        self, user_id: str, github_user_id: str, conversation_id: str, event=None
     ):
         conversation_store = await self._get_conversation_store(user_id, github_user_id)
         conversation = await conversation_store.get_metadata(conversation_id)
         conversation.last_updated_at = datetime.now(timezone.utc)
+        
+        # Update cost/token metrics if event has llm_metrics
+        if event and hasattr(event, 'llm_metrics') and event.llm_metrics:
+            metrics = event.llm_metrics
+            
+            # Update accumulated cost
+            if hasattr(metrics, 'accumulated_cost'):
+                conversation.accumulated_cost = metrics.accumulated_cost
+            
+            # Update token usage
+            if hasattr(metrics, 'accumulated_token_usage'):
+                token_usage = metrics.accumulated_token_usage
+                conversation.prompt_tokens = token_usage.prompt_tokens
+                conversation.completion_tokens = token_usage.completion_tokens
+                conversation.total_tokens = token_usage.prompt_tokens + token_usage.completion_tokens
+        
         await conversation_store.save_metadata(conversation)
 
 
