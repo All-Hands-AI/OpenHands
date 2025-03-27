@@ -21,9 +21,9 @@ from openhands.agenthub.codeact_agent.tools import (
     create_str_replace_editor_tool,
 )
 from openhands.core.exceptions import (
-    FunctionCallNotExistsError,
     FunctionCallValidationError,
 )
+from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     Action,
     AgentDelegateAction,
@@ -37,6 +37,7 @@ from openhands.events.action import (
     IPythonRunCellAction,
     MessageAction,
 )
+from openhands.events.action.mcp import McpAction
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.tool import ToolCallMetadata
 from openhands.llm import LLM
@@ -70,6 +71,7 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
         # Process each tool call to OpenHands action
         for i, tool_call in enumerate(assistant_msg.tool_calls):
             action: Action
+            logger.warning(f'Tool call in function_calling.py: {tool_call}')
             try:
                 arguments = json.loads(tool_call.function.arguments)
             except json.decoder.JSONDecodeError as e:
@@ -191,10 +193,19 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                         f'Missing required argument "url" in tool call {tool_call.function.name}'
                     )
                 action = BrowseURLAction(url=arguments['url'])
+
+            # ================================================
+            # Other cases -> McpTool (MCP)
+            # ================================================
             else:
-                raise FunctionCallNotExistsError(
-                    f'Tool {tool_call.function.name} is not registered. (arguments: {arguments}). Please check the tool name and retry with an existing tool.'
+                # if 'mcp_actions' not in arguments:
+                #     raise FunctionCallNotExistsError(
+                #     f'Tool {tool_call.function.name} is not registered. (arguments: {arguments}). Please check the tool name and retry with an existing tool.'
+                # )
+                action = McpAction(
+                    name=tool_call.function.name, arguments=tool_call.function.arguments
                 )
+                logger.warning(f'MCP action in function_calling.py: {action}')
 
             # We only add thought to the first action
             if i == 0:

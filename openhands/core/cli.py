@@ -7,7 +7,6 @@ from prompt_toolkit import PromptSession, print_formatted_text
 from prompt_toolkit.formatted_text import FormattedText
 from prompt_toolkit.key_binding import KeyBindings
 
-import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands.core.config import (
     AppConfig,
     parse_arguments,
@@ -194,7 +193,7 @@ async def main(loop: asyncio.AbstractEventLoop) -> None:
     sid = str(uuid4())
     display_message(f'Session ID: {sid}')
 
-    agent = create_agent(config)
+    agent = await create_agent(config)
 
     runtime = create_runtime(
         config,
