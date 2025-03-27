@@ -27,11 +27,19 @@ interface TokenUsage {
   model?: string;
 }
 
+interface ModelInfo {
+  max_tokens?: number;
+  max_input_tokens?: number;
+  max_output_tokens?: number;
+  [key: string]: unknown;
+}
+
 interface MetricsState {
   cost: number | null;
   usage: TokenUsage | null;
   mostRecentUsage: TokenUsage | null;
   modelName: string | null;
+  modelInfo: ModelInfo | null;
 }
 
 const initialState: MetricsState = {
@@ -39,6 +47,7 @@ const initialState: MetricsState = {
   usage: null,
   mostRecentUsage: null,
   modelName: null,
+  modelInfo: null,
 };
 
 const metricsSlice = createSlice({
@@ -52,6 +61,7 @@ const metricsSlice = createSlice({
         usage: TokenUsage | null;
         token_usages?: TokenUsage[];
         model_name?: string;
+        model_info?: ModelInfo;
       }>,
     ) => {
       state.cost = action.payload.cost;
@@ -60,6 +70,11 @@ const metricsSlice = createSlice({
       // Set the model name if provided
       if (action.payload.model_name) {
         state.modelName = action.payload.model_name;
+      }
+
+      // Set the model info if provided
+      if (action.payload.model_info) {
+        state.modelInfo = action.payload.model_info;
       }
 
       // Set the most recent usage if token_usages is provided and has entries

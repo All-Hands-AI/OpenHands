@@ -93,6 +93,7 @@ export function handleActionMessage(message: ActionMessage) {
       usage: message.llm_metrics?.accumulated_token_usage ?? null,
       token_usages: message.llm_metrics?.token_usages ?? [],
       model_name: message.llm_metrics?.model_name ?? null,
+      model_info: message.llm_metrics?.model_info ?? null,
     };
     store.dispatch(setMetrics(metrics));
   }

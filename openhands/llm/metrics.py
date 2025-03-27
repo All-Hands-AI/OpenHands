@@ -161,6 +161,7 @@ class Metrics:
                 latency.model_dump() for latency in self._response_latencies
             ],
             'token_usages': [usage.model_dump() for usage in self._token_usages],
+            'model_name': self.model_name,
         }
 
     def reset(self):

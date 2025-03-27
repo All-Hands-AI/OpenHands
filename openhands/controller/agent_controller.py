@@ -1178,7 +1178,14 @@ class AgentController:
                 cache_write_tokens=latest_usage.cache_write_tokens,
                 response_id=latest_usage.response_id,
             )
-        action.llm_metrics = metrics
+        # Add model_info to metrics if available
+        if hasattr(self.agent.llm, 'model_info') and self.agent.llm.model_info:
+            # Add model_info to metrics
+            metrics_dict = metrics.get()
+            metrics_dict['model_info'] = self.agent.llm.model_info
+            action.llm_metrics = metrics_dict
+        else:
+            action.llm_metrics = metrics
 
         # Log the metrics information for frontend display
         log_usage: TokenUsage | None = (

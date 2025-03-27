@@ -327,16 +327,34 @@ export function ConversationCard({
                     </div>
 
                     {/* Context Window Usage */}
-                    {metrics.modelName && (
+                    {metrics.mostRecentUsage && (
                       <div className="mt-3 pt-2 border-t border-neutral-700">
                         <div className="flex justify-between items-center">
                           <span>Context Window Usage:</span>
                           <span className="font-semibold">
                             {(() => {
-                              const { modelName } = metrics;
-                              const contextSize =
-                                MODEL_CONTEXT_SIZES[modelName] ||
-                                MODEL_CONTEXT_SIZES.default;
+                              // Get context window size from model_info if available, otherwise fallback to hardcoded values
+                              let contextSize = MODEL_CONTEXT_SIZES.default;
+
+                              if (
+                                metrics.modelInfo &&
+                                metrics.modelInfo.max_input_tokens
+                              ) {
+                                contextSize =
+                                  metrics.modelInfo.max_input_tokens;
+                              } else if (
+                                metrics.modelInfo &&
+                                metrics.modelInfo.max_tokens
+                              ) {
+                                contextSize = metrics.modelInfo.max_tokens;
+                              } else if (
+                                metrics.modelName &&
+                                MODEL_CONTEXT_SIZES[metrics.modelName]
+                              ) {
+                                contextSize =
+                                  MODEL_CONTEXT_SIZES[metrics.modelName];
+                              }
+
                               const totalTokens =
                                 metrics.mostRecentUsage.prompt_tokens +
                                 metrics.mostRecentUsage.completion_tokens;
@@ -354,10 +372,28 @@ export function ConversationCard({
                             className="bg-blue-600 h-2.5 rounded-full"
                             style={{
                               width: (() => {
-                                const { modelName } = metrics;
-                                const contextSize =
-                                  MODEL_CONTEXT_SIZES[modelName] ||
-                                  MODEL_CONTEXT_SIZES.default;
+                                // Get context window size from model_info if available, otherwise fallback to hardcoded values
+                                let contextSize = MODEL_CONTEXT_SIZES.default;
+
+                                if (
+                                  metrics.modelInfo &&
+                                  metrics.modelInfo.max_input_tokens
+                                ) {
+                                  contextSize =
+                                    metrics.modelInfo.max_input_tokens;
+                                } else if (
+                                  metrics.modelInfo &&
+                                  metrics.modelInfo.max_tokens
+                                ) {
+                                  contextSize = metrics.modelInfo.max_tokens;
+                                } else if (
+                                  metrics.modelName &&
+                                  MODEL_CONTEXT_SIZES[metrics.modelName]
+                                ) {
+                                  contextSize =
+                                    MODEL_CONTEXT_SIZES[metrics.modelName];
+                                }
+
                                 const totalTokens =
                                   metrics.mostRecentUsage.prompt_tokens +
                                   metrics.mostRecentUsage.completion_tokens;
