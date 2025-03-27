@@ -12,7 +12,6 @@ from openhands.events.action import (
     AgentFinishAction,
 )
 from openhands.llm.llm import LLM
-from openhands.mcp.mcp_agent import MCPAgent, convert_mcp_agents_to_tools
 from openhands.memory.condenser import Condenser
 from openhands.memory.conversation_memory import ConversationMemory
 from openhands.runtime.plugins import (
@@ -52,12 +51,7 @@ class CodeActAgent(Agent):
         JupyterRequirement(),
     ]
 
-    def __init__(
-        self,
-        llm: LLM,
-        config: AgentConfig,
-        mcp_agents: list[MCPAgent] | None = None,
-    ) -> None:
+    def __init__(self, llm: LLM, config: AgentConfig, mcp_tools: list[dict]) -> None:
         """Initializes a new instance of the CodeActAgent class.
 
         Parameters:
@@ -75,9 +69,6 @@ class CodeActAgent(Agent):
         )
 
         # initialize MCP agents
-        self.mcp_agents = mcp_agents
-        logger.debug(f'MCP agents: {self.mcp_agents}')
-        mcp_tools = convert_mcp_agents_to_tools(self.mcp_agents)
         self.tools = built_in_tools + mcp_tools
         logger.debug(f'MCP tools: {mcp_tools}')
 
