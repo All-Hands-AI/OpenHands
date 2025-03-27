@@ -121,3 +121,32 @@ def test_metrics_none_serialization():
     # Test deserialization
     deserialized = event_from_dict(serialized)
     assert deserialized.llm_metrics is None
+
+
+def test_agent_name_serialization():
+    # Test with agent_name set
+    action = MessageAction(content='Hello, world!')
+    action.agent_name = 'TestAgent'
+
+    # Test serialization
+    serialized = event_to_dict(action)
+    assert 'agent_name' in serialized
+    assert serialized['agent_name'] == 'TestAgent'
+
+    # Test deserialization
+    deserialized = event_from_dict(serialized)
+    assert deserialized.agent_name == 'TestAgent'
+
+
+def test_agent_name_none_serialization():
+    # Test with agent_name not set (None)
+    action = MessageAction(content='Hello, world!')
+    action.agent_name = None
+
+    # Test serialization
+    serialized = event_to_dict(action)
+    assert 'agent_name' not in serialized
+
+    # Test deserialization
+    deserialized = event_from_dict(serialized)
+    assert deserialized.agent_name == ''

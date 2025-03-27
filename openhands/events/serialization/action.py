@@ -120,6 +120,9 @@ def action_from_dict(action: dict) -> Action:
             blocking = args.get('blocking', False)
             decoded_action.set_hard_timeout(action['timeout'], blocking=blocking)
 
+        if 'agent_name' in action:
+            decoded_action._agent_name = action.get('agent_name', '')
+
         # Set timestamp if it was provided
         if timestamp:
             decoded_action._timestamp = timestamp

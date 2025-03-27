@@ -23,12 +23,24 @@ import { appendInput } from "#/state/command-slice";
 const messageActions = {
   [ActionType.BROWSE]: (message: ActionMessage) => {
     if (!message.args.thought && message.message) {
-      store.dispatch(addAssistantMessage(message.message));
+      store.dispatch(
+        addAssistantMessage({
+          content: message.message,
+          agentName: message.agent_name,
+          timestamp: message.timestamp,
+        }),
+      );
     }
   },
   [ActionType.BROWSE_INTERACTIVE]: (message: ActionMessage) => {
     if (!message.args.thought && message.message) {
-      store.dispatch(addAssistantMessage(message.message));
+      store.dispatch(
+        addAssistantMessage({
+          content: message.message,
+          agentName: message.agent_name,
+          timestamp: message.timestamp,
+        }),
+      );
     }
   },
   [ActionType.WRITE]: (message: ActionMessage) => {
@@ -50,7 +62,13 @@ const messageActions = {
         }),
       );
     } else {
-      store.dispatch(addAssistantMessage(message.args.content));
+      store.dispatch(
+        addAssistantMessage({
+          content: message.args.content,
+          agentName: message.agent_name,
+          timestamp: message.timestamp,
+        }),
+      );
     }
   },
   [ActionType.RUN_IPYTHON]: (message: ActionMessage) => {
@@ -59,7 +77,13 @@ const messageActions = {
     }
   },
   [ActionType.FINISH]: (message: ActionMessage) => {
-    store.dispatch(addAssistantMessage(message.args.final_thought));
+    store.dispatch(
+      addAssistantMessage({
+        content: message.args.final_thought,
+        agentName: message.agent_name,
+        timestamp: message.timestamp,
+      }),
+    );
     let successPrediction = "";
     if (message.args.task_completed === "partial") {
       successPrediction =
@@ -73,9 +97,21 @@ const messageActions = {
     if (successPrediction) {
       // if final_thought is not empty, add a new line before the success prediction
       if (message.args.final_thought) {
-        store.dispatch(addAssistantMessage(`\n${successPrediction}`));
+        store.dispatch(
+          addAssistantMessage({
+            content: `\n${successPrediction}`,
+            agentName: message.agent_name,
+            timestamp: message.timestamp,
+          }),
+        );
       } else {
-        store.dispatch(addAssistantMessage(successPrediction));
+        store.dispatch(
+          addAssistantMessage({
+            content: successPrediction,
+            agentName: message.agent_name,
+            timestamp: message.timestamp,
+          }),
+        );
       }
     }
   },
@@ -105,7 +141,13 @@ export function handleActionMessage(message: ActionMessage) {
 
   if (message.source === "agent") {
     if (message.args && message.args.thought) {
-      store.dispatch(addAssistantMessage(message.args.thought));
+      store.dispatch(
+        addAssistantMessage({
+          content: message.args.thought,
+          agentName: message.agent_name,
+          timestamp: message.timestamp,
+        }),
+      );
     }
     // Need to convert ActionMessage to RejectAction
     // @ts-expect-error TODO: fix

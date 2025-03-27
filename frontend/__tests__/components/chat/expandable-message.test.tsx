@@ -95,6 +95,96 @@ describe("ExpandableMessage", () => {
     expect(screen.queryByTestId("status-icon")).not.toBeInTheDocument();
   });
 
+  const testTimestamp = "2025-03-21T10:00:00Z";
+
+  it(`should display LocalFormat if timestamp is UtcFormat for`, async () => {
+    const testTimestampLocalFormat = "2025-03-21T10:00:00";
+    renderWithProviders(
+      <ExpandableMessage
+        message="Agent Message"
+        type="thought"
+        timestamp={testTimestampLocalFormat}
+        sender="assistant"
+      />,
+    );
+
+    const agent = "Agent";
+    const date = new Date(`${testTimestampLocalFormat}Z`);
+    const pad = (num: number): string => num.toString().padStart(2, "0");
+    const month = pad(date.getMonth() + 1);
+    const day = pad(date.getDate());
+    const hour = pad(date.getHours());
+    const minute = pad(date.getMinutes());
+    const agentNameElement = await screen.findByText(agent);
+
+    expect(agentNameElement.textContent?.trim()).toBe(agent);
+    expect(
+      await screen.findByText((content) =>
+        content.includes(`${month}/${day} ${hour}:${minute}`),
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it(`should display Agent if sender is assistant and agentName is undefind`, async () => {
+    renderWithProviders(
+      <ExpandableMessage
+        message="Agent Message"
+        type="thought"
+        timestamp={testTimestamp}
+        sender="assistant"
+      />,
+    );
+
+    const agent = "Agent";
+    const agentNameElement = await screen.findByText(agent);
+
+    const date = new Date(testTimestamp);
+    const pad = (num: number): string => num.toString().padStart(2, "0");
+    const month = pad(date.getMonth() + 1);
+    const day = pad(date.getDate());
+    const hour = pad(date.getHours());
+    const minute = pad(date.getMinutes());
+
+    expect(agentNameElement.textContent?.trim()).toBe(agent);
+    expect(
+      await screen.findByText((content) =>
+        content.includes(`${month}/${day} ${hour}:${minute}`),
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it(`should display Agent if sender is assistant and timestamp is undefind`, async () => {
+    renderWithProviders(
+      <ExpandableMessage
+        message="Agent Message"
+        type="thought"
+        sender="assistant"
+      />,
+    );
+
+    const agent = "Agent";
+    const agentNameElement = await screen.findByText(agent);
+
+    expect(agentNameElement.textContent?.trim()).toBe(agent);
+    expect(
+      await screen.findByText((content) => content.includes("N/A")),
+    ).toBeInTheDocument();
+  });
+
+  it("should display N/A if sender is assistant and timestamp is undefind", async () => {
+    renderWithProviders(
+      <ExpandableMessage
+        message="Assistant Message"
+        type="thought"
+        sender="assistant"
+      />,
+    );
+    expect(await screen.findByText("Agent")).toBeInTheDocument();
+    expect(
+      await screen.findByText((content) => content.trim() === "N/A"),
+    ).toBeInTheDocument();
+  });
+
   it("should render the out of credits message when the user is out of credits", async () => {
     const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
     // @ts-expect-error - We only care about the APP_MODE and FEATURE_FLAGS fields

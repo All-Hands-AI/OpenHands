@@ -137,3 +137,14 @@ class Event:
     @response_id.setter
     def response_id(self, value: str) -> None:
         self._response_id = value
+
+    # optional field
+    @property
+    def agent_name(self) -> str:
+        if hasattr(self, '_agent_name'):
+            return self._agent_name
+        return ''
+
+    @agent_name.setter
+    def agent_name(self, value: str) -> None:
+        self._agent_name = value

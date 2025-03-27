@@ -23,6 +23,7 @@ TOP_KEYS = [
     'observation',
     'tool_call_metadata',
     'llm_metrics',
+    'agent_name',
 ]
 UNDERSCORE_KEYS = [
     'id',
@@ -31,6 +32,7 @@ UNDERSCORE_KEYS = [
     'cause',
     'tool_call_metadata',
     'llm_metrics',
+    'agent_name',
 ]
 
 DELETE_FROM_TRAJECTORY_EXTRAS = {
@@ -108,6 +110,8 @@ def event_to_dict(event: 'Event') -> dict:
         if key == 'timestamp' and 'timestamp' in d:
             if isinstance(d['timestamp'], datetime):
                 d['timestamp'] = d['timestamp'].isoformat()
+        if key == 'agent_name' and d.get('agent_name') == '':
+            d.pop('agent_name', None)
         if key == 'source' and 'source' in d:
             d['source'] = d['source'].value
         if key == 'recall_type' and 'recall_type' in d:

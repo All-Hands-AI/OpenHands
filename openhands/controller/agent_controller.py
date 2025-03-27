@@ -381,6 +381,7 @@ class AgentController:
                 self.event_stream.add_event(
                     MessageAction(content='TASK: ' + action.inputs['task']),
                     EventSource.USER,
+                    self.agent.name,
                 )
                 await self.delegate.set_agent_state_to(AgentState.RUNNING)
             return
@@ -504,7 +505,7 @@ class AgentController:
                 obs = ErrorObservation(content='The action has not been executed.')
                 obs.tool_call_metadata = self._pending_action.tool_call_metadata
                 obs._cause = self._pending_action.id  # type: ignore[attr-defined]
-                self.event_stream.add_event(obs, EventSource.AGENT)
+                self.event_stream.add_event(obs, EventSource.AGENT, self.agent.name)
 
         # NOTE: RecallActions don't need an ErrorObservation upon reset, as long as they have no tool calls
 
@@ -567,12 +568,15 @@ class AgentController:
                 confirmation_state = ActionConfirmationStatus.REJECTED
             self._pending_action.confirmation_state = confirmation_state  # type: ignore[attr-defined]
             self._pending_action._id = None  # type: ignore[attr-defined]
-            self.event_stream.add_event(self._pending_action, EventSource.AGENT)
+            self.event_stream.add_event(
+                self._pending_action, EventSource.AGENT, self.agent.name
+            )
 
         self.state.agent_state = new_state
         self.event_stream.add_event(
             AgentStateChangedObservation('', self.state.agent_state),
             EventSource.ENVIRONMENT,
+            self.agent.name,
         )
 
     def get_agent_state(self) -> AgentState:
@@ -668,7 +672,7 @@ class AgentController:
 
             # emit the delegate result observation
             obs = AgentDelegateObservation(outputs=delegate_outputs, content=content)
-            self.event_stream.add_event(obs, EventSource.AGENT)
+            self.event_stream.add_event(obs, EventSource.AGENT, self.agent.name)
         else:
             # delegate state is ERROR
             # emit AgentDelegateObservation with error content
@@ -681,7 +685,7 @@ class AgentController:
 
             # emit the delegate result observation
             obs = AgentDelegateObservation(outputs=delegate_outputs, content=content)
-            self.event_stream.add_event(obs, EventSource.AGENT)
+            self.event_stream.add_event(obs, EventSource.AGENT, self.agent.name)
 
         # unset delegate so parent can resume normal handling
         self.delegate = None
@@ -743,10 +747,9 @@ class AgentController:
                 FunctionCallNotExistsError,
             ) as e:
                 self.event_stream.add_event(
-                    ErrorObservation(
-                        content=str(e),
-                    ),
+                    ErrorObservation(content=str(e)),
                     EventSource.AGENT,
+                    self.agent.name,
                 )
                 return
             except (ContextWindowExceededError, BadRequestError, OpenAIError) as e:
@@ -768,6 +771,11 @@ class AgentController:
                         raise LLMContextWindowExceedError()
                 else:
                     raise e
+
+        # The agent_name can be set by the agent to override the default.
+        # The overrided name will be displayed in the frontend.
+        if not hasattr(action, '_agent_name'):
+            action.agent_name = self.agent.name
 
         if action.runnable:
             if self.state.confirmation_mode and (
@@ -1041,12 +1049,10 @@ class AgentController:
             self.state.start_id = self.state.history[0].id
 
         # Add an error event to trigger another step by the agent
-        self.event_stream.add_event(
-            AgentCondensationObservation(
-                content='Trimming prompt to meet context window limitations'
-            ),
-            EventSource.AGENT,
+        obs = AgentCondensationObservation(
+            content='Trimming prompt to meet context window limitations'
         )
+        self.event_stream.add_event(obs, EventSource.AGENT, self.agent.name)
 
     def _apply_conversation_window(self, events: list[Event]) -> list[Event]:
         """Cuts history roughly in half when context window is exceeded.

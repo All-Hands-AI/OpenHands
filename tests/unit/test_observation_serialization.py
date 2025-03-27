@@ -43,6 +43,7 @@ def test_observation_event_props_serialization_deserialization():
         'id': 42,
         'source': 'agent',
         'timestamp': '2021-08-01T12:00:00',
+        'agent_name': 'TestAgent',
         'observation': 'run',
         'message': 'Command `ls -l` executed with exit code 0.',
         'extras': {
@@ -118,6 +119,7 @@ def test_legacy_serialization():
         'id': 42,
         'source': 'agent',
         'timestamp': '2021-08-01T12:00:00',
+        'agent_name': 'TestAgent',
         'observation': 'run',
         'message': 'Command `ls -l` executed with exit code 0.',
         'extras': {
@@ -136,6 +138,7 @@ def test_legacy_serialization():
     assert event.success is True
     assert event.command == 'ls -l'
     assert event.hidden is False
+    assert event.agent_name == 'TestAgent'
 
     event_dict = event_to_dict(event)
     assert event_dict['success'] is True
