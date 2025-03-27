@@ -12,7 +12,7 @@ import { ConversationCardContextMenu } from "./conversation-card-context-menu";
 import { cn } from "#/utils/utils";
 import { BaseModal } from "../../shared/modals/base-modal/base-modal";
 import { RootState } from "#/store";
-import { MODEL_CONTEXT_SIZES } from "#/state/metrics-slice";
+import { DEFAULT_CONTEXT_WINDOW_SIZE } from "#/state/metrics-slice";
 
 interface ConversationCardProps {
   onClick?: () => void;
@@ -333,8 +333,8 @@ export function ConversationCard({
                           <span>Context Window Usage:</span>
                           <span className="font-semibold">
                             {(() => {
-                              // Get context window size from model_info if available, otherwise fallback to hardcoded values
-                              let contextSize = MODEL_CONTEXT_SIZES.default;
+                              // Get context window size from model_info if available, otherwise use default
+                              let contextSize = DEFAULT_CONTEXT_WINDOW_SIZE;
 
                               if (
                                 metrics.modelInfo &&
@@ -347,12 +347,8 @@ export function ConversationCard({
                                 metrics.modelInfo.max_tokens
                               ) {
                                 contextSize = metrics.modelInfo.max_tokens;
-                              } else if (
-                                metrics.modelName &&
-                                MODEL_CONTEXT_SIZES[metrics.modelName]
-                              ) {
-                                contextSize =
-                                  MODEL_CONTEXT_SIZES[metrics.modelName];
+                              } else if (metrics.modelName) {
+                                // No additional fallback needed, using DEFAULT_CONTEXT_WINDOW_SIZE
                               }
 
                               const totalTokens =
@@ -372,8 +368,8 @@ export function ConversationCard({
                             className="bg-blue-600 h-2.5 rounded-full"
                             style={{
                               width: (() => {
-                                // Get context window size from model_info if available, otherwise fallback to hardcoded values
-                                let contextSize = MODEL_CONTEXT_SIZES.default;
+                                // Get context window size from model_info if available, otherwise use default
+                                let contextSize = DEFAULT_CONTEXT_WINDOW_SIZE;
 
                                 if (
                                   metrics.modelInfo &&
@@ -386,12 +382,8 @@ export function ConversationCard({
                                   metrics.modelInfo.max_tokens
                                 ) {
                                   contextSize = metrics.modelInfo.max_tokens;
-                                } else if (
-                                  metrics.modelName &&
-                                  MODEL_CONTEXT_SIZES[metrics.modelName]
-                                ) {
-                                  contextSize =
-                                    MODEL_CONTEXT_SIZES[metrics.modelName];
+                                } else if (metrics.modelName) {
+                                  // No additional fallback needed, using DEFAULT_CONTEXT_WINDOW_SIZE
                                 }
 
                                 const totalTokens =

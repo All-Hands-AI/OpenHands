@@ -5,7 +5,9 @@ import { configureStore } from "@reduxjs/toolkit";
 import userEvent from "@testing-library/user-event";
 import { vi, describe, it, expect } from "vitest";
 import { ConversationCard } from "../conversation-card";
-import metricsReducer, { MODEL_CONTEXT_SIZES } from "#/state/metrics-slice";
+import metricsReducer, {
+  DEFAULT_CONTEXT_WINDOW_SIZE,
+} from "#/state/metrics-slice";
 
 // Mock the formatTimeDelta function
 vi.mock("#/utils/format-time-delta", () => ({
@@ -117,8 +119,7 @@ describe("Metrics Modal", () => {
 
   it("should display context window usage percentage", async () => {
     const store = createStore();
-    const modelName = "claude-3-sonnet-20240229";
-    const contextSize = MODEL_CONTEXT_SIZES[modelName];
+    const contextSize = DEFAULT_CONTEXT_WINDOW_SIZE;
     const totalTokens = 300 + 150; // prompt_tokens + completion_tokens
     const expectedPercentage = `${((totalTokens / contextSize) * 100).toFixed(2)}%`;
 
