@@ -2,9 +2,9 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
 import posthog from "posthog-js";
 import { useDispatch, useSelector } from "react-redux";
-import OpenHands from "#/api/open-hands";
 import { setInitialPrompt } from "#/state/initial-query-slice";
 import { RootState } from "#/store";
+import { conversationService } from "#/api/conversation-service/conversation-service.api";
 
 export const useCreateConversation = () => {
   const navigate = useNavigate();
@@ -28,7 +28,7 @@ export const useCreateConversation = () => {
 
       if (variables.q) dispatch(setInitialPrompt(variables.q));
 
-      return OpenHands.createConversation(
+      return conversationService.createConversation(
         selectedRepository || undefined,
         variables.q,
         files,
@@ -46,7 +46,7 @@ export const useCreateConversation = () => {
       await queryClient.invalidateQueries({
         queryKey: ["user", "conversations"],
       });
-      navigate(`/conversations/${conversationId}`);
+      await navigate(`/conversations/${conversationId}`);
     },
   });
 };

@@ -1,6 +1,6 @@
 import { useQueryClient, useMutation } from "@tanstack/react-query";
-import OpenHands from "#/api/open-hands";
 import { Conversation } from "#/api/open-hands.types";
+import { conversationService } from "#/api/conversation-service/conversation-service.api";
 
 export const useUpdateConversation = () => {
   const queryClient = useQueryClient();
@@ -10,7 +10,10 @@ export const useUpdateConversation = () => {
       id: string;
       conversation: Partial<Omit<Conversation, "id">>;
     }) =>
-      OpenHands.updateUserConversation(variables.id, variables.conversation),
+      conversationService.updateConversation(
+        variables.id,
+        variables.conversation,
+      ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["user", "conversations"] });
     },

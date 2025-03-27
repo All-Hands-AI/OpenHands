@@ -8,8 +8,6 @@ import {
   GetConfigResponse,
   GetVSCodeUrlResponse,
   AuthenticateResponse,
-  Conversation,
-  ResultSet,
   GetTrajectoryResponse,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
@@ -201,56 +199,6 @@ class OpenHands {
     const { data } = await openHands.get<{ runtime_id: string }>(
       `/api/conversations/${conversationId}/config`,
     );
-    return data;
-  }
-
-  static async getUserConversations(): Promise<Conversation[]> {
-    const { data } = await openHands.get<ResultSet<Conversation>>(
-      "/api/conversations?limit=9",
-    );
-    return data.results;
-  }
-
-  static async deleteUserConversation(conversationId: string): Promise<void> {
-    await openHands.delete(`/api/conversations/${conversationId}`);
-  }
-
-  static async updateUserConversation(
-    conversationId: string,
-    conversation: Partial<Omit<Conversation, "conversation_id">>,
-  ): Promise<void> {
-    await openHands.patch(`/api/conversations/${conversationId}`, conversation);
-  }
-
-  static async createConversation(
-    selectedRepository?: string,
-    initialUserMsg?: string,
-    imageUrls?: string[],
-    replayJson?: string,
-  ): Promise<Conversation> {
-    const body = {
-      selected_repository: selectedRepository,
-      selected_branch: undefined,
-      initial_user_msg: initialUserMsg,
-      image_urls: imageUrls,
-      replay_json: replayJson,
-    };
-
-    const { data } = await openHands.post<Conversation>(
-      "/api/conversations",
-      body,
-    );
-
-    return data;
-  }
-
-  static async getConversation(
-    conversationId: string,
-  ): Promise<Conversation | null> {
-    const { data } = await openHands.get<Conversation | null>(
-      `/api/conversations/${conversationId}`,
-    );
-
     return data;
   }
 

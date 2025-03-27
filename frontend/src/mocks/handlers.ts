@@ -1,12 +1,9 @@
 import { delay, http, HttpResponse } from "msw";
-import {
-  GetConfigResponse,
-  Conversation,
-  ResultSet,
-} from "#/api/open-hands.types";
+import { GetConfigResponse } from "#/api/open-hands.types";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import { STRIPE_BILLING_HANDLERS } from "./billing-handlers";
 import { ApiSettings, PostApiSettings } from "#/types/settings";
+import { CONVERSATION_HANDLERS } from "./conversation-handlers";
 
 export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
   llm_model: DEFAULT_SETTINGS.LLM_MODEL,
@@ -30,46 +27,6 @@ const MOCK_USER_PREFERENCES: {
 } = {
   settings: null,
 };
-
-const conversations: Conversation[] = [
-  {
-    conversation_id: "1",
-    title: "My New Project",
-    selected_repository: null,
-    last_updated_at: new Date().toISOString(),
-    created_at: new Date().toISOString(),
-    status: "RUNNING",
-  },
-  {
-    conversation_id: "2",
-    title: "Repo Testing",
-    selected_repository: "octocat/hello-world",
-    // 2 days ago
-    last_updated_at: new Date(
-      Date.now() - 2 * 24 * 60 * 60 * 1000,
-    ).toISOString(),
-    created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    status: "STOPPED",
-  },
-  {
-    conversation_id: "3",
-    title: "Another Project",
-    selected_repository: "octocat/earth",
-    // 5 days ago
-    last_updated_at: new Date(
-      Date.now() - 5 * 24 * 60 * 60 * 1000,
-    ).toISOString(),
-    created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-    status: "STOPPED",
-  },
-];
-
-const CONVERSATIONS = new Map<string, Conversation>(
-  conversations.map((conversation) => [
-    conversation.conversation_id,
-    conversation,
-  ]),
-);
 
 const openHandsHandlers = [
   http.get("/api/options/models", async () =>
@@ -147,6 +104,7 @@ const openHandsHandlers = [
 
 export const handlers = [
   ...STRIPE_BILLING_HANDLERS,
+  ...CONVERSATION_HANDLERS,
   ...openHandsHandlers,
   http.get("/api/github/repositories", () =>
     HttpResponse.json([
@@ -226,79 +184,6 @@ export const handlers = [
   ),
 
   http.get("/api/options/config", () => HttpResponse.json({ APP_MODE: "oss" })),
-
-  http.get("/api/conversations", async () => {
-    const values = Array.from(CONVERSATIONS.values());
-    const results: ResultSet<Conversation> = {
-      results: values,
-      next_page_id: null,
-    };
-
-    return HttpResponse.json(results, { status: 200 });
-  }),
-
-  http.delete("/api/conversations/:conversationId", async ({ params }) => {
-    const { conversationId } = params;
-
-    if (typeof conversationId === "string") {
-      CONVERSATIONS.delete(conversationId);
-      return HttpResponse.json(null, { status: 200 });
-    }
-
-    return HttpResponse.json(null, { status: 404 });
-  }),
-
-  http.patch(
-    "/api/conversations/:conversationId",
-    async ({ params, request }) => {
-      const { conversationId } = params;
-
-      if (typeof conversationId === "string") {
-        const conversation = CONVERSATIONS.get(conversationId);
-
-        if (conversation) {
-          const body = await request.json();
-          if (typeof body === "object" && body?.title) {
-            CONVERSATIONS.set(conversationId, {
-              ...conversation,
-              title: body.title,
-            });
-            return HttpResponse.json(null, { status: 200 });
-          }
-        }
-      }
-
-      return HttpResponse.json(null, { status: 404 });
-    },
-  ),
-
-  http.post("/api/conversations", () => {
-    const conversation: Conversation = {
-      conversation_id: (Math.random() * 100).toString(),
-      title: "New Conversation",
-      selected_repository: null,
-      last_updated_at: new Date().toISOString(),
-      created_at: new Date().toISOString(),
-      status: "RUNNING",
-    };
-
-    CONVERSATIONS.set(conversation.conversation_id, conversation);
-    return HttpResponse.json(conversation, { status: 201 });
-  }),
-
-  http.get("/api/conversations/:conversationId", async ({ params }) => {
-    const { conversationId } = params;
-
-    if (typeof conversationId === "string") {
-      const project = CONVERSATIONS.get(conversationId);
-
-      if (project) {
-        return HttpResponse.json(project, { status: 200 });
-      }
-    }
-
-    return HttpResponse.json(null, { status: 404 });
-  }),
 
   http.post("/api/logout", () => HttpResponse.json(null, { status: 200 })),
 

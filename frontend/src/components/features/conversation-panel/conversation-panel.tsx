@@ -33,7 +33,6 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
   >(null);
 
   const { data: conversations, isFetching, error } = useUserConversations();
-
   const { mutate: deleteConversation } = useDeleteConversation();
   const { mutate: updateConversation } = useUpdateConversation();
 

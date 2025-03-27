@@ -1,12 +1,12 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import OpenHands from "#/api/open-hands";
+import { conversationService } from "#/api/conversation-service/conversation-service.api";
 
 export const useDeleteConversation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (variables: { conversationId: string }) =>
-      OpenHands.deleteUserConversation(variables.conversationId),
+      conversationService.deleteConversation(variables.conversationId),
     onMutate: async (variables) => {
       await queryClient.cancelQueries({ queryKey: ["user", "conversations"] });
       const previousConversations = queryClient.getQueryData([
@@ -24,7 +24,7 @@ export const useDeleteConversation = () => {
 
       return { previousConversations };
     },
-    onError: (err, variables, context) => {
+    onError: (_, __, context) => {
       if (context?.previousConversations) {
         queryClient.setQueryData(
           ["user", "conversations"],
