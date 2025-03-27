@@ -206,9 +206,7 @@ async def upload_file(request: Request, conversation_id: str, files: list[Upload
 
                 # For non-image files, create /uploads directory if it doesn't exist
                 if not is_image:
-                    uploads_dir = os.path.join(
-                        runtime.config.workspace_mount_path_in_sandbox, 'uploads'
-                    )
+                    uploads_dir = '/uploads'
                     try:
                         # Create directory action
                         mkdir_action = FileWriteAction(uploads_dir, '')
