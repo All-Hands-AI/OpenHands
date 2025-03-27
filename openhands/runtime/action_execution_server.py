@@ -16,6 +16,7 @@ import time
 import traceback
 from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import Literal
 from zipfile import ZipFile
 
 import aiofiles
@@ -433,11 +434,9 @@ class ActionExecutor:
         else:
             file_stat = None
 
-        mode = 'w+' if not file_exists else 'r+'
+        mode: Literal['r+', 'w'] = 'w' if not file_exists else 'r+'
         try:
-            async with aiofiles.open(
-                filepath, mode, encoding='utf-8'
-            ) as file:
+            async with aiofiles.open(filepath, mode, encoding='utf-8') as file:
                 if mode != 'w':
                     all_lines = await file.readlines()
                     new_file = insert_lines(insert, all_lines, action.start, action.end)
