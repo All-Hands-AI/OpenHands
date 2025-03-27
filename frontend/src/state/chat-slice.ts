@@ -6,6 +6,7 @@ import {
   OpenHandsObservation,
   CommandObservation,
   IPythonObservation,
+  RecallObservation,
 } from "#/types/core/observations";
 import { OpenHandsAction } from "#/types/core/actions";
 import { OpenHandsEventType } from "#/types/core/base";
@@ -22,6 +23,7 @@ const HANDLED_ACTIONS: OpenHandsEventType[] = [
   "browse",
   "browse_interactive",
   "edit",
+  "recall",
 ];
 
 function getRiskText(risk: ActionSecurityRisk) {
@@ -112,6 +114,9 @@ export const chatSlice = createSlice({
       } else if (actionID === "browse_interactive") {
         // Include the browser_actions in the content
         text = `**Action:**\n\n\`\`\`python\n${action.payload.args.browser_actions}\n\`\`\``;
+      } else if (actionID === "recall") {
+        const { recall_type: recallType, query } = action.payload.args;
+        text = `**Recall Action**\n\nType: ${recallType}\nQuery: ${query}`;
       }
       if (actionID === "run" || actionID === "run_ipython") {
         if (
@@ -203,6 +208,61 @@ export const chatSlice = createSlice({
           content = `${content.slice(0, MAX_CONTENT_LENGTH)}...(truncated)`;
         }
         causeMessage.content = content;
+      } else if (observationID === "recall") {
+        const recallObs = observation.payload as RecallObservation;
+        let content = `**Recall Observation**\n\nType: ${recallObs.extras.recall_type}\n\n`;
+
+        // Handle workspace context
+        if (recallObs.extras.recall_type === "workspace_context") {
+          if (recallObs.extras.repo_name) {
+            content += `**Repository:** ${recallObs.extras.repo_name}\n`;
+          }
+          if (recallObs.extras.repo_directory) {
+            content += `**Directory:** ${recallObs.extras.repo_directory}\n`;
+          }
+          if (recallObs.extras.date) {
+            content += `**Date:** ${recallObs.extras.date}\n`;
+          }
+          if (
+            recallObs.extras.runtime_hosts &&
+            Object.keys(recallObs.extras.runtime_hosts).length > 0
+          ) {
+            content += `**Runtime Hosts:**\n`;
+            for (const [host, port] of Object.entries(
+              recallObs.extras.runtime_hosts,
+            )) {
+              content += `- ${host} (port ${port})\n`;
+            }
+          }
+          if (recallObs.extras.repo_instructions) {
+            content += `\n**Repository Instructions:**\n${recallObs.extras.repo_instructions}\n`;
+          }
+          if (recallObs.extras.additional_agent_instructions) {
+            content += `\n**Additional Instructions:**\n${recallObs.extras.additional_agent_instructions}\n`;
+          }
+        }
+
+        // Handle microagent knowledge
+        if (
+          recallObs.extras.microagent_knowledge &&
+          recallObs.extras.microagent_knowledge.length > 0
+        ) {
+          content += `\n**Microagent Knowledge:**\n`;
+          for (const knowledge of recallObs.extras.microagent_knowledge) {
+            content += `\n### ${knowledge.name} (triggered by: ${knowledge.trigger})\n${knowledge.content}\n`;
+          }
+        }
+
+        // Add the original content from the observation
+        if (
+          observation.payload.content &&
+          observation.payload.content.trim().length > 0
+        ) {
+          content += `\n**Additional Content:**\n${observation.payload.content}\n`;
+        }
+
+        causeMessage.content = content;
+        causeMessage.success = true; // RecallObservation is generally considered successful
       }
     },
 

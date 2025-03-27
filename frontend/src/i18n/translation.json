@@ -4312,6 +4312,36 @@
         "es": "Navegación completada",
         "tr": "Gezinme tamamlandı"
     },
+    "ACTION_MESSAGE$RECALL": {
+        "en": "Recall Action",
+        "ja": "リコールアクション",
+        "zh-CN": "回忆操作",
+        "zh-TW": "回憶操作",
+        "ko-KR": "회상 작업",
+        "no": "Gjenkall handling",
+        "it": "Azione di richiamo",
+        "pt": "Ação de recuperação",
+        "es": "Acción de recuperación",
+        "ar": "إجراء استرجاع",
+        "fr": "Action de rappel",
+        "tr": "Hatırlama Eylemi",
+        "de": "Abruf-Aktion"
+    },
+    "OBSERVATION_MESSAGE$RECALL": {
+        "en": "Recall Result",
+        "ja": "リコール結果",
+        "zh-CN": "回忆结果",
+        "zh-TW": "回憶結果",
+        "ko-KR": "회상 결과",
+        "no": "Gjenkall resultat",
+        "it": "Risultato del richiamo",
+        "pt": "Resultado da recuperação",
+        "es": "Resultado de recuperación",
+        "ar": "نتيجة الاسترجاع",
+        "fr": "Résultat du rappel",
+        "tr": "Hatırlama Sonucu",
+        "de": "Abruf-Ergebnis"
+    },
     "EXPANDABLE_MESSAGE$SHOW_DETAILS": {
         "en": "Show details",
         "zh-CN": "显示详情",
