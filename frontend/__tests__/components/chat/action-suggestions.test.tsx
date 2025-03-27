@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { ActionSuggestions } from "#/components/features/chat/action-suggestions";
 import { useAuth } from "#/context/auth-context";
@@ -21,35 +21,43 @@ vi.mock("#/context/auth-context", () => ({
 
 describe("ActionSuggestions", () => {
   // Setup mocks for each test
-  vi.clearAllMocks();
-  
-  (useAuth as any).mockReturnValue({
-    githubTokenIsSet: true,
-  });
-  
-  (useSelector as any).mockReturnValue({
-    selectedRepository: "test-repo",
+  beforeEach(() => {
+    vi.clearAllMocks();
+    
+    (useAuth as any).mockReturnValue({
+      providersAreSet: true,
+    });
+    
+    (useSelector as any).mockReturnValue({
+      selectedRepository: "test-repo",
+    });
   });
 
   it("should render both GitHub buttons when GitHub token is set and repository is selected", () => {
     render(<ActionSuggestions onSuggestionsClick={() => {}} />);
 
-    const pushButton = screen.getByRole("button", { name: "Push to Branch" });
-    const prButton = screen.getByRole("button", { name: "Push & Create PR" });
-
+    // Find all buttons with data-testid="suggestion"
+    const buttons = screen.getAllByTestId("suggestion");
+    
+    // Check if we have at least 2 buttons
+    expect(buttons.length).toBeGreaterThanOrEqual(2);
+    
+    // Check if the buttons contain the expected text
+    const pushButton = buttons.find(button => button.textContent?.includes("Push to Branch"));
+    const prButton = buttons.find(button => button.textContent?.includes("Push & Create PR"));
+    
     expect(pushButton).toBeInTheDocument();
     expect(prButton).toBeInTheDocument();
   });
 
   it("should not render buttons when GitHub token is not set", () => {
     (useAuth as any).mockReturnValue({
-      githubTokenIsSet: false,
+      providersAreSet: false,
     });
 
     render(<ActionSuggestions onSuggestionsClick={() => {}} />);
 
-    expect(screen.queryByRole("button", { name: "Push to Branch" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Push & Create PR" })).not.toBeInTheDocument();
+    expect(screen.queryByTestId("suggestion")).not.toBeInTheDocument();
   });
 
   it("should not render buttons when no repository is selected", () => {
@@ -59,8 +67,7 @@ describe("ActionSuggestions", () => {
 
     render(<ActionSuggestions onSuggestionsClick={() => {}} />);
 
-    expect(screen.queryByRole("button", { name: "Push to Branch" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Push & Create PR" })).not.toBeInTheDocument();
+    expect(screen.queryByTestId("suggestion")).not.toBeInTheDocument();
   });
 
   it("should have different prompts for 'Push to Branch' and 'Push & Create PR' buttons", () => {
