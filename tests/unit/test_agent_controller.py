@@ -862,7 +862,9 @@ async def test_run_controller_with_memory_error(test_event_stream):
     runtime.event_stream = event_stream
 
     # Create a real Memory instance
-    memory = Memory(event_stream=event_stream, sid='test-memory')
+    memory = Memory(
+        event_stream=event_stream, sid='test-memory', custom_microagents_dir=None
+    )
 
     # Patch the _find_microagent_knowledge method to raise our test exception
     def mock_find_microagent_knowledge(*args, **kwargs):
@@ -1066,7 +1068,7 @@ async def test_agent_controller_processes_null_observation_with_cause():
     event_stream = EventStream(sid='test-session', file_store=file_store)
 
     # Create a Memory instance - not used directly in this test but needed for setup
-    Memory(event_stream=event_stream, sid='test-session')
+    Memory(event_stream=event_stream, sid='test-session', custom_microagents_dir=None)
 
     # Create a mock agent with necessary attributes
     mock_agent = MagicMock(spec=Agent)

@@ -42,9 +42,7 @@ async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
 
 
 @app.post('/unset-settings-tokens', response_model=dict[str, str])
-async def unset_settings_tokens(
-    request: Request
-) -> JSONResponse:
+async def unset_settings_tokens(request: Request) -> JSONResponse:
     try:
         settings_store = await SettingsStoreImpl.get_instance(
             config, get_user_id(request)
@@ -52,24 +50,26 @@ async def unset_settings_tokens(
 
         existing_settings = await settings_store.load()
         if existing_settings:
-            settings = existing_settings.model_copy(update={'secrets_store': SecretStore()})
+            settings = existing_settings.model_copy(
+                update={'secrets_store': SecretStore()}
+            )
             await settings_store.store(settings)
-            
+
         return JSONResponse(
             status_code=status.HTTP_200_OK,
             content={'message': 'Settings stored'},
         )
-    
+
     except Exception as e:
         logger.warning(f'Something went wrong unsetting tokens: {e}')
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={'error': 'Something went wrong unsetting tokens'},
         )
+
+
 @app.post('/reset-settings', response_model=dict[str, str])
-async def reset_settings(
-    request: Request
-) -> JSONResponse:
+async def reset_settings(request: Request) -> JSONResponse:
     """
     Resets user settings.
     """
@@ -79,23 +79,28 @@ async def reset_settings(
         )
 
         existing_settings = await settings_store.load()
-        settings = Settings(language="en",
-                             agent="CodeActAgent",
-                             security_analyzer="",
-                             confirmation_mode=False,
-                             llm_model="anthropic/claude-3-5-sonnet-20241022",
-                             llm_api_key="",
-                             llm_base_url="",
-                             remote_runtime_resource_factor=1,
-                             enable_default_condenser=True,
-                             enable_sound_notifications=False,
-                             user_consents_to_analytics=existing_settings.user_consents_to_analytics if existing_settings else False
-                    )
-        
+        settings = Settings(
+            language='en',
+            agent='CodeActAgent',
+            security_analyzer='',
+            confirmation_mode=False,
+            llm_model='anthropic/claude-3-5-sonnet-20241022',
+            llm_api_key='',
+            llm_base_url='',
+            remote_runtime_resource_factor=1,
+            enable_default_condenser=True,
+            enable_sound_notifications=False,
+            user_consents_to_analytics=existing_settings.user_consents_to_analytics
+            if existing_settings
+            else False,
+        )
+
         server_config_values = server_config.get_config()
-        is_hide_llm_settings_enabled = server_config_values.get("FEATURE_FLAGS", {}).get("HIDE_LLM_SETTINGS", False)
+        is_hide_llm_settings_enabled = server_config_values.get(
+            'FEATURE_FLAGS', {}
+        ).get('HIDE_LLM_SETTINGS', False)
         # We don't want the user to be able to modify these settings in SaaS
-        if (server_config.app_mode == AppMode.SAAS and is_hide_llm_settings_enabled):
+        if server_config.app_mode == AppMode.SAAS and is_hide_llm_settings_enabled:
             if existing_settings:
                 settings.llm_api_key = existing_settings.llm_api_key
                 settings.llm_base_url = existing_settings.llm_base_url
@@ -106,13 +111,14 @@ async def reset_settings(
             status_code=status.HTTP_200_OK,
             content={'message': 'Settings stored'},
         )
-    
+
     except Exception as e:
         logger.warning(f'Something went wrong resetting settings: {e}')
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={'error': 'Something went wrong resetting settings'},
         )
+
 
 @app.post('/settings', response_model=dict[str, str])
 async def store_settings(

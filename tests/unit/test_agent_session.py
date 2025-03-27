@@ -87,7 +87,9 @@ async def test_agent_session_start_with_no_state(mock_agent):
             super().set_initial_state(*args, state=state, **kwargs)
 
     # Create a real Memory instance with the mock event stream
-    memory = Memory(event_stream=mock_event_stream, sid='test-session')
+    memory = Memory(
+        event_stream=mock_event_stream, sid='test-session', custom_microagents_dir=None
+    )
     memory.microagents_dir = 'test-dir'
 
     # Patch AgentController and State.restore_from_session to fail; patch Memory in AgentSession

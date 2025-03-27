@@ -150,6 +150,7 @@ class AgentSession:
             self.memory = await self._create_memory(
                 selected_repository=selected_repository,
                 repo_directory=repo_directory,
+                custom_microagents_dir=config.custom_microagents_dir,
             )
 
             if git_provider_tokens:
@@ -396,11 +397,15 @@ class AgentSession:
         return controller
 
     async def _create_memory(
-        self, selected_repository: str | None, repo_directory: str | None
+        self,
+        selected_repository: str | None,
+        repo_directory: str | None,
+        custom_microagents_dir: str | None,
     ) -> Memory:
         memory = Memory(
             event_stream=self.event_stream,
             sid=self.sid,
+            custom_microagents_dir=custom_microagents_dir,
             status_callback=self._status_callback,
         )
 

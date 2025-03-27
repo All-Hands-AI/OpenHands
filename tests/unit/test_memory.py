@@ -42,7 +42,9 @@ def memory(event_stream):
     """Create a test memory instance."""
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    memory = Memory(event_stream, 'test_sid')
+    memory = Memory(
+        event_stream=event_stream, sid='test_sid', custom_microagents_dir=None
+    )
     yield memory
     loop.close()
 
@@ -144,6 +146,7 @@ async def test_memory_with_microagents():
     memory = Memory(
         event_stream=event_stream,
         sid='test-session',
+        custom_microagents_dir=None,
     )
 
     # Verify microagents were loaded - at least one microagent should be loaded
@@ -190,6 +193,91 @@ async def test_memory_with_microagents():
     assert 'magic word' in observation.microagent_knowledge[0].content
 
 
+@pytest.mark.asyncio
+async def test_memory_with_user_global_microagents(tmp_path):
+    """Test that Memory loads microagents from the user's global microagents directory.
+
+    This test verifies that:
+    1. Memory loads microagents from ~/.openhands-state/global-microagents
+    2. When a microagent action with a trigger word is processed, a RecallObservation is created
+    """
+    # Create a mock event stream
+    event_stream = MagicMock(spec=EventStream)
+
+    # Create a test microagent in the user's global microagents directory
+    user_global_microagent_name = 'test_user_global_microagent'
+    user_global_microagent_content = """---
+name: test_user_global
+type: knowledge
+triggers: [test_trigger]
+---
+
+This is a test microagent from the user's global directory.
+"""
+
+    # Create a temporary directory to simulate ~/.openhands-state/global-microagents
+    user_global_dir = os.path.join(tmp_path, '.openhands-state', 'global-microagents')
+    os.makedirs(user_global_dir, exist_ok=True)
+    with open(
+        os.path.join(user_global_dir, f'{user_global_microagent_name}.md'), 'w'
+    ) as f:
+        f.write(user_global_microagent_content)
+
+    # Patch the user's home directory to use our test directory
+    with patch('os.path.expanduser', return_value=str(tmp_path)):
+        # Initialize Memory
+        memory = Memory(
+            event_stream=event_stream,
+            sid='test-session',
+            custom_microagents_dir=None,
+        )
+
+        # Verify the user's global microagent was loaded
+        assert 'test_user_global' in memory.knowledge_microagents
+
+        # Create a microagent action with the trigger word
+        microagent_action = RecallAction(
+            query='Hello, test_trigger!', recall_type=RecallType.KNOWLEDGE
+        )
+
+        # Set the source to USER
+        microagent_action._source = EventSource.USER  # type: ignore[attr-defined]
+
+        # Mock the event_stream.add_event method
+        added_events = []
+
+        def original_add_event(event, source):
+            added_events.append((event, source))
+
+        event_stream.add_event = original_add_event
+
+        # Add the microagent action to the event stream
+        event_stream.add_event(microagent_action, EventSource.USER)
+
+        # Clear the events list to only capture new events
+        added_events.clear()
+
+        # Process the microagent action
+        await memory._on_event(microagent_action)
+
+        # Verify a RecallObservation was added to the event stream
+        assert len(added_events) == 1
+        observation, source = added_events[0]
+        assert isinstance(observation, RecallObservation)
+        assert source == EventSource.ENVIRONMENT
+        assert observation.recall_type == RecallType.KNOWLEDGE
+        assert len(observation.microagent_knowledge) == 1
+        assert observation.microagent_knowledge[0].name == 'test_user_global'
+        assert observation.microagent_knowledge[0].trigger == 'test_trigger'
+        assert (
+            "test microagent from the user's global directory"
+            in observation.microagent_knowledge[0].content
+        )
+
+    # Clean up
+    os.remove(os.path.join(user_global_dir, f'{user_global_microagent_name}.md'))
+
+
 def test_memory_repository_info(prompt_dir):
     """Test that Memory adds repository info to RecallObservations."""
     # Create an in-memory file store and real event stream
@@ -221,6 +309,7 @@ REPOSITORY INSTRUCTIONS: This is a test repository.
         memory = Memory(
             event_stream=event_stream,
             sid='test-session',
+            custom_microagents_dir=None,
         )
 
         # Set repository info

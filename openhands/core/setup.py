@@ -132,6 +132,7 @@ def create_memory(
     runtime: Runtime,
     event_stream: EventStream,
     sid: str,
+    custom_microagents_dir: str | None = None,
     selected_repository: str | None = None,
     repo_directory: str | None = None,
     status_callback: Callable | None = None,
@@ -149,6 +150,7 @@ def create_memory(
     memory = Memory(
         event_stream=event_stream,
         sid=sid,
+        custom_microagents_dir=custom_microagents_dir,
         status_callback=status_callback,
     )
 

@@ -28,6 +28,14 @@ GLOBAL_MICROAGENTS_DIR = os.path.join(
     'microagents',
 )
 
+# This function will be used to get the user's global microagents directory
+def get_user_global_microagents_dir() -> str:
+    return os.path.join(
+        os.path.expanduser('~'),
+        '.openhands-state',
+        'global-microagents',
+    )
+
 
 class Memory:
     """
@@ -37,6 +45,7 @@ class Memory:
 
     sid: str
     event_stream: EventStream
+    custom_microagents_dir: str | None
     status_callback: Callable | None
     loop: asyncio.AbstractEventLoop | None
 
@@ -44,10 +53,12 @@ class Memory:
         self,
         event_stream: EventStream,
         sid: str,
+        custom_microagents_dir: str | None,
         status_callback: Callable | None = None,
     ):
         self.event_stream = event_stream
         self.sid = sid if sid else str(uuid.uuid4())
+        self.custom_microagents_dir = custom_microagents_dir
         self.status_callback = status_callback
         self.loop = None
 
@@ -68,6 +79,10 @@ class Memory:
         # Load global microagents (Knowledge + Repo)
         # from typically OpenHands/microagents (i.e., the PUBLIC microagents)
         self._load_global_microagents()
+
+        # Load custom microagents (Knowledge)
+        # from a user-defined microagents directory
+        self._load_custom_microagents()
 
     def on_event(self, event: Event):
         """Handle an event from the event stream."""
@@ -246,8 +261,11 @@ class Memory:
 
     def _load_global_microagents(self) -> None:
         """
-        Loads microagents from the global microagents_dir
+        Loads microagents from:
+        1. The global microagents_dir (public microagents)
+        2. The user's global microagents directory (~/.openhands-state/global-microagents)
         """
+        # Load public microagents
         repo_agents, knowledge_agents, _ = load_microagents_from_dir(
             GLOBAL_MICROAGENTS_DIR
         )
@@ -257,6 +275,29 @@ class Memory:
         for name, agent in repo_agents.items():
             if isinstance(agent, RepoMicroAgent):
                 self.repo_microagents[name] = agent
+
+        # Load user's global microagents if the directory exists
+        user_global_dir = get_user_global_microagents_dir()
+        if os.path.exists(user_global_dir):
+            user_repo_agents, user_knowledge_agents, _ = load_microagents_from_dir(
+                user_global_dir
+            )
+            for name, agent in user_knowledge_agents.items():
+                if isinstance(agent, KnowledgeMicroAgent):
+                    self.knowledge_microagents[name] = agent
+            for name, agent in user_repo_agents.items():
+                if isinstance(agent, RepoMicroAgent):
+                    self.repo_microagents[name] = agent
+
+    def _load_custom_microagents(self) -> None:
+        """
+        Loads custom microagents from the user-defined microagents directory
+        """
+        if self.custom_microagents_dir:
+            custom_agents, _, _ = load_microagents_from_dir(self.custom_microagents_dir)
+            for name, agent in custom_agents.items():
+                if isinstance(agent, KnowledgeMicroAgent):
+                    self.knowledge_microagents[name] = agent
 
     def set_repository_info(self, repo_name: str, repo_directory: str) -> None:
         """Store repository info so we can reference it in an observation."""
