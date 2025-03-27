@@ -2,7 +2,6 @@ import { useDisclosure } from "@heroui/react";
 import React from "react";
 import { Outlet } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
-import { FaServer } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import {
@@ -30,8 +29,6 @@ import {
 import Security from "#/components/shared/modals/security/security";
 import { useEndSession } from "#/hooks/use-end-session";
 import { useUserConversation } from "#/hooks/query/use-user-conversation";
-import { ServedAppLabel } from "#/components/layout/served-app-label";
-import { TerminalStatusLabel } from "#/components/features/terminal/terminal-status-label";
 import { useSettings } from "#/hooks/query/use-settings";
 import { clearFiles, clearInitialPrompt } from "#/state/initial-query-slice";
 import { RootState } from "#/store";
@@ -53,16 +50,10 @@ function AppContent() {
 
   const [width, setWidth] = React.useState(window.innerWidth);
 
-  const secrets = React.useMemo(
-    // secrets to filter go here
-    () => [].filter((secret) => secret !== null),
-    [],
-  );
-
-  const Terminal = React.useMemo(
-    () => React.lazy(() => import("#/components/features/terminal/terminal")),
-    [],
-  );
+  // const Terminal = React.useMemo(
+  //   () => React.lazy(() => import("#/components/features/terminal/terminal")),
+  //   [],
+  // );
 
   React.useEffect(() => {
     if (isFetched && !conversation) {
@@ -134,7 +125,7 @@ function AppContent() {
           <ResizablePanel
             orientation={Orientation.VERTICAL}
             className="grow h-full min-h-0 min-w-0"
-            initialSize={500}
+            initialSize={600}
             firstClassName="rounded-xl overflow-hidden border border-neutral-600"
             secondClassName="flex flex-col overflow-hidden"
             firstChild={
@@ -146,12 +137,12 @@ function AppContent() {
                     to: "",
                     icon: <CodeIcon />,
                   },
-                  { label: "Jupyter", to: "jupyter", icon: <ListIcon /> },
-                  {
-                    label: <ServedAppLabel />,
-                    to: "served",
-                    icon: <FaServer />,
-                  },
+                  // { label: "Jupyter", to: "jupyter", icon: <ListIcon /> },
+                  // {
+                  //   label: <ServedAppLabel />,
+                  //   to: "served",
+                  //   icon: <FaServer />,
+                  // },
                   {
                     label: (
                       <div className="flex items-center gap-1">
@@ -161,6 +152,15 @@ function AppContent() {
                     to: "browser",
                     icon: <GlobeIcon />,
                   },
+                  {
+                    label: (
+                      <div className="flex items-center gap-1">
+                        {t(I18nKey.WORKSPACE$TERMINAL_TAB_LABEL)}
+                      </div>
+                    ),
+                    to: "terminal",
+                    icon: <ListIcon />,
+                  },
                 ]}
               >
                 <FilesProvider>
@@ -168,18 +168,18 @@ function AppContent() {
                 </FilesProvider>
               </Container>
             }
-            secondChild={
-              <Container
-                className="h-full overflow-scroll"
-                label={<TerminalStatusLabel />}
-              >
-                {/* Terminal uses some API that is not compatible in a server-environment. For this reason, we lazy load it to ensure
-                 * that it loads only in the client-side. */}
-                <React.Suspense fallback={<div className="h-full" />}>
-                  <Terminal secrets={secrets} />
-                </React.Suspense>
-              </Container>
-            }
+            secondChild={undefined} // secondChild={
+            //   <Container
+            //     className="h-full overflow-scroll"
+            //     label={<TerminalStatusLabel />}
+            //   >
+            //     {/* Terminal uses some API that is not compatible in a server-environment. For this reason, we lazy load it to ensure
+            //      * that it loads only in the client-side. */}
+            //     <React.Suspense fallback={<div className="h-full" />}>
+            //       <Terminal secrets={secrets} />
+            //     </React.Suspense>
+            //   </Container>
+            // }
           />
         }
       />

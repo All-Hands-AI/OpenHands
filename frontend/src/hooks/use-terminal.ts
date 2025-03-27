@@ -5,6 +5,7 @@ import { Command } from "#/state/command-slice";
 import { getTerminalCommand } from "#/services/terminal-service";
 import { parseTerminalOutput } from "#/utils/parse-terminal-output";
 import { useWsClient } from "#/context/ws-client-provider";
+// import { useLocation } from "react-router";
 
 /*
   NOTE: Tests for this hook are indirectly covered by the tests for the XTermTerminal component.
@@ -34,6 +35,8 @@ export const useTerminal = ({
   const ref = React.useRef<HTMLDivElement>(null);
   const lastCommandIndex = React.useRef(0);
   const keyEventDisposable = React.useRef<{ dispose: () => void } | null>(null);
+  // const location = useLocation();
+  // const pathname = location.pathname;
 
   const createTerminal = () =>
     new Terminal({
@@ -100,7 +103,6 @@ export const useTerminal = ({
     fitAddon.current = new FitAddon();
 
     let resizeObserver: ResizeObserver | null = null;
-
     if (ref.current) {
       /* Initialize the terminal in the DOM */
       initializeTerminal();
