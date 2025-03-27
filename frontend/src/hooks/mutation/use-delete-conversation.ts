@@ -8,14 +8,14 @@ export const useDeleteConversation = () => {
     mutationFn: (variables: { conversationId: string }) =>
       ConversationService.deleteConversation(variables.conversationId),
     onMutate: async (variables) => {
-      await queryClient.cancelQueries({ queryKey: ["user", "conversations"] });
+      await queryClient.cancelQueries({ queryKey: ["conversations"] });
       const previousConversations = queryClient.getQueryData([
         "user",
         "conversations",
       ]);
 
       queryClient.setQueryData(
-        ["user", "conversations"],
+        ["conversations"],
         (old: { conversation_id: string }[] | undefined) =>
           old?.filter(
             (conv) => conv.conversation_id !== variables.conversationId,
@@ -27,13 +27,13 @@ export const useDeleteConversation = () => {
     onError: (_, __, context) => {
       if (context?.previousConversations) {
         queryClient.setQueryData(
-          ["user", "conversations"],
+          ["conversations"],
           context.previousConversations,
         );
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["user", "conversations"] });
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
     },
   });
 };

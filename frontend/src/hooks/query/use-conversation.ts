@@ -3,7 +3,7 @@ import { ConversationService } from "#/api/conversation-service/conversation-ser
 
 export const useConversation = (cid: string | null) =>
   useQuery({
-    queryKey: ["user", "conversation", cid],
+    queryKey: ["conversations", cid],
     queryFn: () => ConversationService.getConversation(cid!),
     enabled: !!cid,
     retry: false,

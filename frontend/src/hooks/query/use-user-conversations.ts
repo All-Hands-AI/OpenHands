@@ -6,7 +6,7 @@ export const useUserConversations = () => {
   const { data: userIsAuthenticated } = useIsAuthed();
 
   return useQuery({
-    queryKey: ["user", "conversations"],
+    queryKey: ["conversations"],
     queryFn: ConversationService.getConversations,
     enabled: !!userIsAuthenticated,
   });
