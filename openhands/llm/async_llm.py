@@ -1,8 +1,9 @@
 import asyncio
 from functools import partial
-from typing import Any
+from typing import Any, Callable, Coroutine
 
 from litellm import acompletion as litellm_acompletion
+from litellm.types.utils import ModelResponse
 
 from openhands.core.exceptions import UserCancelledError
 from openhands.core.logger import openhands_logger as logger
@@ -17,7 +18,9 @@ from openhands.utils.shutdown_listener import should_continue
 class AsyncLLM(LLM):
     """Asynchronous LLM class."""
 
-    def __init__(self, *args, **kwargs):
+    _async_completion: Callable[..., Coroutine[Any, Any, ModelResponse]]
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
         self._async_completion = partial(
@@ -37,7 +40,9 @@ class AsyncLLM(LLM):
             seed=self.config.seed,
         )
 
-        async_completion_unwrapped = self._async_completion
+        async_completion_unwrapped: Callable[
+            ..., Coroutine[Any, Any, ModelResponse]
+        ] = self._async_completion
 
         @self.retry_decorator(
             num_retries=self.config.num_retries,
@@ -46,7 +51,7 @@ class AsyncLLM(LLM):
             retry_max_wait=self.config.retry_max_wait,
             retry_multiplier=self.config.retry_multiplier,
         )
-        async def async_completion_wrapper(*args, **kwargs):
+        async def async_completion_wrapper(*args: Any, **kwargs: Any) -> dict[str, Any]:
             """Wrapper for the litellm acompletion function that adds logging and cost tracking."""
             messages: list[dict[str, Any]] | dict[str, Any] = []
 
@@ -77,7 +82,7 @@ class AsyncLLM(LLM):
 
             self.log_prompt(messages)
 
-            async def check_stopped():
+            async def check_stopped() -> None:
                 while should_continue():
                     if (
                         hasattr(self.config, 'on_cancel_requested_fn')
@@ -97,10 +102,8 @@ class AsyncLLM(LLM):
                 self.log_response(message_back)
 
                 # log costs and tokens used
-                self._post_completion(resp)
-
                 # We do not support streaming in this method, thus return resp
-                return resp
+                return dict(resp)
 
             except UserCancelledError:
                 logger.debug('LLM request cancelled by user.')
@@ -117,14 +120,15 @@ class AsyncLLM(LLM):
                 except asyncio.CancelledError:
                     pass
 
-        self._async_completion = async_completion_wrapper  # type: ignore
+        self._async_completion = async_completion_wrapper
 
-    async def _call_acompletion(self, *args, **kwargs):
+    async def _call_acompletion(self, *args: Any, **kwargs: Any) -> ModelResponse:
         """Wrapper for the litellm acompletion function."""
         # Used in testing?
-        return await litellm_acompletion(*args, **kwargs)
+        resp = await litellm_acompletion(*args, **kwargs)
+        return ModelResponse(**resp)
 
     @property
-    def async_completion(self):
+    def async_completion(self) -> Callable[..., Coroutine[Any, Any, ModelResponse]]:
         """Decorator for the async litellm acompletion function."""
         return self._async_completion
