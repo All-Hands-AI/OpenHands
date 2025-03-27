@@ -66,6 +66,7 @@ class CodeActAgent(Agent):
         super().__init__(llm, config)
         self.pending_actions: deque[Action] = deque()
         self.reset()
+        logger.info(f'MCP agents: {mcp_agents}')
 
         built_in_tools = codeact_function_calling.get_tools(
             codeact_enable_browsing=self.config.codeact_enable_browsing,
@@ -75,14 +76,18 @@ class CodeActAgent(Agent):
         )
 
         # initialize MCP agents
-        self.mcp_agents = mcp_agents
-        logger.debug(f'MCP agents: {self.mcp_agents}')
-        mcp_tools = convert_mcp_agents_to_tools(self.mcp_agents)
+        self.mcp_agents = mcp_agents if mcp_agents is not None else []
+        logger.info(f'MCP agents: {self.mcp_agents}')
+        try:
+            mcp_tools = convert_mcp_agents_to_tools(self.mcp_agents)
+            logger.info(f'MCP tools: {mcp_tools}')
+        except Exception as e:
+            logger.error(f"Error converting MCP agents to tools: {e}")
+            mcp_tools = []
         self.tools = built_in_tools + mcp_tools
-        logger.debug(f'MCP tools: {mcp_tools}')
-
+        
         # Retrieve the enabled tools
-        logger.debug(
+        logger.info(
             f"TOOLS loaded for CodeActAgent: {', '.join([tool.get('function').get('name') for tool in self.tools])}"
         )
         self.prompt_manager = PromptManager(
