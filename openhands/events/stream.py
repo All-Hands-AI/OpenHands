@@ -5,7 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from enum import Enum
 from functools import partial
-from typing import Callable, Iterable
+from typing import Any, AsyncIterator, Callable, Iterable
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.event import Event, EventSource
@@ -27,35 +27,42 @@ class EventStreamSubscriber(str, Enum):
     RESOLVER = 'openhands_resolver'
     SERVER = 'server'
     RUNTIME = 'runtime'
+    MEMORY = 'memory'
     MAIN = 'main'
     TEST = 'test'
 
 
-async def session_exists(sid: str, file_store: FileStore) -> bool:
+async def session_exists(
+    sid: str, file_store: FileStore, user_id: str | None = None
+) -> bool:
     try:
-        await call_sync_from_async(file_store.list, get_conversation_dir(sid))
+        await call_sync_from_async(file_store.list, get_conversation_dir(sid, user_id))
         return True
     except FileNotFoundError:
         return False
 
 
 class AsyncEventStreamWrapper:
-    def __init__(self, event_stream, *args, **kwargs):
+    def __init__(self, event_stream: 'EventStream', *args: Any, **kwargs: Any) -> None:
         self.event_stream = event_stream
         self.args = args
         self.kwargs = kwargs
 
-    async def __aiter__(self):
+    async def __aiter__(self) -> AsyncIterator[Event]:
         loop = asyncio.get_running_loop()
 
         # Create an async generator that yields events
         for event in self.event_stream.get_events(*self.args, **self.kwargs):
             # Run the blocking get_events() in a thread pool
-            yield await loop.run_in_executor(None, lambda e=event: e)  # type: ignore
+            def get_event(e: Event = event) -> Event:
+                return e
+
+            yield await loop.run_in_executor(None, get_event)
 
 
 class EventStream:
     sid: str
+    user_id: str | None
     file_store: FileStore
     secrets: dict[str, str]
     # For each subscriber ID, there is a map of callback functions - useful
@@ -69,9 +76,10 @@ class EventStream:
     _thread_pools: dict[str, dict[str, ThreadPoolExecutor]]
     _thread_loops: dict[str, dict[str, asyncio.AbstractEventLoop]]
 
-    def __init__(self, sid: str, file_store: FileStore):
+    def __init__(self, sid: str, file_store: FileStore, user_id: str | None = None):
         self.sid = sid
         self.file_store = file_store
+        self.user_id = user_id
         self._stop_flag = threading.Event()
         self._queue: queue.Queue[Event] = queue.Queue()
         self._thread_pools = {}
@@ -89,10 +97,24 @@ class EventStream:
         self.__post_init__()
 
     def __post_init__(self) -> None:
+        events = []
+
         try:
-            events = self.file_store.list(get_conversation_events_dir(self.sid))
+            events_dir = get_conversation_events_dir(self.sid, self.user_id)
+            events += self.file_store.list(events_dir)
         except FileNotFoundError:
-            logger.debug(f'No events found for session {self.sid}')
+            logger.debug(f'No events found for session {self.sid} at {events_dir}')
+
+        if self.user_id:
+            # During transition to new location, try old location if user_id is set
+            # TODO: remove this code after 5/1/2025
+            try:
+                events_dir = get_conversation_events_dir(self.sid)
+                events += self.file_store.list(events_dir)
+            except FileNotFoundError:
+                logger.debug(f'No events found for session {self.sid} at {events_dir}')
+
+        if not events:
             self._cur_id = 0
             return
 
@@ -102,14 +124,14 @@ class EventStream:
             if id >= self._cur_id:
                 self._cur_id = id + 1
 
-    def _init_thread_loop(self, subscriber_id: str, callback_id: str):
+    def _init_thread_loop(self, subscriber_id: str, callback_id: str) -> None:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         if subscriber_id not in self._thread_loops:
             self._thread_loops[subscriber_id] = {}
         self._thread_loops[subscriber_id][callback_id] = loop
 
-    def close(self):
+    def close(self) -> None:
         self._stop_flag.set()
         if self._queue_thread.is_alive():
             self._queue_thread.join()
@@ -124,7 +146,7 @@ class EventStream:
         while not self._queue.empty():
             self._queue.get()
 
-    def _clean_up_subscriber(self, subscriber_id: str, callback_id: str):
+    def _clean_up_subscriber(self, subscriber_id: str, callback_id: str) -> None:
         if subscriber_id not in self._subscribers:
             logger.warning(f'Subscriber not found during cleanup: {subscriber_id}')
             return
@@ -155,8 +177,8 @@ class EventStream:
 
         del self._subscribers[subscriber_id][callback_id]
 
-    def _get_filename_for_id(self, id: int) -> str:
-        return get_conversation_event_filename(self.sid, id)
+    def _get_filename_for_id(self, id: int, user_id: str | None) -> str:
+        return get_conversation_event_filename(self.sid, id, user_id)
 
     @staticmethod
     def _get_id_from_filename(filename: str) -> int:
@@ -172,7 +194,7 @@ class EventStream:
         end_id: int | None = None,
         reverse: bool = False,
         filter_out_type: tuple[type[Event], ...] | None = None,
-        filter_hidden=False,
+        filter_hidden: bool = False,
     ) -> Iterable[Event]:
         """
         Retrieve events from the event stream, optionally filtering out events of a given type
@@ -189,7 +211,7 @@ class EventStream:
             Events from the stream that match the criteria.
         """
 
-        def should_filter(event: Event):
+        def should_filter(event: Event) -> bool:
             if filter_hidden and hasattr(event, 'hidden') and event.hidden:
                 return True
             if filter_out_type is not None and isinstance(event, filter_out_type):
@@ -222,10 +244,20 @@ class EventStream:
                 event_id += 1
 
     def get_event(self, id: int) -> Event:
-        filename = self._get_filename_for_id(id)
-        content = self.file_store.read(filename)
-        data = json.loads(content)
-        return event_from_dict(data)
+        filename = self._get_filename_for_id(id, self.user_id)
+        try:
+            content = self.file_store.read(filename)
+            data = json.loads(content)
+            return event_from_dict(data)
+        except FileNotFoundError:
+            logger.debug(f'File {filename} not found')
+            # TODO remove this block after 5/1/2025
+            if self.user_id:
+                filename = self._get_filename_for_id(id, None)
+                content = self.file_store.read(filename)
+                data = json.loads(content)
+                return event_from_dict(data)
+            raise
 
     def get_latest_event(self) -> Event:
         return self.get_event(self._cur_id - 1)
@@ -234,8 +266,11 @@ class EventStream:
         return self._cur_id - 1
 
     def subscribe(
-        self, subscriber_id: EventStreamSubscriber, callback: Callable, callback_id: str
-    ):
+        self,
+        subscriber_id: EventStreamSubscriber,
+        callback: Callable[[Event], None],
+        callback_id: str,
+    ) -> None:
         initializer = partial(self._init_thread_loop, subscriber_id, callback_id)
         pool = ThreadPoolExecutor(max_workers=1, initializer=initializer)
         if subscriber_id not in self._subscribers:
@@ -250,7 +285,9 @@ class EventStream:
         self._subscribers[subscriber_id][callback_id] = callback
         self._thread_pools[subscriber_id][callback_id] = pool
 
-    def unsubscribe(self, subscriber_id: EventStreamSubscriber, callback_id: str):
+    def unsubscribe(
+        self, subscriber_id: EventStreamSubscriber, callback_id: str
+    ) -> None:
         if subscriber_id not in self._subscribers:
             logger.warning(f'Subscriber not found during unsubscribe: {subscriber_id}')
             return
@@ -261,8 +298,8 @@ class EventStream:
 
         self._clean_up_subscriber(subscriber_id, callback_id)
 
-    def add_event(self, event: Event, source: EventSource):
-        if hasattr(event, '_id') and event.id is not None:
+    def add_event(self, event: Event, source: EventSource) -> None:
+        if event.id != Event.INVALID_ID:
             raise ValueError(
                 f'Event already has an ID:{event.id}. It was probably added back to the EventStream from inside a handler, triggering a loop.'
             )
@@ -276,16 +313,18 @@ class EventStream:
         data = self._replace_secrets(data)
         event = event_from_dict(data)
         if event.id is not None:
-            self.file_store.write(self._get_filename_for_id(event.id), json.dumps(data))
+            self.file_store.write(
+                self._get_filename_for_id(event.id, self.user_id), json.dumps(data)
+            )
         self._queue.put(event)
 
-    def set_secrets(self, secrets: dict[str, str]):
+    def set_secrets(self, secrets: dict[str, str]) -> None:
         self.secrets = secrets.copy()
 
-    def update_secrets(self, secrets: dict[str, str]):
+    def update_secrets(self, secrets: dict[str, str]) -> None:
         self.secrets.update(secrets)
 
-    def _replace_secrets(self, data: dict) -> dict:
+    def _replace_secrets(self, data: dict[str, Any]) -> dict[str, Any]:
         for key in data:
             if isinstance(data[key], dict):
                 data[key] = self._replace_secrets(data[key])
@@ -294,7 +333,7 @@ class EventStream:
                     data[key] = data[key].replace(secret, '<secret_hidden>')
         return data
 
-    def _run_queue_loop(self):
+    def _run_queue_loop(self) -> None:
         self._queue_loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self._queue_loop)
         try:
@@ -302,7 +341,7 @@ class EventStream:
         finally:
             self._queue_loop.close()
 
-    async def _process_queue(self):
+    async def _process_queue(self) -> None:
         while should_continue() and not self._stop_flag.is_set():
             event = None
             try:
@@ -319,8 +358,10 @@ class EventStream:
                     future = pool.submit(callback, event)
                     future.add_done_callback(self._make_error_handler(callback_id, key))
 
-    def _make_error_handler(self, callback_id: str, subscriber_id: str):
-        def _handle_callback_error(fut):
+    def _make_error_handler(
+        self, callback_id: str, subscriber_id: str
+    ) -> Callable[[Any], None]:
+        def _handle_callback_error(fut: Any) -> None:
             try:
                 # This will raise any exception that occurred during callback execution
                 fut.result()
@@ -333,14 +374,14 @@ class EventStream:
 
         return _handle_callback_error
 
-    def filtered_events_by_source(self, source: EventSource):
+    def filtered_events_by_source(self, source: EventSource) -> Iterable[Event]:
         for event in self.get_events():
             if event.source == source:
                 yield event
 
     def _should_filter_event(
         self,
-        event,
+        event: Event,
         query: str | None = None,
         event_types: tuple[type[Event], ...] | None = None,
         source: str | None = None,
@@ -363,19 +404,20 @@ class EventStream:
         if event_types and not isinstance(event, event_types):
             return True
 
-        if source and not event.source.value == source:
+        if source:
+            if event.source is None or event.source.value != source:
+                return True
+
+        if start_date and event.timestamp is not None and event.timestamp < start_date:
             return True
 
-        if start_date and event.timestamp < start_date:
-            return True
-
-        if end_date and event.timestamp > end_date:
+        if end_date and event.timestamp is not None and event.timestamp > end_date:
             return True
 
         # Text search in event content if query provided
         if query:
             event_dict = event_to_dict(event)
-            event_str = str(event_dict).lower()
+            event_str = json.dumps(event_dict).lower()
             if query.lower() not in event_str:
                 return True
 
@@ -391,7 +433,7 @@ class EventStream:
         start_id: int = 0,
         limit: int = 100,
         reverse: bool = False,
-    ) -> list[type[Event]]:
+    ) -> list[Event]:
         """Get matching events from the event stream based on filters.
 
         Args:

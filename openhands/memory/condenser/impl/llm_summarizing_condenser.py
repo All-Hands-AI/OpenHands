@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from openhands.core.config.condenser_config import LLMSummarizingCondenserConfig
+from openhands.core.message import Message, TextContent
 from openhands.events.event import Event
 from openhands.events.observation.agent import AgentCondensationObservation
 from openhands.llm import LLM
@@ -81,22 +82,19 @@ CHANGES: str(val) replaces f"{val:.16G}"
 DEPS: None modified
 INTENT: Fix precision while maintaining FITS compliance"""
 
-        prompt + '\n\n'
+        prompt += '\n\n'
 
         prompt += ('\n' + summary_event.message + '\n') if summary_event.message else ''
 
-        prompt + '\n\n'
+        prompt += '\n\n'
 
         for forgotten_event in forgotten_events:
             prompt += str(forgotten_event) + '\n\n'
 
+        messages = [Message(role='user', content=[TextContent(text=prompt)])]
+
         response = self.llm.completion(
-            messages=[
-                {
-                    'content': prompt,
-                    'role': 'user',
-                },
-            ],
+            messages=self.llm.format_messages_for_llm(messages),
         )
         summary = response.choices[0].message.content
 

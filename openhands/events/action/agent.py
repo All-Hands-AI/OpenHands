@@ -4,6 +4,7 @@ from typing import Any
 
 from openhands.core.schema import ActionType
 from openhands.events.action.action import Action
+from openhands.events.event import RecallType
 
 
 @dataclass
@@ -17,21 +18,6 @@ class ChangeAgentStateAction(Action):
     @property
     def message(self) -> str:
         return f'Agent state changed to {self.agent_state}'
-
-
-@dataclass
-class AgentSummarizeAction(Action):
-    summary: str
-    action: str = ActionType.SUMMARIZE
-
-    @property
-    def message(self) -> str:
-        return self.summary
-
-    def __str__(self) -> str:
-        ret = '**AgentSummarizeAction**\n'
-        ret += f'SUMMARY: {self.summary}'
-        return ret
 
 
 class AgentFinishTaskCompleted(Enum):
@@ -106,3 +92,22 @@ class AgentDelegateAction(Action):
     @property
     def message(self) -> str:
         return f"I'm asking {self.agent} for help with this task."
+
+
+@dataclass
+class RecallAction(Action):
+    """This action is used for retrieving content, e.g., from the global directory or user workspace."""
+
+    recall_type: RecallType
+    query: str = ''
+    thought: str = ''
+    action: str = ActionType.RECALL
+
+    @property
+    def message(self) -> str:
+        return f'Retrieving content for: {self.query[:50]}'
+
+    def __str__(self) -> str:
+        ret = '**RecallAction**\n'
+        ret += f'QUERY: {self.query[:50]}'
+        return ret

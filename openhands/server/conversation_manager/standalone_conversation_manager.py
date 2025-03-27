@@ -11,7 +11,6 @@ from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.agent import AgentState
 from openhands.events.action import MessageAction
-from openhands.events.observation.agent import AgentStateChangedObservation
 from openhands.events.stream import EventStream, EventStreamSubscriber, session_exists
 from openhands.server.config.server_config import ServerConfig
 from openhands.server.monitoring import MonitoringListener
@@ -63,9 +62,11 @@ class StandaloneConversationManager(ConversationManager):
             self._cleanup_task.cancel()
             self._cleanup_task = None
 
-    async def attach_to_conversation(self, sid: str) -> Conversation | None:
+    async def attach_to_conversation(
+        self, sid: str, user_id: str | None = None
+    ) -> Conversation | None:
         start_time = time.time()
-        if not await session_exists(sid, self.file_store):
+        if not await session_exists(sid, self.file_store, user_id=user_id):
             return None
 
         async with self._conversations_lock:
@@ -88,7 +89,9 @@ class StandaloneConversationManager(ConversationManager):
                 return conversation
 
             # Create new conversation if none exists
-            c = Conversation(sid, file_store=self.file_store, config=self.config)
+            c = Conversation(
+                sid, file_store=self.file_store, config=self.config, user_id=user_id
+            )
             try:
                 await c.connect()
             except AgentRuntimeUnavailableError as e:
@@ -106,26 +109,28 @@ class StandaloneConversationManager(ConversationManager):
             return c
 
     async def join_conversation(
-        self, sid: str, connection_id: str, settings: Settings, user_id: str | None
-    ):
+        self,
+        sid: str,
+        connection_id: str,
+        settings: Settings,
+        user_id: str | None,
+        github_user_id: str | None,
+    ) -> EventStream:
         logger.info(
             f'join_conversation:{sid}:{connection_id}',
             extra={'session_id': sid, 'user_id': user_id},
         )
         await self.sio.enter_room(connection_id, ROOM_KEY.format(sid=sid))
         self._local_connection_id_to_session_id[connection_id] = sid
-        event_stream = await self._get_event_stream(sid)
+        event_stream = await self.maybe_start_agent_loop(
+            sid, settings, user_id, github_user_id=github_user_id
+        )
         if not event_stream:
-            return await self.maybe_start_agent_loop(sid, settings, user_id)
-        for event in event_stream.get_events(reverse=True):
-            if isinstance(event, AgentStateChangedObservation):
-                if event.agent_state in (
-                    AgentState.STOPPED.value,
-                    AgentState.ERROR.value,
-                ):
-                    await self.close_session(sid)
-                    return await self.maybe_start_agent_loop(sid, settings, user_id)
-                break
+            logger.error(
+                f'No event stream after joining conversation: {sid}',
+                extra={'session_id': sid},
+            )
+            raise RuntimeError(f'no_event_stream:{sid}')
         return event_stream
 
     async def detach_from_conversation(self, conversation: Conversation):
@@ -187,14 +192,18 @@ class StandaloneConversationManager(ConversationManager):
                 logger.error('error_cleaning_stale')
                 await asyncio.sleep(_CLEANUP_INTERVAL)
 
-    async def _get_conversation_store(self, user_id: str | None) -> ConversationStore:
+    async def _get_conversation_store(
+        self, user_id: str | None, github_user_id: str | None
+    ) -> ConversationStore:
         conversation_store_class = self._conversation_store_class
         if not conversation_store_class:
             self._conversation_store_class = conversation_store_class = get_impl(
                 ConversationStore,  # type: ignore
                 self.server_config.conversation_store_class,
             )
-        store = await conversation_store_class.get_instance(self.config, user_id)
+        store = await conversation_store_class.get_instance(
+            self.config, user_id, github_user_id
+        )
         return store
 
     async def get_running_agent_loops(
@@ -243,6 +252,8 @@ class StandaloneConversationManager(ConversationManager):
         settings: Settings,
         user_id: str | None,
         initial_user_msg: MessageAction | None = None,
+        replay_json: str | None = None,
+        github_user_id: str | None = None,
     ) -> EventStream:
         logger.info(f'maybe_start_agent_loop:{sid}', extra={'session_id': sid})
         session: Session | None = None
@@ -256,7 +267,9 @@ class StandaloneConversationManager(ConversationManager):
                     extra={'session_id': sid, 'user_id': user_id},
                 )
                 # Get the conversations sorted (oldest first)
-                conversation_store = await self._get_conversation_store(user_id)
+                conversation_store = await self._get_conversation_store(
+                    user_id, github_user_id
+                )
                 conversations = await conversation_store.get_all_metadata(response_ids)
                 conversations.sort(key=_last_updated_at_key, reverse=True)
 
@@ -272,18 +285,22 @@ class StandaloneConversationManager(ConversationManager):
                 user_id=user_id,
             )
             self._local_agent_loops_by_sid[sid] = session
-            asyncio.create_task(session.initialize_agent(settings, initial_user_msg))
+            asyncio.create_task(
+                session.initialize_agent(settings, initial_user_msg, replay_json)
+            )
             # This does not get added when resuming an existing conversation
             try:
                 session.agent_session.event_stream.subscribe(
                     EventStreamSubscriber.SERVER,
-                    self._create_conversation_update_callback(user_id, sid),
+                    self._create_conversation_update_callback(
+                        user_id, github_user_id, sid
+                    ),
                     UPDATED_AT_CALLBACK_ID,
                 )
             except ValueError:
                 pass  # Already subscribed - take no action
 
-        event_stream = await self._get_event_stream(sid)
+        event_stream = await self._get_event_stream(sid, user_id)
         if not event_stream:
             logger.error(
                 f'No event stream after starting agent loop: {sid}',
@@ -292,7 +309,9 @@ class StandaloneConversationManager(ConversationManager):
             raise RuntimeError(f'no_event_stream:{sid}')
         return event_stream
 
-    async def _get_event_stream(self, sid: str) -> EventStream | None:
+    async def _get_event_stream(
+        self, sid: str, user_id: str | None
+    ) -> EventStream | None:
         logger.info(f'_get_event_stream:{sid}', extra={'session_id': sid})
         session = self._local_agent_loops_by_sid.get(sid)
         if session:
@@ -374,22 +393,23 @@ class StandaloneConversationManager(ConversationManager):
         )
 
     def _create_conversation_update_callback(
-        self, user_id: str | None, conversation_id: str
+        self, user_id: str | None, github_user_id: str | None, conversation_id: str
     ) -> Callable:
         def callback(*args, **kwargs):
             call_async_from_sync(
                 self._update_timestamp_for_conversation,
                 GENERAL_TIMEOUT,
                 user_id,
+                github_user_id,
                 conversation_id,
             )
 
         return callback
 
     async def _update_timestamp_for_conversation(
-        self, user_id: str, conversation_id: str
+        self, user_id: str, github_user_id: str, conversation_id: str
     ):
-        conversation_store = await self._get_conversation_store(user_id)
+        conversation_store = await self._get_conversation_store(user_id, github_user_id)
         conversation = await conversation_store.get_metadata(conversation_id)
         conversation.last_updated_at = datetime.now(timezone.utc)
         await conversation_store.save_metadata(conversation)

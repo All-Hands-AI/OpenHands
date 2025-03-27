@@ -281,13 +281,6 @@ For development setups, you can also define custom named LLM configurations. See
 
 The agent configuration options are defined in the `[agent]` and `[agent.<agent_name>]` sections of the `config.toml` file.
 
-### Microagent Configuration
-- `micro_agent_name`
-  - Type: `str`
-  - Default: `""`
-  - Description: Name of the micro agent to use for this agent
-
-
 ### LLM Configuration
 - `llm_config`
   - Type: `str`

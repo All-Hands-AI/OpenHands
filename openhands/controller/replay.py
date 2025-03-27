@@ -3,6 +3,7 @@ from openhands.events.action.action import Action
 from openhands.events.action.message import MessageAction
 from openhands.events.event import Event, EventSource
 from openhands.events.observation.empty import NullObservation
+from openhands.events.serialization.event import event_from_dict
 
 
 class ReplayManager:
@@ -76,3 +77,21 @@ class ReplayManager:
         assert isinstance(event, Action)
         self.replay_index += 1
         return event
+
+    @staticmethod
+    def get_replay_events(trajectory) -> list[Event]:
+        if not isinstance(trajectory, list):
+            raise ValueError(
+                f'Expected a list in {trajectory}, got {type(trajectory).__name__}'
+            )
+        replay_events = []
+        for item in trajectory:
+            event = event_from_dict(item)
+            if event.source == EventSource.ENVIRONMENT:
+                # ignore ENVIRONMENT events as they are not issued by
+                # the user or agent, and should not be replayed
+                continue
+            # cannot add an event with _id to event stream
+            event._id = None  # type: ignore[attr-defined]
+            replay_events.append(event)
+        return replay_events
