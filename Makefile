@@ -196,14 +196,7 @@ start-backend:
 # Start frontend
 start-frontend:
 	@echo "$(YELLOW)Starting frontend...$(RESET)"
-	@cd frontend && \
-	if grep -qi microsoft /proc/version 2>/dev/null; then \
-		echo "Detected WSL environment. Using 'dev_wsl'"; \
-		SCRIPT=dev_wsl; \
-	else \
-		SCRIPT=dev; \
-	fi; \
-	VITE_BACKEND_HOST=$(BACKEND_HOST_PORT) VITE_FRONTEND_PORT=$(FRONTEND_PORT) npm run $$SCRIPT -- --port $(FRONTEND_PORT) --host $(BACKEND_HOST)
+	@cd frontend && VITE_BACKEND_HOST=$(BACKEND_HOST_PORT) VITE_FRONTEND_PORT=$(FRONTEND_PORT) npm run dev -- --port $(FRONTEND_PORT) --host $(BACKEND_HOST)
 
 # Common setup for running the app (non-callable)
 _run_setup:
