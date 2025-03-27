@@ -9,6 +9,7 @@ from pydantic import (
     model_validator,
 )
 from pydantic.json import pydantic_encoder
+from pydantic.json_schema import SkipJsonSchema
 
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.utils import load_app_config
@@ -29,7 +30,7 @@ class Settings(BaseModel):
     llm_api_key: SecretStr | None = None
     llm_base_url: str | None = None
     remote_runtime_resource_factor: int | None = None
-    secrets_store: SecretStore = Field(default_factory=SecretStore, frozen=True)
+    secrets_store: SkipJsonSchema[SecretStore] = Field(default_factory=SecretStore, frozen=True)
     enable_default_condenser: bool = False
     enable_sound_notifications: bool = False
     user_consents_to_analytics: bool | None = None
