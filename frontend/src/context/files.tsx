@@ -55,6 +55,8 @@ function FilesProvider({ children }: FilesProviderProps) {
     [paths, setPaths, files, setFileContent, selectedPath, setSelectedPath],
   );
 
+  console.log("value", value);
+
   return <FilesContext value={value}>{children}</FilesContext>;
 }
 
