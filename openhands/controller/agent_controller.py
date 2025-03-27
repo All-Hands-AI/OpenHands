@@ -54,7 +54,7 @@ from openhands.events.action import (
     MessageAction,
     NullAction,
 )
-from openhands.events.action.agent import RecallAction
+from openhands.events.action.agent import CondensationAction, RecallAction
 from openhands.events.event import Event
 from openhands.events.observation import (
     AgentCondensationObservation,
@@ -304,6 +304,8 @@ class AgentController:
                 # TODO: this is fragile, but how else to check if eligible?
                 return True
             if isinstance(event, AgentDelegateAction):
+                return True
+            if isinstance(event, CondensationAction):
                 return True
             return False
         if isinstance(event, Observation):
