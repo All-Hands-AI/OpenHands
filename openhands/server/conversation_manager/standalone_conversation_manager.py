@@ -397,7 +397,7 @@ class StandaloneConversationManager(ConversationManager):
     ) -> Callable:
         def callback(event, *args, **kwargs):
             call_async_from_sync(
-                self._update_timestamp_for_conversation,
+                self._update_conversation_for_event,
                 GENERAL_TIMEOUT,
                 user_id,
                 github_user_id,
@@ -407,7 +407,7 @@ class StandaloneConversationManager(ConversationManager):
 
         return callback
 
-    async def _update_timestamp_for_conversation(
+    async def _update_conversation_for_event(
         self, user_id: str, github_user_id: str, conversation_id: str, event=None
     ):
         conversation_store = await self._get_conversation_store(user_id, github_user_id)
