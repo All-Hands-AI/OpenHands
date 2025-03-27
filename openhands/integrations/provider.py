@@ -61,7 +61,7 @@ PROVIDER_TOKEN_TYPE = MappingProxyType[ProviderType, ProviderToken]
 CUSTOM_SECRETS_TYPE = MappingProxyType[str, SecretStr]
 PROVIDER_TOKEN_TYPE_WITH_JSON_SCHEMA = Annotated[
     PROVIDER_TOKEN_TYPE,
-    WithJsonSchema({"type": "object", "additionalProperties": { "type": "string" }})
+    WithJsonSchema({'type': 'object', 'additionalProperties': {'type': 'string'}}),
 ]
 
 
