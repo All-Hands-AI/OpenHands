@@ -138,7 +138,7 @@ def event_to_dict(event: 'Event') -> dict:
         if hasattr(event, 'success'):
             d['success'] = event.success
     else:
-        raise ValueError('Event must be either action or observation')
+        raise ValueError(f'Event must be either action or observation. has: {event}')
     return d
 
 

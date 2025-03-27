@@ -5,7 +5,6 @@ from uuid import uuid4
 
 from termcolor import colored
 
-import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands.core.config import (
     AppConfig,
     parse_arguments,
@@ -108,7 +107,7 @@ async def main(loop: asyncio.AbstractEventLoop):
     sid = str(uuid4())
     display_message(f'Session ID: {sid}')
 
-    agent = create_agent(config)
+    agent = await create_agent(config)
 
     runtime = create_runtime(
         config,
