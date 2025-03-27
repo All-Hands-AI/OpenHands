@@ -96,6 +96,20 @@ class Metrics:
     def token_usages(self, value: list[TokenUsage]) -> None:
         self._token_usages = value
 
+    @property
+    def accumulated_token_usage(self) -> TokenUsage:
+        """Get the accumulated token usage, initializing it if it doesn't exist."""
+        if not hasattr(self, '_accumulated_token_usage'):
+            self._accumulated_token_usage = TokenUsage(
+                model=self.model_name,
+                prompt_tokens=0,
+                completion_tokens=0,
+                cache_read_tokens=0,
+                cache_write_tokens=0,
+                response_id='',
+            )
+        return self._accumulated_token_usage
+
     def add_cost(self, value: float) -> None:
         if value < 0:
             raise ValueError('Added cost cannot be negative.')
@@ -129,7 +143,7 @@ class Metrics:
         self._token_usages.append(usage)
 
         # Update accumulated token usage using the __add__ operator
-        self._accumulated_token_usage = self._accumulated_token_usage + TokenUsage(
+        self._accumulated_token_usage = self.accumulated_token_usage + TokenUsage(
             model=self.model_name,
             prompt_tokens=prompt_tokens,
             completion_tokens=completion_tokens,
@@ -148,14 +162,14 @@ class Metrics:
 
         # Merge accumulated token usage using the __add__ operator
         self._accumulated_token_usage = (
-            self._accumulated_token_usage + other._accumulated_token_usage
+            self.accumulated_token_usage + other.accumulated_token_usage
         )
 
     def get(self) -> dict:
         """Return the metrics in a dictionary."""
         return {
             'accumulated_cost': self._accumulated_cost,
-            'accumulated_token_usage': self._accumulated_token_usage.model_dump(),
+            'accumulated_token_usage': self.accumulated_token_usage.model_dump(),
             'costs': [cost.model_dump() for cost in self._costs],
             'response_latencies': [
                 latency.model_dump() for latency in self._response_latencies
