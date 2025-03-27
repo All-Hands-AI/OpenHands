@@ -15,6 +15,7 @@ from openhands.core.config.condenser_config import (
     RecentEventsCondenserConfig,
 )
 from openhands.core.config.llm_config import LLMConfig
+from openhands.core.message import Message, TextContent
 from openhands.events.event import Event, EventSource
 from openhands.events.observation import BrowserOutputObservation
 from openhands.events.observation.agent import AgentCondensationObservation
@@ -79,6 +80,10 @@ def mock_llm() -> LLM:
 
     # Attach helper methods to the mock object
     mock_llm.set_mock_response_content = set_mock_response_content
+
+    mock_llm.format_messages_for_llm = lambda events: [
+        Message(role='user', content=[TextContent(text=str(event))]) for event in events
+    ]
 
     return mock_llm
 
@@ -376,6 +381,51 @@ def test_llm_summarizing_condenser_llm_call(mock_llm, mock_state):
     assert 'condenser_meta' in mock_state.extra_data
     assert len(mock_state.extra_data['condenser_meta']) == 1
     assert mock_state.extra_data['condenser_meta'][0]['metrics'] == {'test_metric': 1.0}
+
+
+def test_llm_summarizing_condenser_resets_when_given_truncated_history(
+    mock_llm, mock_state
+):
+    """Test that the condenser, when it sees a shorter history than it has in the past (due to truncation), will reset its tracking."""
+    max_size = 4
+    keep_first = 1
+    condenser = LLMSummarizingCondenser(
+        max_size=max_size, keep_first=keep_first, llm=mock_llm
+    )
+
+    # Add initial event
+    first_event = create_test_event('Event 0')
+    mock_state.history.append(first_event)
+
+    # Set up mock LLM response
+    mock_llm.set_mock_response_content('Summary of forgotten events')
+
+    # Add enough events to trigger forgetting
+    for i in range(max_size + 3):  # +3 to ensure we're well past max_size
+        event = create_test_event(f'Event {i+1}')
+        mock_state.history.append(event)
+
+    # Get the condensed history
+    results = condenser.condensed_history(mock_state)
+
+    # We should have exactly 3 events:
+    # 1. First event (keep_first = 1)
+    # 2. Summary event
+    # 3. Most recent event
+    assert len(results) == 3, f'Expected 3 events, got {len(results)}: {results}'
+
+    # Now, call condensation on a small history that contains only two events.
+    alternate_history = [
+        create_test_event('Alt. Event 0'),
+        create_test_event('Alt. Event 1'),
+    ]
+    mock_state.history = alternate_history
+
+    # When we do this, the condenser should start tracking the alternative history
+    # as the de-facto history. That means we lose the summarization event and any
+    # other events that were in the previous history.
+    results = condenser.condensed_history(mock_state)
+    assert results == alternate_history
 
 
 def test_amortized_forgetting_condenser_from_config():
