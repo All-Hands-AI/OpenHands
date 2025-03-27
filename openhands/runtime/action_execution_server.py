@@ -18,6 +18,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from zipfile import ZipFile
 
+import aiofiles
 from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
@@ -375,7 +376,6 @@ class ActionExecutor:
         filepath = self._resolve_path(action.path, working_dir)
         try:
             if filepath.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif')):
-                import aiofiles
                 async with aiofiles.open(filepath, 'rb') as file:
                     image_data = await file.read()
                     encoded_image = base64.b64encode(image_data).decode('utf-8')
@@ -433,9 +433,11 @@ class ActionExecutor:
         else:
             file_stat = None
 
-        mode = 'w' if not file_exists else 'r+'
+        mode = 'w+' if not file_exists else 'r+'
         try:
-            async with aiofiles.open(filepath, mode, encoding='utf-8') as file:
+            async with aiofiles.open(
+                filepath, mode, encoding='utf-8'
+            ) as file:
                 if mode != 'w':
                     all_lines = await file.readlines()
                     new_file = insert_lines(insert, all_lines, action.start, action.end)

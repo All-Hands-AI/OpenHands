@@ -5,9 +5,9 @@ import asyncio
 import multiprocessing as mp
 import os
 import pathlib
-import subprocess
 from typing import Any, Awaitable, TextIO
 
+import aiofiles
 from pydantic import SecretStr
 from tqdm import tqdm
 
@@ -36,7 +36,9 @@ def cleanup() -> None:
 
 # This function tracks the progress AND write the output to a JSONL file
 async def update_progress(
-    output: Awaitable[ResolverOutput], output_fp: TextIO, pbar: tqdm
+    output: Awaitable[ResolverOutput],
+    output_fp: TextIO | aiofiles.threadpool.text.AsyncTextIOWrapper,
+    pbar: tqdm,
 ) -> None:
     resolved_output = await output
     pbar.update(1)
@@ -112,9 +114,12 @@ async def resolve_issues(
     repo_dir = os.path.join(output_dir, 'repo')
     if not os.path.exists(repo_dir):
         process = await asyncio.create_subprocess_exec(
-            'git', 'clone', issue_handler.get_clone_url(), f'{output_dir}/repo',
+            'git',
+            'clone',
+            issue_handler.get_clone_url(),
+            f'{output_dir}/repo',
             stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
+            stderr=asyncio.subprocess.PIPE,
         )
         stdout, stderr = await process.communicate()
         checkout_output = stdout.decode('utf-8') if stdout else stderr.decode('utf-8')
@@ -123,10 +128,12 @@ async def resolve_issues(
 
     # get the commit id of current repo for reproducibility
     process = await asyncio.create_subprocess_exec(
-        'git', 'rev-parse', 'HEAD',
+        'git',
+        'rev-parse',
+        'HEAD',
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
-        cwd=repo_dir
+        cwd=repo_dir,
     )
     stdout, _ = await process.communicate()
     base_commit = stdout.decode('utf-8').strip()
@@ -137,6 +144,7 @@ async def resolve_issues(
         openhands_instructions_path = os.path.join(repo_dir, '.openhands_instructions')
         if os.path.exists(openhands_instructions_path):
             import aiofiles
+
             async with aiofiles.open(openhands_instructions_path, 'r') as f:
                 repo_instruction = await f.read()
 
@@ -186,18 +194,22 @@ async def resolve_issues(
                 )
 
                 process = await asyncio.create_subprocess_exec(
-                    'git', 'checkout', f'{issue.head_branch}',
+                    'git',
+                    'checkout',
+                    f'{issue.head_branch}',
                     stdout=asyncio.subprocess.PIPE,
                     stderr=asyncio.subprocess.PIPE,
-                    cwd=repo_dir
+                    cwd=repo_dir,
                 )
                 await process.communicate()
 
                 process = await asyncio.create_subprocess_exec(
-                    'git', 'rev-parse', 'HEAD',
+                    'git',
+                    'rev-parse',
+                    'HEAD',
                     stdout=asyncio.subprocess.PIPE,
                     stderr=asyncio.subprocess.PIPE,
-                    cwd=repo_dir
+                    cwd=repo_dir,
                 )
                 stdout, _ = await process.communicate()
                 base_commit = stdout.decode('utf-8').strip()
@@ -234,7 +246,7 @@ async def resolve_issues(
         logger.info('KeyboardInterrupt received. Cleaning up...')
         cleanup()
 
-    output_fp.close()
+    await output_fp.close()
     logger.info('Finished.')
 
 

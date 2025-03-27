@@ -212,6 +212,7 @@ async def run_controller(
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         histories = controller.get_trajectory(config.save_screenshots_in_trajectory)
         import aiofiles
+
         async with aiofiles.open(file_path, 'w') as f:
             await f.write(json.dumps(histories, indent=4))
 
