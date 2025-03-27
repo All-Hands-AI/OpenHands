@@ -12,7 +12,7 @@ import { setSelectedRepository } from "#/state/initial-query-slice";
 import { useConfig } from "#/hooks/query/use-config";
 import { sanitizeQuery } from "#/utils/sanitize-query";
 import { GitRepository } from "#/types/github";
-import { Provider } from "#/types/settings";
+import { Provider, ProviderOptions } from "#/types/settings";
 
 interface GitRepositorySelectorProps {
   onInputChange: (value: string) => void;
@@ -108,39 +108,24 @@ export function GitRepositorySelector({
 
         const sanitizedInput = sanitizeQuery(inputValue);
 
-        // Find the repository by textValue to get its provider
         const repo = allRepositories.find((r) => r.full_name === textValue);
         if (!repo) return false;
-        
-        // Check if input starts with "git" - potential provider filter
-        if (sanitizedInput.startsWith("git")) {
-          // If input is exactly "git", show both GitHub and GitLab repos
-          if (sanitizedInput === "git") {
-            return true;
-          }
-          
-          // Check for partial matches with "github"
-          if ("github".startsWith(sanitizedInput)) {
-            return repo.git_provider === "github";
-          }
-          
-          // Check for partial matches with "gitlab"
-          if ("gitlab".startsWith(sanitizedInput)) {
-            return repo.git_provider === "gitlab";
-          }
-          
-          // If input is longer than provider names but starts with them
-          if (sanitizedInput.startsWith("github")) {
-            return repo.git_provider === "github" && 
-                   sanitizeQuery(textValue).includes(sanitizedInput);
-          }
-          
-          if (sanitizedInput.startsWith("gitlab")) {
-            return repo.git_provider === "gitlab" && 
-                   sanitizeQuery(textValue).includes(sanitizedInput);
+
+        const provider = repo.git_provider?.toLowerCase() as Provider;
+        const providerKeys = Object.keys(ProviderOptions) as Provider[];
+
+        // If input is exactly "git", show repos from any git-based provider
+        if (sanitizedInput === "git") {
+          return providerKeys.includes(provider);
+        }
+
+        // Provider based typeahead
+        for (const p of providerKeys) {
+          if (p.startsWith(sanitizedInput)) {
+            return provider === p;
           }
         }
-        
+
         // Default case: check if the repository name matches the input
         return sanitizeQuery(textValue).includes(sanitizedInput);
       }}
