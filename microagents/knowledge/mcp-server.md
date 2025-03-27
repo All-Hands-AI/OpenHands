@@ -11,7 +11,7 @@
 
 # General guide to interact with the MCP servers provided by users
 
-This document provides instructions for creating clients to interact with MCP servers.
+This document provides instructions to interact with MCP servers via custom utility functions.
 
 ## What is MCP?
 
@@ -43,8 +43,6 @@ MCP follows a client-server architecture where:
 Below is the full list of requests supported by the MCP servers, note that not all servers support
 all requests:
 
-- Ping: Checks if the server is alive.
-- Initialize: Initializes the server and negotiates capabilities.
 - ListTools: Lists available tools.
 - CallTool: Calls a specific tool.
 - ListResources: Lists available resources.
@@ -57,7 +55,7 @@ all requests:
 ## Prerequisites
 
 First, you will always need to ask the user to provide the mcp server configurations, which contains the commands
-and arguments to start the server locally if the user has not supplied it yet, as the client code will need
+and arguments to start the server locally if the user has not supplied it yet, as the utility functions will need
 them to start and connect to the server.
 
 Example:
@@ -85,8 +83,7 @@ The `call_tool` and `list_tools` functions provide a simple interface to interac
 
 Also, those functions will automatically spawn the server, so please don't try to start the server manually.
 
-Below is the sample code to create a session to use tools via the MCP server in Python. Remember you
-don't need the import statement as the functions are already available.
+Below is the sample code to create a session to use tools via the MCP server in Python.
 
 ```python
 # We don't need to import the functions as they are already available
@@ -104,8 +101,5 @@ print(tools)
 result = await call_tool(config, "tool_name", {"param1": "value1"})
 print(result)
 ```
-
-You can adapt this code with the arguments provided by the user to create a session to interact with
-the MCP server.
 
 If anything is unclear or you need more details, you can refer to the official documentation.
