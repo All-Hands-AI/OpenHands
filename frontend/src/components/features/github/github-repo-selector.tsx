@@ -134,7 +134,7 @@ export function GitRepositorySelector({
                 data-testid="github-repo-item"
                 key={repo.id}
                 className="data-[selected=true]:bg-default-100"
-                textValue={repo.full_name}
+                textValue={`${repo.full_name} ${repo.git_provider}`}
               >
                 {repo.full_name}
               </AutocompleteItem>
@@ -154,7 +154,7 @@ export function GitRepositorySelector({
                 data-testid="github-repo-item"
                 key={repo.id}
                 className="data-[selected=true]:bg-default-100"
-                textValue={repo.full_name}
+                textValue={`${repo.full_name} ${repo.git_provider}`}
               >
                 {repo.full_name}
                 <span className="ml-1 text-gray-400">
