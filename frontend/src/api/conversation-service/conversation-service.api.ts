@@ -1,4 +1,3 @@
-import { AxiosInstance } from "axios";
 import { openHands } from "../open-hands-axios";
 import {
   Conversation,
@@ -7,10 +6,8 @@ import {
 } from "./conversation-service.types";
 import { getConversationUrl } from "./conversation-service.utils";
 
-class ConversationService {
-  constructor(private axiosInstance: AxiosInstance = openHands) {}
-
-  async createConversation(
+export class ConversationService {
+  static async createConversation(
     selectedRepository?: string,
     initialUserMsg?: string,
     imageUrls?: string[],
@@ -24,7 +21,7 @@ class ConversationService {
       replay_json: replayJson,
     };
 
-    const { data } = await this.axiosInstance.post<Conversation>(
+    const { data } = await openHands.post<Conversation>(
       getConversationUrl(),
       body,
     );
@@ -32,16 +29,16 @@ class ConversationService {
     return data;
   }
 
-  async getConversation(conversationId: string) {
-    const { data } = await this.axiosInstance.get<Conversation>(
+  static async getConversation(conversationId: string) {
+    const { data } = await openHands.get<Conversation | null>(
       getConversationUrl(conversationId),
     );
 
     return data;
   }
 
-  async getConversations(): Promise<Conversation[]> {
-    const { data } = await this.axiosInstance.get<GetConversationsResponse>(
+  static async getConversations(): Promise<Conversation[]> {
+    const { data } = await openHands.get<GetConversationsResponse>(
       getConversationUrl(),
       { params: { limit: 9 } },
     );
@@ -49,19 +46,14 @@ class ConversationService {
     return data.results;
   }
 
-  async updateConversation(
+  static async updateConversation(
     conversationId: string,
     conversation: UpdateConversationBody,
   ): Promise<void> {
-    await this.axiosInstance.patch(
-      getConversationUrl(conversationId),
-      conversation,
-    );
+    await openHands.patch(getConversationUrl(conversationId), conversation);
   }
 
-  async deleteConversation(conversationId: string): Promise<void> {
-    await this.axiosInstance.delete(`/api/conversations/${conversationId}`);
+  static async deleteConversation(conversationId: string): Promise<void> {
+    await openHands.delete(`/api/conversations/${conversationId}`);
   }
 }
-
-export const conversationService = new ConversationService();

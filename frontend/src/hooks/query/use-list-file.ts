@@ -1,13 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import OpenHands from "#/api/open-hands";
-import { useConversation } from "#/context/conversation-context";
+import { useConversationContext } from "#/context/conversation-context";
 
 interface UseListFileConfig {
   path: string;
 }
 
 export const useListFile = (config: UseListFileConfig) => {
-  const { conversationId } = useConversation();
+  const { conversationId } = useConversationContext();
   return useQuery({
     queryKey: ["file", conversationId, config.path],
     queryFn: () => OpenHands.getFile(conversationId, config.path),

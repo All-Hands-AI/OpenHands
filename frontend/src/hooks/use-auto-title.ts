@@ -4,7 +4,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { useQueryClient } from "@tanstack/react-query";
 import { useUpdateConversation } from "./mutation/use-update-conversation";
 import { RootState } from "#/store";
-import { useConversatiom } from "#/hooks/query/use-user-conversation";
+import { useConversation } from "#/hooks/query/use-conversation";
 
 const defaultTitlePattern = /^Conversation [a-f0-9]+$/;
 
@@ -15,7 +15,7 @@ const defaultTitlePattern = /^Conversation [a-f0-9]+$/;
  */
 export function useAutoTitle() {
   const { conversationId } = useParams<{ conversationId: string }>();
-  const { data: conversation, refetch: refetchConversation } = useConversatiom(
+  const { data: conversation, refetch: refetchConversation } = useConversation(
     conversationId ?? null,
   );
   const queryClient = useQueryClient();

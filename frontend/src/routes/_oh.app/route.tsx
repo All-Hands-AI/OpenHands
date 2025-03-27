@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import {
   ConversationProvider,
-  useConversation,
+  useConversationContext,
 } from "#/context/conversation-context";
 import { Controls } from "#/components/features/controls/controls";
 import { clearMessages, addUserMessage } from "#/state/chat-slice";
@@ -29,7 +29,7 @@ import {
 } from "#/components/layout/resizable-panel";
 import Security from "#/components/shared/modals/security/security";
 import { useEndSession } from "#/hooks/use-end-session";
-import { useConversatiom } from "#/hooks/query/use-user-conversation";
+import { useConversation } from "#/hooks/query/use-conversation";
 import { ServedAppLabel } from "#/components/layout/served-app-label";
 import { TerminalStatusLabel } from "#/components/features/terminal/terminal-status-label";
 import { useSettings } from "#/hooks/query/use-settings";
@@ -41,8 +41,8 @@ function AppContent() {
   useConversationConfig();
   const { t } = useTranslation();
   const { data: settings } = useSettings();
-  const { conversationId } = useConversation();
-  const { data: conversation, isFetched } = useConversatiom(
+  const { conversationId } = useConversationContext();
+  const { data: conversation, isFetched } = useConversation(
     conversationId || null,
   );
   const { initialPrompt, files } = useSelector(

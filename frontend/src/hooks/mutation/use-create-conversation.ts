@@ -4,7 +4,7 @@ import posthog from "posthog-js";
 import { useDispatch, useSelector } from "react-redux";
 import { setInitialPrompt } from "#/state/initial-query-slice";
 import { RootState } from "#/store";
-import { conversationService } from "#/api/conversation-service/conversation-service.api";
+import { ConversationService } from "#/api/conversation-service/conversation-service.api";
 
 const conversationMutationFn = async (
   selectedRepository: string | undefined,
@@ -16,7 +16,7 @@ const conversationMutationFn = async (
     selectedRepository || initialUserMsg || imageUrls.length > 0 || replayJson;
   if (!hasInitialData) throw new Error("No query provided");
 
-  return conversationService.createConversation(
+  return ConversationService.createConversation(
     selectedRepository,
     initialUserMsg,
     imageUrls,

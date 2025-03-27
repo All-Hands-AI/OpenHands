@@ -1,12 +1,12 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { conversationService } from "#/api/conversation-service/conversation-service.api";
+import { ConversationService } from "#/api/conversation-service/conversation-service.api";
 
 export const useDeleteConversation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (variables: { conversationId: string }) =>
-      conversationService.deleteConversation(variables.conversationId),
+      ConversationService.deleteConversation(variables.conversationId),
     onMutate: async (variables) => {
       await queryClient.cancelQueries({ queryKey: ["user", "conversations"] });
       const previousConversations = queryClient.getQueryData([

@@ -1,6 +1,6 @@
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { Conversation } from "#/api/open-hands.types";
-import { conversationService } from "#/api/conversation-service/conversation-service.api";
+import { ConversationService } from "#/api/conversation-service/conversation-service.api";
 
 export const useUpdateConversation = () => {
   const queryClient = useQueryClient();
@@ -10,7 +10,7 @@ export const useUpdateConversation = () => {
       id: string;
       conversation: Partial<Omit<Conversation, "id">>;
     }) =>
-      conversationService.updateConversation(
+      ConversationService.updateConversation(
         variables.id,
         variables.conversation,
       ),

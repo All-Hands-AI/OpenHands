@@ -4,12 +4,12 @@ import {
   useWsClient,
   WsClientProviderStatus,
 } from "#/context/ws-client-provider";
-import { useConversation } from "#/context/conversation-context";
+import { useConversationContext } from "#/context/conversation-context";
 import OpenHands from "#/api/open-hands";
 
 export const useConversationConfig = () => {
   const { status } = useWsClient();
-  const { conversationId } = useConversation();
+  const { conversationId } = useConversationContext();
 
   const query = useQuery({
     queryKey: ["conversation_config", conversationId],

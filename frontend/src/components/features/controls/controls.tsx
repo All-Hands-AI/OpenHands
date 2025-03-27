@@ -3,7 +3,7 @@ import React from "react";
 import { AgentControlBar } from "./agent-control-bar";
 import { AgentStatusBar } from "./agent-status-bar";
 import { SecurityLock } from "./security-lock";
-import { useConversatiom } from "#/hooks/query/use-user-conversation";
+import { useConversation } from "#/hooks/query/use-conversation";
 import { ConversationCard } from "../conversation-panel/conversation-card";
 import { useAutoTitle } from "#/hooks/use-auto-title";
 
@@ -14,7 +14,7 @@ interface ControlsProps {
 
 export function Controls({ setSecurityOpen, showSecurityLock }: ControlsProps) {
   const params = useParams();
-  const { data: conversation } = useConversatiom(params.conversationId ?? null);
+  const { data: conversation } = useConversation(params.conversationId ?? null);
   useAutoTitle();
 
   return (

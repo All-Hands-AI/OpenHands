@@ -1,9 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import OpenHands from "#/api/open-hands";
-import { useConversation } from "#/context/conversation-context";
+import { useConversationContext } from "#/context/conversation-context";
 
 export const useVSCodeUrl = (config: { enabled: boolean }) => {
-  const { conversationId } = useConversation();
+  const { conversationId } = useConversationContext();
 
   const data = useQuery({
     queryKey: ["vscode_url", conversationId],
