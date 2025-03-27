@@ -5,6 +5,7 @@ from typing import Any
 import httpx
 from pydantic import SecretStr
 
+from openhands.config.github_config import get_github_api_url, get_github_graphql_url
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.service_types import (
     AuthenticationError,
@@ -19,7 +20,7 @@ from openhands.utils.import_utils import get_impl
 
 
 class GitHubService(GitService):
-    BASE_URL = 'https://api.github.com'
+    DEFAULT_BASE_URL = 'https://api.github.com'
     token: SecretStr = SecretStr('')
     refresh = False
 
@@ -30,9 +31,14 @@ class GitHubService(GitService):
         external_auth_token: SecretStr | None = None,
         token: SecretStr | None = None,
         external_token_manager: bool = False,
+        base_url: str | None = None,
     ):
         self.user_id = user_id
         self.external_token_manager = external_token_manager
+        
+        # Use config or environment variables for GitHub API URL
+        self.BASE_URL = base_url or get_github_api_url() or self.DEFAULT_BASE_URL
+        self.GRAPHQL_URL = get_github_graphql_url() or f"{self.BASE_URL}/graphql"
 
         if token:
             self.token = token
@@ -157,7 +163,7 @@ class GitHubService(GitService):
             async with httpx.AsyncClient() as client:
                 github_headers = await self._get_github_headers()
                 response = await client.post(
-                    f'{self.BASE_URL}/graphql',
+                    self.GRAPHQL_URL,
                     headers=github_headers,
                     json={'query': query, 'variables': variables},
                 )
