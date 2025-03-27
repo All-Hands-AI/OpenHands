@@ -59,7 +59,10 @@ class ProviderToken(BaseModel):
 
 PROVIDER_TOKEN_TYPE = MappingProxyType[ProviderType, ProviderToken]
 CUSTOM_SECRETS_TYPE = MappingProxyType[str, SecretStr]
-PROVIDER_TOKEN_TYPE_WITH_JSON_SCHEMA = Annotated[PROVIDER_TOKEN_TYPE, WithJsonSchema({"type": "object", "additionalProperties": { "type": "string" }})]
+PROVIDER_TOKEN_TYPE_WITH_JSON_SCHEMA = Annotated[
+    PROVIDER_TOKEN_TYPE,
+    WithJsonSchema({"type": "object", "additionalProperties": { "type": "string" }})
+]
 
 
 class SecretStore(BaseModel):
