@@ -239,6 +239,10 @@ class ProviderHandler:
                     git_token = self.provider_tokens[provider].token
                     if git_token and provider in provider_domains:
                         domain = provider_domains[provider]
+
+                        if provider == ProviderType.GITLAB:
+                            return f'https://oauth2:{git_token.get_secret_value()}@{domain}/{repository}.git'
+
                         return f'https://{git_token.get_secret_value()}@{domain}/{repository}.git'
             except Exception:
                 continue
