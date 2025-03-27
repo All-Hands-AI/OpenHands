@@ -240,7 +240,7 @@ class SensitiveDataFilter(logging.Filter):
             if (
                 len(value) > 2
                 and value != 'default'
-                and any(s in key_upper for s in ('SECRET', 'KEY', 'CODE', 'TOKEN'))
+                and any(s in key_upper for s in ('SECRET', '_KEY', '_CODE', '_TOKEN'))
             ):
                 sensitive_values.append(value)
 

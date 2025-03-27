@@ -429,7 +429,7 @@ async def resolve_issue(
     # checkout the repo
     repo_dir = os.path.join(output_dir, 'repo')
     if not os.path.exists(repo_dir):
-        checkout_output = subprocess.check_output(
+        checkout_output = subprocess.check_output(  # noqa: ASYNC101
             [
                 'git',
                 'clone',
@@ -442,7 +442,7 @@ async def resolve_issue(
 
     # get the commit id of current repo for reproducibility
     base_commit = (
-        subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo_dir)
+        subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo_dir)  # noqa: ASYNC101
         .decode('utf-8')
         .strip()
     )
@@ -452,7 +452,7 @@ async def resolve_issue(
         # Check for .openhands_instructions file in the workspace directory
         openhands_instructions_path = os.path.join(repo_dir, '.openhands_instructions')
         if os.path.exists(openhands_instructions_path):
-            with open(openhands_instructions_path, 'r') as f:
+            with open(openhands_instructions_path, 'r') as f:  # noqa: ASYNC101
                 repo_instruction = f.read()
 
     # OUTPUT FILE
@@ -461,7 +461,7 @@ async def resolve_issue(
 
     # Check if this issue was already processed
     if os.path.exists(output_file):
-        with open(output_file, 'r') as f:
+        with open(output_file, 'r') as f:  # noqa: ASYNC101
             for line in f:
                 data = ResolverOutput.model_validate_json(line)
                 if data.issue.number == issue_number:
@@ -470,7 +470,7 @@ async def resolve_issue(
                     )
                     return
 
-    output_fp = open(output_file, 'a')
+    output_fp = open(output_file, 'a')  # noqa: ASYNC101
 
     logger.info(
         f'Resolving issue {issue_number} with Agent {AGENT_CLASS}, model {model_name}, max iterations {max_iterations}.'
@@ -489,20 +489,20 @@ async def resolve_issue(
 
             # Fetch the branch first to ensure it exists locally
             fetch_cmd = ['git', 'fetch', 'origin', branch_to_use]
-            subprocess.check_output(
+            subprocess.check_output(  # noqa: ASYNC101
                 fetch_cmd,
                 cwd=repo_dir,
             )
 
             # Checkout the branch
             checkout_cmd = ['git', 'checkout', branch_to_use]
-            subprocess.check_output(
+            subprocess.check_output(  # noqa: ASYNC101
                 checkout_cmd,
                 cwd=repo_dir,
             )
 
             base_commit = (
-                subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo_dir)
+                subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo_dir)  # noqa: ASYNC101
                 .decode('utf-8')
                 .strip()
             )
@@ -539,7 +539,7 @@ def main() -> None:
 
     parser = argparse.ArgumentParser(description='Resolve a single issue.')
     parser.add_argument(
-        '--repo',
+        '--selected-repo',
         type=str,
         required=True,
         help='repository to resolve issues in form of `owner/repo`.',
@@ -638,9 +638,9 @@ def main() -> None:
             f'ghcr.io/all-hands-ai/runtime:{openhands.__version__}-nikolaik'
         )
 
-    parts = my_args.repo.rsplit('/', 1)
+    parts = my_args.selected_repo.rsplit('/', 1)
     if len(parts) < 2:
-        raise ValueError('Invalid repo name')
+        raise ValueError('Invalid repository format. Expected owner/repo')
     owner, repo = parts
 
     token = my_args.token or os.getenv('GITHUB_TOKEN') or os.getenv('GITLAB_TOKEN')
@@ -651,7 +651,7 @@ def main() -> None:
     if not token:
         raise ValueError('Token is required.')
 
-    platform = identify_token(token, repo)
+    platform = identify_token(token, my_args.selected_repo)
     if platform == Platform.INVALID:
         raise ValueError('Token is invalid.')
 

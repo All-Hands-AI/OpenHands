@@ -9,13 +9,13 @@ from openhands.events.action import (
     FileReadAction,
     FileWriteAction,
     MessageAction,
+    RecallAction,
 )
 from openhands.events.action.action import ActionConfirmationStatus
 from openhands.events.action.files import FileEditSource, FileReadSource
 from openhands.events.serialization import (
     event_from_dict,
     event_to_dict,
-    event_to_memory,
 )
 
 
@@ -38,22 +38,6 @@ def serialization_deserialization(
     assert (
         serialized_action_dict == original_action_dict
     ), 'The serialized action should match the original action dict.'
-
-    # memory dict is what is sent to the LLM
-    serialized_action_memory = event_to_memory(action_instance, max_message_chars)
-    original_memory_dict = original_action_dict.copy()
-
-    # we don't send backend properties like id
-    original_memory_dict.pop('id', None)
-    original_memory_dict.pop('timestamp', None)
-    if 'args' in original_memory_dict:
-        original_memory_dict['args'].pop('blocking', None)
-        original_memory_dict['args'].pop('confirmation_state', None)
-
-    # the rest should match
-    assert (
-        serialized_action_memory == original_memory_dict
-    ), 'The serialized action in memory should match the original action dict.'
 
 
 def test_event_props_serialization_deserialization():
@@ -354,6 +338,18 @@ def test_file_ohaci_edit_action_legacy_serialization():
     assert event_dict['args']['content'] == ''
     assert event_dict['args']['start'] == 1
     assert event_dict['args']['end'] == -1
+
+
+def test_agent_microagent_action_serialization_deserialization():
+    original_action_dict = {
+        'action': 'recall',
+        'args': {
+            'query': 'What is the capital of France?',
+            'thought': 'I need to find information about France',
+            'recall_type': 'knowledge',
+        },
+    }
+    serialization_deserialization(original_action_dict, RecallAction)
 
 
 def test_file_read_action_legacy_serialization():

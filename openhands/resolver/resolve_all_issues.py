@@ -27,9 +27,9 @@ from openhands.resolver.utils import (
 
 
 def cleanup() -> None:
-    print('Cleaning up child processes...')
+    logger.info('Cleaning up child processes...')
     for process in mp.active_children():
-        print(f'Terminating child process: {process.name}')
+        logger.info(f'Terminating child process: {process.name}')
         process.terminate()
         process.join()
 
@@ -111,7 +111,7 @@ async def resolve_issues(
     # checkout the repo
     repo_dir = os.path.join(output_dir, 'repo')
     if not os.path.exists(repo_dir):
-        checkout_output = subprocess.check_output(
+        checkout_output = subprocess.check_output(  # noqa: ASYNC101
             [
                 'git',
                 'clone',
@@ -124,7 +124,7 @@ async def resolve_issues(
 
     # get the commit id of current repo for reproducibility
     base_commit = (
-        subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo_dir)
+        subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo_dir)  # noqa: ASYNC101
         .decode('utf-8')
         .strip()
     )
@@ -134,7 +134,7 @@ async def resolve_issues(
         # Check for .openhands_instructions file in the workspace directory
         openhands_instructions_path = os.path.join(repo_dir, '.openhands_instructions')
         if os.path.exists(openhands_instructions_path):
-            with open(openhands_instructions_path, 'r') as f:
+            with open(openhands_instructions_path, 'r') as f:  # noqa: ASYNC101
                 repo_instruction = f.read()
 
     # OUTPUT FILE
@@ -142,14 +142,14 @@ async def resolve_issues(
     logger.info(f'Writing output to {output_file}')
     finished_numbers = set()
     if os.path.exists(output_file):
-        with open(output_file, 'r') as f:
+        with open(output_file, 'r') as f:  # noqa: ASYNC101
             for line in f:
                 data = ResolverOutput.model_validate_json(line)
                 finished_numbers.add(data.issue.number)
         logger.warning(
             f'Output file {output_file} already exists. Loaded {len(finished_numbers)} finished issues.'
         )
-    output_fp = open(output_file, 'a')
+    output_fp = open(output_file, 'a')  # noqa: ASYNC101
 
     logger.info(
         f'Resolving issues with model {model_name}, max iterations {max_iterations}.'
@@ -182,13 +182,13 @@ async def resolve_issues(
                     f'Checking out to PR branch {issue.head_branch} for issue {issue.number}'
                 )
 
-                subprocess.check_output(
+                subprocess.check_output(  # noqa: ASYNC101
                     ['git', 'checkout', f'{issue.head_branch}'],
                     cwd=repo_dir,
                 )
 
                 base_commit = (
-                    subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo_dir)
+                    subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo_dir)  # noqa: ASYNC101
                     .decode('utf-8')
                     .strip()
                 )
@@ -222,7 +222,7 @@ async def resolve_issues(
         await asyncio.gather(*[run_with_semaphore(task) for task in tasks])
 
     except KeyboardInterrupt:
-        print('KeyboardInterrupt received. Cleaning up...')
+        logger.info('KeyboardInterrupt received. Cleaning up...')
         cleanup()
 
     output_fp.close()
@@ -234,7 +234,7 @@ def main() -> None:
         description='Resolve multiple issues from Github or Gitlab.'
     )
     parser.add_argument(
-        '--repo',
+        '--selected-repo',
         type=str,
         required=True,
         help='Github or Gitlab repository to resolve issues in form of `owner/repo`.',
@@ -333,7 +333,7 @@ def main() -> None:
             f'ghcr.io/all-hands-ai/runtime:{openhands.__version__}-nikolaik'
         )
 
-    owner, repo = my_args.repo.split('/')
+    owner, repo = my_args.selected_repo.split('/')
     token = my_args.token or os.getenv('GITHUB_TOKEN') or os.getenv('GITLAB_TOKEN')
     username = my_args.username if my_args.username else os.getenv('GIT_USERNAME')
     if not username:
@@ -342,7 +342,7 @@ def main() -> None:
     if not token:
         raise ValueError('Token is required.')
 
-    platform = identify_token(token)
+    platform = identify_token(token, my_args.selected_repo)
     if platform == Platform.INVALID:
         raise ValueError('Token is invalid.')
 
