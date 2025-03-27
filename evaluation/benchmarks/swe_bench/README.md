@@ -4,7 +4,7 @@ This folder contains the evaluation harness that we built on top of the original
 
 **UPDATE (2/18/2025): We now support running SWE-Gym using the same evaluation harness here. For more details, checkout [this README](./SWE-Gym.md).
 
-**UPDATE (10/16/2024): We now support SWE-Bench multimodal evaluation! Simply use "princeton-nlp/SWE-bench_Multimodal" as the dataset name in the `run_infer.sh` script to evaluate on multimodal instances.**
+**UPDATE (03/27/2025): We now support SWE-Bench multimodal evaluation! Simply use "princeton-nlp/SWE-bench_Multimodal" as the dataset name in the `run_infer.sh` script to evaluate on multimodal instances.**
 
 **UPDATE (7/1/2024): We now support the official SWE-Bench dockerized evaluation as announced [here](https://github.com/princeton-nlp/SWE-bench/blob/main/docs/20240627_docker/README.md).**
 
