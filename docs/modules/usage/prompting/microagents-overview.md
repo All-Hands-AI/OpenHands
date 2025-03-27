@@ -18,27 +18,31 @@ A microagent is classified as repository-specific or public depending on its loc
 
 When OpenHands works with a repository, it:
 
-1. Loads repository-specific instructions from `.openhands/microagents/` if present in the repository.
-2. Loads public knowledge microagents triggered by keywords in conversations
-3. Loads public task microagents when explicitly requested by the user
+1. Loads **repository-specific** microagents from `.openhands/microagents/` if present in the repository.
+2. Loads **public knowledge** microagents triggered by keywords in conversations
+3. Loads **public tasks** microagents when explicitly requested by the user
 
-See current [Public Microagents](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/) at the official repository.
+You can check out the existing public microagents at the [official OpenHands repository](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/).
+
+## Microagents Discovery and Loading
+
+OpenHands uses the following process to discover and load microagents:
+
+1. For **repository-specific** microagents:
+
+   - Searches for `.openhands/microagents/repo.md` as the main repository instruction file
+   - Recursively scans the `.openhands/microagents/knowledge/` directory for knowledge microagents
+   - Recursively scans the `.openhands/microagents/tasks/` directory for task microagents
+   - All `.md` files within these directories are processed, regardless of their depth
+
+2. For **public** microagents:
+   - Loads from the official OpenHands repository's `/microagents/knowledge/` and `/microagents/tasks/` directories
+   - Only processes files that match their expected location patterns
+
+Note that `README.md` files are automatically skipped during the loading process.
 
 ## Microagent Format
 
-All microagents use markdown files with YAML frontmatter that have special instructions to help OpenHands accomplish
-tasks:
+All microagents use markdown files with YAML frontmatter that have special instructions to help OpenHands activate them.
 
-```
----
-name: <Name of the microagent>
-type: <MicroAgent type>
-version: <MicroAgent version>
-agent: <The agent type (Typically CodeActAgent)>
-triggers:
-- <Optional keywords triggering the microagent. If triggers are removed, it will always be included>
----
-
-<Markdown with any special guidelines, instructions, and prompts that OpenHands should follow.
-Check out the specific documentation for each microagent on best practices for more information.>
-```
+Check out the [syntax documentation](./microagents-syntax) for a comprehensive guide on how to configure your microagents.
