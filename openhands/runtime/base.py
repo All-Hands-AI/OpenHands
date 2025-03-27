@@ -312,7 +312,11 @@ class Runtime(FileEditRuntimeMixin):
             return
 
         observation._cause = event.id  # type: ignore[attr-defined]
-        observation.tool_call_metadata = event.tool_call_metadata
+        observation.tool_call_metadata = (
+            event.tool_call_metadata.model_response.id
+            if event.tool_call_metadata
+            else None
+        )
 
         # this might be unnecessary, since source should be set by the event stream when we're here
         source = event.source if event.source else EventSource.AGENT
