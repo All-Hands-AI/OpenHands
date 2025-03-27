@@ -207,19 +207,6 @@ async def upload_file(request: Request, conversation_id: str, files: list[Upload
                 # For non-image files, create /uploads directory if it doesn't exist
                 if not is_image:
                     uploads_dir = '/uploads'
-                    try:
-                        # Create directory action
-                        mkdir_action = FileWriteAction(uploads_dir, '')
-                        mkdir_observation = await call_sync_from_async(
-                            runtime.run_action, mkdir_action
-                        )
-                        if isinstance(mkdir_observation, ErrorObservation):
-                            # Directory might already exist, which is fine
-                            logger.debug(
-                                f'Note when creating uploads directory: {mkdir_observation}'
-                            )
-                    except Exception as e:
-                        logger.debug(f'Note when creating uploads directory: {e}')
 
                 # Determine destination path
                 if is_image:
