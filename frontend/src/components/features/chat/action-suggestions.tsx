@@ -11,6 +11,14 @@ interface ActionSuggestionsProps {
   onSuggestionsClick: (value: string) => void;
 }
 
+// Define button configurations to reduce duplication
+interface ButtonConfig {
+  label: string;
+  value: string;
+  eventName: string;
+  callback?: () => void;
+}
+
 export function ActionSuggestions({
   onSuggestionsClick,
 }: ActionSuggestionsProps) {
@@ -30,16 +38,37 @@ export function ActionSuggestions({
   const pr = isGitLab ? "merge request" : "pull request";
   const prShort = isGitLab ? "MR" : "PR";
 
-  const terms = {
-    pr,
-    prShort,
-    pushToBranch: `Please push the changes to a remote branch on ${
+  // Define the button configurations
+  const PUSH_TO_BRANCH: ButtonConfig = {
+    label: t(I18nKey.ACTION$PUSH_TO_BRANCH),
+    value: `Please push the changes to a remote branch on ${
       isGitLab ? "GitLab" : "GitHub"
     }, but do NOT create a ${pr}. Please use the exact SAME branch name as the one you are currently on.`,
-    createPR: `Please push the changes to ${
+    eventName: "push_to_branch_button_clicked",
+  };
+
+  const PUSH_AND_CREATE_PR: ButtonConfig = {
+    label: t(I18nKey.ACTION$PUSH_CREATE_PR),
+    value: `Please push the changes to ${
       isGitLab ? "GitLab" : "GitHub"
     } and open a ${pr}. Please create a meaningful branch name that describes the changes. If a ${pr} template exists in the repository, please follow it when creating the ${prShort} description.`,
-    pushToPR: `Please push the latest changes to the existing ${pr}.`,
+    eventName: "create_pr_button_clicked",
+    callback: () => setHasPullRequest(true),
+  };
+
+  const PUSH_TO_PR: ButtonConfig = {
+    label: t(I18nKey.ACTION$PUSH_CHANGES_TO_PR),
+    value: `Please push the latest changes to the existing ${pr}.`,
+    eventName: "push_to_pr_button_clicked",
+  };
+
+  // Helper function to handle button clicks
+  const handleButtonClick = (config: ButtonConfig) => {
+    posthog.capture(config.eventName);
+    onSuggestionsClick(config.value);
+    if (config.callback) {
+      config.callback();
+    }
   };
 
   return (
@@ -50,45 +79,26 @@ export function ActionSuggestions({
             <>
               <SuggestionItem
                 suggestion={{
-                  label: t(I18nKey.ACTION$PUSH_TO_BRANCH),
-                  value: terms.pushToBranch,
+                  label: PUSH_TO_BRANCH.label,
+                  value: PUSH_TO_BRANCH.value,
                 }}
-                onClick={() => {
-                  posthog.capture("push_to_branch_button_clicked");
-                  // Ensure we're sending the correct value for this button
-                  onSuggestionsClick(
-                    "Please push the changes to a remote branch on GitHub, but do NOT create a pull request. Please use the exact SAME branch name as the one you are currently on.",
-                  );
-                }}
+                onClick={() => handleButtonClick(PUSH_TO_BRANCH)}
               />
               <SuggestionItem
                 suggestion={{
-                  label: t(I18nKey.ACTION$PUSH_CREATE_PR),
-                  value: terms.createPR,
+                  label: PUSH_AND_CREATE_PR.label,
+                  value: PUSH_AND_CREATE_PR.value,
                 }}
-                onClick={() => {
-                  posthog.capture("create_pr_button_clicked");
-                  // Ensure we're sending the correct value for this button
-                  onSuggestionsClick(
-                    "Please push the changes to GitHub and open a pull request. Please create a meaningful branch name that describes the changes.",
-                  );
-                  setHasPullRequest(true);
-                }}
+                onClick={() => handleButtonClick(PUSH_AND_CREATE_PR)}
               />
             </>
           ) : (
             <SuggestionItem
               suggestion={{
-                label: t(I18nKey.ACTION$PUSH_CHANGES_TO_PR),
-                value: terms.pushToPR,
+                label: PUSH_TO_PR.label,
+                value: PUSH_TO_PR.value,
               }}
-              onClick={() => {
-                posthog.capture("push_to_pr_button_clicked");
-                // Ensure we're sending the correct value for this button
-                onSuggestionsClick(
-                  "Please push the latest changes to the existing pull request.",
-                );
-              }}
+              onClick={() => handleButtonClick(PUSH_TO_PR)}
             />
           )}
         </div>
