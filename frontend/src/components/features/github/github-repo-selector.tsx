@@ -87,9 +87,7 @@ export function GitRepositorySelector({
   const emptyContent = isLoading ? (
     <div className="flex items-center justify-center py-2">
       <Spinner size="sm" className="mr-2" />
-      <span>
-        {t(I18nKey.GITHUB$LOADING_REPOSITORIES) || "Loading repositories..."}
-      </span>
+      <span>{t(I18nKey.GITHUB$LOADING_REPOSITORIES)}</span>
     </div>
   ) : (
     t(I18nKey.GITHUB$NO_RESULTS)
