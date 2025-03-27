@@ -10,6 +10,7 @@ from pydantic import (
 )
 from pydantic.json import pydantic_encoder
 
+from openhands.core.config.config_utils import OH_MAX_ITERATIONS
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.utils import load_app_config
 from openhands.integrations.provider import SecretStore
@@ -20,21 +21,21 @@ class Settings(BaseModel):
     Persisted settings for OpenHands sessions
     """
 
-    language: str | None = None
-    agent: str | None = None
-    max_iterations: int | None = None
-    security_analyzer: str | None = None
-    confirmation_mode: bool | None = None
-    llm_model: str | None = None
-    llm_api_key: SecretStr | None = None
-    llm_base_url: str | None = None
-    remote_runtime_resource_factor: int | None = None
+    language: str = 'en'
+    agent: str = 'CodeActAgent'
+    max_iterations: int = OH_MAX_ITERATIONS
+    security_analyzer: str = ''
+    confirmation_mode: bool = False
+    llm_model: str = 'anthropic/claude-3-5-sonnet-20241022'
+    llm_api_key: SecretStr = SecretStr('')
+    llm_base_url: str = ''
+    remote_runtime_resource_factor: int = 1
     secrets_store: SecretStore = Field(default_factory=SecretStore, frozen=True)
-    enable_default_condenser: bool = False
+    enable_default_condenser: bool = True
     enable_sound_notifications: bool = False
-    user_consents_to_analytics: bool | None = None
-    sandbox_base_container_image: str | None = None
-    sandbox_runtime_container_image: str | None = None
+    user_consents_to_analytics: bool = False
+    sandbox_base_container_image: str = ''
+    sandbox_runtime_container_image: str = ''
 
     model_config = {
         'validate_assignment': True,

@@ -79,19 +79,7 @@ async def reset_settings(
         )
 
         existing_settings = await settings_store.load()
-        settings = Settings(language="en",
-                             agent="CodeActAgent",
-                             security_analyzer="",
-                             confirmation_mode=False,
-                             llm_model="anthropic/claude-3-5-sonnet-20241022",
-                             llm_api_key="",
-                             llm_base_url="",
-                             remote_runtime_resource_factor=1,
-                             enable_default_condenser=True,
-                             enable_sound_notifications=False,
-                             user_consents_to_analytics=existing_settings.user_consents_to_analytics if existing_settings else False
-                    )
-        
+        settings = Settings(user_consents_to_analytics=existing_settings.user_consents_to_analytics if existing_settings else False)    
         server_config_values = server_config.get_config()
         is_hide_llm_settings_enabled = server_config_values.get("FEATURE_FLAGS", {}).get("HIDE_LLM_SETTINGS", False)
         # We don't want the user to be able to modify these settings in SaaS
@@ -150,15 +138,15 @@ async def store_settings(
         # Convert to Settings model and merge with existing settings
         if existing_settings:
             # Keep existing LLM settings if not provided
-            if settings.llm_api_key is None:
+            if not settings.llm_api_key:
                 settings.llm_api_key = existing_settings.llm_api_key
-            if settings.llm_model is None:
+            if not settings.llm_model:
                 settings.llm_model = existing_settings.llm_model
-            if settings.llm_base_url is None:
+            if not settings.llm_base_url:
                 settings.llm_base_url = existing_settings.llm_base_url
 
             # Keep existing analytics consent if not provided
-            if settings.user_consents_to_analytics is None:
+            if not settings.user_consents_to_analytics:
                 settings.user_consents_to_analytics = (
                     existing_settings.user_consents_to_analytics
                 )
