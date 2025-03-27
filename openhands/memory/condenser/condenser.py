@@ -81,6 +81,7 @@ class View(BaseModel):
         summary: str | None = None
         summary_offset: int | None = None
 
+        # The relevant summary is always in the last condensation event (i.e., the most recent one).
         for event in reversed(events):
             if isinstance(event, CondensationAction):
                 if event.summary is not None and event.summary_offset is not None:
