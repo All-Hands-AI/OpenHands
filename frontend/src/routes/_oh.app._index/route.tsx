@@ -74,8 +74,6 @@ function FileViewer() {
     setFileExplorerIsOpen((prev) => !prev);
   };
 
-  console.log("files", files);
-
   return (
     <div className="flex h-full bg-base-secondary relative">
       <FileExplorer isOpen={fileExplorerIsOpen} onToggle={toggleFileExplorer} />

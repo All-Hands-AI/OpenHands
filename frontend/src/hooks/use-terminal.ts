@@ -1,10 +1,10 @@
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 import React from "react";
-import { Command } from "#/state/command-slice";
-import { getTerminalCommand } from "#/services/terminal-service";
-import { parseTerminalOutput } from "#/utils/parse-terminal-output";
 import { useWsClient } from "#/context/ws-client-provider";
+import { getTerminalCommand } from "#/services/terminal-service";
+import { Command } from "#/state/command-slice";
+import { parseTerminalOutput } from "#/utils/parse-terminal-output";
 // import { useLocation } from "react-router";
 
 /*
@@ -38,12 +38,32 @@ export const useTerminal = ({
   // const location = useLocation();
   // const pathname = location.pathname;
 
+  // Reset lastCommandIndex when commands array is empty
+  React.useEffect(() => {
+    if (commands.length === 0) {
+      lastCommandIndex.current = 0;
+    }
+  }, [commands]);
+
+  // Cleanup function to properly dispose terminal
+  const cleanup = React.useCallback(() => {
+    if (keyEventDisposable.current) {
+      keyEventDisposable.current.dispose();
+      keyEventDisposable.current = null;
+    }
+    if (terminal.current) {
+      terminal.current.dispose();
+      terminal.current = null;
+    }
+    lastCommandIndex.current = 0;
+  }, []);
+
   const createTerminal = () =>
     new Terminal({
       fontFamily: "Menlo, Monaco, 'Courier New', monospace",
       fontSize: 14,
       theme: {
-        background: "#24272E",
+        background: "#1A1C28",
       },
     });
 
@@ -97,18 +117,18 @@ export const useTerminal = ({
     return command.slice(0, -1);
   };
 
+  // Initialize terminal
   React.useEffect(() => {
-    /* Create a new terminal instance */
+    cleanup(); // Clean up existing terminal before creating new one
+
     terminal.current = createTerminal();
     fitAddon.current = new FitAddon();
 
     let resizeObserver: ResizeObserver | null = null;
     if (ref.current) {
-      /* Initialize the terminal in the DOM */
       initializeTerminal();
       terminal.current.write("$ ");
 
-      /* Listen for resize events */
       resizeObserver = new ResizeObserver(() => {
         fitAddon.current?.fit();
       });
@@ -116,35 +136,36 @@ export const useTerminal = ({
     }
 
     return () => {
-      terminal.current?.dispose();
+      cleanup();
       resizeObserver?.disconnect();
     };
-  }, []);
+  }, []); // Keep this as empty dependency array
 
+  // Handle commands updates
   React.useEffect(() => {
-    /* Write commands to the terminal */
-    if (terminal.current && commands.length > 0) {
-      // Start writing commands from the last command index
-      for (let i = lastCommandIndex.current; i < commands.length; i += 1) {
-        // eslint-disable-next-line prefer-const
-        let { content, type } = commands[i];
+    if (!terminal.current || commands.length === 0) return;
 
-        secrets.forEach((secret) => {
-          content = content.replaceAll(secret, "*".repeat(10));
-        });
+    // Write all commands when switching tabs
+    for (let i = lastCommandIndex.current; i < commands.length; i += 1) {
+      let { content } = commands[i];
+      const { type } = commands[i];
 
-        terminal.current?.writeln(
-          parseTerminalOutput(content.replaceAll("\n", "\r\n").trim()),
-        );
+      secrets.forEach((secret) => {
+        content = content.replaceAll(secret, "*".repeat(10));
+      });
 
-        if (type === "output") {
-          terminal.current.write(`\n$ `);
-        }
+      terminal.current.writeln(
+        parseTerminalOutput(content.replaceAll("\n", "\r\n").trim()),
+      );
+
+      if (type === "output") {
+        terminal.current.write("\n$ ");
       }
-
-      lastCommandIndex.current = commands.length; // Update the position of the last command
     }
-  }, [commands]);
+
+    lastCommandIndex.current = commands.length;
+    fitAddon.current?.fit(); // Ensure terminal fits after writing commands
+  }, [commands, secrets]);
 
   React.useEffect(() => {
     if (terminal.current) {
