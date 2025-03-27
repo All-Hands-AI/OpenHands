@@ -3,9 +3,14 @@ import Clip from "#/icons/clip.svg?react";
 interface UploadImageInputProps {
   onUpload: (files: File[]) => void;
   label?: React.ReactNode;
+  acceptAll?: boolean;
 }
 
-export function UploadImageInput({ onUpload, label }: UploadImageInputProps) {
+export function UploadImageInput({
+  onUpload,
+  label,
+  acceptAll = false,
+}: UploadImageInputProps) {
   const handleUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) onUpload(Array.from(event.target.files));
   };
@@ -16,7 +21,7 @@ export function UploadImageInput({ onUpload, label }: UploadImageInputProps) {
       <input
         data-testid="upload-image-input"
         type="file"
-        accept="image/*"
+        accept={acceptAll ? "*" : "image/*"}
         multiple
         hidden
         onChange={handleUpload}

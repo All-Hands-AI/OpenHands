@@ -192,6 +192,9 @@ async def upload_file(request: Request, conversation_id: str, files: list[Upload
                 )
                 continue
 
+            # Determine if this is an image file
+            is_image = file.content_type and file.content_type.startswith('image/')
+
             # copy the file to the runtime
             with tempfile.TemporaryDirectory() as tmp_dir:
                 tmp_file_path = os.path.join(tmp_dir, safe_filename)
@@ -200,11 +203,39 @@ async def upload_file(request: Request, conversation_id: str, files: list[Upload
                     tmp_file.flush()
 
                 runtime: Runtime = request.state.conversation.runtime
+
+                # For non-image files, create /uploads directory if it doesn't exist
+                if not is_image:
+                    uploads_dir = os.path.join(
+                        runtime.config.workspace_mount_path_in_sandbox, 'uploads'
+                    )
+                    try:
+                        # Create directory action
+                        mkdir_action = FileWriteAction(uploads_dir, '')
+                        mkdir_observation = await call_sync_from_async(
+                            runtime.run_action, mkdir_action
+                        )
+                        if isinstance(mkdir_observation, ErrorObservation):
+                            # Directory might already exist, which is fine
+                            logger.debug(
+                                f'Note when creating uploads directory: {mkdir_observation}'
+                            )
+                    except Exception as e:
+                        logger.debug(f'Note when creating uploads directory: {e}')
+
+                # Determine destination path
+                if is_image:
+                    dest_path = runtime.config.workspace_mount_path_in_sandbox
+                else:
+                    dest_path = os.path.join(
+                        runtime.config.workspace_mount_path_in_sandbox, 'uploads'
+                    )
+
                 try:
                     await call_sync_from_async(
                         runtime.copy_to,
                         tmp_file_path,
-                        runtime.config.workspace_mount_path_in_sandbox,
+                        dest_path,
                     )
                 except AgentRuntimeUnavailableError as e:
                     logger.error(f'Error saving file {safe_filename}: {e}')
@@ -212,7 +243,17 @@ async def upload_file(request: Request, conversation_id: str, files: list[Upload
                         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                         content={'error': f'Error saving file: {e}'},
                     )
-            uploaded_files.append(safe_filename)
+
+            # Add file type info to the response
+            uploaded_files.append(
+                {
+                    'name': safe_filename,
+                    'is_image': is_image,
+                    'path': 'uploads/' + safe_filename
+                    if not is_image
+                    else safe_filename,
+                }
+            )
 
         response_content = {
             'message': 'File upload process completed',

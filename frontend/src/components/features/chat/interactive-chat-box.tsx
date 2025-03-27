@@ -23,8 +23,24 @@ export function InteractiveChatBox({
 }: InteractiveChatBoxProps) {
   const [images, setImages] = React.useState<File[]>([]);
 
+  const [nonImageFiles, setNonImageFiles] = React.useState<File[]>([]);
+
   const handleUpload = (files: File[]) => {
-    setImages((prevImages) => [...prevImages, ...files]);
+    const imageFiles = files.filter((file) => file.type.startsWith("image/"));
+    const otherFiles = files.filter((file) => !file.type.startsWith("image/"));
+
+    setImages((prevImages) => [...prevImages, ...imageFiles]);
+
+    if (otherFiles.length > 0) {
+      setNonImageFiles((prevFiles) => [...prevFiles, ...otherFiles]);
+
+      // Create a message mentioning the uploaded files
+      const fileNames = otherFiles.map((file) => file.name).join(", ");
+      const fileMessage = `I've uploaded the following file(s): ${fileNames}`;
+
+      // Set the message to the textarea
+      onChange?.(fileMessage);
+    }
   };
 
   const handleRemoveImage = (index: number) => {
@@ -36,8 +52,11 @@ export function InteractiveChatBox({
   };
 
   const handleSubmit = (message: string) => {
-    onSubmit(message, images);
+    // Combine both image and non-image files
+    const allFiles = [...images, ...nonImageFiles];
+    onSubmit(message, allFiles);
     setImages([]);
+    setNonImageFiles([]);
     if (message) {
       onChange?.("");
     }
@@ -64,7 +83,7 @@ export function InteractiveChatBox({
           "hover:border-neutral-500 focus-within:border-neutral-500",
         )}
       >
-        <UploadImageInput onUpload={handleUpload} />
+        <UploadImageInput onUpload={handleUpload} acceptAll />
         <ChatInput
           disabled={isDisabled}
           button={mode}

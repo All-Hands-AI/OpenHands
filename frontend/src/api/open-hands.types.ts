@@ -8,9 +8,15 @@ export interface SaveFileSuccessResponse {
   message: string;
 }
 
+export interface UploadedFile {
+  name: string;
+  is_image: boolean;
+  path: string;
+}
+
 export interface FileUploadSuccessResponse {
   message: string;
-  uploaded_files: string[];
+  uploaded_files: UploadedFile[];
   skipped_files: { name: string; reason: string }[];
 }
 

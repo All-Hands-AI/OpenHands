@@ -70,13 +70,31 @@ export function ChatInterface() {
         current_message_length: content.length,
       });
     }
-    const promises = files.map((file) => convertImageToBase64(file));
+
+    // Filter image files for base64 conversion
+    const imageFiles = files.filter((file) => file.type.startsWith("image/"));
+    const promises = imageFiles.map((file) => convertImageToBase64(file));
     const imageUrls = await Promise.all(promises);
+
+    // Handle non-image files
+    const nonImageFiles = files.filter(
+      (file) => !file.type.startsWith("image/"),
+    );
+    let finalContent = content;
+    if (nonImageFiles.length > 0) {
+      // If there are non-image files, make sure the message mentions them
+      const fileNames = nonImageFiles.map((file) => file.name).join(", ");
+      if (!finalContent.includes(fileNames)) {
+        finalContent = `I've uploaded the following file(s): ${fileNames}${finalContent ? `\n\n${finalContent}` : ""}`;
+      }
+    }
 
     const timestamp = new Date().toISOString();
     const pending = true;
-    dispatch(addUserMessage({ content, imageUrls, timestamp, pending }));
-    send(createChatMessage(content, imageUrls, timestamp));
+    dispatch(
+      addUserMessage({ content: finalContent, imageUrls, timestamp, pending }),
+    );
+    send(createChatMessage(finalContent, imageUrls, timestamp));
     setMessageToSend(null);
   };
 
