@@ -29,7 +29,7 @@ import {
 } from "#/components/layout/resizable-panel";
 import Security from "#/components/shared/modals/security/security";
 import { useEndSession } from "#/hooks/use-end-session";
-import { useUserConversation } from "#/hooks/query/use-user-conversation";
+import { useConversatiom } from "#/hooks/query/use-user-conversation";
 import { ServedAppLabel } from "#/components/layout/served-app-label";
 import { TerminalStatusLabel } from "#/components/features/terminal/terminal-status-label";
 import { useSettings } from "#/hooks/query/use-settings";
@@ -42,7 +42,7 @@ function AppContent() {
   const { t } = useTranslation();
   const { data: settings } = useSettings();
   const { conversationId } = useConversation();
-  const { data: conversation, isFetched } = useUserConversation(
+  const { data: conversation, isFetched } = useConversatiom(
     conversationId || null,
   );
   const { initialPrompt, files } = useSelector(
