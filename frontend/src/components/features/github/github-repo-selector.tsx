@@ -111,17 +111,37 @@ export function GitRepositorySelector({
         // Find the repository by textValue to get its provider
         const repo = allRepositories.find((r) => r.full_name === textValue);
         if (!repo) return false;
-
-        // If user is searching for "github" or "gitlab" specifically
-        if (sanitizedInput === "github") {
-          return repo.git_provider === "github";
+        
+        // Check if input starts with "git" - potential provider filter
+        if (sanitizedInput.startsWith("git")) {
+          // If input is exactly "git", show both GitHub and GitLab repos
+          if (sanitizedInput === "git") {
+            return true;
+          }
+          
+          // Check for partial matches with "github"
+          if ("github".startsWith(sanitizedInput)) {
+            return repo.git_provider === "github";
+          }
+          
+          // Check for partial matches with "gitlab"
+          if ("gitlab".startsWith(sanitizedInput)) {
+            return repo.git_provider === "gitlab";
+          }
+          
+          // If input is longer than provider names but starts with them
+          if (sanitizedInput.startsWith("github")) {
+            return repo.git_provider === "github" && 
+                   sanitizeQuery(textValue).includes(sanitizedInput);
+          }
+          
+          if (sanitizedInput.startsWith("gitlab")) {
+            return repo.git_provider === "gitlab" && 
+                   sanitizeQuery(textValue).includes(sanitizedInput);
+          }
         }
-
-        if (sanitizedInput === "gitlab") {
-          return repo.git_provider === "gitlab";
-        }
-
-        // Otherwise, check if the repository name matches the input
+        
+        // Default case: check if the repository name matches the input
         return sanitizeQuery(textValue).includes(sanitizedInput);
       }}
     >
