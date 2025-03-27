@@ -1,33 +1,34 @@
 """Configuration module."""
 
 import os
+from typing import Any, Dict
+
 import tomli
-from typing import Any, Dict, Optional
 
 
 def get_config() -> Dict[str, Any]:
     """Get configuration from config file.
-    
+
     Returns:
         Dict[str, Any]: Configuration dictionary.
     """
-    config_path = os.environ.get("OPENHANDS_CONFIG_PATH", "config.toml")
-    
+    config_path = os.environ.get('OPENHANDS_CONFIG_PATH', 'config.toml')
+
     if not os.path.exists(config_path):
         return {}
-    
-    with open(config_path, "rb") as f:
+
+    with open(config_path, 'rb') as f:
         return tomli.load(f)
 
 
 def get_config_value(section: str, key: str, default: Any = None) -> Any:
     """Get a configuration value.
-    
+
     Args:
         section: Configuration section.
         key: Configuration key.
         default: Default value if not found.
-        
+
     Returns:
         Any: Configuration value or default.
     """
