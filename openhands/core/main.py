@@ -94,7 +94,7 @@ async def run_controller(
     sid = sid or generate_sid(config)
 
     if agent is None:
-        agent = create_agent(config)
+        agent = await create_agent(config)
 
     # when the runtime is created, it will be connected and clone the selected repository
     repo_directory = None

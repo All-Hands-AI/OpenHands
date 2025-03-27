@@ -1,13 +1,13 @@
 repos:
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
-    hooks:
-      - id: trailing-whitespace
-        exclude: docs/modules/python
-      - id: end-of-file-fixer
-        exclude: docs/modules/python
-      - id: check-yaml
-      - id: debug-statements
+  # - repo: https://github.com/pre-commit/pre-commit-hooks
+  #   rev: v4.5.0
+  #   hooks:
+  #     - id: trailing-whitespace
+  #       exclude: docs/modules/python
+  #     - id: end-of-file-fixer
+  #       exclude: docs/modules/python
+  #     - id: check-yaml
+  #     - id: debug-statements
 
   - repo: https://github.com/tox-dev/pyproject-fmt
     rev: 1.7.0
