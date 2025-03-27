@@ -29,6 +29,16 @@ workspace_base = "./workspace"
 # Cache directory path
 #cache_dir = "/tmp/cache"
 
+#################################### GitHub ####################################
+# GitHub configuration
+##############################################################################
+[github]
+# GitHub Enterprise Server configuration
+# If these are set, OpenHands will use GitHub Enterprise Server instead of github.com
+#enterprise_url = "https://github.example.com"  # GitHub Enterprise web URL
+#api_url = "https://github.example.com/api/v3"  # GitHub Enterprise API URL
+#graphql_url = "https://github.example.com/api/graphql"  # GitHub Enterprise GraphQL URL
+
 # Reasoning effort for o1 models (low, medium, high, or not set)
 #reasoning_effort = "medium"
 
