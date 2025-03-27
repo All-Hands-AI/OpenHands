@@ -108,17 +108,21 @@ export function GitRepositorySelector({
 
         const sanitizedInput = sanitizeQuery(inputValue);
 
-        // Check if the repository name matches
-        const nameMatches = sanitizeQuery(textValue).includes(sanitizedInput);
+        // Find the repository by textValue to get its provider
+        const repo = allRepositories.find((r) => r.full_name === textValue);
+        if (!repo) return false;
 
-        // Check if the provider type matches (github or gitlab)
-        const providerMatches =
-          sanitizedInput === "github" ||
-          sanitizedInput === "gitlab" ||
-          textValue.includes("github") ||
-          textValue.includes("gitlab");
+        // If user is searching for "github" or "gitlab" specifically
+        if (sanitizedInput === "github") {
+          return repo.git_provider === "github";
+        }
 
-        return nameMatches || providerMatches;
+        if (sanitizedInput === "gitlab") {
+          return repo.git_provider === "gitlab";
+        }
+
+        // Otherwise, check if the repository name matches the input
+        return sanitizeQuery(textValue).includes(sanitizedInput);
       }}
     >
       {config?.APP_MODE === "saas" &&
