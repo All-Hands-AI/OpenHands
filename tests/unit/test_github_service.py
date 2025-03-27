@@ -1,4 +1,5 @@
 from unittest.mock import AsyncMock, Mock, patch
+import os
 
 import httpx
 import pytest
@@ -79,3 +80,45 @@ async def test_github_service_fetch_data():
 
         with pytest.raises(AuthenticationError):
             _ = await service._fetch_data('https://api.github.com/user')
+
+
+@pytest.mark.asyncio
+async def test_github_service_enterprise_server():
+    # Test initialization with custom base URL
+    enterprise_url = 'https://github.example.com/api/v3'
+    service = GitHubService(user_id=None, token=SecretStr('test-token'), base_url=enterprise_url)
+    assert service.BASE_URL == enterprise_url
+    
+    # Test GraphQL URL is correctly derived from base URL
+    assert service.GRAPHQL_URL == f'{enterprise_url}/graphql'
+    
+    # Test with environment variable
+    with patch.dict(os.environ, {'GITHUB_API_URL': 'https://github.company.com/api/v3'}):
+        service = GitHubService(user_id=None, token=SecretStr('test-token'))
+        assert service.BASE_URL == 'https://github.company.com/api/v3'
+        assert service.GRAPHQL_URL == 'https://github.company.com/api/v3/graphql'
+    
+    # Test API calls use the custom base URL
+    mock_response = AsyncMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {'login': 'test-user'}
+    mock_response.raise_for_status = Mock()
+
+    mock_client = AsyncMock()
+    mock_client.get.return_value = mock_response
+    mock_client.__aenter__.return_value = mock_client
+    mock_client.__aexit__.return_value = None
+
+    with patch('httpx.AsyncClient', return_value=mock_client):
+        service = GitHubService(user_id=None, token=SecretStr('test-token'), base_url=enterprise_url)
+        _ = await service._fetch_data(f'{enterprise_url}/user')
+
+        # Verify the request was made with correct URL
+        mock_client.get.assert_called_once()
+        call_args = mock_client.get.call_args
+        url = call_args[0][0]
+        assert enterprise_url in url
+        
+    # Test that the GRAPHQL_URL is set correctly
+    service = GitHubService(user_id=None, token=SecretStr('test-token'), base_url=enterprise_url)
+    assert service.GRAPHQL_URL == f'{enterprise_url}/graphql'
