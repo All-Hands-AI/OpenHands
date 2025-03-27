@@ -14,6 +14,7 @@ from pydantic import (
 )
 from pydantic.json import pydantic_encoder
 
+from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.action import Action
 from openhands.events.action.commands import CmdRunAction
 from openhands.events.stream import EventStream
@@ -268,7 +269,9 @@ class ProviderHandler:
             get_latest: Get the latest working token for the providers if True, otherwise get the existing ones
         """
 
-        if not self.provider_tokens:
+        # TODO: We should remove `not get_latest` in the future. More
+        # details about the error this fixes is in the next comment below
+        if not self.provider_tokens and not get_latest:
             return {}
 
         env_vars: dict[ProviderType, SecretStr] = {}
@@ -288,6 +291,20 @@ class ProviderHandler:
 
                 if token:
                     env_vars[provider] = token
+
+        # TODO: we have an error where reinitializing the runtime doesn't happen with
+        # the provider tokens; thus the code above believes that github isn't a provider
+        # when it really is. We need to share information about current providers set
+        # for the user when the socket event for connect is sent
+        if ProviderType.GITHUB not in env_vars and get_latest:
+            logger.info(
+                f'Force refresh runtime token for user: {self.external_auth_id}'
+            )
+            service = GithubServiceImpl(
+                external_auth_id=self.external_auth_id,
+                external_token_manager=self.external_token_manager,
+            )
+            env_vars[ProviderType.GITHUB] = await service.get_latest_token()
 
         if not expose_secrets:
             return env_vars

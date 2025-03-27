@@ -21,7 +21,6 @@ import { useLogout } from "#/hooks/mutation/use-logout";
 import { useConfig } from "#/hooks/query/use-config";
 import { cn } from "#/utils/utils";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
-import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 
 export function Sidebar() {
   const location = useLocation();
@@ -36,7 +35,6 @@ export function Sidebar() {
     isFetching: isFetchingSettings,
   } = useSettings();
   const { mutateAsync: logout } = useLogout();
-  const { mutate: saveUserSettings } = useSaveSettings();
 
   const [settingsModalIsOpen, setSettingsModalIsOpen] = React.useState(false);
 
@@ -78,8 +76,7 @@ export function Sidebar() {
   };
 
   const handleLogout = async () => {
-    if (config?.APP_MODE === "saas") await logout();
-    else saveUserSettings({ unset_github_token: true });
+    await logout();
     posthog.reset();
   };
 
