@@ -429,31 +429,34 @@ async def resolve_issue(
     # checkout the repo
     repo_dir = os.path.join(output_dir, 'repo')
     if not os.path.exists(repo_dir):
-        checkout_output = subprocess.check_output(  # noqa: ASYNC101
-            [
-                'git',
-                'clone',
-                issue_handler.get_clone_url(),
-                f'{output_dir}/repo',
-            ]
-        ).decode('utf-8')
+        process = await asyncio.create_subprocess_exec(
+            'git', 'clone', issue_handler.get_clone_url(), f'{output_dir}/repo',
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+        stdout, stderr = await process.communicate()
+        checkout_output = stdout.decode('utf-8') if stdout else stderr.decode('utf-8')
         if 'fatal' in checkout_output:
             raise RuntimeError(f'Failed to clone repository: {checkout_output}')
 
     # get the commit id of current repo for reproducibility
-    base_commit = (
-        subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo_dir)  # noqa: ASYNC101
-        .decode('utf-8')
-        .strip()
+    process = await asyncio.create_subprocess_exec(
+        'git', 'rev-parse', 'HEAD',
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+        cwd=repo_dir
     )
+    stdout, _ = await process.communicate()
+    base_commit = stdout.decode('utf-8').strip()
     logger.info(f'Base commit: {base_commit}')
 
     if repo_instruction is None:
         # Check for .openhands_instructions file in the workspace directory
         openhands_instructions_path = os.path.join(repo_dir, '.openhands_instructions')
         if os.path.exists(openhands_instructions_path):
-            with open(openhands_instructions_path, 'r') as f:  # noqa: ASYNC101
-                repo_instruction = f.read()
+            import aiofiles
+            async with aiofiles.open(openhands_instructions_path, 'r') as f:
+                repo_instruction = await f.read()
 
     # OUTPUT FILE
     output_file = os.path.join(output_dir, 'output.jsonl')
@@ -461,8 +464,8 @@ async def resolve_issue(
 
     # Check if this issue was already processed
     if os.path.exists(output_file):
-        with open(output_file, 'r') as f:  # noqa: ASYNC101
-            for line in f:
+        async with aiofiles.open(output_file, 'r') as f:
+            async for line in f:
                 data = ResolverOutput.model_validate_json(line)
                 if data.issue.number == issue_number:
                     logger.warning(
@@ -470,7 +473,7 @@ async def resolve_issue(
                     )
                     return
 
-    output_fp = open(output_file, 'a')  # noqa: ASYNC101
+    output_fp = await aiofiles.open(output_file, 'a')
 
     logger.info(
         f'Resolving issue {issue_number} with Agent {AGENT_CLASS}, model {model_name}, max iterations {max_iterations}.'
@@ -488,24 +491,32 @@ async def resolve_issue(
                 raise ValueError('Branch name cannot be None')
 
             # Fetch the branch first to ensure it exists locally
-            fetch_cmd = ['git', 'fetch', 'origin', branch_to_use]
-            subprocess.check_output(  # noqa: ASYNC101
-                fetch_cmd,
-                cwd=repo_dir,
+            # Fetch the branch first to ensure it exists locally
+            process = await asyncio.create_subprocess_exec(
+                'git', 'fetch', 'origin', branch_to_use,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+                cwd=repo_dir
             )
+            await process.communicate()
 
             # Checkout the branch
-            checkout_cmd = ['git', 'checkout', branch_to_use]
-            subprocess.check_output(  # noqa: ASYNC101
-                checkout_cmd,
-                cwd=repo_dir,
+            process = await asyncio.create_subprocess_exec(
+                'git', 'checkout', branch_to_use,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+                cwd=repo_dir
             )
+            await process.communicate()
 
-            base_commit = (
-                subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo_dir)  # noqa: ASYNC101
-                .decode('utf-8')
-                .strip()
+            process = await asyncio.create_subprocess_exec(
+                'git', 'rev-parse', 'HEAD',
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+                cwd=repo_dir
             )
+            stdout, _ = await process.communicate()
+            base_commit = stdout.decode('utf-8').strip()
 
         output = await process_issue(
             issue,
