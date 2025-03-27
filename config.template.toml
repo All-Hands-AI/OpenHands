@@ -201,7 +201,6 @@ model = "gpt-4o"
 #native_tool_calling = None
 
 
-
 [llm.gpt4o-mini]
 api_key = ""
 model = "gpt-4o"
@@ -384,3 +383,20 @@ type = "noop"
 # Configuration for the evaluation, please refer to the specific evaluation
 # plugin for the available options
 ##############################################################################
+
+#################################### MCP ####################################
+# Configuration for MCP (Model Context Protocol) settings
+##############################################################################
+[mcp-sse]
+# List of MCP server URLs, separated by quotes
+# Example: mcp_servers = ["http://server1:8080/sse", "http://server2:8080/sse"]
+#mcp_servers = []
+
+#################################### MCP ####################################
+# Configuration for MCP (Model Context Protocol) settings
+##############################################################################
+[mcp-stdio]
+# List of MCP server URLs, separated by quotes
+# Example: commands = [""]
+#commands = []
+#args = []

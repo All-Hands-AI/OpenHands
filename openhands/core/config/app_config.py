@@ -11,6 +11,7 @@ from openhands.core.config.config_utils import (
 )
 from openhands.core.config.extended_config import ExtendedConfig
 from openhands.core.config.llm_config import LLMConfig
+from openhands.core.config.mcp_config import MCPConfig
 from openhands.core.config.sandbox_config import SandboxConfig
 from openhands.core.config.security_config import SecurityConfig
 
@@ -47,6 +48,7 @@ class AppConfig(BaseModel):
         file_uploads_allowed_extensions: Allowed file extensions. `['.*']` allows all.
         cli_multiline_input: Whether to enable multiline input in CLI. When disabled,
             input is read line by line. When enabled, input continues until /exit command.
+        mcp: MCP configuration settings.
     """
 
     llms: dict[str, LLMConfig] = Field(default_factory=dict)
@@ -88,6 +90,7 @@ class AppConfig(BaseModel):
     max_concurrent_conversations: int = Field(
         default=3
     )  # Maximum number of concurrent agent loops allowed per user
+    mcp: MCPConfig = Field(default_factory=MCPConfig)
 
     defaults_dict: ClassVar[dict] = {}
 
@@ -136,3 +139,8 @@ class AppConfig(BaseModel):
         super().model_post_init(__context)
         if not AppConfig.defaults_dict:  # Only set defaults_dict if it's empty
             AppConfig.defaults_dict = model_defaults_to_dict(self)
+        # Validate MCP configurations
+        if self.mcp.sse.mcp_servers:
+            self.mcp.sse.validate_servers()
+        if self.mcp.stdio.commands:
+            self.mcp.stdio.validate_stdio()
