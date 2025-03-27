@@ -1,7 +1,9 @@
+import os
 from typing import Any
 
 import requests
 
+from openhands.config.github_config import get_github_api_url, get_github_enterprise_url
 from openhands.core.logger import openhands_logger as logger
 from openhands.resolver.interfaces.issue import (
     Issue,
@@ -12,11 +14,13 @@ from openhands.resolver.utils import extract_issue_references
 
 
 class GithubIssueHandler(IssueHandlerInterface):
-    def __init__(self, owner: str, repo: str, token: str, username: str | None = None):
+    def __init__(self, owner: str, repo: str, token: str, username: str | None = None, base_url: str | None = None):
         self.owner = owner
         self.repo = repo
         self.token = token
         self.username = username
+        self.api_base_url = base_url or get_github_api_url() or 'https://api.github.com'
+        self.web_base_url = get_github_enterprise_url() or 'https://github.com'
         self.base_url = self.get_base_url()
         self.download_url = self.get_download_url()
         self.clone_url = self.get_clone_url()
@@ -32,10 +36,11 @@ class GithubIssueHandler(IssueHandlerInterface):
         }
 
     def get_base_url(self) -> str:
-        return f'https://api.github.com/repos/{self.owner}/{self.repo}'
+        return f'{self.api_base_url}/repos/{self.owner}/{self.repo}'
 
     def get_authorize_url(self) -> str:
-        return f'https://{self.username}:{self.token}@github.com/'
+        host = self.web_base_url.replace('https://', '')
+        return f'https://{self.username}:{self.token}@{host}/'
 
     def get_branch_url(self, branch_name: str) -> str:
         return self.get_base_url() + f'/branches/{branch_name}'
@@ -49,13 +54,14 @@ class GithubIssueHandler(IssueHandlerInterface):
             if self.username
             else f'x-auth-token:{self.token}'
         )
-        return f'https://{username_and_token}@github.com/{self.owner}/{self.repo}.git'
+        host = self.web_base_url.replace('https://', '')
+        return f'https://{username_and_token}@{host}/{self.owner}/{self.repo}.git'
 
     def get_graphql_url(self) -> str:
-        return 'https://api.github.com/graphql'
+        return f'{self.api_base_url}/graphql'
 
     def get_compare_url(self, branch_name: str) -> str:
-        return f'https://github.com/{self.owner}/{self.repo}/compare/{branch_name}?expand=1'
+        return f'{self.web_base_url}/{self.owner}/{self.repo}/compare/{branch_name}?expand=1'
 
     def get_converted_issues(
         self, issue_numbers: list[int] | None = None, comment_id: int | None = None
@@ -222,7 +228,7 @@ class GithubIssueHandler(IssueHandlerInterface):
         response.raise_for_status()
 
     def get_pull_url(self, pr_number: int) -> str:
-        return f'https://github.com/{self.owner}/{self.repo}/pull/{pr_number}'
+        return f'{self.web_base_url}/{self.owner}/{self.repo}/pull/{pr_number}'
 
     def get_default_branch_name(self) -> str:
         response = requests.get(f'{self.base_url}', headers=self.headers)
