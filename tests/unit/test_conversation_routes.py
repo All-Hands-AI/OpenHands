@@ -1,6 +1,6 @@
-import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
+import pytest
 from fastapi import Request
 from fastapi.responses import JSONResponse
 
@@ -54,7 +54,9 @@ async def test_get_conversation_metrics():
     mock_request.state.conversation = mock_conversation
 
     # Mock JSONResponse
-    with patch('openhands.server.routes.conversation.JSONResponse') as mock_json_response:
+    with patch(
+        'openhands.server.routes.conversation.JSONResponse'
+    ) as mock_json_response:
         mock_json_response.return_value = JSONResponse(
             status_code=200,
             content={
@@ -67,7 +69,7 @@ async def test_get_conversation_metrics():
         )
 
         # Call the function
-        result = await get_conversation_metrics(mock_request)
+        await get_conversation_metrics(mock_request)
 
         # Verify JSONResponse was called with correct arguments
         mock_json_response.assert_called_once_with(
