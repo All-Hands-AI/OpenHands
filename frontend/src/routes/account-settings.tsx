@@ -470,17 +470,16 @@ function AccountSettings() {
                   </b>
                   .
                 </p>
+                <BrandButton
+                  type="button"
+                  variant="secondary"
+                  onClick={handleLogout}
+                  isDisabled={!providersAreSet}
+                >
+                  Disconnect Tokens
+                </BrandButton>
               </>
             )}
-
-            <BrandButton
-              type="button"
-              variant="secondary"
-              onClick={handleLogout}
-              isDisabled={!providersAreSet}
-            >
-              Disconnect Tokens
-            </BrandButton>
           </section>
 
           <section className="flex flex-col gap-6">
