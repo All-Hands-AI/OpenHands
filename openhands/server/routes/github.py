@@ -1,7 +1,9 @@
+import os
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 from pydantic import SecretStr
 
+from openhands.config.github_config import get_github_api_url
 from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
@@ -31,8 +33,12 @@ async def get_github_repositories(
 ):
     if provider_tokens and ProviderType.GITHUB in provider_tokens:
         token = provider_tokens[ProviderType.GITHUB]
+        github_api_url = get_github_api_url()
         client = GithubServiceImpl(
-            user_id=token.user_id, external_auth_token=access_token, token=token.token
+            user_id=token.user_id, 
+            external_auth_token=access_token, 
+            token=token.token,
+            base_url=github_api_url
         )
 
         try:
@@ -98,9 +104,13 @@ async def get_github_installation_ids(
 ):
     if provider_tokens and ProviderType.GITHUB in provider_tokens:
         token = provider_tokens[ProviderType.GITHUB]
+        github_api_url = get_github_api_url()
 
         client = GithubServiceImpl(
-            user_id=token.user_id, external_auth_token=access_token, token=token.token
+            user_id=token.user_id, 
+            external_auth_token=access_token, 
+            token=token.token,
+            base_url=github_api_url
         )
         try:
             installations_ids: list[int] = await client.get_installation_ids()
@@ -135,9 +145,13 @@ async def search_github_repositories(
 ):
     if provider_tokens and ProviderType.GITHUB in provider_tokens:
         token = provider_tokens[ProviderType.GITHUB]
+        github_api_url = get_github_api_url()
 
         client = GithubServiceImpl(
-            user_id=token.user_id, external_auth_token=access_token, token=token.token
+            user_id=token.user_id, 
+            external_auth_token=access_token, 
+            token=token.token,
+            base_url=github_api_url
         )
         try:
             repos: list[Repository] = await client.search_repositories(
@@ -177,9 +191,13 @@ async def get_suggested_tasks(
 
     if provider_tokens and ProviderType.GITHUB in provider_tokens:
         token = provider_tokens[ProviderType.GITHUB]
+        github_api_url = get_github_api_url()
 
         client = GithubServiceImpl(
-            user_id=token.user_id, external_auth_token=access_token, token=token.token
+            user_id=token.user_id, 
+            external_auth_token=access_token, 
+            token=token.token,
+            base_url=github_api_url
         )
         try:
             tasks: list[SuggestedTask] = await client.get_suggested_tasks()
