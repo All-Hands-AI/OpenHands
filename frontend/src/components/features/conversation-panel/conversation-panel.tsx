@@ -3,7 +3,7 @@ import { NavLink, useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import { ConversationCard } from "./conversation-card";
-import { useUserConversations } from "#/hooks/query/use-user-conversations";
+import { useConversations } from "#/hooks/query/use-user-conversations";
 import { useDeleteConversation } from "#/hooks/mutation/use-delete-conversation";
 import { ConfirmDeleteModal } from "./confirm-delete-modal";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
@@ -32,7 +32,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
     string | null
   >(null);
 
-  const { data: conversations, isFetching, error } = useUserConversations();
+  const { data: conversations, isFetching, error } = useConversations();
   const { mutate: deleteConversation } = useDeleteConversation();
   const { mutate: updateConversation } = useUpdateConversation();
 
