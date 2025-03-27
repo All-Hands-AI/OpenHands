@@ -51,10 +51,10 @@ test("parseGithubUrl with GitHub Enterprise Server", () => {
   ]);
 
   expect(parseGithubUrl("https://github.example.com/")).toEqual([]);
-  
+
   // Test with different domain
   window.GITHUB_WEB_URL = "https://git.company.com";
-  
+
   expect(
     parseGithubUrl("https://git.company.com/alexreardon/tiny-invariant"),
   ).toEqual(["alexreardon", "tiny-invariant"]);
