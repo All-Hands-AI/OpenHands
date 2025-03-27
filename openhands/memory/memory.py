@@ -98,11 +98,14 @@ class Memory:
                     return
 
                 # Handle knowledge recall (triggered microagents)
+                # Allow triggering from both user and agent messages
                 elif (
                     event.source == EventSource.USER
-                    and event.recall_type == RecallType.KNOWLEDGE
-                ):
-                    logger.debug('Microagent knowledge recall')
+                    or event.source == EventSource.AGENT
+                ) and event.recall_type == RecallType.KNOWLEDGE:
+                    logger.debug(
+                        f'Microagent knowledge recall from {event.source} message'
+                    )
                     microagent_obs: RecallObservation | NullObservation | None = None
                     microagent_obs = self._on_microagent_recall(event)
                     if microagent_obs is None:
