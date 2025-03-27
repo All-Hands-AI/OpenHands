@@ -161,7 +161,7 @@ class Session:
         except Exception as e:
             self.logger.exception(f'Error creating agent_session: {e}')
             err_class = e.__class__.__name__
-            await self.send_error(f'Error creating agent_session: {err_class}')
+            await self.send_error(f'Failed to create agent session: {err_class}')
             return
 
     def _create_llm(self, agent_cls: str | None) -> LLM:
