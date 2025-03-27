@@ -1,4 +1,3 @@
-import os
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 from pydantic import SecretStr
@@ -35,10 +34,10 @@ async def get_github_repositories(
         token = provider_tokens[ProviderType.GITHUB]
         github_api_url = get_github_api_url()
         client = GithubServiceImpl(
-            user_id=token.user_id, 
-            external_auth_token=access_token, 
+            user_id=token.user_id,
+            external_auth_token=access_token,
             token=token.token,
-            base_url=github_api_url
+            base_url=github_api_url,
         )
 
         try:
@@ -107,10 +106,10 @@ async def get_github_installation_ids(
         github_api_url = get_github_api_url()
 
         client = GithubServiceImpl(
-            user_id=token.user_id, 
-            external_auth_token=access_token, 
+            user_id=token.user_id,
+            external_auth_token=access_token,
             token=token.token,
-            base_url=github_api_url
+            base_url=github_api_url,
         )
         try:
             installations_ids: list[int] = await client.get_installation_ids()
@@ -148,10 +147,10 @@ async def search_github_repositories(
         github_api_url = get_github_api_url()
 
         client = GithubServiceImpl(
-            user_id=token.user_id, 
-            external_auth_token=access_token, 
+            user_id=token.user_id,
+            external_auth_token=access_token,
             token=token.token,
-            base_url=github_api_url
+            base_url=github_api_url,
         )
         try:
             repos: list[Repository] = await client.search_repositories(
@@ -194,10 +193,10 @@ async def get_suggested_tasks(
         github_api_url = get_github_api_url()
 
         client = GithubServiceImpl(
-            user_id=token.user_id, 
-            external_auth_token=access_token, 
+            user_id=token.user_id,
+            external_auth_token=access_token,
             token=token.token,
-            base_url=github_api_url
+            base_url=github_api_url,
         )
         try:
             tasks: list[SuggestedTask] = await client.get_suggested_tasks()

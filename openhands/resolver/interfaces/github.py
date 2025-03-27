@@ -1,4 +1,3 @@
-import os
 from typing import Any
 
 import requests
@@ -14,7 +13,14 @@ from openhands.resolver.utils import extract_issue_references
 
 
 class GithubIssueHandler(IssueHandlerInterface):
-    def __init__(self, owner: str, repo: str, token: str, username: str | None = None, base_url: str | None = None):
+    def __init__(
+        self,
+        owner: str,
+        repo: str,
+        token: str,
+        username: str | None = None,
+        base_url: str | None = None,
+    ):
         self.owner = owner
         self.repo = repo
         self.token = token
