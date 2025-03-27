@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from openhands.core.config.condenser_config import AmortizedForgettingCondenserConfig
 from openhands.events.action.agent import CondensationAction
-from openhands.events.event import Event
 from openhands.memory.condenser.condenser import (
     Condensation,
     RollingCondenser,
@@ -36,23 +35,6 @@ class AmortizedForgettingCondenser(RollingCondenser):
         self.keep_first = keep_first
 
         super().__init__()
-
-    def get_view(self, events: list[Event]) -> View:
-        # Get all non-condensation events
-        result_events = []
-        forgotten_event_ids = []
-
-        for event in events:
-            if isinstance(event, CondensationAction):
-                forgotten_event_ids.extend(event.forgotten)
-            else:
-                result_events.append(event)
-
-        return View(
-            events=[
-                event for event in result_events if event.id not in forgotten_event_ids
-            ]
-        )
 
     def get_condensation(self, view: View) -> Condensation:
         target_size = self.max_size // 2

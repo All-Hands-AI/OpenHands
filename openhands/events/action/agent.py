@@ -141,9 +141,12 @@ class CondensationAction(Action):
     summary: str | None = None
     """An optional summary of the events being forgotten."""
 
+    summary_offset: int | None = None
+    """An optional offset to the start of the resulting view indicating where the summary should be inserted."""
+
     def _validate_field_polymorphism(self) -> bool:
         """Check if the optional fields are instantiated in a valid configuration."""
-        # There are only two valid configurations:
+        # For the forgotton events, there are only two valid configurations:
         # 1. We're forgetting events based on the list of provided IDs, or
         using_event_ids = self.forgotten_event_ids is not None
         # 2. We're forgetting events based on the range of IDs.
@@ -153,7 +156,15 @@ class CondensationAction(Action):
         )
 
         # Either way, we can only have one of the two valid configurations.
-        return using_event_ids ^ using_event_range
+        forgotten_event_configuration = using_event_ids ^ using_event_range
+
+        # We also need to check that if the summary is provided, so is the
+        # offset (and vice versa).
+        summary_configuration = (
+            self.summary is None and self.summary_offset is None
+        ) or (self.summary is not None and self.summary_offset is not None)
+
+        return forgotten_event_configuration and summary_configuration
 
     def __post_init__(self):
         if not self._validate_field_polymorphism():

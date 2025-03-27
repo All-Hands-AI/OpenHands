@@ -5,7 +5,6 @@ from pydantic import BaseModel
 
 from openhands.core.config.condenser_config import LLMAttentionCondenserConfig
 from openhands.events.action.agent import CondensationAction
-from openhands.events.event import Event
 from openhands.llm.llm import LLM
 from openhands.memory.condenser.condenser import (
     Condensation,
@@ -47,23 +46,6 @@ class LLMAttentionCondenser(RollingCondenser):
             )
 
         super().__init__()
-
-    def get_view(self, events: list[Event]) -> View:
-        result_events = []
-        forgotten_event_ids = []
-
-        for event in events:
-            if isinstance(event, CondensationAction):
-                forgotten_event_ids.extend(event.forgotten)
-            else:
-                result_events.append(event)
-
-        # Filter any forgotten events from the result events
-        return View(
-            events=[
-                event for event in result_events if event.id not in forgotten_event_ids
-            ]
-        )
 
     def get_condensation(self, view: View) -> Condensation:
         target_size = self.max_size // 2

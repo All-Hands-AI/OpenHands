@@ -3,7 +3,6 @@ from __future__ import annotations
 from openhands.core.config.condenser_config import LLMSummarizingCondenserConfig
 from openhands.core.message import Message, TextContent
 from openhands.events.action.agent import CondensationAction
-from openhands.events.event import Event
 from openhands.events.observation.agent import AgentCondensationObservation
 from openhands.llm import LLM
 from openhands.memory.condenser.condenser import (
@@ -36,37 +35,6 @@ class LLMSummarizingCondenser(RollingCondenser):
         self.llm = llm
 
         super().__init__()
-
-    def get_view(self, events: list[Event]) -> View:
-        result_events = []
-        forgotten_event_ids = []
-
-        for event in events:
-            if isinstance(event, CondensationAction):
-                forgotten_event_ids.extend(event.forgotten)
-            else:
-                result_events.append(event)
-
-        kept_events = [
-            event for event in result_events if event.id not in forgotten_event_ids
-        ]
-
-        # Grab the latest summary
-        summary: str | None = None
-        for event in reversed(events):
-            if isinstance(event, CondensationAction):
-                summary = event.summary
-                break
-
-        # If there's a summary event, stick it just after the kept prefix
-        if summary is not None:
-            return View(
-                events=kept_events[: self.keep_first]
-                + [AgentCondensationObservation(summary)]
-                + kept_events[self.keep_first :]
-            )
-        else:
-            return View(events=kept_events)
 
     def get_condensation(self, view: View) -> Condensation:
         head = view[: self.keep_first]
@@ -138,6 +106,7 @@ INTENT: Fix precision while maintaining FITS compliance"""
                 forgotten_events_start_id=min(event.id for event in forgotten_events),
                 forgotten_events_end_id=max(event.id for event in forgotten_events),
                 summary=summary,
+                summary_offset=self.keep_first,
             )
         )
 
