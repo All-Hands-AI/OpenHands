@@ -2,6 +2,7 @@
 import argparse
 import asyncio
 import sys
+from typing import List
 
 from openhands.agenthub.codeact_agent.tools.mcp_agent import MCPAgent
 from openhands.core.config.app_config import AppConfig
@@ -16,29 +17,54 @@ class MCPRunner:
 
     def __init__(self, config: AppConfig):
         self.server_reference = 'openhands.agenthub.codeact_agent.tools.mcp_agent'
-        self.agent = MCPAgent()
         llm_config = config.get_llm_config_from_agent(config.default_agent)
-        self.config = config.get_agent_config(config.default_agent)
+        self.config = config
         self.llm = LLM(config=llm_config)
+        self.mcp_agents: List[MCPAgent] = []
 
-    async def initialize(
-        self,
-        connection_type: str,
-        server_url: str | None = None,
-    ) -> None:
-        """Initialize the MCP agent with the appropriate connection."""
-        logger.info(f'Initializing MCPAgent with {connection_type} connection...')
+    async def initialize(self) -> None:
+        """Initialize the MCP agent with multiple connections based on config."""
+        if not hasattr(self.config, 'mcp'):
+            logger.error('MCP configuration not found')
+            return
 
-        if connection_type == 'stdio':
-            await self.agent.initialize(
-                connection_type='stdio',
-                command=sys.executable,
-                args=['-m', self.server_reference],
-            )
-        else:  # sse
-            await self.agent.initialize(connection_type='sse', server_url=server_url)
+        mcp_config = self.config.mcp
 
-        logger.info(f'Connected to MCP server via {connection_type}')
+        # Initialize SSE connections
+        if mcp_config.sse.mcp_servers:
+            for server_url in mcp_config.sse.mcp_servers:
+                logger.info(
+                    f'Initializing MCP agent for {server_url} with SSE connection...'
+                )
+
+                agent = MCPAgent()
+                try:
+                    await agent.initialize(connection_type='sse', server_url=server_url)
+                    self.mcp_agents.append(agent)
+                    logger.info(f'Connected to MCP server {server_url} via SSE')
+                except Exception as e:
+                    logger.error(f'Failed to connect to {server_url}: {str(e)}')
+                    raise
+
+        # Initialize stdio connections
+        if mcp_config.stdio.commands:
+            for command, args in zip(mcp_config.stdio.commands, mcp_config.stdio.args):
+                logger.info(
+                    f'Initializing MCP agent for {command} with stdio connection...'
+                )
+
+                agent = MCPAgent()
+                try:
+                    await agent.initialize(
+                        connection_type='stdio', command=command, args=args
+                    )
+                    self.mcp_agents.append(agent)
+                    logger.info(
+                        f'Connected to MCP server via stdio with command {command}'
+                    )
+                except Exception as e:
+                    logger.error(f'Failed to connect with command {command}: {str(e)}')
+                    raise
 
     async def run_single_prompt(self, prompt: str) -> None:
         """Run the agent with a single prompt."""
@@ -54,24 +80,14 @@ class MCPRunner:
 
     async def cleanup(self) -> None:
         """Clean up agent resources."""
-        await self.agent.cleanup()
+        for agent in self.mcp_agents:
+            await agent.cleanup()
         logger.info('Session ended')
 
 
 def parse_args() -> argparse.Namespace:
     """Parse command line arguments."""
     parser = get_parser()
-    parser.add_argument(
-        '--mcp-connection',
-        choices=['stdio', 'sse'],
-        default='sse',
-        help='Connection type: stdio or sse',
-    )
-    parser.add_argument(
-        '--mcp-server-url',
-        default='http://127.0.0.1:8000/sse',
-        help='URL for SSE connection',
-    )
     parser.add_argument('--prompt', '-p', help='Single prompt to execute and exit')
     return parser.parse_args()
 
@@ -84,8 +100,9 @@ async def run_mcp() -> None:
     runner = MCPRunner(config)
 
     try:
-        await runner.initialize(args.mcp_connection, args.mcp_server_url)
-        # await runner.run_single_prompt(args.prompt)
+        await runner.initialize()
+        if args.prompt:
+            await runner.run_single_prompt(args.prompt)
 
     except KeyboardInterrupt:
         logger.info('Program interrupted by user')
