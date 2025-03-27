@@ -31,11 +31,15 @@ export function GitRepositoriesSuggestionBox({
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   // TODO: Use `useQueries` to fetch all repositories in parallel
-  const { data: appRepositories } = useAppRepositories();
-  const { data: userRepositories } = useUserRepositories();
-  const { data: searchedRepos } = useSearchRepositories(
-    sanitizeQuery(debouncedSearchQuery),
-  );
+  const { data: appRepositories, isLoading: isAppReposLoading } =
+    useAppRepositories();
+  const { data: userRepositories, isLoading: isUserReposLoading } =
+    useUserRepositories();
+  const { data: searchedRepos, isLoading: isSearchReposLoading } =
+    useSearchRepositories(sanitizeQuery(debouncedSearchQuery));
+
+  const isLoading =
+    isAppReposLoading || isUserReposLoading || isSearchReposLoading;
 
   const repositories =
     userRepositories?.pages.flatMap((page) => page.data) ||
@@ -62,6 +66,7 @@ export function GitRepositoriesSuggestionBox({
             onSelect={handleSubmit}
             publicRepositories={searchedRepos || []}
             userRepositories={repositories}
+            isLoading={isLoading}
           />
         ) : (
           <BrandButton

@@ -4,6 +4,7 @@ import {
   Autocomplete,
   AutocompleteItem,
   AutocompleteSection,
+  Spinner,
 } from "@heroui/react";
 import { useDispatch } from "react-redux";
 import posthog from "posthog-js";
@@ -19,6 +20,7 @@ interface GitRepositorySelectorProps {
   onSelect: () => void;
   userRepositories: GitRepository[];
   publicRepositories: GitRepository[];
+  isLoading?: boolean;
 }
 
 export function GitRepositorySelector({
@@ -26,6 +28,7 @@ export function GitRepositorySelector({
   onSelect,
   userRepositories,
   publicRepositories,
+  isLoading = false,
 }: GitRepositorySelectorProps) {
   const { t } = useTranslation();
   const { data: config } = useConfig();
@@ -81,7 +84,16 @@ export function GitRepositorySelector({
     dispatch(setSelectedRepository(null));
   };
 
-  const emptyContent = t(I18nKey.GITHUB$NO_RESULTS);
+  const emptyContent = isLoading ? (
+    <div className="flex items-center justify-center py-2">
+      <Spinner size="sm" className="mr-2" />
+      <span>
+        {t(I18nKey.GITHUB$LOADING_REPOSITORIES) || "Loading repositories..."}
+      </span>
+    </div>
+  ) : (
+    t(I18nKey.GITHUB$NO_RESULTS)
+  );
 
   return (
     <Autocomplete
@@ -96,6 +108,7 @@ export function GitRepositorySelector({
           inputWrapper:
             "text-sm w-full rounded-[4px] px-3 py-[10px] bg-[#525252] text-[#A3A3A3]",
         },
+        endContent: isLoading ? <Spinner size="sm" /> : undefined,
       }}
       onSelectionChange={(id) => handleRepoSelection(id?.toString() ?? null)}
       onInputChange={onInputChange}
