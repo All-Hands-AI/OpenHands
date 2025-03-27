@@ -37,7 +37,10 @@ from openhands.llm.retry_mixin import RetryMixin
 __all__ = ['LLM']
 
 # tuple of exceptions to retry on
-LLM_RETRY_EXCEPTIONS: tuple[type[Exception], ...] = (RateLimitError,)
+LLM_RETRY_EXCEPTIONS: tuple[type[Exception], ...] = (
+    RateLimitError,
+    litellm.Timeout,
+)
 
 # cache prompt supporting models
 # remove this when we gemini and deepseek are supported
