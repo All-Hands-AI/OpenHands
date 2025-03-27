@@ -103,10 +103,23 @@ export function GitRepositorySelector({
       listboxProps={{
         emptyContent,
       }}
-      defaultFilter={(textValue, inputValue) =>
-        !inputValue ||
-        sanitizeQuery(textValue).includes(sanitizeQuery(inputValue))
-      }
+      defaultFilter={(textValue, inputValue) => {
+        if (!inputValue) return true;
+
+        const sanitizedInput = sanitizeQuery(inputValue);
+
+        // Check if the repository name matches
+        const nameMatches = sanitizeQuery(textValue).includes(sanitizedInput);
+
+        // Check if the provider type matches (github or gitlab)
+        const providerMatches =
+          sanitizedInput === "github" ||
+          sanitizedInput === "gitlab" ||
+          textValue.includes("github") ||
+          textValue.includes("gitlab");
+
+        return nameMatches || providerMatches;
+      }}
     >
       {config?.APP_MODE === "saas" &&
         config?.APP_SLUG &&
@@ -134,7 +147,7 @@ export function GitRepositorySelector({
                 data-testid="github-repo-item"
                 key={repo.id}
                 className="data-[selected=true]:bg-default-100"
-                textValue={`${repo.full_name} ${repo.git_provider}`}
+                textValue={repo.full_name}
               >
                 {repo.full_name}
               </AutocompleteItem>
@@ -154,7 +167,7 @@ export function GitRepositorySelector({
                 data-testid="github-repo-item"
                 key={repo.id}
                 className="data-[selected=true]:bg-default-100"
-                textValue={`${repo.full_name} ${repo.git_provider}`}
+                textValue={repo.full_name}
               >
                 {repo.full_name}
                 <span className="ml-1 text-gray-400">
