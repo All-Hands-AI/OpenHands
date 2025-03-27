@@ -818,15 +818,25 @@ if __name__ == '__main__':
             return []
 
     @app.get('/view')
-    async def view_file(path: str):
+    async def view_file(path: str, request: Request):
         """View a file using an embedded viewer.
 
         Args:
             path (str): The absolute path of the file to view.
+            request (Request): The FastAPI request object.
 
         Returns:
             HTMLResponse: An HTML page with an appropriate viewer for the file.
         """
+        # Security check: Only allow requests from localhost
+        client_host = request.client.host if request.client else None
+        if client_host not in ['127.0.0.1', 'localhost', '::1']:
+            logger.warning(f'Unauthorized file view attempt from {client_host}')
+            return HTMLResponse(
+                content='<h1>Access Denied</h1><p>This endpoint is only accessible from localhost</p>',
+                status_code=403,
+            )
+
         if not os.path.isabs(path):
             return HTMLResponse(
                 content=f'<h1>Error: Path must be absolute</h1><p>{path}</p>',
