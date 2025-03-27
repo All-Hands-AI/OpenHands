@@ -91,6 +91,8 @@ export function handleActionMessage(message: ActionMessage) {
     const metrics = {
       cost: message.llm_metrics?.accumulated_cost ?? null,
       usage: message.llm_metrics?.accumulated_token_usage ?? null,
+      token_usages: message.llm_metrics?.token_usages ?? [],
+      model_name: message.llm_metrics?.model_name ?? null,
     };
     store.dispatch(setMetrics(metrics));
   }

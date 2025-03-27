@@ -12,6 +12,7 @@ import { ConversationCardContextMenu } from "./conversation-card-context-menu";
 import { cn } from "#/utils/utils";
 import { BaseModal } from "../../shared/modals/base-modal/base-modal";
 import { RootState } from "#/store";
+import { MODEL_CONTEXT_SIZES } from "#/state/metrics-slice";
 
 interface ConversationCardProps {
   onClick?: () => void;
@@ -282,7 +283,7 @@ export function ConversationCard({
                       </span>
                     </div>
 
-                    <div className="flex justify-between items-center pt-1">
+                    <div className="flex justify-between items-center pt-1 pb-2">
                       <span className="font-semibold">Total Tokens:</span>
                       <span className="font-bold">
                         {(
@@ -292,6 +293,85 @@ export function ConversationCard({
                       </span>
                     </div>
                   </>
+                )}
+
+                {/* Most Recent Prompt Metrics */}
+                {metrics?.mostRecentUsage && (
+                  <div className="border-t border-neutral-700 pt-4 pb-2">
+                    <h3 className="text-lg font-semibold mb-3">
+                      Most Recent Prompt
+                    </h3>
+
+                    <div className="flex justify-between items-center pb-2">
+                      <span>Input Tokens:</span>
+                      <span className="font-semibold">
+                        {metrics.mostRecentUsage.prompt_tokens.toLocaleString()}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between items-center pb-2">
+                      <span>Output Tokens:</span>
+                      <span className="font-semibold">
+                        {metrics.mostRecentUsage.completion_tokens.toLocaleString()}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between items-center pb-2">
+                      <span>Total Tokens:</span>
+                      <span className="font-bold">
+                        {(
+                          metrics.mostRecentUsage.prompt_tokens +
+                          metrics.mostRecentUsage.completion_tokens
+                        ).toLocaleString()}
+                      </span>
+                    </div>
+
+                    {/* Context Window Usage */}
+                    {metrics.modelName && (
+                      <div className="mt-3 pt-2 border-t border-neutral-700">
+                        <div className="flex justify-between items-center">
+                          <span>Context Window Usage:</span>
+                          <span className="font-semibold">
+                            {(() => {
+                              const { modelName } = metrics;
+                              const contextSize =
+                                MODEL_CONTEXT_SIZES[modelName] ||
+                                MODEL_CONTEXT_SIZES.default;
+                              const totalTokens =
+                                metrics.mostRecentUsage.prompt_tokens +
+                                metrics.mostRecentUsage.completion_tokens;
+                              const percentage =
+                                (totalTokens / contextSize) * 100;
+
+                              return `${percentage.toFixed(2)}%`;
+                            })()}
+                          </span>
+                        </div>
+
+                        {/* Progress bar for context window usage */}
+                        <div className="w-full bg-neutral-700 rounded-full h-2.5 mt-2">
+                          <div
+                            className="bg-blue-600 h-2.5 rounded-full"
+                            style={{
+                              width: (() => {
+                                const { modelName } = metrics;
+                                const contextSize =
+                                  MODEL_CONTEXT_SIZES[modelName] ||
+                                  MODEL_CONTEXT_SIZES.default;
+                                const totalTokens =
+                                  metrics.mostRecentUsage.prompt_tokens +
+                                  metrics.mostRecentUsage.completion_tokens;
+                                const percentage =
+                                  (totalTokens / contextSize) * 100;
+
+                                return `${Math.min(percentage, 100)}%`;
+                              })(),
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
