@@ -12,6 +12,7 @@ from openhands.events.action import (
     AgentFinishAction,
 )
 from openhands.llm.llm import LLM
+from openhands.mcp.mcp_agent import MCPAgent, convert_mcp_agents_to_tools
 from openhands.memory.condenser import Condenser
 from openhands.memory.conversation_memory import ConversationMemory
 from openhands.runtime.plugins import (
@@ -55,6 +56,7 @@ class CodeActAgent(Agent):
         self,
         llm: LLM,
         config: AgentConfig,
+        mcp_agents: list[MCPAgent] | None = None,
     ) -> None:
         """Initializes a new instance of the CodeActAgent class.
 
@@ -65,13 +67,21 @@ class CodeActAgent(Agent):
         self.pending_actions: deque[Action] = deque()
         self.reset()
 
-        # Retrieve the enabled tools
-        self.tools = codeact_function_calling.get_tools(
+        built_in_tools = codeact_function_calling.get_tools(
             codeact_enable_browsing=self.config.codeact_enable_browsing,
             codeact_enable_jupyter=self.config.codeact_enable_jupyter,
             codeact_enable_llm_editor=self.config.codeact_enable_llm_editor,
             llm=self.llm,
         )
+
+        # initialize MCP agents
+        self.mcp_agents = mcp_agents
+        logger.debug(f'MCP agents: {self.mcp_agents}')
+        mcp_tools = convert_mcp_agents_to_tools(self.mcp_agents)
+        self.tools = built_in_tools + mcp_tools
+        logger.debug(f'MCP tools: {mcp_tools}')
+
+        # Retrieve the enabled tools
         logger.debug(
             f"TOOLS loaded for CodeActAgent: {', '.join([tool.get('function').get('name') for tool in self.tools])}"
         )
@@ -122,7 +132,9 @@ class CodeActAgent(Agent):
         # log to litellm proxy if possible
         params['extra_body'] = {'metadata': state.to_llm_metadata(agent_name=self.name)}
         response = self.llm.completion(**params)
+        logger.error(f'Response from LLM: {response}')
         actions = codeact_function_calling.response_to_actions(response)
+        logger.error(f'Actions after response_to_actions: {actions}')
         for action in actions:
             self.pending_actions.append(action)
         return self.pending_actions.popleft()

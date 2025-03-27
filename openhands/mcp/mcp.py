@@ -1,14 +1,14 @@
 from contextlib import AsyncExitStack
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.sse import sse_client
 from mcp.client.stdio import stdio_client
 from mcp.types import TextContent
 
-from openhands.agenthub.codeact_agent.tools.mcp_base import BaseTool, ToolResult
-from openhands.agenthub.codeact_agent.tools.mcp_tool_collection import ToolCollection
 from openhands.core.logger import openhands_logger as logger
+from openhands.mcp.mcp_base import BaseTool, ToolResult
+from openhands.mcp.mcp_tool_collection import ToolCollection
 
 
 class MCPClientTool(BaseTool):
@@ -87,7 +87,7 @@ class MCPClients(ToolCollection):
 
         # Clear existing tools
         self.tools = tuple()
-        self.tool_map = {}
+        self.tool_map: Dict[str, BaseTool] = {}
 
         # Create proper tool objects for each server tool
         for tool in response.tools:

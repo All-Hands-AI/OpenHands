@@ -8,6 +8,7 @@ NOTE: this will be executed inside the docker sandbox.
 import argparse
 import asyncio
 import base64
+import json
 import mimetypes
 import os
 import shutil
@@ -33,6 +34,7 @@ from uvicorn import run
 
 from openhands.core.exceptions import BrowserUnavailableException
 from openhands.core.logger import openhands_logger as logger
+from openhands.core.setup import create_mcp_agents
 from openhands.events.action import (
     Action,
     BrowseInteractiveAction,
@@ -43,6 +45,7 @@ from openhands.events.action import (
     FileWriteAction,
     IPythonRunCellAction,
 )
+from openhands.events.action.mcp import McpAction
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.observation import (
     CmdOutputObservation,
@@ -53,6 +56,7 @@ from openhands.events.observation import (
     IPythonRunCellObservation,
     Observation,
 )
+from openhands.events.observation.mcp import MCPObservation
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.runtime.browser import browse
 from openhands.runtime.browser.browser_env import BrowserEnv
@@ -67,6 +71,7 @@ from openhands.utils.async_utils import call_sync_from_async, wait_all
 
 class ActionRequest(BaseModel):
     action: dict
+    sse_mcp_config: list[str]
 
 
 ROOT_GID = 0
@@ -256,6 +261,7 @@ class ActionExecutor:
 
         logger.debug('Initializing bash commands')
         await self._init_bash_commands()
+
         logger.debug('Runtime client initialized.')
         self._initialized = True
 
@@ -295,12 +301,13 @@ class ActionExecutor:
             assert obs.exit_code == 0
         logger.debug('Bash init commands completed')
 
-    async def run_action(self, action) -> Observation:
+    async def run_action(self, action, sse_mcp_servers: list[str]) -> Observation:
         async with self.lock:
             action_type = action.action
-            logger.debug(f'Running action:\n{action}')
+            self.sse_mcp_servers = sse_mcp_servers
+            logger.warning(f'Running action:\n{action}')
             observation = await getattr(self, action_type)(action)
-            logger.debug(f'Action output:\n{observation}')
+            logger.warning(f'Action output:\n{observation}')
             return observation
 
     async def run(
@@ -505,6 +512,47 @@ class ActionExecutor:
         await self._ensure_browser_ready()
         return await browse(action, self.browser)
 
+    # TODO: Implement MCP action
+    async def mcp(self, action: McpAction) -> Observation:
+        logger.warning(f'SSE MCP servers: {self.sse_mcp_servers}')
+        # FIXME: This is a temporary solution to test MCP. Need to use mcp
+        # Convert URLs to use host.docker.internal for docker runtime
+        mcp_server_urls = []
+        for server in self.sse_mcp_servers:
+            if server.startswith('http://') or server.startswith('https://'):
+                # Extract the path and port from the URL
+                url_parts = server.split('://', 1)[1].split('/', 1)
+                host_port = url_parts[0]
+                path = url_parts[1] if len(url_parts) > 1 else ''
+
+                # Replace IP with host.docker.internal but keep port
+                port = host_port.split(':')[1] if ':' in host_port else ''
+                docker_url = f'http://host.docker.internal:{port}/{path}'
+                mcp_server_urls.append(docker_url)
+            else:
+                mcp_server_urls.append(server)
+
+        # FIXME: Need to close the agents after calling the tool
+        mcp_agents = await create_mcp_agents(mcp_server_urls, [], [])
+        logger.warning(f'MCP action received: {action}')
+        # Find the MCP agent that has the matching tool name
+        matching_agent = None
+        logger.warning(f'MCP agents: {mcp_agents}')
+        logger.warning(f'MCP action name: {action.name}')
+        for agent in mcp_agents:
+            if action.name in [tool.name for tool in agent.mcp_clients.tools]:
+                matching_agent = agent
+                break
+        if matching_agent is None:
+            raise ValueError(
+                f'No matching MCP agent found for tool name: {action.name}'
+            )
+        args_dict = json.loads(action.arguments)
+        response = await matching_agent.run_tool(action.name, args_dict)
+        logger.warning(f'MCP response: {response}')
+        # Print stack trace to see the calling context
+        return MCPObservation(content=f'MCP action received and processed: {response}')
+
     def close(self):
         self.memory_monitor.stop_monitoring()
         if self.bash_session is not None:
@@ -514,6 +562,7 @@ class ActionExecutor:
 
 
 if __name__ == '__main__':
+    logger.warning('Starting Action Execution Server')
     parser = argparse.ArgumentParser()
     parser.add_argument('port', type=int, help='Port to listen on')
     parser.add_argument('--working-dir', type=str, help='Working directory')
@@ -530,7 +579,6 @@ if __name__ == '__main__':
     )
     # example: python client.py 8000 --working-dir /workspace --plugins JupyterRequirement
     args = parser.parse_args()
-
     plugins_to_load: list[Plugin] = []
     if args.plugins:
         for plugin in args.plugins:
@@ -614,10 +662,11 @@ if __name__ == '__main__':
         assert client is not None
         try:
             action = event_from_dict(action_request.action)
+            sse_mcp_servers = action_request.sse_mcp_config
             if not isinstance(action, Action):
                 raise HTTPException(status_code=400, detail='Invalid action type')
             client.last_execution_time = time.time()
-            observation = await client.run_action(action)
+            observation = await client.run_action(action, sse_mcp_servers)
             return event_to_dict(observation)
         except Exception as e:
             logger.error(f'Error while running /execute_action: {str(e)}')

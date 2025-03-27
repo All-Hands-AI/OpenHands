@@ -26,6 +26,7 @@ from openhands.events.action import (
 )
 from openhands.events.action.action import Action
 from openhands.events.action.files import FileEditSource
+from openhands.events.action.mcp import McpAction
 from openhands.events.observation import (
     AgentThinkObservation,
     ErrorObservation,
@@ -268,7 +269,10 @@ class ActionExecutionClient(Runtime):
                 with self._send_action_server_request(
                     'POST',
                     f'{self._get_action_execution_server_host()}/execute_action',
-                    json={'action': event_to_dict(action)},
+                    json={
+                        'action': event_to_dict(action),
+                        'sse_mcp_config': self.config.mcp.sse.mcp_servers,
+                    },
                     # wait a few more seconds to get the timeout error from client side
                     timeout=action.timeout + 5,
                 ) as response:
@@ -300,6 +304,9 @@ class ActionExecutionClient(Runtime):
         return self.send_action_for_execution(action)
 
     def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
+        return self.send_action_for_execution(action)
+
+    def mcp(self, action: McpAction) -> Observation:
         return self.send_action_for_execution(action)
 
     def close(self) -> None:

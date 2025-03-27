@@ -1,19 +1,12 @@
 from typing import Any, Dict, List, Optional, Tuple
 
-from pydantic import Field
+from pydantic import BaseModel, Field
 
-from openhands.core.logger import logger
-from openhands.prompt.mcp import (
-    MULTIMEDIA_RESPONSE_PROMPT,
-    NEXT_STEP_PROMPT,
-    SYSTEM_PROMPT,
-)
-from openhands.runtime.plugins.tool.base import ToolResult
-from openhands.runtime.plugins.tool.mcp import MCPClients
-from openhands.schema import AgentState, Message
+from openhands.core.logger import openhands_logger as logger
+from openhands.mcp.mcp import MCPClients
 
 
-class MCPAgent:
+class MCPAgent(BaseModel):
     """Agent for interacting with MCP (Model Context Protocol) servers.
 
     This agent connects to an MCP server using either SSE or stdio transport
@@ -23,22 +16,14 @@ class MCPAgent:
     name: str = 'mcp_agent'
     description: str = 'An agent that connects to an MCP server and uses its tools.'
 
-    system_prompt: str = SYSTEM_PROMPT
-    next_step_prompt: str = NEXT_STEP_PROMPT
-
     # Initialize MCP tool collection
     mcp_clients: MCPClients = Field(default_factory=MCPClients)
-    available_tools: MCPClients = None  # Will be set in initialize()
+    model_config = {'arbitrary_types_allowed': True}
 
-    max_steps: int = 20
-    connection_type: str = 'stdio'  # "stdio" or "sse"
+    connection_type: str = 'sse'  # "stdio" or "sse"
 
     # Track tool schemas to detect changes
     tool_schemas: Dict[str, Dict[str, Any]] = Field(default_factory=dict)
-    _refresh_tools_interval: int = 5  # Refresh tools every N steps
-
-    # Special tool names that should trigger termination
-    special_tool_names: List[str] = Field(default_factory=lambda: ['terminate'])
 
     async def initialize(
         self,
@@ -70,9 +55,6 @@ class MCPAgent:
         else:
             raise ValueError(f'Unsupported connection type: {self.connection_type}')
 
-        # Set available_tools to our MCP instance
-        self.available_tools = self.mcp_clients
-
         # Store initial tool schemas
         await self._refresh_tools()
 
@@ -81,11 +63,7 @@ class MCPAgent:
         tools_info = ', '.join(tool_names)
 
         # Add system prompt and available tools information
-        self.memory.add_message(
-            Message.system_message(
-                f'{self.system_prompt}\n\nAvailable MCP tools: {tools_info}'
-            )
-        )
+        logger.info(f'Available MCP tools: {tools_info}')
 
     async def _refresh_tools(self) -> Tuple[List[str], List[str]]:
         """Refresh the list of available tools from the MCP server.
@@ -119,58 +97,26 @@ class MCPAgent:
         # Log and notify about changes
         if added_tools:
             logger.info(f'Added MCP tools: {added_tools}')
-            self.memory.add_message(
-                Message.system_message(f"New tools available: {', '.join(added_tools)}")
-            )
         if removed_tools:
             logger.info(f'Removed MCP tools: {removed_tools}')
-            self.memory.add_message(
-                Message.system_message(
-                    f"Tools no longer available: {', '.join(removed_tools)}"
-                )
-            )
         if changed_tools:
             logger.info(f'Changed MCP tools: {changed_tools}')
 
         return added_tools, removed_tools
 
-    async def think(self) -> bool:
-        """Process current state and decide next action."""
-        # Check MCP session and tools availability
-        if not self.mcp_clients.session or not self.mcp_clients.tool_map:
-            logger.info('MCP service is no longer available, ending interaction')
-            self.state = AgentState.FINISHED
-            return False
+    async def run_tool(
+        self, tool_name: str, args: Dict[str, Any] | None = None
+    ) -> Dict[str, Any]:
+        """Run a tool with the given name and input.
 
-        # Refresh tools periodically
-        if self.current_step % self._refresh_tools_interval == 0:
-            await self._refresh_tools()
-            # All tools removed indicates shutdown
-            if not self.mcp_clients.tool_map:
-                logger.info('MCP service has shut down, ending interaction')
-                self.state = AgentState.FINISHED
-                return False
+        Args:
+            tool_name: Name of the tool to run
+            args: Input for the tool
+        """
+        if not self.mcp_clients.session:
+            raise ValueError('MCP connection not initialized')
 
-        # Use the parent class's think method
-        return await super().think()
-
-    async def _handle_special_tool(self, name: str, result: Any, **kwargs) -> None:
-        """Handle special tool execution and state changes"""
-        # First process with parent handler
-        await super()._handle_special_tool(name, result, **kwargs)
-
-        # Handle multimedia responses
-        if isinstance(result, ToolResult) and result.base64_image:
-            self.memory.add_message(
-                Message.system_message(
-                    MULTIMEDIA_RESPONSE_PROMPT.format(tool_name=name)
-                )
-            )
-
-    def _should_finish_execution(self, name: str, **kwargs) -> bool:
-        """Determine if tool execution should finish the agent"""
-        # Terminate if the tool name is 'terminate'
-        return name.lower() == 'terminate'
+        return await self.mcp_clients.execute(name=tool_name, tool_input=args)
 
     async def cleanup(self) -> None:
         """Clean up MCP connection when done."""
@@ -178,11 +124,22 @@ class MCPAgent:
             await self.mcp_clients.disconnect()
             logger.info('MCP connection closed')
 
-    async def run(self, request: Optional[str] = None) -> str:
-        """Run the agent with cleanup when done."""
-        try:
-            result = await super().run(request)
-            return result
-        finally:
-            # Ensure cleanup happens even if there's an error
-            await self.cleanup()
+
+def convert_mcp_agents_to_tools(mcp_agents: list[MCPAgent]) -> list[dict]:
+    """
+    Converts a list of MCPAgent instances to ChatCompletionToolParam format
+    that can be used by CodeActAgent.
+
+    Args:
+        mcp_agents: List of MCPAgent instances
+
+    Returns:
+        List of ChatCompletionToolParam tools ready to be used by CodeActAgent
+    """
+    all_mcp_tools = []
+    for agent in mcp_agents:
+        # Each MCPAgent has an mcp_clients property that is a ToolCollection
+        # The ToolCollection has a to_params method that converts tools to ChatCompletionToolParam format
+        mcp_tools = agent.mcp_clients.to_params()
+        all_mcp_tools.extend(mcp_tools)
+    return all_mcp_tools

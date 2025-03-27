@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, List
 
-from openhands.agenthub.codeact_agent.tools.mcp_base import (
+from openhands.mcp.mcp_base import (
     BaseTool,
     ToolFailure,
     ToolResult,
