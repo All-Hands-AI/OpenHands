@@ -685,6 +685,7 @@ def test_convert_from_multiple_tool_calls_no_tool_calls():
     )
     assert result == input_messages
 
+
 def test_convert_from_multiple_tool_calls_with_ignore_final_tool_result():
     # Test case with multiple tool calls in one message and ignore_final_tool_result=True
     input_messages = [
@@ -742,12 +743,7 @@ def test_convert_from_multiple_tool_calls_with_ignore_final_tool_result():
                 },
             ],
         },
-        {
-            'role': 'tool',
-            'tool_call_id': 'call2',
-            'name': 'func2',
-            'content': ''
-        }
+        {'role': 'tool', 'tool_call_id': 'call2', 'name': 'func2', 'content': ''},
     ]
 
     result = convert_from_multiple_tool_calls_to_single_tool_call_messages(
