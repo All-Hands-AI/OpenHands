@@ -13,11 +13,6 @@ interface MessagesProps {
 export const Messages: React.FC<MessagesProps> = React.memo(
   ({ messages, isAwaitingUserConfirmation }) =>
     messages.map((message, index) => {
-      // Skip rendering hidden messages
-      if (message.hidden) {
-        return null;
-      }
-
       const shouldShowConfirmationButtons =
         messages.length - 1 === index &&
         message.sender === "assistant" &&

@@ -23,7 +23,7 @@ const HANDLED_ACTIONS: OpenHandsEventType[] = [
   "browse",
   "browse_interactive",
   "edit",
-  "recall",
+  "recall", // Keep this for backward compatibility
 ];
 
 function getRiskText(risk: ActionSecurityRisk) {
@@ -115,24 +115,8 @@ export const chatSlice = createSlice({
         // Include the browser_actions in the content
         text = `**Action:**\n\n\`\`\`python\n${action.payload.args.browser_actions}\n\`\`\``;
       } else if (actionID === "recall") {
-        // Create a hidden placeholder for RecallAction that will be updated by RecallObservation
-        // This ensures the collapsible functionality works properly
-        text = `**Recall Action**\n\nType: ${action.payload.args.recall_type}\nQuery: ${action.payload.args.query}`;
-
-        // Add a special flag to mark this message as hidden until an observation arrives
-        const message: Message = {
-          type: "action",
-          sender: "assistant",
-          translationID,
-          eventID: action.payload.id,
-          content: text,
-          imageUrls: [],
-          timestamp: new Date().toISOString(),
-          hidden: true, // Mark as hidden until observation arrives
-        };
-
-        state.messages.push(message);
-        return; // Skip the normal message addition below
+        // Don't visualize RecallAction, only visualize RecallObservation
+        return; // Skip adding this message
       }
       if (actionID === "run" || actionID === "run_ipython") {
         if (
@@ -164,6 +148,79 @@ export const chatSlice = createSlice({
       if (!HANDLED_ACTIONS.includes(observationID)) {
         return;
       }
+
+      // Special handling for RecallObservation - create a new message instead of updating an existing one
+      if (observationID === "recall") {
+        const recallObs = observation.payload as RecallObservation;
+        let content = `**Recall Observation**\n\nType: ${recallObs.extras.recall_type}\n\n`;
+
+        // Handle workspace context
+        if (recallObs.extras.recall_type === "workspace_context") {
+          if (recallObs.extras.repo_name) {
+            content += `**Repository:** ${recallObs.extras.repo_name}\n`;
+          }
+          if (recallObs.extras.repo_directory) {
+            content += `**Directory:** ${recallObs.extras.repo_directory}\n`;
+          }
+          if (recallObs.extras.date) {
+            content += `**Date:** ${recallObs.extras.date}\n`;
+          }
+          if (
+            recallObs.extras.runtime_hosts &&
+            Object.keys(recallObs.extras.runtime_hosts).length > 0
+          ) {
+            content += `**Runtime Hosts:**\n`;
+            for (const [host, port] of Object.entries(
+              recallObs.extras.runtime_hosts,
+            )) {
+              content += `- ${host} (port ${port})\n`;
+            }
+          }
+          if (recallObs.extras.repo_instructions) {
+            content += `\n**Repository Instructions:**\n${recallObs.extras.repo_instructions}\n`;
+          }
+          if (recallObs.extras.additional_agent_instructions) {
+            content += `\n**Additional Instructions:**\n${recallObs.extras.additional_agent_instructions}\n`;
+          }
+        }
+
+        // Handle microagent knowledge
+        if (
+          recallObs.extras.microagent_knowledge &&
+          recallObs.extras.microagent_knowledge.length > 0
+        ) {
+          content += `\n**Microagent Knowledge:**\n`;
+          for (const knowledge of recallObs.extras.microagent_knowledge) {
+            content += `\n### ${knowledge.name} (triggered by: ${knowledge.trigger})\n${knowledge.content}\n`;
+          }
+        }
+
+        // Add the original content from the observation
+        if (
+          observation.payload.content &&
+          observation.payload.content.trim().length > 0
+        ) {
+          content += `\n**Additional Content:**\n${observation.payload.content}\n`;
+        }
+
+        // Create a new message for the observation
+        const translationID = `OBSERVATION_MESSAGE$${observationID.toUpperCase()}`;
+        const message: Message = {
+          type: "action", // Use "action" type to get the collapsible functionality
+          sender: "assistant",
+          translationID,
+          eventID: observation.payload.id,
+          content,
+          imageUrls: [],
+          timestamp: new Date().toISOString(),
+          success: true, // RecallObservation is generally considered successful
+        };
+
+        state.messages.push(message);
+        return; // Skip the normal observation handling below
+      }
+
+      // Normal handling for other observation types
       const translationID = `OBSERVATION_MESSAGE$${observationID.toUpperCase()}`;
       const causeID = observation.payload.cause;
       const causeMessage = state.messages.find(
@@ -224,62 +281,7 @@ export const chatSlice = createSlice({
           content = `${content.slice(0, MAX_CONTENT_LENGTH)}...(truncated)`;
         }
         causeMessage.content = content;
-      } else if (observationID === "recall") {
-        const recallObs = observation.payload as RecallObservation;
-        let content = `**Recall Observation**\n\nType: ${recallObs.extras.recall_type}\n\n`;
-
-        // Handle workspace context
-        if (recallObs.extras.recall_type === "workspace_context") {
-          if (recallObs.extras.repo_name) {
-            content += `**Repository:** ${recallObs.extras.repo_name}\n`;
-          }
-          if (recallObs.extras.repo_directory) {
-            content += `**Directory:** ${recallObs.extras.repo_directory}\n`;
-          }
-          if (recallObs.extras.date) {
-            content += `**Date:** ${recallObs.extras.date}\n`;
-          }
-          if (
-            recallObs.extras.runtime_hosts &&
-            Object.keys(recallObs.extras.runtime_hosts).length > 0
-          ) {
-            content += `**Runtime Hosts:**\n`;
-            for (const [host, port] of Object.entries(
-              recallObs.extras.runtime_hosts,
-            )) {
-              content += `- ${host} (port ${port})\n`;
-            }
-          }
-          if (recallObs.extras.repo_instructions) {
-            content += `\n**Repository Instructions:**\n${recallObs.extras.repo_instructions}\n`;
-          }
-          if (recallObs.extras.additional_agent_instructions) {
-            content += `\n**Additional Instructions:**\n${recallObs.extras.additional_agent_instructions}\n`;
-          }
-        }
-
-        // Handle microagent knowledge
-        if (
-          recallObs.extras.microagent_knowledge &&
-          recallObs.extras.microagent_knowledge.length > 0
-        ) {
-          content += `\n**Microagent Knowledge:**\n`;
-          for (const knowledge of recallObs.extras.microagent_knowledge) {
-            content += `\n### ${knowledge.name} (triggered by: ${knowledge.trigger})\n${knowledge.content}\n`;
-          }
-        }
-
-        // Add the original content from the observation
-        if (
-          observation.payload.content &&
-          observation.payload.content.trim().length > 0
-        ) {
-          content += `\n**Additional Content:**\n${observation.payload.content}\n`;
-        }
-
-        causeMessage.content = content;
-        causeMessage.success = true; // RecallObservation is generally considered successful
-        causeMessage.hidden = false; // Unhide the message when the observation arrives
+        // RecallObservation is now handled at the beginning of the function
       }
     },
 
