@@ -60,19 +60,19 @@
         "de": "Einstellungen"
     },
     "PROJECT$START_NEW": {
-        "en": "Start new project",
-        "ja": "新規プロジェクトを開始",
-        "zh-CN": "开始新项目",
-        "zh-TW": "開始新專案",
-        "ko-KR": "새 프로젝트 시작",
-        "no": "Start nytt prosjekt",
-        "it": "Avvia nuovo progetto",
-        "pt": "Iniciar novo projeto",
-        "es": "Iniciar nuevo proyecto",
-        "ar": "بدء مشروع جديد",
-        "fr": "Démarrer un nouveau projet",
-        "tr": "Yeni proje başlat",
-        "de": "Neues Projekt starten"
+        "en": "Start new conversation",
+        "ja": "新規会話を開始",
+        "zh-CN": "开始新对话",
+        "zh-TW": "開始新對話",
+        "ko-KR": "새 대화 시작",
+        "no": "Start ny samtale",
+        "it": "Avvia nuova conversazione",
+        "pt": "Iniciar nova conversa",
+        "es": "Iniciar nueva conversación",
+        "ar": "بدء محادثة جديدة",
+        "fr": "Démarrer une nouvelle conversation",
+        "tr": "Yeni sohbet başlat",
+        "de": "Neue Unterhaltung starten"
     },
     "PROJECT$NEW": {
         "en": "New Project",
