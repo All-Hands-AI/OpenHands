@@ -111,6 +111,7 @@ class BrowserEnv:
         if self.eval_mode:
             self.eval_goal = obs['goal']
             if 'goal_object' in obs:
+                obs['goal_object'] = list(obs['goal_object'])
                 if len(obs['goal_object']) > 0:
                     self.eval_goal = obs['goal_object'][0]['text']
                 for message in obs['goal_object']:

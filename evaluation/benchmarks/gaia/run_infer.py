@@ -389,7 +389,7 @@ if __name__ == '__main__':
     prepared_dataset = prepare_dataset(gaia_tests, output_file, args.eval_n_limit)
     # indices = [30, 60, 102, 106, 110, 115, 133, 161] # crashing behaviour
     # indices = [28, 43, 47, 93, 105, 119, 125, 137, 148, 153, 154] # output formatting
-    indices = [14]
+    indices = [63]
     prepared_dataset = prepared_dataset.iloc[indices]
     # print(prepared_dataset['Question'])
     # print(type(prepared_dataset), prepared_dataset)

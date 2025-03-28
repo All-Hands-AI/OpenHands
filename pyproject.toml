@@ -30,7 +30,8 @@ uvicorn = "*"
 types-toml = "*"
 numpy = "*"
 json-repair = "*"
-browsergym-core = { git = "https://github.com/adityasoni9998/browsergym.git", subdirectory = "browsergym/core", branch = "browsergym_fixes" } # integrate browsergym-core as the browsing interface
+browsergym-core = { git = "https://github.com/adityasoni9998/browsergym.git", subdirectory = "browsergym/core", branch = "browsergym_update" } # integrate browsergym-core as the browsing interface
+exa-py = "*"
 html2text = "*"
 e2b = ">=1.0.5,<1.2.0"
 pexpect = "*"
@@ -67,7 +68,7 @@ runloop-api-client = "0.26.0"
 libtmux = ">=0.37,<0.40"
 pygithub = "^2.5.0"
 joblib = "*"
-openhands-aci = { git = "https://github.com/adityasoni9998/openhands-aci.git", branch = "markdown_file_read" }
+openhands-aci = { git = "https://github.com/adityasoni9998/openhands-aci.git", branch = "file_viewer_gaia" }
 python-socketio = "^5.11.4"
 redis = "^5.2.0"
 sse-starlette = "^2.1.3"
@@ -143,10 +144,10 @@ gdown = "*"
 matplotlib = "*"
 seaborn = "*"
 tabulate = "*"
-browsergym = "0.10.2"
-browsergym-webarena = "0.10.2"
-browsergym-miniwob = "0.10.2"
-browsergym-visualwebarena = "0.10.2"
+browsergym = "0.13.3"
+browsergym-webarena = "0.13.3"
+browsergym-miniwob = "0.13.3"
+browsergym-visualwebarena = { git = "https://github.com/adityasoni9998/browsergym.git", subdirectory = "browsergym/visualwebarena", branch = "browsergym_update" } # integrate browsergym-visualwebarena
 
 [tool.poetry-dynamic-versioning]
 enable = true

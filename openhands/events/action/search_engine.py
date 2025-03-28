@@ -9,6 +9,8 @@ from openhands.events.action.action import Action
 class SearchAction(Action):
     query: str
     thought: str = ''
+    start_date: str | None = None
+    end_date: str | None = None
     action: str = ActionType.SEARCH
     runnable: ClassVar[bool] = True
 

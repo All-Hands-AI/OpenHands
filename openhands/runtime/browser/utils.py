@@ -31,6 +31,8 @@ async def browse(
     try:
         # obs provided by BrowserGym: see https://github.com/ServiceNow/BrowserGym/blob/main/core/src/browsergym/core/env.py#L396
         obs = await call_sync_from_async(browser.step, action_str)
+        if 'open_pages_urls' in obs:
+            obs['open_pages_urls'] = list(obs['open_pages_urls'])
         return BrowserOutputObservation(
             content=obs['text_content'],  # text content of the page
             url=obs.get('url', ''),  # URL of the page

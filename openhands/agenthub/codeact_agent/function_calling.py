@@ -213,7 +213,10 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                     raise FunctionCallNotExistsError(
                         f'Missing required argument "query" in tool call {tool_call.function.name}'
                     )
-                action = SearchAction(query=arguments['query'])
+                start_date = None
+                if 'start_date' in arguments:
+                    start_date = arguments['start_date']
+                action = SearchAction(query=arguments['query'], start_date=start_date)
             else:
                 raise FunctionCallNotExistsError(
                     f'Tool {tool_call.function.name} is not registered. (arguments: {arguments}). Please check the tool name and retry with an existing tool.'
