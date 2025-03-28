@@ -1,10 +1,10 @@
+import { UserSettings } from "#/api/settings-service/settings-service.types";
 import { DEFAULT_SETTINGS } from "#/services/settings";
-import { Settings } from "#/types/settings";
 
-export const hasAdvancedSettingsSet = (settings: Settings): boolean =>
-  !!settings.LLM_BASE_URL ||
-  settings.AGENT !== DEFAULT_SETTINGS.AGENT ||
-  settings.REMOTE_RUNTIME_RESOURCE_FACTOR !==
-    DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR ||
-  settings.CONFIRMATION_MODE ||
-  !!settings.SECURITY_ANALYZER;
+export const hasAdvancedSettingsSet = (settings: UserSettings): boolean =>
+  !!settings.llm_base_url ||
+  settings.agent !== DEFAULT_SETTINGS.agent ||
+  settings.remote_runtime_resource_factor !==
+    DEFAULT_SETTINGS.remote_runtime_resource_factor ||
+  settings.confirmation_mode ||
+  !!settings.security_analyzer;

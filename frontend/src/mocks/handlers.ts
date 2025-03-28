@@ -4,26 +4,9 @@ import {
   Conversation,
   ResultSet,
 } from "#/api/open-hands.types";
-import { DEFAULT_SETTINGS } from "#/services/settings";
 import { STRIPE_BILLING_HANDLERS } from "./billing-handlers";
 import { ApiSettings, PostApiSettings } from "#/types/settings";
-
-export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
-  llm_model: DEFAULT_SETTINGS.LLM_MODEL,
-  llm_base_url: DEFAULT_SETTINGS.LLM_BASE_URL,
-  llm_api_key: DEFAULT_SETTINGS.LLM_API_KEY,
-  agent: DEFAULT_SETTINGS.AGENT,
-  language: DEFAULT_SETTINGS.LANGUAGE,
-  confirmation_mode: DEFAULT_SETTINGS.CONFIRMATION_MODE,
-  security_analyzer: DEFAULT_SETTINGS.SECURITY_ANALYZER,
-  remote_runtime_resource_factor:
-    DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
-  github_token_is_set: DEFAULT_SETTINGS.GITHUB_TOKEN_IS_SET,
-  enable_default_condenser: DEFAULT_SETTINGS.ENABLE_DEFAULT_CONDENSER,
-  enable_sound_notifications: DEFAULT_SETTINGS.ENABLE_SOUND_NOTIFICATIONS,
-  user_consents_to_analytics: DEFAULT_SETTINGS.USER_CONSENTS_TO_ANALYTICS,
-  provider_tokens: DEFAULT_SETTINGS.PROVIDER_TOKENS,
-};
+import { DEFAULT_SETTINGS } from "#/services/settings";
 
 const MOCK_USER_PREFERENCES: {
   settings: ApiSettings | PostApiSettings | null;
@@ -209,7 +192,7 @@ export const handlers = [
       }
 
       const fullSettings = {
-        ...MOCK_DEFAULT_USER_SETTINGS,
+        ...DEFAULT_SETTINGS,
         ...MOCK_USER_PREFERENCES.settings,
         ...newSettings,
       };
@@ -304,7 +287,7 @@ export const handlers = [
 
   http.post("/api/reset-settings", async () => {
     await delay();
-    MOCK_USER_PREFERENCES.settings = { ...MOCK_DEFAULT_USER_SETTINGS };
+    MOCK_USER_PREFERENCES.settings = { ...DEFAULT_SETTINGS };
     return HttpResponse.json(null, { status: 200 });
   }),
 ];

@@ -13,7 +13,7 @@ import {
   GetTrajectoryResponse,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
-import { ApiSettings, PostApiSettings } from "#/types/settings";
+import { PostApiSettings } from "#/types/settings";
 
 class OpenHands {
   /**
@@ -251,14 +251,6 @@ class OpenHands {
       `/api/conversations/${conversationId}`,
     );
 
-    return data;
-  }
-
-  /**
-   * Get the settings from the server or use the default settings if not found
-   */
-  static async getSettings(): Promise<ApiSettings> {
-    const { data } = await openHands.get<ApiSettings>("/api/settings");
     return data;
   }
 

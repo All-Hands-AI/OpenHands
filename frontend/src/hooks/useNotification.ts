@@ -26,7 +26,7 @@ export const useNotification = () => {
       // 4. Not a settings-related notification
       if (
         options?.playSound === true && // Must be explicitly true
-        settings?.ENABLE_SOUND_NOTIFICATIONS &&
+        settings?.enable_sound_notifications &&
         audioRef.current &&
         !title.includes("BUTTON$") // Don't play for button/settings actions
       ) {
@@ -49,7 +49,7 @@ export const useNotification = () => {
 
       return undefined;
     },
-    [settings?.ENABLE_SOUND_NOTIFICATIONS],
+    [settings?.enable_sound_notifications],
   );
 
   return { notify };

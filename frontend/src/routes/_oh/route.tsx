@@ -59,7 +59,7 @@ export default function MainApp() {
   const { pathname } = useLocation();
   const [searchParams] = useSearchParams();
   const { githubTokenIsSet } = useAuth();
-  const { data: settings } = useSettings();
+  const { data: settings, isFetched: settingsIsFetched } = useSettings();
   const { error, isFetching } = useBalance();
   const { migrateUserConsent } = useMigrateUserConsent();
   const { t } = useTranslation();
@@ -79,17 +79,17 @@ export default function MainApp() {
   const [consentFormIsOpen, setConsentFormIsOpen] = React.useState(false);
 
   React.useEffect(() => {
-    if (settings?.LANGUAGE) {
-      i18n.changeLanguage(settings.LANGUAGE);
+    if (settingsIsFetched && settings?.language) {
+      i18n.changeLanguage(settings.language);
     }
-  }, [settings?.LANGUAGE]);
+  }, [settingsIsFetched, settings?.language]);
 
   React.useEffect(() => {
     const consentFormModalIsOpen =
-      settings?.USER_CONSENTS_TO_ANALYTICS === null;
+      settingsIsFetched && settings?.user_consents_to_analytics === null;
 
     setConsentFormIsOpen(consentFormModalIsOpen);
-  }, [settings]);
+  }, [settingsIsFetched, settings?.user_consents_to_analytics]);
 
   React.useEffect(() => {
     // Migrate user consent to the server if it was previously stored in localStorage
@@ -146,7 +146,7 @@ export default function MainApp() {
 
       {config.data?.FEATURE_FLAGS.ENABLE_BILLING &&
         config.data?.APP_MODE === "saas" &&
-        settings?.IS_NEW_USER && <SetupPaymentModal />}
+        settings?.is_new_user && <SetupPaymentModal />}
     </div>
   );
 }

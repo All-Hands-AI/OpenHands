@@ -59,10 +59,10 @@ function AccountSettings() {
 
     if (isSuccess) {
       return (
-        isCustomModel(resources.models, settings.LLM_MODEL) ||
+        isCustomModel(resources.models, settings.llm_model) ||
         hasAdvancedSettingsSet({
           ...settings,
-          PROVIDER_TOKENS: settings.PROVIDER_TOKENS || {},
+          provider_tokens: settings.provider_tokens || {},
         })
       );
     }
@@ -71,9 +71,9 @@ function AccountSettings() {
   };
 
   const hasAppSlug = !!config?.APP_SLUG;
-  const isGitHubTokenSet = settings?.GITHUB_TOKEN_IS_SET;
-  const isLLMKeySet = settings?.LLM_API_KEY === "**********";
-  const isAnalyticsEnabled = settings?.USER_CONSENTS_TO_ANALYTICS;
+  const isGitHubTokenSet = settings?.github_token_is_set;
+  const isLLMKeySet = settings?.llm_api_key === "**********";
+  const isAnalyticsEnabled = settings?.user_consents_to_analytics;
   const isAdvancedSettingsSet = determineWhetherToToggleAdvancedSettings();
 
   const modelsAndProviders = organizeModelsAndProviders(
@@ -84,7 +84,7 @@ function AccountSettings() {
     "basic" | "advanced"
   >(isAdvancedSettingsSet ? "advanced" : "basic");
   const [confirmationModeIsEnabled, setConfirmationModeIsEnabled] =
-    React.useState(!!settings?.SECURITY_ANALYZER);
+    React.useState(!!settings?.security_analyzer);
   const [resetSettingsModalIsOpen, setResetSettingsModalIsOpen] =
     React.useState(false);
 
@@ -151,7 +151,7 @@ function AccountSettings() {
         formData.get("security-analyzer-input")?.toString() || "",
       REMOTE_RUNTIME_RESOURCE_FACTOR:
         remoteRuntimeResourceFactor ||
-        DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
+        DEFAULT_SETTINGS.remote_runtime_resource_factor,
       CONFIRMATION_MODE: confirmationModeIsEnabled,
     };
 
@@ -193,7 +193,7 @@ function AccountSettings() {
     setLlmConfigMode(isToggled ? "advanced" : "basic");
     if (!isToggled) {
       // reset advanced state
-      setConfirmationModeIsEnabled(!!settings?.SECURITY_ANALYZER);
+      setConfirmationModeIsEnabled(!!settings?.security_analyzer);
     }
   };
 
@@ -237,7 +237,7 @@ function AccountSettings() {
               {llmConfigMode === "basic" && !shouldHandleSpecialSaasCase && (
                 <ModelSelector
                   models={modelsAndProviders}
-                  currentModel={settings.LLM_MODEL}
+                  currentModel={settings.llm_model}
                 />
               )}
 
@@ -246,7 +246,7 @@ function AccountSettings() {
                   testId="llm-custom-model-input"
                   name="llm-custom-model-input"
                   label="Custom Model"
-                  defaultValue={settings.LLM_MODEL}
+                  defaultValue={settings.llm_model}
                   placeholder="anthropic/claude-3-5-sonnet-20241022"
                   type="text"
                   className="w-[680px]"
@@ -257,7 +257,7 @@ function AccountSettings() {
                   testId="base-url-input"
                   name="base-url-input"
                   label="Base URL"
-                  defaultValue={settings.LLM_BASE_URL}
+                  defaultValue={settings.llm_base_url}
                   placeholder="https://api.openai.com"
                   type="text"
                   className="w-[680px]"
@@ -298,7 +298,7 @@ function AccountSettings() {
                       label: agent,
                     })) || []
                   }
-                  defaultSelectedKey={settings.AGENT}
+                  defaultSelectedKey={settings.agent}
                   isClearable={false}
                 />
               )}
@@ -317,7 +317,7 @@ function AccountSettings() {
                     </>
                   }
                   items={REMOTE_RUNTIME_OPTIONS}
-                  defaultSelectedKey={settings.REMOTE_RUNTIME_RESOURCE_FACTOR?.toString()}
+                  defaultSelectedKey={settings.remote_runtime_resource_factor?.toString()}
                   isDisabled
                   isClearable={false}
                 />
@@ -327,7 +327,7 @@ function AccountSettings() {
                 <SettingsSwitch
                   testId="enable-confirmation-mode-switch"
                   onToggle={setConfirmationModeIsEnabled}
-                  defaultIsToggled={!!settings.CONFIRMATION_MODE}
+                  defaultIsToggled={!!settings.confirmation_mode}
                   isBeta
                 >
                   Enable confirmation mode
@@ -338,7 +338,7 @@ function AccountSettings() {
                 <SettingsSwitch
                   testId="enable-memory-condenser-switch"
                   name="enable-memory-condenser-switch"
-                  defaultIsToggled={!!settings.ENABLE_DEFAULT_CONDENSER}
+                  defaultIsToggled={!!settings.enable_default_condenser}
                 >
                   Enable memory condensation
                 </SettingsSwitch>
@@ -356,7 +356,7 @@ function AccountSettings() {
                         label: analyzer,
                       })) || []
                     }
-                    defaultSelectedKey={settings.SECURITY_ANALYZER}
+                    defaultSelectedKey={settings.security_analyzer}
                     isClearable
                     showOptionalTag
                   />
@@ -448,7 +448,7 @@ function AccountSettings() {
                 key: language.value,
                 label: language.label,
               }))}
-              defaultSelectedKey={settings.LANGUAGE}
+              defaultSelectedKey={settings.language}
               isClearable={false}
             />
 
@@ -463,7 +463,7 @@ function AccountSettings() {
             <SettingsSwitch
               testId="enable-sound-notifications-switch"
               name="enable-sound-notifications-switch"
-              defaultIsToggled={!!settings.ENABLE_SOUND_NOTIFICATIONS}
+              defaultIsToggled={!!settings.enable_sound_notifications}
             >
               Enable sound notifications
             </SettingsSwitch>

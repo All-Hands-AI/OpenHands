@@ -7,6 +7,7 @@ import MainApp from "#/routes/_oh/route";
 import i18n from "#/i18n";
 import * as CaptureConsent from "#/utils/handle-capture-consent";
 import OpenHands from "#/api/open-hands";
+import { SettingsService } from "#/api/settings-service/settings-service.api";
 
 describe("frontend/routes/_oh", () => {
   const RouteStub = createRoutesStub([{ Component: MainApp, path: "/" }]);
@@ -59,7 +60,7 @@ describe("frontend/routes/_oh", () => {
   it.skip("should render and capture the user's consent if oss mode", async () => {
     const user = userEvent.setup();
     const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
-    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+    const getSettingsSpy = vi.spyOn(SettingsService, "getSettings");
     const handleCaptureConsentSpy = vi.spyOn(
       CaptureConsent,
       "handleCaptureConsent",

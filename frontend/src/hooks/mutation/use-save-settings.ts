@@ -16,8 +16,8 @@ const saveSettingsMutationFn = async (
   const apiSettings: Partial<PostApiSettings> = {
     llm_model: settings.LLM_MODEL,
     llm_base_url: settings.LLM_BASE_URL,
-    agent: settings.AGENT || DEFAULT_SETTINGS.AGENT,
-    language: settings.LANGUAGE || DEFAULT_SETTINGS.LANGUAGE,
+    agent: settings.AGENT || DEFAULT_SETTINGS.agent,
+    language: settings.LANGUAGE || DEFAULT_SETTINGS.language,
     confirmation_mode: settings.CONFIRMATION_MODE,
     security_analyzer: settings.SECURITY_ANALYZER,
     llm_api_key:

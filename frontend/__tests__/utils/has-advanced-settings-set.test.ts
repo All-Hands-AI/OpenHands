@@ -12,7 +12,7 @@ describe("hasAdvancedSettingsSet", () => {
       expect(
         hasAdvancedSettingsSet({
           ...DEFAULT_SETTINGS,
-          LLM_BASE_URL: "test",
+          llm_base_url: "test",
         }),
       ).toBe(true);
     });
@@ -21,7 +21,7 @@ describe("hasAdvancedSettingsSet", () => {
       expect(
         hasAdvancedSettingsSet({
           ...DEFAULT_SETTINGS,
-          AGENT: "test",
+          agent: "test",
         }),
       ).toBe(true);
     });
@@ -30,7 +30,7 @@ describe("hasAdvancedSettingsSet", () => {
       expect(
         hasAdvancedSettingsSet({
           ...DEFAULT_SETTINGS,
-          REMOTE_RUNTIME_RESOURCE_FACTOR: 999,
+          remote_runtime_resource_factor: 999,
         }),
       ).toBe(true);
     });
@@ -39,7 +39,7 @@ describe("hasAdvancedSettingsSet", () => {
       expect(
         hasAdvancedSettingsSet({
           ...DEFAULT_SETTINGS,
-          CONFIRMATION_MODE: true,
+          confirmation_mode: true,
         }),
       ).toBe(true);
     });
@@ -48,7 +48,7 @@ describe("hasAdvancedSettingsSet", () => {
       expect(
         hasAdvancedSettingsSet({
           ...DEFAULT_SETTINGS,
-          SECURITY_ANALYZER: "test",
+          security_analyzer: "test",
         }),
       ).toBe(true);
     });
