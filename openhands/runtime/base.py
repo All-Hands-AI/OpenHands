@@ -31,6 +31,7 @@ from openhands.events.action import (
     FileWriteAction,
     IPythonRunCellAction,
 )
+from openhands.events.action.mcp import McpAction
 from openhands.events.event import Event
 from openhands.events.observation import (
     AgentThinkObservation,
@@ -536,6 +537,10 @@ class Runtime(FileEditRuntimeMixin):
 
     @abstractmethod
     def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
+        pass
+
+    @abstractmethod
+    def mcp(self, action: McpAction) -> Observation:
         pass
 
     # ====================================================================

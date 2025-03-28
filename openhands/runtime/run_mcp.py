@@ -4,19 +4,19 @@ import asyncio
 import sys
 from typing import List
 
-from openhands.agenthub.codeact_agent.tools.mcp_agent import MCPAgent
 from openhands.core.config.app_config import AppConfig
 from openhands.core.config.utils import get_parser, setup_config_from_args
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message, TextContent
 from openhands.llm.llm import LLM
+from openhands.mcp.mcp_agent import MCPAgent, convert_mcp_agents_to_tools
 
 
 class MCPRunner:
     """Runner class for MCP Agent with proper path handling and configuration."""
 
     def __init__(self, config: AppConfig):
-        self.server_reference = 'openhands.agenthub.codeact_agent.tools.mcp_agent'
+        self.server_reference = 'openhands.mcp.mcp_agent'
         llm_config = config.get_llm_config_from_agent(config.default_agent)
         self.config = config
         self.llm = LLM(config=llm_config)
@@ -65,6 +65,9 @@ class MCPRunner:
                 except Exception as e:
                     logger.error(f'Failed to connect with command {command}: {str(e)}')
                     raise
+
+        mcp_tools = convert_mcp_agents_to_tools(self.mcp_agents)
+        logger.info(f'MCP tools: {mcp_tools}')
 
     async def run_single_prompt(self, prompt: str) -> None:
         """Run the agent with a single prompt."""

@@ -309,6 +309,7 @@ class EventStream:
         logger.debug(f'Adding {type(event).__name__} id={event.id} from {source.name}')
         event._timestamp = datetime.now().isoformat()
         event._source = source  # type: ignore [attr-defined]
+        logger.debug(f'Event to add: {event}')
         data = event_to_dict(event)
         data = self._replace_secrets(data)
         event = event_from_dict(data)
