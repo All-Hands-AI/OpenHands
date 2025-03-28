@@ -33,8 +33,8 @@ def get_token_usage_for_event_id(
 ) -> TokenUsage | None:
     """Starting from the event with .id == event_id and moving backwards in `events`,
     find the first TokenUsage record (if any) associated either with:
-      - tool_call_metadata.model_response.id, or
-      - event.response_id
+      - event.response_id, or
+      - tool_call_metadata.model_response.id
     Returns the first match found, or None if none is found.
     """
     # Find the index of the event with the given id
@@ -48,3 +48,24 @@ def get_token_usage_for_event_id(
         if usage is not None:
             return usage
     return None
+
+
+def exceeds_token_limit(event: Event, metrics: Metrics, max_tokens: int) -> bool:
+    """
+    Checks if the token usage for the given event exceeds the specified maximum token limit.
+
+    Args:
+        event: The event to check token usage for
+        metrics: The metrics containing token usage records
+        max_tokens: The maximum token limit to compare against
+
+    Returns:
+        bool: True if the event's token usage exceeds the limit, False otherwise
+        (also returns False if no token usage record is found)
+    """
+    usage = get_token_usage_for_event(event, metrics)
+    if usage is None:
+        return False
+
+    # Compare against prompt tokens (input tokens)
+    return usage.prompt_tokens > max_tokens

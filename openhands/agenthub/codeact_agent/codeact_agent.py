@@ -183,6 +183,7 @@ class CodeActAgent(Agent):
         if latest_user_message and latest_user_message.content.strip() == '/exit':
             return AgentFinishAction()
 
+
         # Condense the events from the state. If we get a view we'll pass those
         # to the conversation manager for processing, but if we get a condensation
         # event we'll just return that instead of an action. The controller will
