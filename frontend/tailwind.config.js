@@ -9,10 +9,10 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: "#C9B974", // nice yellow
-        logo: "#CFB755", // color for logos and icons
-        base: "#0D0F11", // dark background also used for tooltips
-        "base-secondary": "#24272E", // lighter background
+        primary: "#E4775D", // nice yellow
+        logo: "#E4775D", // color for logos and icons
+        base: "#13141D", // dark background also used for tooltips
+        "base-secondary": "#1A1C28", // lighter background
         danger: "#E76A5E",
         success: "#A5E75E",
         tertiary: "#454545", // gray, used for inputs
@@ -36,7 +36,7 @@ export default {
         dark: {
           colors: {
             primary: "#4465DB",
-            logo: "#CFB755",
+            logo: "#E4775D",
           },
         },
       },

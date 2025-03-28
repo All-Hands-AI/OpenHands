@@ -1,5 +1,4 @@
 import React from "react";
-import { Link } from "react-router";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { HelpLink } from "#/components/features/settings/help-link";
 import { KeyStatusIcon } from "#/components/features/settings/key-status-icon";
@@ -13,7 +12,7 @@ import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 import { useAIConfigOptions } from "#/hooks/query/use-ai-config-options";
 import { useConfig } from "#/hooks/query/use-config";
 import { useSettings } from "#/hooks/query/use-settings";
-import { useAppLogout } from "#/hooks/use-app-logout";
+// import { useAppLogout } from "#/hooks/use-app-logout";
 import { AvailableLanguages } from "#/i18n";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import { handleCaptureConsent } from "#/utils/handle-capture-consent";
@@ -45,7 +44,7 @@ function AccountSettings() {
     isSuccess: isSuccessfulResources,
   } = useAIConfigOptions();
   const { mutate: saveSettings } = useSaveSettings();
-  const { handleLogout } = useAppLogout();
+  // const { handleLogout } = useAppLogout();
 
   const isFetching = isFetchingSettings || isFetchingResources;
   const isSuccess = isSuccessfulSettings && isSuccessfulResources;
@@ -70,8 +69,8 @@ function AccountSettings() {
     return false;
   };
 
-  const hasAppSlug = !!config?.APP_SLUG;
-  const isGitHubTokenSet = settings?.GITHUB_TOKEN_IS_SET;
+  // const hasAppSlug = !!config?.APP_SLUG;
+  // const isGitHubTokenSet = settings?.GITHUB_TOKEN_IS_SET;
   const isLLMKeySet = settings?.LLM_API_KEY === "**********";
   const isAnalyticsEnabled = settings?.USER_CONSENTS_TO_ANALYTICS;
   const isAdvancedSettingsSet = determineWhetherToToggleAdvancedSettings();
@@ -365,7 +364,7 @@ function AccountSettings() {
             </section>
           )}
 
-          <section className="flex flex-col gap-6">
+          {/* <section className="flex flex-col gap-6">
             <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">
               GitHub Settings
             </h2>
@@ -433,7 +432,7 @@ function AccountSettings() {
             >
               Disconnect from GitHub
             </BrandButton>
-          </section>
+          </section> */}
 
           <section className="flex flex-col gap-6">
             <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">

@@ -76,10 +76,11 @@ class CodeActAgent(Agent):
             mcp_tools = convert_mcp_agents_to_tools(self.mcp_agents)
             logger.info(f'MCP tools: {mcp_tools}')
         except Exception as e:
-            logger.error(f"Error converting MCP agents to tools: {e}")
+            logger.error(f'Error converting MCP agents to tools: {e}')
             mcp_tools = []
+
         self.tools = built_in_tools + mcp_tools
-        
+
         # Retrieve the enabled tools
         logger.info(
             f"TOOLS loaded for CodeActAgent: {', '.join([tool.get('function').get('name') for tool in self.tools])}"
