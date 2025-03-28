@@ -204,11 +204,12 @@ export const chatSlice = createSlice({
         }
 
         // Create a new message for the observation
+        // Use the correct translation ID format that matches what's in the i18n file
         const translationID = `OBSERVATION_MESSAGE$${observationID.toUpperCase()}`;
         const message: Message = {
           type: "action", // Use "action" type to get the collapsible functionality
           sender: "assistant",
-          translationID,
+          translationID, // This must match an entry in the i18n translation file
           eventID: observation.payload.id,
           content,
           imageUrls: [],
