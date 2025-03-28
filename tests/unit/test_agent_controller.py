@@ -647,7 +647,7 @@ async def test_notify_on_llm_retry(mock_agent, mock_event_stream, mock_status_ca
 async def test_context_window_exceeded_error_handling(
     mock_agent, mock_runtime, test_event_stream
 ):
-    """Test that context window exceeded errors are handled correctly by truncating history."""
+    """Test that context window exceeded errors are handled correctly by the controller, providing a smaller view but keeping the history intact."""
     max_iterations = 5
     error_after = 2
 
@@ -702,7 +702,7 @@ async def test_context_window_exceeded_error_handling(
     # state is set to error out before then, if this terminates and we have a
     # record of the error being thrown we can be confident that the controller
     # handles the truncation correctly.
-    await asyncio.wait_for(
+    final_state = await asyncio.wait_for(
         run_controller(
             config=AppConfig(max_iterations=max_iterations),
             initial_user_action=MessageAction(content='INITIAL'),
@@ -732,6 +732,20 @@ async def test_context_window_exceeded_error_handling(
             assert len(first_view) > len(second_view)
         else:
             assert len(first_view) < len(second_view)
+
+    # The final state's history should contain:
+    # - max_iterations number of message actions,
+    # - max_iterations number of recall actions,
+    # - max_iterations number of recall observations,
+    # - and exactly one condensation action.
+    assert len(final_state.history) == max_iterations * 3 + 1
+
+    # ...but the final state's view should be identical to the last view (plus
+    # the final message action and associated recall action/observation).
+    assert len(final_state.view) == len(step_state.views[-1]) + 3
+
+    # And these two representations of the state are _not_ the same.
+    assert len(final_state.history) != len(final_state.view)
 
 
 @pytest.mark.asyncio
