@@ -7,7 +7,6 @@ from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message, TextContent
-from openhands.core.message_utils import exceeds_token_limit
 from openhands.events.action import (
     Action,
     AgentFinishAction,
@@ -16,6 +15,7 @@ from openhands.events.event import Event
 from openhands.llm.llm import LLM
 from openhands.memory.condenser import Condenser
 from openhands.memory.condenser.condenser import Condensation, View
+from openhands.memory.condenser.impl.token_aware_condenser import TokenAwareCondenser
 from openhands.memory.conversation_memory import ConversationMemory
 from openhands.runtime.plugins import (
     AgentSkillsRequirement,
@@ -86,6 +86,14 @@ class CodeActAgent(Agent):
         self.conversation_memory = ConversationMemory(self.config, self.prompt_manager)
 
         self.condenser = Condenser.from_config(self.config.condenser)
+
+        # FIXME: we need to use the agent LLM's max_input_tokens
+        if (
+            isinstance(self.condenser, TokenAwareCondenser)
+            and self.llm.config.max_input_tokens
+        ):
+            self.condenser.max_input_tokens = self.llm.config.max_input_tokens
+
         logger.debug(f'Using condenser: {type(self.condenser)}')
 
     def reset(self) -> None:
@@ -116,22 +124,6 @@ class CodeActAgent(Agent):
         latest_user_message = state.get_last_user_message()
         if latest_user_message and latest_user_message.content.strip() == '/exit':
             return AgentFinishAction()
-
-        # Check if last eligible event exceeds token limit
-        # If yes, apply condensation and immediately return the action.
-        last_event = state.history[-1] if state.history else None
-        if (
-            last_event
-            and self.llm.config.max_input_tokens
-            and exceeds_token_limit(
-                last_event, state.metrics, self.llm.config.max_input_tokens
-            )
-        ):
-            logger.debug('Last event exceeds token limit, applying condensation')
-            # Apply condensation since token limit is exceeded
-            condensed_result = self.condenser.condensed_history(state, force=True)
-            if isinstance(condensed_result, Condensation):
-                return condensed_result.action
 
         # Condense the events from the state. If we get a view we'll pass those
         # to the conversation manager for processing, but if we get a condensation
