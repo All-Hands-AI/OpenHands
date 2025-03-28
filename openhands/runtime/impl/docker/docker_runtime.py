@@ -256,9 +256,12 @@ class DockerRuntime(ActionExecutionClient):
             self.config.workspace_mount_path is not None
             and self.config.workspace_mount_path_in_sandbox is not None
         ):
-            # e.g. result would be: {"/home/user/openhands/workspace": {'bind': "/workspace", 'mode': 'rw'}}
+            # e.g. result would be: {"/home/user/openhands/workspace/openhands-volume-1d386f20f9f34a938040c813cb8c1117": {'bind': "/workspace", 'mode': 'rw'}}
+            volume_name = (
+                f'{self.config.workspace_mount_path}/openhands-volume-{self.sid}'
+            )
             volumes = {
-                self.config.workspace_mount_path: {
+                volume_name: {
                     'bind': self.config.workspace_mount_path_in_sandbox,
                     'mode': 'rw',
                 }
