@@ -142,14 +142,16 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             buildx_cmd.append(f'--platform={platform}')
 
         # cursor >
-        # # ローカルのイメージをキャッシュとして使用
-        # if target_image_repo:
-        #     try:
-        #         self.docker_client.images.get(target_image_repo)
-        #         buildx_cmd.append(f'--cache-from={target_image_repo}')
-        #         logger.debug(f'Using local image {target_image_repo} as cache')
-        #     except docker.errors.ImageNotFound:
-        #         logger.debug(f'Local image {target_image_repo} not found, skipping cache')
+        # ローカルのイメージをキャッシュとして使用
+        if target_image_repo:
+            try:
+                self.docker_client.images.get(target_image_repo)
+                buildx_cmd.append(f'--cache-from=type=registry,ref={target_image_repo}')
+                logger.debug(f'Using local image {target_image_repo} as cache')
+            except docker.errors.ImageNotFound:
+                logger.debug(
+                    f'Local image {target_image_repo} not found, skipping cache'
+                )
         # < cursor
 
         # TODO: (Tetsu-is) fix later. Hard-coded for now.
