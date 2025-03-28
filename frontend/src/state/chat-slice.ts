@@ -115,8 +115,24 @@ export const chatSlice = createSlice({
         // Include the browser_actions in the content
         text = `**Action:**\n\n\`\`\`python\n${action.payload.args.browser_actions}\n\`\`\``;
       } else if (actionID === "recall") {
-        // Don't visualize RecallAction, only visualize RecallObservation
-        return; // Skip adding this message
+        // Create a hidden placeholder for RecallAction that will be updated by RecallObservation
+        // This ensures the collapsible functionality works properly
+        text = `**Recall Action**\n\nType: ${action.payload.args.recall_type}\nQuery: ${action.payload.args.query}`;
+
+        // Add a special flag to mark this message as hidden until an observation arrives
+        const message: Message = {
+          type: "action",
+          sender: "assistant",
+          translationID,
+          eventID: action.payload.id,
+          content: text,
+          imageUrls: [],
+          timestamp: new Date().toISOString(),
+          hidden: true, // Mark as hidden until observation arrives
+        };
+
+        state.messages.push(message);
+        return; // Skip the normal message addition below
       }
       if (actionID === "run" || actionID === "run_ipython") {
         if (
@@ -263,6 +279,7 @@ export const chatSlice = createSlice({
 
         causeMessage.content = content;
         causeMessage.success = true; // RecallObservation is generally considered successful
+        causeMessage.hidden = false; // Unhide the message when the observation arrives
       }
     },
 

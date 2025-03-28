@@ -8,4 +8,5 @@ export type Message = {
   pending?: boolean;
   translationID?: string;
   eventID?: number;
+  hidden?: boolean; // Flag to hide messages until they should be displayed
 };
