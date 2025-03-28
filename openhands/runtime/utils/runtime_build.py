@@ -170,6 +170,9 @@ def build_runtime_image_in_folder(
     extra_build_args: List[str] | None = None,
 ) -> str:
     runtime_image_repo, _ = get_runtime_image_repo_and_tag(base_image)
+    logger.info(
+        f'[LOG] base_image: {base_image}, runtime_image_repo: {runtime_image_repo}'
+    )
     lock_tag = f'oh_v{oh_version}_{get_hash_for_lock_files(base_image)}'
     versioned_tag = (
         # truncate the base image to 96 characters to fit in the tag max length (128 characters)
