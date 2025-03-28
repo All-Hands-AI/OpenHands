@@ -14,8 +14,17 @@ class RecentEventsCondenser(Condenser):
 
         super().__init__()
 
-    def condense(self, events: list[Event]) -> View | Condensation:
-        """Keep only the most recent events (up to `max_events`)."""
+    def condense(self, events: list[Event], force: bool = False) -> View | Condensation:
+        """Keep only the most recent events (up to `max_events`).
+
+        Args:
+            events: A list of events representing the entire history of the agent.
+            force: If True, force condensation regardless of normal conditions.
+                  Not used by this condenser as it always condenses to max_events.
+
+        Returns:
+            View: A view containing the kept events.
+        """
         head = events[: self.keep_first]
         tail_length = max(0, self.max_events - len(head))
         tail = events[-tail_length:]
