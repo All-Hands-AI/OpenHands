@@ -7,6 +7,7 @@ from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message, TextContent
+from openhands.core.message_utils import exceeds_token_limit
 from openhands.events.action import (
     Action,
     AgentFinishAction,
@@ -115,6 +116,22 @@ class CodeActAgent(Agent):
         latest_user_message = state.get_last_user_message()
         if latest_user_message and latest_user_message.content.strip() == '/exit':
             return AgentFinishAction()
+
+        # Check if last eligible event exceeds token limit
+        # If yes, apply condensation and immediately return the action.
+        last_event = state.history[-1] if state.history else None
+        if (
+            last_event
+            and self.llm.config.max_input_tokens
+            and exceeds_token_limit(
+                last_event, state.metrics, self.llm.config.max_input_tokens
+            )
+        ):
+            logger.debug('Last event exceeds token limit, applying condensation')
+            # Apply condensation since token limit is exceeded
+            condensed_result = self.condenser.condensed_history(state, force=True)
+            if isinstance(condensed_result, Condensation):
+                return condensed_result.action
 
         # Condense the events from the state. If we get a view we'll pass those
         # to the conversation manager for processing, but if we get a condensation
