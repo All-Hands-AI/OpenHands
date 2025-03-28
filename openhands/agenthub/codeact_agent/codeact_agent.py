@@ -51,7 +51,9 @@ class CodeActAgent(Agent):
         JupyterRequirement(),
     ]
 
-    def __init__(self, llm: LLM, config: AgentConfig, mcp_tools: list[dict] | None = None) -> None:
+    def __init__(
+        self, llm: LLM, config: AgentConfig, mcp_tools: list[dict] | None = None
+    ) -> None:
         """Initializes a new instance of the CodeActAgent class.
 
         Parameters:
