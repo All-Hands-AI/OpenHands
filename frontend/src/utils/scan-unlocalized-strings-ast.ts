@@ -68,9 +68,10 @@ function shouldIgnorePath(filePath: string): boolean {
   return IGNORE_PATHS.some((ignore) => filePath.includes(ignore));
 }
 
+// Check if a string looks like a translation key
+// Translation keys typically use dots, underscores, or are all caps
+// Also check for the pattern with $ which is used in our translation keys
 function isLikelyTranslationKey(str: string): boolean {
-  // Translation keys typically use dots, underscores, or are all caps
-  // Also check for the pattern with $ which is used in our translation keys
   return (
     /^[A-Z0-9_$.]+$/.test(str) ||
     str.includes(".") ||
@@ -274,7 +275,13 @@ function isLikelyUserFacingText(str: string): boolean {
     return true;
   }
 
-  if (isLikelyTranslationKey(str) || isCommonDevelopmentString(str)) {
+  // Check if it's a translation key pattern (e.g., "SETTINGS$BASE_URL")
+  // These should be wrapped in t() or use I18nKey enum
+  if (isLikelyTranslationKey(str) && /^[A-Z0-9_]+\$[A-Z0-9_]+$/.test(str)) {
+    return true;
+  }
+
+  if (isCommonDevelopmentString(str)) {
     return false;
   }
 
@@ -303,6 +310,7 @@ function isLikelyUserFacingText(str: string): boolean {
     "Beta",
     "documentation",
     "Language",
+    "GitHub",
   ];
 
   if (knownUIStrings.includes(str)) {
@@ -347,6 +355,14 @@ function isTranslationCall(node: t.Node): boolean {
     node.callee.name === "t" &&
     node.arguments.length > 0
   ) {
+    // Check if using raw string instead of I18nKey enum
+    if (t.isStringLiteral(node.arguments[0])) {
+      const key = node.arguments[0].value;
+      if (isRawTranslationKey(key)) {
+        // This is a raw translation key passed to t() - should use I18nKey enum
+        return false;
+      }
+    }
     return true;
   }
 
@@ -464,6 +480,23 @@ export function scanFileForUnlocalizedStrings(filePath: string): string[] {
               !isInTranslationContext(jsxAttrPath)
             ) {
               unlocalizedStrings.push(text);
+            }
+          }
+
+          // Check for JSX expressions that might contain t() calls with raw strings
+          if (t.isJSXExpressionContainer(value)) {
+            if (
+              t.isCallExpression(value.expression) &&
+              t.isIdentifier(value.expression.callee) &&
+              value.expression.callee.name === "t" &&
+              value.expression.arguments.length > 0 &&
+              t.isStringLiteral(value.expression.arguments[0])
+            ) {
+              const key = value.expression.arguments[0].value;
+              // Check if it's a raw translation key pattern (e.g., "SETTINGS$BASE_URL")
+              if (/^[A-Z0-9_]+\$[A-Z0-9_]+$/.test(key)) {
+                unlocalizedStrings.push(key);
+              }
             }
           }
         },
