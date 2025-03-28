@@ -84,7 +84,7 @@ def query_api(
         summary={'query': query},
         highlights=False,
         start_published_date=get_date(start_date),
-        end_published_date=get_date(end_date),
+        # end_published_date=get_date(end_date),
     )
     markdown_content = response_to_markdown(search_results, query)
     return SearchEngineObservation(query=query, content=markdown_content)

@@ -62,15 +62,13 @@ AGENT_CLS_TO_INST_SUFFIX = {
 def get_config(
     metadata: EvalMetadata,
 ) -> AppConfig:
-    brave_search_api_key = os.environ.get('SEARCH_API_KEY', None)
-    assert (
-        brave_search_api_key is not None
-    ), 'Environment variable SEARCH_API_KEY is not set.'
+    search_api_key = os.environ.get('SEARCH_API_KEY', None)
+    assert search_api_key is not None, 'Environment variable SEARCH_API_KEY is not set.'
 
     sandbox_config = get_default_sandbox_config_for_eval()
     sandbox_config.base_container_image = 'python:3.12-bookworm'
     sandbox_config.runtime_startup_env_vars = {
-        'SEARCH_API_KEY': brave_search_api_key,
+        'SEARCH_API_KEY': search_api_key,
     }
     config = AppConfig(
         default_agent=metadata.agent_class,
@@ -387,15 +385,7 @@ if __name__ == '__main__':
 
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     prepared_dataset = prepare_dataset(gaia_tests, output_file, args.eval_n_limit)
-    # indices = [30, 60, 102, 106, 110, 115, 133, 161] # crashing behaviour
-    # indices = [28, 43, 47, 93, 105, 119, 125, 137, 148, 153, 154] # output formatting
-    indices = [63]
-    prepared_dataset = prepared_dataset.iloc[indices]
-    # print(prepared_dataset['Question'])
-    # print(type(prepared_dataset), prepared_dataset)
-    # column_names = prepared_dataset.columns.tolist()
-    # print(column_names)
-    # exit()
+
     run_evaluation(
         dataset=prepared_dataset,
         metadata=metadata,

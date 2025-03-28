@@ -20,7 +20,7 @@ SearchEngineTool = ChatCompletionToolParam(
                 },
                 'start_date': {
                     'type': 'string',
-                    'description': 'Optional parameter to retrieve only those links published after the date specified by the start_date parameter. The start_date string MUST be specified in ISO 8601 format.',
+                    'description': 'Optional parameter to retrieve only those links published after the date specified by the start_date parameter. The start_date string MUST be specified in ISO 8601 format. Example formats: "2023-12-17T00:00:00.000Z" OR "2024-01-01"',
                 },
             },
             'required': ['query'],
