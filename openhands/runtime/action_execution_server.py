@@ -17,7 +17,7 @@ import time
 import traceback
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Optional
+from typing import Any, Dict, Optional
 from zipfile import ZipFile
 
 from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
@@ -58,6 +58,9 @@ from openhands.events.observation import (
     Observation,
 )
 from openhands.events.observation.mcp import MCPObservation
+from openhands.events.observation.playwright_mcp import (
+    PlaywrightMcpBrowserScreenshotObservation,
+)
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.runtime.browser import browse
 from openhands.runtime.browser.browser_env import BrowserEnv
@@ -522,7 +525,7 @@ class ActionExecutor:
         await self._ensure_browser_ready()
         return await browse(action, self.browser)
 
-    async def mcp(self, action: McpAction) -> Observation:
+    async def call_tool_mcp(self, action: McpAction) -> Observation:
         mcp_server_urls = self.sse_mcp_servers or []
         commands: list[str] = []
         args: list[list[str]] = []
@@ -580,7 +583,54 @@ class ActionExecutor:
         for agent in mcp_agents:
             await agent.cleanup()
 
+        # special case for browser screenshot of playwright_mcp
+        if action.name == 'browser_screenshot':
+            return self.playwright_mcp_browser_screenshot(action, response)
+
         return MCPObservation(content=f'MCP action received and processed: {response}')
+
+    # TODO: Implement this
+    def playwright_mcp_browser_screenshot(
+        self, action: McpAction, response: Dict[str, Any]
+    ) -> Observation:
+        if not isinstance(response, dict) or 'content' not in response:
+            raise TypeError("response must be a dict with a 'content' key")
+        if not isinstance(response['content'], list):
+            raise TypeError("response['content'] must be a list")
+
+        # Optionally, check each item in the list
+        for item in response['content']:
+            if not isinstance(item, dict) or not all(
+                k in item for k in ('type', 'data', 'mimeType')
+            ):
+                raise TypeError(
+                    "Each item in response['content'] must be a dict with 'type', 'data', and 'mimeType' keys"
+                )
+            if not all(isinstance(item[k], str) for k in ('type', 'data', 'mimeType')):
+                raise TypeError("'type', 'data', and 'mimeType' must be strings")
+
+        # example response:
+        """
+        {
+            "content": [
+                {
+                    "type": "image",
+                    "data": "/9j/4AA...",
+                    "mimeType": "image/jpeg",
+                    "url": "https://www.google.com"
+                }
+        ]
+        }
+        """
+        if len(response['content']) > 0:
+            return PlaywrightMcpBrowserScreenshotObservation(
+                content=json.dumps(response),
+                url=response['content'][0]['url'],
+                trigger_by_action=action.name,
+                screenshot=response['content'][0]['data'],
+            )
+        else:
+            raise ValueError('No content found in response')
 
     def close(self):
         self.memory_monitor.stop_monitoring()
