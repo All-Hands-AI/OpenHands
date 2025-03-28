@@ -15,6 +15,7 @@ from openhands.events.action import (
 from openhands.events.action.agent import AgentFinishAction
 from openhands.events.event import Event, EventSource
 from openhands.llm.metrics import Metrics
+from openhands.memory.view import View
 from openhands.storage.files import FileStore
 from openhands.storage.locations import get_conversation_agent_state_filename
 
@@ -215,3 +216,7 @@ class State:
                 f'openhands_version:{openhands.__version__}',
             ],
         }
+
+    @property
+    def view(self) -> View:
+        return View.from_events(self.history)
