@@ -19,6 +19,12 @@ export interface ActionMessage {
   // LLM metrics information
   llm_metrics?: {
     accumulated_cost: number;
+    accumulated_token_usage: {
+      prompt_tokens: number;
+      completion_tokens: number;
+      cache_read_tokens: number;
+      cache_write_tokens: number;
+    };
   };
 
   // Tool call metadata
