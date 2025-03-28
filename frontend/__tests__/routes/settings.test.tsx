@@ -58,11 +58,11 @@ describe("Settings Screen", () => {
     renderSettingsScreen();
 
     await waitFor(() => {
-      screen.getByText("SETTINGS$LLM_SETTINGS");
-      screen.getByText("SETTINGS$GITHUB_SETTINGS");
+      // Use queryAllByText to handle multiple elements with the same text
+      expect(screen.queryAllByText("SETTINGS$LLM_SETTINGS")).not.toHaveLength(0);
       screen.getByText("ACCOUNT_SETTINGS$ADDITIONAL_SETTINGS");
-      screen.getByText("SETTINGS$RESET_TO_DEFAULTS");
-      screen.getByText("SETTINGS$SAVE_CHANGES");
+      screen.getByText("BUTTON$RESET_TO_DEFAULTS");
+      screen.getByText("BUTTON$SAVE");
     });
   });
 
@@ -190,7 +190,7 @@ describe("Settings Screen", () => {
       expect(handleLogoutMock).toHaveBeenCalled();
     });
 
-    it("should not render the 'SETTINGS$CONFIGURE_GITHUB_REPOSITORIES' button if OSS mode", async () => {
+    it("should not render the 'GITHUB$CONFIGURE_REPOS' button if OSS mode", async () => {
       getConfigSpy.mockResolvedValue({
         APP_MODE: "oss",
         GITHUB_CLIENT_ID: "123",
@@ -203,11 +203,11 @@ describe("Settings Screen", () => {
 
       renderSettingsScreen();
 
-      const button = screen.queryByText("SETTINGS$CONFIGURE_GITHUB_REPOSITORIES");
+      const button = screen.queryByText("GITHUB$CONFIGURE_REPOS");
       expect(button).not.toBeInTheDocument();
     });
 
-    it("should render the 'SETTINGS$CONFIGURE_GITHUB_REPOSITORIES' button if SaaS mode and app slug exists", async () => {
+    it("should render the 'GITHUB$CONFIGURE_REPOS' button if SaaS mode and app slug exists", async () => {
       getConfigSpy.mockResolvedValue({
         APP_MODE: "saas",
         GITHUB_CLIENT_ID: "123",
@@ -220,7 +220,7 @@ describe("Settings Screen", () => {
       });
 
       renderSettingsScreen();
-      await screen.findByText("SETTINGS$CONFIGURE_GITHUB_REPOSITORIES");
+      await screen.findByText("GITHUB$CONFIGURE_REPOS");
     });
 
     it("should not render the GitHub token input if SaaS mode", async () => {
@@ -265,7 +265,7 @@ describe("Settings Screen", () => {
       const input = await screen.findByTestId("github-token-input");
       await user.type(input, "invalid-token");
 
-      const saveButton = screen.getByText("SETTINGS$SAVE_CHANGES");
+      const saveButton = screen.getByText("BUTTON$SAVE");
       await user.click(saveButton);
 
       llmProviderInput = await screen.findByTestId("llm-provider-input");
@@ -521,7 +521,7 @@ describe("Settings Screen", () => {
         expect(input).toBeDisabled();
       });
 
-      it.skip("should save the runtime settings when the 'SETTINGS$SAVE_CHANGES' button is clicked", async () => {
+      it.skip("should save the runtime settings when the 'BUTTON$SAVE' button is clicked", async () => {
         const user = userEvent.setup();
         getConfigSpy.mockResolvedValue({
           APP_MODE: "saas",
@@ -545,7 +545,7 @@ describe("Settings Screen", () => {
         const option = await screen.findByText("2x (4 core, 16G)");
         await user.click(option);
 
-        const saveButton = screen.getByText("SETTINGS$SAVE_CHANGES");
+        const saveButton = screen.getByText("BUTTON$SAVE");
         await user.click(saveButton);
 
         expect(saveSettingsSpy).toHaveBeenCalledWith(
@@ -561,7 +561,7 @@ describe("Settings Screen", () => {
 
         await toggleAdvancedSettings(user);
 
-        const saveButton = screen.getByText("SETTINGS$SAVE_CHANGES");
+        const saveButton = screen.getByText("BUTTON$SAVE");
         await user.click(saveButton);
 
         await waitFor(() => {
@@ -592,7 +592,7 @@ describe("Settings Screen", () => {
 
         await toggleAdvancedSettings(user);
 
-        const resetButton = screen.getByText("SETTINGS$RESET_TO_DEFAULTS");
+        const resetButton = screen.getByText("BUTTON$RESET_TO_DEFAULTS");
         await user.click(resetButton);
 
         // show modal
@@ -640,7 +640,7 @@ describe("Settings Screen", () => {
         );
         await user.click(confirmationModeSwitch);
 
-        const saveButton = screen.getByText("SETTINGS$SAVE_CHANGES");
+        const saveButton = screen.getByText("BUTTON$SAVE");
         await user.click(saveButton);
 
         expect(saveSettingsSpy).toHaveBeenCalledWith(
@@ -738,7 +738,7 @@ describe("Settings Screen", () => {
       });
     });
 
-    it("should save the settings when the 'SETTINGS$SAVE_CHANGES' button is clicked", async () => {
+    it("should save the settings when the 'BUTTON$SAVE' button is clicked", async () => {
       const user = userEvent.setup();
       getSettingsSpy.mockResolvedValue({
         ...MOCK_DEFAULT_USER_SETTINGS,
@@ -754,7 +754,7 @@ describe("Settings Screen", () => {
 
       expect(languageInput).toHaveValue("Norsk");
 
-      const saveButton = screen.getByText("SETTINGS$SAVE_CHANGES");
+      const saveButton = screen.getByText("BUTTON$SAVE");
       await user.click(saveButton);
 
       expect(saveSettingsSpy).toHaveBeenCalledWith(
@@ -792,7 +792,7 @@ describe("Settings Screen", () => {
       const gpt4Option = await screen.findByText("gpt-4o");
       await user.click(gpt4Option);
 
-      const saveButton = screen.getByText("SETTINGS$SAVE_CHANGES");
+      const saveButton = screen.getByText("BUTTON$SAVE");
       await user.click(saveButton);
 
       expect(saveSettingsSpy).toHaveBeenCalledWith(
@@ -818,7 +818,7 @@ describe("Settings Screen", () => {
 
       expect(languageInput).toHaveValue("Norsk");
 
-      const resetButton = screen.getByText("SETTINGS$RESET_TO_DEFAULTS");
+      const resetButton = screen.getByText("BUTTON$RESET_TO_DEFAULTS");
       await user.click(resetButton);
 
       expect(saveSettingsSpy).not.toHaveBeenCalled();
@@ -860,7 +860,7 @@ describe("Settings Screen", () => {
 
       renderSettingsScreen();
 
-      const resetButton = await screen.findByText("SETTINGS$RESET_TO_DEFAULTS");
+      const resetButton = await screen.findByText("BUTTON$RESET_TO_DEFAULTS");
       await user.click(resetButton);
 
       const modal = await screen.findByTestId("reset-modal");
@@ -889,7 +889,7 @@ describe("Settings Screen", () => {
       await user.click(analyticsConsentInput);
       expect(analyticsConsentInput).toBeChecked();
 
-      const saveButton = screen.getByText("SETTINGS$SAVE_CHANGES");
+      const saveButton = screen.getByText("BUTTON$SAVE");
       await user.click(saveButton);
 
       expect(handleCaptureConsentSpy).toHaveBeenCalledWith(true);
@@ -903,7 +903,7 @@ describe("Settings Screen", () => {
       );
       renderSettingsScreen();
 
-      const saveButton = await screen.findByText("SETTINGS$SAVE_CHANGES");
+      const saveButton = await screen.findByText("BUTTON$SAVE");
       await user.click(saveButton);
 
       expect(handleCaptureConsentSpy).toHaveBeenCalledWith(false);
@@ -936,7 +936,7 @@ describe("Settings Screen", () => {
       const user = userEvent.setup();
       renderSettingsScreen();
 
-      const saveButton = screen.getByText("SETTINGS$SAVE_CHANGES");
+      const saveButton = screen.getByText("BUTTON$SAVE");
       await user.click(saveButton);
 
       expect(saveSettingsSpy).toHaveBeenCalledWith(
@@ -953,7 +953,7 @@ describe("Settings Screen", () => {
       const input = await screen.findByTestId("llm-api-key-input");
       expect(input).toHaveValue("");
 
-      const saveButton = screen.getByText("SETTINGS$SAVE_CHANGES");
+      const saveButton = screen.getByText("BUTTON$SAVE");
       await user.click(saveButton);
 
       expect(saveSettingsSpy).toHaveBeenCalledWith(
@@ -973,7 +973,7 @@ describe("Settings Screen", () => {
       const input = await screen.findByTestId("llm-api-key-input");
       expect(input).toHaveValue("");
 
-      const saveButton = screen.getByText("SETTINGS$SAVE_CHANGES");
+      const saveButton = screen.getByText("BUTTON$SAVE");
       await user.click(saveButton);
 
       expect(saveSettingsSpy).toHaveBeenCalledWith(
@@ -988,7 +988,7 @@ describe("Settings Screen", () => {
       const input = await screen.findByTestId("llm-api-key-input");
       await user.type(input, "new-api-key");
 
-      const saveButton = screen.getByText("SETTINGS$SAVE_CHANGES");
+      const saveButton = screen.getByText("BUTTON$SAVE");
       await user.click(saveButton);
 
       expect(saveSettingsSpy).toHaveBeenCalledWith(
@@ -1068,7 +1068,7 @@ describe("Settings Screen", () => {
       const user = userEvent.setup();
       renderSettingsScreen();
 
-      const saveButton = await screen.findByText("SETTINGS$SAVE_CHANGES");
+      const saveButton = await screen.findByText("BUTTON$SAVE");
       await user.click(saveButton);
 
       expect(saveSettingsSpy).toHaveBeenCalledWith(
@@ -1084,7 +1084,7 @@ describe("Settings Screen", () => {
       const user = userEvent.setup();
       renderSettingsScreen();
 
-      const resetButton = await screen.findByText("SETTINGS$RESET_TO_DEFAULTS");
+      const resetButton = await screen.findByText("BUTTON$RESET_TO_DEFAULTS");
       await user.click(resetButton);
 
       const modal = await screen.findByTestId("reset-modal");

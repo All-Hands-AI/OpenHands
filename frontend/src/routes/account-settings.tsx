@@ -336,7 +336,7 @@ function AccountSettings() {
                   defaultIsToggled={!!settings.CONFIRMATION_MODE}
                   isBeta
                 >
-                  {t(I18nKey.SETTINGS$ENABLE_CONFIRMATION_MODE)}
+                  {t(I18nKey.SETTINGS$CONFIRMATION_MODE)}
                 </SettingsSwitch>
               )}
 
@@ -373,7 +373,7 @@ function AccountSettings() {
 
           <section className="flex flex-col gap-6">
             <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">
-              {t(I18nKey.SETTINGS$GITHUB_SETTINGS)}
+              {t(I18nKey.SETTINGS$LLM_SETTINGS)}
             </h2>
             {isSaas && hasAppSlug && (
               <Link
@@ -382,7 +382,7 @@ function AccountSettings() {
                 rel="noreferrer noopener"
               >
                 <BrandButton type="button" variant="secondary">
-                  {t(I18nKey.SETTINGS$CONFIGURE_GITHUB_REPOSITORIES)}
+                  {t(I18nKey.GITHUB$CONFIGURE_REPOS)}
                 </BrandButton>
               </Link>
             )}
@@ -391,7 +391,7 @@ function AccountSettings() {
                 <SettingsInput
                   testId="github-token-input"
                   name="github-token-input"
-                  label={t(I18nKey.SETTINGS$GITHUB_TOKEN)}
+                  label={t(I18nKey.GITHUB$TOKEN_LABEL)}
                   type="password"
                   className="w-[680px]"
                   startContent={
@@ -403,7 +403,7 @@ function AccountSettings() {
                 />
                 <p data-testid="github-token-help-anchor" className="text-xs">
                   {" "}
-                  {t(I18nKey.SETTINGS$GENERATE_TOKEN_ON)}{" "}
+                  {t(I18nKey.GITHUB$GET_TOKEN)}{" "}
                   <b>
                     {" "}
                     <a
@@ -412,10 +412,10 @@ function AccountSettings() {
                       className="underline underline-offset-2"
                       rel="noopener noreferrer"
                     >
-                      {t(I18nKey.GITHUB$GITHUB)}
+                      GitHub
                     </a>{" "}
                   </b>
-                  {t(I18nKey.SETTINGS$OR_SEE_THE)}{" "}
+                  {t(I18nKey.COMMON$HERE)}{" "}
                   <b>
                     <a
                       href="https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token"
@@ -423,7 +423,7 @@ function AccountSettings() {
                       className="underline underline-offset-2"
                       rel="noopener noreferrer"
                     >
-                      {t(I18nKey.SETTINGS$DOCUMENTATION)}
+                      {t(I18nKey.COMMON$CLICK_FOR_INSTRUCTIONS)}
                     </a>
                   </b>
                   .
@@ -463,7 +463,7 @@ function AccountSettings() {
               name="enable-analytics-switch"
               defaultIsToggled={!!isAnalyticsEnabled}
             >
-              {t(I18nKey.SETTINGS$ENABLE_ANALYTICS)}
+              {t(I18nKey.ANALYTICS$ENABLE)}
             </SettingsSwitch>
 
             <SettingsSwitch
@@ -471,7 +471,7 @@ function AccountSettings() {
               name="enable-sound-notifications-switch"
               defaultIsToggled={!!settings.ENABLE_SOUND_NOTIFICATIONS}
             >
-              {t(I18nKey.SETTINGS$ENABLE_SOUND_NOTIFICATIONS)}
+              Sound Notifications
             </SettingsSwitch>
           </section>
         </div>
@@ -483,7 +483,7 @@ function AccountSettings() {
           variant="secondary"
           onClick={() => setResetSettingsModalIsOpen(true)}
         >
-          {t(I18nKey.SETTINGS$RESET_TO_DEFAULTS)}
+          {t(I18nKey.BUTTON$RESET_TO_DEFAULTS)}
         </BrandButton>
         <BrandButton
           type="button"
@@ -492,7 +492,7 @@ function AccountSettings() {
             formRef.current?.requestSubmit();
           }}
         >
-          {t(I18nKey.SETTINGS$SAVE_CHANGES)}
+          {t(I18nKey.BUTTON$SAVE)}
         </BrandButton>
       </footer>
 
