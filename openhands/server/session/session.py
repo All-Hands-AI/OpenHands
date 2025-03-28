@@ -10,7 +10,6 @@ from openhands.core.config import AppConfig
 from openhands.core.config.condenser_config import (
     LLMSummarizingCondenserConfig,
 )
-from openhands.core.const.guide_url import TROUBLESHOOTING_URL
 from openhands.core.logger import OpenHandsLoggerAdapter
 from openhands.core.schema import AgentState
 from openhands.events.action import MessageAction, NullAction
@@ -161,9 +160,8 @@ class Session:
             )
         except Exception as e:
             self.logger.exception(f'Error creating agent_session: {e}')
-            await self.send_error(
-                f'Error creating agent_session. Please check Docker is running and visit `{TROUBLESHOOTING_URL}` for more debugging information..'
-            )
+            err_class = e.__class__.__name__
+            await self.send_error(f'Failed to create agent session: {err_class}')
             return
 
     def _create_llm(self, agent_cls: str | None) -> LLM:

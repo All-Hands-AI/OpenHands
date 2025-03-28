@@ -2,13 +2,14 @@ from __future__ import annotations
 
 from enum import Enum
 from types import MappingProxyType
-from typing import Any, Coroutine, Literal, overload
+from typing import Annotated, Any, Coroutine, Literal, overload
 
 from pydantic import (
     BaseModel,
     Field,
     SecretStr,
     SerializationInfo,
+    WithJsonSchema,
     field_serializer,
     model_validator,
 )
@@ -58,10 +59,14 @@ class ProviderToken(BaseModel):
 
 PROVIDER_TOKEN_TYPE = MappingProxyType[ProviderType, ProviderToken]
 CUSTOM_SECRETS_TYPE = MappingProxyType[str, SecretStr]
+PROVIDER_TOKEN_TYPE_WITH_JSON_SCHEMA = Annotated[
+    PROVIDER_TOKEN_TYPE,
+    WithJsonSchema({'type': 'object', 'additionalProperties': {'type': 'string'}}),
+]
 
 
 class SecretStore(BaseModel):
-    provider_tokens: PROVIDER_TOKEN_TYPE = Field(
+    provider_tokens: PROVIDER_TOKEN_TYPE_WITH_JSON_SCHEMA = Field(
         default_factory=lambda: MappingProxyType({})
     )
 
