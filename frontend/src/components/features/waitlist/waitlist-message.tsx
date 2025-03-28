@@ -9,20 +9,7 @@ export function WaitlistMessage({ content }: WaitlistMessageProps) {
         {content === "sign-in" && "Sign in with GitHub"}
         {content === "waitlist" && "Just a little longer!"}
       </h1>
-      {content === "sign-in" && (
-        <p>
-          or{" "}
-          <a
-            href="https://www.all-hands.dev/join-waitlist"
-            target="_blank"
-            rel="noreferrer noopener"
-            className="text-blue-500 hover:underline underline-offset-2"
-          >
-            join the waitlist
-          </a>{" "}
-          if you haven&apos;t already
-        </p>
-      )}
+      {/* Sign-in message without waitlist reference */}
       {content === "waitlist" && (
         <p className="text-sm">
           Thanks for your patience! We&apos;re accepting new members
