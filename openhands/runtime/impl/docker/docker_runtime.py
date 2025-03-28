@@ -1,6 +1,7 @@
 from functools import lru_cache
 from typing import Callable
 from uuid import UUID
+import os
 
 import docker
 import httpx
@@ -252,27 +253,55 @@ class DockerRuntime(ActionExecutionClient):
         environment.update(self.config.sandbox.runtime_startup_env_vars)
 
         self.log('debug', f'Workspace Base: {self.config.workspace_base}')
+        # Initialize volumes dictionary
+        volumes = {}
+        
+        # Add workspace mount if configured
         if (
             self.config.workspace_mount_path is not None
             and self.config.workspace_mount_path_in_sandbox is not None
         ):
             # e.g. result would be: {"/home/user/openhands/workspace": {'bind': "/workspace", 'mode': 'rw'}}
-            volumes = {
-                self.config.workspace_mount_path: {
-                    'bind': self.config.workspace_mount_path_in_sandbox,
-                    'mode': 'rw',
-                }
+            volumes[self.config.workspace_mount_path] = {
+                'bind': self.config.workspace_mount_path_in_sandbox,
+                'mode': 'rw',
             }
             logger.debug(f'Mount dir: {self.config.workspace_mount_path}')
         else:
             logger.debug(
                 'Mount dir is not set, will not mount the workspace directory to the container'
             )
+        
+        # Add Docker socket mount if enabled via environment variable or config
+        env_docker_socket_enabled = os.environ.get('SANDBOX_DOCKER_SOCKET_ENABLED', '').lower() == 'true'
+        docker_socket_enabled = env_docker_socket_enabled or self.config.sandbox.docker_socket_enabled
+        
+        # Get Docker socket path from environment variable or config
+        env_docker_socket_path = os.environ.get('SANDBOX_DOCKER_SOCKET_PATH', '')
+        docker_socket_path = env_docker_socket_path or self.config.sandbox.docker_socket_path
+        
+        if docker_socket_enabled:
+            volumes[docker_socket_path] = {
+                'bind': docker_socket_path,
+                'mode': 'rw',
+            }
+            if env_docker_socket_enabled:
+                logger.debug(f'Docker socket mount enabled via environment variable: {docker_socket_path}')
+            else:
+                logger.debug(f'Docker socket mount enabled via configuration: {docker_socket_path}')
+        
+        # If no volumes are configured, set to None
+        if not volumes:
             volumes = None
         self.log(
             'debug',
             f'Sandbox workspace: {self.config.workspace_mount_path_in_sandbox}',
         )
+        if docker_socket_enabled:
+            self.log(
+                'debug',
+                f'Docker socket mounted: {docker_socket_path} -> {docker_socket_path}',
+            )
 
         command = get_action_execution_server_startup_command(
             server_port=self._container_port,
@@ -354,6 +383,18 @@ class DockerRuntime(ActionExecutionClient):
             'debug',
             f'attached to container: {self.container_name} {self._container_port} {self.api_url}',
         )
+        env_docker_socket_enabled = os.environ.get('SANDBOX_DOCKER_SOCKET_ENABLED', '').lower() == 'true'
+        docker_socket_enabled = env_docker_socket_enabled or self.config.sandbox.docker_socket_enabled
+        
+        # Get Docker socket path from environment variable or config
+        env_docker_socket_path = os.environ.get('SANDBOX_DOCKER_SOCKET_PATH', '')
+        docker_socket_path = env_docker_socket_path or self.config.sandbox.docker_socket_path
+        
+        if docker_socket_enabled:
+            self.log(
+                'debug',
+                f'Docker socket should be mounted: {docker_socket_path} -> {docker_socket_path}',
+            )
 
     @tenacity.retry(
         stop=tenacity.stop_after_delay(120) | stop_if_should_exit(),
