@@ -11,6 +11,7 @@ from openhands.events.observation.agent import MicroagentKnowledge
 
 @dataclass
 class RuntimeInfo:
+    date: str
     available_hosts: dict[str, int] = field(default_factory=dict)
     additional_agent_instructions: str = ''
 

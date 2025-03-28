@@ -14,5 +14,197 @@
   "sidebar.apiSidebar.category.Backend": {
     "message": "Backend",
     "description": "The label for category Backend in sidebar apiSidebar"
+  },
+  "sidebar.docsSidebar.category.User Guides": {
+    "message": "Guides d'Utilisateur",
+    "description": "The label for category User Guides in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.Running OpenHands": {
+    "message": "Exécution d'OpenHands",
+    "description": "The label for category Running OpenHands in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.Prompting": {
+    "message": "Prompting",
+    "description": "The label for category Prompting in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.Architecture": {
+    "message": "Architecture",
+    "description": "The label for category Architecture in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Running OpenHands": {
+    "message": "Exécution d'OpenHands",
+    "description": "The label for document Running OpenHands in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Getting Started": {
+    "message": "Commencer",
+    "description": "The label for document Getting Started in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Key Features": {
+    "message": "Fonctionnalités Clés",
+    "description": "The label for document Key Features in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.Customization": {
+    "message": "Personnalisation",
+    "description": "The label for category Customization in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.Usage Methods": {
+    "message": "Méthodes d'Utilisation",
+    "description": "The label for category Usage Methods in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.Advanced Configuration": {
+    "message": "Configuration Avancée",
+    "description": "The label for category Advanced Configuration in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Troubleshooting": {
+    "message": "Dépannage",
+    "description": "The label for document Troubleshooting in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Feedback": {
+    "message": "Retour d'Information",
+    "description": "The label for document Feedback in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.For OpenHands Developers": {
+    "message": "Pour les Développeurs OpenHands",
+    "description": "The label for category For OpenHands Developers in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.About": {
+    "message": "À Propos",
+    "description": "The label for document About in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Best Practices": {
+    "message": "Meilleures Pratiques",
+    "description": "The label for document Best Practices in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.Microagents": {
+    "message": "Micro-agents",
+    "description": "The label for category Microagents in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Overview": {
+    "message": "Aperçu",
+    "description": "The label for document Overview in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Repository": {
+    "message": "Dépôt",
+    "description": "The label for document Repository in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Public": {
+    "message": "Public",
+    "description": "The label for document Public in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Repository Customization": {
+    "message": "Personnalisation du Dépôt",
+    "description": "The label for document Repository Customization in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.GUI Mode": {
+    "message": "Mode GUI",
+    "description": "The label for document GUI Mode in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.CLI Mode": {
+    "message": "Mode CLI",
+    "description": "The label for document CLI Mode in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Headless Mode": {
+    "message": "Mode Sans Interface",
+    "description": "The label for document Headless Mode in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Github Action": {
+    "message": "Action GitHub",
+    "description": "The label for document Github Action in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.Cloud": {
+    "message": "Cloud",
+    "description": "The label for category Cloud in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Openhands Cloud": {
+    "message": "OpenHands Cloud",
+    "description": "The label for document Openhands Cloud in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Cloud GitHub Resolver": {
+    "message": "Résolveur GitHub Cloud",
+    "description": "The label for document Cloud GitHub Resolver in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.LLM Configuration": {
+    "message": "Configuration LLM",
+    "description": "The label for category LLM Configuration in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.Providers": {
+    "message": "Fournisseurs",
+    "description": "The label for category Providers in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Azure": {
+    "message": "Azure",
+    "description": "The label for document Azure in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Google": {
+    "message": "Google",
+    "description": "The label for document Google in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Groq": {
+    "message": "Groq",
+    "description": "The label for document Groq in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.LiteLLM Proxy": {
+    "message": "Proxy LiteLLM",
+    "description": "The label for document LiteLLM Proxy in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.OpenAI": {
+    "message": "OpenAI",
+    "description": "The label for document OpenAI in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.OpenRouter": {
+    "message": "OpenRouter",
+    "description": "The label for document OpenRouter in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.Runtime Configuration": {
+    "message": "Configuration d'Exécution",
+    "description": "The label for category Runtime Configuration in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Docker Runtime": {
+    "message": "Environnement Docker",
+    "description": "The label for document Docker Runtime in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Remote Runtime": {
+    "message": "Environnement Distant",
+    "description": "The label for document Remote Runtime in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Modal Runtime": {
+    "message": "Environnement Modal",
+    "description": "The label for document Modal Runtime in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Daytona Runtime": {
+    "message": "Environnement Daytona",
+    "description": "The label for document Daytona Runtime in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Local Runtime": {
+    "message": "Environnement Local",
+    "description": "The label for document Local Runtime in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Configuration Options": {
+    "message": "Options de Configuration",
+    "description": "The label for document Configuration Options in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Custom Sandbox": {
+    "message": "Bac à Sable Personnalisé",
+    "description": "The label for document Custom Sandbox in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Development Overview": {
+    "message": "Aperçu du Développement",
+    "description": "The label for document Development Overview in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Backend": {
+    "message": "Backend",
+    "description": "The label for document Backend in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Runtime": {
+    "message": "Environnement d'Exécution",
+    "description": "The label for document Runtime in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Debugging": {
+    "message": "Débogage",
+    "description": "The label for document Debugging in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.Evaluation": {
+    "message": "Évaluation",
+    "description": "The label for document Evaluation in sidebar docsSidebar"
   }
 }

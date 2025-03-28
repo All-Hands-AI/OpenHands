@@ -11,7 +11,6 @@ import CheckCircle from "#/icons/check-circle-solid.svg?react";
 import XCircle from "#/icons/x-circle-solid.svg?react";
 import { cn } from "#/utils/utils";
 import { useConfig } from "#/hooks/query/use-config";
-import { BILLING_SETTINGS } from "#/utils/feature-flags";
 
 interface ExpandableMessageProps {
   id?: string;
@@ -43,12 +42,15 @@ export function ExpandableMessage({
   const statusIconClasses = "h-4 w-4 ml-2 inline";
 
   if (
-    BILLING_SETTINGS() &&
+    config?.FEATURE_FLAGS.ENABLE_BILLING &&
     config?.APP_MODE === "saas" &&
     id === "STATUS$ERROR_LLM_OUT_OF_CREDITS"
   ) {
     return (
-      <div className="flex gap-2 items-center justify-start border-l-2 pl-2 my-2 py-2 border-danger">
+      <div
+        data-testid="out-of-credits"
+        className="flex gap-2 items-center justify-start border-l-2 pl-2 my-2 py-2 border-danger"
+      >
         <div className="text-sm w-full">
           <div className="font-bold text-danger">
             {t("STATUS$ERROR_LLM_OUT_OF_CREDITS")}

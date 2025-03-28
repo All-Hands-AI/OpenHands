@@ -54,7 +54,7 @@ from openhands.events.action import (
     MessageAction,
     NullAction,
 )
-from openhands.events.action.agent import RecallAction
+from openhands.events.action.agent import CondensationAction, RecallAction
 from openhands.events.event import Event
 from openhands.events.observation import (
     AgentCondensationObservation,
@@ -93,6 +93,7 @@ class AgentController:
         ChangeAgentStateAction,
         AgentStateChangedObservation,
     )
+    _cached_first_user_message: MessageAction | None = None
 
     def __init__(
         self,
@@ -304,6 +305,8 @@ class AgentController:
                 return True
             if isinstance(event, AgentDelegateAction):
                 return True
+            if isinstance(event, CondensationAction):
+                return True
             return False
         if isinstance(event, Observation):
             if (
@@ -478,8 +481,18 @@ class AgentController:
 
             if self.get_agent_state() != AgentState.RUNNING:
                 await self.set_agent_state_to(AgentState.RUNNING)
-        elif action.source == EventSource.AGENT and action.wait_for_response:
-            await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
+        elif action.source == EventSource.AGENT:
+            # Check if we need to trigger microagents based on agent message content
+            recall_action = RecallAction(
+                query=action.content, recall_type=RecallType.KNOWLEDGE
+            )
+            self._pending_action = recall_action
+            # This is source=AGENT because the agent message is the trigger for the microagent retrieval
+            self.event_stream.add_event(recall_action, EventSource.AGENT)
+
+            # If the agent is waiting for a response, set the appropriate state
+            if action.wait_for_response:
+                await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
 
     def _reset(self) -> None:
         """Resets the agent controller."""
@@ -604,6 +617,7 @@ class AgentController:
         llm = LLM(config=llm_config, retry_listener=self._notify_on_llm_retry)
         delegate_agent = agent_cls(llm=llm, config=agent_config)
         state = State(
+            session_id=self.id.removesuffix('-delegate'),
             inputs=action.inputs or {},
             local_iteration=0,
             iteration=self.state.iteration,
@@ -872,6 +886,7 @@ class AgentController:
         # If state is None, we create a brand new state and still load the event stream so we can restore the history
         if state is None:
             self.state = State(
+                session_id=self.id.removesuffix('-delegate'),
                 inputs={},
                 max_iterations=max_iterations,
                 confirmation_mode=confirmation_mode,
@@ -896,10 +911,13 @@ class AgentController:
         # Always load from the event stream to avoid losing history
         self._init_history()
 
-    def get_trajectory(self) -> list[dict]:
+    def get_trajectory(self, include_screenshots: bool = False) -> list[dict]:
         # state history could be partially hidden/truncated before controller is closed
         assert self._closed
-        return [event_to_trajectory(event) for event in self.state.history]
+        return [
+            event_to_trajectory(event, include_screenshots)
+            for event in self.state.history
+        ]
 
     def _init_history(self) -> None:
         """Initializes the agent's history from the event stream.
@@ -1206,15 +1224,19 @@ class AgentController:
         Returns:
             MessageAction | None: The first user message, or None if no user message found
         """
-        # Find the first user message from the appropriate starting point
-        user_messages = list(self.event_stream.get_events(start_id=self.state.start_id))
+        # Return cached message if any
+        if self._cached_first_user_message is not None:
+            return self._cached_first_user_message
 
-        # Get and return the first user message
-        return next(
+        # Find the first user message
+        self._cached_first_user_message = next(
             (
                 e
-                for e in user_messages
+                for e in self.event_stream.get_events(
+                    start_id=self.state.start_id,
+                )
                 if isinstance(e, MessageAction) and e.source == EventSource.USER
             ),
             None,
         )
+        return self._cached_first_user_message
