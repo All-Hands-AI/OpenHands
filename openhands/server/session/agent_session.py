@@ -136,9 +136,6 @@ class AgentSession:
                         config.mcp.stdio.args,
                     )
 
-                    # Attach MCP agents to the agent instance
-                    agent.mcp_agents = mcp_agents
-
                     # Give some time for MCP connections to stabilize
                     await asyncio.sleep(1)
 
@@ -174,6 +171,7 @@ class AgentSession:
                         self.logger.info(
                             f"MCP Agent {idx} available tools: {list(mcp_agent.mcp_clients.tool_map.keys()) if hasattr(mcp_agent, 'mcp_clients') and hasattr(mcp_agent.mcp_clients, 'tool_map') else 'No tools available'}"
                         )
+                        await mcp_agent.cleanup()
 
                     self.logger.info(
                         f'Successfully initialized {len(mcp_agents)} MCP agents'

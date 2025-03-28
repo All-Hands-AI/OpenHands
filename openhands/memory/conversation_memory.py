@@ -1,4 +1,5 @@
 from typing import Generator
+import json
 
 from litellm import ModelResponse
 
@@ -334,17 +335,22 @@ class ConversationMemory:
             message = Message(role='user', content=[TextContent(text=text)])
         # FIXME: This is a temporary solution to test MCP. Not sure if it's the best way to do it.
         elif isinstance(obs, MCPObservation):
-            logger.warning(f'MCPObservation: {obs}')
-            message = Message(role='user', content=[TextContent(text=obs.content)])
+            # logger.warning(f'MCPObservation: {obs}')
+            message = Message(role='assistant', content=[TextContent(text=obs.content)])
         elif isinstance(obs, PlaywrightMcpBrowserScreenshotObservation):
-            text = obs.content
+            text = 'Image: Current webpage screenshot\n'
+            screenshot_content = json.loads(obs.content)
+            logger.debug(
+                f'screenshot_content in conversation_memory: {screenshot_content}'
+            )
+            if 'url' in screenshot_content:
+                text += f'URL: {screenshot_content["url"]}\n'
 
-            text += 'Image: Current webpage screenshot (Note that only visible portion of webpage is present in the screenshot. You may need to scroll to view the remaining portion of the web-page.)\n'
+            # We don't actually need to screenshot fed into the LLM. We can use snapshots. Meanwhile, the screenshot will be streamed to the user.
             message = Message(
-                role='user',
+                role='assistant',
                 content=[
-                    TextContent(text=obs.content),
-                    ImageContent(image_urls=[obs.url]),
+                    TextContent(text=text),
                 ],
             )
         elif isinstance(obs, IPythonRunCellObservation):

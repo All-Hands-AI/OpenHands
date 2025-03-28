@@ -1,5 +1,4 @@
 import os
-import platform
 import tempfile
 import threading
 from abc import abstractmethod
@@ -280,9 +279,8 @@ class ActionExecutionClient(Runtime):
             assert action.timeout is not None
 
             try:
-                execution_action_body = {
+                execution_action_body: dict[str, Any] = {
                     'action': event_to_dict(action),
-                    'caller_platform': platform.system(),
                 }
                 if self.config.mcp.sse.mcp_servers:
                     execution_action_body['sse_mcp_config'] = (
