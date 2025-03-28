@@ -1,0 +1,53 @@
+# 🏛️ システムアーキテクチャ
+
+<div style={{ textAlign: 'center' }}>
+  <img src="https://github.com/All-Hands-AI/OpenHands/assets/16201837/97d747e3-29d8-4ccb-8d34-6ad1adb17f38" alt="OpenHands System Architecture Diagram Jul 4 2024" />
+  <p><em>OpenHands システムアーキテクチャ図 (2024年7月4日)</em></p>
+</div>
+
+これはシステムアーキテクチャの高レベルな概要です。システムはフロントエンドとバックエンドの2つの主要コンポーネントに分かれています。フロントエンドはユーザーインタラクションを処理し、結果を表示する役割を担います。バックエンドはビジネスロジックを処理し、エージェントを実行する役割を担います。
+
+# フロントエンドアーキテクチャ {#frontend-architecture-ja}
+
+![system_architecture.svg](/img/system_architecture.svg)
+
+この概要は、主要なコンポーネントとそれらの相互作用を示すために簡略化されています。バックエンドアーキテクチャのより詳細なビューについては、以下のバックエンドアーキテクチャのセクションを参照してください。
+
+# バックエンドアーキテクチャ {#backend-architecture-ja}
+
+_**免責事項**: バックエンドアーキテクチャは現在進行中の作業であり、変更される可能性があります。以下の図は、図のフッターに示されているコミットに基づくバックエンドの現在のアーキテクチャを示しています。_
+
+![backend_architecture.svg](/img/backend_architecture.svg)
+
+<details>
+  <summary>この図の更新</summary>
+  <div>
+    バックエンドアーキテクチャ図の生成は部分的に自動化されています。
+    この図は、py2pumlツールを使用してコード内の型ヒントから生成されます。
+    その後、図は手動でレビュー、調整され、PNGとSVGにエクスポートされます。
+
+    ## 前提条件
+
+    - openhandsが実行可能なPython環境
+    (リポジトリのルートにあるREADME.mdファイルの指示に従って)
+    - [py2puml](https://github.com/lucsorel/py2puml)がインストールされていること
+
+## 手順
+
+1.  リポジトリのルートから以下のコマンドを実行して、図を自動生成します:
+    `py2puml openhands openhands > docs/architecture/backend_architecture.puml`
+
+2.  生成されたファイルをPlantUMLエディタで開きます。例えば、PlantUML拡張機能を使用したVisual Studio Codeや[PlantText](https://www.planttext.com/)など。
+
+3.  生成されたPUMLをレビューし、図に必要な調整を行います(欠落部分の追加、ミスの修正、位置の改善など)。
+    _py2pumlは、コード内の型ヒントに基づいて図を作成するため、型ヒントが欠落していたり正しくない場合、図が不完全または不正確になることがあります。_
+
+4.  新旧の図の差分をレビューし、変更が正しいかどうかを手動で確認します。
+    _過去に図に手動で追加され、現在も関連性のある部分を削除しないように注意してください。_
+
+5.  図のフッターに、図の生成に使用されたコミットのコミットハッシュを追加します。
+
+6.  図をPNGとSVGファイルとしてエクスポートし、`docs/architecture`ディレクトリ内の既存の図を置き換えます。これは(例えば[PlantText](https://www.planttext.com/))で行うことができます。
+
+  </div>
+</details>
