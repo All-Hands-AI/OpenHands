@@ -12,7 +12,6 @@ from openhands.events.observation import (
 )
 from openhands.events.observation.agent import (
     AgentStateChangedObservation,
-    RecallObservation,
 )
 from openhands.events.serialization import event_to_dict
 from openhands.events.stream import AsyncEventStreamWrapper
