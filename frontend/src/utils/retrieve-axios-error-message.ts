@@ -7,12 +7,8 @@ import {
 /**
  * Retrieve the error message from an Axios error
  * @param error The error to render a toast for
- * @param t Translation function
  */
-export const retrieveAxiosErrorMessage = (
-  error: AxiosError,
-  t: (key: string) => string,
-) => {
+export const retrieveAxiosErrorMessage = (error: AxiosError) => {
   let errorMessage: string | null = null;
 
   if (isAxiosErrorWithErrorField(error) && error.response?.data.error) {
@@ -26,5 +22,5 @@ export const retrieveAxiosErrorMessage = (
     errorMessage = error.message;
   }
 
-  return errorMessage || t("ERROR$GENERIC");
+  return errorMessage;
 };

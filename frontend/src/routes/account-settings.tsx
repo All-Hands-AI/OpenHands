@@ -168,8 +168,8 @@ function AccountSettings() {
         setLlmConfigMode(isAdvancedSettingsSet ? "advanced" : "basic");
       },
       onError: (error) => {
-        const errorMessage = retrieveAxiosErrorMessage(error, t);
-        displayErrorToast(errorMessage);
+        const errorMessage = retrieveAxiosErrorMessage(error);
+        displayErrorToast(errorMessage || t(I18nKey.ERROR$GENERIC));
       },
     });
   };

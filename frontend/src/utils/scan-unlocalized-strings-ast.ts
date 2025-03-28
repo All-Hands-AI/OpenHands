@@ -1,3 +1,21 @@
+/**
+ * AST-based Unlocalized String Scanner
+ *
+ * This module scans the codebase for unlocalized strings that should be internationalized.
+ * It uses Babel's AST parser to analyze TypeScript/JavaScript files and identify:
+ *
+ * - String literals that appear to be user-facing text
+ * - JSX text content that should be localized
+ * - Raw translation keys that should be wrapped in i18next.t() calls
+ *
+ * The scanner employs sophisticated heuristics to distinguish between:
+ * - Technical strings (CSS classes, URLs, file paths, etc.)
+ * - User-facing text that requires localization
+ *
+ * It recursively scans directories while respecting ignore patterns and
+ * returns a map of file paths to lists of unlocalized strings found in each file.
+ */
+
 import fs from "fs";
 import nodePath from "path";
 import * as parser from "@babel/parser";
@@ -94,6 +112,15 @@ function isRawTranslationKey(str: string): boolean {
   }
 
   return /^[A-Z0-9_]+\$[A-Z0-9_]+$/.test(str);
+}
+
+// Specific technical strings that should be excluded from localization
+const EXCLUDED_TECHNICAL_STRINGS = [
+  "openid email profile", // OAuth scope string - not user-facing
+];
+
+function isExcludedTechnicalString(str: string): boolean {
+  return EXCLUDED_TECHNICAL_STRINGS.includes(str);
 }
 
 function isCommonDevelopmentString(str: string): boolean {
@@ -442,6 +469,11 @@ function isCommonDevelopmentString(str: string): boolean {
 function isLikelyUserFacingText(str: string): boolean {
   // Basic validation - skip very short strings or strings without letters
   if (!str || str.length <= 2 || !/[a-zA-Z]/.test(str)) {
+    return false;
+  }
+
+  // Check if it's a specifically excluded technical string
+  if (isExcludedTechnicalString(str)) {
     return false;
   }
 
