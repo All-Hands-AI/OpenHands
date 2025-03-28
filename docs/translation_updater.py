@@ -22,6 +22,7 @@ LANGUAGES = {
     'fr': 'French',
     'zh-Hans': 'Simplified Chinese',
     'pt-BR': 'Brazilian Portuguese',
+    'ja': 'Japanese',
 }
 
 
@@ -42,7 +43,7 @@ def load_file_hashes():
 def save_file_hashes(hashes):
     """Save current file hashes."""
     with open(CACHE_FILE, 'w') as f:
-        json.dump(hashes, f)
+        json.dump(hashes, f, indent=4)
 
 
 def get_translation_path(source_path, lang):

@@ -42,7 +42,6 @@ class ActionType(str, Enum):
     """Delegates a task to another agent.
     """
 
-
     THINK = 'think'
     """Logs a thought.
     """
@@ -81,3 +80,6 @@ class ActionType(str, Enum):
 
     RECALL = 'recall'
     """Retrieves content from a user workspace, microagent, or other source."""
+
+    CONDENSATION = 'condensation'
+    """Condenses a list of events into a summary."""
