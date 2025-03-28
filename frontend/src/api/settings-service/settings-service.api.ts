@@ -23,7 +23,7 @@ export class SettingsService {
    * Reset the user's settings
    */
   static async resetSettings(): Promise<boolean> {
-    const response = await openHands.post("/api/reset-settings");
+    const response = await openHands.post("/api/settings/reset");
     return response.status === 200;
   }
 }

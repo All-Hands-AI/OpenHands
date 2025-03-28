@@ -44,7 +44,7 @@ export const SETTINGS_HANDLERS = [
     return HttpResponse.json(null, { status: 400 });
   }),
 
-  http.post("/api/reset-settings", async () => {
+  http.post("/api/settings/reset", async () => {
     await delay();
     MOCK_USER_PREFERENCES.settings = { ...DEFAULT_SETTINGS };
     return HttpResponse.json(null, { status: 200 });

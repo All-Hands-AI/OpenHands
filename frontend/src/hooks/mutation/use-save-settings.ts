@@ -1,6 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { DEFAULT_SETTINGS } from "#/services/settings";
-import OpenHands from "#/api/open-hands";
 import { useSettings } from "../query/use-settings";
 import { UserSettings } from "#/api/settings-service/settings-service.types";
 import { SettingsService } from "#/api/settings-service/settings-service.api";
@@ -10,7 +9,7 @@ const saveSettingsMutationFn = async (
 ) => {
   // If settings is null, we're resetting
   if (settings === null) {
-    await OpenHands.resetSettings();
+    await SettingsService.resetSettings();
     return;
   }
 
