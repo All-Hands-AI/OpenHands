@@ -115,8 +115,8 @@ export const chatSlice = createSlice({
         // Include the browser_actions in the content
         text = `**Action:**\n\n\`\`\`python\n${action.payload.args.browser_actions}\n\`\`\``;
       } else if (actionID === "recall") {
-        const { recall_type: recallType, query } = action.payload.args;
-        text = `**Recall Action**\n\nType: ${recallType}\nQuery: ${query}`;
+        // Don't visualize RecallAction, only visualize RecallObservation
+        return; // Skip adding this message
       }
       if (actionID === "run" || actionID === "run_ipython") {
         if (
