@@ -27,7 +27,7 @@ export function CodeNotInGitHubLink() {
       >
         {t(I18nKey.GITHUB$START_FROM_SCRATCH)}
       </span>{" "}
-      and use the VS Code link to upload and download your code.
+      {t(I18nKey.GITHUB$VSCODE_LINK_DESCRIPTION)}
     </div>
   );
 }

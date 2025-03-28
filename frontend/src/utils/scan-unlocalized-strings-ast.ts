@@ -326,6 +326,10 @@ function isLikelyUserFacingText(str: string): boolean {
     "documentation",
     "Language",
     "GitHub",
+    "Sound Notifications",
+    "Created",
+    "ago",
+    "and use the VS Code link to upload and download your code",
   ];
 
   if (knownUIStrings.includes(str)) {

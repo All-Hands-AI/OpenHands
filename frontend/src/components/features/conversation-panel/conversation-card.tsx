@@ -223,14 +223,18 @@ export function ConversationCard({
             <ConversationRepoLink selectedRepository={selectedRepository} />
           )}
           <p className="text-xs text-neutral-400">
-            <span>Created </span>
+            <span>{t(I18nKey.CONVERSATION$CREATED)} </span>
             <time>
-              {formatTimeDelta(new Date(createdAt || lastUpdatedAt))} ago
+              {formatTimeDelta(new Date(createdAt || lastUpdatedAt))}{" "}
+              {t(I18nKey.CONVERSATION$AGO)}
             </time>
             {showUpdateTime && (
               <>
                 <span>{t(I18nKey.CONVERSATION$UPDATED)} </span>
-                <time>{formatTimeDelta(new Date(lastUpdatedAt))} ago</time>
+                <time>
+                  {formatTimeDelta(new Date(lastUpdatedAt))}{" "}
+                  {t(I18nKey.CONVERSATION$AGO)}
+                </time>
               </>
             )}
           </p>

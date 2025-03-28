@@ -373,7 +373,7 @@ function AccountSettings() {
 
           <section className="flex flex-col gap-6">
             <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">
-              {t(I18nKey.SETTINGS$LLM_SETTINGS)}
+              {t(I18nKey.SETTINGS$GITHUB_SETTINGS)}
             </h2>
             {isSaas && hasAppSlug && (
               <Link
@@ -471,7 +471,7 @@ function AccountSettings() {
               name="enable-sound-notifications-switch"
               defaultIsToggled={!!settings.ENABLE_SOUND_NOTIFICATIONS}
             >
-              Sound Notifications
+              {t(I18nKey.SETTINGS$SOUND_NOTIFICATIONS)}
             </SettingsSwitch>
           </section>
         </div>
