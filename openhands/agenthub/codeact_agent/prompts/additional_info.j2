@@ -24,5 +24,8 @@ For example, if you are using vite.config.js, you should set server.host and ser
 {% if runtime_info.additional_agent_instructions %}
 {{ runtime_info.additional_agent_instructions }}
 {% endif %}
+{% if runtime_info.date %}
+Today's date is {{ runtime_info.date }} (UTC).
+{% endif %}
 </RUNTIME_INFORMATION>
 {% endif %}

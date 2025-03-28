@@ -11,8 +11,10 @@ from openhands.events.action import (
     Action,
     AgentFinishAction,
 )
+from openhands.events.event import Event
 from openhands.llm.llm import LLM
 from openhands.memory.condenser import Condenser
+from openhands.memory.condenser.condenser import Condensation, View
 from openhands.memory.conversation_memory import ConversationMemory
 from openhands.runtime.plugins import (
     AgentSkillsRequirement,
@@ -92,6 +94,7 @@ class CodeActAgent(Agent):
 
     def step(self, state: State) -> Action:
         """Performs one step using the CodeAct Agent.
+
         This includes gathering info on previous steps and prompting the model to make a command to execute.
 
         Parameters:
@@ -113,8 +116,23 @@ class CodeActAgent(Agent):
         if latest_user_message and latest_user_message.content.strip() == '/exit':
             return AgentFinishAction()
 
-        # prepare what we want to send to the LLM
-        messages = self._get_messages(state)
+        # Condense the events from the state. If we get a view we'll pass those
+        # to the conversation manager for processing, but if we get a condensation
+        # event we'll just return that instead of an action. The controller will
+        # immediately ask the agent to step again with the new view.
+        condensed_history: list[Event] = []
+        match self.condenser.condensed_history(state):
+            case View(events=events):
+                condensed_history = events
+
+            case Condensation(action=condensation_action):
+                return condensation_action
+
+        logger.debug(
+            f'Processing {len(condensed_history)} events from a total of {len(state.history)} events'
+        )
+
+        messages = self._get_messages(condensed_history)
         params: dict = {
             'messages': self.llm.format_messages_for_llm(messages),
         }
@@ -127,7 +145,7 @@ class CodeActAgent(Agent):
             self.pending_actions.append(action)
         return self.pending_actions.popleft()
 
-    def _get_messages(self, state: State) -> list[Message]:
+    def _get_messages(self, events: list[Event]) -> list[Message]:
         """Constructs the message history for the LLM conversation.
 
         This method builds a structured conversation history by processing events from the state
@@ -143,7 +161,7 @@ class CodeActAgent(Agent):
         6. Adds environment reminders for non-function-calling mode
 
         Args:
-            state (State): The current state object containing conversation history and other metadata
+            events: The list of events to convert to messages
 
         Returns:
             list[Message]: A list of formatted messages ready for LLM consumption, including:
@@ -165,13 +183,6 @@ class CodeActAgent(Agent):
         # Use ConversationMemory to process initial messages
         messages = self.conversation_memory.process_initial_messages(
             with_caching=self.llm.is_caching_prompt_active()
-        )
-
-        # Condense the events from the state.
-        events = self.condenser.condensed_history(state)
-
-        logger.debug(
-            f'Processing {len(events)} events from a total of {len(state.history)} events'
         )
 
         # Use ConversationMemory to process events
