@@ -207,7 +207,7 @@ describe("Settings Screen", () => {
       expect(button).not.toBeInTheDocument();
     });
 
-    it("should render the 'GITHUB$CONFIGURE_REPOS' button if SaaS mode and app slug exists", async () => {
+    it("should render the 'Configure GitHub Repositories' button if SaaS mode and app slug exists", async () => {
       getConfigSpy.mockResolvedValue({
         APP_MODE: "saas",
         GITHUB_CLIENT_ID: "123",
@@ -521,7 +521,7 @@ describe("Settings Screen", () => {
         expect(input).toBeDisabled();
       });
 
-      it.skip("should save the runtime settings when the 'BUTTON$SAVE' button is clicked", async () => {
+      it.skip("should save the runtime settings when the 'Save Changes' button is clicked", async () => {
         const user = userEvent.setup();
         getConfigSpy.mockResolvedValue({
           APP_MODE: "saas",
@@ -738,7 +738,7 @@ describe("Settings Screen", () => {
       });
     });
 
-    it("should save the settings when the 'BUTTON$SAVE' button is clicked", async () => {
+    it("should save the settings when the 'Save Changes' button is clicked", async () => {
       const user = userEvent.setup();
       getSettingsSpy.mockResolvedValue({
         ...MOCK_DEFAULT_USER_SETTINGS,
