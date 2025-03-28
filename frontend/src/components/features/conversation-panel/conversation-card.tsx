@@ -229,7 +229,7 @@ export function ConversationCard({
             </time>
             {showUpdateTime && (
               <>
-                <span>{t("CONVERSATION$UPDATED")} </span>
+                <span>{t(I18nKey.CONVERSATION$UPDATED)} </span>
                 <time>{formatTimeDelta(new Date(lastUpdatedAt))} ago</time>
               </>
             )}
@@ -250,7 +250,7 @@ export function ConversationCard({
                 {metrics?.cost !== null && (
                   <div className="flex justify-between items-center border-b border-neutral-700 pb-2">
                     <span className="text-lg font-semibold">
-                      {t("CONVERSATION$TOTAL_COST")}
+                      {t(I18nKey.CONVERSATION$TOTAL_COST)}
                     </span>
                     <span className="font-semibold">
                       ${metrics.cost.toFixed(4)}
@@ -261,7 +261,7 @@ export function ConversationCard({
                 {metrics?.usage !== null && (
                   <>
                     <div className="flex justify-between items-center pb-2">
-                      <span>{t("CONVERSATION$INPUT")}:</span>
+                      <span>{t(I18nKey.CONVERSATION$INPUT)}:</span>
                       <span className="font-semibold">
                         {metrics.usage.prompt_tokens.toLocaleString()}
                       </span>
@@ -279,7 +279,7 @@ export function ConversationCard({
                     </div>
 
                     <div className="flex justify-between items-center border-b border-neutral-700 pb-2">
-                      <span>{t("CONVERSATION$OUTPUT")}:</span>
+                      <span>{t(I18nKey.CONVERSATION$OUTPUT)}:</span>
                       <span className="font-semibold">
                         {metrics.usage.completion_tokens.toLocaleString()}
                       </span>
@@ -287,7 +287,7 @@ export function ConversationCard({
 
                     <div className="flex justify-between items-center pt-1">
                       <span className="font-semibold">
-                        {t("CONVERSATION$TOTAL")}:
+                        {t(I18nKey.CONVERSATION$TOTAL)}:
                       </span>
                       <span className="font-bold">
                         {(
@@ -304,7 +304,7 @@ export function ConversationCard({
 
           {!metrics?.cost && !metrics?.usage && (
             <div className="rounded-md p-4 text-center">
-              <p className="text-neutral-400">{t("CONVERSATION$NO_METRICS")}</p>
+              <p className="text-neutral-400">{t(I18nKey.CONVERSATION$NO_METRICS)}</p>
             </div>
           )}
         </div>

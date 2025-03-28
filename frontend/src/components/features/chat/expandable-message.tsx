@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { I18nKey } from "#/i18n/declaration";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Link } from "react-router";
@@ -44,7 +45,7 @@ export function ExpandableMessage({
   if (
     config?.FEATURE_FLAGS.ENABLE_BILLING &&
     config?.APP_MODE === "saas" &&
-    id === "STATUS$ERROR_LLM_OUT_OF_CREDITS"
+    id === I18nKey.STATUS$ERROR_LLM_OUT_OF_CREDITS
   ) {
     return (
       <div
@@ -53,13 +54,13 @@ export function ExpandableMessage({
       >
         <div className="text-sm w-full">
           <div className="font-bold text-danger">
-            {t("STATUS$ERROR_LLM_OUT_OF_CREDITS")}
+            {t(I18nKey.STATUS$ERROR_LLM_OUT_OF_CREDITS)}
           </div>
           <Link
             className="mt-2 mb-2 w-full h-10 rounded flex items-center justify-center gap-2 bg-primary text-[#0D0F11]"
             to="/settings/billing"
           >
-            {t("BILLING$CLICK_TO_TOP_UP")}
+            {t(I18nKey.BILLING$CLICK_TO_TOP_UP)}
           </Link>
         </div>
       </div>

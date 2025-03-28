@@ -1,6 +1,7 @@
 import React from "react";
 import { useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
+import { I18nKey } from "#/i18n/declaration";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { setInitialPrompt } from "#/state/initial-query-slice";
 
@@ -19,12 +20,12 @@ export function CodeNotInGitHubLink() {
 
   return (
     <div className="text-xs text-neutral-400">
-      {t("GITHUB$CODE_NOT_IN_GITHUB")}{" "}
+      {t(I18nKey.GITHUB$CODE_NOT_IN_GITHUB)}{" "}
       <span
         onClick={handleStartFromScratch}
         className="underline cursor-pointer"
       >
-        {t("GITHUB$START_FROM_SCRATCH")}
+        {t(I18nKey.GITHUB$START_FROM_SCRATCH)}
       </span>{" "}
       and use the VS Code link to upload and download your code.
     </div>
