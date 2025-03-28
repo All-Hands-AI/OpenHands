@@ -23,7 +23,6 @@ jobs:
           PR_BRANCH: ${{ github.head_ref }}
         run: |
           REPO_URL="https://github.com/${{ github.repository }}"
-          PR_BRANCH="${{ github.head_ref }}"
           echo "Repository URL: $REPO_URL"
           echo "PR Branch: $PR_BRANCH"
 
