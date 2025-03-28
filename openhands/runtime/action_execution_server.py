@@ -861,7 +861,7 @@ if __name__ == '__main__':
         except Exception as e:
             logger.error(f'Error serving file viewer: {str(e)}')
             return HTMLResponse(
-                content=f'<h1>Error viewing file</h1><p>{str(e)}</p>', status_code=500
+                content=f'<h1>Error viewing file</h1><p>{path}</p><p>{str(e)}</p>', status_code=500
             )
 
     logger.debug(f'Starting action execution API on port {args.port}')
