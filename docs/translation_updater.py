@@ -18,7 +18,12 @@ DOCS_DIR = 'docs/'
 CACHE_FILE = os.path.join(DOCS_DIR, 'translation_cache.json')
 
 # Supported languages and their codes
-LANGUAGES = {'fr': 'French', 'zh-Hans': 'Simplified Chinese'}
+LANGUAGES = {
+    'fr': 'French',
+    'zh-Hans': 'Simplified Chinese',
+    'pt-BR': 'Brazilian Portuguese',
+    'ja': 'Japanese',
+}
 
 
 def get_file_hash(filepath):
@@ -38,7 +43,7 @@ def load_file_hashes():
 def save_file_hashes(hashes):
     """Save current file hashes."""
     with open(CACHE_FILE, 'w') as f:
-        json.dump(hashes, f)
+        json.dump(hashes, f, indent=4)
 
 
 def get_translation_path(source_path, lang):
@@ -52,7 +57,7 @@ def translate_content(content, target_lang):
     system_prompt = f'You are a professional translator. Translate the following content into {target_lang}. Preserve all Markdown formatting, code blocks, and front matter. Keep any {{% jsx %}} tags and similar intact. Do not translate code examples, URLs, or technical terms.'
 
     message = client.messages.create(
-        model='claude-3-opus-20240229',
+        model='claude-3-7-sonnet-20250219',
         max_tokens=4096,
         temperature=0,
         system=system_prompt,

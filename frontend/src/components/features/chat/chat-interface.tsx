@@ -17,19 +17,19 @@ import { useWsClient } from "#/context/ws-client-provider";
 import { Messages } from "./messages";
 import { ChatSuggestions } from "./chat-suggestions";
 import { ActionSuggestions } from "./action-suggestions";
-import { ContinueButton } from "#/components/shared/buttons/continue-button";
+
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { useGetTrajectory } from "#/hooks/mutation/use-get-trajectory";
-import { downloadTrajectory } from "#/utils/download-files";
+import { downloadTrajectory } from "#/utils/download-trajectory";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 
 function getEntryPoint(
   hasRepository: boolean | null,
-  hasImportedProjectZip: boolean | null,
+  hasReplayJson: boolean | null,
 ): string {
   if (hasRepository) return "github";
-  if (hasImportedProjectZip) return "zip";
+  if (hasReplayJson) return "replay";
   return "direct";
 }
 
@@ -48,7 +48,7 @@ export function ChatInterface() {
   >("positive");
   const [feedbackModalIsOpen, setFeedbackModalIsOpen] = React.useState(false);
   const [messageToSend, setMessageToSend] = React.useState<string | null>(null);
-  const { selectedRepository, importedProjectZip } = useSelector(
+  const { selectedRepository, replayJson } = useSelector(
     (state: RootState) => state.initialQuery,
   );
   const params = useParams();
@@ -59,10 +59,10 @@ export function ChatInterface() {
       posthog.capture("initial_query_submitted", {
         entry_point: getEntryPoint(
           selectedRepository !== null,
-          importedProjectZip !== null,
+          replayJson !== null,
         ),
         query_character_length: content.length,
-        uploaded_zip_size: importedProjectZip?.length,
+        replay_json_size: replayJson?.length,
       });
     } else {
       posthog.capture("user_message_sent", {
@@ -83,10 +83,6 @@ export function ChatInterface() {
   const handleStop = () => {
     posthog.capture("stop_button_clicked");
     send(generateAgentStateChangeEvent(AgentState.STOPPED));
-  };
-
-  const handleSendContinueMsg = () => {
-    handleSendMessage("Continue", []);
   };
 
   const onClickShareFeedbackActionButton = async (
@@ -165,10 +161,6 @@ export function ChatInterface() {
           />
 
           <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0">
-            {messages.length > 2 &&
-              curAgentState === AgentState.AWAITING_USER_INPUT && (
-                <ContinueButton onClick={handleSendContinueMsg} />
-              )}
             {curAgentState === AgentState.RUNNING && <TypingIndicator />}
           </div>
 

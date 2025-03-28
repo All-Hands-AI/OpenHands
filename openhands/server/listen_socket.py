@@ -6,10 +6,14 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     NullAction,
 )
+from openhands.events.action.agent import RecallAction
 from openhands.events.observation import (
     NullObservation,
 )
-from openhands.events.observation.agent import AgentStateChangedObservation
+from openhands.events.observation.agent import (
+    AgentStateChangedObservation,
+    RecallObservation,
+)
 from openhands.events.serialization import event_to_dict
 from openhands.events.stream import AsyncEventStreamWrapper
 from openhands.server.shared import (
@@ -50,16 +54,18 @@ async def connect(connection_id: str, environ):
     event_stream = await conversation_manager.join_conversation(
         conversation_id, connection_id, settings, user_id, github_user_id
     )
-
+    logger.info(
+        f'Connected to conversation {conversation_id} with connection_id {connection_id}. Replaying event stream...'
+    )
     agent_state_changed = None
+    if event_stream is None:
+        raise ConnectionRefusedError('Failed to join conversation')
     async_stream = AsyncEventStreamWrapper(event_stream, latest_event_id + 1)
     async for event in async_stream:
+        logger.info(f'oh_event: {event.__class__.__name__}')
         if isinstance(
             event,
-            (
-                NullAction,
-                NullObservation,
-            ),
+            (NullAction, NullObservation, RecallAction, RecallObservation),
         ):
             continue
         elif isinstance(event, AgentStateChangedObservation):
@@ -68,10 +74,18 @@ async def connect(connection_id: str, environ):
             await sio.emit('oh_event', event_to_dict(event), to=connection_id)
     if agent_state_changed:
         await sio.emit('oh_event', event_to_dict(agent_state_changed), to=connection_id)
+    logger.info(f'Finished replaying event stream for conversation {conversation_id}')
+
+
+@sio.event
+async def oh_user_action(connection_id: str, data: dict):
+    await conversation_manager.send_to_event_stream(connection_id, data)
 
 
 @sio.event
 async def oh_action(connection_id: str, data: dict):
+    # TODO: Remove this handler once all clients are updated to use oh_user_action
+    # Keeping for backward compatibility with in-progress sessions
     await conversation_manager.send_to_event_stream(connection_id, data)
 
 

@@ -10,6 +10,7 @@ export default {
     extend: {
       colors: {
         primary: "#C9B974", // nice yellow
+        logo: "#CFB755", // color for logos and icons
         base: "#0D0F11", // dark background also used for tooltips
         "base-secondary": "#24272E", // lighter background
         danger: "#E76A5E",
@@ -35,6 +36,7 @@ export default {
         dark: {
           colors: {
             primary: "#4465DB",
+            logo: "#CFB755",
           },
         },
       },

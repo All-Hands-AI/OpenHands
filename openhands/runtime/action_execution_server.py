@@ -20,7 +20,7 @@ from zipfile import ZipFile
 
 from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.security import APIKeyHeader
 from openhands_aci.editor.editor import OHEditor
 from openhands_aci.editor.exceptions import ToolError
@@ -31,6 +31,7 @@ from starlette.background import BackgroundTask
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from uvicorn import run
 
+from openhands.core.exceptions import BrowserUnavailableException
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     Action,
@@ -57,6 +58,7 @@ from openhands.runtime.browser import browse
 from openhands.runtime.browser.browser_env import BrowserEnv
 from openhands.runtime.plugins import ALL_PLUGINS, JupyterPlugin, Plugin, VSCodePlugin
 from openhands.runtime.utils.bash import BashSession
+from openhands.runtime.utils.file_viewer import generate_file_viewer_html
 from openhands.runtime.utils.files import insert_lines, read_lines
 from openhands.runtime.utils.memory_monitor import MemoryMonitor
 from openhands.runtime.utils.runtime_init import init_user_and_working_directory
@@ -159,7 +161,9 @@ class ActionExecutor:
         self.lock = asyncio.Lock()
         self.plugins: dict[str, Plugin] = {}
         self.file_editor = OHEditor(workspace_root=self._initial_cwd)
-        self.browser = BrowserEnv(browsergym_eval_env)
+        self.browser: BrowserEnv | None = None
+        self.browser_init_task: asyncio.Task | None = None
+        self.browsergym_eval_env = browsergym_eval_env
         self.start_time = time.time()
         self.last_execution_time = self.start_time
         self._initialized = False
@@ -183,6 +187,38 @@ class ActionExecutor:
     def initial_cwd(self):
         return self._initial_cwd
 
+    async def _init_browser_async(self):
+        """Initialize the browser asynchronously."""
+        logger.debug('Initializing browser asynchronously')
+        try:
+            self.browser = BrowserEnv(self.browsergym_eval_env)
+            logger.debug('Browser initialized asynchronously')
+        except Exception as e:
+            logger.error(f'Failed to initialize browser: {e}')
+            self.browser = None
+
+    async def _ensure_browser_ready(self):
+        """Ensure the browser is ready for use."""
+        if self.browser is None:
+            if self.browser_init_task is None:
+                # Start browser initialization if it hasn't been started
+                self.browser_init_task = asyncio.create_task(self._init_browser_async())
+            elif self.browser_init_task.done():
+                # If the task is done but browser is still None, restart initialization
+                self.browser_init_task = asyncio.create_task(self._init_browser_async())
+
+            # Wait for browser to be initialized
+            if self.browser_init_task:
+                logger.debug('Waiting for browser to be ready...')
+                await self.browser_init_task
+
+            # Check if browser was successfully initialized
+            if self.browser is None:
+                raise BrowserUnavailableException('Browser initialization failed')
+
+        # If we get here, the browser is ready
+        logger.debug('Browser is ready')
+
     async def ainit(self):
         # bash needs to be initialized first
         logger.debug('Initializing bash session')
@@ -190,16 +226,20 @@ class ActionExecutor:
             work_dir=self._initial_cwd,
             username=self.username,
             no_change_timeout_seconds=int(
-                os.environ.get('NO_CHANGE_TIMEOUT_SECONDS', 30)
+                os.environ.get('NO_CHANGE_TIMEOUT_SECONDS', 10)
             ),
             max_memory_mb=self.max_memory_gb * 1024 if self.max_memory_gb else None,
         )
         self.bash_session.initialize()
         logger.debug('Bash session initialized')
 
+        # Start browser initialization in the background
+        self.browser_init_task = asyncio.create_task(self._init_browser_async())
+        logger.debug('Browser initialization started in background')
+
         await wait_all(
             (self._init_plugin(plugin) for plugin in self.plugins_to_load),
-            timeout=30,
+            timeout=60,
         )
         logger.debug('All plugins initialized')
 
@@ -336,7 +376,7 @@ class ActionExecutor:
         filepath = self._resolve_path(action.path, working_dir)
         try:
             if filepath.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif')):
-                with open(filepath, 'rb') as file:
+                with open(filepath, 'rb') as file:  # noqa: ASYNC101
                     image_data = file.read()
                     encoded_image = base64.b64encode(image_data).decode('utf-8')
                     mime_type, _ = mimetypes.guess_type(filepath)
@@ -346,13 +386,13 @@ class ActionExecutor:
 
                 return FileReadObservation(path=filepath, content=encoded_image)
             elif filepath.lower().endswith('.pdf'):
-                with open(filepath, 'rb') as file:
+                with open(filepath, 'rb') as file:  # noqa: ASYNC101
                     pdf_data = file.read()
                     encoded_pdf = base64.b64encode(pdf_data).decode('utf-8')
                     encoded_pdf = f'data:application/pdf;base64,{encoded_pdf}'
                 return FileReadObservation(path=filepath, content=encoded_pdf)
             elif filepath.lower().endswith(('.mp4', '.webm', '.ogg')):
-                with open(filepath, 'rb') as file:
+                with open(filepath, 'rb') as file:  # noqa: ASYNC101
                     video_data = file.read()
                     encoded_video = base64.b64encode(video_data).decode('utf-8')
                     mime_type, _ = mimetypes.guess_type(filepath)
@@ -362,7 +402,7 @@ class ActionExecutor:
 
                 return FileReadObservation(path=filepath, content=encoded_video)
 
-            with open(filepath, 'r', encoding='utf-8') as file:
+            with open(filepath, 'r', encoding='utf-8') as file:  # noqa: ASYNC101
                 lines = read_lines(file.readlines(), action.start, action.end)
         except FileNotFoundError:
             return ErrorObservation(
@@ -395,7 +435,7 @@ class ActionExecutor:
 
         mode = 'w' if not file_exists else 'r+'
         try:
-            with open(filepath, mode, encoding='utf-8') as file:
+            with open(filepath, mode, encoding='utf-8') as file:  # noqa: ASYNC101
                 if mode != 'w':
                     all_lines = file.readlines()
                     new_file = insert_lines(insert, all_lines, action.start, action.end)
@@ -459,16 +499,19 @@ class ActionExecutor:
         )
 
     async def browse(self, action: BrowseURLAction) -> Observation:
+        await self._ensure_browser_ready()
         return await browse(action, self.browser)
 
     async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
+        await self._ensure_browser_ready()
         return await browse(action, self.browser)
 
     def close(self):
         self.memory_monitor.stop_monitoring()
         if self.bash_session is not None:
             self.bash_session.close()
-        self.browser.close()
+        if self.browser is not None:
+            self.browser.close()
 
 
 if __name__ == '__main__':
@@ -488,6 +531,11 @@ if __name__ == '__main__':
     )
     # example: python client.py 8000 --working-dir /workspace --plugins JupyterRequirement
     args = parser.parse_args()
+
+    port_path = '/tmp/oh-server-url'
+    os.makedirs(os.path.dirname(port_path), exist_ok=True)
+    with open(port_path, 'w') as f:
+        f.write(f'http://127.0.0.1:{args.port}')
 
     plugins_to_load: list[Plugin] = []
     if args.plugins:
@@ -609,7 +657,7 @@ if __name__ == '__main__':
                     )
 
                 zip_path = os.path.join(full_dest_path, file.filename)
-                with open(zip_path, 'wb') as buffer:
+                with open(zip_path, 'wb') as buffer:  # noqa: ASYNC101
                     shutil.copyfileobj(file.file, buffer)
 
                 # Extract the zip file
@@ -622,7 +670,7 @@ if __name__ == '__main__':
             else:
                 # For single file uploads
                 file_path = os.path.join(full_dest_path, file.filename)
-                with open(file_path, 'wb') as buffer:
+                with open(file_path, 'wb') as buffer:  # noqa: ASYNC101
                     shutil.copyfileobj(file.file, buffer)
                 logger.debug(f'Uploaded file {file.filename} to {destination}')
 
@@ -768,6 +816,54 @@ if __name__ == '__main__':
         except Exception as e:
             logger.error(f'Error listing files: {e}')
             return []
+
+    @app.get('/view')
+    async def view_file(path: str, request: Request):
+        """View a file using an embedded viewer.
+
+        Args:
+            path (str): The absolute path of the file to view.
+            request (Request): The FastAPI request object.
+
+        Returns:
+            HTMLResponse: An HTML page with an appropriate viewer for the file.
+        """
+        # Security check: Only allow requests from localhost
+        client_host = request.client.host if request.client else None
+        if client_host not in ['127.0.0.1', 'localhost', '::1']:
+            logger.warning(f'Unauthorized file view attempt from {client_host}')
+            return HTMLResponse(
+                content='<h1>Access Denied</h1><p>This endpoint is only accessible from localhost</p>',
+                status_code=403,
+            )
+
+        if not os.path.isabs(path):
+            return HTMLResponse(
+                content=f'<h1>Error: Path must be absolute</h1><p>{path}</p>',
+                status_code=400,
+            )
+
+        if not os.path.exists(path):
+            return HTMLResponse(
+                content=f'<h1>Error: File not found</h1><p>{path}</p>', status_code=404
+            )
+
+        if os.path.isdir(path):
+            return HTMLResponse(
+                content=f'<h1>Error: Path is a directory</h1><p>{path}</p>',
+                status_code=400,
+            )
+
+        try:
+            html_content = generate_file_viewer_html(path)
+            return HTMLResponse(content=html_content)
+
+        except Exception as e:
+            logger.error(f'Error serving file viewer: {str(e)}')
+            return HTMLResponse(
+                content=f'<h1>Error viewing file</h1><p>{path}</p><p>{str(e)}</p>',
+                status_code=500,
+            )
 
     logger.debug(f'Starting action execution API on port {args.port}')
     run(app, host='0.0.0.0', port=args.port)

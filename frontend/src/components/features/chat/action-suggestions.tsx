@@ -2,7 +2,6 @@ import posthog from "posthog-js";
 import React from "react";
 import { useSelector } from "react-redux";
 import { SuggestionItem } from "#/components/features/suggestions/suggestion-item";
-import { DownloadModal } from "#/components/shared/download-modal";
 import type { RootState } from "#/store";
 import { useAuth } from "#/context/auth-context";
 
@@ -18,21 +17,11 @@ export function ActionSuggestions({
     (state: RootState) => state.initialQuery,
   );
 
-  const [isDownloading, setIsDownloading] = React.useState(false);
   const [hasPullRequest, setHasPullRequest] = React.useState(false);
-
-  const handleDownloadClose = () => {
-    setIsDownloading(false);
-  };
 
   return (
     <div className="flex flex-col gap-2 mb-2">
-      <DownloadModal
-        initialPath=""
-        onClose={handleDownloadClose}
-        isOpen={isDownloading}
-      />
-      {githubTokenIsSet && selectedRepository ? (
+      {githubTokenIsSet && selectedRepository && (
         <div className="flex flex-row gap-2 justify-center w-full">
           {!hasPullRequest ? (
             <>
@@ -40,7 +29,7 @@ export function ActionSuggestions({
                 suggestion={{
                   label: "Push to Branch",
                   value:
-                    "Please push the changes to a remote branch on GitHub, but do NOT create a pull request.",
+                    "Please push the changes to a remote branch on GitHub, but do NOT create a pull request. Please use the exact SAME branch name as the one you are currently on.",
                 }}
                 onClick={(value) => {
                   posthog.capture("push_to_branch_button_clicked");
@@ -51,7 +40,7 @@ export function ActionSuggestions({
                 suggestion={{
                   label: "Push & Create PR",
                   value:
-                    "Please push the changes to GitHub and open a pull request.",
+                    "Please push the changes to GitHub and open a pull request. Please create a meaningful branch name that describes the changes.",
                 }}
                 onClick={(value) => {
                   posthog.capture("create_pr_button_clicked");
@@ -74,21 +63,6 @@ export function ActionSuggestions({
             />
           )}
         </div>
-      ) : (
-        <SuggestionItem
-          suggestion={{
-            label: !isDownloading
-              ? "Download files"
-              : "Downloading, please wait...",
-            value: "Download files",
-          }}
-          onClick={() => {
-            posthog.capture("download_workspace_button_clicked");
-            if (!isDownloading) {
-              setIsDownloading(true);
-            }
-          }}
-        />
       )}
     </div>
   );

@@ -4,12 +4,19 @@ import os
 import traceback
 from typing import Callable, ClassVar, Type
 
-import litellm
-from litellm.exceptions import (
+import litellm  # noqa
+from litellm.exceptions import (  # noqa
+    APIConnectionError,
+    APIError,
+    AuthenticationError,
     BadRequestError,
     ContextWindowExceededError,
+    InternalServerError,
+    NotFoundError,
     OpenAIError,
     RateLimitError,
+    ServiceUnavailableError,
+    Timeout,
 )
 
 from openhands.controller.agent import Agent
@@ -47,7 +54,7 @@ from openhands.events.action import (
     MessageAction,
     NullAction,
 )
-from openhands.events.action.agent import RecallAction
+from openhands.events.action.agent import CondensationAction, RecallAction
 from openhands.events.event import Event
 from openhands.events.observation import (
     AgentCondensationObservation,
@@ -86,6 +93,7 @@ class AgentController:
         ChangeAgentStateAction,
         AgentStateChangedObservation,
     )
+    _cached_first_user_message: MessageAction | None = None
 
     def __init__(
         self,
@@ -223,20 +231,20 @@ class AgentController:
         await self.set_agent_state_to(AgentState.ERROR)
         if self.status_callback is not None:
             err_id = ''
-            if isinstance(e, litellm.AuthenticationError):
+            if isinstance(e, AuthenticationError):
                 err_id = 'STATUS$ERROR_LLM_AUTHENTICATION'
             elif isinstance(
                 e,
                 (
-                    litellm.ServiceUnavailableError,
-                    litellm.APIConnectionError,
-                    litellm.APIError,
+                    ServiceUnavailableError,
+                    APIConnectionError,
+                    APIError,
                 ),
             ):
                 err_id = 'STATUS$ERROR_LLM_SERVICE_UNAVAILABLE'
-            elif isinstance(e, litellm.InternalServerError):
+            elif isinstance(e, InternalServerError):
                 err_id = 'STATUS$ERROR_LLM_INTERNAL_SERVER_ERROR'
-            elif isinstance(e, litellm.BadRequestError) and 'ExceededBudget' in str(e):
+            elif isinstance(e, BadRequestError) and 'ExceededBudget' in str(e):
                 err_id = 'STATUS$ERROR_LLM_OUT_OF_CREDITS'
             elif isinstance(e, RateLimitError):
                 await self.set_agent_state_to(AgentState.RATE_LIMITED)
@@ -256,24 +264,30 @@ class AgentController:
                 f'Traceback: {traceback.format_exc()}',
             )
             reported = RuntimeError(
-                'There was an unexpected error while running the agent. Please '
-                'report this error to the developers by opening an issue at '
-                'https://github.com/All-Hands-AI/OpenHands. Your session ID is '
-                f' {self.id}. Error type: {e.__class__.__name__}'
+                f'There was an unexpected error while running the agent: {e.__class__.__name__}. You can refresh the page or ask the agent to try again.'
             )
             if (
-                isinstance(e, litellm.AuthenticationError)
-                or isinstance(e, litellm.BadRequestError)
+                isinstance(e, Timeout)
+                or isinstance(e, APIError)
+                or isinstance(e, BadRequestError)
+                or isinstance(e, NotFoundError)
+                or isinstance(e, InternalServerError)
+                or isinstance(e, AuthenticationError)
                 or isinstance(e, RateLimitError)
                 or isinstance(e, LLMContextWindowExceedError)
             ):
                 reported = e
+            else:
+                self.log(
+                    'warning',
+                    f'Unknown exception type while running the agent: {type(e).__name__}.',
+                )
             await self._react_to_exception(reported)
 
     def should_step(self, event: Event) -> bool:
-        """
-        Whether the agent should take a step based on an event. In general,
-        the agent should take a step if it receives a message from the user,
+        """Whether the agent should take a step based on an event.
+
+        In general, the agent should take a step if it receives a message from the user,
         or observes something in the environment (after acting).
         """
         # it might be the delegate's day in the sun
@@ -291,12 +305,15 @@ class AgentController:
                 return True
             if isinstance(event, AgentDelegateAction):
                 return True
+            if isinstance(event, CondensationAction):
+                return True
             return False
         if isinstance(event, Observation):
             if (
                 isinstance(event, NullObservation)
                 and event.cause is not None
-                and event.cause > 0
+                and event.cause
+                > 0  # NullObservation has cause > 0 (RecallAction), not 0 (user message)
             ):
                 return True
             if isinstance(event, AgentStateChangedObservation) or isinstance(
@@ -312,7 +329,6 @@ class AgentController:
         Args:
             event (Event): The incoming event to process.
         """
-
         # If we have a delegate that is not finished or errored, forward events to it
         if self.delegate is not None:
             delegate_state = self.delegate.get_agent_state()
@@ -465,11 +481,21 @@ class AgentController:
 
             if self.get_agent_state() != AgentState.RUNNING:
                 await self.set_agent_state_to(AgentState.RUNNING)
-        elif action.source == EventSource.AGENT and action.wait_for_response:
-            await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
+        elif action.source == EventSource.AGENT:
+            # Check if we need to trigger microagents based on agent message content
+            recall_action = RecallAction(
+                query=action.content, recall_type=RecallType.KNOWLEDGE
+            )
+            self._pending_action = recall_action
+            # This is source=AGENT because the agent message is the trigger for the microagent retrieval
+            self.event_stream.add_event(recall_action, EventSource.AGENT)
+
+            # If the agent is waiting for a response, set the appropriate state
+            if action.wait_for_response:
+                await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
 
     def _reset(self) -> None:
-        """Resets the agent controller"""
+        """Resets the agent controller."""
         # Runnable actions need an Observation
         # make sure there is an Observation with the tool call metadata to be recognized by the agent
         # otherwise the pending action is found in history, but it's incomplete without an obs with tool result
@@ -591,6 +617,7 @@ class AgentController:
         llm = LLM(config=llm_config, retry_listener=self._notify_on_llm_retry)
         delegate_agent = agent_cls(llm=llm, config=agent_config)
         state = State(
+            session_id=self.id.removesuffix('-delegate'),
             inputs=action.inputs or {},
             local_iteration=0,
             iteration=self.state.iteration,
@@ -621,7 +648,8 @@ class AgentController:
         )
 
     def end_delegate(self) -> None:
-        """Ends the currently active delegate (e.g., if it is finished or errored)
+        """Ends the currently active delegate (e.g., if it is finished or errored).
+
         so that this controller can resume normal operation.
         """
         if self.delegate is None:
@@ -858,6 +886,7 @@ class AgentController:
         # If state is None, we create a brand new state and still load the event stream so we can restore the history
         if state is None:
             self.state = State(
+                session_id=self.id.removesuffix('-delegate'),
                 inputs={},
                 max_iterations=max_iterations,
                 confirmation_mode=confirmation_mode,
@@ -882,10 +911,13 @@ class AgentController:
         # Always load from the event stream to avoid losing history
         self._init_history()
 
-    def get_trajectory(self) -> list[dict]:
+    def get_trajectory(self, include_screenshots: bool = False) -> list[dict]:
         # state history could be partially hidden/truncated before controller is closed
         assert self._closed
-        return [event_to_trajectory(event) for event in self.state.history]
+        return [
+            event_to_trajectory(event, include_screenshots)
+            for event in self.state.history
+        ]
 
     def _init_history(self) -> None:
         """Initializes the agent's history from the event stream.
@@ -1029,8 +1061,9 @@ class AgentController:
         )
 
     def _apply_conversation_window(self, events: list[Event]) -> list[Event]:
-        """Cuts history roughly in half when context window is exceeded, preserving action-observation pairs
-        and ensuring the first user message is always included.
+        """Cuts history roughly in half when context window is exceeded.
+
+        It preserves action-observation pairs and ensures that the first user message is always included.
 
         The algorithm:
         1. Cut history in half
@@ -1183,8 +1216,7 @@ class AgentController:
         return False
 
     def _first_user_message(self) -> MessageAction | None:
-        """
-        Get the first user message for this agent.
+        """Get the first user message for this agent.
 
         For regular agents, this is the first user message from the beginning (start_id=0).
         For delegate agents, this is the first user message after the delegate's start_id.
@@ -1192,15 +1224,19 @@ class AgentController:
         Returns:
             MessageAction | None: The first user message, or None if no user message found
         """
-        # Find the first user message from the appropriate starting point
-        user_messages = list(self.event_stream.get_events(start_id=self.state.start_id))
+        # Return cached message if any
+        if self._cached_first_user_message is not None:
+            return self._cached_first_user_message
 
-        # Get and return the first user message
-        return next(
+        # Find the first user message
+        self._cached_first_user_message = next(
             (
                 e
-                for e in user_messages
+                for e in self.event_stream.get_events(
+                    start_id=self.state.start_id,
+                )
                 if isinstance(e, MessageAction) and e.source == EventSource.USER
             ),
             None,
         )
+        return self._cached_first_user_message

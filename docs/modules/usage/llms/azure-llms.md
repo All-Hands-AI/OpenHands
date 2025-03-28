@@ -5,7 +5,7 @@ OpenHands uses LiteLLM to make calls to Azure's chat models. You can find their 
 ## Azure OpenAI Configuration
 
 When running OpenHands, you'll need to set the following environment variable using `-e` in the
-[docker run command](/modules/usage/installation#start-the-app):
+[docker run command](../installation#running-openhands):
 
 ```
 LLM_API_VERSION="<api-version>"              # e.g. "2023-05-15"
@@ -34,7 +34,7 @@ You will need your ChatGPT deployment name which can be found on the deployments
 ### Azure OpenAI Configuration
 
 When running OpenHands, set the following environment variable using `-e` in the
-[docker run command](/modules/usage/installation#start-the-app):
+[docker run command](../installation#running-openhands):
 
 ```
 LLM_API_VERSION="<api-version>"                                    # e.g. "2024-02-15-preview"

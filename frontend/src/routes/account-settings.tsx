@@ -25,8 +25,6 @@ import {
   displayErrorToast,
   displaySuccessToast,
 } from "#/utils/custom-toast-handlers";
-import { PostSettings } from "#/types/settings";
-import { HIDE_LLM_SETTINGS } from "#/utils/feature-flags";
 
 const REMOTE_RUNTIME_OPTIONS = [
   { key: 1, label: "1x (2 core, 8G)" },
@@ -53,7 +51,8 @@ function AccountSettings() {
   const isSuccess = isSuccessfulSettings && isSuccessfulResources;
 
   const isSaas = config?.APP_MODE === "saas";
-  const shouldHandleSpecialSaasCase = HIDE_LLM_SETTINGS() && isSaas;
+  const shouldHandleSpecialSaasCase =
+    config?.FEATURE_FLAGS.HIDE_LLM_SETTINGS && isSaas;
 
   const determineWhetherToToggleAdvancedSettings = () => {
     if (shouldHandleSpecialSaasCase) return true;
@@ -170,24 +169,11 @@ function AccountSettings() {
   };
 
   const handleReset = () => {
-    const newSettings: Partial<PostSettings> = {
-      ...DEFAULT_SETTINGS,
-      LLM_API_KEY: "", // reset LLM API key
-    };
-
-    // we don't want the user to be able to modify these settings in SaaS
-    // and we should make sure they aren't included in the reset
-    if (shouldHandleSpecialSaasCase) {
-      delete newSettings.LLM_API_KEY;
-      delete newSettings.LLM_BASE_URL;
-      delete newSettings.LLM_MODEL;
-    }
-
-    saveSettings(newSettings, {
+    saveSettings(null, {
       onSuccess: () => {
         displaySuccessToast("Settings reset");
         setResetSettingsModalIsOpen(false);
-        setLlmConfigMode(isAdvancedSettingsSet ? "advanced" : "basic");
+        setLlmConfigMode("basic");
       },
     });
   };
@@ -288,7 +274,7 @@ function AccountSettings() {
                   startContent={
                     isLLMKeySet && <KeyStatusIcon isSet={isLLMKeySet} />
                   }
-                  placeholder={isLLMKeySet ? "**********" : ""}
+                  placeholder={isLLMKeySet ? "<hidden>" : ""}
                 />
               )}
 
@@ -297,7 +283,7 @@ function AccountSettings() {
                   testId="llm-api-key-help-anchor"
                   text="Don't know your API key?"
                   linkText="Click here for instructions"
-                  href="https://docs.all-hands.dev/modules/usage/llms"
+                  href="https://docs.all-hands.dev/modules/usage/installation#getting-an-api-key"
                 />
               )}
 
@@ -407,15 +393,35 @@ function AccountSettings() {
                       <KeyStatusIcon isSet={!!isGitHubTokenSet} />
                     )
                   }
-                  placeholder={isGitHubTokenSet ? "**********" : ""}
+                  placeholder={isGitHubTokenSet ? "<hidden>" : ""}
                 />
-
-                <HelpLink
-                  testId="github-token-help-anchor"
-                  text="Get your token"
-                  linkText="here"
-                  href="https://github.com/settings/tokens/new?description=openhands-app&scopes=repo,user,workflow"
-                />
+                <p data-testid="github-token-help-anchor" className="text-xs">
+                  {" "}
+                  Generate a token on{" "}
+                  <b>
+                    {" "}
+                    <a
+                      href="https://github.com/settings/tokens/new?description=openhands-app&scopes=repo,user,workflow"
+                      target="_blank"
+                      className="underline underline-offset-2"
+                      rel="noopener noreferrer"
+                    >
+                      GitHub
+                    </a>{" "}
+                  </b>
+                  or see the{" "}
+                  <b>
+                    <a
+                      href="https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token"
+                      target="_blank"
+                      className="underline underline-offset-2"
+                      rel="noopener noreferrer"
+                    >
+                      documentation
+                    </a>
+                  </b>
+                  .
+                </p>
               </>
             )}
 
