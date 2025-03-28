@@ -192,7 +192,7 @@ class TokenAwareCondenserConfig(BaseModel):
         description='Number of initial events to always keep in history.',
         ge=0,
     )
-    token_threshold: float = Field(
+    threshold: float = Field(
         default=0.85,
         description='Maximum fraction of tokens used before triggering condensation.',
         ge=0.0,
