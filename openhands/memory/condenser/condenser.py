@@ -9,7 +9,6 @@ from pydantic import BaseModel
 from openhands.controller.state.state import State
 from openhands.core.config.condenser_config import CondenserConfig
 from openhands.events.action.agent import CondensationAction
-from openhands.events.event import Event
 from openhands.memory.view import View
 
 CONDENSER_METADATA_KEY = 'condenser_meta'
@@ -87,13 +86,13 @@ class Condenser(ABC):
             self.write_metadata(state)
 
     @abstractmethod
-    def condense(self, events: list[Event]) -> View | Condensation:
+    def condense(self, View) -> View | Condensation:
         """Condense a sequence of events into a potentially smaller list.
 
         New condenser strategies should override this method to implement their own condensation logic. Call `self.add_metadata` in the implementation to record any relevant per-condensation diagnostic information.
 
         Args:
-            events: A list of events representing the entire history of the agent.
+            View: A view of the history containing all events that should be condensed.
 
         Returns:
             View | Condensation: A condensed view of the events or an event indicating the history has been condensed.
@@ -102,7 +101,7 @@ class Condenser(ABC):
     def condensed_history(self, state: State) -> View | Condensation:
         """Condense the state's history."""
         with self.metadata_batch(state):
-            return self.condense(state.history)
+            return self.condense(state.view)
 
     @classmethod
     def register_config(cls, configuration_type: type[CondenserConfig]) -> None:
@@ -158,10 +157,7 @@ class RollingCondenser(Condenser, ABC):
     def get_condensation(self, view: View) -> Condensation:
         """Get the condensation from a view."""
 
-    def condense(self, events: list[Event]) -> View | Condensation:
-        # Convert the state to a view. This might require some condenser-specific logic.
-        view = View.from_events(events)
-
+    def condense(self, view: View) -> View | Condensation:
         # If we trigger the condenser-specific condensation threshold, compute and return
         # the condensation.
         if self.should_condense(view):
