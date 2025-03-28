@@ -93,7 +93,7 @@ export function SettingsForm({ settings, models, onClose }: SettingsFormProps) {
           <SettingsInput
             testId="llm-api-key-input"
             name="llm-api-key-input"
-            label={t("SETTINGS_FORM$API_KEY")}
+            label={t(I18nKey.SETTINGS_FORM$API_KEY)}
             type="password"
             className="w-[680px]"
             placeholder={isLLMKeySet ? "<hidden>" : ""}

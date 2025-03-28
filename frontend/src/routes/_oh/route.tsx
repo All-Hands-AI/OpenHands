@@ -8,6 +8,7 @@ import {
   useSearchParams,
 } from "react-router";
 import { useTranslation } from "react-i18next";
+import { I18nKey } from "#/i18n/declaration";
 import i18n from "#/i18n";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useIsAuthed } from "#/hooks/query/use-is-authed";
@@ -42,7 +43,7 @@ export function ErrorBoundary() {
   if (error instanceof Error) {
     return (
       <div>
-        <h1>{t("ERROR$GENERIC")}</h1>
+        <h1>{t(I18nKey.ERROR$GENERIC)}</h1>
         <pre>{error.message}</pre>
       </div>
     );
@@ -50,7 +51,7 @@ export function ErrorBoundary() {
 
   return (
     <div>
-      <h1>{t("ERROR$UNKNOWN")}</h1>
+      <h1>{t(I18nKey.ERROR$UNKNOWN)}</h1>
     </div>
   );
 }
@@ -106,7 +107,7 @@ export default function MainApp() {
     if (error?.status === 402 && pathname !== "/") {
       navigate("/");
     } else if (!isFetching && searchParams.get("free_credits") === "success") {
-      displaySuccessToast(t("BILLING$YOURE_IN"));
+      displaySuccessToast(t(I18nKey.BILLING$YOURE_IN));
       searchParams.delete("free_credits");
       navigate("/");
     }

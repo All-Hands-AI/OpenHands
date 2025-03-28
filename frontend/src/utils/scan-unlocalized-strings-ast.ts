@@ -156,7 +156,22 @@ function isCommonDevelopmentString(str: string): boolean {
     str.includes("DeepInfra") ||
     str.includes("AI21") ||
     str.includes("Replicate") ||
-    str.includes("OpenRouter")
+    str.includes("OpenRouter") ||
+    str.includes("claude-") ||
+    str.includes("gpt-") ||
+    str.includes("o1-") ||
+    str.includes("o3-") ||
+    // File extensions and paths
+    str === ".png" ||
+    str === ".jpg" ||
+    str === ".jpeg" ||
+    str === ".bmp" ||
+    str === ".gif" ||
+    str === ".pdf" ||
+    str === ".mp4" ||
+    str === ".webm" ||
+    str === ".ogg" ||
+    str === "/beep.wav"
   ) {
     return true;
   }
