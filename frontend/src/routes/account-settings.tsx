@@ -25,6 +25,7 @@ import {
   displayErrorToast,
   displaySuccessToast,
 } from "#/utils/custom-toast-handlers";
+import { ServerUserSettings } from "#/api/settings-service/settings-service.types";
 
 const REMOTE_RUNTIME_OPTIONS = [
   { key: 1, label: "1x (2 core, 8G)" },
@@ -131,7 +132,7 @@ function AccountSettings() {
     const finalLlmApiKey = shouldHandleSpecialSaasCase ? undefined : llmApiKey;
 
     const githubToken = formData.get("github-token-input")?.toString();
-    const newSettings = {
+    const newSettings: Partial<ServerUserSettings> = {
       github_token: githubToken,
       provider_tokens: githubToken
         ? {
@@ -139,20 +140,20 @@ function AccountSettings() {
             gitlab: "",
           }
         : undefined,
-      LANGUAGE: languageValue,
+      language: languageValue,
       user_consents_to_analytics: userConsentsToAnalytics,
-      ENABLE_DEFAULT_CONDENSER: enableMemoryCondenser,
-      ENABLE_SOUND_NOTIFICATIONS: enableSoundNotifications,
-      LLM_MODEL: finalLlmModel,
-      LLM_BASE_URL: finalLlmBaseUrl,
-      LLM_API_KEY: finalLlmApiKey,
-      AGENT: formData.get("agent-input")?.toString(),
-      SECURITY_ANALYZER:
+      enable_default_condenser: enableMemoryCondenser,
+      enable_sound_notifications: enableSoundNotifications,
+      llm_model: finalLlmModel,
+      llm_base_url: finalLlmBaseUrl,
+      llm_api_key: finalLlmApiKey,
+      agent: formData.get("agent-input")?.toString(),
+      security_analyzer:
         formData.get("security-analyzer-input")?.toString() || "",
-      REMOTE_RUNTIME_RESOURCE_FACTOR:
+      remote_runtime_resource_factor:
         remoteRuntimeResourceFactor ||
         DEFAULT_SETTINGS.remote_runtime_resource_factor,
-      CONFIRMATION_MODE: confirmationModeIsEnabled,
+      confirmation_mode: confirmationModeIsEnabled,
     };
 
     saveSettings(newSettings, {

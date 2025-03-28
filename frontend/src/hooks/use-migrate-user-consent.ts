@@ -15,7 +15,7 @@ export const useMigrateUserConsent = () => {
       if (userAnalyticsConsent) {
         args?.handleAnalyticsWasPresentInLocalStorage();
 
-        await saveUserSettings(
+        saveUserSettings(
           { user_consents_to_analytics: userAnalyticsConsent === "true" },
           {
             onSuccess: () => {

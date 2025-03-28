@@ -19,7 +19,7 @@ const toggleAdvancedSettings = async (user: UserEvent) => {
 
 describe("Settings Screen", () => {
   const getSettingsSpy = vi.spyOn(SettingsService, "getSettings");
-  const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+  const saveSettingsSpy = vi.spyOn(SettingsService, "saveSettings");
   const resetSettingsSpy = vi.spyOn(OpenHands, "resetSettings");
   const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
 

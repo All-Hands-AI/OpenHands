@@ -1,11 +1,12 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import OpenHands from "#/api/open-hands";
-import { PostSettings, PostApiSettings } from "#/types/settings";
 import { useSettings } from "../query/use-settings";
+import { UserSettings } from "#/api/settings-service/settings-service.types";
+import { SettingsService } from "#/api/settings-service/settings-service.api";
 
 const saveSettingsMutationFn = async (
-  settings: Partial<PostSettings> | null,
+  settings: Partial<UserSettings> | null,
 ) => {
   // If settings is null, we're resetting
   if (settings === null) {
@@ -13,25 +14,17 @@ const saveSettingsMutationFn = async (
     return;
   }
 
-  const apiSettings: Partial<PostApiSettings> = {
-    llm_model: settings.LLM_MODEL,
-    llm_base_url: settings.LLM_BASE_URL,
-    agent: settings.AGENT || DEFAULT_SETTINGS.agent,
-    language: settings.LANGUAGE || DEFAULT_SETTINGS.language,
-    confirmation_mode: settings.CONFIRMATION_MODE,
-    security_analyzer: settings.SECURITY_ANALYZER,
+  const safeSettings: Partial<UserSettings> = {
+    ...settings,
+    agent: settings.agent || DEFAULT_SETTINGS.agent,
+    language: settings.language || DEFAULT_SETTINGS.language,
     llm_api_key:
-      settings.LLM_API_KEY === ""
+      settings.llm_api_key === ""
         ? ""
-        : settings.LLM_API_KEY?.trim() || undefined,
-    remote_runtime_resource_factor: settings.REMOTE_RUNTIME_RESOURCE_FACTOR,
-    provider_tokens: settings.provider_tokens,
-    enable_default_condenser: settings.ENABLE_DEFAULT_CONDENSER,
-    enable_sound_notifications: settings.ENABLE_SOUND_NOTIFICATIONS,
-    user_consents_to_analytics: settings.user_consents_to_analytics,
+        : settings.llm_api_key?.trim() || undefined,
   };
 
-  await OpenHands.saveSettings(apiSettings);
+  await SettingsService.saveSettings(safeSettings);
 };
 
 export const useSaveSettings = () => {
@@ -39,7 +32,7 @@ export const useSaveSettings = () => {
   const { data: currentSettings } = useSettings();
 
   return useMutation({
-    mutationFn: async (settings: Partial<PostSettings> | null) => {
+    mutationFn: async (settings: Partial<UserSettings> | null) => {
       if (settings === null) {
         await saveSettingsMutationFn(null);
         return;

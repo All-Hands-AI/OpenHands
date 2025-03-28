@@ -19,3 +19,7 @@ export interface UserSettings {
 export interface ClientUserSettings extends UserSettings {
   is_new_user: boolean;
 }
+
+export interface ServerUserSettings extends UserSettings {
+  github_token: string | null;
+}
