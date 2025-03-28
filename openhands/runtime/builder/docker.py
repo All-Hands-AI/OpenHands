@@ -173,7 +173,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             process = subprocess.Popen(
                 buildx_cmd,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,  # cursor
+                stderr=subprocess.STDOUT,  # cursor
                 universal_newlines=True,
                 bufsize=1,
             )
