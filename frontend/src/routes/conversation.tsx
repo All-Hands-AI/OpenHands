@@ -18,9 +18,9 @@ import GlobeIcon from "#/icons/globe.svg?react";
 import ListIcon from "#/icons/list-type-number.svg?react";
 import { clearJupyter } from "#/state/jupyter-slice";
 import { FilesProvider } from "#/context/files";
-import { ChatInterface } from "../../components/features/chat/chat-interface";
+import { ChatInterface } from "../components/features/chat/chat-interface";
 import { WsClientProvider } from "#/context/ws-client-provider";
-import { EventHandler } from "./event-handler";
+import { EventHandler } from "../wrapper/event-handler";
 import { useConversationConfig } from "#/hooks/query/use-conversation-config";
 import { Container } from "#/components/layout/container";
 import {
