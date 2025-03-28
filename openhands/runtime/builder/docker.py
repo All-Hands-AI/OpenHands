@@ -196,7 +196,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
                         stderr_lines.append(line)
                         logger.debug(f'Docker build stderr: {line}')
             # < cursor
-            return_code = process.wait()
+            return_code = process.wait(timeout=180)
             logger.info(f'[LOG] check-point 1-6 return_code: {return_code}')
 
             if return_code != 0:
