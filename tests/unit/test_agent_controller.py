@@ -643,19 +643,25 @@ async def test_notify_on_llm_retry(mock_agent, mock_event_stream, mock_status_ca
 
 
 @pytest.mark.asyncio
-async def test_context_window_exceeded_error_handling(mock_agent, mock_event_stream):
+async def test_context_window_exceeded_error_handling(
+    mock_agent, mock_runtime, test_event_stream
+):
     """Test that context window exceeded errors are handled correctly by truncating history."""
+
+    def _message(index: int) -> MessageAction:
+        message = MessageAction(content=f'Test message {index}')
+        # message._id = index
+        return message
 
     class StepState:
         def __init__(self):
             self.has_errored = False
+            self.index = 0
 
         def step(self, state: State):
-            # Append a few messages to the history -- these will be truncated when we throw the error
-            state.history = [
-                MessageAction(content='Test message 0'),
-                MessageAction(content='Test message 1'),
-            ]
+            if self.index < 3 or self.has_errored:
+                self.index += 1
+                return _message(self.index)
 
             error = ContextWindowExceededError(
                 message='prompt is too long: 233885 tokens > 200000 maximum',
@@ -665,28 +671,40 @@ async def test_context_window_exceeded_error_handling(mock_agent, mock_event_str
             self.has_errored = True
             raise error
 
-    state = StepState()
-    mock_agent.step = state.step
+    step_state = StepState()
+    mock_agent.step = step_state.step
     mock_agent.config = AgentConfig()
 
-    controller = AgentController(
-        agent=mock_agent,
-        event_stream=mock_event_stream,
-        max_iterations=10,
-        sid='test',
-        confirmation_mode=False,
-        headless_mode=True,
+    def on_event_memory(event: Event):
+        if isinstance(event, RecallAction):
+            microagent_obs = RecallObservation(
+                content='Test microagent content',
+                recall_type=RecallType.KNOWLEDGE,
+            )
+            microagent_obs._cause = event.id
+            test_event_stream.add_event(microagent_obs, EventSource.ENVIRONMENT)
+
+    test_event_stream.subscribe(
+        EventStreamSubscriber.MEMORY, on_event_memory, str(uuid4())
+    )
+    mock_runtime.event_stream = test_event_stream
+
+    await asyncio.wait_for(
+        run_controller(
+            config=AppConfig(max_iterations=5),
+            initial_user_action=MessageAction(content='INITIAL'),
+            runtime=mock_runtime,
+            sid='test',
+            agent=mock_agent,
+            fake_user_response_fn=lambda _: 'repeat',
+            memory=mock_memory,
+        ),
+        timeout=10,
     )
 
-    # Set the agent running and take a step in the controller -- this is similar
-    # to taking a single step using `run_controller`, but much easier to control
-    # termination for testing purposes
-    controller.state.agent_state = AgentState.RUNNING
-    await controller._step()
+    assert step_state.has_errored
 
-    # Check that the error was thrown and the history has been truncated
-    assert state.has_errored
-    assert controller.state.history == [MessageAction(content='Test message 1')]
+    raise AssertionError()
 
 
 @pytest.mark.asyncio
