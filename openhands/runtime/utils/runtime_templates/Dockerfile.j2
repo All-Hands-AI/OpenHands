@@ -135,6 +135,9 @@ RUN \
 
 COPY ./code/pyproject.toml ./code/poetry.lock /openhands/code/
 
+COPY ./code/openhands/runtime/plugins/vscode/settings.json /workspace/.vscode/settings.json
+RUN chmod -R a+rwx /workspace/.vscode/settings.json
+
 {{ install_dependencies() }}
 
 # ================================================================
@@ -147,6 +150,10 @@ COPY ./code/pyproject.toml ./code/poetry.lock /openhands/code/
 # ================================================================
 RUN if [ -d /openhands/code/openhands ]; then rm -rf /openhands/code/openhands; fi
 COPY ./code/pyproject.toml ./code/poetry.lock /openhands/code/
+
+COPY ./code/openhands/runtime/plugins/vscode/settings.json /workspace/.vscode/settings.json
+RUN chmod -R a+rwx /workspace/.vscode/settings.json
+
 COPY ./code/openhands /openhands/code/openhands
 RUN chmod a+rwx /openhands/code/openhands/__init__.py
 
