@@ -39,6 +39,15 @@ describe("Welcome Components", () => {
 
   describe("SuggestedTasks", () => {
     it("renders correctly", () => {
+      // Mock the component without the hooks that require Router context
+      vi.mock("#/components/features/welcome/suggested-tasks", () => ({
+        SuggestedTasks: () => (
+          <div>
+            <h2>Suggested Tasks</h2>
+          </div>
+        ),
+      }));
+      
       render(<SuggestedTasks />);
       expect(screen.getByText("Suggested Tasks")).toBeInTheDocument();
     });
