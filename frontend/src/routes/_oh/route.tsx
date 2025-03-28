@@ -13,10 +13,9 @@ import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useIsAuthed } from "#/hooks/query/use-is-authed";
 import { useConfig } from "#/hooks/query/use-config";
 import { Sidebar } from "#/components/features/sidebar/sidebar";
-import { WaitlistModal } from "#/components/features/waitlist/waitlist-modal";
+import { AuthModal } from "#/components/features/waitlist/auth-modal";
 import { AnalyticsConsentFormModal } from "#/components/features/analytics/analytics-consent-form-modal";
 import { useSettings } from "#/hooks/query/use-settings";
-import { useAuth } from "#/context/auth-context";
 import { useMigrateUserConsent } from "#/hooks/use-migrate-user-consent";
 import { useBalance } from "#/hooks/query/use-balance";
 import { SetupPaymentModal } from "#/components/features/payment/setup-payment-modal";
@@ -58,7 +57,6 @@ export default function MainApp() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [searchParams] = useSearchParams();
-  const { githubTokenIsSet } = useAuth();
   const { data: settings } = useSettings();
   const { error, isFetching } = useBalance();
   const { migrateUserConsent } = useMigrateUserConsent();
@@ -112,7 +110,7 @@ export default function MainApp() {
   }, [error?.status, pathname, isFetching]);
 
   const userIsAuthed = !!isAuthed && !authError;
-  const renderWaitlistModal =
+  const renderAuthModal =
     !isFetchingAuth && !userIsAuthed && config.data?.APP_MODE === "saas";
 
   return (
@@ -129,13 +127,7 @@ export default function MainApp() {
         <Outlet />
       </div>
 
-      {renderWaitlistModal && (
-        <WaitlistModal
-          ghTokenIsSet={githubTokenIsSet}
-          githubAuthUrl={gitHubAuthUrl}
-        />
-      )}
-
+      {renderAuthModal && <AuthModal githubAuthUrl={gitHubAuthUrl} />}
       {config.data?.APP_MODE === "oss" && consentFormIsOpen && (
         <AnalyticsConsentFormModal
           onClose={() => {
