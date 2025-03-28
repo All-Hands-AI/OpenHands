@@ -300,64 +300,33 @@ function isLikelyUserFacingText(str: string): boolean {
     return false;
   }
 
-  // Special case for known UI strings that should be localized
-  const knownUIStrings = [
-    "GitHub Settings",
-    "API Key",
-    "Base URL",
-    "Agent",
-    "Settings",
-    "Advanced",
-    "Enable confirmation mode",
-    "Enable memory condensation",
-    "GitHub Token",
-    "Configure GitHub Repositories",
-    "Save Changes",
-    "JSON File",
-    "Azure AI Studio",
-    "AWS SageMaker",
-    "AWS Bedrock",
-    "Mistral AI",
-    "Perplexity AI",
-    "Fireworks AI",
-    "Cloudflare Workers AI",
-    "Voyage AI",
-    "Beta",
-    "documentation",
-    "Language",
-    "GitHub",
-    "Sound Notifications",
-    "Created",
-    "ago",
-    "and use the VS Code link to upload and download your code",
-    "Conversations",
-  ];
-
-  if (knownUIStrings.includes(str)) {
-    return true;
-  }
-
   // Check if it's likely user-facing text
   // 1. Contains multiple words with spaces
   // 2. Contains punctuation like question marks, periods, or exclamation marks
   // 3. Starts with a capital letter and has multiple words
   const hasMultipleWords = /\s+/.test(str) && str.split(/\s+/).length > 1;
-  const hasPunctuation = /[?!.]/.test(str);
+  const hasPunctuation = /[?!.,:]/.test(str);
   const isCapitalizedPhrase = /^[A-Z]/.test(str) && hasMultipleWords;
 
   // Additional check for "Title Case" phrases (multiple words with capital letters)
   const isTitleCase = hasMultipleWords && /\s[A-Z]/.test(str);
 
-  // Check for single capitalized words that are likely UI elements (like "Conversations", "Settings", etc.)
-  const isSingleCapitalizedWord =
-    /^[A-Z][a-z]+$/.test(str) && !str.includes(" ");
+  // Check for single words that are likely UI elements (regardless of capitalization)
+  const isSingleWord =
+    !str.includes(" ") && str.length > 1 && /^[a-zA-Z]+$/.test(str);
+
+  // Check for common UI words (regardless of capitalization)
+  const isCommonUIWord =
+    /^(settings|options|preferences|profile|account|help|support|about|contact|feedback|report|conversations|documentation|language|created|advanced|settings|github|token|key|url|file|mode|agent|model|provider|base|custom|configure|repository|repositories|changes|notifications|sound|memory|confirmation|beta|studio|sagemaker|bedrock|mistral|perplexity|fireworks|cloudflare|workers|voyage|json|api|llm|vscode|code|link|upload|download)$/i.test(
+      str,
+    );
 
   // Check for product names (often have capital letters in the middle)
   const hasInternalCapitals = /[a-z][A-Z]/.test(str);
 
-  // Check for UI element text (buttons, labels, etc.)
+  // Check for UI element text (buttons, labels, etc.) - case insensitive
   const isUIElementText =
-    /^(Save|Cancel|Submit|Delete|Add|Edit|Remove|Update|Create|View|Download|Upload|Login|Logout|Sign In|Sign Out|Register|Search|Filter|Sort|Next|Previous|Back|Continue|Finish|Done|Apply|Reset|Clear|Close|Open|Show|Hide|Enable|Disable)(\s+\w+)*$/.test(
+    /^(save|cancel|submit|delete|add|edit|remove|update|create|view|download|upload|login|logout|sign in|sign out|register|search|filter|sort|next|previous|back|continue|finish|done|apply|reset|clear|close|open|show|hide|enable|disable|ok|yes|no|copy|paste|cut|undo|redo|select|deselect|check|uncheck|toggle|switch|start|stop|pause|resume|refresh|reload|retry|skip|confirm|deny|accept|reject|allow|block)(\s+\w+)*$/i.test(
       str,
     );
 
@@ -368,7 +337,8 @@ function isLikelyUserFacingText(str: string): boolean {
     isTitleCase ||
     hasInternalCapitals ||
     isUIElementText ||
-    isSingleCapitalizedWord
+    isCommonUIWord ||
+    (isSingleWord && !isCommonDevelopmentString(str))
   );
 }
 
