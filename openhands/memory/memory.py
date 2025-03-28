@@ -228,13 +228,26 @@ class Memory:
         return recalled_content
 
     def load_user_workspace_microagents(
-        self, user_microagents: list[BaseMicroAgent]
+        self, user_microagents: list[BaseMicroAgent], agent_config=None
     ) -> None:
         """
         This method loads microagents from a user's cloned repo or workspace directory.
 
         This is typically called from agent_session or setup once the workspace is cloned.
         """
+        # Check if repository memory is enabled
+        enable_repo_memory = True
+        if agent_config is not None:
+            enable_repo_memory = getattr(agent_config, 'enable_repository_memory', True)
+        
+        if not enable_repo_memory:
+            logger.info('Repository memory is disabled, skipping loading of repo microagents')
+            # Only load knowledge microagents, not repo microagents
+            for user_microagent in user_microagents:
+                if isinstance(user_microagent, KnowledgeMicroAgent):
+                    self.knowledge_microagents[user_microagent.name] = user_microagent
+            return
+            
         logger.info(
             'Loading user workspace microagents: %s', [m.name for m in user_microagents]
         )

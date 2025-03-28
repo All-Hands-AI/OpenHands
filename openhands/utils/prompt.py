@@ -84,12 +84,14 @@ class PromptManager:
         repository_info: RepositoryInfo | None,
         runtime_info: RuntimeInfo | None,
         repo_instructions: str = '',
+        agent_config=None,
     ) -> str:
         """Renders the additional info template with the stored repository/runtime info."""
         return self.additional_info_template.render(
             repository_info=repository_info,
             repository_instructions=repo_instructions,
             runtime_info=runtime_info,
+            agent_config=agent_config or self.agent_config,
         ).strip()
 
     def build_microagent_info(

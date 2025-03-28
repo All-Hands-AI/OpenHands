@@ -29,3 +29,6 @@ Today's date is {{ runtime_info.date }} (UTC).
 {% endif %}
 </RUNTIME_INFORMATION>
 {% endif %}
+{% if agent_config and agent_config.enable_repository_memory %}
+{% include "memory_instructions.j2" %}
+{% endif %}

@@ -412,7 +412,7 @@ class AgentSession:
             microagents: list[BaseMicroAgent] = await call_sync_from_async(
                 self.runtime.get_microagents_from_selected_repo, selected_repository
             )
-            memory.load_user_workspace_microagents(microagents)
+            memory.load_user_workspace_microagents(microagents, self.agent_config)
 
             if selected_repository and repo_directory:
                 memory.set_repository_info(selected_repository, repo_directory)
