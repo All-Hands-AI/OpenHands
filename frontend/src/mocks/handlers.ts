@@ -5,14 +5,7 @@ import {
   ResultSet,
 } from "#/api/open-hands.types";
 import { STRIPE_BILLING_HANDLERS } from "./billing-handlers";
-import { ApiSettings, PostApiSettings } from "#/types/settings";
-import { DEFAULT_SETTINGS } from "#/services/settings";
-
-const MOCK_USER_PREFERENCES: {
-  settings: ApiSettings | PostApiSettings | null;
-} = {
-  settings: null,
-};
+import { SETTINGS_HANDLERS } from "./settings-handlers";
 
 const conversations: Conversation[] = [
   {
@@ -130,6 +123,7 @@ const openHandsHandlers = [
 
 export const handlers = [
   ...STRIPE_BILLING_HANDLERS,
+  ...SETTINGS_HANDLERS,
   ...openHandsHandlers,
   http.get("/api/github/repositories", () =>
     HttpResponse.json([
@@ -171,39 +165,6 @@ export const handlers = [
 
     return HttpResponse.json(config);
   }),
-  http.get("/api/settings", async () => {
-    await delay();
-    const { settings } = MOCK_USER_PREFERENCES;
-
-    if (!settings) return HttpResponse.json(null, { status: 404 });
-
-    if (Object.keys(settings.provider_tokens).length > 0)
-      settings.github_token_is_set = true;
-
-    return HttpResponse.json(settings);
-  }),
-  http.post("/api/settings", async ({ request }) => {
-    const body = await request.json();
-
-    if (body) {
-      let newSettings: Partial<PostApiSettings> = {};
-      if (typeof body === "object") {
-        newSettings = { ...body };
-      }
-
-      const fullSettings = {
-        ...DEFAULT_SETTINGS,
-        ...MOCK_USER_PREFERENCES.settings,
-        ...newSettings,
-      };
-
-      MOCK_USER_PREFERENCES.settings = fullSettings;
-      return HttpResponse.json(null, { status: 200 });
-    }
-
-    return HttpResponse.json(null, { status: 400 });
-  }),
-
   http.post("/api/authenticate", async () =>
     HttpResponse.json({ message: "Authenticated" }),
   ),
@@ -284,10 +245,4 @@ export const handlers = [
   }),
 
   http.post("/api/logout", () => HttpResponse.json(null, { status: 200 })),
-
-  http.post("/api/reset-settings", async () => {
-    await delay();
-    MOCK_USER_PREFERENCES.settings = { ...DEFAULT_SETTINGS };
-    return HttpResponse.json(null, { status: 200 });
-  }),
 ];
