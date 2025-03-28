@@ -1,65 +1,54 @@
 import React from "react";
-import { useDispatch } from "react-redux";
-import posthog from "posthog-js";
-import { setReplayJson } from "#/state/initial-query-slice";
-import { useGitHubUser } from "#/hooks/query/use-github-user";
-import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
-import { useConfig } from "#/hooks/query/use-config";
-import { ReplaySuggestionBox } from "../../components/features/suggestions/replay-suggestion-box";
-import { GitHubRepositoriesSuggestionBox } from "#/components/features/github/github-repositories-suggestion-box";
-import { CodeNotInGitHubLink } from "#/components/features/github/code-not-in-github-link";
-import { HeroHeading } from "#/components/shared/hero-heading";
-import { TaskForm } from "#/components/shared/task-form";
-import { convertFileToText } from "#/utils/convert-file-to-text";
-import { ENABLE_TRAJECTORY_REPLAY } from "#/utils/feature-flags";
+import { useNavigate } from "react-router";
+import { WelcomeHeader } from "#/components/features/welcome/welcome-header";
+import { ConnectToRepo } from "#/components/features/welcome/connect-to-repo";
+import { SuggestedTasks } from "#/components/features/welcome/suggested-tasks";
+import { LaunchFromScratchButton } from "#/components/features/welcome/launch-from-scratch-button";
 
 function Home() {
-  const dispatch = useDispatch();
-  const formRef = React.useRef<HTMLFormElement>(null);
+  const navigate = useNavigate();
 
-  const { data: config } = useConfig();
-  const { data: user } = useGitHubUser();
-
-  const gitHubAuthUrl = useGitHubAuthUrl({
-    appMode: config?.APP_MODE || null,
-    gitHubClientId: config?.GITHUB_CLIENT_ID || null,
-  });
+  const handleLaunchFromScratch = () => {
+    // This would typically start a new project from scratch
+    // For now, we'll just navigate to the workspace
+    navigate("/workspace");
+  };
 
   return (
     <div
       data-testid="home-screen"
-      className="bg-base-secondary h-full rounded-xl flex flex-col items-center justify-center relative overflow-y-auto px-2"
+      className="bg-[#1E1E1E] h-full rounded-xl flex flex-col relative overflow-y-auto p-6"
     >
-      <HeroHeading />
-      <div className="flex flex-col gap-1 w-full mt-8 md:w-[600px] items-center">
-        <div className="flex flex-col gap-2 w-full">
-          <TaskForm ref={formRef} />
-        </div>
+      <div className="flex flex-col w-full max-w-5xl mx-auto">
+        {/* Welcome Header */}
+        <WelcomeHeader />
 
-        <div className="flex gap-4 w-full flex-col md:flex-row mt-8">
-          <GitHubRepositoriesSuggestionBox
-            handleSubmit={() => formRef.current?.requestSubmit()}
-            gitHubAuthUrl={gitHubAuthUrl}
-            user={user || null}
-          />
-          {ENABLE_TRAJECTORY_REPLAY() && (
-            <ReplaySuggestionBox
-              onChange={async (event) => {
-                if (event.target.files) {
-                  const json = event.target.files[0];
-                  dispatch(setReplayJson(await convertFileToText(json)));
-                  posthog.capture("json_file_uploaded");
-                  formRef.current?.requestSubmit();
-                } else {
-                  // TODO: handle error
-                }
-              }}
-            />
-          )}
+        {/* Divider */}
+        <div className="w-full h-px bg-[#525252] my-8" />
+
+        {/* Main Content */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Left Column - Connect to Repo */}
+          <div className="flex flex-col">
+            <ConnectToRepo>
+              <div className="w-full border border-[#525252] rounded-md p-2">
+                <select className="w-full bg-[#2A2A2A] text-white p-2 rounded-md border border-[#525252]">
+                  <option>Select a Repo</option>
+                </select>
+              </div>
+            </ConnectToRepo>
+          </div>
+
+          {/* Right Column - Suggested Tasks */}
+          <div className="flex flex-col">
+            <SuggestedTasks />
+          </div>
         </div>
-        <div className="w-full flex justify-start mt-2 ml-2">
-          <CodeNotInGitHubLink />
-        </div>
+      </div>
+
+      {/* Launch From Scratch Button - Fixed at the top right */}
+      <div className="absolute top-6 right-6 w-48">
+        <LaunchFromScratchButton onClick={handleLaunchFromScratch} />
       </div>
     </div>
   );
