@@ -1,5 +1,5 @@
-import re
 from typing import Any
+
 from openhands.core.exceptions import LLMMalformedActionError
 from openhands.events.action.action import Action
 from openhands.events.action.agent import (
@@ -21,6 +21,7 @@ from openhands.events.action.files import (
     FileReadAction,
     FileWriteAction,
 )
+from openhands.events.action.mcp import McpAction
 from openhands.events.action.message import MessageAction
 
 actions = (
@@ -39,6 +40,7 @@ actions = (
     RecallAction,
     ChangeAgentStateAction,
     MessageAction,
+    McpAction,
 )
 
 ACTION_TYPE_TO_CLASS = {action_class.action: action_class for action_class in actions}  # type: ignore[attr-defined]
