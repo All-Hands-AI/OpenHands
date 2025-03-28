@@ -9,7 +9,7 @@ from openhands.core.config.utils import get_parser, setup_config_from_args
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message, TextContent
 from openhands.llm.llm import LLM
-from openhands.mcp.mcp_agent import MCPAgent
+from openhands.mcp.mcp_agent import MCPAgent, convert_mcp_agents_to_tools
 
 
 class MCPRunner:
@@ -65,6 +65,9 @@ class MCPRunner:
                 except Exception as e:
                     logger.error(f'Failed to connect with command {command}: {str(e)}')
                     raise
+
+        mcp_tools = convert_mcp_agents_to_tools(self.mcp_agents)
+        logger.info(f'MCP tools: {mcp_tools}')
 
     async def run_single_prompt(self, prompt: str) -> None:
         """Run the agent with a single prompt."""
