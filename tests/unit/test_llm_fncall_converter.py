@@ -684,3 +684,73 @@ def test_convert_from_multiple_tool_calls_no_tool_calls():
         input_messages
     )
     assert result == input_messages
+
+def test_convert_from_multiple_tool_calls_with_ignore_final_tool_result():
+    # Test case with multiple tool calls in one message and ignore_final_tool_result=True
+    input_messages = [
+        {
+            'role': 'assistant',
+            'content': 'Let me help you with that.',
+            'tool_calls': [
+                {
+                    'id': 'call1',
+                    'type': 'function',
+                    'function': {'name': 'func1', 'arguments': '{}'},
+                },
+                {
+                    'id': 'call2',
+                    'type': 'function',
+                    'function': {'name': 'func2', 'arguments': '{}'},
+                },
+            ],
+        },
+        {
+            'role': 'tool',
+            'tool_call_id': 'call1',
+            'content': 'Result 1',
+            'name': 'func1',
+        },
+    ]
+
+    # Expected output should include the pending tool call and an empty tool result
+    expected_output = [
+        {
+            'role': 'assistant',
+            'content': 'Let me help you with that.',
+            'tool_calls': [
+                {
+                    'id': 'call1',
+                    'type': 'function',
+                    'function': {'name': 'func1', 'arguments': '{}'},
+                },
+            ],
+        },
+        {
+            'role': 'tool',
+            'tool_call_id': 'call1',
+            'content': 'Result 1',
+            'name': 'func1',
+        },
+        {
+            'role': 'assistant',
+            'content': '',
+            'tool_calls': [
+                {
+                    'id': 'call2',
+                    'type': 'function',
+                    'function': {'name': 'func2', 'arguments': '{}'},
+                },
+            ],
+        },
+        {
+            'role': 'tool',
+            'tool_call_id': 'call2',
+            'name': 'func2',
+            'content': ''
+        }
+    ]
+
+    result = convert_from_multiple_tool_calls_to_single_tool_call_messages(
+        input_messages, ignore_final_tool_result=True
+    )
+    assert result == expected_output
