@@ -1,4 +1,5 @@
 import os
+import platform
 import tempfile
 import threading
 from abc import abstractmethod
@@ -279,13 +280,23 @@ class ActionExecutionClient(Runtime):
             assert action.timeout is not None
 
             try:
+                execution_action_body = {
+                    'action': event_to_dict(action),
+                    'caller_platform': platform.system(),
+                }
+                if self.config.mcp.sse.mcp_servers:
+                    execution_action_body['sse_mcp_config'] = (
+                        self.config.mcp.sse.mcp_servers
+                    )
+                if self.config.mcp.stdio.commands:
+                    execution_action_body['stdio_mcp_config'] = (
+                        self.config.mcp.stdio.commands,
+                        self.config.mcp.stdio.args,
+                    )
                 response = self._send_action_server_request(
                     'POST',
                     f'{self._get_action_execution_server_host()}/execute_action',
-                    json={
-                        'action': event_to_dict(action),
-                        'sse_mcp_config': self.config.mcp.sse.mcp_servers,
-                    },
+                    json=execution_action_body,
                     # wait a few more seconds to get the timeout error from client side
                     timeout=action.timeout + 5,
                 )
@@ -320,7 +331,7 @@ class ActionExecutionClient(Runtime):
     def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
         return self.send_action_for_execution(action)
 
-    def mcp(self, action: McpAction) -> Observation:
+    def call_tool_mcp(self, action: McpAction) -> Observation:
         return self.send_action_for_execution(action)
 
     def close(self) -> None:

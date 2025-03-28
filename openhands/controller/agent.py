@@ -32,11 +32,13 @@ class Agent(ABC):
         self,
         llm: LLM,
         config: 'AgentConfig',
+        mcp_tools: list[dict] | None = None,
     ):
         self.llm = llm
         self.config = config
         self._complete = False
         self.prompt_manager: 'PromptManager' | None = None
+        self.mcp_tools = mcp_tools
 
     @property
     def complete(self) -> bool:
