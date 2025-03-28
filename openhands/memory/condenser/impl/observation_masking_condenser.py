@@ -15,17 +15,8 @@ class ObservationMaskingCondenser(Condenser):
 
         super().__init__()
 
-    def condense(self, events: list[Event], force: bool = False) -> View | Condensation:
-        """Replace the content of observations outside of the attention window with a placeholder.
-
-        Args:
-            events: A list of events representing the entire history of the agent.
-            force: If True, force condensation regardless of normal conditions.
-                  Not used by this condenser as it always masks observations outside the attention window.
-
-        Returns:
-            View: A view with observations masked outside the attention window.
-        """
+    def condense(self, events: list[Event]) -> View | Condensation:
+        """Replace the content of observations outside of the attention window with a placeholder."""
         results: list[Event] = []
         for i, event in enumerate(events):
             if (

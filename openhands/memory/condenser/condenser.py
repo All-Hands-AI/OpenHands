@@ -150,33 +150,22 @@ class Condenser(ABC):
             self.write_metadata(state)
 
     @abstractmethod
-    def condense(self, events: list[Event], force: bool = False) -> View | Condensation:
+    def condense(self, events: list[Event]) -> View | Condensation:
         """Condense a sequence of events into a potentially smaller list.
 
         New condenser strategies should override this method to implement their own condensation logic. Call `self.add_metadata` in the implementation to record any relevant per-condensation diagnostic information.
 
         Args:
             events: A list of events representing the entire history of the agent.
-            force: If True, force condensation, for example when we're close to the token limit.
 
         Returns:
             View | Condensation: A condensed view of the events or an event indicating the history has been condensed.
         """
 
-    def condensed_history(
-        self, state: State, force: bool = False
-    ) -> View | Condensation:
-        """Condense the state's history.
-
-        Args:
-            state: The state containing the history to condense.
-            force: If True, force condensation, for example when we're close to the token limit.
-
-        Returns:
-            View | Condensation: A condensed view of the events or an event indicating the history has been condensed.
-        """
+    def condensed_history(self, state: State) -> View | Condensation:
+        """Condense the state's history."""
         with self.metadata_batch(state):
-            return self.condense(state.history, force)
+            return self.condense(state.history)
 
     @classmethod
     def register_config(cls, configuration_type: type[CondenserConfig]) -> None:
@@ -225,28 +214,20 @@ class RollingCondenser(Condenser, ABC):
     """
 
     @abstractmethod
-    def should_condense(self, view: View, force: bool = False) -> bool:
-        """Determine if a view should be condensed.
-
-        Args:
-            view: The view to check for condensation.
-            force: If True, force condensation, for example when we're close to the token limit.
-
-        Returns:
-            bool: True if condensation should occur, False otherwise.
-        """
+    def should_condense(self, view: View) -> bool:
+        """Determine if a view should be condensed."""
 
     @abstractmethod
     def get_condensation(self, view: View) -> Condensation:
         """Get the condensation from a view."""
 
-    def condense(self, events: list[Event], force: bool = False) -> View | Condensation:
+    def condense(self, events: list[Event]) -> View | Condensation:
         # Convert the state to a view. This might require some condenser-specific logic.
         view = View.from_events(events)
 
         # If we trigger the condenser-specific condensation threshold, compute and return
         # the condensation.
-        if self.should_condense(view, force):
+        if self.should_condense(view):
             return self.get_condensation(view)
 
         # Otherwise we're safe to just return the view.

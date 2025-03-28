@@ -53,17 +53,8 @@ class AmortizedForgettingCondenser(RollingCondenser):
 
         return Condensation(action=event)
 
-    def should_condense(self, view: View, force: bool = False) -> bool:
-        """Determine if this view should be condensed.
-
-        Args:
-            view: The view to check for condensation.
-            force: If True, force condensation regardless of view size.
-
-        Returns:
-            bool: True if condensation should occur, False otherwise.
-        """
-        return force or len(view) > self.max_size
+    def should_condense(self, view: View) -> bool:
+        return len(view) > self.max_size
 
     @classmethod
     def from_config(
