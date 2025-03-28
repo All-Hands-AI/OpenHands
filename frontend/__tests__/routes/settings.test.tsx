@@ -190,7 +190,7 @@ describe("Settings Screen", () => {
       expect(handleLogoutMock).toHaveBeenCalled();
     });
 
-    it("should not render the 'GITHUB$CONFIGURE_REPOS' button if OSS mode", async () => {
+    it("should not render the 'Configure GitHub Repositories' button if OSS mode", async () => {
       getConfigSpy.mockResolvedValue({
         APP_MODE: "oss",
         GITHUB_CLIENT_ID: "123",
