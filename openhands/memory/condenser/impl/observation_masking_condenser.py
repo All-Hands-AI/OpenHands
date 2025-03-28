@@ -15,7 +15,11 @@ class ObservationMaskingCondenser(Condenser):
 
         super().__init__()
 
+<<<<<<< HEAD
     def condense(self, view: View) -> View | Condensation:
+=======
+    def condense(self, events: list[Event]) -> View | Condensation:
+>>>>>>> 9f2a39382 (Revert "add force argument")
         """Replace the content of observations outside of the attention window with a placeholder."""
         results: list[Event] = []
         for i, event in enumerate(view):

@@ -109,8 +109,8 @@ class LLMAttentionCondenser(RollingCondenser):
 
         return Condensation(action=event)
 
-    def should_condense(self, view: View, force: bool = False) -> bool:
-        return force or len(view) > self.max_size
+    def should_condense(self, view: View) -> bool:
+        return len(view) > self.max_size
 
     @classmethod
     def from_config(cls, config: LLMAttentionCondenserConfig) -> LLMAttentionCondenser:
