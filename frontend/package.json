@@ -119,7 +119,7 @@
     "prettier": "^3.5.3",
     "stripe": "^17.7.0",
     "tailwindcss": "^3.4.17",
-    "typescript": "^5.5.4",
+    "typescript": "^5.8.2",
     "vite-plugin-svgr": "^4.2.0",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.0.2"
