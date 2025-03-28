@@ -35,12 +35,10 @@ export type ApiSettings = {
 
 export type PostSettings = Settings & {
   provider_tokens: Record<Provider, string>;
-  unset_github_token: boolean;
   user_consents_to_analytics: boolean | null;
 };
 
 export type PostApiSettings = ApiSettings & {
   provider_tokens: Record<Provider, string>;
-  unset_github_token: boolean;
   user_consents_to_analytics: boolean | null;
 };

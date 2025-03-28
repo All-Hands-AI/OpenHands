@@ -30,6 +30,7 @@ class AppConfig(BaseModel):
         file_store: Type of file store to use.
         file_store_path: Path to the file store.
         save_trajectory_path: Either a folder path to store trajectories with auto-generated filenames, or a designated trajectory file path.
+        save_screenshots_in_trajectory: Whether to save screenshots in trajectory (in encoded image format).
         replay_trajectory_path: Path to load trajectory and replay. If provided, trajectory would be replayed first before user's instruction.
         workspace_base: Base path for the workspace. Defaults to `./workspace` as absolute path.
         workspace_mount_path: Path to mount the workspace. Defaults to `workspace_base`.
@@ -60,6 +61,7 @@ class AppConfig(BaseModel):
     file_store: str = Field(default='local')
     file_store_path: str = Field(default='/tmp/openhands_file_store')
     save_trajectory_path: str | None = Field(default=None)
+    save_screenshots_in_trajectory: bool = Field(default=False)
     replay_trajectory_path: str | None = Field(default=None)
     workspace_base: str | None = Field(default=None)
     workspace_mount_path: str | None = Field(default=None)
@@ -81,7 +83,7 @@ class AppConfig(BaseModel):
     runloop_api_key: SecretStr | None = Field(default=None)
     daytona_api_key: SecretStr | None = Field(default=None)
     daytona_api_url: str = Field(default='https://app.daytona.io/api')
-    daytona_target: str = Field(default='us')
+    daytona_target: str = Field(default='eu')
     cli_multiline_input: bool = Field(default=False)
     conversation_max_age_seconds: int = Field(default=864000)  # 10 days in seconds
     enable_default_condenser: bool = Field(default=True)
@@ -134,4 +136,5 @@ class AppConfig(BaseModel):
     def model_post_init(self, __context):
         """Post-initialization hook, called when the instance is created with only default values."""
         super().model_post_init(__context)
-        AppConfig.defaults_dict = model_defaults_to_dict(self)
+        if not AppConfig.defaults_dict:  # Only set defaults_dict if it's empty
+            AppConfig.defaults_dict = model_defaults_to_dict(self)

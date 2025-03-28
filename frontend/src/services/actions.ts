@@ -9,6 +9,7 @@ import { appendSecurityAnalyzerInput } from "#/state/security-analyzer-slice";
 import { setCode, setActiveFilepath } from "#/state/code-slice";
 import { appendJupyterInput } from "#/state/jupyter-slice";
 import { setCurStatusMessage } from "#/state/status-slice";
+import { setMetrics } from "#/state/metrics-slice";
 import store from "#/store";
 import ActionType from "#/types/action-type";
 import {
@@ -83,6 +84,15 @@ const messageActions = {
 export function handleActionMessage(message: ActionMessage) {
   if (message.args?.hidden) {
     return;
+  }
+
+  // Update metrics if available
+  if (message.llm_metrics) {
+    const metrics = {
+      cost: message.llm_metrics?.accumulated_cost ?? null,
+      usage: message.llm_metrics?.accumulated_token_usage ?? null,
+    };
+    store.dispatch(setMetrics(metrics));
   }
 
   if (message.action === ActionType.RUN) {

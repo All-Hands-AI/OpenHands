@@ -34,7 +34,9 @@ class AgentConfig(BaseModel):
     enable_history_truncation: bool = Field(default=True)
     enable_som_visual_browsing: bool = Field(default=False)
     enable_search_engine: bool = Field(default=False)
-    condenser: CondenserConfig = Field(default_factory=NoOpCondenserConfig)
+    condenser: CondenserConfig = Field(
+        default_factory=lambda: NoOpCondenserConfig(type='noop')
+    )
 
     model_config = {'extra': 'forbid'}
 
