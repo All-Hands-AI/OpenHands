@@ -720,6 +720,7 @@ class ConversationMemory:
                     return True
         return False
 
+<<<<<<< HEAD
     @staticmethod
     def _filter_unmatched_tool_calls(
         messages: list[Message],
