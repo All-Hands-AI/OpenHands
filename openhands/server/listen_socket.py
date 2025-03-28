@@ -68,9 +68,6 @@ async def connect(connection_id: str, environ):
             (NullAction, NullObservation, RecallAction),
         ):
             continue
-        # Allow RecallObservation to be sent to the frontend
-        elif isinstance(event, RecallObservation):
-            await sio.emit('oh_event', event_to_dict(event), to=connection_id)
         elif isinstance(event, AgentStateChangedObservation):
             agent_state_changed = event
         else:
