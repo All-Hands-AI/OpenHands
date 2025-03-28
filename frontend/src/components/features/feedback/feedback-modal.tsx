@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import { I18nKey } from "#/i18n/declaration";
 import {
   BaseModalTitle,
   BaseModalDescription,
@@ -5,8 +7,6 @@ import {
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import { ModalBody } from "#/components/shared/modals/modal-body";
 import { FeedbackForm } from "./feedback-form";
-import { useTranslation } from "react-i18next";
-import { I18nKey } from "#/i18n/declaration";
 
 interface FeedbackModalProps {
   onClose: () => void;
@@ -20,7 +20,6 @@ export function FeedbackModal({
   polarity,
 }: FeedbackModalProps) {
   const { t } = useTranslation();
-  
   if (!isOpen) return null;
 
   return (
