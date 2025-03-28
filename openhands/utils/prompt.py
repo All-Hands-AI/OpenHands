@@ -37,8 +37,10 @@ class PromptManager:
     def __init__(
         self,
         prompt_dir: str,
+        agent_config=None,
     ):
         self.prompt_dir: str = prompt_dir
+        self.agent_config = agent_config
         self.system_template: Template = self._load_template('system_prompt')
         self.user_template: Template = self._load_template('user_prompt')
         self.additional_info_template: Template = self._load_template('additional_info')
@@ -54,7 +56,7 @@ class PromptManager:
             return Template(file.read())
 
     def get_system_message(self) -> str:
-        return self.system_template.render().strip()
+        return self.system_template.render(agent_config=self.agent_config).strip()
 
     def get_example_user_message(self) -> str:
         """This is the initial user message provided to the agent
