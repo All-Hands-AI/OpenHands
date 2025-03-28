@@ -68,7 +68,7 @@ works best, but you have [many options](https://docs.all-hands.dev/modules/usage
 
 ---
 
-You can also [connect OpenHands to your local filesystem](https://docs.all-hands.dev/modules/usage/runtimes#connecting-to-your-filesystem),
+You can also [connect OpenHands to your local filesystem](https://docs.all-hands.dev/modules/usage/runtimes/docker#connecting-to-your-filesystem),
 run OpenHands in a scriptable [headless mode](https://docs.all-hands.dev/modules/usage/how-to/headless-mode),
 interact with it via a [friendly CLI](https://docs.all-hands.dev/modules/usage/how-to/cli-mode),
 or run it on tagged issues with [a github action](https://docs.all-hands.dev/modules/usage/how-to/github-action).
