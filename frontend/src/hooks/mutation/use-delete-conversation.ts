@@ -1,21 +1,21 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import OpenHands from "#/api/open-hands";
+import { ConversationService } from "#/api/conversation-service/conversation-service.api";
 
 export const useDeleteConversation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (variables: { conversationId: string }) =>
-      OpenHands.deleteUserConversation(variables.conversationId),
+      ConversationService.deleteConversation(variables.conversationId),
     onMutate: async (variables) => {
-      await queryClient.cancelQueries({ queryKey: ["user", "conversations"] });
+      await queryClient.cancelQueries({ queryKey: ["conversations"] });
       const previousConversations = queryClient.getQueryData([
         "user",
         "conversations",
       ]);
 
       queryClient.setQueryData(
-        ["user", "conversations"],
+        ["conversations"],
         (old: { conversation_id: string }[] | undefined) =>
           old?.filter(
             (conv) => conv.conversation_id !== variables.conversationId,
@@ -24,16 +24,16 @@ export const useDeleteConversation = () => {
 
       return { previousConversations };
     },
-    onError: (err, variables, context) => {
+    onError: (_, __, context) => {
       if (context?.previousConversations) {
         queryClient.setQueryData(
-          ["user", "conversations"],
+          ["conversations"],
           context.previousConversations,
         );
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["user", "conversations"] });
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
     },
   });
 };

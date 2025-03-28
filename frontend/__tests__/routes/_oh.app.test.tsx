@@ -3,8 +3,8 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "test-utils";
 import { screen, waitFor } from "@testing-library/react";
 import App from "#/routes/_oh.app/route";
-import OpenHands from "#/api/open-hands";
 import * as CustomToast from "#/utils/custom-toast-handlers";
+import { ConversationService } from "#/api/conversation-service/conversation-service.api";
 
 describe("App", () => {
   const errorToastSpy = vi.spyOn(CustomToast, "displayErrorToast");
@@ -37,7 +37,7 @@ describe("App", () => {
   });
 
   it("should call endSession if the user does not have permission to view conversation", async () => {
-    const getConversationSpy = vi.spyOn(OpenHands, "getConversation");
+    const getConversationSpy = vi.spyOn(ConversationService, "getConversation");
 
     getConversationSpy.mockResolvedValue(null);
     renderWithProviders(<RouteStub initialEntries={["/conversation/9999"]} />);
@@ -49,7 +49,7 @@ describe("App", () => {
   });
 
   it("should not call endSession if the user has permission", async () => {
-    const getConversationSpy = vi.spyOn(OpenHands, "getConversation");
+    const getConversationSpy = vi.spyOn(ConversationService, "getConversation");
 
     getConversationSpy.mockResolvedValue({
       conversation_id: "9999",

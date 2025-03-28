@@ -1,13 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
-import OpenHands from "#/api/open-hands";
 import { useIsAuthed } from "./use-is-authed";
+import { ConversationService } from "#/api/conversation-service/conversation-service.api";
 
-export const useUserConversations = () => {
+export const useConversations = () => {
   const { data: userIsAuthenticated } = useIsAuthed();
 
   return useQuery({
-    queryKey: ["user", "conversations"],
-    queryFn: OpenHands.getUserConversations,
+    queryKey: ["conversations"],
+    queryFn: ConversationService.getConversations,
     enabled: !!userIsAuthenticated,
   });
 };

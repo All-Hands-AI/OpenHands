@@ -27,7 +27,7 @@ export function ConversationProvider({
   return <ConversationContext value={value}>{children}</ConversationContext>;
 }
 
-export function useConversation() {
+export function useConversationContext() {
   const context = React.useContext(ConversationContext);
   if (!context) {
     throw new Error(
