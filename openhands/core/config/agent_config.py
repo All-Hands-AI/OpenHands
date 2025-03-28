@@ -20,6 +20,7 @@ class AgentConfig(BaseModel):
         condenser: Configuration for the memory condenser. Default is NoOpCondenserConfig.
         enable_history_truncation: Whether history should be truncated to continue the session when hitting LLM context length limit.
         enable_som_visual_browsing: Whether to enable SoM (Set of Marks) visual browsing. Default is False.
+        enable_repository_memory: Whether to enable repository memory (storing information in repo.md). Default is True.
     """
 
     llm_config: str | None = Field(default=None)
@@ -30,6 +31,7 @@ class AgentConfig(BaseModel):
     disabled_microagents: list[str] = Field(default_factory=list)
     enable_history_truncation: bool = Field(default=True)
     enable_som_visual_browsing: bool = Field(default=True)
+    enable_repository_memory: bool = Field(default=True)
     condenser: CondenserConfig = Field(
         default_factory=lambda: NoOpCondenserConfig(type='noop')
     )

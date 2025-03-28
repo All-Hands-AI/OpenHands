@@ -92,8 +92,13 @@ def run_sequential_evaluation(
                     processed_count += 1
                     continue
 
-                # Set repo_md from previous instance if available
-                if i > 0 and current_repo_md is not None:
+                # Check if repository memory is enabled in agent config
+                enable_repo_memory = True
+                if metadata and metadata.agent_config is not None:
+                    enable_repo_memory = getattr(metadata.agent_config, 'enable_repository_memory', True)
+                
+                # Set repo_md from previous instance if available and repository memory is enabled
+                if enable_repo_memory and i > 0 and current_repo_md is not None:
                     instance_series['repo_md'] = current_repo_md
                 else:
                     instance_series['repo_md'] = None
@@ -139,8 +144,12 @@ def run_sequential_evaluation(
 
                 # Write result to output file
                 if result is not None:
-                    # Extract repo_md from the result for the next instance
-                    if result.test_result and 'repo_md' in result.test_result:
+                    # Extract repo_md from the result for the next instance if repository memory is enabled
+                    enable_repo_memory = True
+                    if metadata and metadata.agent_config is not None:
+                        enable_repo_memory = getattr(metadata.agent_config, 'enable_repository_memory', True)
+                    
+                    if enable_repo_memory and result.test_result and 'repo_md' in result.test_result:
                         current_repo_md = result.test_result['repo_md']
                         logger.info(
                             f'Extracted repo_md for next instance in {repo}: {current_repo_md}'

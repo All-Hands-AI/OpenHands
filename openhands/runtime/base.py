@@ -400,6 +400,19 @@ class Runtime(FileEditRuntimeMixin):
         if selected_repository:
             repo_root = workspace_root / selected_repository.split('/')[-1]
             microagents_dir = repo_root / '.openhands' / 'microagents'
+        
+        # Check if repository memory is enabled in agent config
+        enable_repo_memory = True
+        if hasattr(self.config, 'agent_config') and self.config.agent_config is not None:
+            enable_repo_memory = getattr(self.config.agent_config, 'enable_repository_memory', True)
+        
+        if not enable_repo_memory:
+            self.log(
+                'info',
+                'Repository memory is disabled in agent config, skipping microagents loading',
+            )
+            return loaded_microagents
+            
         self.log(
             'info',
             f'Selected repo: {selected_repository}, loading microagents from {microagents_dir} (inside runtime)',

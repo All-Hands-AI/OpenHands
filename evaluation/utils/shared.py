@@ -172,6 +172,12 @@ def make_metadata(
     agent_config: AgentConfig | None = None,
     condenser_config: CondenserConfig | None = None,
 ) -> EvalMetadata:
+    # Create agent_config if it doesn't exist
+    if agent_config is None:
+        agent_config = AgentConfig()
+    
+    # Disable repository memory for evaluation
+    agent_config.enable_repository_memory = False
     model_name = llm_config.model.split('/')[-1]
     model_path = model_name.replace(':', '_').replace('@', '-')
     eval_note = f'_N_{eval_note}' if eval_note else ''
