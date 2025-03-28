@@ -7,12 +7,15 @@ def get_token_usage_for_event(event: Event, metrics: Metrics) -> TokenUsage | No
     Returns at most one token usage record for the `model_response.id` in this event's
     `tool_call_metadata`.
 
-    If no response_id is found, or none match in metrics.token_usages, returns None.
+    If no response_id is found in tool_call_metadata, falls back to event.response_id.
+    If none match in metrics.token_usages, returns None.
     """
+    # First try to get response_id from tool_call_metadata
+    response_id = None
     if event.tool_call_metadata and event.tool_call_metadata.model_response:
         response_id = event.tool_call_metadata.model_response.get('id')
         if response_id:
-            return next(
+            usage = next(
                 (
                     usage
                     for usage in metrics.token_usages
@@ -20,6 +23,20 @@ def get_token_usage_for_event(event: Event, metrics: Metrics) -> TokenUsage | No
                 ),
                 None,
             )
+            if usage:
+                return usage
+    
+    # Fallback to event.response_id if available
+    if hasattr(event, '_response_id') and event._response_id:
+        return next(
+            (
+                usage
+                for usage in metrics.token_usages
+                if usage.response_id == event._response_id
+            ),
+            None,
+        )
+    
     return None
 
 
