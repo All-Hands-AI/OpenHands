@@ -12,9 +12,9 @@ class PlaywrightMcpBrowserScreenshotObservation(Observation):
     browsergym's screenshot format", "url": "url of the current webpage"}.
     """
 
-    observation: str = ObservationType.PLAYWRIGHT_MCP_BROWSER_SCREENSHOT
     url: str
     trigger_by_action: str
+    observation: str = ObservationType.PLAYWRIGHT_MCP_BROWSER_SCREENSHOT
     screenshot: str = field(repr=False, default='')  # don't show in repr
 
     @property

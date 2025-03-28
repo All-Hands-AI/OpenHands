@@ -51,16 +51,17 @@ class CodeActAgent(Agent):
         JupyterRequirement(),
     ]
 
-    def __init__(self, llm: LLM, config: AgentConfig, mcp_tools: list[dict]) -> None:
+    def __init__(self, llm: LLM, config: AgentConfig, mcp_tools: list[dict] | None = None) -> None:
         """Initializes a new instance of the CodeActAgent class.
 
         Parameters:
         - llm (LLM): The llm to be used by this agent
+        - config (AgentConfig): The configuration for this agent
+        - mcp_tools (list[dict] | None, optional): List of MCP tools to be used by this agent. Defaults to None.
         """
-        super().__init__(llm, config)
+        super().__init__(llm, config, mcp_tools)
         self.pending_actions: deque[Action] = deque()
         self.reset()
-        logger.info(f'MCP agents: {mcp_agents}')
 
         built_in_tools = codeact_function_calling.get_tools(
             codeact_enable_browsing=self.config.codeact_enable_browsing,
@@ -69,17 +70,7 @@ class CodeActAgent(Agent):
             llm=self.llm,
         )
 
-        # initialize MCP agents
-        self.mcp_agents = mcp_agents if mcp_agents is not None else []
-        logger.info(f'MCP agents: {self.mcp_agents}')
-        try:
-            mcp_tools = convert_mcp_agents_to_tools(self.mcp_agents)
-            logger.info(f'MCP tools: {mcp_tools}')
-        except Exception as e:
-            logger.error(f'Error converting MCP agents to tools: {e}')
-            mcp_tools = []
-
-        self.tools = built_in_tools + mcp_tools
+        self.tools = built_in_tools + (mcp_tools if mcp_tools is not None else [])
 
         # Retrieve the enabled tools
         logger.info(
