@@ -3,7 +3,7 @@
 import os
 from typing import Optional
 
-from openhands.config.config import get_config
+from openhands.core.config import load_app_config
 
 
 def get_github_config() -> dict:
@@ -12,8 +12,12 @@ def get_github_config() -> dict:
     Returns:
         dict: GitHub configuration with enterprise_url, api_url, and web_url keys.
     """
-    config = get_config()
-    github_config = config.get('github', {})
+    config = load_app_config(set_logging_levels=False)
+    github_config = {}
+    
+    # Check if 'github' section exists in the extended config
+    if hasattr(config, 'extended') and hasattr(config.extended, 'config'):
+        github_config = config.extended.config.get('github', {})
 
     # Get GitHub Enterprise Server configuration
     enterprise_url = os.environ.get(
