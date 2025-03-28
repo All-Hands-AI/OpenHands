@@ -13,10 +13,12 @@ from openhands.core.config import AgentConfig, AppConfig, LLMConfig
 from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import OpenHandsLoggerAdapter
 from openhands.core.schema.agent import AgentState
+from openhands.core.setup import create_mcp_agents
 from openhands.events.action import ChangeAgentStateAction, MessageAction
 from openhands.events.event import Event, EventSource
 from openhands.events.stream import EventStream
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderHandler
+from openhands.mcp.mcp_agent import convert_mcp_agents_to_tools
 from openhands.memory.memory import Memory
 from openhands.microagent.microagent import BaseMicroAgent
 from openhands.runtime import get_runtime_cls
@@ -113,6 +115,71 @@ class AgentSession:
         finished = False  # For monitoring
         runtime_connected = False
         try:
+            # Initialize MCP agents first before creating runtime and controller
+            try:
+                # Log MCP configuration to help with debugging
+                self.logger.info(f'MCP SSE servers: {config.mcp.sse.mcp_servers}')
+                self.logger.info(f'MCP stdio commands: {config.mcp.stdio.commands}')
+                self.logger.info(f'MCP stdio args: {config.mcp.stdio.args}')
+
+                # Check if MCP servers are available
+                if not config.mcp.sse.mcp_servers and not config.mcp.stdio.commands:
+                    self.logger.warning(
+                        'No MCP servers or commands configured. MCP integration will not work.'
+                    )
+                else:
+                    self.logger.info('Initializing MCP agents for server mode...')
+                    mcp_agents = await create_mcp_agents(
+                        config.mcp.sse.mcp_servers,
+                        config.mcp.stdio.commands,
+                        config.mcp.stdio.args,
+                    )
+
+                    # Attach MCP agents to the agent instance
+                    agent.mcp_agents = mcp_agents
+
+                    # Give some time for MCP connections to stabilize
+                    await asyncio.sleep(1)
+
+                    # For CodeActAgent and similar agents that use the tools attribute
+                    if hasattr(agent, 'tools'):
+                        try:
+                            # Convert MCP agents to tools format for CodeActAgent
+                            mcp_tools = convert_mcp_agents_to_tools(mcp_agents)
+                            self.logger.info(
+                                f"MCP tools created: {[tool.get('function', {}).get('name', '<unnamed>') for tool in mcp_tools]}"
+                            )
+
+                            # If agent already has tools, extend them; otherwise create a new list
+                            if isinstance(agent.tools, list):
+                                agent.tools.extend(mcp_tools)
+                            else:
+                                agent.tools = mcp_tools
+
+                            self.logger.info(
+                                f'Agent now has {len(agent.tools)} tools including MCP tools'
+                            )
+                        except Exception as e:
+                            self.logger.error(
+                                f'Error converting MCP agents to tools: {str(e)}',
+                                exc_info=True,
+                            )
+
+                    # Log MCP agents status
+                    for idx, mcp_agent in enumerate(mcp_agents):
+                        self.logger.info(
+                            f'MCP Agent {idx} connection type: {mcp_agent.connection_type}'
+                        )
+                        self.logger.info(
+                            f"MCP Agent {idx} available tools: {list(mcp_agent.mcp_clients.tool_map.keys()) if hasattr(mcp_agent, 'mcp_clients') and hasattr(mcp_agent.mcp_clients, 'tool_map') else 'No tools available'}"
+                        )
+
+                    self.logger.info(
+                        f'Successfully initialized {len(mcp_agents)} MCP agents'
+                    )
+            except Exception as e:
+                self.logger.error(f'Error initializing MCP agents: {e}', exc_info=True)
+
             self._create_security_analyzer(config.security.security_analyzer)
             runtime_connected = await self._create_runtime(
                 runtime_name=runtime_name,
