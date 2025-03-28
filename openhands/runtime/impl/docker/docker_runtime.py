@@ -288,6 +288,7 @@ class DockerRuntime(ActionExecutionClient):
             server_port=self._container_port,
             plugins=self.plugins,
             app_config=self.config,
+            runtime_mode='docker',
         )
 
         try:
