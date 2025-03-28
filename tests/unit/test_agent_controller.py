@@ -647,21 +647,23 @@ async def test_context_window_exceeded_error_handling(
     mock_agent, mock_runtime, test_event_stream
 ):
     """Test that context window exceeded errors are handled correctly by truncating history."""
-
-    def _message(index: int) -> MessageAction:
-        message = MessageAction(content=f'Test message {index}')
-        # message._id = index
-        return message
+    max_iterations = 5
+    error_after = 2
 
     class StepState:
         def __init__(self):
             self.has_errored = False
             self.index = 0
+            self.views = []
 
         def step(self, state: State):
-            if self.index < 3 or self.has_errored:
+            self.views.append(state.view)
+
+            # Wait until the right step to throw the error, and make sure we
+            # only throw it once.
+            if self.index < error_after or self.has_errored:
                 self.index += 1
-                return _message(self.index)
+                return MessageAction(content=f'Test message {self.index}')
 
             error = ContextWindowExceededError(
                 message='prompt is too long: 233885 tokens > 200000 maximum',
@@ -675,6 +677,12 @@ async def test_context_window_exceeded_error_handling(
     mock_agent.step = step_state.step
     mock_agent.config = AgentConfig()
 
+    # Because we're sending message actions, we need to respond to the recall
+    # actions that get generated as a response.
+
+    # We do that by playing the role of the recall module -- subscribe to the
+    # event stream and respond to recall actions by inserting fake recall
+    # obesrvations.
     def on_event_memory(event: Event):
         if isinstance(event, RecallAction):
             microagent_obs = RecallObservation(
@@ -689,9 +697,13 @@ async def test_context_window_exceeded_error_handling(
     )
     mock_runtime.event_stream = test_event_stream
 
+    # Now we can run the controller for a fixed number of steps. Since the step
+    # state is set to error out before then, if this terminates and we have a
+    # record of the error being thrown we can be confident that the controller
+    # handles the truncation correctly.
     await asyncio.wait_for(
         run_controller(
-            config=AppConfig(max_iterations=5),
+            config=AppConfig(max_iterations=max_iterations),
             initial_user_action=MessageAction(content='INITIAL'),
             runtime=mock_runtime,
             sid='test',
@@ -702,9 +714,23 @@ async def test_context_window_exceeded_error_handling(
         timeout=10,
     )
 
+    # Check that the context window exception was thrown and the controller
+    # called the agent's `step` function the right number of times.
     assert step_state.has_errored
+    assert len(step_state.views) == max_iterations
 
-    raise AssertionError()
+    # Look at pre/post-step views. Normally, these should always increase in
+    # size (because we return a message action, which triggers a recall, which
+    # triggers a recall response). But if the pre/post-views are on the turn
+    # when we throw the context window exceeded error, we should see the
+    # post-step view compressed.
+    for index, (first_view, second_view) in enumerate(
+        zip(step_state.views[:-1], step_state.views[1:])
+    ):
+        if index == error_after:
+            assert len(first_view) > len(second_view)
+        else:
+            assert len(first_view) < len(second_view)
 
 
 @pytest.mark.asyncio
