@@ -119,7 +119,7 @@ def _print_window(
     ignore_window: bool = False,
 ) -> str:
     global CURRENT_LINE
-    if not _check_current_file(file_path):
+    if not _check_current_file(file_path) or file_path is None:
         return ''
     with open(file_path) as file:
         content = file.read()

@@ -49,27 +49,23 @@ def strip_ansi(o: str) -> str:
     return stripped
 
 
-from typing import cast
-from tornado.websocket import WebSocketClientConnection
-
-
 class JupyterKernel:
-    def __init__(self, url_suffix: str, convid: str, lang: str = 'python') -> None:
+    def __init__(self, url_suffix, convid, lang='python'):
         self.base_url = f'http://{url_suffix}'
         self.base_ws_url = f'ws://{url_suffix}'
         self.lang = lang
-        self.kernel_id: str | None = None
-        self.ws: WebSocketClientConnection | None = None
+        self.kernel_id = None
+        self.ws = None
         self.convid = convid
         logging.info(
             f'Jupyter kernel created for conversation {convid} at {url_suffix}'
         )
 
         self.heartbeat_interval = 10000  # 10 seconds
-        self.heartbeat_callback: PeriodicCallback | None = None
+        self.heartbeat_callback = None
         self.initialized = False
 
-    async def initialize(self) -> None:
+    async def initialize(self):
         await self.execute(r'%colors nocolor')
         # pre-defined tools
         self.tools_to_run: list[str] = [
@@ -80,12 +76,11 @@ class JupyterKernel:
             logging.info(f'Tool [{tool}] initialized:\n{res}')
         self.initialized = True
 
-    async def _send_heartbeat(self) -> None:
-        ws = self.ws
-        if not ws:
+    async def _send_heartbeat(self):
+        if not self.ws:
             return
         try:
-            ws.ping()
+            self.ws.ping()
             # logging.info('Heartbeat sent...')
         except tornado.iostream.StreamClosedError:
             # logging.info('Heartbeat failed, reconnecting...')
@@ -96,20 +91,13 @@ class JupyterKernel:
                     'ConnectionRefusedError: Failed to reconnect to kernel websocket - Is the kernel still running?'
                 )
 
-    async def _connect(self) -> None:
-        # Close existing websocket
-        ws = self.ws
-        if ws:
-            try:
-                ws.close()
-            except Exception:
-                pass
+    async def _connect(self):
+        if self.ws:
+            self.ws.close()
             self.ws = None
 
-        # Get or create kernel ID
         client = AsyncHTTPClient()
-        kernel_id = self.kernel_id
-        if not kernel_id:
+        if not self.kernel_id:
             n_tries = 5
             while n_tries > 0:
                 try:
@@ -119,149 +107,117 @@ class JupyterKernel:
                         body=json_encode({'name': self.lang}),
                     )
                     kernel = json_decode(response.body)
-                    kernel_id = kernel['id']
-                    self.kernel_id = kernel_id
+                    self.kernel_id = kernel['id']
                     break
                 except Exception:
                     # kernels are not ready yet
                     n_tries -= 1
-                    if n_tries > 0:
-                        await asyncio.sleep(1)
-                    else:
-                        raise ConnectionRefusedError('Failed to connect to kernel')
+                    await asyncio.sleep(1)
 
-        assert kernel_id is not None
+            if n_tries == 0:
+                raise ConnectionRefusedError('Failed to connect to kernel')
 
-        # Connect to websocket
         ws_req = HTTPRequest(
             url='{}/api/kernels/{}/channels'.format(
-                self.base_ws_url, url_escape(kernel_id)
+                self.base_ws_url, url_escape(self.kernel_id)
             )
         )
-        ws = await websocket_connect(ws_req)
-        if not ws:
-            raise ConnectionRefusedError('Failed to connect to websocket')
-        self.ws = ws
+        self.ws = await websocket_connect(ws_req)
         logging.info('Connected to kernel websocket')
 
         # Setup heartbeat
         if self.heartbeat_callback:
             self.heartbeat_callback.stop()
-        callback = PeriodicCallback(
+        self.heartbeat_callback = PeriodicCallback(
             self._send_heartbeat, self.heartbeat_interval
         )
-        callback.start()
-        self.heartbeat_callback = callback
+        self.heartbeat_callback.start()
 
     @retry(
         retry=retry_if_exception_type(ConnectionRefusedError),
         stop=stop_after_attempt(3),
         wait=wait_fixed(2),
     )
-    async def execute(self, code: str, timeout: int = 120) -> str:
-        # Connect to kernel if needed
+    async def execute(self, code, timeout=120):
         if not self.ws:
             await self._connect()
-            
-        assert self.ws is not None
 
-        # Send code to kernel
         msg_id = uuid4().hex
+        assert self.ws is not None
         res = await self.ws.write_message(
-                json_encode(
-                    {
-                        'header': {
-                            'username': '',
-                            'version': '5.0',
-                            'session': '',
-                            'msg_id': msg_id,
-                            'msg_type': 'execute_request',
-                        },
-                        'parent_header': {},
-                        'channel': 'shell',
-                        'content': {
-                            'code': code,
-                            'silent': False,
-                            'store_history': False,
-                            'user_expressions': {},
-                            'allow_stdin': False,
-                        },
-                        'metadata': {},
-                        'buffers': {},
-                    }
-                )
+            json_encode(
+                {
+                    'header': {
+                        'username': '',
+                        'version': '5.0',
+                        'session': '',
+                        'msg_id': msg_id,
+                        'msg_type': 'execute_request',
+                    },
+                    'parent_header': {},
+                    'channel': 'shell',
+                    'content': {
+                        'code': code,
+                        'silent': False,
+                        'store_history': False,
+                        'user_expressions': {},
+                        'allow_stdin': False,
+                    },
+                    'metadata': {},
+                    'buffers': {},
+                }
             )
-            if not res:
-                return '[Failed to send code to kernel]'
-        except Exception:
-            return '[Failed to send code to kernel]'
-
+        )
         logging.info(f'Executed code in jupyter kernel:\n{res}')
 
-        outputs: list[str] = []
+        outputs = []
 
-        async def wait_for_messages() -> bool:
+        async def wait_for_messages():
             execution_done = False
             while not execution_done:
-                ws = self.ws
-                if not ws:
-                    return False
-                try:
-                    msg = await ws.read_message()
-                    if not msg:
-                        return False
-                    msg = json_decode(msg)
-                    msg_type = msg['msg_type']
-                    parent_msg_id = msg['parent_header'].get('msg_id', None)
+                assert self.ws is not None
+                msg = await self.ws.read_message()
+                msg = json_decode(msg)
+                msg_type = msg['msg_type']
+                parent_msg_id = msg['parent_header'].get('msg_id', None)
 
-                    if parent_msg_id != msg_id:
-                        continue
+                if parent_msg_id != msg_id:
+                    continue
 
-                    if os.environ.get('DEBUG'):
-                        logging.info(
-                            f"MSG TYPE: {msg_type.upper()} DONE:{execution_done}\nCONTENT: {msg['content']}"
+                if os.environ.get('DEBUG'):
+                    logging.info(
+                        f"MSG TYPE: {msg_type.upper()} DONE:{execution_done}\nCONTENT: {msg['content']}"
+                    )
+
+                if msg_type == 'error':
+                    traceback = '\n'.join(msg['content']['traceback'])
+                    outputs.append(traceback)
+                    execution_done = True
+                elif msg_type == 'stream':
+                    outputs.append(msg['content']['text'])
+                elif msg_type in ['execute_result', 'display_data']:
+                    outputs.append(msg['content']['data']['text/plain'])
+                    if 'image/png' in msg['content']['data']:
+                        # use markdone to display image (in case of large image)
+                        outputs.append(
+                            f"\n![image](data:image/png;base64,{msg['content']['data']['image/png']})\n"
                         )
 
-                    if msg_type == 'error':
-                        traceback = '\n'.join(msg['content']['traceback'])
-                        outputs.append(traceback)
-                        execution_done = True
-                    elif msg_type == 'stream':
-                        outputs.append(msg['content']['text'])
-                    elif msg_type in ['execute_result', 'display_data']:
-                        outputs.append(msg['content']['data']['text/plain'])
-                        if 'image/png' in msg['content']['data']:
-                            # use markdone to display image (in case of large image)
-                            outputs.append(
-                                f"\n![image](data:image/png;base64,{msg['content']['data']['image/png']})\n"
-                            )
-
-                    elif msg_type == 'execute_reply':
-                        execution_done = True
-                except Exception:
-                    return False
+                elif msg_type == 'execute_reply':
+                    execution_done = True
             return execution_done
 
-        async def interrupt_kernel() -> None:
-            kernel_id = self.kernel_id
-            if not kernel_id:
-                return
-            try:
-                client = AsyncHTTPClient()
-                interrupt_response = await client.fetch(
-                    f'{self.base_url}/api/kernels/{kernel_id}/interrupt',
-                    method='POST',
-                    body=json_encode({'kernel_id': kernel_id}),
-                )
-                logging.info(f'Kernel interrupted: {interrupt_response}')
-            except Exception:
-                logging.error('Failed to interrupt kernel')
+        async def interrupt_kernel():
+            client = AsyncHTTPClient()
+            interrupt_response = await client.fetch(
+                f'{self.base_url}/api/kernels/{self.kernel_id}/interrupt',
+                method='POST',
+                body=json_encode({'kernel_id': self.kernel_id}),
+            )
+            logging.info(f'Kernel interrupted: {interrupt_response}')
 
         try:
             execution_done = await asyncio.wait_for(wait_for_messages(), timeout)
-            if not execution_done:
-                await interrupt_kernel()
-                return '[Failed to execute code]'
         except asyncio.TimeoutError:
             await interrupt_kernel()
             return f'[Execution timed out ({timeout} seconds).]'
@@ -278,37 +234,24 @@ class JupyterKernel:
             logging.info(f'OUTPUT:\n{ret}')
         return ret
 
-    async def shutdown_async(self) -> None:
-        # Delete kernel
-        kernel_id = self.kernel_id
-        if kernel_id:
-            try:
-                client = AsyncHTTPClient()
-                await client.fetch(
-                    '{}/api/kernels/{}'.format(self.base_url, kernel_id),
-                    method='DELETE',
-                )
-            except Exception:
-                logging.error('Failed to delete kernel')
-            finally:
-                self.kernel_id = None
-
-        # Close websocket
-        ws = self.ws
-        if ws:
-            try:
-                ws.close()
-            except Exception:
-                logging.error('Failed to close websocket')
-            finally:
+    async def shutdown_async(self):
+        if self.kernel_id:
+            client = AsyncHTTPClient()
+            await client.fetch(
+                '{}/api/kernels/{}'.format(self.base_url, self.kernel_id),
+                method='DELETE',
+            )
+            self.kernel_id = None
+            if self.ws:
+                self.ws.close()
                 self.ws = None
 
 
 class ExecuteHandler(tornado.web.RequestHandler):
-    def initialize(self, jupyter_kernel: JupyterKernel) -> None:
+    def initialize(self, jupyter_kernel):
         self.jupyter_kernel = jupyter_kernel
 
-    async def post(self) -> None:
+    async def post(self):
         data = json_decode(self.request.body)
         code = data.get('code')
 
@@ -322,10 +265,10 @@ class ExecuteHandler(tornado.web.RequestHandler):
         self.write(output)
 
 
-def make_app() -> tornado.web.Application:
+def make_app():
     jupyter_kernel = JupyterKernel(
         f"localhost:{os.environ.get('JUPYTER_GATEWAY_PORT')}",
-        os.environ.get('JUPYTER_GATEWAY_KERNEL_ID', ''),
+        os.environ.get('JUPYTER_GATEWAY_KERNEL_ID'),
     )
     asyncio.get_event_loop().run_until_complete(jupyter_kernel.initialize())
 
