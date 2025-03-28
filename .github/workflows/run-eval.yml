@@ -19,6 +19,8 @@ jobs:
           ref: ${{ github.head_ref }}
 
       - name: Trigger remote job
+        env:
+          PR_BRANCH: ${{ github.head_ref }}
         run: |
           REPO_URL="https://github.com/${{ github.repository }}"
           PR_BRANCH="${{ github.head_ref }}"
