@@ -2,13 +2,15 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from typing import Any
+from typing import Any, overload
 
-from typing_extensions import override
+from pydantic import BaseModel
 
 from openhands.controller.state.state import State
 from openhands.core.config.condenser_config import CondenserConfig
+from openhands.events.action.agent import CondensationAction
 from openhands.events.event import Event
+from openhands.events.observation.agent import AgentCondensationObservation
 
 CONDENSER_METADATA_KEY = 'condenser_meta'
 """Key identifying where metadata is stored in a `State` object's `extra_data` field."""
@@ -32,6 +34,75 @@ CONDENSER_REGISTRY: dict[type[CondenserConfig], type[Condenser]] = {}
 """Registry of condenser configurations to their corresponding condenser classes."""
 
 
+class View(BaseModel):
+    """Linearly ordered view of events.
+
+    Produced by a condenser to indicate the included events are ready to process as LLM input.
+    """
+
+    events: list[Event]
+
+    def __len__(self) -> int:
+        return len(self.events)
+
+    def __iter__(self):
+        return iter(self.events)
+
+    # To preserve list-like indexing, we ideally support slicing and position-based indexing.
+    # The only challenge with that is switching the return type based on the input type -- we
+    # can mark the different signatures for MyPy with `@overload` decorators.
+
+    @overload
+    def __getitem__(self, key: slice) -> list[Event]: ...
+
+    @overload
+    def __getitem__(self, key: int) -> Event: ...
+
+    def __getitem__(self, key: int | slice) -> Event | list[Event]:
+        if isinstance(key, slice):
+            start, stop, step = key.indices(len(self))
+            return [self[i] for i in range(start, stop, step)]
+        elif isinstance(key, int):
+            return self.events[key]
+        else:
+            raise ValueError(f'Invalid key type: {type(key)}')
+
+    @staticmethod
+    def from_events(events: list[Event]) -> View:
+        """Create a view from a list of events, respecting the semantics of any condensation events."""
+        forgotten_event_ids: set[int] = set()
+        for event in events:
+            if isinstance(event, CondensationAction):
+                forgotten_event_ids.update(event.forgotten)
+
+        kept_events = [event for event in events if event.id not in forgotten_event_ids]
+
+        # If we have a summary, insert it at the specified offset.
+        summary: str | None = None
+        summary_offset: int | None = None
+
+        # The relevant summary is always in the last condensation event (i.e., the most recent one).
+        for event in reversed(events):
+            if isinstance(event, CondensationAction):
+                if event.summary is not None and event.summary_offset is not None:
+                    summary = event.summary
+                    summary_offset = event.summary_offset
+                    break
+
+        if summary is not None and summary_offset is not None:
+            kept_events.insert(
+                summary_offset, AgentCondensationObservation(content=summary)
+            )
+
+        return View(events=kept_events)
+
+
+class Condensation(BaseModel):
+    """Produced by a condenser to indicate the history has been condensed."""
+
+    action: CondensationAction
+
+
 class Condenser(ABC):
     """Abstract condenser interface.
 
@@ -39,10 +110,7 @@ class Condenser(ABC):
 
     Agents can use condensers to reduce the amount of events they need to consider when deciding which action to take. To use a condenser, agents can call the `condensed_history` method on the current `State` being considered and use the results instead of the full history.
 
-    Example usage::
-
-        condenser = Condenser.from_config(condenser_config)
-        events = condenser.condensed_history(state)
+    If the condenser returns a `Condensation` instead of a `View`, the agent should return `Condensation.action` instead of producing its own action. On the next agent step the condenser will use that condensation event to produce a new `View`.
     """
 
     def __init__(self):
@@ -82,7 +150,7 @@ class Condenser(ABC):
             self.write_metadata(state)
 
     @abstractmethod
-    def condense(self, events: list[Event]) -> list[Event]:
+    def condense(self, events: list[Event]) -> View | Condensation:
         """Condense a sequence of events into a potentially smaller list.
 
         New condenser strategies should override this method to implement their own condensation logic. Call `self.add_metadata` in the implementation to record any relevant per-condensation diagnostic information.
@@ -91,10 +159,10 @@ class Condenser(ABC):
             events: A list of events representing the entire history of the agent.
 
         Returns:
-            list[Event]: An event sequence representing a condensed history of the agent.
+            View | Condensation: A condensed view of the events or an event indicating the history has been condensed.
         """
 
-    def condensed_history(self, state: State) -> list[Event]:
+    def condensed_history(self, state: State) -> View | Condensation:
         """Condense the state's history."""
         with self.metadata_batch(state):
             return self.condense(state.history)
@@ -140,39 +208,28 @@ class Condenser(ABC):
 class RollingCondenser(Condenser, ABC):
     """Base class for a specialized condenser strategy that applies condensation to a rolling history.
 
-    The rolling history is computed by appending new events to the most recent condensation. For example, the sequence of calls::
+    The rolling history is generated by `View.from_events`, which analyzes all events in the history and produces a `View` object representing what will be sent to the LLM.
 
-        assert state.history == [event1, event2, event3]
-        condensation = condenser.condensed_history(state)
-
-        # ...new events are added to the state...
-
-        assert state.history == [event1, event2, event3, event4, event5]
-        condenser.condensed_history(state)
-
-    will result in second call to `condensed_history` passing `condensation + [event4, event5]` to the `condense` method.
+    If `should_condense` says so, the condenser is then responsible for generating a `Condensation` object from the `View` object. This will be added to the event history which should -- when given to `get_view` -- produce the condensed `View` to be passed to the LLM.
     """
 
-    def __init__(self) -> None:
-        self._condensation: list[Event] = []
-        self._last_history_length: int = 0
+    @abstractmethod
+    def should_condense(self, view: View) -> bool:
+        """Determine if a view should be condensed."""
 
-        super().__init__()
+    @abstractmethod
+    def get_condensation(self, view: View) -> Condensation:
+        """Get the condensation from a view."""
 
-    @override
-    def condensed_history(self, state: State) -> list[Event]:
-        # The history should grow monotonically -- if it doesn't, something has
-        # truncated the history and we need to reset our tracking.
-        if len(state.history) < self._last_history_length:
-            self._condensation = []
-            self._last_history_length = 0
+    def condense(self, events: list[Event]) -> View | Condensation:
+        # Convert the state to a view. This might require some condenser-specific logic.
+        view = View.from_events(events)
 
-        new_events = state.history[self._last_history_length :]
+        # If we trigger the condenser-specific condensation threshold, compute and return
+        # the condensation.
+        if self.should_condense(view):
+            return self.get_condensation(view)
 
-        with self.metadata_batch(state):
-            results = self.condense(self._condensation + new_events)
-
-        self._condensation = results
-        self._last_history_length = len(state.history)
-
-        return results
+        # Otherwise we're safe to just return the view.
+        else:
+            return view

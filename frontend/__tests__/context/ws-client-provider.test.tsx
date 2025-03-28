@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, waitFor } from "@testing-library/react";
 import React from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import * as ChatSlice from "#/state/chat-slice";
 import {
   updateStatusWhenErrorMessagePresent,
@@ -86,11 +87,15 @@ describe("WsClientProvider", () => {
   });
 
   it("should emit oh_user_action event when send is called", async () => {
-    const { getByText } = render(
-      <WsClientProvider conversationId="test-conversation-id">
-        <TestComponent />
-      </WsClientProvider>,
-    );
+    const { getByText } = render(<TestComponent />, {
+      wrapper: ({ children }) => (
+        <QueryClientProvider client={new QueryClient()}>
+          <WsClientProvider conversationId="test-conversation-id">
+            {children}
+          </WsClientProvider>
+        </QueryClientProvider>
+      ),
+    });
 
     // Assert
     expect(getByText("Test Component")).toBeInTheDocument();
