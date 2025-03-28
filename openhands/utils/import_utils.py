@@ -1,4 +1,5 @@
 import importlib
+from functools import lru_cache
 from typing import Type, TypeVar
 
 T = TypeVar('T')
@@ -13,6 +14,7 @@ def import_from(qual_name: str):
     return result
 
 
+@lru_cache()
 def get_impl(cls: Type[T], impl_name: str | None) -> Type[T]:
     """Import a named implementation of the specified class"""
     if impl_name is None:

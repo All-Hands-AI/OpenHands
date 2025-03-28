@@ -17,11 +17,13 @@ from openhands.events.observation.agent import (
 from openhands.events.serialization import event_to_dict
 from openhands.events.stream import AsyncEventStreamWrapper
 from openhands.server.shared import (
-    ConversationValidatorImpl,
     SettingsStoreImpl,
     config,
     conversation_manager,
     sio,
+)
+from openhands.storage.conversation.conversation_validator import (
+    create_conversation_validator,
 )
 
 
@@ -36,7 +38,7 @@ async def connect(connection_id: str, environ):
         raise ConnectionRefusedError('No conversation_id in query params')
 
     cookies_str = environ.get('HTTP_COOKIE', '')
-    conversation_validator = ConversationValidatorImpl()
+    conversation_validator = create_conversation_validator()
     user_id, github_user_id = await conversation_validator.validate(
         conversation_id, cookies_str
     )
