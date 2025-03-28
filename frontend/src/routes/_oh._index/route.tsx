@@ -19,7 +19,7 @@ function Home() {
       data-testid="home-screen"
       className="bg-[#1E1E1E] h-full rounded-xl flex flex-col relative overflow-y-auto p-6"
     >
-      <div className="flex flex-col w-full max-w-5xl mx-auto">
+      <div className="flex flex-col w-full">
         {/* Welcome Header */}
         <WelcomeHeader />
 
@@ -31,11 +31,9 @@ function Home() {
           {/* Left Column - Connect to Repo */}
           <div className="flex flex-col">
             <ConnectToRepo>
-              <div className="w-full border border-[#525252] rounded-md p-2">
-                <select className="w-full bg-[#2A2A2A] text-white p-2 rounded-md border border-[#525252]">
-                  <option>Select a Repo</option>
-                </select>
-              </div>
+              <select className="w-full bg-[#2A2A2A] text-white p-2 rounded-md border border-[#525252]">
+                <option>Select a Repo</option>
+              </select>
             </ConnectToRepo>
           </div>
 

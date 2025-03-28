@@ -7,12 +7,12 @@ export function WelcomeHeader() {
   const { t } = useTranslation();
 
   return (
-    <div className="flex flex-col items-center gap-4 mb-8">
-      <div className="flex justify-center">
+    <div className="flex flex-col items-start gap-4 mb-8">
+      <div className="flex">
         <HandsIcon width={88} height={88} />
       </div>
       <h1 className="text-3xl font-bold">{t(I18nKey.LANDING$TITLE)}</h1>
-      <p className="text-center text-sm max-w-md">
+      <p className="text-sm max-w-md">
         OpenHands makes it easy to build and maintain software using AI-driven
         development.
       </p>
