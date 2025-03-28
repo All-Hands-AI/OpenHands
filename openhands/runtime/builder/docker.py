@@ -166,7 +166,10 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             f'================ {buildx_cmd[0].upper()} BUILD STARTED ================'
         )
 
+        logger.info('[LOG] check-point 1-4')
+
         try:
+            logger.info('[LOG] check-point 1-5 process.Popen()')
             process = subprocess.Popen(
                 buildx_cmd,
                 stdout=subprocess.PIPE,
