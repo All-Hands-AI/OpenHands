@@ -244,8 +244,8 @@ class RollingCondenser(Condenser, ABC):
         # Convert the state to a view. This might require some condenser-specific logic.
         view = View.from_events(events)
 
-        # If we trigger the condenser-specific condensation threshold,
-        # or if we are close to the token limit, compute and return the condensation.
+        # If we trigger the condenser-specific condensation threshold, compute and return
+        # the condensation.
         if self.should_condense(view, force):
             return self.get_condensation(view)
 
