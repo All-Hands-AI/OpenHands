@@ -1,6 +1,29 @@
 import { extractNextPageFromLink } from "#/utils/extract-next-page-from-link";
 import { openHands } from "./open-hands-axios";
 
+export interface SuggestedTask {
+  task_type:
+    | "MERGE_CONFLICTS"
+    | "FAILING_CHECKS"
+    | "UNRESOLVED_COMMENTS"
+    | "OPEN_ISSUE"
+    | "OPEN_PR";
+  repo: string;
+  issue_number: number;
+  title: string;
+}
+
+/**
+ * Retrieves suggested tasks from GitHub for the authenticated user
+ * @returns A list of suggested tasks (PRs and issues)
+ */
+export const retrieveGitHubSuggestedTasks = async () => {
+  const response = await openHands.get<SuggestedTask[]>(
+    "/api/github/suggested-tasks",
+  );
+  return response.data;
+};
+
 /**
  * Retrieves repositories where OpenHands Github App has been installed
  * @param installationIndex Pagination cursor position for app installation IDs

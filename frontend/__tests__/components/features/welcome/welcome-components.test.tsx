@@ -13,6 +13,15 @@ vi.mock("react-i18next", () => ({
   }),
 }));
 
+// Mock the GitHub user hook
+vi.mock("#/hooks/query/use-github-user", () => ({
+  useGitHubUser: () => ({
+    data: null,
+    isLoading: false,
+    error: null,
+  }),
+}));
+
 describe("Welcome Components", () => {
   describe("WelcomeHeader", () => {
     it("renders correctly", () => {
@@ -41,6 +50,8 @@ describe("Welcome Components", () => {
     it("renders correctly", () => {
       render(<SuggestedTasks />);
       expect(screen.getByText("Suggested Tasks")).toBeInTheDocument();
+      // When not logged in, it should show a message to sign in
+      expect(screen.getByText("Sign in with GitHub to see suggested tasks")).toBeInTheDocument();
     });
   });
 
