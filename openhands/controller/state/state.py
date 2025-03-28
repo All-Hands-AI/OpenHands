@@ -184,7 +184,7 @@ class State:
         """Returns the latest user message and image(if provided) that appears after a FinishAction, or the first (the task) if nothing was finished yet."""
         last_user_message = None
         last_user_message_image_urls: list[str] | None = []
-        for event in reversed(self.history):
+        for event in reversed(self.view):
             if isinstance(event, MessageAction) and event.source == 'user':
                 last_user_message = event.content
                 last_user_message_image_urls = event.image_urls
@@ -195,13 +195,13 @@ class State:
         return last_user_message, last_user_message_image_urls
 
     def get_last_agent_message(self) -> MessageAction | None:
-        for event in reversed(self.history):
+        for event in reversed(self.view):
             if isinstance(event, MessageAction) and event.source == EventSource.AGENT:
                 return event
         return None
 
     def get_last_user_message(self) -> MessageAction | None:
-        for event in reversed(self.history):
+        for event in reversed(self.view):
             if isinstance(event, MessageAction) and event.source == EventSource.USER:
                 return event
         return None
