@@ -3,7 +3,7 @@
 import os
 from typing import Any, Dict
 
-import tomli
+import toml
 
 
 def get_config() -> Dict[str, Any]:
@@ -18,7 +18,7 @@ def get_config() -> Dict[str, Any]:
         return {}
 
     with open(config_path, 'rb') as f:
-        return tomli.load(f)
+        return toml.load(f)
 
 
 def get_config_value(section: str, key: str, default: Any = None) -> Any:
