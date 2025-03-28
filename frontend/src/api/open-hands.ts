@@ -306,20 +306,28 @@ class OpenHands {
   }
 
   static async getGitHubUser(): Promise<GitHubUser> {
-    const response = await openHands.get<GitHubUser>("/api/github/user");
+    console.log("[OpenHands.getGitHubUser] Making API request to /api/github/user");
+    try {
+      const response = await openHands.get<GitHubUser>("/api/github/user");
+      console.log("[OpenHands.getGitHubUser] API response received:", response);
 
-    const { data } = response;
+      const { data } = response;
 
-    const user: GitHubUser = {
-      id: data.id,
-      login: data.login,
-      avatar_url: data.avatar_url,
-      company: data.company,
-      name: data.name,
-      email: data.email,
-    };
+      const user: GitHubUser = {
+        id: data.id,
+        login: data.login,
+        avatar_url: data.avatar_url,
+        company: data.company,
+        name: data.name,
+        email: data.email,
+      };
 
-    return user;
+      console.log("[OpenHands.getGitHubUser] Processed user data:", user);
+      return user;
+    } catch (error) {
+      console.error("[OpenHands.getGitHubUser] API request failed:", error);
+      throw error;
+    }
   }
 
   static async getGitHubUserInstallationIds(): Promise<number[]> {

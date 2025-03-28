@@ -86,17 +86,29 @@ class GitHubService(GitService):
             raise UnknownException('Unknown error')
 
     async def get_user(self) -> User:
+        from openhands.core.logger import openhands_logger as logger
+        
+        logger.info(f"[GitHubService.get_user] Getting GitHub user. Token exists: {self.token is not None and self.token.get_secret_value() != ''}")
+        
         url = f'{self.BASE_URL}/user'
-        response, _ = await self._fetch_data(url)
-
-        return User(
-            id=response.get('id'),
-            login=response.get('login'),
-            avatar_url=response.get('avatar_url'),
-            company=response.get('company'),
-            name=response.get('name'),
-            email=response.get('email'),
-        )
+        try:
+            logger.info("[GitHubService.get_user] Fetching user data from GitHub API")
+            response, _ = await self._fetch_data(url)
+            
+            user = User(
+                id=response.get('id'),
+                login=response.get('login'),
+                avatar_url=response.get('avatar_url'),
+                company=response.get('company'),
+                name=response.get('name'),
+                email=response.get('email'),
+            )
+            
+            logger.info(f"[GitHubService.get_user] Successfully retrieved GitHub user: {user.login}")
+            return user
+        except Exception as e:
+            logger.error(f"[GitHubService.get_user] Error fetching GitHub user: {str(e)}", exc_info=True)
+            raise
 
     async def get_repositories(
         self, page: int, per_page: int, sort: str, installation_id: int | None

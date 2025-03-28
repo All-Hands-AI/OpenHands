@@ -178,12 +178,24 @@ class ProviderHandler:
 
     async def get_user(self) -> User:
         """Get user information from the first available provider"""
+        from openhands.core.logger import openhands_logger as logger
+        
+        logger.info(f"[ProviderHandler.get_user] Attempting to get user with providers: {list(self.provider_tokens.keys())}")
+        
         for provider in self.provider_tokens:
             try:
+                logger.info(f"[ProviderHandler.get_user] Trying provider: {provider.value}")
                 service = self._get_service(provider)
-                return await service.get_user()
-            except Exception:
+                logger.info(f"[ProviderHandler.get_user] Service created for {provider.value}")
+                
+                user = await service.get_user()
+                logger.info(f"[ProviderHandler.get_user] Successfully retrieved user from {provider.value}: {user.login}")
+                return user
+            except Exception as e:
+                logger.error(f"[ProviderHandler.get_user] Error with provider {provider.value}: {str(e)}", exc_info=True)
                 continue
+                
+        logger.error("[ProviderHandler.get_user] Failed to get user from any provider")
         raise AuthenticationError('Need valid provider token')
 
     async def _get_latest_provider_token(
