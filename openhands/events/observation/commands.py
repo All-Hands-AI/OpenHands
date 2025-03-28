@@ -163,8 +163,8 @@ class CmdOutputObservation(Observation):
         if self.metadata.exit_code != -1:
             ret += f'\n[Command finished with exit code {self.metadata.exit_code}]'
 
-        utc_now = datetime.now(timezone.utc)
-        ret += f'\n[Timestamp (UTC): {utc_now.strftime('%a %b %d %H:%M:%S %Z %Y')}]' # Formatted time, e.g Mon Mar 25 22:01:53 UTC 2025
+        # utc_now = datetime.now(timezone.utc)
+        # ret += f'\n[Timestamp (UTC): {utc_now.strftime('%a %b %d %H:%M:%S %Z %Y')}]' # Formatted time, e.g Mon Mar 25 22:01:53 UTC 2025
         return ret
 
 
