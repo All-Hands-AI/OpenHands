@@ -17,7 +17,7 @@ from openhands.events import EventStream
 from openhands.events.event import Event
 from openhands.integrations.provider import ProviderToken, ProviderType, SecretStore
 from openhands.llm.llm import LLM
-from openhands.mcp.mcp_agent import MCPAgent
+from openhands.mcp.mcp_agent import MCPAgent, convert_mcp_agents_to_tools
 from openhands.memory.memory import Memory
 from openhands.microagent.microagent import BaseMicroAgent
 from openhands.runtime import get_runtime_cls
@@ -173,21 +173,26 @@ async def create_agent(config: AppConfig) -> Agent:
     agent_cls: Type[Agent] = Agent.get_cls(config.default_agent)
     agent_config = config.get_agent_config(config.default_agent)
     llm_config = config.get_llm_config_from_agent(config.default_agent)
-    # FIXME: Need to close the agents after calling the tool
     mcp_agents = await create_mcp_agents(
         config.mcp.sse.mcp_servers, config.mcp.stdio.commands, config.mcp.stdio.args
     )
+    mcp_tools = convert_mcp_agents_to_tools(mcp_agents)
     agent = agent_cls(
         llm=LLM(config=llm_config),
         config=agent_config,
-        mcp_agents=mcp_agents,
+        mcp_tools=mcp_tools,
     )
+
+    # We only need to get the tools from the MCP agents, so we can safely close them after that
+    # the actual calls will be done in a sandbox environment, not here
+    for mcp_agent in mcp_agents:
+        await mcp_agent.cleanup()
 
     return agent
 
 
 async def create_mcp_agents(
-    sse_mcp_server: List[str], commands: List[str], args: List[str]
+    sse_mcp_server: List[str], commands: List[str], args: List[List[str]]
 ) -> List[MCPAgent]:
     mcp_agents: List[MCPAgent] = []
     # Initialize SSE connections
@@ -208,7 +213,7 @@ async def create_mcp_agents(
 
     # Initialize stdio connections
     if commands:
-        for command, args in zip(commands, args):
+        for command, command_args in zip(commands, args):
             logger.info(
                 f'Initializing MCP agent for {command} with stdio connection...'
             )
@@ -216,7 +221,7 @@ async def create_mcp_agents(
             agent = MCPAgent()
             try:
                 await agent.initialize(
-                    connection_type='stdio', command=command, args=args
+                    connection_type='stdio', command=command, args=command_args
                 )
                 mcp_agents.append(agent)
                 logger.info(f'Connected to MCP server via stdio with command {command}')

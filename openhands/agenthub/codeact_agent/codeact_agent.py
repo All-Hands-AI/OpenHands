@@ -12,7 +12,6 @@ from openhands.events.action import (
     AgentFinishAction,
 )
 from openhands.llm.llm import LLM
-from openhands.mcp.mcp_agent import MCPAgent, convert_mcp_agents_to_tools
 from openhands.memory.condenser import Condenser
 from openhands.memory.conversation_memory import ConversationMemory
 from openhands.runtime.plugins import (
@@ -52,12 +51,7 @@ class CodeActAgent(Agent):
         JupyterRequirement(),
     ]
 
-    def __init__(
-        self,
-        llm: LLM,
-        config: AgentConfig,
-        mcp_agents: list[MCPAgent] | None = None,
-    ) -> None:
+    def __init__(self, llm: LLM, config: AgentConfig, mcp_tools: list[dict]) -> None:
         """Initializes a new instance of the CodeActAgent class.
 
         Parameters:
@@ -137,9 +131,9 @@ class CodeActAgent(Agent):
         # log to litellm proxy if possible
         params['extra_body'] = {'metadata': state.to_llm_metadata(agent_name=self.name)}
         response = self.llm.completion(**params)
-        logger.error(f'Response from LLM: {response}')
+        logger.debug(f'Response from LLM: {response}')
         actions = codeact_function_calling.response_to_actions(response)
-        logger.error(f'Actions after response_to_actions: {actions}')
+        logger.debug(f'Actions after response_to_actions: {actions}')
         for action in actions:
             self.pending_actions.append(action)
         return self.pending_actions.popleft()
