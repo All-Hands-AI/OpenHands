@@ -1,5 +1,3 @@
-from unittest.mock import Mock
-
 import pytest
 from litellm import ModelResponse
 
@@ -74,9 +72,7 @@ def test_get_messages(codeact_agent: CodeActAgent):
     history.append(message_action_5)
 
     codeact_agent.reset()
-    messages = codeact_agent._get_messages(
-        Mock(history=history, max_iterations=5, iteration=0, extra_data={})
-    )
+    messages = codeact_agent._get_messages(history)
 
     assert (
         len(messages) == 6
@@ -110,9 +106,7 @@ def test_get_messages_prompt_caching(codeact_agent: CodeActAgent):
         history.append(message_action_agent)
 
     codeact_agent.reset()
-    messages = codeact_agent._get_messages(
-        Mock(history=history, max_iterations=10, iteration=5, extra_data={})
-    )
+    messages = codeact_agent._get_messages(history)
 
     # Check that only the last two user messages have cache_prompt=True
     cached_user_messages = [
