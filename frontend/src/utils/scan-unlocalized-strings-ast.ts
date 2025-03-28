@@ -330,6 +330,7 @@ function isLikelyUserFacingText(str: string): boolean {
     "Created",
     "ago",
     "and use the VS Code link to upload and download your code",
+    "Conversations",
   ];
 
   if (knownUIStrings.includes(str)) {
@@ -347,6 +348,10 @@ function isLikelyUserFacingText(str: string): boolean {
   // Additional check for "Title Case" phrases (multiple words with capital letters)
   const isTitleCase = hasMultipleWords && /\s[A-Z]/.test(str);
 
+  // Check for single capitalized words that are likely UI elements (like "Conversations", "Settings", etc.)
+  const isSingleCapitalizedWord =
+    /^[A-Z][a-z]+$/.test(str) && !str.includes(" ");
+
   // Check for product names (often have capital letters in the middle)
   const hasInternalCapitals = /[a-z][A-Z]/.test(str);
 
@@ -362,7 +367,8 @@ function isLikelyUserFacingText(str: string): boolean {
     isCapitalizedPhrase ||
     isTitleCase ||
     hasInternalCapitals ||
-    isUIElementText
+    isUIElementText ||
+    isSingleCapitalizedWord
   );
 }
 

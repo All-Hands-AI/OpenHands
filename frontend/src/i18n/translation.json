@@ -3851,6 +3851,21 @@
         "tr": "Özel",
         "ja": "非公開"
     },
+    "SIDEBAR$CONVERSATIONS": {
+        "en": "Conversations",
+        "ja": "会話",
+        "zh-CN": "对话",
+        "zh-TW": "對話",
+        "ko-KR": "대화",
+        "de": "Gespräche",
+        "no": "Samtaler",
+        "it": "Conversazioni",
+        "pt": "Conversas",
+        "es": "Conversaciones",
+        "ar": "المحادثات",
+        "fr": "Conversations",
+        "tr": "Konuşmalar"
+    },
     "STATUS$STARTING_RUNTIME": {
         "en": "Starting runtime...",
         "zh-CN": "启动运行时...",
