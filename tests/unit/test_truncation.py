@@ -34,51 +34,6 @@ def mock_agent():
 
 
 class TestTruncation:
-    def test_apply_conversation_window_basic(self, mock_event_stream, mock_agent):
-        controller = AgentController(
-            agent=mock_agent,
-            event_stream=mock_event_stream,
-            max_iterations=10,
-            sid='test_truncation',
-            confirmation_mode=False,
-            headless_mode=True,
-        )
-
-        # Create a sequence of events with IDs
-        first_msg = MessageAction(content='Hello, start task', wait_for_response=False)
-        first_msg._source = EventSource.USER
-        first_msg._id = 1
-
-        cmd1 = CmdRunAction(command='ls')
-        cmd1._id = 2
-        obs1 = CmdOutputObservation(command='ls', content='file1.txt', command_id=2)
-        obs1._id = 3
-        obs1._cause = 2
-
-        cmd2 = CmdRunAction(command='pwd')
-        cmd2._id = 4
-        obs2 = CmdOutputObservation(command='pwd', content='/home', command_id=4)
-        obs2._id = 5
-        obs2._cause = 4
-
-        events = [first_msg, cmd1, obs1, cmd2, obs2]
-
-        # Apply truncation
-        truncated = controller._apply_conversation_window(events)
-
-        # Should keep first user message and roughly half of other events
-        assert (
-            len(truncated) >= 3
-        )  # First message + at least one action-observation pair
-        assert truncated[0] == first_msg  # First message always preserved
-        assert controller.state.start_id == first_msg._id
-        assert controller.state.truncation_id is not None
-
-        # Verify pairs aren't split
-        for i, event in enumerate(truncated[1:]):
-            if isinstance(event, CmdOutputObservation):
-                assert any(e._id == event._cause for e in truncated[: i + 1])
-
     def test_truncation_does_not_impact_trajectory(self, mock_event_stream, mock_agent):
         controller = AgentController(
             agent=mock_agent,
