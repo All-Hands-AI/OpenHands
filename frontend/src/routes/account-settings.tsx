@@ -227,7 +227,7 @@ function AccountSettings() {
             >
               <div className="flex items-center gap-7">
                 <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">
-                  {t("SETTINGS$LLM_SETTINGS")}
+                  {t(I18nKey.SETTINGS$LLM_SETTINGS)}
                 </h2>
                 {!shouldHandleSpecialSaasCase && (
                   <SettingsSwitch
@@ -235,7 +235,7 @@ function AccountSettings() {
                     defaultIsToggled={isAdvancedSettingsSet}
                     onToggle={onToggleAdvancedMode}
                   >
-                    {t("SETTINGS$ADVANCED")}
+                    {t(I18nKey.SETTINGS$ADVANCED)}
                   </SettingsSwitch>
                 )}
               </div>
@@ -262,7 +262,7 @@ function AccountSettings() {
                 <SettingsInput
                   testId="base-url-input"
                   name="base-url-input"
-                  label={t("SETTINGS$BASE_URL")}
+                  label={t(I18nKey.SETTINGS$BASE_URL)}
                   defaultValue={settings.LLM_BASE_URL}
                   placeholder="https://api.openai.com"
                   type="text"
@@ -274,7 +274,7 @@ function AccountSettings() {
                 <SettingsInput
                   testId="llm-api-key-input"
                   name="llm-api-key-input"
-                  label={t("SETTINGS_FORM$API_KEY")}
+                  label={t(I18nKey.SETTINGS_FORM$API_KEY)}
                   type="password"
                   className="w-[680px]"
                   startContent={
@@ -297,7 +297,7 @@ function AccountSettings() {
                 <SettingsDropdownInput
                   testId="agent-input"
                   name="agent-input"
-                  label={t("SETTINGS$AGENT")}
+                  label={t(I18nKey.SETTINGS$AGENT)}
                   items={
                     resources?.agents.map((agent) => ({
                       key: agent,
@@ -315,9 +315,9 @@ function AccountSettings() {
                   name="runtime-settings-input"
                   label={
                     <>
-                      {t("SETTINGS$RUNTIME_SETTINGS")}
+                      {t(I18nKey.SETTINGS$RUNTIME_SETTINGS)}
                       <a href="mailto:contact@all-hands.dev">
-                        {t("SETTINGS$GET_IN_TOUCH")}
+                        {t(I18nKey.SETTINGS$GET_IN_TOUCH)}
                       </a>
                       )
                     </>
@@ -336,7 +336,7 @@ function AccountSettings() {
                   defaultIsToggled={!!settings.CONFIRMATION_MODE}
                   isBeta
                 >
-                  {t("SETTINGS$ENABLE_CONFIRMATION_MODE")}
+                  {t(I18nKey.SETTINGS$ENABLE_CONFIRMATION_MODE)}
                 </SettingsSwitch>
               )}
 
@@ -346,7 +346,7 @@ function AccountSettings() {
                   name="enable-memory-condenser-switch"
                   defaultIsToggled={!!settings.ENABLE_DEFAULT_CONDENSER}
                 >
-                  {t("SETTINGS$ENABLE_MEMORY_CONDENSATION")}
+                  {t(I18nKey.SETTINGS$ENABLE_MEMORY_CONDENSATION)}
                 </SettingsSwitch>
               )}
 
@@ -373,7 +373,7 @@ function AccountSettings() {
 
           <section className="flex flex-col gap-6">
             <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">
-              {t("SETTINGS$GITHUB_SETTINGS")}
+              {t(I18nKey.SETTINGS$GITHUB_SETTINGS)}
             </h2>
             {isSaas && hasAppSlug && (
               <Link
@@ -382,7 +382,7 @@ function AccountSettings() {
                 rel="noreferrer noopener"
               >
                 <BrandButton type="button" variant="secondary">
-                  {t("SETTINGS$CONFIGURE_GITHUB_REPOSITORIES")}
+                  {t(I18nKey.SETTINGS$CONFIGURE_GITHUB_REPOSITORIES)}
                 </BrandButton>
               </Link>
             )}
@@ -391,7 +391,7 @@ function AccountSettings() {
                 <SettingsInput
                   testId="github-token-input"
                   name="github-token-input"
-                  label={t("SETTINGS$GITHUB_TOKEN")}
+                  label={t(I18nKey.SETTINGS$GITHUB_TOKEN)}
                   type="password"
                   className="w-[680px]"
                   startContent={
@@ -403,7 +403,7 @@ function AccountSettings() {
                 />
                 <p data-testid="github-token-help-anchor" className="text-xs">
                   {" "}
-                  {t("SETTINGS$GENERATE_TOKEN_ON")}{" "}
+                  {t(I18nKey.SETTINGS$GENERATE_TOKEN_ON)}{" "}
                   <b>
                     {" "}
                     <a
@@ -412,10 +412,10 @@ function AccountSettings() {
                       className="underline underline-offset-2"
                       rel="noopener noreferrer"
                     >
-                      GitHub
+                      {t(I18nKey.GITHUB$GITHUB)}
                     </a>{" "}
                   </b>
-                  {t("SETTINGS$OR_SEE_THE")}{" "}
+                  {t(I18nKey.SETTINGS$OR_SEE_THE)}{" "}
                   <b>
                     <a
                       href="https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token"
@@ -423,7 +423,7 @@ function AccountSettings() {
                       className="underline underline-offset-2"
                       rel="noopener noreferrer"
                     >
-                      documentation
+                      {t(I18nKey.SETTINGS$DOCUMENTATION)}
                     </a>
                   </b>
                   .
@@ -437,19 +437,19 @@ function AccountSettings() {
               onClick={handleLogout}
               isDisabled={!isGitHubTokenSet}
             >
-              {t("ACCOUNT_SETTINGS$DISCONNECT_FROM_GITHUB")}
+              {t(I18nKey.ACCOUNT_SETTINGS$DISCONNECT_FROM_GITHUB)}
             </BrandButton>
           </section>
 
           <section className="flex flex-col gap-6">
             <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">
-              {t("ACCOUNT_SETTINGS$ADDITIONAL_SETTINGS")}
+              {t(I18nKey.ACCOUNT_SETTINGS$ADDITIONAL_SETTINGS)}
             </h2>
 
             <SettingsDropdownInput
               testId="language-input"
               name="language-input"
-              label={t("SETTINGS$LANGUAGE")}
+              label={t(I18nKey.SETTINGS$LANGUAGE)}
               items={AvailableLanguages.map((language) => ({
                 key: language.value,
                 label: language.label,
@@ -463,7 +463,7 @@ function AccountSettings() {
               name="enable-analytics-switch"
               defaultIsToggled={!!isAnalyticsEnabled}
             >
-              {t("SETTINGS$ENABLE_ANALYTICS")}
+              {t(I18nKey.SETTINGS$ENABLE_ANALYTICS)}
             </SettingsSwitch>
 
             <SettingsSwitch
@@ -471,7 +471,7 @@ function AccountSettings() {
               name="enable-sound-notifications-switch"
               defaultIsToggled={!!settings.ENABLE_SOUND_NOTIFICATIONS}
             >
-              {t("SETTINGS$ENABLE_SOUND_NOTIFICATIONS")}
+              {t(I18nKey.SETTINGS$ENABLE_SOUND_NOTIFICATIONS)}
             </SettingsSwitch>
           </section>
         </div>
@@ -483,7 +483,7 @@ function AccountSettings() {
           variant="secondary"
           onClick={() => setResetSettingsModalIsOpen(true)}
         >
-          {t("SETTINGS$RESET_TO_DEFAULTS")}
+          {t(I18nKey.SETTINGS$RESET_TO_DEFAULTS)}
         </BrandButton>
         <BrandButton
           type="button"
@@ -492,7 +492,7 @@ function AccountSettings() {
             formRef.current?.requestSubmit();
           }}
         >
-          {t("SETTINGS$SAVE_CHANGES")}
+          {t(I18nKey.SETTINGS$SAVE_CHANGES)}
         </BrandButton>
       </footer>
 
@@ -502,7 +502,7 @@ function AccountSettings() {
             data-testid="reset-modal"
             className="bg-base-secondary p-4 rounded-xl flex flex-col gap-4 border border-tertiary"
           >
-            <p>{t("SETTINGS$RESET_CONFIRMATION")}</p>
+            <p>{t(I18nKey.SETTINGS$RESET_CONFIRMATION)}</p>
             <div className="w-full flex gap-2">
               <BrandButton
                 type="button"
