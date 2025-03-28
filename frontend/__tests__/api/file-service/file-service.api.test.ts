@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fileService } from "#/api/file-service/file-service.api";
+import { FileService } from "#/api/file-service/file-service.api";
 import {
   FILE_VARIANTS_1,
   FILE_VARIANTS_2,
@@ -12,18 +12,18 @@ import {
 
 describe("FileService", () => {
   it("should get a list of files", async () => {
-    await expect(fileService.getFiles("test-conversation-id")).resolves.toEqual(
+    await expect(FileService.getFiles("test-conversation-id")).resolves.toEqual(
       FILE_VARIANTS_1,
     );
 
     await expect(
-      fileService.getFiles("test-conversation-id-2"),
+      FileService.getFiles("test-conversation-id-2"),
     ).resolves.toEqual(FILE_VARIANTS_2);
   });
 
   it("should get content of a file", async () => {
     await expect(
-      fileService.getFile("test-conversation-id", "file1.txt"),
+      FileService.getFile("test-conversation-id", "file1.txt"),
     ).resolves.toEqual("Content of file1.txt");
   });
 });

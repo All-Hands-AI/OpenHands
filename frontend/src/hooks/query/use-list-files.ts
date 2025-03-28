@@ -3,7 +3,7 @@ import { useSelector } from "react-redux";
 import { useConversation } from "#/context/conversation-context";
 import { RootState } from "#/store";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
-import { fileService } from "#/api/file-service/file-service.api";
+import { FileService } from "#/api/file-service/file-service.api";
 
 interface UseListFilesConfig {
   path?: string;
@@ -21,7 +21,7 @@ export const useListFiles = (config: UseListFilesConfig = DEFAULT_CONFIG) => {
 
   return useQuery({
     queryKey: ["files", conversationId, config?.path],
-    queryFn: () => fileService.getFiles(conversationId, config?.path),
+    queryFn: () => FileService.getFiles(conversationId, config?.path),
     enabled: runtimeIsActive && !!config?.enabled,
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 15, // 15 minutes

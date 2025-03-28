@@ -4,9 +4,9 @@ import { renderWithProviders } from "test-utils";
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { AgentState } from "#/types/agent-state";
 import { FileExplorer } from "#/components/features/file-explorer/file-explorer";
-import { fileService } from "#/api/file-service/file-service.api";
+import { FileService } from "#/api/file-service/file-service.api";
 
-const getFilesSpy = vi.spyOn(fileService, "getFiles");
+const getFilesSpy = vi.spyOn(FileService, "getFiles");
 
 vi.mock("../../services/fileService", async () => ({
   uploadFiles: vi.fn(),
