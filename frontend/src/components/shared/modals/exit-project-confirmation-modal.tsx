@@ -28,7 +28,7 @@ export function ExitProjectConfirmationModal({
     <ModalBackdrop onClose={onClose}>
       <DangerModal
         title={t(I18nKey.EXIT_PROJECT$CONFIRM)}
-        description="You will lose any unsaved information."
+        description={t(I18nKey.EXIT_PROJECT$WARNING)}
         buttons={{
           danger: {
             text: t(I18nKey.EXIT_PROJECT$TITLE),

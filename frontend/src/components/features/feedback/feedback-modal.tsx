@@ -5,6 +5,8 @@ import {
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import { ModalBody } from "#/components/shared/modals/modal-body";
 import { FeedbackForm } from "./feedback-form";
+import { useTranslation } from "react-i18next";
+import { I18nKey } from "#/i18n/declaration";
 
 interface FeedbackModalProps {
   onClose: () => void;
@@ -17,13 +19,15 @@ export function FeedbackModal({
   isOpen,
   polarity,
 }: FeedbackModalProps) {
+  const { t } = useTranslation();
+  
   if (!isOpen) return null;
 
   return (
     <ModalBackdrop onClose={onClose}>
       <ModalBody className="border border-tertiary">
-        <BaseModalTitle title="Feedback" />
-        <BaseModalDescription description="To help us improve, we collect feedback from your interactions to improve our prompts. By submitting this form, you consent to us collecting this data." />
+        <BaseModalTitle title={t(I18nKey.FEEDBACK$TITLE)} />
+        <BaseModalDescription description={t(I18nKey.FEEDBACK$DESCRIPTION)} />
         <FeedbackForm onClose={onClose} polarity={polarity} />
       </ModalBody>
     </ModalBackdrop>

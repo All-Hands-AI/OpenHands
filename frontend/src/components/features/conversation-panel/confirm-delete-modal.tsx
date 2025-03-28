@@ -24,7 +24,7 @@ export function ConfirmDeleteModal({
       <ModalBody className="items-start border border-tertiary">
         <div className="flex flex-col gap-2">
           <BaseModalTitle title={t(I18nKey.CONVERSATION$CONFIRM_DELETE)} />
-          <BaseModalDescription description="All data associated with this project will be lost." />
+          <BaseModalDescription description={t(I18nKey.CONVERSATION$DELETE_WARNING)} />
         </div>
         <div
           className="flex flex-col gap-2 w-full"
