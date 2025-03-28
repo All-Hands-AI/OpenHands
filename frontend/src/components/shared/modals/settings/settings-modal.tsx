@@ -30,13 +30,14 @@ export function SettingsModal({ onClose, settings }: SettingsModalProps) {
           {t(I18nKey.AI_SETTINGS$TITLE)}
         </span>
         <p className="text-xs text-[#A3A3A3]">
-          {t(I18nKey.SETTINGS$DESCRIPTION)} {t("SETTINGS$FOR_OTHER_OPTIONS")}{" "}
+          {t(I18nKey.SETTINGS$DESCRIPTION)}{" "}
+          {t(I18nKey.SETTINGS$FOR_OTHER_OPTIONS)}
           <Link
             data-testid="advanced-settings-link"
             to="/settings"
             className="underline underline-offset-2 text-white"
           >
-            {t("SETTINGS$SEE_ADVANCED_SETTINGS")}
+            {t(I18nKey.SETTINGS$SEE_ADVANCED_SETTINGS)}
           </Link>
         </p>
         {aiConfigOptions.isLoading && (

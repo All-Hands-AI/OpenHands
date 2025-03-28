@@ -1,7 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { I18nKey } from "#/i18n/declaration";
 import { useSelector } from "react-redux";
+import { I18nKey } from "#/i18n/declaration";
 import { showErrorToast } from "#/utils/error-handler";
 import { RootState } from "#/store";
 import { AgentState } from "#/types/agent-state";

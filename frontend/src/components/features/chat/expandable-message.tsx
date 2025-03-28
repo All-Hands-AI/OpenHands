@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { I18nKey } from "#/i18n/declaration";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Link } from "react-router";
+import { I18nKey } from "#/i18n/declaration";
 import { code } from "../markdown/code";
 import { ol, ul } from "../markdown/list";
 import ArrowUp from "#/icons/angle-up-solid.svg?react";

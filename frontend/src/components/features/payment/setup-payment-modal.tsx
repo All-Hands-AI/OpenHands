@@ -25,7 +25,9 @@ export function SetupPaymentModal() {
       <ModalBody className="border border-tertiary">
         <AllHandsLogo width={68} height={46} />
         <div className="flex flex-col gap-2 w-full items-center text-center">
-          <h1 className="text-2xl font-bold">{t(I18nKey.BILLING$YOUVE_GOT_50)}</h1>
+          <h1 className="text-2xl font-bold">
+            {t(I18nKey.BILLING$YOUVE_GOT_50)}
+          </h1>
           <p>
             <Trans
               i18nKey="BILLING$CLAIM_YOUR_50"
