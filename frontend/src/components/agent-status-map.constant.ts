@@ -66,7 +66,7 @@ export const AGENT_STATUS_MAP: {
     indicator: IndicatorColor.YELLOW,
   },
   [AgentState.BUDGET_EXCEEDED]: {
-    message: "Budget exceeded",
+    message: I18nKey.CHAT_INTERFACE$AGENT_BUDGET_EXCEEDED_MESSAGE,
     indicator: IndicatorColor.RED,
   },
 };
