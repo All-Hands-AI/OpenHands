@@ -163,25 +163,40 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             process = subprocess.Popen(
                 buildx_cmd,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
+                stderr=subprocess.PIPE,  # cursor
                 universal_newlines=True,
                 bufsize=1,
             )
+
+            stdout_lines = []  # cursor
+            stderr_lines = []  # cursor
 
             if process.stdout:
                 for line in iter(process.stdout.readline, ''):
                     line = line.strip()
                     if line:
+                        stdout_lines.append(line)  # cursor
                         self._output_logs(line)
 
+            # cursor >
+            if process.stderr:
+                for line in iter(process.stderr.readline, ''):
+                    line = line.strip()
+                    if line:
+                        stderr_lines.append(line)
+                        logger.debug(f'Docker build stderr: {line}')
+            # < cursor
             return_code = process.wait()
 
             if return_code != 0:
+                error_output = '\n'.join(stdout_lines + stderr_lines)  # cursor
                 raise subprocess.CalledProcessError(
                     return_code,
                     process.args,
-                    output=process.stdout.read() if process.stdout else None,
-                    stderr=process.stderr.read() if process.stderr else None,
+                    # output=process.stdout.read() if process.stdout else None,
+                    # stderr=process.stderr.read() if process.stderr else None,
+                    output=error_output,  # cursor
+                    stderr='\n'.join(stderr_lines),  # cursor
                 )
 
         except subprocess.CalledProcessError as e:
