@@ -38,7 +38,7 @@ class ActionType(str, Enum):
     """Interact with the browser instance.
     """
 
-    MCP = 'mcp'
+    MCP = 'call_tool_mcp'
     """Interact with the MCP server.
     """
 

@@ -37,6 +37,9 @@ from openhands.events.observation.agent import (
 from openhands.events.observation.error import ErrorObservation
 from openhands.events.observation.mcp import MCPObservation
 from openhands.events.observation.observation import Observation
+from openhands.events.observation.playwright_mcp import (
+    PlaywrightMcpBrowserScreenshotObservation,
+)
 from openhands.events.serialization.event import truncate_content
 from openhands.utils.prompt import PromptManager, RepositoryInfo, RuntimeInfo
 
@@ -331,6 +334,17 @@ class ConversationMemory:
         elif isinstance(obs, MCPObservation):
             logger.warning(f'MCPObservation: {obs}')
             message = Message(role='user', content=[TextContent(text=obs.content)])
+        elif isinstance(obs, PlaywrightMcpBrowserScreenshotObservation):
+            text = obs.content
+
+            text += 'Image: Current webpage screenshot (Note that only visible portion of webpage is present in the screenshot. You may need to scroll to view the remaining portion of the web-page.)\n'
+            message = Message(
+                role='user',
+                content=[
+                    TextContent(text=obs.content),
+                    ImageContent(image_urls=[obs.url]),
+                ],
+            )
         elif isinstance(obs, IPythonRunCellObservation):
             text = obs.content
             # replace base64 images with a placeholder
