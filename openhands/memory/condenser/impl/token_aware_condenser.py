@@ -27,8 +27,8 @@ class TokenAwareCondenser(RollingCondenser):
     def __init__(self, llm: LLM, keep_first: int = 1, threshold: float = 0.85):
         if keep_first < 0:
             raise ValueError(f'keep_first ({keep_first}) cannot be negative')
-        if threshold < 1:
-            raise ValueError(f'threshold ({threshold}) must be positive')
+        if threshold < 0.0 or threshold > 1.0:
+            raise ValueError(f'threshold ({threshold}) must be between 0.0 and 1.0')
 
         self.keep_first = keep_first
         self.threshold = threshold
@@ -112,12 +112,11 @@ INTENT: Fix precision while maintaining FITS compliance"""
 
     def should_condense(self, view: View) -> bool:
         # Check if we exceed the token limit using the last eligible event
-        last_event = view[-1] if len(view) > 0 else None
         estimated_tokens = int(self.threshold * self.max_input_tokens)
-        logger.debug(f'Estimated tokens: {estimated_tokens}')
+        logger.debug(f'Estimated max tokens to keep: {estimated_tokens}')
 
-        if last_event and exceeds_token_limit(
-            last_event,
+        if exceeds_token_limit(
+            view,
             self.llm.metrics,
             estimated_tokens,
         ):

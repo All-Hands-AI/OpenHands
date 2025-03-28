@@ -1,3 +1,4 @@
+from openhands.core.logger import openhands_logger as logger
 from openhands.events.event import Event
 from openhands.llm.metrics import Metrics, TokenUsage
 
@@ -29,8 +30,8 @@ def get_token_usage_for_event(event: Event, metrics: Metrics) -> TokenUsage | No
     return None
 
 
-def get_token_usage_for_event_id(
-    events: list[Event], event_id: int, metrics: Metrics
+def estimate_token_usage_at_event_id(
+    events: list[Event], metrics: Metrics, event_id: int = -1
 ) -> TokenUsage | None:
     """
     Starting from the event with .id == event_id and moving backwards in `events`,
@@ -39,6 +40,9 @@ def get_token_usage_for_event_id(
       - tool_call_metadata.model_response.id
     Returns the first match found, or None if none is found.
     """
+    if event_id == -1:
+        event_id = len(events) - 1
+
     # Find the index of the event with the given id
     idx = next((i for i, e in enumerate(events) if e.id == event_id), None)
     if idx is None:
@@ -52,7 +56,7 @@ def get_token_usage_for_event_id(
     return None
 
 
-def exceeds_token_limit(event: Event, metrics: Metrics, max_tokens: int) -> bool:
+def exceeds_token_limit(events: list[Event], metrics: Metrics, max_tokens: int) -> bool:
     """
     Checks if the token usage for the given event exceeds the specified maximum token limit.
 
@@ -65,9 +69,13 @@ def exceeds_token_limit(event: Event, metrics: Metrics, max_tokens: int) -> bool
         bool: True if the event's token usage exceeds the limit, False otherwise
         (also returns False if no token usage record is found)
     """
-    usage = get_token_usage_for_event(event, metrics)
-    if usage is None:
+    usage = estimate_token_usage_at_event_id(events, metrics)
+    if usage is None or not usage.prompt_tokens:
         return False
 
-    # Compare against prompt tokens (input tokens)
-    return usage.prompt_tokens > max_tokens
+    logger.debug(f'Usage: {usage}')
+    logger.debug(
+        f'Comparing {usage.prompt_tokens + usage.completion_tokens} > {max_tokens}'
+    )
+    # Compare against prompt tokens (input tokens) + completion tokens (output tokens)
+    return usage.prompt_tokens + usage.completion_tokens > max_tokens
