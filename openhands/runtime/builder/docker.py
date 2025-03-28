@@ -48,6 +48,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         except FileNotFoundError:
             return False
 
+    # DockerRuntimeBuilder.build()
     def build(
         self,
         path: str,
@@ -126,6 +127,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         target_image_repo, target_image_source_tag = target_image_hash_name.split(':')
         target_image_tag = tags[1].split(':')[1] if len(tags) > 1 else None
 
+        # docker buildxのコマンドを作成
         buildx_cmd = [
             'docker' if not self.is_podman else 'podman',
             'buildx',
@@ -142,7 +144,6 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             buildx_cmd.append(f'--platform={platform}')
 
         cache_dir = '/tmp/.buildx-cache'
-        logger.info(f'[LOG] is_cache_usable: {self._is_cache_usable(cache_dir)}')
         if use_local_cache and self._is_cache_usable(cache_dir):
             buildx_cmd.extend(
                 [
@@ -151,10 +152,15 @@ class DockerRuntimeBuilder(RuntimeBuilder):
                 ]
             )
 
+        logger.info('[LOG] check-point 1-1')
         if extra_build_args:
             buildx_cmd.extend(extra_build_args)
 
+        logger.info('[LOG] check-point 1-2')
+
         buildx_cmd.append(path)  # must be last!
+
+        logger.info('[LOG] check-point 1-3')
 
         self.rolling_logger.start(
             f'================ {buildx_cmd[0].upper()} BUILD STARTED ================'
