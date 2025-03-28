@@ -178,6 +178,30 @@ class ConversationWindowCondenserConfig(BaseModel):
     model_config = ConfigDict(extra='forbid')
 
 
+class TokenAwareCondenserConfig(BaseModel):
+    """Configuration for TokenAwareCondenser."""
+
+    type: Literal['token_aware'] = Field('token_aware')
+    llm_config: LLMConfig = Field(
+        ..., description='Configuration for the LLM to use for condensing.'
+    )
+
+    # at least one event by default, because the best guess is that it's the user task
+    keep_first: int = Field(
+        default=1,
+        description='Number of initial events to always keep in history.',
+        ge=0,
+    )
+    token_threshold: float = Field(
+        default=0.85,
+        description='Maximum fraction of tokens used before triggering condensation.',
+        ge=0.0,
+        le=1.0,
+    )
+
+    model_config = {'extra': 'forbid'}
+
+
 # Type alias for convenience
 CondenserConfig = (
     NoOpCondenserConfig
@@ -190,6 +214,7 @@ CondenserConfig = (
     | StructuredSummaryCondenserConfig
     | CondenserPipelineConfig
     | ConversationWindowCondenserConfig
+    | TokenAwareCondenserConfig
 )
 
 
@@ -228,7 +253,7 @@ def condenser_config_from_toml_section(
 
         # Handle LLM config reference if needed
         if (
-            condenser_type in ('llm', 'llm_attention')
+            condenser_type in ('llm', 'llm_attention', 'token_aware')
             and 'llm_config' in data
             and isinstance(data['llm_config'], str)
         ):
@@ -293,6 +318,7 @@ def create_condenser_config(condenser_type: str, data: dict) -> CondenserConfig:
         'pipeline': CondenserPipelineConfig,
         'conversation_window': ConversationWindowCondenserConfig,
         'browser_output_masking': BrowserOutputCondenserConfig,
+        'token_aware': TokenAwareCondenserConfig,
     }
 
     if condenser_type not in condenser_classes:

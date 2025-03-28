@@ -33,6 +33,7 @@ from openhands.llm.llm import LLM
 from openhands.llm.llm_utils import check_tools
 from openhands.memory.condenser import Condenser
 from openhands.memory.condenser.condenser import Condensation, View
+from openhands.memory.condenser.impl.token_aware_condenser import TokenAwareCondenser
 from openhands.memory.conversation_memory import ConversationMemory
 from openhands.runtime.plugins import (
     AgentSkillsRequirement,
@@ -91,6 +92,14 @@ class CodeActAgent(Agent):
         self.conversation_memory = ConversationMemory(self.config, self.prompt_manager)
 
         self.condenser = Condenser.from_config(self.config.condenser)
+
+        # FIXME: we need to use the agent LLM's max_input_tokens
+        if (
+            isinstance(self.condenser, TokenAwareCondenser)
+            and self.llm.config.max_input_tokens
+        ):
+            self.condenser.max_input_tokens = self.llm.config.max_input_tokens
+
         logger.debug(f'Using condenser: {type(self.condenser)}')
 
     @property
@@ -182,7 +191,6 @@ class CodeActAgent(Agent):
         latest_user_message = state.get_last_user_message()
         if latest_user_message and latest_user_message.content.strip() == '/exit':
             return AgentFinishAction()
-
 
         # Condense the events from the state. If we get a view we'll pass those
         # to the conversation manager for processing, but if we get a condensation
