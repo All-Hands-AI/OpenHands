@@ -1,5 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { I18nKey } from "#/i18n/declaration";
 import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
 import { JoinWaitlistAnchor } from "./join-waitlist-anchor";
 import { WaitlistMessage } from "./waitlist-message";
@@ -46,7 +47,7 @@ export function WaitlistModal({
             className="w-full"
             startContent={<GitHubLogo width={20} height={20} />}
           >
-            {t("GITHUB$CONNECT_TO_GITHUB")}
+            {t(I18nKey.GITHUB$CONNECT_TO_GITHUB)}
           </BrandButton>
         )}
         {ghTokenIsSet && <JoinWaitlistAnchor />}
