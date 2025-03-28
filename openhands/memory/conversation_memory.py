@@ -347,8 +347,6 @@ class ConversationMemory:
             text = obs.get_agent_obs_text()
             if (
                 obs.trigger_by_action == ActionType.BROWSE_INTERACTIVE
-                and obs.set_of_marks is not None
-                and len(obs.set_of_marks) > 0
                 and enable_som_visual_browsing
                 and vision_is_active
             ):
@@ -357,14 +355,27 @@ class ConversationMemory:
                     role='user',
                     content=[
                         TextContent(text=text),
-                        ImageContent(image_urls=[obs.set_of_marks]),
+                        ImageContent(
+                            image_urls=[
+                                # show set of marks if it exists
+                                # otherwise, show raw screenshot when using vision-supported model
+                                obs.set_of_marks
+                                if obs.set_of_marks is not None
+                                and len(obs.set_of_marks) > 0
+                                else obs.screenshot
+                            ]
+                        ),
                     ],
+                )
+                logger.debug(
+                    f'Vision enabled for browsing, showing {"set of marks" if obs.set_of_marks and len(obs.set_of_marks) > 0 else "screenshot"}'
                 )
             else:
                 message = Message(
                     role='user',
                     content=[TextContent(text=text)],
                 )
+                logger.debug('Vision disabled for browsing, showing text')
         elif isinstance(obs, AgentDelegateObservation):
             text = truncate_content(
                 obs.outputs['content'] if 'content' in obs.outputs else '',
@@ -399,13 +410,16 @@ class ConversationMemory:
                 else:
                     repo_info = None
 
+                date = obs.date
+
                 if obs.runtime_hosts or obs.additional_agent_instructions:
                     runtime_info = RuntimeInfo(
                         available_hosts=obs.runtime_hosts,
                         additional_agent_instructions=obs.additional_agent_instructions,
+                        date=date,
                     )
                 else:
-                    runtime_info = None
+                    runtime_info = RuntimeInfo(date=date)
 
                 repo_instructions = (
                     obs.repo_instructions if obs.repo_instructions else ''
