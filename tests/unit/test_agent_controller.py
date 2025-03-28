@@ -1231,25 +1231,43 @@ def test_apply_conversation_window_basic(mock_event_stream, mock_agent):
     first_msg._source = EventSource.USER
     first_msg._id = 1
 
+    # Add agent question
+    agent_msg = MessageAction(
+        content='What task would you like me to perform?', wait_for_response=True
+    )
+    agent_msg._source = EventSource.AGENT
+    agent_msg._id = 2
+
+    # Add user response
+    user_response = MessageAction(
+        content='Please list all files and show me current directory',
+        wait_for_response=False,
+    )
+    user_response._source = EventSource.USER
+    user_response._id = 3
+
     cmd1 = CmdRunAction(command='ls')
-    cmd1._id = 2
-    obs1 = CmdOutputObservation(command='ls', content='file1.txt', command_id=2)
-    obs1._id = 3
-    obs1._cause = 2
+    cmd1._id = 4
+    obs1 = CmdOutputObservation(command='ls', content='file1.txt', command_id=4)
+    obs1._id = 5
+    obs1._cause = 4
 
     cmd2 = CmdRunAction(command='pwd')
-    cmd2._id = 4
-    obs2 = CmdOutputObservation(command='pwd', content='/home', command_id=4)
-    obs2._id = 5
-    obs2._cause = 4
+    cmd2._id = 6
+    obs2 = CmdOutputObservation(command='pwd', content='/home', command_id=6)
+    obs2._id = 7
+    obs2._cause = 6
 
-    events = [first_msg, cmd1, obs1, cmd2, obs2]
+    events = [first_msg, agent_msg, user_response, cmd1, obs1, cmd2, obs2]
 
     # Apply truncation
     truncated = controller._apply_conversation_window(events)
 
+    # Verify truncation occured
     # Should keep first user message and roughly half of other events
-    assert len(truncated) >= 3  # First message + at least one action-observation pair
+    assert (
+        3 <= len(truncated) < len(events)
+    )  # First message + at least one action-observation pair
     assert truncated[0] == first_msg  # First message always preserved
     assert controller.state.start_id == first_msg._id
     assert controller.state.truncation_id is not None

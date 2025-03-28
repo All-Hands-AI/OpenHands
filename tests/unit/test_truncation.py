@@ -81,64 +81,6 @@ class TestTruncation:
         assert len(controller.state.history) == history_len
         assert len(controller.get_trajectory()) == history_len
 
-    def test_context_window_exceeded_handling(self, mock_event_stream, mock_agent):
-        controller = AgentController(
-            agent=mock_agent,
-            event_stream=mock_event_stream,
-            max_iterations=10,
-            sid='test_truncation',
-            confirmation_mode=False,
-            headless_mode=True,
-        )
-
-        # Setup initial history with IDs
-        first_msg = MessageAction(content='Start task', wait_for_response=False)
-        first_msg._source = EventSource.USER
-        first_msg._id = 1
-
-        # Add agent question
-        agent_msg = MessageAction(
-            content='What task would you like me to perform?', wait_for_response=True
-        )
-        agent_msg._source = EventSource.AGENT
-        agent_msg._id = 2
-
-        # Add user response
-        user_response = MessageAction(
-            content='Please list all files and show me current directory',
-            wait_for_response=False,
-        )
-        user_response._source = EventSource.USER
-        user_response._id = 3
-
-        cmd1 = CmdRunAction(command='ls')
-        cmd1._id = 4
-        obs1 = CmdOutputObservation(command='ls', content='file1.txt', command_id=4)
-        obs1._id = 5
-        obs1._cause = 4
-
-        # Update mock event stream to include new messages
-        mock_event_stream.get_events.return_value = [
-            first_msg,
-            agent_msg,
-            user_response,
-            cmd1,
-            obs1,
-        ]
-        controller.state.history = [first_msg, agent_msg, user_response, cmd1, obs1]
-        original_history_len = len(controller.state.history)
-
-        # Simulate ContextWindowExceededError and truncation
-        controller.state.history = controller._apply_conversation_window(
-            controller.state.history
-        )
-
-        # Verify truncation occurred
-        assert len(controller.state.history) < original_history_len
-        assert controller.state.start_id == first_msg._id
-        assert controller.state.truncation_id is not None
-        assert controller.state.truncation_id > controller.state.start_id
-
     def test_history_restoration_after_truncation(self, mock_event_stream, mock_agent):
         controller = AgentController(
             agent=mock_agent,
