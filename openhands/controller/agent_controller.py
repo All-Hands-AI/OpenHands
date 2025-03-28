@@ -54,7 +54,7 @@ from openhands.events.action import (
     MessageAction,
     NullAction,
 )
-from openhands.events.action.agent import RecallAction
+from openhands.events.action.agent import CondensationAction, RecallAction
 from openhands.events.event import Event
 from openhands.events.observation import (
     AgentCondensationObservation,
@@ -305,6 +305,8 @@ class AgentController:
                 return True
             if isinstance(event, AgentDelegateAction):
                 return True
+            if isinstance(event, CondensationAction):
+                return True
             return False
         if isinstance(event, Observation):
             if (
@@ -479,8 +481,18 @@ class AgentController:
 
             if self.get_agent_state() != AgentState.RUNNING:
                 await self.set_agent_state_to(AgentState.RUNNING)
-        elif action.source == EventSource.AGENT and action.wait_for_response:
-            await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
+        elif action.source == EventSource.AGENT:
+            # Check if we need to trigger microagents based on agent message content
+            recall_action = RecallAction(
+                query=action.content, recall_type=RecallType.KNOWLEDGE
+            )
+            self._pending_action = recall_action
+            # This is source=AGENT because the agent message is the trigger for the microagent retrieval
+            self.event_stream.add_event(recall_action, EventSource.AGENT)
+
+            # If the agent is waiting for a response, set the appropriate state
+            if action.wait_for_response:
+                await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
 
     def _reset(self) -> None:
         """Resets the agent controller."""
