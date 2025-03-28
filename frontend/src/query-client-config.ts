@@ -4,6 +4,7 @@ import {
   MutationCache,
 } from "@tanstack/react-query";
 import i18next from "i18next";
+import { I18nKey } from "./i18n/declaration";
 import { retrieveAxiosErrorMessage } from "./utils/retrieve-axios-error-message";
 import { displayErrorToast } from "./utils/custom-toast-handlers";
 
@@ -15,7 +16,7 @@ export const queryClientConfig: QueryClientConfig = {
         const errorMessage = retrieveAxiosErrorMessage(error, i18next.t);
 
         if (!shownErrors.has(errorMessage)) {
-          displayErrorToast(errorMessage || i18next.t("ERROR$GENERIC"));
+          displayErrorToast(errorMessage || i18next.t(I18nKey.ERROR$GENERIC));
           shownErrors.add(errorMessage);
 
           setTimeout(() => {
