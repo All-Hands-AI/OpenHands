@@ -6,7 +6,7 @@ import {
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
-import { mapProvider } from "#/utils/map-provider";
+import { mapProvider, MAP_PROVIDER } from "#/utils/map-provider";
 import { VERIFIED_MODELS, VERIFIED_PROVIDERS } from "#/utils/verified-models";
 import { extractModelAndProvider } from "#/utils/extract-model-and-provider";
 
@@ -39,11 +39,16 @@ export function ModelSelector({
   }, [currentModel]);
 
   const handleChangeProvider = (provider: string) => {
-    setSelectedProvider(provider);
+    // Find the actual provider key from MAP_PROVIDER if a display name was provided
+    const providerKey = Object.entries(MAP_PROVIDER).find(
+      ([_, displayName]) => displayName === provider
+    )?.[0] || provider;
+
+    setSelectedProvider(providerKey);
     setSelectedModel(null);
 
-    const separator = models[provider]?.separator || "";
-    setLitellmId(provider + separator);
+    const separator = models[providerKey]?.separator || "";
+    setLitellmId(providerKey + separator);
   };
 
   const handleChangeModel = (model: string) => {

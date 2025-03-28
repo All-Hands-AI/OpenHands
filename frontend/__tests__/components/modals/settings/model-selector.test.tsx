@@ -133,4 +133,30 @@ describe("ModelSelector", () => {
     expect(screen.getByLabelText("LLM Provider")).toHaveValue("Azure");
     expect(screen.getByLabelText("LLM Model")).toHaveValue("ada");
   });
+
+  it("should handle Mistral AI provider selection correctly", async () => {
+    const mistralModels = {
+      mistral: {
+        separator: "/",
+        models: ["mistral-tiny", "mistral-small", "mistral-medium"],
+      },
+    };
+
+    const user = userEvent.setup();
+    render(<ModelSelector models={mistralModels} />);
+
+    const providerSelector = screen.getByLabelText("LLM Provider");
+    await user.click(providerSelector);
+
+    // Select Mistral AI (display name)
+    const mistralOption = screen.getByText("Mistral AI");
+    await user.click(mistralOption);
+
+    // Verify model dropdown is enabled and shows correct models
+    const modelSelector = screen.getByLabelText("LLM Model");
+    expect(modelSelector).not.toBeDisabled();
+
+    await user.click(modelSelector);
+    expect(screen.getByText("mistral-tiny")).toBeInTheDocument();
+  });
 });
