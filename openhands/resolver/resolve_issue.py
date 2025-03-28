@@ -13,6 +13,7 @@ from uuid import uuid4
 from pydantic import SecretStr
 from termcolor import colored
 
+import openhands
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig, AppConfig, LLMConfig, SandboxConfig
 from openhands.core.logger import openhands_logger as logger
