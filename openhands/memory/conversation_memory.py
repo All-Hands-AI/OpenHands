@@ -126,7 +126,7 @@ class ConversationMemory:
 
             messages += messages_to_add
 
-        return messages
+        return self.verify_messages(messages)
 
     def process_initial_messages(self, with_caching: bool = False) -> list[Message]:
         """Create the initial messages for the conversation."""
@@ -592,3 +592,34 @@ class ConversationMemory:
                 ):
                     return True
         return False
+
+    def verify_messages(self, messages: list[Message]) -> list[Message]:
+        """Verify that the messages are valid and fix them if not.
+
+        Returns:
+            The verified messages
+
+        Args:
+            messages_to_check: The list of messages to verify
+        """
+        # Create a new list to store valid messages
+        valid_messages = []
+
+        for message in messages:
+            if message.role == 'user':
+                # Create a new list of valid content items
+                valid_content = []
+                for content in message.content:
+                    if isinstance(content, TextContent) and len(content.text) == 0:
+                        continue  # Skip empty text content
+                    valid_content.append(content)
+
+                # Only add the message if it has valid content
+                if valid_content:
+                    message.content = valid_content
+                    valid_messages.append(message)
+            else:
+                # Non-user messages are always valid
+                valid_messages.append(message)
+
+        return valid_messages
