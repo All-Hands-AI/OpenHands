@@ -564,7 +564,7 @@ class Runtime(FileEditRuntimeMixin):
         pass
 
     @abstractmethod
-    def mcp(self, action: McpAction) -> Observation:
+    def call_tool_mcp(self, action: McpAction) -> Observation:
         pass
 
     # ====================================================================

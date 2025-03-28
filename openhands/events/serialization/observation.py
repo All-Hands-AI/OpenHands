@@ -27,6 +27,9 @@ from openhands.events.observation.files import (
 )
 from openhands.events.observation.mcp import MCPObservation
 from openhands.events.observation.observation import Observation
+from openhands.events.observation.playwright_mcp import (
+    PlaywrightMcpBrowserScreenshotObservation,
+)
 from openhands.events.observation.reject import UserRejectObservation
 from openhands.events.observation.success import SuccessObservation
 
@@ -47,6 +50,7 @@ observations = (
     AgentThinkObservation,
     RecallObservation,
     MCPObservation,
+    PlaywrightMcpBrowserScreenshotObservation,
 )
 
 OBSERVATION_TYPE_TO_CLASS = {

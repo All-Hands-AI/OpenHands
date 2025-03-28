@@ -13,7 +13,6 @@ from openhands.events.action import (
 )
 from openhands.events.event import Event
 from openhands.llm.llm import LLM
-from openhands.mcp.mcp_agent import MCPAgent, convert_mcp_agents_to_tools
 from openhands.memory.condenser import Condenser
 from openhands.memory.condenser.condenser import Condensation, View
 from openhands.memory.conversation_memory import ConversationMemory
@@ -54,12 +53,7 @@ class CodeActAgent(Agent):
         JupyterRequirement(),
     ]
 
-    def __init__(
-        self,
-        llm: LLM,
-        config: AgentConfig,
-        mcp_agents: list[MCPAgent] | None = None,
-    ) -> None:
+    def __init__(self, llm: LLM, config: AgentConfig, mcp_tools: list[dict]) -> None:
         """Initializes a new instance of the CodeActAgent class.
 
         Parameters:
@@ -68,7 +62,7 @@ class CodeActAgent(Agent):
         super().__init__(llm, config)
         self.pending_actions: deque[Action] = deque()
         self.reset()
-        logger.info(f'MCP agents: {mcp_agents}')
+        logger.debug(f'MCP tools: {mcp_tools}')
 
         built_in_tools = codeact_function_calling.get_tools(
             codeact_enable_browsing=self.config.codeact_enable_browsing,
@@ -78,14 +72,6 @@ class CodeActAgent(Agent):
         )
 
         # initialize MCP agents
-        self.mcp_agents = mcp_agents if mcp_agents is not None else []
-        logger.info(f'MCP agents: {self.mcp_agents}')
-        try:
-            mcp_tools = convert_mcp_agents_to_tools(self.mcp_agents)
-            logger.info(f'MCP tools: {mcp_tools}')
-        except Exception as e:
-            logger.error(f"Error converting MCP agents to tools: {e}")
-            mcp_tools = []
         self.tools = built_in_tools + mcp_tools
         
         # Retrieve the enabled tools
@@ -155,9 +141,9 @@ class CodeActAgent(Agent):
         # log to litellm proxy if possible
         params['extra_body'] = {'metadata': state.to_llm_metadata(agent_name=self.name)}
         response = self.llm.completion(**params)
-        logger.error(f'Response from LLM: {response}')
+        logger.debug(f'Response from LLM: {response}')
         actions = codeact_function_calling.response_to_actions(response)
-        logger.error(f'Actions after response_to_actions: {actions}')
+        logger.debug(f'Actions after response_to_actions: {actions}')
         for action in actions:
             self.pending_actions.append(action)
         return self.pending_actions.popleft()
