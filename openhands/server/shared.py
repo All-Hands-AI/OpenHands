@@ -11,6 +11,7 @@ from openhands.server.conversation_manager.conversation_manager import (
 from openhands.server.monitoring import MonitoringListener
 from openhands.storage import get_file_store
 from openhands.storage.conversation.conversation_store import ConversationStore
+from openhands.storage.conversation.conversation_validator import ConversationValidator
 from openhands.storage.settings.settings_store import SettingsStore
 from openhands.utils.import_utils import get_impl
 
@@ -55,3 +56,9 @@ ConversationStoreImpl = get_impl(
     ConversationStore,  # type: ignore
     server_config.conversation_store_class,
 )
+
+conversation_validator_cls = os.environ.get(
+    'OPENHANDS_CONVERSATION_VALIDATOR_CLS',
+    'openhands.storage.conversation.conversation_validator.ConversationValidator',
+)
+ConversationValidatorImpl = get_impl(ConversationValidator, conversation_validator_cls)

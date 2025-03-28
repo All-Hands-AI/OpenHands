@@ -17,13 +17,11 @@ from openhands.events.observation.agent import (
 from openhands.events.serialization import event_to_dict
 from openhands.events.stream import AsyncEventStreamWrapper
 from openhands.server.shared import (
+    ConversationValidatorImpl,
     SettingsStoreImpl,
     config,
     conversation_manager,
     sio,
-)
-from openhands.storage.conversation.conversation_validator import (
-    ConversationValidatorImpl,
 )
 
 
