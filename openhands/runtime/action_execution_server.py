@@ -17,13 +17,14 @@ import time
 import traceback
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Optional
 from zipfile import ZipFile
 
 from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.security import APIKeyHeader
+from mcp.types import ImageContent
 from openhands_aci.editor.editor import OHEditor
 from openhands_aci.editor.exceptions import ToolError
 from openhands_aci.editor.results import ToolResult
@@ -62,6 +63,7 @@ from openhands.events.observation.playwright_mcp import (
     PlaywrightMcpBrowserScreenshotObservation,
 )
 from openhands.events.serialization import event_from_dict, event_to_dict
+from openhands.mcp.mcp_base import ToolResult as MCPToolResult
 from openhands.runtime.browser import browse
 from openhands.runtime.browser.browser_env import BrowserEnv
 from openhands.runtime.plugins import ALL_PLUGINS, JupyterPlugin, Plugin, VSCodePlugin
@@ -78,7 +80,6 @@ class ActionRequest(BaseModel):
     action: dict
     sse_mcp_config: Optional[list[str]] = None
     stdio_mcp_config: Optional[tuple[list[str], list[list[str]]]] = None
-    caller_platform: str = 'Linux'
 
 
 ROOT_GID = 0
@@ -204,7 +205,6 @@ class ActionExecutor:
         # update the sse_mcp_servers and stdio_mcp_config to prepare for MCP action if needed
         self.sse_mcp_servers = action_request.sse_mcp_config
         self.stdio_mcp_config = action_request.stdio_mcp_config
-        self.caller_platform = action_request.caller_platform
 
     async def _init_browser_async(self):
         """Initialize the browser asynchronously."""
@@ -319,9 +319,7 @@ class ActionExecutor:
     async def run_action(self, action) -> Observation:
         async with self.lock:
             action_type = action.action
-            logger.warning(f'Running action:\n{action}')
             observation = await getattr(self, action_type)(action)
-            logger.warning(f'Action output:\n{observation}')
             return observation
 
     async def run(
@@ -537,36 +535,13 @@ class ActionExecutor:
         if not mcp_server_urls and not commands:
             raise ValueError('No MCP servers or stdio MCP config found')
 
-        if mcp_server_urls:
-            # Validate that all MCP server URLs are valid URLs
-            for i, server in enumerate(mcp_server_urls):
-                if not (server.startswith('http://') or server.startswith('https://')):
-                    raise ValueError(
-                        f'Invalid MCP server URL format: {server}. URLs must start with http:// or https://'
-                    )
-
-                logger.debug(f'Runtime mode: {self.runtime_mode}')
-                logger.debug(f'Caller platform: {self.caller_platform}')
-                # Convert URLs to use host.docker.internal for caller platform is macOS
-                if self.runtime_mode == 'docker' and self.caller_platform == 'Darwin':
-                    # Extract the path and port from the URL
-                    url_parts = server.split('://', 1)[1].split('/', 1)
-                    host_port = url_parts[0]
-                    path = url_parts[1] if len(url_parts) > 1 else ''
-                    # Replace IP with host.docker.internal but keep port
-                    port = host_port.split(':')[1] if ':' in host_port else ''
-                    docker_url = f'http://host.docker.internal:{port}/{path}'
-                    mcp_server_urls[i] = docker_url
-                else:
-                    mcp_server_urls[i] = server
-
-        logger.info(f'SSE MCP servers: {mcp_server_urls}')
+        logger.debug(f'SSE MCP servers: {mcp_server_urls}')
         mcp_agents = await create_mcp_agents(mcp_server_urls, commands, args)
-        logger.info(f'MCP action received: {action}')
+        logger.debug(f'MCP action received: {action}')
         # Find the MCP agent that has the matching tool name
         matching_agent = None
-        logger.info(f'MCP agents: {mcp_agents}')
-        logger.info(f'MCP action name: {action.name}')
+        logger.debug(f'MCP agents: {mcp_agents}')
+        logger.debug(f'MCP action name: {action.name}')
         for agent in mcp_agents:
             if action.name in [tool.name for tool in agent.mcp_clients.tools]:
                 matching_agent = agent
@@ -588,50 +563,27 @@ class ActionExecutor:
         if action.name == 'browser_screenshot':
             return self.playwright_mcp_browser_screenshot(action, response)
 
-        return MCPObservation(content=f'MCP action received and processed: {response}')
+        return MCPObservation(content=f'MCP result:{response}')
 
-    # TODO: Implement this
     def playwright_mcp_browser_screenshot(
-        self, action: McpAction, response: Dict[str, Any]
+        self, action: McpAction, response: MCPToolResult
     ) -> Observation:
-        if not isinstance(response, dict) or 'content' not in response:
-            raise TypeError("response must be a dict with a 'content' key")
-        if not isinstance(response['content'], list):
-            raise TypeError("response['content'] must be a list")
-
-        # Optionally, check each item in the list
-        for item in response['content']:
-            if not isinstance(item, dict) or not all(
-                k in item for k in ('type', 'data', 'mimeType')
-            ):
-                raise TypeError(
-                    "Each item in response['content'] must be a dict with 'type', 'data', and 'mimeType' keys"
-                )
-            if not all(isinstance(item[k], str) for k in ('type', 'data', 'mimeType')):
-                raise TypeError("'type', 'data', and 'mimeType' must be strings")
-
         # example response:
         """
         {
-            "content": [
-                {
-                    "type": "image",
-                    "data": "/9j/4AA...",
-                    "mimeType": "image/jpeg",
-                    "url": "https://www.google.com"
-                }
-        ]
+            "type": "image",
+            "data": "image/jpeg;base64,/9j/4AA...",
+            "mimeType": "image/jpeg",
+            "url": "https://www.google.com"
         }
         """
-        if len(response['content']) > 0:
-            return PlaywrightMcpBrowserScreenshotObservation(
-                content=json.dumps(response),
-                url=response['content'][0]['url'],
-                trigger_by_action=action.name,
-                screenshot=response['content'][0]['data'],
-            )
-        else:
-            raise ValueError('No content found in response')
+        screenshot_content: ImageContent = response.output
+        return PlaywrightMcpBrowserScreenshotObservation(
+            content=f'{response}',
+            url=screenshot_content.url if screenshot_content.url is not None else '',
+            trigger_by_action=action.name,
+            screenshot=f'data:image/png;base64,{screenshot_content.data}',
+        )
 
     def close(self):
         self.memory_monitor.stop_monitoring()
