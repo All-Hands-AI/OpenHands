@@ -150,13 +150,13 @@ class BrowsingAgent(Agent):
         last_obs = None
         last_action = None
 
-        if EVAL_MODE and len(state.history) == 1:
+        if EVAL_MODE and len(state.view) == 1:
             # for webarena and miniwob++ eval, we need to retrieve the initial observation already in browser env
             # initialize and retrieve the first observation by issuing an noop OP
             # For non-benchmark browsing, the browser env starts with a blank page, and the agent is expected to first navigate to desired websites
             return BrowseInteractiveAction(browser_actions='noop()')
 
-        for event in state.history:
+        for event in state.view:
             if isinstance(event, BrowseInteractiveAction):
                 prev_actions.append(event.browser_actions)
                 last_action = event

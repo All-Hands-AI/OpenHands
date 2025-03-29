@@ -57,7 +57,6 @@ from openhands.events.action import (
 from openhands.events.action.agent import CondensationAction, RecallAction
 from openhands.events.event import Event
 from openhands.events.observation import (
-    AgentCondensationObservation,
     AgentDelegateObservation,
     AgentStateChangedObservation,
     ErrorObservation,
@@ -1046,7 +1045,10 @@ class AgentController:
 
     def _handle_long_context_error(self) -> None:
         # When context window is exceeded, keep roughly half of agent interactions
-        self.state.history = self._apply_conversation_window(self.state.history)
+        kept_event_ids = {
+            e.id for e in self._apply_conversation_window(self.state.history)
+        }
+        forgotten_event_ids = {e.id for e in self.state.history} - kept_event_ids
 
         # Save the ID of the first event in our truncated history for future reloading
         if self.state.history:
@@ -1054,8 +1056,9 @@ class AgentController:
 
         # Add an error event to trigger another step by the agent
         self.event_stream.add_event(
-            AgentCondensationObservation(
-                content='Trimming prompt to meet context window limitations'
+            CondensationAction(
+                forgotten_events_start_id=min(forgotten_event_ids),
+                forgotten_events_end_id=max(forgotten_event_ids),
             ),
             EventSource.AGENT,
         )
