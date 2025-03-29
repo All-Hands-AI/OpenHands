@@ -84,8 +84,11 @@ export function handleObservationMessage(message: ObservationMessage) {
             observation: "recall" as const,
             extras: {
               ...(message.extras || {}),
-              recall_type: (message.extras?.recall_type as any) || "knowledge"
-            }
+              recall_type:
+                (message.extras?.recall_type as
+                  | "workspace_context"
+                  | "knowledge") || "knowledge",
+            },
           }),
         );
         break;
