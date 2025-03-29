@@ -238,6 +238,7 @@ class AgentController:
             err_id = ''
             if isinstance(e, AuthenticationError):
                 err_id = 'STATUS$ERROR_LLM_AUTHENTICATION'
+                self._last_error_reason = 'LLM authentication error'
             elif isinstance(
                 e,
                 (
@@ -247,12 +248,14 @@ class AgentController:
                 ),
             ):
                 err_id = 'STATUS$ERROR_LLM_SERVICE_UNAVAILABLE'
+                self._last_error_reason = 'LLM service is unavailable'
             elif isinstance(e, InternalServerError):
                 err_id = 'STATUS$ERROR_LLM_INTERNAL_SERVER_ERROR'
+                self._last_error_reason = 'LLM internal server error'
             elif isinstance(e, BadRequestError) and 'ExceededBudget' in str(e):
                 err_id = 'STATUS$ERROR_LLM_OUT_OF_CREDITS'
                 # Set error reason for budget exceeded
-                self._last_error_reason = 'Budget exceeded: Out of credits'
+                self._last_error_reason = 'budget exceeded (out of credits)'
                 # Use ERROR state with reason instead of separate state
                 await self.set_agent_state_to(AgentState.ERROR)
                 return
