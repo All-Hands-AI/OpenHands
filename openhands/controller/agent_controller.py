@@ -246,6 +246,7 @@ class AgentController:
                 err_id = 'STATUS$ERROR_LLM_INTERNAL_SERVER_ERROR'
             elif isinstance(e, BadRequestError) and 'ExceededBudget' in str(e):
                 err_id = 'STATUS$ERROR_LLM_OUT_OF_CREDITS'
+                await self.set_agent_state_to(AgentState.BUDGET_EXCEEDED)
             elif isinstance(e, RateLimitError):
                 await self.set_agent_state_to(AgentState.RATE_LIMITED)
                 return

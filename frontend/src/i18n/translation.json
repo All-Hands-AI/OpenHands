@@ -2078,6 +2078,21 @@
         "tr": "Ajan hız sınırına ulaştı",
         "ja": "エージェントがレート制限中"
     },
+    "CHAT_INTERFACE$AGENT_BUDGET_EXCEEDED_MESSAGE": {
+        "en": "Budget Exceeded",
+        "zh-CN": "预算已超出",
+        "zh-TW": "預算已超出",
+        "de": "Budget überschritten",
+        "ko-KR": "예산 초과",
+        "no": "Budsjett overskredet",
+        "it": "Budget superato",
+        "pt": "Orçamento excedido",
+        "es": "Presupuesto excedido",
+        "ar": "تجاوز الميزانية",
+        "fr": "Budget dépassé",
+        "tr": "Bütçe aşıldı",
+        "ja": "予算超過"
+    },
     "CHAT_INTERFACE$AGENT_PAUSED_MESSAGE": {
         "en": "Agent has paused.",
         "de": "Agent pausiert.",
