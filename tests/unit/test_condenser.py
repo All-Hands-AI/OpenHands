@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Any, Callable, Iterable
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -15,17 +15,24 @@ from openhands.core.config.condenser_config import (
     ObservationMaskingCondenserConfig,
     RecentEventsCondenserConfig,
     StructuredSummaryCondenserConfig,
+    TokenAwareCondenserConfig,
 )
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.message import Message, TextContent
 from openhands.core.schema.action import ActionType
+from openhands.events.action.agent import CondensationAction
 from openhands.events.event import Event, EventSource
 from openhands.events.observation import BrowserOutputObservation
 from openhands.events.observation.agent import AgentCondensationObservation
 from openhands.events.observation.observation import Observation
 from openhands.llm import LLM
 from openhands.memory.condenser import Condenser
-from openhands.memory.condenser.condenser import Condensation, RollingCondenser, View
+from openhands.memory.condenser.condenser import (
+    CONDENSER_METADATA_KEY,
+    Condensation,
+    RollingCondenser,
+    View,
+)
 from openhands.memory.condenser.impl import (
     AmortizedForgettingCondenser,
     BrowserOutputCondenser,
@@ -36,6 +43,7 @@ from openhands.memory.condenser.impl import (
     ObservationMaskingCondenser,
     RecentEventsCondenser,
     StructuredSummaryCondenser,
+    TokenAwareCondenser,
 )
 from openhands.memory.condenser.impl.pipeline import CondenserPipeline
 
@@ -620,6 +628,7 @@ def test_llm_attention_condenser_handles_keep_first_events(mock_llm):
         assert view[:keep_first] == events[: min(keep_first, i + 1)]
 
 
+<<<<<<< HEAD
 def test_structured_summary_condenser_from_config():
     """Test that StructuredSummaryCondenser objects can be made from config."""
     config = StructuredSummaryCondenserConfig(
@@ -629,10 +638,21 @@ def test_structured_summary_condenser_from_config():
             model='gpt-4o',
             api_key='test_key',
             caching_prompt=True,
+=======
+def test_token_aware_condenser_from_config():
+    """Test that TokenAwareCondenser objects can be made from config."""
+    config = TokenAwareCondenserConfig(
+        threshold=0.85,
+        keep_first=2,
+        llm_config=LLMConfig(
+            model='gpt-4o',
+            api_key='test_key',
+>>>>>>> ca7d645f0 (fix init, add tests)
         ),
     )
     condenser = Condenser.from_config(config)
 
+<<<<<<< HEAD
     assert isinstance(condenser, StructuredSummaryCondenser)
     assert condenser.llm.config.model == 'gpt-4o'
     assert condenser.llm.config.api_key.get_secret_value() == 'test_key'
@@ -780,3 +800,159 @@ def test_condenser_pipeline_chains_sub_condensers():
 
         for event in browser_outputs[-ATTENTION_WINDOW:]:
             assert 'Content omitted' not in str(event)
+=======
+    assert isinstance(condenser, TokenAwareCondenser)
+    assert condenser.llm.config.model == 'gpt-4o'
+    assert condenser.llm.config.api_key.get_secret_value() == 'test_key'
+    assert condenser.threshold == 0.85
+    assert condenser.keep_first == 2
+
+
+def test_token_aware_condenser_invalid_config():
+    """Test that TokenAwareCondenser raises error when invalid parameters are provided."""
+    # Test negative keep_first
+    pytest.raises(ValueError, TokenAwareCondenser, llm=MagicMock(), keep_first=-1)
+
+    # Test threshold < 0
+    pytest.raises(ValueError, TokenAwareCondenser, llm=MagicMock(), threshold=-0.1)
+
+    # Test threshold > 1
+    pytest.raises(ValueError, TokenAwareCondenser, llm=MagicMock(), threshold=1.1)
+
+
+@patch('openhands.core.message_utils.exceeds_token_limit')
+def test_token_aware_condenser_should_condense(mock_exceeds_token_limit, mock_llm):
+    """Test that TokenAwareCondenser correctly decides when to condense based on token metrics."""
+    # Set up condenser with mock LLM
+    condenser = TokenAwareCondenser(llm=mock_llm, threshold=0.85)
+    condenser.agent_llm = mock_llm  # This is typically set when used in an agent
+
+    events = [create_test_event(f'Event {i}', id=i) for i in range(10)]
+    view = View(events=events)
+
+    # Test case 1: Below token limit
+    mock_exceeds_token_limit.return_value = False
+    assert condenser.should_condense(view) is False
+
+    # Test case 2: Exceeds token limit
+    mock_exceeds_token_limit.return_value = True
+    assert condenser.should_condense(view) is True
+
+    # Verify exceeds_token_limit was called with the expected arguments
+    mock_exceeds_token_limit.assert_called_with(
+        view.events, mock_llm.metrics, int(0.85 * condenser.max_input_tokens)
+    )
+
+
+def test_token_aware_condenser_get_condensation(mock_llm):
+    """Test that TokenAwareCondenser creates proper condensation."""
+    keep_first = 2
+    condenser = TokenAwareCondenser(llm=mock_llm, keep_first=keep_first)
+
+    # Create test events
+    events = [create_test_event(f'Event {i}', id=i) for i in range(10)]
+    view = View(events=events)
+
+    # Set LLM mock response
+    mock_llm.set_mock_response_content('Summarized content')
+
+    # Get condensation
+    condensation = condenser.get_condensation(view)
+
+    # Verify result structure
+    assert isinstance(condensation, Condensation)
+    assert isinstance(condensation.action, CondensationAction)
+    assert condensation.action.summary == 'Summarized content'
+    assert condensation.action.summary_offset == keep_first
+
+    # Verify forgotten events (all events except first two and last three)
+    # Target size is len(view) // 2 = 5
+    # Keep first 2, keep 1 for summary, keep last (5-2-1) = 2 events
+    # Forgotten events should be events[2:8] (IDs 2-7)
+    assert condensation.action.forgotten_events_start_id == 2
+    assert condensation.action.forgotten_events_end_id == 7
+
+    # Verify LLM was called
+    assert mock_llm.completion.call_count == 1
+
+
+@patch('openhands.core.message_utils.exceeds_token_limit')
+def test_token_aware_condenser_integration(mock_exceeds_token_limit, mock_llm):
+    """Integration test for TokenAwareCondenser's full condensation cycle."""
+    condenser = TokenAwareCondenser(llm=mock_llm, keep_first=2)
+    condenser.agent_llm = mock_llm
+
+    events = [create_test_event(f'Event {i}', id=i) for i in range(20)]
+
+    # Set mock responses
+    mock_llm.set_mock_response_content('Summary of events')
+
+    # Mock the token limit check to trigger condensation after a certain point
+    def side_effect(events, metrics, max_tokens):
+        # Only trigger condensation when we have more than 10 events
+        return len(events) > 10
+
+    mock_exceeds_token_limit.side_effect = side_effect
+
+    harness = RollingCondenserTestHarness(condenser)
+
+    # Track if we got a condensation
+    condensation_occurred = False
+
+    for i, result in enumerate(harness.views(events)):
+        if i <= 10:
+            # Before threshold, should just return view
+            assert len(result) == i + 1
+        else:
+            # After threshold, a condensation should have occurred,
+            # resulting in a view containing:
+            # - The first 2 events (keep_first)
+            # - The condensation summary event
+            # - The most recent events (total size is target_size = len(view) // 2)
+            condensation_occurred = True
+
+            # First two events should be preserved
+            assert result[0] == events[0]
+            assert result[1] == events[1]
+
+            # Third event should be the summary
+            assert isinstance(result[2], AgentCondensationObservation)
+
+    # Make sure condensation happened
+    assert condensation_occurred
+
+    # Verify LLM was called for the summary
+    assert mock_llm.completion.call_count > 0
+
+
+def test_token_aware_condenser_metadata(mock_llm):
+    """Test that TokenAwareCondenser correctly tracks metadata."""
+    condenser = TokenAwareCondenser(llm=mock_llm)
+
+    # Set up mock response and metrics
+    mock_response = MagicMock()
+    mock_response.model_dump.return_value = {'response': 'data'}
+    mock_llm.completion.return_value = mock_response
+    mock_llm.metrics.get.return_value = {'metrics': 'data'}
+
+    # Create minimal state and events
+    mock_state = MagicMock()
+    mock_state.extra_data = {}
+    mock_state.history = [create_test_event(f'Event {i}', id=i) for i in range(10)]
+
+    # Mock should_condense to force condensation
+    condenser.should_condense = MagicMock(return_value=True)
+
+    # Process the history
+    condenser.condensed_history(mock_state)
+
+    # Verify metadata was written to state
+    assert CONDENSER_METADATA_KEY in mock_state.extra_data
+    assert len(mock_state.extra_data[CONDENSER_METADATA_KEY]) == 1
+
+    metadata = mock_state.extra_data[CONDENSER_METADATA_KEY][0]
+    assert 'response' in metadata
+    assert 'metrics' in metadata
+    assert metadata['response'] == {'response': 'data'}
+    assert metadata['metrics'] == {'metrics': 'data'}
+>>>>>>> ca7d645f0 (fix init, add tests)
