@@ -162,6 +162,9 @@ class AgentController:
 
         # replay-related
         self._replay_manager = ReplayManager(replay_events)
+        
+        # Error tracking
+        self._last_error_reason = ""
 
     async def close(self, set_stop_state=True) -> None:
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream.
