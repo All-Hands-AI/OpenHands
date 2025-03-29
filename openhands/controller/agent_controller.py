@@ -163,9 +163,6 @@ class AgentController:
         # replay-related
         self._replay_manager = ReplayManager(replay_events)
 
-        # Error tracking
-        self._last_error_reason = ''
-
     async def close(self, set_stop_state=True) -> None:
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream.
 
@@ -232,13 +229,13 @@ class AgentController:
     ):
         """React to an exception by setting the agent state to error and sending a status message."""
         # Store the error reason before setting the agent state
-        self._last_error_reason = f'{type(e).__name__}: {str(e)}'
+        self.state.last_error = f'{type(e).__name__}: {str(e)}'
 
         if self.status_callback is not None:
             err_id = ''
             if isinstance(e, AuthenticationError):
                 err_id = 'STATUS$ERROR_LLM_AUTHENTICATION'
-                self._last_error_reason = 'LLM authentication error'
+                self.state.last_error = 'LLM authentication error'
             elif isinstance(
                 e,
                 (
@@ -248,21 +245,21 @@ class AgentController:
                 ),
             ):
                 err_id = 'STATUS$ERROR_LLM_SERVICE_UNAVAILABLE'
-                self._last_error_reason = 'LLM service is unavailable'
+                self.state.last_error = 'LLM service is unavailable'
             elif isinstance(e, InternalServerError):
                 err_id = 'STATUS$ERROR_LLM_INTERNAL_SERVER_ERROR'
-                self._last_error_reason = 'LLM internal server error'
+                self.state.last_error = 'LLM internal server error'
             elif isinstance(e, BadRequestError) and 'ExceededBudget' in str(e):
                 err_id = 'STATUS$ERROR_LLM_OUT_OF_CREDITS'
                 # Set error reason for budget exceeded
-                self._last_error_reason = 'budget exceeded (out of credits)'
+                self.state.last_error = 'budget exceeded (out of credits)'
                 # Use ERROR state with reason instead of separate state
                 await self.set_agent_state_to(AgentState.ERROR)
                 return
             elif isinstance(e, RateLimitError):
                 await self.set_agent_state_to(AgentState.RATE_LIMITED)
                 return
-            self.status_callback('error', err_id, self._last_error_reason)
+            self.status_callback('error', err_id, self.state.last_error)
 
         # Set the agent state to ERROR after storing the reason
         await self.set_agent_state_to(AgentState.ERROR)
@@ -601,8 +598,8 @@ class AgentController:
 
         # Create observation with reason field if it's an error state
         reason = ''
-        if new_state == AgentState.ERROR and hasattr(self, '_last_error_reason'):
-            reason = getattr(self, '_last_error_reason', '')
+        if new_state == AgentState.ERROR:
+            reason = self.state.last_error
 
         self.event_stream.add_event(
             AgentStateChangedObservation('', self.state.agent_state, reason),
