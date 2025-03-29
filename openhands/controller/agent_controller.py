@@ -228,7 +228,9 @@ class AgentController:
         e: Exception,
     ):
         """React to an exception by setting the agent state to error and sending a status message."""
-        await self.set_agent_state_to(AgentState.ERROR)
+        # Store the error reason before setting the agent state
+        self._last_error_reason = f'{type(e).__name__}: {str(e)}'
+
         if self.status_callback is not None:
             err_id = ''
             if isinstance(e, AuthenticationError):
@@ -247,10 +249,14 @@ class AgentController:
             elif isinstance(e, BadRequestError) and 'ExceededBudget' in str(e):
                 err_id = 'STATUS$ERROR_LLM_OUT_OF_CREDITS'
                 await self.set_agent_state_to(AgentState.BUDGET_EXCEEDED)
+                return
             elif isinstance(e, RateLimitError):
                 await self.set_agent_state_to(AgentState.RATE_LIMITED)
                 return
-            self.status_callback('error', err_id, type(e).__name__ + ': ' + str(e))
+            self.status_callback('error', err_id, self._last_error_reason)
+
+        # Set the agent state to ERROR after storing the reason
+        await self.set_agent_state_to(AgentState.ERROR)
 
     def step(self):
         asyncio.create_task(self._step_with_exception_handling())
@@ -583,8 +589,14 @@ class AgentController:
             self.event_stream.add_event(self._pending_action, EventSource.AGENT)
 
         self.state.agent_state = new_state
+
+        # Create observation with reason field if it's an error state
+        reason = ''
+        if new_state == AgentState.ERROR and hasattr(self, '_last_error_reason'):
+            reason = getattr(self, '_last_error_reason', '')
+
         self.event_stream.add_event(
-            AgentStateChangedObservation('', self.state.agent_state),
+            AgentStateChangedObservation('', self.state.agent_state, reason),
             EventSource.ENVIRONMENT,
         )
 
