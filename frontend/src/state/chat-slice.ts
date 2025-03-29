@@ -152,35 +152,35 @@ export const chatSlice = createSlice({
       // Special handling for RecallObservation - create a new message instead of updating an existing one
       if (observationID === "recall") {
         const recallObs = observation.payload as RecallObservation;
-        let content = `**Recall Observation**\n\nType: ${recallObs.extras.recall_type}\n\n`;
+        let content = `**Recall Observation**`;
 
         // Handle workspace context
         if (recallObs.extras.recall_type === "workspace_context") {
           if (recallObs.extras.repo_name) {
-            content += `**Repository:** ${recallObs.extras.repo_name}\n`;
+            content += `\n\n**Repository:** ${recallObs.extras.repo_name}`;
           }
           if (recallObs.extras.repo_directory) {
-            content += `**Directory:** ${recallObs.extras.repo_directory}\n`;
+            content += `\n\n**Directory:** ${recallObs.extras.repo_directory}`;
           }
           if (recallObs.extras.date) {
-            content += `**Date:** ${recallObs.extras.date}\n`;
+            content += `\n\n**Date:** ${recallObs.extras.date}`;
           }
           if (
             recallObs.extras.runtime_hosts &&
             Object.keys(recallObs.extras.runtime_hosts).length > 0
           ) {
-            content += `**Runtime Hosts:**\n`;
+            content += `\n\n**Available Runtime Hosts for Web Apps:**`;
             for (const [host, port] of Object.entries(
               recallObs.extras.runtime_hosts,
             )) {
-              content += `- ${host} (port ${port})\n`;
+              content += `\n\n- ${host} (port ${port})`;
             }
           }
           if (recallObs.extras.repo_instructions) {
-            content += `\n**Repository Instructions:**\n${recallObs.extras.repo_instructions}\n`;
+            content += `\n\n**Repository Instructions:**\n\n${recallObs.extras.repo_instructions}`;
           }
           if (recallObs.extras.additional_agent_instructions) {
-            content += `\n**Additional Instructions:**\n${recallObs.extras.additional_agent_instructions}\n`;
+            content += `\n\n**Additional Instructions:**\n\n${recallObs.extras.additional_agent_instructions}`;
           }
         }
 
@@ -189,9 +189,9 @@ export const chatSlice = createSlice({
           recallObs.extras.microagent_knowledge &&
           recallObs.extras.microagent_knowledge.length > 0
         ) {
-          content += `\n**Microagent Knowledge:**\n`;
+          content += `\n\n**Microagent Knowledge:**`;
           for (const knowledge of recallObs.extras.microagent_knowledge) {
-            content += `\n### ${knowledge.name} (triggered by: ${knowledge.trigger})\n${knowledge.content}\n`;
+            content += `\n\n**${knowledge.name}** (triggered by: ${knowledge.trigger})\n\n${knowledge.content}\n`;
           }
         }
 
