@@ -32,18 +32,19 @@ const REMOTE_RUNTIME_OPTIONS = [
 ];
 
 function AccountSettings() {
+  const settingsQuery = useSettings();
   const {
     data: settings,
     isFetching: isFetchingSettings,
     isFetched,
-    isSuccess: isSuccessfulSettings,
-  } = useSettings();
+  } = settingsQuery;
+  const isSuccessfulSettings = !!settings && !settingsQuery.isError;
+
   const { data: config } = useConfig();
-  const {
-    data: resources,
-    isFetching: isFetchingResources,
-    isSuccess: isSuccessfulResources,
-  } = useAIConfigOptions();
+
+  const resourcesQuery = useAIConfigOptions();
+  const { data: resources, isFetching: isFetchingResources } = resourcesQuery;
+  const isSuccessfulResources = !!resources && !resourcesQuery.isError;
   const { mutate: saveSettings } = useSaveSettings();
   const { handleLogout } = useAppLogout();
 
@@ -57,7 +58,7 @@ function AccountSettings() {
   const determineWhetherToToggleAdvancedSettings = () => {
     if (shouldHandleSpecialSaasCase) return true;
 
-    if (isSuccess) {
+    if (isSuccess && settings && resources) {
       return (
         isCustomModel(resources.models, settings.LLM_MODEL) ||
         hasAdvancedSettingsSet({
