@@ -34,57 +34,87 @@ async def browse(
         if not isinstance(obs, dict):
             raise TypeError(f'Expected dict from browser.step, got {type(obs)}')
 
-        # Get text_content with proper type checking
-        text_content = obs.get('text_content', '')
-        if not isinstance(text_content, str):
-            text_content = str(text_content)
+        # Check text_content type
+        if 'text_content' in obs:
+            if not isinstance(obs['text_content'], str):
+                raise TypeError(f"Expected 'text_content' to be str, got {type(obs['text_content'])}")
+            text_content = obs['text_content']
+        else:
+            text_content = ''
 
-        # Get URL with proper type checking
-        url = obs.get('url', '')
-        if not isinstance(url, str):
-            url = str(url)
+        # Check URL type
+        if 'url' in obs:
+            if not isinstance(obs['url'], str):
+                raise TypeError(f"Expected 'url' to be str, got {type(obs['url'])}")
+            url = obs['url']
+        else:
+            url = ''
 
-        # Get image_content with proper type checking
-        image_content = obs.get('image_content', [])
-        if not isinstance(image_content, list):
-            image_content = list(image_content)
+        # Check image_content type
+        if 'image_content' in obs:
+            if not isinstance(obs['image_content'], list):
+                raise TypeError(f"Expected 'image_content' to be list, got {type(obs['image_content'])}")
+            image_content = obs['image_content']
+        else:
+            image_content = []
 
-        # Get open_pages_urls with proper type checking
-        open_pages_urls = obs.get('open_pages_urls', [])
-        if not isinstance(open_pages_urls, list):
-            open_pages_urls = list(open_pages_urls)
+        # Check open_pages_urls type
+        if 'open_pages_urls' in obs:
+            if not isinstance(obs['open_pages_urls'], list):
+                raise TypeError(f"Expected 'open_pages_urls' to be list, got {type(obs['open_pages_urls'])}")
+            open_pages_urls = obs['open_pages_urls']
+        else:
+            open_pages_urls = []
 
-        # Get active_page_index with proper type checking
-        active_page_index = obs.get('active_page_index', -1)
-        if not isinstance(active_page_index, int):
-            active_page_index = int(active_page_index)
+        # Check active_page_index type
+        if 'active_page_index' in obs:
+            if not isinstance(obs['active_page_index'], int):
+                raise TypeError(f"Expected 'active_page_index' to be int, got {type(obs['active_page_index'])}")
+            active_page_index = obs['active_page_index']
+        else:
+            active_page_index = -1
 
-        # Get dom_object with proper type checking
-        dom_object = obs.get('dom_object', {})
-        if not isinstance(dom_object, dict):
-            dom_object = dict(dom_object)
+        # Check dom_object type
+        if 'dom_object' in obs:
+            if not isinstance(obs['dom_object'], dict):
+                raise TypeError(f"Expected 'dom_object' to be dict, got {type(obs['dom_object'])}")
+            dom_object = obs['dom_object']
+        else:
+            dom_object = {}
 
-        # Get axtree_object with proper type checking
-        axtree_object = obs.get('axtree_object', {})
-        if not isinstance(axtree_object, dict):
-            axtree_object = dict(axtree_object)
+        # Check axtree_object type
+        if 'axtree_object' in obs:
+            if not isinstance(obs['axtree_object'], dict):
+                raise TypeError(f"Expected 'axtree_object' to be dict, got {type(obs['axtree_object'])}")
+            axtree_object = obs['axtree_object']
+        else:
+            axtree_object = {}
 
-        # Get extra_element_properties with proper type checking
-        extra_element_properties = obs.get('extra_element_properties', {})
-        if not isinstance(extra_element_properties, dict):
-            extra_element_properties = dict(extra_element_properties)
+        # Check extra_element_properties type
+        if 'extra_element_properties' in obs:
+            if not isinstance(obs['extra_element_properties'], dict):
+                raise TypeError(f"Expected 'extra_element_properties' to be dict, got {type(obs['extra_element_properties'])}")
+            extra_element_properties = obs['extra_element_properties']
+        else:
+            extra_element_properties = {}
 
-        # Get last_action with proper type checking
-        last_action = obs.get('last_action', '')
-        if not isinstance(last_action, str):
-            last_action = str(last_action)
+        # Check last_action type
+        if 'last_action' in obs:
+            if not isinstance(obs['last_action'], str):
+                raise TypeError(f"Expected 'last_action' to be str, got {type(obs['last_action'])}")
+            last_action = obs['last_action']
+        else:
+            last_action = ''
 
-        # Get last_action_error with proper type checking
-        last_action_error = obs.get('last_action_error', '')
-        if not isinstance(last_action_error, str):
-            last_action_error = str(last_action_error)
+        # Check last_action_error type
+        if 'last_action_error' in obs:
+            if not isinstance(obs['last_action_error'], str):
+                raise TypeError(f"Expected 'last_action_error' to be str, got {type(obs['last_action_error'])}")
+            last_action_error = obs['last_action_error']
+        else:
+            last_action_error = ''
 
-        # Determine error flag
+        # Determine error flag based on presence of last_action_error
         error_flag = bool(last_action_error)
 
         return BrowserOutputObservation(
