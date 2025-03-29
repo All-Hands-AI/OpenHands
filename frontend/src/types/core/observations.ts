@@ -1,4 +1,5 @@
 import { AgentState } from "../agent-state";
+import ObservationType from "../observation-type";
 import { OpenHandsObservationEvent } from "./base";
 
 export interface AgentStateChangeObservation
@@ -109,6 +110,15 @@ export interface AgentThinkObservation
   };
 }
 
+export interface PlaywrightMcpBrowserScreenshotObservation
+  extends OpenHandsObservationEvent<ObservationType.PLAYWRIGHT_MCP_BROWSER_SCREENSHOT> {
+  source: "agent";
+  extras: {
+    url: string;
+    screenshot: string;
+    trigger_by_action: string;
+  };
+}
 export type OpenHandsObservation =
   | AgentStateChangeObservation
   | AgentThinkObservation
@@ -120,4 +130,5 @@ export type OpenHandsObservation =
   | WriteObservation
   | ReadObservation
   | EditObservation
-  | ErrorObservation;
+  | ErrorObservation
+  | PlaywrightMcpBrowserScreenshotObservation;

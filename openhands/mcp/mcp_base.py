@@ -6,6 +6,10 @@ from mcp.types import ImageContent
 from pydantic import BaseModel, Field
 
 
+class ExtendedImageContent(ImageContent):
+    url: str
+
+
 class BaseTool(ABC, BaseModel):
     name: str
     description: str
@@ -68,6 +72,15 @@ class ToolResult(BaseModel):
     def __str__(self):
         if self.error:
             return f'Error: {self.error}'
+        elif isinstance(self.output, ExtendedImageContent):
+            return json.dumps(
+                {
+                    'type': 'image',
+                    'image_url': f'data:image/png;base64,{self.output.data}',
+                    'mimeType': self.output.mimeType,
+                    'url': self.output.url,
+                }
+            )
         elif isinstance(self.output, ImageContent):
             return json.dumps(
                 {

@@ -31,6 +31,7 @@ export function handleObservationMessage(message: ObservationMessage) {
       break;
     case ObservationType.BROWSE:
     case ObservationType.BROWSE_INTERACTIVE:
+    case ObservationType.PLAYWRIGHT_MCP_BROWSER_SCREENSHOT:
       if (message.extras?.screenshot) {
         store.dispatch(setScreenshotSrc(message.extras?.screenshot));
       }
@@ -215,6 +216,19 @@ export function handleObservationMessage(message: ObservationMessage) {
               focused_element_bid: String(
                 message.extras.focused_element_bid || "",
               ),
+            },
+          }),
+        );
+        break;
+      case ObservationType.PLAYWRIGHT_MCP_BROWSER_SCREENSHOT:
+        store.dispatch(
+          addAssistantObservation({
+            ...baseObservation,
+            observation: ObservationType.PLAYWRIGHT_MCP_BROWSER_SCREENSHOT,
+            extras: {
+              url: String(message.extras.url || ""),
+              screenshot: String(message.extras.screenshot || ""),
+              trigger_by_action: String(message.extras.trigger_by_action || ""),
             },
           }),
         );

@@ -320,9 +320,7 @@ class ActionExecutor:
     async def run_action(self, action) -> Observation:
         async with self.lock:
             action_type = action.action
-            logger.warning(f'Running action:\n{action}')
             observation = await getattr(self, action_type)(action)
-            logger.warning(f'Action output:\n{observation}')
             return observation
 
     async def run(
@@ -606,7 +604,7 @@ class ActionExecutor:
         screenshot_content: ImageContent = response.output
         return PlaywrightMcpBrowserScreenshotObservation(
             content=f'{response}',
-            url=screenshot_content['url'] if 'url' in response else '',
+            url=screenshot_content.url if screenshot_content.url is not None else '',
             trigger_by_action=action.name,
             screenshot=f'data:image/png;base64,{screenshot_content.data}',
         )
