@@ -195,14 +195,6 @@ export const chatSlice = createSlice({
           }
         }
 
-        // Add the original content from the observation
-        if (
-          observation.payload.content &&
-          observation.payload.content.trim().length > 0
-        ) {
-          content += `\n**Additional Content:**\n${observation.payload.content}\n`;
-        }
-
         // Create a new message for the observation
         // Use the correct translation ID format that matches what's in the i18n file
         const translationID = `OBSERVATION_MESSAGE$${observationID.toUpperCase()}`;
