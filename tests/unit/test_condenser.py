@@ -875,13 +875,18 @@ def test_token_aware_condenser_get_condensation(mock_llm):
 
 def test_token_aware_condenser_integration(mock_llm):
     """Integration test for TokenAwareCondenser's full condensation cycle."""
+
     # Configure mock LLM to simulate token counting
     def mock_get_metrics():
         return {'total_tokens': 0}
+
     mock_llm.metrics.get.side_effect = mock_get_metrics
 
     # Configure mock exceeds_token_limit to return True after 8 events, but only for non-condensed views
-    with patch('openhands.memory.condenser.impl.token_aware_condenser.exceeds_token_limit') as mock_exceeds:
+    with patch(
+        'openhands.memory.condenser.impl.token_aware_condenser.exceeds_token_limit'
+    ) as mock_exceeds:
+
         def mock_exceeds_token_limit(events, metrics, limit):
             # Only trigger condensation if we don't have a condensation event in the events
             has_condensation = any(isinstance(e, CondensationAction) for e in events)
@@ -930,11 +935,15 @@ def test_token_aware_condenser_integration(mock_llm):
                 assert isinstance(view[2], AgentCondensationObservation)
 
             # Track condensation events by looking at the LLM's response
-            print(f"View {i}: len={len(view)}, completion_count={mock_llm.completion.call_count}, condensation_count={condensation_count}")
+            print(
+                f'View {i}: len={len(view)}, completion_count={mock_llm.completion.call_count}, condensation_count={condensation_count}'
+            )
             if len(view) > 2 and isinstance(view[2], AgentCondensationObservation):
-                print(f"  Found summary event: {view[2].message}")
+                print(f'  Found summary event: {view[2].message}')
                 if mock_llm.completion.call_count > condensation_count:
-                    print(f"  Incrementing condensation_count from {condensation_count} to {mock_llm.completion.call_count}")
+                    print(
+                        f'  Incrementing condensation_count from {condensation_count} to {mock_llm.completion.call_count}'
+                    )
                     condensation_count = mock_llm.completion.call_count
 
         # Verify the token limit check was called
