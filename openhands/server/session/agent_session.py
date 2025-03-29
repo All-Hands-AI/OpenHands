@@ -135,9 +135,6 @@ class AgentSession:
                         config.mcp.stdio.args,
                     )
 
-                    # Attach MCP agents to the agent instance
-                    agent.mcp_agents = mcp_agents
-
                     # Give some time for MCP connections to stabilize
                     await asyncio.sleep(1)
 

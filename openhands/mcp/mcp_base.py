@@ -1,6 +1,8 @@
+import json
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
 
+from mcp.types import ImageContent
 from pydantic import BaseModel, Field
 
 
@@ -64,7 +66,18 @@ class ToolResult(BaseModel):
         )
 
     def __str__(self):
-        return f'Error: {self.error}' if self.error else self.output
+        if self.error:
+            return f'Error: {self.error}'
+        elif isinstance(self.output, ImageContent):
+            return json.dumps(
+                {
+                    'type': 'image',
+                    'image_url': f'data:image/png;base64,{self.output.data}',
+                    'mimeType': self.output.mimeType,
+                }
+            )
+        else:
+            return self.output
 
     def replace(self, **kwargs):
         """Returns a new ToolResult with the given fields replaced."""
