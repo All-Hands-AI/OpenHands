@@ -23,6 +23,7 @@ class TokenAwareCondenser(RollingCondenser):
     """
 
     max_input_tokens: int = 32000
+    agent_llm: LLM
 
     def __init__(self, llm: LLM, keep_first: int = 1, threshold: float = 0.85):
         if keep_first < 0:
@@ -116,8 +117,8 @@ INTENT: Fix precision while maintaining FITS compliance"""
         logger.debug(f'Estimated max tokens to keep: {estimated_tokens}')
 
         if exceeds_token_limit(
-            view,
-            self.llm.metrics,
+            view.events,
+            self.agent_llm.metrics,
             estimated_tokens,
         ):
             return True
