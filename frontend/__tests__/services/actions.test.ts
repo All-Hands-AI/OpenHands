@@ -80,8 +80,8 @@ describe("Actions Service", () => {
       let capturedPartialMessage = "";
       (store.dispatch as any).mockImplementation((action: any) => {
         if (action.type === "chat/addAssistantMessage" &&
-            action.payload.includes("believe that the task was **completed partially**")) {
-          capturedPartialMessage = action.payload;
+            action.payload.content.includes("believe that the task was **completed partially**")) {
+          capturedPartialMessage = action.payload.content;
         }
       });
 
@@ -107,8 +107,8 @@ describe("Actions Service", () => {
       let capturedNotCompletedMessage = "";
       (store.dispatch as any).mockImplementation((action: any) => {
         if (action.type === "chat/addAssistantMessage" &&
-            action.payload.includes("believe that the task was **not completed**")) {
-          capturedNotCompletedMessage = action.payload;
+            action.payload.content.includes("believe that the task was **not completed**")) {
+          capturedNotCompletedMessage = action.payload.content;
         }
       });
 
@@ -134,8 +134,8 @@ describe("Actions Service", () => {
       let capturedCompletedMessage = "";
       (store.dispatch as any).mockImplementation((action: any) => {
         if (action.type === "chat/addAssistantMessage" &&
-            action.payload.includes("believe that the task was **completed successfully**")) {
-          capturedCompletedMessage = action.payload;
+            action.payload.content.includes("believe that the task was **completed successfully**")) {
+          capturedCompletedMessage = action.payload.content;
         }
       });
 

@@ -17,6 +17,10 @@ interface ExpandableMessageProps {
   message: string;
   type: string;
   success?: boolean;
+  timestamp?: string;
+  sender?: string;
+  agentName?: string;
+  agentBgColor?: string;
 }
 
 export function ExpandableMessage({
@@ -24,13 +28,16 @@ export function ExpandableMessage({
   message,
   type,
   success,
+  timestamp,
+  sender,
+  agentName,
+  agentBgColor,
 }: ExpandableMessageProps) {
   const { data: config } = useConfig();
   const { t, i18n } = useTranslation();
   const [showDetails, setShowDetails] = useState(true);
   const [headline, setHeadline] = useState("");
   const [details, setDetails] = useState(message);
-
   useEffect(() => {
     if (id && i18n.exists(id)) {
       setHeadline(t(id));
@@ -66,66 +73,97 @@ export function ExpandableMessage({
     );
   }
 
+  const agentDisplayName = agentName || "Agent";
+  const agentInitial = agentDisplayName.charAt(0).toUpperCase();
+
+  let timestampDisplay = "N/A";
+  if (timestamp) {
+    const date = new Date(
+      timestamp.endsWith("Z") ? timestamp : `${timestamp}Z`,
+    );
+
+    const pad = (num: number): string => num.toString().padStart(2, "0");
+    const month = pad(date.getMonth() + 1);
+    const day = pad(date.getDate());
+    const hour = pad(date.getHours());
+    const minute = pad(date.getMinutes());
+    timestampDisplay = `${month}/${day} ${hour}:${minute}`;
+  }
+
+  const renderAgentInfo = () => {
+    if (sender === "assistant") {
+      return (
+        <div className="agent-info-expandable">
+          <div className={`common-icon ${agentBgColor}`}>{agentInitial}</div>
+          <div className="agent-name">{agentDisplayName}</div>
+          <div className="agent-time">{timestampDisplay}</div>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
-    <div
-      className={cn(
-        "flex gap-2 items-center justify-start border-l-2 pl-2 my-2 py-2",
-        type === "error" ? "border-danger" : "border-neutral-300",
-      )}
-    >
-      <div className="text-sm w-full">
-        <div className="flex flex-row justify-between items-center w-full">
-          <span
-            className={cn(
-              headline ? "font-bold" : "",
-              type === "error" ? "text-danger" : "text-neutral-300",
-            )}
-          >
-            {headline && (
-              <>
-                {headline}
-                <button
-                  type="button"
-                  onClick={() => setShowDetails(!showDetails)}
-                  className="cursor-pointer text-left"
-                >
-                  {showDetails ? (
-                    <ArrowUp
-                      className={cn(
-                        "h-4 w-4 ml-2 inline",
-                        type === "error" ? "fill-danger" : "fill-neutral-300",
-                      )}
-                    />
-                  ) : (
-                    <ArrowDown
-                      className={cn(
-                        "h-4 w-4 ml-2 inline",
-                        type === "error" ? "fill-danger" : "fill-neutral-300",
-                      )}
-                    />
-                  )}
-                </button>
-              </>
-            )}
-          </span>
-          {type === "action" && success !== undefined && (
-            <span className="flex-shrink-0">
-              {success ? (
-                <CheckCircle
-                  data-testid="status-icon"
-                  className={cn(statusIconClasses, "fill-success")}
-                />
-              ) : (
-                <XCircle
-                  data-testid="status-icon"
-                  className={cn(statusIconClasses, "fill-danger")}
-                />
+    <div>
+      {renderAgentInfo()}
+      <div
+        className={cn(
+          "flex gap-2 items-center justify-start border-l-2 pl-2 my-2 py-2",
+          type === "error" ? "border-danger" : "border-neutral-300",
+        )}
+      >
+        <div className="text-sm w-full">
+          <div className="flex flex-row justify-between items-center w-full">
+            <span
+              className={cn(
+                headline ? "font-bold" : "",
+                type === "error" ? "text-danger" : "text-neutral-300",
+              )}
+            >
+              {headline && (
+                <>
+                  {headline}
+                  <button
+                    type="button"
+                    onClick={() => setShowDetails(!showDetails)}
+                    className="cursor-pointer text-left"
+                  >
+                    {showDetails ? (
+                      <ArrowUp
+                        className={cn(
+                          "h-4 w-4 ml-2 inline",
+                          type === "error" ? "fill-danger" : "fill-neutral-300",
+                        )}
+                      />
+                    ) : (
+                      <ArrowDown
+                        className={cn(
+                          "h-4 w-4 ml-2 inline",
+                          type === "error" ? "fill-danger" : "fill-neutral-300",
+                        )}
+                      />
+                    )}
+                  </button>
+                </>
               )}
             </span>
-          )}
-        </div>
-        {(!headline || showDetails) && (
-          <div className="text-sm overflow-auto">
+            {type === "action" && success !== undefined && (
+              <span className="flex-shrink-0">
+                {success ? (
+                  <CheckCircle
+                    data-testid="status-icon"
+                    className={cn(statusIconClasses, "fill-success")}
+                  />
+                ) : (
+                  <XCircle
+                    data-testid="status-icon"
+                    className={cn(statusIconClasses, "fill-danger")}
+                  />
+                )}
+              </span>
+            )}
+          </div>
+          {(!headline || showDetails) && (
             <Markdown
               components={{
                 code,
@@ -136,8 +174,8 @@ export function ExpandableMessage({
             >
               {details}
             </Markdown>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

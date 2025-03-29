@@ -75,13 +75,21 @@ export const chatSlice = createSlice({
       state.messages.push(message);
     },
 
-    addAssistantMessage(state: SliceState, action: PayloadAction<string>) {
+    addAssistantMessage(
+      state: SliceState,
+      action: PayloadAction<{
+        content: string;
+        agentName?: string;
+        timestamp?: string;
+      }>,
+    ) {
       const message: Message = {
         type: "thought",
         sender: "assistant",
-        content: action.payload,
+        content: action.payload.content,
+        agentName: action.payload.agentName || "",
         imageUrls: [],
-        timestamp: new Date().toISOString(),
+        timestamp: action.payload.timestamp || new Date().toISOString(),
         pending: false,
       };
       state.messages.push(message);
@@ -129,7 +137,8 @@ export const chatSlice = createSlice({
         eventID: action.payload.id,
         content: text,
         imageUrls: [],
-        timestamp: new Date().toISOString(),
+        agentName: action.payload.agent_name || "",
+        timestamp: action.payload.timestamp || new Date().toISOString(),
       };
 
       state.messages.push(message);
@@ -156,6 +165,7 @@ export const chatSlice = createSlice({
       if (observationID === "run") {
         const commandObs = observation.payload as CommandObservation;
         causeMessage.success = commandObs.extras.metadata.exit_code === 0;
+        causeMessage.agentName = observation.payload.agent_name || "";
       } else if (observationID === "run_ipython") {
         // For IPython, we consider it successful if there's no error message
         const ipythonObs = observation.payload as IPythonObservation;
@@ -208,15 +218,19 @@ export const chatSlice = createSlice({
 
     addErrorMessage(
       state: SliceState,
-      action: PayloadAction<{ id?: string; message: string }>,
+      action: PayloadAction<{
+        id?: string;
+        message: string;
+        timestamp?: string;
+      }>,
     ) {
-      const { id, message } = action.payload;
+      const { id, message, timestamp } = action.payload;
       state.messages.push({
         translationID: id,
         content: message,
         type: "error",
         sender: "assistant",
-        timestamp: new Date().toISOString(),
+        timestamp: timestamp || new Date().toISOString(),
       });
     },
 

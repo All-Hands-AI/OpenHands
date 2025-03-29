@@ -57,3 +57,87 @@ code {
 .markdown-body td {
   padding: 0.1rem 1rem;
 }
+
+.border-neutral-300{
+  font-size: 15px;
+  margin-left: 50px;
+  margin-top: -15px;
+}
+
+.border-danger{
+  font-size: 15px;
+  margin-left: 50px;
+  margin-top: -15px;
+}
+
+.max-w-full {
+  max-width:90%;
+  margin-left: 50px;
+  margin-top: -26px;
+}
+
+.flex gap-2 items-center justify-start border-l-2 pl-2 my-2 py-2{
+  font-size: 15px;
+  margin-top: -30px;
+}
+
+.user {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 10px;
+}
+
+.assistant {
+  margin-bottom: 10px;
+}
+
+.agent-info {
+  align-items: center;
+  display: flex;
+  margin-bottom: 10px;
+}
+
+.agent-info-expandable {
+  align-items: center;
+  width: auto;
+  display: flex;
+}
+
+.common-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 20px;
+  margin-right: 10px;
+  display: flex;
+}
+
+.agent-name {
+  margin-right: 0px;
+  font-size: 15px;
+  margin-top: -21px;
+  float: right;
+  position:relative;
+}
+
+.user-time {
+  margin-right: 5px;
+  font-size: 15px;
+  margin-top: -15px;
+  float: right;
+  position:relative;
+  opacity:50% ;
+}
+
+.agent-time {
+  font-size: 15px;
+  margin-left: 10px;
+  margin-right: -50px;
+  margin-top: -20px;
+  float: right;
+  position:relative;
+  opacity:50% ;
+}

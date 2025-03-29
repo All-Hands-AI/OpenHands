@@ -298,11 +298,15 @@ class EventStream:
 
         self._clean_up_subscriber(subscriber_id, callback_id)
 
-    def add_event(self, event: Event, source: EventSource) -> None:
+    def add_event(
+        self, event: Event, source: EventSource, agent_name: str | None = None
+    ) -> None:
         if event.id != Event.INVALID_ID:
             raise ValueError(
                 f'Event already has an ID:{event.id}. It was probably added back to the EventStream from inside a handler, triggering a loop.'
             )
+        if agent_name is not None:
+            event._agent_name = agent_name
         with self._lock:
             event._id = self._cur_id  # type: ignore [attr-defined]
             self._cur_id += 1

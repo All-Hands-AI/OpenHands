@@ -3,6 +3,7 @@ import { ActionSecurityRisk } from "#/state/security-analyzer-slice";
 
 export interface UserMessageAction extends OpenHandsActionEvent<"message"> {
   source: "user";
+  agent_name?: string;
   args: {
     content: string;
     image_urls: string[];
@@ -11,6 +12,7 @@ export interface UserMessageAction extends OpenHandsActionEvent<"message"> {
 
 export interface CommandAction extends OpenHandsActionEvent<"run"> {
   source: "agent";
+  agent_name?: string;
   args: {
     command: string;
     security_risk: ActionSecurityRisk;
@@ -23,6 +25,7 @@ export interface CommandAction extends OpenHandsActionEvent<"run"> {
 export interface AssistantMessageAction
   extends OpenHandsActionEvent<"message"> {
   source: "agent";
+  agent_name?: string;
   args: {
     thought: string;
     image_urls: string[] | null;
@@ -32,6 +35,7 @@ export interface AssistantMessageAction
 
 export interface IPythonAction extends OpenHandsActionEvent<"run_ipython"> {
   source: "agent";
+  agent_name?: string;
   args: {
     code: string;
     security_risk: ActionSecurityRisk;
@@ -43,6 +47,7 @@ export interface IPythonAction extends OpenHandsActionEvent<"run_ipython"> {
 
 export interface ThinkAction extends OpenHandsActionEvent<"think"> {
   source: "agent";
+  agent_name?: string;
   args: {
     thought: string;
   };
@@ -50,6 +55,7 @@ export interface ThinkAction extends OpenHandsActionEvent<"think"> {
 
 export interface FinishAction extends OpenHandsActionEvent<"finish"> {
   source: "agent";
+  agent_name?: string;
   args: {
     final_thought: string;
     task_completed: "success" | "failure" | "partial";
@@ -60,6 +66,7 @@ export interface FinishAction extends OpenHandsActionEvent<"finish"> {
 
 export interface DelegateAction extends OpenHandsActionEvent<"delegate"> {
   source: "agent";
+  agent_name?: string;
   timeout: number;
   args: {
     agent: "BrowsingAgent";
@@ -70,6 +77,7 @@ export interface DelegateAction extends OpenHandsActionEvent<"delegate"> {
 
 export interface BrowseAction extends OpenHandsActionEvent<"browse"> {
   source: "agent";
+  agent_name?: string;
   args: {
     url: string;
     thought: string;
@@ -80,6 +88,7 @@ export interface BrowseInteractiveAction
   extends OpenHandsActionEvent<"browse_interactive"> {
   source: "agent";
   timeout: number;
+  agent_name?: string;
   args: {
     browser_actions: string;
     thought: string | null;
@@ -89,6 +98,7 @@ export interface BrowseInteractiveAction
 
 export interface FileReadAction extends OpenHandsActionEvent<"read"> {
   source: "agent";
+  agent_name?: string;
   args: {
     path: string;
     thought: string;
@@ -100,6 +110,7 @@ export interface FileReadAction extends OpenHandsActionEvent<"read"> {
 
 export interface FileWriteAction extends OpenHandsActionEvent<"write"> {
   source: "agent";
+  agent_name?: string;
   args: {
     path: string;
     content: string;
@@ -109,6 +120,7 @@ export interface FileWriteAction extends OpenHandsActionEvent<"write"> {
 
 export interface FileEditAction extends OpenHandsActionEvent<"edit"> {
   source: "agent";
+  agent_name?: string;
   args: {
     path: string;
     command?: string;
@@ -128,6 +140,7 @@ export interface FileEditAction extends OpenHandsActionEvent<"edit"> {
 
 export interface RejectAction extends OpenHandsActionEvent<"reject"> {
   source: "agent";
+  agent_name?: string;
   args: {
     thought: string;
   };

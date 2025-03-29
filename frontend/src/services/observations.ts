@@ -44,7 +44,13 @@ export function handleObservationMessage(message: ObservationMessage) {
     case ObservationType.DELEGATE:
       // TODO: better UI for delegation result (#2309)
       if (message.content) {
-        store.dispatch(addAssistantMessage(message.content));
+        store.dispatch(
+          addAssistantMessage({
+            content: message.content,
+            agentName: message.agent_name,
+            timestamp: message.timestamp,
+          }),
+        );
       }
       break;
     case ObservationType.READ:
@@ -53,7 +59,13 @@ export function handleObservationMessage(message: ObservationMessage) {
     case ObservationType.NULL:
       break; // We don't display the default message for these observations
     default:
-      store.dispatch(addAssistantMessage(message.message));
+      store.dispatch(
+        addAssistantMessage({
+          content: message.message,
+          agentName: message.agent_name,
+          timestamp: message.timestamp,
+        }),
+      );
       break;
   }
   if (!message.extras?.hidden) {
@@ -70,6 +82,7 @@ export function handleObservationMessage(message: ObservationMessage) {
           addAssistantObservation({
             ...baseObservation,
             observation: "agent_state_changed" as const,
+            agent_name: message.agent_name,
             extras: {
               agent_state: (message.extras.agent_state as AgentState) || "idle",
             },
@@ -81,6 +94,7 @@ export function handleObservationMessage(message: ObservationMessage) {
           addAssistantObservation({
             ...baseObservation,
             observation: "run" as const,
+            agent_name: message.agent_name,
             extras: {
               command: String(message.extras.command || ""),
               metadata: message.extras.metadata,
@@ -223,6 +237,7 @@ export function handleObservationMessage(message: ObservationMessage) {
         store.dispatch(
           addAssistantObservation({
             ...baseObservation,
+            agent_name: message.agent_name,
             observation: "error" as const,
             source: "user" as const,
             extras: {

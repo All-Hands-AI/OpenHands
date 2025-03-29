@@ -47,6 +47,7 @@ def mock_agent():
     agent.llm = MagicMock(spec=LLM)
     agent.llm.metrics = Metrics()
     agent.llm.config = AppConfig().get_llm_config()
+    agent.name = 'TestAgent'
     return agent
 
 
@@ -179,6 +180,7 @@ async def test_run_controller_with_fatal_error(test_event_stream, mock_memory):
     agent.llm = MagicMock(spec=LLM)
     agent.llm.metrics = Metrics()
     agent.llm.config = config.get_llm_config()
+    agent.name = 'TestAgent'
 
     runtime = MagicMock(spec=Runtime)
 
@@ -186,7 +188,7 @@ async def test_run_controller_with_fatal_error(test_event_stream, mock_memory):
         if isinstance(event, CmdRunAction):
             error_obs = ErrorObservation('You messed around with Jim')
             error_obs._cause = event.id
-            test_event_stream.add_event(error_obs, EventSource.USER)
+            test_event_stream.add_event(error_obs, EventSource.USER, agent.name)
 
     test_event_stream.subscribe(EventStreamSubscriber.RUNTIME, on_event, str(uuid4()))
     runtime.event_stream = test_event_stream
@@ -198,7 +200,9 @@ async def test_run_controller_with_fatal_error(test_event_stream, mock_memory):
                 recall_type=RecallType.KNOWLEDGE,
             )
             microagent_obs._cause = event.id
-            test_event_stream.add_event(microagent_obs, EventSource.ENVIRONMENT)
+            test_event_stream.add_event(
+                microagent_obs, EventSource.ENVIRONMENT, agent.name
+            )
 
     test_event_stream.subscribe(
         EventStreamSubscriber.MEMORY, on_event_memory, str(uuid4())
@@ -235,6 +239,7 @@ async def test_run_controller_stop_with_stuck(test_event_stream, mock_memory):
     agent.llm = MagicMock(spec=LLM)
     agent.llm.metrics = Metrics()
     agent.llm.config = config.get_llm_config()
+    agent.name = 'TestAgent'
     runtime = MagicMock(spec=Runtime)
 
     def on_event(event: Event):
@@ -243,7 +248,9 @@ async def test_run_controller_stop_with_stuck(test_event_stream, mock_memory):
                 'Non fatal error here to trigger loop'
             )
             non_fatal_error_obs._cause = event.id
-            test_event_stream.add_event(non_fatal_error_obs, EventSource.ENVIRONMENT)
+            test_event_stream.add_event(
+                non_fatal_error_obs, EventSource.ENVIRONMENT, agent.name
+            )
 
     test_event_stream.subscribe(EventStreamSubscriber.RUNTIME, on_event, str(uuid4()))
     runtime.event_stream = test_event_stream
@@ -255,7 +262,9 @@ async def test_run_controller_stop_with_stuck(test_event_stream, mock_memory):
                 recall_type=RecallType.KNOWLEDGE,
             )
             microagent_obs._cause = event.id
-            test_event_stream.add_event(microagent_obs, EventSource.ENVIRONMENT)
+            test_event_stream.add_event(
+                microagent_obs, EventSource.ENVIRONMENT, agent.name
+            )
 
     test_event_stream.subscribe(
         EventStreamSubscriber.MEMORY, on_event_memory, str(uuid4())
@@ -286,6 +295,7 @@ async def test_run_controller_stop_with_stuck(test_event_stream, mock_memory):
         action_dict = event_to_dict(action)
         observation_dict = event_to_dict(observation)
         assert action_dict['action'] == 'run' and action_dict['args']['command'] == 'ls'
+        assert action_dict['agent_name'] == observation_dict['agent_name']
         assert (
             observation_dict['observation'] == 'error'
             and observation_dict['content'] == 'Non fatal error here to trigger loop'
@@ -434,12 +444,13 @@ async def test_reset_with_pending_action_no_observation(mock_agent, mock_event_s
     # Verify that an ErrorObservation was added to the event stream
     mock_event_stream.add_event.assert_called_once()
     args, kwargs = mock_event_stream.add_event.call_args
-    error_obs, source = args
+    error_obs, source, agent_name = args
     assert isinstance(error_obs, ErrorObservation)
     assert error_obs.content == 'The action has not been executed.'
     assert error_obs.tool_call_metadata == pending_action.tool_call_metadata
     assert error_obs._cause == pending_action.id
     assert source == EventSource.AGENT
+    assert agent_name == mock_agent.name
 
     # Verify that pending action was reset
     assert controller._pending_action is None
@@ -570,6 +581,7 @@ async def test_run_controller_max_iterations_has_metrics(
     agent.llm = MagicMock(spec=LLM)
     agent.llm.metrics = Metrics()
     agent.llm.config = config.get_llm_config()
+    agent.name = 'TestAgent'
 
     def agent_step_fn(state):
         print(f'agent_step_fn received state: {state}')
@@ -590,7 +602,9 @@ async def test_run_controller_max_iterations_has_metrics(
                 'Non fatal error. event id: ' + str(event.id)
             )
             non_fatal_error_obs._cause = event.id
-            event_stream.add_event(non_fatal_error_obs, EventSource.ENVIRONMENT)
+            event_stream.add_event(
+                non_fatal_error_obs, EventSource.ENVIRONMENT, agent.name
+            )
 
     event_stream.subscribe(EventStreamSubscriber.RUNTIME, on_event, str(uuid4()))
     runtime.event_stream = event_stream
@@ -602,7 +616,7 @@ async def test_run_controller_max_iterations_has_metrics(
                 recall_type=RecallType.KNOWLEDGE,
             )
             microagent_obs._cause = event.id
-            event_stream.add_event(microagent_obs, EventSource.ENVIRONMENT)
+            event_stream.add_event(microagent_obs, EventSource.ENVIRONMENT, agent.name)
 
     event_stream.subscribe(EventStreamSubscriber.MEMORY, on_event_memory, str(uuid4()))
 
@@ -851,6 +865,7 @@ async def test_run_controller_with_memory_error(test_event_stream):
     agent.llm = MagicMock(spec=LLM)
     agent.llm.metrics = Metrics()
     agent.llm.config = config.get_llm_config()
+    agent.name = 'TestAgent'
 
     # Create a real action to return from the mocked step function
     def agent_step_fn(state):
@@ -895,6 +910,7 @@ async def test_action_metrics_copy():
     # Create agent with metrics
     agent = MagicMock(spec=Agent)
     agent.llm = MagicMock(spec=LLM)
+    agent.name = 'TestAgent'
     metrics = Metrics(model_name='test-model')
     metrics.accumulated_cost = 0.05
 
@@ -1006,6 +1022,7 @@ async def test_first_user_message_with_identical_content():
     mock_agent.llm = MagicMock(spec=LLM)
     mock_agent.llm.metrics = Metrics()
     mock_agent.llm.config = AppConfig().get_llm_config()
+    mock_agent.name = 'TestAgent'
 
     controller = AgentController(
         agent=mock_agent,
@@ -1073,6 +1090,7 @@ async def test_agent_controller_processes_null_observation_with_cause():
     mock_agent.llm = MagicMock(spec=LLM)
     mock_agent.llm.metrics = Metrics()
     mock_agent.llm.config = AppConfig().get_llm_config()
+    mock_agent.name = 'TestAgent'
 
     # Create a controller with the mock agent
     controller = AgentController(
@@ -1087,7 +1105,7 @@ async def test_agent_controller_processes_null_observation_with_cause():
         # Create and add the first user message (will have ID 0)
         user_message = MessageAction(content='First user message')
         user_message._source = EventSource.USER  # type: ignore[attr-defined]
-        event_stream.add_event(user_message, EventSource.USER)
+        event_stream.add_event(user_message, EventSource.USER, mock_agent.name)
 
         # Give it a little time to process
         await asyncio.sleep(0.3)

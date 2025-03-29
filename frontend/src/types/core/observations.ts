@@ -4,6 +4,7 @@ import { OpenHandsObservationEvent } from "./base";
 export interface AgentStateChangeObservation
   extends OpenHandsObservationEvent<"agent_state_changed"> {
   source: "agent";
+  agent_name?: string;
   extras: {
     agent_state: AgentState;
   };
@@ -11,6 +12,7 @@ export interface AgentStateChangeObservation
 
 export interface CommandObservation extends OpenHandsObservationEvent<"run"> {
   source: "agent";
+  agent_name?: string;
   extras: {
     command: string;
     hidden?: boolean;
@@ -96,6 +98,7 @@ export interface EditObservation extends OpenHandsObservationEvent<"edit"> {
 
 export interface ErrorObservation extends OpenHandsObservationEvent<"error"> {
   source: "user";
+  agent_name?: string;
   extras: {
     error_id?: string;
   };

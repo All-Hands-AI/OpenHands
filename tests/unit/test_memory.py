@@ -66,6 +66,7 @@ async def test_memory_on_event_exception_handling(memory, event_stream):
     agent.llm = MagicMock(spec=LLM)
     agent.llm.metrics = Metrics()
     agent.llm.config = AppConfig().get_llm_config()
+    agent.name = 'TestAgent'
 
     # Create a mock runtime
     runtime = MagicMock(spec=Runtime)
@@ -102,6 +103,7 @@ async def test_memory_on_workspace_context_recall_exception_handling(
     agent.llm = MagicMock(spec=LLM)
     agent.llm.metrics = Metrics()
     agent.llm.config = AppConfig().get_llm_config()
+    agent.name = 'TestAgent'
 
     # Create a mock runtime
     runtime = MagicMock(spec=Runtime)

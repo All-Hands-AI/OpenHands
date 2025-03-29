@@ -45,6 +45,7 @@ def test_event_props_serialization_deserialization():
         'id': 42,
         'source': 'agent',
         'timestamp': '2021-08-01T12:00:00',
+        'agent_name': 'TestAgent',
         'action': 'message',
         'args': {
             'content': 'This is a test.',
