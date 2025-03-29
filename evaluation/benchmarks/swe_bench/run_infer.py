@@ -24,6 +24,7 @@ from evaluation.utils.shared import (
     is_fatal_evaluation_error,
     make_metadata,
     prepare_dataset,
+    update_agent_config_for_eval,
     reset_logger_for_multiprocessing,
     run_evaluation,
     update_llm_config_for_completions_logging,
@@ -218,6 +219,7 @@ def get_config(
         condenser=metadata.condenser_config,
         enable_prompt_extensions=False,
     )
+    agent_config = update_agent_config_for_eval(agent_config)
     config.set_agent_config(agent_config)
     return config
 

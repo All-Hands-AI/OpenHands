@@ -20,6 +20,7 @@ from evaluation.utils.shared import (
     prepare_dataset,
     reset_logger_for_multiprocessing,
     run_evaluation,
+    update_agent_config_for_eval,
     update_llm_config_for_completions_logging,
 )
 from openhands.controller.state.state import State
@@ -135,6 +136,7 @@ def get_config(
         codeact_enable_browsing=RUN_WITH_BROWSING,
         codeact_enable_llm_editor=False,
     )
+    agent_config = update_agent_config_for_eval(agent_config)
     config.set_agent_config(agent_config)
     return config
 
