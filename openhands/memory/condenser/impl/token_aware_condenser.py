@@ -17,6 +17,7 @@ from openhands.memory.condenser.condenser import (
 class TokenAwareCondenser(RollingCondenser):
     """A condenser that summarizes events when they exceed a token limit.
 
+    Similar with LLMSummarizingCondenser, with token limits.
     Maintains a condensed history and summarizes events when they exceed a token threshold,
     keeping a special summarization event after the prefix that summarizes all previous summarizations
     and newly forgotten events.
