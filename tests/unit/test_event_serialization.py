@@ -121,3 +121,18 @@ def test_metrics_none_serialization():
     # Test deserialization
     deserialized = event_from_dict(serialized)
     assert deserialized.llm_metrics is None
+
+
+def test_response_id_serialization():
+    # Create an action with a response_id
+    action = MessageAction(content='Hello, world!')
+    action.response_id = 'test-response-id'
+
+    # Test serialization
+    serialized = event_to_dict(action)
+    assert 'response_id' in serialized
+    assert serialized['response_id'] == 'test-response-id'
+
+    # Test deserialization
+    deserialized = event_from_dict(serialized)
+    assert deserialized.response_id == 'test-response-id'
