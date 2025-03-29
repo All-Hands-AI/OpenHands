@@ -258,7 +258,7 @@ class DockerRuntime(ActionExecutionClient):
             logger.debug(
                 'Mount dir is not set, will not mount the workspace directory to the container'
             )
-            volumes = None
+            volumes = {}
         self.log(
             'debug',
             f'Sandbox workspace: {self.config.workspace_mount_path_in_sandbox}',
