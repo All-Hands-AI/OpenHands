@@ -120,8 +120,8 @@ skip-string-normalization = true
 
 [tool.ruff.lint]
 select = ["D"]
-# ignore warnings for missing docstrings
-ignore = ["D1"]
+# ignore warnings for missing docstrings and async errors
+ignore = ["D1", "ASYNC100", "ASYNC101"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
