@@ -358,6 +358,14 @@ To use these with the docker command, pass in `-e SANDBOX_<option>`. Example: `-
   - Default: `0.0.0.0`
   - Description: The binding address for the runtime ports.  It specifies which network interface on the host machine Docker should bind the runtime ports to.
 
+### Volume
+- `runtime_extra_volume`
+  - Type: `dict`
+  - Default: `{}`
+  - Description: The extra volumes for bind mounts. This is a dictionary which key must be a path in the host to mount,while which value must be a dictionary representing path in the runtime container.
+    The value must be contains a two keys, "bind" and "mode". "bind" means path string, while "mode" means file mode like "rw".
+    This can be used to mount `/var/run/docker.sock` to perform Docker outside of Docker.
+
 ### Linting and Plugins
 - `enable_auto_lint`
   - Type: `bool`
