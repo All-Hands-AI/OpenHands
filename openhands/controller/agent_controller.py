@@ -162,9 +162,9 @@ class AgentController:
 
         # replay-related
         self._replay_manager = ReplayManager(replay_events)
-        
+
         # Error tracking
-        self._last_error_reason = ""
+        self._last_error_reason = ''
 
     async def close(self, set_stop_state=True) -> None:
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream.
@@ -251,7 +251,10 @@ class AgentController:
                 err_id = 'STATUS$ERROR_LLM_INTERNAL_SERVER_ERROR'
             elif isinstance(e, BadRequestError) and 'ExceededBudget' in str(e):
                 err_id = 'STATUS$ERROR_LLM_OUT_OF_CREDITS'
-                await self.set_agent_state_to(AgentState.BUDGET_EXCEEDED)
+                # Set error reason for budget exceeded
+                self._last_error_reason = 'Budget exceeded: Out of credits'
+                # Use ERROR state with reason instead of separate state
+                await self.set_agent_state_to(AgentState.ERROR)
                 return
             elif isinstance(e, RateLimitError):
                 await self.set_agent_state_to(AgentState.RATE_LIMITED)

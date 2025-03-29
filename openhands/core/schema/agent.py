@@ -49,7 +49,3 @@ class AgentState(str, Enum):
     RATE_LIMITED = 'rate_limited'
     """The agent is rate limited.
     """
-
-    BUDGET_EXCEEDED = 'budget_exceeded'
-    """The agent is out of credits
-    """
