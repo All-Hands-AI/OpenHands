@@ -17,7 +17,7 @@ const getSettingsQueryFn = async () => {
     SECURITY_ANALYZER: apiSettings.security_analyzer,
     LLM_API_KEY: apiSettings.llm_api_key,
     REMOTE_RUNTIME_RESOURCE_FACTOR: apiSettings.remote_runtime_resource_factor,
-    GITHUB_TOKEN_IS_SET: apiSettings.github_token_is_set,
+    PROVIDER_TOKENS_SET: apiSettings.provider_tokens_set,
     ENABLE_DEFAULT_CONDENSER: apiSettings.enable_default_condenser,
     ENABLE_SOUND_NOTIFICATIONS: apiSettings.enable_sound_notifications,
     USER_CONSENTS_TO_ANALYTICS: apiSettings.user_consents_to_analytics,
@@ -27,10 +27,11 @@ const getSettingsQueryFn = async () => {
 };
 
 export const useSettings = () => {
-  const { setGitHubTokenIsSet, githubTokenIsSet } = useAuth();
+  const { setProviderTokensSet, providerTokensSet, setProvidersAreSet } =
+    useAuth();
 
   const query = useQuery({
-    queryKey: ["settings", githubTokenIsSet],
+    queryKey: ["settings", providerTokensSet],
     queryFn: getSettingsQueryFn,
     // Only retry if the error is not a 404 because we
     // would want to show the modal immediately if the
@@ -50,8 +51,18 @@ export const useSettings = () => {
   }, [query.data?.LLM_API_KEY, query.isFetched]);
 
   React.useEffect(() => {
-    if (query.isFetched) setGitHubTokenIsSet(!!query.data?.GITHUB_TOKEN_IS_SET);
-  }, [query.data?.GITHUB_TOKEN_IS_SET, query.isFetched]);
+    if (query.data?.PROVIDER_TOKENS_SET) {
+      const providers = query.data.PROVIDER_TOKENS_SET;
+      const setProviders = (
+        Object.keys(providers) as Array<keyof typeof providers>
+      ).filter((key) => providers[key]);
+      setProviderTokensSet(setProviders);
+      const atLeastOneSet = Object.values(query.data.PROVIDER_TOKENS_SET).some(
+        (value) => value,
+      );
+      setProvidersAreSet(atLeastOneSet);
+    }
+  }, [query.data?.PROVIDER_TOKENS_SET, query.isFetched]);
 
   // We want to return the defaults if the settings aren't found so the user can still see the
   // options to make their initial save. We don't set the defaults in `initialData` above because

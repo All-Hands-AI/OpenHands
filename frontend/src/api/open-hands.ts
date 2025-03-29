@@ -14,6 +14,7 @@ import {
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
 import { ApiSettings, PostApiSettings } from "#/types/settings";
+import { GitHubUser, GitRepository } from "#/types/github";
 
 class OpenHands {
   /**
@@ -306,7 +307,7 @@ class OpenHands {
   }
 
   static async getGitHubUser(): Promise<GitHubUser> {
-    const response = await openHands.get<GitHubUser>("/api/github/user");
+    const response = await openHands.get<GitHubUser>("/api/user/info");
 
     const { data } = response;
 
@@ -323,16 +324,16 @@ class OpenHands {
   }
 
   static async getGitHubUserInstallationIds(): Promise<number[]> {
-    const response = await openHands.get<number[]>("/api/github/installations");
+    const response = await openHands.get<number[]>("/api/user/installations");
     return response.data;
   }
 
   static async searchGitHubRepositories(
     query: string,
     per_page = 5,
-  ): Promise<GitHubRepository[]> {
-    const response = await openHands.get<GitHubRepository[]>(
-      "/api/github/search/repositories",
+  ): Promise<GitRepository[]> {
+    const response = await openHands.get<GitRepository[]>(
+      "/api/user/search/repositories",
       {
         params: {
           query,

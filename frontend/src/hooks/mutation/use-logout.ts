@@ -4,7 +4,7 @@ import { useAuth } from "#/context/auth-context";
 import { useConfig } from "../query/use-config";
 
 export const useLogout = () => {
-  const { setGitHubTokenIsSet } = useAuth();
+  const { setProviderTokensSet, setProvidersAreSet } = useAuth();
   const queryClient = useQueryClient();
   const { data: config } = useConfig();
 
@@ -20,7 +20,8 @@ export const useLogout = () => {
       queryClient.removeQueries({ queryKey: ["settings"] });
 
       // Update token state - this will trigger a settings refetch since it's part of the query key
-      setGitHubTokenIsSet(false);
+      setProviderTokensSet([]);
+      setProvidersAreSet(false);
     },
   });
 };

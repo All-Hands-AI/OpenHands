@@ -5,8 +5,8 @@ import { setReplayJson } from "#/state/initial-query-slice";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useConfig } from "#/hooks/query/use-config";
+import { GitRepositoriesSuggestionBox } from "#/components/features/github/github-repositories-suggestion-box";
 import { ReplaySuggestionBox } from "../../components/features/suggestions/replay-suggestion-box";
-import { GitHubRepositoriesSuggestionBox } from "#/components/features/github/github-repositories-suggestion-box";
 import { CodeNotInGitHubLink } from "#/components/features/github/code-not-in-github-link";
 import { HeroHeading } from "#/components/shared/hero-heading";
 import { TaskForm } from "#/components/shared/task-form";
@@ -37,7 +37,7 @@ function Home() {
         </div>
 
         <div className="flex gap-4 w-full flex-col md:flex-row mt-8">
-          <GitHubRepositoriesSuggestionBox
+          <GitRepositoriesSuggestionBox
             handleSubmit={() => formRef.current?.requestSubmit()}
             gitHubAuthUrl={gitHubAuthUrl}
             user={user || null}
