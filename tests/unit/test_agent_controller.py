@@ -17,6 +17,7 @@ from openhands.events.action import ChangeAgentStateAction, CmdRunAction, Messag
 from openhands.events.action.agent import RecallAction
 from openhands.events.event import RecallType
 from openhands.events.observation import (
+    AgentStateChangedObservation,
     ErrorObservation,
 )
 from openhands.events.observation.agent import RecallObservation
@@ -27,7 +28,7 @@ from openhands.llm.metrics import Metrics, TokenUsage
 from openhands.memory.memory import Memory
 from openhands.runtime.base import Runtime
 from openhands.storage.memory import InMemoryFileStore
-from openhands.events.observation import AgentStateChangedObservation
+
 
 @pytest.fixture
 def temp_dir(tmp_path_factory: pytest.TempPathFactory) -> str:
@@ -216,13 +217,17 @@ async def test_run_controller_with_fatal_error(test_event_stream, mock_memory):
     print(f'state: {state}')
     events = list(test_event_stream.get_events())
     print(f'event_stream: {events}')
-    error_observations = test_event_stream.get_matching_events(reverse=True, limit=1, event_types=(AgentStateChangedObservation))
+    error_observations = test_event_stream.get_matching_events(
+        reverse=True, limit=1, event_types=(AgentStateChangedObservation)
+    )
     assert len(error_observations) == 1
     error_observation = error_observations[0]
     assert state.iteration == 3
     assert state.agent_state == AgentState.ERROR
     assert state.last_error == 'AgentStuckInLoopError: Agent got stuck in a loop'
-    assert error_observation.reason == 'AgentStuckInLoopError: Agent got stuck in a loop'
+    assert (
+        error_observation.reason == 'AgentStuckInLoopError: Agent got stuck in a loop'
+    )
     assert len(events) == 11
 
 
@@ -625,11 +630,16 @@ async def test_run_controller_max_iterations_has_metrics(
         state.last_error
         == 'RuntimeError: Agent reached maximum iteration in headless mode. Current iteration: 3, max iteration: 3'
     )
-    error_observations = test_event_stream.get_matching_events(reverse=True, limit=1, event_types=(AgentStateChangedObservation))
+    error_observations = test_event_stream.get_matching_events(
+        reverse=True, limit=1, event_types=(AgentStateChangedObservation)
+    )
     assert len(error_observations) == 1
     error_observation = error_observations[0]
 
-    assert error_observation.reason == 'RuntimeError: Agent reached maximum iteration in headless mode. Current iteration: 3, max iteration: 3'
+    assert (
+        error_observation.reason
+        == 'RuntimeError: Agent reached maximum iteration in headless mode. Current iteration: 3, max iteration: 3'
+    )
 
     assert (
         state.metrics.accumulated_cost == 10.0 * 3
@@ -847,10 +857,15 @@ async def test_run_controller_with_context_window_exceeded_without_truncation(
         == 'LLMContextWindowExceedError: Conversation history longer than LLM context window limit. Consider turning on enable_history_truncation config to avoid this error'
     )
 
-    error_observations = test_event_stream.get_matching_events(reverse=True, limit=1, event_types=(AgentStateChangedObservation))
+    error_observations = test_event_stream.get_matching_events(
+        reverse=True, limit=1, event_types=(AgentStateChangedObservation)
+    )
     assert len(error_observations) == 1
     error_observation = error_observations[0]
-    assert error_observation.reason == 'LLMContextWindowExceedError: Conversation history longer than LLM context window limit. Consider turning on enable_history_truncation config to avoid this error'
+    assert (
+        error_observation.reason
+        == 'LLMContextWindowExceedError: Conversation history longer than LLM context window limit. Consider turning on enable_history_truncation config to avoid this error'
+    )
 
     # Check that the context window exceeded error was raised during the run
     assert step_state.has_errored
