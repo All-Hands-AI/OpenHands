@@ -189,9 +189,9 @@ export const chatSlice = createSlice({
           recallObs.extras.microagent_knowledge &&
           recallObs.extras.microagent_knowledge.length > 0
         ) {
-          content += `\n\n**Microagent Knowledge:**`;
+          content += `\n\n**Triggered Microagent Knowledge:**`;
           for (const knowledge of recallObs.extras.microagent_knowledge) {
-            content += `\n\n- **${knowledge.name}** (triggered by: ${knowledge.trigger})\n\n${knowledge.content}\n`;
+            content += `\n\n- **${knowledge.name}** (triggered by: ${knowledge.trigger})\n\n\`\`\`\n${knowledge.content}\n\`\`\``;
           }
         }
 
