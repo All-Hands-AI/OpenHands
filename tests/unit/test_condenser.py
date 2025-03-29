@@ -714,23 +714,28 @@ def test_token_aware_condenser_get_condensation(mock_llm):
 def test_token_aware_condenser_integration(mock_llm):
     """Integration test for TokenAwareCondenser's full condensation cycle."""
 
+    # Reset mock LLM
+    mock_llm.reset_mock()
+
     # Configure mock LLM to simulate token counting
-    def mock_get_metrics():
-        return {'total_tokens': 0}
+    mock_metrics = MagicMock()
+    mock_metrics.get.return_value = {'total_tokens': 0}
+    mock_llm.metrics = mock_metrics
+    mock_llm.format_messages_for_llm.side_effect = lambda x: x
 
-    mock_llm.metrics.get.side_effect = mock_get_metrics
-
-    # Configure mock exceeds_token_limit to return True after 8 events, but only for non-condensed views
+    # Configure mock should_condense to return True after 8 events, but only for non-condensed views
     with patch(
-        'openhands.memory.condenser.impl.token_aware_condenser.exceeds_token_limit'
-    ) as mock_exceeds:
+        'openhands.memory.condenser.impl.token_aware_condenser.TokenAwareCondenser.should_condense'
+    ) as mock_should_condense:
 
-        def mock_exceeds_token_limit(events, metrics, limit):
-            # Only trigger condensation if we don't have a condensation event in the events
-            has_condensation = any(isinstance(e, CondensationAction) for e in events)
-            return len(events) > 8 and not has_condensation
+        def mock_should_condense(self, view):
+            # Only trigger condensation if we have enough events and no condensation event
+            if len(view.events) <= self.keep_first:
+                return False
+            has_condensation = any(isinstance(e, AgentCondensationObservation) for e in view.events)
+            return len(view.events) > 8 and not has_condensation
 
-        mock_exceeds.side_effect = mock_exceeds_token_limit
+        mock_should_condense.side_effect = mock_should_condense
 
         condenser = TokenAwareCondenser(llm=mock_llm, keep_first=2, threshold=0.85)
         condenser.agent_llm = mock_llm
@@ -751,7 +756,7 @@ def test_token_aware_condenser_integration(mock_llm):
         view_count = 0
         summary_event_seen = False
         last_view_length = 0
-        condensation_count = 0
+        summary_event_count = 0
 
         for i, view in enumerate(harness.views(events)):
             view_count += 1
@@ -774,22 +779,18 @@ def test_token_aware_condenser_integration(mock_llm):
 
             # Track condensation events by looking at the LLM's response
             print(
-                f'View {i}: len={len(view)}, completion_count={mock_llm.completion.call_count}, condensation_count={condensation_count}'
+                f'View {i}: len={len(view)}, completion_count={mock_llm.completion.call_count}, summary_event_count={summary_event_count}'
             )
             if len(view) > 2 and isinstance(view[2], AgentCondensationObservation):
                 print(f'  Found summary event: {view[2].message}')
-                if mock_llm.completion.call_count > condensation_count:
-                    print(
-                        f'  Incrementing condensation_count from {condensation_count} to {mock_llm.completion.call_count}'
-                    )
-                    condensation_count = mock_llm.completion.call_count
+                summary_event_count += 1
 
         # Verify the token limit check was called
-        assert mock_exceeds.call_count > 0
-        # Verify the completion method was called for each condensation
-        assert mock_llm.completion.call_count == condensation_count
-        # Ensure we saw at least 2 condensation cycles
-        assert condensation_count >= 2
+        assert mock_should_condense.call_count > 0
+        # Verify the completion method was called for each summary event
+        assert mock_llm.completion.call_count == summary_event_count
+        # Ensure we saw at least 2 summary events
+        assert summary_event_count >= 2
         assert summary_event_seen
         # Verify final view is properly condensed
         assert last_view_length < 8

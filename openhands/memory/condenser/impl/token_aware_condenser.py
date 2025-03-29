@@ -45,9 +45,10 @@ class TokenAwareCondenser(RollingCondenser):
         # prefix events from the head, minus one for the summarization event
         events_from_tail = target_size - len(head) - 1
 
+        # Check if we have enough events to access the keep_first index
         summary_event = (
             view[self.keep_first]
-            if isinstance(view[self.keep_first], AgentCondensationObservation)
+            if len(view) > self.keep_first and isinstance(view[self.keep_first], AgentCondensationObservation)
             else AgentCondensationObservation('No events summarized')
         )
 
@@ -102,6 +103,17 @@ INTENT: Fix precision while maintaining FITS compliance"""
 
         self.add_metadata('response', response.model_dump())
         self.add_metadata('metrics', self.llm.metrics.get())
+
+        # If there are no forgotten events, use the first event's ID
+        if not forgotten_events:
+            return Condensation(
+                action=CondensationAction(
+                    forgotten_events_start_id=view[0].id,
+                    forgotten_events_end_id=view[0].id,
+                    summary=summary,
+                    summary_offset=self.keep_first,
+                )
+            )
 
         return Condensation(
             action=CondensationAction(
