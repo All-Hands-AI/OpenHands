@@ -1,19 +1,22 @@
 import asyncio
 from concurrent import futures
 from concurrent.futures import ThreadPoolExecutor
-from typing import Callable, Coroutine, Iterable, List
+from typing import Any, Callable, Coroutine, Iterable, List, TypeVar, cast
+
+T = TypeVar('T')  # Return type of the async function
+R = TypeVar('R')  # Return type of the sync function
 
 GENERAL_TIMEOUT: int = 15
 EXECUTOR = ThreadPoolExecutor()
 
 
-async def call_sync_from_async(
-    fn: Callable[..., object], *args: object, **kwargs: object
-) -> object:
+async def call_sync_from_async(fn: Callable[..., R], *args: Any, **kwargs: Any) -> R:
     """
     Shorthand for running a function in the default background thread pool executor
     and awaiting the result. The nature of synchronous code is that the future
-    returned by this function is not cancellable
+    returned by this function is not cancellable.
+
+    Preserves the return type of the original function.
     """
     loop = asyncio.get_event_loop()
     coro = loop.run_in_executor(None, lambda: fn(*args, **kwargs))
@@ -22,27 +25,28 @@ async def call_sync_from_async(
 
 
 def call_async_from_sync(
-    corofn: Callable[..., Coroutine[object, object, object]],
+    corofn: Callable[..., Coroutine[Any, Any, T]],
     timeout: float = GENERAL_TIMEOUT,
-    *args: object,
-    **kwargs: object,
-) -> object:
+    *args: Any,
+    **kwargs: Any,
+) -> T:
     """
     Shorthand for running a coroutine in the default background thread pool executor
-    and awaiting the result
-    """
+    and awaiting the result.
 
+    Preserves the return type of the original coroutine function.
+    """
     if corofn is None:
         raise ValueError('corofn is None')
     if not asyncio.iscoroutinefunction(corofn):
         raise ValueError('corofn is not a coroutine function')
 
-    async def arun() -> object:
+    async def arun() -> T:
         coro = corofn(*args, **kwargs)
         result = await coro
         return result
 
-    def run() -> object:
+    def run() -> T:
         loop_for_thread = asyncio.new_event_loop()
         try:
             asyncio.set_event_loop(loop_for_thread)
@@ -57,25 +61,31 @@ def call_async_from_sync(
 
 
 async def call_coro_in_bg_thread(
-    corofn: Callable[..., Coroutine[object, object, object]],
+    corofn: Callable[..., Coroutine[Any, Any, T]],
     timeout: float = GENERAL_TIMEOUT,
-    *args: object,
-    **kwargs: object,
-) -> object:
-    """Function for running a coroutine in a background thread."""
+    *args: Any,
+    **kwargs: Any,
+) -> T:
+    """
+    Function for running a coroutine in a background thread.
+
+    Preserves the return type of the original coroutine function.
+    """
     return await call_sync_from_async(
         call_async_from_sync, corofn, timeout, *args, **kwargs
     )
 
 
 async def wait_all(
-    iterable: Iterable[Coroutine], timeout: int = GENERAL_TIMEOUT
-) -> List:
+    iterable: Iterable[Coroutine[Any, Any, T]], timeout: int = GENERAL_TIMEOUT
+) -> List[T]:
     """
     Shorthand for waiting for all the coroutines in the iterable given in parallel. Creates
     a task for each coroutine.
     Returns a list of results in the original order. If any single task raised an exception, this is raised.
     If multiple tasks raised exceptions, an AsyncException is raised containing all exceptions.
+
+    Preserves the return type of the original coroutines.
     """
     tasks = [asyncio.create_task(c) for c in iterable]
     if not tasks:
