@@ -103,18 +103,34 @@ $env:PROMPT = "{self.PS1}"
 function Process-Command {{
     param($command)
     try {{
-        Invoke-Expression $command
+        # Execute the command and capture output
+        $output = Invoke-Expression $command 2>&1
+        $exitCode = $LASTEXITCODE
+        
+        # Output the result
+        if ($output) {{ $output | Out-String }}
+        
+        # Output PS1 prompt with metadata
+        Write-Host "{self.PS1}"
+        
+        # Return exit code
+        return $exitCode
     }} catch {{
         Write-Error $_.Exception.Message
-        exit 1
+        Write-Host "{self.PS1}"
+        return 1
     }}
 }}
+
+# Output initial PS1 prompt
+Write-Host "{self.PS1}"
 
 # Main command processing loop
 while ($true) {{
     $input = Read-Host
     if ($input -eq "exit") {{ break }}
-    Process-Command $input
+    $exitCode = Process-Command $input
+    $LASTEXITCODE = $exitCode
 }}
 '''
         self._init_script.write_text(init_script_content)
@@ -155,8 +171,11 @@ while ($true) {{
             creationflags=subprocess.CREATE_NEW_PROCESS_GROUP
         )
         
-        # Wait for the process to be ready
+        # Wait for the process to be ready and get initial PS1 prompt
         time.sleep(1)
+        initial_output = self._get_process_output()
+        if not initial_output or self.PS1 not in initial_output:
+            raise RuntimeError('Failed to get initial PS1 prompt from PowerShell')
         
         # Verify the process is running
         if self._process.poll() is not None:
@@ -185,21 +204,32 @@ while ($true) {{
             if self._process.poll() is not None:
                 raise RuntimeError('PowerShell process has terminated')
             
-            # Write command to temporary script file
-            self._command_script.write_text(command)
-            
             # Log the command we're about to send
-            cmd = f'& {{. "{self._command_script}"}}\n'
-            logger.debug(f'Attempting to send command to PowerShell: {cmd!r}')
+            logger.debug(f'Attempting to send command to PowerShell: {command!r}')
             
             # Ensure stdin is still open
             if self._process.stdin is None:
                 raise RuntimeError('PowerShell stdin pipe is closed')
             
-            # Send command to execute the script
-            self._process.stdin.write(cmd)
+            # Log process state before sending
+            logger.debug(f'Process state before send: poll={self._process.poll()}, stdin={self._process.stdin is not None}')
+            
+            # Send command directly to PowerShell
+            self._process.stdin.write(f"{command}\n")
             self._process.stdin.flush()
+            logger.debug('Command sent and flushed to stdin')
+            
             time.sleep(0.1)  # Give PowerShell time to process the command
+            logger.debug('After sleep, checking process state')
+            
+            # Check process state after sending
+            if self._process.poll() is not None:
+                logger.error(f'Process terminated after sending command. Exit code: {self._process.poll()}')
+                if self._process.stderr:
+                    error_output = self._process.stderr.read()
+                    logger.error(f'Process stderr: {error_output}')
+                raise RuntimeError('PowerShell process terminated after sending command')
+                
         except (OSError, IOError) as e:
             logger.error(f'Failed to send command to PowerShell: {e}')
             logger.error(f'Process state: poll={self._process.poll()}, stdin={self._process.stdin is not None}')
@@ -213,17 +243,81 @@ while ($true) {{
         try:
             # Read all available output
             output = []
+            print('Starting to read process output')
+            logger.debug('Starting to read process output')
+            
+            # Set a timeout for reading
+            timeout = 1.0  # 1 second timeout for the overall operation
+            start_time = time.time()
+            
             while True:
-                # Use a timeout to avoid blocking indefinitely
+                # Check if we've exceeded the timeout
+                if time.time() - start_time > timeout:
+                    print('Timeout reached while reading output')
+                    logger.debug('Timeout reached while reading output')
+                    break
+                
                 try:
-                    line = self._process.stdout.readline()
-                    if not line:
+                    print('Attempting to read line from stdout')
+                    logger.debug('Attempting to read line from stdout')
+                    
+                    # Check if there's data available to read
+                    if not self._process.stdout:
+                        print('stdout is None')
                         break
-                    output.append(line.rstrip())
-                except Exception:
+                    
+                    # Try to read a line with a longer timeout
+                    try:
+                        # Use a thread to read the line with a timeout
+                        import threading
+                        line = [None]
+                        def read_line():
+                            line[0] = self._process.stdout.readline()
+                        
+                        thread = threading.Thread(target=read_line)
+                        thread.daemon = True
+                        thread.start()
+                        thread.join(timeout=0.1)  # Wait up to 100ms for the read
+                        
+                        if thread.is_alive():
+                            # Read timed out, continue
+                            continue
+                            
+                        if line[0] is None:
+                            # No data available
+                            continue
+                            
+                    except Exception as e:
+                        print(f'Error during readline: {e}')
+                        break
+                        
+                    if not line[0]:
+                        print('No more output available')
+                        logger.debug('No more output available')
+                        break
+                        
+                    # Skip empty lines
+                    if not line[0].strip():
+                        continue
+                        
+                    print(f'Read line: {line[0].rstrip()}')
+                    logger.debug(f'Read line: {line[0].rstrip()}')
+                    output.append(line[0].rstrip())
+                    
+                    # If we've found a PS1 prompt, we can stop reading
+                    if self.PS1 in line[0]:
+                        # If we have some output before the PS1 prompt, we can stop
+                        if len(output) > 1:  # > 1 because the last line is the PS1 prompt
+                            break
+                        
+                except Exception as e:
+                    print(f'Error reading line from stdout: {e}')
+                    logger.error(f'Error reading line from stdout: {e}')
                     break
             
-            return '\n'.join(output)
+            result = '\n'.join(output)
+            logger.debug(f'Final output: {result}')
+            return result
         except (OSError, IOError) as e:
             logger.error(f'Failed to read output from PowerShell: {e}')
             raise RuntimeError(f'Failed to read output from PowerShell: {e}')
@@ -443,6 +537,7 @@ while ($true) {{
 
         # Strip the command of any leading/trailing whitespace
         logger.debug(f'RECEIVED ACTION: {action}')
+        print(f'RECEIVED ACTION: {action}')
         command = action.command.strip()
         is_input: bool = action.is_input
 
@@ -452,6 +547,7 @@ while ($true) {{
             BashCommandStatus.NO_CHANGE_TIMEOUT,
             BashCommandStatus.HARD_TIMEOUT,
         }:
+            print(f'PREVIOUS STATUS: {self.prev_status}')
             if command == '':
                 return CmdOutputObservation(
                     content='ERROR: No previous running command to retrieve logs from.',
@@ -465,8 +561,10 @@ while ($true) {{
                     metadata=CmdOutputMetadata(),
                 )
 
+        print(f'COMMAND: {command}')
         # Check if the command is a single command or multiple commands
         splited_commands = split_bash_commands(command)
+        print(f'SPLIT COMMANDS: {splited_commands}')
         if len(splited_commands) > 1:
             return ErrorObservation(
                 content=(
@@ -478,7 +576,11 @@ while ($true) {{
 
         start_time = time.time()
         last_change_time = start_time
+        print(f'START TIME: {start_time}')
+        logger.debug('Getting initial process output')
         last_pane_output = self._get_process_output()
+        print(f'LAST PANE OUTPUT: {last_pane_output}')
+        logger.debug(f'Initial process output: {last_pane_output}')
 
         # When prev command is still running, and we are trying to send a new command
         if (
@@ -493,6 +595,8 @@ while ($true) {{
             and not is_input
             and command != ''  # not input and not empty command
         ):
+            print('Previous command still running, handling timeout state')
+            logger.debug('Previous command still running, handling timeout state')
             _ps1_matches = CmdOutputMetadata.matches_ps1_metadata(last_pane_output)
             raw_command_output = self._combine_outputs_between_matches(
                 last_pane_output, _ps1_matches
@@ -506,6 +610,7 @@ while ($true) {{
                 'send other commands to interact with the current process, '
                 'or send keys ("C-c", "C-z", "C-d") to interrupt/kill the previous command before sending your new command.]'
             )
+            print(f'PREVIOUS COMMAND OUTPUT: {raw_command_output}')
             logger.debug(f'PREVIOUS COMMAND OUTPUT: {raw_command_output}')
             command_output = self._get_command_output(
                 command,
@@ -513,6 +618,7 @@ while ($true) {{
                 metadata,
                 continue_prefix='[Below is the output of the previous command.]\n',
             )
+            print(f'COMMAND OUTPUT: {command_output}')
             return CmdOutputObservation(
                 command=command,
                 content=command_output,
@@ -521,35 +627,46 @@ while ($true) {{
 
         # Send actual command/inputs to the process
         if command != '':
+            print(f'SENDING COMMAND: {command!r}')
             is_special_key = self._is_special_key(command)
             if is_input:
+                print(f'SENDING INPUT TO RUNNING PROCESS: {command!r}')
                 logger.debug(f'SENDING INPUT TO RUNNING PROCESS: {command!r}')
                 self._send_command(command)
             else:
                 # convert command to raw string
                 command = escape_powershell_special_chars(command)
+                print(f'SENDING COMMAND: {command!r}')
                 logger.debug(f'SENDING COMMAND: {command!r}')
                 self._send_command(command)
 
         # Loop until the command completes or times out
+        iteration = 0
         while should_continue():
+            print(f'ITERATION: {iteration}')
+            iteration += 1
             _start_time = time.time()
-            logger.debug(f'GETTING PROCESS OUTPUT at {_start_time}')
+            logger.debug(f'Iteration {iteration}: Getting process output at {_start_time}')
             cur_pane_output = self._get_process_output()
             logger.debug(
-                f'PROCESS OUTPUT GOT after {time.time() - _start_time:.2f} seconds'
+                f'Iteration {iteration}: Process output received after {time.time() - _start_time:.2f} seconds'
             )
-            logger.debug(f'BEGIN OF PROCESS OUTPUT: {cur_pane_output.split("\n")[:10]}')
-            logger.debug(f'END OF PROCESS OUTPUT: {cur_pane_output.split("\n")[-10:]}')
+            logger.debug(f'Iteration {iteration}: BEGIN OF PROCESS OUTPUT: {cur_pane_output.split("\n")[:10]}')
+            logger.debug(f'Iteration {iteration}: END OF PROCESS OUTPUT: {cur_pane_output.split("\n")[-10:]}')
+            
             ps1_matches = CmdOutputMetadata.matches_ps1_metadata(cur_pane_output)
+            logger.debug(f'Iteration {iteration}: Found {len(ps1_matches)} PS1 matches')
+            
             if cur_pane_output != last_pane_output:
                 last_pane_output = cur_pane_output
                 last_change_time = time.time()
-                logger.debug(f'CONTENT UPDATED DETECTED at {last_change_time}')
+                logger.debug(f'Iteration {iteration}: Content updated detected at {last_change_time}')
 
             # 1) Execution completed
             # if the last command output contains the end marker
             if cur_pane_output.rstrip().endswith(CMD_OUTPUT_PS1_END.rstrip()):
+                print(f'Iteration {iteration}: Command completed, handling completion')
+                logger.debug(f'Iteration {iteration}: Command completed, handling completion')
                 return self._handle_completed_command(
                     command,
                     pane_content=cur_pane_output,
@@ -560,13 +677,16 @@ while ($true) {{
             # for a while (self.NO_CHANGE_TIMEOUT_SECONDS)
             # We ignore this if the command is *blocking
             time_since_last_change = time.time() - last_change_time
+            print(f'Iteration {iteration}: Time since last change: {time_since_last_change}')
             logger.debug(
-                f'CHECKING NO CHANGE TIMEOUT ({self.NO_CHANGE_TIMEOUT_SECONDS}s): elapsed {time_since_last_change}. Action blocking: {action.blocking}'
+                f'Iteration {iteration}: Checking no-change timeout ({self.NO_CHANGE_TIMEOUT_SECONDS}s): elapsed {time_since_last_change}. Action blocking: {action.blocking}'
             )
             if (
                 not action.blocking
                 and time_since_last_change >= self.NO_CHANGE_TIMEOUT_SECONDS
             ):
+                print(f'Iteration {iteration}: No change timeout reached, handling timeout')
+                logger.debug(f'Iteration {iteration}: No change timeout reached, handling timeout')
                 return self._handle_nochange_timeout_command(
                     command,
                     pane_content=cur_pane_output,
@@ -574,10 +694,14 @@ while ($true) {{
                 )
 
             # 3) Execution timed out due to hard timeout
+            elapsed_time = time.time() - start_time
+            print(f'Iteration {iteration}: Elapsed time: {elapsed_time}')
             logger.debug(
-                f'CHECKING HARD TIMEOUT ({action.timeout}s): elapsed {time.time() - start_time}'
+                f'Iteration {iteration}: Checking hard timeout ({action.timeout}s): elapsed {elapsed_time}'
             )
-            if action.timeout and time.time() - start_time >= action.timeout:
+            if action.timeout and elapsed_time >= action.timeout:
+                print(f'Iteration {iteration}: Hard timeout reached, handling timeout')
+                logger.debug(f'Iteration {iteration}: Hard timeout reached, handling timeout')
                 return self._handle_hard_timeout_command(
                     command,
                     pane_content=cur_pane_output,
@@ -585,6 +709,9 @@ while ($true) {{
                     timeout=action.timeout,
                 )
 
-            logger.debug(f'SLEEPING for {self.POLL_INTERVAL} seconds for next poll')
+            print(f'Iteration {iteration}: Sleeping for {self.POLL_INTERVAL} seconds')
+            logger.debug(f'Iteration {iteration}: Sleeping for {self.POLL_INTERVAL} seconds')
             time.sleep(self.POLL_INTERVAL)
+            
+        logger.error('PowerShell session was interrupted')
         raise RuntimeError('PowerShell session was likely interrupted...')

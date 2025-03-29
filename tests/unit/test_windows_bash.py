@@ -39,9 +39,11 @@ def test_initialization(windows_bash_session, temp_work_dir):
 
 def test_command_execution(windows_bash_session):
     """Test basic command execution."""
+    print('Initializing WindowsBashSession')
     windows_bash_session.initialize()
     
     # Test a simple command
+    print('Executing command')
     action = CmdRunAction(command="Write-Output 'Hello World'")
     result = windows_bash_session.execute(action)
     
