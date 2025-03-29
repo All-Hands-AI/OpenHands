@@ -34,13 +34,12 @@ async def browse(
         if not isinstance(obs, dict):
             raise TypeError(f'Expected dict from browser.step, got {type(obs)}')
 
-        # Check text_content type
-        if 'text_content' in obs:
-            if not isinstance(obs['text_content'], str):
-                raise TypeError(f"Expected 'text_content' to be str, got {type(obs['text_content'])}")
-            text_content = obs['text_content']
-        else:
-            text_content = ''
+        # Check text_content type - this should be required as in the main branch
+        if not isinstance(obs['text_content'], str):
+            raise TypeError(
+                f"Expected 'text_content' to be str, got {type(obs['text_content'])}"
+            )
+        text_content = obs['text_content']
 
         # Check URL type
         if 'url' in obs:
@@ -53,7 +52,9 @@ async def browse(
         # Check image_content type
         if 'image_content' in obs:
             if not isinstance(obs['image_content'], list):
-                raise TypeError(f"Expected 'image_content' to be list, got {type(obs['image_content'])}")
+                raise TypeError(
+                    f"Expected 'image_content' to be list, got {type(obs['image_content'])}"
+                )
             image_content = obs['image_content']
         else:
             image_content = []
@@ -61,7 +62,9 @@ async def browse(
         # Check open_pages_urls type
         if 'open_pages_urls' in obs:
             if not isinstance(obs['open_pages_urls'], list):
-                raise TypeError(f"Expected 'open_pages_urls' to be list, got {type(obs['open_pages_urls'])}")
+                raise TypeError(
+                    f"Expected 'open_pages_urls' to be list, got {type(obs['open_pages_urls'])}"
+                )
             open_pages_urls = obs['open_pages_urls']
         else:
             open_pages_urls = []
@@ -69,7 +72,9 @@ async def browse(
         # Check active_page_index type
         if 'active_page_index' in obs:
             if not isinstance(obs['active_page_index'], int):
-                raise TypeError(f"Expected 'active_page_index' to be int, got {type(obs['active_page_index'])}")
+                raise TypeError(
+                    f"Expected 'active_page_index' to be int, got {type(obs['active_page_index'])}"
+                )
             active_page_index = obs['active_page_index']
         else:
             active_page_index = -1
@@ -77,7 +82,9 @@ async def browse(
         # Check dom_object type
         if 'dom_object' in obs:
             if not isinstance(obs['dom_object'], dict):
-                raise TypeError(f"Expected 'dom_object' to be dict, got {type(obs['dom_object'])}")
+                raise TypeError(
+                    f"Expected 'dom_object' to be dict, got {type(obs['dom_object'])}"
+                )
             dom_object = obs['dom_object']
         else:
             dom_object = {}
@@ -85,7 +92,9 @@ async def browse(
         # Check axtree_object type
         if 'axtree_object' in obs:
             if not isinstance(obs['axtree_object'], dict):
-                raise TypeError(f"Expected 'axtree_object' to be dict, got {type(obs['axtree_object'])}")
+                raise TypeError(
+                    f"Expected 'axtree_object' to be dict, got {type(obs['axtree_object'])}"
+                )
             axtree_object = obs['axtree_object']
         else:
             axtree_object = {}
@@ -93,7 +102,9 @@ async def browse(
         # Check extra_element_properties type
         if 'extra_element_properties' in obs:
             if not isinstance(obs['extra_element_properties'], dict):
-                raise TypeError(f"Expected 'extra_element_properties' to be dict, got {type(obs['extra_element_properties'])}")
+                raise TypeError(
+                    f"Expected 'extra_element_properties' to be dict, got {type(obs['extra_element_properties'])}"
+                )
             extra_element_properties = obs['extra_element_properties']
         else:
             extra_element_properties = {}
@@ -101,7 +112,9 @@ async def browse(
         # Check last_action type
         if 'last_action' in obs:
             if not isinstance(obs['last_action'], str):
-                raise TypeError(f"Expected 'last_action' to be str, got {type(obs['last_action'])}")
+                raise TypeError(
+                    f"Expected 'last_action' to be str, got {type(obs['last_action'])}"
+                )
             last_action = obs['last_action']
         else:
             last_action = ''
@@ -109,7 +122,9 @@ async def browse(
         # Check last_action_error type
         if 'last_action_error' in obs:
             if not isinstance(obs['last_action_error'], str):
-                raise TypeError(f"Expected 'last_action_error' to be str, got {type(obs['last_action_error'])}")
+                raise TypeError(
+                    f"Expected 'last_action_error' to be str, got {type(obs['last_action_error'])}"
+                )
             last_action_error = obs['last_action_error']
         else:
             last_action_error = ''
