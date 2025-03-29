@@ -1,0 +1,13 @@
+# Override ruff settings for CI
+[lint]
+ignore = [
+    "E501",
+    "B003",
+    "B007",
+    "B009",
+    "B010",
+    "B904",
+    "B018",
+    "ASYNC100",
+    "ASYNC101",
+]

@@ -17,8 +17,6 @@ ignore = [
     "B010",
     "B904",
     "B018",
-    "ASYNC100",
-    "ASYNC101",
 ]
 
 [lint.flake8-quotes]
