@@ -1,5 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { Trans, useTranslation } from "react-i18next";
+import { I18nKey } from "#/i18n/declaration";
 import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import { ModalBody } from "#/components/shared/modals/modal-body";
@@ -15,7 +16,7 @@ export function SetupPaymentModal() {
       window.location.href = data;
     },
     onError: () => {
-      displayErrorToast(t("BILLING$ERROR_WHILE_CREATING_SESSION"));
+      displayErrorToast(t(I18nKey.BILLING$ERROR_WHILE_CREATING_SESSION));
     },
   });
 
@@ -24,7 +25,9 @@ export function SetupPaymentModal() {
       <ModalBody className="border border-tertiary">
         <AllHandsLogo width={68} height={46} />
         <div className="flex flex-col gap-2 w-full items-center text-center">
-          <h1 className="text-2xl font-bold">{t("BILLING$YOUVE_GOT_50")}</h1>
+          <h1 className="text-2xl font-bold">
+            {t(I18nKey.BILLING$YOUVE_GOT_50)}
+          </h1>
           <p>
             <Trans
               i18nKey="BILLING$CLAIM_YOUR_50"
@@ -40,7 +43,7 @@ export function SetupPaymentModal() {
           isDisabled={isPending}
           onClick={mutate}
         >
-          {t("BILLING$PROCEED_TO_STRIPE")}
+          {t(I18nKey.BILLING$PROCEED_TO_STRIPE)}
         </BrandButton>
       </ModalBody>
     </ModalBackdrop>

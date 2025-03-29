@@ -36,7 +36,7 @@ describe("UserAvatar", () => {
       />,
     );
 
-    expect(screen.getByAltText("user avatar")).toBeInTheDocument();
+    expect(screen.getByAltText("AVATAR$ALT_TEXT")).toBeInTheDocument();
     expect(
       screen.queryByLabelText("USER$AVATAR_PLACEHOLDER"),
     ).not.toBeInTheDocument();
@@ -63,6 +63,6 @@ describe("UserAvatar", () => {
       />,
     );
     expect(screen.getByTestId("loading-spinner")).toBeInTheDocument();
-    expect(screen.queryByAltText("user avatar")).not.toBeInTheDocument();
+    expect(screen.queryByAltText("AVATAR$ALT_TEXT")).not.toBeInTheDocument();
   });
 });

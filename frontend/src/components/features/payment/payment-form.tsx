@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { useCreateStripeCheckoutSession } from "#/hooks/mutation/stripe/use-create-stripe-checkout-session";
 import { useBalance } from "#/hooks/query/use-balance";
 import { cn } from "#/utils/utils";
@@ -7,8 +8,10 @@ import { SettingsInput } from "../settings/settings-input";
 import { BrandButton } from "../settings/brand-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { amountIsValid } from "#/utils/amount-is-valid";
+import { I18nKey } from "#/i18n/declaration";
 
 export function PaymentForm() {
+  const { t } = useTranslation();
   const { data: balance, isLoading } = useBalance();
   const { mutate: addBalance, isPending } = useCreateStripeCheckoutSession();
 
@@ -38,7 +41,7 @@ export function PaymentForm() {
       className="flex flex-col gap-6 px-11 py-9"
     >
       <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">
-        Manage Credits
+        {t(I18nKey.PAYMENT$MANAGE_CREDITS)}
       </h2>
 
       <div
@@ -63,7 +66,7 @@ export function PaymentForm() {
           name="top-up-input"
           onChange={handleTopUpInputChange}
           type="text"
-          label="Add funds"
+          label={t(I18nKey.PAYMENT$ADD_FUNDS)}
           placeholder="Specify an amount in USD to add - min $10"
           className="w-[680px]"
         />
@@ -74,7 +77,7 @@ export function PaymentForm() {
             type="submit"
             isDisabled={isPending || buttonIsDisabled}
           >
-            Add credit
+            {t(I18nKey.PAYMENT$ADD_CREDIT)}
           </BrandButton>
           {isPending && <LoadingSpinner size="small" />}
         </div>

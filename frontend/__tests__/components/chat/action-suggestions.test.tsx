@@ -19,6 +19,20 @@ vi.mock("#/context/auth-context", () => ({
   useAuth: vi.fn(),
 }));
 
+// Mock react-i18next
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({
+    t: (key: string) => {
+      const translations: Record<string, string> = {
+        "ACTION$PUSH_TO_BRANCH": "Push to Branch",
+        "ACTION$PUSH_CREATE_PR": "Push & Create PR",
+        "ACTION$PUSH_CHANGES_TO_PR": "Push Changes to PR"
+      };
+      return translations[key] || key;
+    },
+  }),
+}));
+
 describe("ActionSuggestions", () => {
   // Setup mocks for each test
   vi.clearAllMocks();

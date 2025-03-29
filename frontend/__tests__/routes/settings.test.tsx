@@ -58,11 +58,11 @@ describe("Settings Screen", () => {
     renderSettingsScreen();
 
     await waitFor(() => {
-      screen.getByText("LLM Settings");
-      screen.getByText("GitHub Settings");
-      screen.getByText("Additional Settings");
-      screen.getByText("Reset to defaults");
-      screen.getByText("Save Changes");
+      // Use queryAllByText to handle multiple elements with the same text
+      expect(screen.queryAllByText("SETTINGS$LLM_SETTINGS")).not.toHaveLength(0);
+      screen.getByText("ACCOUNT_SETTINGS$ADDITIONAL_SETTINGS");
+      screen.getByText("BUTTON$RESET_TO_DEFAULTS");
+      screen.getByText("BUTTON$SAVE");
     });
   });
 
@@ -153,7 +153,7 @@ describe("Settings Screen", () => {
 
       renderSettingsScreen();
 
-      const button = await screen.findByText("Disconnect from GitHub");
+      const button = await screen.findByText("ACCOUNT_SETTINGS$DISCONNECT_FROM_GITHUB");
       expect(button).toBeInTheDocument();
       expect(button).toBeDisabled();
     });
@@ -165,7 +165,7 @@ describe("Settings Screen", () => {
       });
 
       renderSettingsScreen();
-      const button = await screen.findByText("Disconnect from GitHub");
+      const button = await screen.findByText("ACCOUNT_SETTINGS$DISCONNECT_FROM_GITHUB");
       expect(button).toBeInTheDocument();
       expect(button).toBeEnabled();
 
@@ -184,7 +184,7 @@ describe("Settings Screen", () => {
 
       renderSettingsScreen();
 
-      const button = await screen.findByText("Disconnect from GitHub");
+      const button = await screen.findByText("ACCOUNT_SETTINGS$DISCONNECT_FROM_GITHUB");
       await user.click(button);
 
       expect(handleLogoutMock).toHaveBeenCalled();
@@ -203,7 +203,7 @@ describe("Settings Screen", () => {
 
       renderSettingsScreen();
 
-      const button = screen.queryByText("Configure GitHub Repositories");
+      const button = screen.queryByText("GITHUB$CONFIGURE_REPOS");
       expect(button).not.toBeInTheDocument();
     });
 
@@ -220,7 +220,7 @@ describe("Settings Screen", () => {
       });
 
       renderSettingsScreen();
-      await screen.findByText("Configure GitHub Repositories");
+      await screen.findByText("GITHUB$CONFIGURE_REPOS");
     });
 
     it("should not render the GitHub token input if SaaS mode", async () => {
@@ -265,7 +265,7 @@ describe("Settings Screen", () => {
       const input = await screen.findByTestId("github-token-input");
       await user.type(input, "invalid-token");
 
-      const saveButton = screen.getByText("Save Changes");
+      const saveButton = screen.getByText("BUTTON$SAVE");
       await user.click(saveButton);
 
       llmProviderInput = await screen.findByTestId("llm-provider-input");
@@ -545,7 +545,7 @@ describe("Settings Screen", () => {
         const option = await screen.findByText("2x (4 core, 16G)");
         await user.click(option);
 
-        const saveButton = screen.getByText("Save Changes");
+        const saveButton = screen.getByText("BUTTON$SAVE");
         await user.click(saveButton);
 
         expect(saveSettingsSpy).toHaveBeenCalledWith(
@@ -561,7 +561,7 @@ describe("Settings Screen", () => {
 
         await toggleAdvancedSettings(user);
 
-        const saveButton = screen.getByText("Save Changes");
+        const saveButton = screen.getByText("BUTTON$SAVE");
         await user.click(saveButton);
 
         await waitFor(() => {
@@ -592,7 +592,7 @@ describe("Settings Screen", () => {
 
         await toggleAdvancedSettings(user);
 
-        const resetButton = screen.getByText("Reset to defaults");
+        const resetButton = screen.getByText("BUTTON$RESET_TO_DEFAULTS");
         await user.click(resetButton);
 
         // show modal
@@ -640,7 +640,7 @@ describe("Settings Screen", () => {
         );
         await user.click(confirmationModeSwitch);
 
-        const saveButton = screen.getByText("Save Changes");
+        const saveButton = screen.getByText("BUTTON$SAVE");
         await user.click(saveButton);
 
         expect(saveSettingsSpy).toHaveBeenCalledWith(
@@ -754,7 +754,7 @@ describe("Settings Screen", () => {
 
       expect(languageInput).toHaveValue("Norsk");
 
-      const saveButton = screen.getByText("Save Changes");
+      const saveButton = screen.getByText("BUTTON$SAVE");
       await user.click(saveButton);
 
       expect(saveSettingsSpy).toHaveBeenCalledWith(
@@ -792,7 +792,7 @@ describe("Settings Screen", () => {
       const gpt4Option = await screen.findByText("gpt-4o");
       await user.click(gpt4Option);
 
-      const saveButton = screen.getByText("Save Changes");
+      const saveButton = screen.getByText("BUTTON$SAVE");
       await user.click(saveButton);
 
       expect(saveSettingsSpy).toHaveBeenCalledWith(
@@ -818,7 +818,7 @@ describe("Settings Screen", () => {
 
       expect(languageInput).toHaveValue("Norsk");
 
-      const resetButton = screen.getByText("Reset to defaults");
+      const resetButton = screen.getByText("BUTTON$RESET_TO_DEFAULTS");
       await user.click(resetButton);
 
       expect(saveSettingsSpy).not.toHaveBeenCalled();
@@ -860,7 +860,7 @@ describe("Settings Screen", () => {
 
       renderSettingsScreen();
 
-      const resetButton = await screen.findByText("Reset to defaults");
+      const resetButton = await screen.findByText("BUTTON$RESET_TO_DEFAULTS");
       await user.click(resetButton);
 
       const modal = await screen.findByTestId("reset-modal");
@@ -889,7 +889,7 @@ describe("Settings Screen", () => {
       await user.click(analyticsConsentInput);
       expect(analyticsConsentInput).toBeChecked();
 
-      const saveButton = screen.getByText("Save Changes");
+      const saveButton = screen.getByText("BUTTON$SAVE");
       await user.click(saveButton);
 
       expect(handleCaptureConsentSpy).toHaveBeenCalledWith(true);
@@ -903,7 +903,7 @@ describe("Settings Screen", () => {
       );
       renderSettingsScreen();
 
-      const saveButton = await screen.findByText("Save Changes");
+      const saveButton = await screen.findByText("BUTTON$SAVE");
       await user.click(saveButton);
 
       expect(handleCaptureConsentSpy).toHaveBeenCalledWith(false);
@@ -936,7 +936,7 @@ describe("Settings Screen", () => {
       const user = userEvent.setup();
       renderSettingsScreen();
 
-      const saveButton = screen.getByText("Save Changes");
+      const saveButton = screen.getByText("BUTTON$SAVE");
       await user.click(saveButton);
 
       expect(saveSettingsSpy).toHaveBeenCalledWith(
@@ -953,7 +953,7 @@ describe("Settings Screen", () => {
       const input = await screen.findByTestId("llm-api-key-input");
       expect(input).toHaveValue("");
 
-      const saveButton = screen.getByText("Save Changes");
+      const saveButton = screen.getByText("BUTTON$SAVE");
       await user.click(saveButton);
 
       expect(saveSettingsSpy).toHaveBeenCalledWith(
@@ -973,7 +973,7 @@ describe("Settings Screen", () => {
       const input = await screen.findByTestId("llm-api-key-input");
       expect(input).toHaveValue("");
 
-      const saveButton = screen.getByText("Save Changes");
+      const saveButton = screen.getByText("BUTTON$SAVE");
       await user.click(saveButton);
 
       expect(saveSettingsSpy).toHaveBeenCalledWith(
@@ -988,7 +988,7 @@ describe("Settings Screen", () => {
       const input = await screen.findByTestId("llm-api-key-input");
       await user.type(input, "new-api-key");
 
-      const saveButton = screen.getByText("Save Changes");
+      const saveButton = screen.getByText("BUTTON$SAVE");
       await user.click(saveButton);
 
       expect(saveSettingsSpy).toHaveBeenCalledWith(
@@ -1068,7 +1068,7 @@ describe("Settings Screen", () => {
       const user = userEvent.setup();
       renderSettingsScreen();
 
-      const saveButton = await screen.findByText("Save Changes");
+      const saveButton = await screen.findByText("BUTTON$SAVE");
       await user.click(saveButton);
 
       expect(saveSettingsSpy).toHaveBeenCalledWith(
@@ -1084,7 +1084,7 @@ describe("Settings Screen", () => {
       const user = userEvent.setup();
       renderSettingsScreen();
 
-      const resetButton = await screen.findByText("Reset to defaults");
+      const resetButton = await screen.findByText("BUTTON$RESET_TO_DEFAULTS");
       await user.click(resetButton);
 
       const modal = await screen.findByTestId("reset-modal");

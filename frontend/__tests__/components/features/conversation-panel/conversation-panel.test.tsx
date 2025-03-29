@@ -135,10 +135,10 @@ describe("ConversationPanel", () => {
     await user.click(deleteButton);
 
     // Cancel the deletion
-    const cancelButton = screen.getByText("Cancel");
+    const cancelButton = screen.getByRole("button", { name: /cancel/i });
     await user.click(cancelButton);
 
-    expect(screen.queryByText("Cancel")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /cancel/i })).not.toBeInTheDocument();
 
     // Ensure the conversation is not deleted
     cards = await screen.findAllByTestId("conversation-card");
@@ -172,10 +172,10 @@ describe("ConversationPanel", () => {
     await user.click(deleteButton);
 
     // Confirm the deletion
-    const confirmButton = screen.getByText("Confirm");
+    const confirmButton = screen.getByRole("button", { name: /confirm/i });
     await user.click(confirmButton);
 
-    expect(screen.queryByText("Confirm")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /confirm/i })).not.toBeInTheDocument();
 
     // Wait for the cards to update with a longer timeout
     await waitFor(() => {
@@ -239,10 +239,10 @@ describe("ConversationPanel", () => {
     await user.click(deleteButton);
 
     // Confirm the deletion
-    const confirmButton = screen.getByText("Confirm");
+    const confirmButton = screen.getByRole("button", { name: /confirm/i });
     await user.click(confirmButton);
 
-    expect(screen.queryByText("Confirm")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /confirm/i })).not.toBeInTheDocument();
 
     // Wait for the cards to update
     await waitFor(() => {
