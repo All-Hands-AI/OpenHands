@@ -39,7 +39,7 @@ def estimate_token_usage_at_event_id(
     Returns the first match found, or None if none is found.
     """
     if event_id == -1:
-        event_id = len(events) - 1
+        event_id = events[-1].id
 
     # Find the index of the event with the given id
     idx = next((i for i, e in enumerate(events) if e.id == event_id), None)

@@ -99,6 +99,7 @@ class CodeActAgent(Agent):
             and self.llm.config.max_input_tokens
         ):
             self.condenser.max_input_tokens = self.llm.config.max_input_tokens
+            self.condenser.agent_llm = self.llm
 
         logger.debug(f'Using condenser: {type(self.condenser)}')
 
