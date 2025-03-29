@@ -32,6 +32,7 @@ export function ExpandableMessage({
   const [details, setDetails] = useState(message);
 
   useEffect(() => {
+    // Normal handling for other messages
     if (id && i18n.exists(id)) {
       setHeadline(t(id));
       setDetails(message);
