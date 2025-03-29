@@ -33,6 +33,14 @@ from openhands.server.file_config import (
 )
 from openhands.utils.async_utils import call_sync_from_async
 
+
+def _write_to_file(file_path: str, contents: bytes) -> None:
+    """Helper function to write contents to a file."""
+    with open(file_path, 'wb') as file:
+        file.write(contents)
+        file.flush()
+
+
 app = APIRouter(prefix='/api/conversations/{conversation_id}')
 
 
@@ -195,9 +203,8 @@ async def upload_file(request: Request, conversation_id: str, files: list[Upload
             # copy the file to the runtime
             with tempfile.TemporaryDirectory() as tmp_dir:
                 tmp_file_path = os.path.join(tmp_dir, safe_filename)
-                with open(tmp_file_path, 'wb') as tmp_file:
-                    tmp_file.write(file_contents)
-                    tmp_file.flush()
+                # Use a helper function to write to the file
+                await call_sync_from_async(_write_to_file, tmp_file_path, file_contents)
 
                 runtime: Runtime = request.state.conversation.runtime
                 try:
