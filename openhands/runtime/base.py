@@ -138,16 +138,9 @@ class Runtime(FileEditRuntimeMixin):
             external_auth_id=user_id,
             external_token_manager=True,
         )
-        raw_env_vars_obj = call_async_from_sync(
+        raw_env_vars: dict[str, str] = call_async_from_sync(
             self.provider_handler.get_env_vars, GENERAL_TIMEOUT, True, None, False
         )
-        if not isinstance(raw_env_vars_obj, dict):
-            raise TypeError(
-                f'Expected dict from get_env_vars, got {type(raw_env_vars_obj)}'
-            )
-        raw_env_vars: dict[str, str] = {
-            str(k): str(v) for k, v in raw_env_vars_obj.items()
-        }
         self.initial_env_vars.update(raw_env_vars)
 
         self._vscode_enabled = any(
@@ -303,12 +296,9 @@ class Runtime(FileEditRuntimeMixin):
         assert event.timeout is not None
         try:
             await self._export_latest_git_provider_tokens(event)
-            obs_obj = await call_sync_from_async(self.run_action, event)
-            if not isinstance(obs_obj, (CmdOutputObservation, ErrorObservation)):
-                raise TypeError(
-                    f'Expected CmdOutputObservation or ErrorObservation, got {type(obs_obj)}'
-                )
-            observation: Observation = obs_obj
+            observation: Observation = await call_sync_from_async(
+                self.run_action, event
+            )
         except Exception as e:
             err_id = ''
             if isinstance(e, httpx.NetworkError) or isinstance(
