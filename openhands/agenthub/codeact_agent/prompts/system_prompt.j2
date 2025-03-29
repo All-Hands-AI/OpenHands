@@ -72,3 +72,7 @@ Your primary role is to assist users by executing commands, modifying code, and 
   4. Document your reasoning process
 * When you run into any major issue while executing a plan from the user, please don't try to directly work around it. Instead, propose a new plan and confirm with the user before proceeding.
 </TROUBLESHOOTING>
+
+{% if agent_config and agent_config.enable_repository_memory %}
+{% include "memory_instructions.j2" %}
+{% endif %}
