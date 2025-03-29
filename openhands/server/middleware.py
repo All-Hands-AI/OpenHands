@@ -190,10 +190,17 @@ class GitHubTokenMiddleware(SessionMiddlewareInterface):
         self.app = app
 
     async def __call__(self, request: Request, call_next: Callable):
+        from openhands.core.logger import openhands_logger as logger
+        
+        user_id = get_user_id(request)
+        logger.info(f"[GitHubTokenMiddleware] Processing request for user_id: {user_id}, path: {request.url.path}")
+        
         settings_store = await shared.SettingsStoreImpl.get_instance(
-            shared.config, get_user_id(request)
+            shared.config, user_id
         )
         settings = await settings_store.load()
+        
+        logger.info(f"[GitHubTokenMiddleware] Settings loaded: {settings is not None}")
 
         # TODO: To avoid checks like this we should re-add the abilty to have completely different middleware in SAAS as in OSS
         if getattr(request.state, 'provider_tokens', None) is None:
@@ -202,8 +209,17 @@ class GitHubTokenMiddleware(SessionMiddlewareInterface):
                 and settings.secrets_store
                 and settings.secrets_store.provider_tokens
             ):
+                logger.info(f"[GitHubTokenMiddleware] Setting provider_tokens from settings. Available providers: {list(settings.secrets_store.provider_tokens.keys())}")
                 request.state.provider_tokens = settings.secrets_store.provider_tokens
             else:
+                logger.warning("[GitHubTokenMiddleware] No provider_tokens found in settings")
                 request.state.provider_tokens = None
+        else:
+            logger.info("[GitHubTokenMiddleware] provider_tokens already set on request.state")
 
-        return await call_next(request)
+        response = await call_next(request)
+        
+        # Log response status for debugging
+        logger.info(f"[GitHubTokenMiddleware] Response status: {response.status_code} for path: {request.url.path}")
+        
+        return response

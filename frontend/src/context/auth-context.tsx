@@ -12,19 +12,31 @@ interface AuthContextProps extends React.PropsWithChildren {
 const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 
 function AuthProvider({ children, initialGithubTokenIsSet }: AuthContextProps) {
+  console.log("[AuthProvider] Initializing with initialGithubTokenIsSet:", initialGithubTokenIsSet);
+  
   const [githubTokenIsSet, setGitHubTokenIsSet] = React.useState(
     !!initialGithubTokenIsSet,
   );
 
+  // Log when the token state changes
+  React.useEffect(() => {
+    console.log("[AuthProvider] githubTokenIsSet changed:", githubTokenIsSet);
+  }, [githubTokenIsSet]);
+
+  const handleSetGitHubTokenIsSet = React.useCallback((value: boolean) => {
+    console.log("[AuthProvider] Setting githubTokenIsSet to:", value);
+    setGitHubTokenIsSet(value);
+  }, []);
+
   const value = React.useMemo(
     () => ({
       githubTokenIsSet,
-      setGitHubTokenIsSet,
+      setGitHubTokenIsSet: handleSetGitHubTokenIsSet,
     }),
-    [githubTokenIsSet, setGitHubTokenIsSet],
+    [githubTokenIsSet, handleSetGitHubTokenIsSet],
   );
 
-  return <AuthContext value={value}>{children}</AuthContext>;
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 function useAuth() {

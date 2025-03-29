@@ -64,27 +64,44 @@ async def get_github_user(
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     access_token: SecretStr | None = Depends(get_access_token),
 ):
+    from openhands.core.logger import openhands_logger as logger
+    
+    logger.info(f"[get_github_user] Request received. provider_tokens: {provider_tokens is not None}, access_token: {access_token is not None}")
+    
     if provider_tokens:
+        logger.info(f"[get_github_user] Provider tokens available: {list(provider_tokens.keys())}")
+        
         client = ProviderHandler(
             provider_tokens=provider_tokens, external_auth_token=access_token
         )
 
         try:
+            logger.info("[get_github_user] Attempting to get user with ProviderHandler")
             user: User = await client.get_user()
+            logger.info(f"[get_github_user] User retrieved successfully: {user.login}")
             return user
 
         except AuthenticationError as e:
+            logger.error(f"[get_github_user] Authentication error: {str(e)}")
             return JSONResponse(
                 content=str(e),
                 status_code=status.HTTP_401_UNAUTHORIZED,
             )
 
         except UnknownException as e:
+            logger.error(f"[get_github_user] Unknown exception: {str(e)}")
             return JSONResponse(
                 content=str(e),
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+        except Exception as e:
+            logger.error(f"[get_github_user] Unexpected error: {str(e)}", exc_info=True)
+            return JSONResponse(
+                content=f"Unexpected error: {str(e)}",
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
+    logger.warning("[get_github_user] No provider tokens available")
     return JSONResponse(
         content='GitHub token required.',
         status_code=status.HTTP_401_UNAUTHORIZED,
