@@ -194,13 +194,13 @@ function AppContent() {
 
           <Controls
             setSecurityOpen={onSecurityModalOpen}
-            showSecurityLock={!!settings?.SECURITY_ANALYZER}
+            showSecurityLock={!!settings?.security_analyzer}
           />
           {settings && (
             <Security
               isOpen={securityModalIsOpen}
               onOpenChange={onSecurityModalOpenChange}
-              securityAnalyzer={settings.SECURITY_ANALYZER}
+              securityAnalyzer={settings.security_analyzer}
             />
           )}
         </div>

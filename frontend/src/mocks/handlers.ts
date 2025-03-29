@@ -4,32 +4,8 @@ import {
   Conversation,
   ResultSet,
 } from "#/api/open-hands.types";
-import { DEFAULT_SETTINGS } from "#/services/settings";
 import { STRIPE_BILLING_HANDLERS } from "./billing-handlers";
-import { ApiSettings, PostApiSettings } from "#/types/settings";
-
-export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
-  llm_model: DEFAULT_SETTINGS.LLM_MODEL,
-  llm_base_url: DEFAULT_SETTINGS.LLM_BASE_URL,
-  llm_api_key: DEFAULT_SETTINGS.LLM_API_KEY,
-  agent: DEFAULT_SETTINGS.AGENT,
-  language: DEFAULT_SETTINGS.LANGUAGE,
-  confirmation_mode: DEFAULT_SETTINGS.CONFIRMATION_MODE,
-  security_analyzer: DEFAULT_SETTINGS.SECURITY_ANALYZER,
-  remote_runtime_resource_factor:
-    DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
-  github_token_is_set: DEFAULT_SETTINGS.GITHUB_TOKEN_IS_SET,
-  enable_default_condenser: DEFAULT_SETTINGS.ENABLE_DEFAULT_CONDENSER,
-  enable_sound_notifications: DEFAULT_SETTINGS.ENABLE_SOUND_NOTIFICATIONS,
-  user_consents_to_analytics: DEFAULT_SETTINGS.USER_CONSENTS_TO_ANALYTICS,
-  provider_tokens: DEFAULT_SETTINGS.PROVIDER_TOKENS,
-};
-
-const MOCK_USER_PREFERENCES: {
-  settings: ApiSettings | PostApiSettings | null;
-} = {
-  settings: null,
-};
+import { SETTINGS_HANDLERS } from "./settings-handlers";
 
 const conversations: Conversation[] = [
   {
@@ -147,6 +123,7 @@ const openHandsHandlers = [
 
 export const handlers = [
   ...STRIPE_BILLING_HANDLERS,
+  ...SETTINGS_HANDLERS,
   ...openHandsHandlers,
   http.get("/api/github/repositories", () =>
     HttpResponse.json([
@@ -188,39 +165,6 @@ export const handlers = [
 
     return HttpResponse.json(config);
   }),
-  http.get("/api/settings", async () => {
-    await delay();
-    const { settings } = MOCK_USER_PREFERENCES;
-
-    if (!settings) return HttpResponse.json(null, { status: 404 });
-
-    if (Object.keys(settings.provider_tokens).length > 0)
-      settings.github_token_is_set = true;
-
-    return HttpResponse.json(settings);
-  }),
-  http.post("/api/settings", async ({ request }) => {
-    const body = await request.json();
-
-    if (body) {
-      let newSettings: Partial<PostApiSettings> = {};
-      if (typeof body === "object") {
-        newSettings = { ...body };
-      }
-
-      const fullSettings = {
-        ...MOCK_DEFAULT_USER_SETTINGS,
-        ...MOCK_USER_PREFERENCES.settings,
-        ...newSettings,
-      };
-
-      MOCK_USER_PREFERENCES.settings = fullSettings;
-      return HttpResponse.json(null, { status: 200 });
-    }
-
-    return HttpResponse.json(null, { status: 400 });
-  }),
-
   http.post("/api/authenticate", async () =>
     HttpResponse.json({ message: "Authenticated" }),
   ),
@@ -301,10 +245,4 @@ export const handlers = [
   }),
 
   http.post("/api/logout", () => HttpResponse.json(null, { status: 200 })),
-
-  http.post("/api/reset-settings", async () => {
-    await delay();
-    MOCK_USER_PREFERENCES.settings = { ...MOCK_DEFAULT_USER_SETTINGS };
-    return HttpResponse.json(null, { status: 200 });
-  }),
 ];

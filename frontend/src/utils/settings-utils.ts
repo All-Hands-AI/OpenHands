@@ -1,4 +1,4 @@
-import { Settings } from "#/types/settings";
+import { UserSettings } from "#/api/settings-service/settings-service.types";
 
 const extractBasicFormData = (formData: FormData) => {
   const provider = formData.get("llm-provider-input")?.toString();
@@ -47,7 +47,7 @@ const extractAdvancedFormData = (formData: FormData) => {
   };
 };
 
-export const extractSettings = (formData: FormData): Partial<Settings> => {
+export const extractSettings = (formData: FormData): Partial<UserSettings> => {
   const { LLM_MODEL, LLM_API_KEY, AGENT, LANGUAGE } =
     extractBasicFormData(formData);
 
@@ -72,14 +72,14 @@ export const extractSettings = (formData: FormData): Partial<Settings> => {
   }
 
   return {
-    LLM_MODEL: CUSTOM_LLM_MODEL || LLM_MODEL,
-    LLM_API_KEY,
-    AGENT,
-    LANGUAGE,
-    LLM_BASE_URL,
-    CONFIRMATION_MODE,
-    SECURITY_ANALYZER,
-    ENABLE_DEFAULT_CONDENSER,
-    PROVIDER_TOKENS: providerTokens,
+    llm_model: CUSTOM_LLM_MODEL || LLM_MODEL,
+    llm_api_key: LLM_API_KEY,
+    agent: AGENT,
+    language: LANGUAGE,
+    llm_base_url: LLM_BASE_URL,
+    confirmation_mode: CONFIRMATION_MODE,
+    security_analyzer: SECURITY_ANALYZER,
+    enable_default_condenser: ENABLE_DEFAULT_CONDENSER,
+    provider_tokens: providerTokens,
   };
 };

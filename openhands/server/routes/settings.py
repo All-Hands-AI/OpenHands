@@ -68,7 +68,7 @@ async def unset_settings_tokens(request: Request) -> JSONResponse:
         )
 
 
-@app.post('/reset-settings', response_model=dict[str, str])
+@app.post('/settings/reset', response_model=dict[str, str])
 async def reset_settings(request: Request) -> JSONResponse:
     """
     Resets user settings.

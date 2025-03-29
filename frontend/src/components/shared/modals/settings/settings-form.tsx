@@ -9,15 +9,16 @@ import { extractSettings } from "#/utils/settings-utils";
 import { useEndSession } from "#/hooks/use-end-session";
 import { ModalBackdrop } from "../modal-backdrop";
 import { ModelSelector } from "./model-selector";
-import { Settings } from "#/types/settings";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { KeyStatusIcon } from "#/components/features/settings/key-status-icon";
 import { SettingsInput } from "#/components/features/settings/settings-input";
 import { HelpLink } from "#/components/features/settings/help-link";
 import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
+import { UserSettings } from "#/api/settings-service/settings-service.types";
+import { DEFAULT_SETTINGS } from "#/services/settings";
 
 interface SettingsFormProps {
-  settings: Settings;
+  settings: UserSettings | undefined;
   models: string[];
   onClose: () => void;
 }
@@ -42,17 +43,16 @@ export function SettingsForm({ settings, models, onClose }: SettingsFormProps) {
 
   const handleFormSubmission = async (formData: FormData) => {
     const newSettings = extractSettings(formData);
-
-    await saveUserSettings(newSettings, {
+    saveUserSettings(newSettings, {
       onSuccess: () => {
         onClose();
         resetOngoingSession();
 
         posthog.capture("settings_saved", {
-          LLM_MODEL: newSettings.LLM_MODEL,
-          LLM_API_KEY: newSettings.LLM_API_KEY ? "SET" : "UNSET",
+          LLM_MODEL: newSettings.llm_model,
+          LLM_API_KEY: newSettings.llm_api_key ? "SET" : "UNSET",
           REMOTE_RUNTIME_RESOURCE_FACTOR:
-            newSettings.REMOTE_RUNTIME_RESOURCE_FACTOR,
+            newSettings.remote_runtime_resource_factor,
         });
       },
     });
@@ -74,7 +74,7 @@ export function SettingsForm({ settings, models, onClose }: SettingsFormProps) {
     }
   };
 
-  const isLLMKeySet = settings.LLM_API_KEY === "**********";
+  const isLLMKeySet = settings?.llm_api_key === "**********";
 
   return (
     <div>
@@ -87,7 +87,7 @@ export function SettingsForm({ settings, models, onClose }: SettingsFormProps) {
         <div className="flex flex-col gap-4">
           <ModelSelector
             models={organizeModelsAndProviders(models)}
-            currentModel={settings.LLM_MODEL}
+            currentModel={settings?.llm_model || DEFAULT_SETTINGS.llm_model}
           />
 
           <SettingsInput

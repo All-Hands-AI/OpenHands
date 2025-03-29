@@ -5,11 +5,10 @@ import { I18nKey } from "#/i18n/declaration";
 import { LoadingSpinner } from "../../loading-spinner";
 import { ModalBackdrop } from "../modal-backdrop";
 import { SettingsForm } from "./settings-form";
-import { Settings } from "#/types/settings";
-import { DEFAULT_SETTINGS } from "#/services/settings";
+import { UserSettings } from "#/api/settings-service/settings-service.types";
 
 interface SettingsModalProps {
-  settings?: Settings;
+  settings: UserSettings | undefined;
   onClose: () => void;
 }
 
@@ -46,7 +45,7 @@ export function SettingsModal({ onClose, settings }: SettingsModalProps) {
         )}
         {aiConfigOptions.data && (
           <SettingsForm
-            settings={settings || DEFAULT_SETTINGS}
+            settings={settings}
             models={aiConfigOptions.data?.models}
             onClose={onClose}
           />
