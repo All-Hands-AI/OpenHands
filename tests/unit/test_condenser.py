@@ -628,7 +628,6 @@ def test_llm_attention_condenser_handles_keep_first_events(mock_llm):
         assert view[:keep_first] == events[: min(keep_first, i + 1)]
 
 
-<<<<<<< HEAD
 def test_structured_summary_condenser_from_config():
     """Test that StructuredSummaryCondenser objects can be made from config."""
     config = StructuredSummaryCondenserConfig(
@@ -638,7 +637,8 @@ def test_structured_summary_condenser_from_config():
             model='gpt-4o',
             api_key='test_key',
             caching_prompt=True,
-=======
+
+
 def test_token_aware_condenser_from_config():
     """Test that TokenAwareCondenser objects can be made from config."""
     config = TokenAwareCondenserConfig(
@@ -647,13 +647,11 @@ def test_token_aware_condenser_from_config():
         llm_config=LLMConfig(
             model='gpt-4o',
             api_key='test_key',
->>>>>>> ca7d645f0 (fix init, add tests)
         ),
     )
     condenser = Condenser.from_config(config)
 
-<<<<<<< HEAD
-    assert isinstance(condenser, StructuredSummaryCondenser)
+    assert isinstance(condenser, TokenAwareCondenser)
     assert condenser.llm.config.model == 'gpt-4o'
     assert condenser.llm.config.api_key.get_secret_value() == 'test_key'
     assert condenser.max_size == 50
@@ -800,7 +798,6 @@ def test_condenser_pipeline_chains_sub_condensers():
 
         for event in browser_outputs[-ATTENTION_WINDOW:]:
             assert 'Content omitted' not in str(event)
-=======
     assert isinstance(condenser, TokenAwareCondenser)
     assert condenser.llm.config.model == 'gpt-4o'
     assert condenser.llm.config.api_key.get_secret_value() == 'test_key'
@@ -820,10 +817,8 @@ def test_token_aware_condenser_invalid_config():
     pytest.raises(ValueError, TokenAwareCondenser, llm=MagicMock(), threshold=1.1)
 
 
-@patch(
-    'openhands.memory.condenser.impl.token_aware_condenser.TokenAwareCondenser.should_condense'
-)
-def test_token_aware_condenser_should_condense(mock_should_condense, mock_llm):
+@patch('openhands.core.message_utils.exceeds_token_limit')
+def test_token_aware_condenser_should_condense(mock_exceeds_token_limit, mock_llm):
     """Test that TokenAwareCondenser correctly decides when to condense based on token metrics."""
     # Set up condenser with mock LLM
     condenser = TokenAwareCondenser(llm=mock_llm, threshold=0.85)
@@ -833,15 +828,17 @@ def test_token_aware_condenser_should_condense(mock_should_condense, mock_llm):
     view = View(events=events)
 
     # Test case 1: Below token limit
-    mock_should_condense.return_value = False
+    mock_exceeds_token_limit.return_value = False
     assert condenser.should_condense(view) is False
 
     # Test case 2: Exceeds token limit
-    mock_should_condense.return_value = True
+    mock_exceeds_token_limit.return_value = True
     assert condenser.should_condense(view) is True
 
-    # Check that the method was called
-    assert mock_should_condense.call_count == 2
+    # Verify exceeds_token_limit was called with the expected arguments
+    mock_exceeds_token_limit.assert_called_with(
+        view.events, mock_llm.metrics, int(0.85 * condenser.max_input_tokens)
+    )
 
 
 def test_token_aware_condenser_get_condensation(mock_llm):
@@ -876,52 +873,79 @@ def test_token_aware_condenser_get_condensation(mock_llm):
     assert mock_llm.completion.call_count == 1
 
 
-@patch(
-    'openhands.memory.condenser.impl.token_aware_condenser.TokenAwareCondenser.should_condense'
-)
-def test_token_aware_condenser_integration(mock_should_condense, mock_llm):
+def test_token_aware_condenser_integration(mock_llm):
     """Integration test for TokenAwareCondenser's full condensation cycle."""
-    condenser = TokenAwareCondenser(llm=mock_llm, keep_first=2)
-    condenser.agent_llm = mock_llm
+    # Configure mock LLM to simulate token counting
+    def mock_get_metrics():
+        return {'total_tokens': 0}
+    mock_llm.metrics.get.side_effect = mock_get_metrics
 
-    events = [create_test_event(f'Event {i}', id=i) for i in range(20)]
+    # Configure mock exceeds_token_limit to return True after 8 events, but only for non-condensed views
+    with patch('openhands.memory.condenser.impl.token_aware_condenser.exceeds_token_limit') as mock_exceeds:
+        def mock_exceeds_token_limit(events, metrics, limit):
+            # Only trigger condensation if we don't have a condensation event in the events
+            has_condensation = any(isinstance(e, CondensationAction) for e in events)
+            return len(events) > 8 and not has_condensation
 
-    # Set mock responses
-    mock_response = MagicMock()
-    mock_response.choices = [MagicMock()]
-    mock_response.choices[0].message = MagicMock()
-    mock_response.choices[0].message.content = 'Summary of events'
-    mock_llm.completion.return_value = mock_response
+        mock_exceeds.side_effect = mock_exceeds_token_limit
 
-    # First time should_condense is called, return False to allow normal view
-    # Then return True to trigger condensation
-    mock_should_condense.side_effect = [False] * 11 + [True] * 10
+        condenser = TokenAwareCondenser(llm=mock_llm, keep_first=2, threshold=0.85)
+        condenser.agent_llm = mock_llm
 
-    harness = RollingCondenserTestHarness(condenser)
+        events = [create_test_event(f'Event {i}', id=i) for i in range(30)]
 
-    # Track view count
-    view_count = 0
-    summary_event_seen = False
+        # Set mock responses for the summary generation
+        mock_response = MagicMock()
+        mock_response.choices = [MagicMock()]
+        mock_response.choices[0].message = MagicMock()
+        mock_response.choices[0].message.content = 'Summary of events'
+        mock_llm.completion.return_value = mock_response
+        mock_response.model_dump = MagicMock(return_value={})
 
-    for i, view in enumerate(harness.views(events[:15])):
-        view_count += 1
+        harness = RollingCondenserTestHarness(condenser)
 
-        # Before the 11th call, we should get normal views
-        if i < 11:
-            assert len(view) == i + 1
-        # After the 11th call, we should get condensed views
-        else:
-            # Check that we see a summary event
+        # Track view count and summary events
+        view_count = 0
+        summary_event_seen = False
+        last_view_length = 0
+        condensation_count = 0
+
+        for i, view in enumerate(harness.views(events)):
+            view_count += 1
+            last_view_length = len(view)
+
+            # Before first condensation (8 events), we should get normal views
+            if not summary_event_seen:
+                assert len(view) == i + 1
+                if len(view) > 8:
+                    # Check that we see a summary event at the expected position
+                    assert len(view) > 2
+                    assert isinstance(view[2], AgentCondensationObservation)
+                    summary_event_seen = True
+                    # Verify the view is actually condensed (smaller than before)
+                    assert len(view) < 8
+            else:
+                # After first condensation, verify we maintain the condensed structure
+                assert len(view) > 2
+                assert isinstance(view[2], AgentCondensationObservation)
+
+            # Track condensation events by looking at the LLM's response
+            print(f"View {i}: len={len(view)}, completion_count={mock_llm.completion.call_count}, condensation_count={condensation_count}")
             if len(view) > 2 and isinstance(view[2], AgentCondensationObservation):
-                summary_event_seen = True
+                print(f"  Found summary event: {view[2].message}")
+                if mock_llm.completion.call_count > condensation_count:
+                    print(f"  Incrementing condensation_count from {condensation_count} to {mock_llm.completion.call_count}")
+                    condensation_count = mock_llm.completion.call_count
 
-    # Verify the method was called
-    assert mock_should_condense.call_count > 0
-    # Verify the completion method was called for the summary
-    assert mock_llm.completion.call_count > 0
-    # Ensure we have enough views
-    assert view_count > 10
-    assert summary_event_seen
+        # Verify the token limit check was called
+        assert mock_exceeds.call_count > 0
+        # Verify the completion method was called for each condensation
+        assert mock_llm.completion.call_count == condensation_count
+        # Ensure we saw at least 2 condensation cycles
+        assert condensation_count >= 2
+        assert summary_event_seen
+        # Verify final view is properly condensed
+        assert last_view_length < 8
 
 
 def test_token_aware_condenser_metadata(mock_llm):
@@ -954,4 +978,3 @@ def test_token_aware_condenser_metadata(mock_llm):
     assert 'metrics' in metadata
     assert metadata['response'] == {'response': 'data'}
     assert metadata['metrics'] == {'metrics': 'data'}
->>>>>>> ca7d645f0 (fix init, add tests)
