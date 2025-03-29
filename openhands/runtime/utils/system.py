@@ -6,7 +6,7 @@ import time
 def check_port_available(port: int) -> bool:
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
-        sock.bind(('localhost', port))
+        sock.bind(('0.0.0.0', port))
         return True
     except OSError:
         time.sleep(0.1)  # Short delay to further reduce chance of collisions

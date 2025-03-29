@@ -133,17 +133,19 @@ class CodeActAgent(Agent):
         )
 
         messages = self._get_messages(condensed_history)
-        params: dict = {
-            'messages': self.llm.format_messages_for_llm(messages),
-        }
-        params['tools'] = self.tools
-        # log to litellm proxy if possible
-        params['extra_body'] = {'metadata': state.to_llm_metadata(agent_name=self.name)}
+        params: dict = self.build_llm_completion_params(messages, state)
         response = self.llm.completion(**params)
         actions = codeact_function_calling.response_to_actions(response)
         for action in actions:
             self.pending_actions.append(action)
         return self.pending_actions.popleft()
+
+    def build_llm_completion_params(self, messages: list[Message], state: State) -> dict:
+        return {
+            'messages': self.llm.format_messages_for_llm(messages),
+            'tools' : self.tools,
+            'extra_body' : {'metadata': state.to_llm_metadata(agent_name=self.name)}
+        }
 
     def _get_messages(self, events: list[Event]) -> list[Message]:
         """Constructs the message history for the LLM conversation.
