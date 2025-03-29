@@ -228,7 +228,8 @@ class AgentController:
         e: Exception,
     ):
         """React to an exception by setting the agent state to error and sending a status message."""
-        await self.set_agent_state_to(AgentState.ERROR)
+        error_message = type(e).__name__ + ': ' + str(e)
+        
         if self.status_callback is not None:
             err_id = ''
             if isinstance(e, AuthenticationError):
@@ -249,7 +250,9 @@ class AgentController:
             elif isinstance(e, RateLimitError):
                 await self.set_agent_state_to(AgentState.RATE_LIMITED)
                 return
-            self.status_callback('error', err_id, type(e).__name__ + ': ' + str(e))
+            self.status_callback('error', err_id, error_message)
+        
+        await self.set_agent_state_to(AgentState.ERROR, reason=error_message)
 
     def step(self):
         asyncio.create_task(self._step_with_exception_handling())
@@ -524,11 +527,12 @@ class AgentController:
         self._pending_action = None
         self.agent.reset()
 
-    async def set_agent_state_to(self, new_state: AgentState) -> None:
+    async def set_agent_state_to(self, new_state: AgentState, reason: str = "") -> None:
         """Updates the agent's state and handles side effects. Can emit events to the event stream.
 
         Args:
             new_state (AgentState): The new state to set for the agent.
+            reason (str, optional): The reason for the state change, particularly useful for ERROR state.
         """
         self.log(
             'info',
@@ -537,6 +541,10 @@ class AgentController:
 
         if new_state == self.state.agent_state:
             return
+
+        # Store error reason if provided
+        if new_state == AgentState.ERROR and reason:
+            self.state.last_error = reason
 
         if new_state in (AgentState.STOPPED, AgentState.ERROR):
             # sync existing metrics BEFORE resetting the agent
@@ -583,7 +591,7 @@ class AgentController:
 
         self.state.agent_state = new_state
         self.event_stream.add_event(
-            AgentStateChangedObservation('', self.state.agent_state),
+            AgentStateChangedObservation('', self.state.agent_state, reason=reason if new_state == AgentState.ERROR else ""),
             EventSource.ENVIRONMENT,
         )
 
