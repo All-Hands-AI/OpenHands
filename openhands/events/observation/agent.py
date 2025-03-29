@@ -72,6 +72,7 @@ class RecallObservation(Observation):
     repo_instructions: str = ''
     runtime_hosts: dict[str, int] = field(default_factory=dict)
     additional_agent_instructions: str = ''
+    date: str = ''
 
     # knowledge
     microagent_knowledge: list[MicroagentKnowledge] = field(default_factory=list)
@@ -112,6 +113,7 @@ class RecallObservation(Observation):
                     f'repo_instructions={self.repo_instructions[:20]}...',
                     f'runtime_hosts={self.runtime_hosts}',
                     f'additional_agent_instructions={self.additional_agent_instructions[:20]}...',
+                    f'date={self.date}'
                 ]
             )
         else:

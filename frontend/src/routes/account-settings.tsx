@@ -25,7 +25,6 @@ import {
   displayErrorToast,
   displaySuccessToast,
 } from "#/utils/custom-toast-handlers";
-import { PostSettings } from "#/types/settings";
 
 const REMOTE_RUNTIME_OPTIONS = [
   { key: 1, label: "1x (2 core, 8G)" },
@@ -170,24 +169,11 @@ function AccountSettings() {
   };
 
   const handleReset = () => {
-    const newSettings: Partial<PostSettings> = {
-      ...DEFAULT_SETTINGS,
-      LLM_API_KEY: "", // reset LLM API key
-    };
-
-    // we don't want the user to be able to modify these settings in SaaS
-    // and we should make sure they aren't included in the reset
-    if (shouldHandleSpecialSaasCase) {
-      delete newSettings.LLM_API_KEY;
-      delete newSettings.LLM_BASE_URL;
-      delete newSettings.LLM_MODEL;
-    }
-
-    saveSettings(newSettings, {
+    saveSettings(null, {
       onSuccess: () => {
         displaySuccessToast("Settings reset");
         setResetSettingsModalIsOpen(false);
-        setLlmConfigMode(isAdvancedSettingsSet ? "advanced" : "basic");
+        setLlmConfigMode("basic");
       },
     });
   };
@@ -297,7 +283,7 @@ function AccountSettings() {
                   testId="llm-api-key-help-anchor"
                   text="Don't know your API key?"
                   linkText="Click here for instructions"
-                  href="https://docs.all-hands.dev/modules/usage/llms"
+                  href="https://docs.all-hands.dev/modules/usage/installation#getting-an-api-key"
                 />
               )}
 

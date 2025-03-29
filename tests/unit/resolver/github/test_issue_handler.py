@@ -11,7 +11,7 @@ from openhands.resolver.interfaces.issue_definitions import (
 
 def test_get_converted_issues_initializes_review_comments():
     # Mock the necessary dependencies
-    with patch('requests.get') as mock_get:
+    with patch('httpx.get') as mock_get:
         # Mock the response for issues
         mock_issues_response = MagicMock()
         mock_issues_response.json.return_value = [
@@ -54,7 +54,7 @@ def test_get_converted_issues_initializes_review_comments():
 
 def test_get_converted_issues_handles_empty_body():
     # Mock the necessary dependencies
-    with patch('requests.get') as mock_get:
+    with patch('httpx.get') as mock_get:
         # Mock the response for issues
         mock_issues_response = MagicMock()
         mock_issues_response.json.return_value = [
@@ -97,7 +97,7 @@ def test_get_converted_issues_handles_empty_body():
 
 def test_pr_handler_get_converted_issues_with_comments():
     # Mock the necessary dependencies
-    with patch('requests.get') as mock_get:
+    with patch('httpx.get') as mock_get:
         # Mock the response for PRs
         mock_prs_response = MagicMock()
         mock_prs_response.json.return_value = [
@@ -150,7 +150,7 @@ def test_pr_handler_get_converted_issues_with_comments():
         ]
 
         # Mock the post request for GraphQL
-        with patch('requests.post') as mock_post:
+        with patch('httpx.post') as mock_post:
             mock_post.return_value = mock_graphql_response
 
             # Create an instance of PRHandler
@@ -182,7 +182,7 @@ def test_pr_handler_get_converted_issues_with_comments():
 
 def test_get_issue_comments_with_specific_comment_id():
     # Mock the necessary dependencies
-    with patch('requests.get') as mock_get:
+    with patch('httpx.get') as mock_get:
         # Mock the response for comments
         mock_comments_response = MagicMock()
         mock_comments_response.json.return_value = [
@@ -210,7 +210,7 @@ def test_pr_handler_get_converted_issues_with_specific_thread_comment():
     specific_comment_id = 123
 
     # Mock GraphQL response for review threads
-    with patch('requests.get') as mock_get:
+    with patch('httpx.get') as mock_get:
         # Mock the response for PRs
         mock_prs_response = MagicMock()
         mock_prs_response.json.return_value = [
@@ -279,7 +279,7 @@ def test_pr_handler_get_converted_issues_with_specific_thread_comment():
         ]
 
         # Mock the post request for GraphQL
-        with patch('requests.post') as mock_post:
+        with patch('httpx.post') as mock_post:
             mock_post.return_value = mock_graphql_response
 
             # Create an instance of PRHandler
@@ -315,7 +315,7 @@ def test_pr_handler_get_converted_issues_with_specific_review_thread_comment():
     specific_comment_id = 123
 
     # Mock GraphQL response for review threads
-    with patch('requests.get') as mock_get:
+    with patch('httpx.get') as mock_get:
         # Mock the response for PRs
         mock_prs_response = MagicMock()
         mock_prs_response.json.return_value = [
@@ -384,7 +384,7 @@ def test_pr_handler_get_converted_issues_with_specific_review_thread_comment():
         ]
 
         # Mock the post request for GraphQL
-        with patch('requests.post') as mock_post:
+        with patch('httpx.post') as mock_post:
             mock_post.return_value = mock_graphql_response
 
             # Create an instance of PRHandler
@@ -426,7 +426,7 @@ def test_pr_handler_get_converted_issues_with_specific_comment_and_issue_refs():
     specific_comment_id = 123
 
     # Mock GraphQL response for review threads
-    with patch('requests.get') as mock_get:
+    with patch('httpx.get') as mock_get:
         # Mock the response for PRs
         mock_prs_response = MagicMock()
         mock_prs_response.json.return_value = [
@@ -509,7 +509,7 @@ def test_pr_handler_get_converted_issues_with_specific_comment_and_issue_refs():
         ]
 
         # Mock the post request for GraphQL
-        with patch('requests.post') as mock_post:
+        with patch('httpx.post') as mock_post:
             mock_post.return_value = mock_graphql_response
 
             # Create an instance of PRHandler
@@ -551,7 +551,7 @@ def test_pr_handler_get_converted_issues_with_specific_comment_and_issue_refs():
 
 def test_pr_handler_get_converted_issues_with_duplicate_issue_refs():
     # Mock the necessary dependencies
-    with patch('requests.get') as mock_get:
+    with patch('httpx.get') as mock_get:
         # Mock the response for PRs
         mock_prs_response = MagicMock()
         mock_prs_response.json.return_value = [
@@ -611,7 +611,7 @@ def test_pr_handler_get_converted_issues_with_duplicate_issue_refs():
         ]
 
         # Mock the post request for GraphQL
-        with patch('requests.post') as mock_post:
+        with patch('httpx.post') as mock_post:
             mock_post.return_value = mock_graphql_response
 
             # Create an instance of PRHandler
