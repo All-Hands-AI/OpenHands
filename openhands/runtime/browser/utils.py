@@ -1,5 +1,4 @@
 import os
-from typing import Any, Dict
 
 from openhands.core.exceptions import BrowserUnavailableException
 from openhands.core.schema import ActionType
@@ -31,67 +30,54 @@ async def browse(
 
     try:
         # obs provided by BrowserGym: see https://github.com/ServiceNow/BrowserGym/blob/main/core/src/browsergym/core/env.py#L396
-        obs: Dict[str, Any] = await call_sync_from_async(browser.step, action_str)
+        obs = await call_sync_from_async(browser.step, action_str)
 
-        # text_content is required as in the main branch
-        if not isinstance(obs['text_content'], str):
-            raise TypeError(
-                f"Expected 'text_content' to be str, got {type(obs['text_content'])}"
-            )
+        # Extract values with type checking
+        text_content = obs.get('text_content', '')
+        if not isinstance(text_content, str):
+            text_content = str(text_content)
 
-        # Get values with appropriate type checking
         url = obs.get('url', '')
         if not isinstance(url, str):
-            raise TypeError(f"Expected 'url' to be str, got {type(url)}")
+            url = str(url)
 
         image_content = obs.get('image_content', [])
         if not isinstance(image_content, list):
-            raise TypeError(
-                f"Expected 'image_content' to be list, got {type(image_content)}"
-            )
+            image_content = []
 
         open_pages_urls = obs.get('open_pages_urls', [])
         if not isinstance(open_pages_urls, list):
-            raise TypeError(
-                f"Expected 'open_pages_urls' to be list, got {type(open_pages_urls)}"
-            )
+            open_pages_urls = []
 
         active_page_index = obs.get('active_page_index', -1)
         if not isinstance(active_page_index, int):
-            raise TypeError(
-                f"Expected 'active_page_index' to be int, got {type(active_page_index)}"
-            )
+            try:
+                active_page_index = int(active_page_index)
+            except (ValueError, TypeError):
+                active_page_index = -1
 
         dom_object = obs.get('dom_object', {})
         if not isinstance(dom_object, dict):
-            raise TypeError(f"Expected 'dom_object' to be dict, got {type(dom_object)}")
+            dom_object = {}
 
         axtree_object = obs.get('axtree_object', {})
         if not isinstance(axtree_object, dict):
-            raise TypeError(
-                f"Expected 'axtree_object' to be dict, got {type(axtree_object)}"
-            )
+            axtree_object = {}
 
         extra_element_properties = obs.get('extra_element_properties', {})
         if not isinstance(extra_element_properties, dict):
-            raise TypeError(
-                f"Expected 'extra_element_properties' to be dict, got {type(extra_element_properties)}"
-            )
+            extra_element_properties = {}
 
         last_action = obs.get('last_action', '')
         if not isinstance(last_action, str):
-            raise TypeError(
-                f"Expected 'last_action' to be str, got {type(last_action)}"
-            )
+            last_action = str(last_action)
 
         last_action_error = obs.get('last_action_error', '')
         if not isinstance(last_action_error, str):
-            raise TypeError(
-                f"Expected 'last_action_error' to be str, got {type(last_action_error)}"
-            )
+            last_action_error = str(last_action_error)
 
         return BrowserOutputObservation(
-            content=obs['text_content'],  # text content of the page
+            content=text_content,  # text content of the page
             url=url,  # URL of the page
             screenshot=obs.get('screenshot', None),  # base64-encoded screenshot, png
             set_of_marks=obs.get(
