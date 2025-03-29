@@ -1,7 +1,7 @@
 import asyncio
 from concurrent import futures
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any, Callable, Coroutine, Iterable, List, TypeVar, cast
+from typing import Any, Callable, Coroutine, Iterable, List, TypeVar
 
 T = TypeVar('T')  # Return type of the async function
 R = TypeVar('R')  # Return type of the sync function
