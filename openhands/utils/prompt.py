@@ -37,8 +37,10 @@ class PromptManager:
     def __init__(
         self,
         prompt_dir: str,
+        agent_config=None,
     ):
         self.prompt_dir: str = prompt_dir
+        self.agent_config = agent_config
         self.system_template: Template = self._load_template('system_prompt')
         self.user_template: Template = self._load_template('user_prompt')
         self.additional_info_template: Template = self._load_template('additional_info')
@@ -54,7 +56,7 @@ class PromptManager:
             return Template(file.read())
 
     def get_system_message(self) -> str:
-        return self.system_template.render().strip()
+        return self.system_template.render(agent_config=self.agent_config).strip()
 
     def get_example_user_message(self) -> str:
         """This is the initial user message provided to the agent
@@ -82,12 +84,14 @@ class PromptManager:
         repository_info: RepositoryInfo | None,
         runtime_info: RuntimeInfo | None,
         repo_instructions: str = '',
+        agent_config=None,
     ) -> str:
         """Renders the additional info template with the stored repository/runtime info."""
         return self.additional_info_template.render(
             repository_info=repository_info,
             repository_instructions=repo_instructions,
             runtime_info=runtime_info,
+            agent_config=agent_config or self.agent_config,
         ).strip()
 
     def build_microagent_info(

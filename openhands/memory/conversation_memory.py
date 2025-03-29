@@ -457,6 +457,7 @@ class ConversationMemory:
                             repository_info=repo_info,
                             runtime_info=runtime_info,
                             repo_instructions=repo_instructions,
+                            agent_config=self.agent_config,
                         )
                     )
                     message_content.append(TextContent(text=formatted_workspace_text))

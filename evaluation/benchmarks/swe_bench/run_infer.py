@@ -26,6 +26,7 @@ from evaluation.utils.shared import (
     prepare_dataset,
     reset_logger_for_multiprocessing,
     run_evaluation,
+    update_agent_config_for_eval,
     update_llm_config_for_completions_logging,
 )
 from openhands.controller.state.state import State
@@ -38,8 +39,18 @@ from openhands.core.config import (
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.critic import AgentFinishedCritic
-from openhands.events.action import CmdRunAction, MessageAction
-from openhands.events.observation import CmdOutputObservation, ErrorObservation
+from openhands.events.action import (
+    CmdRunAction,
+    FileReadAction,
+    FileWriteAction,
+    MessageAction,
+)
+from openhands.events.observation import (
+    CmdOutputObservation,
+    ErrorObservation,
+    FileReadObservation,
+    FileWriteObservation,
+)
 from openhands.events.serialization.event import event_from_dict, event_to_dict
 from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
@@ -111,8 +122,18 @@ Follow these steps to resolve the issue:
    - If any tests fail, revise your implementation until all tests pass
 
 Be thorough in your exploration, testing, and reasoning. It's fine if your thinking process is lengthy - quality and completeness are more important than brevity.
+
+IMPORTANT: make sure to log your learnings about this repository in the repo.md file.
 """
 
+    if 'repo_md' in instance and instance['repo_md'] is not None:
+        instruction += f"""
+
+Here's the current version of the repo.md file:
+<repo_md>
+{instance['repo_md']}
+</repo_md>
+"""
     if RUN_WITH_BROWSING:
         instruction += """
 <IMPORTANT!>
@@ -198,6 +219,7 @@ def get_config(
         condenser=metadata.condenser_config,
         enable_prompt_extensions=False,
     )
+    agent_config = update_agent_config_for_eval(agent_config)
     config.set_agent_config(agent_config)
     return config
 
@@ -331,6 +353,31 @@ def initialize_runtime(
         f'Expected to find python interpreter from testbed, but got: {str(obs)}',
     )
 
+    # Check if repository memory is enabled in agent config
+    enable_repo_memory = True
+    if (
+        hasattr(runtime.config, 'agent_config')
+        and runtime.config.agent_config is not None
+    ):
+        enable_repo_memory = getattr(
+            runtime.config.agent_config, 'enable_repository_memory', True
+        )
+
+    if enable_repo_memory and 'repo_md' in instance and instance['repo_md'] is not None:
+        action = FileWriteAction(
+            path=f'/workspace/{workspace_dir_name}/.openhands/microagents/repo.md',
+            content=instance['repo_md'],
+        )
+        action.set_hard_timeout(600)
+        logger.info(action, extra={'msg_type': 'ACTION'})
+        obs = runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert_and_raise(
+            isinstance(obs, FileWriteObservation),
+            f'Failed to write repo.md: {str(obs)}',
+        )
+        logger.info(f'Wrote repo.md for instance {instance["instance_id"]}')
+
     logger.info('-' * 30)
     logger.info('END Runtime Initialization Fn')
     logger.info('-' * 30)
@@ -450,10 +497,22 @@ def complete_runtime(
 
     assert_and_raise(git_patch is not None, 'Failed to get git diff (None)')
 
+    repo_md = None
+    if '.openhands/microagents/repo.md' in git_patch:
+        action = FileReadAction(
+            path=f'/workspace/{workspace_dir_name}/.openhands/microagents/repo.md'
+        )
+        logger.info(action, extra={'msg_type': 'ACTION'})
+        obs = runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        if isinstance(obs, FileReadObservation):
+            repo_md = obs.content.strip()
+            logger.info(f'repo.md detected:\n{repo_md}')
+
     logger.info('-' * 30)
     logger.info('END Runtime Completion Fn')
     logger.info('-' * 30)
-    return {'git_patch': git_patch}
+    return {'git_patch': git_patch, 'repo_md': repo_md}
 
 
 def process_instance(
@@ -515,8 +574,12 @@ def process_instance(
         # Get git patch
         return_val = complete_runtime(runtime, instance)
         git_patch = return_val['git_patch']
+        repo_md = return_val['repo_md']
         logger.info(
             f'Got git diff for instance {instance.instance_id}:\n--------\n{git_patch}\n--------'
+        )
+        logger.info(
+            f'Got repo.md for instance {instance.instance_id}:\n--------\n{repo_md}\n--------'
         )
     finally:
         runtime.close()
@@ -527,6 +590,7 @@ def process_instance(
     # because the agent may alter the environment / testcases
     test_result = {
         'git_patch': git_patch,
+        'repo_md': repo_md,
     }
 
     # If you are working on some simpler benchmark that only evaluates the final model output (e.g., in a MessageAction)

@@ -22,11 +22,11 @@ vi.mock("#/context/auth-context", () => ({
 describe("ActionSuggestions", () => {
   // Setup mocks for each test
   vi.clearAllMocks();
-  
+
   (useAuth as any).mockReturnValue({
     githubTokenIsSet: true,
   });
-  
+
   (useSelector as any).mockReturnValue({
     selectedRepository: "test-repo",
   });
@@ -66,14 +66,14 @@ describe("ActionSuggestions", () => {
   it("should have different prompts for 'Push to Branch' and 'Push & Create PR' buttons", () => {
     // This test verifies that the prompts are different in the component
     const component = render(<ActionSuggestions onSuggestionsClick={() => {}} />);
-    
+
     // Get the component instance to access the internal values
     const pushBranchPrompt = "Please push the changes to a remote branch on GitHub, but do NOT create a pull request. Please use the exact SAME branch name as the one you are currently on.";
     const createPRPrompt = "Please push the changes to GitHub and open a pull request. Please create a meaningful branch name that describes the changes.";
-    
+
     // Verify the prompts are different
     expect(pushBranchPrompt).not.toEqual(createPRPrompt);
-    
+
     // Verify the PR prompt mentions creating a meaningful branch name
     expect(createPRPrompt).toContain("meaningful branch name");
     expect(createPRPrompt).not.toContain("SAME branch name");
