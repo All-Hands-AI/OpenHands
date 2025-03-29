@@ -3,10 +3,10 @@ import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "test-utils";
 import { vi, describe, afterEach, it, expect } from "vitest";
 import TreeNode from "#/components/features/file-explorer/tree-node";
-import OpenHands from "#/api/open-hands";
+import { FileService } from "#/api/file-service/file-service.api";
 
-const getFileSpy = vi.spyOn(OpenHands, "getFile");
-const getFilesSpy = vi.spyOn(OpenHands, "getFiles");
+const getFileSpy = vi.spyOn(FileService, "getFile");
+const getFilesSpy = vi.spyOn(FileService, "getFiles");
 
 vi.mock("../../services/fileService", async () => ({
   uploadFile: vi.fn(),
