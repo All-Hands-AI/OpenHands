@@ -1,9 +1,8 @@
 import posthog from "posthog-js";
 import React from "react";
-import { useSelector } from "react-redux";
 import { SuggestionItem } from "#/components/features/suggestions/suggestion-item";
-import type { RootState } from "#/store";
 import { useAuth } from "#/context/auth-context";
+import { useInitialQuery } from "#/hooks/query/use-initial-query";
 
 interface ActionSuggestionsProps {
   onSuggestionsClick: (value: string) => void;
@@ -13,9 +12,7 @@ export function ActionSuggestions({
   onSuggestionsClick,
 }: ActionSuggestionsProps) {
   const { githubTokenIsSet } = useAuth();
-  const { selectedRepository } = useSelector(
-    (state: RootState) => state.initialQuery,
-  );
+  const { selectedRepository } = useInitialQuery();
 
   const [hasPullRequest, setHasPullRequest] = React.useState(false);
 

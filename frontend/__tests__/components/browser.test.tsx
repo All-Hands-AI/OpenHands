@@ -23,38 +23,47 @@ vi.mock("react-i18next", async () => {
   };
 });
 
+// Mock the useBrowser hook
+vi.mock("#/hooks/query/use-browser", () => ({
+  useBrowser: vi.fn(),
+}));
+
 import { screen } from "@testing-library/react";
 import { renderWithProviders } from "../../test-utils";
 import { BrowserPanel } from "#/components/features/browser/browser";
+import { useBrowser } from "#/hooks/query/use-browser";
 
 describe("Browser", () => {
   afterEach(() => {
     vi.clearAllMocks();
   });
   it("renders a message if no screenshotSrc is provided", () => {
-    renderWithProviders(<BrowserPanel />, {
-      preloadedState: {
-        browser: {
-          url: "https://example.com",
-          screenshotSrc: "",
-        },
-      },
+    // Mock the hook to return empty screenshot
+    (useBrowser as any).mockReturnValue({
+      url: "https://github.com/All-Hands-AI/OpenHands",
+      screenshotSrc: "",
+      isLoading: false,
+      setUrl: vi.fn(),
+      setScreenshotSrc: vi.fn(),
     });
+
+    renderWithProviders(<BrowserPanel />);
 
     // i18n empty message key
     expect(screen.getByText("BROWSER$NO_PAGE_LOADED")).toBeInTheDocument();
   });
 
   it("renders the url and a screenshot", () => {
-    renderWithProviders(<BrowserPanel />, {
-      preloadedState: {
-        browser: {
-          url: "https://example.com",
-          screenshotSrc:
-            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mN0uGvyHwAFCAJS091fQwAAAABJRU5ErkJggg==",
-        },
-      },
+    // Mock the hook to return a screenshot
+    (useBrowser as any).mockReturnValue({
+      url: "https://example.com",
+      screenshotSrc: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mN0uGvyHwAFCAJS091fQwAAAABJRU5ErkJggg==",
+      isLoading: false,
+      setUrl: vi.fn(),
+      setScreenshotSrc: vi.fn(),
     });
+
+    renderWithProviders(<BrowserPanel />);
 
     expect(screen.getByText("https://example.com")).toBeInTheDocument();
     expect(screen.getByAltText(/browser screenshot/i)).toBeInTheDocument();

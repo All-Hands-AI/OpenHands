@@ -1,65 +1,71 @@
-import {
-  addAssistantMessage,
-  addAssistantAction,
-  addUserMessage,
-  addErrorMessage,
-} from "#/state/chat-slice";
 import { trackError } from "#/utils/error-handler";
-import { appendSecurityAnalyzerInput } from "#/state/security-analyzer-slice";
-import { setCode, setActiveFilepath } from "#/state/code-slice";
-import { appendJupyterInput } from "#/state/jupyter-slice";
-import { setCurStatusMessage } from "#/state/status-slice";
-import { setMetrics } from "#/state/metrics-slice";
-import store from "#/store";
+import { queryClient } from "#/query-client-init";
 import ActionType from "#/types/action-type";
 import {
   ActionMessage,
   ObservationMessage,
   StatusMessage,
 } from "#/types/message";
-import { handleObservationMessage } from "./observations";
-import { appendInput } from "#/state/command-slice";
+import { handleObservationMessage, getChatFunctions } from "./observations";
+// Command slice is now handled by React Query
 
 const messageActions = {
   [ActionType.BROWSE]: (message: ActionMessage) => {
     if (!message.args.thought && message.message) {
-      store.dispatch(addAssistantMessage(message.message));
+      getChatFunctions().addAssistantMessage(message.message);
     }
   },
   [ActionType.BROWSE_INTERACTIVE]: (message: ActionMessage) => {
     if (!message.args.thought && message.message) {
-      store.dispatch(addAssistantMessage(message.message));
+      getChatFunctions().addAssistantMessage(message.message);
     }
   },
   [ActionType.WRITE]: (message: ActionMessage) => {
     const { path, content } = message.args;
-    store.dispatch(setActiveFilepath(path));
-    store.dispatch(setCode(content));
+    // Update code state in React Query
+    const currentState = queryClient.getQueryData<{
+      code: string;
+      path: string;
+    }>(["code"]) || { code: "", path: "" };
+    queryClient.setQueryData(["code"], {
+      ...currentState,
+      path,
+      code: content,
+    });
   },
   [ActionType.MESSAGE]: (message: ActionMessage) => {
     if (message.source === "user") {
-      store.dispatch(
-        addUserMessage({
-          content: message.args.content,
-          imageUrls:
-            typeof message.args.image_urls === "string"
-              ? [message.args.image_urls]
-              : message.args.image_urls,
-          timestamp: message.timestamp,
-          pending: false,
-        }),
-      );
+      getChatFunctions().addUserMessage({
+        content: message.args.content,
+        imageUrls:
+          typeof message.args.image_urls === "string"
+            ? [message.args.image_urls]
+            : message.args.image_urls,
+        timestamp: message.timestamp,
+        pending: false,
+      });
     } else {
-      store.dispatch(addAssistantMessage(message.args.content));
+      getChatFunctions().addAssistantMessage(message.args.content);
     }
   },
   [ActionType.RUN_IPYTHON]: (message: ActionMessage) => {
     if (message.args.confirmation_state !== "rejected") {
-      store.dispatch(appendJupyterInput(message.args.code));
+      // Update jupyter state in React Query
+      const currentState = queryClient.getQueryData<{
+        cells: Array<{ content: string; type: string }>;
+      }>(["jupyter"]) || { cells: [] };
+
+      queryClient.setQueryData(["jupyter"], {
+        ...currentState,
+        cells: [
+          ...currentState.cells,
+          { content: message.args.code, type: "input" },
+        ],
+      });
     }
   },
   [ActionType.FINISH]: (message: ActionMessage) => {
-    store.dispatch(addAssistantMessage(message.args.final_thought));
+    getChatFunctions().addAssistantMessage(message.args.final_thought);
     let successPrediction = "";
     if (message.args.task_completed === "partial") {
       successPrediction =
@@ -73,9 +79,9 @@ const messageActions = {
     if (successPrediction) {
       // if final_thought is not empty, add a new line before the success prediction
       if (message.args.final_thought) {
-        store.dispatch(addAssistantMessage(`\n${successPrediction}`));
+        getChatFunctions().addAssistantMessage(`\n${successPrediction}`);
       } else {
-        store.dispatch(addAssistantMessage(successPrediction));
+        getChatFunctions().addAssistantMessage(successPrediction);
       }
     }
   },
@@ -92,24 +98,41 @@ export function handleActionMessage(message: ActionMessage) {
       cost: message.llm_metrics?.accumulated_cost ?? null,
       usage: message.llm_metrics?.accumulated_token_usage ?? null,
     };
-    store.dispatch(setMetrics(metrics));
+    try {
+      // Update metrics in React Query
+      queryClient.setQueryData(["metrics"], metrics);
+    } catch (error) {
+      console.warn("Failed to update metrics:", error);
+    }
   }
 
   if (message.action === ActionType.RUN) {
-    store.dispatch(appendInput(message.args.command));
+    // Update command state in React Query
+    const currentState = queryClient.getQueryData<{
+      commands: Array<{ content: string; type: string }>;
+    }>(["command"]) || { commands: [] };
+
+    queryClient.setQueryData(["command"], {
+      ...currentState,
+      commands: [
+        ...currentState.commands,
+        { content: message.args.command, type: "input" },
+      ],
+    });
   }
 
   if ("args" in message && "security_risk" in message.args) {
-    store.dispatch(appendSecurityAnalyzerInput(message));
+    // Security analyzer is now handled by React Query
+    // This will be handled by the websocket event handler
   }
 
   if (message.source === "agent") {
     if (message.args && message.args.thought) {
-      store.dispatch(addAssistantMessage(message.args.thought));
+      getChatFunctions().addAssistantMessage(message.args.thought);
     }
     // Need to convert ActionMessage to RejectAction
     // @ts-expect-error TODO: fix
-    store.dispatch(addAssistantAction(message));
+    getChatFunctions().addAssistantAction(message);
   }
 
   if (message.action in messageActions) {
@@ -121,22 +144,23 @@ export function handleActionMessage(message: ActionMessage) {
 
 export function handleStatusMessage(message: StatusMessage) {
   if (message.type === "info") {
-    store.dispatch(
-      setCurStatusMessage({
-        ...message,
-      }),
-    );
+    // Status slice is now handled by React Query
+    // The websocket events hook will update the React Query cache
+    // Update status message in React Query
+    try {
+      queryClient.setQueryData(["status", "currentMessage"], message);
+    } catch (error) {
+      console.error("Failed to update status message:", error);
+    }
   } else if (message.type === "error") {
     trackError({
       message: message.message,
       source: "chat",
       metadata: { msgId: message.id },
     });
-    store.dispatch(
-      addErrorMessage({
-        ...message,
-      }),
-    );
+    getChatFunctions().addErrorMessage({
+      ...message,
+    });
   }
 }
 
@@ -154,10 +178,8 @@ export function handleAssistantMessage(message: Record<string, unknown>) {
       source: "chat",
       metadata: { raw_message: message },
     });
-    store.dispatch(
-      addErrorMessage({
-        message: errorMsg,
-      }),
-    );
+    getChatFunctions().addErrorMessage({
+      message: errorMsg,
+    });
   }
 }

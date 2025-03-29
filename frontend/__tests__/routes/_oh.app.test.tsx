@@ -5,6 +5,7 @@ import { screen, waitFor } from "@testing-library/react";
 import App from "#/routes/_oh.app/route";
 import OpenHands from "#/api/open-hands";
 import * as CustomToast from "#/utils/custom-toast-handlers";
+import { QueryClient } from "@tanstack/react-query";
 
 describe("App", () => {
   const errorToastSpy = vi.spyOn(CustomToast, "displayErrorToast");
@@ -18,6 +19,9 @@ describe("App", () => {
   }));
 
   beforeAll(() => {
+    // Initialize a new QueryClient for tests
+    new QueryClient();
+    
     vi.mock("#/hooks/use-end-session", () => ({
       useEndSession: vi.fn(() => endSessionMock),
     }));

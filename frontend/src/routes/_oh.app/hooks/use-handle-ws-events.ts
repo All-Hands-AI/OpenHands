@@ -1,12 +1,12 @@
 import React from "react";
-import { useDispatch } from "react-redux";
 import { useWsClient } from "#/context/ws-client-provider";
 import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
-import { addErrorMessage } from "#/state/chat-slice";
 import { AgentState } from "#/types/agent-state";
 import { ErrorObservation } from "#/types/core/observations";
 import { useEndSession } from "../../../hooks/use-end-session";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
+import { useSecurityAnalyzer } from "#/hooks/query/use-security-analyzer";
+import { useChat } from "#/hooks/query/use-chat";
 
 interface ServerError {
   error: boolean | string;
@@ -22,7 +22,8 @@ const isErrorObservation = (data: object): data is ErrorObservation =>
 export const useHandleWSEvents = () => {
   const { events, send } = useWsClient();
   const endSession = useEndSession();
-  const dispatch = useDispatch();
+  const { addErrorMessage } = useChat();
+  const { appendSecurityAnalyzerInput } = useSecurityAnalyzer();
 
   React.useEffect(() => {
     if (!events.length) {
@@ -54,12 +55,20 @@ export const useHandleWSEvents = () => {
     }
 
     if (isErrorObservation(event)) {
-      dispatch(
-        addErrorMessage({
-          id: event.extras?.error_id,
-          message: event.message,
-        }),
-      );
+      addErrorMessage({
+        id: event.extras?.error_id,
+        message: event.message,
+      });
     }
-  }, [events.length]);
+
+    // Handle security analyzer events
+    if (
+      "args" in event &&
+      typeof event.args === "object" &&
+      event.args !== null &&
+      "security_risk" in event.args
+    ) {
+      appendSecurityAnalyzerInput({ payload: event });
+    }
+  }, [events.length, appendSecurityAnalyzerInput]);
 };

@@ -8,14 +8,12 @@
 import { HydratedRouter } from "react-router/dom";
 import React, { startTransition, StrictMode } from "react";
 import { hydrateRoot } from "react-dom/client";
-import { Provider } from "react-redux";
 import posthog from "posthog-js";
 import "./i18n";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import store from "./store";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { useConfig } from "./hooks/query/use-config";
 import { AuthProvider } from "./context/auth-context";
-import { queryClientConfig } from "./query-client-config";
+import { queryClient } from "./query-client-init";
 
 function PosthogInit() {
   const { data: config } = useConfig();
@@ -45,22 +43,18 @@ async function prepareApp() {
   }
 }
 
-export const queryClient = new QueryClient(queryClientConfig);
-
-prepareApp().then(() =>
+prepareApp().then(() => {
   startTransition(() => {
     hydrateRoot(
       document,
       <StrictMode>
-        <Provider store={store}>
-          <AuthProvider>
-            <QueryClientProvider client={queryClient}>
-              <HydratedRouter />
-              <PosthogInit />
-            </QueryClientProvider>
-          </AuthProvider>
-        </Provider>
+        <AuthProvider>
+          <QueryClientProvider client={queryClient}>
+            <HydratedRouter />
+            <PosthogInit />
+          </QueryClientProvider>
+        </AuthProvider>
       </StrictMode>,
     );
-  }),
-);
+  });
+});

@@ -1,19 +1,49 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { handleStatusMessage, handleActionMessage } from "#/services/actions";
-import store from "#/store";
 import { trackError } from "#/utils/error-handler";
 import ActionType from "#/types/action-type";
 import { ActionMessage } from "#/types/message";
+import { queryClient } from "#/query-client-init";
+import * as observations from "#/services/observations";
 
 // Mock dependencies
 vi.mock("#/utils/error-handler", () => ({
   trackError: vi.fn(),
 }));
 
+// Create a mock store for backward compatibility
+const mockStore = {
+  dispatch: vi.fn(),
+  getState: vi.fn(),
+};
+
 vi.mock("#/store", () => ({
-  default: {
-    dispatch: vi.fn(),
-  },
+  default: mockStore,
+}));
+
+// Mock QueryClientWrapper
+vi.mock("#/utils/query-client-wrapper", () => ({
+  getQueryClientWrapper: vi.fn(() => ({
+    isSliceMigrated: vi.fn(() => true),
+    setQueryData: vi.fn(),
+    conditionalDispatch: vi.fn(),
+  })),
+}));
+
+// Create a mock for the chat functions
+const mockAddErrorMessage = vi.fn();
+const mockAddAssistantMessage = vi.fn();
+
+// Mock the getChatFunctions method
+vi.spyOn(observations, "getChatFunctions").mockImplementation(() => ({
+  addErrorMessage: mockAddErrorMessage,
+  addAssistantMessage: mockAddAssistantMessage,
+  addAssistantAction: vi.fn(),
+  addAssistantObservation: vi.fn(),
+  addUserMessage: vi.fn(),
+  clearMessages: vi.fn(),
+  messages: [],
+  isLoading: false,
 }));
 
 describe("Actions Service", () => {
@@ -22,7 +52,7 @@ describe("Actions Service", () => {
   });
 
   describe("handleStatusMessage", () => {
-    it("should dispatch info messages to status state", () => {
+    it("should handle info messages without dispatching to Redux (now using React Query)", () => {
       const message = {
         type: "info",
         message: "Runtime is not available",
@@ -32,9 +62,8 @@ describe("Actions Service", () => {
 
       handleStatusMessage(message);
 
-      expect(store.dispatch).toHaveBeenCalledWith(expect.objectContaining({
-        payload: message,
-      }));
+      // We no longer dispatch to Redux for info messages
+      expect(mockStore.dispatch).not.toHaveBeenCalled();
     });
 
     it("should log error messages and display them in chat", () => {
@@ -53,13 +82,55 @@ describe("Actions Service", () => {
         metadata: { msgId: "runtime.connection.failed" },
       });
 
-      expect(store.dispatch).toHaveBeenCalledWith(expect.objectContaining({
-        payload: message,
-      }));
+      // Now we should check if the React Query function was called instead of Redux
+      expect(mockAddErrorMessage).toHaveBeenCalledWith(message);
     });
   });
 
   describe("handleActionMessage", () => {
+    it("should update metrics via React Query when metrics are available", () => {
+      const message: ActionMessage = {
+        id: 1,
+        action: ActionType.MESSAGE,
+        source: "agent",
+        message: "Test message",
+        timestamp: new Date().toISOString(),
+        args: {
+          content: "Test content",
+        },
+        llm_metrics: {
+          accumulated_cost: 0.05,
+        },
+        tool_call_metadata: {
+          model_response: {
+            usage: {
+              prompt_tokens: 100,
+              completion_tokens: 50,
+              total_tokens: 150,
+            }
+          }
+        }
+      };
+
+      // Mock the queryClient
+      const mockSetQueryData = vi.fn();
+      vi.spyOn(queryClient, 'setQueryData').mockImplementation(mockSetQueryData);
+
+      handleActionMessage(message);
+
+      expect(mockSetQueryData).toHaveBeenCalledWith(
+        ["metrics"],
+        {
+          cost: 0.05,
+          usage: {
+            prompt_tokens: 100,
+            completion_tokens: 50,
+            total_tokens: 150,
+          }
+        }
+      );
+    });
+
     it("should use first-person perspective for task completion messages", () => {
       // Test partial completion
       const messagePartial: ActionMessage = {
@@ -76,17 +147,15 @@ describe("Actions Service", () => {
         }
       };
 
-      // Mock implementation to capture the message
-      let capturedPartialMessage = "";
-      (store.dispatch as any).mockImplementation((action: any) => {
-        if (action.type === "chat/addAssistantMessage" &&
-            action.payload.includes("believe that the task was **completed partially**")) {
-          capturedPartialMessage = action.payload;
-        }
-      });
+      // Reset the mock before testing
+      mockAddAssistantMessage.mockReset();
 
       handleActionMessage(messagePartial);
-      expect(capturedPartialMessage).toContain("I believe that the task was **completed partially**");
+      
+      // Check if the addAssistantMessage was called with the right message
+      expect(mockAddAssistantMessage).toHaveBeenCalledWith(
+        expect.stringContaining("I believe that the task was **completed partially**")
+      );
 
       // Test not completed
       const messageNotCompleted: ActionMessage = {
@@ -103,17 +172,15 @@ describe("Actions Service", () => {
         }
       };
 
-      // Mock implementation to capture the message
-      let capturedNotCompletedMessage = "";
-      (store.dispatch as any).mockImplementation((action: any) => {
-        if (action.type === "chat/addAssistantMessage" &&
-            action.payload.includes("believe that the task was **not completed**")) {
-          capturedNotCompletedMessage = action.payload;
-        }
-      });
+      // Reset the mock before testing
+      mockAddAssistantMessage.mockReset();
 
       handleActionMessage(messageNotCompleted);
-      expect(capturedNotCompletedMessage).toContain("I believe that the task was **not completed**");
+      
+      // Check if the addAssistantMessage was called with the right message
+      expect(mockAddAssistantMessage).toHaveBeenCalledWith(
+        expect.stringContaining("I believe that the task was **not completed**")
+      );
 
       // Test completed successfully
       const messageCompleted: ActionMessage = {
@@ -130,17 +197,15 @@ describe("Actions Service", () => {
         }
       };
 
-      // Mock implementation to capture the message
-      let capturedCompletedMessage = "";
-      (store.dispatch as any).mockImplementation((action: any) => {
-        if (action.type === "chat/addAssistantMessage" &&
-            action.payload.includes("believe that the task was **completed successfully**")) {
-          capturedCompletedMessage = action.payload;
-        }
-      });
+      // Reset the mock before testing
+      mockAddAssistantMessage.mockReset();
 
       handleActionMessage(messageCompleted);
-      expect(capturedCompletedMessage).toContain("I believe that the task was **completed successfully**");
+      
+      // Check if the addAssistantMessage was called with the right message
+      expect(mockAddAssistantMessage).toHaveBeenCalledWith(
+        expect.stringContaining("I believe that the task was **completed successfully**")
+      );
     });
   });
 });

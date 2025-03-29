@@ -1,31 +1,49 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, waitFor } from "@testing-library/react";
+import { waitFor, render } from "@testing-library/react";
 import React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import * as ChatSlice from "#/state/chat-slice";
 import {
   updateStatusWhenErrorMessagePresent,
   WsClientProvider,
   useWsClient,
 } from "#/context/ws-client-provider";
+import * as observations from "#/services/observations";
+
+// Create a mock for the addErrorMessage function
+const mockAddErrorMessage = vi.fn();
+
+// Mock the getChatFunctions method
+vi.spyOn(observations, "getChatFunctions").mockImplementation(() => ({
+  addErrorMessage: mockAddErrorMessage,
+  addAssistantMessage: vi.fn(),
+  addAssistantAction: vi.fn(),
+  addAssistantObservation: vi.fn(),
+  addUserMessage: vi.fn(),
+  clearMessages: vi.fn(),
+  messages: [],
+  isLoading: false,
+}));
 
 describe("Propagate error message", () => {
+  beforeEach(() => {
+    // Reset the mocks before each test
+    vi.clearAllMocks();
+  });
+
   it("should do nothing when no message was passed from server", () => {
-    const addErrorMessageSpy = vi.spyOn(ChatSlice, "addErrorMessage");
     updateStatusWhenErrorMessagePresent(null);
     updateStatusWhenErrorMessagePresent(undefined);
     updateStatusWhenErrorMessagePresent({});
     updateStatusWhenErrorMessagePresent({ message: null });
 
-    expect(addErrorMessageSpy).not.toHaveBeenCalled();
+    expect(mockAddErrorMessage).not.toHaveBeenCalled();
   });
 
   it("should display error to user when present", () => {
     const message = "We have a problem!";
-    const addErrorMessageSpy = vi.spyOn(ChatSlice, "addErrorMessage");
     updateStatusWhenErrorMessagePresent({ message });
 
-    expect(addErrorMessageSpy).toHaveBeenCalledWith({
+    expect(mockAddErrorMessage).toHaveBeenCalledWith({
       message,
       status_update: true,
       type: "error",
@@ -34,13 +52,12 @@ describe("Propagate error message", () => {
 
   it("should display error including translation id when present", () => {
     const message = "We have a problem!";
-    const addErrorMessageSpy = vi.spyOn(ChatSlice, "addErrorMessage");
     updateStatusWhenErrorMessagePresent({
       message,
       data: { msg_id: "..id.." },
     });
 
-    expect(addErrorMessageSpy).toHaveBeenCalledWith({
+    expect(mockAddErrorMessage).toHaveBeenCalledWith({
       message,
       id: "..id..",
       status_update: true,

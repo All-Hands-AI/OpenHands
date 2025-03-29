@@ -26,12 +26,7 @@ describe("ConversationPanel", () => {
 
   const renderConversationPanel = (config?: QueryClientConfig) =>
     renderWithProviders(<RouterStub />, {
-      preloadedState: {
-        metrics: {
-          cost: null,
-          usage: null
-        }
-      }
+      preloadedState: {}
     });
 
   const { endSessionMock } = vi.hoisted(() => ({
@@ -345,12 +340,7 @@ describe("ConversationPanel", () => {
     ]);
 
     renderWithProviders(<MyRouterStub />, {
-      preloadedState: {
-        metrics: {
-          cost: null,
-          usage: null
-        }
-      }
+      preloadedState: {}
     });
 
     const toggleButton = screen.getByText("Toggle");

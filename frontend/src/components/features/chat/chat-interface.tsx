@@ -1,4 +1,3 @@
-import { useDispatch, useSelector } from "react-redux";
 import React from "react";
 import posthog from "posthog-js";
 import { useParams } from "react-router";
@@ -6,9 +5,9 @@ import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
 import { TrajectoryActions } from "../trajectory/trajectory-actions";
 import { createChatMessage } from "#/services/chat-service";
 import { InteractiveChatBox } from "./interactive-chat-box";
-import { addUserMessage } from "#/state/chat-slice";
-import { RootState } from "#/store";
 import { AgentState } from "#/types/agent-state";
+import { useAgentState } from "#/hooks/query/use-agent-state";
+import { useChat } from "#/hooks/query/use-chat";
 import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
 import { FeedbackModal } from "../feedback/feedback-modal";
 import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom";
@@ -17,6 +16,7 @@ import { useWsClient } from "#/context/ws-client-provider";
 import { Messages } from "./messages";
 import { ChatSuggestions } from "./chat-suggestions";
 import { ActionSuggestions } from "./action-suggestions";
+import { useInitialQuery } from "#/hooks/query/use-initial-query";
 
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
@@ -35,22 +35,19 @@ function getEntryPoint(
 
 export function ChatInterface() {
   const { send, isLoadingMessages } = useWsClient();
-  const dispatch = useDispatch();
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const { scrollDomToBottom, onChatBodyScroll, hitBottom } =
     useScrollToBottom(scrollRef);
 
-  const { messages } = useSelector((state: RootState) => state.chat);
-  const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const { messages, addUserMessage } = useChat();
+  const { curAgentState } = useAgentState();
 
   const [feedbackPolarity, setFeedbackPolarity] = React.useState<
     "positive" | "negative"
   >("positive");
   const [feedbackModalIsOpen, setFeedbackModalIsOpen] = React.useState(false);
   const [messageToSend, setMessageToSend] = React.useState<string | null>(null);
-  const { selectedRepository, replayJson } = useSelector(
-    (state: RootState) => state.initialQuery,
-  );
+  const { selectedRepository, replayJson } = useInitialQuery();
   const params = useParams();
   const { mutate: getTrajectory } = useGetTrajectory();
 
@@ -75,7 +72,7 @@ export function ChatInterface() {
 
     const timestamp = new Date().toISOString();
     const pending = true;
-    dispatch(addUserMessage({ content, imageUrls, timestamp, pending }));
+    addUserMessage({ content, imageUrls, timestamp, pending });
     send(createChatMessage(content, imageUrls, timestamp));
     setMessageToSend(null);
   };
