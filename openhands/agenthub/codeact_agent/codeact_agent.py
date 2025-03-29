@@ -93,7 +93,7 @@ class CodeActAgent(Agent):
 
         self.condenser = Condenser.from_config(self.config.condenser)
 
-        # FIXME: we need to use the agent LLM's max_input_tokens
+        # We need to use the *agent* LLM's max_input_tokens and metrics
         if (
             isinstance(self.condenser, TokenAwareCondenser)
             and self.llm.config.max_input_tokens
