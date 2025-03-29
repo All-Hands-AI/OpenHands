@@ -118,7 +118,7 @@ export interface MicroagentKnowledge {
 export interface RecallObservation extends OpenHandsObservationEvent<"recall"> {
   source: "agent";
   extras: {
-    recall_type: "workspace_context" | "knowledge";
+    recall_type?: "workspace_context" | "knowledge";
     repo_name?: string;
     repo_directory?: string;
     repo_instructions?: string;

@@ -32,14 +32,6 @@ export function ExpandableMessage({
   const [details, setDetails] = useState(message);
 
   useEffect(() => {
-    // Special handling for RecallObservation messages
-    if (id === "OBSERVATION_MESSAGE$RECALL") {
-      setHeadline(t(id)); // Use the translation
-      setDetails(message);
-      setShowDetails(false); // Start collapsed
-      return;
-    }
-
     // Normal handling for other messages
     if (id && i18n.exists(id)) {
       setHeadline(t(id));

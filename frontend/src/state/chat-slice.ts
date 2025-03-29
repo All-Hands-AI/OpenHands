@@ -23,7 +23,7 @@ const HANDLED_ACTIONS: OpenHandsEventType[] = [
   "browse",
   "browse_interactive",
   "edit",
-  "recall", // Keep this for backward compatibility
+  "recall",
 ];
 
 function getRiskText(risk: ActionSecurityRisk) {
@@ -115,8 +115,8 @@ export const chatSlice = createSlice({
         // Include the browser_actions in the content
         text = `**Action:**\n\n\`\`\`python\n${action.payload.args.browser_actions}\n\`\`\``;
       } else if (actionID === "recall") {
-        // Don't visualize RecallAction, only visualize RecallObservation
-        return; // Skip adding this message
+        // skip recall actions
+        return;
       }
       if (actionID === "run" || actionID === "run_ipython") {
         if (
@@ -207,14 +207,14 @@ export const chatSlice = createSlice({
         // Use the correct translation ID format that matches what's in the i18n file
         const translationID = `OBSERVATION_MESSAGE$${observationID.toUpperCase()}`;
         const message: Message = {
-          type: "action", // Use "action" type to get the collapsible functionality
+          type: "action",
           sender: "assistant",
-          translationID, // This must match an entry in the i18n translation file
+          translationID,
           eventID: observation.payload.id,
           content,
           imageUrls: [],
           timestamp: new Date().toISOString(),
-          success: true, // RecallObservation is generally considered successful
+          success: true,
         };
 
         state.messages.push(message);
