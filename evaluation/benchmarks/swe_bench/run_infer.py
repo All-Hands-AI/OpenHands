@@ -24,9 +24,9 @@ from evaluation.utils.shared import (
     is_fatal_evaluation_error,
     make_metadata,
     prepare_dataset,
-    update_agent_config_for_eval,
     reset_logger_for_multiprocessing,
     run_evaluation,
+    update_agent_config_for_eval,
     update_llm_config_for_completions_logging,
 )
 from openhands.controller.state.state import State
@@ -355,9 +355,14 @@ def initialize_runtime(
 
     # Check if repository memory is enabled in agent config
     enable_repo_memory = True
-    if hasattr(runtime.config, 'agent_config') and runtime.config.agent_config is not None:
-        enable_repo_memory = getattr(runtime.config.agent_config, 'enable_repository_memory', True)
-    
+    if (
+        hasattr(runtime.config, 'agent_config')
+        and runtime.config.agent_config is not None
+    ):
+        enable_repo_memory = getattr(
+            runtime.config.agent_config, 'enable_repository_memory', True
+        )
+
     if enable_repo_memory and 'repo_md' in instance and instance['repo_md'] is not None:
         action = FileWriteAction(
             path=f'/workspace/{workspace_dir_name}/.openhands/microagents/repo.md',

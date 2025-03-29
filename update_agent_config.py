@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-import os
-import re
 import glob
+import re
 
 # Find all run_infer.py files
 run_infer_files = glob.glob('evaluation/benchmarks/*/run_infer.py')
@@ -14,26 +13,26 @@ replacement = r'\1\nfrom evaluation.utils.shared import update_agent_config_for_
 
 # Process each file
 for file_path in run_infer_files:
-    print(f"Processing {file_path}...")
-    
+    print(f'Processing {file_path}...')
+
     # Read the file content
     with open(file_path, 'r') as file:
         content = file.read()
-    
+
     # Check if the file already imports update_agent_config_for_eval
     if 'update_agent_config_for_eval' in content:
-        print(f"  Already updated, skipping")
+        print('  Already updated, skipping')
         continue
-    
+
     # Apply the replacement
     updated_content = re.sub(pattern, replacement, content)
-    
+
     # Write the updated content back to the file
     if updated_content != content:
         with open(file_path, 'w') as file:
             file.write(updated_content)
-        print(f"  Updated successfully")
+        print('  Updated successfully')
     else:
-        print(f"  No matching pattern found")
+        print('  No matching pattern found')
 
-print("Done!")
+print('Done!')

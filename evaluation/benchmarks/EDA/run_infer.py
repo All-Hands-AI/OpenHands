@@ -14,6 +14,7 @@ from evaluation.utils.shared import (
     prepare_dataset,
     reset_logger_for_multiprocessing,
     run_evaluation,
+    update_agent_config_for_eval,
 )
 from openhands.controller.state.state import State
 from openhands.core.config import (
@@ -74,8 +75,7 @@ def get_config(
     )
     config.set_llm_config(metadata.llm_config)
     agent_config = config.get_agent_config(metadata.agent_class)
-from evaluation.utils.shared import update_agent_config_for_eval
-agent_config = update_agent_config_for_eval(agent_config)
+    agent_config = update_agent_config_for_eval(agent_config)
     agent_config.enable_prompt_extensions = False
     return config
 

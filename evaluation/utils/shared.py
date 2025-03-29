@@ -160,21 +160,23 @@ def cleanup():
         process.join()
 
 
-def update_agent_config_for_eval(agent_config: AgentConfig | None = None) -> AgentConfig:
+def update_agent_config_for_eval(
+    agent_config: AgentConfig | None = None,
+) -> AgentConfig:
     """Update agent config with evaluation-specific settings.
-    
+
     Args:
         agent_config: The agent config to update. If None, a new AgentConfig will be created.
-        
+
     Returns:
         The updated agent config.
     """
     if agent_config is None:
         agent_config = AgentConfig()
-    
+
     # Disable repository memory for evaluation
     agent_config.enable_repository_memory = False
-    
+
     return agent_config
 
 

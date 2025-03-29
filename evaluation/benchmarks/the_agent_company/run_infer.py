@@ -13,7 +13,10 @@ from typing import List
 import yaml
 from browsing import pre_login
 
-from evaluation.utils.shared import get_default_sandbox_config_for_eval, update_agent_config_for_eval
+from evaluation.utils.shared import (
+    get_default_sandbox_config_for_eval,
+    update_agent_config_for_eval,
+)
 from openhands.controller.state.state import State
 from openhands.core.config import (
     AppConfig,
