@@ -33,3 +33,12 @@ interface GitHubCommit {
 interface GithubAppInstallation {
   installations: { id: number }[];
 }
+
+// Extend Window interface to include GitHub Enterprise URL
+declare global {
+  interface Window {
+    GITHUB_ENTERPRISE_URL?: string;
+    GITHUB_API_URL?: string;
+    GITHUB_WEB_URL?: string;
+  }
+}

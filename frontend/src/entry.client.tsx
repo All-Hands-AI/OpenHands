@@ -16,6 +16,7 @@ import store from "./store";
 import { useConfig } from "./hooks/query/use-config";
 import { AuthProvider } from "./context/auth-context";
 import { queryClientConfig } from "./query-client-config";
+import { initGitHubEnterpriseConfig } from "./config/github-enterprise";
 
 function PosthogInit() {
   const { data: config } = useConfig();
@@ -33,6 +34,9 @@ function PosthogInit() {
 }
 
 async function prepareApp() {
+  // Initialize GitHub Enterprise Server configuration
+  initGitHubEnterpriseConfig();
+
   if (
     process.env.NODE_ENV === "development" &&
     import.meta.env.VITE_MOCK_API === "true"
