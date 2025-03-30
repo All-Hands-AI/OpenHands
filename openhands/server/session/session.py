@@ -132,6 +132,11 @@ class Session:
             )
             self.logger.info(f'Enabling default condenser: {default_condenser_config}')
             agent_config.condenser = default_condenser_config
+            
+        # Set research mode if enabled
+        if hasattr(settings, 'research_mode') and settings.research_mode:
+            self.logger.info('Research mode enabled - using read-only tools')
+            agent_config.codeact_enable_read_only_tools = True
 
         agent = Agent.get_cls(agent_cls)(llm, agent_config)
 

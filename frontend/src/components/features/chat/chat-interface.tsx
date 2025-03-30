@@ -17,6 +17,7 @@ import { useWsClient } from "#/context/ws-client-provider";
 import { Messages } from "./messages";
 import { ChatSuggestions } from "./chat-suggestions";
 import { ActionSuggestions } from "./action-suggestions";
+import { ResearchModeToggle } from "./research-mode-toggle";
 
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
@@ -150,15 +151,18 @@ export function ChatInterface() {
 
       <div className="flex flex-col gap-[6px] px-4 pb-4">
         <div className="flex justify-between relative">
-          <TrajectoryActions
-            onPositiveFeedback={() =>
-              onClickShareFeedbackActionButton("positive")
-            }
-            onNegativeFeedback={() =>
-              onClickShareFeedbackActionButton("negative")
-            }
-            onExportTrajectory={() => onClickExportTrajectoryButton()}
-          />
+          <div className="flex items-center gap-2">
+            <TrajectoryActions
+              onPositiveFeedback={() =>
+                onClickShareFeedbackActionButton("positive")
+              }
+              onNegativeFeedback={() =>
+                onClickShareFeedbackActionButton("negative")
+              }
+              onExportTrajectory={() => onClickExportTrajectoryButton()}
+            />
+            <ResearchModeToggle />
+          </div>
 
           <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0">
             {curAgentState === AgentState.RUNNING && <TypingIndicator />}

@@ -93,6 +93,7 @@ async def reset_settings(request: Request) -> JSONResponse:
             user_consents_to_analytics=existing_settings.user_consents_to_analytics
             if existing_settings
             else False,
+            research_mode=False,
         )
 
         server_config_values = server_config.get_config()

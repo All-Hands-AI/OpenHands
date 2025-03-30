@@ -9,6 +9,7 @@ from fastapi import (
 )
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
+import openhands.agenthub.codeact_readonly_agent  # noqa F401 (import the read-only agent)
 from openhands import __version__
 from openhands.server.routes.conversation import app as conversation_api_router
 from openhands.server.routes.feedback import app as feedback_api_router

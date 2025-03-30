@@ -15,6 +15,7 @@ export type Settings = {
   USER_CONSENTS_TO_ANALYTICS: boolean | null;
   PROVIDER_TOKENS: Record<Provider, string>;
   IS_NEW_USER?: boolean;
+  RESEARCH_MODE: boolean;
 };
 
 export type ApiSettings = {
@@ -31,14 +32,17 @@ export type ApiSettings = {
   enable_sound_notifications: boolean;
   user_consents_to_analytics: boolean | null;
   provider_tokens: Record<Provider, string>;
+  research_mode: boolean;
 };
 
 export type PostSettings = Settings & {
   provider_tokens: Record<Provider, string>;
   user_consents_to_analytics: boolean | null;
+  research_mode: boolean;
 };
 
 export type PostApiSettings = ApiSettings & {
   provider_tokens: Record<Provider, string>;
   user_consents_to_analytics: boolean | null;
+  research_mode: boolean;
 };

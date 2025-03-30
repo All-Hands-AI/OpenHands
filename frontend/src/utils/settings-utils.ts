@@ -26,6 +26,7 @@ const extractAdvancedFormData = (formData: FormData) => {
   let CONFIRMATION_MODE = false;
   let SECURITY_ANALYZER: string | undefined;
   let ENABLE_DEFAULT_CONDENSER = true;
+  let RESEARCH_MODE = false;
 
   if (isUsingAdvancedOptions) {
     CUSTOM_LLM_MODEL = formData.get("custom-model")?.toString();
@@ -36,6 +37,7 @@ const extractAdvancedFormData = (formData: FormData) => {
       SECURITY_ANALYZER = formData.get("security-analyzer")?.toString();
     }
     ENABLE_DEFAULT_CONDENSER = keys.includes("enable-default-condenser");
+    RESEARCH_MODE = keys.includes("research-mode");
   }
 
   return {
@@ -44,6 +46,7 @@ const extractAdvancedFormData = (formData: FormData) => {
     CONFIRMATION_MODE,
     SECURITY_ANALYZER,
     ENABLE_DEFAULT_CONDENSER,
+    RESEARCH_MODE,
   };
 };
 
@@ -57,6 +60,7 @@ export const extractSettings = (formData: FormData): Partial<Settings> => {
     CONFIRMATION_MODE,
     SECURITY_ANALYZER,
     ENABLE_DEFAULT_CONDENSER,
+    RESEARCH_MODE,
   } = extractAdvancedFormData(formData);
 
   // Extract provider tokens
@@ -81,5 +85,6 @@ export const extractSettings = (formData: FormData): Partial<Settings> => {
     SECURITY_ANALYZER,
     ENABLE_DEFAULT_CONDENSER,
     PROVIDER_TOKENS: providerTokens,
+    RESEARCH_MODE,
   };
 };
