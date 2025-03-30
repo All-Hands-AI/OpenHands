@@ -62,7 +62,7 @@ async def connect(connection_id: str, environ):
         raise ConnectionRefusedError('Failed to join conversation')
     async_stream = AsyncEventStreamWrapper(event_stream, latest_event_id + 1)
     async for event in async_stream:
-        logger.info(f'oh_event: {event.__class__.__name__}')
+        logger.debug(f'oh_event: {event.__class__.__name__}')
         if isinstance(
             event,
             (NullAction, NullObservation, RecallAction, RecallObservation),

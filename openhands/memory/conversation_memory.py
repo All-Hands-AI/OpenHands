@@ -337,21 +337,21 @@ class ConversationMemory:
             logger.warning(f'MCPObservation: {obs}')
             message = Message(role='user', content=[TextContent(text=obs.content)])
         elif isinstance(obs, PlaywrightMcpBrowserScreenshotObservation):
-            text = obs.content
             screenshot_content = json.loads(obs.content)
-            logger.debug(
-                f'screenshot_content in conversation_memory: {screenshot_content}'
-            )
+            text = f'Current webpage screenshot with URL: {screenshot_content["url"]}\n'
+            # logger.debug(
+            #     f'screenshot_content in conversation_memory: {screenshot_content}'
+            # )
 
-            text += 'Image: Current webpage screenshot (Note that only visible portion of webpage is present in the screenshot. You may need to scroll to view the remaining portion of the web-page.)\n'
+            # We don't actually need to screenshot fed into the LLM. We can use snapshots. Meanwhile, the screenshot will be streamed to the user.
             message = Message(
                 role='user',
                 content=[
-                    TextContent(text=obs.content),
-                    ImageContent(
-                        image_urls=[screenshot_content['image_url']],
-                        type=screenshot_content['mimeType'],
-                    ),
+                    TextContent(text=text),
+                    # ImageContent(
+                    #     image_urls=[screenshot_content['image_url']],
+                    #     type=screenshot_content['mimeType'],
+                    # ),
                 ],
             )
         elif isinstance(obs, IPythonRunCellObservation):
