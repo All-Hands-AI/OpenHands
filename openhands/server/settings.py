@@ -35,7 +35,6 @@ class Settings(BaseModel):
     user_consents_to_analytics: bool | None = None
     sandbox_base_container_image: str | None = None
     sandbox_runtime_container_image: str | None = None
-    research_mode: bool = False
 
     model_config = {
         'validate_assignment': True,

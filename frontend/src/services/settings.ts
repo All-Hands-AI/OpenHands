@@ -20,7 +20,6 @@ export const DEFAULT_SETTINGS: Settings = {
     gitlab: "",
   },
   IS_NEW_USER: true,
-  RESEARCH_MODE: false, // Keep this for backward compatibility
 };
 
 /**
