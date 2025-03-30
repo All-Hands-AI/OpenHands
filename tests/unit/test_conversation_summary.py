@@ -26,9 +26,9 @@ async def test_generate_conversation_title_success():
     mock_response.choices = [MagicMock()]
     mock_response.choices[0].message.content = 'Generated Title'
 
-    # Create a mock LLM instance with an async completion method
+    # Create a mock LLM instance with a synchronous completion method
     mock_llm = MagicMock()
-    mock_llm.completion = AsyncMock(return_value=mock_response)
+    mock_llm.completion = MagicMock(return_value=mock_response)
 
     # Patch the LLM class to return our mock
     with patch('openhands.utils.conversation_summary.LLM', return_value=mock_llm):
@@ -51,9 +51,9 @@ async def test_generate_conversation_title_long_title():
         0
     ].message.content = 'This is a very long title that should be truncated because it exceeds the maximum length'
 
-    # Create a mock LLM instance with an async completion method
+    # Create a mock LLM instance with a synchronous completion method
     mock_llm = MagicMock()
-    mock_llm.completion = AsyncMock(return_value=mock_response)
+    mock_llm.completion = MagicMock(return_value=mock_response)
 
     # Patch the LLM class to return our mock
     with patch('openhands.utils.conversation_summary.LLM', return_value=mock_llm):
@@ -69,9 +69,9 @@ async def test_generate_conversation_title_long_title():
 @pytest.mark.asyncio
 async def test_generate_conversation_title_exception():
     """Test that exceptions are handled gracefully."""
-    # Create a mock LLM instance with an async completion method that raises an exception
+    # Create a mock LLM instance with a synchronous completion method that raises an exception
     mock_llm = MagicMock()
-    mock_llm.completion = AsyncMock(side_effect=Exception('Test error'))
+    mock_llm.completion = MagicMock(side_effect=Exception('Test error'))
 
     # Patch the LLM class to return our mock
     with patch('openhands.utils.conversation_summary.LLM', return_value=mock_llm):
