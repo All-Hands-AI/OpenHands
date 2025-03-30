@@ -221,41 +221,6 @@ async def search_conversations(
         get_user_id(request), set(conversation_ids)
     )
 
-    # Check if we need to update any titles for running conversations
-    if running_conversations:
-        user_id = get_user_id(request)
-
-        # Update titles for running conversations with default titles
-        for conversation_id in running_conversations:
-            # Get the current metadata
-            metadata = await conversation_store.get_metadata(conversation_id)
-
-            # Check if the title is a default title (contains the conversation ID)
-            if metadata and metadata.title and conversation_id[:5] in metadata.title:
-                # Generate a new title
-                new_title = await auto_generate_title(conversation_id, user_id)
-
-                if new_title:
-                    # Update the metadata
-                    metadata.title = new_title
-                    await conversation_store.save_metadata(metadata)
-
-    # Refresh metadata after potential updates
-    if running_conversations:
-        # Re-fetch the metadata to get updated titles
-        conversation_metadata_result_set = await conversation_store.search(
-            page_id, limit
-        )
-        filtered_results = [
-            conversation
-            for conversation in conversation_metadata_result_set.results
-            if hasattr(conversation, 'created_at')
-            and (
-                now - conversation.created_at.replace(tzinfo=timezone.utc)
-            ).total_seconds()
-            <= max_age
-        ]
-
     result = ConversationInfoResultSet(
         results=await wait_all(
             _get_conversation_info(
