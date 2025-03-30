@@ -38,7 +38,7 @@ async def generate_conversation_title(
             {'role': 'user', 'content': truncated_message},
         ]
 
-        response = await llm.completion(messages=messages)
+        response = llm.completion(messages=messages)
         title = response.choices[0].message.content.strip()
 
         # Ensure the title isn't too long
