@@ -112,6 +112,8 @@ class DockerRuntimeBuilder(RuntimeBuilder):
                 'apt-get update',
                 'apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin',
             ]
+            # docker image lsで手元のイメージを確認
+            logger.info(f'[LOG] docker image ls: {self.docker_client.images.list()}')
             for cmd in commands:
                 try:
                     subprocess.run(
@@ -127,9 +129,6 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         target_image_repo, target_image_source_tag = target_image_hash_name.split(':')
         target_image_tag = tags[1].split(':')[1] if len(tags) > 1 else None
 
-
-        # docker image lsで手元のイメージを確認
-        logger.info(f'[LOG] docker image ls: {self.docker_client.images.list()}')
 
         # docker buildxのコマンドを作成
         buildx_cmd = [
