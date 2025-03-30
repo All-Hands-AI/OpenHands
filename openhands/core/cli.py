@@ -14,7 +14,13 @@ from openhands.core.config import (
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.loop import run_agent_until_done
 from openhands.core.schema import AgentState
-from openhands.core.setup import create_agent, create_controller, create_runtime
+from openhands.core.setup import (
+    create_agent,
+    create_controller,
+    create_memory,
+    create_runtime,
+    initialize_repository_for_runtime,
+)
 from openhands.events import EventSource, EventStreamSubscriber
 from openhands.events.action import (
     Action,
@@ -109,7 +115,6 @@ async def main(loop: asyncio.AbstractEventLoop):
         sid=sid,
         headless_mode=True,
         agent=agent,
-        selected_repository=config.sandbox.selected_repo,
     )
 
     controller, _ = create_controller(agent, runtime, config)
@@ -165,6 +170,23 @@ async def main(loop: asyncio.AbstractEventLoop):
 
     await runtime.connect()
 
+    # Initialize repository if needed
+    repo_directory = None
+    if config.sandbox.selected_repo:
+        repo_directory = initialize_repository_for_runtime(
+            runtime,
+            selected_repository=config.sandbox.selected_repo,
+        )
+
+    # when memory is created, it will load the microagents from the selected repository
+    memory = create_memory(
+        runtime=runtime,
+        event_stream=event_stream,
+        sid=sid,
+        selected_repository=config.sandbox.selected_repo,
+        repo_directory=repo_directory,
+    )
+
     if initial_user_action:
         # If there's an initial user action, enqueue it and do not prompt again
         event_stream.add_event(initial_user_action, EventSource.USER)
@@ -173,7 +195,7 @@ async def main(loop: asyncio.AbstractEventLoop):
         asyncio.create_task(prompt_for_next_task())
 
     await run_agent_until_done(
-        controller, runtime, [AgentState.STOPPED, AgentState.ERROR]
+        controller, runtime, memory, [AgentState.STOPPED, AgentState.ERROR]
     )
 
 

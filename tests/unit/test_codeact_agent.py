@@ -10,14 +10,14 @@ from openhands.agenthub.codeact_agent.function_calling import (
 )
 from openhands.agenthub.codeact_agent.tools import (
     BrowserTool,
-    CmdRunTool,
     GlobTool,
     GrepTool,
     IPythonTool,
     LLMBasedFileEditTool,
-    StrReplaceEditorTool,
     ThinkTool,
     WebReadTool,
+    create_cmd_run_tool,
+    create_str_replace_editor_tool,
 )
 from openhands.agenthub.codeact_agent.tools.browser import (
     _BROWSER_DESCRIPTION,
@@ -124,6 +124,7 @@ def test_get_tools_with_options():
 
 
 def test_cmd_run_tool():
+    CmdRunTool = create_cmd_run_tool()
     assert CmdRunTool['type'] == 'function'
     assert CmdRunTool['function']['name'] == 'execute_bash'
     assert 'command' in CmdRunTool['function']['parameters']['properties']
@@ -154,6 +155,7 @@ def test_llm_based_file_edit_tool():
 
 
 def test_str_replace_editor_tool():
+    StrReplaceEditorTool = create_str_replace_editor_tool()
     assert StrReplaceEditorTool['type'] == 'function'
     assert StrReplaceEditorTool['function']['name'] == 'str_replace_editor'
 
@@ -240,7 +242,11 @@ def test_step_with_no_pending_actions(mock_state: State):
     mock_response.choices[0].message.content = 'Task completed'
     mock_response.choices[0].message.tool_calls = []
 
+    mock_config = Mock()
+    mock_config.model = 'mock_model'
+
     llm = Mock()
+    llm.config = mock_config
     llm.completion = Mock(return_value=mock_response)
     llm.is_function_calling_active = Mock(return_value=True)  # Enable function calling
     llm.is_caching_prompt_active = Mock(return_value=False)
@@ -262,6 +268,28 @@ def test_step_with_no_pending_actions(mock_state: State):
     action = agent.step(mock_state)
     assert isinstance(action, MessageAction)
     assert action.content == 'Task completed'
+
+
+def test_correct_tool_description_loaded_based_on_model_name(mock_state: State):
+    """Tests that the simplified tool descriptions are loaded for specific models."""
+    o3_mock_config = Mock()
+    o3_mock_config.model = 'mock_o3_model'
+
+    llm = Mock()
+    llm.config = o3_mock_config
+
+    agent = CodeActAgent(llm=llm, config=AgentConfig())
+    for tool in agent.tools:
+        # Assert all descriptions have less than 1024 characters
+        assert len(tool['function']['description']) < 1024
+
+    sonnet_mock_config = Mock()
+    sonnet_mock_config.model = 'mock_sonnet_model'
+
+    llm.config = sonnet_mock_config
+    agent = CodeActAgent(llm=llm, config=AgentConfig())
+    # Assert existence of the detailed tool descriptions that are longer than 1024 characters
+    assert any(len(tool['function']['description']) > 1024 for tool in agent.tools)
 
 
 def test_mismatched_tool_call_events(mock_state: State):
@@ -300,21 +328,21 @@ def test_mismatched_tool_call_events(mock_state: State):
     # 2. The action message, and
     # 3. The observation message
     mock_state.history = [action, observation]
-    messages = agent._get_messages(mock_state)
+    messages = agent._get_messages(mock_state.history)
     assert len(messages) == 3
 
     # The same should hold if the events are presented out-of-order
     mock_state.history = [observation, action]
-    messages = agent._get_messages(mock_state)
+    messages = agent._get_messages(mock_state.history)
     assert len(messages) == 3
 
     # If only one of the two events is present, then we should just get the system message
     mock_state.history = [action]
-    messages = agent._get_messages(mock_state)
+    messages = agent._get_messages(mock_state.history)
     assert len(messages) == 1
 
     mock_state.history = [observation]
-    messages = agent._get_messages(mock_state)
+    messages = agent._get_messages(mock_state.history)
     assert len(messages) == 1
 
 
@@ -406,9 +434,3 @@ def test_enhance_messages_adds_newlines_between_consecutive_user_messages(
     # Fifth message only has ImageContent, no TextContent to modify
     assert len(enhanced_messages[5].content) == 1
     assert isinstance(enhanced_messages[5].content[0], ImageContent)
-
-    # Verify prompt manager methods were called as expected
-    assert agent.prompt_manager.add_examples_to_initial_message.call_count == 1
-    assert (
-        agent.prompt_manager.enhance_message.call_count == 5
-    )  # Called for each user message

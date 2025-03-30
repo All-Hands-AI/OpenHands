@@ -4,7 +4,7 @@ import {
 } from "#/components/shared/modals/confirmation-modals/base-modal";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import { ModalBody } from "#/components/shared/modals/modal-body";
-import { useCurrentSettings } from "#/context/settings-context";
+import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 import { handleCaptureConsent } from "#/utils/handle-capture-consent";
 import { BrandButton } from "../settings/brand-button";
 
@@ -15,14 +15,14 @@ interface AnalyticsConsentFormModalProps {
 export function AnalyticsConsentFormModal({
   onClose,
 }: AnalyticsConsentFormModalProps) {
-  const { saveUserSettings } = useCurrentSettings();
+  const { mutate: saveUserSettings } = useSaveSettings();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const analytics = formData.get("analytics") === "on";
 
-    await saveUserSettings(
+    saveUserSettings(
       { user_consents_to_analytics: analytics },
       {
         onSuccess: () => {

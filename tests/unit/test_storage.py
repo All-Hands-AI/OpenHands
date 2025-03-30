@@ -5,7 +5,7 @@ import shutil
 from abc import ABC
 from dataclasses import dataclass, field
 from io import BytesIO, StringIO
-from typing import Dict, List, Optional
+from typing import Dict, List
 from unittest import TestCase
 from unittest.mock import patch
 
@@ -145,10 +145,10 @@ class _MockGoogleCloudClient:
 class _MockGoogleCloudBucket:
     blobs_by_path: Dict[str, _MockGoogleCloudBlob] = field(default_factory=dict)
 
-    def blob(self, path: Optional[str] = None) -> _MockGoogleCloudBlob:
+    def blob(self, path: str | None = None) -> _MockGoogleCloudBlob:
         return self.blobs_by_path.get(path) or _MockGoogleCloudBlob(self, path)
 
-    def list_blobs(self, prefix: Optional[str] = None) -> List[_MockGoogleCloudBlob]:
+    def list_blobs(self, prefix: str | None = None) -> List[_MockGoogleCloudBlob]:
         blobs = list(self.blobs_by_path.values())
         if prefix and prefix != '/':
             blobs = [blob for blob in blobs if blob.name.startswith(prefix)]
@@ -159,7 +159,7 @@ class _MockGoogleCloudBucket:
 class _MockGoogleCloudBlob:
     bucket: _MockGoogleCloudBucket
     name: str
-    content: Optional[str | bytes] = None
+    content: str | bytes | None = None
 
     def open(self, op: str):
         if op == 'r':

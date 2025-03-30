@@ -1,14 +1,14 @@
 /* homepageHeader.css */
 
 .homepage-header {
-  height: 800px;
+  padding: 1rem 0;
 }
 
 .header-content {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 2rem;
+  padding: 1rem;
   font-weight: 300;
   width: 100%;
 }
@@ -25,6 +25,7 @@
 
 .header-subtitle {
   font-size: 1.5rem;
+  margin: 0.5rem 0;
 }
 
 .header-links {

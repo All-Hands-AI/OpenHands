@@ -44,7 +44,7 @@ class ProcessMonitor {
                 const memPercent = parseFloat(parts[parts.length - 2]);
                 const cpuPercent = parseFloat(parts[parts.length - 1]);
                 const cmd = parts.slice(2, parts.length - 2).join(' ');
-                
+
                 return {
                     pid,
                     ppid,
@@ -80,7 +80,7 @@ class ProcessMonitor {
                 const memPercent = parseFloat(parts[parts.length - 2]);
                 const cpuPercent = parseFloat(parts[parts.length - 1]);
                 const cmd = parts.slice(2, parts.length - 2).join(' ');
-                
+
                 return {
                     pid,
                     ppid,
@@ -109,21 +109,21 @@ class ProcessMonitor {
             // Parse the CSV output
             const lines = stdout.trim().split('\n');
             const header = "PID,PPID,Command,Memory (bytes)";
-            
+
             // Skip empty lines and the header
             const dataLines = lines.filter(line => line.trim() !== '' && !line.includes('Node,'));
-            
+
             const processes = dataLines.map(line => {
                 const parts = line.split(',');
                 if (parts.length < 4) return null;
-                
+
                 // Last part is the node name, then ProcessId, ParentProcessId, CommandLine, WorkingSetSize
                 const pid = parts[parts.length - 4];
                 const ppid = parts[parts.length - 3];
                 const cmd = parts[parts.length - 2];
                 const memBytes = parseInt(parts[parts.length - 1], 10);
                 const memPercent = (memBytes / os.totalmem() * 100).toFixed(1);
-                
+
                 return {
                     pid,
                     ppid,

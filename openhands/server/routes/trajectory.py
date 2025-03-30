@@ -9,7 +9,7 @@ app = APIRouter(prefix='/api/conversations/{conversation_id}')
 
 
 @app.get('/trajectory')
-async def get_trajectory(request: Request):
+async def get_trajectory(request: Request) -> JSONResponse:
     """Get trajectory.
 
     This function retrieves the current trajectory and returns it.

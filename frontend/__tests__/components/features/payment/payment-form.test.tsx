@@ -20,11 +20,15 @@ describe("PaymentForm", () => {
     });
 
   beforeEach(() => {
-    // useBalance hook will return the balance only if the APP_MODE is "saas"
+    // useBalance hook will return the balance only if the APP_MODE is "saas" and the billing feature is enabled
     getConfigSpy.mockResolvedValue({
       APP_MODE: "saas",
       GITHUB_CLIENT_ID: "123",
       POSTHOG_CLIENT_KEY: "456",
+      FEATURE_FLAGS: {
+        ENABLE_BILLING: true,
+        HIDE_LLM_SETTINGS: false,
+      },
     });
   });
 

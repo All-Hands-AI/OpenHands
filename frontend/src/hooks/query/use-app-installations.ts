@@ -14,5 +14,7 @@ export const useAppInstallations = () => {
       githubTokenIsSet &&
       !!config?.GITHUB_CLIENT_ID &&
       config?.APP_MODE === "saas",
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 15, // 15 minutes
   });
 };

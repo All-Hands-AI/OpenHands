@@ -53,4 +53,3 @@ To verify Docker is working correctly, run the hello-world container:
 ```bash
 sudo docker run hello-world
 ```
-

@@ -78,7 +78,7 @@ export function updateStatusWhenErrorMessagePresent(data: ErrorArg | unknown) {
     !!val && typeof val === "object";
   const isString = (val: unknown): val is string => typeof val === "string";
   if (isObject(data) && "message" in data && isString(data.message)) {
-    if (data.message === "websocket error") {
+    if (data.message === "websocket error" || data.message === "timeout") {
       return;
     }
     let msgId: string | undefined;
@@ -118,7 +118,7 @@ export function WsClientProvider({
       EventLogger.error("WebSocket is not connected.");
       return;
     }
-    sioRef.current.emit("oh_action", event);
+    sioRef.current.emit("oh_user_action", event);
   }
 
   function handleConnect() {

@@ -15,16 +15,16 @@ from openhands.agenthub.codeact_agent.tools import (
     READ_ONLY_TOOLS,
     AgentTool,
     BrowserTool,
-    CmdRunTool,
     FinishTool,
     GlobTool,
     GrepTool,
     IPythonTool,
     LLMBasedFileEditTool,
-    StrReplaceEditorTool,
     ThinkTool,
     ViewTool,
     WebReadTool,
+    create_cmd_run_tool,
+    create_str_replace_editor_tool,
 )
 from openhands.core.exceptions import (
     FunctionCallNotExistsError,
@@ -45,6 +45,7 @@ from openhands.events.action import (
 )
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.tool import ToolCallMetadata
+from openhands.llm import LLM
 
 
 def combine_thought(action: Action, thought: str) -> Action:
@@ -145,7 +146,7 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
             # ================================================
             # CmdRunTool (Bash)
             # ================================================
-            if tool_call.function.name == CmdRunTool['function']['name']:
+            if tool_call.function.name == create_cmd_run_tool()['function']['name']:
                 if 'command' not in arguments:
                     raise FunctionCallValidationError(
                         f'Missing required argument "command" in tool call {tool_call.function.name}'
@@ -200,7 +201,10 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                     start=arguments.get('start', 1),
                     end=arguments.get('end', -1),
                 )
-            elif tool_call.function.name == StrReplaceEditorTool['function']['name']:
+            elif (
+                tool_call.function.name
+                == create_str_replace_editor_tool()['function']['name']
+            ):
                 if 'command' not in arguments:
                     raise FunctionCallValidationError(
                         f'Missing required argument "command" in tool call {tool_call.function.name}'
@@ -324,6 +328,13 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
             )
         )
 
+    # Add response id to actions
+    # This will ensure we can match both actions without tool calls (e.g. MessageAction)
+    # and actions with tool calls (e.g. CmdRunAction, IPythonRunCellAction, etc.)
+    # with the token usage data
+    for action in actions:
+        action.response_id = response.id
+
     assert len(actions) >= 1
     return actions
 
@@ -333,7 +344,17 @@ def get_tools(
     codeact_enable_llm_editor: bool = False,
     codeact_enable_jupyter: bool = False,
     codeact_enable_read_only_tools: bool = False,
+    llm: LLM | None = None,
 ) -> list[ChatCompletionToolParam]:
+    SIMPLIFIED_TOOL_DESCRIPTION_LLM_SUBSTRS = ['gpt-', 'o3', 'o1']
+
+    use_simplified_tool_desc = False
+    if llm is not None:
+        use_simplified_tool_desc = any(
+            model_substr in llm.config.model
+            for model_substr in SIMPLIFIED_TOOL_DESCRIPTION_LLM_SUBSTRS
+        )
+
     # update the description of AgentTool first
     AgentTool['function']['description'] = AgentTool['function']['description'].format(
         read_only_tools=', '.join(
@@ -341,7 +362,15 @@ def get_tools(
         )
     )
 
-    tools = [CmdRunTool, ThinkTool, FinishTool, GrepTool, GlobTool, ViewTool, AgentTool]
+    tools = [
+        create_cmd_run_tool(use_simplified_description=use_simplified_tool_desc),
+        ThinkTool,
+        FinishTool,
+        GrepTool,
+        GlobTool,
+        ViewTool,
+        AgentTool
+    ]
     if codeact_enable_browsing:
         tools.append(WebReadTool)
         tools.append(BrowserTool)
@@ -350,7 +379,11 @@ def get_tools(
     if codeact_enable_llm_editor:
         tools.append(LLMBasedFileEditTool)
     else:
-        tools.append(StrReplaceEditorTool)
+        tools.append(
+            create_str_replace_editor_tool(
+                use_simplified_description=use_simplified_tool_desc
+            )
+        )
 
     if codeact_enable_read_only_tools:
         # filter out tools that are not in READ_ONLY_TOOLS

@@ -48,6 +48,11 @@ export interface GetConfigResponse {
   APP_SLUG?: string;
   GITHUB_CLIENT_ID: string;
   POSTHOG_CLIENT_KEY: string;
+  STRIPE_PUBLISHABLE_KEY?: string;
+  FEATURE_FLAGS: {
+    ENABLE_BILLING: boolean;
+    HIDE_LLM_SETTINGS: boolean;
+  };
 }
 
 export interface GetVSCodeUrlResponse {
