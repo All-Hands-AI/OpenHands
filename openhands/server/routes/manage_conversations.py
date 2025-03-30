@@ -100,8 +100,6 @@ async def _create_new_conversation(
         extra={'user_id': user_id, 'session_id': conversation_id},
     )
 
-    # Get repository name for the title if available
-    repository_title = selected_repository.split('/')[-1] if selected_repository else None
     conversation_title = get_default_conversation_title(conversation_id)
 
     logger.info(f'Saving metadata for conversation {conversation_id}')
@@ -200,9 +198,6 @@ async def search_conversations(
     page_id: str | None = None,
     limit: int = 20,
 ) -> ConversationInfoResultSet:
-    # Flag to track if we should skip title generation
-    continue_without_title_generation = False
-    
     conversation_store = await ConversationStoreImpl.get_instance(
         config, get_user_id(request), get_github_user_id(request)
     )
@@ -229,17 +224,17 @@ async def search_conversations(
     # Check if we need to update any titles for running conversations
     if running_conversations:
         user_id = get_user_id(request)
-        
+
         # Update titles for running conversations with default titles
         for conversation_id in running_conversations:
             # Get the current metadata
             metadata = await conversation_store.get_metadata(conversation_id)
-            
+
             # Check if the title is a default title (contains the conversation ID)
             if metadata and metadata.title and conversation_id[:5] in metadata.title:
                 # Generate a new title
                 new_title = await auto_generate_title(conversation_id, user_id)
-                
+
                 if new_title:
                     # Update the metadata
                     metadata.title = new_title
@@ -290,13 +285,15 @@ async def get_conversation(
             # Check if the title is a default title (contains the conversation ID)
             if metadata.title and conversation_id[:5] in metadata.title:
                 # Generate a new title
-                new_title = await auto_generate_title(conversation_id, get_user_id(request))
-                
+                new_title = await auto_generate_title(
+                    conversation_id, get_user_id(request)
+                )
+
                 if new_title:
                     # Update the metadata
                     metadata.title = new_title
                     await conversation_store.save_metadata(metadata)
-                    
+
                     # Refresh metadata after update
                     metadata = await conversation_store.get_metadata(conversation_id)
 
@@ -336,7 +333,7 @@ async def auto_generate_title(conversation_id: str, user_id: str | None) -> str:
     try:
         # Create an event stream for the conversation
         event_stream = EventStream(conversation_id, file_store, user_id)
-        
+
         # Find the first user message
         first_user_message = None
         for event in event_stream.get_events():
@@ -351,14 +348,14 @@ async def auto_generate_title(conversation_id: str, user_id: str | None) -> str:
 
         if first_user_message:
             # Try LLM-based title generation first
-            from openhands.utils.conversation_summary import generate_conversation_title
             from openhands.core.config.llm_config import LLMConfig
-            
+            from openhands.utils.conversation_summary import generate_conversation_title
+
             # Get LLM config from user settings
             try:
                 settings_store = await SettingsStoreImpl.get_instance(config, user_id)
                 settings = await settings_store.load()
-                
+
                 if settings and settings.llm_model:
                     # Create LLM config from settings
                     llm_config = LLMConfig(
@@ -366,15 +363,17 @@ async def auto_generate_title(conversation_id: str, user_id: str | None) -> str:
                         api_key=settings.llm_api_key,
                         base_url=settings.llm_base_url,
                     )
-                    
+
                     # Try to generate title using LLM
-                    llm_title = await generate_conversation_title(first_user_message, llm_config)
+                    llm_title = await generate_conversation_title(
+                        first_user_message, llm_config
+                    )
                     if llm_title:
                         logger.info(f'Generated title using LLM: {llm_title}')
                         return llm_title
             except Exception as e:
                 logger.error(f'Error using LLM for title generation: {e}')
-            
+
             # Fall back to simple truncation if LLM generation fails or is unavailable
             first_user_message = first_user_message.strip()
             title = first_user_message[:30]
@@ -402,7 +401,7 @@ async def update_conversation(
     # If title is empty or unspecified, auto-generate it
     if not title or title.isspace():
         title = await auto_generate_title(conversation_id, user_id)
-        
+
         # If we still don't have a title, use the default
         if not title or title.isspace():
             title = get_default_conversation_title(conversation_id)
