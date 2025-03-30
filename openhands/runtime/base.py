@@ -51,6 +51,7 @@ from openhands.microagent import (
     BaseMicroAgent,
     load_microagents_from_dir,
 )
+from openhands.microagent.types import MCPServerConfig
 from openhands.runtime.plugins import (
     JupyterRequirement,
     PluginRequirement,
@@ -463,6 +464,32 @@ class Runtime(FileEditRuntimeMixin):
             shutil.rmtree(microagent_folder)
 
         return loaded_microagents
+
+    def get_mcp_tools(
+        self, mcp_configs: dict[str, dict[str, MCPServerConfig]]
+    ) -> dict[str, dict[str, str]]:
+        """Get the list of tools from the MCP servers."""
+        microagent_name_to_tools = {}
+        for microagent_name, config_dict in mcp_configs.items():
+            if not config_dict:
+                continue
+
+            server_name_to_tool_defs = {}
+            for server_name, config in config_dict.items():
+                if not config:
+                    continue
+
+                ipython_code = f"""\
+    tools = await list_tools(config={config})
+    print(tools)"""
+                action = IPythonRunCellAction(ipython_code)
+                self.log('info', f'Listing tools for {server_name}')
+                obs = self.run_action(action)
+                server_name_to_tool_defs[server_name] = obs.content
+
+            microagent_name_to_tools[microagent_name] = server_name_to_tool_defs
+
+        return microagent_name_to_tools
 
     def run_action(self, action: Action) -> Observation:
         """Run an action and return the resulting observation.

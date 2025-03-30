@@ -20,6 +20,7 @@ from openhands.microagent import (
     RepoMicroAgent,
     load_microagents_from_dir,
 )
+from openhands.microagent.types import MCPServerConfig
 from openhands.runtime.base import Runtime
 from openhands.utils.prompt import RepositoryInfo, RuntimeInfo
 
@@ -296,3 +297,26 @@ class Memory:
         """Sends a status message to the client."""
         if self.status_callback:
             self.status_callback(msg_type, id, message)
+
+    def get_mcp_configs(self) -> dict[str, dict[str, MCPServerConfig]]:
+        """Get the MCP server configurations."""
+        mcp_configs = {}
+        for name, microagent in self.knowledge_microagents.items():
+            mcp_configs[name] = microagent.metadata.mcp_configs
+        return mcp_configs
+
+    def set_mcp_tools_definition(self, mcp_tools: dict[str, dict[str, str]]) -> None:
+        # Append the MCP tools definition to the knowledge microagent's content
+        for name, microagent in self.knowledge_microagents.items():
+            if name not in mcp_tools:
+                continue
+
+            formatted_tools = (
+                'MCP Tools that you can use via the `mcp_interaction_tool`:\n\n'
+            )
+            # Format the mcp_tools dict into a string
+            for server_name, tool_description in mcp_tools[name].items():
+                formatted_tools += f' - {server_name}:\n{tool_description}\n'
+
+            microagent.content += f'\n{formatted_tools}'
+            logger.warning(f'New content for microagent {name}: {microagent.content}')

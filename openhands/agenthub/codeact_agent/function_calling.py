@@ -15,6 +15,7 @@ from openhands.agenthub.codeact_agent.tools import (
     FinishTool,
     IPythonTool,
     LLMBasedFileEditTool,
+    MCPTool,
     ThinkTool,
     WebReadTool,
     create_cmd_run_tool,
@@ -191,6 +192,16 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                         f'Missing required argument "url" in tool call {tool_call.function.name}'
                     )
                 action = BrowseURLAction(url=arguments['url'])
+            elif tool_call.function.name == MCPTool['function']['name']:
+                if 'tool_name' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "tool_name" in tool call {tool_call.function.name}'
+                    )
+                if 'kwargs' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "kwargs" in tool call {tool_call.function.name}'
+                    )
+
             else:
                 raise FunctionCallNotExistsError(
                     f'Tool {tool_call.function.name} is not registered. (arguments: {arguments}). Please check the tool name and retry with an existing tool.'
@@ -245,6 +256,7 @@ def get_tools(
         create_cmd_run_tool(use_simplified_description=use_simplified_tool_desc),
         ThinkTool,
         FinishTool,
+        MCPTool,
     ]
     if codeact_enable_browsing:
         tools.append(WebReadTool)
