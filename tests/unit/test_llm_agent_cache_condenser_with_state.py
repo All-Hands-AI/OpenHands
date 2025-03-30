@@ -4,9 +4,10 @@ import pytest
 
 from openhands.controller.state.state import State
 from openhands.core.message import Message
+from openhands.events.action.message import MessageAction
 from openhands.events.event import Event
 from openhands.llm import LLM
-from openhands.memory.condenser.condenser import View, Condensation
+from openhands.memory.condenser.condenser import Condensation, View
 from openhands.memory.condenser.impl.llm_agent_cache_condenser import (
     LLMAgentCacheCondenser,
 )
@@ -28,44 +29,41 @@ def test_contains_trigger_word():
     condenser = LLMAgentCacheCondenser(agent=mock_agent, max_size=10)
 
     # Test case 1: Empty events list
-    assert condenser.containsTriggerWord([]) == False
+    assert not condenser.containsTriggerWord([])
 
     # Test case 2: Single event (not enough events)
     mock_event = MagicMock(spec=Event)
-    assert condenser.containsTriggerWord([mock_event]) == False
+    assert not condenser.containsTriggerWord([mock_event])
 
     # Test case 3: User message with CONDENSE! keyword
-    user_event = MagicMock(spec=Event)
-    user_event.source = 'user'
-    user_event.message = 'Please CONDENSE! the conversation history.'
+    user_event = MessageAction('Please CONDENSE! the conversation history.')
+    user_event._source = 'user'
     agent_event = MagicMock(spec=Event)
     agent_event.source = 'agent'
-    assert condenser.containsTriggerWord([user_event, agent_event]) == True
+    assert condenser.containsTriggerWord([user_event, agent_event])
 
     # Test case 4: User message without CONDENSE! keyword
-    user_event.message = 'Please summarize the conversation history.'
-    assert condenser.containsTriggerWord([user_event, agent_event]) == False
+    user_event.content = 'Please summarize the conversation history.'
+    assert not condenser.containsTriggerWord([user_event, agent_event])
 
     # Test case 5: RecallObservation followed by user message with CONDENSE! keyword
-    user_event.message = 'Please CONDENSE! the conversation history.'
+    user_event.content = 'Please CONDENSE! the conversation history.'
     recall_event = MagicMock(spec=Event)
     recall_event.observation = 'recall'
     events = [agent_event, user_event, recall_event]
-    assert condenser.containsTriggerWord(events) == True
+    assert condenser.containsTriggerWord(events)
 
     # Test case 6: Multiple user messages, only the most recent one matters
-    user_event1 = MagicMock(spec=Event)
-    user_event1.source = 'user'
-    user_event1.message = 'First message without keyword'
-    user_event2 = MagicMock(spec=Event)
-    user_event2.source = 'user'
-    user_event2.message = 'Please CONDENSE! the conversation history.'
+    user_event1 = MessageAction('First message without keyword')
+    user_event1._source = 'user'
+    user_event2 = MessageAction('Please CONDENSE! the conversation history.')
+    user_event2._source = 'user'
     events = [user_event1, agent_event, user_event2]
-    assert condenser.containsTriggerWord(events) == True
+    assert condenser.containsTriggerWord(events)
 
     # Test case 7: Multiple user messages, most recent one doesn't have keyword
     events = [user_event2, agent_event, user_event1]
-    assert condenser.containsTriggerWord(events) == False
+    assert not condenser.containsTriggerWord(events)
 
 
 def test_llm_agent_cache_condenser_with_state_no_need():
@@ -131,7 +129,9 @@ def test_llm_agent_cache_condenser_with_state_missing_dependencies():
     mock_state.history = mock_events
 
     # Verify that an exception is raised due to missing conversation_memory
-    with pytest.raises(ValueError, match="Missing conversation_memory or prompt_manager"):
+    with pytest.raises(
+        ValueError, match='Missing conversation_memory or prompt_manager'
+    ):
         condenser.condenseWithState(mock_state)
 
 
@@ -151,13 +151,13 @@ def test_llm_agent_cache_condenser_with_state_with_dependencies(
 
     # Add metrics attribute to the mock LLM
     mock_metrics = MagicMock()
-    mock_metrics.get.return_value = {"tokens": 100}
+    mock_metrics.get.return_value = {'tokens': 100}
     mock_llm.metrics = mock_metrics
 
     # Mock the LLM response
     mock_response = MagicMock()
     mock_response.choices = [MagicMock()]
-    mock_response.choices[0].message.content = "KEEP: 0\nKEEP: 2\nKEEP: 4"
+    mock_response.choices[0].message.content = 'KEEP: 0\nKEEP: 2\nKEEP: 4'
     mock_llm.completion.return_value = mock_response
 
     # Mock the conversation memory
@@ -215,7 +215,7 @@ def test_llm_agent_cache_condenser_with_state_with_rewrite(
 
     # Add metrics attribute to the mock LLM
     mock_metrics = MagicMock()
-    mock_metrics.get.return_value = {"tokens": 100}
+    mock_metrics.get.return_value = {'tokens': 100}
     mock_metrics.add = MagicMock()
     mock_llm.metrics = mock_metrics
 
@@ -223,9 +223,7 @@ def test_llm_agent_cache_condenser_with_state_with_rewrite(
     mock_response = MagicMock()
     mock_response.choices = [MagicMock()]
     mock_response.choices[0].message = MagicMock()
-    mock_response.choices[
-        0
-    ].message.content = """
+    mock_response.choices[0].message.content = """
 KEEP: 0
 REWRITE 2 TO 4 WITH:
 User asked about database schema and agent explained the tables and relationships.
@@ -281,4 +279,4 @@ KEEP: 5
     assert isinstance(result, Condensation)
     assert hasattr(result, 'action')
     assert result.action.summary is not None
-    assert "User asked about database schema" in result.action.summary
+    assert 'User asked about database schema' in result.action.summary

@@ -12,7 +12,9 @@ from openhands.events.event import Event, EventSource
 from openhands.memory.condenser.condenser import Condensation, Condenser, View
 
 if TYPE_CHECKING:
-    from openhands.agent.agent import Agent
+    from openhands.agenthub.llm_cache_code_agent.llm_cache_code_agent import (
+        LLMCacheCodeAgent,
+    )
 
 
 class LLMAgentCacheCondenser(Condenser):
@@ -29,7 +31,7 @@ class LLMAgentCacheCondenser(Condenser):
 
     def __init__(
         self,
-        agent: 'Agent',
+        agent: LLMCacheCodeAgent,
         max_size: int = 100,
         keep_first: int = 1,
     ):
@@ -192,16 +194,7 @@ class LLMAgentCacheCondenser(Condenser):
     def _build_messages_for_condensation(self, events: List[Event]) -> list[Message]:
         # Process the events into messages using the same format as the agent
         # This ensures we can take advantage of the LLM's cache
-        initial_messages = self.conversation_memory.process_initial_messages(
-            with_caching=True
-        )
-
-        messages = self.conversation_memory.process_events(
-            condensed_history=events,
-            initial_messages=initial_messages,
-            max_message_chars=self.llm.config.max_message_chars,
-            vision_is_active=self.llm.vision_is_active(),
-        )
+        messages = self.agent._get_messages(events)
 
         # Add the condensation instructions as a user message at the end
         condensation_instructions = """
