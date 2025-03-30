@@ -57,6 +57,8 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         extra_build_args: list[str] | None = None,
         use_local_cache: bool = False,
     ) -> str:
+        # docker image lsで手元のイメージを確認
+        logger.info(f'[LOG] docker image ls: {self.docker_client.images.list()}')
         """Builds a Docker image using BuildKit and handles the build logs appropriately.
 
         Args:
@@ -112,8 +114,6 @@ class DockerRuntimeBuilder(RuntimeBuilder):
                 'apt-get update',
                 'apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin',
             ]
-            # docker image lsで手元のイメージを確認
-            logger.info(f'[LOG] docker image ls: {self.docker_client.images.list()}')
             for cmd in commands:
                 try:
                     subprocess.run(
