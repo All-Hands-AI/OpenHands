@@ -370,9 +370,6 @@ def _build_sandbox_image(
         names.append(f'{runtime_image_repo}:{versioned_tag}')
     names = [name for name in names if not runtime_builder.image_exists(name, False)]
 
-    # docker image lsで手元のイメージを確認
-    logger.info(f'[LOG] docker image ls: {runtime_builder.docker_client.images.list()}')
-
     image_name = runtime_builder.build(
         path=str(build_folder),
         tags=names,
