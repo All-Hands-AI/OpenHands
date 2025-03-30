@@ -162,6 +162,8 @@ class DockerRuntimeBuilder(RuntimeBuilder):
 
         logger.info('[LOG] check-point 1-3')
 
+        logger.info(f'buildx_cmd: {buildx_cmd}')
+
         self.rolling_logger.start(
             f'================ {buildx_cmd[0].upper()} BUILD STARTED ================'
         )
