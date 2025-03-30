@@ -220,7 +220,6 @@ async def search_conversations(
     running_conversations = await conversation_manager.get_running_agent_loops(
         get_user_id(request), set(conversation_ids)
     )
-
     result = ConversationInfoResultSet(
         results=await wait_all(
             _get_conversation_info(
