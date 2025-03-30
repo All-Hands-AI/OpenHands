@@ -6,8 +6,9 @@ from typing import TYPE_CHECKING, List
 from openhands.controller.state.state import State
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message, TextContent
+from openhands.core.schema.action import ActionType
 from openhands.events.action.agent import CondensationAction
-from openhands.events.event import Event
+from openhands.events.event import Event, EventSource
 from openhands.memory.condenser.condenser import Condensation, Condenser, View
 
 if TYPE_CHECKING:
@@ -87,28 +88,19 @@ class LLMAgentCacheCondenser(Condenser):
         CONDENSATION_TRIGGER_WORD = 'CONDENSE!'
 
         # Iterate through events in reverse order to find the last user message
-        # Skip RecallObservation events which might be inserted after user messages
         for event in reversed(events):
-            # Skip RecallObservation events
-            if hasattr(event, 'observation') and event.observation == 'recall':
-                continue
+            if (
+                hasattr(event, 'source')
+                and event.source == EventSource.USER
+                and hasattr(event, 'action')
+                and event.action == ActionType.MESSAGE
+                and event.message is not None
+            ):
+                return CONDENSATION_TRIGGER_WORD in event.message
 
-            # Check if it's a user message
-            try:
-                if hasattr(event, 'source') and event.source == 'user':
-                    # Check if the message contains "CONDENSE!"
-                    if (
-                        hasattr(event, 'message')
-                        and isinstance(event.message, str)
-                        and CONDENSATION_TRIGGER_WORD in event.message
-                    ):
-                        return True
-                    # Once we've checked a user message and it doesn't have the trigger,
-                    # we can stop looking (we only care about the most recent user message)
-                    break
-            except (AttributeError, TypeError):
-                # If we can't access the attributes, just continue to the next event
-                continue
+            # If we did a condensation, stop looking.
+            if hasattr(event, 'action') and event.action == ActionType.CONDENSATION:
+                return False
 
         return False
 
@@ -185,14 +177,8 @@ class LLMAgentCacheCondenser(Condenser):
         messages = self._build_messages_for_condensation(events)
 
         # Use the agent's build_llm_completion_params to ensure consistent caching
-        if hasattr(self.agent, 'build_llm_completion_params'):
-            params = self.agent.build_llm_completion_params(messages, state or State())
-            response = self.agent.llm.completion(**params)
-        else:
-            # Fallback to direct completion if the agent doesn't have the method
-            response = self.agent.llm.completion(
-                messages=self.agent.llm.format_messages_for_llm(messages),
-            )
+        params = self.agent.build_llm_completion_params(messages, state)
+        response = self.agent.llm.completion(**params)
         self.add_metadata('response', response.model_dump())
 
         rewrite_commands, keep_message_indices = self._parse_condensation_response(
@@ -236,7 +222,9 @@ I need you to condense our conversation history to make it more efficient. Pleas
 
     This will replace all messages from start to end (inclusive) with a single message containing the new content.
 
-3. You can use both options together. For example:
+3. Refer to the messages by their number, starting with 1 in the conversation history.
+
+4. You can use both options together. For example:
     KEEP: 5
     KEEP: 8
     REWRITE 10 TO 15 WITH:
@@ -244,13 +232,13 @@ I need you to condense our conversation history to make it more efficient. Pleas
     END-REWRITE
     KEEP: 18
 
-4. Focus on keeping messages that contain:
+5. Focus on keeping messages that contain:
     - User requirements and constraints
     - Important code changes and decisions
     - Key error messages and debugging information
     - Critical context needed for the current task
 
-5. You can remove or rewrite messages that:
+6. You can remove or rewrite messages that:
     - Contain redundant information
     - Show intermediate steps that are no longer relevant
     - Contain verbose output that has already been processed
@@ -351,8 +339,10 @@ Do not include any other text in your response.
 
         # Add the events to keep based on the LLM's response
         for index in keep_message_indices:
-            if 0 <= index < len(events):
-                keep_event_ids.add(events[index].id)
+            # if 1 <= index <= len(events):
+            #    keep_event_ids.add(events[index-1].id)
+            # This code is wrong! events are converted into a smaller number of messages!
+            pass
 
         # Create a list of event IDs to forget
         forgotten_event_ids = [
@@ -365,9 +355,9 @@ Do not include any other text in your response.
             end_idx = rewrite_command.end
 
             # Validate the range
-            if 0 <= start_idx < len(events) and 0 <= end_idx < len(events):
+            if 1 <= start_idx <= len(events) and 1 <= end_idx < len(events):
                 # Add events in the rewrite range to forgotten_event_ids (except those in keep_first)
-                for i in range(start_idx, end_idx + 1):
+                for i in range(start_idx - 1, end_idx):
                     if i >= self.keep_first:  # Don't remove events in keep_first
                         event_id = events[i].id
                         if event_id in keep_event_ids:

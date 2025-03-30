@@ -54,6 +54,7 @@ CACHE_PROMPT_SUPPORTED_MODELS = [
     'claude-3-5-haiku-20241022',
     'claude-3-haiku-20240307',
     'claude-3-opus-20240229',
+    'openai/gpt-4o-mini',
 ]
 
 # function calling supporting models
