@@ -24,7 +24,10 @@ async def generate_conversation_title(
         return None
 
     # Truncate very long messages to avoid excessive token usage
-    truncated_message = message[:1000] if len(message) > 1000 else message
+    if len(message) > 1000:
+        truncated_message = message[:1000] + '...(truncated)'
+    else:
+        truncated_message = message
 
     try:
         llm = LLM(llm_config)
@@ -33,9 +36,12 @@ async def generate_conversation_title(
         messages = [
             {
                 'role': 'system',
-                'content': f'Generate a concise, descriptive title (maximum {max_length} characters) for a conversation that starts with the following message. The title should summarize the main topic or request. Return only the title, with no additional text, quotes, or explanations.',
+                'content': 'You are a helpful assistant that generates concise, descriptive titles for conversations with OpenHands. OpenHands is a helpful AI agent that can interact with a computer to solve tasks using bash terminal, file editor, and browser. Given a user message (which may be truncated), generate a concise, descriptive title for the conversation. Return only the title, with no additional text, quotes, or explanations.',
             },
-            {'role': 'user', 'content': truncated_message},
+            {
+                'role': 'user',
+                'content': f'Generate a title (maximum {max_length} characters) for a conversation that starts with this message:\n\n{truncated_message}',
+            },
         ]
 
         response = llm.completion(messages=messages)
