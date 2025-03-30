@@ -252,3 +252,47 @@ Please read the [CONTRIBUTING.md](../CONTRIBUTING.md) file for details on our co
 ## Troubleshooting
 
 TODO
+
+## Deployment
+
+### Vercel
+
+To deploy the frontend application on Vercel, follow these steps:
+
+1. Install the Vercel CLI:
+   ```sh
+   npm install -g vercel
+   ```
+
+2. Log in to your Vercel account:
+   ```sh
+   vercel login
+   ```
+
+3. Deploy the application:
+   ```sh
+   vercel
+   ```
+
+4. Follow the prompts to configure your project. Vercel will automatically detect the configuration from the `vercel.json` file.
+
+### Netlify
+
+To deploy the frontend application on Netlify, follow these steps:
+
+1. Install the Netlify CLI:
+   ```sh
+   npm install -g netlify-cli
+   ```
+
+2. Log in to your Netlify account:
+   ```sh
+   netlify login
+   ```
+
+3. Deploy the application:
+   ```sh
+   netlify deploy
+   ```
+
+4. Follow the prompts to configure your project. Netlify will automatically detect the configuration from the `netlify.toml` file.
