@@ -152,7 +152,7 @@ export const chatSlice = createSlice({
       // Special handling for RecallObservation - create a new message instead of updating an existing one
       if (observationID === "recall") {
         const recallObs = observation.payload as RecallObservation;
-        let content = `**Recall Observation**`;
+        let content = ``;
 
         // Handle workspace context
         if (recallObs.extras.recall_type === "workspace_context") {
