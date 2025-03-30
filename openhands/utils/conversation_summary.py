@@ -44,7 +44,7 @@ async def generate_conversation_title(
             },
         ]
 
-        response = llm.completion(messages=messages)
+        response = await llm.completion(messages=messages)
         title = response.choices[0].message.content.strip()
 
         # Ensure the title isn't too long

@@ -21,41 +21,47 @@ async def test_generate_conversation_title_empty_message():
 @pytest.mark.asyncio
 async def test_generate_conversation_title_success():
     """Test successful title generation."""
-    mock_llm = MagicMock()
+    # Create a proper mock response
     mock_response = MagicMock()
     mock_response.choices = [MagicMock()]
     mock_response.choices[0].message.content = 'Generated Title'
 
-    # Set up the async mock correctly
+    # Create a mock LLM instance with an async completion method
+    mock_llm = MagicMock()
     mock_llm.completion = AsyncMock(return_value=mock_response)
 
+    # Patch the LLM class to return our mock
     with patch('openhands.utils.conversation_summary.LLM', return_value=mock_llm):
         result = await generate_conversation_title(
             'Can you help me with Python?', LLMConfig(model='test-model')
         )
 
     assert result == 'Generated Title'
+    # Verify the mock was called with the expected arguments
     mock_llm.completion.assert_called_once()
 
 
 @pytest.mark.asyncio
 async def test_generate_conversation_title_long_title():
     """Test that long titles are truncated."""
-    mock_llm = MagicMock()
+    # Create a proper mock response with a long title
     mock_response = MagicMock()
     mock_response.choices = [MagicMock()]
     mock_response.choices[
         0
     ].message.content = 'This is a very long title that should be truncated because it exceeds the maximum length'
 
-    # Set up the async mock correctly
+    # Create a mock LLM instance with an async completion method
+    mock_llm = MagicMock()
     mock_llm.completion = AsyncMock(return_value=mock_response)
 
+    # Patch the LLM class to return our mock
     with patch('openhands.utils.conversation_summary.LLM', return_value=mock_llm):
         result = await generate_conversation_title(
             'Can you help me with Python?', LLMConfig(model='test-model'), max_length=30
         )
 
+    # Verify the title is truncated correctly
     assert len(result) <= 30
     assert result.endswith('...')
 
@@ -63,12 +69,15 @@ async def test_generate_conversation_title_long_title():
 @pytest.mark.asyncio
 async def test_generate_conversation_title_exception():
     """Test that exceptions are handled gracefully."""
+    # Create a mock LLM instance with an async completion method that raises an exception
     mock_llm = MagicMock()
     mock_llm.completion = AsyncMock(side_effect=Exception('Test error'))
 
+    # Patch the LLM class to return our mock
     with patch('openhands.utils.conversation_summary.LLM', return_value=mock_llm):
         result = await generate_conversation_title(
             'Can you help me with Python?', LLMConfig(model='test-model')
         )
 
+    # Verify that None is returned when an exception occurs
     assert result is None
