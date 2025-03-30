@@ -165,6 +165,8 @@ class DockerRuntimeBuilder(RuntimeBuilder):
 
         logger.info(f'buildx_cmd: {buildx_cmd}')
 
+        logger.info('hoge')
+
         # docker image lsで手元のイメージを確認
         logger.info(f'[LOG] docker image ls: {self.docker_client.images.list()}')
 
