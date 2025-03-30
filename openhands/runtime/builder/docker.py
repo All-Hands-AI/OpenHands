@@ -57,8 +57,6 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         extra_build_args: list[str] | None = None,
         use_local_cache: bool = False,
     ) -> str:
-        # docker image lsで手元のイメージを確認
-        logger.info(f'[LOG] docker image ls: {self.docker_client.images.list()}')
         """Builds a Docker image using BuildKit and handles the build logs appropriately.
 
         Args:
