@@ -48,6 +48,11 @@ class InitSessionRequest(BaseModel):
     replay_json: str | None = None
 
 
+class ConversationUpdate(BaseModel):
+    title: str | None = None
+    selected_repository: str | None = None
+
+
 async def _create_new_conversation(
     user_id: str | None,
     git_provider_tokens: PROVIDER_TOKEN_TYPE | None,
@@ -345,27 +350,40 @@ async def auto_generate_title(conversation_id: str, user_id: str | None) -> str:
 
 @app.patch('/conversations/{conversation_id}')
 async def update_conversation(
-    request: Request, conversation_id: str, title: str = Body(embed=True)
-) -> bool:
-    user_id = get_user_id(request)
+    conversation_id: str,
+    conversation: ConversationUpdate,
+    request: Request,
+) -> ConversationInfo | None:
     conversation_store = await ConversationStoreImpl.get_instance(
-        config, user_id, get_github_user_id(request)
+        config, get_user_id(request), get_github_user_id(request)
     )
-    metadata = await conversation_store.get_metadata(conversation_id)
-    if not metadata:
-        return False
+    try:
+        metadata = await conversation_store.get_metadata(conversation_id)
+        if metadata:
+            if conversation.title is not None:
+                # If title is empty string, auto-generate a title
+                if conversation.title == '':
+                    new_title = await auto_generate_title(
+                        conversation_id, get_user_id(request)
+                    )
+                    if new_title:
+                        metadata.title = new_title
+                    else:
+                        metadata.title = get_default_conversation_title(conversation_id)
+                else:
+                    metadata.title = conversation.title
 
-    # If title is empty or unspecified, auto-generate it
-    if not title or title.isspace():
-        title = await auto_generate_title(conversation_id, user_id)
+            if conversation.selected_repository is not None:
+                metadata.selected_repository = conversation.selected_repository
 
-        # If we still don't have a title, use the default
-        if not title or title.isspace():
-            title = get_default_conversation_title(conversation_id)
-
-    metadata.title = title
-    await conversation_store.save_metadata(metadata)
-    return True
+            await conversation_store.save_metadata(metadata)
+            is_running = await conversation_manager.is_agent_loop_running(conversation_id)
+            conversation_info = await _get_conversation_info(metadata, is_running)
+            if conversation_info:
+                conversation_info.needs_title_update = False  # Reset the flag after update
+            return conversation_info
+    except FileNotFoundError:
+        return None
 
 
 @app.delete('/conversations/{conversation_id}')
