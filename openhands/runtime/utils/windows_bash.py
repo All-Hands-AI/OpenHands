@@ -40,6 +40,15 @@ class WindowsBashSession:
         
         print(f"[DEBUG] Executing command: {command} with timeout {timeout}s")
         
+        # Recreate temp directory if it was deleted
+        if not hasattr(self, '_temp_dir') or not self._temp_dir.exists():
+            try:
+                self._temp_dir = Path(tempfile.mkdtemp())
+                print(f"[DEBUG] Recreated temp directory: {self._temp_dir}")
+            except Exception as e:
+                print(f"[ERROR] Failed to recreate temp directory: {e}")
+                return ErrorObservation(content=f"Failed to recreate temp directory: {e}")
+        
         # Handle special cases
         if command.startswith("C-"):
             print("[DEBUG] Detected special key command, not supported.")
@@ -91,16 +100,13 @@ Write-Host "[PS_SCRIPT] Changed directory."
 
 try {{
     Write-Host "[PS_SCRIPT] Executing command: {command}"
-    # Execute the command and capture output using a script block
-    # Redirect error output to error file
-    $errorOutput = & {{
-        {command}
-    }} 2>&1 | Where-Object {{ $_ -is [System.Management.Automation.ErrorRecord] }}
+    
+    # Create a script block and try to execute it
+    $scriptBlock = [ScriptBlock]::Create("{command}")
+    $errorOutput = & $scriptBlock 2>&1 | Where-Object {{ $_ -is [System.Management.Automation.ErrorRecord] }}
     
     # Capture standard output
-    $standardOutput = & {{
-        {command}
-    }} 2>&1 | Where-Object {{ $_ -isnot [System.Management.Automation.ErrorRecord] }}
+    $standardOutput = & $scriptBlock 2>&1 | Where-Object {{ $_ -isnot [System.Management.Automation.ErrorRecord] }}
     
     Write-Host "[PS_SCRIPT] Command execution finished."
     
@@ -134,7 +140,7 @@ try {{
     Write-Host "[PS_SCRIPT] Caught exception during command execution."
     # Write error details
     Write-Host "[PS_SCRIPT] Writing error to {error_file}"
-    $_ | Out-File -FilePath '{error_file}' -Encoding utf8
+    $_.Exception.Message | Out-File -FilePath '{error_file}' -Encoding utf8
     Write-Host "[PS_SCRIPT] Error written."
     
     # Write failure status

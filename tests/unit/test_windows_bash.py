@@ -117,7 +117,8 @@ def test_command_timeout(windows_bash_session):
 
     # Test a command that will timeout
     test_timeout_sec = 1
-    action = CmdRunAction(command=f"Start-Sleep -Seconds 5", timeout=test_timeout_sec)
+    action = CmdRunAction(command=f"Start-Sleep -Seconds 5")
+    action.set_hard_timeout(test_timeout_sec)
     start_time = time.monotonic()
     result = windows_bash_session.execute(action)
     duration = time.monotonic() - start_time
@@ -222,10 +223,8 @@ def test_cleanup(windows_bash_session):
     assert not temp_dir_path.exists()
 
 
-def test_error_handling(windows_bash_session):
-    """Test error handling in various scenarios."""
-    # windows_bash_session.initialize() # No longer needed here
-
+def test_syntax_error_handling(windows_bash_session):
+    """Test handling of syntax errors in PowerShell commands."""
     # Test invalid command syntax (should be caught by PowerShell)
     action = CmdRunAction(command="Write-Output 'Missing Quote")
     result = windows_bash_session.execute(action)
@@ -234,6 +233,9 @@ def test_error_handling(windows_bash_session):
     assert "missing closing quote" in result.content.lower() or "string is missing the terminator" in result.content.lower()
     assert result.metadata.exit_code == 1 # Wrapper catches exception, sets exit code to 1
 
+
+def test_special_characters_handling(windows_bash_session):
+    """Test handling of commands containing special characters."""
     # Test command with special characters that don't break the script injection
     # Ensure quoting handles typical shell metacharacters when passed to Invoke-Expression
     special_chars_cmd = 'Write-Output "Special Chars: & | < > ` \' \\" ! $ % ^ ( ) - = + [ ] { } ; : , . ? / ~"'
