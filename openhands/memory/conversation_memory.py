@@ -529,13 +529,13 @@ class ConversationMemory:
                 tool_call_id=tool_call_metadata.tool_call_id,
                 name=tool_call_metadata.function_name,
             )
-            tool_call_id_to_message[tool_call_metadata.tool_call_id]._source = obs
+            tool_call_id_to_message[tool_call_metadata.tool_call_id]._event = obs
             # No need to return the observation message
             # because it will be added by get_action_message when all the corresponding
             # tool calls in the SAME request are processed
             return []
 
-        message._source = obs
+        message._event = obs
         return [message]
 
     def apply_prompt_caching(self, messages: list[Message]) -> None:
