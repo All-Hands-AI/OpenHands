@@ -2,7 +2,7 @@ from fastapi import APIRouter, Request, status
 from fastapi.responses import JSONResponse
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.events.async_event_store_wrapper import AsyncStoredEventListWrapper
+from openhands.events.async_stored_event_list_wrapper import AsyncStoredEventListWrapper
 from openhands.events.serialization import event_to_dict
 from openhands.server.data_models.feedback import FeedbackDataModel, store_feedback
 from openhands.utils.async_utils import call_sync_from_async

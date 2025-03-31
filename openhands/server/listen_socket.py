@@ -7,7 +7,7 @@ from openhands.events.action import (
     NullAction,
 )
 from openhands.events.action.agent import RecallAction
-from openhands.events.async_event_store_wrapper import AsyncStoredEventListWrapper
+from openhands.events.async_stored_event_list_wrapper import AsyncStoredEventListWrapper
 from openhands.events.observation import (
     NullObservation,
 )

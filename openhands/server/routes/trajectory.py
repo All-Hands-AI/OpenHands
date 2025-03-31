@@ -2,7 +2,7 @@ from fastapi import APIRouter, Request, status
 from fastapi.responses import JSONResponse
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.events.async_event_store_wrapper import AsyncStoredEventListWrapper
+from openhands.events.async_stored_event_list_wrapper import AsyncStoredEventListWrapper
 from openhands.events.serialization import event_to_trajectory
 
 app = APIRouter(prefix='/api/conversations/{conversation_id}')
