@@ -201,6 +201,38 @@ class DockerRuntimeBuilder(RuntimeBuilder):
 
         # << subprocess上でdocker image lsを実行する
 
+        # subprocess上でbuildコマンドを実行する >>
+        logger.info('[LOG] build in subprocess for testing')
+        # use docker build not buildx
+        build_cmd = [
+            'docker',
+            'build',
+            '-t',
+            'custom-image-from-sandbox',
+            '--load',
+            path,
+        ]
+        build_process = subprocess.Popen(
+            build_cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            universal_newlines=True,
+            bufsize=1,
+        )
+
+        stdout_lines = []
+
+        if build_process.stdout:
+            for line in iter(build_process.stdout.readline, ''):
+                line = line.strip()
+                if line:
+                    stdout_lines.append(line)
+                    logger.info(f'[LOG] docker build: {line}')
+        else:
+            logger.warning('[LOG] No stdout available from docker build command')
+
+        # << subprocess上でbuildコマンドを実行する
+
         try:
             logger.info('[LOG] check-point 1-5 process.Popen()')
             process = subprocess.Popen(
