@@ -254,6 +254,16 @@ class OpenHands {
     return data;
   }
 
+  static async generateConversationTitle(
+    conversationId: string,
+  ): Promise<Conversation | null> {
+    const { data } = await openHands.post<Conversation | null>(
+      `/api/conversations/${conversationId}/generate-title`,
+    );
+
+    return data;
+  }
+
   /**
    * Get the settings from the server or use the default settings if not found
    */

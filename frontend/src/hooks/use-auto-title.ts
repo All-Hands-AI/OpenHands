@@ -44,33 +44,34 @@ export function useAutoTitle() {
       return;
     }
 
-    if (conversation.title && !defaultTitlePattern.test(conversation.title)) {
+    // Check if the conversation needs a title update or has a default title
+    const needsUpdate = conversation.needs_title_update ||
+      (conversation.title && defaultTitlePattern.test(conversation.title));
+
+    if (!needsUpdate) {
       return;
     }
 
-    updateConversation(
-      {
-        id: conversationId,
-        conversation: { title: "" },
-      },
-      {
-        onSuccess: async () => {
-          try {
-            const updatedConversation =
-              await OpenHands.getConversation(conversationId);
+    // Use the dedicated endpoint for generating titles
+    const generateTitle = async () => {
+      try {
+        const updatedConversation = await OpenHands.generateConversationTitle(conversationId);
 
-            queryClient.setQueryData(
-              ["user", "conversation", conversationId],
-              updatedConversation,
-            );
-          } catch (error) {
-            queryClient.invalidateQueries({
-              queryKey: ["user", "conversation", conversationId],
-            });
-          }
-        },
-      },
-    );
+        if (updatedConversation) {
+          queryClient.setQueryData(
+            ["user", "conversation", conversationId],
+            updatedConversation,
+          );
+        }
+      } catch (error) {
+        console.error("Error generating title:", error);
+        queryClient.invalidateQueries({
+          queryKey: ["user", "conversation", conversationId],
+        });
+      }
+    };
+
+    generateTitle();
   }, [
     messages,
     conversationId,

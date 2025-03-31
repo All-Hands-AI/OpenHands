@@ -17,3 +17,4 @@ class ConversationInfo:
     status: ConversationStatus = ConversationStatus.STOPPED
     selected_repository: str | None = None
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    needs_title_update: bool = False

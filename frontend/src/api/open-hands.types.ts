@@ -77,6 +77,7 @@ export interface Conversation {
   last_updated_at: string;
   created_at: string;
   status: ProjectStatus;
+  needs_title_update?: boolean;
 }
 
 export interface ResultSet<T> {
