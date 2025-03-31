@@ -86,7 +86,12 @@ INTENT: Fix precision while maintaining FITS compliance"""
 
         prompt += '\n\n'
 
-        prompt += ('\n' + summary_event.message + '\n') if summary_event.message else ''
+        prompt += (
+            ('\n' + summary_event.message + '\n')
+            if summary_event.message is not None
+            and summary_event.message != 'No events summarized'
+            else ''
+        )
 
         prompt += '\n\n'
 
@@ -116,6 +121,10 @@ INTENT: Fix precision while maintaining FITS compliance"""
         # Check if we exceed the token limit using the last eligible event
         estimated_tokens = int(self.threshold * self.max_input_tokens)
         logger.debug(f'Estimated max tokens to keep: {estimated_tokens}')
+
+        # FIXME: if we just went through a condensation, don't do it again
+        if len(view) > 1 and isinstance(view[-1], CondensationAction):
+            return False
 
         if exceeds_token_limit(
             view.events,
