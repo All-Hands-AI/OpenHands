@@ -23,7 +23,7 @@ from openhands.server.shared import (
     sio,
 )
 from openhands.storage.conversation.conversation_validator import (
-    ConversationValidatorImpl,
+    create_conversation_validator,
 )
 
 
@@ -38,7 +38,7 @@ async def connect(connection_id: str, environ):
         raise ConnectionRefusedError('No conversation_id in query params')
 
     cookies_str = environ.get('HTTP_COOKIE', '')
-    conversation_validator = ConversationValidatorImpl()
+    conversation_validator = create_conversation_validator()
     user_id, github_user_id = await conversation_validator.validate(
         conversation_id, cookies_str
     )
