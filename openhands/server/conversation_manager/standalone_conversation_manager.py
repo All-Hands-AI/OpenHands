@@ -301,19 +301,19 @@ class StandaloneConversationManager(ConversationManager):
             except ValueError:
                 pass  # Already subscribed - take no action
 
-        event_stream = await self._get_event_stream(sid, user_id)
-        if not event_stream:
+        event_store = await self._get_event_store(sid, user_id)
+        if not event_store:
             logger.error(
                 f'No event stream after starting agent loop: {sid}',
                 extra={'session_id': sid},
             )
             raise RuntimeError(f'no_event_stream:{sid}')
-        return event_stream
+        return event_store
 
-    async def _get_event_stream(
+    async def _get_event_store(
         self, sid: str, user_id: str | None
     ) -> EventStore | None:
-        logger.info(f'_get_event_stream:{sid}', extra={'session_id': sid})
+        logger.info(f'_get_event_store:{sid}', extra={'session_id': sid})
         session = self._local_agent_loops_by_sid.get(sid)
         if session:
             logger.info(f'found_local_agent_loop:{sid}', extra={'session_id': sid})
