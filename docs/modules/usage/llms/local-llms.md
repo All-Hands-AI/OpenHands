@@ -51,13 +51,13 @@ vllm serve my_folder/openhands-lm-32b-v0.1 \
 
 ## Run and Configure OpenHands
 
-## Run OpenHands
+### Run OpenHands
 
-### Using Docker
+#### Using Docker
 
 Run OpenHands using [the official docker run command](../installation#start-the-app).
 
-### Using Development Mode
+#### Using Development Mode
 
 Use the instructions in [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md) to build OpenHands.
 Ensure `config.toml` exists by running `make setup-config` which will create one for you. In the `config.toml`, enter the following:
