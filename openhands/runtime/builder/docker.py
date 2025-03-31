@@ -179,25 +179,25 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         logger.info('[LOG] check-point 1-4')
 
         # subprocess上でdocker image lsを実行する >>
-        logger.info('[LOG] print docker image ls in subprocess')
-        ls_cmd = ['docker', 'image', 'ls']
-        test_process = subprocess.Popen(
-            ls_cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            universal_newlines=True,
-            bufsize=1,
-        )
-        stdout_lines = []
+        # logger.info('[LOG] print docker image ls in subprocess')
+        # ls_cmd = ['docker', 'image', 'ls']
+        # test_process = subprocess.Popen(
+        #     ls_cmd,
+        #     stdout=subprocess.PIPE,
+        #     stderr=subprocess.STDOUT,
+        #     universal_newlines=True,
+        #     bufsize=1,
+        # )
+        # stdout_lines = []
 
-        if test_process.stdout:
-            for line in iter(test_process.stdout.readline, ''):
-                line = line.strip()
-                if line:
-                    stdout_lines.append(line)
-                    logger.info(f'[LOG] docker image ls: {line}')
-        else:
-            logger.warning('[LOG] No stdout available from docker image ls command')
+        # if test_process.stdout:
+        #     for line in iter(test_process.stdout.readline, ''):
+        #         line = line.strip()
+        #         if line:
+        #             stdout_lines.append(line)
+        #             logger.info(f'[LOG] docker image ls: {line}')
+        # else:
+        #     logger.warning('[LOG] No stdout available from docker image ls command')
 
         # << subprocess上でdocker image lsを実行する
 
