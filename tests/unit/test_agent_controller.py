@@ -1284,7 +1284,6 @@ def test_apply_conversation_window_basic(mock_event_stream, mock_agent):
     )  # First message + at least one action-observation pair
     assert truncated[0] == first_msg  # First message always preserved
     assert controller.state.start_id == first_msg._id
-    assert controller.state.truncation_id is not None
 
     # Verify pairs aren't split
     for i, event in enumerate(truncated[1:]):
@@ -1327,7 +1326,6 @@ def test_history_restoration_after_truncation(mock_event_stream, mock_agent):
 
     # Save state
     saved_start_id = controller.state.start_id
-    saved_truncation_id = controller.state.truncation_id
     saved_history_len = len(controller.state.history)
 
     # Set up mock event stream for new controller
@@ -1343,7 +1341,6 @@ def test_history_restoration_after_truncation(mock_event_stream, mock_agent):
         headless_mode=True,
     )
     new_controller.state.start_id = saved_start_id
-    new_controller.state.truncation_id = saved_truncation_id
     new_controller.state.history = mock_event_stream.get_events()
 
     # Verify restoration

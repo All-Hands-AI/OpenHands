@@ -927,12 +927,6 @@ class AgentController:
         - For delegate events (between AgentDelegateAction and AgentDelegateObservation):
             - Excludes all events between the action and observation
             - Includes the delegate action and observation themselves
-
-        The history is loaded in two parts if truncation_id is set:
-        1. First user message from start_id onwards
-        2. Rest of history from truncation_id to the end
-
-        Otherwise loads normally from start_id.
         """
         # define range of events to fetch
         # delegates start with a start_id and initially won't find any events
@@ -954,29 +948,6 @@ class AgentController:
             return
 
         events: list[Event] = []
-
-        # If we have a truncation point, get first user message and then rest of history
-        if hasattr(self.state, 'truncation_id') and self.state.truncation_id > 0:
-            # Find first user message from stream
-            first_user_msg = next(
-                (
-                    e
-                    for e in self.event_stream.get_events(
-                        start_id=start_id,
-                        end_id=end_id,
-                        reverse=False,
-                        filter_out_type=self.filter_out,
-                        filter_hidden=True,
-                    )
-                    if isinstance(e, MessageAction) and e.source == EventSource.USER
-                ),
-                None,
-            )
-            if first_user_msg:
-                events.append(first_user_msg)
-
-            # the rest of the events are from the truncation point
-            start_id = self.state.truncation_id
 
         # Get rest of history
         events_to_add = list(
@@ -1135,10 +1106,6 @@ class AgentController:
                 else:
                     # if it's an action with source == EventSource.AGENT, we're good
                     break
-
-        # Save where to continue from in next reload
-        if kept_events:
-            self.state.truncation_id = kept_events[0].id
 
         # Ensure first user message is included
         if first_user_msg and first_user_msg not in kept_events:

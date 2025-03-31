@@ -97,8 +97,6 @@ class State:
     # start_id and end_id track the range of events in history
     start_id: int = -1
     end_id: int = -1
-    # truncation_id tracks where to load history after context window truncation
-    truncation_id: int = -1
 
     delegates: dict[tuple[int, int], tuple[str, str]] = field(default_factory=dict)
     # NOTE: This will never be used by the controller, but it can be used by different
@@ -218,7 +216,7 @@ class State:
             'trace_version': openhands.__version__,
             'tags': [
                 f'agent:{agent_name}',
-                f'web_host:{os.environ.get("WEB_HOST", "unspecified")}',
+                f"web_host:{os.environ.get('WEB_HOST', 'unspecified')}",
                 f'openhands_version:{openhands.__version__}',
             ],
         }
