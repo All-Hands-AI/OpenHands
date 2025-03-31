@@ -83,7 +83,7 @@ In the OpenHands UI, click on the Settings wheel in the bottom-left corner.
 Then in the `Model` input, enter `openai/openhands-lm-32b-v0.1`, or the name of the model you pulled earlier.
 If it doesn’t show up in the dropdown, enable `Advanced Settings` and type it in.
 
-In the API Key field, enter `my` or any value you setted.
+In the API Key field, enter `mykey` or any value you setted.
 
 In the Base URL field, enter `http://host.docker.internal:8000`.
 
