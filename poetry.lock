@@ -496,18 +496,18 @@ files = [
 
 [[package]]
 name = "boto3"
-version = "1.37.22"
+version = "1.37.23"
 description = "The AWS SDK for Python"
 optional = false
 python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "boto3-1.37.22-py3-none-any.whl", hash = "sha256:a14324d5fa5f4fea00c0e3c69754cbd28100f7fe194693eeecf2dc07446cf4ef"},
-    {file = "boto3-1.37.22.tar.gz", hash = "sha256:78a0ec0aafbf6044104c98ad80b69e6d1c83d8233fda2c2d241029e6c705c510"},
+    {file = "boto3-1.37.23-py3-none-any.whl", hash = "sha256:fc462b9fd738bd8a1c121d94d237c6b6a05a2c1cc709d16f5223acb752f7310b"},
+    {file = "boto3-1.37.23.tar.gz", hash = "sha256:82f4599a34f5eb66e916b9ac8547394f6e5899c19580e74b60237db04cf66d1e"},
 ]
 
 [package.dependencies]
-botocore = ">=1.37.22,<1.38.0"
+botocore = ">=1.37.23,<1.38.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.11.0,<0.12.0"
 
@@ -516,14 +516,14 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "boto3-stubs"
-version = "1.37.22"
-description = "Type annotations for boto3 1.37.22 generated with mypy-boto3-builder 8.10.1"
+version = "1.37.23"
+description = "Type annotations for boto3 1.37.23 generated with mypy-boto3-builder 8.10.1"
 optional = false
 python-versions = ">=3.8"
 groups = ["evaluation"]
 files = [
-    {file = "boto3_stubs-1.37.22-py3-none-any.whl", hash = "sha256:7d41213bef29af9bca6cbf481b00ec1a2535c111ee979ed152249d2c1ec02208"},
-    {file = "boto3_stubs-1.37.22.tar.gz", hash = "sha256:ad6c1471bd503da253420294ca5060a4a24d53cdc2672503a579d9b779d0e5ce"},
+    {file = "boto3_stubs-1.37.23-py3-none-any.whl", hash = "sha256:a00884a3df819bdc6b040c857e57a87b4f33df963ee88f8f406b13bf2cd983ca"},
+    {file = "boto3_stubs-1.37.23.tar.gz", hash = "sha256:011f06dadcd5ef3c627ec9808b9afa4e1837b0f009d82b8209f12a84ffbb3867"},
 ]
 
 [package.dependencies]
@@ -579,7 +579,7 @@ bedrock-data-automation-runtime = ["mypy-boto3-bedrock-data-automation-runtime (
 bedrock-runtime = ["mypy-boto3-bedrock-runtime (>=1.37.0,<1.38.0)"]
 billing = ["mypy-boto3-billing (>=1.37.0,<1.38.0)"]
 billingconductor = ["mypy-boto3-billingconductor (>=1.37.0,<1.38.0)"]
-boto3 = ["boto3 (==1.37.22)"]
+boto3 = ["boto3 (==1.37.23)"]
 braket = ["mypy-boto3-braket (>=1.37.0,<1.38.0)"]
 budgets = ["mypy-boto3-budgets (>=1.37.0,<1.38.0)"]
 ce = ["mypy-boto3-ce (>=1.37.0,<1.38.0)"]
@@ -943,14 +943,14 @@ xray = ["mypy-boto3-xray (>=1.37.0,<1.38.0)"]
 
 [[package]]
 name = "botocore"
-version = "1.37.22"
+version = "1.37.23"
 description = "Low-level, data-driven core of boto 3."
 optional = false
 python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "botocore-1.37.22-py3-none-any.whl", hash = "sha256:184db7c9314d13002bc827f511a5140574b5da1acda342d51e093dad6317de98"},
-    {file = "botocore-1.37.22.tar.gz", hash = "sha256:b3b26f1a90236bcd17d4092f8c85a256b44e9955a16b633319a2f5678d605e9f"},
+    {file = "botocore-1.37.23-py3-none-any.whl", hash = "sha256:ffbe1f5958adb1c50d72d3ad1018cb265fe349248c08782d334601c0814f0e38"},
+    {file = "botocore-1.37.23.tar.gz", hash = "sha256:3a249c950cef9ee9ed7b2278500ad83a4ad6456bc433a43abd1864d1b61b2acb"},
 ]
 
 [package.dependencies]
@@ -2179,20 +2179,20 @@ typing = ["typing-extensions (>=4.12.2) ; python_version < \"3.11\""]
 
 [[package]]
 name = "flake8"
-version = "7.1.2"
+version = "7.2.0"
 description = "the modular source code checker: pep8 pyflakes and co"
 optional = false
-python-versions = ">=3.8.1"
+python-versions = ">=3.9"
 groups = ["main", "runtime"]
 files = [
-    {file = "flake8-7.1.2-py2.py3-none-any.whl", hash = "sha256:1cbc62e65536f65e6d754dfe6f1bada7f5cf392d6f5db3c2b85892466c3e7c1a"},
-    {file = "flake8-7.1.2.tar.gz", hash = "sha256:c586ffd0b41540951ae41af572e6790dbd49fc12b3aa2541685d253d9bd504bd"},
+    {file = "flake8-7.2.0-py2.py3-none-any.whl", hash = "sha256:93b92ba5bdb60754a6da14fa3b93a9361fd00a59632ada61fd7b130436c40343"},
+    {file = "flake8-7.2.0.tar.gz", hash = "sha256:fa558ae3f6f7dbf2b4f22663e5343b6b6023620461f8d4ff2019ef4b5ee70426"},
 ]
 
 [package.dependencies]
 mccabe = ">=0.7.0,<0.8.0"
-pycodestyle = ">=2.12.0,<2.13.0"
-pyflakes = ">=3.2.0,<3.3.0"
+pycodestyle = ">=2.13.0,<2.14.0"
+pyflakes = ">=3.3.0,<3.4.0"
 
 [[package]]
 name = "flask"
@@ -4393,14 +4393,14 @@ types-tqdm = "*"
 
 [[package]]
 name = "litellm"
-version = "1.64.1"
+version = "1.65.0"
 description = "Library to easily interface with LLM API providers"
 optional = false
 python-versions = "!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*,>=3.8"
 groups = ["main"]
 files = [
-    {file = "litellm-1.64.1-py3-none-any.whl", hash = "sha256:bd7cb4977dee121551f0322d48b4e51e9a508fc2ac2273e7c5405ca69354e352"},
-    {file = "litellm-1.64.1.tar.gz", hash = "sha256:73bac891b1fbd77ada4d691e967657c53f48c207d9c3ba414ad0ffe3e7ec8f89"},
+    {file = "litellm-1.65.0-py3-none-any.whl", hash = "sha256:bbc211f3d03e1830ed7f4304b40f70fa1fa4a2f9109d006ede5f78e83a189aba"},
+    {file = "litellm-1.65.0.tar.gz", hash = "sha256:147a74d18601ccaaff3ca125eba914ab6e5b5854aff480dce5a52be5b9d52ff8"},
 ]
 
 [package.dependencies]
@@ -4836,14 +4836,14 @@ files = [
 
 [[package]]
 name = "modal"
-version = "0.73.131"
+version = "0.73.136"
 description = "Python client library for Modal"
 optional = false
 python-versions = ">=3.9"
 groups = ["main", "evaluation"]
 files = [
-    {file = "modal-0.73.131-py3-none-any.whl", hash = "sha256:cece493c196a5c932602fa84ef91c60737078c263ac8859acc8c7e13257a6215"},
-    {file = "modal-0.73.131.tar.gz", hash = "sha256:26809ad9c9bd66d912370454135599b093e7bc2f450d6257d82dd178d00dab62"},
+    {file = "modal-0.73.136-py3-none-any.whl", hash = "sha256:1f812712ea616cce949c06c5a4b45497d1157879775986de54db9ed2023b79e9"},
+    {file = "modal-0.73.136.tar.gz", hash = "sha256:e8a6d3961c11e6440b2ab9a7f344fb1beb9aae8b8511df871ce3b2399f194af0"},
 ]
 
 [package.dependencies]
@@ -6210,14 +6210,14 @@ global = ["pybind11-global (==2.13.6)"]
 
 [[package]]
 name = "pycodestyle"
-version = "2.12.1"
+version = "2.13.0"
 description = "Python style guide checker"
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.9"
 groups = ["main", "runtime"]
 files = [
-    {file = "pycodestyle-2.12.1-py2.py3-none-any.whl", hash = "sha256:46f0fb92069a7c28ab7bb558f05bfc0110dac69a0cd23c61ea0040283a9d78b3"},
-    {file = "pycodestyle-2.12.1.tar.gz", hash = "sha256:6838eae08bbce4f6accd5d5572075c63626a15ee3e6f842df996bf62f6d73521"},
+    {file = "pycodestyle-2.13.0-py2.py3-none-any.whl", hash = "sha256:35863c5974a271c7a726ed228a14a4f6daf49df369d8c50cd9a6f58a5e143ba9"},
+    {file = "pycodestyle-2.13.0.tar.gz", hash = "sha256:c8415bf09abe81d9c7f872502a6eee881fbe85d8763dd5b9924bb0a01d67efae"},
 ]
 
 [[package]]
@@ -6448,14 +6448,14 @@ dev = ["black", "flake8", "flake8-black", "isort", "jupyter-console", "mkdocs", 
 
 [[package]]
 name = "pyflakes"
-version = "3.2.0"
+version = "3.3.2"
 description = "passive checker of Python programs"
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.9"
 groups = ["main", "runtime"]
 files = [
-    {file = "pyflakes-3.2.0-py2.py3-none-any.whl", hash = "sha256:84b5be138a2dfbb40689ca07e2152deb896a65c3a3e24c251c5c62489568074a"},
-    {file = "pyflakes-3.2.0.tar.gz", hash = "sha256:1c61603ff154621fb2a9172037d84dca3500def8c8b630657d1701f026f8af3f"},
+    {file = "pyflakes-3.3.2-py2.py3-none-any.whl", hash = "sha256:5039c8339cbb1944045f4ee5466908906180f13cc99cc9949348d10f82a5c32a"},
+    {file = "pyflakes-3.3.2.tar.gz", hash = "sha256:6dfd61d87b97fba5dcfaaf781171ac16be16453be6d816147989e7f6e6a9576b"},
 ]
 
 [[package]]
@@ -8402,14 +8402,14 @@ test = ["pytest", "tornado (>=4.5)", "typeguard"]
 
 [[package]]
 name = "termcolor"
-version = "2.5.0"
+version = "3.0.0"
 description = "ANSI color formatting for output in terminal"
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "termcolor-2.5.0-py3-none-any.whl", hash = "sha256:37b17b5fc1e604945c2642c872a3764b5d547a48009871aea3edd3afa180afb8"},
-    {file = "termcolor-2.5.0.tar.gz", hash = "sha256:998d8d27da6d48442e8e1f016119076b690d962507531df4890fcd2db2ef8a6f"},
+    {file = "termcolor-3.0.0-py3-none-any.whl", hash = "sha256:fdfdc9f2bdb71c69fbbbaeb7ceae3afef0461076dd2ee265bf7b7c49ddb05ebb"},
+    {file = "termcolor-3.0.0.tar.gz", hash = "sha256:0cd855c8716383f152ad02bbb39841d6e4694538ff5d424088e56c8b81fde525"},
 ]
 
 [package.extras]
