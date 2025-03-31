@@ -19,7 +19,12 @@ export function ActionSuggestions({
 
   const [hasPullRequest, setHasPullRequest] = React.useState(false);
 
-  const isGitLab = selectedRepository?.git_provider.toLowerCase() === "gitlab";
+  // Check if selectedRepository is an object with git_provider property
+  const isGitLab =
+    typeof selectedRepository === "object" &&
+    selectedRepository !== null &&
+    selectedRepository.git_provider &&
+    selectedRepository.git_provider.toLowerCase() === "gitlab";
 
   const pr = isGitLab ? "merge request" : "pull request";
   const prShort = isGitLab ? "MR" : "PR";
