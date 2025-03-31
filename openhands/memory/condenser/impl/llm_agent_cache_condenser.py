@@ -29,26 +29,19 @@ class LLMAgentCacheCondenser(Condenser):
     the LLM to take advantage of the cached prompt and only process the new instructions.
     """
 
-    def __init__(
-        self,
-        agent: LLMCacheCodeAgent,
-        max_size: int = 100,
-        keep_first: int = 1,
-    ):
+    def __init__(self, agent: LLMCacheCodeAgent, max_size: int = 100):
         """Initialize the condenser with the agent instance.
 
         Args:
             agent: The agent instance. This is used to access the LLM, conversation memory,
                   and prompt manager, ensuring that caching works properly.
             max_size: The maximum number of events to keep before condensing.
-            keep_first: The number of events to always keep at the beginning.
         """
         self.agent = agent
         self.llm = agent.llm
         self.conversation_memory = agent.conversation_memory
         self.prompt_manager = agent.prompt_manager
         self.max_size = max_size
-        self.keep_first = keep_first
 
         # Verify that the LLM supports caching
         if not self.llm.is_caching_prompt_active():
@@ -150,12 +143,11 @@ class LLMAgentCacheCondenser(Condenser):
         Returns:
             The condensed events, a View, or a Condensation.
         """
-        # If we don't need to condense, just return the events
-        events = state.history
-        if not self.should_condense(events):
-            return View.from_events(events)
+        view = View.from_events(state.history)
+        if self.should_condense(state.history):
+            return self._do_condensation(view.events, state)
 
-        return self._do_condensation(events, state)
+        return view
 
     def _do_condensation(
         self, events: List[Event], state: State
@@ -341,76 +333,43 @@ Do not include any other text in your response.
         if not keep_message_indices and not rewrite_commands:
             return View.from_events(events)
 
-        # Always keep the first few events (system prompt, initial user message, etc.)
-        keep_event_ids = set(event.id for event in events[: self.keep_first])
+        keep_events = []
 
-        summary = ''
+        # Add events that were not sent to the LLM (i.e., events without a corresponding `_event` in messages)
+        for event in events:
+            if not any(message._event == event for message in messages):
+                if event.id == Event.INVALID_ID:
+                    raise ValueError(f'Event {event} had an invalid id.')
+                keep_events.append(event)
 
         # Add the events to keep based on the LLM's response
         for index in keep_message_indices:
             try:
                 message = messages[index]
                 if message._event:
-                    event = next((e for e in events if e == message._event), None)
-                    if event:
-                        keep_event_ids.add(event.id)
-                    else:
-                        raise ValueError(
-                            f'Could not find matching event {message._event}'
-                        )
+                    keep_events.append(message._event)
             except IndexError:
-                logger.warning(
-                    f'Index {index} is out of range for messages. Skipping this index.'
-                )
+                pass
+
+        # Check that there is at least one user message left
+        if not any(event.source == EventSource.USER for event in keep_events):
+            for event in events:
+                if event.source == EventSource.USER:
+                    keep_events.append(event)
+                    break
 
         # Create a list of event IDs to forget
-        forgotten_event_ids = [
-            event.id for event in events if event.id not in keep_event_ids
-        ]
+        forgotten_event_ids = [event.id for event in events if event not in keep_events]
 
-        for rewrite_command in rewrite_commands:
-            # Get the range of messages to rewrite
-            start_idx = rewrite_command.start
-            end_idx = rewrite_command.end
-
-            # Validate the range
-            if 0 <= start_idx < len(messages) and 0 <= end_idx < len(messages):
-                # Add events in the rewrite range to forgotten_event_ids (except those in keep_first)
-                for i in range(start_idx, end_idx + 1):
-                    message = messages[i]
-                    for event in events:
-                        if (
-                            event.source == message._event
-                            and event.id not in keep_event_ids
-                        ):
-                            forgotten_event_ids.append(event.id)
-
-                summary += rewrite_command.content + '\n'
-            else:
-                logger.info(
-                    f'Invalid range for REWRITE command: {start_idx} to {end_idx}. Skipping this command.'
-                )
-                summary += (
-                    f'The conversation history has been condensed. {len(forgotten_event_ids)} less important messages have been removed to focus on the key information.'
-                    + '\n'
-                )
+        if rewrite_commands:
+            summary = '\n'.join([rewrite.content for rewrite in rewrite_commands])
         else:
-            summary += (
-                f'The conversation history has been condensed. {len(forgotten_event_ids)} less important messages have been removed to focus on the key information.'
-                + '\n'
-            )
-
-        # Add metadata for debugging and analysis
-        self.add_metadata('metrics', self.llm.metrics.get())
-        self.add_metadata('kept_events', len(keep_event_ids))
-        self.add_metadata('forgotten_events', len(forgotten_event_ids))
+            summary = None
 
         # Create and return the condensation action
         return Condensation(
             action=CondensationAction(
-                forgotten_event_ids=forgotten_event_ids,
-                summary=summary,
-                summary_offset=self.keep_first,
+                forgotten_event_ids=forgotten_event_ids, summary=summary
             )
         )
 

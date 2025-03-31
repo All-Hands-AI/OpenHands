@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-from typing import List, Type
+from typing import Type
 
 from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
-from openhands.controller.state.state import State
 from openhands.core.config.agent_config import AgentConfig
-from openhands.events.event import Event
 from openhands.llm import LLM
 from openhands.memory.condenser.condenser import Condenser
 from openhands.memory.condenser.impl.llm_agent_cache_condenser import (
@@ -46,12 +44,7 @@ class LLMCacheCodeAgent(CodeActAgent):
 
         # Override the condenser created by the parent class
         # Create and set the LLMAgentCacheCondenser, passing self as the agent
-        self.condenser = LLMAgentCacheCondenser(
-            agent=self,
-            max_size=100,  # Default max size
-            keep_first=1,  # Default keep first
-        )
-        self._condenser = self.condenser  # For compatibility with our tests
+        self.condenser = LLMAgentCacheCondenser(agent=self)
 
     @classmethod
     def get_condenser_class(cls) -> Type[Condenser]:
