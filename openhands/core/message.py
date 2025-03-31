@@ -71,7 +71,7 @@ class Message(BaseModel):
     force_string_serializer: bool = False
 
     # needed so we know which event created a message when the LLM refers to it.
-    _source: Optional['Event'] = PrivateAttr(default=None)
+    _event: Optional['Event'] = PrivateAttr(default=None)
 
     @property
     def contains_image(self) -> bool:
