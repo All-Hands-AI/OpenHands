@@ -2,7 +2,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Literal, Optional
 
 from litellm import ChatCompletionMessageToolCall
-from pydantic import BaseModel, Field, model_serializer
+from pydantic import BaseModel, Field, PrivateAttr, model_serializer
 
 if TYPE_CHECKING:
     from openhands.events.event import Event
@@ -71,7 +71,7 @@ class Message(BaseModel):
     force_string_serializer: bool = False
 
     # needed so we know which event created a message when the LLM refers to it.
-    source: Optional['Event'] = Field(default=None, exclude=True)
+    _source: Optional['Event'] = PrivateAttr(default=None)
 
     @property
     def contains_image(self) -> bool:
