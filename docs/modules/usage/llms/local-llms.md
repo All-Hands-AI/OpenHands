@@ -19,7 +19,7 @@ For example, to download [OpenHands LM 32B v0.1](https://huggingface.co/all-hand
 huggingface-cli download all-hands/openhands-lm-32b-v0.1 --local-dir my_folder/openhands-lm-32b-v0.1
 ```
 
-## Create an OpenAI-compatible endpoint with a model serving framework
+## Create an OpenAI-Compatible Endpoint With a Model Serving Framework
 
 ### Serving with SGLang
 
