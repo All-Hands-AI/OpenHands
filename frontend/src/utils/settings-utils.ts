@@ -5,7 +5,12 @@ const extractBasicFormData = (formData: FormData) => {
   const model = formData.get("llm-model-input")?.toString();
 
   const LLM_MODEL = `${provider}/${model}`.toLowerCase();
-  const LLM_API_KEY = formData.get("llm-api-key-input")?.toString();
+
+  // Only include the API key if it's explicitly provided in the form data
+  // This prevents empty strings or undefined values from overriding existing keys
+  const apiKeyValue = formData.get("llm-api-key-input");
+  const LLM_API_KEY = apiKeyValue !== null ? apiKeyValue.toString() : undefined;
+
   const AGENT = formData.get("agent")?.toString();
   const LANGUAGE = formData.get("language")?.toString();
 

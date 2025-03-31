@@ -41,7 +41,25 @@ export function SettingsForm({ settings, models, onClose }: SettingsFormProps) {
   };
 
   const handleFormSubmission = async (formData: FormData) => {
-    const newSettings = extractSettings(formData);
+    // Get the API key input value
+    const apiKeyInput = formData.get("llm-api-key-input")?.toString();
+
+    // Create a new FormData object to avoid modifying the original
+    const processedFormData = new FormData();
+
+    // Copy all entries except the API key
+    for (const [key, value] of formData.entries()) {
+      if (key !== "llm-api-key-input") {
+        processedFormData.append(key, value);
+      }
+    }
+
+    // Only add the API key if it's not empty and not just whitespace
+    if (apiKeyInput && apiKeyInput.trim() !== "") {
+      processedFormData.append("llm-api-key-input", apiKeyInput);
+    }
+
+    const newSettings = extractSettings(processedFormData);
 
     await saveUserSettings(newSettings, {
       onSuccess: () => {
