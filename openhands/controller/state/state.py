@@ -171,6 +171,12 @@ class State:
         # don't pickle history, it will be restored from the event stream
         state = self.__dict__.copy()
         state['history'] = []
+
+        # Remove any view caching attributes. They'll be rebuilt frmo the
+        # history after that gets reloaded.
+        state.pop('_history_checksum', None)
+        state.pop('_view', None)
+
         return state
 
     def __setstate__(self, state):
@@ -219,4 +225,15 @@ class State:
 
     @property
     def view(self) -> View:
-        return View.from_events(self.history)
+        # Compute a simple checksum from the history to see if we can re-use any
+        # cached view.
+        history_checksum = len(self.history)
+        old_history_checksum = getattr(self, '_history_checksum', -1)
+
+        # If the history has changed, we need to re-create the view and update
+        # the caching.
+        if history_checksum != old_history_checksum:
+            self._history_checksum = history_checksum
+            self._view = View.from_events(self.history)
+
+        return self._view
