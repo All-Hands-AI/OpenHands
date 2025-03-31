@@ -133,7 +133,7 @@ class DockerRuntime(ActionExecutionClient):
                 )
                 self.send_status_message('STATUS$STARTING_CONTAINER')
                 # この段階でtemp_dir入れちゃう
-                test_temp_dir = '/tmp/'
+                test_temp_dir = '.'
                 logger.info(f'use test_temp_dir: {test_temp_dir}')
                 self.runtime_container_image = build_runtime_image(
                     self.base_container_image,
