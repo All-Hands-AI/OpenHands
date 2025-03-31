@@ -133,7 +133,11 @@ RUN \
     mkdir -p /openhands/code/openhands && \
     touch /openhands/code/openhands/__init__.py
 
+# Copy the main project files
 COPY ./code/pyproject.toml ./code/poetry.lock /openhands/code/
+
+# Copy the litellm source if needed for path dependency
+COPY ./code/openhands/litellm /openhands/code/openhands/litellm/
 
 COPY ./code/openhands/runtime/plugins/vscode/settings.json /workspace/.vscode/settings.json
 RUN chmod -R a+rwx /workspace/.vscode/settings.json

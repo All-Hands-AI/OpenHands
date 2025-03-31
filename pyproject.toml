@@ -16,7 +16,7 @@ packages = [
 python = "^3.12"
 datasets = "*"
 pandas = "*"
-litellm = "^1.60.0"
+litellm = { path = "./openhands/litellm", develop = true }
 google-generativeai = "*" # To use litellm with Gemini Pro API
 google-api-python-client = "^2.164.0" # For Google Sheets API
 google-auth-httplib2 = "*" # For Google Sheets authentication
