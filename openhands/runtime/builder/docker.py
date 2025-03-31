@@ -130,7 +130,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         # docker buildxのコマンドを作成
         buildx_cmd = [
             'docker' if not self.is_podman else 'podman',
-            # 'buildx', buildxじゃなくてdocker buildでやってみる
+            'buildx',
             'build',
             '--progress=plain',
             f'--build-arg=OPENHANDS_RUNTIME_VERSION={oh_version}',

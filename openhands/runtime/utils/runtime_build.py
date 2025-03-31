@@ -141,6 +141,7 @@ def build_runtime_image(
 
     See https://docs.all-hands.dev/modules/usage/architecture/runtime for more details.
     """
+    # folderが与えられてない時はtemp_dirを作成してそこにbuildする。そんでそのtemp_dirをreturnする。
     if build_folder is None:
         with tempfile.TemporaryDirectory() as temp_dir:
             result = build_runtime_image_in_folder(
@@ -155,6 +156,7 @@ def build_runtime_image(
             )
             return result
 
+    # folderが与えられている時はそこにbuildする。
     result = build_runtime_image_in_folder(
         base_image=base_image,
         runtime_builder=runtime_builder,
