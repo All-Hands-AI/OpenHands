@@ -5,6 +5,7 @@ from fastapi import APIRouter, Body, Request, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
+from openhands.core.config.llm_config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.message import MessageAction
 from openhands.events.event import EventSource
@@ -34,6 +35,7 @@ from openhands.server.types import LLMAuthenticationError, MissingSettingsError
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.utils.async_utils import wait_all
+from openhands.utils.conversation_summary import generate_conversation_title
 
 app = APIRouter(prefix='/api')
 
@@ -244,24 +246,19 @@ async def get_conversation(
         metadata = await conversation_store.get_metadata(conversation_id)
         is_running = await conversation_manager.is_agent_loop_running(conversation_id)
 
-        # Check if we need to update the title
+        # Check if we need to update the title but don't modify it in the GET request
+        needs_title_update = False
         if is_running and metadata:
             # Check if the title is a default title (contains the conversation ID)
             if metadata.title and conversation_id[:5] in metadata.title:
-                # Generate a new title
-                new_title = await auto_generate_title(
-                    conversation_id, get_user_id(request)
-                )
-
-                if new_title:
-                    # Update the metadata
-                    metadata.title = new_title
-                    await conversation_store.save_metadata(metadata)
-
-                    # Refresh metadata after update
-                    metadata = await conversation_store.get_metadata(conversation_id)
+                needs_title_update = True
 
         conversation_info = await _get_conversation_info(metadata, is_running)
+        
+        # Add the needs_title_update flag to the response
+        if conversation_info:
+            conversation_info.needs_title_update = needs_title_update
+            
         return conversation_info
     except FileNotFoundError:
         return None
@@ -312,10 +309,6 @@ async def auto_generate_title(conversation_id: str, user_id: str | None) -> str:
 
         if first_user_message:
             # Try LLM-based title generation first
-            from openhands.core.config.llm_config import LLMConfig
-            from openhands.utils.conversation_summary import generate_conversation_title
-
-            # Get LLM config from user settings
             try:
                 settings_store = await SettingsStoreImpl.get_instance(config, user_id)
                 settings = await settings_store.load()
@@ -413,6 +406,7 @@ async def _get_conversation_info(
             status=(
                 ConversationStatus.RUNNING if is_running else ConversationStatus.STOPPED
             ),
+            needs_title_update=False,  # Default value, will be set by the GET endpoint if needed
         )
     except Exception as e:
         logger.error(
