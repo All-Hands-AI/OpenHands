@@ -1235,7 +1235,7 @@ def test_apply_conversation_window_basic(mock_event_stream, mock_agent):
         agent=mock_agent,
         event_stream=mock_event_stream,
         max_iterations=10,
-        sid='test_truncation',
+        sid='test_apply_conversation_window_basic',
         confirmation_mode=False,
         headless_mode=True,
     )
