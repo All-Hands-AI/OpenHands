@@ -91,10 +91,17 @@ Write-Host "[PS_SCRIPT] Changed directory."
 
 try {{
     Write-Host "[PS_SCRIPT] Executing command: {command}"
-    # Execute the command and capture output
-    $output = Invoke-Expression -Command @'
-{command}
-'@ 2>&1
+    # Execute the command and capture output using a script block
+    # Redirect error output to error file
+    $errorOutput = & {{
+        {command}
+    }} 2>&1 | Where-Object {{ $_ -is [System.Management.Automation.ErrorRecord] }}
+    
+    # Capture standard output
+    $standardOutput = & {{
+        {command}
+    }} 2>&1 | Where-Object {{ $_ -isnot [System.Management.Automation.ErrorRecord] }}
+    
     Write-Host "[PS_SCRIPT] Command execution finished."
     
     # Save exit code
@@ -102,10 +109,17 @@ try {{
     if ($null -eq $exitCode) {{ $exitCode = 0 }}
     Write-Host "[PS_SCRIPT] Exit code: $exitCode"
     
-    # Write output to file
+    # Write standard output to output file
     Write-Host "[PS_SCRIPT] Writing output to {output_file}"
-    $output | Out-File -FilePath '{output_file}' -Encoding utf8
+    $standardOutput | Out-File -FilePath '{output_file}' -Encoding utf8
     Write-Host "[PS_SCRIPT] Output written."
+    
+    # Write error output to error file if any
+    if ($errorOutput) {{
+        Write-Host "[PS_SCRIPT] Writing error to {error_file}"
+        $errorOutput | Out-File -FilePath '{error_file}' -Encoding utf8
+        Write-Host "[PS_SCRIPT] Error written."
+    }}
     
     # Get current directory (may have changed)
     $newDir = Get-Location
