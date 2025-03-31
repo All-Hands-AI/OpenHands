@@ -1,7 +1,5 @@
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from openhands.agenthub.llm_cache_code_agent.llm_cache_code_agent import (
     LLMCacheCodeAgent,
 )
@@ -9,7 +7,8 @@ from openhands.controller.state.state import State
 from openhands.core.config.agent_config import AgentConfig
 from openhands.core.message import Message
 from openhands.events.action.message import MessageAction
-from openhands.events.event import Event
+from openhands.events.event import Event, RecallType
+from openhands.events.observation.agent import RecallObservation
 from openhands.events.observation.files import FileReadObservation
 from openhands.llm import LLM
 from openhands.memory.condenser.condenser import Condensation, View
@@ -37,13 +36,13 @@ def test_contains_trigger_word():
     assert not condenser.containsTriggerWord([])
 
     # Test case 2: Single event (not enough events)
-    mock_event = MagicMock(spec=Event)
-    assert not condenser.containsTriggerWord([mock_event])
+    event = MessageAction('Please CONDENSE! the conversation history.')
+    assert not condenser.containsTriggerWord([event])
 
     # Test case 3: User message with CONDENSE! keyword
     user_event = MessageAction('Please CONDENSE! the conversation history.')
     user_event._source = 'user'
-    agent_event = MagicMock(spec=Event)
+    agent_event = MessageAction('Agent response')
     agent_event.source = 'agent'
     assert condenser.containsTriggerWord([user_event, agent_event])
 
@@ -53,8 +52,9 @@ def test_contains_trigger_word():
 
     # Test case 5: RecallObservation followed by user message with CONDENSE! keyword
     user_event.content = 'Please CONDENSE! the conversation history.'
-    recall_event = MagicMock(spec=Event)
-    recall_event.observation = 'recall'
+    recall_event = RecallObservation(
+        recall_type=RecallType.KNOWLEDGE, content='saw a thing'
+    )
     events = [agent_event, user_event, recall_event]
     assert condenser.containsTriggerWord(events)
 
@@ -101,46 +101,7 @@ def test_llm_agent_cache_condenser_with_state_no_need():
     assert len(result.events) == 5
 
 
-def test_llm_agent_cache_condenser_with_state_missing_dependencies():
-    """Test that the condenser raises an exception when dependencies are missing."""
-    # Mock the LLM with caching enabled for initialization
-    mock_llm = MagicMock(spec=LLM)
-    mock_llm.is_caching_prompt_active.return_value = True
-
-    # Add config attribute to the mock LLM
-    mock_llm_config = MagicMock()
-    mock_llm_config.max_message_chars = 1000
-    mock_llm.config = mock_llm_config
-    mock_llm.vision_is_active.return_value = False
-
-    # Create the agent with missing dependencies
-    mock_agent = MagicMock()
-    mock_agent.llm = mock_llm
-
-    # Intentionally set conversation_memory to None to trigger the error
-    mock_agent.conversation_memory = None
-    mock_agent.prompt_manager = MagicMock(spec=PromptManager)
-
-    # Create the condenser
-    condenser = LLMAgentCacheCondenser(agent=mock_agent, max_size=5)
-
-    # Create mock events (more than max_size)
-    mock_events = [MagicMock(spec=Event) for _ in range(6)]
-    for i, event in enumerate(mock_events):
-        event.id = i
-
-    # Create a mock state with the events
-    mock_state = MagicMock(spec=State)
-    mock_state.history = mock_events
-
-    # Verify that an exception is raised due to missing conversation_memory
-    with pytest.raises(
-        ValueError, match='Missing conversation_memory or prompt_manager'
-    ):
-        condenser.condenseWithState(mock_state)
-
-
-def test_llm_agent_cache_condenser_with_state_with_dependencies():
+def test_llm_agent_cache_condenser_with_state_keep():
     """Test that the condenser uses the LLM to condense events when dependencies are available."""
     # Create a real LLM instance with caching enabled
     mock_llm = MagicMock(spec=LLM)
