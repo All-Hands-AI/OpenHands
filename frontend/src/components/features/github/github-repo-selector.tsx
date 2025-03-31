@@ -73,7 +73,7 @@ export function GitRepositorySelector({
   const handleRepoSelection = (id: string | null) => {
     const repo = allRepositories.find((r) => r.id.toString() === id);
     if (repo) {
-      dispatch(setSelectedRepository(repo.full_name));
+      dispatch(setSelectedRepository(repo));
       posthog.capture("repository_selected");
       onSelect();
       setSelectedKey(id);
