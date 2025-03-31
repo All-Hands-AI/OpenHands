@@ -19,9 +19,7 @@ export function ActionSuggestions({
 
   const [hasPullRequest, setHasPullRequest] = React.useState(false);
 
-  // Check if selectedRepository is an object with git_provider property
   const isGitLab =
-    typeof selectedRepository === "object" &&
     selectedRepository !== null &&
     selectedRepository.git_provider &&
     selectedRepository.git_provider.toLowerCase() === "gitlab";
