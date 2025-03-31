@@ -11,7 +11,7 @@ It is highly recommended that you use GPUs to serve local models for optimal exp
 - 2025/03/31: We released an open model OpenHands LM v0.1 32B that achieves 37.1% on SWE-Bench Verified ([blog](https://www.all-hands.dev/blog/introducing-openhands-lm-32b----a-strong-open-coding-agent-model), [model](https://huggingface.co/all-hands/openhands-lm-32b-v0.1)).
 
 
-## Download the model from Huggingface
+## Download the Model from Huggingface
 
 For example, if you are hoping to download [OpenHands LM 32B v0.1](https://huggingface.co/all-hands/openhands-lm-32b-v0.1):
 
