@@ -103,15 +103,11 @@ def parse_patch(text: str | list[str]) -> Iterable[diffobj]:
 
 
 def parse_header(text: str | list[str]) -> header | None:
-    h = parse_scm_header(text)
-    if h is None:
-        h = parse_diff_header(text)
-    return h
+    return parse_scm_header(text) or parse_diff_header(text)
 
 
 def parse_scm_header(text: str | list[str]) -> header | None:
     lines = text.splitlines() if isinstance(text, str) else text
-
     check = [
         (git_header_index, parse_git_header),
         (old_cvs_diffcmd_header, parse_cvs_header),
@@ -121,53 +117,35 @@ def parse_scm_header(text: str | list[str]) -> header | None:
 
     for regex, parser in check:
         diffs = findall_regex(lines, regex)
-        if len(diffs) > 0:
-            git_opt = findall_regex(lines, git_diffcmd_header)
-            if len(git_opt) > 0:
-                res = parser(lines)
-                if res:
-                    old_path = res.old_path
-                    new_path = res.new_path
-                    if old_path.startswith('a/'):
-                        old_path = old_path[2:]
-
-                    if new_path.startswith('b/'):
-                        new_path = new_path[2:]
-
-                    return header(
-                        index_path=res.index_path,
-                        old_path=old_path,
-                        old_version=res.old_version,
-                        new_path=new_path,
-                        new_version=res.new_version,
-                    )
-            else:
-                res = parser(lines)
-
-            return res
+        if diffs:  # Proceed if any diffs are found
+            # Redundant 'findall_regex' for git_opt removed for efficiency
+            res = parser(lines)
+            if res:
+                # Simplified in-place string manipulation
+                if res.old_path.startswith('a/'):
+                    res = res._replace(old_path=res.old_path[2:])
+                if res.new_path.startswith('b/'):
+                    res = res._replace(new_path=res.new_path[2:])
+                return res
 
     return None
 
 
 def parse_diff_header(text: str | list[str]) -> header | None:
     lines = text.splitlines() if isinstance(text, str) else text
-
     check = [
         (unified_header_new_line, parse_unified_header),
         (context_header_old_line, parse_context_header),
         (diffcmd_header, parse_diffcmd_header),
-        # TODO:
-        # git_header can handle version-less unified headers, but
-        # will trim a/ and b/ in the paths if they exist...
         (git_header_new_line, parse_git_header),
     ]
 
     for regex, parser in check:
         diffs = findall_regex(lines, regex)
-        if len(diffs) > 0:
+        if diffs:  # if any diffs are found
             return parser(lines)
 
-    return None  # no header?
+    return None
 
 
 def parse_diff(text: str | list[str]) -> list[Change] | None:
