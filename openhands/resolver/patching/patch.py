@@ -156,18 +156,14 @@ def parse_diff_header(text: str | list[str]) -> header | None:
         (unified_header_new_line, parse_unified_header),
         (context_header_old_line, parse_context_header),
         (diffcmd_header, parse_diffcmd_header),
-        # TODO:
-        # git_header can handle version-less unified headers, but
-        # will trim a/ and b/ in the paths if they exist...
-        (git_header_new_line, parse_git_header),
+        (git_header_new_line, parse_git_header)
     ]
 
     for regex, parser in check:
-        diffs = findall_regex(lines, regex)
-        if len(diffs) > 0:
+        if any(regex.match(line) for line in lines):
             return parser(lines)
 
-    return None  # no header?
+    return None
 
 
 def parse_diff(text: str | list[str]) -> list[Change] | None:
@@ -201,39 +197,31 @@ def parse_git_header(text: str | list[str]) -> header | None:
     new_path = None
     cmd_old_path = None
     cmd_new_path = None
+
     for line in lines:
-        hm = git_diffcmd_header.match(line)
-        if hm:
-            cmd_old_path = hm.group(1)
-            cmd_new_path = hm.group(2)
+        if match := git_diffcmd_header.match(line):
+            cmd_old_path = match.group(1)
+            cmd_new_path = match.group(2)
             continue
 
-        g = git_header_index.match(line)
-        if g:
-            old_version = g.group(1)
-            new_version = g.group(2)
+        if match := git_header_index.match(line):
+            old_version = match.group(1)
+            new_version = match.group(2)
             continue
 
-        # git always has it's own special headers
-        o = git_header_old_line.match(line)
-        if o:
-            old_path = o.group(1)
+        if match := git_header_old_line.match(line):
+            old_path = match.group(1)
 
-        n = git_header_new_line.match(line)
-        if n:
-            new_path = n.group(1)
+        if match := git_header_new_line.match(line):
+            new_path = match.group(1)
 
-        binary = git_header_binary_file.match(line)
-        if binary:
-            old_path = binary.group(1)
-            new_path = binary.group(2)
+        if match := git_header_binary_file.match(line):
+            old_path = match.group(1)
+            new_path = match.group(2)
 
         if old_path and new_path:
-            if old_path.startswith('a/'):
-                old_path = old_path[2:]
-
-            if new_path.startswith('b/'):
-                new_path = new_path[2:]
+            old_path = old_path[2:] if old_path.startswith('a/') else old_path
+            new_path = new_path[2:] if new_path.startswith('b/') else new_path
             return header(
                 index_path=None,
                 old_path=old_path,
@@ -242,19 +230,12 @@ def parse_git_header(text: str | list[str]) -> header | None:
                 new_version=new_version,
             )
 
-    # if we go through all of the text without finding our normal info,
-    # use the cmd if available
     if cmd_old_path and cmd_new_path and old_version and new_version:
-        if cmd_old_path.startswith('a/'):
-            cmd_old_path = cmd_old_path[2:]
-
-        if cmd_new_path.startswith('b/'):
-            cmd_new_path = cmd_new_path[2:]
+        cmd_old_path = cmd_old_path[2:] if cmd_old_path.startswith('a/') else cmd_old_path
+        cmd_new_path = cmd_new_path[2:] if cmd_new_path.startswith('b/') else cmd_new_path
 
         return header(
             index_path=None,
-            # wow, I kind of hate this:
-            # assume /dev/null if the versions are zeroed out
             old_path='/dev/null' if old_version == '0000000' else cmd_old_path,
             old_version=old_version,
             new_path='/dev/null' if new_version == '0000000' else cmd_new_path,
@@ -416,19 +397,13 @@ def parse_cvs_header(text: str | list[str]) -> header | None:
 def parse_diffcmd_header(text: str | list[str]) -> header | None:
     lines = text.splitlines() if isinstance(text, str) else text
 
-    headers = findall_regex(lines, diffcmd_header)
-    if len(headers) == 0:
-        return None
-
-    while len(lines) > 0:
-        d = diffcmd_header.match(lines[0])
-        del lines[0]
-        if d:
+    for line in lines:
+        if match := diffcmd_header.match(line):
             return header(
                 index_path=None,
-                old_path=d.group(1),
+                old_path=match.group(1),
                 old_version=None,
-                new_path=d.group(2),
+                new_path=match.group(2),
                 new_version=None,
             )
     return None
@@ -437,31 +412,17 @@ def parse_diffcmd_header(text: str | list[str]) -> header | None:
 def parse_unified_header(text: str | list[str]) -> header | None:
     lines = text.splitlines() if isinstance(text, str) else text
 
-    headers = findall_regex(lines, unified_header_new_line)
-    if len(headers) == 0:
-        return None
-
-    while len(lines) > 1:
-        o = unified_header_old_line.match(lines[0])
-        del lines[0]
-        if o:
-            n = unified_header_new_line.match(lines[0])
-            del lines[0]
-            if n:
-                over = o.group(2)
-                if len(over) == 0:
-                    over = None
-
-                nver = n.group(2)
-                if len(nver) == 0:
-                    nver = None
-
+    while lines:
+        if match := unified_header_old_line.match(lines.pop(0)):
+            if n := unified_header_new_line.match(lines.pop(0)):
+                old_version = match.group(2) or None
+                new_version = n.group(2) or None
                 return header(
                     index_path=None,
-                    old_path=o.group(1),
-                    old_version=over,
+                    old_path=match.group(1),
+                    old_version=old_version,
                     new_path=n.group(1),
-                    new_version=nver,
+                    new_version=new_version,
                 )
 
     return None
@@ -470,31 +431,17 @@ def parse_unified_header(text: str | list[str]) -> header | None:
 def parse_context_header(text: str | list[str]) -> header | None:
     lines = text.splitlines() if isinstance(text, str) else text
 
-    headers = findall_regex(lines, context_header_old_line)
-    if len(headers) == 0:
-        return None
-
-    while len(lines) > 1:
-        o = context_header_old_line.match(lines[0])
-        del lines[0]
-        if o:
-            n = context_header_new_line.match(lines[0])
-            del lines[0]
-            if n:
-                over = o.group(2)
-                if len(over) == 0:
-                    over = None
-
-                nver = n.group(2)
-                if len(nver) == 0:
-                    nver = None
-
+    while lines:
+        if match := context_header_old_line.match(lines.pop(0)):
+            if n := context_header_new_line.match(lines.pop(0)):
+                old_version = match.group(2) or None
+                new_version = n.group(2) or None
                 return header(
                     index_path=None,
-                    old_path=o.group(1),
-                    old_version=over,
+                    old_path=match.group(1),
+                    old_version=old_version,
                     new_path=n.group(1),
-                    new_version=nver,
+                    new_version=new_version,
                 )
 
     return None
