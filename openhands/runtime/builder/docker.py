@@ -127,7 +127,6 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         target_image_repo, target_image_source_tag = target_image_hash_name.split(':')
         target_image_tag = tags[1].split(':')[1] if len(tags) > 1 else None
 
-
         # docker buildxのコマンドを作成
         buildx_cmd = [
             'docker' if not self.is_podman else 'podman',
@@ -175,6 +174,29 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         )
 
         logger.info('[LOG] check-point 1-4')
+
+        # subprocess上でdocker image lsを実行する >>
+        logger.info('[LOG] print docker image ls in subprocess')
+        ls_cmd = ['docker', 'image', 'ls']
+        test_process = subprocess.Popen(
+            ls_cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            universal_newlines=True,
+            bufsize=1,
+        )
+        stdout_lines = []
+
+        if test_process.stdout:
+            for line in iter(test_process.stdout.readline, ''):
+                line = line.strip()
+                if line:
+                    stdout_lines.append(line)
+                    logger.info(f'[LOG] docker image ls: {line}')
+        else:
+            logger.warning('[LOG] No stdout available from docker image ls command')
+
+        # << subprocess上でdocker image lsを実行する
 
         try:
             logger.info('[LOG] check-point 1-5 process.Popen()')
