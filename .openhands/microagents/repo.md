@@ -10,6 +10,8 @@ This repository contains the code for OpenHands, an automated AI software engine
 To set up the entire repo, including frontend and backend, run `make build`.
 You don't need to do this unless the user asks you to, or if you're trying to run the entire application.
 
+IMPORTANT: Before making any changes to the codebase, ALWAYS run `make install-pre-commit-hooks` to ensure pre-commit hooks are properly installed.
+
 Before pushing any changes, you MUST ensure that any lint errors or simple test errors have been fixed.
 
 * If you've made changes to the backend, you should run `pre-commit run --all-files --config ./dev_config/python/.pre-commit-config.yaml`
