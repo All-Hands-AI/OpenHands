@@ -65,11 +65,13 @@ TESTS: {Failing cases, error messages, outputs}
 CHANGES: {Code edits, variable updates}
 DEPS: {Dependencies, imports, external calls}
 INTENT: {Why changes were made, acceptance criteria}
+VC_STATUS: {Repository state, current branch, PR status, commit history}
 
 PRIORITIZE:
 1. Capture key user requirements and constraints
 2. Maintain critical problem context
 3. Keep all sections concise
+4. Update VC_STATUS after each version control operation
 
 SKIP: {Git clones, build logs, file listings}
 
@@ -80,7 +82,8 @@ STATE: mod_float() in card.py updated
 TESTS: test_format() passed
 CHANGES: str(val) replaces f"{val:.16G}"
 DEPS: None modified
-INTENT: Fix precision while maintaining FITS compliance"""
+INTENT: Fix precision while maintaining FITS compliance
+VC_STATUS: Branch: fix-float-precision, PR: #42 "Fix float precision in FITS cards" (open), Latest commit: a1b2c3d "Update mod_float function"""
 
         prompt += '\n\n'
 
