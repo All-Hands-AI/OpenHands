@@ -3,13 +3,13 @@ import pytest
 import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
-import time # Import time for sleep in tests
-import subprocess # Import subprocess
+import time
+import subprocess
 
-# Change import to the new simplified session class
-from openhands.runtime.utils.simple_windows_bash import SimpleWindowsBashSession 
+from openhands.runtime.utils.windows_bash import WindowsBashSession 
 from openhands.events.action import CmdRunAction
-from openhands.events.observation.commands import CmdOutputObservation, CmdOutputMetadata, ErrorObservation
+from openhands.events.observation.commands import CmdOutputObservation, CmdOutputMetadata
+from openhands.events.observation import ErrorObservation
 
 
 @pytest.fixture
@@ -21,9 +21,9 @@ def temp_work_dir():
 
 @pytest.fixture
 def windows_bash_session(temp_work_dir):
-    """Create a SimpleWindowsBashSession instance for testing."""
+    """Create a WindowsBashSession instance for testing."""
     # Instantiate the new class
-    session = SimpleWindowsBashSession(
+    session = WindowsBashSession(
         work_dir=temp_work_dir,
         username=None, 
         # no_change_timeout_seconds is not relevant here
@@ -45,11 +45,9 @@ def test_initialization(windows_bash_session, temp_work_dir):
 
 def test_command_execution(windows_bash_session):
     """Test basic command execution."""
-    # print('Initializing SimpleWindowsBashSession') # Keep print for debugging if needed
     windows_bash_session.initialize()
     
     # Test a simple command
-    # print('Executing command')
     action = CmdRunAction(command="Write-Output 'Hello World'")
     result = windows_bash_session.execute(action)
     
@@ -261,7 +259,7 @@ def test_initialization_failure():
         # Simulate Popen raising an exception
         mock_popen.side_effect = OSError("Failed to start process")
         
-        session = SimpleWindowsBashSession(work_dir="test_dir")
+        session = WindowsBashSession(work_dir="test_dir")
         
         with pytest.raises(RuntimeError) as exc_info:
             session.initialize()
@@ -278,7 +276,7 @@ def test_initialization_process_dies():
         mock_process.pid = 1234
         mock_popen.return_value = mock_process
         
-        session = SimpleWindowsBashSession(work_dir="test_dir")
+        session = WindowsBashSession(work_dir="test_dir")
         
         with pytest.raises(RuntimeError) as exc_info:
             session.initialize()
