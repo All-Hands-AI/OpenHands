@@ -2,7 +2,7 @@ from fastapi import APIRouter, Request, status
 from fastapi.responses import JSONResponse
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.events.async_event_store_wrapper import AsyncEventStoreWrapper
+from openhands.events.async_event_store_wrapper import AsyncStoredEventListWrapper
 from openhands.events.serialization import event_to_dict
 from openhands.server.data_models.feedback import FeedbackDataModel, store_feedback
 from openhands.utils.async_utils import call_sync_from_async
@@ -34,7 +34,7 @@ async def submit_feedback(request: Request, conversation_id: str) -> JSONRespons
     # Assuming the storage service is already configured in the backend
     # and there is a function to handle the storage.
     body = await request.json()
-    async_store = AsyncEventStoreWrapper(
+    async_store = AsyncStoredEventListWrapper(
         request.state.conversation.event_stream, filter_hidden=True
     )
     trajectory = []

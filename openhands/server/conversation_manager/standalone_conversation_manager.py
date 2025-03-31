@@ -11,7 +11,7 @@ from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.agent import AgentState
 from openhands.events.action import MessageAction
-from openhands.events.event_store import EventStore
+from openhands.events.stored_event_list import StoredEventList
 from openhands.events.stream import EventStreamSubscriber, session_exists
 from openhands.server.config.server_config import ServerConfig
 from openhands.server.monitoring import MonitoringListener
@@ -116,7 +116,7 @@ class StandaloneConversationManager(ConversationManager):
         settings: Settings,
         user_id: str | None,
         github_user_id: str | None,
-    ) -> EventStore:
+    ) -> StoredEventList:
         logger.info(
             f'join_conversation:{sid}:{connection_id}',
             extra={'session_id': sid, 'user_id': user_id},
@@ -255,7 +255,7 @@ class StandaloneConversationManager(ConversationManager):
         initial_user_msg: MessageAction | None = None,
         replay_json: str | None = None,
         github_user_id: str | None = None,
-    ) -> EventStore:
+    ) -> StoredEventList:
         logger.info(f'maybe_start_agent_loop:{sid}', extra={'session_id': sid})
         session: Session | None = None
         if not await self.is_agent_loop_running(sid):
@@ -312,7 +312,7 @@ class StandaloneConversationManager(ConversationManager):
 
     async def _get_event_store(
         self, sid: str, user_id: str | None
-    ) -> EventStore | None:
+    ) -> StoredEventList | None:
         logger.info(f'_get_event_store:{sid}', extra={'session_id': sid})
         session = self._local_agent_loops_by_sid.get(sid)
         if session:

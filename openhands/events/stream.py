@@ -9,8 +9,8 @@ from typing import Any, Callable
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.event import Event, EventSource
-from openhands.events.event_store import EventStore
 from openhands.events.serialization.event import event_from_dict, event_to_dict
+from openhands.events.stored_event_list import StoredEventList
 from openhands.io import json
 from openhands.storage import FileStore
 from openhands.storage.locations import (
@@ -41,7 +41,7 @@ async def session_exists(
         return False
 
 
-class EventStream(EventStore):
+class EventStream(StoredEventList):
     secrets: dict[str, str]
     # For each subscriber ID, there is a map of callback functions - useful
     # when there are multiple listeners
