@@ -13,7 +13,7 @@ It is highly recommended that you use GPUs to serve local models for optimal exp
 
 ## Download the Model from Huggingface
 
-For example, if you are hoping to download [OpenHands LM 32B v0.1](https://huggingface.co/all-hands/openhands-lm-32b-v0.1):
+For example, to download [OpenHands LM 32B v0.1](https://huggingface.co/all-hands/openhands-lm-32b-v0.1):
 
 ```bash
 huggingface-cli download all-hands/openhands-lm-32b-v0.1 --local-dir my_folder/openhands-lm-32b-v0.1
