@@ -2,6 +2,7 @@
 
 :::warning
 When using a Local LLM, OpenHands may have limited functionality.
+It is highly recommended that you use GPUs to serve local models for optimal experience.
 :::
 
 
