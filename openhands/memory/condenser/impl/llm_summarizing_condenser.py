@@ -56,34 +56,46 @@ class LLMSummarizingCondenser(RollingCondenser):
                 forgotten_events.append(event)
 
         # Construct prompt for summarization
-        prompt = """You are maintaining state history for an LLM-based code agent. Track:
+        prompt = """You are maintaining a context-aware state history for an interactive agent. Track:
 
-USER_CONTEXT: (Preserve essential user requirements, problem descriptions, and clarifications in concise form)
+USER_CONTEXT: (Preserve essential user requirements, goals, and clarifications in concise form)
 
-STATE: {File paths, function signatures, data structures}
+COMPLETED: (Tasks completed so far, with brief results)
+PENDING: (Tasks that still need to be done)
+CURRENT_STATE: (Current variables, data structures, or relevant state)
+
+For code-specific tasks, also include:
+CODE_STATE: {File paths, function signatures, data structures}
 TESTS: {Failing cases, error messages, outputs}
 CHANGES: {Code edits, variable updates}
 DEPS: {Dependencies, imports, external calls}
-INTENT: {Why changes were made, acceptance criteria}
 VC_STATUS: {Repository state, current branch, PR status, commit history}
 
 PRIORITIZE:
-1. Capture key user requirements and constraints
-2. Maintain critical problem context
-3. Keep all sections concise
-4. Update VC_STATUS after each version control operation
+1. Adapt tracking format to match the actual task type
+2. Capture key user requirements and goals
+3. Distinguish between completed and pending tasks
+4. Keep all sections concise and relevant
 
-SKIP: {Git clones, build logs, file listings}
+SKIP: Tracking irrelevant details for the current task type
 
-Example history format:
-USER_CONTEXT: Fix FITS card float representation - "0.009125" becomes "0.009124999999999999" causing comment truncation. Use Python's str() when possible while maintaining FITS compliance.
+Example formats:
 
-STATE: mod_float() in card.py updated
+For code tasks:
+USER_CONTEXT: Fix FITS card float representation issue
+COMPLETED: Modified mod_float() in card.py, all tests passing
+PENDING: Create PR, update documentation
+CODE_STATE: mod_float() in card.py updated
 TESTS: test_format() passed
 CHANGES: str(val) replaces f"{val:.16G}"
 DEPS: None modified
-INTENT: Fix precision while maintaining FITS compliance
-VC_STATUS: Branch: fix-float-precision, PR: #42 "Fix float precision in FITS cards" (open), Latest commit: a1b2c3d "Update mod_float function"""
+VC_STATUS: Branch: fix-float-precision, Latest commit: a1b2c3d
+
+For other tasks:
+USER_CONTEXT: Write 20 haikus based on coin flip results
+COMPLETED: 15 haikus written for results [T,H,T,H,T,H,T,T,H,T,H,T,H,T,H]
+PENDING: 5 more haikus needed
+CURRENT_STATE: Last flip: Heads, Haiku count: 15/20"""
 
         prompt += '\n\n'
 
