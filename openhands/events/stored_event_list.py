@@ -20,8 +20,8 @@ class StoredEventList:
     """
 
     sid: str
-    user_id: str | None
     file_store: FileStore
+    user_id: str | None
     _cur_id: int = 0
 
     def __post_init__(self) -> None:

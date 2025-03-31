@@ -54,7 +54,7 @@ class EventStream(StoredEventList):
     _thread_loops: dict[str, dict[str, asyncio.AbstractEventLoop]]
 
     def __init__(self, sid: str, file_store: FileStore, user_id: str | None = None):
-        super().__init__(sid, user_id, file_store)
+        super().__init__(sid, file_store, user_id)
         self._stop_flag = threading.Event()
         self._queue: queue.Queue[Event] = queue.Queue()
         self._thread_pools = {}
