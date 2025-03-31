@@ -168,6 +168,9 @@ class DockerRuntimeBuilder(RuntimeBuilder):
 
         # docker image lsで手元のイメージを確認
         logger.info(f'[LOG] docker image ls: {self.docker_client.images.list()}')
+        logger.info(
+            f'[LOG] docker_client.imagesのinstance: {self.docker_client.images}'
+        )
 
         self.rolling_logger.start(
             f'================ {buildx_cmd[0].upper()} BUILD STARTED ================'
