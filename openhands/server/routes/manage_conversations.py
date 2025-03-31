@@ -264,34 +264,7 @@ async def get_conversation(
         return None
 
 
-@app.post('/conversations/{conversation_id}/generate-title')
-async def generate_conversation_title_endpoint(
-    conversation_id: str, request: Request
-) -> ConversationInfo | None:
-    """Generate a title for a conversation based on the first user message."""
-    conversation_store = await ConversationStoreImpl.get_instance(
-        config, get_user_id(request), get_github_user_id(request)
-    )
-    try:
-        metadata = await conversation_store.get_metadata(conversation_id)
-        is_running = await conversation_manager.is_agent_loop_running(conversation_id)
 
-        if metadata:
-            # Generate a new title
-            new_title = await auto_generate_title(conversation_id, get_user_id(request))
-
-            if new_title:
-                # Update the metadata
-                metadata.title = new_title
-                await conversation_store.save_metadata(metadata)
-
-                # Refresh metadata after update
-                metadata = await conversation_store.get_metadata(conversation_id)
-
-        conversation_info = await _get_conversation_info(metadata, is_running)
-        return conversation_info
-    except FileNotFoundError:
-        return None
 
 
 def get_default_conversation_title(conversation_id: str) -> str:

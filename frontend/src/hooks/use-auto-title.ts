@@ -53,27 +53,33 @@ export function useAutoTitle() {
       return;
     }
 
-    // Use the dedicated endpoint for generating titles
-    const generateTitle = async () => {
-      try {
-        const updatedConversation =
-          await OpenHands.generateConversationTitle(conversationId);
+    // Use the existing PATCH endpoint with an empty title to trigger auto-generation
+    updateConversation(
+      {
+        id: conversationId,
+        conversation: { title: "" },
+      },
+      {
+        onSuccess: async () => {
+          try {
+            const updatedConversation =
+              await OpenHands.getConversation(conversationId);
 
-        if (updatedConversation) {
-          queryClient.setQueryData(
-            ["user", "conversation", conversationId],
-            updatedConversation,
-          );
-        }
-      } catch (error) {
-        // Silently handle error and invalidate the query to refresh data
-        queryClient.invalidateQueries({
-          queryKey: ["user", "conversation", conversationId],
-        });
-      }
-    };
-
-    generateTitle();
+            if (updatedConversation) {
+              queryClient.setQueryData(
+                ["user", "conversation", conversationId],
+                updatedConversation,
+              );
+            }
+          } catch (error) {
+            // Silently handle error and invalidate the query to refresh data
+            queryClient.invalidateQueries({
+              queryKey: ["user", "conversation", conversationId],
+            });
+          }
+        },
+      },
+    );
   }, [
     messages,
     conversationId,
