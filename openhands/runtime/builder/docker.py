@@ -145,6 +145,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
 
         cache_dir = '/tmp/.buildx-cache'
         if use_local_cache and self._is_cache_usable(cache_dir):
+            logger.info(f'[LOG] use local cache: {cache_dir}')
             buildx_cmd.extend(
                 [
                     f'--cache-from=type=local,src={cache_dir}',
@@ -224,6 +225,29 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             logger.warning('[LOG] No stdout available from docker buildx ls command')
 
         # << docker buildxのinstanceを確認する
+
+        # instanceをdefaultにセットする
+        set_default_instance_cmd = ['docker', 'buildx', 'use', 'default']
+        set_default_instance_process = subprocess.Popen(
+            set_default_instance_cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            universal_newlines=True,
+        )
+
+        if set_default_instance_process.stdout:
+            for line in iter(set_default_instance_process.stdout.readline, ''):
+                line = line.strip()
+                if line:
+                    stdout_lines.append(line)
+                    logger.info(f'[LOG] docker buildx use default: {line}')
+        else:
+            logger.warning(
+                '[LOG] No stdout available from docker buildx use default command'
+            )
+
+        # << instanceをdefaultにセットする
+
         # subprocess上でbuildコマンドを実行する >>
         # logger.info('[LOG] build in subprocess for testing')
         # # use docker build not buildx
