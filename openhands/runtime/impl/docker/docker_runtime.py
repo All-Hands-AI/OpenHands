@@ -133,13 +133,13 @@ class DockerRuntime(ActionExecutionClient):
                 )
                 self.send_status_message('STATUS$STARTING_CONTAINER')
                 # この段階でtemp_dir入れちゃう
-                test_temp_dir = '.'
-                logger.info(f'use test_temp_dir: {test_temp_dir}')
+                # test_temp_dir = '.'
+                # logger.info(f'use test_temp_dir: {test_temp_dir}')
                 self.runtime_container_image = build_runtime_image(
                     self.base_container_image,
                     self.runtime_builder,
                     platform=self.config.sandbox.platform,
-                    build_folder=test_temp_dir,
+                    # build_folder=test_temp_dir,
                     extra_deps=self.config.sandbox.runtime_extra_deps,
                     force_rebuild=self.config.sandbox.force_rebuild_runtime,
                     extra_build_args=self.config.sandbox.runtime_extra_build_args,

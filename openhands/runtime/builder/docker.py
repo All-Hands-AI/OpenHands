@@ -163,6 +163,10 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         logger.info('[LOG] check-point 1-3')
 
         logger.info(f'buildx_cmd: {buildx_cmd}')
+        logger.info(f'[LOG] Build context path: {path}')
+        logger.info(f'[LOG] Build context path exists: {os.path.exists(path)}')
+        logger.info(f'[LOG] Build context path is directory: {os.path.isdir(path)}')
+        logger.info(f'[LOG] Build context path contents: {os.listdir(path)}')
 
         logger.info('hoge')
 
