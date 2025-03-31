@@ -2,8 +2,8 @@ import os
 import shutil
 from unittest.mock import MagicMock, Mock
 
-from litellm import ChatCompletionMessageToolCall
 import pytest
+from litellm import ChatCompletionMessageToolCall
 
 from openhands.controller.state.state import State
 from openhands.core.config.agent_config import AgentConfig
@@ -1052,94 +1052,149 @@ def test_has_agent_in_earlier_events(conversation_memory):
         is False
     )
 
+
 class TestFilterUnmatchedToolCalls:
-    
     @pytest.fixture
     def processor(self):
         return ConversationMemory()
-    
+
     def test_empty_is_unchanged(self):
         assert list(ConversationMemory._filter_unmatched_tool_calls([])) == []
-    
-    def test_empty_is_unchanged(self):
+
+    def test_no_tool_calls_is_unchanged(self):
         messages = [
-            Message(role="user", content=[TextContent(text="Hello")]),
-            Message(role="assistant", content=[TextContent(text="Hi there")]),
-            Message(role="user", content=[TextContent(text="How are you?")]),
+            Message(role='user', content=[TextContent(text='Hello')]),
+            Message(role='assistant', content=[TextContent(text='Hi there')]),
+            Message(role='user', content=[TextContent(text='How are you?')]),
         ]
-        assert list(ConversationMemory._filter_unmatched_tool_calls(messages)) == messages
-    
+        assert (
+            list(ConversationMemory._filter_unmatched_tool_calls(messages)) == messages
+        )
+
     def test_matched_tool_calls_are_unchanged(self):
         messages = [
-            Message(role="user", content=[TextContent(text="What's the weather?")]),
-            Message(role="assistant", content=[], tool_calls=[
-                ChatCompletionMessageToolCall(id="call_1", type="function", function={"name": "get_weather", "arguments": ""})
-            ]),
-            Message(role="tool", tool_call_id="call_1", content=[TextContent(text="Sunny, 75°F")]),
-            Message(role="assistant", content=[TextContent(text="It's sunny today.")])
+            Message(role='user', content=[TextContent(text="What's the weather?")]),
+            Message(
+                role='assistant',
+                content=[],
+                tool_calls=[
+                    ChatCompletionMessageToolCall(
+                        id='call_1',
+                        type='function',
+                        function={'name': 'get_weather', 'arguments': ''},
+                    )
+                ],
+            ),
+            Message(
+                role='tool',
+                tool_call_id='call_1',
+                content=[TextContent(text='Sunny, 75°F')],
+            ),
+            Message(role='assistant', content=[TextContent(text="It's sunny today.")]),
         ]
-        
+
         # All tool calls have matching responses, should remain unchanged
-        assert list(ConversationMemory._filter_unmatched_tool_calls(messages)) == messages
-    
+        assert (
+            list(ConversationMemory._filter_unmatched_tool_calls(messages)) == messages
+        )
+
     def test_tool_call_without_response_is_removed(self):
         messages = [
-            Message(role="user", content=[TextContent(text="Query")]),
-            Message(role="tool", tool_call_id="missing_call", content=[TextContent(text="Response")]),
-            Message(role="assistant", content=[TextContent(text="Answer")])
+            Message(role='user', content=[TextContent(text='Query')]),
+            Message(
+                role='tool',
+                tool_call_id='missing_call',
+                content=[TextContent(text='Response')],
+            ),
+            Message(role='assistant', content=[TextContent(text='Answer')]),
         ]
-        
+
         expected_after_filter = [
-            Message(role="user", content=[TextContent(text="Query")]),
-            Message(role="assistant", content=[TextContent(text="Answer")])
+            Message(role='user', content=[TextContent(text='Query')]),
+            Message(role='assistant', content=[TextContent(text='Answer')]),
         ]
-        
+
         result = list(ConversationMemory._filter_unmatched_tool_calls(messages))
         assert result == expected_after_filter
 
     def test_tool_response_without_call_is_removed(self):
         messages = [
-            Message(role="user", content=[TextContent(text="Query")]),
-            Message(role="assistant", content=[], tool_calls=[
-                ChatCompletionMessageToolCall(id="unmatched_call", type="function", function={"name": "some_function", "arguments": ""})
-            ]),
-            Message(role="assistant", content=[TextContent(text="Answer")])
+            Message(role='user', content=[TextContent(text='Query')]),
+            Message(
+                role='assistant',
+                content=[],
+                tool_calls=[
+                    ChatCompletionMessageToolCall(
+                        id='unmatched_call',
+                        type='function',
+                        function={'name': 'some_function', 'arguments': ''},
+                    )
+                ],
+            ),
+            Message(role='assistant', content=[TextContent(text='Answer')]),
         ]
-        
+
         expected_after_filter = [
-            Message(role="user", content=[TextContent(text="Query")]),
-            Message(role="assistant", content=[TextContent(text="Answer")])
+            Message(role='user', content=[TextContent(text='Query')]),
+            Message(role='assistant', content=[TextContent(text='Answer')]),
         ]
-        
+
         result = list(ConversationMemory._filter_unmatched_tool_calls(messages))
         assert result == expected_after_filter
-    
+
     def test_partial_matched_tool_calls_retains_matched(self):
         """When there are both matched and unmatched tools calls in a message, retain the message and only matched calls"""
         messages = [
-            Message(role="user", content=[TextContent(text="Get data")]),
-            Message(role="assistant", content=[], tool_calls=[
-                ChatCompletionMessageToolCall(id="matched_call", type="function", function={"name": "function1", "arguments": ""}),
-                ChatCompletionMessageToolCall(id="unmatched_call", type="function", function={"name": "function2", "arguments": ""})
-            ]),
-            Message(role="tool", tool_call_id="matched_call", content=[TextContent(text="Data")]),
-            Message(role="assistant", content=[TextContent(text="Result")])
+            Message(role='user', content=[TextContent(text='Get data')]),
+            Message(
+                role='assistant',
+                content=[],
+                tool_calls=[
+                    ChatCompletionMessageToolCall(
+                        id='matched_call',
+                        type='function',
+                        function={'name': 'function1', 'arguments': ''},
+                    ),
+                    ChatCompletionMessageToolCall(
+                        id='unmatched_call',
+                        type='function',
+                        function={'name': 'function2', 'arguments': ''},
+                    ),
+                ],
+            ),
+            Message(
+                role='tool',
+                tool_call_id='matched_call',
+                content=[TextContent(text='Data')],
+            ),
+            Message(role='assistant', content=[TextContent(text='Result')]),
         ]
-        
+
         expected = [
-            Message(role="user", content=[TextContent(text="Get data")]),
+            Message(role='user', content=[TextContent(text='Get data')]),
             # This message should be modified to only include the matched tool call
-            Message(role="assistant", content=[], tool_calls=[
-                ChatCompletionMessageToolCall(id="matched_call", type="function", function={"name": "function1", "arguments": ""})
-            ]),
-            Message(role="tool", tool_call_id="matched_call", content=[TextContent(text="Data")]),
-            Message(role="assistant", content=[TextContent(text="Result")])
+            Message(
+                role='assistant',
+                content=[],
+                tool_calls=[
+                    ChatCompletionMessageToolCall(
+                        id='matched_call',
+                        type='function',
+                        function={'name': 'function1', 'arguments': ''},
+                    )
+                ],
+            ),
+            Message(
+                role='tool',
+                tool_call_id='matched_call',
+                content=[TextContent(text='Data')],
+            ),
+            Message(role='assistant', content=[TextContent(text='Result')]),
         ]
-        
+
         result = list(ConversationMemory._filter_unmatched_tool_calls(messages))
-    
+
         # Verify result structure
         assert len(result) == len(expected)
         for i, msg in enumerate(result):
             assert msg == expected[i]
-    
