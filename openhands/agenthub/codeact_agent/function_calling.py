@@ -369,7 +369,7 @@ def get_tools(
         GrepTool,
         GlobTool,
         ViewTool,
-        AgentTool
+        AgentTool,
     ]
     if codeact_enable_browsing:
         tools.append(WebReadTool)

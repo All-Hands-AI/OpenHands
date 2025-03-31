@@ -343,7 +343,7 @@ function AccountSettings() {
                   Enable memory condensation
                 </SettingsSwitch>
               )}
-              
+
               {llmConfigMode === "advanced" && (
                 <div className="flex flex-col gap-2">
                   <h3 className="text-sm font-medium">Agent Mode</h3>
@@ -353,15 +353,22 @@ function AccountSettings() {
                       name="agent"
                       label="Agent Type"
                       items={[
-                        { key: 'CodeActAgent', label: 'Execute Mode (Full Access)' },
-                        { key: 'CodeActReadOnlyAgent', label: 'Research Mode (Read-Only)' },
+                        {
+                          key: "CodeActAgent",
+                          label: "Execute Mode (Full Access)",
+                        },
+                        {
+                          key: "CodeActReadOnlyAgent",
+                          label: "Research Mode (Read-Only)",
+                        },
                       ]}
                       defaultSelectedKey={settings.AGENT}
                       isClearable={false}
                     />
                     <p className="text-xs text-gray-500 ml-2">
-                      Research Mode only uses read-only tools like grep, glob, view, and web_read.
-                      This is useful for exploring a codebase without making changes.
+                      Research Mode only uses read-only tools like grep, glob,
+                      view, and web_read. This is useful for exploring a
+                      codebase without making changes.
                     </p>
                   </div>
                 </div>
