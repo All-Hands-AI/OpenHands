@@ -215,6 +215,13 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
             )
         )
 
+    # Add response id to actions
+    # This will ensure we can match both actions without tool calls (e.g. MessageAction)
+    # and actions with tool calls (e.g. CmdRunAction, IPythonRunCellAction, etc.)
+    # with the token usage data
+    for action in actions:
+        action.response_id = response.id
+
     assert len(actions) >= 1
     return actions
 
