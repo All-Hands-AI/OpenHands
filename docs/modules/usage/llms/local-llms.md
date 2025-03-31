@@ -55,7 +55,7 @@ vllm serve my_folder/openhands-lm-32b-v0.1 \
 When running `openhands`, you'll need to set the following in the OpenHands UI through the Settings:
 - the model to `openai/openhands-lm-32b-v0.1` (`openai/`, and then `served-model-name` you set above)
 - the base url to `http://host.docker.internal:8000`
-- the API key is optional, you can use any string, such as `mykey` you set above.
+- the API key need to be the exact string you set above (for example, `mykey`)
 
 
 ## Run OpenHands in Development Mode
