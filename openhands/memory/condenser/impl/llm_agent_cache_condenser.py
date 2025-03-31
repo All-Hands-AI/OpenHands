@@ -187,7 +187,7 @@ class LLMAgentCacheCondenser(Condenser):
             response
         )
         condensation = self._condense_events(
-            events, rewrite_commands, keep_message_indices
+            events, messages, rewrite_commands, keep_message_indices
         )
         return condensation
 
@@ -196,8 +196,10 @@ class LLMAgentCacheCondenser(Condenser):
         # This ensures we can take advantage of the LLM's cache
         messages = self.agent._get_messages(events)
 
+        nextMessageNumber = len(messages)
+
         # Add the condensation instructions as a user message at the end
-        condensation_instructions = """
+        condensation_instructions = f"""
 I need you to condense our conversation history to make it more efficient. Please:
 
 1. Identify which previous messages can be removed without losing important context
@@ -215,7 +217,10 @@ I need you to condense our conversation history to make it more efficient. Pleas
 
     This will replace all messages from start to end (inclusive) with a single message containing the new content.
 
-3. Refer to the messages by their number, starting with 1 in the conversation history.
+3. Refer to the messages by their number.
+    The first message, the system, prompt has number 0.
+    The next is 1 and so on.
+    All the way to the last message, this one, whose number is {nextMessageNumber}.
 
 4. You can use both options together. For example:
     KEEP: 5
@@ -245,7 +250,6 @@ Do not include any other text in your response.
             Message(role='user', content=[TextContent(text=condensation_instructions)])
         )
 
-        self.conversation_memory.apply_prompt_caching(messages)
         return messages
 
     def _parse_condensation_response(
@@ -318,10 +322,22 @@ Do not include any other text in your response.
     def _condense_events(
         self,
         events: List[Event],
+        messages: List[Message],
         rewrite_commands: list[RewriteCommand],
         keep_message_indices: list[int],
     ) -> Condensation | View:
-        # If we couldn't parse any indices and there's no rewrite command, keep all events
+        """Condense events based on LLM's response.
+
+        Args:
+            events: The original list of events.
+            messages: The list of messages derived from events.
+            rewrite_commands: List of rewrite commands from the LLM.
+            keep_message_indices: Indices of messages to keep.
+
+        Returns:
+            A Condensation or View object.
+        """
+        # If no indices or rewrite commands are provided, keep all events
         if not keep_message_indices and not rewrite_commands:
             return View.from_events(events)
 
@@ -332,10 +348,17 @@ Do not include any other text in your response.
 
         # Add the events to keep based on the LLM's response
         for index in keep_message_indices:
-            # if 1 <= index <= len(events):
-            #    keep_event_ids.add(events[index-1].id)
-            # This code is wrong! events are converted into a smaller number of messages!
-            pass
+            try:
+                message = messages[index]
+                # Find the corresponding event for the message
+                for event in events:
+                    if event == message.source:
+                        keep_event_ids.add(event.id)
+                        break
+            except IndexError:
+                logger.warning(
+                    f'Index {index} is out of range for messages. Skipping this index.'
+                )
 
         # Create a list of event IDs to forget
         forgotten_event_ids = [
@@ -343,20 +366,21 @@ Do not include any other text in your response.
         ]
 
         for rewrite_command in rewrite_commands:
-            # Get the range of events to rewrite
+            # Get the range of messages to rewrite
             start_idx = rewrite_command.start
             end_idx = rewrite_command.end
 
             # Validate the range
-            if 1 <= start_idx <= len(events) and 1 <= end_idx < len(events):
+            if 0 <= start_idx < len(messages) and 0 <= end_idx < len(messages):
                 # Add events in the rewrite range to forgotten_event_ids (except those in keep_first)
-                for i in range(start_idx - 1, end_idx):
-                    if i >= self.keep_first:  # Don't remove events in keep_first
-                        event_id = events[i].id
-                        if event_id in keep_event_ids:
-                            keep_event_ids.remove(event_id)
-                        if event_id not in forgotten_event_ids:
-                            forgotten_event_ids.append(event_id)
+                for i in range(start_idx, end_idx + 1):
+                    message = messages[i]
+                    for event in events:
+                        if (
+                            event.source == message.source
+                            and event.id not in keep_event_ids
+                        ):
+                            forgotten_event_ids.append(event.id)
 
                 summary += rewrite_command.content + '\n'
             else:

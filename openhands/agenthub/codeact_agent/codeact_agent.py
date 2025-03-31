@@ -140,11 +140,13 @@ class CodeActAgent(Agent):
             self.pending_actions.append(action)
         return self.pending_actions.popleft()
 
-    def build_llm_completion_params(self, messages: list[Message], state: State) -> dict:
+    def build_llm_completion_params(
+        self, messages: list[Message], state: State
+    ) -> dict:
         return {
             'messages': self.llm.format_messages_for_llm(messages),
-            'tools' : self.tools,
-            'extra_body' : {'metadata': state.to_llm_metadata(agent_name=self.name)}
+            'tools': self.tools,
+            'extra_body': {'metadata': state.to_llm_metadata(agent_name=self.name)},
         }
 
     def _get_messages(self, events: list[Event]) -> list[Message]:
@@ -202,6 +204,8 @@ class CodeActAgent(Agent):
 
         return messages
 
+    # we should consider moving this method to the ConversationMemory class.
+    # Currently it is the class that deals with the conversion between Events to Messages.
     def _enhance_messages(self, messages: list[Message]) -> list[Message]:
         """Enhances the user message with additional context based on keywords matched.
 
