@@ -2,7 +2,7 @@ import os
 from dataclasses import dataclass, field
 from itertools import islice
 
-from jinja2 import Template
+from jinja2 import Environment, FileSystemLoader, Template
 
 from openhands.controller.state.state import State
 from openhands.core.message import Message, TextContent
@@ -41,6 +41,7 @@ class PromptManager:
     ):
         self.prompt_dir: str = prompt_dir
         self.agent_config = agent_config
+        self.env = Environment(loader=FileSystemLoader(prompt_dir))
         self.system_template: Template = self._load_template('system_prompt')
         self.user_template: Template = self._load_template('user_prompt')
         self.additional_info_template: Template = self._load_template('additional_info')
@@ -53,10 +54,12 @@ class PromptManager:
         if not os.path.exists(template_path):
             raise FileNotFoundError(f'Prompt file {template_path} not found')
         with open(template_path, 'r') as file:
-            return Template(file.read())
+            return self.env.from_string(file.read())
 
     def get_system_message(self) -> str:
-        return self.system_template.render(agent_config=self.agent_config).strip()
+        return self.system_template.render(
+            agent_config=self.agent_config,
+        ).strip()
 
     def get_example_user_message(self) -> str:
         """This is the initial user message provided to the agent
