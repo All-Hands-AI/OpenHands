@@ -59,6 +59,7 @@ We have a few guides for running OpenHands with specific model providers:
 - [LiteLLM Proxy](llms/litellm-proxy)
 - [OpenAI](llms/openai-llms)
 - [OpenRouter](llms/openrouter)
+- [Local LLMs with SGLang or vLLM](llms/../local-llms.md)
 
 ### API retries and rate limits
 
