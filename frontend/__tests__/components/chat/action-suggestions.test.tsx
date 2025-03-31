@@ -23,11 +23,11 @@ describe("ActionSuggestions", () => {
   // Setup mocks for each test
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     (useAuth as any).mockReturnValue({
       providersAreSet: true,
     });
-    
+
     (useSelector as any).mockReturnValue({
       selectedRepository: "test-repo",
     });
@@ -38,14 +38,18 @@ describe("ActionSuggestions", () => {
 
     // Find all buttons with data-testid="suggestion"
     const buttons = screen.getAllByTestId("suggestion");
-    
+
     // Check if we have at least 2 buttons
     expect(buttons.length).toBeGreaterThanOrEqual(2);
-    
+
     // Check if the buttons contain the expected text
-    const pushButton = buttons.find(button => button.textContent?.includes("Push to Branch"));
-    const prButton = buttons.find(button => button.textContent?.includes("Push & Create PR"));
-    
+    const pushButton = buttons.find((button) =>
+      button.textContent?.includes("Push to Branch"),
+    );
+    const prButton = buttons.find((button) =>
+      button.textContent?.includes("Push & Create PR"),
+    );
+
     expect(pushButton).toBeInTheDocument();
     expect(prButton).toBeInTheDocument();
   });
@@ -72,15 +76,19 @@ describe("ActionSuggestions", () => {
 
   it("should have different prompts for 'Push to Branch' and 'Push & Create PR' buttons", () => {
     // This test verifies that the prompts are different in the component
-    const component = render(<ActionSuggestions onSuggestionsClick={() => {}} />);
-    
+    const component = render(
+      <ActionSuggestions onSuggestionsClick={() => {}} />,
+    );
+
     // Get the component instance to access the internal values
-    const pushBranchPrompt = "Please push the changes to a remote branch on GitHub, but do NOT create a pull request. Please use the exact SAME branch name as the one you are currently on.";
-    const createPRPrompt = "Please push the changes to GitHub and open a pull request. Please create a meaningful branch name that describes the changes.";
-    
+    const pushBranchPrompt =
+      "Please push the changes to a remote branch on GitHub, but do NOT create a pull request. Please use the exact SAME branch name as the one you are currently on.";
+    const createPRPrompt =
+      "Please push the changes to GitHub and open a pull request. Please create a meaningful branch name that describes the changes.";
+
     // Verify the prompts are different
     expect(pushBranchPrompt).not.toEqual(createPRPrompt);
-    
+
     // Verify the PR prompt mentions creating a meaningful branch name
     expect(createPRPrompt).toContain("meaningful branch name");
     expect(createPRPrompt).not.toContain("SAME branch name");
