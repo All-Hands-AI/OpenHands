@@ -318,7 +318,7 @@ class ActionExecutionClient(Runtime):
     def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
         return self.send_action_for_execution(action)
 
-    def mcp(self, action: McpAction) -> Observation:
+    def call_tool_mcp(self, action: McpAction) -> Observation:
         return self.send_action_for_execution(action)
 
     def close(self) -> None:

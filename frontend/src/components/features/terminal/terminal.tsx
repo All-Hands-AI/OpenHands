@@ -20,7 +20,7 @@ function Terminal({ secrets }: TerminalProps) {
 
   return (
     <div className="h-full p-2 min-h-0">
-      <div ref={ref} className="h-full w-full" />
+      <div ref={ref} className="h-full w-full bg-base-secondary" />
     </div>
   );
 }

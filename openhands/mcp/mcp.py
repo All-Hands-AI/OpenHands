@@ -4,10 +4,10 @@ from typing import Dict, List, Optional
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.sse import sse_client
 from mcp.client.stdio import stdio_client
-from mcp.types import TextContent
+from mcp.types import ImageContent, TextContent
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.mcp.mcp_base import BaseTool, ToolResult
+from openhands.mcp.mcp_base import BaseTool, ExtendedImageContent, ToolResult
 from openhands.mcp.mcp_tool_collection import ToolCollection
 
 
@@ -23,9 +23,34 @@ class MCPClientTool(BaseTool):
 
         try:
             result = await self.session.call_tool(self.name, kwargs)
+            logger.debug(f'MCP tool result: {result}')
             content_str = ', '.join(
                 item.text for item in result.content if isinstance(item, TextContent)
             )
+
+            # special case for image content
+            if (
+                self.name == 'browser_screenshot'
+                and isinstance(result.content, list)
+                and len(result.content) > 0
+                and isinstance(result.content[0], ImageContent)
+            ):
+                screenshot_content = result.content[0]
+                if screenshot_content.url is not None:
+                    logger.debug(
+                        f'MCP screenshot content url: {screenshot_content.url}'
+                    )
+                    return ToolResult(
+                        output=ExtendedImageContent(
+                            url=screenshot_content.url,
+                            mimeType=screenshot_content.mimeType,
+                            data=screenshot_content.data,
+                            type=screenshot_content.type,
+                            annotations=screenshot_content.annotations,
+                        )
+                    )
+                else:
+                    return ToolResult(output=result.content[0])
             return ToolResult(output=content_str or 'No output returned.')
         except Exception as e:
             return ToolResult(error=f'Error executing tool: {str(e)}')

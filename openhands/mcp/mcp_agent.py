@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.mcp.mcp import MCPClients
+from openhands.mcp.mcp_base import ToolResult
 
 
 class MCPAgent(BaseModel):
@@ -106,7 +107,7 @@ class MCPAgent(BaseModel):
 
     async def run_tool(
         self, tool_name: str, args: Dict[str, Any] | None = None
-    ) -> Dict[str, Any]:
+    ) -> ToolResult:
         """Run a tool with the given name and input.
 
         Args:
@@ -125,21 +126,29 @@ class MCPAgent(BaseModel):
             logger.info('MCP connection closed')
 
 
-def convert_mcp_agents_to_tools(mcp_agents: list[MCPAgent]) -> list[dict]:
+def convert_mcp_agents_to_tools(mcp_agents: list[MCPAgent] | None) -> list[dict]:
     """
     Converts a list of MCPAgent instances to ChatCompletionToolParam format
     that can be used by CodeActAgent.
 
     Args:
-        mcp_agents: List of MCPAgent instances
+        mcp_agents: List of MCPAgent instances or None
 
     Returns:
         List of ChatCompletionToolParam tools ready to be used by CodeActAgent
     """
+    if mcp_agents is None:
+        logger.warning('mcp_agents is None, returning empty list')
+        return []
+
     all_mcp_tools = []
-    for agent in mcp_agents:
-        # Each MCPAgent has an mcp_clients property that is a ToolCollection
-        # The ToolCollection has a to_params method that converts tools to ChatCompletionToolParam format
-        mcp_tools = agent.mcp_clients.to_params()
-        all_mcp_tools.extend(mcp_tools)
+    try:
+        for agent in mcp_agents:
+            # Each MCPAgent has an mcp_clients property that is a ToolCollection
+            # The ToolCollection has a to_params method that converts tools to ChatCompletionToolParam format
+            mcp_tools = agent.mcp_clients.to_params()
+            all_mcp_tools.extend(mcp_tools)
+    except Exception as e:
+        logger.error(f'Error in convert_mcp_agents_to_tools: {e}')
+        return []
     return all_mcp_tools

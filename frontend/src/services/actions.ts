@@ -31,6 +31,11 @@ const messageActions = {
       store.dispatch(addAssistantMessage(message.message));
     }
   },
+  [ActionType.PLAYWRIGHT_MCP_BROWSER_SCREENSHOT]: (message: ActionMessage) => {
+    if (!message.args.thought && message.message) {
+      store.dispatch(addAssistantMessage(message.message));
+    }
+  },
   [ActionType.WRITE]: (message: ActionMessage) => {
     const { path, content } = message.args;
     store.dispatch(setActiveFilepath(path));
@@ -145,10 +150,13 @@ export function handleStatusMessage(message: StatusMessage) {
 
 export function handleAssistantMessage(message: Record<string, unknown>) {
   if (message.action) {
+    console.log("message-handleAssistantMessage", message);
     handleActionMessage(message as unknown as ActionMessage);
   } else if (message.observation) {
+    console.log("message-handleObservationMessage", message);
     handleObservationMessage(message as unknown as ObservationMessage);
   } else if (message.status_update) {
+    console.log("message-handleStatusMessage", message);
     handleStatusMessage(message as unknown as StatusMessage);
   } else {
     const errorMsg = "Unknown message type received";

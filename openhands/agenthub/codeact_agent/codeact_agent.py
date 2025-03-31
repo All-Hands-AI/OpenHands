@@ -51,13 +51,17 @@ class CodeActAgent(Agent):
         JupyterRequirement(),
     ]
 
-    def __init__(self, llm: LLM, config: AgentConfig, mcp_tools: list[dict]) -> None:
+    def __init__(
+        self, llm: LLM, config: AgentConfig, mcp_tools: list[dict] | None = None
+    ) -> None:
         """Initializes a new instance of the CodeActAgent class.
 
         Parameters:
         - llm (LLM): The llm to be used by this agent
+        - config (AgentConfig): The configuration for this agent
+        - mcp_tools (list[dict] | None, optional): List of MCP tools to be used by this agent. Defaults to None.
         """
-        super().__init__(llm, config)
+        super().__init__(llm, config, mcp_tools)
         self.pending_actions: deque[Action] = deque()
         self.reset()
 
@@ -68,12 +72,10 @@ class CodeActAgent(Agent):
             llm=self.llm,
         )
 
-        # initialize MCP agents
-        self.tools = built_in_tools + mcp_tools
-        logger.debug(f'MCP tools: {mcp_tools}')
+        self.tools = built_in_tools + (mcp_tools if mcp_tools is not None else [])
 
         # Retrieve the enabled tools
-        logger.debug(
+        logger.info(
             f"TOOLS loaded for CodeActAgent: {', '.join([tool.get('function').get('name') for tool in self.tools])}"
         )
         self.prompt_manager = PromptManager(

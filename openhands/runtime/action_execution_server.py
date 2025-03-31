@@ -24,6 +24,7 @@ from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.security import APIKeyHeader
+from mcp.types import ImageContent
 from openhands_aci.editor.editor import OHEditor
 from openhands_aci.editor.exceptions import ToolError
 from openhands_aci.editor.results import ToolResult
@@ -58,7 +59,11 @@ from openhands.events.observation import (
     Observation,
 )
 from openhands.events.observation.mcp import MCPObservation
+from openhands.events.observation.playwright_mcp import (
+    PlaywrightMcpBrowserScreenshotObservation,
+)
 from openhands.events.serialization import event_from_dict, event_to_dict
+from openhands.mcp.mcp_base import ToolResult as MCPToolResult
 from openhands.runtime.browser import browse
 from openhands.runtime.browser.browser_env import BrowserEnv
 from openhands.runtime.plugins import ALL_PLUGINS, JupyterPlugin, Plugin, VSCodePlugin
@@ -315,9 +320,7 @@ class ActionExecutor:
     async def run_action(self, action) -> Observation:
         async with self.lock:
             action_type = action.action
-            logger.warning(f'Running action:\n{action}')
             observation = await getattr(self, action_type)(action)
-            logger.warning(f'Action output:\n{observation}')
             return observation
 
     async def run(
@@ -522,7 +525,7 @@ class ActionExecutor:
         await self._ensure_browser_ready()
         return await browse(action, self.browser)
 
-    async def mcp(self, action: McpAction) -> Observation:
+    async def call_tool_mcp(self, action: McpAction) -> Observation:
         mcp_server_urls = self.sse_mcp_servers or []
         commands: list[str] = []
         args: list[list[str]] = []
@@ -580,7 +583,31 @@ class ActionExecutor:
         for agent in mcp_agents:
             await agent.cleanup()
 
+        # special case for browser screenshot of playwright_mcp
+        if action.name == 'browser_screenshot':
+            return self.playwright_mcp_browser_screenshot(action, response)
+
         return MCPObservation(content=f'MCP action received and processed: {response}')
+
+    def playwright_mcp_browser_screenshot(
+        self, action: McpAction, response: MCPToolResult
+    ) -> Observation:
+        # example response:
+        """
+        {
+            "type": "image",
+            "data": "image/jpeg;base64,/9j/4AA...",
+            "mimeType": "image/jpeg",
+            "url": "https://www.google.com"
+        }
+        """
+        screenshot_content: ImageContent = response.output
+        return PlaywrightMcpBrowserScreenshotObservation(
+            content=f'{response}',
+            url=screenshot_content.url if screenshot_content.url is not None else '',
+            trigger_by_action=action.name,
+            screenshot=f'data:image/png;base64,{screenshot_content.data}',
+        )
 
     def close(self):
         self.memory_monitor.stop_monitoring()

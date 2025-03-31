@@ -12,7 +12,8 @@ export type OpenHandsEventType =
   | "reject"
   | "think"
   | "finish"
-  | "error";
+  | "error"
+  | "playwright_mcp_browser_screenshot";
 
 interface OpenHandsBaseEvent {
   id: number;

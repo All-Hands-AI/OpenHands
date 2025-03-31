@@ -1,41 +1,38 @@
 import { useDisclosure } from "@heroui/react";
 import React from "react";
-import { Outlet } from "react-router";
-import { useDispatch, useSelector } from "react-redux";
-import { FaServer } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
-import { I18nKey } from "#/i18n/declaration";
-import {
-  ConversationProvider,
-  useConversation,
-} from "#/context/conversation-context";
+import { useDispatch, useSelector } from "react-redux";
+import { Outlet } from "react-router";
 import { Controls } from "#/components/features/controls/controls";
-import { clearMessages, addUserMessage } from "#/state/chat-slice";
-import { clearTerminal } from "#/state/command-slice";
-import { useEffectOnce } from "#/hooks/use-effect-once";
-import CodeIcon from "#/icons/code.svg?react";
-import GlobeIcon from "#/icons/globe.svg?react";
-import ListIcon from "#/icons/list-type-number.svg?react";
-import { clearJupyter } from "#/state/jupyter-slice";
-import { FilesProvider } from "#/context/files";
-import { ChatInterface } from "../../components/features/chat/chat-interface";
-import { WsClientProvider } from "#/context/ws-client-provider";
-import { EventHandler } from "./event-handler";
-import { useConversationConfig } from "#/hooks/query/use-conversation-config";
+import { TerminalStatusLabel } from "#/components/features/terminal/terminal-status-label";
 import { Container } from "#/components/layout/container";
 import {
   Orientation,
   ResizablePanel,
 } from "#/components/layout/resizable-panel";
 import Security from "#/components/shared/modals/security/security";
-import { useEndSession } from "#/hooks/use-end-session";
-import { useUserConversation } from "#/hooks/query/use-user-conversation";
-import { ServedAppLabel } from "#/components/layout/served-app-label";
-import { TerminalStatusLabel } from "#/components/features/terminal/terminal-status-label";
+import {
+  ConversationProvider,
+  useConversation,
+} from "#/context/conversation-context";
+import { FilesProvider } from "#/context/files";
+import { WsClientProvider } from "#/context/ws-client-provider";
+import { useConversationConfig } from "#/hooks/query/use-conversation-config";
 import { useSettings } from "#/hooks/query/use-settings";
+import { useUserConversation } from "#/hooks/query/use-user-conversation";
+import { useEffectOnce } from "#/hooks/use-effect-once";
+import { useEndSession } from "#/hooks/use-end-session";
+import { I18nKey } from "#/i18n/declaration";
+import CodeIcon from "#/icons/code.svg?react";
+import GlobeIcon from "#/icons/globe.svg?react";
+import { addUserMessage, clearMessages } from "#/state/chat-slice";
+import { clearTerminal } from "#/state/command-slice";
 import { clearFiles, clearInitialPrompt } from "#/state/initial-query-slice";
+import { clearJupyter } from "#/state/jupyter-slice";
 import { RootState } from "#/store";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
+import { ChatInterface } from "../../components/features/chat/chat-interface";
+import { EventHandler } from "./event-handler";
 
 function AppContent() {
   useConversationConfig();
@@ -53,16 +50,10 @@ function AppContent() {
 
   const [width, setWidth] = React.useState(window.innerWidth);
 
-  const secrets = React.useMemo(
-    // secrets to filter go here
-    () => [].filter((secret) => secret !== null),
-    [],
-  );
-
-  const Terminal = React.useMemo(
-    () => React.lazy(() => import("#/components/features/terminal/terminal")),
-    [],
-  );
+  // const Terminal = React.useMemo(
+  //   () => React.lazy(() => import("#/components/features/terminal/terminal")),
+  //   [],
+  // );
 
   React.useEffect(() => {
     if (isFetched && !conversation) {
@@ -126,61 +117,45 @@ function AppContent() {
       <ResizablePanel
         orientation={Orientation.HORIZONTAL}
         className="grow h-full min-h-0 min-w-0"
-        initialSize={500}
+        initialSize={550}
         firstClassName="rounded-xl overflow-hidden border border-neutral-600 bg-base-secondary"
         secondClassName="flex flex-col overflow-hidden"
         firstChild={<ChatInterface />}
         secondChild={
-          <ResizablePanel
-            orientation={Orientation.VERTICAL}
-            className="grow h-full min-h-0 min-w-0"
-            initialSize={500}
-            firstClassName="rounded-xl overflow-hidden border border-neutral-600"
-            secondClassName="flex flex-col overflow-hidden"
-            firstChild={
-              <Container
-                className="h-full"
-                labels={[
-                  {
-                    label: t(I18nKey.WORKSPACE$TITLE),
-                    to: "",
-                    icon: <CodeIcon />,
-                  },
-                  { label: "Jupyter", to: "jupyter", icon: <ListIcon /> },
-                  {
-                    label: <ServedAppLabel />,
-                    to: "served",
-                    icon: <FaServer />,
-                  },
-                  {
-                    label: (
-                      <div className="flex items-center gap-1">
-                        {t(I18nKey.BROWSER$TITLE)}
-                      </div>
-                    ),
-                    to: "browser",
-                    icon: <GlobeIcon />,
-                  },
-                ]}
-              >
-                <FilesProvider>
-                  <Outlet />
-                </FilesProvider>
-              </Container>
-            }
-            secondChild={
-              <Container
-                className="h-full overflow-scroll"
-                label={<TerminalStatusLabel />}
-              >
-                {/* Terminal uses some API that is not compatible in a server-environment. For this reason, we lazy load it to ensure
-                 * that it loads only in the client-side. */}
-                <React.Suspense fallback={<div className="h-full" />}>
-                  <Terminal secrets={secrets} />
-                </React.Suspense>
-              </Container>
-            }
-          />
+          <Container
+            className="h-full"
+            labels={[
+              {
+                label: t(I18nKey.WORKSPACE$TITLE),
+                to: "",
+                icon: <CodeIcon />,
+              },
+              // { label: "Jupyter", to: "jupyter", icon: <ListIcon /> },
+              // {
+              //   label: <ServedAppLabel />,
+              //   to: "served",
+              //   icon: <FaServer />,
+              // },
+              {
+                label: <TerminalStatusLabel />,
+                to: "terminal",
+                // icon: <ListIcon />,
+              },
+              {
+                label: (
+                  <div className="flex items-center gap-1">
+                    {t(I18nKey.BROWSER$TITLE)}
+                  </div>
+                ),
+                to: "browser",
+                icon: <GlobeIcon />,
+              },
+            ]}
+          >
+            <FilesProvider>
+              <Outlet />
+            </FilesProvider>
+          </Container>
         }
       />
     );

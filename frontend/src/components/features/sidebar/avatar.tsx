@@ -4,6 +4,10 @@ interface AvatarProps {
 
 export function Avatar({ src }: AvatarProps) {
   return (
-    <img src={src} alt="user avatar" className="w-full h-full rounded-full" />
+    <img
+      src={src}
+      alt="user avatar"
+      className="w-full h-full rounded-full bg-gray-500"
+    />
   );
 }

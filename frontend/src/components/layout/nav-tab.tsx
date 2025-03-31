@@ -24,7 +24,7 @@ export function NavTab({ to, label, icon, isBeta }: NavTabProps) {
       {({ isActive }) => (
         <>
           <div className={cn(isActive && "text-logo")}>{icon}</div>
-          {label}
+          <span className={cn(isActive && "text-logo")}>{label}</span>
           {isBeta && <BetaBadge />}
         </>
       )}

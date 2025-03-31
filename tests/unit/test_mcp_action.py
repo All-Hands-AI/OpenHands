@@ -28,7 +28,7 @@ async def test_mcp_action_execution():
         action = McpAction(mcp_actions='test_action')
 
         # Execute the action
-        observation = await executor.mcp(action)
+        observation = await executor.call_tool_mcp(action)
         logger.warning(f'Observation: {observation}')
 
         # Verify the observation
