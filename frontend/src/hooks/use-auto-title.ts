@@ -45,7 +45,8 @@ export function useAutoTitle() {
     }
 
     // Check if the conversation needs a title update or has a default title
-    const needsUpdate = conversation.needs_title_update ||
+    const needsUpdate =
+      conversation.needs_title_update ||
       (conversation.title && defaultTitlePattern.test(conversation.title));
 
     if (!needsUpdate) {
@@ -55,7 +56,8 @@ export function useAutoTitle() {
     // Use the dedicated endpoint for generating titles
     const generateTitle = async () => {
       try {
-        const updatedConversation = await OpenHands.generateConversationTitle(conversationId);
+        const updatedConversation =
+          await OpenHands.generateConversationTitle(conversationId);
 
         if (updatedConversation) {
           queryClient.setQueryData(
@@ -64,7 +66,7 @@ export function useAutoTitle() {
           );
         }
       } catch (error) {
-        console.error("Error generating title:", error);
+        // Silently handle error and invalidate the query to refresh data
         queryClient.invalidateQueries({
           queryKey: ["user", "conversation", conversationId],
         });
