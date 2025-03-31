@@ -10,6 +10,7 @@ class AgentStateChangedObservation(Observation):
     """This data class represents the result from delegating to another agent"""
 
     agent_state: str
+    reason: str = ''
     observation: str = ObservationType.AGENT_STATE_CHANGED
 
     @property
