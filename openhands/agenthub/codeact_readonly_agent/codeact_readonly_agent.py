@@ -3,14 +3,7 @@ CodeActReadOnlyAgent - A specialized version of CodeActAgent that only uses read
 """
 
 from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
-from openhands.agenthub.codeact_agent.tools import (
-    FinishTool,
-    GlobTool,
-    GrepTool,
-    ThinkTool,
-    ViewTool,
-    WebReadTool,
-)
+from openhands.agenthub.codeact_agent.function_calling import get_tools
 from openhands.core.config import AgentConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message, TextContent
@@ -47,14 +40,14 @@ class CodeActReadOnlyAgent(CodeActAgent):
         super().__init__(llm, config)
 
         # Override the tools with only read-only tools
-        self.tools = [
-            ThinkTool,
-            ViewTool,
-            GrepTool,
-            GlobTool,
-            FinishTool,
-            WebReadTool,
-        ]
+        # Force codeact_enable_read_only_tools to True to ensure we only get read-only tools
+        self.tools = get_tools(
+            codeact_enable_browsing=True,  # Enable web_read
+            codeact_enable_jupyter=False,
+            codeact_enable_llm_editor=False,
+            codeact_enable_read_only_tools=True,  # Force read-only mode
+            llm=self.llm,
+        )
 
         logger.debug(
             f"TOOLS loaded for CodeActReadOnlyAgent: {', '.join([tool.get('function').get('name') for tool in self.tools])}"
