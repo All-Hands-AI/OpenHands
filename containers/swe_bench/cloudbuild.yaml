@@ -1,0 +1,7 @@
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  script: |
+    DOCKER_BUILDKIT=1 docker build -t 'us-central1-docker.pkg.dev/docker-rlef-exploration/openhands-repo/openhands-image:openhands-v30' .
+  automapSubstitutions: true
+images:
+- 'us-central1-docker.pkg.dev/docker-rlef-exploration/openhands-repo/openhands-image:openhands-v30'
