@@ -334,24 +334,22 @@ class ConversationMemory:
             message = Message(role='user', content=[TextContent(text=text)])
         # FIXME: This is a temporary solution to test MCP. Not sure if it's the best way to do it.
         elif isinstance(obs, MCPObservation):
-            logger.warning(f'MCPObservation: {obs}')
-            message = Message(role='user', content=[TextContent(text=obs.content)])
+            # logger.warning(f'MCPObservation: {obs}')
+            message = Message(role='assistant', content=[TextContent(text=obs.content)])
         elif isinstance(obs, PlaywrightMcpBrowserScreenshotObservation):
+            text = 'Image: Current webpage screenshot\n'
             screenshot_content = json.loads(obs.content)
-            text = f'Current webpage screenshot with URL: {screenshot_content["url"]}\n'
-            # logger.debug(
-            #     f'screenshot_content in conversation_memory: {screenshot_content}'
-            # )
+            logger.debug(
+                f'screenshot_content in conversation_memory: {screenshot_content}'
+            )
+            if 'url' in screenshot_content:
+                text += f'URL: {screenshot_content["url"]}\n'
 
             # We don't actually need to screenshot fed into the LLM. We can use snapshots. Meanwhile, the screenshot will be streamed to the user.
             message = Message(
-                role='user',
+                role='assistant',
                 content=[
                     TextContent(text=text),
-                    # ImageContent(
-                    #     image_urls=[screenshot_content['image_url']],
-                    #     type=screenshot_content['mimeType'],
-                    # ),
                 ],
             )
         elif isinstance(obs, IPythonRunCellObservation):

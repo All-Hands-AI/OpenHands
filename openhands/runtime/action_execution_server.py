@@ -587,7 +587,7 @@ class ActionExecutor:
         if action.name == 'browser_screenshot':
             return self.playwright_mcp_browser_screenshot(action, response)
 
-        return MCPObservation(content=f'MCP action received and processed: {response}')
+        return MCPObservation(content=f'MCP result:{response}')
 
     def playwright_mcp_browser_screenshot(
         self, action: McpAction, response: MCPToolResult

@@ -76,7 +76,9 @@ class MCPClients(ToolCollection):
         if self.session:
             await self.disconnect()
 
-        streams_context = sse_client(url=server_url)
+        streams_context = sse_client(
+            url=server_url, timeout=60, sse_read_timeout=60 * 10
+        )
         streams = await self.exit_stack.enter_async_context(streams_context)
         self.session = await self.exit_stack.enter_async_context(
             ClientSession(*streams)

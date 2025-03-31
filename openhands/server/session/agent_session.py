@@ -170,6 +170,7 @@ class AgentSession:
                         self.logger.info(
                             f"MCP Agent {idx} available tools: {list(mcp_agent.mcp_clients.tool_map.keys()) if hasattr(mcp_agent, 'mcp_clients') and hasattr(mcp_agent.mcp_clients, 'tool_map') else 'No tools available'}"
                         )
+                        await mcp_agent.cleanup()
 
                     self.logger.info(
                         f'Successfully initialized {len(mcp_agents)} MCP agents'
