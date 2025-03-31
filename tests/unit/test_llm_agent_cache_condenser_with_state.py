@@ -1,11 +1,10 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from openhands.agenthub.llm_cache_code_agent.llm_cache_code_agent import (
     LLMCacheCodeAgent,
 )
 from openhands.controller.state.state import State
 from openhands.core.config.agent_config import AgentConfig
-from openhands.core.message import Message
 from openhands.events.action.message import MessageAction
 from openhands.events.event import Event, RecallType
 from openhands.events.observation.agent import RecallObservation
@@ -15,8 +14,6 @@ from openhands.memory.condenser.condenser import Condensation, View
 from openhands.memory.condenser.impl.llm_agent_cache_condenser import (
     LLMAgentCacheCondenser,
 )
-from openhands.memory.conversation_memory import ConversationMemory
-from openhands.utils.prompt import PromptManager
 
 
 def test_contains_trigger_word():
@@ -43,7 +40,7 @@ def test_contains_trigger_word():
     user_event = MessageAction('Please CONDENSE! the conversation history.')
     user_event._source = 'user'
     agent_event = MessageAction('Agent response')
-    agent_event.source = 'agent'
+    agent_event._source = 'agent'
     assert condenser.containsTriggerWord([user_event, agent_event])
 
     # Test case 4: User message without CONDENSE! keyword
@@ -130,10 +127,9 @@ def test_llm_agent_cache_condenser_with_state_keep():
 
     events = [FileReadObservation(f'{i}.txt', 'content.' * i) for i in range(6)]
     for i, event in enumerate(events):
-        event._id = (
-            i + 1
-        )  # Assigning IDs starting from 1, so that they match the index of the messages
+        # Assigning IDs starting from 1, so that they match the index of the messages
         # that the LLM is told to use.
+        event._id = i + 1
 
     # Create a mock state with the events
     mock_state = MagicMock(spec=State)
@@ -148,11 +144,7 @@ def test_llm_agent_cache_condenser_with_state_keep():
     assert result.action.forgotten_event_ids == [2, 4, 6]
 
 
-@patch('openhands.memory.condenser.impl.llm_agent_cache_condenser.Message')
-@patch('openhands.memory.condenser.impl.llm_agent_cache_condenser.TextContent')
-def test_llm_agent_cache_condenser_with_state_with_rewrite(
-    mock_text_content, mock_message
-):
+def test_llm_agent_cache_condenser_with_state_with_rewrite():
     """Test that the condenser correctly handles REWRITE commands."""
     # Mock the LLM
     mock_llm = MagicMock(spec=LLM)
@@ -174,6 +166,7 @@ def test_llm_agent_cache_condenser_with_state_with_rewrite(
     mock_response.choices[0].message = MagicMock()
     mock_response.choices[0].message.content = """
 KEEP: 0
+KEEP: 1
 REWRITE 2 TO 4 WITH:
 User asked about database schema and agent explained the tables and relationships.
 END-REWRITE
@@ -183,46 +176,21 @@ KEEP: 5
     mock_llm.completion.return_value = mock_response
     mock_llm.format_messages_for_llm = lambda x: x
 
-    # Mock the conversation memory
-    mock_conversation_memory = MagicMock(spec=ConversationMemory)
-    mock_initial_messages = [MagicMock(spec=Message)]
-    mock_conversation_memory.process_initial_messages.return_value = (
-        mock_initial_messages
-    )
-    mock_processed_messages = [MagicMock(spec=Message) for _ in range(5)]
-    mock_conversation_memory.process_events.return_value = mock_processed_messages
+    agentConfig = AgentConfig()
+    agent = LLMCacheCodeAgent(mock_llm, agentConfig)
 
-    # Mock the prompt manager
-    mock_prompt_manager = MagicMock(spec=PromptManager)
+    condenser = agent.condenser
+    condenser.max_size = 5
 
-    # Create a mock agent with the required components
-    mock_agent = MagicMock()
-    mock_agent.llm = mock_llm
-    mock_agent.conversation_memory = mock_conversation_memory
-    mock_agent.prompt_manager = mock_prompt_manager
-
-    # Create the condenser with max_size=5 to force condensation
-    condenser = LLMAgentCacheCondenser(
-        agent=mock_agent,
-        max_size=5,  # Set to 5 to force condensation since we have 6 events
-        keep_first=1,
-    )
-
-    # Create mock events with IDs
-    mock_events = []
-    for i in range(6):
-        event = MagicMock(spec=Event)
-        event.id = i
-        mock_events.append(event)
+    events = [FileReadObservation(f'{i}.txt', 'content.' * i) for i in range(6)]
+    for i, event in enumerate(events):
+        event._id = i
 
     # Create a mock state with the events
     mock_state = MagicMock(spec=State)
-    mock_state.history = mock_events
+    mock_state.history = events
 
-    # Force the should_condense method to return True
-    with patch.object(condenser, 'should_condense', return_value=True):
-        # Condense the events
-        result = condenser.condenseWithState(mock_state)
+    result = condenser.condenseWithState(mock_state)
 
     # Verify that a Condensation is returned with a summary
     assert isinstance(result, Condensation)

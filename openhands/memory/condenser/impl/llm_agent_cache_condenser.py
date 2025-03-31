@@ -350,11 +350,14 @@ Do not include any other text in your response.
         for index in keep_message_indices:
             try:
                 message = messages[index]
-                # Find the corresponding event for the message
-                for event in events:
-                    if event == message.source:
+                if message._source:
+                    event = next((e for e in events if e == message._source), None)
+                    if event:
                         keep_event_ids.add(event.id)
-                        break
+                    else:
+                        raise ValueError(
+                            f'Could not find matching event {message._source}'
+                        )
             except IndexError:
                 logger.warning(
                     f'Index {index} is out of range for messages. Skipping this index.'
@@ -377,7 +380,7 @@ Do not include any other text in your response.
                     message = messages[i]
                     for event in events:
                         if (
-                            event.source == message.source
+                            event.source == message._source
                             and event.id not in keep_event_ids
                         ):
                             forgotten_event_ids.append(event.id)
