@@ -13,6 +13,7 @@ from openhands.events.stream import EventStream
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
 )
+from openhands.llm.llm import LLM
 from openhands.runtime import get_runtime_cls
 from openhands.server.auth import (
     get_github_user_id,
@@ -244,6 +245,13 @@ async def search_conversations(
 async def get_conversation(
     conversation_id: str, request: Request
 ) -> ConversationInfo | None:
+    """
+    Get conversation information by ID.
+    
+    This endpoint is read-only and does not modify any data.
+    It only checks if the conversation has a default title and sets a flag
+    to indicate that the title should be updated via a separate PATCH request.
+    """
     conversation_store = await ConversationStoreImpl.get_instance(
         config, get_user_id(request), get_github_user_id(request)
     )
@@ -251,7 +259,7 @@ async def get_conversation(
         metadata = await conversation_store.get_metadata(conversation_id)
         is_running = await conversation_manager.is_agent_loop_running(conversation_id)
 
-        # Check if we need to update the title but don't modify it in the GET request
+        # Check if the title needs to be updated (but don't modify it here)
         needs_title_update = False
         if is_running and metadata:
             # Check if the title is a default title (contains the conversation ID)
@@ -354,6 +362,14 @@ async def update_conversation(
     conversation: ConversationUpdate,
     request: Request,
 ) -> ConversationInfo | None:
+    """
+    Update conversation metadata, including title generation.
+    
+    This endpoint handles all modifications to conversation data:
+    - If title is empty string (''), it will auto-generate a title based on conversation content
+    - If title is provided, it will use that exact title
+    - If selected_repository is provided, it will update the repository
+    """
     conversation_store = await ConversationStoreImpl.get_instance(
         config, get_user_id(request), get_github_user_id(request)
     )
