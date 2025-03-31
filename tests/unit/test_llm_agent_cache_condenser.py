@@ -221,3 +221,56 @@ def test_llm_agent_cache_condenser_should_condense():
 
     # Test should_condense with large number of events
     assert condenser.should_condense(mock_events_large)
+
+
+def test_llm_agent_cache_condenser_simulated_mixed_condensation():
+    """Test simulated condensation with a mix of messages and observations."""
+    # Create a mock LLM with caching enabled
+    mock_llm = MagicMock(spec=LLM)
+    mock_llm.is_caching_prompt_active.return_value = True
+    mock_llm.config = MagicMock(max_message_chars=1000)
+    mock_llm.vision_is_active.return_value = False
+    mock_llm.metrics = MagicMock()
+    mock_llm.metrics.get.return_value = {'tokens': 100}
+
+    # Create an agent instance with the mock LLM
+    agent_config = AgentConfig()
+    agent = LLMCacheCodeAgent(mock_llm, agent_config)
+
+    # Configure the condenser
+    condenser = agent.condenser
+    condenser.max_size = 5
+    condenser.keep_first = 1
+
+    # Create a mix of events: alternating between MessageAction and FileReadObservation
+    events = []
+    for i in range(1, 8):
+        if i % 2 == 0:
+            event = MessageAction(f'Test message {i}')
+        else:
+            event = FileReadObservation(f'File content for event {i}', f'{i}.txt')
+        event._id = i  # Use _id instead of id
+        events.append(event)
+
+    mock_state = MagicMock(spec=State)
+    mock_state.history = events
+
+    # Simulate the LLM response for condensation
+    mock_response = MagicMock()
+    mock_response.choices = [MagicMock()]
+    mock_response.choices[0].message.content = (
+        'KEEP: 0\n'
+        'KEEP: 1\n'
+        'KEEP: 2\n'
+        'REWRITE 4 TO 5 WITH:\n'
+        'Summary <mention content of message 4,5>\n'
+        'END-REWRITE\n'
+        'KEEP: 6'
+    )
+    mock_llm.completion.return_value = mock_response
+
+    result = condenser.condenseWithState(mock_state)
+    assert isinstance(result, Condensation)
+
+    assert result.action.forgotten_event_ids == [3, 4, 5, 7]
+    assert 'Summary <mention content of message 4,5>' in result.action.summary

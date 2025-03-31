@@ -275,7 +275,7 @@ class ConversationMemory:
             )
 
         for message in messages:
-            message._source = action
+            message._event = action
         return messages
 
     def _process_observation(
