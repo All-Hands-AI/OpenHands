@@ -193,68 +193,57 @@ def parse_diff(text: str | list[str]) -> list[Change] | None:
 
 
 def parse_git_header(text: str | list[str]) -> header | None:
+    # Use splitlines() in list comprehension for text if it's a string
     lines = text.splitlines() if isinstance(text, str) else text
 
-    old_version = None
-    new_version = None
-    old_path = None
-    new_path = None
-    cmd_old_path = None
-    cmd_new_path = None
+    # Initialize variables
+    old_version = new_version = old_path = new_path = None
+    cmd_old_path = cmd_new_path = None
+    
+    # Separate iteration of conditions to avoid unnecessary checks
     for line in lines:
-        hm = git_diffcmd_header.match(line)
-        if hm:
-            cmd_old_path = hm.group(1)
-            cmd_new_path = hm.group(2)
-            continue
+        # Check and process for git_diffcmd_header, git_header_index, and git_header_binary_file
+        if not cmd_old_path or not cmd_new_path:
+            hm = git_diffcmd_header.match(line)
+            if hm:
+                cmd_old_path, cmd_new_path = hm.group(1), hm.group(2)
+                continue
 
-        g = git_header_index.match(line)
-        if g:
-            old_version = g.group(1)
-            new_version = g.group(2)
-            continue
+        if not old_version or not new_version:
+            g = git_header_index.match(line)
+            if g:
+                old_version, new_version = g.group(1), g.group(2)
+                continue
+        
+        # Check if the old and new paths can be derived from headers or binary file differ
+        if not old_path or not new_path:
+            o = git_header_old_line.match(line)
+            if o:
+                old_path = o.group(1)
 
-        # git always has it's own special headers
-        o = git_header_old_line.match(line)
-        if o:
-            old_path = o.group(1)
+            n = git_header_new_line.match(line)
+            if n:
+                new_path = n.group(1)
 
-        n = git_header_new_line.match(line)
-        if n:
-            new_path = n.group(1)
+            binary = git_header_binary_file.match(line)
+            if binary:
+                old_path, new_path = binary.group(1), binary.group(2)
 
-        binary = git_header_binary_file.match(line)
-        if binary:
-            old_path = binary.group(1)
-            new_path = binary.group(2)
+            if old_path and new_path:
+                # Remove 'a/' and 'b/' prefixes if present in paths
+                old_path = old_path[2:] if old_path.startswith('a/') else old_path
+                new_path = new_path[2:] if new_path.startswith('b/') else new_path
+                return header(index_path=None, old_path=old_path, old_version=old_version,
+                              new_path=new_path, new_version=new_version)
 
-        if old_path and new_path:
-            if old_path.startswith('a/'):
-                old_path = old_path[2:]
-
-            if new_path.startswith('b/'):
-                new_path = new_path[2:]
-            return header(
-                index_path=None,
-                old_path=old_path,
-                old_version=old_version,
-                new_path=new_path,
-                new_version=new_version,
-            )
-
-    # if we go through all of the text without finding our normal info,
-    # use the cmd if available
+    # Handle case where normal information isn't found, use command information
     if cmd_old_path and cmd_new_path and old_version and new_version:
-        if cmd_old_path.startswith('a/'):
-            cmd_old_path = cmd_old_path[2:]
-
-        if cmd_new_path.startswith('b/'):
-            cmd_new_path = cmd_new_path[2:]
-
+        cmd_old_path, cmd_new_path = (
+            (cmd_old_path[2:] if cmd_old_path.startswith('a/') else cmd_old_path),
+            (cmd_new_path[2:] if cmd_new_path.startswith('b/') else cmd_new_path)
+        )
         return header(
             index_path=None,
-            # wow, I kind of hate this:
-            # assume /dev/null if the versions are zeroed out
             old_path='/dev/null' if old_version == '0000000' else cmd_old_path,
             old_version=old_version,
             new_path='/dev/null' if new_version == '0000000' else cmd_new_path,
