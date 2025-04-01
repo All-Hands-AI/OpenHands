@@ -3,6 +3,7 @@ from typing import Any, get_args, get_origin
 
 from pydantic import BaseModel
 from pydantic.fields import FieldInfo
+from openhands.core.config.app_config import AppConfig
 
 OH_DEFAULT_AGENT = 'CodeActAgent'
 OH_MAX_ITERATIONS = 250
@@ -60,3 +61,8 @@ def model_defaults_to_dict(model: BaseModel) -> dict[str, Any]:
             result[name] = get_field_info(field)
 
     return result
+
+
+def get_config() -> AppConfig:
+    """Get the current application configuration"""
+    return AppConfig()  # Returns default config, can be enhanced later

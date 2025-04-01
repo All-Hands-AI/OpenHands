@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from typing import AsyncIterator
 from fastapi import FastAPI
 from mcp.server.fastmcp import FastMCP, Context
-from openhands.core.config import get_config  # Existing OpenHands config
+from openhands.core.config.loader import get_config  # Configuration loader
 
 app = FastAPI()
 
@@ -45,8 +45,9 @@ def get_codebase_info() -> dict:
     }
 
 @mcp.resource("openhands://task/current")
-async def get_current_task(ctx: Context) -> dict:
+async def get_current_task() -> dict:
     """Get current task execution status"""
+    ctx = mcp.get_current_context()
     return {
         "status": "active",
         "timestamp": ctx.request_time.isoformat(),
