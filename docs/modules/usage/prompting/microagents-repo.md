@@ -1,68 +1,117 @@
-# Repository Microagents
+# Repository-specific Microagents
 
 ## Overview
 
-OpenHands can be customized to work more effectively with specific repositories by providing repository-specific context
-and guidelines. This section explains how to optimize OpenHands for your project.
+OpenHands can be customized to work more effectively with specific repositories by providing repository-specific context and guidelines.
 
-## Creating a Repository Micro-Agent
+This section explains how to optimize OpenHands for your project.
+
+## Creating Repository Microagents
 
 You can customize OpenHands' behavior for your repository by creating a `.openhands/microagents/` directory in your repository's root.
-At minimum it should contain the file
-`.openhands/microagents/repo.md`, which includes instructions that will
-be given to the agent every time it works with this repository.
 
-### Repository Microagents Best Practices
+You can enhance OpenHands' performance by adding custom microagents to your repository:
 
-- **Keep Instructions Updated**: Regularly update your `.openhands/microagents/` directory as your project evolves.
-- **Be Specific**: Include specific paths, patterns, and requirements unique to your project.
-- **Document Dependencies**: List all tools and dependencies required for development.
-- **Include Examples**: Provide examples of good code patterns from your project.
-- **Specify Conventions**: Document naming conventions, file organization, and code style preferences.
+1. For overall repository-specific instructions, create a `.openhands/microagents/repo.md` file
+2. For reusable domain knowledge triggered by keywords, add multiple `.md` files to `.openhands/microagents/knowledge/`
+3. For common workflows and tasks, create multiple `.md` files to `.openhands/microagents/tasks/`
 
-### Steps to Create a Repository Microagent
+Check out the [best practices](./microagents-syntax.md#markdown-content-best-practices) for formatting the content of your custom microagent.
 
-#### 1. Plan the Repository Microagent
-When creating a repository-specific micro-agent, we suggest including the following information:
-- **Repository Overview**: A brief description of your project's purpose and architecture.
-- **Directory Structure**: Key directories and their purposes.
-- **Development Guidelines**: Project-specific coding standards and practices.
-- **Testing Requirements**: How to run tests and what types of tests are required.
-- **Setup Instructions**: Steps needed to build and run the project.
+Keep in mind that loaded microagents take up space in the context window. It's crucial to strike a balance between the additional context provided by microagents and the instructions provided in the user's inputs.
 
-#### 2. Create File
+Note that you can use OpenHands to create new microagents. The public microagent [`add_agent`](https://github.com/All-Hands-AI/OpenHands/blob/main/microagents/knowledge/add_agent.md) is loaded to all OpenHands instance and can support you on this.
 
-Create a file in your repository under `.openhands/microagents/` (Example: `.openhands/microagents/repo.md`)
+## Types of Microagents
 
-Update the file with the required frontmatter [according to the required format](./microagents-overview#microagent-format)
-and the required specialized guidelines for your repository.
+OpenHands supports three primary types of microagents, each with specific purposes and features to enhance agent performance:
 
-### Example Repository Microagent
+- [repository](#repository-microagents)
+- [knowledge](#knowledge-microagents)
+- [tasks](#tasks-microagents)
+
+The standard directory structure within a repository is:
+
+- One main `repo.md` file containing repository-specific instructions
+- Additional `Knowledge` agents in `.openhands/microagents/knowledge/` directory
+- Additional `Task` agents in `.openhands/microagents/tasks/` directory
+
+When processing the `.openhands/microagents/` directory, OpenHands will recursively scan all subfolders and process any `.md` files (except `README.md`) it finds. The system determines the microagent type based on the `type` field in the YAML frontmatter, not by the file's location. However, for organizational clarity, it's recommended to follow the standard directory structure.
+
+### Repository Microagents
+
+The `Repository` microagent is loaded specifically from `.openhands/microagents/repo.md` and serves as the main
+repository-specific instruction file. This single file is automatically loaded whenever OpenHands works with that repository
+without requiring any keyword matching or explicit call from the user.
+
+OpenHands does not support multiple `repo.md` files in different locations or multiple microagents with type `repo`.
+
+If you need to organize different types of repository information, the recommended approach is to use a single `repo.md` file with well-structured sections rather than trying to create multiple microagents with the type `repo`.
+
+The best practice is to include project-specific instructions, team practices, coding standards, and architectural guidelines that are relevant for **all** prompts in that repository.
+
+Example structure:
 
 ```
----
-name: repo
-type: repo
-agent: CodeActAgent
----
-
-Repository: MyProject
-Description: A web application for task management
-
-Directory Structure:
-- src/: Main application code
-- tests/: Test files
-- docs/: Documentation
-
-Setup:
-- Run `npm install` to install dependencies
-- Use `npm run dev` for development
-- Run `npm test` for testing
-
-Guidelines:
-- Follow ESLint configuration
-- Write tests for all new features
-- Use TypeScript for new code
-
-If adding a new component in src/components, always add appropriate unit tests in tests/components/.
+your-repository/
+└── .openhands/
+    └── microagents/
+        └── repo.md    # Repository-specific instructions
 ```
+
+[See the example in the official OpenHands repository](https://github.com/All-Hands-AI/OpenHands/blob/main/.openhands/microagents/repo.md?plain=1)
+
+### Knowledge Microagents
+
+Knowledge microagents provide specialized domain expertise:
+
+- Recommended to be located in `.openhands/microagents/knowledge/`
+- Triggered by specific keywords in conversations
+- Contain expertise on tools, languages, frameworks, and common practices
+
+Use knowledge microagents to trigger additional context relevant to specific technologies, tools, or workflows. For example, mentioning "git" in your conversation will automatically trigger git-related expertise to help with Git operations.
+
+Examples structure:
+
+```
+your-repository/
+└── .openhands/
+    └── microagents/
+        └── knowledge/
+            └── git.md
+            └── docker.md
+            └── python.md
+            └── ...
+        └── repo.md
+```
+
+You can find several real examples of `Knowledge` microagents in the [offical OpenHands repository](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/knowledge)
+
+### Tasks Microagents
+
+Task microagents guide users through interactive workflows:
+
+- Recommended to be located in `.openhands/microagents/tasks/`
+- Provide step-by-step processes for common development tasks
+- Accept inputs and adapt to different scenarios
+- Ensure consistent outcomes for complex operations
+
+Task microagents are a convenient way to store multi-step processes you perform regularly. For instance, you can create a `update_pr_description.md` microagent to automatically generate better pull request descriptions based on code changes.
+
+Examples structure:
+
+```
+your-repository/
+└── .openhands/
+    └── microagents/
+        └── tasks/
+            └── update_pr_description.md
+            └── address_pr_comments.md
+            └── get_test_to_pass.md
+            └── ...
+        └── knowledge/
+            └── ...
+        └── repo.md
+```
+
+You can find several real examples of `Tasks` microagents in the [offical OpenHands repository](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/tasks)

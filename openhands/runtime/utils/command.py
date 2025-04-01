@@ -18,7 +18,7 @@ def get_action_execution_server_startup_command(
     python_prefix: list[str] = DEFAULT_PYTHON_PREFIX,
     override_user_id: int | None = None,
     override_username: str | None = None,
-):
+) -> list[str]:
     sandbox_config = app_config.sandbox
 
     # Plugin args

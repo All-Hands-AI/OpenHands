@@ -2,10 +2,14 @@ from __future__ import annotations
 
 from openhands.core.config.condenser_config import LLMSummarizingCondenserConfig
 from openhands.core.message import Message, TextContent
-from openhands.events.event import Event
+from openhands.events.action.agent import CondensationAction
 from openhands.events.observation.agent import AgentCondensationObservation
 from openhands.llm import LLM
-from openhands.memory.condenser.condenser import RollingCondenser
+from openhands.memory.condenser.condenser import (
+    Condensation,
+    RollingCondenser,
+    View,
+)
 
 
 class LLMSummarizingCondenser(RollingCondenser):
@@ -32,26 +36,22 @@ class LLMSummarizingCondenser(RollingCondenser):
 
         super().__init__()
 
-    def condense(self, events: list[Event]) -> list[Event]:
-        """Apply the amortized forgetting strategy with LLM summarization to the given list of events."""
-        if len(events) <= self.max_size:
-            return events
-
-        head = events[: self.keep_first]
-
+    def get_condensation(self, view: View) -> Condensation:
+        head = view[: self.keep_first]
         target_size = self.max_size // 2
-        events_from_tail = target_size - len(head)
-        tail = events[-events_from_tail:]
+        # Number of events to keep from the tail -- target size, minus however many
+        # prefix events from the head, minus one for the summarization event
+        events_from_tail = target_size - len(head) - 1
 
         summary_event = (
-            events[self.keep_first]
-            if isinstance(events[self.keep_first], AgentCondensationObservation)
+            view[self.keep_first]
+            if isinstance(view[self.keep_first], AgentCondensationObservation)
             else AgentCondensationObservation('No events summarized')
         )
 
         # Identify events to be forgotten (those not in head or tail)
         forgotten_events = []
-        for event in events[self.keep_first : -events_from_tail]:
+        for event in view[self.keep_first : -events_from_tail]:
             if not isinstance(event, AgentCondensationObservation):
                 forgotten_events.append(event)
 
@@ -82,11 +82,11 @@ CHANGES: str(val) replaces f"{val:.16G}"
 DEPS: None modified
 INTENT: Fix precision while maintaining FITS compliance"""
 
-        prompt + '\n\n'
+        prompt += '\n\n'
 
         prompt += ('\n' + summary_event.message + '\n') if summary_event.message else ''
 
-        prompt + '\n\n'
+        prompt += '\n\n'
 
         for forgotten_event in forgotten_events:
             prompt += str(forgotten_event) + '\n\n'
@@ -101,7 +101,17 @@ INTENT: Fix precision while maintaining FITS compliance"""
         self.add_metadata('response', response.model_dump())
         self.add_metadata('metrics', self.llm.metrics.get())
 
-        return head + [AgentCondensationObservation(summary)] + tail
+        return Condensation(
+            action=CondensationAction(
+                forgotten_events_start_id=min(event.id for event in forgotten_events),
+                forgotten_events_end_id=max(event.id for event in forgotten_events),
+                summary=summary,
+                summary_offset=self.keep_first,
+            )
+        )
+
+    def should_condense(self, view: View) -> bool:
+        return len(view) > self.max_size
 
     @classmethod
     def from_config(

@@ -40,7 +40,7 @@ export function ActionSuggestions({
                 suggestion={{
                   label: "Push & Create PR",
                   value:
-                    "Please push the changes to GitHub and open a pull request. Please use the exact SAME branch name as the one you are currently on.",
+                    "Please push the changes to GitHub and open a pull request. Please create a meaningful branch name that describes the changes.",
                 }}
                 onClick={(value) => {
                   posthog.capture("create_pr_button_clicked");

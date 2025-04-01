@@ -243,6 +243,24 @@ async def get_conversation(
     try:
         metadata = await conversation_store.get_metadata(conversation_id)
         is_running = await conversation_manager.is_agent_loop_running(conversation_id)
+
+        # Check if we need to update the title
+        if is_running and metadata:
+            # Check if the title is a default title (contains the conversation ID)
+            if metadata.title and conversation_id[:5] in metadata.title:
+                # Generate a new title
+                new_title = await auto_generate_title(
+                    conversation_id, get_user_id(request)
+                )
+
+                if new_title:
+                    # Update the metadata
+                    metadata.title = new_title
+                    await conversation_store.save_metadata(metadata)
+
+                    # Refresh metadata after update
+                    metadata = await conversation_store.get_metadata(conversation_id)
+
         conversation_info = await _get_conversation_info(metadata, is_running)
         return conversation_info
     except FileNotFoundError:
@@ -265,6 +283,7 @@ def get_default_conversation_title(conversation_id: str) -> str:
 async def auto_generate_title(conversation_id: str, user_id: str | None) -> str:
     """
     Auto-generate a title for a conversation based on the first user message.
+    Uses LLM-based title generation if available, otherwise falls back to a simple truncation.
 
     Args:
         conversation_id: The ID of the conversation
@@ -292,11 +311,39 @@ async def auto_generate_title(conversation_id: str, user_id: str | None) -> str:
                 break
 
         if first_user_message:
+            # Try LLM-based title generation first
+            from openhands.core.config.llm_config import LLMConfig
+            from openhands.utils.conversation_summary import generate_conversation_title
+
+            # Get LLM config from user settings
+            try:
+                settings_store = await SettingsStoreImpl.get_instance(config, user_id)
+                settings = await settings_store.load()
+
+                if settings and settings.llm_model:
+                    # Create LLM config from settings
+                    llm_config = LLMConfig(
+                        model=settings.llm_model,
+                        api_key=settings.llm_api_key,
+                        base_url=settings.llm_base_url,
+                    )
+
+                    # Try to generate title using LLM
+                    llm_title = await generate_conversation_title(
+                        first_user_message, llm_config
+                    )
+                    if llm_title:
+                        logger.info(f'Generated title using LLM: {llm_title}')
+                        return llm_title
+            except Exception as e:
+                logger.error(f'Error using LLM for title generation: {e}')
+
+            # Fall back to simple truncation if LLM generation fails or is unavailable
             first_user_message = first_user_message.strip()
             title = first_user_message[:30]
             if len(first_user_message) > 30:
                 title += '...'
-            logger.info(f'Generated title: {title}')
+            logger.info(f'Generated title using truncation: {title}')
             return title
     except Exception as e:
         logger.error(f'Error generating title: {str(e)}')
@@ -315,10 +362,12 @@ async def update_conversation(
     if not metadata:
         return False
 
-    # If title is empty or unspecified, auto-generate it from the first user message
+    # If title is empty or unspecified, auto-generate it
     if not title or title.isspace():
         title = await auto_generate_title(conversation_id, user_id)
-        if not title:
+
+        # If we still don't have a title, use the default
+        if not title or title.isspace():
             title = get_default_conversation_title(conversation_id)
 
     metadata.title = title
@@ -361,9 +410,9 @@ async def _get_conversation_info(
             last_updated_at=conversation.last_updated_at,
             created_at=conversation.created_at,
             selected_repository=conversation.selected_repository,
-            status=ConversationStatus.RUNNING
-            if is_running
-            else ConversationStatus.STOPPED,
+            status=(
+                ConversationStatus.RUNNING if is_running else ConversationStatus.STOPPED
+            ),
         )
     except Exception as e:
         logger.error(
