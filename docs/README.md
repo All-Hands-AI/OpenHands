@@ -57,4 +57,4 @@ $ poetry run python docs/translation_updater.py
 # ...
 ```
 
-This process uses `claude-3-opus-20240229` as base model and each language consumes at least ~30k input tokens and ~35k output tokens.
+This process uses `claude-3-7-sonnet-20250219` as base model and each language consumes at least ~30k input tokens and ~35k output tokens.

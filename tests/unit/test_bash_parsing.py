@@ -155,6 +155,31 @@ def test_invalid_syntax():
         assert split_bash_commands(input_command) == [input_command]
 
 
+def test_unclosed_backtick():
+    # This test reproduces issue #7391
+    # The issue occurs when parsing a command with an unclosed backtick
+    # which causes a TypeError: ParsingError.__init__() missing 2 required positional arguments: 's' and 'position'
+    command = 'echo `unclosed backtick'
+
+    # Should not raise TypeError
+    try:
+        result = split_bash_commands(command)
+        # If we get here, the error was handled properly
+        assert result == [command]
+    except TypeError as e:
+        # This is the error we're trying to fix
+        raise e
+
+    # Also test with the original command from the issue (with placeholder org/repo)
+    curl_command = 'curl -X POST "https://api.github.com/repos/example-org/example-repo/pulls" \\ -H "Authorization: Bearer $GITHUB_TOKEN" \\ -H "Accept: application/vnd.github.v3+json" \\ -d \'{ "title": "XXX", "head": "XXX", "base": "main", "draft": false }\' `echo unclosed'
+
+    try:
+        result = split_bash_commands(curl_command)
+        assert result == [curl_command]
+    except TypeError as e:
+        raise e
+
+
 @pytest.fixture
 def sample_commands():
     return [
