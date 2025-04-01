@@ -64,9 +64,11 @@ class View(BaseModel):
                     summary_offset = event.summary_offset
                     break
 
-        if summary is not None and summary_offset is not None:
-            kept_events.insert(
-                summary_offset, AgentCondensationObservation(content=summary)
-            )
+        if summary is not None:
+            summary_obs = AgentCondensationObservation(content=summary)
+            if summary_offset is not None:
+                kept_events.insert(summary_offset, summary_obs)
+            else:
+                kept_events.append(summary_obs)
 
         return View(events=kept_events)
