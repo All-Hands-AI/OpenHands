@@ -885,7 +885,7 @@ class AgentController:
                 # Special handling for warning budget increment
                 await self.set_agent_state_to(AgentState.PAUSED)
                 if self.status_callback is not None:
-                    next_threshold = self._last_warning_threshold + self.warning_budget_increment if self.warning_budget_increment else 0
+                    next_threshold = max_value + self.warning_budget_increment if self.warning_budget_increment else 0
                     self.status_callback(
                         'warning', 
                         'STATUS$COST_THRESHOLD_REACHED', 
