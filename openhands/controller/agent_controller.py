@@ -733,6 +733,17 @@ class AgentController:
             stop_step = await self._handle_traffic_control(
                 'iteration', self.state.iteration, self.state.max_iterations
             )
+            
+        # Check for cost threshold (5 USD)
+        if (
+            self.state.metrics.accumulated_cost is not None
+            and self.state.metrics.accumulated_cost >= 5.0
+            and self.get_agent_state() == AgentState.RUNNING
+        ):
+            stop_step = await self._handle_traffic_control(
+                'cost_threshold', self.state.metrics.accumulated_cost, 5.0
+            )
+            
         if self.max_budget_per_task is not None:
             current_cost = self.state.metrics.accumulated_cost
             if current_cost > self.max_budget_per_task:
@@ -848,7 +859,7 @@ class AgentController:
             self.state.traffic_control_state = TrafficControlState.NORMAL
         else:
             self.state.traffic_control_state = TrafficControlState.THROTTLING
-            # Format values as integers for iterations, keep decimals for budget
+            # Format values as integers for iterations, keep decimals for budget and cost
             if limit_type == 'iteration':
                 current_str = str(int(current_value))
                 max_str = str(int(max_value))
@@ -856,7 +867,16 @@ class AgentController:
                 current_str = f'{current_value:.2f}'
                 max_str = f'{max_value:.2f}'
 
-            if self.headless_mode:
+            if limit_type == 'cost_threshold':
+                # Special handling for cost threshold
+                await self.set_agent_state_to(AgentState.PAUSED)
+                if self.status_callback is not None:
+                    self.status_callback(
+                        'warning', 
+                        'STATUS$COST_THRESHOLD_REACHED', 
+                        f'Cost threshold of ${max_str} USD reached. Current cost: ${current_str} USD. Please approve to continue.'
+                    )
+            elif self.headless_mode:
                 e = RuntimeError(
                     f'Agent reached maximum {limit_type} in headless mode. '
                     f'Current {limit_type}: {current_str}, max {limit_type}: {max_str}'
