@@ -112,10 +112,10 @@ export interface AgentThinkObservation
 export interface MCPCallToolObservation
   extends OpenHandsObservationEvent<"mcp_call_tool"> {
   source: "agent";
-    extras: {
-        tool_name: string;
-        kwargs?: Record<string, unknown>;
-    };
+  extras: {
+    tool_name: string;
+    kwargs?: Record<string, unknown>;
+  };
 }
 
 export type OpenHandsObservation =

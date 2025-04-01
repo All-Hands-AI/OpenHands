@@ -132,11 +132,11 @@ export function handleObservationMessage(message: ObservationMessage) {
             ...baseObservation,
             observation: "mcp_call_tool" as const,
             extras: {
-                tool_name: String(message.extras.tool_name || ""),
-                kwargs:
-                  typeof message.extras.kwargs === "object"
-                    ? (message.extras.kwargs as Record<string, unknown>)
-                    : {},
+              tool_name: String(message.extras.tool_name || ""),
+              kwargs:
+                typeof message.extras.kwargs === "object"
+                  ? (message.extras.kwargs as Record<string, unknown>)
+                  : {},
             },
           }),
         );

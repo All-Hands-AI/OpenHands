@@ -58,7 +58,8 @@ export interface FinishAction extends OpenHandsActionEvent<"finish"> {
   };
 }
 
-export interface MCPCallToolAction extends OpenHandsActionEvent<"mcp_call_tool"> {
+export interface MCPCallToolAction
+  extends OpenHandsActionEvent<"mcp_call_tool"> {
   source: "agent";
   args: {
     thought: string;

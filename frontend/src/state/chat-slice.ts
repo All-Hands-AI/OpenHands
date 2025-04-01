@@ -205,13 +205,13 @@ export const chatSlice = createSlice({
         if (content.length > MAX_CONTENT_LENGTH) {
           content = `${content.slice(0, MAX_CONTENT_LENGTH)}...`;
         }
-        let tool_name = observation.payload.extras.tool_name;
-        let tool_kwargs = JSON.stringify(
+        const toolName = observation.payload.extras.tool_name;
+        const toolKwargs = JSON.stringify(
           observation.payload.extras.kwargs,
           null,
           2,
         );
-        causeMessage.content = `Tool name: \`${tool_name}\`\n\nArguments:\n\`\`\`python\n${tool_kwargs}\n\`\`\`\n\nOutput:\n\`\`\`python\n${content.trim()}\n\`\`\``;
+        causeMessage.content = `Tool name: \`${toolName}\`\n\nArguments:\n\`\`\`python\n${toolKwargs}\n\`\`\`\n\nOutput:\n\`\`\`python\n${content.trim()}\n\`\`\``;
       } else if (observationID === "browse") {
         let content = `**URL:** ${observation.payload.extras.url}\n`;
         if (observation.payload.extras.error) {
