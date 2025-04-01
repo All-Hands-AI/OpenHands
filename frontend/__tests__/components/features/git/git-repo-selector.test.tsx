@@ -1,7 +1,7 @@
 import { screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "test-utils";
-import { GitRepositorySelector } from "#/components/features/github/github-repo-selector";
+import { GitRepositorySelector } from "#/components/features/git/git-repo-selector";
 import OpenHands from "#/api/open-hands";
 import { Provider } from "#/types/settings";
 
@@ -67,7 +67,7 @@ describe("GitRepositorySelector", () => {
 
     const searchPublicRepositoriesSpy = vi.spyOn(
       OpenHands,
-      "searchGitHubRepositories",
+      "searchGitRepositories",
     );
     searchPublicRepositoriesSpy.mockResolvedValue(mockSearchedRepos);
 

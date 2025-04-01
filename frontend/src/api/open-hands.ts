@@ -14,7 +14,7 @@ import {
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
 import { ApiSettings, PostApiSettings } from "#/types/settings";
-import { GitHubUser, GitRepository } from "#/types/github";
+import { GitUser, GitRepository } from "#/types/git";
 
 class OpenHands {
   /**
@@ -306,12 +306,12 @@ class OpenHands {
     return data.credits;
   }
 
-  static async getGitHubUser(): Promise<GitHubUser> {
-    const response = await openHands.get<GitHubUser>("/api/user/info");
+  static async getGitUser(): Promise<GitUser> {
+    const response = await openHands.get<GitUser>("/api/user/info");
 
     const { data } = response;
 
-    const user: GitHubUser = {
+    const user: GitUser = {
       id: data.id,
       login: data.login,
       avatar_url: data.avatar_url,
@@ -328,7 +328,7 @@ class OpenHands {
     return response.data;
   }
 
-  static async searchGitHubRepositories(
+  static async searchGitRepositories(
     query: string,
     per_page = 5,
   ): Promise<GitRepository[]> {

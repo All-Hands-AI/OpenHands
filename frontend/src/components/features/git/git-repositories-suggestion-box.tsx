@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { I18nKey } from "#/i18n/declaration";
 import { SuggestionBox } from "#/components/features/suggestions/suggestion-box";
-import { GitRepositorySelector } from "./github-repo-selector";
+import { GitRepositorySelector } from "./git-repo-selector";
 import { useAppRepositories } from "#/hooks/query/use-app-repositories";
 import { useSearchRepositories } from "#/hooks/query/use-search-repositories";
 import { useUserRepositories } from "#/hooks/query/use-user-repositories";
@@ -11,12 +11,12 @@ import { sanitizeQuery } from "#/utils/sanitize-query";
 import { useDebounce } from "#/hooks/use-debounce";
 import { BrandButton } from "../settings/brand-button";
 import GitHubLogo from "#/assets/branding/github-logo.svg?react";
-import { GitHubErrorReponse, GitHubUser } from "#/types/github";
+import { GitHubErrorReponse, GitUser } from "#/types/git";
 
 interface GitRepositoriesSuggestionBoxProps {
   handleSubmit: () => void;
   gitHubAuthUrl: string | null;
-  user: GitHubErrorReponse | GitHubUser | null;
+  user: GitHubErrorReponse | GitUser | null;
 }
 
 export function GitRepositoriesSuggestionBox({
