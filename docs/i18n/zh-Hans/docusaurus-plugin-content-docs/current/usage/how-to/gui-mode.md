@@ -42,7 +42,7 @@ OpenHands 支持多个版本控制提供商。您可以同时配置多个提供�
 
 2. **在 OpenHands 中输入令牌**：
    - 点击右上角的设置按钮（齿轮图标）
-   - 导航到"GitHub"部分
+   - 导航到"Git Provider Settings"部分
    - 将令牌粘贴到"GitHub Token"字段中
    - 点击"保存"应用更改
 
@@ -114,7 +114,7 @@ OpenHands 可以使用 GitLab 令牌访问仓库并执行操作。
 
 2. **在 OpenHands 中输入令牌**：
    - 点击设置按钮（齿轮图标）
-   - 导航到 `GitLab Settings` 部分
+   - 导航到 `Git Provider Settings` 部分
    - 将令牌粘贴到 `GitLab Token` 字段中
    - 如果使用自托管 GitLab，请输入您的 GitLab 实例 URL
    - 点击 `Save Changes` 应用更改

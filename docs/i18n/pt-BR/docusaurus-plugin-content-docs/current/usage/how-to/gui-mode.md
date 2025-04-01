@@ -39,7 +39,7 @@ O OpenHands exporta automaticamente um `GITHUB_TOKEN` para o ambiente shell se e
      - Minimal Permissions (Selecione **Meta Data = Read-only** para pesquisa, **Pull Requests = Read and Write**, **Content = Read and Write** para criação de branches)
   2. **Insira o Token no OpenHands**:
    - Clique no botão Settings (ícone de engrenagem).
-   - Navegue até a seção `GitHub Settings`.
+   - Navegue até a seção `Git Provider Settings`.
    - Cole seu token no campo `GitHub Token`.
    - Clique em `Save Changes` para aplicar as alterações.
 </details>
@@ -116,7 +116,7 @@ O OpenHands pode usar um token do GitLab para acessar repositórios e realizar o
    - Defina uma data de expiração ou deixe em branco para um token sem expiração.
   2. **Insira o Token no OpenHands**:
    - Clique no botão Settings (ícone de engrenagem).
-   - Navegue até a seção `GitLab Settings`.
+   - Navegue até a seção `Git Provider Settings`.
    - Cole seu token no campo `GitLab Token`.
    - Se estiver usando GitLab auto-hospedado, insira a URL da sua instância GitLab.
    - Clique em `Save Changes` para aplicar as alterações.

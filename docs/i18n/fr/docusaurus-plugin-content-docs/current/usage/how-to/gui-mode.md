@@ -44,7 +44,7 @@ OpenHands exporte automatiquement un `GITHUB_TOKEN` vers l'environnement shell s
 
 2. **Entrer le Jeton dans OpenHands** :
    - Cliquez sur le bouton Paramètres (icône d'engrenage) en haut à droite
-   - Accédez à la section "GitHub"
+   - Accédez à la section "Git Provider Settings"
    - Collez votre jeton dans le champ "Jeton GitHub"
    - Cliquez sur "Enregistrer" pour appliquer les modifications
 
@@ -116,7 +116,7 @@ OpenHands peut utiliser un jeton GitLab pour accéder aux dépôts et effectuer 
 
 2. **Entrer le Jeton dans OpenHands** :
    - Cliquez sur le bouton Paramètres (icône d'engrenage)
-   - Accédez à la section `Paramètres GitLab`
+   - Accédez à la section `Git Provider Settings`
    - Collez votre jeton dans le champ `Jeton GitLab`
    - Si vous utilisez GitLab auto-hébergé, entrez l'URL de votre instance GitLab
    - Cliquez sur `Enregistrer les modifications` pour appliquer les changements

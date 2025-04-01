@@ -38,7 +38,7 @@ OpenHandsは、利用可能な場合、自動的に`GITHUB_TOKEN`をシェル環
      - Minimal Permissions（検索用に**Meta Data = Read-only**を選択し、ブランチ作成用に**Pull Requests = Read and Write**、**Content = Read and Write**を選択します）
   2. **OpenHandsにトークンを入力**:
    - 設定ボタン（歯車アイコン）をクリックします。
-   - `GitHub Settings`セクションに移動します。
+   - `Git Provider Settings`セクションに移動します。
    - `GitHub Token`フィールドにトークンを貼り付けます。
    - `Save Changes`をクリックして変更を適用します。
 </details>
@@ -115,7 +115,7 @@ OpenHandsはGitLabトークンを使用してリポジトリにアクセスし�
    - 有効期限を設定するか、無期限トークンの場合は空白のままにします。
   2. **OpenHandsにトークンを入力**:
    - 設定ボタン（歯車アイコン）をクリックします。
-   - `GitLab Settings`セクションに移動します。
+   - `Git Provider Settings`セクションに移動します。
    - `GitLab Token`フィールドにトークンを貼り付けます。
    - セルフホスト型GitLabを使用している場合は、GitLabインスタンスのURLを入力します。
    - `Save Changes`をクリックして変更を適用します。
