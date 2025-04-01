@@ -16,8 +16,12 @@ export const useCreateConversation = () => {
   );
 
   return useMutation({
-    mutationFn: async (variables: { q?: string }) => {
+    mutationFn: async (variables: {
+      q?: string;
+      allowEmptyQuery?: boolean;
+    }) => {
       if (
+        !variables.allowEmptyQuery &&
         !variables.q?.trim() &&
         !selectedRepository &&
         files.length === 0 &&
