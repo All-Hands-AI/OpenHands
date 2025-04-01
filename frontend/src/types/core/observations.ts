@@ -1,5 +1,4 @@
 import { AgentState } from "../agent-state";
-import ObservationType from "../observation-type";
 import { OpenHandsObservationEvent } from "./base";
 
 export interface AgentStateChangeObservation

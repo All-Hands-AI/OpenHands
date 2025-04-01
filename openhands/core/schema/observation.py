@@ -52,7 +52,3 @@ class ObservationType(str, Enum):
 
     MCP = 'mcp'
     """Result of a MCP Server operation"""
-
-    PLAYWRIGHT_MCP_BROWSER_SCREENSHOT = 'playwright_mcp_browser_screenshot'
-    """Result of a Playwright MCP Browser Screenshot operation. The response is a base64 encoded string of the screenshot, which should be streamed to the client using the correct format matching
-    browsergym's screenshot format."""
