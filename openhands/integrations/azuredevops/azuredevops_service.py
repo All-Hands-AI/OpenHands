@@ -93,10 +93,13 @@ class AzureDevOpsService(GitService):
                     f'Failed to get user information: {response.status_code} {response.text}'
                 )
 
-            user_data = response.json()
+            user_data = await response.json()
+
+            # Convert string ID to integer by hashing it
+            user_id = hash(user_data.get('id', '')) % (2**31)
 
             return User(
-                id=user_data.get('id', 0),
+                id=user_id,
                 login=user_data.get('displayName', ''),
                 avatar_url=user_data.get('imageUrl', ''),
                 name=user_data.get('displayName', ''),
@@ -136,13 +139,16 @@ class AzureDevOpsService(GitService):
                     f'Failed to search repositories: {response.status_code} {response.text}'
                 )
 
-            repos_data = response.json().get('value', [])
+            response_data = await response.json()
+            repos_data = response_data.get('value', [])
 
             repositories = []
             for repo in repos_data[:per_page]:
+                # Convert string ID to integer by hashing it
+                repo_id = hash(repo.get('id', '')) % (2**31)
                 repositories.append(
                     Repository(
-                        id=repo.get('id', 0),
+                        id=repo_id,
                         full_name=f"{self.organization}/{repo.get('name', '')}",
                         git_provider=ProviderType.AZUREDEVOPS,
                         stargazers_count=None,
@@ -182,13 +188,16 @@ class AzureDevOpsService(GitService):
                     f'Failed to get repositories: {response.status_code} {response.text}'
                 )
 
-            repos_data = response.json().get('value', [])
+            response_data = await response.json()
+            repos_data = response_data.get('value', [])
 
             repositories = []
             for repo in repos_data:
+                # Convert string ID to integer by hashing it
+                repo_id = hash(repo.get('id', '')) % (2**31)
                 repositories.append(
                     Repository(
-                        id=repo.get('id', 0),
+                        id=repo_id,
                         full_name=f"{self.organization}/{repo.get('name', '')}",
                         git_provider=ProviderType.AZUREDEVOPS,
                         stargazers_count=None,

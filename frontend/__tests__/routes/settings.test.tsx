@@ -20,6 +20,7 @@ const toggleAdvancedSettings = async (user: UserEvent) => {
 const mock_provider_tokens_are_set: Record<Provider, boolean> = {
   github: true,
   gitlab: false,
+  azuredevops: false,
 };
 
 describe("Settings Screen", () => {
