@@ -101,7 +101,7 @@ Problèmes courants et solutions :
 
 #### Configuration du Jeton GitLab
 
-OpenHands peut utiliser un jeton GitLab pour accéder aux dépôts et effectuer des opérations.
+OpenHands exporte automatiquement un `GITLAB_TOKEN` vers l'environnement shell, uniquement pour les installations locales, s'il est disponible.
 
 ##### Configuration d'un Jeton GitLab
 

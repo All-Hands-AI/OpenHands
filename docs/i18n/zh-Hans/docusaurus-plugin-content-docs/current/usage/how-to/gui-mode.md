@@ -99,7 +99,7 @@ OpenHands 支持多个版本控制提供商。您可以同时配置多个提供�
 
 #### GitLab Token 设置
 
-OpenHands 可以使用 GitLab 令牌访问仓库并执行操作。
+OpenHands 会自动将 `GITLAB_TOKEN` 导出到 shell 环境中，仅适用于本地安装，如果它可用的话。
 
 ##### 设置 GitLab Token
 

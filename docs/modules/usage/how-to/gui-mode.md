@@ -101,7 +101,7 @@ OpenHands automatically exports a `GITHUB_TOKEN` to the shell environment if it 
 
 #### GitLab Token Setup
 
-OpenHands can use a GitLab token to access repositories and perform operations.
+OpenHands automatically exports a `GITLAB_TOKEN` to the shell environment, for local installations only, if it is available.
 
 <details>
   <summary>Setting Up a GitLab Token</summary>

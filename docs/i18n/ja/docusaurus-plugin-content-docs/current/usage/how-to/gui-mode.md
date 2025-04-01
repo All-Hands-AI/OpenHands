@@ -100,7 +100,7 @@ OpenHandsは、利用可能な場合、自動的に`GITHUB_TOKEN`をシェル環
 
 #### GitLabトークンの設定
 
-OpenHandsはGitLabトークンを使用してリポジトリにアクセスし、操作を実行できます。
+OpenHandsは、利用可能な場合、ローカルインストールのみ、自動的に`GITLAB_TOKEN`をシェル環境にエクスポートします。
 
 <details>
   <summary>GitLabトークンの設定</summary>
