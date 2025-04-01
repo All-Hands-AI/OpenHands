@@ -1,11 +1,10 @@
 from dataclasses import dataclass, field
-from typing import MutableMapping
+from typing import Any, cast
 
-import httpx
+import requests
+from requests.structures import CaseInsensitiveDict
 
 from openhands.core.logger import openhands_logger as logger
-
-CLIENT = httpx.Client()
 
 
 @dataclass
@@ -16,48 +15,27 @@ class HttpSession:
     We wrap the session to make it unusable after being closed
     """
 
-    _is_closed: bool = False
-    headers: MutableMapping[str, str] = field(default_factory=dict)
+    session: requests.Session | None = field(default_factory=requests.Session)
 
-    def request(self, *args, **kwargs):
-        if self._is_closed:
+    def __getattr__(self, name: str) -> Any:
+        if self.session is None:
             logger.error(
                 'Session is being used after close!', stack_info=True, exc_info=True
             )
-            self._is_closed = False
-        headers = kwargs.get('headers') or {}
-        headers = {**self.headers, **headers}
-        kwargs['headers'] = headers
-        return CLIENT.request(*args, **kwargs)
+            self.session = requests.Session()
+        return getattr(self.session, name)
 
-    def stream(self, *args, **kwargs):
-        if self._is_closed:
+    @property
+    def headers(self) -> CaseInsensitiveDict[str]:
+        if self.session is None:
             logger.error(
                 'Session is being used after close!', stack_info=True, exc_info=True
             )
-            self._is_closed = False
-        headers = kwargs.get('headers') or {}
-        headers = {**self.headers, **headers}
-        kwargs['headers'] = headers
-        return CLIENT.stream(*args, **kwargs)
-
-    def get(self, *args, **kwargs):
-        return self.request('GET', *args, **kwargs)
-
-    def post(self, *args, **kwargs):
-        return self.request('POST', *args, **kwargs)
-
-    def patch(self, *args, **kwargs):
-        return self.request('PATCH', *args, **kwargs)
-
-    def put(self, *args, **kwargs):
-        return self.request('PUT', *args, **kwargs)
-
-    def delete(self, *args, **kwargs):
-        return self.request('DELETE', *args, **kwargs)
-
-    def options(self, *args, **kwargs):
-        return self.request('OPTIONS', *args, **kwargs)
+            self.session = requests.Session()
+        # Cast to CaseInsensitiveDict[str] since mypy doesn't know the exact type
+        return cast(CaseInsensitiveDict[str], self.session.headers)
 
     def close(self) -> None:
-        self._is_closed = True
+        if self.session is not None:
+            self.session.close()
+            self.session = None

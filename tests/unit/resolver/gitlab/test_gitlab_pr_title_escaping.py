@@ -55,7 +55,7 @@ def test_commit_message_with_quotes():
 
 
 def test_pr_title_with_quotes(monkeypatch):
-    # Mock httpx.post to avoid actual API calls
+    # Mock requests.post to avoid actual API calls
     class MockResponse:
         def __init__(self, status_code=201):
             self.status_code = status_code
@@ -88,8 +88,8 @@ def test_pr_title_with_quotes(monkeypatch):
         def raise_for_status(self):
             pass
 
-    monkeypatch.setattr('httpx.post', mock_post)
-    monkeypatch.setattr('httpx.get', lambda *args, **kwargs: MockGetResponse())
+    monkeypatch.setattr('requests.post', mock_post)
+    monkeypatch.setattr('requests.get', lambda *args, **kwargs: MockGetResponse())
     monkeypatch.setattr(
         'openhands.resolver.interfaces.github.GithubIssueHandler.branch_exists',
         lambda *args, **kwargs: False,

@@ -9,7 +9,7 @@ import tempfile
 import threading
 from typing import Callable
 
-import httpx
+import requests
 import tenacity
 
 import openhands
@@ -307,7 +307,7 @@ class LocalRuntime(ActionExecutionClient):
                     )
                 )
                 return observation_from_dict(response.json())
-            except httpx.NetworkError:
+            except requests.exceptions.ConnectionError:
                 raise AgentRuntimeDisconnectedError('Server connection lost')
 
     def close(self):
