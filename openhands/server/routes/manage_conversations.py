@@ -243,24 +243,6 @@ async def get_conversation(
     try:
         metadata = await conversation_store.get_metadata(conversation_id)
         is_running = await conversation_manager.is_agent_loop_running(conversation_id)
-
-        # Check if we need to update the title
-        if is_running and metadata:
-            # Check if the title is a default title (contains the conversation ID)
-            if metadata.title and conversation_id[:5] in metadata.title:
-                # Generate a new title
-                new_title = await auto_generate_title(
-                    conversation_id, get_user_id(request)
-                )
-
-                if new_title:
-                    # Update the metadata
-                    metadata.title = new_title
-                    await conversation_store.save_metadata(metadata)
-
-                    # Refresh metadata after update
-                    metadata = await conversation_store.get_metadata(conversation_id)
-
         conversation_info = await _get_conversation_info(metadata, is_running)
         return conversation_info
     except FileNotFoundError:
