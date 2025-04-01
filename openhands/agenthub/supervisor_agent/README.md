@@ -1,6 +1,6 @@
 # Supervisor Agent
 
-The Supervisor Agent is designed to delegate tasks to other agents, monitor their execution, and verify the correctness of the solution.
+The Supervisor Agent is designed to delegate tasks to other agents, monitor their execution, verify the correctness of the solution, and detect overthinking in the agent's approach.
 
 ## Current Implementation
 
@@ -10,7 +10,9 @@ In its current implementation, the Supervisor Agent:
 2. Waits for the CodeActAgent to complete
 3. Processes the history of actions and observations from the CodeActAgent
 4. Stores the processed history in `state.extra_data['processed_history']`
-5. Finishes when the CodeActAgent is done
+5. Analyzes the trajectory for overthinking using an LLM
+6. If overthinking is detected, restarts the task with CodeActAgent
+7. If no overthinking is detected, finishes the task
 
 ## History Processing
 
@@ -28,6 +30,22 @@ The formatted history is stored in `state.extra_data['processed_history']` and c
 - Analyzing the agent's performance
 - Generating reports
 
+## Overthinking Detection
+
+The Supervisor Agent analyzes the trajectory for overthinking using an LLM. It detects three patterns of overthinking:
+
+1. **Analysis Paralysis**: The model focuses on heavy planning instead of interacting with the environment.
+2. **Rogue Actions**: After facing setbacks, the model generates multiple actions without waiting for the environment to process the previous action.
+3. **Premature Disengagement**: The model concludes the task without checking with the environment, either because it is overconfident in the solution or because it thinks it can't solve the problem.
+
+The overthinking analysis is stored in `state.extra_data['overthinking_analysis']` and includes:
+
+- `overthinking_score`: A score from 0 to 10, where 0-3 indicates good interaction with the environment, 4-7 indicates some overthinking, and 8-10 indicates severe overthinking.
+- `pattern_observed`: A list of patterns observed, or `null` for good trajectories.
+- `reasoning`: An explanation of the reasoning behind the score.
+
+If any pattern of overthinking is detected, the Supervisor Agent restarts the task with CodeActAgent, providing a fresh approach.
+
 ## Future Enhancements
 
 The Supervisor Agent could be extended to:
@@ -38,8 +56,9 @@ The Supervisor Agent could be extended to:
 - Handle multiple delegations in sequence or parallel
 - Implement retry mechanisms for failed tasks
 - Optimize resource usage across multiple agents
-- Analyze the processed history to verify correctness
 - Generate summaries and insights from the execution history
+- Provide more detailed feedback on overthinking patterns
+- Implement more sophisticated overthinking detection algorithms
 
 ## Usage
 

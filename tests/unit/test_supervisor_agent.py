@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import pytest
 
 from openhands.agenthub.supervisor_agent import SupervisorAgent
@@ -139,3 +141,139 @@ class TestSupervisorAgent:
             agent.get_descriptive_finish_reason('budget_exceeded') == 'BUDGET_EXCEEDED'
         )
         assert agent.get_descriptive_finish_reason('unknown') == 'UNKNOWN'
+
+    @patch('openhands.llm.llm.LLM.completion')
+    def test_analyze_trajectory_good(self, mock_completion, agent):
+        """Test the analyze_trajectory method with a good trajectory."""
+        # Mock the LLM response
+        mock_response = {
+            'choices': [
+                {
+                    'message': {
+                        'content': '<answer>{"overthinking_score": "2", "pattern_observed": null, "reasoning": "The model interacts well with the environment."}</answer>'
+                    }
+                }
+            ]
+        }
+        mock_completion.return_value = mock_response
+
+        # Call the analyze_trajectory method
+        analysis = agent.analyze_trajectory('Test history')
+
+        # Check that the LLM was called with the correct prompt
+        mock_completion.assert_called_once()
+
+        # Check that the analysis was parsed correctly
+        assert analysis is not None
+        assert analysis['overthinking_score'] == '2'
+        assert analysis['pattern_observed'] is None
+        assert analysis['reasoning'] == 'The model interacts well with the environment.'
+
+    @patch('openhands.llm.llm.LLM.completion')
+    def test_analyze_trajectory_overthinking(self, mock_completion, agent):
+        """Test the analyze_trajectory method with an overthinking trajectory."""
+        # Mock the LLM response
+        mock_response = {
+            'choices': [
+                {
+                    'message': {
+                        'content': '<answer>{"overthinking_score": "9", "pattern_observed": ["Analysis Paralysis"], "reasoning": "The model focuses on heavy planning instead of interacting with the environment."}</answer>'
+                    }
+                }
+            ]
+        }
+        mock_completion.return_value = mock_response
+
+        # Call the analyze_trajectory method
+        analysis = agent.analyze_trajectory('Test history')
+
+        # Check that the LLM was called with the correct prompt
+        mock_completion.assert_called_once()
+
+        # Check that the analysis was parsed correctly
+        assert analysis is not None
+        assert analysis['overthinking_score'] == '9'
+        assert analysis['pattern_observed'] == ['Analysis Paralysis']
+        assert (
+            analysis['reasoning']
+            == 'The model focuses on heavy planning instead of interacting with the environment.'
+        )
+
+    @patch('openhands.llm.llm.LLM.completion')
+    def test_analyze_trajectory_error(self, mock_completion, agent):
+        """Test the analyze_trajectory method with an error in the LLM response."""
+        # Mock the LLM response with invalid JSON
+        mock_response = {
+            'choices': [{'message': {'content': '<answer>Invalid JSON</answer>'}}]
+        }
+        mock_completion.return_value = mock_response
+
+        # Call the analyze_trajectory method
+        analysis = agent.analyze_trajectory('Test history')
+
+        # Check that the LLM was called with the correct prompt
+        mock_completion.assert_called_once()
+
+        # Check that the analysis is None
+        assert analysis is None
+
+    @patch(
+        'openhands.agenthub.supervisor_agent.supervisor_agent.SupervisorAgent.analyze_trajectory'
+    )
+    def test_step_with_overthinking(self, mock_analyze_trajectory, agent):
+        """Test the step method with an overthinking trajectory."""
+        state = State(session_id='test', inputs={'test': 'value'})
+
+        # First step - should delegate
+        action = agent.step(state)
+        assert isinstance(action, AgentDelegateAction)
+
+        # Add a delegate observation to the history
+        observation = AgentDelegateObservation(outputs={}, content='Task completed')
+        observation.action = 'delegate_observation'  # Add the action attribute
+        state.history.append(observation)
+
+        # Mock the analyze_trajectory method to return overthinking
+        mock_analyze_trajectory.return_value = {
+            'overthinking_score': '9',
+            'pattern_observed': ['Analysis Paralysis'],
+            'reasoning': 'The model focuses on heavy planning instead of interacting with the environment.',
+        }
+
+        # Second step - should detect overthinking and restart
+        action = agent.step(state)
+        assert isinstance(action, MessageAction)
+        assert 'detected overthinking' in action.content.lower()
+
+        # Next action should be a delegate action
+        action = agent.step(state)
+        assert isinstance(action, AgentDelegateAction)
+        assert action.agent == 'CodeActAgent'
+
+    @patch(
+        'openhands.agenthub.supervisor_agent.supervisor_agent.SupervisorAgent.analyze_trajectory'
+    )
+    def test_step_without_overthinking(self, mock_analyze_trajectory, agent):
+        """Test the step method without overthinking."""
+        state = State(session_id='test', inputs={'test': 'value'})
+
+        # First step - should delegate
+        action = agent.step(state)
+        assert isinstance(action, AgentDelegateAction)
+
+        # Add a delegate observation to the history
+        observation = AgentDelegateObservation(outputs={}, content='Task completed')
+        observation.action = 'delegate_observation'  # Add the action attribute
+        state.history.append(observation)
+
+        # Mock the analyze_trajectory method to return no overthinking
+        mock_analyze_trajectory.return_value = {
+            'overthinking_score': '2',
+            'pattern_observed': None,
+            'reasoning': 'The model interacts well with the environment.',
+        }
+
+        # Second step - should finish normally
+        action = agent.step(state)
+        assert isinstance(action, AgentFinishAction)
+        assert action.task_completed == AgentFinishTaskCompleted.TRUE

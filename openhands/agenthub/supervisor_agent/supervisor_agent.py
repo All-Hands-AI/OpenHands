@@ -1,5 +1,6 @@
+import json
 from collections import deque
-from typing import List, TypedDict
+from typing import List, Optional, TypedDict
 
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
@@ -34,6 +35,14 @@ class ProcessedHistory(TypedDict):
     interactions: List[Interaction]
     final_response: str
     final_finish_reason: str
+
+
+class OverthinkingAnalysis(TypedDict):
+    """Represents the analysis of overthinking in the agent's trajectory."""
+
+    overthinking_score: str
+    pattern_observed: Optional[List[str]]
+    reasoning: str
 
 
 class SupervisorAgent(Agent):
@@ -92,6 +101,183 @@ class SupervisorAgent(Agent):
             if isinstance(event, MessageAction) and event.source == EventSource.USER:
                 return event.content
         return ''
+
+    def create_analysis_prompt(self, processed_history: str) -> str:
+        """Create a prompt for analyzing overthinking in the agent's trajectory.
+
+        Args:
+            processed_history: The processed history of actions and observations.
+
+        Returns:
+            A prompt for analyzing overthinking in the agent's trajectory.
+        """
+        prompt = """You are an AI judge focused on detecting when models prefer their internal reasoning chain over interacting with the environment.
+
+<INTERACTION>
+{processed_history}
+</INTERACTION>
+
+Analyze the <INTERACTION> and determine if the model is preferring their internal reasoning chain over interacting with the environment:
+
+How could this be detected?
+<CORE PRINCIPLE>
+- The model suffers from Analysis Paralysis, it focuses on heavy planning instead of interacting with the environment.
+- The model suffers from Rogue actions, after facing setbacks, it generates multiple actions without waiting for the environment to process the previous action.
+- The model suffers from Premature Disengagement, it concludes the task without checking with the environment. Either because it is overconfident in the solution or because it thinks it can't solve the problem.
+</CORE PRINCIPLE>
+
+<SCORING SYSTEM (0-10)>
+0-3: Always interacting with the environment
+- A summary of what has been done so far is good, even if done multiple times.
+- A brief summary of the steps to take is good if the model interacts with the environment following steps one by one.
+- Only one action per turn, finish and other actions are NOT allowed.
+- Alternating between two operations is good.
+- Trying the same approach over and over is good, even with long or complex actions, as long as the model waits for environment feedback each time.
+- Repeating similar patterns or configurations is fine as long as the model interacts with the environment between attempts.
+- Detailed reasoning and planning is good if it leads to concrete actions with environment interaction.
+
+4-7: Sometimes relies too much on their internal reasoning chain, but still interacts with the environment.
+- It engages in heavy planning, but still interacts with the environment.
+- It NEVER concludes the task without checking with the environment.
+- It might output multiple steps ONE time, but at subsequent turns it interacts one step at a time.
+- Long theoretical discussions are acceptable if they eventually result in concrete actions.
+
+8-10: Completely relies on their internal reasoning chain.
+- Focuses solely on their internal reasoning chain, with no concrete actions following the analysis.
+- Generates multiple actions without waiting for environment response.
+- The model prematurely concludes the task. Either because it is overconfident in the solution or because it thinks it can't solve the problem.
+- Generates many steps without any environment interaction.
+- Gets stuck in endless theoretical discussion without attempting solutions.
+</SCORING SYSTEM>
+
+<ANALYSIS STEPS>
+1. Analysis Paralysis
+   - Is the model focusing on heavy planning instead of interacting with the environment?
+   - Does the model interact with the environment at all?
+   - Does the model follows its planned steps starting from the first one?
+2. Rogue Actions
+   - Does the model generate multiple actions without waiting for the environment to process the previous action?
+   - Is this behavior after a facing a setback?
+   - Does this behaviour happen often?
+3. Premature Disengagement
+   - Does the model prematurely conclude the task?
+   - Is the model overconfident in the solution?
+   - Is the model thinking it can't solve the problem?
+</ANALYSIS STEPS>
+
+<EXAMPLES>
+
+Example 1 - Persistent Retries (Good):
+EXECUTION RESULT: "Error: Invalid configuration"
+Model: *tries complex configuration A*
+EXECUTION RESULT: "Error: Invalid configuration"
+Model: *tries similar complex configuration A with slight modification*
+EXECUTION RESULT: "Error: Invalid configuration"
+Model: *tries complex configuration A again with another modification*
+Score: 0 - The model is persistently trying to solve the problem, waiting for environment feedback between each attempt. Even though the attempts are similar and complex, it's properly interacting with the environment.
+Patterns observed: null
+
+Example 2 - Thoughtful Planning (Good):
+Model: *provides detailed analysis of the problem and potential approaches*
+Model: *tries specific solution based on analysis*
+EXECUTION RESULT: "Error in implementation"
+Model: *refines approach based on error and tries again*
+Score: 0 - While the model engages in detailed planning, it follows through with concrete actions and responds to environment feedback.
+Patterns observed: null
+
+Example 3 - Analysis Paralysis:
+EXECUTION RESULT: "Invalid indentation line 10"
+Model: *Maybe I should... Perhaps I should... It should be... Let me try to start again rewriting the class*
+EXECUTION RESULT: "Still invalid line 10"
+Model: *Its not working... We also need to fix this other thing...*
+EXECUTION RESULT:  "Same error line 10"
+Score: 10 - focuses on its internal reasoning chain instead of the environment.
+Patterns observed: ["Analysis Paralysis"]
+
+Example 4 - Premature Disengagement:
+EXECUTION RESULT: "Invalid indentation line 10"
+Model: *This fixes it! I'll conclude the task. <function=finish>*
+Score: 10 - The model concludes the task without applying the fix or overconfidence in the solution.
+Patterns observed: ["Premature Disengagement"]
+
+Example 5 - Rogue Actions:
+EXECUTION RESULT: "Invalid indentation line 10"
+Model: *Oh no, I forgot to add the old string, let me call the function again <function=str_replace_editor>...</function> and then we do this other thing <function=str_replace_editor>...</function>*
+Score: 10 - The model generates multiple actions after facing a setback without waiting for the environment to process the previous action.
+Patterns observed: ["Rogue Actions"]
+
+</EXAMPLES>
+
+<IMPORTANT>
+Format your response as:
+<answer>
+{{
+    "overthinking_score": "[0-10]",
+    "pattern_observed": ["list of patterns observed or null for good trajectories"],
+    "reasoning": "Explain your reasoning for the score, be careful with new lines as they might break the JSON parsing"
+}}
+</answer>
+Always surround your answer with <answer> and </answer> tags.
+Take your time to understand the interaction and analyze it carefully.
+Think step by step if models prefer their internal reasoning chain over interacting with the environment.
+If the trajectory is good (score 0-3), set "pattern_observed" to null.
+</IMPORTANT>
+"""
+        return prompt.format(processed_history=processed_history)
+
+    def analyze_trajectory(
+        self, processed_history: str
+    ) -> Optional[OverthinkingAnalysis]:
+        """Analyze the trajectory for overthinking using the LLM.
+
+        Args:
+            processed_history: The processed history of actions and observations.
+
+        Returns:
+            An analysis of overthinking in the agent's trajectory, or None if the analysis failed.
+        """
+        try:
+            prompt = self.create_analysis_prompt(processed_history)
+            response = self.llm.completion(
+                messages=[{'role': 'user', 'content': prompt}],
+            )
+
+            llm_response = response['choices'][0]['message']['content'].strip()
+
+            try:
+                start_idx = llm_response.find('<answer>')
+                end_idx = llm_response.find('</answer>')
+
+                if start_idx == -1 or end_idx == -1:
+                    logger.error('Could not find answer tags in LLM response')
+                    return None
+
+                start_idx += len('<answer>')
+                json_str = llm_response[start_idx:end_idx].strip()
+
+                analysis_json = json.loads(json_str)
+
+                # Convert to OverthinkingAnalysis
+                analysis: OverthinkingAnalysis = {
+                    'overthinking_score': analysis_json['overthinking_score'],
+                    'pattern_observed': analysis_json['pattern_observed'],
+                    'reasoning': analysis_json['reasoning'],
+                }
+
+                return analysis
+
+            except json.JSONDecodeError as e:
+                logger.error(f'JSON parsing error: {e}')
+                logger.error(f'Position of error: {e.pos}')
+                logger.error(f'Line number: {e.lineno}')
+                logger.error(f'Column: {e.colno}')
+                logger.error(f'Attempted to parse: {json_str}')
+                return None
+
+        except Exception as e:
+            logger.error(f'Error analyzing trajectory: {e}')
+            logger.error(f'Error type: {type(e)}')
+            return None
 
     def process_history_with_observations(self, state: State) -> str:
         """Process the history of actions and observations and format it as a string.
@@ -205,7 +391,7 @@ class SupervisorAgent(Agent):
 
         This method delegates to CodeActAgent on the first step,
         processes the history of actions and observations when CodeActAgent is done,
-        and returns AgentFinishAction with the processed history.
+        analyzes the trajectory for overthinking, and either finishes or restarts the task.
 
         Parameters:
         - state (State): used to get updated info
@@ -236,7 +422,7 @@ class SupervisorAgent(Agent):
             for event in reversed(state.history):
                 if hasattr(event, 'action') and event.action == 'delegate_observation':
                     logger.info(
-                        'SupervisorAgent: CodeActAgent has finished, processing history and completing task'
+                        'SupervisorAgent: CodeActAgent has finished, processing history and analyzing trajectory'
                     )
 
                     # Process the history of actions and observations
@@ -250,6 +436,51 @@ class SupervisorAgent(Agent):
                         f'Processed history sample: {processed_history[:500]}...'
                     )
 
+                    # Analyze the trajectory for overthinking
+                    overthinking_analysis = self.analyze_trajectory(processed_history)
+
+                    # Store the overthinking analysis in the state's extra_data
+                    if overthinking_analysis:
+                        state.extra_data['overthinking_analysis'] = (
+                            overthinking_analysis
+                        )
+                        logger.info(f'Overthinking analysis: {overthinking_analysis}')
+
+                        # Check if the trajectory shows overthinking
+                        if overthinking_analysis['pattern_observed'] is not None:
+                            # Restart the task with CodeActAgent
+                            logger.info(
+                                'SupervisorAgent: Detected overthinking, restarting task with CodeActAgent'
+                            )
+
+                            # Reset the agent state
+                            self.delegated = False
+                            self.finished = False
+
+                            # Return a message action explaining the restart
+                            self.pending_actions.append(
+                                MessageAction(
+                                    content=(
+                                        f"I've detected overthinking in the CodeActAgent's approach "
+                                        f"(score: {overthinking_analysis['overthinking_score']}, "
+                                        f"patterns: {overthinking_analysis['pattern_observed']}). "
+                                        f"Restarting the task with a fresh approach."
+                                    ),
+                                )
+                            )
+
+                            # Delegate to CodeActAgent again with the original inputs
+                            self.pending_actions.append(
+                                AgentDelegateAction(
+                                    agent='CodeActAgent',
+                                    inputs=state.inputs,
+                                    thought="I'll delegate this task to CodeActAgent again with a fresh approach.",
+                                )
+                            )
+
+                            return self.pending_actions.popleft()
+
+                    # If no overthinking was detected or analysis failed, finish normally
                     self.finished = True
                     return AgentFinishAction(
                         final_thought=(
