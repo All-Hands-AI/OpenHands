@@ -109,6 +109,7 @@ OpenHandsはGitLabトークンを使用してリポジトリにアクセスし�
    - GitLabで、User Settings > Access Tokensに移動します。
    - 以下のスコープを持つ新しいトークンを作成します:
      - `api`（APIアクセス）
+     - `read_user`（ユーザー情報の読み取り）
      - `read_repository`（リポジトリ読み取り）
      - `write_repository`（リポジトリ書き込み）
    - 有効期限を設定するか、無期限トークンの場合は空白のままにします。

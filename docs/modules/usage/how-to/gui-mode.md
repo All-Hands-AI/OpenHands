@@ -110,6 +110,7 @@ OpenHands can use a GitLab token to access repositories and perform operations.
    - On GitLab, go to User Settings > Access Tokens.
    - Create a new token with the following scopes:
      - `api` (API access)
+     - `read_user` (Read user information)
      - `read_repository` (Read repository)
      - `write_repository` (Write repository)
    - Set an expiration date or leave it blank for a non-expiring token.

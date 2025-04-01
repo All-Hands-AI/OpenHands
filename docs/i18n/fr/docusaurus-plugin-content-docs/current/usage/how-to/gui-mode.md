@@ -109,6 +109,7 @@ OpenHands peut utiliser un jeton GitLab pour accéder aux dépôts et effectuer 
    - Sur GitLab, allez dans Paramètres utilisateur > Jetons d'accès
    - Créez un nouveau jeton avec les portées suivantes :
      - `api` (Accès API)
+     - `read_user` (Lecture des informations utilisateur)
      - `read_repository` (Lecture du dépôt)
      - `write_repository` (Écriture du dépôt)
    - Définissez une date d'expiration ou laissez vide pour un jeton sans expiration

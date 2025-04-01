@@ -107,6 +107,7 @@ OpenHands 可以使用 GitLab 令牌访问仓库并执行操作。
    - 在 GitLab 中，转到用户设置 > 访问令牌
    - 创建具有以下范围的新令牌：
      - `api`（API 访问）
+     - `read_user`（读取用户信息）
      - `read_repository`（读取仓库）
      - `write_repository`（写入仓库）
    - 设置过期日期或留空以获取永不过期的令牌
