@@ -130,7 +130,6 @@ function AccountSettings() {
 
     const githubToken = formData.get("github-token-input")?.toString();
     const gitlabToken = formData.get("gitlab-token-input")?.toString();
-    const azuredevopsToken = formData.get("azuredevops-token-input")?.toString();
     // we don't want the user to be able to modify these settings in SaaS
     const finalLlmModel = shouldHandleSpecialSaasCase
       ? undefined
@@ -142,7 +141,7 @@ function AccountSettings() {
 
     const newSettings = {
       provider_tokens:
-        githubToken || gitlabToken || azuredevopsToken
+        githubToken || gitlabToken
           ? {
               github: githubToken || "",
               gitlab: gitlabToken || "",
@@ -489,7 +488,10 @@ function AccountSettings() {
                   placeholder={isAzureDevOpsTokenSet ? "<hidden>" : ""}
                 />
 
-                <p data-testId="azuredevops-token-help-anchor" className="text-xs">
+                <p
+                  data-testId="azuredevops-token-help-anchor"
+                  className="text-xs"
+                >
                   {" "}
                   Generate a Personal Access Token (PAT) on{" "}
                   <b>
@@ -503,7 +505,43 @@ function AccountSettings() {
                       Azure DevOps
                     </a>
                   </b>{" "}
-                  with <b>Code (Read & Write)</b> and <b>User Profile (Read)</b> scopes.
+                  with <b>Code (Read & Write)</b> and <b>User Profile (Read)</b>{" "}
+                  scopes.
+                </p>
+
+                <SettingsInput
+                  testId="azuredevops-token-input"
+                  name="azuredevops-token-input"
+                  label="Azure DevOps Token"
+                  type="password"
+                  className="w-[680px]"
+                  startContent={
+                    isAzureDevOpsTokenSet && (
+                      <KeyStatusIcon isSet={!!isAzureDevOpsTokenSet} />
+                    )
+                  }
+                  placeholder={isAzureDevOpsTokenSet ? "<hidden>" : ""}
+                />
+
+                <p
+                  data-testId="azuredevops-token-help-anchor"
+                  className="text-xs"
+                >
+                  {" "}
+                  Generate a Personal Access Token (PAT) on{" "}
+                  <b>
+                    {" "}
+                    <a
+                      href="https://dev.azure.com/_usersSettings/tokens"
+                      target="_blank"
+                      className="underline underline-offset-2"
+                      rel="noopener noreferrer"
+                    >
+                      Azure DevOps
+                    </a>
+                  </b>{" "}
+                  with <b>Code (Read & Write)</b> and <b>User Profile (Read)</b>{" "}
+                  scopes.
                 </p>
                 <BrandButton
                   type="button"
