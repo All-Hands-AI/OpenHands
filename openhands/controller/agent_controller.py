@@ -734,14 +734,15 @@ class AgentController:
                 'iteration', self.state.iteration, self.state.max_iterations
             )
             
-        # Check for cost threshold (5 USD)
+        # Check for cost threshold (50% of max_budget_per_task)
         if (
             self.state.metrics.accumulated_cost is not None
-            and self.state.metrics.accumulated_cost >= 5.0
+            and self.max_budget_per_task is not None
+            and self.state.metrics.accumulated_cost >= (self.max_budget_per_task * 0.5)
             and self.get_agent_state() == AgentState.RUNNING
         ):
             stop_step = await self._handle_traffic_control(
-                'cost_threshold', self.state.metrics.accumulated_cost, 5.0
+                'cost_threshold', self.state.metrics.accumulated_cost, self.max_budget_per_task * 0.5
             )
             
         if self.max_budget_per_task is not None:
@@ -871,10 +872,14 @@ class AgentController:
                 # Special handling for cost threshold
                 await self.set_agent_state_to(AgentState.PAUSED)
                 if self.status_callback is not None:
+                    # Calculate the percentage of the max budget
+                    percentage = 50  # We're using 50% as the threshold
+                    max_budget = self.max_budget_per_task if self.max_budget_per_task is not None else 0
                     self.status_callback(
                         'warning', 
                         'STATUS$COST_THRESHOLD_REACHED', 
-                        f'Cost threshold of ${max_str} USD reached. Current cost: ${current_str} USD. Please approve to continue.'
+                        f'Cost threshold of ${max_str} USD reached ({percentage}% of max budget ${max_budget:.2f} USD). ' +
+                        f'Current cost: ${current_str} USD. Please approve to continue.'
                     )
             elif self.headless_mode:
                 e = RuntimeError(
