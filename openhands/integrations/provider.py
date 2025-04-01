@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from enum import Enum
 from types import MappingProxyType
 from typing import Annotated, Any, Coroutine, Literal, overload
 
@@ -24,14 +23,10 @@ from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
 from openhands.integrations.service_types import (
     AuthenticationError,
     GitService,
+    ProviderType,
     Repository,
     User,
 )
-
-
-class ProviderType(Enum):
-    GITHUB = 'github'
-    GITLAB = 'gitlab'
 
 
 class ProviderToken(BaseModel):
@@ -194,20 +189,70 @@ class ProviderHandler:
         return await service.get_latest_token()
 
     async def get_repositories(
-        self, page: int, per_page: int, sort: str, installation_id: int | None
+        self,
+        sort: str,
+        installation_id: int | None,
     ) -> list[Repository]:
-        """Get repositories from all available providers"""
-        all_repos = []
+        """
+        Get repositories from a selected providers with pagination support
+        """
+
+        all_repos: list[Repository] = []
         for provider in self.provider_tokens:
             try:
                 service = self._get_service(provider)
-                repos = await service.get_repositories(
-                    page, per_page, sort, installation_id
-                )
-                all_repos.extend(repos)
+                service_repos = await service.get_repositories(sort, installation_id)
+                all_repos.extend(service_repos)
             except Exception:
                 continue
+
         return all_repos
+
+    async def search_repositories(
+        self,
+        query: str,
+        per_page: int,
+        sort: str,
+        order: str,
+    ):
+        all_repos: list[Repository] = []
+        for provider in self.provider_tokens:
+            try:
+                service = self._get_service(provider)
+                service_repos = await service.search_repositories(
+                    query, per_page, sort, order
+                )
+                all_repos.extend(service_repos)
+            except Exception:
+                continue
+
+        return all_repos
+
+    async def get_remote_repository_url(self, repository: str) -> str | None:
+        if not repository:
+            return None
+
+        provider_domains = {
+            ProviderType.GITHUB: 'github.com',
+            ProviderType.GITLAB: 'gitlab.com',
+        }
+
+        for provider in self.provider_tokens:
+            try:
+                service = self._get_service(provider)
+                repo_exists = await service.does_repo_exist(repository)
+                if repo_exists:
+                    git_token = self.provider_tokens[provider].token
+                    if git_token and provider in provider_domains:
+                        domain = provider_domains[provider]
+
+                        if provider == ProviderType.GITLAB:
+                            return f'https://oauth2:{git_token.get_secret_value()}@{domain}/{repository}.git'
+
+                        return f'https://{git_token.get_secret_value()}@{domain}/{repository}.git'
+            except Exception:
+                continue
+        return None
 
     async def set_event_stream_secrets(
         self,

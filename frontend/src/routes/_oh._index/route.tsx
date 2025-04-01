@@ -2,12 +2,12 @@ import React from "react";
 import { useDispatch } from "react-redux";
 import posthog from "posthog-js";
 import { setReplayJson } from "#/state/initial-query-slice";
-import { useGitHubUser } from "#/hooks/query/use-github-user";
+import { useGitUser } from "#/hooks/query/use-git-user";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useConfig } from "#/hooks/query/use-config";
+import { GitRepositoriesSuggestionBox } from "#/components/features/git/git-repositories-suggestion-box";
 import { ReplaySuggestionBox } from "../../components/features/suggestions/replay-suggestion-box";
-import { GitHubRepositoriesSuggestionBox } from "#/components/features/github/github-repositories-suggestion-box";
-import { CodeNotInGitHubLink } from "#/components/features/github/code-not-in-github-link";
+import { CodeNotInGitLink } from "#/components/features/git/code-not-in-github-link";
 import { HeroHeading } from "#/components/shared/hero-heading";
 import { TaskForm } from "#/components/shared/task-form";
 import { convertFileToText } from "#/utils/convert-file-to-text";
@@ -18,7 +18,7 @@ function Home() {
   const formRef = React.useRef<HTMLFormElement>(null);
 
   const { data: config } = useConfig();
-  const { data: user } = useGitHubUser();
+  const { data: user } = useGitUser();
 
   const gitHubAuthUrl = useGitHubAuthUrl({
     appMode: config?.APP_MODE || null,
@@ -37,7 +37,7 @@ function Home() {
         </div>
 
         <div className="flex gap-4 w-full flex-col md:flex-row mt-8">
-          <GitHubRepositoriesSuggestionBox
+          <GitRepositoriesSuggestionBox
             handleSubmit={() => formRef.current?.requestSubmit()}
             gitHubAuthUrl={gitHubAuthUrl}
             user={user || null}
@@ -58,7 +58,7 @@ function Home() {
           )}
         </div>
         <div className="w-full flex justify-start mt-2 ml-2">
-          <CodeNotInGitHubLink />
+          <CodeNotInGitLink />
         </div>
       </div>
     </div>
