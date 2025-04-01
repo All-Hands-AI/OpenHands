@@ -29,6 +29,8 @@ def mock_runtime():
         mock_runtime_instance.status_callback = None
         # Mock get_microagents_from_selected_repo
         mock_runtime_instance.get_microagents_from_selected_repo = Mock(return_value=[])
+        # Mock get_mcp_tool_definitions
+        mock_runtime_instance.get_mcp_tool_definitions = Mock(return_value={})
         mock_create_runtime.return_value = mock_runtime_instance
         yield mock_runtime_instance
 
