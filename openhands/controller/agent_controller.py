@@ -2,6 +2,7 @@ import asyncio
 import copy
 import os
 import traceback
+import aiohttp
 from typing import Callable, ClassVar, Type
 
 import litellm  # noqa
@@ -21,6 +22,7 @@ from litellm.exceptions import (  # noqa
 
 from openhands.controller.agent import Agent
 from openhands.controller.replay import ReplayManager
+from openhands.core.mcp_router import MCPRouter
 from openhands.controller.state.state import State, TrafficControlState
 from openhands.controller.stuck import StuckDetector
 from openhands.core.config import AgentConfig, LLMConfig
@@ -159,8 +161,53 @@ class AgentController:
         self._stuck_detector = StuckDetector(self.state)
         self.status_callback = status_callback
 
+        # MCP routing
+        self.mcp_router = MCPRouter()
+
         # replay-related
         self._replay_manager = ReplayManager(replay_events)
+
+    async def make_mcp_request(self, endpoint: str, payload: dict, required_capabilities: list[str] = ["general"]) -> dict:
+        """Make a request to MCP server with automatic server selection.
+        
+        Args:
+            endpoint: MCP endpoint (e.g. "openhands://config")
+            payload: Request payload
+            required_capabilities: List of capabilities needed for this request
+            
+        Returns:
+            Response from MCP server
+            
+        Raises:
+            Exception: If no available MCP servers
+        """
+        server = self.mcp_router.select_server(required_capabilities)
+        if not server:
+            raise Exception("No available MCP servers matching required capabilities")
+            
+        server_url = self.mcp_router.get_server_url(server)
+        full_url = f"{server_url}/mcp/{endpoint}"
+        
+        last_error = None
+        for attempt in range(1, self.mcp_retries + 1):
+            try:
+                async with aiohttp.ClientSession() as session:
+                    async with session.post(
+                        full_url,
+                        json=payload,
+                        headers={"Content-Type": "application/json"},
+                        timeout=aiohttp.ClientTimeout(total=self.mcp_timeout/1000)
+                    ) as response:
+                        if response.status != 200:
+                            raise Exception(f"MCP request failed: {response.status}")
+                        return await response.json()
+            except Exception as e:
+                last_error = e
+                if attempt < self.mcp_retries:
+                    await asyncio.sleep(self.mcp_retry_delay)
+                continue
+                
+        raise Exception(f"MCP request failed after {self.mcp_retries} attempts. Last error: {str(last_error)}")
 
     async def close(self, set_stop_state=True) -> None:
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream.

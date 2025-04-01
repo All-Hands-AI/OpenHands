@@ -25,9 +25,18 @@ class AppConfig(BaseModel):
     debug: bool = Field(default=False)
     
     # MCP Server Configuration
-    mcp_enabled: bool = Field(default=True, description="Enable Model Context Protocol server")
-    mcp_port: int = Field(default=8000, ge=1024, le=65535, description="Port for MCP server")
-    mcp_logging: bool = Field(default=False, description="Enable verbose logging for MCP server")
+    mcp_servers: dict[str, dict] = Field(
+        default_factory=lambda: {
+            "default": {
+                "enabled": True,
+                "port": 8000,
+                "host": "localhost",
+                "capabilities": ["general"],
+                "logging": False
+            }
+        },
+        description="Configure multiple MCP servers with different capabilities"
+    )
 
     defaults_dict: ClassVar[dict] = {}
     model_config = {'extra': 'forbid'}

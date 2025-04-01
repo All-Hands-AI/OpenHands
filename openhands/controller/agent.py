@@ -23,10 +23,21 @@ class Agent(ABC):
     executing a specific instruction and allowing human interaction with the
     agent during execution.
     It tracks the execution status and maintains a history of interactions.
+    
+    MCP Features:
+    - Supports multiple Model Context Protocol servers
+    - Capability-based routing
+    - Automatic failover
     """
 
     _registry: dict[str, Type['Agent']] = {}
     sandbox_plugins: list[PluginRequirement] = []
+    
+    # MCP Configuration
+    mcp_capabilities: list[str] = ["general"]  # Default capabilities
+    mcp_timeout: int = 5000  # ms
+    mcp_retries: int = 3
+    mcp_retry_delay: float = 0.5  # seconds
 
     def __init__(
         self,
@@ -37,6 +48,44 @@ class Agent(ABC):
         self.config = config
         self._complete = False
         self.prompt_manager: 'PromptManager' | None = None
+
+    async def mcp_request(self, endpoint: str, payload: dict) -> dict:
+        """Make a request to MCP server with automatic capability matching.
+        
+        Args:
+            endpoint: MCP endpoint (e.g. "config")
+            payload: Request payload
+            
+        Returns:
+            Response from MCP server
+            
+        Raises:
+            Exception: If request fails after retries
+            
+        Example:
+            ```python
+            # In your agent implementation:
+            response = await self.mcp_request(
+                endpoint="config",
+                payload={"action": "get_settings"}
+            )
+            print(response["server"]["capabilities"])
+            ```
+        """
+        from openhands.controller.agent_controller import AgentController
+        if not isinstance(self, AgentController):
+            raise RuntimeError("MCP requests require AgentController context")
+            
+        return await self.make_mcp_request(
+            endpoint=endpoint,
+            payload=payload,
+            required_capabilities=self.mcp_capabilities
+        )
+
+    def register_mcp_capability(self, capability: str):
+        """Register a new MCP capability for this agent."""
+        if capability not in self.mcp_capabilities:
+            self.mcp_capabilities.append(capability)
 
     @property
     def complete(self) -> bool:
