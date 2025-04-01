@@ -7,6 +7,7 @@ from pydantic import BaseModel, SecretStr
 class ProviderType(Enum):
     GITHUB = 'github'
     GITLAB = 'gitlab'
+    AZUREDEVOPS = 'azuredevops'
 
 
 class TaskType(str, Enum):

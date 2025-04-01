@@ -1,0 +1,235 @@
+from urllib.parse import quote_plus
+
+import httpx
+from pydantic import SecretStr
+
+from openhands.core.logger import openhands_logger as logger
+from openhands.integrations.service_types import (
+    AuthenticationError,
+    GitService,
+    ProviderType,
+    Repository,
+    UnknownException,
+    User,
+)
+from openhands.utils.import_utils import get_impl
+
+
+class AzureDevOpsService(GitService):
+    BASE_URL = 'https://dev.azure.com'
+    token: SecretStr = SecretStr('')
+    refresh = False
+
+    def __init__(
+        self,
+        user_id: str | None = None,
+        external_auth_id: str | None = None,
+        external_auth_token: SecretStr | None = None,
+        token: SecretStr | None = None,
+        external_token_manager: bool = False,
+        organization: str | None = None,
+    ):
+        self.user_id = user_id
+        self.external_token_manager = external_token_manager
+        self.organization = organization
+
+        if token:
+            self.token = token
+
+    async def _get_azuredevops_headers(self) -> dict:
+        """
+        Retrieve the Azure DevOps Token to construct the headers
+        """
+        if self.user_id and not self.token:
+            self.token = await self.get_latest_token()
+
+        # Azure DevOps uses Basic authentication with PAT
+        # The username is ignored (empty string), and the password is the PAT
+        return {
+            'Authorization': f'Basic {self.token.get_secret_value()}',
+            'Content-Type': 'application/json',
+        }
+
+    def _has_token_expired(self, status_code: int) -> bool:
+        return status_code == 401
+
+    async def get_latest_token(self) -> SecretStr | None:
+        """
+        Get the latest working token for the user
+        """
+        if self.external_token_manager:
+            try:
+                token_manager = get_impl('openhands.auth.token_manager', 'TokenManager')
+                token = await token_manager.get_provider_token(
+                    self.user_id, ProviderType.AZUREDEVOPS
+                )
+                if token:
+                    self.token = token
+                    return token
+            except Exception as e:
+                logger.error(f'Error getting Azure DevOps token: {e}')
+                pass
+
+        return self.token if self.token.get_secret_value() else None
+
+    async def get_user(self) -> User:
+        """
+        Get the authenticated user's information from Azure DevOps
+        """
+        headers = await self._get_azuredevops_headers()
+
+        try:
+            # Get the current user profile
+            async with httpx.AsyncClient() as client:
+                response = await client.get(
+                    f'{self.BASE_URL}/_apis/profile/profiles/me?api-version=7.0',
+                    headers=headers,
+                )
+
+            if response.status_code == 401:
+                raise AuthenticationError('Invalid Azure DevOps credentials')
+            elif response.status_code != 200:
+                raise UnknownException(
+                    f'Failed to get user information: {response.status_code} {response.text}'
+                )
+
+            user_data = response.json()
+
+            return User(
+                id=user_data.get('id', 0),
+                login=user_data.get('displayName', ''),
+                avatar_url=user_data.get('imageUrl', ''),
+                name=user_data.get('displayName', ''),
+                email=user_data.get('emailAddress', ''),
+                company=None,
+            )
+        except httpx.RequestError as e:
+            raise UnknownException(f'Request error: {str(e)}')
+
+    async def search_repositories(
+        self,
+        query: str,
+        per_page: int,
+        sort: str,
+        order: str,
+    ) -> list[Repository]:
+        """
+        Search for repositories in Azure DevOps
+        """
+        if not self.organization:
+            return []
+
+        headers = await self._get_azuredevops_headers()
+
+        try:
+            # Search for repositories in the organization
+            async with httpx.AsyncClient() as client:
+                response = await client.get(
+                    f'{self.BASE_URL}/{self.organization}/_apis/git/repositories?searchCriteria.searchText={quote_plus(query)}&api-version=7.0',
+                    headers=headers,
+                )
+
+            if response.status_code == 401:
+                raise AuthenticationError('Invalid Azure DevOps credentials')
+            elif response.status_code != 200:
+                raise UnknownException(
+                    f'Failed to search repositories: {response.status_code} {response.text}'
+                )
+
+            repos_data = response.json().get('value', [])
+
+            repositories = []
+            for repo in repos_data[:per_page]:
+                repositories.append(
+                    Repository(
+                        id=repo.get('id', 0),
+                        full_name=f"{self.organization}/{repo.get('name', '')}",
+                        git_provider=ProviderType.AZUREDEVOPS,
+                        stargazers_count=None,
+                        pushed_at=None,
+                    )
+                )
+
+            return repositories
+        except httpx.RequestError as e:
+            raise UnknownException(f'Request error: {str(e)}')
+
+    async def get_repositories(
+        self,
+        sort: str,
+        installation_id: int | None,
+    ) -> list[Repository]:
+        """
+        Get repositories for the authenticated user in Azure DevOps
+        """
+        if not self.organization:
+            return []
+
+        headers = await self._get_azuredevops_headers()
+
+        try:
+            # Get all repositories in the organization
+            async with httpx.AsyncClient() as client:
+                response = await client.get(
+                    f'{self.BASE_URL}/{self.organization}/_apis/git/repositories?api-version=7.0',
+                    headers=headers,
+                )
+
+            if response.status_code == 401:
+                raise AuthenticationError('Invalid Azure DevOps credentials')
+            elif response.status_code != 200:
+                raise UnknownException(
+                    f'Failed to get repositories: {response.status_code} {response.text}'
+                )
+
+            repos_data = response.json().get('value', [])
+
+            repositories = []
+            for repo in repos_data:
+                repositories.append(
+                    Repository(
+                        id=repo.get('id', 0),
+                        full_name=f"{self.organization}/{repo.get('name', '')}",
+                        git_provider=ProviderType.AZUREDEVOPS,
+                        stargazers_count=None,
+                        pushed_at=None,
+                    )
+                )
+
+            return repositories
+        except httpx.RequestError as e:
+            raise UnknownException(f'Request error: {str(e)}')
+
+    async def does_repo_exist(self, repository: str) -> bool:
+        """
+        Check if a repository exists for the user in Azure DevOps
+        """
+        if not self.organization:
+            return False
+
+        # Extract repository name from full path (organization/project/repository)
+        parts = repository.split('/')
+        if len(parts) < 2:
+            return False
+
+        repo_name = parts[-1]
+
+        headers = await self._get_azuredevops_headers()
+
+        try:
+            # Check if repository exists
+            async with httpx.AsyncClient() as client:
+                response = await client.get(
+                    f'{self.BASE_URL}/{self.organization}/_apis/git/repositories/{repo_name}?api-version=7.0',
+                    headers=headers,
+                )
+
+            return response.status_code == 200
+        except httpx.RequestError:
+            return False
+
+
+class AzureDevOpsServiceImpl(AzureDevOpsService):
+    """Implementation of the Azure DevOps service"""
+
+    pass
