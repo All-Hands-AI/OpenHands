@@ -514,13 +514,6 @@ class AgentController:
         # make sure there is an Observation with the tool call metadata to be recognized by the agent
         # otherwise the pending action is found in history, but it's incomplete without an obs with tool result
         if self._pending_action and hasattr(self._pending_action, 'tool_call_metadata'):
-            
-    def _reset_warning_threshold(self) -> None:
-        """Resets the warning threshold based on the current cost."""
-        if self.warning_budget_increment is not None and self.warning_budget_increment > 0:
-            current_cost = self.state.metrics.accumulated_cost if self.state.metrics.accumulated_cost is not None else 0.0
-            # Set the last warning threshold to the current threshold
-            self._last_warning_threshold = int(current_cost / self.warning_budget_increment) * self.warning_budget_increment
             # find out if there already is an observation with the same tool call metadata
             found_observation = False
             for event in self.state.history:
