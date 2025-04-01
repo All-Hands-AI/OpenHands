@@ -123,9 +123,7 @@ class GitHubService(GitService):
             response, headers = await self._fetch_data(url, page_params)
 
             # Extract repositories from response
-            page_repos = (
-                response.get(extract_key, []) if extract_key else response
-            )
+            page_repos = response.get(extract_key, []) if extract_key else response
 
             if not page_repos:  # No more repositories
                 break
