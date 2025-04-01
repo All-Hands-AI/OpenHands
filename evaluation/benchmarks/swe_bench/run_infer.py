@@ -743,9 +743,17 @@ if __name__ == '__main__':
             with open(cur_output_file, 'r') as f:
                 for line in f:
                     instance = json.loads(line)
-                    history = [event_from_dict(event) for event in instance['history']]
-                    critic_result = critic.evaluate(history)
-                    if not critic_result.success:
+                    try:
+                        history = [
+                            event_from_dict(event) for event in instance['history']
+                        ]
+                        critic_result = critic.evaluate(history)
+                        if not critic_result.success:
+                            instances_failed.append(instance['instance_id'])
+                    except Exception as e:
+                        logger.error(
+                            f'Error loading history for instance {instance["instance_id"]}: {e}'
+                        )
                         instances_failed.append(instance['instance_id'])
             logger.info(
                 f'{len(instances_failed)} instances failed the current attempt {attempt}: {instances_failed}'
