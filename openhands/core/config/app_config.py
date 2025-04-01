@@ -88,6 +88,22 @@ class AppConfig(BaseModel):
     max_concurrent_conversations: int = Field(
         default=3
     )  # Maximum number of concurrent agent loops allowed per user
+    
+    # MCP Server Configuration
+    mcp_enabled: bool = Field(
+        default=True,
+        description="Enable Model Context Protocol server"
+    )
+    mcp_port: int = Field(
+        default=8000,
+        ge=1024,
+        le=65535,
+        description="Port for MCP server"
+    )
+    mcp_logging: bool = Field(
+        default=False,
+        description="Enable verbose logging for MCP server"
+    )
 
     defaults_dict: ClassVar[dict] = {}
 

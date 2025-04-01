@@ -15,6 +15,7 @@ packages = [
 [tool.poetry.dependencies]
 python = "^3.12"
 datasets = "*"
+mcp = {extras = ["cli"], version = "^0.1.0"}
 pandas = "*"
 litellm = "^1.60.0"
 google-generativeai = "*" # To use litellm with Gemini Pro API

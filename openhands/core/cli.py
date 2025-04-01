@@ -199,7 +199,23 @@ async def main(loop: asyncio.AbstractEventLoop):
     )
 
 
+def run_mcp_server():
+    """Start MCP server in a separate process"""
+    from openhands.mcp_server import app
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+
 if __name__ == '__main__':
+    import multiprocessing
+    
+    # Start MCP server
+    mcp_process = multiprocessing.Process(
+        target=run_mcp_server,
+        daemon=True
+    )
+    mcp_process.start()
+    
+    # Run main application
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     try:
@@ -221,6 +237,10 @@ if __name__ == '__main__':
             # Wait for all tasks to complete with a timeout
             loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
             loop.close()
+            
+            # Terminate MCP server
+            mcp_process.terminate()
+            mcp_process.join()
         except Exception as e:
             print(f'Error during cleanup: {e}')
             sys.exit(1)
