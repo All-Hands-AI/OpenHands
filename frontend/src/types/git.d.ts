@@ -6,7 +6,7 @@ interface GitHubErrorReponse {
   status: number;
 }
 
-interface GitHubUser {
+interface GitUser {
   id: number;
   login: string;
   avatar_url: string;
