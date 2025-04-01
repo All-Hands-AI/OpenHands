@@ -2,7 +2,7 @@ import asyncio
 import copy
 import os
 import traceback
-from typing import Callable, ClassVar, Type
+from typing import Callable, ClassVar, Optional, Type
 
 import litellm  # noqa
 from litellm.exceptions import (  # noqa
@@ -19,6 +19,7 @@ from litellm.exceptions import (  # noqa
     Timeout,
 )
 
+from openhands.agenthub.codeact_agent.thought_manager import ThoughtManager
 from openhands.controller.agent import Agent
 from openhands.controller.replay import ReplayManager
 from openhands.controller.state.state import State, TrafficControlState
@@ -161,6 +162,9 @@ class AgentController:
 
         # replay-related
         self._replay_manager = ReplayManager(replay_events)
+
+        # thought manager for sequential thinking
+        self.thought_manager: Optional[ThoughtManager] = None
 
     async def close(self, set_stop_state=True) -> None:
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream.

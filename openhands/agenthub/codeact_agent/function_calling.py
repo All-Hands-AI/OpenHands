@@ -4,12 +4,14 @@ This is similar to the functionality of `CodeActResponseParser`.
 """
 
 import json
+from typing import Optional
 
 from litellm import (
     ChatCompletionToolParam,
     ModelResponse,
 )
 
+from openhands.agenthub.codeact_agent.thought_manager import Thought, ThoughtManager
 from openhands.agenthub.codeact_agent.tools import (
     BrowserTool,
     FinishTool,
@@ -52,7 +54,9 @@ def combine_thought(action: Action, thought: str) -> Action:
     return action
 
 
-def response_to_actions(response: ModelResponse) -> list[Action]:
+def response_to_actions(
+    response: ModelResponse, thought_manager: Optional[ThoughtManager] = None
+) -> list[Action]:
     actions: list[Action] = []
     assert len(response.choices) == 1, 'Only one choice is supported for now'
     choice = response.choices[0]
@@ -170,6 +174,7 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
             # AgentThinkAction
             # ================================================
             elif tool_call.function.name == ThinkTool['function']['name']:
+                # Create the AgentThinkAction
                 action = AgentThinkAction(
                     thought=arguments.get('thought', ''),
                     thought_number=arguments.get('thoughtNumber', 0),
@@ -181,6 +186,24 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                     branch_id=arguments.get('branchId', ''),
                     needs_more_thoughts=arguments.get('needsMoreThoughts', False),
                 )
+
+                # If we have a thought manager, add the thought to it
+                if thought_manager:
+                    # Create a Thought object from the arguments
+                    thought_obj = Thought(
+                        thought=arguments.get('thought', ''),
+                        thought_number=arguments.get('thoughtNumber', 0),
+                        total_thoughts=arguments.get('totalThoughts', 0),
+                        next_thought_needed=arguments.get('nextThoughtNeeded', False),
+                        is_revision=arguments.get('isRevision', False),
+                        revises_thought=arguments.get('revisesThought', 0),
+                        branch_from_thought=arguments.get('branchFromThought', 0),
+                        branch_id=arguments.get('branchId', ''),
+                        needs_more_thoughts=arguments.get('needsMoreThoughts', False),
+                    )
+
+                    # Add the thought to the manager
+                    thought_manager.add_thought(thought_obj)
 
             # ================================================
             # BrowserTool

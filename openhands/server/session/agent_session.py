@@ -3,8 +3,9 @@ import json
 import time
 from logging import LoggerAdapter
 from types import MappingProxyType
-from typing import Callable, cast
+from typing import Callable, Dict, cast
 
+from openhands.agenthub.codeact_agent.thought_manager import ThoughtManager
 from openhands.controller import AgentController
 from openhands.controller.agent import Agent
 from openhands.controller.replay import ReplayManager
@@ -50,6 +51,7 @@ class AgentSession:
     _closed: bool = False
     loop: asyncio.AbstractEventLoop | None = None
     logger: LoggerAdapter
+    thought_managers: Dict[str, ThoughtManager] = {}
 
     def __init__(
         self,
@@ -323,9 +325,9 @@ class AgentSession:
             return False
 
         if selected_repository and git_provider_tokens:
-            await self.runtime.clone_repo(git_provider_tokens,
-                                          selected_repository,
-                                          selected_branch)
+            await self.runtime.clone_repo(
+                git_provider_tokens, selected_repository, selected_branch
+            )
             await call_sync_from_async(self.runtime.maybe_run_setup_script)
 
         self.logger.debug(
@@ -389,6 +391,12 @@ class AgentSession:
             initial_state=self._maybe_restore_state(),
             replay_events=replay_events,
         )
+
+        # Initialize the thought manager for this agent
+        agent_id = agent.name
+        if agent_id not in self.thought_managers:
+            self.thought_managers[agent_id] = ThoughtManager()
+        controller.thought_manager = self.thought_managers[agent_id]
 
         return controller
 

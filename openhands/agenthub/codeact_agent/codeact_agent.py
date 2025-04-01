@@ -140,7 +140,17 @@ class CodeActAgent(Agent):
         # log to litellm proxy if possible
         params['extra_body'] = {'metadata': state.to_llm_metadata(agent_name=self.name)}
         response = self.llm.completion(**params)
-        actions = codeact_function_calling.response_to_actions(response)
+
+        # Get the thought_manager from the controller if available
+        thought_manager = None
+        if hasattr(state, 'controller') and hasattr(
+            state.controller, 'thought_manager'
+        ):
+            thought_manager = state.controller.thought_manager
+
+        actions = codeact_function_calling.response_to_actions(
+            response, thought_manager
+        )
         for action in actions:
             self.pending_actions.append(action)
         return self.pending_actions.popleft()
