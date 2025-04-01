@@ -541,7 +541,9 @@ class LLM(RetryMixin, DebugMixin):
                 'prompt_tokens_details'
             )
             cache_hit_tokens = (
-                prompt_tokens_details.cached_tokens if prompt_tokens_details else 0
+                prompt_tokens_details.cached_tokens
+                if prompt_tokens_details and prompt_tokens_details.cached_tokens
+                else 0
             )
             if cache_hit_tokens:
                 stats += 'Input tokens (cache hit): ' + str(cache_hit_tokens) + '\n'
