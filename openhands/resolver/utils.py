@@ -6,8 +6,8 @@ import re
 from enum import Enum
 from typing import Callable
 
-import httpx
 import pandas as pd
+import requests
 
 from openhands.controller.state.state import State
 from openhands.core.logger import get_console_handler
@@ -44,12 +44,12 @@ def identify_token(token: str, selected_repo: str | None = None) -> Platform:
         }
 
         try:
-            github_repo_response = httpx.get(
+            github_repo_response = requests.get(
                 github_repo_url, headers=github_bearer_headers, timeout=5
             )
             if github_repo_response.status_code == 200:
                 return Platform.GITHUB
-        except httpx.HTTPError as e:
+        except requests.RequestException as e:
             logger.error(f'Error connecting to GitHub API (selected_repo check): {e}')
 
     # Try GitHub PAT format (token)
@@ -57,10 +57,10 @@ def identify_token(token: str, selected_repo: str | None = None) -> Platform:
     github_headers = {'Authorization': f'token {token}'}
 
     try:
-        github_response = httpx.get(github_url, headers=github_headers, timeout=5)
+        github_response = requests.get(github_url, headers=github_headers, timeout=5)
         if github_response.status_code == 200:
             return Platform.GITHUB
-    except httpx.HTTPError as e:
+    except requests.RequestException as e:
         logger.error(f'Error connecting to GitHub API: {e}')
 
     # Try GitLab token
@@ -68,11 +68,12 @@ def identify_token(token: str, selected_repo: str | None = None) -> Platform:
     gitlab_headers = {'Authorization': f'Bearer {token}'}
 
     try:
-        gitlab_response = httpx.get(gitlab_url, headers=gitlab_headers, timeout=5)
+        gitlab_response = requests.get(gitlab_url, headers=gitlab_headers, timeout=5)
         if gitlab_response.status_code == 200:
             return Platform.GITLAB
-    except httpx.HTTPError as e:
+    except requests.RequestException as e:
         logger.error(f'Error connecting to GitLab API: {e}')
+
     return Platform.INVALID
 
 

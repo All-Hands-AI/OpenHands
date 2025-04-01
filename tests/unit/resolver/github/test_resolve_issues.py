@@ -157,7 +157,7 @@ def test_download_issues_from_github():
             return mock_comments_response
         return mock_issues_response
 
-    with patch('httpx.get', side_effect=get_mock_response):
+    with patch('requests.get', side_effect=get_mock_response):
         issues = handler.get_converted_issues(issue_numbers=[1, 3])
 
     assert len(issues) == 2
@@ -270,8 +270,8 @@ def test_download_pr_from_github():
             return mock_comments_response
         return mock_pr_response
 
-    with patch('httpx.get', side_effect=get_mock_response):
-        with patch('httpx.post', return_value=mock_graphql_response):
+    with patch('requests.get', side_effect=get_mock_response):
+        with patch('requests.post', return_value=mock_graphql_response):
             issues = handler.get_converted_issues(issue_numbers=[1, 2, 3])
 
     assert len(issues) == 3
@@ -877,8 +877,8 @@ def test_download_pr_with_review_comments():
             return mock_comments_response
         return mock_pr_response
 
-    with patch('httpx.get', side_effect=get_mock_response):
-        with patch('httpx.post', return_value=mock_graphql_response):
+    with patch('requests.get', side_effect=get_mock_response):
+        with patch('requests.post', return_value=mock_graphql_response):
             issues = handler.get_converted_issues(issue_numbers=[1])
 
     assert len(issues) == 1
@@ -937,7 +937,7 @@ def test_download_issue_with_specific_comment():
 
         return mock_issue_response
 
-    with patch('httpx.get', side_effect=get_mock_response):
+    with patch('requests.get', side_effect=get_mock_response):
         issues = handler.get_converted_issues(
             issue_numbers=[1], comment_id=specific_comment_id
         )
