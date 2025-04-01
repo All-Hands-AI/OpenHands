@@ -353,6 +353,9 @@ Do not include any other text in your response.
                 if message._event:
                     event = next((e for e in events if e == message._event), None)
                     if event:
+                        print(
+                            f'Keeping event {event}. index:{index}. message:{message}'
+                        )
                         keep_event_ids.add(event.id)
                     else:
                         raise ValueError(
