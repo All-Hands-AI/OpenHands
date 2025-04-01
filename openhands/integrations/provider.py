@@ -27,6 +27,7 @@ from openhands.integrations.service_types import (
     Repository,
     User,
 )
+from openhands.server.types import AppMode
 
 
 class ProviderToken(BaseModel):
@@ -191,7 +192,7 @@ class ProviderHandler:
     async def get_repositories(
         self,
         sort: str,
-        installation_id: int | None,
+        app_mode: AppMode
     ) -> list[Repository]:
         """
         Get repositories from a selected providers with pagination support
