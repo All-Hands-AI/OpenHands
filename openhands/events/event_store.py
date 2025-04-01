@@ -14,7 +14,7 @@ from openhands.utils.shutdown_listener import should_continue
 
 
 @dataclass
-class StoredEventList:
+class EventStore:
     """
     A stored list of events backing a conversation
     """
