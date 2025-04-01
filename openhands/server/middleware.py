@@ -185,7 +185,7 @@ class AttachConversationMiddleware(SessionMiddlewareInterface):
         return response
 
 
-class GitHubTokenMiddleware(SessionMiddlewareInterface):
+class ProviderTokenMiddleware(SessionMiddlewareInterface):
     def __init__(self, app):
         self.app = app
 
