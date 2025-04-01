@@ -1,26 +1,26 @@
 from contextlib import AsyncExitStack, asynccontextmanager
-from typing import Any, Dict, List, Literal, Optional, TypedDict
+from typing import Any, Literal, TypedDict
 
 from mcp import ClientSession, StdioServerParameters, stdio_client
 
 
-class MCPConfig(TypedDict, total=False):
-    """Type definition for MCP configuration."""
+class StdioMCPConfig(TypedDict, total=False):
+    """Type definition for StdIO MCP server configuration."""
 
     command: str
-    args: Optional[List[str]]
-    env: Optional[Dict[str, str]]
+    args: list[str]
+    env: dict[str, str] | None
     encoding: str
     encoding_error_handler: Literal['strict', 'ignore', 'replace']
 
 
 @asynccontextmanager
-async def _create_session(config: MCPConfig):
+async def _create_session(config: StdioMCPConfig):
     """
     Create a temporary session for a single request.
 
     Args:
-        config: Configuration dictionary for the MCP server
+        config: Configuration dictionary for StdIO MCP servers
 
     Yields:
         An initialized ClientSession
@@ -54,18 +54,13 @@ async def _create_session(config: MCPConfig):
             raise ConnectionError(f'Failed to connect to MCP server: {str(e)}') from e
 
 
-async def list_tools(config: MCPConfig):
+async def list_tools(config: StdioMCPConfig):
     """
     List all available tools from the MCP server.
     Automatically handles connection and cleanup.
 
     Args:
-        config: Configuration dictionary with the following keys:
-            - command: The command to run the server
-            - args: Command line arguments (optional)
-            - env: Environment variables (optional)
-            - encoding: Encoding to use for stdio (default: 'utf-8')
-            - encoding_error_handler: How to handle encoding errors (default: 'strict')
+        config: Configuration dictionary for StdIO MCP servers
 
     Returns:
         List of tool objects
@@ -82,18 +77,15 @@ async def list_tools(config: MCPConfig):
             raise RuntimeError(f'Failed to list tools: {str(e)}') from e
 
 
-async def call_tool(config: MCPConfig, tool_name: str, input_data: Dict[str, Any]):
+async def call_tool(
+    config: StdioMCPConfig, tool_name: str, input_data: dict[str, Any] | None = None
+):
     """
     Call a specific tool on the MCP server.
     Automatically handles connection and cleanup.
 
     Args:
-        config: Configuration dictionary with the following keys:
-            - command: The command to run the server
-            - args: Command line arguments (optional)
-            - env: Environment variables (optional)
-            - encoding: Encoding to use for stdio (default: 'utf-8')
-            - encoding_error_handler: How to handle encoding errors (default: 'strict')
+        config: Configuration dictionary for StdIO MCP servers
         tool_name: Name of the tool to call
         input_data: Input data for the tool
 

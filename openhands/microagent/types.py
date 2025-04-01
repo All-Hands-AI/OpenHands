@@ -12,7 +12,7 @@ class MicroAgentType(str, Enum):
     TASK = 'task'
 
 
-class MCPServerConfig(TypedDict, total=False):
+class StdioMCPConfig(TypedDict, total=False):
     """Type definition for MCP server configuration."""
 
     command: str
@@ -31,7 +31,7 @@ class MicroAgentMetadata(BaseModel):
     agent: str = Field(default='CodeActAgent')
     triggers: list[str] = []  # optional, only exists for knowledge microagents
     mcp_configs: dict[
-        str, MCPServerConfig
+        str, StdioMCPConfig
     ] = {}  # optional, map from server name to config
 
 

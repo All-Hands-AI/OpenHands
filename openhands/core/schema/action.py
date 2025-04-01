@@ -80,3 +80,6 @@ class ActionType(str, Enum):
 
     RECALL = 'recall'
     """Retrieves content from a user workspace, microagent, or other source."""
+
+    MCP_CALL_TOOL = 'mcp_call_tool'
+    """Calls a MCP tool."""

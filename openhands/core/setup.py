@@ -164,6 +164,7 @@ def create_memory(
 
         # get MCP tools from the runtime
         mcp_tools = runtime.get_mcp_tools(memory.get_mcp_configs())
+        logger.warning(f'MCP tools: {mcp_tools}')
         memory.set_mcp_tools_definition(mcp_tools)
 
         if selected_repository and repo_directory:

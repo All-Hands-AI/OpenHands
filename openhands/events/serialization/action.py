@@ -21,6 +21,7 @@ from openhands.events.action.files import (
     FileReadAction,
     FileWriteAction,
 )
+from openhands.events.action.mcp import MCPCallToolAction
 from openhands.events.action.message import MessageAction
 
 actions = (
@@ -39,6 +40,7 @@ actions = (
     RecallAction,
     ChangeAgentStateAction,
     MessageAction,
+    MCPCallToolAction,
 )
 
 ACTION_TYPE_TO_CLASS = {action_class.action: action_class for action_class in actions}  # type: ignore[attr-defined]

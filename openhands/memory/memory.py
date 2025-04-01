@@ -20,7 +20,7 @@ from openhands.microagent import (
     RepoMicroAgent,
     load_microagents_from_dir,
 )
-from openhands.microagent.types import MCPServerConfig
+from openhands.microagent.types import StdioMCPConfig
 from openhands.runtime.base import Runtime
 from openhands.utils.prompt import RepositoryInfo, RuntimeInfo
 
@@ -298,7 +298,7 @@ class Memory:
         if self.status_callback:
             self.status_callback(msg_type, id, message)
 
-    def get_mcp_configs(self) -> dict[str, dict[str, MCPServerConfig]]:
+    def get_mcp_configs(self) -> dict[str, dict[str, StdioMCPConfig]]:
         """Get the MCP server configurations."""
         mcp_configs = {}
         for name, microagent in self.knowledge_microagents.items():

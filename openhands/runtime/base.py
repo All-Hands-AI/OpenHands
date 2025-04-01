@@ -30,6 +30,7 @@ from openhands.events.action import (
     FileReadAction,
     FileWriteAction,
     IPythonRunCellAction,
+    MCPCallToolAction,
 )
 from openhands.events.event import Event
 from openhands.events.observation import (
@@ -37,6 +38,7 @@ from openhands.events.observation import (
     CmdOutputObservation,
     ErrorObservation,
     FileReadObservation,
+    MCPCallToolObservation,
     NullObservation,
     Observation,
     UserRejectObservation,
@@ -51,7 +53,7 @@ from openhands.microagent import (
     BaseMicroAgent,
     load_microagents_from_dir,
 )
-from openhands.microagent.types import MCPServerConfig
+from openhands.microagent.types import StdioMCPConfig
 from openhands.runtime.plugins import (
     JupyterRequirement,
     PluginRequirement,
@@ -157,6 +159,12 @@ class Runtime(FileEditRuntimeMixin):
 
         # TODO: remove once done debugging expired github token
         self.prev_token: SecretStr | None = None
+
+        # MCP configs
+        self.microagent_to_mcp_configs: dict[str, dict[str, StdioMCPConfig]] | None = (
+            None
+        )
+        self.microagent_to_mcp_tools: dict[str, dict[str, str]] | None = None
 
     def setup_initial_env(self) -> None:
         if self.attach_to_existing:
@@ -466,9 +474,11 @@ class Runtime(FileEditRuntimeMixin):
         return loaded_microagents
 
     def get_mcp_tools(
-        self, mcp_configs: dict[str, dict[str, MCPServerConfig]]
+        self, mcp_configs: dict[str, dict[str, StdioMCPConfig]]
     ) -> dict[str, dict[str, str]]:
         """Get the list of tools from the MCP servers."""
+        self.microagent_to_mcp_configs = mcp_configs
+
         microagent_name_to_tools = {}
         for microagent_name, config_dict in mcp_configs.items():
             if not config_dict:
@@ -482,13 +492,15 @@ class Runtime(FileEditRuntimeMixin):
                 ipython_code = f"""\
     tools = await list_tools(config={config})
     print(tools)"""
-                action = IPythonRunCellAction(ipython_code)
+                action = IPythonRunCellAction(ipython_code, include_extra=False)
                 self.log('info', f'Listing tools for {server_name}')
                 obs = self.run_action(action)
+                self.log('info', f'Got tools for {server_name}: {obs.content}')
                 server_name_to_tool_defs[server_name] = obs.content
 
             microagent_name_to_tools[microagent_name] = server_name_to_tool_defs
 
+        self.microagent_to_mcp_tools = microagent_name_to_tools
         return microagent_name_to_tools
 
     def run_action(self, action: Action) -> Observation:
@@ -564,6 +576,51 @@ class Runtime(FileEditRuntimeMixin):
     @abstractmethod
     def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
         pass
+
+    def mcp_call_tool(self, action: MCPCallToolAction) -> Observation:
+        """Call a tool exposed by the MCP server."""
+        tool_name = action.tool_name
+
+        if not self.microagent_to_mcp_tools or not self.microagent_to_mcp_configs:
+            return ErrorObservation(
+                'MCP tool definitions or configs not found. Please call get_mcp_tools first.'
+            )
+
+        # Get the MCP server config
+        server_name: str = ''
+        for _, server_to_tools_list in self.microagent_to_mcp_tools.items():
+            search_str = f"Tool(name='{tool_name}',"
+            for server, tools_list in server_to_tools_list.items():
+                if search_str in tools_list:
+                    server_name = server
+                    break
+
+        if not server_name:
+            return ErrorObservation(f'MCP server not found for tool {tool_name}')
+
+        # Get the MCP server config
+        mcp_config: StdioMCPConfig | None = None
+        for _, server_to_config in self.microagent_to_mcp_configs.items():
+            if server_name in server_to_config:
+                mcp_config = server_to_config[server_name]
+                break
+
+        if not mcp_config:
+            return ErrorObservation(f'MCP config not found for server {server_name}')
+
+        # Call the tool
+        ipython_code = f"""\
+    result = await call_tool({mcp_config}, '{tool_name}', {action.kwargs})
+    print(result)"""
+
+        call_action = IPythonRunCellAction(ipython_code, include_extra=False)
+        self.log('info', f'Calling MCP tool {tool_name}')
+        obs = self.run_ipython(call_action)
+        self.log('info', f'Got MCP call_tool result: {obs.content}')
+
+        return MCPCallToolObservation(
+            content=obs.content,
+        )
 
     # ====================================================================
     # File operations
