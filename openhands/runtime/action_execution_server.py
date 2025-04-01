@@ -24,7 +24,6 @@ from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.security import APIKeyHeader
-from mcp.types import ImageContent
 from openhands_aci.editor.editor import OHEditor
 from openhands_aci.editor.exceptions import ToolError
 from openhands_aci.editor.results import ToolResult
@@ -59,11 +58,7 @@ from openhands.events.observation import (
     Observation,
 )
 from openhands.events.observation.mcp import MCPObservation
-from openhands.events.observation.playwright_mcp import (
-    PlaywrightMcpBrowserScreenshotObservation,
-)
 from openhands.events.serialization import event_from_dict, event_to_dict
-from openhands.mcp.mcp_base import ToolResult as MCPToolResult
 from openhands.runtime.browser import browse
 from openhands.runtime.browser.browser_env import BrowserEnv
 from openhands.runtime.plugins import ALL_PLUGINS, JupyterPlugin, Plugin, VSCodePlugin
@@ -559,31 +554,7 @@ class ActionExecutor:
         for agent in mcp_agents:
             await agent.cleanup()
 
-        # special case for browser screenshot of playwright_mcp
-        if action.name == 'browser_screenshot':
-            return self.playwright_mcp_browser_screenshot(action, response)
-
         return MCPObservation(content=f'MCP result:{response}')
-
-    def playwright_mcp_browser_screenshot(
-        self, action: McpAction, response: MCPToolResult
-    ) -> Observation:
-        # example response:
-        """
-        {
-            "type": "image",
-            "data": "image/jpeg;base64,/9j/4AA...",
-            "mimeType": "image/jpeg",
-            "url": "https://www.google.com"
-        }
-        """
-        screenshot_content: ImageContent = response.output
-        return PlaywrightMcpBrowserScreenshotObservation(
-            content=f'{response}',
-            url=screenshot_content.url if screenshot_content.url is not None else '',
-            trigger_by_action=action.name,
-            screenshot=f'data:image/png;base64,{screenshot_content.data}',
-        )
 
     def close(self):
         self.memory_monitor.stop_monitoring()
@@ -608,9 +579,6 @@ if __name__ == '__main__':
         type=str,
         help='BrowserGym environment used for browser evaluation',
         default=None,
-    )
-    parser.add_argument(
-        '--runtime-mode', type=str, help='docker | others', default='others'
     )
 
     # example: python client.py 8000 --working-dir /workspace --plugins JupyterRequirement

@@ -31,11 +31,6 @@ const messageActions = {
       store.dispatch(addAssistantMessage(message.message));
     }
   },
-  [ActionType.PLAYWRIGHT_MCP_BROWSER_SCREENSHOT]: (message: ActionMessage) => {
-    if (!message.args.thought && message.message) {
-      store.dispatch(addAssistantMessage(message.message));
-    }
-  },
   [ActionType.WRITE]: (message: ActionMessage) => {
     const { path, content } = message.args;
     store.dispatch(setActiveFilepath(path));
