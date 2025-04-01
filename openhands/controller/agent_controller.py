@@ -739,7 +739,7 @@ class AgentController:
             stop_step = await self._handle_traffic_control(
                 'iteration', self.state.iteration, self.state.max_iterations
             )
-            
+
         # Check for warning budget increment
         if (
             self.state.metrics.accumulated_cost is not None
@@ -749,15 +749,21 @@ class AgentController:
         ):
             # Calculate the current threshold we're at and the next threshold
             current_cost = self.state.metrics.accumulated_cost
-            current_threshold = int(current_cost / self.warning_budget_increment) * self.warning_budget_increment
+            current_threshold = (
+                int(current_cost / self.warning_budget_increment)
+                * self.warning_budget_increment
+            )
             next_threshold = current_threshold + self.warning_budget_increment
-            
+
             # If we've just crossed a threshold (within 0.01 of the next threshold)
-            if current_cost >= next_threshold - 0.01 and current_cost < next_threshold + self.warning_budget_increment - 0.01:
+            if (
+                current_cost >= next_threshold - 0.01
+                and current_cost < next_threshold + self.warning_budget_increment - 0.01
+            ):
                 stop_step = await self._handle_traffic_control(
                     'warning_budget', current_cost, next_threshold
                 )
-            
+
         if self.max_budget_per_task is not None:
             current_cost = self.state.metrics.accumulated_cost
             if current_cost > self.max_budget_per_task:
@@ -885,12 +891,16 @@ class AgentController:
                 # Special handling for warning budget increment
                 await self.set_agent_state_to(AgentState.PAUSED)
                 if self.status_callback is not None:
-                    next_threshold = max_value + self.warning_budget_increment if self.warning_budget_increment else 0
+                    next_threshold = (
+                        max_value + self.warning_budget_increment
+                        if self.warning_budget_increment
+                        else 0
+                    )
                     self.status_callback(
-                        'warning', 
-                        'STATUS$COST_THRESHOLD_REACHED', 
-                        f'Cost threshold of ${max_str} USD reached. Current cost: ${current_str} USD. ' +
-                        f'Next warning at ${next_threshold:.2f} USD. Please approve to continue.'
+                        'warning',
+                        'STATUS$COST_THRESHOLD_REACHED',
+                        f'Cost threshold of ${max_str} USD reached. Current cost: ${current_str} USD. '
+                        + f'Next warning at ${next_threshold:.2f} USD. Please approve to continue.',
                     )
             elif self.headless_mode:
                 e = RuntimeError(
