@@ -3,7 +3,7 @@ from typing import Callable
 from uuid import UUID
 
 import docker
-import httpx
+import requests
 import tenacity
 from docker.models.containers import Container
 
@@ -347,7 +347,9 @@ class DockerRuntime(ActionExecutionClient):
 
     @tenacity.retry(
         stop=tenacity.stop_after_delay(120) | stop_if_should_exit(),
-        retry=tenacity.retry_if_exception_type((ConnectionError, httpx.NetworkError)),
+        retry=tenacity.retry_if_exception_type(
+            (ConnectionError, requests.exceptions.ConnectionError)
+        ),
         reraise=True,
         wait=tenacity.wait_fixed(2),
     )

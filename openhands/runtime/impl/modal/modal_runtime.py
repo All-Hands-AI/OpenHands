@@ -3,8 +3,8 @@ import tempfile
 from pathlib import Path
 from typing import Callable
 
-import httpx
 import modal
+import requests
 import tenacity
 
 from openhands.core.config import AppConfig
@@ -151,7 +151,9 @@ class ModalRuntime(ActionExecutionClient):
 
     @tenacity.retry(
         stop=tenacity.stop_after_delay(120) | stop_if_should_exit(),
-        retry=tenacity.retry_if_exception_type((ConnectionError, httpx.NetworkError)),
+        retry=tenacity.retry_if_exception_type(
+            (ConnectionError, requests.exceptions.ConnectionError)
+        ),
         reraise=True,
         wait=tenacity.wait_fixed(2),
     )
