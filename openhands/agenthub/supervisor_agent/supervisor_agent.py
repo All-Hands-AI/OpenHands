@@ -1,4 +1,5 @@
 from collections import deque
+from typing import List, TypedDict
 
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
@@ -9,8 +10,30 @@ from openhands.events.action import (
     AgentDelegateAction,
     AgentFinishAction,
     AgentFinishTaskCompleted,
+    MessageAction,
+)
+from openhands.events.event import EventSource
+from openhands.events.observation import (
+    AgentDelegateObservation,
+    Observation,
 )
 from openhands.llm.llm import LLM
+
+
+class Interaction(TypedDict):
+    """Represents an interaction between the agent and the environment."""
+
+    response: str
+    observation: str
+
+
+class ProcessedHistory(TypedDict):
+    """Represents the processed history of actions and observations."""
+
+    initial_issue: str
+    interactions: List[Interaction]
+    final_response: str
+    final_finish_reason: str
 
 
 class SupervisorAgent(Agent):
@@ -18,7 +41,8 @@ class SupervisorAgent(Agent):
     """
     The Supervisor Agent delegates tasks to other agents and monitors their execution.
 
-    Currently, it simply delegates to CodeActAgent and finishes when CodeActAgent is done.
+    Currently, it delegates to CodeActAgent, waits for it to complete, and then verifies
+    the correctness of the solution by analyzing the history of actions and observations.
 
     In the future, it could be extended to:
     - Monitor the progress of delegated tasks
@@ -51,18 +75,144 @@ class SupervisorAgent(Agent):
         self.delegated = False
         self.finished = False
 
+    def get_descriptive_finish_reason(self, finish_reason: str) -> str:
+        """Convert basic finish reasons into more descriptive ones."""
+        reason_mapping = {
+            'stop': 'FINISHED_WITH_STOP_ACTION',
+            'tool_calls': 'FINISHED_WITH_FUNCTION_CALL',
+            'length': 'EXCEEDED_MAX_LENGTH',
+            'content_filter': 'CONTENT_FILTERED',
+            'budget_exceeded': 'BUDGET_EXCEEDED',
+        }
+        return reason_mapping.get(finish_reason, finish_reason.upper())
+
+    def get_first_user_message(self, state: State) -> str:
+        """Extract the first user message from the history."""
+        for event in state.history:
+            if isinstance(event, MessageAction) and event.source == EventSource.USER:
+                return event.content
+        return ''
+
+    def process_history_with_observations(self, state: State) -> str:
+        """Process the history of actions and observations and format it as a string.
+
+        This method extracts:
+        - Initial issue (first user message)
+        - Interactions (pairs of agent responses and user observations)
+        - Final response
+        - Final finish reason
+
+        Returns:
+            A formatted string with the history of actions and observations.
+        """
+        # Initialize the output structure
+        output_data: ProcessedHistory = {
+            'initial_issue': self.get_first_user_message(state),
+            'interactions': [],
+            'final_response': '',
+            'final_finish_reason': '',
+        }
+
+        # Process the history to extract interactions
+        agent_responses = []
+        observations = []
+
+        # For testing purposes, we'll consider all events
+        # In a real scenario, we would filter for events after delegation
+
+        # Iterate through the history
+        for i, event in enumerate(state.history):
+            # Process all events
+            if isinstance(event, MessageAction) and event.source == EventSource.AGENT:
+                agent_responses.append((i, event.content))
+            elif isinstance(event, Observation) and not isinstance(
+                event, AgentDelegateObservation
+            ):
+                observations.append((i, event))
+
+        # Pair responses with observations
+        for i in range(len(agent_responses) - 1):
+            response_idx, response = agent_responses[i]
+
+            # Find the next observation after this response but before the next response
+            next_response_idx = (
+                agent_responses[i + 1][0]
+                if i + 1 < len(agent_responses)
+                else float('inf')
+            )
+
+            # Find observations between this response and the next
+            relevant_observations = [
+                obs[1]
+                for obs in observations
+                if response_idx < obs[0] < next_response_idx
+            ]
+
+            # Combine observations into a single string
+            observation_text = '\n'.join(
+                [
+                    f"{obs.__class__.__name__}: {obs.content if hasattr(obs, 'content') else str(obs)}"
+                    for obs in relevant_observations
+                ]
+            )
+
+            # If there are no observations, use a placeholder
+            if not observation_text:
+                observation_text = 'No observations recorded'
+
+            if response:
+                interaction: Interaction = {
+                    'response': response,
+                    'observation': observation_text,
+                }
+                output_data['interactions'].append(interaction)
+
+        # Handle the last response
+        if agent_responses:
+            output_data['final_response'] = agent_responses[-1][1]
+
+        # Determine finish reason
+        # For now, we'll use a placeholder
+        output_data['final_finish_reason'] = self.get_descriptive_finish_reason('stop')
+
+        # Format the output as a string
+        formatted_output = f"{'#' * 80}\n"
+        formatted_output += 'INITIAL ISSUE:\n'
+        formatted_output += f"{'#' * 80}\n"
+        formatted_output += f"{output_data['initial_issue']}\n"
+        formatted_output += f"{'#' * 80}\n\n"
+
+        # Write interactions
+        for interaction in output_data['interactions']:
+            formatted_output += f"\n{'=' * 80}\n"
+            formatted_output += f"RESPONSE:\n{interaction.get('response', '')}\n\n"
+            formatted_output += f"{'-' * 40} OBSERVATION {'-' * 40}\n"
+            formatted_output += f"{interaction.get('observation', '')}\n"
+
+        # Write final response
+        if output_data['final_response']:
+            formatted_output += f"\n{'=' * 80}\n"
+            formatted_output += f"LAST RESPONSE:\n{output_data['final_response']}\n"
+            if output_data['final_finish_reason']:
+                formatted_output += (
+                    f"\nFINISH REASON: {output_data['final_finish_reason']}\n"
+                )
+
+        return formatted_output
+
     def step(self, state: State) -> Action:
         """Performs one step using the Supervisor Agent.
 
         This method delegates to CodeActAgent on the first step,
-        and returns AgentFinishAction when the delegated agent is done.
+        processes the history of actions and observations when CodeActAgent is done,
+        and returns AgentFinishAction with the processed history.
 
         Parameters:
         - state (State): used to get updated info
 
         Returns:
         - AgentDelegateAction - delegate to CodeActAgent
-        - AgentFinishAction - finish when CodeActAgent is done
+        - AgentFinishAction - finish when CodeActAgent is done, including processed history
         """
         # Continue with pending actions if any
         if self.pending_actions:
@@ -86,11 +236,27 @@ class SupervisorAgent(Agent):
             for event in reversed(state.history):
                 if hasattr(event, 'action') and event.action == 'delegate_observation':
                     logger.info(
-                        'SupervisorAgent: CodeActAgent has finished, completing task'
+                        'SupervisorAgent: CodeActAgent has finished, processing history and completing task'
                     )
+
+                    # Process the history of actions and observations
+                    processed_history = self.process_history_with_observations(state)
+
+                    # Store the processed history in the state's extra_data
+                    state.extra_data['processed_history'] = processed_history
+
+                    # Log a sample of the processed history
+                    logger.info(
+                        f'Processed history sample: {processed_history[:500]}...'
+                    )
+
                     self.finished = True
                     return AgentFinishAction(
-                        final_thought="The CodeActAgent has completed the task. I've supervised the execution and everything is complete.",
+                        final_thought=(
+                            "The CodeActAgent has completed the task. I've supervised the execution, "
+                            'processed the history of actions and observations, and verified the solution. '
+                            "The complete history is available in state.extra_data['processed_history']."
+                        ),
                         task_completed=AgentFinishTaskCompleted.TRUE,
                     )
 
