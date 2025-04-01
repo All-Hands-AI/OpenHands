@@ -14,7 +14,7 @@ export const useUserRepositories = () => {
       retrieveUserGitRepositories(config?.APP_MODE || "oss"),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => lastPage.nextPage,
-    enabled: providersAreSet && config?.APP_MODE === "oss",
+    enabled: providersAreSet,
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 15, // 15 minutes
   });
