@@ -538,13 +538,6 @@ class AgentController:
         self._pending_action = None
         self.agent.reset()
 
-    def _reset_warning_threshold(self) -> None:
-        """Resets the warning threshold based on the current cost."""
-        if self.warning_budget_increment is not None and self.warning_budget_increment > 0:
-            current_cost = self.state.metrics.accumulated_cost if self.state.metrics.accumulated_cost is not None else 0.0
-            # Set the last warning threshold to the current threshold
-            self._last_warning_threshold = int(current_cost / self.warning_budget_increment) * self.warning_budget_increment
-            
     async def set_agent_state_to(self, new_state: AgentState) -> None:
         """Updates the agent's state and handles side effects. Can emit events to the event stream.
 
@@ -565,9 +558,7 @@ class AgentController:
             self.state.metrics.merge(self.state.local_metrics)
             self._reset()
         elif new_state == AgentState.RUNNING:
-            # Reset the warning threshold when the agent starts running
-            self._reset_warning_threshold()
-            
+            # When the agent starts running from a paused state
             if (
                 self.state.agent_state == AgentState.PAUSED
                 # TODO: do we really need both THROTTLING and PAUSED states, or can we clean up one of them completely?
@@ -757,12 +748,13 @@ class AgentController:
             and self.warning_budget_increment > 0
             and self.get_agent_state() == AgentState.RUNNING
         ):
-            # Calculate the next warning threshold
+            # Calculate the current threshold we're at
             current_cost = self.state.metrics.accumulated_cost
-            next_threshold = (int(current_cost / self.warning_budget_increment) + 1) * self.warning_budget_increment
+            current_threshold = int(current_cost / self.warning_budget_increment) * self.warning_budget_increment
             
             # If we've crossed a new threshold and it's higher than the last warning threshold
-            if current_cost >= next_threshold - 0.01 and next_threshold > self._last_warning_threshold:
+            if current_cost >= current_threshold + self.warning_budget_increment - 0.01 and current_threshold + self.warning_budget_increment > self._last_warning_threshold:
+                next_threshold = current_threshold + self.warning_budget_increment
                 self._last_warning_threshold = next_threshold
                 stop_step = await self._handle_traffic_control(
                     'warning_budget', current_cost, next_threshold
