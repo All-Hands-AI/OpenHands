@@ -124,7 +124,7 @@ class GitHubService(GitService):
 
             # Extract repositories from response
             page_repos = (
-                response.get(extract_key, response) if extract_key else response
+                response.get(extract_key, []) if extract_key else response
             )
 
             if not page_repos:  # No more repositories
