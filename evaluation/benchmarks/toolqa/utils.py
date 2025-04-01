@@ -4,7 +4,7 @@ import re
 import string
 import zipfile
 
-import requests
+import httpx
 
 
 def download_data(dir):
@@ -40,7 +40,7 @@ def download_tools(dir, wolfram_alpha_appid='YOUR_WOLFRAMALPHA_APPID'):
     ]
     for tool in tools:
         url = f'https://raw.githubusercontent.com/night-chen/ToolQA/main/benchmark/ReAct/code/tools/{tool}'
-        response = requests.get(url)
+        response = httpx.get(url)
         output_file = os.path.join(tool_path, tool.split('/')[1])
         with open(output_file, 'wb') as f:
             f.write(response.content)
@@ -82,7 +82,7 @@ def get_data(dataset, hardness):
         )
         data = []
         url = f'https://raw.githubusercontent.com/night-chen/ToolQA/main/data/questions/{hardness}/{dataset}-{hardness}.jsonl'
-        url = requests.get(url)
+        url = httpx.get(url)
         if url.status_code == 200:
             lines = url.text.splitlines()
             for line in lines:

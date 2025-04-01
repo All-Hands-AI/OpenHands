@@ -82,11 +82,11 @@ CHANGES: str(val) replaces f"{val:.16G}"
 DEPS: None modified
 INTENT: Fix precision while maintaining FITS compliance"""
 
-        prompt + '\n\n'
+        prompt += '\n\n'
 
         prompt += ('\n' + summary_event.message + '\n') if summary_event.message else ''
 
-        prompt + '\n\n'
+        prompt += '\n\n'
 
         for forgotten_event in forgotten_events:
             prompt += str(forgotten_event) + '\n\n'
