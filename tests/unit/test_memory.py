@@ -261,3 +261,61 @@ REPOSITORY INSTRUCTIONS: This is a test repository.
 
     # Clean up
     os.remove(os.path.join(prompt_dir, 'micro', f'{repo_microagent_name}.md'))
+
+
+@pytest.mark.asyncio
+async def test_memory_with_agent_microagents():
+    """
+    Test that Memory processes microagent based on trigger words from agent messages.
+    """
+    # Create a mock event stream
+    event_stream = MagicMock(spec=EventStream)
+
+    # Initialize Memory to use the global microagents dir
+    memory = Memory(
+        event_stream=event_stream,
+        sid='test-session',
+    )
+
+    # Verify microagents were loaded - at least one microagent should be loaded
+    # from the global directory that's in the repo
+    assert len(memory.knowledge_microagents) > 0
+
+    # We know 'flarglebargle' exists in the global directory
+    assert 'flarglebargle' in memory.knowledge_microagents
+
+    # Create a microagent action with the trigger word
+    microagent_action = RecallAction(
+        query='Hello, flarglebargle!', recall_type=RecallType.KNOWLEDGE
+    )
+
+    # Set the source to AGENT
+    microagent_action._source = EventSource.AGENT  # type: ignore[attr-defined]
+
+    # Mock the event_stream.add_event method
+    added_events = []
+
+    def original_add_event(event, source):
+        added_events.append((event, source))
+
+    event_stream.add_event = original_add_event
+
+    # Add the microagent action to the event stream
+    event_stream.add_event(microagent_action, EventSource.AGENT)
+
+    # Clear the events list to only capture new events
+    added_events.clear()
+
+    # Process the microagent action
+    await memory._on_event(microagent_action)
+
+    # Verify a RecallObservation was added to the event stream
+    assert len(added_events) == 1
+    observation, source = added_events[0]
+    assert isinstance(observation, RecallObservation)
+    assert source == EventSource.ENVIRONMENT
+    assert observation.recall_type == RecallType.KNOWLEDGE
+    assert len(observation.microagent_knowledge) == 1
+    assert observation.microagent_knowledge[0].name == 'flarglebargle'
+    assert observation.microagent_knowledge[0].trigger == 'flarglebargle'
+    assert 'magic word' in observation.microagent_knowledge[0].content

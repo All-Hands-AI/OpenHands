@@ -58,7 +58,7 @@ def _get_swebench_workspace_dir_name(instance: pd.Series) -> str:
     return f'{instance.repo}__{instance.version}'.replace('/', '__')
 
 
-def get_instruction(instance: pd.Series, metadata: EvalMetadata):
+def get_instruction(instance: pd.Series, metadata: EvalMetadata) -> MessageAction:
     workspace_dir_name = _get_swebench_workspace_dir_name(instance)
     instruction = f"""
 <uploaded_files>
@@ -114,12 +114,20 @@ Be thorough in your exploration, testing, and reasoning. It's fine if your think
 """
 
     if RUN_WITH_BROWSING:
-        instruction += """
-<IMPORTANT!>
-You SHOULD NEVER attempt to browse the web.
-</IMPORTANT!>
-"""
-    return instruction
+        instruction += (
+            '<IMPORTANT!>\n'
+            'You SHOULD NEVER attempt to browse the web. '
+            '</IMPORTANT!>\n'
+        )
+
+    if 'image_assets' in instance:
+        assets = instance['image_assets']
+        assert (
+            'problem_statement' in assets
+        ), 'problem_statement is required in image_assets'
+        image_urls = assets['problem_statement']
+        return MessageAction(content=instruction, image_urls=image_urls)
+    return MessageAction(content=instruction)
 
 
 # TODO: migrate all swe-bench docker to ghcr.io/openhands
@@ -129,14 +137,18 @@ DEFAULT_DOCKER_IMAGE_PREFIX = os.environ.get(
 logger.info(f'Default docker image prefix: {DEFAULT_DOCKER_IMAGE_PREFIX}')
 
 
-def get_instance_docker_image(instance_id: str, official_image: bool = False) -> str:
-    if official_image:
+def get_instance_docker_image(
+    instance_id: str,
+    swebench_official_image: bool = False,
+) -> str:
+    if swebench_official_image:
         # Official SWE-Bench image
         # swebench/sweb.eval.x86_64.django_1776_django-11333:v1
         docker_image_prefix = 'docker.io/swebench/'
         repo, name = instance_id.split('__')
-        image_name = f'sweb.eval.x86_64.{repo}_1776_{name}:latest'
-        logger.warning(f'Using official SWE-Bench image: {image_name}')
+        image_name = f'swebench/sweb.eval.x86_64.{repo}_1776_{name}:latest'
+        logger.info(f'Using official SWE-Bench image: {image_name}')
+        return image_name
     else:
         # OpenHands version of the image
         docker_image_prefix = DEFAULT_DOCKER_IMAGE_PREFIX
@@ -144,7 +156,7 @@ def get_instance_docker_image(instance_id: str, official_image: bool = False) ->
         image_name = image_name.replace(
             '__', '_s_'
         )  # to comply with docker image naming convention
-    return (docker_image_prefix.rstrip('/') + '/' + image_name).lower()
+        return (docker_image_prefix.rstrip('/') + '/' + image_name).lower()
 
 
 def get_config(
@@ -152,12 +164,13 @@ def get_config(
     metadata: EvalMetadata,
 ) -> AppConfig:
     # We use a different instance image for the each instance of swe-bench eval
-    use_official_image = bool(
+    use_swebench_official_image = bool(
         ('verified' in metadata.dataset.lower() or 'lite' in metadata.dataset.lower())
         and 'swe-gym' not in metadata.dataset.lower()
     )
     base_container_image = get_instance_docker_image(
-        instance['instance_id'], use_official_image
+        instance['instance_id'],
+        swebench_official_image=use_swebench_official_image,
     )
     logger.info(
         f'Using instance container image: {base_container_image}. '
@@ -373,6 +386,21 @@ def complete_runtime(
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
+    if obs.exit_code == -1:
+        # The previous command is still running
+        # We need to kill previous command
+        logger.info('The previous command is still running, trying to ctrl+z it...')
+        action = CmdRunAction(command='C-z')
+        obs = runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+
+        # Then run the command again
+        action = CmdRunAction(command=f'cd /workspace/{workspace_dir_name}')
+        action.set_hard_timeout(600)
+        logger.info(action, extra={'msg_type': 'ACTION'})
+        obs = runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+
     assert_and_raise(
         isinstance(obs, CmdOutputObservation) and obs.exit_code == 0,
         f'Failed to cd to /workspace/{workspace_dir_name}: {str(obs)}',
@@ -493,13 +521,13 @@ def process_instance(
     try:
         initialize_runtime(runtime, instance)
 
-        instruction = get_instruction(instance, metadata)
+        message_action = get_instruction(instance, metadata)
 
         # Here's how you can run the agent (similar to the `main` function) and get the final task state
         state: State | None = asyncio.run(
             run_controller(
                 config=config,
-                initial_user_action=MessageAction(content=instruction),
+                initial_user_action=message_action,
                 runtime=runtime,
                 fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
                     metadata.agent_class
@@ -539,6 +567,11 @@ def process_instance(
     metrics = get_metrics(state)
 
     # Save the output
+    instruction = message_action.content
+    if message_action.image_urls:
+        instruction += (
+            '\n\n<image_urls>' + '\n'.join(message_action.image_urls) + '</image_urls>'
+        )
     output = EvalOutput(
         instance_id=instance.instance_id,
         instruction=instruction,
