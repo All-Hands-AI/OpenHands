@@ -16,7 +16,6 @@ from openhands.integrations.service_types import (
     UnknownException,
     User,
 )
-from openhands.server.shared import server_config
 from openhands.server.types import AppMode
 from openhands.utils.import_utils import get_impl
 
@@ -139,14 +138,12 @@ class GitHubService(GitService):
 
         return repos[:max_repos]  # Trim to max_repos if needed
 
-    async def get_repositories(self, sort: str) -> list[Repository]:
+    async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
         MAX_REPOS = 1000
         PER_PAGE = 100  # Maximum allowed by GitHub API
         all_repos: list[dict] = []
 
-        
-
-        if server_config.app_mode == AppMode.SAAS:
+        if app_mode == AppMode.SAAS:
             # Get all installation IDs and fetch repos for each one
             installation_ids = await self.get_installation_ids()
 
