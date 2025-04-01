@@ -1,3 +1,4 @@
+import base64
 from urllib.parse import quote_plus
 
 import httpx
@@ -17,6 +18,7 @@ from openhands.utils.import_utils import get_impl
 
 class AzureDevOpsService(GitService):
     BASE_URL = 'https://dev.azure.com'
+    VSSPS_URL = 'https://app.vssps.visualstudio.com'
     token: SecretStr = SecretStr('')
     refresh = False
 
@@ -45,8 +47,13 @@ class AzureDevOpsService(GitService):
 
         # Azure DevOps uses Basic authentication with PAT
         # The username is ignored (empty string), and the password is the PAT
+        # Create base64 encoded credentials (username:PAT)
+        credentials = base64.b64encode(
+            f':{self.token.get_secret_value()}'.encode()
+        ).decode()
+
         return {
-            'Authorization': f'Basic {self.token.get_secret_value()}',
+            'Authorization': f'Basic {credentials}',
             'Content-Type': 'application/json',
         }
 

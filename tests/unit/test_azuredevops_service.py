@@ -1,3 +1,4 @@
+import base64
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -20,7 +21,8 @@ async def test_azuredevops_service_token_handling():
 
     # Test headers contain the token correctly
     headers = await service._get_azuredevops_headers()
-    assert headers['Authorization'] == 'Basic test-token'
+    expected_auth = f'Basic {base64.b64encode(":test-token".encode()).decode()}'
+    assert headers['Authorization'] == expected_auth
     assert headers['Content-Type'] == 'application/json'
 
     # Test initialization without token
@@ -76,7 +78,8 @@ async def test_azuredevops_service_get_user():
             == 'https://dev.azure.com/_apis/profile/profiles/me?api-version=7.0'
         )
         headers = call_args[1]['headers']
-        assert headers['Authorization'] == 'Basic test-token'
+        expected_auth = f'Basic {base64.b64encode(":test-token".encode()).decode()}'
+        assert headers['Authorization'] == expected_auth
 
         # Verify user data is correctly parsed
         assert isinstance(user.id, int)
