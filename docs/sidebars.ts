@@ -156,6 +156,11 @@ const sidebars: SidebarsConfig = {
                   label: 'OpenRouter',
                   id: 'usage/llms/openrouter',
                 },
+                {
+                  type: 'doc',
+                  label: 'Local LLMs with SGLang or vLLM',
+                  id: 'usage/llms/local-llms',
+                },
               ],
             },
           ],
