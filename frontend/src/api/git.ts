@@ -54,13 +54,12 @@ export const retrieveGitHubAppRepositories = async (
  * Given a PAT, retrieves the repositories of the user
  * @returns A list of repositories
  */
-export const retrieveUserGitRepositories = async (app_mode = "oss") => {
+export const retrieveUserGitRepositories = async () => {
   const response = await openHands.get<GitRepository[]>(
     "/api/user/repositories",
     {
       params: {
         sort: "pushed",
-        app_mode,
       },
     },
   );

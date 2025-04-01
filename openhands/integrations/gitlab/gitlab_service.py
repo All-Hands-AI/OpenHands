@@ -120,7 +120,7 @@ class GitLabService(GitService):
 
         return repos
 
-    async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
+    async def get_repositories(self, sort: str) -> list[Repository]:
         MAX_REPOS = 1000
         PER_PAGE = 100  # Maximum allowed by GitLab API
         all_repos: list[dict] = []

@@ -24,7 +24,6 @@ app = APIRouter(prefix='/api/user')
 @app.get('/repositories', response_model=list[Repository])
 async def get_user_repositories(
     sort: str = 'pushed',
-    app_mode: AppMode = AppMode.OSS,
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     access_token: SecretStr | None = Depends(get_access_token),
 ):
@@ -34,7 +33,7 @@ async def get_user_repositories(
         )
 
         try:
-            repos: list[Repository] = await client.get_repositories(sort, app_mode)
+            repos: list[Repository] = await client.get_repositories(sort)
             return repos
 
         except AuthenticationError as e:
