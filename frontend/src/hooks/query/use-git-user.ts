@@ -6,7 +6,7 @@ import OpenHands from "#/api/open-hands";
 import { useAuth } from "#/context/auth-context";
 import { useLogout } from "../mutation/use-logout";
 
-export const useGitHubUser = () => {
+export const useGitUser = () => {
   const { providersAreSet, providerTokensSet } = useAuth();
   const { mutateAsync: logout } = useLogout();
 
@@ -14,7 +14,7 @@ export const useGitHubUser = () => {
 
   const user = useQuery({
     queryKey: ["user", providerTokensSet],
-    queryFn: OpenHands.getGitHubUser,
+    queryFn: OpenHands.getGitUser,
     enabled: providersAreSet && !!config?.APP_MODE,
     retry: false,
     staleTime: 1000 * 60 * 5, // 5 minutes

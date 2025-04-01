@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { Provider } from "#/types/settings";
-import { GitRepository } from "#/types/github";
+import { GitRepository } from "#/types/git";
 
 type SliceState = {
   files: string[]; // base64 encoded images

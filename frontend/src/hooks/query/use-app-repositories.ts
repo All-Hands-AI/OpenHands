@@ -1,6 +1,6 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import React from "react";
-import { retrieveGitHubAppRepositories } from "#/api/github";
+import { retrieveGitHubAppRepositories } from "#/api/git";
 import { useAppInstallations } from "./use-app-installations";
 import { useConfig } from "./use-config";
 import { useAuth } from "#/context/auth-context";

@@ -7,7 +7,7 @@ import {
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import { STRIPE_BILLING_HANDLERS } from "./billing-handlers";
 import { ApiSettings, PostApiSettings } from "#/types/settings";
-import { GitHubUser } from "#/types/github";
+import { GitUser } from "#/types/git";
 
 export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
   llm_model: DEFAULT_SETTINGS.LLM_MODEL,
@@ -156,7 +156,7 @@ export const handlers = [
     ]),
   ),
   http.get("/api/user/info", () => {
-    const user: GitHubUser = {
+    const user: GitUser = {
       id: 1,
       login: "octocat",
       avatar_url: "https://avatars.githubusercontent.com/u/583231?v=4",
