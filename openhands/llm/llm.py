@@ -40,6 +40,7 @@ __all__ = ['LLM']
 LLM_RETRY_EXCEPTIONS: tuple[type[Exception], ...] = (
     RateLimitError,
     litellm.Timeout,
+    litellm.InternalServerError,
 )
 
 # cache prompt supporting models
@@ -66,6 +67,7 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     'o1-2024-12-17',
     'o3-mini-2025-01-31',
     'o3-mini',
+    'gemini-2.5-pro',
 ]
 
 REASONING_EFFORT_SUPPORTED_MODELS = [
@@ -271,7 +273,16 @@ class LLM(RetryMixin, DebugMixin):
             # if we mocked function calling, and we have tools, convert the response back to function calling format
             if mock_function_calling and mock_fncall_tools is not None:
                 logger.debug(f'Response choices: {len(resp.choices)}')
-                assert len(resp.choices) >= 1
+                if len(resp.choices) < 1:
+                    # Just try again
+                    raise litellm.InternalServerError(
+                        'Response choices is less than 1 - This is only seen in Gemini Pro 2.5 so far. Response: '
+                        + str(resp),
+                        self.config.custom_llm_provider,
+                        self.config.model,
+                        response=resp,
+                    )
+
                 non_fncall_response_message = resp.choices[0].message
                 fn_call_messages_with_response = (
                     convert_non_fncall_messages_to_fncall_messages(
@@ -285,6 +296,15 @@ class LLM(RetryMixin, DebugMixin):
                     )
                 resp.choices[0].message = fn_call_response_message
 
+            if len(resp.choices) < 1:
+                # Just try again
+                raise litellm.InternalServerError(
+                    'Response choices is less than 1 - This is only seen in Gemini Pro 2.5 so far. Response: '
+                    + str(resp),
+                    self.config.custom_llm_provider,
+                    self.config.model,
+                    response=resp,
+                )
             message_back: str = resp['choices'][0]['message']['content'] or ''
             tool_calls: list[ChatCompletionMessageToolCall] = resp['choices'][0][
                 'message'
