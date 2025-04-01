@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { HelpLink } from "#/components/features/settings/help-link";
@@ -49,6 +49,7 @@ function AccountSettings() {
   const { mutate: saveSettings } = useSaveSettings();
   const { handleLogout } = useAppLogout();
   const { providerTokensSet, providersAreSet } = useAuth();
+  const [activeTab, setActiveTab] = useState("github");
 
   const isFetching = isFetchingSettings || isFetchingResources;
   const isSuccess = isSuccessfulSettings && isSuccessfulResources;
@@ -130,9 +131,13 @@ function AccountSettings() {
 
     const githubToken = formData.get("github-token-input")?.toString();
     const gitlabToken = formData.get("gitlab-token-input")?.toString();
-    const azuredevopsToken = formData.get("azuredevops-token-input")?.toString();
+    const azuredevopsToken = formData
+      .get("azuredevops-token-input")
+      ?.toString();
     const azureDevOpsOrg = formData.get("azuredevops-org-input")?.toString();
-    const azureDevOpsProject = formData.get("azuredevops-project-input")?.toString();
+    const azureDevOpsProject = formData
+      .get("azuredevops-project-input")
+      ?.toString();
     // we don't want the user to be able to modify these settings in SaaS
     const finalLlmModel = shouldHandleSpecialSaasCase
       ? undefined
@@ -396,143 +401,191 @@ function AccountSettings() {
             )}
             {!isSaas && (
               <>
-                <SettingsInput
-                  testId="github-token-input"
-                  name="github-token-input"
-                  label="GitHub Token"
-                  type="password"
-                  className="w-[680px]"
-                  startContent={
-                    isGitHubTokenSet && (
-                      <KeyStatusIcon isSet={!!isGitHubTokenSet} />
-                    )
-                  }
-                  placeholder={isGitHubTokenSet ? "<hidden>" : ""}
-                />
-                <p data-testid="github-token-help-anchor" className="text-xs">
-                  {" "}
-                  Generate a token on{" "}
-                  <b>
-                    {" "}
-                    <a
-                      href="https://github.com/settings/tokens/new?description=openhands-app&scopes=repo,user,workflow"
-                      target="_blank"
-                      className="underline underline-offset-2"
-                      rel="noopener noreferrer"
+                <div>
+                  {/* Navigation Tabs */}
+                  <nav className="flex border-b border-gray-200">
+                    <button
+                      type="button"
+                      className={`px-4 py-2 text-sm font-medium ${
+                        activeTab === "github"
+                          ? "border-b-2 border-blue-500"
+                          : ""
+                      }`}
+                      onClick={() => setActiveTab("github")}
                     >
                       GitHub
-                    </a>{" "}
-                  </b>
-                  or see the{" "}
-                  <b>
-                    <a
-                      href="https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token"
-                      target="_blank"
-                      className="underline underline-offset-2"
-                      rel="noopener noreferrer"
-                    >
-                      documentation
-                    </a>
-                  </b>
-                  .
-                </p>
-
-                <SettingsInput
-                  testId="gitlab-token-input"
-                  name="gitlab-token-input"
-                  label="GitLab Token"
-                  type="password"
-                  className="w-[680px]"
-                  startContent={
-                    isGitLabTokenSet && (
-                      <KeyStatusIcon isSet={!!isGitLabTokenSet} />
-                    )
-                  }
-                  placeholder={isGitHubTokenSet ? "<hidden>" : ""}
-                />
-
-                <p data-testId="gitlab-token-help-anchor" className="text-xs">
-                  {" "}
-                  Generate a token on{" "}
-                  <b>
-                    {" "}
-                    <a
-                      href="https://gitlab.com/-/user_settings/personal_access_tokens?name=openhands-app&scopes=api,read_user,read_repository,write_repository"
-                      target="_blank"
-                      className="underline underline-offset-2"
-                      rel="noopener noreferrer"
+                    </button>
+                    <button
+                      type="button"
+                      className={`px-4 py-2 text-sm font-medium ${
+                        activeTab === "gitlab"
+                          ? "border-b-2 border-blue-500"
+                          : ""
+                      }`}
+                      onClick={() => setActiveTab("gitlab")}
                     >
                       GitLab
-                    </a>{" "}
-                  </b>
-                  or see the{" "}
-                  <b>
-                    <a
-                      href="https://docs.gitlab.com/user/profile/personal_access_tokens/"
-                      target="_blank"
-                      className="underline underline-offset-2"
-                      rel="noopener noreferrer"
-                    >
-                      documentation
-                    </a>
-                  </b>
-                  .
-                </p>
-
-                <SettingsInput
-                  testId="azuredevops-token-input"
-                  name="azuredevops-token-input"
-                  label="Azure DevOps Token"
-                  type="password"
-                  className="w-[680px]"
-                  startContent={
-                    isAzureDevOpsTokenSet && (
-                      <KeyStatusIcon isSet={!!isAzureDevOpsTokenSet} />
-                    )
-                  }
-                  placeholder={isAzureDevOpsTokenSet ? "<hidden>" : ""}
-                />
-
-                <p
-                  data-testId="azuredevops-token-help-anchor"
-                  className="text-xs"
-                >
-                  {" "}
-                  Generate a Personal Access Token (PAT) on{" "}
-                  <b>
-                    {" "}
-                    <a
-                      href="https://dev.azure.com/_usersSettings/tokens"
-                      target="_blank"
-                      className="underline underline-offset-2"
-                      rel="noopener noreferrer"
+                    </button>
+                    <button
+                      type="button"
+                      className={`px-4 py-2 text-sm font-medium ${
+                        activeTab === "azuredevops"
+                          ? "border-b-2 border-blue-500"
+                          : ""
+                      }`}
+                      onClick={() => setActiveTab("azuredevops")}
                     >
                       Azure DevOps
-                    </a>
-                  </b>{" "}
-                  with <b>Code (Read & Write)</b> and <b>User Profile (Read)</b>{" "}
-                  scopes.
-                </p>
+                    </button>
+                  </nav>
 
-                <SettingsInput
-                  testId="azuredevops-org-input"
-                  name="azuredevops-org-input"
-                  label="Azure DevOps Organization"
-                  type="text"
-                  className="w-[680px]"
-                  placeholder="Your Azure DevOps organization name"
-                  defaultValue={settings?.AZURE_DEVOPS_ORG || ""}
-                />
-
-                <SettingsInput
-                  testId="azuredevops-project-input"
-                  name="azuredevops-project-input"
-                  label="Azure DevOps Project"
-                  type="text"
-                  className="w-[680px]"
-                  placeholder="Your Azure DevOps project name"
-                  defaultValue={settings?.AZURE_DEVOPS_PROJECT || ""}
-                />
+                  {/* Tab Content */}
+                  <div className="mt-4">
+                    {activeTab === "github" && (
+                      <>
+                        <SettingsInput
+                          testId="github-token-input"
+                          name="github-token-input"
+                          label="GitHub Token"
+                          type="password"
+                          className="w-[680px]"
+                          startContent={
+                            isGitHubTokenSet && (
+                              <KeyStatusIcon isSet={!!isGitHubTokenSet} />
+                            )
+                          }
+                          placeholder={isGitHubTokenSet ? "<hidden>" : ""}
+                        />
+                        <p
+                          data-testid="github-token-help-anchor"
+                          className="text-xs"
+                        >
+                          Generate a token on{" "}
+                          <b>
+                            <a
+                              href="https://github.com/settings/tokens/new?description=openhands-app&scopes=repo,user,workflow"
+                              target="_blank"
+                              className="underline underline-offset-2"
+                              rel="noopener noreferrer"
+                            >
+                              GitHub
+                            </a>
+                          </b>{" "}
+                          or see the{" "}
+                          <b>
+                            <a
+                              href="https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token"
+                              target="_blank"
+                              className="underline underline-offset-2"
+                              rel="noopener noreferrer"
+                            >
+                              documentation
+                            </a>
+                          </b>
+                          .
+                        </p>
+                      </>
+                    )}
+                    {activeTab === "gitlab" && (
+                      <>
+                        <SettingsInput
+                          testId="gitlab-token-input"
+                          name="gitlab-token-input"
+                          label="GitLab Token"
+                          type="password"
+                          className="w-[680px]"
+                          startContent={
+                            isGitLabTokenSet && (
+                              <KeyStatusIcon isSet={!!isGitLabTokenSet} />
+                            )
+                          }
+                          placeholder={isGitLabTokenSet ? "<hidden>" : ""}
+                        />
+                        <p
+                          data-testId="gitlab-token-help-anchor"
+                          className="text-xs"
+                        >
+                          Generate a token on{" "}
+                          <b>
+                            <a
+                              href="https://gitlab.com/-/user_settings/personal_access_tokens?name=openhands-app&scopes=api,read_user,read_repository,write_repository"
+                              target="_blank"
+                              className="underline underline-offset-2"
+                              rel="noopener noreferrer"
+                            >
+                              GitLab
+                            </a>
+                          </b>{" "}
+                          or see the{" "}
+                          <b>
+                            <a
+                              href="https://docs.gitlab.com/user/profile/personal_access_tokens/"
+                              target="_blank"
+                              className="underline underline-offset-2"
+                              rel="noopener noreferrer"
+                            >
+                              documentation
+                            </a>
+                          </b>
+                          .
+                        </p>
+                      </>
+                    )}
+                    {activeTab === "azuredevops" && (
+                      <>
+                        <SettingsInput
+                          testId="azuredevops-token-input"
+                          name="azuredevops-token-input"
+                          label="Azure DevOps Token"
+                          type="password"
+                          className="w-[680px]"
+                          startContent={
+                            isAzureDevOpsTokenSet && (
+                              <KeyStatusIcon isSet={!!isAzureDevOpsTokenSet} />
+                            )
+                          }
+                          placeholder={isAzureDevOpsTokenSet ? "<hidden>" : ""}
+                        />
+                        <p
+                          data-testId="azuredevops-token-help-anchor"
+                          className="text-xs"
+                        >
+                          Generate a Personal Access Token (PAT) on{" "}
+                          <b>
+                            <a
+                              href="https://dev.azure.com/_usersSettings/tokens"
+                              target="_blank"
+                              className="underline underline-offset-2"
+                              rel="noopener noreferrer"
+                            >
+                              Azure DevOps
+                            </a>
+                          </b>{" "}
+                          with <b>Code (Read & Write)</b> and{" "}
+                          <b>User Profile (Read)</b> scopes.
+                        </p>
+                        <SettingsInput
+                          testId="azuredevops-org-input"
+                          name="azuredevops-org-input"
+                          label="Azure DevOps Organization"
+                          type="text"
+                          className="w-[680px]"
+                          placeholder="Your Azure DevOps organization name"
+                          defaultValue={settings?.AZURE_DEVOPS_ORG || ""}
+                        />
+                        <SettingsInput
+                          testId="azuredevops-project-input"
+                          name="azuredevops-project-input"
+                          label="Azure DevOps Project"
+                          type="text"
+                          className="w-[680px]"
+                          placeholder="Your Azure DevOps project name"
+                          defaultValue={settings?.AZURE_DEVOPS_PROJECT || ""}
+                        />
+                      </>
+                    )}
+                  </div>
+                </div>
                 <BrandButton
                   type="button"
                   variant="secondary"
@@ -544,9 +597,9 @@ function AccountSettings() {
               </>
             )}
           </section>
-
           <section className="flex flex-col gap-6">
             <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">
+              {" "}
               Additional Settings
             </h2>
 
