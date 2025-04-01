@@ -50,6 +50,7 @@ export function handleObservationMessage(message: ObservationMessage) {
     case ObservationType.READ:
     case ObservationType.EDIT:
     case ObservationType.THINK:
+    case ObservationType.MCP_CALL_TOOL:
     case ObservationType.NULL:
       break; // We don't display the default message for these observations
     default:
@@ -121,6 +122,21 @@ export function handleObservationMessage(message: ObservationMessage) {
             observation: "run_ipython" as const,
             extras: {
               code: String(message.extras.code || ""),
+            },
+          }),
+        );
+        break;
+      case "mcp_call_tool":
+        store.dispatch(
+          addAssistantObservation({
+            ...baseObservation,
+            observation: "mcp_call_tool" as const,
+            extras: {
+                tool_name: String(message.extras.tool_name || ""),
+                kwargs:
+                  typeof message.extras.kwargs === "object"
+                    ? (message.extras.kwargs as Record<string, unknown>)
+                    : {},
             },
           }),
         );

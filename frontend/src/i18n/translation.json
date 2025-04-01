@@ -4313,6 +4313,21 @@
         "es": "Navegación completada",
         "tr": "Gezinme tamamlandı"
     },
+    "OBSERVATION_MESSAGE$MCP_CALL_TOOL": {
+        "en": "Called an MCP tool",
+        "zh-CN": "调用了 MCP 工具",
+        "zh-TW": "調用了 MCP 工具",
+        "ko-KR": "MCP 도구 호출됨",
+        "ja": "MCPツールを呼び出しました",
+        "no": "Kalt et MCP-verktøy",
+        "ar": "تم استدعاء أداة MCP",
+        "de": "Ein MCP-Tool aufgerufen",
+        "fr": "Outil MCP appelé",
+        "it": "Chiamato uno strumento MCP",
+        "pt": "Ferramenta MCP chamada",
+        "es": "Se ha llamado a una herramienta MCP",
+        "tr": "Bir MCP aracı çağrıldı"
+    },
     "EXPANDABLE_MESSAGE$SHOW_DETAILS": {
         "en": "Show details",
         "zh-CN": "显示详情",

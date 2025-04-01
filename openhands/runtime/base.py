@@ -495,6 +495,11 @@ class Runtime(FileEditRuntimeMixin):
     print(tools)"""
                 action = IPythonRunCellAction(ipython_code, include_extra=False)
                 obs = self.run_action(action)
+                # Check if we can retrieve tool definitions from the server
+                if 'Tool(' not in obs.content:
+                    raise RuntimeError(
+                        f'Failed to retrieve tool definitions from MCP server {server_name}: {obs.content}'
+                    )
                 self.log('info', f'Got tools for {server_name}: {obs.content}')
                 server_name_to_tools_def[server_name] = obs.content
 
@@ -585,21 +590,19 @@ class Runtime(FileEditRuntimeMixin):
             not self.microagent_name_to_tools_def
             or not self.microagent_name_to_mcp_configs
         ):
-            return ErrorObservation(
-                'MCP tool definitions or configs not found. Please call get_mcp_tools first.'
-            )
+            return ErrorObservation('MCP tool definitions or configs not found.')
 
         # Get the MCP server config
         server_name: str = ''
-        for _, server_to_tools_list in self.microagent_name_to_tools_def.items():
+        for _, server_to_tools_def in self.microagent_name_to_tools_def.items():
             search_str = f"Tool(name='{tool_name}',"
-            for server, tools_list in server_to_tools_list.items():
+            for server, tools_list in server_to_tools_def.items():
                 if search_str in tools_list:
                     server_name = server
                     break
 
         if not server_name:
-            return ErrorObservation(f'MCP server not found for tool {tool_name}')
+            return ErrorObservation(f'MCP server not found for tool: {tool_name}')
 
         # Get the MCP server config
         mcp_config: StdioServerParameters | None = None
@@ -609,7 +612,7 @@ class Runtime(FileEditRuntimeMixin):
                 break
 
         if not mcp_config:
-            return ErrorObservation(f'MCP config not found for server {server_name}')
+            return ErrorObservation(f'MCP config not found for server: {server_name}')
 
         # Call the tool
         ipython_code = f"""\
@@ -620,6 +623,8 @@ class Runtime(FileEditRuntimeMixin):
         obs = self.run_ipython(call_action)
 
         return MCPCallToolObservation(
+            tool_name=tool_name,
+            kwargs=action.kwargs,
             content=obs.content,
         )
 

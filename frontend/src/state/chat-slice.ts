@@ -22,6 +22,7 @@ const HANDLED_ACTIONS: OpenHandsEventType[] = [
   "browse",
   "browse_interactive",
   "edit",
+  "mcp_call_tool",
 ];
 
 function getRiskText(risk: ActionSecurityRisk) {
@@ -112,6 +113,12 @@ export const chatSlice = createSlice({
       } else if (actionID === "browse_interactive") {
         // Include the browser_actions in the content
         text = `**Action:**\n\n\`\`\`python\n${action.payload.args.browser_actions}\n\`\`\``;
+      } else if (actionID === "mcp_call_tool") {
+        text = `Tool name: \`${action.payload.args.tool_name}\`\n\nArguments:\n\`\`\`python\n${JSON.stringify(
+          action.payload.args.kwargs,
+          null,
+          2,
+        )}\n\`\`\``;
       }
       if (actionID === "run" || actionID === "run_ipython") {
         if (
@@ -193,6 +200,18 @@ export const chatSlice = createSlice({
         } else {
           causeMessage.content = observation.payload.content;
         }
+      } else if (observationID === "mcp_call_tool") {
+        let { content } = observation.payload;
+        if (content.length > MAX_CONTENT_LENGTH) {
+          content = `${content.slice(0, MAX_CONTENT_LENGTH)}...`;
+        }
+        let tool_name = observation.payload.extras.tool_name;
+        let tool_kwargs = JSON.stringify(
+          observation.payload.extras.kwargs,
+          null,
+          2,
+        );
+        causeMessage.content = `Tool name: \`${tool_name}\`\n\nArguments:\n\`\`\`python\n${tool_kwargs}\n\`\`\`\n\nOutput:\n\`\`\`python\n${content.trim()}\n\`\`\``;
       } else if (observationID === "browse") {
         let content = `**URL:** ${observation.payload.extras.url}\n`;
         if (observation.payload.extras.error) {

@@ -29,6 +29,9 @@ enum ObservationType {
   // A response to the agent's thought (usually a static message)
   THINK = "think",
 
+  // MCP tool call result
+  MCP_CALL_TOOL = "mcp_call_tool",
+
   // A no-op observation
   NULL = "null",
 }

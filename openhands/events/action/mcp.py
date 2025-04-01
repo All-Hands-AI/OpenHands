@@ -7,10 +7,11 @@ from openhands.events.action.action import Action
 
 @dataclass
 class MCPCallToolAction(Action):
-    kwargs: dict[str, Any] | None = None
-    tool_name: str = ''
-    action: str = ActionType.MCP_CALL_TOOL
     runnable: ClassVar[bool] = True
+    thought: str = ''
+    tool_name: str = ''
+    kwargs: dict[str, Any] | None = None
+    action: str = ActionType.MCP_CALL_TOOL
 
     @property
     def message(self) -> str:
