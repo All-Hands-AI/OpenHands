@@ -208,6 +208,11 @@ const sidebars: SidebarsConfig = {
         },
         {
           type: 'doc',
+          label: 'MCP Integration',
+          id: 'modules/mcp-integration',
+        },
+        {
+          type: 'doc',
           label: 'Custom Sandbox',
           id: 'usage/how-to/custom-sandbox-guide',
         },
