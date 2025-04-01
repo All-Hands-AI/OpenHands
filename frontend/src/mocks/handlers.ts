@@ -24,6 +24,8 @@ export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
   enable_sound_notifications: DEFAULT_SETTINGS.ENABLE_SOUND_NOTIFICATIONS,
   user_consents_to_analytics: DEFAULT_SETTINGS.USER_CONSENTS_TO_ANALYTICS,
   provider_tokens: DEFAULT_SETTINGS.PROVIDER_TOKENS,
+  azure_devops_org: DEFAULT_SETTINGS.AZURE_DEVOPS_ORG,
+  azure_devops_project: DEFAULT_SETTINGS.AZURE_DEVOPS_PROJECT,
 };
 
 const MOCK_USER_PREFERENCES: {
