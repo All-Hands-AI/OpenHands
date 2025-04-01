@@ -2,7 +2,7 @@ import React from "react";
 import { useDispatch } from "react-redux";
 import posthog from "posthog-js";
 import { setReplayJson } from "#/state/initial-query-slice";
-import { useGitUser } from "#/hooks/query/use-github-user";
+import { useGitUser } from "#/hooks/query/use-git-user";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useConfig } from "#/hooks/query/use-config";
 import { GitRepositoriesSuggestionBox } from "#/components/features/git/git-repositories-suggestion-box";
