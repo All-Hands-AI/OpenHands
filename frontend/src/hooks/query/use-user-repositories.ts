@@ -11,7 +11,7 @@ export const useUserRepositories = () => {
   const repos = useInfiniteQuery({
     queryKey: ["repositories", providerTokensSet],
     queryFn: async ({ pageParam }) =>
-      retrieveUserGitRepositories(pageParam, 100),
+      retrieveUserGitRepositories(config?.APP_MODE || "oss"),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => lastPage.nextPage,
     enabled: providersAreSet && config?.APP_MODE === "oss",
