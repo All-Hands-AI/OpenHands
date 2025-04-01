@@ -1,6 +1,6 @@
 import base64
 from urllib.parse import quote_plus
-
+import os
 import httpx
 from pydantic import SecretStr
 
@@ -17,8 +17,8 @@ from openhands.utils.import_utils import get_impl
 
 
 class AzureDevOpsService(GitService):
-    BASE_URL = 'https://dev.azure.com'
-    VSSPS_URL = 'https://app.vssps.visualstudio.com'
+    BASE_URL = f'https://dev.azure.com/{ os.environ.get('AZURE_DEVOPS_ORG', '') }/{os.environ.get('AZURE_DEVOPS_PROJECT', '') }'    
+    BASE_VSAEX_URL = f'https://vsaex.dev.azure.com/{ os.environ.get('AZURE_DEVOPS_ORG', '') }'
     token: SecretStr = SecretStr('')
     refresh = False
 
@@ -28,12 +28,11 @@ class AzureDevOpsService(GitService):
         external_auth_id: str | None = None,
         external_auth_token: SecretStr | None = None,
         token: SecretStr | None = None,
-        external_token_manager: bool = False,
-        organization: str | None = None,
+        external_token_manager: bool = False,        
     ):
         self.user_id = user_id
         self.external_token_manager = external_token_manager
-        self.organization = organization
+        self.organization =  os.environ.get('AZURE_DEVOPS_ORG', '') 
 
         if token:
             self.token = token
@@ -86,10 +85,11 @@ class AzureDevOpsService(GitService):
         headers = await self._get_azuredevops_headers()
 
         try:
+
             # Get the current user profile
             async with httpx.AsyncClient() as client:
                 response = await client.get(
-                    f'{self.BASE_URL}/_apis/profile/profiles/me?api-version=7.0',
+                    f"{self.BASE_VSAEX_URL}/_apis/connectionData?api-version=7.2-preview.1",
                     headers=headers,
                 )
 
@@ -100,21 +100,23 @@ class AzureDevOpsService(GitService):
                     f'Failed to get user information: {response.status_code} {response.text}'
                 )
 
-            user_data = await response.json()
+            user_data = response.json().get('authenticatedUser', {})
 
             # Convert string ID to integer by hashing it
             user_id = hash(user_data.get('id', '')) % (2**31)
 
             return User(
                 id=user_id,
-                login=user_data.get('displayName', ''),
+                login=user_data.get('properties.Account.$value', ''),
                 avatar_url=user_data.get('imageUrl', ''),
-                name=user_data.get('displayName', ''),
-                email=user_data.get('emailAddress', ''),
+                name=user_data.get('providerDisplayName', ''),
+                email=user_data.get('properties.Account.$value', ''),
                 company=None,
             )
-        except httpx.RequestError as e:
+        except httpx.RequestError as e:            
             raise UnknownException(f'Request error: {str(e)}')
+        except Exception as e:
+            print(f'Error: {str(e)}')
 
     async def search_repositories(
         self,
@@ -132,10 +134,15 @@ class AzureDevOpsService(GitService):
         headers = await self._get_azuredevops_headers()
 
         try:
+
+            url = f'{self.BASE_URL}/_apis/git/repositories?searchCriteria.searchText={quote_plus(query)}&api-version=7.0'
+
+            print(f'URL: {url}')
+
             # Search for repositories in the organization
             async with httpx.AsyncClient() as client:
                 response = await client.get(
-                    f'{self.BASE_URL}/{self.organization}/_apis/git/repositories?searchCriteria.searchText={quote_plus(query)}&api-version=7.0',
+                    url,
                     headers=headers,
                 )
 
@@ -146,7 +153,7 @@ class AzureDevOpsService(GitService):
                     f'Failed to search repositories: {response.status_code} {response.text}'
                 )
 
-            response_data = await response.json()
+            response_data = response.json()
             repos_data = response_data.get('value', [])
 
             repositories = []
@@ -181,10 +188,15 @@ class AzureDevOpsService(GitService):
         headers = await self._get_azuredevops_headers()
 
         try:
+
+            url = f'{self.BASE_URL}/_apis/git/repositories?api-version=7.0'
+
+            print(f'URL: {url}')
+
             # Get all repositories in the organization
             async with httpx.AsyncClient() as client:
                 response = await client.get(
-                    f'{self.BASE_URL}/{self.organization}/_apis/git/repositories?api-version=7.0',
+                    url,
                     headers=headers,
                 )
 
@@ -195,7 +207,7 @@ class AzureDevOpsService(GitService):
                     f'Failed to get repositories: {response.status_code} {response.text}'
                 )
 
-            response_data = await response.json()
+            response_data = response.json()
             repos_data = response_data.get('value', [])
 
             repositories = []
@@ -236,10 +248,11 @@ class AzureDevOpsService(GitService):
             # Check if repository exists
             async with httpx.AsyncClient() as client:
                 response = await client.get(
-                    f'{self.BASE_URL}/{self.organization}/_apis/git/repositories/{repo_name}?api-version=7.0',
+                    f'{self.BASE_URL}/_apis/git/repositories/{repo_name}?api-version=7.0',
                     headers=headers,
                 )
 
+            print(f'response: {response.status_code}')
             return response.status_code == 200
         except httpx.RequestError:
             return False

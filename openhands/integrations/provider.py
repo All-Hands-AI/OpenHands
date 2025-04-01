@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from types import MappingProxyType
 from typing import Annotated, Any, Coroutine, Literal, overload
 
@@ -201,6 +202,8 @@ class ProviderHandler:
         Get repositories from a selected providers with pagination support
         """
 
+        print(f'provider tokens: {self.provider_tokens}')
+
         all_repos: list[Repository] = []
         for provider in self.provider_tokens:
             try:
@@ -255,13 +258,14 @@ class ProviderHandler:
                             return f'https://oauth2:{git_token.get_secret_value()}@{domain}/{repository}.git'
 
                         if provider == ProviderType.AZUREDEVOPS:
+                            print(f'Azure DevOps repo: {repository}')
                             # Azure DevOps URL format: https://{PAT}@dev.azure.com/{organization}/{project}/_git/{repository}
                             parts = repository.split('/')
                             if len(parts) >= 2:
                                 organization = parts[0]
                                 repo_name = parts[-1]
                                 project = parts[1] if len(parts) >= 3 else repo_name
-                                return f'https://{git_token.get_secret_value()}@{domain}/{organization}/{project}/_git/{repo_name}'
+                                return f'https://{git_token.get_secret_value()}@{domain}/{ os.environ.get('AZURE_DEVOPS_ORG', '') }/{os.environ.get('AZURE_DEVOPS_PROJECT', '') }/_git/{repo_name}'
                             return f'https://{git_token.get_secret_value()}@{domain}/{repository}'
 
                         return f'https://{git_token.get_secret_value()}@{domain}/{repository}.git'

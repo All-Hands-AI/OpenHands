@@ -329,6 +329,7 @@ class Runtime(FileEditRuntimeMixin):
         selected_branch: str | None,
     ) -> str:
         provider_handler = ProviderHandler(provider_tokens=git_provider_tokens)
+        print(f'selected_repository: {selected_repository}')
         remote_repo_url = await provider_handler.get_remote_repository_url(
             selected_repository
         )
