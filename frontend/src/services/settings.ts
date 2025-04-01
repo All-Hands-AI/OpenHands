@@ -21,6 +21,8 @@ export const DEFAULT_SETTINGS: Settings = {
     azuredevops: "",
   },
   IS_NEW_USER: true,
+  AZURE_DEVOPS_ORG: null,
+  AZURE_DEVOPS_PROJECT: null,
 };
 
 /**

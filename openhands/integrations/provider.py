@@ -265,7 +265,11 @@ class ProviderHandler:
                                 organization = parts[0]
                                 repo_name = parts[-1]
                                 project = parts[1] if len(parts) >= 3 else repo_name
-                                return f'https://{git_token.get_secret_value()}@{domain}/{ os.environ.get('AZURE_DEVOPS_ORG', '') }/{os.environ.get('AZURE_DEVOPS_PROJECT', '') }/_git/{repo_name}'
+                                # Get the service to access its organization and project properties
+                                service = self._get_service(provider)
+                                azure_org = getattr(service, 'organization', os.environ.get('AZURE_DEVOPS_ORG', ''))
+                                azure_project = getattr(service, 'project', os.environ.get('AZURE_DEVOPS_PROJECT', ''))
+                                return f'https://{git_token.get_secret_value()}@{domain}/{azure_org}/{azure_project}/_git/{repo_name}'
                             return f'https://{git_token.get_secret_value()}@{domain}/{repository}'
 
                         return f'https://{git_token.get_secret_value()}@{domain}/{repository}.git'

@@ -130,6 +130,9 @@ function AccountSettings() {
 
     const githubToken = formData.get("github-token-input")?.toString();
     const gitlabToken = formData.get("gitlab-token-input")?.toString();
+    const azuredevopsToken = formData.get("azuredevops-token-input")?.toString();
+    const azureDevOpsOrg = formData.get("azuredevops-org-input")?.toString();
+    const azureDevOpsProject = formData.get("azuredevops-project-input")?.toString();
     // we don't want the user to be able to modify these settings in SaaS
     const finalLlmModel = shouldHandleSpecialSaasCase
       ? undefined
@@ -141,7 +144,7 @@ function AccountSettings() {
 
     const newSettings = {
       provider_tokens:
-        githubToken || gitlabToken
+        githubToken || gitlabToken || azuredevopsToken
           ? {
               github: githubToken || "",
               gitlab: gitlabToken || "",
@@ -162,6 +165,8 @@ function AccountSettings() {
         remoteRuntimeResourceFactor ||
         DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
       CONFIRMATION_MODE: confirmationModeIsEnabled,
+      AZURE_DEVOPS_ORG: azureDevOpsOrg || null,
+      AZURE_DEVOPS_PROJECT: azureDevOpsProject || null,
     };
 
     saveSettings(newSettings, {
@@ -510,39 +515,24 @@ function AccountSettings() {
                 </p>
 
                 <SettingsInput
-                  testId="azuredevops-token-input"
-                  name="azuredevops-token-input"
-                  label="Azure DevOps Token"
-                  type="password"
+                  testId="azuredevops-org-input"
+                  name="azuredevops-org-input"
+                  label="Azure DevOps Organization"
+                  type="text"
                   className="w-[680px]"
-                  startContent={
-                    isAzureDevOpsTokenSet && (
-                      <KeyStatusIcon isSet={!!isAzureDevOpsTokenSet} />
-                    )
-                  }
-                  placeholder={isAzureDevOpsTokenSet ? "<hidden>" : ""}
+                  placeholder="Your Azure DevOps organization name"
+                  defaultValue={settings?.AZURE_DEVOPS_ORG || ""}
                 />
 
-                <p
-                  data-testId="azuredevops-token-help-anchor"
-                  className="text-xs"
-                >
-                  {" "}
-                  Generate a Personal Access Token (PAT) on{" "}
-                  <b>
-                    {" "}
-                    <a
-                      href="https://dev.azure.com/_usersSettings/tokens"
-                      target="_blank"
-                      className="underline underline-offset-2"
-                      rel="noopener noreferrer"
-                    >
-                      Azure DevOps
-                    </a>
-                  </b>{" "}
-                  with <b>Code (Read & Write)</b> and <b>User Profile (Read)</b>{" "}
-                  scopes.
-                </p>
+                <SettingsInput
+                  testId="azuredevops-project-input"
+                  name="azuredevops-project-input"
+                  label="Azure DevOps Project"
+                  type="text"
+                  className="w-[680px]"
+                  placeholder="Your Azure DevOps project name"
+                  defaultValue={settings?.AZURE_DEVOPS_PROJECT || ""}
+                />
                 <BrandButton
                   type="button"
                   variant="secondary"

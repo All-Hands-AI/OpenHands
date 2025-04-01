@@ -17,8 +17,6 @@ from openhands.utils.import_utils import get_impl
 
 
 class AzureDevOpsService(GitService):
-    BASE_URL = f'https://dev.azure.com/{ os.environ.get('AZURE_DEVOPS_ORG', '') }/{os.environ.get('AZURE_DEVOPS_PROJECT', '') }'    
-    BASE_VSAEX_URL = f'https://vsaex.dev.azure.com/{ os.environ.get('AZURE_DEVOPS_ORG', '') }'
     token: SecretStr = SecretStr('')
     refresh = False
 
@@ -28,11 +26,16 @@ class AzureDevOpsService(GitService):
         external_auth_id: str | None = None,
         external_auth_token: SecretStr | None = None,
         token: SecretStr | None = None,
-        external_token_manager: bool = False,        
+        external_token_manager: bool = False,
+        organization: str | None = None,
+        project: str | None = None,
     ):
         self.user_id = user_id
         self.external_token_manager = external_token_manager
-        self.organization =  os.environ.get('AZURE_DEVOPS_ORG', '') 
+        self.organization = organization or os.environ.get('AZURE_DEVOPS_ORG', '')
+        self.project = project or os.environ.get('AZURE_DEVOPS_PROJECT', '')
+        self.BASE_URL = f'https://dev.azure.com/{self.organization}/{self.project}'
+        self.BASE_VSAEX_URL = f'https://vsaex.dev.azure.com/{self.organization}'
 
         if token:
             self.token = token

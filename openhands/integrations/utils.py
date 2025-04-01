@@ -40,7 +40,7 @@ async def validate_provider_token(token: SecretStr) -> ProviderType | None:
     try:
         # For Azure DevOps, we need to try with an organization
         # This will only validate the token format, not access to a specific organization
-        azuredevops_service = AzureDevOpsService(token=token)
+        azuredevops_service = AzureDevOpsService(token=token, organization=None, project=None)
         await azuredevops_service.get_user()
         return ProviderType.AZUREDEVOPS
     except Exception:
