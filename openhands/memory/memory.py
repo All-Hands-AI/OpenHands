@@ -4,6 +4,8 @@ import uuid
 from datetime import datetime, timezone
 from typing import Callable
 
+from mcp import StdioServerParameters
+
 import openhands
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.agent import RecallAction
@@ -20,7 +22,6 @@ from openhands.microagent import (
     RepoMicroAgent,
     load_microagents_from_dir,
 )
-from openhands.microagent.types import StdioMCPConfig
 from openhands.runtime.base import Runtime
 from openhands.utils.prompt import RepositoryInfo, RuntimeInfo
 
@@ -298,11 +299,11 @@ class Memory:
         if self.status_callback:
             self.status_callback(msg_type, id, message)
 
-    def get_mcp_configs(self) -> dict[str, dict[str, StdioMCPConfig]]:
-        """Get the MCP server configurations."""
+    def get_mcp_configs(self) -> dict[str, dict[str, StdioServerParameters]]:
+        """Get the dictionary mapping from microagents' name to MCP server configurations."""
         mcp_configs = {}
         for name, microagent in self.knowledge_microagents.items():
-            mcp_configs[name] = microagent.metadata.mcp_configs
+            mcp_configs[name] = microagent.metadata.mcp_servers
         return mcp_configs
 
     def set_mcp_tools_definition(self, mcp_tools: dict[str, dict[str, str]]) -> None:
@@ -311,12 +312,12 @@ class Memory:
             if name not in mcp_tools:
                 continue
 
-            formatted_tools = (
-                'MCP Tools that you can use via the `mcp_interaction_tool`:\n\n'
-            )
+            formatted_tools = 'MCP Tools that you can use via the `mcp_call_tool`:\n\n'
             # Format the mcp_tools dict into a string
             for server_name, tool_description in mcp_tools[name].items():
                 formatted_tools += f' - {server_name}:\n{tool_description}\n'
 
             microagent.content += f'\n{formatted_tools}'
-            logger.warning(f'New content for microagent {name}: {microagent.content}')
+            logger.info(
+                f'Updated content for microagent {name} with MCP tools loaded: {microagent.content}'
+            )

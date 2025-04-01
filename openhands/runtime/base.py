@@ -14,6 +14,7 @@ from typing import Callable, cast
 from zipfile import ZipFile
 
 import httpx
+from mcp import StdioServerParameters
 from pydantic import SecretStr
 
 from openhands.core.config import AppConfig, SandboxConfig
@@ -53,7 +54,6 @@ from openhands.microagent import (
     BaseMicroAgent,
     load_microagents_from_dir,
 )
-from openhands.microagent.types import StdioMCPConfig
 from openhands.runtime.plugins import (
     JupyterRequirement,
     PluginRequirement,
@@ -161,9 +161,9 @@ class Runtime(FileEditRuntimeMixin):
         self.prev_token: SecretStr | None = None
 
         # MCP configs
-        self.microagent_to_mcp_configs: dict[str, dict[str, StdioMCPConfig]] | None = (
-            None
-        )
+        self.microagent_to_mcp_configs: (
+            dict[str, dict[str, StdioServerParameters]] | None
+        ) = None
         self.microagent_to_mcp_tools: dict[str, dict[str, str]] | None = None
 
     def setup_initial_env(self) -> None:
@@ -474,7 +474,7 @@ class Runtime(FileEditRuntimeMixin):
         return loaded_microagents
 
     def get_mcp_tools(
-        self, mcp_configs: dict[str, dict[str, StdioMCPConfig]]
+        self, mcp_configs: dict[str, dict[str, StdioServerParameters]]
     ) -> dict[str, dict[str, str]]:
         """Get the list of tools from the MCP servers."""
         self.microagent_to_mcp_configs = mcp_configs
@@ -490,7 +490,7 @@ class Runtime(FileEditRuntimeMixin):
                     continue
 
                 ipython_code = f"""\
-    tools = await list_tools(config={config})
+    tools = await list_tools(config={config.model_dump()})
     print(tools)"""
                 action = IPythonRunCellAction(ipython_code, include_extra=False)
                 self.log('info', f'Listing tools for {server_name}')
@@ -599,7 +599,7 @@ class Runtime(FileEditRuntimeMixin):
             return ErrorObservation(f'MCP server not found for tool {tool_name}')
 
         # Get the MCP server config
-        mcp_config: StdioMCPConfig | None = None
+        mcp_config: StdioServerParameters | None = None
         for _, server_to_config in self.microagent_to_mcp_configs.items():
             if server_name in server_to_config:
                 mcp_config = server_to_config[server_name]
@@ -610,13 +610,11 @@ class Runtime(FileEditRuntimeMixin):
 
         # Call the tool
         ipython_code = f"""\
-    result = await call_tool({mcp_config}, '{tool_name}', {action.kwargs})
+    result = await call_tool({mcp_config.model_dump()}, '{tool_name}', {action.kwargs})
     print(result)"""
 
         call_action = IPythonRunCellAction(ipython_code, include_extra=False)
-        self.log('info', f'Calling MCP tool {tool_name}')
         obs = self.run_ipython(call_action)
-        self.log('info', f'Got MCP call_tool result: {obs.content}')
 
         return MCPCallToolObservation(
             content=obs.content,
