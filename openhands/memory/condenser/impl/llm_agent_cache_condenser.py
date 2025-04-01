@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Optional
 
 from openhands.controller.state.state import State
 from openhands.core.logger import openhands_logger as logger
@@ -344,76 +344,60 @@ Do not include any other text in your response.
         # Always keep the first few events (system prompt, initial user message, etc.)
         keep_event_ids = set(event.id for event in events[: self.keep_first])
 
-        summary = ''
+        # Add events that were not sent to the LLM (i.e., events without a corresponding `_event` in messages)
+        for event in events:
+            if not any(message._event == event for message in messages):
+                keep_event_ids.add(event.id)
 
         # Add the events to keep based on the LLM's response
         for index in keep_message_indices:
             try:
                 message = messages[index]
                 if message._event:
-                    event = next((e for e in events if e == message._event), None)
-                    if event:
-                        print(
-                            f'Keeping event {event}. index:{index}. message:{message}'
-                        )
-                        keep_event_ids.add(event.id)
-                    else:
-                        raise ValueError(
-                            f'Could not find matching event {message._event}'
-                        )
+                    event_not_send_to_llm: Optional[Event] = next(
+                        (e for e in events if e == message._event), None
+                    )
+                    if event_not_send_to_llm is not None:
+                        keep_event_ids.add(event_not_send_to_llm.id)
             except IndexError:
-                logger.warning(
-                    f'Index {index} is out of range for messages. Skipping this index.'
-                )
+                pass
 
         # Create a list of event IDs to forget
         forgotten_event_ids = [
             event.id for event in events if event.id not in keep_event_ids
         ]
 
-        for rewrite_command in rewrite_commands:
-            # Get the range of messages to rewrite
-            start_idx = rewrite_command.start
-            end_idx = rewrite_command.end
+        if rewrite_commands:
+            summary = ''
+            for rewrite_command in rewrite_commands:
+                # Get the range of messages to rewrite
+                start_idx = rewrite_command.start
+                end_idx = rewrite_command.end
 
-            # Validate the range
-            if 0 <= start_idx < len(messages) and 0 <= end_idx < len(messages):
-                # Add events in the rewrite range to forgotten_event_ids (except those in keep_first)
-                for i in range(start_idx, end_idx + 1):
-                    message = messages[i]
-                    for event in events:
-                        if (
-                            event.source == message._event
-                            and event.id not in keep_event_ids
-                        ):
-                            forgotten_event_ids.append(event.id)
+                # Validate the range
+                if 0 <= start_idx < len(messages) and 0 <= end_idx < len(messages):
+                    # Add events in the rewrite range to forgotten_event_ids (except those in keep_first)
+                    for i in range(start_idx, end_idx + 1):
+                        message = messages[i]
+                        for event_not_send_to_llm in events:
+                            if (
+                                event_not_send_to_llm.source == message._event
+                                and event_not_send_to_llm.id not in keep_event_ids
+                            ):
+                                forgotten_event_ids.append(event_not_send_to_llm.id)
 
-                summary += rewrite_command.content + '\n'
-            else:
-                logger.info(
-                    f'Invalid range for REWRITE command: {start_idx} to {end_idx}. Skipping this command.'
-                )
-                summary += (
-                    f'The conversation history has been condensed. {len(forgotten_event_ids)} less important messages have been removed to focus on the key information.'
-                    + '\n'
-                )
+                    summary += rewrite_command.content + '\n'
+                else:
+                    logger.info(
+                        f'Invalid range for REWRITE command: {start_idx} to {end_idx}. Skipping this command.'
+                    )
         else:
-            summary += (
-                f'The conversation history has been condensed. {len(forgotten_event_ids)} less important messages have been removed to focus on the key information.'
-                + '\n'
-            )
-
-        # Add metadata for debugging and analysis
-        self.add_metadata('metrics', self.llm.metrics.get())
-        self.add_metadata('kept_events', len(keep_event_ids))
-        self.add_metadata('forgotten_events', len(forgotten_event_ids))
+            summary = None
 
         # Create and return the condensation action
         return Condensation(
             action=CondensationAction(
-                forgotten_event_ids=forgotten_event_ids,
-                summary=summary,
-                summary_offset=self.keep_first,
+                forgotten_event_ids=forgotten_event_ids, summary=summary
             )
         )
 
