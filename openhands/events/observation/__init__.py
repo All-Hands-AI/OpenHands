@@ -45,5 +45,4 @@ __all__ = [
     'RecallObservation',
     'RecallType',
     'MCPObservation',
-    'PlaywrightMcpBrowserScreenshotObservation',
 ]

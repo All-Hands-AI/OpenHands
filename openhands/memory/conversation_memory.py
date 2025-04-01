@@ -1,5 +1,4 @@
 from typing import Generator
-import json
 
 from litellm import ModelResponse
 
@@ -40,9 +39,6 @@ from openhands.events.observation.agent import (
 from openhands.events.observation.error import ErrorObservation
 from openhands.events.observation.mcp import MCPObservation
 from openhands.events.observation.observation import Observation
-from openhands.events.observation.playwright_mcp import (
-    PlaywrightMcpBrowserScreenshotObservation,
-)
 from openhands.events.serialization.event import truncate_content
 from openhands.utils.prompt import PromptManager, RepositoryInfo, RuntimeInfo
 
@@ -337,22 +333,6 @@ class ConversationMemory:
         elif isinstance(obs, MCPObservation):
             # logger.warning(f'MCPObservation: {obs}')
             message = Message(role='assistant', content=[TextContent(text=obs.content)])
-        elif isinstance(obs, PlaywrightMcpBrowserScreenshotObservation):
-            text = 'Image: Current webpage screenshot\n'
-            screenshot_content = json.loads(obs.content)
-            logger.debug(
-                f'screenshot_content in conversation_memory: {screenshot_content}'
-            )
-            if 'url' in screenshot_content:
-                text += f'URL: {screenshot_content["url"]}\n'
-
-            # We don't actually need to screenshot fed into the LLM. We can use snapshots. Meanwhile, the screenshot will be streamed to the user.
-            message = Message(
-                role='assistant',
-                content=[
-                    TextContent(text=text),
-                ],
-            )
         elif isinstance(obs, IPythonRunCellObservation):
             text = obs.content
             # replace base64 images with a placeholder
