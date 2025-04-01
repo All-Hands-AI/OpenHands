@@ -536,36 +536,13 @@ class ActionExecutor:
         if not mcp_server_urls and not commands:
             raise ValueError('No MCP servers or stdio MCP config found')
 
-        if mcp_server_urls:
-            # Validate that all MCP server URLs are valid URLs
-            for i, server in enumerate(mcp_server_urls):
-                if not (server.startswith('http://') or server.startswith('https://')):
-                    raise ValueError(
-                        f'Invalid MCP server URL format: {server}. URLs must start with http:// or https://'
-                    )
-
-                logger.debug(f'Runtime mode: {self.runtime_mode}')
-                logger.debug(f'Caller platform: {self.caller_platform}')
-                # Convert URLs to use host.docker.internal for caller platform is macOS
-                if self.runtime_mode == 'docker' and self.caller_platform == 'Darwin':
-                    # Extract the path and port from the URL
-                    url_parts = server.split('://', 1)[1].split('/', 1)
-                    host_port = url_parts[0]
-                    path = url_parts[1] if len(url_parts) > 1 else ''
-                    # Replace IP with host.docker.internal but keep port
-                    port = host_port.split(':')[1] if ':' in host_port else ''
-                    docker_url = f'http://host.docker.internal:{port}/{path}'
-                    mcp_server_urls[i] = docker_url
-                else:
-                    mcp_server_urls[i] = server
-
-        logger.info(f'SSE MCP servers: {mcp_server_urls}')
+        logger.debug(f'SSE MCP servers: {mcp_server_urls}')
         mcp_agents = await create_mcp_agents(mcp_server_urls, commands, args)
-        logger.info(f'MCP action received: {action}')
+        logger.debug(f'MCP action received: {action}')
         # Find the MCP agent that has the matching tool name
         matching_agent = None
-        logger.info(f'MCP agents: {mcp_agents}')
-        logger.info(f'MCP action name: {action.name}')
+        logger.debug(f'MCP agents: {mcp_agents}')
+        logger.debug(f'MCP action name: {action.name}')
         for agent in mcp_agents:
             if action.name in [tool.name for tool in agent.mcp_clients.tools]:
                 matching_agent = agent
