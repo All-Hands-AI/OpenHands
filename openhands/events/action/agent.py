@@ -58,13 +58,39 @@ class AgentThinkAction(Action):
     Attributes:
         thought (str): The agent's explanation of its actions.
         action (str): The action type, namely ActionType.THINK.
+        thought_number (int, optional): The number of the current thought in a sequence.
+        total_thoughts (int, optional): The estimated total number of thoughts needed.
+        next_thought_needed (bool, optional): Whether another thought step is needed.
+        is_revision (bool, optional): Whether this thought revises previous thinking.
+        revises_thought (int, optional): Which thought number is being reconsidered.
+        branch_from_thought (int, optional): If branching, which thought number is the branching point.
+        branch_id (str, optional): Identifier for the current branch.
+        needs_more_thoughts (bool, optional): If reaching end but realizing more thoughts needed.
     """
 
     thought: str = ''
     action: str = ActionType.THINK
+    thought_number: int = 0
+    total_thoughts: int = 0
+    next_thought_needed: bool = False
+    is_revision: bool = False
+    revises_thought: int = 0
+    branch_from_thought: int = 0
+    branch_id: str = ''
+    needs_more_thoughts: bool = False
 
     @property
     def message(self) -> str:
+        if self.thought_number > 0 and self.total_thoughts > 0:
+            prefix = f'Thought {self.thought_number}/{self.total_thoughts}'
+
+            if self.is_revision and self.revises_thought > 0:
+                prefix += f' (revising thought {self.revises_thought})'
+            elif self.branch_from_thought > 0 and self.branch_id:
+                prefix += f' (branch from thought {self.branch_from_thought}, ID: {self.branch_id})'
+
+            return f'{prefix}: {self.thought}'
+
         return f'I am thinking...: {self.thought}'
 
 

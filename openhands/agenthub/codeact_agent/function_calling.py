@@ -170,7 +170,17 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
             # AgentThinkAction
             # ================================================
             elif tool_call.function.name == ThinkTool['function']['name']:
-                action = AgentThinkAction(thought=arguments.get('thought', ''))
+                action = AgentThinkAction(
+                    thought=arguments.get('thought', ''),
+                    thought_number=arguments.get('thoughtNumber', 0),
+                    total_thoughts=arguments.get('totalThoughts', 0),
+                    next_thought_needed=arguments.get('nextThoughtNeeded', False),
+                    is_revision=arguments.get('isRevision', False),
+                    revises_thought=arguments.get('revisesThought', 0),
+                    branch_from_thought=arguments.get('branchFromThought', 0),
+                    branch_id=arguments.get('branchId', ''),
+                    needs_more_thoughts=arguments.get('needsMoreThoughts', False),
+                )
 
             # ================================================
             # BrowserTool
