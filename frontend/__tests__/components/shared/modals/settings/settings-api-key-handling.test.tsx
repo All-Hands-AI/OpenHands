@@ -11,7 +11,7 @@ import { Settings } from "#/types/settings";
 describe("Settings API Key Handling", () => {
   const onCloseMock = vi.fn();
   const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
-  
+
   beforeEach(() => {
     saveSettingsSpy.mockClear();
     onCloseMock.mockClear();
@@ -21,7 +21,7 @@ describe("Settings API Key Handling", () => {
     // Create settings with an API key that's already set (showing asterisks)
     const settingsWithApiKey: Settings = {
       ...DEFAULT_SETTINGS,
-      LLM_API_KEY: "**********" // This represents an already set API key
+      LLM_API_KEY: "**********", // This represents an already set API key
     };
 
     const RouteStub = createRoutesStub([
@@ -60,7 +60,7 @@ describe("Settings API Key Handling", () => {
     // Create settings with no API key set
     const settingsWithoutApiKey: Settings = {
       ...DEFAULT_SETTINGS,
-      LLM_API_KEY: null
+      LLM_API_KEY: null,
     };
 
     const RouteStub = createRoutesStub([
