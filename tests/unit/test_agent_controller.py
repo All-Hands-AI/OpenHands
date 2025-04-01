@@ -823,7 +823,7 @@ async def test_run_controller_with_context_window_exceeded_with_truncation(
         def step(self, state: State):
             # If the state has more than one message and we haven't errored yet,
             # throw the context window exceeded error
-            if len(state.history) > 1 and not self.has_errored:
+            if len(state.history) > 3 and not self.has_errored:
                 error = ContextWindowExceededError(
                     message='prompt is too long: 233885 tokens > 200000 maximum',
                     model='',
@@ -855,7 +855,7 @@ async def test_run_controller_with_context_window_exceeded_with_truncation(
     try:
         state = await asyncio.wait_for(
             run_controller(
-                config=AppConfig(max_iterations=3),
+                config=AppConfig(max_iterations=5),
                 initial_user_action=MessageAction(content='INITIAL'),
                 runtime=mock_runtime,
                 sid='test',
@@ -875,11 +875,11 @@ async def test_run_controller_with_context_window_exceeded_with_truncation(
 
     # Hitting the iteration limit indicates the controller is failing for the
     # expected reason
-    assert state.iteration == 3
+    assert state.iteration == 5
     assert state.agent_state == AgentState.ERROR
     assert (
         state.last_error
-        == 'RuntimeError: Agent reached maximum iteration in headless mode. Current iteration: 3, max iteration: 3'
+        == 'RuntimeError: Agent reached maximum iteration in headless mode. Current iteration: 5, max iteration: 5'
     )
 
     # Check that the context window exceeded error was raised during the run
