@@ -7,7 +7,7 @@ import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useConfig } from "#/hooks/query/use-config";
 import { GitRepositoriesSuggestionBox } from "#/components/features/git/git-repositories-suggestion-box";
 import { ReplaySuggestionBox } from "../../components/features/suggestions/replay-suggestion-box";
-import { CodeNotInGitHubLink } from "#/components/features/git/code-not-in-github-link";
+import { CodeNotInGitLink } from "#/components/features/git/code-not-in-github-link";
 import { HeroHeading } from "#/components/shared/hero-heading";
 import { TaskForm } from "#/components/shared/task-form";
 import { convertFileToText } from "#/utils/convert-file-to-text";
@@ -58,7 +58,7 @@ function Home() {
           )}
         </div>
         <div className="w-full flex justify-start mt-2 ml-2">
-          <CodeNotInGitHubLink />
+          <CodeNotInGitLink />
         </div>
       </div>
     </div>
