@@ -1,6 +1,6 @@
 from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
 
-_MCP_CALL_DESCRIPTION = """Custom tool to call tools exposed by MCP (Model Context Protocol) servers.
+_MCP_CALL_DESCRIPTION = """Custom tool to call other tools exposed by MCP (Model Context Protocol) servers.
 
 For example, if you see a tool in the format: \
 "Tool(name='tool_name', description='Tool description', inputSchema={'type': 'object', 'properties':
@@ -24,10 +24,10 @@ MCPCallTool = ChatCompletionToolParam(
                 },
                 'kwargs': {
                     'type': 'object',
-                    'description': 'The arguments dict to pass to the tool call.',
+                    'description': 'The optional arguments dict to pass to the tool call.',
                 },
             },
-            'required': ['tool_name', 'kwargs'],
+            'required': ['tool_name'],
         },
     ),
 )

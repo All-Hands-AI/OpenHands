@@ -161,10 +161,10 @@ class Runtime(FileEditRuntimeMixin):
         self.prev_token: SecretStr | None = None
 
         # MCP configs
-        self.microagent_to_mcp_configs: (
+        self.microagent_name_to_mcp_configs: (
             dict[str, dict[str, StdioServerParameters]] | None
         ) = None
-        self.microagent_to_mcp_tools: dict[str, dict[str, str]] | None = None
+        self.microagent_name_to_tools_def: dict[str, dict[str, str]] | None = None
 
     def setup_initial_env(self) -> None:
         if self.attach_to_existing:
@@ -473,35 +473,35 @@ class Runtime(FileEditRuntimeMixin):
 
         return loaded_microagents
 
-    def get_mcp_tools(
-        self, mcp_configs: dict[str, dict[str, StdioServerParameters]]
+    def get_mcp_tool_definitions(
+        self,
+        microagent_name_to_mcp_configs: dict[str, dict[str, StdioServerParameters]],
     ) -> dict[str, dict[str, str]]:
-        """Get the list of tools from the MCP servers."""
-        self.microagent_to_mcp_configs = mcp_configs
+        """Get the list of tools exposed by all MCP servers from all microagents."""
+        self.microagent_name_to_mcp_configs = microagent_name_to_mcp_configs
 
-        microagent_name_to_tools = {}
-        for microagent_name, config_dict in mcp_configs.items():
-            if not config_dict:
+        microagent_name_to_tools_def = {}
+        for microagent_name, mcp_configs_dict in microagent_name_to_mcp_configs.items():
+            if not mcp_configs_dict:
                 continue
 
-            server_name_to_tool_defs = {}
-            for server_name, config in config_dict.items():
-                if not config:
+            server_name_to_tools_def = {}
+            for server_name, server_config in mcp_configs_dict.items():
+                if not server_config:
                     continue
 
                 ipython_code = f"""\
-    tools = await list_tools(config={config.model_dump()})
+    tools = await list_tools(config={server_config.model_dump()})
     print(tools)"""
                 action = IPythonRunCellAction(ipython_code, include_extra=False)
-                self.log('info', f'Listing tools for {server_name}')
                 obs = self.run_action(action)
                 self.log('info', f'Got tools for {server_name}: {obs.content}')
-                server_name_to_tool_defs[server_name] = obs.content
+                server_name_to_tools_def[server_name] = obs.content
 
-            microagent_name_to_tools[microagent_name] = server_name_to_tool_defs
+            microagent_name_to_tools_def[microagent_name] = server_name_to_tools_def
 
-        self.microagent_to_mcp_tools = microagent_name_to_tools
-        return microagent_name_to_tools
+        self.microagent_name_to_tools_def = microagent_name_to_tools_def
+        return microagent_name_to_tools_def
 
     def run_action(self, action: Action) -> Observation:
         """Run an action and return the resulting observation.
@@ -581,14 +581,17 @@ class Runtime(FileEditRuntimeMixin):
         """Call a tool exposed by the MCP server."""
         tool_name = action.tool_name
 
-        if not self.microagent_to_mcp_tools or not self.microagent_to_mcp_configs:
+        if (
+            not self.microagent_name_to_tools_def
+            or not self.microagent_name_to_mcp_configs
+        ):
             return ErrorObservation(
                 'MCP tool definitions or configs not found. Please call get_mcp_tools first.'
             )
 
         # Get the MCP server config
         server_name: str = ''
-        for _, server_to_tools_list in self.microagent_to_mcp_tools.items():
+        for _, server_to_tools_list in self.microagent_name_to_tools_def.items():
             search_str = f"Tool(name='{tool_name}',"
             for server, tools_list in server_to_tools_list.items():
                 if search_str in tools_list:
@@ -600,7 +603,7 @@ class Runtime(FileEditRuntimeMixin):
 
         # Get the MCP server config
         mcp_config: StdioServerParameters | None = None
-        for _, server_to_config in self.microagent_to_mcp_configs.items():
+        for _, server_to_config in self.microagent_name_to_mcp_configs.items():
             if server_name in server_to_config:
                 mcp_config = server_to_config[server_name]
                 break

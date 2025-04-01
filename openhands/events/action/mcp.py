@@ -1,5 +1,5 @@
-from dataclasses import dataclass, field
-from typing import ClassVar
+from dataclasses import dataclass
+from typing import Any, ClassVar
 
 from openhands.core.schema import ActionType
 from openhands.events.action.action import Action
@@ -7,7 +7,7 @@ from openhands.events.action.action import Action
 
 @dataclass
 class MCPCallToolAction(Action):
-    kwargs: dict = field(default_factory=dict)
+    kwargs: dict[str, Any] | None = None
     tool_name: str = ''
     action: str = ActionType.MCP_CALL_TOOL
     runnable: ClassVar[bool] = True

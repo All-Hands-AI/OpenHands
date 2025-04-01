@@ -202,13 +202,9 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                     raise FunctionCallValidationError(
                         f'Missing required argument "tool_name" in tool call {tool_call.function.name}'
                     )
-                if 'kwargs' not in arguments:
-                    raise FunctionCallValidationError(
-                        f'Missing required argument "kwargs" in tool call {tool_call.function.name}'
-                    )
                 action = MCPCallToolAction(
                     tool_name=arguments['tool_name'],
-                    kwargs=arguments['kwargs'],
+                    kwargs=arguments['kwargs'] if 'kwargs' in arguments else None,
                 )
 
             else:

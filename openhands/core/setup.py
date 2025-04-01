@@ -163,9 +163,11 @@ def create_memory(
         memory.load_user_workspace_microagents(microagents)
 
         # get MCP tools from the runtime
-        mcp_tools = runtime.get_mcp_tools(memory.get_mcp_configs())
-        logger.warning(f'MCP tools: {mcp_tools}')
-        memory.set_mcp_tools_definition(mcp_tools)
+        mcp_tools_definition = runtime.get_mcp_tool_definitions(
+            memory.get_mcp_configs()
+        )
+        logger.info(f'All MCP tools: {mcp_tools_definition}')
+        memory.populate_mcp_tool_definitions(mcp_tools_definition)
 
         if selected_repository and repo_directory:
             memory.set_repository_info(selected_repository, repo_directory)
