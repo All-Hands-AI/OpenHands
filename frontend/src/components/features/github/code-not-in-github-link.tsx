@@ -12,7 +12,7 @@ export function CodeNotInGitHubLink() {
   const handleStartFromScratch = () => {
     // Set the initial prompt and create a new conversation
     dispatch(setInitialPrompt(INITIAL_PROMPT));
-    createConversation({ q: INITIAL_PROMPT });
+    createConversation({ q: INITIAL_PROMPT, allowEmptyQuery: true });
   };
 
   return (
