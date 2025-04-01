@@ -29,6 +29,9 @@ enum ActionType {
   // Logs a thought.
   THINK = "think",
 
+  // Calls an MCP tool
+  MCP_CALL_TOOL = "mcp_call_tool",
+
   // If you're absolutely certain that you've completed your task and have tested your work,
   // use the finish action to stop working.
   FINISH = "finish",

@@ -411,6 +411,10 @@ class AgentSession:
             )
             memory.load_user_workspace_microagents(microagents)
 
+            # get MCP tools from the runtime
+            mcp_tools = self.runtime.get_mcp_tool_definitions(memory.get_mcp_configs())
+            memory.populate_mcp_tool_definitions(mcp_tools)
+
             if selected_repository and repo_directory:
                 memory.set_repository_info(selected_repository, repo_directory)
         return memory

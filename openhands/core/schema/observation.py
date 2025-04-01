@@ -49,3 +49,6 @@ class ObservationType(str, Enum):
 
     RECALL = 'recall'
     """Result of a recall operation. This can be the workspace context, a microagent, or other types of information."""
+
+    MCP_CALL_TOOL = 'mcp_call_tool'
+    """Result of a tool call to the MCP server."""

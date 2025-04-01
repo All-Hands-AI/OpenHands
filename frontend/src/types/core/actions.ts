@@ -58,6 +58,16 @@ export interface FinishAction extends OpenHandsActionEvent<"finish"> {
   };
 }
 
+export interface MCPCallToolAction
+  extends OpenHandsActionEvent<"mcp_call_tool"> {
+  source: "agent";
+  args: {
+    thought: string;
+    tool_name: string;
+    kwargs: Record<string, unknown>;
+  };
+}
+
 export interface DelegateAction extends OpenHandsActionEvent<"delegate"> {
   source: "agent";
   timeout: number;
@@ -146,4 +156,5 @@ export type OpenHandsAction =
   | FileReadAction
   | FileEditAction
   | FileWriteAction
+  | MCPCallToolAction
   | RejectAction;

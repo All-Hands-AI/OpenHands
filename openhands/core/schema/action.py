@@ -83,3 +83,6 @@ class ActionType(str, Enum):
 
     CONDENSATION = 'condensation'
     """Condenses a list of events into a summary."""
+
+    MCP_CALL_TOOL = 'mcp_call_tool'
+    """Calls a MCP tool."""

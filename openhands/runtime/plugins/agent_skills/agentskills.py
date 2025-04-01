@@ -27,5 +27,9 @@ for func_name in __all__:
 
 # Add file_editor (a function)
 from openhands.runtime.plugins.agent_skills.file_editor import file_editor  # noqa: E402
+from openhands.runtime.plugins.agent_skills.mcp import (  # noqa: E402
+    call_tool,
+    list_tools,
+)
 
-__all__ += ['file_editor']
+__all__ += ['file_editor', 'list_tools', 'call_tool']

@@ -12,6 +12,7 @@ export type OpenHandsEventType =
   | "reject"
   | "think"
   | "finish"
+  | "mcp_call_tool"
   | "error";
 
 interface OpenHandsBaseEvent {

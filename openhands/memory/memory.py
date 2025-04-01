@@ -4,6 +4,8 @@ import uuid
 from datetime import datetime, timezone
 from typing import Callable
 
+from mcp import StdioServerParameters
+
 import openhands
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.agent import RecallAction
@@ -299,3 +301,33 @@ class Memory:
         """Sends a status message to the client."""
         if self.status_callback:
             self.status_callback(msg_type, id, message)
+
+    def get_mcp_configs(self) -> dict[str, dict[str, StdioServerParameters]]:
+        """Get the dictionary mapping from microagent name to MCP server configurations."""
+        microagent_name_to_mcp_configs = {}
+        for microagent_name, microagent in self.knowledge_microagents.items():
+            microagent_name_to_mcp_configs[microagent_name] = (
+                microagent.metadata.mcp_servers
+            )
+        return microagent_name_to_mcp_configs
+
+    def populate_mcp_tool_definitions(
+        self, microagent_name_to_mcp_tool_definitions: dict[str, dict[str, str]]
+    ) -> None:
+        """Populate the knowledge microagents with the MCP tools' definitions."""
+        # Append the MCP tools' definition to the knowledge microagent's content
+        for microagent_name, microagent in self.knowledge_microagents.items():
+            if microagent_name not in microagent_name_to_mcp_tool_definitions:
+                continue
+
+            formatted_tools = 'MCP Tools that you can use via the `mcp_call_tool`:\n\n'
+            # Format the mcp_tools dict into a string
+            for server_name, tools_def in microagent_name_to_mcp_tool_definitions[
+                microagent_name
+            ].items():
+                formatted_tools += f' - {server_name}:\n{tools_def}\n'
+
+            microagent.content += f'\n{formatted_tools}'
+            logger.info(
+                f'Updated content for microagent {microagent_name} with MCP tools loaded: {microagent.content}'
+            )
