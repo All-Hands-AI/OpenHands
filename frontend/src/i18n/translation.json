@@ -4329,19 +4329,19 @@
         "de": "Kontext wird geladen"
     },
     "OBSERVATION_MESSAGE$RECALL": {
-        "en": "Context Loaded",
-        "ja": "コンテキストが読み込まれました",
-        "zh-CN": "上下文已加载",
-        "zh-TW": "上下文已載入",
-        "ko-KR": "컨텍스트 로드됨",
-        "no": "Kontekst lastet",
-        "it": "Contesto caricato",
-        "pt": "Contexto carregado",
-        "es": "Contexto cargado",
-        "ar": "تم تحميل السياق",
-        "fr": "Contexte chargé",
-        "tr": "Bağlam Yüklendi",
-        "de": "Kontext geladen"
+        "en": "MicroAgent Activated",
+        "ja": "マイクロエージェントが有効化されました",
+        "zh-CN": "微代理已激活",
+        "zh-TW": "微代理已啟動",
+        "ko-KR": "마이크로에이전트 활성화됨",
+        "no": "MikroAgent aktivert",
+        "it": "MicroAgent attivato",
+        "pt": "MicroAgent ativado",
+        "es": "MicroAgent activado",
+        "ar": "تم تنشيط الوكيل المصغر",
+        "fr": "MicroAgent activé",
+        "tr": "MikroAjan Etkinleştirildi",
+        "de": "MicroAgent aktiviert"
     },
     "EXPANDABLE_MESSAGE$SHOW_DETAILS": {
         "en": "Show details",

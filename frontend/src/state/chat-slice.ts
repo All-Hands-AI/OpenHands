@@ -169,7 +169,7 @@ export const chatSlice = createSlice({
             recallObs.extras.runtime_hosts &&
             Object.keys(recallObs.extras.runtime_hosts).length > 0
           ) {
-            content += `\n\n**Available Runtime Hosts for Web Apps:**`;
+            content += `\n\n**MicroAgent: Available Hosts**`;
             for (const [host, port] of Object.entries(
               recallObs.extras.runtime_hosts,
             )) {
@@ -184,24 +184,34 @@ export const chatSlice = createSlice({
           }
         }
 
-        // Handle microagent knowledge
+        // Create a new message for the observation
+        // Use the correct translation ID format that matches what's in the i18n file
+        const translationID = `OBSERVATION_MESSAGE$${observationID.toUpperCase()}`;
+
+        // Handle microagent knowledge and prepare custom title if needed
+        let customTitle = translationID;
         if (
           recallObs.extras.microagent_knowledge &&
           recallObs.extras.microagent_knowledge.length > 0
         ) {
+          // Extract microagent names for the title
+          const microagentNames = recallObs.extras.microagent_knowledge
+            .map((k) => k.name)
+            .join(", ");
+
+          // Create custom title with microagent names
+          customTitle = `${translationID}: ${microagentNames}`;
+
           content += `\n\n**Triggered Microagent Knowledge:**`;
           for (const knowledge of recallObs.extras.microagent_knowledge) {
             content += `\n\n- **${knowledge.name}** (triggered by: ${knowledge.trigger})\n\n\`\`\`\n${knowledge.content}\n\`\`\``;
           }
         }
 
-        // Create a new message for the observation
-        // Use the correct translation ID format that matches what's in the i18n file
-        const translationID = `OBSERVATION_MESSAGE$${observationID.toUpperCase()}`;
         const message: Message = {
           type: "action",
           sender: "assistant",
-          translationID,
+          translationID: customTitle,
           eventID: observation.payload.id,
           content,
           imageUrls: [],
