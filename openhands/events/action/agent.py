@@ -158,11 +158,10 @@ class CondensationAction(Action):
         # Either way, we can only have one of the two valid configurations.
         forgotten_event_configuration = using_event_ids ^ using_event_range
 
-        # We also need to check that if the summary is provided, so is the
-        # offset (and vice versa).
+        # Check that if we have a summary_offset, we also have a summary
         summary_configuration = (
-            self.summary is None and self.summary_offset is None
-        ) or (self.summary is not None and self.summary_offset is not None)
+            self.summary is not None if self.summary_offset is not None else True
+        )
 
         return forgotten_event_configuration and summary_configuration
 
