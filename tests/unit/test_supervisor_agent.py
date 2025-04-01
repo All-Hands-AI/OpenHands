@@ -3,7 +3,11 @@ import pytest
 from openhands.agenthub.supervisor_agent import SupervisorAgent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig, LLMConfig
-from openhands.events.action import AgentDelegateAction, AgentFinishAction, AgentFinishTaskCompleted
+from openhands.events.action import (
+    AgentDelegateAction,
+    AgentFinishAction,
+    AgentFinishTaskCompleted,
+)
 from openhands.events.observation import AgentDelegateObservation
 from openhands.llm.llm import LLM
 
