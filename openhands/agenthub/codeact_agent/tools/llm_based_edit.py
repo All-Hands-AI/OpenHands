@@ -9,7 +9,7 @@ _FILE_EDIT_DESCRIPTION = """Edit a file in plain-text format.
 
 **Example 1: general edit for short files**
 For example, given an existing file `/path/to/file.py` that looks like this:
-(this is the end of the file)
+(this is the beginning of the file)
 1|class MyClass:
 2|    def __init__(self):
 3|        self.x = 1
@@ -21,7 +21,7 @@ For example, given an existing file `/path/to/file.py` that looks like this:
 (this is the end of the file)
 
 The assistant wants to edit the file to look like this:
-(this is the end of the file)
+(this is the beginning of the file)
 1|class MyClass:
 2|    def __init__(self):
 3|        self.x = 1
@@ -45,7 +45,7 @@ print(MyClass().y)
 
 **Example 2: append to file for short files**
 For example, given an existing file `/path/to/file.py` that looks like this:
-(this is the end of the file)
+(this is the beginning of the file)
 1|class MyClass:
 2|    def __init__(self):
 3|        self.x = 1

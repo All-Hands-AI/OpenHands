@@ -25,7 +25,7 @@ def split_bash_commands(commands: str) -> list[str]:
         return ['']
     try:
         parsed = bashlex.parse(commands)
-    except (bashlex.errors.ParsingError, NotImplementedError):
+    except (bashlex.errors.ParsingError, NotImplementedError, TypeError):
         logger.debug(
             f'Failed to parse bash commands\n'
             f'[input]: {commands}\n'
@@ -145,7 +145,7 @@ def escape_bash_special_chars(command: str) -> str:
         remaining = command[last_pos:]
         parts.append(remaining)
         return ''.join(parts)
-    except (bashlex.errors.ParsingError, NotImplementedError):
+    except (bashlex.errors.ParsingError, NotImplementedError, TypeError):
         logger.debug(
             f'Failed to parse bash commands for special characters escape\n'
             f'[input]: {command}\n'
