@@ -162,7 +162,7 @@ def get_instance_docker_image(
         docker_image_prefix = 'docker.io/swebench/'
         repo, name = instance_id.split('__')
         image_name = f'swebench/sweb.eval.x86_64.{repo}_1776_{name}:latest'
-        logger.info(f'Using official SWE-Bench image: {image_name}')
+        logger.debug(f'Using official SWE-Bench image: {image_name}')
         return image_name
     else:
         # OpenHands version of the image
