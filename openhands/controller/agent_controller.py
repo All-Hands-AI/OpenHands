@@ -158,7 +158,6 @@ class AgentController:
         self.agent_configs = agent_configs if agent_configs else {}
         self._initial_max_iterations = max_iterations
         self._initial_max_budget_per_task = max_budget_per_task
-        self._last_warning_threshold = 0.0  # Track the last cost threshold that triggered a warning
 
         # stuck helper
         self._stuck_detector = StuckDetector(self.state)
@@ -748,14 +747,13 @@ class AgentController:
             and self.warning_budget_increment > 0
             and self.get_agent_state() == AgentState.RUNNING
         ):
-            # Calculate the current threshold we're at
+            # Calculate the current threshold we're at and the next threshold
             current_cost = self.state.metrics.accumulated_cost
             current_threshold = int(current_cost / self.warning_budget_increment) * self.warning_budget_increment
+            next_threshold = current_threshold + self.warning_budget_increment
             
-            # If we've crossed a new threshold and it's higher than the last warning threshold
-            if current_cost >= current_threshold + self.warning_budget_increment - 0.01 and current_threshold + self.warning_budget_increment > self._last_warning_threshold:
-                next_threshold = current_threshold + self.warning_budget_increment
-                self._last_warning_threshold = next_threshold
+            # If we've just crossed a threshold (within 0.01 of the next threshold)
+            if current_cost >= next_threshold - 0.01 and current_cost < next_threshold + self.warning_budget_increment - 0.01:
                 stop_step = await self._handle_traffic_control(
                     'warning_budget', current_cost, next_threshold
                 )
