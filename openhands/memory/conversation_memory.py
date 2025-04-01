@@ -506,9 +506,9 @@ class ConversationMemory:
                             role='user',
                             content=[TextContent(text=formatted_text)],
                         )
-
-                # Return empty list if no microagents to include or all were disabled
-                return []
+                else:
+                    # Return empty list if no microagents to include or all were disabled
+                    return []
         elif (
             isinstance(obs, RecallObservation)
             and not self.agent_config.enable_prompt_extensions
