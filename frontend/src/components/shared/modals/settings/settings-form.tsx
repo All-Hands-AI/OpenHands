@@ -41,6 +41,16 @@ export function SettingsForm({ settings, models, onClose }: SettingsFormProps) {
   };
 
   const handleFormSubmission = async (formData: FormData) => {
+    // Check if the API key input is empty but has a placeholder (meaning it's already set)
+    const apiKeyInput = formData.get("llm-api-key-input")?.toString() || "";
+    const isApiKeyEmpty = apiKeyInput === "";
+
+    // If the API key input is empty and the key is already set (showing asterisks), we should preserve it
+    if (isApiKeyEmpty && settings.LLM_API_KEY === "**********") {
+      // Remove the API key from the form data so it won't be included in the extracted settings
+      formData.delete("llm-api-key-input");
+    }
+
     const newSettings = extractSettings(formData);
 
     await saveUserSettings(newSettings, {
