@@ -67,7 +67,7 @@ describe("GitRepositorySelector", () => {
 
     const searchPublicRepositoriesSpy = vi.spyOn(
       OpenHands,
-      "searchGitHubRepositories",
+      "searchGitRepositories",
     );
     searchPublicRepositoriesSpy.mockResolvedValue(mockSearchedRepos);
 
