@@ -77,6 +77,7 @@ qtconsole = "^5.6.1"
 memory-profiler = "^0.61.0"
 daytona-sdk = "0.11.2"
 python-json-logger = "^3.2.1"
+aiohttp = "^3.11.12"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "0.11.2"
@@ -96,6 +97,7 @@ reportlab = "*"
 
 [tool.coverage.run]
 concurrency = ["gevent"]
+
 
 
 [tool.poetry.group.runtime.dependencies]
@@ -125,6 +127,7 @@ ignore = ["D1"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
 
 
 [tool.poetry.group.evaluation.dependencies]
