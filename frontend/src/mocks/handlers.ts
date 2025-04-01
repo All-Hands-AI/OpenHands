@@ -7,7 +7,7 @@ import {
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import { STRIPE_BILLING_HANDLERS } from "./billing-handlers";
 import { ApiSettings, PostApiSettings } from "#/types/settings";
-import { GitUser } from "#/types/github";
+import { GitUser } from "#/types/git";
 
 export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
   llm_model: DEFAULT_SETTINGS.LLM_MODEL,

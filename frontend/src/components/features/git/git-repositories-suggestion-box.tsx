@@ -11,7 +11,7 @@ import { sanitizeQuery } from "#/utils/sanitize-query";
 import { useDebounce } from "#/hooks/use-debounce";
 import { BrandButton } from "../settings/brand-button";
 import GitHubLogo from "#/assets/branding/github-logo.svg?react";
-import { GitHubErrorReponse, GitUser } from "#/types/github";
+import { GitHubErrorReponse, GitUser } from "#/types/git";
 
 interface GitRepositoriesSuggestionBoxProps {
   handleSubmit: () => void;
