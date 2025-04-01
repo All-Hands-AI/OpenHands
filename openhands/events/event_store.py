@@ -22,11 +22,12 @@ class EventStore:
     sid: str
     file_store: FileStore
     user_id: str | None
-    _cur_id: int = 0
+    cur_id: int = -1  # We fix this in post init if it is not specified
 
     def __post_init__(self) -> None:
+        if self.cur_id >= 0:
+            return
         events = []
-
         try:
             events_dir = get_conversation_events_dir(self.sid, self.user_id)
             events += self.file_store.list(events_dir)
@@ -43,14 +44,14 @@ class EventStore:
                 logger.debug(f'No events found for session {self.sid} at {events_dir}')
 
         if not events:
-            self._cur_id = 0
+            self.cur_id = 0
             return
 
         # if we have events, we need to find the highest id to prepare for new events
         for event_str in events:
             id = self._get_id_from_filename(event_str)
-            if id >= self._cur_id:
-                self._cur_id = id + 1
+            if id >= self.cur_id:
+                self.cur_id = id + 1
 
     def get_events(
         self,
@@ -84,7 +85,7 @@ class EventStore:
 
         if reverse:
             if end_id is None:
-                end_id = self._cur_id - 1
+                end_id = self.cur_id - 1
             event_id = end_id
             while event_id >= start_id:
                 try:
@@ -124,10 +125,10 @@ class EventStore:
             raise
 
     def get_latest_event(self) -> Event:
-        return self.get_event(self._cur_id - 1)
+        return self.get_event(self.cur_id - 1)
 
     def get_latest_event_id(self) -> int:
-        return self._cur_id - 1
+        return self.cur_id - 1
 
     def filtered_events_by_source(self, source: EventSource) -> Iterable[Event]:
         for event in self.get_events():

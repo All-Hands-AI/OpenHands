@@ -162,8 +162,8 @@ class EventStream(EventStore):
                 f'Event already has an ID:{event.id}. It was probably added back to the EventStream from inside a handler, triggering a loop.'
             )
         with self._lock:
-            event._id = self._cur_id  # type: ignore [attr-defined]
-            self._cur_id += 1
+            event._id = self.cur_id  # type: ignore [attr-defined]
+            self.cur_id += 1
         logger.debug(f'Adding {type(event).__name__} id={event.id} from {source.name}')
         event._timestamp = datetime.now().isoformat()
         event._source = source  # type: ignore [attr-defined]

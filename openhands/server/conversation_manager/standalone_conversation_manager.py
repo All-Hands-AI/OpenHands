@@ -317,7 +317,13 @@ class StandaloneConversationManager(ConversationManager):
         session = self._local_agent_loops_by_sid.get(sid)
         if session:
             logger.info(f'found_local_agent_loop:{sid}', extra={'session_id': sid})
-            return session.agent_session.event_stream
+            event_stream = session.agent_session.event_stream
+            return EventStore(
+                event_stream.sid,
+                event_stream.file_store,
+                event_stream.user_id,
+                event_stream.cur_id,
+            )
         return None
 
     async def send_to_event_stream(self, connection_id: str, data: dict):
