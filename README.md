@@ -27,6 +27,15 @@ Welcome to OpenHands (formerly OpenDevin), a platform for software development a
 OpenHands agents can do anything a human developer can: modify code, run commands, browse the web,
 call APIs, and yes—even copy code snippets from StackOverflow.
 
+### New in v0.30: Model Context Protocol (MCP) Integration
+- Standardized interface for LLM context provisioning
+- Secure tool execution with command whitelisting
+- Configurable server (port 8000 by default)
+- Resources/Tools/Prompts management via:
+  - `openhands://config` - System configuration
+  - `openhands://codebase` - Project metadata
+  - `openhands://task/current` - Active task status
+
 Learn more at [docs.all-hands.dev](https://docs.all-hands.dev), or jump to the [Quick Start](#-quick-start).
 
 > [!IMPORTANT]
