@@ -100,39 +100,58 @@ class GitHubService(GitService):
             email=response.get('email'),
         )
 
-    async def get_repositories(
-        self, sort: str, app_mode: AppMode
-    ) -> list[Repository]:
+    async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
         MAX_REPOS = 1000
         PER_PAGE = 100  # Maximum allowed by GitHub API
-        all_repos: list[dict]= []
-        page = 1
+        all_repos: list[dict] = []
 
         if app_mode == AppMode.SAAS:
+            # Get all installation IDs and fetch repos for each one
             installation_ids = await self.get_installation_ids()
-        
 
-        while len(all_repos) < MAX_REPOS:
-            params = {'page': str(page), 'per_page': str(PER_PAGE)}
-            if installation_id:
-                url = f'{self.BASE_URL}/user/installations/{installation_id}/repositories'
-                response, headers = await self._fetch_data(url, params)
-                response = response.get('repositories', [])
-            else:
+            # Iterate through each installation ID
+            for installation_id in installation_ids:
+                page = 1
+
+                # Continue fetching until we reach MAX_REPOS
+                while len(all_repos) < MAX_REPOS:
+                    params = {'page': str(page), 'per_page': str(PER_PAGE)}
+                    url = f'{self.BASE_URL}/user/installations/{installation_id}/repositories'
+                    response, headers = await self._fetch_data(url, params)
+                    repos = response.get('repositories', [])
+
+                    if not repos:  # No more repositories for this installation
+                        break
+
+                    all_repos.extend(repos)
+                    page += 1
+
+                    # Check if we've reached the last page for this installation
+                    link_header = headers.get('Link', '')
+                    if 'rel="next"' not in link_header:
+                        break
+
+                # If we've already reached MAX_REPOS, no need to check other installations
+                if len(all_repos) >= MAX_REPOS:
+                    break
+        else:
+            # Original behavior for non-SaaS mode
+            page = 1
+            while len(all_repos) < MAX_REPOS:
+                params = {'page': str(page), 'per_page': str(PER_PAGE), 'sort': sort}
                 url = f'{self.BASE_URL}/user/repos'
-                params['sort'] = sort
                 response, headers = await self._fetch_data(url, params)
 
-            if not response:  # No more repositories
-                break
+                if not response:  # No more repositories
+                    break
 
-            all_repos.extend(response)
-            page += 1
+                all_repos.extend(response)
+                page += 1
 
-            # Check if we've reached the last page
-            link_header = headers.get('Link', '')
-            if 'rel="next"' not in link_header:
-                break
+                # Check if we've reached the last page
+                link_header = headers.get('Link', '')
+                if 'rel="next"' not in link_header:
+                    break
 
         # Trim to MAX_REPOS if needed and convert to Repository objects
         all_repos = all_repos[:MAX_REPOS]
@@ -141,7 +160,7 @@ class GitHubService(GitService):
                 id=repo.get('id'),
                 full_name=repo.get('full_name'),
                 stargazers_count=repo.get('stargazers_count'),
-                git_provider=ProviderType.GITHUB
+                git_provider=ProviderType.GITHUB,
             )
             for repo in all_repos
         ]
@@ -166,7 +185,7 @@ class GitHubService(GitService):
                 id=repo.get('id'),
                 full_name=repo.get('full_name'),
                 stargazers_count=repo.get('stargazers_count'),
-                git_provider=ProviderType.GITHUB
+                git_provider=ProviderType.GITHUB,
             )
             for repo in repos
         ]

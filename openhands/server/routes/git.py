@@ -21,27 +21,20 @@ from openhands.server.types import AppMode
 app = APIRouter(prefix='/api/user')
 
 
-from pydantic import BaseModel
-
-
 @app.get('/repositories', response_model=list[Repository])
 async def get_user_repositories(
     sort: str = 'pushed',
-    app_mode: AppMode = 'oss',
+    app_mode: AppMode = AppMode.OSS,
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     access_token: SecretStr | None = Depends(get_access_token),
 ):
-
     if provider_tokens:
         client = ProviderHandler(
             provider_tokens=provider_tokens, external_auth_token=access_token
         )
 
         try:
-
-            repos: list[Repository] = await client.get_repositories(
-                sort, app_mode
-            )
+            repos: list[Repository] = await client.get_repositories(sort, app_mode)
             return repos
 
         except AuthenticationError as e:
@@ -136,7 +129,6 @@ async def search_repositories(
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     access_token: SecretStr | None = Depends(get_access_token),
 ):
-
     if provider_tokens:
         client = ProviderHandler(
             provider_tokens=provider_tokens, external_auth_token=access_token
