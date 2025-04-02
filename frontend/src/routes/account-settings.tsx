@@ -25,6 +25,8 @@ import {
   displayErrorToast,
   displaySuccessToast,
 } from "#/utils/custom-toast-handlers";
+import { ProviderOptions } from "#/types/settings";
+import { useAuth } from "#/context/auth-context";
 
 const REMOTE_RUNTIME_OPTIONS = [
   { key: 1, label: "1x (2 core, 8G)" },
@@ -46,6 +48,7 @@ function AccountSettings() {
   } = useAIConfigOptions();
   const { mutate: saveSettings } = useSaveSettings();
   const { handleLogout } = useAppLogout();
+  const { providerTokensSet, providersAreSet } = useAuth();
 
   const isFetching = isFetchingSettings || isFetchingResources;
   const isSuccess = isSuccessfulSettings && isSuccessfulResources;
@@ -62,7 +65,6 @@ function AccountSettings() {
         isCustomModel(resources.models, settings.LLM_MODEL) ||
         hasAdvancedSettingsSet({
           ...settings,
-          PROVIDER_TOKENS: settings.PROVIDER_TOKENS || {},
         })
       );
     }
@@ -71,8 +73,11 @@ function AccountSettings() {
   };
 
   const hasAppSlug = !!config?.APP_SLUG;
-  const isGitHubTokenSet = settings?.GITHUB_TOKEN_IS_SET;
-  const isLLMKeySet = settings?.LLM_API_KEY === "**********";
+  const isGitHubTokenSet =
+    providerTokensSet.includes(ProviderOptions.github) || false;
+  const isGitLabTokenSet =
+    providerTokensSet.includes(ProviderOptions.gitlab) || false;
+  const isLLMKeySet = settings?.LLM_API_KEY_SET;
   const isAnalyticsEnabled = settings?.USER_CONSENTS_TO_ANALYTICS;
   const isAdvancedSettingsSet = determineWhetherToToggleAdvancedSettings();
 
@@ -115,12 +120,14 @@ function AccountSettings() {
     const enableSoundNotifications =
       formData.get("enable-sound-notifications-switch")?.toString() === "on";
     const llmBaseUrl = formData.get("base-url-input")?.toString() || "";
+    const inputApiKey = formData.get("llm-api-key-input")?.toString() || "";
     const llmApiKey =
-      formData.get("llm-api-key-input")?.toString() ||
-      (isLLMKeySet
-        ? undefined // don't update if it's already set
-        : ""); // reset if it's first time save to avoid 500 error
+      inputApiKey === "" && isLLMKeySet
+        ? undefined // don't update if it's already set and input is empty
+        : inputApiKey; // otherwise use the input value
 
+    const githubToken = formData.get("github-token-input")?.toString();
+    const gitlabToken = formData.get("gitlab-token-input")?.toString();
     // we don't want the user to be able to modify these settings in SaaS
     const finalLlmModel = shouldHandleSpecialSaasCase
       ? undefined
@@ -130,22 +137,21 @@ function AccountSettings() {
       : llmBaseUrl;
     const finalLlmApiKey = shouldHandleSpecialSaasCase ? undefined : llmApiKey;
 
-    const githubToken = formData.get("github-token-input")?.toString();
     const newSettings = {
-      github_token: githubToken,
-      provider_tokens: githubToken
-        ? {
-            github: githubToken,
-            gitlab: "",
-          }
-        : undefined,
+      provider_tokens:
+        githubToken || gitlabToken
+          ? {
+              github: githubToken || "",
+              gitlab: gitlabToken || "",
+            }
+          : undefined,
       LANGUAGE: languageValue,
       user_consents_to_analytics: userConsentsToAnalytics,
       ENABLE_DEFAULT_CONDENSER: enableMemoryCondenser,
       ENABLE_SOUND_NOTIFICATIONS: enableSoundNotifications,
       LLM_MODEL: finalLlmModel,
       LLM_BASE_URL: finalLlmBaseUrl,
-      LLM_API_KEY: finalLlmApiKey,
+      llm_api_key: finalLlmApiKey,
       AGENT: formData.get("agent-input")?.toString(),
       SECURITY_ANALYZER:
         formData.get("security-analyzer-input")?.toString() || "",
@@ -271,10 +277,10 @@ function AccountSettings() {
                   label="API Key"
                   type="password"
                   className="w-[680px]"
+                  placeholder={isLLMKeySet ? "<hidden>" : ""}
                   startContent={
                     isLLMKeySet && <KeyStatusIcon isSet={isLLMKeySet} />
                   }
-                  placeholder={isLLMKeySet ? "<hidden>" : ""}
                 />
               )}
 
@@ -367,7 +373,7 @@ function AccountSettings() {
 
           <section className="flex flex-col gap-6">
             <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">
-              GitHub Settings
+              Git Provider Settings
             </h2>
             {isSaas && hasAppSlug && (
               <Link
@@ -422,17 +428,58 @@ function AccountSettings() {
                   </b>
                   .
                 </p>
+
+                <SettingsInput
+                  testId="gitlab-token-input"
+                  name="gitlab-token-input"
+                  label="GitLab Token"
+                  type="password"
+                  className="w-[680px]"
+                  startContent={
+                    isGitLabTokenSet && (
+                      <KeyStatusIcon isSet={!!isGitLabTokenSet} />
+                    )
+                  }
+                  placeholder={isGitHubTokenSet ? "<hidden>" : ""}
+                />
+
+                <p data-testId="gitlab-token-help-anchor" className="text-xs">
+                  {" "}
+                  Generate a token on{" "}
+                  <b>
+                    {" "}
+                    <a
+                      href="https://gitlab.com/-/user_settings/personal_access_tokens?name=openhands-app&scopes=api,read_user,read_repository,write_repository"
+                      target="_blank"
+                      className="underline underline-offset-2"
+                      rel="noopener noreferrer"
+                    >
+                      GitLab
+                    </a>{" "}
+                  </b>
+                  or see the{" "}
+                  <b>
+                    <a
+                      href="https://docs.gitlab.com/user/profile/personal_access_tokens/"
+                      target="_blank"
+                      className="underline underline-offset-2"
+                      rel="noopener noreferrer"
+                    >
+                      documentation
+                    </a>
+                  </b>
+                  .
+                </p>
+                <BrandButton
+                  type="button"
+                  variant="secondary"
+                  onClick={handleLogout}
+                  isDisabled={!providersAreSet}
+                >
+                  Disconnect Tokens
+                </BrandButton>
               </>
             )}
-
-            <BrandButton
-              type="button"
-              variant="secondary"
-              onClick={handleLogout}
-              isDisabled={!isGitHubTokenSet}
-            >
-              Disconnect from GitHub
-            </BrandButton>
           </section>
 
           <section className="flex flex-col gap-6">

@@ -143,6 +143,11 @@ const sidebars: SidebarsConfig = {
                 },
                 {
                   type: 'doc',
+                  label: 'Local LLMs with SGLang or vLLM',
+                  id: 'usage/llms/local-llms',
+                },
+                {
+                  type: 'doc',
                   label: 'LiteLLM Proxy',
                   id: 'usage/llms/litellm-proxy',
                 },
