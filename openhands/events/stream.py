@@ -180,7 +180,7 @@ class EventStream(EventStore):
         events = []
         end = start + self.cache_size
         for index in range(start, end):
-            filename = self._get_filename_for_id(index, None)
+            filename = self._get_filename_for_id(index, self.user_id)
             content = self.file_store.read(filename)
             event = json.loads(content)
             events.append(event)
