@@ -50,18 +50,6 @@ class BaseMicroAgent(BaseModel):
         # Handle case where there's no frontmatter or empty frontmatter
         metadata_dict = loaded.metadata or {}
 
-        # If no type is specified, default to repo type
-        if 'type' not in metadata_dict:
-            metadata_dict['type'] = MicroAgentType.REPO_KNOWLEDGE
-
-        # If no name is specified, use 'repo' for repo type
-        if 'name' not in metadata_dict:
-            metadata_dict['name'] = (
-                'repo'
-                if metadata_dict['type'] == MicroAgentType.REPO_KNOWLEDGE
-                else 'default'
-            )
-
         try:
             metadata = MicroAgentMetadata(**metadata_dict)
         except Exception as e:
