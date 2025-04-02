@@ -1,4 +1,5 @@
 import os
+import sys # Added import
 import pytest
 import tempfile
 from pathlib import Path
@@ -11,6 +12,9 @@ from openhands.runtime.utils.windows_bash import WindowsBashSession
 from openhands.events.action import CmdRunAction
 from openhands.events.observation.commands import CmdOutputObservation, CmdOutputMetadata
 from openhands.events.observation import ErrorObservation
+
+# Skip all tests in this module if not running on Windows
+pytestmark = pytest.mark.skipif(sys.platform != 'win32', reason="WindowsBashSession tests require Windows")
 
 
 @pytest.fixture
