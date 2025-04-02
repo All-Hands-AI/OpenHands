@@ -1,5 +1,6 @@
 import warnings
 from contextlib import asynccontextmanager
+import logging
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
@@ -21,13 +22,34 @@ from openhands.server.routes.public import app as public_api_router
 from openhands.server.routes.security import app as security_api_router
 from openhands.server.routes.settings import app as settings_router
 from openhands.server.routes.trajectory import app as trajectory_router
+from openhands.server.routes.auth import app as auth_router
 from openhands.server.shared import conversation_manager
+from openhands.server.backend_pre_start import init
+from openhands.server.db import engine, database
+from openhands.server.initial_data import init as init_initial_data
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
 async def _lifespan(app: FastAPI):
-    async with conversation_manager:
-        yield
+    try:
+        # Connect to database
+        await database.connect()
+        
+        # Initialize database connection
+        await init(engine)  
+        await init_initial_data()  
+        
+        # Start conversation manager
+        async with conversation_manager:
+            yield
+    except Exception as e:
+        logger.error(f"Error during startup: {e}")
+        raise
+    finally:
+        # Disconnect from database
+        await database.disconnect()
 
 
 app = FastAPI(
@@ -52,3 +74,4 @@ app.include_router(manage_conversation_api_router)
 app.include_router(settings_router)
 app.include_router(github_api_router)
 app.include_router(trajectory_router)
+app.include_router(auth_router)
