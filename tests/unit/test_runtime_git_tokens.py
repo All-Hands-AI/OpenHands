@@ -51,6 +51,9 @@ class TestRuntime(Runtime):
 
     def run_action(self, action: Action) -> Observation:
         return NullObservation()
+    
+    def call_tool_mcp(self, action):
+        return NullObservation()
 
 
 @pytest.fixture
