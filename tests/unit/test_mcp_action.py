@@ -25,7 +25,7 @@ async def test_mcp_action_execution():
         )
 
         # Create a McpAction instance
-        action = McpAction(mcp_actions='test_action')
+        action = McpAction(name='test_action')
 
         # Execute the action
         observation = await executor.call_tool_mcp(action)
