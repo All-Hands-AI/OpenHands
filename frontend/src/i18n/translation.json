@@ -2078,6 +2078,7 @@
         "tr": "Ajan hız sınırına ulaştı",
         "ja": "エージェントがレート制限中"
     },
+
     "CHAT_INTERFACE$AGENT_PAUSED_MESSAGE": {
         "en": "Agent has paused.",
         "de": "Agent pausiert.",
@@ -2238,7 +2239,19 @@
         "es": "No se encontraron resultados.",
         "de": "Keine Ergebnisse gefunden.",
         "it": "Nessun risultato trovato.",
-        "pt": "Nenhum resultado encontrado.",
+        "pt": "Nenhum resultado encontrado."
+    },
+    "GITHUB$LOADING_REPOSITORIES": {
+        "en": "Loading repositories...",
+        "ja": "リポジトリを読み込み中...",
+        "zh-CN": "正在加载仓库...",
+        "zh-TW": "正在加載倉庫...",
+        "ko-KR": "저장소 로딩 중...",
+        "fr": "Chargement des dépôts...",
+        "es": "Cargando repositorios...",
+        "de": "Lade Repositories...",
+        "it": "Caricamento dei repository...",
+        "pt": "Carregando repositórios...",
         "ar": "لم يتم العثور على نتائج.",
         "no": "Ingen resultater funnet.",
         "tr": "Sonuç bulunamadı"
@@ -4553,19 +4566,19 @@
         "no": "Ingen samtaler funnet",
         "tr": "Konuşma yok"
     },
-    "LANDING$SELECT_REPO": {
-        "en": "Select a GitHub project",
-        "ja": "GitHubプロジェクトを選択",
-        "zh-CN": "选择GitHub项目",
-        "zh-TW": "選擇 GitHub 專案",
-        "ko-KR": "GitHub 프로젝트 선택",
-        "fr": "Sélectionner un projet GitHub",
-        "es": "Seleccionar un proyecto de GitHub",
-        "de": "Ein GitHub-Projekt auswählen",
-        "it": "Seleziona un progetto GitHub",
-        "pt": "Selecionar um projeto do GitHub",
-        "ar": "اختر مشروع GitHub",
-        "no": "Velg et GitHub-prosjekt",
+    "LANDING$SELECT_GIT_REPO": {
+        "en": "Select a Git project",
+        "ja": "Gitプロジェクトを選択",
+        "zh-CN": "选择Git项目",
+        "zh-TW": "選擇 Git 專案",
+        "ko-KR": "Git 프로젝트 선택",
+        "fr": "Sélectionner un projet Git",
+        "es": "Seleccionar un proyecto de Git",
+        "de": "Ein Git-Projekt auswählen",
+        "it": "Seleziona un progetto Git",
+        "pt": "Selecionar um projeto do Git",
+        "ar": "اختر مشروع Git",
+        "no": "Velg et Git-prosjekt",
         "tr": "Depo seç"
     },
     "BUTTON$SEND": {

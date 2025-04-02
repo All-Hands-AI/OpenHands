@@ -1,4 +1,9 @@
-export type Provider = "github" | "gitlab";
+export const ProviderOptions = {
+  github: "github",
+  gitlab: "gitlab",
+} as const;
+
+export type Provider = keyof typeof ProviderOptions;
 
 // For GET requests (data received from backend)
 export type ProviderTokenDataGet = {
@@ -23,7 +28,7 @@ export type Settings = {
   CONFIRMATION_MODE: boolean;
   SECURITY_ANALYZER: string;
   REMOTE_RUNTIME_RESOURCE_FACTOR: number | null;
-  GITHUB_TOKEN_IS_SET: boolean;
+  PROVIDER_TOKENS_SET: Record<Provider, boolean>;
   ENABLE_DEFAULT_CONDENSER: boolean;
   ENABLE_SOUND_NOTIFICATIONS: boolean;
   USER_CONSENTS_TO_ANALYTICS: boolean | null;
@@ -40,11 +45,11 @@ export type ApiSettings = {
   confirmation_mode: boolean;
   security_analyzer: string;
   remote_runtime_resource_factor: number | null;
-  github_token_is_set: boolean;
   enable_default_condenser: boolean;
   enable_sound_notifications: boolean;
   user_consents_to_analytics: boolean | null;
   provider_tokens: Record<Provider, ProviderTokenDataGet | string>;
+  provider_tokens_set: Record<Provider, boolean>;
 };
 
 export type PostSettings = Settings & {

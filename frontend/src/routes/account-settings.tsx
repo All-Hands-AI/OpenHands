@@ -25,6 +25,8 @@ import {
   displayErrorToast,
   displaySuccessToast,
 } from "#/utils/custom-toast-handlers";
+import { ProviderOptions } from "#/types/settings";
+import { useAuth } from "#/context/auth-context";
 
 const REMOTE_RUNTIME_OPTIONS = [
   { key: 1, label: "1x (2 core, 8G)" },
@@ -46,6 +48,7 @@ function AccountSettings() {
   } = useAIConfigOptions();
   const { mutate: saveSettings } = useSaveSettings();
   const { handleLogout } = useAppLogout();
+  const { providerTokensSet, providersAreSet } = useAuth();
 
   const isFetching = isFetchingSettings || isFetchingResources;
   const isSuccess = isSuccessfulSettings && isSuccessfulResources;
@@ -62,7 +65,6 @@ function AccountSettings() {
         isCustomModel(resources.models, settings.LLM_MODEL) ||
         hasAdvancedSettingsSet({
           ...settings,
-          PROVIDER_TOKENS: settings.PROVIDER_TOKENS || {},
         })
       );
     }
@@ -71,7 +73,10 @@ function AccountSettings() {
   };
 
   const hasAppSlug = !!config?.APP_SLUG;
-  const isGitHubTokenSet = settings?.GITHUB_TOKEN_IS_SET;
+  const isGitHubTokenSet =
+    providerTokensSet.includes(ProviderOptions.github) || false;
+  const isGitLabTokenSet =
+    providerTokensSet.includes(ProviderOptions.gitlab) || false;
   const isLLMKeySet = settings?.LLM_API_KEY === "**********";
   const isAnalyticsEnabled = settings?.USER_CONSENTS_TO_ANALYTICS;
   const isAdvancedSettingsSet = determineWhetherToToggleAdvancedSettings();
@@ -121,6 +126,10 @@ function AccountSettings() {
         ? undefined // don't update if it's already set
         : ""); // reset if it's first time save to avoid 500 error
 
+    const githubToken = formData.get("github-token-input")?.toString();
+    const gitlabToken = formData.get("gitlab-token-input")?.toString();
+    const hostUrl = formData.get("host-url-input")?.toString();
+
     // we don't want the user to be able to modify these settings in SaaS
     const finalLlmModel = shouldHandleSpecialSaasCase
       ? undefined
@@ -130,22 +139,19 @@ function AccountSettings() {
       : llmBaseUrl;
     const finalLlmApiKey = shouldHandleSpecialSaasCase ? undefined : llmApiKey;
 
-    const githubToken = formData.get("github-token-input")?.toString();
-    const hostUrl = formData.get("host-url-input")?.toString();
     const newSettings = {
-      github_token: githubToken,
-      provider_tokens: githubToken
-        ? {
-            github: {
-              token: githubToken,
-              host_url: hostUrl || "",
-            },
-            gitlab: {
-              token: "",
-              host_url: "",
-            },
-          }
-        : undefined,
+      provider_tokens:
+        githubToken || gitlabToken
+          ? {
+              github: githubToken
+                ? {
+                    token: githubToken,
+                    host_url: hostUrl || "",
+                  }
+                : "",
+              gitlab: gitlabToken || "",
+            }
+          : undefined,
       LANGUAGE: languageValue,
       user_consents_to_analytics: userConsentsToAnalytics,
       ENABLE_DEFAULT_CONDENSER: enableMemoryCondenser,
@@ -374,7 +380,7 @@ function AccountSettings() {
 
           <section className="flex flex-col gap-6">
             <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">
-              GitHub Settings
+              Git Provider Settings
             </h2>
             {isSaas && hasAppSlug && (
               <Link
@@ -429,32 +435,74 @@ function AccountSettings() {
                   </b>
                   .
                 </p>
+
+                <SettingsInput
+                  testId="gitlab-token-input"
+                  name="gitlab-token-input"
+                  label="GitLab Token"
+                  type="password"
+                  className="w-[680px]"
+                  startContent={
+                    isGitLabTokenSet && (
+                      <KeyStatusIcon isSet={!!isGitLabTokenSet} />
+                    )
+                  }
+                  placeholder={isGitHubTokenSet ? "<hidden>" : ""}
+                />
+
+                <p data-testId="gitlab-token-help-anchor" className="text-xs">
+                  {" "}
+                  Generate a token on{" "}
+                  <b>
+                    {" "}
+                    <a
+                      href="https://gitlab.com/-/user_settings/personal_access_tokens?name=openhands-app&scopes=api,read_user,read_repository,write_repository"
+                      target="_blank"
+                      className="underline underline-offset-2"
+                      rel="noopener noreferrer"
+                    >
+                      GitLab
+                    </a>{" "}
+                  </b>
+                  or see the{" "}
+                  <b>
+                    <a
+                      href="https://docs.gitlab.com/user/profile/personal_access_tokens/"
+                      target="_blank"
+                      className="underline underline-offset-2"
+                      rel="noopener noreferrer"
+                    >
+                      documentation
+                    </a>
+                  </b>
+                  .
+                </p>
+
+                {/* Enterprise Host URL field - always visible regardless of SaaS mode */}
+                <SettingsInput
+                  testId="host-url-input"
+                  name="host-url-input"
+                  label="Enterprise Host URL"
+                  type="text"
+                  className="w-[680px]"
+                  defaultValue={
+                    typeof settings.PROVIDER_TOKENS?.github === 'object'
+                      ? settings.PROVIDER_TOKENS?.github?.host_url || ""
+                      : ""
+                  }
+                  placeholder="https://github.example.com"
+                />
+
+                <BrandButton
+                  type="button"
+                  variant="secondary"
+                  onClick={handleLogout}
+                  isDisabled={!providersAreSet}
+                >
+                  Disconnect Tokens
+                </BrandButton>
               </>
             )}
-
-            {/* Enterprise Host URL field - always visible regardless of SaaS mode */}
-            <SettingsInput
-              testId="host-url-input"
-              name="host-url-input"
-              label="Enterprise Host URL"
-              type="text"
-              className="w-[680px]"
-              defaultValue={
-                typeof settings.PROVIDER_TOKENS?.github === 'object'
-                  ? settings.PROVIDER_TOKENS?.github?.host_url || ""
-                  : ""
-              }
-              placeholder="https://github.example.com"
-            />
-
-            <BrandButton
-              type="button"
-              variant="secondary"
-              onClick={handleLogout}
-              isDisabled={!isGitHubTokenSet}
-            >
-              Disconnect from GitHub
-            </BrandButton>
           </section>
 
           <section className="flex flex-col gap-6">

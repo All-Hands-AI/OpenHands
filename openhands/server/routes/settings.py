@@ -39,10 +39,29 @@ async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
                         'host_url': token.host_url or '',  # Use empty string if None
                     }
 
+        # Create provider_tokens_set dictionary
+        provider_tokens_set = {}
+
+        if bool(user_id):
+            provider_tokens_set[ProviderType.GITHUB.value] = True
+
+        provider_tokens_list = get_provider_tokens(request)
+        if provider_tokens_list:
+            all_provider_types = [provider.value for provider in ProviderType]
+            provider_tokens_types = [
+                provider.value for provider in provider_tokens_list
+            ]
+            for provider_type in all_provider_types:
+                if provider_type in provider_tokens_types:
+                    provider_tokens_set[provider_type] = True
+                else:
+                    provider_tokens_set[provider_type] = False
+
         settings_with_token_data = GETSettingsModel(
             **settings.model_dump(exclude='secrets_store'),
             github_token_is_set=github_token_is_set,
             provider_tokens=provider_tokens,
+            provider_tokens_set=provider_tokens_set,
         )
 
         settings_with_token_data.llm_api_key = settings.llm_api_key

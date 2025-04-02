@@ -124,3 +124,4 @@ class GETSettingsModel(Settings):
 
     github_token_is_set: bool | None = None
     provider_tokens: dict[str, dict[str, str]] | None = None
+    provider_tokens_set: dict[str, bool] | None = None
