@@ -12,7 +12,8 @@ import { GitUser } from "#/types/git";
 export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
   llm_model: DEFAULT_SETTINGS.LLM_MODEL,
   llm_base_url: DEFAULT_SETTINGS.LLM_BASE_URL,
-  llm_api_key: DEFAULT_SETTINGS.LLM_API_KEY,
+  llm_api_key: null,
+  llm_api_key_set: DEFAULT_SETTINGS.LLM_API_KEY_SET,
   agent: DEFAULT_SETTINGS.AGENT,
   language: DEFAULT_SETTINGS.LANGUAGE,
   confirmation_mode: DEFAULT_SETTINGS.CONFIRMATION_MODE,

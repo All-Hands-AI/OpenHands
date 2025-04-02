@@ -15,7 +15,7 @@ const getSettingsQueryFn = async () => {
     LANGUAGE: apiSettings.language,
     CONFIRMATION_MODE: apiSettings.confirmation_mode,
     SECURITY_ANALYZER: apiSettings.security_analyzer,
-    LLM_API_KEY: apiSettings.llm_api_key,
+    LLM_API_KEY_SET: apiSettings.llm_api_key_set,
     REMOTE_RUNTIME_RESOURCE_FACTOR: apiSettings.remote_runtime_resource_factor,
     PROVIDER_TOKENS_SET: apiSettings.provider_tokens_set,
     ENABLE_DEFAULT_CONDENSER: apiSettings.enable_default_condenser,
@@ -45,10 +45,10 @@ export const useSettings = () => {
   });
 
   React.useEffect(() => {
-    if (query.isFetched && query.data?.LLM_API_KEY) {
+    if (query.isFetched && query.data?.LLM_API_KEY_SET) {
       posthog.capture("user_activated");
     }
-  }, [query.data?.LLM_API_KEY, query.isFetched]);
+  }, [query.data?.LLM_API_KEY_SET, query.isFetched]);
 
   React.useEffect(() => {
     if (query.data?.PROVIDER_TOKENS_SET) {

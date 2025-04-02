@@ -50,7 +50,7 @@ export function SettingsForm({ settings, models, onClose }: SettingsFormProps) {
 
         posthog.capture("settings_saved", {
           LLM_MODEL: newSettings.LLM_MODEL,
-          LLM_API_KEY: newSettings.LLM_API_KEY ? "SET" : "UNSET",
+          LLM_API_KEY_SET: newSettings.LLM_API_KEY_SET ? "SET" : "UNSET",
           REMOTE_RUNTIME_RESOURCE_FACTOR:
             newSettings.REMOTE_RUNTIME_RESOURCE_FACTOR,
         });
@@ -74,7 +74,7 @@ export function SettingsForm({ settings, models, onClose }: SettingsFormProps) {
     }
   };
 
-  const isLLMKeySet = settings.LLM_API_KEY === "**********";
+  const isLLMKeySet = settings.LLM_API_KEY_SET;
 
   return (
     <div>
