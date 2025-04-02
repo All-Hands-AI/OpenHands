@@ -120,11 +120,11 @@ function AccountSettings() {
     const enableSoundNotifications =
       formData.get("enable-sound-notifications-switch")?.toString() === "on";
     const llmBaseUrl = formData.get("base-url-input")?.toString() || "";
+    const inputApiKey = formData.get("llm-api-key-input")?.toString() || "";
     const llmApiKey =
-      formData.get("llm-api-key-input")?.toString() ||
-      (isLLMKeySet
-        ? undefined // don't update if it's already set
-        : ""); // reset if it's first time save to avoid 500 error
+      inputApiKey === "" && isLLMKeySet
+        ? undefined // don't update if it's already set and input is empty
+        : inputApiKey; // otherwise use the input value
 
     const githubToken = formData.get("github-token-input")?.toString();
     const gitlabToken = formData.get("gitlab-token-input")?.toString();
@@ -277,10 +277,10 @@ function AccountSettings() {
                   label="API Key"
                   type="password"
                   className="w-[680px]"
+                  placeholder={isLLMKeySet ? "<hidden>" : ""}
                   startContent={
                     isLLMKeySet && <KeyStatusIcon isSet={isLLMKeySet} />
                   }
-                  placeholder={isLLMKeySet ? "<hidden>" : ""}
                 />
               )}
 
