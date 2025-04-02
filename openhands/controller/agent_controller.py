@@ -261,7 +261,7 @@ class AgentController:
                 and 'ContentPolicyViolationError' in str(e)
             ):
                 err_id = 'STATUS$ERROR_LLM_CONTENT_POLICY_VIOLATION'
-                self.state.last_error = str(e)
+                self.state.last_error = err_id
             await self.status_callback('error', err_id, self.state.last_error)
 
         # Set the agent state to ERROR after storing the reason
