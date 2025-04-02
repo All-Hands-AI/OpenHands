@@ -48,7 +48,7 @@ class BaseMicroAgent(BaseModel):
         content = loaded.content
 
         # Handle case where there's no frontmatter or empty frontmatter
-        metadata_dict = loaded.metadata if loaded.metadata else {}
+        metadata_dict = loaded.metadata or {}
 
         # If no type is specified, default to repo type
         if 'type' not in metadata_dict:
