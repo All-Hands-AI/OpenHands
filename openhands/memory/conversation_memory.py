@@ -329,10 +329,10 @@ class ConversationMemory:
             else:
                 text = truncate_content(obs.to_agent_observation(), max_message_chars)
             message = Message(role='user', content=[TextContent(text=text)])
-        # FIXME: This is a temporary solution to test MCP. Not sure if it's the best way to do it.
         elif isinstance(obs, MCPObservation):
             # logger.warning(f'MCPObservation: {obs}')
-            message = Message(role='assistant', content=[TextContent(text=obs.content)])
+            text = truncate_content(obs.content, max_message_chars)
+            message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, IPythonRunCellObservation):
             text = obs.content
             # replace base64 images with a placeholder
