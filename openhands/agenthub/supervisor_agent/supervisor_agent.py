@@ -494,7 +494,7 @@ If the trajectory is good (score 0-3), set "pattern_observed" to null.
                     agent='CodeActAgent',
                     inputs=state.inputs,
                     thought="I'll delegate this task to CodeActAgent to handle it.",
-                    clear_history=False,  # No need to clear history on first delegation
+                    clear_history=True,  # Always clear history when delegating
                 )
             )
 
