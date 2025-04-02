@@ -114,7 +114,7 @@ class SupervisorAgent(Agent):
         logger.info(
             f'SupervisorAgent: Handling CmdOutputObservation: {observation.command}'
         )
-        
+
         # Check if this is the git rev-parse HEAD command result
         if (
             observation.command == 'git rev-parse HEAD'
@@ -317,7 +317,9 @@ If the trajectory is good (score 0-3), set "pattern_observed" to null.
         - Final response
         - Final finish reason
 
-        Only processes events that occurred after delegation to CodeActAgent.
+        Only processes events that occurred after the MOST RECENT delegation to CodeActAgent.
+        This ensures that if we redelegate with clear_history=True, we only process events
+        after that redelegation, not all events since the beginning.
 
         Returns:
             A formatted string with the history of actions and observations.
@@ -334,8 +336,8 @@ If the trajectory is good (score 0-3), set "pattern_observed" to null.
         agent_responses = []
         observations = []
 
-        # Find the delegation event to only process events after it
-        delegation_index = -1
+        # Find the MOST RECENT delegation event to only process events after it
+        delegation_indices = []
         for i, event in enumerate(state.history):
             if (
                 hasattr(event, 'action')
@@ -343,21 +345,25 @@ If the trajectory is good (score 0-3), set "pattern_observed" to null.
                 and hasattr(event, 'agent')
                 and event.agent == 'CodeActAgent'
             ):
-                delegation_index = i
+                delegation_indices.append(i)
                 logger.info(f'SupervisorAgent: Found delegation event at index {i}')
-                break
 
-        if delegation_index == -1:
+        # If no delegation events found
+        if not delegation_indices:
             logger.warning(
                 'SupervisorAgent: Could not find delegation event in history'
             )
             return 'No delegation event found in history'
-            
-        logger.info(f'SupervisorAgent: Processing events after index {delegation_index} (total events: {len(state.history)})')
 
-        # Iterate through the history, only processing events after delegation
+        # Use the most recent delegation event
+        delegation_index = delegation_indices[-1]
+        logger.info(
+            f'SupervisorAgent: Using MOST RECENT delegation event at index {delegation_index} (total events: {len(state.history)})'
+        )
+
+        # Iterate through the history, only processing events after the most recent delegation
         for i, event in enumerate(state.history):
-            # Skip events before delegation
+            # Skip events before the most recent delegation
             if i <= delegation_index:
                 continue
 
@@ -534,7 +540,9 @@ If the trajectory is good (score 0-3), set "pattern_observed" to null.
                     )
 
                     # Analyze the trajectory for overthinking
-                    logger.info('SupervisorAgent: Analyzing trajectory for overthinking')
+                    logger.info(
+                        'SupervisorAgent: Analyzing trajectory for overthinking'
+                    )
                     overthinking_analysis = self.analyze_trajectory(processed_history)
 
                     # Store the overthinking analysis in the state's extra_data
@@ -542,7 +550,9 @@ If the trajectory is good (score 0-3), set "pattern_observed" to null.
                         state.extra_data['overthinking_analysis'] = (
                             overthinking_analysis
                         )
-                        logger.info(f'SupervisorAgent: Overthinking analysis: {overthinking_analysis}')
+                        logger.info(
+                            f'SupervisorAgent: Overthinking analysis: {overthinking_analysis}'
+                        )
 
                         # Check if the trajectory shows overthinking
                         if overthinking_analysis['pattern_observed'] is not None:
