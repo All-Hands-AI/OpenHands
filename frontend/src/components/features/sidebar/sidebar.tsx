@@ -4,7 +4,7 @@ import { useDispatch } from "react-redux";
 import posthog from "posthog-js";
 import { NavLink, useLocation } from "react-router";
 import { useTranslation } from "react-i18next";
-import { useGitHubUser } from "#/hooks/query/use-github-user";
+import { useGitUser } from "#/hooks/query/use-git-user";
 import { UserActions } from "./user-actions";
 import { AllHandsLogoButton } from "#/components/shared/buttons/all-hands-logo-button";
 import { DocsButton } from "#/components/shared/buttons/docs-button";
@@ -29,7 +29,7 @@ export function Sidebar() {
   const location = useLocation();
   const dispatch = useDispatch();
   const endSession = useEndSession();
-  const user = useGitHubUser();
+  const user = useGitUser();
   const { data: config } = useConfig();
   const {
     data: settings,

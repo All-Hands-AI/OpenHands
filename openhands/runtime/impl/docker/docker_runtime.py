@@ -2,6 +2,8 @@ from functools import lru_cache
 from typing import Callable
 from uuid import UUID
 
+import os 
+
 import docker
 import httpx
 import tenacity
@@ -86,6 +88,10 @@ class DockerRuntime(ActionExecutionClient):
         self._container_port = -1
         self._vscode_port = -1
         self._app_ports: list[int] = []
+
+        if os.environ.get("DOCKER_HOST_ADDR"):
+            logger.info(f'Using DOCKER_HOST_IP: {os.environ["DOCKER_HOST_ADDR"]} for local_runtime_url')
+            self.config.sandbox.local_runtime_url = f'http://{os.environ["DOCKER_HOST_ADDR"]}'
 
         self.docker_client: docker.DockerClient = self._init_docker_client()
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
