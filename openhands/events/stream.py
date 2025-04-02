@@ -67,9 +67,6 @@ class EventStream(EventStore):
         self._lock = threading.Lock()
         self.secrets = {}
 
-        # load the stream
-        self.__post_init__()
-
     def _init_thread_loop(self, subscriber_id: str, callback_id: str) -> None:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
