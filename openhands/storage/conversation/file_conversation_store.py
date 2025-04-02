@@ -28,6 +28,8 @@ conversation_metadata_type_adapter = TypeAdapter(ConversationMetadata)
 @dataclass
 class FileConversationStore(ConversationStore):
     file_store: FileStore
+    user_id: str | None = None
+    github_user_id: str | None = None
 
     async def save_metadata(self, metadata: ConversationMetadata) -> None:
         json_str = conversation_metadata_type_adapter.dump_json(metadata)
@@ -83,7 +85,11 @@ class FileConversationStore(ConversationStore):
         conversations = []
         for conversation_id in conversation_ids:
             try:
-                conversations.append(await self.get_metadata(conversation_id))
+                metadata = await self.get_metadata(conversation_id)
+                # Only include conversations that belong to this user
+                if (self.user_id and metadata.user_id == self.user_id) or \
+                   (self.github_user_id and metadata.github_user_id == self.github_user_id):
+                    conversations.append(metadata)
             except Exception:
                 logger.warning(
                     f'Could not load conversation metadata: {conversation_id}'
@@ -94,17 +100,19 @@ class FileConversationStore(ConversationStore):
         return ConversationMetadataResultSet(conversations, next_page_id)
 
     def get_conversation_metadata_dir(self) -> str:
+        if self.user_id:
+            return f'users/{self.user_id}/conversations'
         return CONVERSATION_BASE_DIR
 
     def get_conversation_metadata_filename(self, conversation_id: str) -> str:
-        return get_conversation_metadata_filename(conversation_id)
+        return get_conversation_metadata_filename(conversation_id, self.user_id)
 
     @classmethod
     async def get_instance(
         cls, config: AppConfig, user_id: str | None, github_user_id: str | None
     ) -> FileConversationStore:
         file_store = get_file_store(config.file_store, config.file_store_path)
-        return FileConversationStore(file_store)
+        return FileConversationStore(file_store, user_id, github_user_id)
 
 
 def _sort_key(conversation: ConversationMetadata) -> str:
