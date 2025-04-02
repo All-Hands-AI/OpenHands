@@ -110,11 +110,15 @@ class EventStore:
             return False
 
         if end_id is None:
-            end_id = self.cur_id - 1
+            end_id = self.cur_id
+        else:
+            end_id += 1  # From inclusive to exclusive
 
         if reverse:
             step = -1
             start_id, end_id = end_id, start_id
+            start_id -= 1
+            end_id -= 1
         else:
             step = 1
 
@@ -129,8 +133,8 @@ class EventStore:
                 try:
                     event = self.get_event(index)
                 except FileNotFoundError:
-                    break
-            if not should_filter(event):
+                    event = None
+            if event and not should_filter(event):
                 yield event
 
     def get_event(self, id: int) -> Event:

@@ -110,8 +110,10 @@ def test_get_matching_events_type_filter(temp_dir: str):
     assert len(events) == 3
 
     # Filter in reverse
-    events = event_stream.get_matching_events(reverse=True, limit=1)
+    events = event_stream.get_matching_events(reverse=True, limit=3)
+    assert len(events) == 3
     assert isinstance(events[0], MessageAction) and events[0].content == 'test'
+    assert isinstance(events[2], NullObservation) and events[2].content == 'test'
 
 
 def test_get_matching_events_query_search(temp_dir: str):
