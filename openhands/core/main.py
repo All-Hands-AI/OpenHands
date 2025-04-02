@@ -148,18 +148,17 @@ async def run_controller(
     )
 
     # start event is a MessageAction with the task, either resumed or new
-    if initial_state is not None:
+    if initial_state is not None and initial_state.last_error:
         # we're resuming the previous session
-        if initial_state.last_error:
-            event_stream.add_event(
-                MessageAction(
-                    content=(
-                        "Let's get back on track. If you experienced errors before, do "
-                        'NOT resume your task. Ask me about it.'
-                    ),
+        event_stream.add_event(
+            MessageAction(
+                content=(
+                    "Let's get back on track. If you experienced errors before, do "
+                    'NOT resume your task. Ask me about it.'
                 ),
-                EventSource.USER,
-            )
+            ),
+            EventSource.USER,
+        )
     else:
         # init with the provided actions
         event_stream.add_event(initial_user_action, EventSource.USER)
