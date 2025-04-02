@@ -395,7 +395,7 @@ describe("Settings Screen", () => {
     it("should render an indicator if the LLM API key is set", async () => {
       getSettingsSpy.mockResolvedValueOnce({
         ...MOCK_DEFAULT_USER_SETTINGS,
-        llm_api_key: "**********",
+        llm_api_key_set: true,
       });
 
       renderSettingsScreen();
@@ -416,7 +416,7 @@ describe("Settings Screen", () => {
     it("should set '<hidden>' placeholder if the LLM API key is set", async () => {
       getSettingsSpy.mockResolvedValueOnce({
         ...MOCK_DEFAULT_USER_SETTINGS,
-        llm_api_key: "**********",
+        llm_api_key_set: true,
       });
 
       renderSettingsScreen();
@@ -971,7 +971,7 @@ describe("Settings Screen", () => {
       const user = userEvent.setup();
       getSettingsSpy.mockResolvedValue({
         ...MOCK_DEFAULT_USER_SETTINGS,
-        llm_api_key: "**********",
+        llm_api_key_set: true,
       });
 
       renderSettingsScreen();
