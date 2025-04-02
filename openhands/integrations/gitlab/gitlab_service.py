@@ -98,15 +98,15 @@ class GitLabService(GitService):
     async def search_repositories(
         self, query: str, per_page: int = 30, sort: str = 'updated', order: str = 'desc'
     ) -> list[Repository]:
-        url = f'{self.BASE_URL}/search'
+        url = f'{self.BASE_URL}/projects'
         params = {
-            'scope': 'projects',
             'search': query,
             'per_page': per_page,
-            'order_by': sort,
+            'order_by': 'last_activity_at',
             'sort': order,
-            'visibility': 'public',  # Ensure we only search for public repositories
+            'visibility': 'public',
         }
+
         response, _ = await self._fetch_data(url, params)
         repos = [
             Repository(
