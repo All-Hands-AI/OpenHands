@@ -111,6 +111,10 @@ class SupervisorAgent(Agent):
         self, observation: CmdOutputObservation, state: State
     ) -> None:
         """Handle the CmdOutputObservation to store the commit hash."""
+        logger.info(
+            f'SupervisorAgent: Handling CmdOutputObservation: {observation.command}'
+        )
+        
         # Check if this is the git rev-parse HEAD command result
         if (
             observation.command == 'git rev-parse HEAD'
@@ -118,6 +122,7 @@ class SupervisorAgent(Agent):
         ):
             # Store the commit hash
             commit_hash = observation.content.strip()
+            logger.info(f'SupervisorAgent: Got commit hash: {commit_hash}')
             logger.info(
                 f'SupervisorAgent: Stored pre-delegation commit hash: {commit_hash}'
             )
@@ -339,6 +344,7 @@ If the trajectory is good (score 0-3), set "pattern_observed" to null.
                 and event.agent == 'CodeActAgent'
             ):
                 delegation_index = i
+                logger.info(f'SupervisorAgent: Found delegation event at index {i}')
                 break
 
         if delegation_index == -1:
@@ -346,6 +352,8 @@ If the trajectory is good (score 0-3), set "pattern_observed" to null.
                 'SupervisorAgent: Could not find delegation event in history'
             )
             return 'No delegation event found in history'
+            
+        logger.info(f'SupervisorAgent: Processing events after index {delegation_index} (total events: {len(state.history)})')
 
         # Iterate through the history, only processing events after delegation
         for i, event in enumerate(state.history):
@@ -489,6 +497,9 @@ If the trajectory is good (score 0-3), set "pattern_observed" to null.
             # This will be handled in the next step after we get the commit hash
 
             # Delegate to CodeActAgent
+            logger.info(
+                'SupervisorAgent: Delegating to CodeActAgent with clear_history=True'
+            )
             self.pending_actions.append(
                 AgentDelegateAction(
                     agent='CodeActAgent',
@@ -523,6 +534,7 @@ If the trajectory is good (score 0-3), set "pattern_observed" to null.
                     )
 
                     # Analyze the trajectory for overthinking
+                    logger.info('SupervisorAgent: Analyzing trajectory for overthinking')
                     overthinking_analysis = self.analyze_trajectory(processed_history)
 
                     # Store the overthinking analysis in the state's extra_data
@@ -530,7 +542,7 @@ If the trajectory is good (score 0-3), set "pattern_observed" to null.
                         state.extra_data['overthinking_analysis'] = (
                             overthinking_analysis
                         )
-                        logger.info(f'Overthinking analysis: {overthinking_analysis}')
+                        logger.info(f'SupervisorAgent: Overthinking analysis: {overthinking_analysis}')
 
                         # Check if the trajectory shows overthinking
                         if overthinking_analysis['pattern_observed'] is not None:
@@ -585,6 +597,9 @@ If the trajectory is good (score 0-3), set "pattern_observed" to null.
                             # We need to create a new State object with a clean history
                             # This is done by setting clear_history=True in the AgentDelegateAction
                             # The controller will handle clearing the history before delegation
+                            logger.info(
+                                'SupervisorAgent: Redelegating to CodeActAgent with clear_history=True'
+                            )
                             self.pending_actions.append(
                                 AgentDelegateAction(
                                     agent='CodeActAgent',
