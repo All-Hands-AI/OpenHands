@@ -15,6 +15,16 @@ import {
 import { openHands } from "./open-hands-axios";
 import { ApiSettings, PostApiSettings } from "#/types/settings";
 
+interface VerifySignatureResponse {
+  public_key: string;
+  jwt: string;
+}
+
+interface VerifySignatureRequest {
+  signature: string;
+  message: string;
+}
+
 class OpenHands {
   /**
    * Retrieve the list of models available
@@ -357,6 +367,26 @@ class OpenHands {
     const endpoint =
       appMode === "saas" ? "/api/logout" : "/api/unset-settings-tokens";
     await openHands.post(endpoint);
+  }
+
+  /**
+   * Verify user's wallet signature and get JWT token
+   * @param signature The signature from MetaMask
+   * @param message The message that was signed
+   * @returns The user's public key and JWT token
+   */
+  static async verifySignature(
+    signature: string,
+    message: string,
+  ): Promise<VerifySignatureResponse> {
+    const { data } = await openHands.post<VerifySignatureResponse>(
+      "/api/users/verify",
+      {
+        signature,
+        message,
+      },
+    );
+    return data;
   }
 }
 

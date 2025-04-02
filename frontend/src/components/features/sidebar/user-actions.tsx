@@ -1,6 +1,31 @@
-import React from "react";
-import { UserAvatar } from "./user-avatar";
-import { AccountSettingsContextMenu } from "../context-menu/account-settings-context-menu";
+import { TooltipButton } from "#/components/shared/buttons/tooltip-button";
+import {
+  useGetListAddresses,
+  useGetPublicKey,
+  useGetSignedLogin,
+  usePersistActions,
+} from "#/zutand-stores/persist-config/selector";
+import {
+  useAccountModal,
+  useConnectModal,
+  WalletButton,
+} from "@rainbow-me/rainbowkit";
+import React, { useEffect } from "react";
+import { FaUserAlt, FaWallet } from "react-icons/fa";
+import { twMerge } from "tailwind-merge";
+import { useAccount, useAccountEffect } from "wagmi";
+import { signMessage } from "@wagmi/core";
+import { wagmiConfig } from "#/config/config";
+import { reduceString } from "#/utils/utils";
+import OpenHands from "#/api/open-hands";
+import {
+  displayErrorToast,
+  displaySuccessToast,
+} from "#/utils/custom-toast-handlers";
+import {
+  removeAuthTokenHeader,
+  setAuthTokenHeader,
+} from "#/api/open-hands-axios";
 
 interface UserActionsProps {
   onLogout: () => void;
@@ -9,6 +34,14 @@ interface UserActionsProps {
 }
 
 export function UserActions({ onLogout, user, isLoading }: UserActionsProps) {
+  const { openConnectModal } = useConnectModal();
+  const { openAccountModal } = useAccountModal();
+  const account = useAccount();
+  const { setSignedLogin, setPublicKey, setJwt, reset } = usePersistActions();
+  const signedLogin = useGetSignedLogin();
+  const publicKey = useGetPublicKey();
+  const listAddresses = useGetListAddresses();
+
   const [accountContextMenuIsVisible, setAccountContextMenuIsVisible] =
     React.useState(false);
 
@@ -25,21 +58,124 @@ export function UserActions({ onLogout, user, isLoading }: UserActionsProps) {
     closeAccountMenu();
   };
 
+  useAccountEffect({
+    onConnect(account) {
+      console.log("Connected!", account);
+      onConnectEffect(account);
+    },
+    onDisconnect() {
+      console.log("Disconnected!");
+      reset();
+      removeAuthTokenHeader();
+      handleLogout();
+    },
+  });
+
+  const onConnectEffect = async (account: any) => {
+    try {
+      if (account?.address && !signedLogin) {
+        const message = "Sign to confirm account access to Thesis Capsule";
+        const signature = await signMessage(wagmiConfig, {
+          message: message,
+        });
+
+        console.log("signature", signature);
+        if (signature) {
+          try {
+            // Verify signature with backend
+            const response = await OpenHands.verifySignature(
+              signature,
+              message,
+            );
+
+            // Store user data
+            setSignedLogin(signature);
+            setPublicKey(response.public_key);
+            setJwt(response.jwt);
+            setAuthTokenHeader(response.jwt);
+
+            displaySuccessToast("Successfully verified wallet");
+          } catch (apiError) {
+            console.error("API Error:", apiError);
+            reset();
+            removeAuthTokenHeader();
+            throw new Error("Failed to verify wallet with server");
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Wallet connection error:", error);
+      displayErrorToast(
+        error instanceof Error ? error.message : "Error connecting wallet",
+      );
+      reset();
+      removeAuthTokenHeader();
+    }
+  };
+
   return (
     <div data-testid="user-actions" className="w-8 h-8 relative">
-      <UserAvatar
-        avatarUrl={user?.avatar_url}
-        onClick={toggleAccountMenu}
-        isLoading={isLoading}
-      />
+      {/* <ConnectButton
+        accountStatus={"avatar"}
+        showBalance={false}
+        chainStatus={"none"}
+      /> */}
+      {openConnectModal && (
+        <button
+          onClick={openConnectModal}
+          type="button"
+          className="w-8 h-8 rounded-full flex items-center justify-center bg-background"
+        >
+          <FaWallet />
+        </button>
+      )}
 
-      {accountContextMenuIsVisible && (
+      {openAccountModal && (
+        <button
+          onClick={openAccountModal}
+          type="button"
+          className="w-8 h-8 rounded-full flex items-center justify-center"
+        >
+          <TooltipButton
+            testId="user-avatar"
+            tooltip={reduceString(account?.address || "")}
+            ariaLabel={reduceString(account?.address || "")}
+            onClick={openAccountModal}
+            className={twMerge(
+              "w-8 h-8 rounded-full flex items-center justify-center bg-background",
+              isLoading && "bg-transparent",
+            )}
+          >
+            <FaUserAlt />
+          </TooltipButton>
+        </button>
+      )}
+
+      {/* <button onClick={openConnectModal}>
+        <UserAvatar
+          avatarUrl={user?.avatar_url}
+          onClick={toggleAccountMenu}
+          isLoading={isLoading}
+        />
+      </button> */}
+
+      {/* <WalletButton.Custom wallet="rainbow">
+        {({ ready, connect }) => {
+          return (
+            <button type="button" disabled={!ready} onClick={connect}>
+              Connect Rainbow
+            </button>
+          );
+        }}
+      </WalletButton.Custom> */}
+
+      {/* {accountContextMenuIsVisible && (
         <AccountSettingsContextMenu
           isLoggedIn={!!user}
           onLogout={handleLogout}
           onClose={closeAccountMenu}
         />
-      )}
+      )} */}
     </div>
   );
 }

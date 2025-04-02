@@ -102,3 +102,18 @@ export const formatTimestamp = (timestamp: string) =>
     minute: "2-digit",
     second: "2-digit",
   });
+
+/**
+ * Returns a shortened string by replacing middle characters with '...'
+ */
+export function reduceString(
+  str: string,
+  from: number = 4,
+  end: number = 4,
+): string {
+  if (!str) return "-";
+
+  return str && typeof str.substring === "function"
+    ? `${str.substring(0, from)}...${str.substring(str.length - end)}`
+    : "-";
+}

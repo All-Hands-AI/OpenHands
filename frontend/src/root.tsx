@@ -1,3 +1,7 @@
+import "@rainbow-me/rainbowkit/styles.css";
+
+import React from "react";
+import { Toaster } from "react-hot-toast";
 import {
   Links,
   Meta,
@@ -6,10 +10,13 @@ import {
   Scripts,
   ScrollRestoration,
 } from "react-router";
-import "./tailwind.css";
 import "./index.css";
-import React from "react";
-import { Toaster } from "react-hot-toast";
+import "./tailwind.css";
+
+import { darkTheme, RainbowKitProvider } from "@rainbow-me/rainbowkit";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { WagmiProvider } from "wagmi";
+import { queryClient, wagmiConfig } from "./config/config";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -31,10 +38,26 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export const meta: MetaFunction = () => [
-  { title: "OpenHands" },
+  { title: "Thesis Capsule" },
   { name: "description", content: "Let's Start Building!" },
 ];
 
 export default function App() {
-  return <Outlet />;
+  return (
+    <WagmiProvider config={wagmiConfig}>
+      <RainbowKitProvider
+        theme={darkTheme()}
+        locale="en-US"
+        modalSize="compact"
+        appInfo={{
+          appName: "Thesis Capsule",
+          learnMoreUrl: "https://thesis.io",
+        }}
+      >
+        <QueryClientProvider client={queryClient}>
+          <Outlet />
+        </QueryClientProvider>
+      </RainbowKitProvider>
+    </WagmiProvider>
+  );
 }

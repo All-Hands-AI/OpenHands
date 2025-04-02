@@ -9,6 +9,7 @@
   "dependencies": {
     "@heroui/react": "2.7.4",
     "@monaco-editor/react": "^4.7.0-rc.0",
+    "@rainbow-me/rainbowkit": "^2.2.4",
     "@react-router/node": "^7.3.0",
     "@react-router/serve": "^7.3.0",
     "@react-types/shared": "^3.28.0",
@@ -46,6 +47,7 @@
     "socket.io-client": "^4.8.1",
     "tailwind-merge": "^3.0.2",
     "vite": "^6.2.1",
+    "wagmi": "^2.14.16",
     "web-vitals": "^3.5.2",
     "ws": "^8.18.1"
   },
