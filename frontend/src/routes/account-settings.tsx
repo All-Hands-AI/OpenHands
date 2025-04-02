@@ -79,8 +79,8 @@ function AccountSettings() {
   const isGitLabTokenSet =
     providerTokensSet.includes(ProviderOptions.gitlab) || false;
   const isAzureDevOpsTokenSet =
-    providerTokensSet.includes(ProviderOptions.azuredevops) || false;
-  const isLLMKeySet = settings?.LLM_API_KEY === "**********";
+    providerTokensSet.includes(ProviderOptions.azuredevops) || false; 
+  const isLLMKeySet = settings?.LLM_API_KEY_SET;
   const isAnalyticsEnabled = settings?.USER_CONSENTS_TO_ANALYTICS;
   const isAdvancedSettingsSet = determineWhetherToToggleAdvancedSettings();
 
@@ -123,11 +123,11 @@ function AccountSettings() {
     const enableSoundNotifications =
       formData.get("enable-sound-notifications-switch")?.toString() === "on";
     const llmBaseUrl = formData.get("base-url-input")?.toString() || "";
+    const inputApiKey = formData.get("llm-api-key-input")?.toString() || "";
     const llmApiKey =
-      formData.get("llm-api-key-input")?.toString() ||
-      (isLLMKeySet
-        ? undefined // don't update if it's already set
-        : ""); // reset if it's first time save to avoid 500 error
+      inputApiKey === "" && isLLMKeySet
+        ? undefined // don't update if it's already set and input is empty
+        : inputApiKey; // otherwise use the input value
 
     const githubToken = formData.get("github-token-input")?.toString();
     const gitlabToken = formData.get("gitlab-token-input")?.toString();
@@ -162,7 +162,7 @@ function AccountSettings() {
       ENABLE_SOUND_NOTIFICATIONS: enableSoundNotifications,
       LLM_MODEL: finalLlmModel,
       LLM_BASE_URL: finalLlmBaseUrl,
-      LLM_API_KEY: finalLlmApiKey,
+      llm_api_key: finalLlmApiKey,
       AGENT: formData.get("agent-input")?.toString(),
       SECURITY_ANALYZER:
         formData.get("security-analyzer-input")?.toString() || "",
@@ -290,10 +290,10 @@ function AccountSettings() {
                   label="API Key"
                   type="password"
                   className="w-[680px]"
+                  placeholder={isLLMKeySet ? "<hidden>" : ""}
                   startContent={
                     isLLMKeySet && <KeyStatusIcon isSet={isLLMKeySet} />
                   }
-                  placeholder={isLLMKeySet ? "<hidden>" : ""}
                 />
               )}
 

@@ -123,3 +123,4 @@ class GETSettingsModel(Settings):
     """
 
     provider_tokens_set: dict[str, bool] | None = None
+    llm_api_key_set: bool

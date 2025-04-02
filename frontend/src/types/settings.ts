@@ -11,7 +11,7 @@ export type Settings = {
   LLM_BASE_URL: string;
   AGENT: string;
   LANGUAGE: string;
-  LLM_API_KEY: string | null;
+  LLM_API_KEY_SET: boolean;
   CONFIRMATION_MODE: boolean;
   SECURITY_ANALYZER: string;
   REMOTE_RUNTIME_RESOURCE_FACTOR: number | null;
@@ -31,6 +31,7 @@ export type ApiSettings = {
   agent: string;
   language: string;
   llm_api_key: string | null;
+  llm_api_key_set: boolean;
   confirmation_mode: boolean;
   security_analyzer: string;
   remote_runtime_resource_factor: number | null;
@@ -46,6 +47,7 @@ export type ApiSettings = {
 export type PostSettings = Settings & {
   provider_tokens: Record<Provider, string>;
   user_consents_to_analytics: boolean | null;
+  llm_api_key?: string | null;
 };
 
 export type PostApiSettings = ApiSettings & {
