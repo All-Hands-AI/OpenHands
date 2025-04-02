@@ -188,8 +188,7 @@ export const chatSlice = createSlice({
         // Use the correct translation ID format that matches what's in the i18n file
         const translationID = `OBSERVATION_MESSAGE$${observationID.toUpperCase()}`;
 
-        // Handle microagent knowledge and prepare custom title if needed
-        let customTitle = translationID;
+        // Handle microagent knowledge
         if (
           recallObs.extras.microagent_knowledge &&
           recallObs.extras.microagent_knowledge.length > 0
@@ -198,9 +197,6 @@ export const chatSlice = createSlice({
           const microagentNames = recallObs.extras.microagent_knowledge
             .map((k) => k.name)
             .join(", ");
-
-          // Create custom title with microagent names
-          customTitle = `${translationID}: ${microagentNames}`;
 
           content += `\n\n**Triggered Microagent Knowledge:**`;
           for (const knowledge of recallObs.extras.microagent_knowledge) {
@@ -211,7 +207,7 @@ export const chatSlice = createSlice({
         const message: Message = {
           type: "action",
           sender: "assistant",
-          translationID: customTitle,
+          translationID: translationID,
           eventID: observation.payload.id,
           content,
           imageUrls: [],
@@ -284,7 +280,6 @@ export const chatSlice = createSlice({
           content = `${content.slice(0, MAX_CONTENT_LENGTH)}...(truncated)`;
         }
         causeMessage.content = content;
-        // RecallObservation is now handled at the beginning of the function
       }
     },
 

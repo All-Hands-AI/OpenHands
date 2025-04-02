@@ -4325,21 +4325,6 @@
         "es": "Navegación completada",
         "tr": "Gezinme tamamlandı"
     },
-    "ACTION_MESSAGE$RECALL": {
-        "en": "Loading Context",
-        "ja": "コンテキストを読み込み中",
-        "zh-CN": "加载上下文",
-        "zh-TW": "載入上下文",
-        "ko-KR": "컨텍스트 로딩 중",
-        "no": "Laster kontekst",
-        "it": "Caricamento del contesto",
-        "pt": "Carregando contexto",
-        "es": "Cargando contexto",
-        "ar": "تحميل السياق",
-        "fr": "Chargement du contexte",
-        "tr": "Bağlam Yükleniyor",
-        "de": "Kontext wird geladen"
-    },
     "OBSERVATION_MESSAGE$RECALL": {
         "en": "MicroAgent Activated",
         "ja": "マイクロエージェントが有効化されました",
