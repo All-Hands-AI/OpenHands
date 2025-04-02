@@ -21,10 +21,10 @@ wait_seconds = 1
 )
 async def init(db_engine: AsyncEngine) -> None:
     try:
-        logger.info("Initializing database")
+        logger.info('Initializing database')
         # Try to create connection to check if DB is awake
         async with db_engine.connect() as connection:
-            await connection.execute(text("SELECT 1"))
+            await connection.execute(text('SELECT 1'))
             await connection.commit()
     except Exception as e:
         logger.error(e)
@@ -35,6 +35,7 @@ async def main() -> None:
     await init(engine)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     import asyncio
+
     asyncio.run(main())

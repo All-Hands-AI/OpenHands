@@ -1,5 +1,6 @@
-from sqlalchemy import Column, String, Table, DateTime
+from sqlalchemy import Column, DateTime, String, Table
 from sqlalchemy.sql import func
+
 from .db import metadata
 
 # Define User table
@@ -10,5 +11,5 @@ User = Table(
     # TODO: should we encrypt mnemonic?
     Column('mnemonic', String, nullable=False),
     Column('jwt', String, nullable=False),
-    Column('created_at', DateTime, server_default=func.now(), nullable=False)
-) 
+    Column('created_at', DateTime, server_default=func.now(), nullable=False),
+)

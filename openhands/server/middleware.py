@@ -4,19 +4,19 @@ from datetime import datetime, timedelta
 from typing import Callable
 from urllib.parse import urlparse
 
+import jwt
 from fastapi import Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request as StarletteRequest
 from starlette.types import ASGIApp
-import jwt
 
+from openhands.core.logger import openhands_logger as logger
 from openhands.server import shared
 from openhands.server.auth import get_user_id
 from openhands.server.routes.auth import JWT_SECRET
 from openhands.server.types import SessionMiddlewareInterface
-from openhands.core.logger import openhands_logger as logger
 
 
 class LocalhostCORSMiddleware(CORSMiddleware):
@@ -226,7 +226,7 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
         if not auth_header or not auth_header.startswith('Bearer '):
             return JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                content={'detail': 'Missing or invalid authorization header'}
+                content={'detail': 'Missing or invalid authorization header'},
             )
 
         token = auth_header.split(' ')[1]
@@ -237,16 +237,16 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
         except jwt.ExpiredSignatureError:
             return JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                content={'detail': 'Token has expired'}
+                content={'detail': 'Token has expired'},
             )
         except jwt.InvalidTokenError:
             return JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                content={'detail': 'Invalid token'}
+                content={'detail': 'Invalid token'},
             )
         except Exception as e:
             logger.error(f'Error processing JWT token: {str(e)}')
             return JSONResponse(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                content={'detail': 'Internal server error'}
+                content={'detail': 'Internal server error'},
             )

@@ -1,14 +1,14 @@
-from sqlalchemy import MetaData, select, text
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine
-from databases import Database
-from openhands.core.logger import openhands_logger as logger
 import os
 
-POSTGRES_USER = os.getenv('POSTGRES_USER', 'postgres')
-POSTGRES_PASSWORD = os.getenv('POSTGRES_PASSWORD', 'postgres')
-POSTGRES_DB = os.getenv('POSTGRES_DB', 'openhands')
-POSTGRES_HOST = os.getenv('POSTGRES_HOST', 'localhost')
-POSTGRES_PORT = os.getenv('POSTGRES_PORT', '5432')
+from databases import Database
+from sqlalchemy import MetaData
+from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
+
+POSTGRES_USER = os.getenv('POSTGRES_USER')
+POSTGRES_PASSWORD = os.getenv('POSTGRES_PASSWORD')
+POSTGRES_DB = os.getenv('POSTGRES_DB')
+POSTGRES_HOST = os.getenv('POSTGRES_HOST')
+POSTGRES_PORT = os.getenv('POSTGRES_PORT')
 SQLALCHEMY_DATABASE_URI = f'postgresql+asyncpg://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}'
 
 # Create the SQLAlchemy async engine
@@ -23,6 +23,7 @@ database = Database(SQLALCHEMY_DATABASE_URI)
 
 # Create MetaData instance
 metadata = MetaData()
+
 
 async def init_db() -> None:
     """Initialize database tables."""
