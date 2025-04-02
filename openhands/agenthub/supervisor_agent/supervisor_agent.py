@@ -6,16 +6,19 @@ from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
 from openhands.core.logger import openhands_logger as logger
+from openhands.core.schema import ActionType
 from openhands.events.action import (
     Action,
     AgentDelegateAction,
     AgentFinishAction,
     AgentFinishTaskCompleted,
+    CmdRunAction,
     MessageAction,
 )
 from openhands.events.event import EventSource
 from openhands.events.observation import (
     AgentDelegateObservation,
+    CmdOutputObservation,
     Observation,
 )
 from openhands.llm.llm import LLM
@@ -76,10 +79,12 @@ class SupervisorAgent(Agent):
         self.reset()
         self.delegated = False
         self.finished = False
+        self.pre_delegation_commit: Optional[str] = None
 
     def reset(self) -> None:
         """Resets the Supervisor Agent."""
         super().reset()
+        self.pre_delegation_commit = None
         self.pending_actions.clear()
         self.delegated = False
         self.finished = False
@@ -101,6 +106,25 @@ class SupervisorAgent(Agent):
             if isinstance(event, MessageAction) and event.source == EventSource.USER:
                 return event.content
         return ''
+
+    def handle_cmd_output_observation(
+        self, observation: CmdOutputObservation, state: State
+    ) -> None:
+        """Handle the CmdOutputObservation to store the commit hash."""
+        # Check if this is the git rev-parse HEAD command result
+        if (
+            observation.command == 'git rev-parse HEAD'
+            and observation.metadata.exit_code == 0
+        ):
+            # Store the commit hash
+            commit_hash = observation.content.strip()
+            logger.info(
+                f'SupervisorAgent: Stored pre-delegation commit hash: {commit_hash}'
+            )
+            self.pre_delegation_commit = commit_hash
+
+            # Also store it in state.extra_data for persistence
+            state.extra_data['pre_delegation_commit'] = commit_hash
 
     def create_analysis_prompt(self, processed_history: str) -> str:
         """Create a prompt for analyzing overthinking in the agent's trajectory.
@@ -288,6 +312,8 @@ If the trajectory is good (score 0-3), set "pattern_observed" to null.
         - Final response
         - Final finish reason
 
+        Only processes events that occurred after delegation to CodeActAgent.
+
         Returns:
             A formatted string with the history of actions and observations.
         """
@@ -303,12 +329,31 @@ If the trajectory is good (score 0-3), set "pattern_observed" to null.
         agent_responses = []
         observations = []
 
-        # For testing purposes, we'll consider all events
-        # In a real scenario, we would filter for events after delegation
-
-        # Iterate through the history
+        # Find the delegation event to only process events after it
+        delegation_index = -1
         for i, event in enumerate(state.history):
-            # Process all events
+            if (
+                hasattr(event, 'action')
+                and event.action == ActionType.DELEGATE
+                and hasattr(event, 'agent')
+                and event.agent == 'CodeActAgent'
+            ):
+                delegation_index = i
+                break
+
+        if delegation_index == -1:
+            logger.warning(
+                'SupervisorAgent: Could not find delegation event in history'
+            )
+            return 'No delegation event found in history'
+
+        # Iterate through the history, only processing events after delegation
+        for i, event in enumerate(state.history):
+            # Skip events before delegation
+            if i <= delegation_index:
+                continue
+
+            # Process events after delegation
             if isinstance(event, MessageAction) and event.source == EventSource.AGENT:
                 agent_responses.append((i, event.content))
             elif isinstance(event, Observation) and not isinstance(
@@ -400,20 +445,61 @@ If the trajectory is good (score 0-3), set "pattern_observed" to null.
         - AgentDelegateAction - delegate to CodeActAgent
         - AgentFinishAction - finish when CodeActAgent is done, including processed history
         """
+        # Process any CmdOutputObservation to store commit hash
+        for event in reversed(state.history):
+            if isinstance(event, CmdOutputObservation):
+                self.handle_cmd_output_observation(event, state)
+                break
+
         # Continue with pending actions if any
         if self.pending_actions:
             return self.pending_actions.popleft()
 
         # Check if we've already delegated
         if not self.delegated:
-            # First step: delegate to CodeActAgent
-            logger.info('SupervisorAgent: Delegating to CodeActAgent')
-            self.delegated = True
-            return AgentDelegateAction(
-                agent='CodeActAgent',
-                inputs=state.inputs,
-                thought="I'll delegate this task to CodeActAgent to handle it.",
+            # First step: save the repository state before delegating
+            logger.info('SupervisorAgent: Saving repository state before delegating')
+
+            # Create a commit to save the current state
+            # First, check if there are any changes to commit
+            self.pending_actions.append(
+                CmdRunAction(
+                    command='git status --porcelain',
+                    thought='Checking if there are any changes to commit before delegation',
+                )
             )
+
+            # If there are changes, commit them with a special message
+            self.pending_actions.append(
+                CmdRunAction(
+                    command='git diff-index --quiet HEAD || git commit -a -m "SUPERVISOR_AGENT_CHECKPOINT: Saving state before delegation"',
+                    thought='Committing any changes before delegation',
+                )
+            )
+
+            # Get the commit hash to save
+            self.pending_actions.append(
+                CmdRunAction(
+                    command='git rev-parse HEAD',
+                    thought='Getting the commit hash to save for potential reset',
+                )
+            )
+
+            # Store the commit hash in state.extra_data
+            # This will be handled in the next step after we get the commit hash
+
+            # Delegate to CodeActAgent
+            self.pending_actions.append(
+                AgentDelegateAction(
+                    agent='CodeActAgent',
+                    inputs=state.inputs,
+                    thought="I'll delegate this task to CodeActAgent to handle it.",
+                    clear_history=False,  # No need to clear history on first delegation
+                )
+            )
+
+            self.delegated = True
+            return self.pending_actions.popleft()
 
         # If we've already delegated and CodeActAgent is done, we're also done
         if not self.finished:
@@ -469,12 +555,42 @@ If the trajectory is good (score 0-3), set "pattern_observed" to null.
                                 )
                             )
 
-                            # Delegate to CodeActAgent again with the original inputs
+                            # Reset the repository to the state before delegation
+                            # First, check if we have a saved commit hash
+                            commit_hash = self.pre_delegation_commit
+                            if (
+                                not commit_hash
+                                and hasattr(state, 'extra_data')
+                                and 'pre_delegation_commit' in state.extra_data
+                            ):
+                                commit_hash = state.extra_data['pre_delegation_commit']
+
+                            if commit_hash:
+                                logger.info(
+                                    f'SupervisorAgent: Resetting repository to commit {commit_hash}'
+                                )
+                                # Reset the repository to the saved commit
+                                self.pending_actions.append(
+                                    CmdRunAction(
+                                        command=f'git reset --hard {commit_hash}',
+                                        thought='Resetting the repository to the state before delegation',
+                                    )
+                                )
+                            else:
+                                logger.warning(
+                                    'SupervisorAgent: No pre-delegation commit hash found, cannot reset repository'
+                                )
+
+                            # Clear the history before redelegating
+                            # We need to create a new State object with a clean history
+                            # This is done by setting clear_history=True in the AgentDelegateAction
+                            # The controller will handle clearing the history before delegation
                             self.pending_actions.append(
                                 AgentDelegateAction(
                                     agent='CodeActAgent',
                                     inputs=state.inputs,
-                                    thought="I'll delegate this task to CodeActAgent again with a fresh approach.",
+                                    thought="I'll delegate this task to CodeActAgent again with a fresh approach, resetting the repository and clearing the history to start clean.",
+                                    clear_history=True,  # Add this parameter to clear history before delegation
                                 )
                             )
 
