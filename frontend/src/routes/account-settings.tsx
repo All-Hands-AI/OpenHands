@@ -151,7 +151,7 @@ function AccountSettings() {
       ENABLE_SOUND_NOTIFICATIONS: enableSoundNotifications,
       LLM_MODEL: finalLlmModel,
       LLM_BASE_URL: finalLlmBaseUrl,
-      LLM_API_KEY: finalLlmApiKey,
+      llm_api_key: finalLlmApiKey,
       AGENT: formData.get("agent-input")?.toString(),
       SECURITY_ANALYZER:
         formData.get("security-analyzer-input")?.toString() || "",
