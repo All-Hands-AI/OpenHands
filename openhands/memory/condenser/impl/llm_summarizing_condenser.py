@@ -56,7 +56,7 @@ class LLMSummarizingCondenser(RollingCondenser):
                 forgotten_events.append(event)
 
         # Construct prompt for summarization
-        prompt = """You are maintaining a context-aware state history for an interactive agent. Track:
+        prompt = """You are maintaining a context-aware state summary for an interactive agent. You will be given a list of events corresponding to actions taken by the agent, and the most recent previous summary if one exists. Track:
 
 USER_CONTEXT: (Preserve essential user requirements, goals, and clarifications in concise form)
 
@@ -99,12 +99,19 @@ CURRENT_STATE: Last flip: Heads, Haiku count: 15/20"""
 
         prompt += '\n\n'
 
-        prompt += ('\n' + summary_event.message + '\n') if summary_event.message else ''
+        prompt += (
+            f'<PREVIOUS SUMMARY>\n{summary_event.message}\n</PREVIOUS SUMMARY>\n'
+            if summary_event.message
+            else ''
+        )
 
         prompt += '\n\n'
 
         for forgotten_event in forgotten_events:
-            prompt += str(forgotten_event) + '\n\n'
+            prompt += f'<EVENT id={forgotten_event.id}>\n{forgotten_event}\n</EVENT>\n'
+
+        if forgotten_events:
+            prompt += 'Now summarize the events using the rules above.'
 
         messages = [Message(role='user', content=[TextContent(text=prompt)])]
 
