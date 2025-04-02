@@ -2,7 +2,7 @@ from unittest.mock import MagicMock, patch
 
 import httpx
 import pytest
-from litellm.exceptions import RateLimitError
+from litellm.exceptions import BadRequestError, ContentPolicyViolationError, RateLimitError
 
 from openhands.core.config import LLMConfig
 from openhands.events.action.message import MessageAction
@@ -271,6 +271,78 @@ def test_guess_success_exhausts_retries(mock_completion, default_config):
 
     # Call guess_success and expect it to raise an error after retries
     with pytest.raises(RateLimitError):
+        handler.guess_success(issue, history)
+
+    # Assertions
+    assert (
+        mock_completion.call_count == default_config.num_retries
+    )  # Initial call + retries
+
+
+@patch('openhands.llm.llm.litellm_completion')
+def test_guess_success_content_policy_violation_direct(mock_completion, default_config):
+    """Test that ContentPolicyViolationError is handled correctly when raised directly."""
+    # Simulate ContentPolicyViolationError
+    mock_completion.side_effect = ContentPolicyViolationError(
+        'Content policy violation', llm_provider='test_provider', model='test_model'
+    )
+
+    # Initialize LLM and handler
+    llm = LLM(config=default_config)
+    handler = ServiceContextPR(
+        GithubPRHandler('test-owner', 'test-repo', 'test-token'), default_config
+    )
+    handler.llm = llm
+
+    # Mock issue and history
+    issue = Issue(
+        owner='test-owner',
+        repo='test-repo',
+        number=1,
+        title='Test Issue',
+        body='This is a test issue.',
+        thread_comments=['Please improve error handling'],
+    )
+    history = [MessageAction(content='Fixed error handling.')]
+
+    # Call guess_success and expect it to raise ContentPolicyViolationError
+    with pytest.raises(ContentPolicyViolationError):
+        handler.guess_success(issue, history)
+
+    # Assertions
+    assert (
+        mock_completion.call_count == default_config.num_retries
+    )  # Initial call + retries
+
+
+@patch('openhands.llm.llm.litellm_completion')
+def test_guess_success_content_policy_violation_bad_request(mock_completion, default_config):
+    """Test that ContentPolicyViolationError is handled correctly when wrapped in BadRequestError."""
+    # Simulate BadRequestError with ContentPolicyViolationError message
+    mock_completion.side_effect = BadRequestError(
+        'ContentPolicyViolationError: Content policy violation', llm_provider='test_provider', model='test_model'
+    )
+
+    # Initialize LLM and handler
+    llm = LLM(config=default_config)
+    handler = ServiceContextPR(
+        GithubPRHandler('test-owner', 'test-repo', 'test-token'), default_config
+    )
+    handler.llm = llm
+
+    # Mock issue and history
+    issue = Issue(
+        owner='test-owner',
+        repo='test-repo',
+        number=1,
+        title='Test Issue',
+        body='This is a test issue.',
+        thread_comments=['Please improve error handling'],
+    )
+    history = [MessageAction(content='Fixed error handling.')]
+
+    # Call guess_success and expect it to raise BadRequestError
+    with pytest.raises(BadRequestError):
         handler.guess_success(issue, history)
 
     # Assertions
