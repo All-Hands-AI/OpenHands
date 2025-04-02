@@ -375,3 +375,60 @@ def test_llm_agent_cache_condenser_with_agent_state_change_action():
         message_action_condense2,
         condensation2.action,
     ]
+
+
+def test_llm_agent_cache_condenser_always_keep_system_prompt():
+    """Test that the system prompt and all events are always kept during condensation."""
+
+    mock_llm = MagicMock(spec=LLM)
+    mock_llm.is_caching_prompt_active.return_value = True
+    mock_llm.config = MagicMock(max_message_chars=1000)
+    mock_llm.vision_is_active.return_value = False
+    mock_llm.metrics = MagicMock()
+    mock_llm.metrics.get.return_value = {'tokens': 100}
+
+    agent_config = AgentConfig()
+    agent = LLMCacheCodeAgent(mock_llm, agent_config)
+
+    condenser = agent.condenser
+
+    first_message = MessageAction('Hello, how are you?')
+    first_message._source = 'user'
+    first_message._id = 1
+    assistant_message_event = MessageAction('Great!')
+    assistant_message_event._source = 'agent'
+    assistant_message_event._id = 2
+    user_condensation_message_event = MessageAction('NOW CONDENSE!')
+    user_condensation_message_event._source = 'user'
+    user_condensation_message_event._id = 3
+
+    state = State(
+        history=[
+            first_message,
+            assistant_message_event,
+            user_condensation_message_event,
+        ]
+    )
+
+    # Simulate the LLM response for condensation
+    mock_response = MagicMock()
+    mock_response.choices = [MagicMock()]
+    mock_response.choices[0].message.content = 'KEEP: 1\nKEEP: 2'
+    mock_llm.completion.return_value = mock_response
+
+    # Perform condensation
+    condensation = condenser.condenseWithState(state)
+
+    assert isinstance(condensation, Condensation)
+    condensation.action._id = 7
+    state.history.append(condensation.action)
+    assert condensation.action.forgotten_event_ids == [3]
+
+    view = condenser.condenseWithState(state)
+    assert isinstance(view, View)
+    assert view.events == [first_message, assistant_message_event, condensation.action]
+
+    messages = agent._get_messages(view.events)
+    assert messages[0].role == 'system'
+    assert 'You are OpenHands' in messages[0].content[0].text
+    assert len(messages) == 3
