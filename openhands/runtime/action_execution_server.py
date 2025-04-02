@@ -153,7 +153,6 @@ class ActionExecutor:
         username: str,
         user_id: int,
         browsergym_eval_env: str | None,
-        runtime_mode: str,
     ) -> None:
         self.plugins_to_load = plugins_to_load
         self._initial_cwd = work_dir
@@ -175,7 +174,6 @@ class ActionExecutor:
         self.start_time = time.time()
         self.last_execution_time = self.start_time
         self._initialized = False
-        self.runtime_mode = runtime_mode
 
         self.max_memory_gb: int | None = None
         if _override_max_memory_gb := os.environ.get('RUNTIME_MAX_MEMORY_GB', None):
@@ -601,7 +599,6 @@ if __name__ == '__main__':
             username=args.username,
             user_id=args.user_id,
             browsergym_eval_env=args.browsergym_eval_env,
-            runtime_mode=args.runtime_mode,
         )
         await client.ainit()
         yield
