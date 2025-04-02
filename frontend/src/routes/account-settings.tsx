@@ -438,7 +438,7 @@ function AccountSettings() {
                 <SettingsInput
                   testId="gitlab-token-input"
                   name="gitlab-token-input"
-                  label="GitLab Token"
+                  label={t(I18nKey.GITLAB$TOKEN_LABEL)}
                   type="password"
                   className="w-[680px]"
                   startContent={
@@ -449,9 +449,9 @@ function AccountSettings() {
                   placeholder={isGitHubTokenSet ? "<hidden>" : ""}
                 />
 
-                <p data-testId="gitlab-token-help-anchor" className="text-xs">
+                <p data-testid="gitlab-token-help-anchor" className="text-xs">
                   {" "}
-                  Generate a token on{" "}
+                  {t(I18nKey.GITLAB$GET_TOKEN)}{" "}
                   <b>
                     {" "}
                     <a
@@ -463,7 +463,7 @@ function AccountSettings() {
                       GitLab
                     </a>{" "}
                   </b>
-                  or see the{" "}
+                  {t(I18nKey.GITLAB$OR_SEE)}{" "}
                   <b>
                     <a
                       href="https://docs.gitlab.com/user/profile/personal_access_tokens/"
@@ -471,7 +471,7 @@ function AccountSettings() {
                       className="underline underline-offset-2"
                       rel="noopener noreferrer"
                     >
-                      documentation
+                      {t(I18nKey.COMMON$DOCUMENTATION)}
                     </a>
                   </b>
                   .
