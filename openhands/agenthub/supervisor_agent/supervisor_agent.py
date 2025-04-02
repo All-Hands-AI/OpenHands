@@ -12,6 +12,7 @@ from openhands.events.action import (
     AgentDelegateAction,
     AgentFinishAction,
     AgentFinishTaskCompleted,
+    AgentThinkAction,
     CmdRunAction,
     MessageAction,
 )
@@ -522,8 +523,10 @@ If the trajectory is good (score 0-3), set "pattern_observed" to null.
         if not self.finished:
             # Check if the delegated agent has finished
             # Look for AgentDelegateObservation in the history
+            delegate_observation_found = False
             for event in reversed(state.history):
                 if hasattr(event, 'action') and event.action == 'delegate_observation':
+                    delegate_observation_found = True
                     logger.info(
                         'SupervisorAgent: CodeActAgent has finished, processing history and analyzing trajectory'
                     )
@@ -632,9 +635,18 @@ If the trajectory is good (score 0-3), set "pattern_observed" to null.
                         task_completed=AgentFinishTaskCompleted.TRUE,
                     )
 
+            # If we didn't find a delegate observation, we're still waiting
+            if not delegate_observation_found:
+                logger.info(
+                    'SupervisorAgent: Still waiting for CodeActAgent to complete'
+                )
+
         # If we're here, we're waiting for the delegated agent to finish
         logger.info('SupervisorAgent: Waiting for CodeActAgent to complete')
-        return AgentFinishAction(
-            final_thought="The CodeActAgent has completed the task. I've supervised the execution and everything is complete.",
-            task_completed=AgentFinishTaskCompleted.TRUE,
+        # Return a ThinkAction to keep the agent running
+        return AgentThinkAction(
+            thought=(
+                "I've delegated this task to CodeActAgent. I'm waiting for it to complete. "
+                "Once it's done, I'll analyze the execution trajectory for overthinking patterns."
+            )
         )
