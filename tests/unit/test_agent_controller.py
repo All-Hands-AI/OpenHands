@@ -167,7 +167,9 @@ async def test_react_to_exception(mock_agent, mock_event_stream, mock_status_cal
 
 
 @pytest.mark.asyncio
-async def test_react_to_content_policy_violation(mock_agent, mock_event_stream, mock_status_callback):
+async def test_react_to_content_policy_violation(
+    mock_agent, mock_event_stream, mock_status_callback
+):
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
@@ -178,9 +180,9 @@ async def test_react_to_content_policy_violation(mock_agent, mock_event_stream, 
         headless_mode=True,
     )
     error = ContentPolicyViolationError(
-        message="Output blocked by content filtering policy",
-        model="gpt-4",
-        llm_provider="openai"
+        message='Output blocked by content filtering policy',
+        model='gpt-4',
+        llm_provider='openai',
     )
     await controller._react_to_exception(error)
     mock_status_callback.assert_called_once_with(
