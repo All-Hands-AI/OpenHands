@@ -26,9 +26,23 @@ async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
             )
 
         github_token_is_set = bool(user_id) or bool(get_provider_tokens(request))
+
+        # Get provider_tokens from secrets_store (without token values)
+        provider_tokens = {}
+        if settings.secrets_store and settings.secrets_store.provider_tokens:
+            for provider_type, token in settings.secrets_store.provider_tokens.items():
+                if token:
+                    provider_type_str = provider_type.value
+                    provider_tokens[provider_type_str] = {
+                        # Don't include token at all
+                        'user_id': token.user_id or '',  # Use empty string if None
+                        'host_url': token.host_url or '',  # Use empty string if None
+                    }
+
         settings_with_token_data = GETSettingsModel(
             **settings.model_dump(exclude='secrets_store'),
             github_token_is_set=github_token_is_set,
+            provider_tokens=provider_tokens,
         )
 
         settings_with_token_data.llm_api_key = settings.llm_api_key
@@ -133,19 +147,32 @@ async def store_settings(
             k: v for k, v in settings.provider_tokens.items() if k in provider_types
         }
 
-        # Determine whether tokens are valid
-        for token_type, token_value in settings.provider_tokens.items():
-            if token_value:
-                confirmed_token_type = await validate_provider_token(
-                    SecretStr(token_value)
+    # Determine whether tokens are valid
+    for token_type, token_value in settings.provider_tokens.items():
+        if token_value:
+            # Check if token_value is a dict with 'token' key
+            host_url = None
+            if isinstance(token_value, dict) and 'token' in token_value:
+                token_str = token_value.get(
+                    'token', ''
+                )  # Default to empty string if None
+                host_url = token_value.get('host_url')
+                if not token_str:
+                    continue
+            else:
+                # Ensure token_str is a string
+                token_str = str(token_value)
+
+            confirmed_token_type = await validate_provider_token(
+                SecretStr(token_str), host_url
+            )
+            if not confirmed_token_type or confirmed_token_type.value != token_type:
+                return JSONResponse(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    content={
+                        'error': f'Invalid token. Please make sure it is a valid {token_type} token.'
+                    },
                 )
-                if not confirmed_token_type or confirmed_token_type.value != token_type:
-                    return JSONResponse(
-                        status_code=status.HTTP_401_UNAUTHORIZED,
-                        content={
-                            'error': f'Invalid token. Please make sure it is a valid {token_type} token.'
-                        },
-                    )
 
     try:
         settings_store = await SettingsStoreImpl.get_instance(
@@ -178,26 +205,38 @@ async def store_settings(
                     ]
 
                     # Merge incoming settings store with the existing one
-                    for provider, token_value in settings.provider_tokens.items():
-                        if provider in existing_providers and not token_value:
-                            provider_type = ProviderType(provider)
+                    for provider_str, token_value in settings.provider_tokens.items():
+                        if provider_str in existing_providers and not token_value:
+                            provider_type = ProviderType(provider_str)
                             existing_token = (
                                 existing_settings.secrets_store.provider_tokens.get(
                                     provider_type
                                 )
                             )
                             if existing_token and existing_token.token:
-                                settings.provider_tokens[provider] = (
-                                    existing_token.token.get_secret_value()
-                                )
+                                # Convert to string or dict as expected by provider_tokens
+                                token_str = existing_token.token.get_secret_value()
+                                if existing_token.host_url:
+                                    settings.provider_tokens[provider_str] = {
+                                        'token': token_str,
+                                        'host_url': existing_token.host_url,
+                                    }
+                                else:
+                                    settings.provider_tokens[provider_str] = token_str
             else:  # nothing passed in means keep current settings
                 provider_tokens = existing_settings.secrets_store.provider_tokens
-                settings.provider_tokens = {
-                    provider.value: data.token.get_secret_value()
-                    if data.token
-                    else None
-                    for provider, data in provider_tokens.items()
-                }
+                settings.provider_tokens = {}
+                for provider_type, data in provider_tokens.items():
+                    provider_str = provider_type.value
+                    if data.token:
+                        token_str = data.token.get_secret_value()
+                        if data.host_url:
+                            settings.provider_tokens[provider_str] = {
+                                'token': token_str,
+                                'host_url': data.host_url,
+                            }
+                        else:
+                            settings.provider_tokens[provider_str] = token_str
 
         # Update sandbox config with new settings
         if settings.remote_runtime_resource_factor is not None:
@@ -241,9 +280,16 @@ def convert_to_settings(settings_with_token_data: POSTSettingsModel) -> Settings
         for token_type, token_value in settings_with_token_data.provider_tokens.items():
             if token_value:
                 provider = ProviderType(token_type)
-                tokens[provider] = ProviderToken(
-                    token=SecretStr(token_value), user_id=None
-                )
+                if isinstance(token_value, dict):
+                    tokens[provider] = ProviderToken(
+                        token=SecretStr(token_value.get('token', '')),
+                        user_id=None,
+                        host_url=token_value.get('host_url'),
+                    )
+                else:
+                    tokens[provider] = ProviderToken(
+                        token=SecretStr(str(token_value)), user_id=None
+                    )
 
         # Create new SecretStore with tokens
         settings = settings.model_copy(

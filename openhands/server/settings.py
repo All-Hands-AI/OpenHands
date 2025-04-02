@@ -107,11 +107,13 @@ class POSTSettingsModel(Settings):
     Settings for POST requests
     """
 
-    # Override provider_tokens to accept string tokens from frontend
-    provider_tokens: dict[str, str] = {}
+    # Override provider_tokens to accept string tokens or objects from frontend
+    provider_tokens: dict[str, str | dict[str, str]] = {}
 
     @field_serializer('provider_tokens')
-    def provider_tokens_serializer(self, provider_tokens: dict[str, str]):
+    def provider_tokens_serializer(
+        self, provider_tokens: dict[str, str | dict[str, str]]
+    ):
         return provider_tokens
 
 
@@ -121,3 +123,4 @@ class GETSettingsModel(Settings):
     """
 
     github_token_is_set: bool | None = None
+    provider_tokens: dict[str, dict[str, str]] | None = None

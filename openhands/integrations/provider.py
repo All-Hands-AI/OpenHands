@@ -37,6 +37,7 @@ class ProviderType(Enum):
 class ProviderToken(BaseModel):
     token: SecretStr | None = Field(default=None)
     user_id: str | None = Field(default=None)
+    host_url: str | None = Field(default=None)
 
     model_config = {
         'frozen': True,  # Makes the entire model immutable
@@ -51,7 +52,8 @@ class ProviderToken(BaseModel):
         elif isinstance(token_value, dict):
             token_str = token_value.get('token')
             user_id = token_value.get('user_id')
-            return cls(token=SecretStr(token_str), user_id=user_id)
+            host_url = token_value.get('host_url')
+            return cls(token=SecretStr(token_str), user_id=user_id, host_url=host_url)
 
         else:
             raise ValueError('Unsupport Provider token type')
@@ -97,6 +99,7 @@ class SecretStore(BaseModel):
                 if expose_secrets
                 else pydantic_encoder(provider_token.token),
                 'user_id': provider_token.user_id,
+                'host_url': provider_token.host_url,
             }
 
         return tokens
@@ -174,6 +177,7 @@ class ProviderHandler:
             external_auth_token=self.external_auth_token,
             token=token.token,
             external_token_manager=self.external_token_manager,
+            base_url=token.host_url,
         )
 
     async def get_user(self) -> User:

@@ -86,6 +86,7 @@ def test_settings_handles_sensitive_data():
                 ProviderType.GITHUB: ProviderToken(
                     token=SecretStr('test-token'),
                     user_id=None,
+                    host_url='https://github.example.com',
                 )
             }
         ),
@@ -110,7 +111,7 @@ def test_convert_to_settings():
     settings_with_token_data = POSTSettingsModel(
         llm_api_key='test-key',
         provider_tokens={
-            'github': 'test-token',
+            'github': {'token': 'test-token', 'host_url': 'https://github.example.com'},
         },
     )
 
@@ -122,4 +123,8 @@ def test_convert_to_settings():
             ProviderType.GITHUB
         ].token.get_secret_value()
         == 'test-token'
+    )
+    assert (
+        settings.secrets_store.provider_tokens[ProviderType.GITHUB].host_url
+        == 'https://github.example.com'
     )

@@ -16,7 +16,9 @@ from openhands.server.settings import POSTSettingsModel, Settings
 
 def test_provider_token_immutability():
     """Test that ProviderToken is immutable"""
-    token = ProviderToken(token=SecretStr('test'), user_id='user1')
+    token = ProviderToken(
+        token=SecretStr('test'), user_id='user1', host_url='https://example.com'
+    )
 
     # Test direct attribute modification
     with pytest.raises(ValidationError):
@@ -25,6 +27,9 @@ def test_provider_token_immutability():
     with pytest.raises(ValidationError):
         token.user_id = 'new_user'
 
+    with pytest.raises(ValidationError):
+        token.host_url = 'https://new-example.com'
+
     # Test that __setattr__ is blocked
     with pytest.raises(ValidationError):
         setattr(token, 'token', SecretStr('new'))
@@ -32,6 +37,7 @@ def test_provider_token_immutability():
     # Verify original values are unchanged
     assert token.token.get_secret_value() == 'test'
     assert token.user_id == 'user1'
+    assert token.host_url == 'https://example.com'
 
 
 def test_secret_store_immutability():
@@ -192,22 +198,37 @@ def test_token_conversion():
 
     # Test with dict token
     store2 = SecretStore(
-        provider_tokens={'github': {'token': 'test_token', 'user_id': 'user1'}}
+        provider_tokens={
+            'github': {
+                'token': 'test_token',
+                'user_id': 'user1',
+                'host_url': 'https://example.com',
+            }
+        }
     )
     assert (
         store2.provider_tokens[ProviderType.GITHUB].token.get_secret_value()
         == 'test_token'
     )
     assert store2.provider_tokens[ProviderType.GITHUB].user_id == 'user1'
+    assert store2.provider_tokens[ProviderType.GITHUB].host_url == 'https://example.com'
 
     # Test with ProviderToken
-    token = ProviderToken(token=SecretStr('test_token'), user_id='user2')
+    token = ProviderToken(
+        token=SecretStr('test_token'),
+        user_id='user2',
+        host_url='https://github.example.org',
+    )
     store3 = SecretStore(provider_tokens={ProviderType.GITHUB: token})
     assert (
         store3.provider_tokens[ProviderType.GITHUB].token.get_secret_value()
         == 'test_token'
     )
     assert store3.provider_tokens[ProviderType.GITHUB].user_id == 'user2'
+    assert (
+        store3.provider_tokens[ProviderType.GITHUB].host_url
+        == 'https://github.example.org'
+    )
 
     store4 = SecretStore(
         provider_tokens={

@@ -131,12 +131,19 @@ function AccountSettings() {
     const finalLlmApiKey = shouldHandleSpecialSaasCase ? undefined : llmApiKey;
 
     const githubToken = formData.get("github-token-input")?.toString();
+    const hostUrl = formData.get("host-url-input")?.toString();
     const newSettings = {
       github_token: githubToken,
       provider_tokens: githubToken
         ? {
-            github: githubToken,
-            gitlab: "",
+            github: {
+              token: githubToken,
+              host_url: hostUrl || "",
+            },
+            gitlab: {
+              token: "",
+              host_url: "",
+            },
           }
         : undefined,
       LANGUAGE: languageValue,
@@ -424,6 +431,21 @@ function AccountSettings() {
                 </p>
               </>
             )}
+
+            {/* Enterprise Host URL field - always visible regardless of SaaS mode */}
+            <SettingsInput
+              testId="host-url-input"
+              name="host-url-input"
+              label="Enterprise Host URL"
+              type="text"
+              className="w-[680px]"
+              defaultValue={
+                typeof settings.PROVIDER_TOKENS?.github === 'object'
+                  ? settings.PROVIDER_TOKENS?.github?.host_url || ""
+                  : ""
+              }
+              placeholder="https://github.example.com"
+            />
 
             <BrandButton
               type="button"

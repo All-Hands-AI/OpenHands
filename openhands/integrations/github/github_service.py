@@ -37,8 +37,46 @@ class GitHubService(GitService):
         self.external_token_manager = external_token_manager
 
         # Use config or environment variables for GitHub API URL
-        self.BASE_URL = base_url or get_github_api_url() or self.DEFAULT_BASE_URL
-        self.GRAPHQL_URL = get_github_graphql_url() or f'{self.BASE_URL}/graphql'
+        if base_url and base_url.strip():  # Check if base_url is not None and not empty
+            # For GitHub Enterprise Server, the REST API endpoint is /api/v3 and GraphQL is /api/graphql
+            # We just need to change the hostname
+
+            # Log the provided base_url for debugging
+            logger.debug(f'GitHub Service initialized with base_url: {base_url}')
+
+            # Remove any trailing slashes and whitespace
+            base_url = base_url.strip().rstrip('/')
+
+            # Check if this is already an API URL
+            if base_url == self.DEFAULT_BASE_URL:
+                # This is github.com API URL, use it as is
+                self.BASE_URL = base_url
+                self.GRAPHQL_URL = (
+                    get_github_graphql_url() or f'{self.BASE_URL}/graphql'
+                )
+            elif '/api/v3' in base_url:
+                # Already in the correct format for REST API
+                self.BASE_URL = base_url
+                self.GRAPHQL_URL = base_url.replace('/api/v3', '/api/graphql')
+            else:
+                # Assume this is a GitHub Enterprise Server hostname
+                # Append /api/v3 for REST API
+                self.BASE_URL = f'{base_url}/api/v3'
+                self.GRAPHQL_URL = f'{base_url}/api/graphql'
+
+            # Log that we're using GitHub Enterprise Server
+            logger.debug(
+                f'Using GitHub Enterprise Server with BASE_URL: {self.BASE_URL}'
+            )
+        else:
+            # Default to github.com API
+            self.BASE_URL = get_github_api_url() or self.DEFAULT_BASE_URL
+            self.GRAPHQL_URL = get_github_graphql_url() or f'{self.BASE_URL}/graphql'
+            logger.debug(f'Using GitHub.com API with BASE_URL: {self.BASE_URL}')
+
+        # Log the final URLs for debugging
+        logger.debug(f'GitHub Service using BASE_URL: {self.BASE_URL}')
+        logger.debug(f'GitHub Service using GRAPHQL_URL: {self.GRAPHQL_URL}')
 
         if token:
             self.token = token

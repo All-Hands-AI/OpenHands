@@ -32,7 +32,8 @@ async def get_github_repositories(
 ):
     if provider_tokens and ProviderType.GITHUB in provider_tokens:
         token = provider_tokens[ProviderType.GITHUB]
-        github_api_url = get_github_api_url()
+        # Use the host_url from the token if available, otherwise use the default API URL
+        github_api_url = token.host_url or get_github_api_url()
         client = GithubServiceImpl(
             user_id=token.user_id,
             external_auth_token=access_token,
@@ -103,7 +104,8 @@ async def get_github_installation_ids(
 ):
     if provider_tokens and ProviderType.GITHUB in provider_tokens:
         token = provider_tokens[ProviderType.GITHUB]
-        github_api_url = get_github_api_url()
+        # Use the host_url from the token if available, otherwise use the default API URL
+        github_api_url = token.host_url or get_github_api_url()
 
         client = GithubServiceImpl(
             user_id=token.user_id,
@@ -144,7 +146,8 @@ async def search_github_repositories(
 ):
     if provider_tokens and ProviderType.GITHUB in provider_tokens:
         token = provider_tokens[ProviderType.GITHUB]
-        github_api_url = get_github_api_url()
+        # Use the host_url from the token if available, otherwise use the default API URL
+        github_api_url = token.host_url or get_github_api_url()
 
         client = GithubServiceImpl(
             user_id=token.user_id,
@@ -190,7 +193,8 @@ async def get_suggested_tasks(
 
     if provider_tokens and ProviderType.GITHUB in provider_tokens:
         token = provider_tokens[ProviderType.GITHUB]
-        github_api_url = get_github_api_url()
+        # Use the host_url from the token if available, otherwise use the default API URL
+        github_api_url = token.host_url or get_github_api_url()
 
         client = GithubServiceImpl(
             user_id=token.user_id,
