@@ -5,6 +5,7 @@ import uuid
 import re
 from pathlib import Path
 import time
+import base64
 
 from openhands.events.action import CmdRunAction
 from openhands.events.observation import ErrorObservation
@@ -78,11 +79,11 @@ class WindowsBashSession:
             script_file = self._temp_dir / f"script_{run_uuid}.ps1"
             print(f"[DEBUG] Temp files: script={script_file}, out={output_file}, err={error_file}, status={status_file}")
 
-            # Escape the command in Python before inserting into the PS script
-            # Replace single quotes with two single quotes for PowerShell string literals
-            escaped_command_for_powershell = command.replace("'", "''")
-            # Also escape for logging within Write-Host (single quotes make it literal)
-            escaped_command_for_logging = command.replace("'", "''")
+            # Encode the command using Base64 to avoid PowerShell parsing issues
+            print(f"[DEBUG] Encoding command using Base64: {command[:50]}...")
+            encoded_command_bytes = command.encode('utf-8')
+            base64_encoded_command = base64.b64encode(encoded_command_bytes).decode('utf-8')
+            print(f"[DEBUG] Base64 encoded command: {base64_encoded_command[:50]}...")
 
             # Create PowerShell script to execute the command and write results to files
             script_content = f"""
@@ -106,14 +107,24 @@ Write-Host "[PS_SCRIPT] Changed directory."
 
 try {{
     # Log original command for clarity - use escaped version in single quotes
-    Write-Host '[PS_SCRIPT] Executing command (original): {escaped_command_for_logging}'
-    
-    # Use the command escaped in Python (single quotes replaced with '')
-    $commandToExecute = '{escaped_command_for_powershell}'
-    Write-Host "[PS_SCRIPT] Executing command (escaped): $commandToExecute"
+    Write-Host '[PS_SCRIPT] Executing command (Base64 Encoded): {base64_encoded_command[:100]}...'
 
-    # Create and execute the script block, capturing all output streams
-    $scriptBlock = [ScriptBlock]::Create($commandToExecute)
+    # Use the command escaped in Python (single quotes replaced with '')
+    $base64Command = '{base64_encoded_command}'
+    Write-Host "[PS_SCRIPT] Decoding Base64 command..."
+    try {{
+        $decodedBytes = [System.Convert]::FromBase64String($base64Command)
+        $decodedCommand = [System.Text.Encoding]::UTF8.GetString($decodedBytes)
+        Write-Host "[PS_SCRIPT] Decoded command successfully (first 50 chars): $($decodedCommand.Substring(0, [System.Math]::Min(50, $decodedCommand.Length)))..."
+    }} catch {{
+        Write-Host "[PS_SCRIPT] ERROR decoding Base64 command: $($_.Exception.Message)"
+        throw "Failed to decode Base64 command." # Propagate error
+    }}
+
+    # Create and execute the script block using the decoded command, capturing all output streams
+    Write-Host "[PS_SCRIPT] Creating script block from decoded command..."
+    $scriptBlock = [ScriptBlock]::Create($decodedCommand)
+    Write-Host "[PS_SCRIPT] Executing script block..."
     $allOutput = & $scriptBlock *>&1
     
     # Separate Error Records and Standard Output
@@ -154,7 +165,11 @@ try {{
     Write-Host "[PS_SCRIPT] Caught exception during command execution."
     # Write error details
     Write-Host "[PS_SCRIPT] Writing error to {error_file}"
-    $_.ToString() | Out-File -FilePath '{error_file}' -Encoding utf8 # Use ToString() for better formatting
+    # Try to include specific error details
+    $errorDetails = $_.ToString()
+    if ($_.Exception) {{ $errorDetails += "`nException Message: $($_.Exception.Message)" }}
+    if ($_.InvocationInfo) {{ $errorDetails += "`nScript Line Number: $($_.InvocationInfo.ScriptLineNumber)" }}
+    $errorDetails | Out-File -FilePath '{error_file}' -Encoding utf8
     Write-Host "[PS_SCRIPT] Error written."
     
     # Write failure status (always exit code 1 in catch block)
