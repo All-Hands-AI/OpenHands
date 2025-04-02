@@ -154,7 +154,10 @@ class Session:
             self.config.mcp.stdio.args,
         )
         mcp_tools = convert_mcp_agents_to_tools(mcp_agents)
-        agent = Agent.get_cls(agent_cls)(llm, agent_config, mcp_tools)
+        if mcp_tools:
+            agent = Agent.get_cls(agent_cls)(llm, agent_config, mcp_tools)
+        else:
+            agent = Agent.get_cls(agent_cls)(llm, agent_config)
         # close all mcp agents after extracting tools
         for mcp_agent in mcp_agents:
             await mcp_agent.cleanup()

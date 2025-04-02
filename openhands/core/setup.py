@@ -180,11 +180,17 @@ async def create_agent(config: AppConfig) -> Agent:
         config.mcp.sse.mcp_servers, config.mcp.stdio.commands, config.mcp.stdio.args
     )
     mcp_tools = convert_mcp_agents_to_tools(mcp_agents)
-    agent = agent_cls(
-        llm=LLM(config=llm_config),
-        config=agent_config,
-        mcp_tools=mcp_tools,
-    )
+    if mcp_tools:
+        agent = agent_cls(
+            llm=LLM(config=llm_config),
+            config=agent_config,
+            mcp_tools=mcp_tools,
+        )
+    else:
+        agent = agent_cls(
+            llm=LLM(config=llm_config),
+            config=agent_config,
+        )
 
     # We only need to get the tools from the MCP agents, so we can safely close them after that
     # the actual calls will be done in a sandbox environment, not here
