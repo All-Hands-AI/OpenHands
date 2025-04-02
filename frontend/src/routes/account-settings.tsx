@@ -408,6 +408,19 @@ function AccountSettings() {
                   }
                   placeholder={isGitHubTokenSet ? "<hidden>" : ""}
                 />
+                <SettingsInput
+                  testId="host-url-input"
+                  name="host-url-input"
+                  label="GitHub Enterprise Server Host URL"
+                  type="text"
+                  className="w-[680px]"
+                  defaultValue={
+                    typeof settings.PROVIDER_TOKENS?.github === 'object'
+                      ? settings.PROVIDER_TOKENS?.github?.host_url || ""
+                      : ""
+                  }
+                  placeholder="https://github.example.com"
+                />
                 <p data-testid="github-token-help-anchor" className="text-xs">
                   {" "}
                   Generate a token on{" "}
@@ -477,21 +490,6 @@ function AccountSettings() {
                   </b>
                   .
                 </p>
-
-                {/* Enterprise Host URL field - always visible regardless of SaaS mode */}
-                <SettingsInput
-                  testId="host-url-input"
-                  name="host-url-input"
-                  label="Enterprise Host URL"
-                  type="text"
-                  className="w-[680px]"
-                  defaultValue={
-                    typeof settings.PROVIDER_TOKENS?.github === 'object'
-                      ? settings.PROVIDER_TOKENS?.github?.host_url || ""
-                      : ""
-                  }
-                  placeholder="https://github.example.com"
-                />
 
                 <BrandButton
                   type="button"
