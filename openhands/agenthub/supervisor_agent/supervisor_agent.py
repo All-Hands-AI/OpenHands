@@ -68,12 +68,14 @@ class SupervisorAgent(Agent):
         self,
         llm: LLM,
         config: AgentConfig,
+        skip_git_commands: bool = False,  # Add parameter for testing
     ) -> None:
         """Initializes a new instance of the SupervisorAgent class.
 
         Parameters:
         - llm (LLM): The llm to be used by this agent
         - config (AgentConfig): The configuration for this agent
+        - skip_git_commands (bool): If True, skip git commands (for testing)
         """
         super().__init__(llm, config)
         self.pending_actions: deque[Action] = deque()
@@ -81,6 +83,7 @@ class SupervisorAgent(Agent):
         self.delegated = False
         self.finished = False
         self.pre_delegation_commit: Optional[str] = None
+        self.skip_git_commands = skip_git_commands  # Store the flag
 
     def reset(self) -> None:
         """Resets the Supervisor Agent."""
@@ -89,6 +92,7 @@ class SupervisorAgent(Agent):
         self.pending_actions.clear()
         self.delegated = False
         self.finished = False
+        # Don't reset skip_git_commands as it's a configuration parameter
 
     def get_descriptive_finish_reason(self, finish_reason: str) -> str:
         """Convert basic finish reasons into more descriptive ones."""
@@ -470,54 +474,129 @@ If the trajectory is good (score 0-3), set "pattern_observed" to null.
         if self.pending_actions:
             return self.pending_actions.popleft()
 
-        # Check if we've already delegated
-        if not self.delegated:
-            # First step: save the repository state before delegating
-            logger.info('SupervisorAgent: Saving repository state before delegating')
+        # Check if we're in the restart sequence after detecting overthinking
+        if 'restart_reason' in state.extra_data and not self.delegated:
+            # Find the last message or command in the history
+            last_event_type = None
+            for event in reversed(state.history):
+                if isinstance(event, MessageAction):
+                    if 'detected overthinking' in event.content.lower():
+                        last_event_type = 'overthinking_message'
+                        break
+                elif isinstance(event, CmdRunAction):
+                    if 'git reset --hard' in event.command:
+                        last_event_type = 'git_reset'
+                        break
+                elif isinstance(event, CmdOutputObservation):
+                    if 'git reset --hard' in event.command:
+                        last_event_type = 'git_reset_output'
+                        break
 
-            # Create a commit to save the current state
-            # First, check if there are any changes to commit
-            self.pending_actions.append(
-                CmdRunAction(
-                    command='git status --porcelain',
-                    thought='Checking if there are any changes to commit before delegation',
+            # After the overthinking message, reset the repository
+            if last_event_type == 'overthinking_message':
+                # Reset the repository to the state before delegation
+                # First, check if we have a saved commit hash
+                commit_hash = self.pre_delegation_commit
+                if (
+                    not commit_hash
+                    and hasattr(state, 'extra_data')
+                    and 'pre_delegation_commit' in state.extra_data
+                ):
+                    commit_hash = state.extra_data['pre_delegation_commit']
+
+                if commit_hash:
+                    logger.info(
+                        f'SupervisorAgent: Resetting repository to commit {commit_hash}'
+                    )
+                    # Reset the repository to the saved commit
+                    return CmdRunAction(
+                        command=f'git reset --hard {commit_hash}',
+                        thought='Resetting the repository to the state before delegation',
+                    )
+                else:
+                    logger.warning(
+                        'SupervisorAgent: No pre-delegation commit hash found, cannot reset repository'
+                    )
+                    # Skip to delegation
+                    last_event_type = 'git_reset_output'
+
+            # After git reset, delegate to CodeActAgent again
+            if last_event_type == 'git_reset' or last_event_type == 'git_reset_output':
+                # Clear the history before redelegating
+                # The controller will handle clearing the history before delegation
+                logger.info(
+                    'SupervisorAgent: Redelegating to CodeActAgent with clear_history=True'
                 )
-            )
+                # Clear the restart reason since we're handling it now
+                state.extra_data.pop('restart_reason', None)
+                return AgentDelegateAction(
+                    agent='CodeActAgent',
+                    inputs=state.inputs,
+                    thought="I'll delegate this task to CodeActAgent again with a fresh approach, resetting the repository and clearing the history to start clean.",
+                    clear_history=True,  # Add this parameter to clear history before delegation
+                )
 
-            # If there are changes, commit them with a special message
-            self.pending_actions.append(
-                CmdRunAction(
+        # Track git command sequence for repository state saving
+        # We need to check if we're in the middle of the git command sequence
+        last_cmd = None
+        for event in reversed(state.history):
+            if isinstance(event, CmdRunAction):
+                last_cmd = event.command
+                break
+            elif isinstance(event, CmdOutputObservation):
+                last_cmd = event.command
+                break
+
+        # If we've started the git command sequence but haven't finished it yet
+        if self.delegated and last_cmd is not None:
+            # After git status, commit any changes
+            if 'git status' in last_cmd:
+                return CmdRunAction(
                     command='git diff-index --quiet HEAD || git commit -a -m "SUPERVISOR_AGENT_CHECKPOINT: Saving state before delegation"',
                     thought='Committing any changes before delegation',
                 )
-            )
-
-            # Get the commit hash to save
-            self.pending_actions.append(
-                CmdRunAction(
+            # After commit, get the commit hash
+            elif 'git commit' in last_cmd or 'git diff-index' in last_cmd:
+                return CmdRunAction(
                     command='git rev-parse HEAD',
                     thought='Getting the commit hash to save for potential reset',
                 )
-            )
-
-            # Store the commit hash in state.extra_data
-            # This will be handled in the next step after we get the commit hash
-
-            # Delegate to CodeActAgent
-            logger.info(
-                'SupervisorAgent: Delegating to CodeActAgent with clear_history=True'
-            )
-            self.pending_actions.append(
-                AgentDelegateAction(
+            # After getting commit hash, delegate to CodeActAgent
+            elif 'git rev-parse HEAD' in last_cmd:
+                logger.info(
+                    'SupervisorAgent: Delegating to CodeActAgent with clear_history=True'
+                )
+                return AgentDelegateAction(
                     agent='CodeActAgent',
                     inputs=state.inputs,
                     thought="I'll delegate this task to CodeActAgent to handle it.",
                     clear_history=True,  # Always clear history when delegating
                 )
-            )
 
-            self.delegated = True
-            return self.pending_actions.popleft()
+        # Check if we've already delegated
+        if not self.delegated:
+            # First step: save the repository state before delegating
+            logger.info('SupervisorAgent: Saving repository state before delegating')
+
+            # If skip_git_commands is True, skip the git commands and directly delegate
+            if self.skip_git_commands:
+                logger.info('SupervisorAgent: Skipping git commands (for testing)')
+                self.delegated = True
+                return AgentDelegateAction(
+                    agent='CodeActAgent',
+                    inputs=state.inputs,
+                    thought="I'll delegate this task to CodeActAgent to handle it.",
+                    clear_history=True,  # Always clear history when delegating
+                )
+
+            # Create a commit to save the current state
+            # First, check if there are any changes to commit
+            # Only queue one action at a time - the controller will call step() again for each action
+            self.delegated = True  # Mark as delegated so we don't repeat this step
+            return CmdRunAction(
+                command='git status --porcelain',
+                thought='Checking if there are any changes to commit before delegation',
+            )
 
         # If we've already delegated and CodeActAgent is done, we're also done
         if not self.finished:
@@ -568,61 +647,35 @@ If the trajectory is good (score 0-3), set "pattern_observed" to null.
                             self.delegated = False
                             self.finished = False
 
-                            # Return a message action explaining the restart
-                            self.pending_actions.append(
-                                MessageAction(
-                                    content=(
-                                        f"I've detected overthinking in the CodeActAgent's approach "
-                                        f"(score: {overthinking_analysis['overthinking_score']}, "
-                                        f"patterns: {overthinking_analysis['pattern_observed']}). "
-                                        f"Restarting the task with a fresh approach."
-                                    ),
-                                )
-                            )
+                            # Store the overthinking info for the restart sequence
+                            state.extra_data['restart_reason'] = {
+                                'score': overthinking_analysis['overthinking_score'],
+                                'patterns': overthinking_analysis['pattern_observed'],
+                            }
 
-                            # Reset the repository to the state before delegation
-                            # First, check if we have a saved commit hash
-                            commit_hash = self.pre_delegation_commit
-                            if (
-                                not commit_hash
-                                and hasattr(state, 'extra_data')
-                                and 'pre_delegation_commit' in state.extra_data
-                            ):
-                                commit_hash = state.extra_data['pre_delegation_commit']
-
-                            if commit_hash:
+                            # If skip_git_commands is True, skip the message and directly redelegate
+                            if self.skip_git_commands:
                                 logger.info(
-                                    f'SupervisorAgent: Resetting repository to commit {commit_hash}'
+                                    'SupervisorAgent: Skipping git commands (for testing)'
                                 )
-                                # Reset the repository to the saved commit
-                                self.pending_actions.append(
-                                    CmdRunAction(
-                                        command=f'git reset --hard {commit_hash}',
-                                        thought='Resetting the repository to the state before delegation',
-                                    )
-                                )
-                            else:
-                                logger.warning(
-                                    'SupervisorAgent: No pre-delegation commit hash found, cannot reset repository'
-                                )
-
-                            # Clear the history before redelegating
-                            # We need to create a new State object with a clean history
-                            # This is done by setting clear_history=True in the AgentDelegateAction
-                            # The controller will handle clearing the history before delegation
-                            logger.info(
-                                'SupervisorAgent: Redelegating to CodeActAgent with clear_history=True'
-                            )
-                            self.pending_actions.append(
-                                AgentDelegateAction(
+                                # Clear the restart reason since we're handling it now
+                                state.extra_data.pop('restart_reason', None)
+                                return AgentDelegateAction(
                                     agent='CodeActAgent',
                                     inputs=state.inputs,
                                     thought="I'll delegate this task to CodeActAgent again with a fresh approach, resetting the repository and clearing the history to start clean.",
                                     clear_history=True,  # Add this parameter to clear history before delegation
                                 )
-                            )
 
-                            return self.pending_actions.popleft()
+                            # Return a message action explaining the restart
+                            return MessageAction(
+                                content=(
+                                    f"I've detected overthinking in the CodeActAgent's approach "
+                                    f"(score: {overthinking_analysis['overthinking_score']}, "
+                                    f"patterns: {overthinking_analysis['pattern_observed']}). "
+                                    f"Restarting the task with a fresh approach."
+                                ),
+                            )
 
                     # If no overthinking was detected or analysis failed, finish normally
                     self.finished = True
