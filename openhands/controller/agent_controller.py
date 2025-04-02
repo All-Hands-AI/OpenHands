@@ -631,6 +631,27 @@ class AgentController:
         llm_config = self.agent_to_llm_config.get(action.agent, self.agent.llm.config)
         llm = LLM(config=llm_config, retry_listener=self._notify_on_llm_retry)
         delegate_agent = agent_cls(llm=llm, config=agent_config)
+
+        # Determine the start_id based on whether we're clearing history
+        start_id = self.event_stream.get_latest_event_id() + 1
+
+        # If clear_history is True, we'll create a new event stream starting point
+        # This effectively "erases" the history for the delegate agent
+        if hasattr(action, 'clear_history') and action.clear_history:
+            self.log(
+                'info',
+                f'Clearing history before delegating to {action.agent}',
+            )
+            
+            # Add a message to indicate the history was cleared
+            message_action = MessageAction(
+                content=f'Starting fresh with {action.agent}. Previous history has been cleared.',
+            )
+            self.event_stream.add_event(message_action, EventSource.AGENT)
+            
+            # Update the start_id to be after the message we just added
+            start_id = self.event_stream.get_latest_event_id() + 1
+
         state = State(
             session_id=self.id.removesuffix('-delegate'),
             inputs=action.inputs or {},
@@ -641,7 +662,7 @@ class AgentController:
             # global metrics should be shared between parent and child
             metrics=self.state.metrics,
             # start on top of the stream
-            start_id=self.event_stream.get_latest_event_id() + 1,
+            start_id=start_id,
         )
         self.log(
             'debug',
