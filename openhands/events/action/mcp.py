@@ -8,7 +8,7 @@ from openhands.events.action.action import Action, ActionSecurityRisk
 @dataclass
 class McpAction(Action):
     name: str
-    arguments: str
+    arguments: str | None = None
     thought: str = ''
     action: str = ActionType.MCP
     runnable: ClassVar[bool] = True
