@@ -17,6 +17,7 @@ python = "^3.12"
 datasets = "*"
 pandas = "*"
 litellm = "^1.60.0"
+aiohttp = ">=3.9.0,!=3.11.13"  # Pin to avoid yanked version 3.11.13
 google-generativeai = "*" # To use litellm with Gemini Pro API
 google-api-python-client = "^2.164.0" # For Google Sheets API
 google-auth-httplib2 = "*" # For Google Sheets authentication
@@ -99,7 +100,6 @@ reportlab = "*"
 concurrency = ["gevent"]
 
 
-
 [tool.poetry.group.runtime.dependencies]
 jupyterlab = "*"
 notebook = "*"
@@ -127,7 +127,6 @@ ignore = ["D1"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
-
 
 
 [tool.poetry.group.evaluation.dependencies]
