@@ -78,6 +78,12 @@ class WindowsBashSession:
             script_file = self._temp_dir / f"script_{run_uuid}.ps1"
             print(f"[DEBUG] Temp files: script={script_file}, out={output_file}, err={error_file}, status={status_file}")
 
+            # Escape the command in Python before inserting into the PS script
+            # Replace single quotes with two single quotes for PowerShell string literals
+            escaped_command_for_powershell = command.replace("'", "''")
+            # Also escape for logging within Write-Host (single quotes make it literal)
+            escaped_command_for_logging = command.replace("'", "''")
+
             # Create PowerShell script to execute the command and write results to files
             script_content = f"""
 Write-Host "[PS_SCRIPT] Starting script execution"
@@ -99,21 +105,27 @@ Set-Location '{self._cwd}'
 Write-Host "[PS_SCRIPT] Changed directory."
 
 try {{
-    Write-Host "[PS_SCRIPT] Executing command: {command}"
+    # Log original command for clarity - use escaped version in single quotes
+    Write-Host '[PS_SCRIPT] Executing command (original): {escaped_command_for_logging}'
     
-    # Create a script block and try to execute it
-    $scriptBlock = [ScriptBlock]::Create("{command}")
-    $errorOutput = & $scriptBlock 2>&1 | Where-Object {{ $_ -is [System.Management.Automation.ErrorRecord] }}
+    # Use the command escaped in Python (single quotes replaced with '')
+    $commandToExecute = '{escaped_command_for_powershell}'
+    Write-Host "[PS_SCRIPT] Executing command (escaped): $commandToExecute"
+
+    # Create and execute the script block, capturing all output streams
+    $scriptBlock = [ScriptBlock]::Create($commandToExecute)
+    $allOutput = & $scriptBlock *>&1
     
-    # Capture standard output
-    $standardOutput = & $scriptBlock 2>&1 | Where-Object {{ $_ -isnot [System.Management.Automation.ErrorRecord] }}
-    
+    # Separate Error Records and Standard Output
+    $errorOutput = $allOutput | Where-Object {{ $_ -is [System.Management.Automation.ErrorRecord] }}
+    $standardOutput = $allOutput | Where-Object {{ $_ -isnot [System.Management.Automation.ErrorRecord] }}
+
     Write-Host "[PS_SCRIPT] Command execution finished."
     
     # Save exit code
     $exitCode = $LASTEXITCODE
-    if ($null -eq $exitCode) {{ $exitCode = 0 }}
-    Write-Host "[PS_SCRIPT] Exit code: $exitCode"
+    if ($null -eq $exitCode) {{ $exitCode = 0 }} # Check if command itself set exit code
+    Write-Host "[PS_SCRIPT] Final exit code: $exitCode"
     
     # Write standard output to output file
     Write-Host "[PS_SCRIPT] Writing output to {output_file}"
@@ -123,7 +135,9 @@ try {{
     # Write error output to error file if any
     if ($errorOutput) {{
         Write-Host "[PS_SCRIPT] Writing error to {error_file}"
-        $errorOutput | Out-File -FilePath '{error_file}' -Encoding utf8
+        # Format error records nicely
+        $formattedErrors = $errorOutput | ForEach-Object {{ $_.ToString() }}
+        $formattedErrors | Out-File -FilePath '{error_file}' -Encoding utf8
         Write-Host "[PS_SCRIPT] Error written."
     }}
     
@@ -140,10 +154,10 @@ try {{
     Write-Host "[PS_SCRIPT] Caught exception during command execution."
     # Write error details
     Write-Host "[PS_SCRIPT] Writing error to {error_file}"
-    $_.Exception.Message | Out-File -FilePath '{error_file}' -Encoding utf8
+    $_.ToString() | Out-File -FilePath '{error_file}' -Encoding utf8 # Use ToString() for better formatting
     Write-Host "[PS_SCRIPT] Error written."
     
-    # Write failure status
+    # Write failure status (always exit code 1 in catch block)
     Write-Host "[PS_SCRIPT] Writing failure status to {status_file}"
     "EXIT_CODE=1`nWORKING_DIR=$originalDirPath" | Out-File -FilePath '{status_file}' -Encoding utf8
     Write-Host "[PS_SCRIPT] Failure status written."
