@@ -30,7 +30,7 @@ uvicorn = "*"
 types-toml = "*"
 numpy = "*"
 json-repair = "*"
-browsergym-core = "0.10.2" # integrate browsergym-core as the browsing interface
+browsergym-core = "0.13.3" # integrate browsergym-core as the browsing interface
 html2text = "*"
 e2b = ">=1.0.5,<1.4.0"
 pexpect = "*"
@@ -77,6 +77,7 @@ qtconsole = "^5.6.1"
 memory-profiler = "^0.61.0"
 daytona-sdk = "0.11.2"
 python-json-logger = "^3.2.1"
+playwright = "^1.51.0"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "0.11.2"
@@ -96,6 +97,7 @@ reportlab = "*"
 
 [tool.coverage.run]
 concurrency = ["gevent"]
+
 
 
 [tool.poetry.group.runtime.dependencies]
@@ -127,6 +129,7 @@ ignore = ["D1"]
 convention = "google"
 
 
+
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"
 whatthepatch = "*"
@@ -141,10 +144,10 @@ gdown = "*"
 matplotlib = "*"
 seaborn = "*"
 tabulate = "*"
-browsergym = "0.10.2"
-browsergym-webarena = "0.10.2"
-browsergym-miniwob = "0.10.2"
-browsergym-visualwebarena = "0.10.2"
+browsergym = "0.13.3"
+browsergym-webarena = "0.13.3"
+browsergym-miniwob = "0.13.3"
+browsergym-visualwebarena = "0.13.3"
 boto3-stubs = {extras = ["s3"], version = "^1.37.19"}
 
 [tool.poetry-dynamic-versioning]
