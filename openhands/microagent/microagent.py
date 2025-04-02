@@ -46,8 +46,24 @@ class BaseMicroAgent(BaseModel):
         file_io = io.StringIO(file_content)
         loaded = frontmatter.load(file_io)
         content = loaded.content
+
+        # Handle case where there's no frontmatter or empty frontmatter
+        metadata_dict = loaded.metadata if loaded.metadata else {}
+
+        # If no type is specified, default to repo type
+        if 'type' not in metadata_dict:
+            metadata_dict['type'] = MicroAgentType.REPO_KNOWLEDGE
+
+        # If no name is specified, use 'repo' for repo type
+        if 'name' not in metadata_dict:
+            metadata_dict['name'] = (
+                'repo'
+                if metadata_dict['type'] == MicroAgentType.REPO_KNOWLEDGE
+                else 'default'
+            )
+
         try:
-            metadata = MicroAgentMetadata(**loaded.metadata)
+            metadata = MicroAgentMetadata(**metadata_dict)
         except Exception as e:
             raise MicroAgentValidationError(f'Error loading metadata: {e}') from e
 

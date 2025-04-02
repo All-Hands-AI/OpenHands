@@ -10,7 +10,6 @@ from openhands.server.settings import GETSettingsModel, POSTSettingsModel, Setti
 from openhands.server.shared import SettingsStoreImpl, config, server_config
 from openhands.server.types import AppMode
 
-
 app = APIRouter(prefix='/api')
 
 
@@ -27,10 +26,10 @@ async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
             )
 
         provider_tokens_set = {}
-        
+
         if bool(user_id):
             provider_tokens_set[ProviderType.GITHUB.value] = True
-        
+
         provider_tokens = get_provider_tokens(request)
         if provider_tokens:
             all_provider_types = [provider.value for provider in ProviderType]

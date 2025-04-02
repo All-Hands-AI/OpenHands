@@ -1,8 +1,8 @@
 import os
 from typing import Any
+from urllib.parse import quote_plus
 
 import httpx
-from urllib.parse import quote_plus 
 from pydantic import SecretStr
 
 from openhands.integrations.service_types import (
@@ -112,11 +112,11 @@ class GitLabService(GitService):
                 id=repo.get('id'),
                 full_name=repo.get('path_with_namespace'),
                 stargazers_count=repo.get('star_count'),
-                git_provider=ProviderType.GITLAB
+                git_provider=ProviderType.GITLAB,
             )
             for repo in response
         ]
-        
+
         return repos
 
     async def get_repositories(
@@ -124,7 +124,7 @@ class GitLabService(GitService):
     ) -> list[Repository]:
         if installation_id:
             return []  # Not implementing installation_token case yet
-        
+
         MAX_REPOS = 1000
         PER_PAGE = 100  # Maximum allowed by GitLab API
         all_repos: list[dict] = []
@@ -136,7 +136,7 @@ class GitLabService(GitService):
             'pushed': 'last_activity_at',
             'updated': 'last_activity_at',
             'created': 'created_at',
-            'full_name': 'name'
+            'full_name': 'name',
         }.get(sort, 'last_activity_at')
 
         while len(all_repos) < MAX_REPOS:
@@ -146,7 +146,7 @@ class GitLabService(GitService):
                 'order_by': order_by,
                 'sort': 'desc',  # GitLab uses sort for direction (asc/desc)
                 'owned': 1,  # Use 1 instead of True
-                'membership': 1  # Use 1 instead of True
+                'membership': 1,  # Use 1 instead of True
             }
             response, headers = await self._fetch_data(url, params)
 
@@ -168,7 +168,7 @@ class GitLabService(GitService):
                 id=repo.get('id'),
                 full_name=repo.get('path_with_namespace'),
                 stargazers_count=repo.get('star_count'),
-                git_provider=ProviderType.GITLAB
+                git_provider=ProviderType.GITLAB,
             )
             for repo in all_repos
         ]

@@ -104,13 +104,15 @@ class GitHubService(GitService):
     ) -> list[Repository]:
         MAX_REPOS = 1000
         PER_PAGE = 100  # Maximum allowed by GitHub API
-        all_repos: list[dict]= []
+        all_repos: list[dict] = []
         page = 1
 
         while len(all_repos) < MAX_REPOS:
             params = {'page': str(page), 'per_page': str(PER_PAGE)}
             if installation_id:
-                url = f'{self.BASE_URL}/user/installations/{installation_id}/repositories'
+                url = (
+                    f'{self.BASE_URL}/user/installations/{installation_id}/repositories'
+                )
                 response, headers = await self._fetch_data(url, params)
                 response = response.get('repositories', [])
             else:
@@ -136,7 +138,7 @@ class GitHubService(GitService):
                 id=repo.get('id'),
                 full_name=repo.get('full_name'),
                 stargazers_count=repo.get('stargazers_count'),
-                git_provider=ProviderType.GITHUB
+                git_provider=ProviderType.GITHUB,
             )
             for repo in all_repos
         ]
@@ -161,7 +163,7 @@ class GitHubService(GitService):
                 id=repo.get('id'),
                 full_name=repo.get('full_name'),
                 stargazers_count=repo.get('stargazers_count'),
-                git_provider=ProviderType.GITHUB
+                git_provider=ProviderType.GITHUB,
             )
             for repo in repos
         ]
