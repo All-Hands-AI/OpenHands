@@ -333,28 +333,33 @@ Do not include any other text in your response.
         if not keep_message_indices and not rewrite_commands:
             return View.from_events(events)
 
-        keep_event_ids = set()
+        keep_events = []
 
         # Add events that were not sent to the LLM (i.e., events without a corresponding `_event` in messages)
         for event in events:
             if not any(message._event == event for message in messages):
                 if event.id == Event.INVALID_ID:
                     raise ValueError(f'Event {event} had an invalid id.')
-                keep_event_ids.add(event.id)
+                keep_events.append(event)
 
         # Add the events to keep based on the LLM's response
         for index in keep_message_indices:
             try:
                 message = messages[index]
                 if message._event:
-                    keep_event_ids.add(message._event.id)
+                    keep_events.append(message._event)
             except IndexError:
                 pass
 
+        # Check that there is at least one user message left
+        if not any(event.source == EventSource.USER for event in keep_events):
+            for event in events:
+                if event.source == EventSource.USER:
+                    keep_events.append(event)
+                    break
+
         # Create a list of event IDs to forget
-        forgotten_event_ids = [
-            event.id for event in events if event.id not in keep_event_ids
-        ]
+        forgotten_event_ids = [event.id for event in events if event not in keep_events]
 
         if rewrite_commands:
             summary = '\n'.join([rewrite.content for rewrite in rewrite_commands])
