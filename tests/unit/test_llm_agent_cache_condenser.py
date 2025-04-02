@@ -5,7 +5,7 @@ from openhands.agenthub.llm_cache_code_agent.llm_cache_code_agent import (
 )
 from openhands.controller.state.state import State
 from openhands.core.config.agent_config import AgentConfig
-from openhands.events.action.agent import ChangeAgentStateAction, CondensationAction
+from openhands.events.action.agent import ChangeAgentStateAction
 from openhands.events.action.message import MessageAction
 from openhands.events.event import Event, RecallType
 from openhands.events.observation.agent import RecallObservation
@@ -241,7 +241,6 @@ def test_llm_agent_cache_condenser_simulated_mixed_condensation():
     # Configure the condenser
     condenser = agent.condenser
     condenser.max_size = 5
-    condenser.keep_first = 1
 
     # Create a mix of events: alternating between MessageAction and FileReadObservation
     events = []
@@ -291,12 +290,10 @@ def test_llm_agent_cache_condenser_with_agent_state_change_action():
     agent_config = AgentConfig()
     agent = LLMCacheCodeAgent(mock_llm, agent_config)
 
-    # Configure the condenser
     condenser = agent.condenser
-    condenser.max_size = 5
 
-    message_event = MessageAction('first message')
-    message_event._id = 1
+    first_message_event = MessageAction('first message')
+    first_message_event._id = 1
     # this event is not sent to the llm at all. So it should be kept
     # and not forgotten
     agent_state_change_event = ChangeAgentStateAction(agent_state='active')
@@ -305,10 +302,9 @@ def test_llm_agent_cache_condenser_with_agent_state_change_action():
     message_action_condense._source = 'user'
     message_action_condense._id = 3
 
-    events = [message_event, agent_state_change_event, message_action_condense]
-
-    mock_state = MagicMock(spec=State)
-    mock_state.history = events
+    state = State(
+        history=[first_message_event, agent_state_change_event, message_action_condense]
+    )
 
     # Simulate the LLM response for condensation
     mock_response = MagicMock()
@@ -316,16 +312,66 @@ def test_llm_agent_cache_condenser_with_agent_state_change_action():
     mock_response.choices[0].message.content = 'KEEP: 0\nKEEP: 1'
     mock_llm.completion.return_value = mock_response
 
-    result = condenser.condenseWithState(mock_state)
+    condensation = condenser.condenseWithState(state)
 
-    # Verify that a Condensation is returned and both events are kept
-    assert isinstance(result, Condensation)
-    assert result.action.forgotten_event_ids == [3]
+    assert isinstance(condensation, Condensation)
+    assert condensation.action.forgotten_event_ids == [message_action_condense.id]
 
     # Apply the condensation
-    events_after_condensation = events + [result.action]
-    view = View.from_events(events_after_condensation)
+    condensation.action._id = 4
+    state.history.append(condensation.action)
+    view = condenser.condenseWithState(state)
     assert isinstance(view, View)
-    assert view.events[:2] == [message_event, agent_state_change_event]
-    assert isinstance(view.events[2], CondensationAction)
-    assert len(view.events) == 3
+    assert view.events == [
+        first_message_event,
+        agent_state_change_event,
+        condensation.action,
+    ]
+
+    # Continue after condensation
+    msg_afer_condensation = MessageAction('First message after second condensation')
+    msg_afer_condensation._id = 5
+    state.history.append(msg_afer_condensation)
+    view = condenser.condenseWithState(state)
+    assert isinstance(view, View)
+    assert view.events == [
+        first_message_event,
+        agent_state_change_event,
+        condensation.action,
+        msg_afer_condensation,
+    ]
+
+    # Do a second condensation
+    message_action_condense2 = MessageAction(
+        'Remember this important info. Then CONDENSE!'
+    )
+    message_action_condense2._source = 'user'
+    message_action_condense2._id = 6
+    state.history.append(message_action_condense2)
+
+    # Simulate the LLM response for condensation
+    mock_response = MagicMock()
+    mock_response.choices = [MagicMock()]
+    mock_response.choices[0].message.content = 'KEEP: 0\nKEEP: 3'
+    mock_llm.completion.return_value = mock_response
+
+    condensation2 = condenser.condenseWithState(state)
+
+    # Verify that a Condensation is returned and both events are kept
+    assert isinstance(condensation2, Condensation)
+    assert condensation2.action.forgotten_event_ids == [
+        first_message_event.id,
+        msg_afer_condensation.id,
+    ]
+
+    # Apply the condensation
+    condensation2.action._id = 7
+    state.history.append(condensation2.action)
+    view = condenser.condenseWithState(state)
+    assert isinstance(view, View)
+    assert view.events == [
+        agent_state_change_event,
+        condensation.action,
+        message_action_condense2,
+        condensation2.action,
+    ]

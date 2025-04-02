@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List
 
 from openhands.controller.state.state import State
 from openhands.core.logger import openhands_logger as logger
@@ -29,26 +29,19 @@ class LLMAgentCacheCondenser(Condenser):
     the LLM to take advantage of the cached prompt and only process the new instructions.
     """
 
-    def __init__(
-        self,
-        agent: LLMCacheCodeAgent,
-        max_size: int = 100,
-        keep_first: int = 1,
-    ):
+    def __init__(self, agent: LLMCacheCodeAgent, max_size: int = 100):
         """Initialize the condenser with the agent instance.
 
         Args:
             agent: The agent instance. This is used to access the LLM, conversation memory,
                   and prompt manager, ensuring that caching works properly.
             max_size: The maximum number of events to keep before condensing.
-            keep_first: The number of events to always keep at the beginning.
         """
         self.agent = agent
         self.llm = agent.llm
         self.conversation_memory = agent.conversation_memory
         self.prompt_manager = agent.prompt_manager
         self.max_size = max_size
-        self.keep_first = keep_first
 
         # Verify that the LLM supports caching
         if not self.llm.is_caching_prompt_active():
@@ -150,12 +143,11 @@ class LLMAgentCacheCondenser(Condenser):
         Returns:
             The condensed events, a View, or a Condensation.
         """
-        # If we don't need to condense, just return the events
-        events = state.history
-        if not self.should_condense(events):
-            return View.from_events(events)
+        view = View.from_events(state.history)
+        if self.should_condense(state.history):
+            return self._do_condensation(view.events, state)
 
-        return self._do_condensation(events, state)
+        return view
 
     def _do_condensation(
         self, events: List[Event], state: State
@@ -341,12 +333,13 @@ Do not include any other text in your response.
         if not keep_message_indices and not rewrite_commands:
             return View.from_events(events)
 
-        # Always keep the first few events (system prompt, initial user message, etc.)
-        keep_event_ids = set(event.id for event in events[: self.keep_first])
+        keep_event_ids = set()
 
         # Add events that were not sent to the LLM (i.e., events without a corresponding `_event` in messages)
         for event in events:
             if not any(message._event == event for message in messages):
+                if event.id == Event.INVALID_ID:
+                    raise ValueError(f'Event {event} had an invalid id.')
                 keep_event_ids.add(event.id)
 
         # Add the events to keep based on the LLM's response
@@ -354,11 +347,7 @@ Do not include any other text in your response.
             try:
                 message = messages[index]
                 if message._event:
-                    event_not_send_to_llm: Optional[Event] = next(
-                        (e for e in events if e == message._event), None
-                    )
-                    if event_not_send_to_llm is not None:
-                        keep_event_ids.add(event_not_send_to_llm.id)
+                    keep_event_ids.add(message._event.id)
             except IndexError:
                 pass
 
@@ -368,29 +357,7 @@ Do not include any other text in your response.
         ]
 
         if rewrite_commands:
-            summary = ''
-            for rewrite_command in rewrite_commands:
-                # Get the range of messages to rewrite
-                start_idx = rewrite_command.start
-                end_idx = rewrite_command.end
-
-                # Validate the range
-                if 0 <= start_idx < len(messages) and 0 <= end_idx < len(messages):
-                    # Add events in the rewrite range to forgotten_event_ids (except those in keep_first)
-                    for i in range(start_idx, end_idx + 1):
-                        message = messages[i]
-                        for event_not_send_to_llm in events:
-                            if (
-                                event_not_send_to_llm.source == message._event
-                                and event_not_send_to_llm.id not in keep_event_ids
-                            ):
-                                forgotten_event_ids.append(event_not_send_to_llm.id)
-
-                    summary += rewrite_command.content + '\n'
-                else:
-                    logger.info(
-                        f'Invalid range for REWRITE command: {start_idx} to {end_idx}. Skipping this command.'
-                    )
+            summary = '\n'.join([rewrite.content for rewrite in rewrite_commands])
         else:
             summary = None
 
