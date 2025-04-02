@@ -171,7 +171,22 @@ class EventStream(EventStore):
             self.file_store.write(
                 self._get_filename_for_id(event.id, self.user_id), json.dumps(data)
             )
+            if event.id >= self.cache_size and not event.id % self.cache_size:
+                self._store_cache_page(event.id - self.cache_size, event.id)
         self._queue.put(event)
+
+    def _store_cache_page(self, start: int, end: int):
+        """Store a page in the cache. Reading individual events is slow when there are a lot of them, so we use pages."""
+        events = []
+        end = start + self.cache_size
+        for index in range(start, end):
+            filename = self._get_filename_for_id(index, None)
+            content = self.file_store.read(filename)
+            event = json.loads(content)
+            events.append(event)
+        contents = json.dumps(events)
+        cache_filename = self._get_filename_for_cache(start, end)
+        self.file_store.write(cache_filename, contents)
 
     def set_secrets(self, secrets: dict[str, str]) -> None:
         self.secrets = secrets.copy()
