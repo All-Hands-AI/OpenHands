@@ -256,7 +256,10 @@ class AgentController:
             elif isinstance(e, RateLimitError):
                 await self.set_agent_state_to(AgentState.RATE_LIMITED)
                 return
-            elif isinstance(e, ContentPolicyViolationError) or (isinstance(e, BadRequestError) and 'ContentPolicyViolationError' in str(e)):
+            elif isinstance(e, ContentPolicyViolationError) or (
+                isinstance(e, BadRequestError)
+                and 'ContentPolicyViolationError' in str(e)
+            ):
                 err_id = 'STATUS$ERROR_LLM_CONTENT_POLICY_VIOLATION'
                 self.state.last_error = str(e)
             await self.status_callback('error', err_id, self.state.last_error)
