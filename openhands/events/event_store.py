@@ -30,7 +30,7 @@ class EventStore:
         events = []
         try:
             events_dir = get_conversation_events_dir(self.sid, self.user_id)
-            events += self.file_store.list(events_dir)
+            events = self.file_store.list(events_dir)
         except FileNotFoundError:
             logger.debug(f'No events found for session {self.sid} at {events_dir}')
 
