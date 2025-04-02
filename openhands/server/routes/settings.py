@@ -139,6 +139,20 @@ async def store_settings(
     request: Request,
     settings: POSTSettingsModel,
 ) -> JSONResponse:
+    
+    print(f'get_user_id: {get_user_id(request)}')
+    settings_store = await SettingsStoreImpl.get_instance(
+        config, get_user_id(request)
+    )
+    existing_settings = await settings_store.load()    
+
+    existing_settings.azure_devops_org = settings.azure_devops_org
+    existing_settings.azure_devops_project = settings.azure_devops_project
+
+    await settings_store.store(existing_settings)
+
+    print(f'settings: {settings}')
+
     # Check provider tokens are valid
     if settings.provider_tokens:
         # Remove extraneous token types
@@ -162,10 +176,9 @@ async def store_settings(
                     )
 
     try:
-        settings_store = await SettingsStoreImpl.get_instance(
-            config, get_user_id(request)
-        )
-        existing_settings = await settings_store.load()
+
+
+        
 
         # Convert to Settings model and merge with existing settings
         if existing_settings:

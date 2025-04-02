@@ -27,18 +27,44 @@ class AzureDevOpsService(GitService):
         external_auth_token: SecretStr | None = None,
         token: SecretStr | None = None,
         external_token_manager: bool = False,
-        organization: str | None = None,
-        project: str | None = None,
-    ):
+    ):        
         self.user_id = user_id
         self.external_token_manager = external_token_manager
-        self.organization = organization or os.environ.get('AZURE_DEVOPS_ORG', '')
-        self.project = project or os.environ.get('AZURE_DEVOPS_PROJECT', '')
+        self.organization =  os.environ.get('AZURE_DEVOPS_ORG', '')
+        self.project = os.environ.get('AZURE_DEVOPS_PROJECT', '')
         self.BASE_URL = f'https://dev.azure.com/{self.organization}/{self.project}'
         self.BASE_VSAEX_URL = f'https://vsaex.dev.azure.com/{self.organization}'
 
         if token:
             self.token = token
+
+
+    async def load_settings(self) -> None:
+        """
+        Load settings from the SettingsStore
+        """
+        try:
+            from openhands.server.shared import (
+                SettingsStoreImpl,
+                config,
+                conversation_manager,
+                sio,
+            )
+            
+            if(self.organization and self.project):
+                return
+            settings_store = await SettingsStoreImpl.get_instance(config, None)
+            settings = await settings_store.load()
+
+            self.organization = settings.azure_devops_org or self.organization
+            self.project = settings.azure_devops_project or self.project
+
+            self.BASE_URL = f'https://dev.azure.com/{self.organization}/{self.project}'
+            self.BASE_VSAEX_URL = f'https://vsaex.dev.azure.com/{self.organization}'
+
+        except Exception as e:
+            print(f'Error loading Azure DevOps settings: {e}')
+            pass
 
     async def _get_azuredevops_headers(self) -> dict:
         """
@@ -87,6 +113,7 @@ class AzureDevOpsService(GitService):
         """
         headers = await self._get_azuredevops_headers()
 
+        await self.load_settings()
         try:
 
             # Get the current user profile
@@ -131,6 +158,7 @@ class AzureDevOpsService(GitService):
         """
         Search for repositories in Azure DevOps
         """
+        await self.load_settings()
         if not self.organization:
             return []
 
@@ -185,6 +213,7 @@ class AzureDevOpsService(GitService):
         """
         Get repositories for the authenticated user in Azure DevOps
         """
+        await self.load_settings()        
         if not self.organization:
             return []
 
@@ -235,6 +264,7 @@ class AzureDevOpsService(GitService):
         """
         Check if a repository exists for the user in Azure DevOps
         """
+        await self.load_settings()        
         if not self.organization:
             return False
 
