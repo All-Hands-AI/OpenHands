@@ -169,7 +169,7 @@ export const chatSlice = createSlice({
             recallObs.extras.runtime_hosts &&
             Object.keys(recallObs.extras.runtime_hosts).length > 0
           ) {
-            content += `\n\n**MicroAgent: Available Hosts**`;
+            content += `\n\n**Available Hosts**`;
             for (const [host, port] of Object.entries(
               recallObs.extras.runtime_hosts,
             )) {
@@ -193,14 +193,9 @@ export const chatSlice = createSlice({
           recallObs.extras.microagent_knowledge &&
           recallObs.extras.microagent_knowledge.length > 0
         ) {
-          // Extract microagent names for the title
-          const microagentNames = recallObs.extras.microagent_knowledge
-            .map((k) => k.name)
-            .join(", ");
-
           content += `\n\n**Triggered Microagent Knowledge:**`;
           for (const knowledge of recallObs.extras.microagent_knowledge) {
-            content += `\n\n- **${knowledge.name}** (triggered by: ${knowledge.trigger})\n\n\`\`\`\n${knowledge.content}\n\`\`\``;
+            content += `\n\n- **${knowledge.name}** (triggered by keyword: ${knowledge.trigger})\n\n\`\`\`\n${knowledge.content}\n\`\`\``;
           }
         }
 
