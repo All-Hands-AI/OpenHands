@@ -47,6 +47,7 @@ from openhands.integrations.provider import (
     ProviderHandler,
     ProviderType,
 )
+from openhands.integrations.service_types import Repository
 from openhands.microagent import (
     BaseMicroAgent,
     load_microagents_from_dir,
@@ -325,13 +326,32 @@ class Runtime(FileEditRuntimeMixin):
     async def clone_repo(
         self,
         git_provider_tokens: PROVIDER_TOKEN_TYPE,
-        selected_repository: str,
+        selected_repository: str | Repository,
         selected_branch: str | None,
+        repository_provider: ProviderType = ProviderType.GITHUB,
     ) -> str:
-        provider_handler = ProviderHandler(provider_tokens=git_provider_tokens)
-        remote_repo_url = await provider_handler.get_remote_repository_url(
+        provider_domains = {
+            ProviderType.GITHUB: 'github.com',
+            ProviderType.GITLAB: 'gitlab.com',
+        }
+
+        git_token = git_provider_tokens[repository_provider].token
+        if not git_token:
+            raise RuntimeError('Require valid git token to clone repo')
+
+        domain = provider_domains[repository_provider]
+        repository = (
             selected_repository
+            if isinstance(selected_repository, str)
+            else selected_repository.full_name
         )
+
+        if repository_provider == ProviderType.GITLAB:
+            remote_repo_url = f'https://oauth2:{git_token.get_secret_value()}@{domain}/{repository}.git'
+        else:
+            remote_repo_url = (
+                f'https://{git_token.get_secret_value()}@{domain}/{repository}.git'
+            )
 
         if not remote_repo_url:
             raise ValueError('Missing either Git token or valid repository')
