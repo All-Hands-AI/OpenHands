@@ -10,7 +10,7 @@ export type Settings = {
   LLM_BASE_URL: string;
   AGENT: string;
   LANGUAGE: string;
-  LLM_API_KEY: string | null;
+  LLM_API_KEY_SET: boolean;
   CONFIRMATION_MODE: boolean;
   SECURITY_ANALYZER: string;
   REMOTE_RUNTIME_RESOURCE_FACTOR: number | null;
