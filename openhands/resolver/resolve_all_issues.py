@@ -328,7 +328,7 @@ def main() -> None:
 
     runtime_container_image = my_args.runtime_container_image
     if runtime_container_image is None:
-        runtime_container_image = 'ghcr.io/all-hands-ai/runtime:0.30.0-nikolaik'
+        runtime_container_image = 'ghcr.io/all-hands-ai/runtime:0.31.0-nikolaik'
 
     owner, repo = my_args.selected_repo.split('/')
     token = my_args.token or os.getenv('GITHUB_TOKEN') or os.getenv('GITLAB_TOKEN')
