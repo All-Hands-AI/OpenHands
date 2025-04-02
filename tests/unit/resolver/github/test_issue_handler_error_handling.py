@@ -2,7 +2,7 @@ from unittest.mock import MagicMock, patch
 
 import httpx
 import pytest
-from litellm.exceptions import BadRequestError, ContentPolicyViolationError, RateLimitError
+from litellm.exceptions import RateLimitError
 
 from openhands.core.config import LLMConfig
 from openhands.events.action.message import MessageAction
