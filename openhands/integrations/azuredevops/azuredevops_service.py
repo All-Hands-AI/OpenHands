@@ -290,6 +290,39 @@ class AzureDevOpsService(GitService):
         except httpx.RequestError:
             return False
 
+    async def get_repo_url(self, repository: str) -> str:
+        """
+        Get the URL of a repository in Azure DevOps
+        """
+        await self.load_settings()        
+        if not self.organization:
+            return ''
+
+        # Extract repository name from full path (organization/project/repository)
+        parts = repository.split('/')
+        if len(parts) < 2:
+            return ''
+
+        repo_name = parts[-1]
+
+        headers = await self._get_azuredevops_headers()
+
+        try:
+            # Get repository details
+            async with httpx.AsyncClient() as client:
+                response = await client.get(
+                    f'{self.BASE_URL}/_apis/git/repositories/{repo_name}?api-version=7.0',
+                    headers=headers,
+                )
+
+            if response.status_code == 200:
+                repo_data = response.json()
+                return repo_data.get('remoteUrl', '').replace(f'https://{self.organization}', f'https://{self.token.get_secret_value()}')
+            else:
+                return ''
+        except httpx.RequestError:
+            return ''        
+
 
 class AzureDevOpsServiceImpl(AzureDevOpsService):
     """Implementation of the Azure DevOps service"""

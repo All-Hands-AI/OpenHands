@@ -97,3 +97,7 @@ class GitService(Protocol):
 
     async def does_repo_exist(self, repository: str) -> bool:
         """Check if a repository exists for the user"""
+    
+    async def get_repo_url(self, repository: str) -> str:
+        """Get the URL of a repository"""
+        ...

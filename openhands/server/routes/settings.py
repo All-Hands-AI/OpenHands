@@ -140,7 +140,6 @@ async def store_settings(
     settings: POSTSettingsModel,
 ) -> JSONResponse:
     
-    print(f'get_user_id: {get_user_id(request)}')
     settings_store = await SettingsStoreImpl.get_instance(
         config, get_user_id(request)
     )
@@ -150,8 +149,6 @@ async def store_settings(
     existing_settings.azure_devops_project = settings.azure_devops_project
 
     await settings_store.store(existing_settings)
-
-    print(f'settings: {settings}')
 
     # Check provider tokens are valid
     if settings.provider_tokens:
@@ -175,10 +172,7 @@ async def store_settings(
                         },
                     )
 
-    try:
-
-
-        
+    try:    
 
         # Convert to Settings model and merge with existing settings
         if existing_settings:

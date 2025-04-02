@@ -258,19 +258,8 @@ class ProviderHandler:
                             return f'https://oauth2:{git_token.get_secret_value()}@{domain}/{repository}.git'
 
                         if provider == ProviderType.AZUREDEVOPS:
-                            print(f'Azure DevOps repo: {repository}')
                             # Azure DevOps URL format: https://{PAT}@dev.azure.com/{organization}/{project}/_git/{repository}
-                            parts = repository.split('/')
-                            if len(parts) >= 2:
-                                organization = parts[0]
-                                repo_name = parts[-1]
-                                project = parts[1] if len(parts) >= 3 else repo_name
-                                # Get the service to access its organization and project properties
-                                service = self._get_service(provider)
-                                azure_org = getattr(service, 'organization', os.environ.get('AZURE_DEVOPS_ORG', ''))
-                                azure_project = getattr(service, 'project', os.environ.get('AZURE_DEVOPS_PROJECT', ''))
-                                return f'https://{git_token.get_secret_value()}@{domain}/{azure_org}/{azure_project}/_git/{repo_name}'
-                            return f'https://{git_token.get_secret_value()}@{domain}/{repository}'
+                            return await service.get_repo_url(repository)                                
 
                         return f'https://{git_token.get_secret_value()}@{domain}/{repository}.git'
             except Exception:
