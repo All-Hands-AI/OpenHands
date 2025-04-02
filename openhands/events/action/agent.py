@@ -88,9 +88,12 @@ class AgentDelegateAction(Action):
     inputs: dict
     thought: str = ''
     action: str = ActionType.DELEGATE
+    clear_history: bool = False  # Whether to clear history before delegation
 
     @property
     def message(self) -> str:
+        if self.clear_history:
+            return f"I'm asking {self.agent} for help with this task, starting with a clean slate."
         return f"I'm asking {self.agent} for help with this task."
 
 
