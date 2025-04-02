@@ -10,6 +10,7 @@ from litellm.exceptions import (  # noqa
     APIError,
     AuthenticationError,
     BadRequestError,
+    ContentPolicyViolationError,
     ContextWindowExceededError,
     InternalServerError,
     NotFoundError,
@@ -255,7 +256,10 @@ class AgentController:
             elif isinstance(e, RateLimitError):
                 await self.set_agent_state_to(AgentState.RATE_LIMITED)
                 return
-            self.status_callback('error', err_id, self.state.last_error)
+            elif isinstance(e, ContentPolicyViolationError):
+                err_id = 'STATUS$ERROR_LLM_CONTENT_POLICY_VIOLATION'
+                self.state.last_error = str(e)
+            await self.status_callback('error', err_id, self.state.last_error)
 
         # Set the agent state to ERROR after storing the reason
         await self.set_agent_state_to(AgentState.ERROR)
@@ -283,6 +287,7 @@ class AgentController:
                 or isinstance(e, InternalServerError)
                 or isinstance(e, AuthenticationError)
                 or isinstance(e, RateLimitError)
+                or isinstance(e, ContentPolicyViolationError)
                 or isinstance(e, LLMContextWindowExceedError)
             ):
                 reported = e
