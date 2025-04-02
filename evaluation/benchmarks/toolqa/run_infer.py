@@ -31,6 +31,7 @@ from openhands.utils.async_utils import call_async_from_sync
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
+    'SupervisorAgent': codeact_user_response,  # SupervisorAgent uses the same response function as CodeActAgent
 }
 
 AGENT_CLS_TO_INST_SUFFIX = {

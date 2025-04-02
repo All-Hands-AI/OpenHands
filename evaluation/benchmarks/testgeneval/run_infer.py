@@ -52,6 +52,7 @@ RUN_WITH_BROWSING = os.environ.get('RUN_WITH_BROWSING', 'false').lower() == 'tru
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
+    'SupervisorAgent': codeact_user_response,  # SupervisorAgent uses the same response function as CodeActAgent
 }
 
 

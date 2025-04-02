@@ -61,6 +61,7 @@ def codeact_user_response(state: State) -> str:
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
+    'SupervisorAgent': codeact_user_response,  # SupervisorAgent uses the same response function as CodeActAgent
 }
 
 AGENT_CLS_TO_INST_SUFFIX = {

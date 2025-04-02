@@ -37,6 +37,9 @@ AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': functools.partial(
         codeact_user_response, encapsulate_solution=True, try_parse=None
     ),
+    'SupervisorAgent': functools.partial(
+        codeact_user_response, encapsulate_solution=True, try_parse=None
+    ),  # SupervisorAgent uses the same response function as CodeActAgent
 }
 
 AGENT_CLS_TO_INST_SUFFIX = {
