@@ -13,7 +13,6 @@ const saveSettingsMutationFn = async (
     return;
   }
 
-  console.log("Save settings", settings);
   const apiSettings: Partial<PostApiSettings> = {
     llm_model: settings.LLM_MODEL,
     llm_base_url: settings.LLM_BASE_URL,
