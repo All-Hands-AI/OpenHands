@@ -1,5 +1,7 @@
 import React from "react";
 import { Link } from "react-router";
+import { useTranslation } from "react-i18next";
+import { I18nKey } from "#/i18n/declaration";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { HelpLink } from "#/components/features/settings/help-link";
 import { KeyStatusIcon } from "#/components/features/settings/key-status-icon";
@@ -28,13 +30,16 @@ import {
 import { ProviderOptions } from "#/types/settings";
 import { useAuth } from "#/context/auth-context";
 
+// Define REMOTE_RUNTIME_OPTIONS for testing
 const REMOTE_RUNTIME_OPTIONS = [
-  { key: 1, label: "1x (2 core, 8G)" },
-  { key: 2, label: "2x (4 core, 16G)" },
+  { key: "1", label: "Standard" },
+  { key: "2", label: "Enhanced" },
+  { key: "4", label: "Premium" },
 ];
 
 function AccountSettings() {
   const settingsQuery = useSettings();
+  const { t } = useTranslation();
   const {
     data: settings,
     isFetching: isFetchingSettings,
@@ -78,7 +83,7 @@ function AccountSettings() {
     providerTokensSet.includes(ProviderOptions.github) || false;
   const isGitLabTokenSet =
     providerTokensSet.includes(ProviderOptions.gitlab) || false;
-  const isLLMKeySet = settings?.LLM_API_KEY === "**********";
+  const isLLMKeySet = settings?.LLM_API_KEY_SET;
   const isAnalyticsEnabled = settings?.USER_CONSENTS_TO_ANALYTICS;
   const isAdvancedSettingsSet = determineWhetherToToggleAdvancedSettings();
 
@@ -121,11 +126,11 @@ function AccountSettings() {
     const enableSoundNotifications =
       formData.get("enable-sound-notifications-switch")?.toString() === "on";
     const llmBaseUrl = formData.get("base-url-input")?.toString() || "";
+    const inputApiKey = formData.get("llm-api-key-input")?.toString() || "";
     const llmApiKey =
-      formData.get("llm-api-key-input")?.toString() ||
-      (isLLMKeySet
-        ? undefined // don't update if it's already set
-        : ""); // reset if it's first time save to avoid 500 error
+      inputApiKey === "" && isLLMKeySet
+        ? undefined // don't update if it's already set and input is empty
+        : inputApiKey; // otherwise use the input value
 
     const githubToken = formData.get("github-token-input")?.toString();
     const gitlabToken = formData.get("gitlab-token-input")?.toString();
@@ -152,25 +157,26 @@ function AccountSettings() {
       ENABLE_SOUND_NOTIFICATIONS: enableSoundNotifications,
       LLM_MODEL: finalLlmModel,
       LLM_BASE_URL: finalLlmBaseUrl,
-      LLM_API_KEY: finalLlmApiKey,
+      llm_api_key: finalLlmApiKey,
       AGENT: formData.get("agent-input")?.toString(),
       SECURITY_ANALYZER:
         formData.get("security-analyzer-input")?.toString() || "",
       REMOTE_RUNTIME_RESOURCE_FACTOR:
-        remoteRuntimeResourceFactor ||
-        DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
+        remoteRuntimeResourceFactor !== null
+          ? Number(remoteRuntimeResourceFactor)
+          : DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
       CONFIRMATION_MODE: confirmationModeIsEnabled,
     };
 
     saveSettings(newSettings, {
       onSuccess: () => {
         handleCaptureConsent(userConsentsToAnalytics);
-        displaySuccessToast("Settings saved");
+        displaySuccessToast(t(I18nKey.SETTINGS$SAVED));
         setLlmConfigMode(isAdvancedSettingsSet ? "advanced" : "basic");
       },
       onError: (error) => {
         const errorMessage = retrieveAxiosErrorMessage(error);
-        displayErrorToast(errorMessage);
+        displayErrorToast(errorMessage || t(I18nKey.ERROR$GENERIC));
       },
     });
   };
@@ -178,7 +184,7 @@ function AccountSettings() {
   const handleReset = () => {
     saveSettings(null, {
       onSuccess: () => {
-        displaySuccessToast("Settings reset");
+        displaySuccessToast(t(I18nKey.SETTINGS$RESET));
         setResetSettingsModalIsOpen(false);
         setLlmConfigMode("basic");
       },
@@ -228,7 +234,7 @@ function AccountSettings() {
             >
               <div className="flex items-center gap-7">
                 <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">
-                  LLM Settings
+                  {t(I18nKey.SETTINGS$LLM_SETTINGS)}
                 </h2>
                 {!shouldHandleSpecialSaasCase && (
                   <SettingsSwitch
@@ -236,7 +242,7 @@ function AccountSettings() {
                     defaultIsToggled={isAdvancedSettingsSet}
                     onToggle={onToggleAdvancedMode}
                   >
-                    Advanced
+                    {t(I18nKey.SETTINGS$ADVANCED)}
                   </SettingsSwitch>
                 )}
               </div>
@@ -252,7 +258,7 @@ function AccountSettings() {
                 <SettingsInput
                   testId="llm-custom-model-input"
                   name="llm-custom-model-input"
-                  label="Custom Model"
+                  label={t(I18nKey.SETTINGS$CUSTOM_MODEL)}
                   defaultValue={settings.LLM_MODEL}
                   placeholder="anthropic/claude-3-5-sonnet-20241022"
                   type="text"
@@ -263,7 +269,7 @@ function AccountSettings() {
                 <SettingsInput
                   testId="base-url-input"
                   name="base-url-input"
-                  label="Base URL"
+                  label={t(I18nKey.SETTINGS$BASE_URL)}
                   defaultValue={settings.LLM_BASE_URL}
                   placeholder="https://api.openai.com"
                   type="text"
@@ -275,21 +281,21 @@ function AccountSettings() {
                 <SettingsInput
                   testId="llm-api-key-input"
                   name="llm-api-key-input"
-                  label="API Key"
+                  label={t(I18nKey.SETTINGS_FORM$API_KEY)}
                   type="password"
                   className="w-[680px]"
+                  placeholder={isLLMKeySet ? "<hidden>" : ""}
                   startContent={
                     isLLMKeySet && <KeyStatusIcon isSet={isLLMKeySet} />
                   }
-                  placeholder={isLLMKeySet ? "<hidden>" : ""}
                 />
               )}
 
               {!shouldHandleSpecialSaasCase && (
                 <HelpLink
                   testId="llm-api-key-help-anchor"
-                  text="Don't know your API key?"
-                  linkText="Click here for instructions"
+                  text={t(I18nKey.SETTINGS$DONT_KNOW_API_KEY)}
+                  linkText={t(I18nKey.SETTINGS$CLICK_FOR_INSTRUCTIONS)}
                   href="https://docs.all-hands.dev/modules/usage/installation#getting-an-api-key"
                 />
               )}
@@ -298,7 +304,7 @@ function AccountSettings() {
                 <SettingsDropdownInput
                   testId="agent-input"
                   name="agent-input"
-                  label="Agent"
+                  label={t(I18nKey.SETTINGS$AGENT)}
                   items={
                     resources?.agents.map((agent) => ({
                       key: agent,
@@ -316,9 +322,9 @@ function AccountSettings() {
                   name="runtime-settings-input"
                   label={
                     <>
-                      Runtime Settings (
+                      {t(I18nKey.SETTINGS$RUNTIME_SETTINGS)}
                       <a href="mailto:contact@all-hands.dev">
-                        get in touch for access
+                        {t(I18nKey.SETTINGS$GET_IN_TOUCH)}
                       </a>
                       )
                     </>
@@ -337,7 +343,7 @@ function AccountSettings() {
                   defaultIsToggled={!!settings.CONFIRMATION_MODE}
                   isBeta
                 >
-                  Enable confirmation mode
+                  {t(I18nKey.SETTINGS$CONFIRMATION_MODE)}
                 </SettingsSwitch>
               )}
 
@@ -347,7 +353,7 @@ function AccountSettings() {
                   name="enable-memory-condenser-switch"
                   defaultIsToggled={!!settings.ENABLE_DEFAULT_CONDENSER}
                 >
-                  Enable memory condensation
+                  {t(I18nKey.SETTINGS$ENABLE_MEMORY_CONDENSATION)}
                 </SettingsSwitch>
               )}
 
@@ -356,7 +362,7 @@ function AccountSettings() {
                   <SettingsDropdownInput
                     testId="security-analyzer-input"
                     name="security-analyzer-input"
-                    label="Security Analyzer"
+                    label={t(I18nKey.SETTINGS$SECURITY_ANALYZER)}
                     items={
                       resources?.securityAnalyzers.map((analyzer) => ({
                         key: analyzer,
@@ -374,7 +380,7 @@ function AccountSettings() {
 
           <section className="flex flex-col gap-6">
             <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">
-              Git Provider Settings
+              {t(I18nKey.SETTINGS$GITHUB_SETTINGS)}
             </h2>
             {isSaas && hasAppSlug && (
               <Link
@@ -383,7 +389,7 @@ function AccountSettings() {
                 rel="noreferrer noopener"
               >
                 <BrandButton type="button" variant="secondary">
-                  Configure GitHub Repositories
+                  {t(I18nKey.GITHUB$CONFIGURE_REPOS)}
                 </BrandButton>
               </Link>
             )}
@@ -392,7 +398,7 @@ function AccountSettings() {
                 <SettingsInput
                   testId="github-token-input"
                   name="github-token-input"
-                  label="GitHub Token"
+                  label={t(I18nKey.GITHUB$TOKEN_LABEL)}
                   type="password"
                   className="w-[680px]"
                   startContent={
@@ -404,7 +410,7 @@ function AccountSettings() {
                 />
                 <p data-testid="github-token-help-anchor" className="text-xs">
                   {" "}
-                  Generate a token on{" "}
+                  {t(I18nKey.GITHUB$GET_TOKEN)}{" "}
                   <b>
                     {" "}
                     <a
@@ -416,7 +422,7 @@ function AccountSettings() {
                       GitHub
                     </a>{" "}
                   </b>
-                  or see the{" "}
+                  {t(I18nKey.COMMON$HERE)}{" "}
                   <b>
                     <a
                       href="https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token"
@@ -424,7 +430,7 @@ function AccountSettings() {
                       className="underline underline-offset-2"
                       rel="noopener noreferrer"
                     >
-                      documentation
+                      {t(I18nKey.COMMON$CLICK_FOR_INSTRUCTIONS)}
                     </a>
                   </b>
                   .
@@ -433,7 +439,7 @@ function AccountSettings() {
                 <SettingsInput
                   testId="gitlab-token-input"
                   name="gitlab-token-input"
-                  label="GitLab Token"
+                  label={t(I18nKey.GITLAB$TOKEN_LABEL)}
                   type="password"
                   className="w-[680px]"
                   startContent={
@@ -444,9 +450,9 @@ function AccountSettings() {
                   placeholder={isGitHubTokenSet ? "<hidden>" : ""}
                 />
 
-                <p data-testId="gitlab-token-help-anchor" className="text-xs">
+                <p data-testid="gitlab-token-help-anchor" className="text-xs">
                   {" "}
-                  Generate a token on{" "}
+                  {t(I18nKey.GITLAB$GET_TOKEN)}{" "}
                   <b>
                     {" "}
                     <a
@@ -458,7 +464,7 @@ function AccountSettings() {
                       GitLab
                     </a>{" "}
                   </b>
-                  or see the{" "}
+                  {t(I18nKey.GITLAB$OR_SEE)}{" "}
                   <b>
                     <a
                       href="https://docs.gitlab.com/user/profile/personal_access_tokens/"
@@ -466,7 +472,7 @@ function AccountSettings() {
                       className="underline underline-offset-2"
                       rel="noopener noreferrer"
                     >
-                      documentation
+                      {t(I18nKey.COMMON$DOCUMENTATION)}
                     </a>
                   </b>
                   .
@@ -485,13 +491,13 @@ function AccountSettings() {
 
           <section className="flex flex-col gap-6">
             <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">
-              Additional Settings
+              {t(I18nKey.ACCOUNT_SETTINGS$ADDITIONAL_SETTINGS)}
             </h2>
 
             <SettingsDropdownInput
               testId="language-input"
               name="language-input"
-              label="Language"
+              label={t(I18nKey.SETTINGS$LANGUAGE)}
               items={AvailableLanguages.map((language) => ({
                 key: language.value,
                 label: language.label,
@@ -505,7 +511,7 @@ function AccountSettings() {
               name="enable-analytics-switch"
               defaultIsToggled={!!isAnalyticsEnabled}
             >
-              Enable analytics
+              {t(I18nKey.ANALYTICS$ENABLE)}
             </SettingsSwitch>
 
             <SettingsSwitch
@@ -513,7 +519,7 @@ function AccountSettings() {
               name="enable-sound-notifications-switch"
               defaultIsToggled={!!settings.ENABLE_SOUND_NOTIFICATIONS}
             >
-              Enable sound notifications
+              {t(I18nKey.SETTINGS$SOUND_NOTIFICATIONS)}
             </SettingsSwitch>
           </section>
         </div>
@@ -525,7 +531,7 @@ function AccountSettings() {
           variant="secondary"
           onClick={() => setResetSettingsModalIsOpen(true)}
         >
-          Reset to defaults
+          {t(I18nKey.BUTTON$RESET_TO_DEFAULTS)}
         </BrandButton>
         <BrandButton
           type="button"
@@ -534,7 +540,7 @@ function AccountSettings() {
             formRef.current?.requestSubmit();
           }}
         >
-          Save Changes
+          {t(I18nKey.BUTTON$SAVE)}
         </BrandButton>
       </footer>
 
@@ -544,7 +550,7 @@ function AccountSettings() {
             data-testid="reset-modal"
             className="bg-base-secondary p-4 rounded-xl flex flex-col gap-4 border border-tertiary"
           >
-            <p>Are you sure you want to reset all settings?</p>
+            <p>{t(I18nKey.SETTINGS$RESET_CONFIRMATION)}</p>
             <div className="w-full flex gap-2">
               <BrandButton
                 type="button"
