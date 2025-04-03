@@ -2109,18 +2109,18 @@
         "tr": "Hadi inşa etmeye başlayalım!"
     },
     "LANDING$SUBTITLE": {
-        "en": "OpenHands makes it easy to build and maintain software using a simple prompt.",
-        "ja": "OpenHandsは、シンプルなプロンプトを使用してソフトウェアの開発と保守を簡単にします。",
-        "zh-CN": "OpenHands 使用简单的提示来轻松构建和维护软件。",
-        "zh-TW": "OpenHands 使用簡單的提示來輕鬆建構和維護軟體。",
-        "ko-KR": "OpenHands는 간단한 프롬프트를 사용하여 소프트웨어를 쉽게 구축하고 유지관리할 수 있게 해줍니다.",
-        "fr": "OpenHands facilite la construction et la maintenance de logiciels à l'aide d'une invite simple.",
-        "es": "OpenHands facilita la construcción y el mantenimiento de software usando un prompt simple.",
-        "de": "OpenHands macht es einfach, Software mit einem einfachen Prompt zu erstellen und zu warten.",
-        "it": "OpenHands rende facile costruire e mantenere software usando un prompt semplice.",
-        "pt": "OpenHands torna fácil construir e manter software usando um prompt simples.",
-        "ar": "يجعل OpenHands من السهل بناء وصيانة البرمجيات باستخدام موجه بسيط.",
-        "no": "OpenHands gjør det enkelt å bygge og vedlikeholde programvare ved hjelp av en enkel prompt.",
+        "en": "Thesis makes it easy to build and maintain software using a simple prompt.",
+        "ja": "Thesisは、シンプルなプロンプトを使用してソフトウェアの開発と保守を簡単にします。",
+        "zh-CN": "Thesis 使用简单的提示来轻松构建和维护软件。",
+        "zh-TW": "Thesis 使用簡單的提示來輕鬆建構和維護軟體。",
+        "ko-KR": "Thesis 간단한 프롬프트를 사용하여 소프트웨어를 쉽게 구축하고 유지관리할 수 있게 해줍니다.",
+        "fr": "Thesis facilite la construction et la maintenance de logiciels à l'aide d'une invite simple.",
+        "es": "Thesis facilita la construcción y el mantenimiento de software usando un prompt simple.",
+        "de": "Thesis macht es einfach, Software mit einem einfachen Prompt zu erstellen und zu warten.",
+        "it": "Thesis rende facile costruire e mantenere software usando un prompt semplice.",
+        "pt": "Thesis torna fácil construir e manter software usando um prompt simples.",
+        "ar": "يجعل Thesis من السهل بناء وصيانة البرمجيات باستخدام موجه بسيط.",
+        "no": "Thesis gjør det enkelt å bygge og vedlikeholde programvare ved hjelp av en enkel prompt.",
         "tr": "Yapay zeka destekli yazılım geliştirme"
     },
     "LANDING$START_HELP": {
@@ -2527,6 +2527,21 @@
         "ar": "توقف",
         "no": "Stopp",
         "tr": "Durdur"
+    },
+    "BUTTON$CONNECT_WALLET": {
+        "en": "Connect your wallet",
+        "ja": "Walletに接続",
+        "zh-CN": "连接到Wallet",
+        "zh-TW": "連線到 Wallet",
+        "ko-KR": "Wallet에 연결",
+        "fr": "Se connecter à Wallet",
+        "es": "Conectar con Wallet",
+        "de": "Mit Wallet verbinden",
+        "it": "Connetti a Wallet",
+        "pt": "Conectar ao Wallet",
+        "ar": "الاتصال بـ Wallet",
+        "no": "Koble til Wallet",
+        "tr": "Wallet'a bağlan"
     },
     "LANDING$ATTACH_IMAGES": {
         "en": "Attach images",

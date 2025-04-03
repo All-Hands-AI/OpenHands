@@ -1,21 +1,35 @@
+import { BrandButton } from "#/components/features/settings/brand-button";
 import { HeroHeading } from "#/components/shared/hero-heading";
 import { TaskForm } from "#/components/shared/task-form";
-import { useConfig } from "#/hooks/query/use-config";
-import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
+// import { useConfig } from "#/hooks/query/use-config";
+// import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
+import { useSettings } from "#/hooks/query/use-settings";
+import { I18nKey } from "#/i18n/declaration";
+import { useGetJwt } from "#/zutand-stores/persist-config/selector";
+import { useConnectModal } from "@rainbow-me/rainbowkit";
 import React from "react";
-import { useDispatch } from "react-redux";
+import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router";
+import { useAccount } from "wagmi";
 
 function Home() {
-  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { t } = useTranslation();
+  const { data: settings } = useSettings();
+  const { isConnected } = useAccount();
+  const jwt = useGetJwt();
   const formRef = React.useRef<HTMLFormElement>(null);
 
-  const { data: config } = useConfig();
+  // const { data: config } = useConfig();
   // const { data: user } = useGitHubUser();
+  const { openConnectModal } = useConnectModal();
 
-  const gitHubAuthUrl = useGitHubAuthUrl({
-    appMode: config?.APP_MODE || null,
-    gitHubClientId: config?.GITHUB_CLIENT_ID || null,
-  });
+  // const gitHubAuthUrl = useGitHubAuthUrl({
+  //   appMode: config?.APP_MODE || null,
+  //   gitHubClientId: config?.GITHUB_CLIENT_ID || null,
+  // });
+
+  const isUserLoggedIn = !!jwt && !!isConnected;
 
   return (
     <div
@@ -25,7 +39,26 @@ function Home() {
       <HeroHeading />
       <div className="flex flex-col gap-1 w-full mt-8 md:w-[600px] items-center">
         <div className="flex flex-col gap-2 w-full">
-          <TaskForm ref={formRef} />
+          {isUserLoggedIn ? (
+            <TaskForm ref={formRef} />
+          ) : (
+            <div className="flex flex-col gap-2 w-full">
+              <div className="text-tertiary-light text-center">
+                Welcome to Thesis! We're currently in private beta.
+                <br /> To get started, Please enter connect your wallet.
+              </div>
+
+              <BrandButton
+                testId="connect-your-wallet"
+                type="button"
+                variant="secondary"
+                className="w-full text-tertiary font-bold hover:brightness-110 bg-tertiary-light border-content mt-2 uppercase"
+                onClick={openConnectModal}
+              >
+                {t(I18nKey.BUTTON$CONNECT_WALLET)}
+              </BrandButton>
+            </div>
+          )}
         </div>
 
         {/* <div className="flex gap-4 w-full flex-col md:flex-row mt-8">

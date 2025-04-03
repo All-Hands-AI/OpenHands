@@ -1,6 +1,7 @@
 import os
-from datetime import datetime, timedelta
+from datetime import datetime
 
+# timedelta
 import jwt
 from eth_account.messages import encode_defunct
 from fastapi import APIRouter, HTTPException
@@ -41,9 +42,11 @@ def create_jwt_token(user_id: str) -> str:
         'sub': user_id,
         'iat': datetime.utcnow(),
     }
-    if JWT_EXPIRES_IN:
-        payload['exp'] = datetime.utcnow() + timedelta(seconds=JWT_EXPIRES_IN)
-    
+
+    # # TODO: FIXME: uncomment this when we have a way to refresh the token
+    # if JWT_EXPIRES_IN:
+    #     payload['exp'] = datetime.utcnow() + timedelta(seconds=JWT_EXPIRES_IN)
+
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
 

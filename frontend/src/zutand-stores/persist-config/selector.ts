@@ -8,3 +8,4 @@ export const useGetPublicKey = () =>
   usePersistStore((state) => state.publicKey);
 export const useGetListAddresses = () =>
   usePersistStore((state) => state.listAddresses);
+export const useGetJwt = () => usePersistStore((state) => state.jwt);
