@@ -41,6 +41,10 @@ class PromptManager:
     ):
         self.prompt_dir: str = prompt_dir
         self.agent_config = agent_config
+
+        if self.prompt_dir is None:
+            raise ValueError('Prompt directory is not set')
+
         self.env = Environment(loader=FileSystemLoader(prompt_dir))
         self.system_template: Template = self._load_template('system_prompt')
         self.user_template: Template = self._load_template('user_prompt')
@@ -48,8 +52,6 @@ class PromptManager:
         self.microagent_info_template: Template = self._load_template('microagent_info')
 
     def _load_template(self, template_name: str) -> Template:
-        if self.prompt_dir is None:
-            raise ValueError('Prompt directory is not set')
         template_path = os.path.join(self.prompt_dir, f'{template_name}.j2')
         if not os.path.exists(template_path):
             raise FileNotFoundError(f'Prompt file {template_path} not found')
