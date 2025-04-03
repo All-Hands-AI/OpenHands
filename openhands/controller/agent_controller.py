@@ -400,7 +400,19 @@ class AgentController:
                     MessageAction(content='TASK: ' + action.inputs['task']),
                     EventSource.USER,
                 )
-                await self.delegate.set_agent_state_to(AgentState.RUNNING)
+
+            # Set the delegate to RUNNING state
+            await self.delegate.set_agent_state_to(AgentState.RUNNING)
+
+            # Set the parent agent to DELEGATING state to prevent it from processing events
+            # This is a new state we'll add to indicate the agent is waiting for a delegate
+            await self.set_agent_state_to(AgentState.DELEGATING)
+
+            # Log that delegation has been activated
+            self.log(
+                'info',
+                f'Delegation activated: parent agent {self.agent.name} is now in DELEGATING state',
+            )
             return
 
         elif isinstance(action, AgentFinishAction):
@@ -631,6 +643,27 @@ class AgentController:
         llm_config = self.agent_to_llm_config.get(action.agent, self.agent.llm.config)
         llm = LLM(config=llm_config, retry_listener=self._notify_on_llm_retry)
         delegate_agent = agent_cls(llm=llm, config=agent_config)
+
+        # Determine the start_id based on whether we're clearing history
+        start_id = self.event_stream.get_latest_event_id() + 1
+
+        # If clear_history is True, we'll create a new event stream starting point
+        # This effectively "erases" the history for the delegate agent
+        if hasattr(action, 'clear_history') and action.clear_history:
+            self.log(
+                'info',
+                f'Clearing history before delegating to {action.agent}',
+            )
+
+            # Add a message to indicate the history was cleared
+            message_action = MessageAction(
+                content=f'Starting fresh with {action.agent}. Previous history has been cleared.',
+            )
+            self.event_stream.add_event(message_action, EventSource.AGENT)
+
+            # Update the start_id to be after the message we just added
+            start_id = self.event_stream.get_latest_event_id() + 1
+
         state = State(
             session_id=self.id.removesuffix('-delegate'),
             inputs=action.inputs or {},
@@ -641,7 +674,7 @@ class AgentController:
             # global metrics should be shared between parent and child
             metrics=self.state.metrics,
             # start on top of the stream
-            start_id=self.event_stream.get_latest_event_id() + 1,
+            start_id=start_id,
         )
         self.log(
             'debug',
@@ -660,6 +693,15 @@ class AgentController:
             initial_state=state,
             is_delegate=True,
             headless_mode=self.headless_mode,
+        )
+
+        # Set the parent reference in the delegate
+        self.delegate.parent = self
+
+        # Log that delegation has been set up
+        self.log(
+            'info',
+            f'Delegate {delegate_agent.name} has been set up with start_id={start_id}',
         )
 
     def end_delegate(self) -> None:
@@ -710,13 +752,33 @@ class AgentController:
             obs = AgentDelegateObservation(outputs=delegate_outputs, content=content)
             self.event_stream.add_event(obs, EventSource.AGENT)
 
+        # Set the parent agent back to RUNNING state if it was in DELEGATING state
+        current_state = self.get_agent_state()
+        if current_state == AgentState.DELEGATING:
+            asyncio.get_event_loop().run_until_complete(
+                self.set_agent_state_to(AgentState.RUNNING)
+            )
+            self.log(
+                'info',
+                f'Delegation ended: parent agent {self.agent.name} is now back in RUNNING state',
+            )
+
         # unset delegate so parent can resume normal handling
         self.delegate = None
         self.delegateAction = None
 
     async def _step(self) -> None:
         """Executes a single step of the parent or delegate agent. Detects stuck agents and limits on the number of iterations and the task budget."""
-        if self.get_agent_state() != AgentState.RUNNING:
+        current_state = self.get_agent_state()
+
+        # Skip processing if the agent is not in RUNNING state
+        if current_state != AgentState.RUNNING:
+            # Log if the agent is in DELEGATING state
+            if current_state == AgentState.DELEGATING:
+                self.log(
+                    'debug',
+                    f'Agent {self.agent.name} is in DELEGATING state, skipping step',
+                )
             return
 
         if self._pending_action:
@@ -857,11 +919,33 @@ class AgentController:
                 max_str = f'{max_value:.2f}'
 
             if self.headless_mode:
-                e = RuntimeError(
-                    f'Agent reached maximum {limit_type} in headless mode. '
-                    f'Current {limit_type}: {current_str}, max {limit_type}: {max_str}'
-                )
-                await self._react_to_exception(e)
+                # Check if we're in a delegate agent (CodeActAgent) with a parent (SupervisorAgent)
+                if self.is_delegate and self.id.endswith('-delegate'):
+                    # Set a flag in the state's extra_data to indicate max iterations reached
+                    self.state.extra_data['max_iterations_reached'] = True
+                    self.state.extra_data['max_iterations_reason'] = (
+                        f'Agent reached maximum {limit_type} in headless mode. '
+                        f'Current {limit_type}: {current_str}, max {limit_type}: {max_str}'
+                    )
+
+                    # Create a delegate observation to return to the supervisor
+                    observation = AgentDelegateObservation(
+                        outputs={},
+                        content='CodeActAgent encountered an error during execution.',
+                    )
+
+                    # Add the observation to the history
+                    self.state.history.append(observation)
+
+                    # Set the agent state to FINISHED to return control to the supervisor
+                    await self.set_agent_state_to(AgentState.FINISHED)
+                else:
+                    # Original behavior for non-delegate agents
+                    e = RuntimeError(
+                        f'Agent reached maximum {limit_type} in headless mode. '
+                        f'Current {limit_type}: {current_str}, max {limit_type}: {max_str}'
+                    )
+                    await self._react_to_exception(e)
             else:
                 e = RuntimeError(
                     f'Agent reached maximum {limit_type}. '

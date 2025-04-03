@@ -38,6 +38,7 @@ DATASET_CACHE_DIR = os.path.join(os.path.dirname(__file__), 'data')
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': functools.partial(codeact_user_response, encapsulate_solution=True),
+    'SupervisorAgent': functools.partial(codeact_user_response, encapsulate_solution=True),  # SupervisorAgent uses the same response function as CodeActAgent
 }
 
 AGENT_CLS_TO_INST_SUFFIX = {

@@ -49,3 +49,7 @@ class AgentState(str, Enum):
     RATE_LIMITED = 'rate_limited'
     """The agent is rate limited.
     """
+
+    DELEGATING = 'delegating'
+    """The agent has delegated to another agent and is waiting for it to complete.
+    """

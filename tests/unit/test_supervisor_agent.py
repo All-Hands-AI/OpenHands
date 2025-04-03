@@ -1,0 +1,303 @@
+from unittest.mock import patch
+
+import pytest
+
+from openhands.agenthub.supervisor_agent import SupervisorAgent
+from openhands.controller.state.state import State
+from openhands.core.config import AgentConfig, LLMConfig
+from openhands.core.schema import ActionType
+from openhands.events.action import (
+    AgentDelegateAction,
+    AgentFinishAction,
+    AgentFinishTaskCompleted,
+    MessageAction,
+)
+from openhands.events.event import EventSource
+from openhands.events.observation import (
+    AgentDelegateObservation,
+    CmdOutputObservation,
+    FileReadObservation,
+)
+from openhands.llm.llm import LLM
+
+
+class TestSupervisorAgent:
+    @pytest.fixture
+    def agent(self):
+        llm_config = LLMConfig(model='test-model', api_key='test-key')
+        llm = LLM(config=llm_config)
+        config = AgentConfig()
+        # Skip git commands for testing to maintain compatibility with existing tests
+        return SupervisorAgent(llm=llm, config=config, skip_git_commands=True)
+
+    def test_initial_delegation(self, agent):
+        """Test that the agent delegates to CodeActAgent on the first step."""
+        state = State(session_id='test', inputs={'test': 'value'})
+        action = agent.step(state)
+
+        assert isinstance(action, AgentDelegateAction)
+        assert action.agent == 'CodeActAgent'
+        assert action.inputs == state.inputs
+
+    def test_finish_after_delegation_complete(self, agent):
+        """Test that the agent finishes when the delegated agent is done."""
+        state = State(session_id='test', inputs={'test': 'value'})
+
+        # First step - should delegate
+        action = agent.step(state)
+        assert isinstance(action, AgentDelegateAction)
+
+        # Add a delegate observation to the history
+        observation = AgentDelegateObservation(outputs={}, content='Task completed')
+        observation.action = 'delegate_observation'  # Add the action attribute
+        state.history.append(observation)
+
+        # Second step - should finish
+        action = agent.step(state)
+        assert isinstance(action, AgentFinishAction)
+        assert action.task_completed == AgentFinishTaskCompleted.TRUE
+
+    def test_history_processing(self, agent):
+        """Test that the agent processes the history of actions and observations."""
+        state = State(session_id='test', inputs={'test': 'value'})
+
+        # Add a user message to the history
+        user_message = MessageAction(
+            content='Please help me with this task',
+        )
+        user_message._source = EventSource.USER  # Set the source directly
+        state.history.append(user_message)
+
+        # First step - should delegate
+        action = agent.step(state)
+        assert isinstance(action, AgentDelegateAction)
+
+        # Add the delegation action to the history
+        # This is needed because the agent looks for this in the history
+        delegate_action = AgentDelegateAction(
+            agent='CodeActAgent',
+            inputs=state.inputs,
+            thought="I'll delegate this task to CodeActAgent to handle it.",
+        )
+        delegate_action.action = ActionType.DELEGATE  # Set the action type
+        state.history.append(delegate_action)
+
+        # Add some agent messages and observations to simulate CodeActAgent activity
+        agent_message1 = MessageAction(
+            content="I'll help you with this task. Let me check the files first.",
+        )
+        agent_message1._source = EventSource.AGENT  # Set the source directly
+        state.history.append(agent_message1)
+
+        file_observation = FileReadObservation(
+            content='This is the content of the file',
+            path='/path/to/file.txt',
+        )
+        state.history.append(file_observation)
+
+        agent_message2 = MessageAction(
+            content='I found the file. Now let me run a command.',
+        )
+        agent_message2._source = EventSource.AGENT  # Set the source directly
+        state.history.append(agent_message2)
+
+        cmd_observation = CmdOutputObservation(
+            content='Command executed successfully',
+            exit_code=0,
+            command='ls -la',
+        )
+        state.history.append(cmd_observation)
+
+        agent_message3 = MessageAction(
+            content='Task completed successfully!',
+        )
+        agent_message3._source = EventSource.AGENT  # Set the source directly
+        state.history.append(agent_message3)
+
+        # Add a delegate observation to the history
+        observation = AgentDelegateObservation(outputs={}, content='Task completed')
+        observation.action = 'delegate_observation'  # Add the action attribute
+        state.history.append(observation)
+
+        # Second step - should finish and process history
+        action = agent.step(state)
+        assert isinstance(action, AgentFinishAction)
+        assert action.task_completed == AgentFinishTaskCompleted.TRUE
+
+        # Check that the processed history is stored in state.extra_data
+        assert 'processed_history' in state.extra_data
+        processed_history = state.extra_data['processed_history']
+
+        # Check that the processed history contains the expected sections
+        assert 'INITIAL ISSUE:' in processed_history
+        assert 'Please help me with this task' in processed_history
+        assert 'RESPONSE:' in processed_history
+        assert 'OBSERVATION' in processed_history
+        assert 'LAST RESPONSE:' in processed_history
+        assert 'FINISH REASON:' in processed_history
+
+    def test_get_descriptive_finish_reason(self, agent):
+        """Test the get_descriptive_finish_reason method."""
+        assert (
+            agent.get_descriptive_finish_reason('stop') == 'FINISHED_WITH_STOP_ACTION'
+        )
+        assert (
+            agent.get_descriptive_finish_reason('tool_calls')
+            == 'FINISHED_WITH_FUNCTION_CALL'
+        )
+        assert agent.get_descriptive_finish_reason('length') == 'EXCEEDED_MAX_LENGTH'
+        assert (
+            agent.get_descriptive_finish_reason('content_filter') == 'CONTENT_FILTERED'
+        )
+        assert (
+            agent.get_descriptive_finish_reason('budget_exceeded') == 'BUDGET_EXCEEDED'
+        )
+        assert agent.get_descriptive_finish_reason('unknown') == 'UNKNOWN'
+
+    @patch('openhands.llm.llm.LLM.completion')
+    def test_analyze_trajectory_good(self, mock_completion, agent):
+        """Test the analyze_trajectory method with a good trajectory."""
+        # Mock the LLM response
+        mock_response = {
+            'choices': [
+                {
+                    'message': {
+                        'content': '<answer>{"overthinking_score": "2", "pattern_observed": null, "reasoning": "The model interacts well with the environment."}</answer>'
+                    }
+                }
+            ]
+        }
+        mock_completion.return_value = mock_response
+
+        # Call the analyze_trajectory method
+        analysis = agent.analyze_trajectory('Test history')
+
+        # Check that the LLM was called with the correct prompt
+        mock_completion.assert_called_once()
+
+        # Check that the analysis was parsed correctly
+        assert analysis is not None
+        assert analysis['overthinking_score'] == '2'
+        assert analysis['pattern_observed'] is None
+        assert analysis['reasoning'] == 'The model interacts well with the environment.'
+
+    @patch('openhands.llm.llm.LLM.completion')
+    def test_analyze_trajectory_overthinking(self, mock_completion, agent):
+        """Test the analyze_trajectory method with an overthinking trajectory."""
+        # Mock the LLM response
+        mock_response = {
+            'choices': [
+                {
+                    'message': {
+                        'content': '<answer>{"overthinking_score": "9", "pattern_observed": ["Analysis Paralysis"], "reasoning": "The model focuses on heavy planning instead of interacting with the environment."}</answer>'
+                    }
+                }
+            ]
+        }
+        mock_completion.return_value = mock_response
+
+        # Call the analyze_trajectory method
+        analysis = agent.analyze_trajectory('Test history')
+
+        # Check that the LLM was called with the correct prompt
+        mock_completion.assert_called_once()
+
+        # Check that the analysis was parsed correctly
+        assert analysis is not None
+        assert analysis['overthinking_score'] == '9'
+        assert analysis['pattern_observed'] == ['Analysis Paralysis']
+        assert (
+            analysis['reasoning']
+            == 'The model focuses on heavy planning instead of interacting with the environment.'
+        )
+
+    @patch('openhands.llm.llm.LLM.completion')
+    def test_analyze_trajectory_error(self, mock_completion, agent):
+        """Test the analyze_trajectory method with an error in the LLM response."""
+        # Mock the LLM response with invalid JSON
+        mock_response = {
+            'choices': [{'message': {'content': '<answer>Invalid JSON</answer>'}}]
+        }
+        mock_completion.return_value = mock_response
+
+        # Call the analyze_trajectory method
+        analysis = agent.analyze_trajectory('Test history')
+
+        # Check that the LLM was called with the correct prompt
+        mock_completion.assert_called_once()
+
+        # Check that the analysis is None
+        assert analysis is None
+
+    @patch(
+        'openhands.agenthub.supervisor_agent.supervisor_agent.SupervisorAgent.analyze_trajectory'
+    )
+    def test_step_with_overthinking(self, mock_analyze_trajectory, agent):
+        """Test the step method with an overthinking trajectory."""
+        state = State(session_id='test', inputs={'test': 'value'})
+
+        # First step - should delegate
+        action = agent.step(state)
+        assert isinstance(action, AgentDelegateAction)
+
+        # Add the delegation action to the history
+        # This is needed because the agent looks for this in the history
+        delegate_action = AgentDelegateAction(
+            agent='CodeActAgent',
+            inputs=state.inputs,
+            thought="I'll delegate this task to CodeActAgent to handle it.",
+        )
+        delegate_action.action = ActionType.DELEGATE  # Set the action type
+        state.history.append(delegate_action)
+
+        # Add a delegate observation to the history
+        observation = AgentDelegateObservation(outputs={}, content='Task completed')
+        observation.action = 'delegate_observation'  # Add the action attribute
+        state.history.append(observation)
+
+        # Mock the analyze_trajectory method to return overthinking
+        mock_analyze_trajectory.return_value = {
+            'overthinking_score': '9',
+            'pattern_observed': ['Analysis Paralysis'],
+            'reasoning': 'The model focuses on heavy planning instead of interacting with the environment.',
+        }
+
+        # Create a non-skipping agent for this test to verify the message action
+        # We need to temporarily disable skip_git_commands to test the full sequence
+        agent.skip_git_commands = False
+
+        # Second step - should detect overthinking and restart with a message
+        action = agent.step(state)
+        assert isinstance(action, MessageAction)
+        assert 'detected overthinking' in action.content.lower()
+
+        # Re-enable skip_git_commands for the rest of the tests
+        agent.skip_git_commands = True
+
+    @patch(
+        'openhands.agenthub.supervisor_agent.supervisor_agent.SupervisorAgent.analyze_trajectory'
+    )
+    def test_step_without_overthinking(self, mock_analyze_trajectory, agent):
+        """Test the step method without overthinking."""
+        state = State(session_id='test', inputs={'test': 'value'})
+
+        # First step - should delegate
+        action = agent.step(state)
+        assert isinstance(action, AgentDelegateAction)
+
+        # Add a delegate observation to the history
+        observation = AgentDelegateObservation(outputs={}, content='Task completed')
+        observation.action = 'delegate_observation'  # Add the action attribute
+        state.history.append(observation)
+
+        # Mock the analyze_trajectory method to return no overthinking
+        mock_analyze_trajectory.return_value = {
+            'overthinking_score': '2',
+            'pattern_observed': None,
+            'reasoning': 'The model interacts well with the environment.',
+        }
+
+        # Second step - should finish normally
+        action = agent.step(state)
+        assert isinstance(action, AgentFinishAction)
+        assert action.task_completed == AgentFinishTaskCompleted.TRUE

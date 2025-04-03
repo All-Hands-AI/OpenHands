@@ -67,6 +67,7 @@ def codeact_user_response_mint(state: State, task: Task, task_config: dict[str, 
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response_mint,
+    'SupervisorAgent': codeact_user_response_mint,  # SupervisorAgent uses the same response function as CodeActAgent
 }
 
 AGENT_CLS_TO_INST_SUFFIX = {
