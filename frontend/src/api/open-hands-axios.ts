@@ -7,12 +7,8 @@ const baseURL = `${window.location.protocol}//${import.meta.env.VITE_BACKEND_BAS
 export const openHands = axios.create({
   baseURL,
   headers: {
+    "Cache-Control": "no-cache",
     "Content-Type": "application/json",
-    Accept: "application/json",
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
-    "Access-Control-Allow-Headers":
-      "Origin, X-Requested-With, Content-Type, Accept, Authorization, x-github-token",
   },
 });
 
@@ -23,15 +19,6 @@ openHands.interceptors.request.use(
     const token = usePersistStore.getState().jwt;
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
-
-      // Add CORS headers
-      Object.assign(config.headers, {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods":
-          "GET, POST, PUT, DELETE, PATCH, OPTIONS",
-        "Access-Control-Allow-Headers":
-          "Origin, X-Requested-With, Content-Type, Accept, Authorization, x-github-token",
-      });
     }
     return config;
   },

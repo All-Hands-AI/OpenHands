@@ -42,15 +42,6 @@ export function UserActions({ onLogout, user, isLoading }: UserActionsProps) {
   const publicKey = useGetPublicKey();
   const listAddresses = useGetListAddresses();
 
-  // Initialize JWT from localStorage on component mount
-  useEffect(() => {
-    const storedJwt = localStorage.getItem("jwt");
-    if (storedJwt) {
-      setAuthTokenHeader(storedJwt);
-      setJwt(storedJwt);
-    }
-  }, [setJwt]);
-
   const [accountContextMenuIsVisible, setAccountContextMenuIsVisible] =
     React.useState(false);
 
@@ -63,7 +54,6 @@ export function UserActions({ onLogout, user, isLoading }: UserActionsProps) {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("jwt");
     removeAuthTokenHeader();
     onLogout();
     closeAccountMenu();
@@ -77,7 +67,6 @@ export function UserActions({ onLogout, user, isLoading }: UserActionsProps) {
     onDisconnect() {
       console.log("Disconnected!");
       reset();
-      localStorage.removeItem("jwt");
       removeAuthTokenHeader();
       handleLogout();
     },

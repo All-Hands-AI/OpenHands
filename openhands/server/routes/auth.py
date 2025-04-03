@@ -43,7 +43,7 @@ def create_jwt_token(user_id: str) -> str:
     }
     if JWT_EXPIRES_IN:
         payload['exp'] = datetime.utcnow() + timedelta(seconds=JWT_EXPIRES_IN)
-
+    
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
 

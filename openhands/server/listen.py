@@ -17,6 +17,7 @@ base_app.mount(
     '/', SPAStaticFiles(directory='./frontend/build', html=True), name='dist'
 )
 
+base_app.add_middleware(JWTAuthMiddleware)
 base_app.add_middleware(
     LocalhostCORSMiddleware,
     allow_credentials=True,
@@ -29,7 +30,7 @@ base_app.add_middleware(
     RateLimitMiddleware,
     rate_limiter=InMemoryRateLimiter(requests=10, seconds=1),
 )
-base_app.add_middleware(JWTAuthMiddleware)
+
 base_app.middleware('http')(AttachConversationMiddleware(base_app))
 base_app.middleware('http')(GitHubTokenMiddleware(base_app))
 
