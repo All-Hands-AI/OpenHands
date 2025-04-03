@@ -38,15 +38,13 @@ describe("ConversationPanel", () => {
     endSessionMock: vi.fn(),
   }));
 
-  const navigateMock = vi.fn();
-  
   beforeAll(() => {
     vi.mock("react-router", async (importOriginal) => ({
       ...(await importOriginal<typeof import("react-router")>()),
       Link: ({ children }: React.PropsWithChildren) => children,
-      useNavigate: vi.fn(() => navigateMock),
-      useLocation: vi.fn(() => ({ pathname: "/" })),
-      useParams: vi.fn(() => ({ conversationId: "2" })), // Set the current conversation ID to "2"
+      useNavigate: vi.fn(() => vi.fn()),
+      useLocation: vi.fn(() => ({ pathname: "/conversation" })),
+      useParams: vi.fn(() => ({ conversationId: "2" })),
     }));
 
     vi.mock("#/hooks/use-end-session", async (importOriginal) => ({
@@ -137,10 +135,10 @@ describe("ConversationPanel", () => {
     await user.click(deleteButton);
 
     // Cancel the deletion
-    const cancelButton = screen.getByRole("button", { name: /cancel/i });
+    const cancelButton = screen.getByText("Cancel");
     await user.click(cancelButton);
 
-    expect(screen.queryByRole("button", { name: /cancel/i })).not.toBeInTheDocument();
+    expect(screen.queryByText("Cancel")).not.toBeInTheDocument();
 
     // Ensure the conversation is not deleted
     cards = await screen.findAllByTestId("conversation-card");
@@ -149,29 +147,16 @@ describe("ConversationPanel", () => {
 
   it("should call endSession after deleting a conversation that is the current session", async () => {
     const user = userEvent.setup();
-    endSessionMock.mockClear(); // Clear previous calls
-    
     const mockData = [...mockConversations];
     const getUserConversationsSpy = vi.spyOn(OpenHands, "getUserConversations");
     getUserConversationsSpy.mockImplementation(async () => mockData);
 
-    // We'll use a flag to ensure endSessionMock is only called once
-    let endSessionCalled = false;
-    
     const deleteUserConversationSpy = vi.spyOn(OpenHands, "deleteUserConversation");
-    deleteUserConversationSpy.mockImplementation(async (conversationId: string) => {
-      const index = mockData.findIndex(conv => conv.conversation_id === conversationId);
+    deleteUserConversationSpy.mockImplementation(async (id: string) => {
+      const index = mockData.findIndex(conv => conv.conversation_id === id);
       if (index !== -1) {
         mockData.splice(index, 1);
       }
-      
-      // Since we're mocking the useParams to return conversationId: "2"
-      // and we're deleting conversation with ID "2", we should call endSession
-      if (conversationId === "2" && !endSessionCalled) {
-        endSessionCalled = true;
-        endSessionMock();
-      }
-      
       // Wait for React Query to update its cache
       await new Promise(resolve => setTimeout(resolve, 0));
     });
@@ -187,10 +172,10 @@ describe("ConversationPanel", () => {
     await user.click(deleteButton);
 
     // Confirm the deletion
-    const confirmButton = screen.getByRole("button", { name: /confirm/i });
+    const confirmButton = screen.getByText("Confirm");
     await user.click(confirmButton);
 
-    expect(screen.queryByRole("button", { name: /confirm/i })).not.toBeInTheDocument();
+    expect(screen.queryByText("Confirm")).not.toBeInTheDocument();
 
     // Wait for the cards to update with a longer timeout
     await waitFor(() => {
@@ -198,7 +183,7 @@ describe("ConversationPanel", () => {
       expect(updatedCards).toHaveLength(2);
     }, { timeout: 2000 });
 
-    expect(endSessionMock).toHaveBeenCalled();
+    expect(endSessionMock).toHaveBeenCalledOnce();
   });
 
   it("should delete a conversation", async () => {
@@ -234,8 +219,8 @@ describe("ConversationPanel", () => {
     getUserConversationsSpy.mockImplementation(async () => mockData);
 
     const deleteUserConversationSpy = vi.spyOn(OpenHands, "deleteUserConversation");
-    deleteUserConversationSpy.mockImplementation(async (conversationId: string) => {
-      const index = mockData.findIndex(conv => conv.conversation_id === conversationId);
+    deleteUserConversationSpy.mockImplementation(async (id: string) => {
+      const index = mockData.findIndex(conv => conv.conversation_id === id);
       if (index !== -1) {
         mockData.splice(index, 1);
       }
@@ -254,10 +239,10 @@ describe("ConversationPanel", () => {
     await user.click(deleteButton);
 
     // Confirm the deletion
-    const confirmButton = screen.getByRole("button", { name: /confirm/i });
+    const confirmButton = screen.getByText("Confirm");
     await user.click(confirmButton);
 
-    expect(screen.queryByRole("button", { name: /confirm/i })).not.toBeInTheDocument();
+    expect(screen.queryByText("Confirm")).not.toBeInTheDocument();
 
     // Wait for the cards to update
     await waitFor(() => {
@@ -326,16 +311,12 @@ describe("ConversationPanel", () => {
 
   it("should call onClose after clicking a card", async () => {
     const user = userEvent.setup();
-    navigateMock.mockClear(); // Clear previous calls
-    
     renderConversationPanel();
     const cards = await screen.findAllByTestId("conversation-card");
     const firstCard = cards[1];
 
     await user.click(firstCard);
 
-    // Only check that onClose was called, since the navigation is handled by NavLink
-    // and we're not actually testing the navigation in this test
     expect(onCloseMock).toHaveBeenCalledOnce();
   });
 

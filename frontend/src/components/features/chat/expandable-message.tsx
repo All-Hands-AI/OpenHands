@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Link } from "react-router";
-import { I18nKey } from "#/i18n/declaration";
 import { code } from "../markdown/code";
 import { ol, ul } from "../markdown/list";
 import ArrowUp from "#/icons/angle-up-solid.svg?react";
@@ -33,7 +32,6 @@ export function ExpandableMessage({
   const [details, setDetails] = useState(message);
 
   useEffect(() => {
-    // Normal handling for other messages
     if (id && i18n.exists(id)) {
       setHeadline(t(id));
       setDetails(message);
@@ -46,7 +44,7 @@ export function ExpandableMessage({
   if (
     config?.FEATURE_FLAGS.ENABLE_BILLING &&
     config?.APP_MODE === "saas" &&
-    id === I18nKey.STATUS$ERROR_LLM_OUT_OF_CREDITS
+    id === "STATUS$ERROR_LLM_OUT_OF_CREDITS"
   ) {
     return (
       <div
@@ -55,13 +53,13 @@ export function ExpandableMessage({
       >
         <div className="text-sm w-full">
           <div className="font-bold text-danger">
-            {t(I18nKey.STATUS$ERROR_LLM_OUT_OF_CREDITS)}
+            {t("STATUS$ERROR_LLM_OUT_OF_CREDITS")}
           </div>
           <Link
             className="mt-2 mb-2 w-full h-10 rounded flex items-center justify-center gap-2 bg-primary text-[#0D0F11]"
             to="/settings/billing"
           >
-            {t(I18nKey.BILLING$CLICK_TO_TOP_UP)}
+            {t("BILLING$CLICK_TO_TOP_UP")}
           </Link>
         </div>
       </div>
