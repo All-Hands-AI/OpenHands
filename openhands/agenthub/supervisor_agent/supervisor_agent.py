@@ -95,6 +95,10 @@ class SupervisorAgent(Agent):
         self.finished = False
         # Don't reset skip_git_commands as it's a configuration parameter
 
+        # Clear delegated_state from extra_data if it exists
+        if hasattr(self, 'state') and hasattr(self.state, 'extra_data'):
+            self.state.extra_data.pop('delegated_state', None)
+
     def get_descriptive_finish_reason(self, finish_reason: str) -> str:
         """Convert basic finish reasons into more descriptive ones."""
         reason_mapping = {
@@ -465,6 +469,15 @@ If the trajectory is good (score 0-3), set "pattern_observed" to null.
         - AgentDelegateAction - delegate to CodeActAgent
         - AgentFinishAction - finish when CodeActAgent is done, including processed history
         """
+        # Sync delegated state from extra_data if available
+        if 'delegated_state' in state.extra_data:
+            delegated_from_state = state.extra_data['delegated_state']
+            if self.delegated != delegated_from_state:
+                logger.info(
+                    f'SupervisorAgent: Updating self.delegated from {self.delegated} to {delegated_from_state} based on state.extra_data'
+                )
+                self.delegated = delegated_from_state
+
         # Process any CmdOutputObservation to store commit hash
         for event in reversed(state.history):
             if isinstance(event, CmdOutputObservation):
@@ -476,7 +489,12 @@ If the trajectory is good (score 0-3), set "pattern_observed" to null.
             return self.pending_actions.popleft()
 
         # Check if we're in the restart sequence after detecting overthinking
-        if 'restart_reason' in state.extra_data and not self.delegated:
+        # Get the delegated state from extra_data if available, otherwise use self.delegated
+        delegated_from_state = state.extra_data.get('delegated_state', self.delegated)
+        logger.info(
+            f'SupervisorAgent: delegated_from_state={delegated_from_state}, self.delegated={self.delegated}, restart_reason in extra_data={"restart_reason" in state.extra_data}'
+        )
+        if 'restart_reason' in state.extra_data and not delegated_from_state:
             # Find the last message or command in the history
             last_event_type = None
             for event in reversed(state.history):
@@ -530,6 +548,9 @@ If the trajectory is good (score 0-3), set "pattern_observed" to null.
                 )
                 # Clear the restart reason since we're handling it now
                 state.extra_data.pop('restart_reason', None)
+                # Update delegated state in both instance and extra_data
+                self.delegated = True
+                state.extra_data['delegated_state'] = True
                 return AgentDelegateAction(
                     agent='CodeActAgent',
                     inputs=state.inputs,
@@ -567,6 +588,8 @@ If the trajectory is good (score 0-3), set "pattern_observed" to null.
                 logger.info(
                     'SupervisorAgent: Delegating to CodeActAgent with clear_history=True'
                 )
+                # Store delegated state in extra_data to ensure it persists between steps
+                state.extra_data['delegated_state'] = True
                 return AgentDelegateAction(
                     agent='CodeActAgent',
                     inputs=state.inputs,
@@ -583,6 +606,8 @@ If the trajectory is good (score 0-3), set "pattern_observed" to null.
             if self.skip_git_commands:
                 logger.info('SupervisorAgent: Skipping git commands (for testing)')
                 self.delegated = True
+                # Store delegated state in extra_data to ensure it persists between steps
+                state.extra_data['delegated_state'] = True
                 return AgentDelegateAction(
                     agent='CodeActAgent',
                     inputs=state.inputs,
@@ -594,6 +619,8 @@ If the trajectory is good (score 0-3), set "pattern_observed" to null.
             # First, check if there are any changes to commit
             # Only queue one action at a time - the controller will call step() again for each action
             self.delegated = True  # Mark as delegated so we don't repeat this step
+            # Store delegated state in extra_data to ensure it persists between steps
+            state.extra_data['delegated_state'] = True
             return CmdRunAction(
                 command='git status --porcelain',
                 thought='Checking if there are any changes to commit before delegation',
@@ -654,6 +681,12 @@ If the trajectory is good (score 0-3), set "pattern_observed" to null.
                                 'patterns': overthinking_analysis['pattern_observed'],
                             }
 
+                            # Store the delegation state in extra_data to ensure it persists between steps
+                            state.extra_data['delegated_state'] = False
+                            logger.info(
+                                f'SupervisorAgent: Set delegated_state in extra_data to False, self.delegated={self.delegated}'
+                            )
+
                             # If skip_git_commands is True, skip the message and directly redelegate
                             if self.skip_git_commands:
                                 logger.info(
@@ -661,6 +694,9 @@ If the trajectory is good (score 0-3), set "pattern_observed" to null.
                                 )
                                 # Clear the restart reason since we're handling it now
                                 state.extra_data.pop('restart_reason', None)
+                                # Update delegated state in both instance and extra_data
+                                self.delegated = True
+                                state.extra_data['delegated_state'] = True
                                 return AgentDelegateAction(
                                     agent='CodeActAgent',
                                     inputs=state.inputs,
