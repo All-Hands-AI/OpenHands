@@ -79,6 +79,7 @@ class CodeActAgent(Agent):
         )
         self.prompt_manager = PromptManager(
             prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
+            agent_config=self.config,
         )
 
         # Create a ConversationMemory instance
