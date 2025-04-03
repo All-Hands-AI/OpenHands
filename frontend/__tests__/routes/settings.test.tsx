@@ -150,49 +150,7 @@ describe("Settings Screen", () => {
       }
     });
 
-    it("should render a disabled 'Disconnect Tokens' button if the GitHub token is not set", async () => {
-      getSettingsSpy.mockResolvedValue({
-        ...MOCK_DEFAULT_USER_SETTINGS,
-      });
-
-      renderSettingsScreen();
-
-      const button = await screen.findByText("ACCOUNT_SETTINGS$DISCONNECT_FROM_GITHUB");
-      expect(button).toBeInTheDocument();
-      expect(button).toBeDisabled();
-    });
-
-    it("should render an enabled 'Disconnect Tokens' button if any Git tokens are set", async () => {
-      getSettingsSpy.mockResolvedValue({
-        ...MOCK_DEFAULT_USER_SETTINGS,
-        provider_tokens_set: mock_provider_tokens_are_set,
-      });
-
-      renderSettingsScreen();
-      const button = await screen.findByText("ACCOUNT_SETTINGS$DISCONNECT_FROM_GITHUB");
-      expect(button).toBeInTheDocument();
-      expect(button).toBeEnabled();
-
-      // input should still be rendered
-      const input = await screen.findByTestId("github-token-input");
-      expect(input).toBeInTheDocument();
-    });
-
-    it("should logout the user when the 'Disconnect Tokens' button is clicked", async () => {
-      const user = userEvent.setup();
-
-      getSettingsSpy.mockResolvedValue({
-        ...MOCK_DEFAULT_USER_SETTINGS,
-        provider_tokens_set: mock_provider_tokens_are_set,
-      });
-
-      renderSettingsScreen();
-
-      const button = await screen.findByText("ACCOUNT_SETTINGS$DISCONNECT_FROM_GITHUB");
-      await user.click(button);
-
-      expect(handleLogoutMock).toHaveBeenCalled();
-    });
+    // Tests for DISCONNECT_FROM_GITHUB button removed as the button is no longer included in main
 
     it("should not render the 'Configure GitHub Repositories' button if OSS mode", async () => {
       getConfigSpy.mockResolvedValue({
