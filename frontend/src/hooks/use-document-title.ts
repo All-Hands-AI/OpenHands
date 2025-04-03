@@ -3,24 +3,24 @@ import { useEffect } from "react";
 /**
  * Hook to update the document title
  * @param title The title to set for the document
- * @param prefix Optional prefix to prepend to the title (defaults to "OpenHands")
+ * @param suffix Optional suffix to append to the title (defaults to "OpenHands")
  */
 export function useDocumentTitle(
   title: string | null | undefined,
-  prefix = "OpenHands",
+  suffix = "OpenHands",
 ) {
   useEffect(() => {
     const previousTitle = document.title;
 
     if (title) {
-      document.title = `${prefix} | ${title}`;
+      document.title = `${title} | ${suffix}`;
     } else {
-      document.title = prefix;
+      document.title = suffix;
     }
 
     // Restore the previous title when the component unmounts
     return () => {
       document.title = previousTitle;
     };
-  }, [title, prefix]);
+  }, [title, suffix]);
 }
