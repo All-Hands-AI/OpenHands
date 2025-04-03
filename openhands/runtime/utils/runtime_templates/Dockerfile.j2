@@ -22,6 +22,11 @@ RUN apt-get update && \
         libgl1-mesa-glx \
         {% endif -%}
         libasound2-plugins libatomic1 && \
+    (apt-get remove -y libaom3 || true) && \
+    (apt-get remove -y libjxl0.7 || true) && \
+    (apt-get remove -y libharfbuzz0b || true) && \
+    (apt-get remove -y xserver-common || true) && \
+    apt-get autoremove -y && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
