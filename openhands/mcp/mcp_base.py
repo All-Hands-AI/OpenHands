@@ -4,6 +4,7 @@ from typing import Any, Dict, Optional
 
 from mcp.types import ImageContent
 from pydantic import BaseModel, Field
+from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
 
 
 class ExtendedImageContent(ImageContent):
@@ -14,6 +15,10 @@ class BaseTool(ABC, BaseModel):
     name: str
     description: str
     parameters: Optional[dict] = None
+
+    @classmethod
+    def postfix(cls) -> str:
+        return '_mcp_tool_call'
 
     class Config:
         arbitrary_types_allowed = True
@@ -31,7 +36,7 @@ class BaseTool(ABC, BaseModel):
         return {
             'type': 'function',
             'function': {
-                'name': self.name,
+                'name': self.name + self.postfix(),
                 'description': self.description,
                 'parameters': self.parameters,
             },
@@ -96,11 +101,3 @@ class ToolResult(BaseModel):
         """Returns a new ToolResult with the given fields replaced."""
         # return self.copy(update=kwargs)
         return type(self)(**{**self.dict(), **kwargs})
-
-
-class CLIResult(ToolResult):
-    """A ToolResult that can be rendered as a CLI output."""
-
-
-class ToolFailure(ToolResult):
-    """A ToolResult that represents a failure."""

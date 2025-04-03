@@ -4,12 +4,11 @@ from typing import Dict, List, Optional
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.sse import sse_client
 from mcp.client.stdio import stdio_client
-from mcp.types import ImageContent, TextContent
+from mcp.types import TextContent
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.mcp.mcp_base import BaseTool, ExtendedImageContent, ToolResult
-from openhands.mcp.mcp_tool_collection import ToolCollection
-
+from openhands.mcp.mcp_base import BaseTool, ToolResult
+from pydantic import BaseModel, Field
 
 class MCPClientTool(BaseTool):
     """Represents a tool proxy that can be called on the MCP server from the client side."""
@@ -28,35 +27,12 @@ class MCPClientTool(BaseTool):
                 item.text for item in result.content if isinstance(item, TextContent)
             )
 
-            # special case for image content
-            if (
-                self.name == 'browser_screenshot'
-                and isinstance(result.content, list)
-                and len(result.content) > 0
-                and isinstance(result.content[0], ImageContent)
-            ):
-                screenshot_content = result.content[0]
-                if screenshot_content.url is not None:
-                    logger.debug(
-                        f'MCP screenshot content url: {screenshot_content.url}'
-                    )
-                    return ToolResult(
-                        output=ExtendedImageContent(
-                            url=screenshot_content.url,
-                            mimeType=screenshot_content.mimeType,
-                            data=screenshot_content.data,
-                            type=screenshot_content.type,
-                            annotations=screenshot_content.annotations,
-                        )
-                    )
-                else:
-                    return ToolResult(output=result.content[0])
             return ToolResult(output=content_str or 'No output returned.')
         except Exception as e:
             return ToolResult(error=f'Error executing tool: {str(e)}')
 
 
-class MCPClients(ToolCollection):
+class MCPClient(BaseModel):
     """
     A collection of tools that connects to an MCP server and manages available tools through the Model Context Protocol.
     """
@@ -64,10 +40,11 @@ class MCPClients(ToolCollection):
     session: Optional[ClientSession] = None
     exit_stack: AsyncExitStack = AsyncExitStack()
     description: str = 'MCP client tools for server interaction'
-
-    def __init__(self):
-        super().__init__()  # Initialize with empty tools list
-        self.name = 'mcp'  # Keep name for backward compatibility
+    tools: List[MCPClientTool] = Field(default_factory=list)
+    tool_map: Dict[str, MCPClientTool] = Field(default_factory=dict)
+    
+    class Config:
+        arbitrary_types_allowed = True
 
     async def connect_sse(self, server_url: str) -> None:
         """Connect to an MCP server using SSE transport."""
@@ -113,8 +90,7 @@ class MCPClients(ToolCollection):
         response = await self.session.list_tools()
 
         # Clear existing tools
-        self.tools = tuple()
-        self.tool_map: Dict[str, BaseTool] = {}
+        self.tools = []
 
         # Create proper tool objects for each server tool
         for tool in response.tools:
@@ -125,17 +101,97 @@ class MCPClients(ToolCollection):
                 session=self.session,
             )
             self.tool_map[tool.name] = server_tool
+            self.tools.append(server_tool)
 
-        self.tools = tuple(self.tool_map.values())
         logger.info(
             f'Connected to server with tools: {[tool.name for tool in response.tools]}'
         )
+        
+    async def call_tool(self, tool_name: str, args: Dict) -> ToolResult:
+        """Call a tool on the MCP server."""
+        if tool_name not in self.tool_map:
+            raise ValueError(f'Tool {tool_name} not found.')
+        return await self.tool_map[tool_name](**args)
 
     async def disconnect(self) -> None:
         """Disconnect from the MCP server and clean up resources."""
         if self.session:
-            await self.exit_stack.aclose()
-            self.session = None
-            self.tools = tuple()
-            self.tool_map = {}
-            logger.info('Disconnected from MCP server')
+            try:
+                # Close the session first
+                if hasattr(self.session, 'close'):
+                    await self.session.close()
+                # Then close the exit stack
+                await self.exit_stack.aclose()
+            except Exception as e:
+                logger.error(f'Error during disconnect: {str(e)}')
+            finally:
+                self.session = None
+                self.tools = tuple()
+                logger.info('Disconnected from MCP server')
+
+def convert_mcp_clients_to_tools(mcp_clients: list[MCPClient] | None) -> list[dict]:
+    """
+    Converts a list of MCPClient instances to ChatCompletionToolParam format
+    that can be used by CodeActAgent.
+
+    Args:
+        mcp_clients: List of MCPClient instances or None
+
+    Returns:
+        List of ChatCompletionToolParam tools ready to be used by CodeActAgent
+    """
+    if mcp_clients is None:
+        logger.warning('mcp_clients is None, returning empty list')
+        return []
+
+    all_mcp_tools = []
+    try:
+        for client in mcp_clients:
+            # Each MCPClient has an mcp_clients property that is a ToolCollection
+            # The ToolCollection has a to_params method that converts tools to ChatCompletionToolParam format
+            for tool in client.tools:
+                mcp_tools = tool.to_param()
+                logger.warn(f'MCP tool: {mcp_tools}')
+                all_mcp_tools.append(mcp_tools)
+    except Exception as e:
+        logger.error(f'Error in convert_mcp_clients_to_tools: {e}')
+        return []
+    return all_mcp_tools
+
+async def create_mcp_clients(
+    sse_mcp_server: List[str], commands: List[str], args: List[List[str]]
+) -> List[MCPClient]:
+    mcp_clients: List[MCPClient] = []
+    # Initialize SSE connections
+    if sse_mcp_server:
+        for server_url in sse_mcp_server:
+            logger.info(
+                f'Initializing MCP agent for {server_url} with SSE connection...'
+            )
+
+            client = MCPClient()
+            try:
+                await client.connect_sse(server_url)
+                mcp_clients.append(client)
+                logger.info(f'Connected to MCP server {server_url} via SSE')
+            except Exception as e:
+                logger.error(f'Failed to connect to {server_url}: {str(e)}')
+                raise
+
+    # Initialize stdio connections
+    if commands:
+        for command, command_args in zip(commands, args):
+            logger.info(
+                f'Initializing MCP agent for {command} with stdio connection...'
+            )
+
+            client = MCPClient()
+            try:
+                await client.connect_stdio(command, command_args)
+                mcp_clients.append(client)
+                logger.info(f'Connected to MCP server via stdio with command {command}')
+            except Exception as e:
+                logger.error(f'Failed to connect with command {command}: {str(e)}')
+                raise
+
+    return mcp_clients

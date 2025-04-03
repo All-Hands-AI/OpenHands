@@ -273,6 +273,8 @@ class AgentController:
         try:
             await self._step()
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             self.log(
                 'error',
                 f'Error while running the agent (session ID: {self.id}): {e}. '

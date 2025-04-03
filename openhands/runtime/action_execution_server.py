@@ -35,7 +35,7 @@ from uvicorn import run
 
 from openhands.core.exceptions import BrowserUnavailableException
 from openhands.core.logger import openhands_logger as logger
-from openhands.core.setup import create_mcp_agents
+from openhands.core.setup import create_mcp_clients
 from openhands.events.action import (
     Action,
     BrowseInteractiveAction,
@@ -529,28 +529,28 @@ class ActionExecutor:
             raise ValueError('No MCP servers or stdio MCP config found')
 
         logger.debug(f'SSE MCP servers: {mcp_server_urls}')
-        mcp_agents = await create_mcp_agents(mcp_server_urls, commands, args)
+        mcp_clients = await create_mcp_clients(mcp_server_urls, commands, args)
         logger.debug(f'MCP action received: {action}')
         # Find the MCP agent that has the matching tool name
-        matching_agent = None
-        logger.debug(f'MCP agents: {mcp_agents}')
+        matching_client = None
+        logger.debug(f'MCP clients: {mcp_clients}')
         logger.debug(f'MCP action name: {action.name}')
-        for agent in mcp_agents:
-            if action.name in [tool.name for tool in agent.mcp_clients.tools]:
-                matching_agent = agent
+        for client in mcp_clients:
+            if action.name in [tool.name for tool in client.tools]:
+                matching_client = client
                 break
-        if matching_agent is None:
+        if matching_client is None:
             raise ValueError(
                 f'No matching MCP agent found for tool name: {action.name}'
             )
-        logger.debug(f'Matching agent: {matching_agent}')
+        logger.debug(f'Matching client: {matching_client}')
         args_dict = json.loads(action.arguments)
-        response = await matching_agent.run_tool(action.name, args_dict)
+        response = await matching_client.call_tool(action.name, args_dict)
         logger.debug(f'MCP response: {response}')
 
-        # close agent connections
-        for agent in mcp_agents:
-            await agent.cleanup()
+        # close client connections
+        for client in mcp_clients:
+            await client.disconnect()
 
         return MCPObservation(content=f'MCP result:{response}')
 
