@@ -919,11 +919,34 @@ class AgentController:
                 max_str = f'{max_value:.2f}'
 
             if self.headless_mode:
-                e = RuntimeError(
-                    f'Agent reached maximum {limit_type} in headless mode. '
-                    f'Current {limit_type}: {current_str}, max {limit_type}: {max_str}'
-                )
-                await self._react_to_exception(e)
+                # Check if we're in a delegate agent (CodeActAgent) with a parent (SupervisorAgent)
+                if self.is_delegate and self.id.endswith('-delegate'):
+                    # Set a flag in the state's extra_data to indicate max iterations reached
+                    self.state.extra_data['max_iterations_reached'] = True
+                    self.state.extra_data['max_iterations_reason'] = (
+                        f'Agent reached maximum {limit_type} in headless mode. '
+                        f'Current {limit_type}: {current_str}, max {limit_type}: {max_str}'
+                    )
+                    
+                    # Create a delegate observation to return to the supervisor
+                    observation = AgentDelegateObservation(
+                        outputs={},
+                        content=f'CodeActAgent encountered an error during execution.',
+                    )
+                    observation.action = 'delegate_observation'
+                    
+                    # Add the observation to the history
+                    self.state.history.append(observation)
+                    
+                    # Set the agent state to DONE to return control to the supervisor
+                    await self.set_agent_state_to(AgentState.DONE)
+                else:
+                    # Original behavior for non-delegate agents
+                    e = RuntimeError(
+                        f'Agent reached maximum {limit_type} in headless mode. '
+                        f'Current {limit_type}: {current_str}, max {limit_type}: {max_str}'
+                    )
+                    await self._react_to_exception(e)
             else:
                 e = RuntimeError(
                     f'Agent reached maximum {limit_type}. '

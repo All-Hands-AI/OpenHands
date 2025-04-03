@@ -546,8 +546,10 @@ If the trajectory is good (score 0-3), set "pattern_observed" to null.
                 logger.info(
                     'SupervisorAgent: Redelegating to CodeActAgent with clear_history=True'
                 )
-                # Clear the restart reason since we're handling it now
+                # Clear the restart reason and max iterations flags since we're handling them now
                 state.extra_data.pop('restart_reason', None)
+                state.extra_data.pop('max_iterations_reached', None)
+                state.extra_data.pop('max_iterations_reason', None)
                 # Update delegated state in both instance and extra_data
                 self.delegated = True
                 state.extra_data['delegated_state'] = True
@@ -634,9 +636,19 @@ If the trajectory is good (score 0-3), set "pattern_observed" to null.
             for event in reversed(state.history):
                 if hasattr(event, 'action') and event.action == 'delegate_observation':
                     delegate_observation_found = True
-                    logger.info(
-                        'SupervisorAgent: CodeActAgent has finished, processing history and analyzing trajectory'
-                    )
+                    
+                    # Check if max iterations were reached
+                    max_iterations_reached = state.extra_data.get('max_iterations_reached', False)
+                    if max_iterations_reached:
+                        logger.info(
+                            'SupervisorAgent: CodeActAgent reached maximum iterations, processing history and analyzing trajectory'
+                        )
+                        reason = state.extra_data.get('max_iterations_reason', 'Unknown reason')
+                        logger.info(f'SupervisorAgent: Max iterations reason: {reason}')
+                    else:
+                        logger.info(
+                            'SupervisorAgent: CodeActAgent has finished, processing history and analyzing trajectory'
+                        )
 
                     # Process the history of actions and observations
                     processed_history = self.process_history_with_observations(state)
@@ -692,8 +704,10 @@ If the trajectory is good (score 0-3), set "pattern_observed" to null.
                                 logger.info(
                                     'SupervisorAgent: Skipping git commands (for testing)'
                                 )
-                                # Clear the restart reason since we're handling it now
+                                # Clear the restart reason and max iterations flags since we're handling them now
                                 state.extra_data.pop('restart_reason', None)
+                                state.extra_data.pop('max_iterations_reached', None)
+                                state.extra_data.pop('max_iterations_reason', None)
                                 # Update delegated state in both instance and extra_data
                                 self.delegated = True
                                 state.extra_data['delegated_state'] = True
