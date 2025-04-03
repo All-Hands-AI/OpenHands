@@ -235,7 +235,8 @@ def goto_line(line_number: int) -> None:
         line_number: int: The line number to move to.
     """
     global CURRENT_FILE, CURRENT_LINE, WINDOW
-    _check_current_file()
+    if not _check_current_file():
+        return
 
     with open(str(CURRENT_FILE)) as file:
         total_lines = max(1, sum(1 for _ in file))
@@ -244,10 +245,6 @@ def goto_line(line_number: int) -> None:
         return
 
     CURRENT_LINE = _clamp(line_number, 1, total_lines)
-
-    if CURRENT_FILE is None:
-        _output_error('No file open. Use the open_file function first.')
-        return
     output = _cur_file_header(CURRENT_FILE, total_lines)
     output += _print_window(
         CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=True, ignore_window=False
@@ -262,10 +259,7 @@ def scroll_down() -> None:
         None
     """
     global CURRENT_FILE, CURRENT_LINE, WINDOW
-    _check_current_file()
-
-    if CURRENT_FILE is None:
-        _output_error('No file open. Use the open_file function first.')
+    if not _check_current_file():
         return
     with open(str(CURRENT_FILE)) as file:
         total_lines = max(1, sum(1 for _ in file))
@@ -284,10 +278,7 @@ def scroll_up() -> None:
         None
     """
     global CURRENT_FILE, CURRENT_LINE, WINDOW
-    _check_current_file()
-
-    if CURRENT_FILE is None:
-        _output_error('No file open. Use the open_file function first.')
+    if not _check_current_file():
         return
     with open(str(CURRENT_FILE)) as file:
         total_lines = max(1, sum(1 for _ in file))

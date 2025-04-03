@@ -3,7 +3,7 @@ from typing import Protocol
 from openhands.storage.files import FileStore
 
 
-class E2BFilesystem(Protocol):
+class SupportsFilesystemOperations(Protocol):
     def write(self, path: str, contents: str | bytes) -> None: ...
     def read(self, path: str) -> str: ...
     def list(self, path: str) -> list[str]: ...
@@ -11,7 +11,7 @@ class E2BFilesystem(Protocol):
 
 
 class E2BFileStore(FileStore):
-    def __init__(self, filesystem: E2BFilesystem) -> None:
+    def __init__(self, filesystem: SupportsFilesystemOperations) -> None:
         self.filesystem = filesystem
 
     def write(self, path: str, contents: str | bytes) -> None:
