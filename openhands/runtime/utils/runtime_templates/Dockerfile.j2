@@ -23,7 +23,6 @@ RUN apt-get update && \
         {% endif -%}
         libasound2-plugins libatomic1 && \
     {%- if 'ubuntu' in base_image -%}
-    # If using a stock ubuntu image, install Python 3.12 and Node 22
     curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
     apt-get install -y nodejs python3.12 python-is-python3 && \
     {% endif -%}
