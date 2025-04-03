@@ -160,6 +160,11 @@ while IFS= read -r task_image; do
 
         export PYTHONPATH=evaluation/benchmarks/the_agent_company:$PYTHONPATH && \
             eval "$COMMAND"
+        # Prune unused images and volumes
+        docker image rm "$task_image"
+        docker images "ghcr.io/all-hands-ai/runtime" -q | xargs -r docker rmi -f
+        docker volume prune -f
+        docker system prune -f
     fi
 done < "$temp_file"
 

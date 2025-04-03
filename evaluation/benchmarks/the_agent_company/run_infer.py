@@ -52,7 +52,7 @@ def get_config(
 
     config = AppConfig(
         run_as_openhands=False,
-        max_budget_per_task=4,
+        max_budget_per_task=10,
         max_iterations=100,
         save_trajectory_path=os.path.join(
             mount_path_on_host, f'traj_{task_short_name}.json'
@@ -155,9 +155,8 @@ Here is the task: """
     instruction += '\n\nIMPORTANT: If there are the-agent-company.com websites mentioned in the task description, NOTE that these websites are privately hosted.\n'
     instruction += 'IMPORTANT: You should NEVER ask for Human Help.\n'
     if 'gitlab' in dependencies:
-        instruction += "IMPORTANT: You are already signed in to Gitlab but here are the sign-in credentials for your reference. Gitlab username is 'root' and password is 'theagentcompany'"
-    print(instruction)
-    exit()
+        instruction += "IMPORTANT: You are already signed in to Gitlab, but here are the sign-in credentials for your reference - Gitlab username is 'root' and password is 'theagentcompany'"
+
     state: State | None = asyncio.run(
         run_controller(
             config=config,
