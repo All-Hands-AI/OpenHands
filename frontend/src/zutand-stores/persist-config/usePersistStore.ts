@@ -36,13 +36,9 @@ const usePersistStore = create<PersistStore & { actions: MultisigAction }>()(
         setPublicKey: (publicKey: string) => set({ publicKey }),
         setListAddresses: (listAddresses: string[]) => set({ listAddresses }),
         setJwt: (jwt: string) => {
-          // Store JWT in both zustand and localStorage
-          localStorage.setItem("jwt", jwt);
           set({ jwt });
         },
         reset: () => {
-          // Clear JWT from localStorage on reset
-          localStorage.removeItem("jwt");
           set((state) => ({
             signedLogin: "",
             publicKey: "",
