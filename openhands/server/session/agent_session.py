@@ -133,6 +133,8 @@ class AgentSession:
                         config.mcp.sse.mcp_servers,
                         config.mcp.stdio.commands,
                         config.mcp.stdio.args,
+                        sid=self.sid,
+                        user_id=self.user_id,
                     )
 
                     # Give some time for MCP connections to stabilize
