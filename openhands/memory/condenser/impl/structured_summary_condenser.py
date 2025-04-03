@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 from openhands.core.config.condenser_config import (
     StructuredSummaryCondenserConfig,
 )
+from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message, TextContent
 from openhands.events.action.agent import CondensationAction
 from openhands.events.observation.agent import AgentCondensationObservation
@@ -269,8 +270,11 @@ Capture all relevant information, especially:
             # Create a StateSummary object
             summary = StateSummary.model_validate(args_dict)
 
-        except (AttributeError, KeyError, json.JSONDecodeError) as e:
-            raise ValueError(f'Failed to extract summary from response: {str(e)}')
+        except (ValueError, AttributeError, KeyError, json.JSONDecodeError) as e:
+            logger.warning(
+                f'Failed to parse summary tool call: {e}. Using empty summary.'
+            )
+            summary = StateSummary()
 
         self.add_metadata('response', response.model_dump())
         self.add_metadata('metrics', self.llm.metrics.get())
