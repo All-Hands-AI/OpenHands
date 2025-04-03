@@ -6,13 +6,10 @@ The Supervisor Agent is designed to delegate tasks to other agents, monitor thei
 
 In its current implementation, the Supervisor Agent:
 
-1. Delegates all tasks to the CodeActAgent
-2. Waits for the CodeActAgent to complete
-3. Processes the history of actions and observations from the CodeActAgent
-4. Stores the processed history in `state.extra_data['processed_history']`
-5. Analyzes the trajectory for overthinking using an LLM
-6. If overthinking is detected, restarts the task with CodeActAgent
-7. If no overthinking is detected, finishes the task
+1. If history has less than 5 events, saves repository state and delegates to CodeActAgent
+2. If history has 5 or more events, analyzes the trajectory for overthinking
+3. If overthinking is detected OR history has less than 5 events, delegates to CodeActAgent
+4. If no overthinking is detected AND history has 5 or more events, finishes the interaction
 
 ## History Processing
 

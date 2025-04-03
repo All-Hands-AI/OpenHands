@@ -458,26 +458,19 @@ If the trajectory is good (score 0-3), set "pattern_observed" to null.
     def step(self, state: State) -> Action:
         """Performs one step using the Supervisor Agent.
 
-        This method delegates to CodeActAgent on the first step,
-        processes the history of actions and observations when CodeActAgent is done,
-        analyzes the trajectory for overthinking, and either finishes or restarts the task.
+        This method:
+        1. If history < 5 events, saves repository state and delegates to CodeActAgent
+        2. If history >= 5 events, analyzes for overthinking
+        3. If overthinking detected OR history < 5, delegates to CodeActAgent
+        4. If no overthinking AND history >= 5, finishes the interaction
 
         Parameters:
         - state (State): used to get updated info
 
         Returns:
         - AgentDelegateAction - delegate to CodeActAgent
-        - AgentFinishAction - finish when CodeActAgent is done, including processed history
+        - AgentFinishAction - finish when CodeActAgent is done and no overthinking detected
         """
-        # Sync delegated state from extra_data if available
-        if 'delegated_state' in state.extra_data:
-            delegated_from_state = state.extra_data['delegated_state']
-            if self.delegated != delegated_from_state:
-                logger.info(
-                    f'SupervisorAgent: Updating self.delegated from {self.delegated} to {delegated_from_state} based on state.extra_data'
-                )
-                self.delegated = delegated_from_state
-
         # Process any CmdOutputObservation to store commit hash
         for event in reversed(state.history):
             if isinstance(event, CmdOutputObservation):
@@ -489,118 +482,53 @@ If the trajectory is good (score 0-3), set "pattern_observed" to null.
             return self.pending_actions.popleft()
 
         # Check if we're in the restart sequence after detecting overthinking
-        # Get the delegated state from extra_data if available, otherwise use self.delegated
-        delegated_from_state = state.extra_data.get('delegated_state', self.delegated)
-        logger.info(
-            f'SupervisorAgent: delegated_from_state={delegated_from_state}, self.delegated={self.delegated}, restart_reason in extra_data={"restart_reason" in state.extra_data}'
-        )
-        if 'restart_reason' in state.extra_data and not delegated_from_state:
+        if 'restart_reason' in state.extra_data and not state.extra_data.get('delegated_state', False):
             # Find the last message or command in the history
             last_event_type = None
             for event in reversed(state.history):
-                if isinstance(event, MessageAction):
-                    if 'detected overthinking' in event.content.lower():
-                        last_event_type = 'overthinking_message'
-                        break
-                elif isinstance(event, CmdRunAction):
-                    if 'git reset --hard' in event.command:
-                        last_event_type = 'git_reset'
-                        break
-                elif isinstance(event, CmdOutputObservation):
-                    if 'git reset --hard' in event.command:
-                        last_event_type = 'git_reset_output'
-                        break
+                if isinstance(event, MessageAction) and 'detected overthinking' in event.content.lower():
+                    last_event_type = 'overthinking_message'
+                    break
+                elif isinstance(event, CmdRunAction) and 'git reset --hard' in event.command:
+                    last_event_type = 'git_reset'
+                    break
+                elif isinstance(event, CmdOutputObservation) and 'git reset --hard' in event.command:
+                    last_event_type = 'git_reset_output'
+                    break
 
             # After the overthinking message, reset the repository
             if last_event_type == 'overthinking_message':
                 # Reset the repository to the state before delegation
-                # First, check if we have a saved commit hash
-                commit_hash = self.pre_delegation_commit
-                if (
-                    not commit_hash
-                    and hasattr(state, 'extra_data')
-                    and 'pre_delegation_commit' in state.extra_data
-                ):
-                    commit_hash = state.extra_data['pre_delegation_commit']
-
+                commit_hash = self.pre_delegation_commit or state.extra_data.get('pre_delegation_commit')
                 if commit_hash:
-                    logger.info(
-                        f'SupervisorAgent: Resetting repository to commit {commit_hash}'
-                    )
-                    # Reset the repository to the saved commit
+                    logger.info(f'SupervisorAgent: Resetting repository to commit {commit_hash}')
                     return CmdRunAction(
                         command=f'git reset --hard {commit_hash}',
                         thought='Resetting the repository to the state before delegation',
                     )
                 else:
-                    logger.warning(
-                        'SupervisorAgent: No pre-delegation commit hash found, cannot reset repository'
-                    )
-                    # Skip to delegation
-                    last_event_type = 'git_reset_output'
+                    logger.warning('SupervisorAgent: No pre-delegation commit hash found, cannot reset repository')
+                    last_event_type = 'git_reset_output'  # Skip to delegation
 
             # After git reset, delegate to CodeActAgent again
             if last_event_type == 'git_reset' or last_event_type == 'git_reset_output':
-                # Clear the history before redelegating
-                # The controller will handle clearing the history before delegation
-                logger.info(
-                    'SupervisorAgent: Redelegating to CodeActAgent with clear_history=True'
-                )
-                # Clear the restart reason and max iterations flags since we're handling them now
+                logger.info('SupervisorAgent: Redelegating to CodeActAgent with clear_history=True')
+                # Clear the restart reason and max iterations flags
                 state.extra_data.pop('restart_reason', None)
                 state.extra_data.pop('max_iterations_reached', None)
                 state.extra_data.pop('max_iterations_reason', None)
-                # Update delegated state in both instance and extra_data
+                # Update delegated state
                 self.delegated = True
                 state.extra_data['delegated_state'] = True
                 return AgentDelegateAction(
                     agent='CodeActAgent',
                     inputs=state.inputs,
-                    thought="I'll delegate this task to CodeActAgent again with a fresh approach, resetting the repository and clearing the history to start clean.",
-                    clear_history=True,  # Add this parameter to clear history before delegation
+                    thought="I'll delegate this task to CodeActAgent again with a fresh approach.",
+                    clear_history=True,
                 )
 
-        # Track git command sequence for repository state saving
-        # We need to check if we're in the middle of the git command sequence
-        last_cmd = None
-        for event in reversed(state.history):
-            if isinstance(event, CmdRunAction):
-                last_cmd = event.command
-                break
-            elif isinstance(event, CmdOutputObservation):
-                last_cmd = event.command
-                break
-
-        # If we've started the git command sequence but haven't finished it yet
-        if self.delegated and last_cmd is not None:
-            # After git status, commit any changes
-            if 'git status' in last_cmd:
-                return CmdRunAction(
-                    command='git diff-index --quiet HEAD || git commit -a -m "SUPERVISOR_AGENT_CHECKPOINT: Saving state before delegation"',
-                    thought='Committing any changes before delegation',
-                )
-            # After commit, get the commit hash
-            elif 'git commit' in last_cmd or 'git diff-index' in last_cmd:
-                return CmdRunAction(
-                    command='git rev-parse HEAD',
-                    thought='Getting the commit hash to save for potential reset',
-                )
-            # After getting commit hash, delegate to CodeActAgent
-            elif 'git rev-parse HEAD' in last_cmd:
-                logger.info(
-                    'SupervisorAgent: Delegating to CodeActAgent with clear_history=True'
-                )
-                # Store delegated state in extra_data to ensure it persists between steps
-                state.extra_data['delegated_state'] = True
-                return AgentDelegateAction(
-                    agent='CodeActAgent',
-                    inputs=state.inputs,
-                    thought="I'll delegate this task to CodeActAgent to handle it.",
-                    clear_history=True,  # Always clear history when delegating
-                )
-
-        # Check if we've already delegated
-        if not self.delegated:
+        # Check if history is less than 5 events or we haven't delegated yet
+        if len(state.history) < 5 or not self.delegated:
             # First step: save the repository state before delegating
             logger.info('SupervisorAgent: Saving repository state before delegating')
 
@@ -608,161 +536,111 @@ If the trajectory is good (score 0-3), set "pattern_observed" to null.
             if self.skip_git_commands:
                 logger.info('SupervisorAgent: Skipping git commands (for testing)')
                 self.delegated = True
-                # Store delegated state in extra_data to ensure it persists between steps
                 state.extra_data['delegated_state'] = True
                 return AgentDelegateAction(
                     agent='CodeActAgent',
                     inputs=state.inputs,
                     thought="I'll delegate this task to CodeActAgent to handle it.",
-                    clear_history=True,  # Always clear history when delegating
+                    clear_history=True,
                 )
 
-            # Create a commit to save the current state
-            # First, check if there are any changes to commit
-            # Only queue one action at a time - the controller will call step() again for each action
-            self.delegated = True  # Mark as delegated so we don't repeat this step
-            # Store delegated state in extra_data to ensure it persists between steps
+            # If we're in the middle of the git command sequence
+            last_cmd = None
+            for event in reversed(state.history):
+                if isinstance(event, CmdRunAction):
+                    last_cmd = event.command
+                    break
+                elif isinstance(event, CmdOutputObservation):
+                    last_cmd = event.command
+                    break
+
+            if last_cmd is not None:
+                # After git status, commit any changes
+                if 'git status' in last_cmd:
+                    return CmdRunAction(
+                        command='git diff-index --quiet HEAD || git commit -a -m "SUPERVISOR_AGENT_CHECKPOINT: Saving state before delegation"',
+                        thought='Committing any changes before delegation',
+                    )
+                # After commit, get the commit hash
+                elif 'git commit' in last_cmd or 'git diff-index' in last_cmd:
+                    return CmdRunAction(
+                        command='git rev-parse HEAD',
+                        thought='Getting the commit hash to save for potential reset',
+                    )
+                # After getting commit hash, delegate to CodeActAgent
+                elif 'git rev-parse HEAD' in last_cmd:
+                    logger.info('SupervisorAgent: Delegating to CodeActAgent with clear_history=True')
+                    state.extra_data['delegated_state'] = True
+                    return AgentDelegateAction(
+                        agent='CodeActAgent',
+                        inputs=state.inputs,
+                        thought="I'll delegate this task to CodeActAgent to handle it.",
+                        clear_history=True,
+                    )
+            
+            # Start the git command sequence
+            self.delegated = True
             state.extra_data['delegated_state'] = True
             return CmdRunAction(
                 command='git status --porcelain',
                 thought='Checking if there are any changes to commit before delegation',
             )
 
-        # If we've already delegated and CodeActAgent is done, we're also done
-        if not self.finished:
-            # Check if the delegated agent has finished
-            # Look for AgentDelegateObservation in the history
-            delegate_observation_found = False
+        # Check if the delegated agent has finished
+        delegate_observation_found = False
+        for event in reversed(state.history):
+            if (isinstance(event, AgentDelegateObservation) or 
+                (hasattr(event, 'observation') and event.observation == ObservationType.DELEGATE)):
+                delegate_observation_found = True
+                break
 
-            # Log the entire history for debugging
-            logger.info(f'SupervisorAgent: History length: {len(state.history)}')
-            for j, hist_event in enumerate(state.history):
-                logger.info(
-                    f'SupervisorAgent: History event {j}: {type(hist_event).__name__}'
-                )
-
-            for i, event in enumerate(reversed(state.history)):
-                logger.info(
-                    f'SupervisorAgent: Checking event {i}: {type(event).__name__}'
-                )
-                if hasattr(event, 'action'):
-                    logger.info(
-                        f'SupervisorAgent: Event has action attribute: {event.action}'
-                    )
-
-                # Check for AgentDelegateObservation by either instance type or observation type
-                logger.info(
-                    f'SupervisorAgent: Checking if event is AgentDelegateObservation: {isinstance(event, AgentDelegateObservation)}'
-                )
-                if hasattr(event, 'observation'):
-                    logger.info(
-                        f'SupervisorAgent: Event has observation attribute: {event.observation}'
-                    )
-                    if hasattr(event.observation, '__eq__'):
-                        logger.info(
-                            f'SupervisorAgent: Observation equals DELEGATE: {event.observation == ObservationType.DELEGATE}'
-                        )
-
-                if (
-                    isinstance(event, AgentDelegateObservation)
-                    or (
-                        hasattr(event, 'observation')
-                        and event.observation == ObservationType.DELEGATE
-                    )
-                ):
-                    logger.info('SupervisorAgent: Found delegate observation')
-                    delegate_observation_found = True
-
-                    # Check if max iterations were reached
-                    max_iterations_reached = state.extra_data.get(
-                        'max_iterations_reached', False
-                    )
-                    if max_iterations_reached:
-                        logger.info(
-                            'SupervisorAgent: CodeActAgent reached maximum iterations, processing history and analyzing trajectory'
-                        )
-                        reason = state.extra_data.get(
-                            'max_iterations_reason', 'Unknown reason'
-                        )
-                        logger.info(f'SupervisorAgent: Max iterations reason: {reason}')
-                    else:
-                        logger.info(
-                            'SupervisorAgent: CodeActAgent has finished, processing history and analyzing trajectory'
-                        )
-
-        # Always process history and run overthinking analysis if there are at least 2 events in the history
-        # This ensures we always run the analysis regardless of whether there's a delegate observation or finish action
+        # Process history and run overthinking analysis if there are at least 5 events in the history
         overthinking_detected = False
-        if len(state.history) >= 2:
+        if len(state.history) >= 5:
             # Process the history of actions and observations
             processed_history = self.process_history_with_observations(state)
-
-            # Store the processed history in the state's extra_data
             state.extra_data['processed_history'] = processed_history
-
-            # Log a sample of the processed history
-            logger.info(
-                f'Processed history sample: {processed_history[:500]}...'
-            )
-
+            
             # Analyze the trajectory for overthinking
-            logger.info(
-                'SupervisorAgent: Analyzing trajectory for overthinking'
-            )
+            logger.info('SupervisorAgent: Analyzing trajectory for overthinking')
             overthinking_analysis = self.analyze_trajectory(processed_history)
-
+            
             # Store the overthinking analysis in the state's extra_data
             if overthinking_analysis:
-                state.extra_data['overthinking_analysis'] = (
-                    overthinking_analysis
-                )
-                logger.info(
-                    f'SupervisorAgent: Overthinking analysis: {overthinking_analysis}'
-                )
-
+                state.extra_data['overthinking_analysis'] = overthinking_analysis
+                logger.info(f'SupervisorAgent: Overthinking analysis: {overthinking_analysis}')
+                
                 # Check if the trajectory shows overthinking
                 if overthinking_analysis['pattern_observed'] is not None:
                     overthinking_detected = True
-                    # Restart the task with CodeActAgent
-                    logger.info(
-                        'SupervisorAgent: Detected overthinking, restarting task with CodeActAgent'
-                    )
-
+                    logger.info('SupervisorAgent: Detected overthinking, restarting task with CodeActAgent')
+                    
                     # Reset the agent state
                     self.delegated = False
                     self.finished = False
-
+                    
                     # Store the overthinking info for the restart sequence
                     state.extra_data['restart_reason'] = {
                         'score': overthinking_analysis['overthinking_score'],
                         'patterns': overthinking_analysis['pattern_observed'],
                     }
-
-                    # Store the delegation state in extra_data to ensure it persists between steps
                     state.extra_data['delegated_state'] = False
-                    logger.info(
-                        f'SupervisorAgent: Set delegated_state in extra_data to False, self.delegated={self.delegated}'
-                    )
-
+                    
                     # If skip_git_commands is True, skip the message and directly redelegate
                     if self.skip_git_commands:
-                        logger.info(
-                            'SupervisorAgent: Skipping git commands (for testing)'
-                        )
-                        # Clear the restart reason and max iterations flags since we're handling them now
+                        logger.info('SupervisorAgent: Skipping git commands (for testing)')
                         state.extra_data.pop('restart_reason', None)
                         state.extra_data.pop('max_iterations_reached', None)
                         state.extra_data.pop('max_iterations_reason', None)
-                        # Update delegated state in both instance and extra_data
                         self.delegated = True
                         state.extra_data['delegated_state'] = True
                         return AgentDelegateAction(
                             agent='CodeActAgent',
                             inputs=state.inputs,
-                            thought="I'll delegate this task to CodeActAgent again with a fresh approach, resetting the repository and clearing the history to start clean.",
-                            clear_history=True,  # Add this parameter to clear history before delegation
+                            thought="I'll delegate this task to CodeActAgent again with a fresh approach.",
+                            clear_history=True,
                         )
-
+                    
                     # Return a message action explaining the restart
                     return MessageAction(
                         content=(
@@ -773,51 +651,32 @@ If the trajectory is good (score 0-3), set "pattern_observed" to null.
                         ),
                     )
 
-        # If delegate observation was found and no overthinking was detected or analysis failed, finish normally
-        if delegate_observation_found and not overthinking_detected:
+        # If delegate observation was found, no overthinking was detected, and history >= 5, finish normally
+        if delegate_observation_found and not overthinking_detected and len(state.history) >= 5:
             self.finished = True
             return AgentFinishAction(
                 final_thought=(
                     "The CodeActAgent has completed the task. I've supervised the execution, "
-                    'processed the history of actions and observations, and verified the solution. '
-                    "The complete history is available in state.extra_data['processed_history']."
+                    'processed the history of actions and observations, and verified the solution.'
                 ),
                 task_completed=AgentFinishTaskCompleted.TRUE,
             )
 
-            # If we didn't find a delegate observation, we're still waiting
-            if not delegate_observation_found:
-                logger.info(
-                    'SupervisorAgent: Still waiting for CodeActAgent to complete'
-                )
-
-        # If we're here, we're waiting for the delegated agent to finish
-        logger.info('SupervisorAgent: Waiting for CodeActAgent to complete')
-
         # Check if we've already delegated to CodeActAgent
         delegation_found = False
         for event in reversed(state.history):
-            if (
-                isinstance(event, AgentDelegateAction)
-                and event.agent == 'CodeActAgent'
-                and event.source == EventSource.AGENT
-            ):
+            if (isinstance(event, AgentDelegateAction) and 
+                event.agent == 'CodeActAgent' and 
+                event.source == EventSource.AGENT):
                 delegation_found = True
                 break
 
-        # If we've already delegated, we should not return any action
-        # This ensures the control flow is transferred to the delegate
+        # If we've already delegated, return NullAction to avoid taking steps while delegate is active
         if delegation_found:
-            logger.info(
-                'SupervisorAgent: Already delegated to CodeActAgent, returning NullAction'
-            )
-            # Return NullAction to avoid taking any steps while delegate is active
+            logger.info('SupervisorAgent: Already delegated to CodeActAgent, returning NullAction')
             return NullAction()
 
         # If we haven't delegated yet, return a ThinkAction
         return AgentThinkAction(
-            thought=(
-                "I've delegated this task to CodeActAgent. I'm waiting for it to complete. "
-                "Once it's done, I'll analyze the execution trajectory for overthinking patterns."
-            )
+            thought="I've delegated this task to CodeActAgent. I'm waiting for it to complete."
         )
