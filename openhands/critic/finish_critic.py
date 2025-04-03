@@ -22,10 +22,5 @@ class AgentFinishedCritic(BaseCritic):
 
         if isinstance(last_action, AgentFinishAction):
             return CriticResult(score=1, message='Agent finished.')
-            # if last_action.task_completed == AgentFinishTaskCompleted.TRUE.value:
-            # else:
-            #     return CriticResult(
-            #         score=0, message='Agent finished but task is not completed.'
-            #     )
         else:
             return CriticResult(score=0, message='Agent did not finish.')
