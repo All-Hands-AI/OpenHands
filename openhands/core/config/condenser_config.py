@@ -122,6 +122,29 @@ class LLMAttentionCondenserConfig(BaseModel):
     model_config = {'extra': 'forbid'}
 
 
+class StructuredSummaryCondenserConfig(BaseModel):
+    """Configuration for LLMCondenser."""
+
+    type: Literal['structured'] = Field('structured')
+    llm_config: LLMConfig = Field(
+        ..., description='Configuration for the LLM to use for condensing.'
+    )
+
+    # at least one event by default, because the best guess is that it's the user task
+    keep_first: int = Field(
+        default=1,
+        description='Number of initial events to always keep in history.',
+        ge=0,
+    )
+    max_size: int = Field(
+        default=100,
+        description='Maximum size of the condensed history before triggering forgetting.',
+        ge=2,
+    )
+
+    model_config = {'extra': 'forbid'}
+
+
 # Type alias for convenience
 CondenserConfig = (
     NoOpCondenserConfig
@@ -131,6 +154,7 @@ CondenserConfig = (
     | LLMSummarizingCondenserConfig
     | AmortizedForgettingCondenserConfig
     | LLMAttentionCondenserConfig
+    | StructuredSummaryCondenserConfig
 )
 
 
@@ -233,6 +257,7 @@ def create_condenser_config(condenser_type: str, data: dict) -> CondenserConfig:
         'llm': LLMSummarizingCondenserConfig,
         'amortized': AmortizedForgettingCondenserConfig,
         'llm_attention': LLMAttentionCondenserConfig,
+        'structured': StructuredSummaryCondenserConfig,
     }
 
     if condenser_type not in condenser_classes:
