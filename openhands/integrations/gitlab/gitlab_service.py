@@ -146,7 +146,6 @@ class GitLabService(GitService):
                 'per_page': str(PER_PAGE),
                 'order_by': order_by,
                 'sort': 'desc',  # GitLab uses sort for direction (asc/desc)
-                'owned': 1,  # Use 1 instead of True
                 'membership': 1,  # Use 1 instead of True
             }
             response, headers = await self._fetch_data(url, params)
@@ -173,16 +172,6 @@ class GitLabService(GitService):
             )
             for repo in all_repos
         ]
-
-    async def does_repo_exist(self, repository: str) -> bool:
-        encoded_repo = quote_plus(repository)
-        url = f'{self.BASE_URL}/projects/{encoded_repo}'
-        try:
-            await self._fetch_data(url)
-            return True
-        except Exception as e:
-            print(e)
-            return False
 
 
 gitlab_service_cls = os.environ.get(
