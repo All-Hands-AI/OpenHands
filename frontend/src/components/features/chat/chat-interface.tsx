@@ -2,6 +2,8 @@ import { useDispatch, useSelector } from "react-redux";
 import React from "react";
 import posthog from "posthog-js";
 import { useParams } from "react-router";
+import { useTranslation } from "react-i18next";
+import { I18nKey } from "#/i18n/declaration";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
 import { TrajectoryActions } from "../trajectory/trajectory-actions";
 import { createChatMessage } from "#/services/chat-service";
@@ -24,14 +26,19 @@ import { useGetTrajectory } from "#/hooks/mutation/use-get-trajectory";
 import { downloadTrajectory } from "#/utils/download-trajectory";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 
-function getEntryPoint(hasRepository: boolean | null): string {
+function getEntryPoint(
+  hasRepository: boolean | null,
+  hasReplayJson: boolean | null,
+): string {
   if (hasRepository) return "github";
+  if (hasReplayJson) return "replay";
   return "direct";
 }
 
 export function ChatInterface() {
   const { send, isLoadingMessages } = useWsClient();
   const dispatch = useDispatch();
+  const { t } = useTranslation();
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const { scrollDomToBottom, onChatBodyScroll, hitBottom } =
     useScrollToBottom(scrollRef);
@@ -44,7 +51,7 @@ export function ChatInterface() {
   >("positive");
   const [feedbackModalIsOpen, setFeedbackModalIsOpen] = React.useState(false);
   const [messageToSend, setMessageToSend] = React.useState<string | null>(null);
-  const { selectedRepository } = useSelector(
+  const { selectedRepository, replayJson } = useSelector(
     (state: RootState) => state.initialQuery,
   );
   const params = useParams();
@@ -53,8 +60,12 @@ export function ChatInterface() {
   const handleSendMessage = async (content: string, files: File[]) => {
     if (messages.length === 0) {
       posthog.capture("initial_query_submitted", {
-        entry_point: getEntryPoint(selectedRepository !== null),
+        entry_point: getEntryPoint(
+          selectedRepository !== null,
+          replayJson !== null,
+        ),
         query_character_length: content.length,
+        replay_json_size: replayJson?.length,
       });
     } else {
       posthog.capture("user_message_sent", {
@@ -86,19 +97,19 @@ export function ChatInterface() {
 
   const onClickExportTrajectoryButton = () => {
     if (!params.conversationId) {
-      displayErrorToast("ConversationId unknown, cannot download trajectory");
+      displayErrorToast(t(I18nKey.CONVERSATION$DOWNLOAD_ERROR));
       return;
     }
 
     getTrajectory(params.conversationId, {
       onSuccess: async (data) => {
         await downloadTrajectory(
-          params.conversationId ?? "unknown",
+          params.conversationId ?? t(I18nKey.CONVERSATION$UNKNOWN),
           data.trajectory,
         );
       },
-      onError: (error) => {
-        displayErrorToast(error.message);
+      onError: () => {
+        displayErrorToast(t(I18nKey.CONVERSATION$DOWNLOAD_ERROR));
       },
     });
   };

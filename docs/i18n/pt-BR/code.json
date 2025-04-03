@@ -1,0 +1,53 @@
+{
+    "footer.title": {
+        "message": "OpenHands"
+    },
+    "footer.docs": {
+        "message": "Documentação"
+    },
+    "footer.community": {
+        "message": "Comunidade"
+    },
+    "footer.copyright": {
+        "message": "© {year} OpenHands"
+    },
+    "faq.title": {
+        "message": "Perguntas Frequentes",
+        "description": "FAQ Title"
+    },
+    "faq.description": {
+        "message": "Perguntas Frequentes"
+    },
+    "faq.section.title.1": {
+        "message": "O que é o OpenHands?",
+        "description": "First Section Title"
+    },
+    "faq.section.highlight": {
+        "message": "OpenHands",
+        "description": "Highlight Text"
+    },
+    "faq.section.description.1": {
+        "message": "é um engenheiro de software autônomo que pode resolver tarefas de engenharia de software e navegação web a qualquer momento. Pode executar consultas de ciência de dados, como \"Encontrar o número de pull requests no repositório OpenHands nos últimos meses\", e tarefas de engenharia de software, como \"Por favor, adicione testes a este arquivo e verifique se todos os testes passam. Se não, corrija o arquivo.\"",
+        "description": "Description for OpenHands"
+    },
+    "faq.section.description.2": {
+        "message": "Além disso, o OpenHands é uma plataforma e comunidade para desenvolvedores de agentes que desejam testar e avaliar novos agentes.",
+        "description": "Further Description for OpenHands"
+    },
+    "faq.section.title.2": {
+        "message": "Suporte",
+        "description": "Support Section Title"
+    },
+    "faq.section.support.answer": {
+        "message": "Se você encontrar um problema que outros usuários também possam ter, por favor, relate-o em {githubLink}. Se você estiver tendo dificuldades com a instalação ou tiver perguntas gerais, junte-se a nós no {discordLink} ou {slackLink}.",
+        "description": "Support Answer"
+    },
+    "faq.section.title.3": {
+        "message": "Como resolver um problema no GitHub com o OpenHands?",
+        "description": "GitHub Issue Section Title"
+    },
+    "faq.section.github.steps.intro": {
+        "message": "Para resolver um problema no GitHub usando o OpenHands, envie um comando ao OpenHands pedindo para seguir etapas como as seguintes:",
+        "description": "GitHub Steps Introduction"
+    }
+}

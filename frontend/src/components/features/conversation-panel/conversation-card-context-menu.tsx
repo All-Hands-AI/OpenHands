@@ -27,7 +27,7 @@ export function ConversationCardContextMenu({
       ref={ref}
       testId="context-menu"
       className={cn(
-        "right-0 absolute",
+        "right-0 absolute mt-3",
         position === "top" && "bottom-full",
         position === "bottom" && "top-full",
       )}

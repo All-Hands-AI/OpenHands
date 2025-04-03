@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-from enum import Enum
 from types import MappingProxyType
-from typing import Any, Coroutine, Literal, overload
+from typing import Annotated, Any, Coroutine, Literal, overload
 
 from pydantic import (
     BaseModel,
     Field,
     SecretStr,
     SerializationInfo,
+    WithJsonSchema,
     field_serializer,
     model_validator,
 )
@@ -22,14 +22,10 @@ from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
 from openhands.integrations.service_types import (
     AuthenticationError,
     GitService,
+    ProviderType,
     Repository,
     User,
 )
-
-
-class ProviderType(Enum):
-    GITHUB = 'github'
-    GITLAB = 'gitlab'
 
 
 class ProviderToken(BaseModel):
@@ -57,10 +53,14 @@ class ProviderToken(BaseModel):
 
 PROVIDER_TOKEN_TYPE = MappingProxyType[ProviderType, ProviderToken]
 CUSTOM_SECRETS_TYPE = MappingProxyType[str, SecretStr]
+PROVIDER_TOKEN_TYPE_WITH_JSON_SCHEMA = Annotated[
+    PROVIDER_TOKEN_TYPE,
+    WithJsonSchema({'type': 'object', 'additionalProperties': {'type': 'string'}}),
+]
 
 
 class SecretStore(BaseModel):
-    provider_tokens: PROVIDER_TOKEN_TYPE = Field(
+    provider_tokens: PROVIDER_TOKEN_TYPE_WITH_JSON_SCHEMA = Field(
         default_factory=lambda: MappingProxyType({})
     )
 
@@ -188,19 +188,43 @@ class ProviderHandler:
         return await service.get_latest_token()
 
     async def get_repositories(
-        self, page: int, per_page: int, sort: str, installation_id: int | None
+        self,
+        sort: str,
+        installation_id: int | None,
     ) -> list[Repository]:
-        """Get repositories from all available providers"""
-        all_repos = []
+        """
+        Get repositories from a selected providers with pagination support
+        """
+
+        all_repos: list[Repository] = []
         for provider in self.provider_tokens:
             try:
                 service = self._get_service(provider)
-                repos = await service.get_repositories(
-                    page, per_page, sort, installation_id
-                )
-                all_repos.extend(repos)
+                service_repos = await service.get_repositories(sort, installation_id)
+                all_repos.extend(service_repos)
             except Exception:
                 continue
+
+        return all_repos
+
+    async def search_repositories(
+        self,
+        query: str,
+        per_page: int,
+        sort: str,
+        order: str,
+    ):
+        all_repos: list[Repository] = []
+        for provider in self.provider_tokens:
+            try:
+                service = self._get_service(provider)
+                service_repos = await service.search_repositories(
+                    query, per_page, sort, order
+                )
+                all_repos.extend(service_repos)
+            except Exception:
+                continue
+
         return all_repos
 
     async def set_event_stream_secrets(

@@ -107,7 +107,6 @@ class POSTSettingsModel(Settings):
     Settings for POST requests
     """
 
-    unset_github_token: bool | None = None
     # Override provider_tokens to accept string tokens from frontend
     provider_tokens: dict[str, str] = {}
 
@@ -121,4 +120,5 @@ class GETSettingsModel(Settings):
     Settings with additional token data for the frontend
     """
 
-    github_token_is_set: bool | None = None
+    provider_tokens_set: dict[str, bool] | None = None
+    llm_api_key_set: bool

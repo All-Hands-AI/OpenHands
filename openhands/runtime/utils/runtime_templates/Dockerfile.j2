@@ -14,6 +14,7 @@ ENV POETRY_VIRTUALENVS_PATH=/openhands/poetry \
 
 # Install base system dependencies
 RUN apt-get update && \
+    apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
         wget curl sudo apt-utils git jq tmux \
         {%- if 'ubuntu' in base_image and (base_image.endswith(':latest') or base_image.endswith(':24.04')) -%}
@@ -22,6 +23,10 @@ RUN apt-get update && \
         libgl1-mesa-glx \
         {% endif -%}
         libasound2-plugins libatomic1 && \
+    # Remove packages with CVEs and no updates yet, if present
+    (apt-get remove -y libaom3 || true) && \
+    (apt-get remove -y libjxl0.7 || true) && \
+    (apt-get remove -y libopenexr-3-1-30 || true) && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -41,7 +46,7 @@ RUN mkdir -p /openhands && \
 # 2. https://github.com/gitpod-io/openvscode-releases
 
 # Setup VSCode Server
-ARG RELEASE_TAG="openvscode-server-v1.94.2"
+ARG RELEASE_TAG="openvscode-server-v1.98.2"
 ARG RELEASE_ORG="gitpod-io"
 # ARG USERNAME=openvscode-server
 # ARG USER_UID=1000
@@ -80,25 +85,29 @@ RUN mkdir -p ${OPENVSCODE_SERVER_ROOT}/extensions/openhands-memory-monitor && \
 {% macro install_dependencies() %}
 # Install all dependencies
 WORKDIR /openhands/code
-RUN \
-    /openhands/micromamba/bin/micromamba config set changeps1 False && \
-    # Configure Poetry and create virtual environment
+
+# Configure micromamba and poetry
+RUN /openhands/micromamba/bin/micromamba config set changeps1 False && \
     /openhands/micromamba/bin/micromamba run -n openhands poetry config virtualenvs.path /openhands/poetry && \
-    /openhands/micromamba/bin/micromamba run -n openhands poetry env use python3.12 && \
-    # Install project dependencies
-    /openhands/micromamba/bin/micromamba run -n openhands poetry install --only main,runtime --no-interaction --no-root && \
-    # Update and install additional tools
-    apt-get update && \
+    /openhands/micromamba/bin/micromamba run -n openhands poetry env use python3.12
+
+# Install project dependencies in smaller chunks
+RUN /openhands/micromamba/bin/micromamba run -n openhands poetry install --only main --no-interaction --no-root
+
+RUN /openhands/micromamba/bin/micromamba run -n openhands poetry install --only runtime --no-interaction --no-root
+
+# Install playwright and its dependencies
+RUN apt-get update && \
     /openhands/micromamba/bin/micromamba run -n openhands poetry run pip install playwright && \
-    /openhands/micromamba/bin/micromamba run -n openhands poetry run playwright install --with-deps chromium && \
-    # Set environment variables
-    echo "OH_INTERPRETER_PATH=$(/openhands/micromamba/bin/micromamba run -n openhands poetry run python -c "import sys; print(sys.executable)")" >> /etc/environment && \
-    # Clear caches
-    /openhands/micromamba/bin/micromamba run -n openhands poetry cache clear --all . -n && \
-    # Set permissions
+    /openhands/micromamba/bin/micromamba run -n openhands poetry run playwright install --with-deps chromium
+
+# Set environment variables and permissions
+RUN /openhands/micromamba/bin/micromamba run -n openhands poetry run python -c "import sys; print('OH_INTERPRETER_PATH=' + sys.executable)" >> /etc/environment && \
     chmod -R g+rws /openhands/poetry && \
-    mkdir -p /openhands/workspace && chmod -R g+rws,o+rw /openhands/workspace && \
-    # Clean up
+    mkdir -p /openhands/workspace && chmod -R g+rws,o+rw /openhands/workspace
+
+# Clear caches
+RUN /openhands/micromamba/bin/micromamba run -n openhands poetry cache clear --all . -n && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
     /openhands/micromamba/bin/micromamba clean --all
 
@@ -131,6 +140,9 @@ RUN \
 
 COPY ./code/pyproject.toml ./code/poetry.lock /openhands/code/
 
+COPY ./code/openhands/runtime/plugins/vscode/settings.json /workspace/.vscode/settings.json
+RUN chmod -R a+rwx /workspace/.vscode/settings.json
+
 {{ install_dependencies() }}
 
 # ================================================================
@@ -143,6 +155,10 @@ COPY ./code/pyproject.toml ./code/poetry.lock /openhands/code/
 # ================================================================
 RUN if [ -d /openhands/code/openhands ]; then rm -rf /openhands/code/openhands; fi
 COPY ./code/pyproject.toml ./code/poetry.lock /openhands/code/
+
+COPY ./code/openhands/runtime/plugins/vscode/settings.json /workspace/.vscode/settings.json
+RUN chmod -R a+rwx /workspace/.vscode/settings.json
+
 COPY ./code/openhands /openhands/code/openhands
 RUN chmod a+rwx /openhands/code/openhands/__init__.py
 
