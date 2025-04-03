@@ -125,7 +125,11 @@ class Memory:
     def _on_workspace_context_recall(
         self, event: RecallAction
     ) -> RecallObservation | None:
-        """Add repository and runtime information to the stream as a RecallObservation."""
+        """Add repository and runtime information to the stream as a RecallObservation.
+
+        This method collects information from all available repo microagents and concatenates their contents.
+        Multiple repo microagents are supported, and their contents will be concatenated with newlines between them.
+        """
 
         # Create WORKSPACE_CONTEXT info:
         # - repository_info
@@ -135,11 +139,8 @@ class Memory:
 
         # Collect raw repository instructions
         repo_instructions = ''
-        assert (
-            len(self.repo_microagents) <= 1
-        ), f'Expecting at most one repo microagent, but found {len(self.repo_microagents)}: {self.repo_microagents.keys()}'
 
-        # Retrieve the context of repo instructions
+        # Retrieve the context of repo instructions from all repo microagents
         for microagent in self.repo_microagents.values():
             if repo_instructions:
                 repo_instructions += '\n\n'
