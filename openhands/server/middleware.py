@@ -220,7 +220,7 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
     def __init__(self, app: ASGIApp):
         super().__init__(app)
         # TODO: update this to include all public paths
-        self.public_paths = ['/api/auth/signup', '/alive', '/server_info']
+        self.public_paths = ['/api/auth/signup', '/alive', '/server_info', "/api/settings", "/api/options/config", "/api/options/models", "/api/options/agents", "/api/options/security-analyzers"]
 
     async def dispatch(self, request: Request, call_next):
         if request.url.path in self.public_paths:
