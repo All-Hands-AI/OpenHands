@@ -1,13 +1,13 @@
 import React from "react";
 import { BrandButton } from "#/components/features/settings/brand-button";
-import { HelpLink } from "#/components/features/settings/help-link";
-import { KeyStatusIcon } from "#/components/features/settings/key-status-icon";
+// import { HelpLink } from "#/components/features/settings/help-link";
+// import { KeyStatusIcon } from "#/components/features/settings/key-status-icon";
 import { SettingsDropdownInput } from "#/components/features/settings/settings-dropdown-input";
-import { SettingsInput } from "#/components/features/settings/settings-input";
+// import { SettingsInput } from "#/components/features/settings/settings-input";
 import { SettingsSwitch } from "#/components/features/settings/settings-switch";
-import { LoadingSpinner } from "#/components/shared/loading-spinner";
+// import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
-import { ModelSelector } from "#/components/shared/modals/settings/model-selector";
+// import { ModelSelector } from "#/components/shared/modals/settings/model-selector";
 import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 import { useAIConfigOptions } from "#/hooks/query/use-ai-config-options";
 import { useConfig } from "#/hooks/query/use-config";
@@ -18,7 +18,6 @@ import { DEFAULT_SETTINGS } from "#/services/settings";
 import { handleCaptureConsent } from "#/utils/handle-capture-consent";
 import { hasAdvancedSettingsSet } from "#/utils/has-advanced-settings-set";
 import { isCustomModel } from "#/utils/is-custom-model";
-import { organizeModelsAndProviders } from "#/utils/organize-models-and-providers";
 import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
 import {
   displayErrorToast,
@@ -31,12 +30,13 @@ const REMOTE_RUNTIME_OPTIONS = [
 ];
 
 function AccountSettings() {
-  const {
+  let {
     data: settings,
     isFetching: isFetchingSettings,
     isFetched,
     isSuccess: isSuccessfulSettings,
   } = useSettings();
+
   const { data: config } = useConfig();
   const {
     data: resources,
@@ -47,6 +47,7 @@ function AccountSettings() {
   // const { handleLogout } = useAppLogout();
 
   const isFetching = isFetchingSettings || isFetchingResources;
+  console.log("isFetching", isFetching);
   const isSuccess = isSuccessfulSettings && isSuccessfulResources;
 
   const isSaas = config?.APP_MODE === "saas";
@@ -58,11 +59,11 @@ function AccountSettings() {
 
     if (isSuccess) {
       return (
-        isCustomModel(resources.models, settings.LLM_MODEL) ||
+        isCustomModel(resources.models, settings?.LLM_MODEL || "") ||
         hasAdvancedSettingsSet({
           ...settings,
-          PROVIDER_TOKENS: settings.PROVIDER_TOKENS || {},
-        })
+          PROVIDER_TOKENS: settings?.PROVIDER_TOKENS || { github: "", gitlab: "" },
+        } as any)
       );
     }
 
@@ -75,14 +76,15 @@ function AccountSettings() {
   const isAnalyticsEnabled = settings?.USER_CONSENTS_TO_ANALYTICS;
   const isAdvancedSettingsSet = determineWhetherToToggleAdvancedSettings();
 
-  const modelsAndProviders = organizeModelsAndProviders(
-    resources?.models || [],
-  );
+  // const modelsAndProviders = organizeModelsAndProviders(
+  //   resources?.models || [],
+  // );
 
   const [llmConfigMode, setLlmConfigMode] = React.useState<
     "basic" | "advanced"
   >(isAdvancedSettingsSet ? "advanced" : "basic");
-  const [confirmationModeIsEnabled, setConfirmationModeIsEnabled] =
+  console.log("llmConfigMode", llmConfigMode);
+  const [confirmationModeIsEnabled, _] =
     React.useState(!!settings?.SECURITY_ANALYZER);
   const [resetSettingsModalIsOpen, setResetSettingsModalIsOpen] =
     React.useState(false);
@@ -188,21 +190,21 @@ function AccountSettings() {
     return <div>Failed to fetch settings. Please try reloading.</div>;
   }
 
-  const onToggleAdvancedMode = (isToggled: boolean) => {
-    setLlmConfigMode(isToggled ? "advanced" : "basic");
-    if (!isToggled) {
-      // reset advanced state
-      setConfirmationModeIsEnabled(!!settings?.SECURITY_ANALYZER);
-    }
-  };
+  // const onToggleAdvancedMode = (isToggled: boolean) => {
+  //   setLlmConfigMode(isToggled ? "advanced" : "basic");
+  //   if (!isToggled) {
+  //     // reset advanced state
+  //     setConfirmationModeIsEnabled(!!settings?.SECURITY_ANALYZER);
+  //   }
+  // };
 
-  if (isFetching || !settings) {
-    return (
-      <div className="flex grow p-4">
-        <LoadingSpinner size="large" />
-      </div>
-    );
-  }
+  // if (isFetching || !settings) {
+  //   return (
+  //     <div className="flex grow p-4">
+  //       <LoadingSpinner size="large" />
+  //     </div>
+  //   );
+  // }
 
   return (
     <>
@@ -213,7 +215,7 @@ function AccountSettings() {
         className="flex flex-col grow overflow-auto"
       >
         <div className="flex flex-col gap-12 px-11 py-9">
-          {!shouldHandleSpecialSaasCase && (
+          {/* {!shouldHandleSpecialSaasCase && (
             <section
               data-testid="llm-settings-section"
               className="flex flex-col gap-6"
@@ -362,7 +364,7 @@ function AccountSettings() {
                 </div>
               )}
             </section>
-          )}
+          )} */}
 
           {/* <section className="flex flex-col gap-6">
             <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">
@@ -447,7 +449,7 @@ function AccountSettings() {
                 key: language.value,
                 label: language.label,
               }))}
-              defaultSelectedKey={settings.LANGUAGE}
+              defaultSelectedKey={settings?.LANGUAGE}
               isClearable={false}
             />
 
@@ -462,7 +464,7 @@ function AccountSettings() {
             <SettingsSwitch
               testId="enable-sound-notifications-switch"
               name="enable-sound-notifications-switch"
-              defaultIsToggled={!!settings.ENABLE_SOUND_NOTIFICATIONS}
+              defaultIsToggled={!!settings?.ENABLE_SOUND_NOTIFICATIONS}
             >
               Enable sound notifications
             </SettingsSwitch>
