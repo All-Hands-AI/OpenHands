@@ -6,23 +6,36 @@ import { TaskForm } from "#/components/shared/task-form";
 import { I18nKey } from "#/i18n/declaration";
 import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { t } from "i18next";
-import React from "react";
-// import { useDispatch } from "react-redux";
+import React, { useEffect } from "react";
+import { useNavigate } from "react-router";
+import { useDispatch } from "react-redux";
 import { useAccount } from "wagmi";
+import { useSettings } from "#/hooks/query/use-settings";
+import { useUserConversations } from "#/hooks/query/use-user-conversations";
+import { useTranslation } from "react-i18next";
 
 function Home() {
-  // const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { t } = useTranslation();
+  const { data: settings } = useSettings();
+  const { data: conversations } = useUserConversations();
+  const { isConnected } = useAccount();
   const formRef = React.useRef<HTMLFormElement>(null);
 
   // const { data: config } = useConfig();
   // const { data: user } = useGitHubUser();
-  const account = useAccount();
   const { openConnectModal } = useConnectModal();
 
   // const gitHubAuthUrl = useGitHubAuthUrl({
   //   appMode: config?.APP_MODE || null,
   //   gitHubClientId: config?.GITHUB_CLIENT_ID || null,
   // });
+
+  useEffect(() => {
+    if (conversations?.length) {
+      navigate(`/oh/${conversations[0].conversation_id}`);
+    }
+  }, [conversations?.length]);
 
   return (
     <div
@@ -32,7 +45,7 @@ function Home() {
       <HeroHeading />
       <div className="flex flex-col gap-1 w-full mt-8 md:w-[600px] items-center">
         <div className="flex flex-col gap-2 w-full">
-          {account?.address ? <TaskForm ref={formRef} /> :
+          {isConnected ? <TaskForm ref={formRef} /> :
             <div className="flex flex-col gap-2 w-full">
               <div>Welcome to Thesis! We're currently in private beta.
                 To get started, Please enter connect your wallet.

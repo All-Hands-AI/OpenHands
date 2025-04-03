@@ -69,10 +69,9 @@ async def signup(request: SignupRequest) -> SignupResponse:
     query = select(User).where(User.c.public_key == request.publicAddress.lower())
     existing_user = await database.fetch_one(query)
     if existing_user:
-        # If user exists, just return a new token
-        token = create_jwt_token(existing_user['public_key'])
+        # If user exists, just return current token
         return SignupResponse(
-            token=token,
+            token=existing_user['jwt'],
             user={
                 'id': existing_user['public_key'],
                 'publicAddress': existing_user['public_key'],
