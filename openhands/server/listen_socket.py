@@ -1,3 +1,4 @@
+from types import MappingProxyType
 from urllib.parse import parse_qs
 
 from socketio.exceptions import ConnectionRefusedError
@@ -16,6 +17,9 @@ from openhands.events.observation.agent import (
     RecallObservation,
 )
 from openhands.events.serialization import event_to_dict
+from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderToken
+from openhands.integrations.service_types import ProviderType
+from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.shared import (
     SettingsStoreImpl,
     config,
@@ -27,12 +31,26 @@ from openhands.storage.conversation.conversation_validator import (
 )
 
 
+def create_provider_tokens_object(
+    providers_set: list[ProviderType],
+) -> PROVIDER_TOKEN_TYPE:
+    provider_information = {}
+
+    for provider in providers_set:
+        provider_information[provider] = ProviderToken(token=None, user_id=None)
+
+    return MappingProxyType(provider_information)
+
+
 @sio.event
 async def connect(connection_id: str, environ):
     logger.info(f'sio:connect: {connection_id}')
     query_params = parse_qs(environ.get('QUERY_STRING', ''))
     latest_event_id = int(query_params.get('latest_event_id', [-1])[0])
     conversation_id = query_params.get('conversation_id', [None])[0]
+    providers_raw: list[str] = query_params.get('providers_set', [])
+    providers_set: list[ProviderType] = [ProviderType(p) for p in providers_raw]
+
     if not conversation_id:
         logger.error('No conversation_id in query params')
         raise ConnectionRefusedError('No conversation_id in query params')
@@ -50,9 +68,17 @@ async def connect(connection_id: str, environ):
         raise ConnectionRefusedError(
             'Settings not found', {'msg_id': 'CONFIGURATION$SETTINGS_NOT_FOUND'}
         )
+    session_init_args: dict = {}
+    if settings:
+        session_init_args = {**settings.__dict__, **session_init_args}
+
+    session_init_args['git_provider_tokens'] = create_provider_tokens_object(
+        providers_set
+    )
+    conversation_init_data = ConversationInitData(**session_init_args)
 
     event_stream = await conversation_manager.join_conversation(
-        conversation_id, connection_id, settings, user_id, github_user_id
+        conversation_id, connection_id, conversation_init_data, user_id, github_user_id
     )
     logger.info(
         f'Connected to conversation {conversation_id} with connection_id {connection_id}. Replaying event stream...'
