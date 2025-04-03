@@ -238,30 +238,14 @@ class ProviderHandler:
     async def get_remote_repository_url(self, repository: str) -> str | None:
         if not repository:
             return None
-
-        provider_domains = {
-            ProviderType.GITHUB: 'github.com',
-            ProviderType.GITLAB: 'gitlab.com',
-            ProviderType.AZUREDEVOPS: 'dev.azure.com',
-        }
-
+        
         for provider in self.provider_tokens:
             try:
                 service = self._get_service(provider)
                 repo_exists = await service.does_repo_exist(repository)
-                if repo_exists:
-                    git_token = self.provider_tokens[provider].token
-                    if git_token and provider in provider_domains:
-                        domain = provider_domains[provider]
+                if repo_exists:                    
+                    return await service.get_repo_url(repository)           
 
-                        if provider == ProviderType.GITLAB:
-                            return f'https://oauth2:{git_token.get_secret_value()}@{domain}/{repository}.git'
-
-                        if provider == ProviderType.AZUREDEVOPS:
-                            # Azure DevOps URL format: https://{PAT}@dev.azure.com/{organization}/{project}/_git/{repository}
-                            return await service.get_repo_url(repository)                                
-
-                        return f'https://{git_token.get_secret_value()}@{domain}/{repository}.git'
             except Exception:
                 continue
         return None

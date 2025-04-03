@@ -183,6 +183,9 @@ class GitLabService(GitService):
             print(e)
             return False
 
+    async def get_repo_url(self, repository: str) -> str:
+        return f'https://oauth2:{await self.get_latest_token()}@gitlab.com/{repository}.git'
+        
 
 gitlab_service_cls = os.environ.get(
     'OPENHANDS_GITLAB_SERVICE_CLS',
