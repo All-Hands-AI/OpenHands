@@ -1,31 +1,26 @@
+import OpenHands from "#/api/open-hands";
+import {
+  removeAuthTokenHeader,
+  setAuthTokenHeader,
+} from "#/api/open-hands-axios";
 import { TooltipButton } from "#/components/shared/buttons/tooltip-button";
+import { wagmiConfig } from "#/config/config";
+import {
+  displayErrorToast,
+  displaySuccessToast,
+} from "#/utils/custom-toast-handlers";
+import { reduceString } from "#/utils/utils";
 import {
   useGetListAddresses,
   useGetPublicKey,
   useGetSignedLogin,
   usePersistActions,
 } from "#/zutand-stores/persist-config/selector";
-import {
-  useAccountModal,
-  useConnectModal,
-  WalletButton,
-} from "@rainbow-me/rainbowkit";
-import React, { useEffect } from "react";
+import { useAccountModal, useConnectModal } from "@rainbow-me/rainbowkit";
+import { signMessage, disconnect } from "@wagmi/core";
 import { FaUserAlt, FaWallet } from "react-icons/fa";
 import { twMerge } from "tailwind-merge";
 import { useAccount, useAccountEffect } from "wagmi";
-import { signMessage } from "@wagmi/core";
-import { wagmiConfig } from "#/config/config";
-import { reduceString } from "#/utils/utils";
-import OpenHands from "#/api/open-hands";
-import {
-  displayErrorToast,
-  displaySuccessToast,
-} from "#/utils/custom-toast-handlers";
-import {
-  removeAuthTokenHeader,
-  setAuthTokenHeader,
-} from "#/api/open-hands-axios";
 
 interface UserActionsProps {
   onLogout: () => void;
@@ -44,6 +39,7 @@ export function UserActions({ onLogout, isLoading }: UserActionsProps) {
   const handleLogout = () => {
     removeAuthTokenHeader();
     onLogout();
+    disconnect(wagmiConfig);
   };
 
   useAccountEffect({
@@ -87,6 +83,7 @@ export function UserActions({ onLogout, isLoading }: UserActionsProps) {
             console.error("API Error:", apiError);
             reset();
             removeAuthTokenHeader();
+            handleLogout();
             throw new Error("Failed to verify wallet with server");
           }
         }
@@ -97,6 +94,7 @@ export function UserActions({ onLogout, isLoading }: UserActionsProps) {
         error instanceof Error ? error.message : "Error connecting wallet",
       );
       reset();
+      handleLogout();
       removeAuthTokenHeader();
     }
   };

@@ -3,23 +3,21 @@ import { HeroHeading } from "#/components/shared/hero-heading";
 import { TaskForm } from "#/components/shared/task-form";
 // import { useConfig } from "#/hooks/query/use-config";
 // import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
-import { I18nKey } from "#/i18n/declaration";
-import { useConnectModal } from "@rainbow-me/rainbowkit";
-import { t } from "i18next";
-import React, { useEffect } from "react";
-import { useNavigate } from "react-router";
-import { useDispatch } from "react-redux";
-import { useAccount } from "wagmi";
 import { useSettings } from "#/hooks/query/use-settings";
-import { useUserConversations } from "#/hooks/query/use-user-conversations";
+import { I18nKey } from "#/i18n/declaration";
+import { useGetJwt } from "#/zutand-stores/persist-config/selector";
+import { useConnectModal } from "@rainbow-me/rainbowkit";
+import React from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router";
+import { useAccount } from "wagmi";
 
 function Home() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { data: settings } = useSettings();
-  const { data: conversations } = useUserConversations();
   const { isConnected } = useAccount();
+  const jwt = useGetJwt();
   const formRef = React.useRef<HTMLFormElement>(null);
 
   // const { data: config } = useConfig();
@@ -31,6 +29,8 @@ function Home() {
   //   gitHubClientId: config?.GITHUB_CLIENT_ID || null,
   // });
 
+  const isUserLoggedIn = !!jwt && !!isConnected;
+
   return (
     <div
       data-testid="home-screen"
@@ -39,19 +39,20 @@ function Home() {
       <HeroHeading />
       <div className="flex flex-col gap-1 w-full mt-8 md:w-[600px] items-center">
         <div className="flex flex-col gap-2 w-full">
-          {isConnected ? (
+          {isUserLoggedIn ? (
             <TaskForm ref={formRef} />
           ) : (
             <div className="flex flex-col gap-2 w-full">
-              <div>
-                Welcome to Thesis! We're currently in private beta. To get
-                started, Please enter connect your wallet.
+              <div className="text-tertiary-light text-center">
+                Welcome to Thesis! We're currently in private beta.
+                <br /> To get started, Please enter connect your wallet.
               </div>
+
               <BrandButton
                 testId="connect-your-wallet"
                 type="button"
                 variant="secondary"
-                className="w-full text-content border-content"
+                className="w-full text-tertiary font-bold hover:brightness-110 bg-tertiary-light border-content mt-2 uppercase"
                 onClick={openConnectModal}
               >
                 {t(I18nKey.BUTTON$CONNECT_WALLET)}
