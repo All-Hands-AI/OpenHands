@@ -13,6 +13,7 @@ from openhands.events.stream import EventStream
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
 )
+from openhands.integrations.service_types import Repository
 from openhands.runtime import get_runtime_cls
 from openhands.server.auth import (
     get_github_user_id,
@@ -41,7 +42,7 @@ app = APIRouter(prefix='/api')
 
 
 class InitSessionRequest(BaseModel):
-    selected_repository: str | None = None
+    selected_repository: Repository | None = None
     selected_branch: str | None = None
     initial_user_msg: str | None = None
     image_urls: list[str] | None = None
@@ -51,7 +52,7 @@ class InitSessionRequest(BaseModel):
 async def _create_new_conversation(
     user_id: str | None,
     git_provider_tokens: PROVIDER_TOKEN_TYPE | None,
-    selected_repository: str | None,
+    selected_repository: Repository | None,
     selected_branch: str | None,
     initial_user_msg: str | None,
     image_urls: list[str] | None,
@@ -111,7 +112,7 @@ async def _create_new_conversation(
             title=conversation_title,
             user_id=user_id,
             github_user_id=None,
-            selected_repository=selected_repository,
+            selected_repository=selected_repository.full_name if selected_repository else selected_repository,
             selected_branch=selected_branch,
         )
     )
