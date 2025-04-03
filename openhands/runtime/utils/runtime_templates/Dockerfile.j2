@@ -33,7 +33,7 @@ RUN apt-get update && \
 
 {% if 'ubuntu' in base_image %}
 RUN ln -s "$(dirname $(which node))/corepack" /usr/local/bin/corepack && \
-    corepack enable yarn && \
+    npm install -g corepack && corepack enable yarn && \
     pip install -U pip pipenv uv && \
     curl -fsSL --compressed https://install.python-poetry.org | python -
 {% endif %}
