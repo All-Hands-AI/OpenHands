@@ -5,7 +5,7 @@ import { setInitialPrompt } from "#/state/initial-query-slice";
 
 const INITIAL_PROMPT = "";
 
-export function CodeNotInGitHubLink() {
+export function CodeNotInGitLink() {
   const dispatch = useDispatch();
   const { mutate: createConversation } = useCreateConversation();
 
@@ -17,7 +17,7 @@ export function CodeNotInGitHubLink() {
 
   return (
     <div className="text-xs text-neutral-400">
-      Code not in GitHub?{" "}
+      Code not in Git?{" "}
       <span
         onClick={handleStartFromScratch}
         className="underline cursor-pointer"

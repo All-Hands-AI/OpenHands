@@ -14,6 +14,7 @@ ENV POETRY_VIRTUALENVS_PATH=/openhands/poetry \
 
 # Install base system dependencies
 RUN apt-get update && \
+    apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
         wget curl sudo apt-utils git jq tmux \
         {%- if 'ubuntu' in base_image and (base_image.endswith(':latest') or base_image.endswith(':24.04')) -%}
@@ -22,6 +23,10 @@ RUN apt-get update && \
         libgl1-mesa-glx \
         {% endif -%}
         libasound2-plugins libatomic1 && \
+    # Remove packages with CVEs and no updates yet, if present
+    (apt-get remove -y libaom3 || true) && \
+    (apt-get remove -y libjxl0.7 || true) && \
+    (apt-get remove -y libopenexr-3-1-30 || true) && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
