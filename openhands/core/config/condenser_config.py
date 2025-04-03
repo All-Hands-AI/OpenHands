@@ -123,7 +123,7 @@ class LLMAttentionCondenserConfig(BaseModel):
 
 
 class StructuredSummaryCondenserConfig(BaseModel):
-    """Configuration for LLMCondenser."""
+    """Configuration for StructuredSummaryCondenser instances."""
 
     type: Literal['structured'] = Field('structured')
     llm_config: LLMConfig = Field(

@@ -6,10 +6,8 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from openhands.core.config.condenser_config import (
-    LLMSummarizingCondenserConfig,
     StructuredSummaryCondenserConfig,
 )
-from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message, TextContent
 from openhands.events.action.agent import CondensationAction
 from openhands.events.observation.agent import AgentCondensationObservation
@@ -23,7 +21,7 @@ from openhands.memory.condenser.condenser import (
 
 
 class StateSummary(BaseModel):
-    """A flattened version of the state summary with validators to handle format issues."""
+    """A structured representation summarizing the state of the agent and the task."""
 
     # Required core fields
     user_context: str = Field(
@@ -101,7 +99,10 @@ class StateSummary(BaseModel):
 
     @classmethod
     def tool_description(cls) -> dict[str, Any]:
-        # Get all field info from the model (Pydantic v2 only)
+        """Description of a tool whose arguments are the fields of this class.
+
+        Can be given to an LLM to force structured generation.
+        """
         properties = {}
 
         # Build properties dictionary from field information
@@ -159,9 +160,7 @@ class StateSummary(BaseModel):
 class StructuredSummaryCondenser(RollingCondenser):
     """A condenser that summarizes forgotten events.
 
-    Maintains a condensed history and forgets old events when it grows too large,
-    keeping a special summarization event after the prefix that summarizes all previous summarizations
-    and newly forgotten events.
+    Maintains a condensed history and forgets old events when it grows too large. Uses structured generation via function-calling to produce summaries that replace forgotten events.
     """
 
     def __init__(self, llm: LLM, max_size: int = 100, keep_first: int = 1):
@@ -173,6 +172,11 @@ class StructuredSummaryCondenser(RollingCondenser):
             raise ValueError(f'keep_first ({keep_first}) cannot be negative')
         if max_size < 1:
             raise ValueError(f'max_size ({max_size}) cannot be non-positive')
+
+        if not llm.is_function_calling_active():
+            raise ValueError(
+                'LLM must support function calling to use StructuredSummaryCondenser'
+            )
 
         self.max_size = max_size
         self.keep_first = keep_first
@@ -218,16 +222,16 @@ Capture all relevant information, especially:
 
         prompt += '\n\n'
 
-        prompt += (
-            f'<PREVIOUS SUMMARY>\n{truncate_content(summary_event.message, max_chars=10_000)}\n</PREVIOUS SUMMARY>\n'
-            if summary_event.message
-            else ''
+        summary_event_content = truncate_content(
+            summary_event.message if summary_event.message else '', max_chars=10_000
         )
+        prompt += f'<PREVIOUS SUMMARY>\n{summary_event_content}\n</PREVIOUS SUMMARY>\n'
 
         prompt += '\n\n'
 
         for forgotten_event in forgotten_events:
-            prompt += f'<EVENT id={forgotten_event.id}>\n{forgotten_event}\n</EVENT>\n'
+            event_content = truncate_content(str(forgotten_event), max_chars=10_000)
+            prompt += f'<EVENT id={forgotten_event.id}>\n{event_content}\n</EVENT>\n'
 
         messages = [Message(role='user', content=[TextContent(text=prompt)])]
 
@@ -263,7 +267,6 @@ Capture all relevant information, especially:
             args_dict = json.loads(args_json)
 
             # Create a StateSummary object
-            logger.info(f'State summary: {args_dict}')
             summary = StateSummary.model_validate(args_dict)
 
         except (AttributeError, KeyError, json.JSONDecodeError) as e:
@@ -286,7 +289,7 @@ Capture all relevant information, especially:
 
     @classmethod
     def from_config(
-        cls, config: LLMSummarizingCondenserConfig
+        cls, config: StructuredSummaryCondenserConfig
     ) -> StructuredSummaryCondenser:
         return StructuredSummaryCondenser(
             llm=LLM(config=config.llm_config),
