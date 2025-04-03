@@ -214,35 +214,18 @@ def test_browser_tool():
 
 def test_response_to_actions_invalid_tool():
     # Test response with invalid tool call
-    # Create a proper ModelResponse object that can be validated by pydantic
-    mock_response = ModelResponse(
-        id="mock_response_id",
-        choices=[
-            {
-                "message": {
-                    "content": "Invalid tool",
-                    "tool_calls": [
-                        {
-                            "id": "tool_call_10",
-                            "function": {
-                                "name": "invalid_tool",
-                                "arguments": "{}"
-                            }
-                        }
-                    ]
-                }
-            }
-        ],
-        model="mock_model",
-        created=1234567890,
-        usage={"prompt_tokens": 10, "completion_tokens": 20, "total_tokens": 30}
-    )
+    mock_response = Mock()
+    mock_response.choices = [Mock()]
+    mock_response.choices[0].message = Mock()
+    mock_response.choices[0].message.content = 'Invalid tool'
+    mock_response.choices[0].message.tool_calls = [Mock()]
+    mock_response.choices[0].message.tool_calls[0].id = 'tool_call_10'
+    mock_response.choices[0].message.tool_calls[0].function = Mock()
+    mock_response.choices[0].message.tool_calls[0].function.name = 'invalid_tool'
+    mock_response.choices[0].message.tool_calls[0].function.arguments = '{}'
 
-    # The function now returns an McpAction for invalid tools instead of raising an error
-    actions = response_to_actions(mock_response)
-    assert len(actions) == 1
-    assert actions[0].name == "invalid_tool"  # Check that it's an McpAction with the correct name
-    assert actions[0].arguments == "{}"  # Check that the arguments are passed through
+    with pytest.raises(FunctionCallNotExistsError):
+        response_to_actions(mock_response)
 
 
 def test_step_with_no_pending_actions(mock_state: State):
