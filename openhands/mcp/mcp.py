@@ -5,13 +5,13 @@ from typing import Dict, List, Optional
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.sse import sse_client
 from mcp.client.stdio import stdio_client
-from mcp.types import TextContent, CallToolResult, Tool
-
-from openhands.core.logger import openhands_logger as logger
+from mcp.types import CallToolResult, TextContent, Tool
 from pydantic import BaseModel, Field
 
-class BaseTool(ABC, Tool):
+from openhands.core.logger import openhands_logger as logger
 
+
+class BaseTool(ABC, Tool):
     @classmethod
     def postfix(cls) -> str:
         return '_mcp_tool_call'
@@ -34,6 +34,7 @@ class BaseTool(ABC, Tool):
             },
         }
 
+
 class MCPClientTool(BaseTool):
     """Represents a tool proxy that can be called on the MCP server from the client side."""
 
@@ -42,14 +43,19 @@ class MCPClientTool(BaseTool):
     async def execute(self, **kwargs) -> CallToolResult:
         """Execute the tool by making a remote call to the MCP server."""
         if not self.session:
-            return CallToolResult(content=[TextContent(text='Not connected to MCP server')], isError=True)
+            return CallToolResult(
+                content=[TextContent(text='Not connected to MCP server')], isError=True
+            )
 
         try:
             result = await self.session.call_tool(self.name, kwargs)
             logger.debug(f'MCP tool result: {result}')
             return result
         except Exception as e:
-            return CallToolResult(content=[TextContent(text=f'Error executing tool: {str(e)}')], isError=True)
+            return CallToolResult(
+                content=[TextContent(text=f'Error executing tool: {str(e)}')],
+                isError=True,
+            )
 
 
 class MCPClient(BaseModel):
@@ -62,7 +68,7 @@ class MCPClient(BaseModel):
     description: str = 'MCP client tools for server interaction'
     tools: List[BaseTool] = Field(default_factory=list)
     tool_map: Dict[str, BaseTool] = Field(default_factory=dict)
-    
+
     class Config:
         arbitrary_types_allowed = True
 
@@ -126,7 +132,7 @@ class MCPClient(BaseModel):
         logger.info(
             f'Connected to server with tools: {[tool.name for tool in response.tools]}'
         )
-        
+
     async def call_tool(self, tool_name: str, args: Dict):
         """Call a tool on the MCP server."""
         if tool_name not in self.tool_map:
@@ -146,8 +152,9 @@ class MCPClient(BaseModel):
                 logger.error(f'Error during disconnect: {str(e)}')
             finally:
                 self.session = None
-                self.tools = tuple()
+                self.tools = []
                 logger.info('Disconnected from MCP server')
+
 
 def convert_mcp_clients_to_tools(mcp_clients: list[MCPClient] | None) -> list[dict]:
     """
@@ -177,6 +184,7 @@ def convert_mcp_clients_to_tools(mcp_clients: list[MCPClient] | None) -> list[di
         logger.error(f'Error in convert_mcp_clients_to_tools: {e}')
         return []
     return all_mcp_tools
+
 
 async def create_mcp_clients(
     sse_mcp_server: List[str], commands: List[str], args: List[List[str]]
