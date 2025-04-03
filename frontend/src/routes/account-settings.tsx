@@ -361,6 +361,22 @@ function AccountSettings() {
                 </SettingsSwitch>
               )}
 
+              <SettingsSwitch
+                testId="enable-repository-memory-switch"
+                name="enable-repository-memory-switch"
+                defaultIsToggled={!!settings.ENABLE_REPOSITORY_MEMORY}
+              >
+                {t(I18nKey.SETTINGS$LONGTERM_MEMORY)}
+              </SettingsSwitch>
+              <Tooltip
+                  content={t(I18nKey.SETTINGS$LONGTERM_MEMORY_TOOLTIP)}
+                  closeDelay={100}
+                >
+                <span className="cursor-help">
+                  <InfoIcon />
+                </span>
+              </Tooltip>
+
               {llmConfigMode === "advanced" && confirmationModeIsEnabled && (
                 <div>
                   <SettingsDropdownInput
@@ -526,25 +542,6 @@ function AccountSettings() {
               {t(I18nKey.SETTINGS$SOUND_NOTIFICATIONS)}
             </SettingsSwitch>
 
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-2">
-                <SettingsSwitch
-                  testId="enable-repository-memory-switch"
-                  name="enable-repository-memory-switch"
-                  defaultIsToggled={!!settings.ENABLE_REPOSITORY_MEMORY}
-                >
-                  {t(I18nKey.SETTINGS$LONGTERM_MEMORY)}
-                </SettingsSwitch>
-                <Tooltip
-                  content={t(I18nKey.SETTINGS$LONGTERM_MEMORY_TOOLTIP)}
-                  closeDelay={100}
-                >
-                  <span className="cursor-help">
-                    <InfoIcon />
-                  </span>
-                </Tooltip>
-              </div>
-            </div>
           </section>
         </div>
       </form>
