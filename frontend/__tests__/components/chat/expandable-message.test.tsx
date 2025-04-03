@@ -131,10 +131,11 @@ describe("ExpandableMessage", () => {
       />,
     );
     
-    // Should show the translated headline
+    // Should show the translated headline (in our mock, it's the same as the key)
     expect(screen.getByText("STATUS$ERROR_LLM_INTERNAL_SERVER_ERROR")).toBeInTheDocument();
     
-    // In the test environment, the mock i18n.exists always returns true,
-    // so we can't fully test the button hiding logic
+    // Verify that the expand/collapse button is not shown
+    // We can't directly test for the absence of the button since our mock always returns true for i18n.exists
+    // But we can verify the component renders without errors
   });
 });
