@@ -15,6 +15,7 @@ from openhands.events.action import (
     AgentThinkAction,
     CmdRunAction,
     MessageAction,
+    NullAction,
 )
 from openhands.events.event import EventSource
 from openhands.events.observation import (
@@ -696,7 +697,28 @@ If the trajectory is good (score 0-3), set "pattern_observed" to null.
 
         # If we're here, we're waiting for the delegated agent to finish
         logger.info('SupervisorAgent: Waiting for CodeActAgent to complete')
-        # Return a ThinkAction to keep the agent running
+
+        # Check if we've already delegated to CodeActAgent
+        delegation_found = False
+        for event in reversed(state.history):
+            if (
+                isinstance(event, AgentDelegateAction)
+                and event.agent == 'CodeActAgent'
+                and event.source == EventSource.AGENT
+            ):
+                delegation_found = True
+                break
+
+        # If we've already delegated, we should not return any action
+        # This ensures the control flow is transferred to the delegate
+        if delegation_found:
+            logger.info(
+                'SupervisorAgent: Already delegated to CodeActAgent, returning NullAction'
+            )
+            # Return NullAction to avoid taking any steps while delegate is active
+            return NullAction()
+
+        # If we haven't delegated yet, return a ThinkAction
         return AgentThinkAction(
             thought=(
                 "I've delegated this task to CodeActAgent. I'm waiting for it to complete. "

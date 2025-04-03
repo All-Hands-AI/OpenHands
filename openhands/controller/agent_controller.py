@@ -393,7 +393,19 @@ class AgentController:
                     MessageAction(content='TASK: ' + action.inputs['task']),
                     EventSource.USER,
                 )
-                await self.delegate.set_agent_state_to(AgentState.RUNNING)
+
+            # Set the delegate to RUNNING state
+            await self.delegate.set_agent_state_to(AgentState.RUNNING)
+
+            # Set the parent agent to DELEGATING state to prevent it from processing events
+            # This is a new state we'll add to indicate the agent is waiting for a delegate
+            await self.set_agent_state_to(AgentState.DELEGATING)
+
+            # Log that delegation has been activated
+            self.log(
+                'info',
+                f'Delegation activated: parent agent {self.agent.name} is now in DELEGATING state',
+            )
             return
 
         elif isinstance(action, AgentFinishAction):
@@ -642,13 +654,13 @@ class AgentController:
                 'info',
                 f'Clearing history before delegating to {action.agent}',
             )
-            
+
             # Add a message to indicate the history was cleared
             message_action = MessageAction(
                 content=f'Starting fresh with {action.agent}. Previous history has been cleared.',
             )
             self.event_stream.add_event(message_action, EventSource.AGENT)
-            
+
             # Update the start_id to be after the message we just added
             start_id = self.event_stream.get_latest_event_id() + 1
 
@@ -681,6 +693,15 @@ class AgentController:
             initial_state=state,
             is_delegate=True,
             headless_mode=self.headless_mode,
+        )
+
+        # Set the parent reference in the delegate
+        self.delegate.parent = self
+
+        # Log that delegation has been set up
+        self.log(
+            'info',
+            f'Delegate {delegate_agent.name} has been set up with start_id={start_id}',
         )
 
     def end_delegate(self) -> None:
@@ -731,13 +752,33 @@ class AgentController:
             obs = AgentDelegateObservation(outputs=delegate_outputs, content=content)
             self.event_stream.add_event(obs, EventSource.AGENT)
 
+        # Set the parent agent back to RUNNING state if it was in DELEGATING state
+        current_state = self.get_agent_state()
+        if current_state == AgentState.DELEGATING:
+            asyncio.get_event_loop().run_until_complete(
+                self.set_agent_state_to(AgentState.RUNNING)
+            )
+            self.log(
+                'info',
+                f'Delegation ended: parent agent {self.agent.name} is now back in RUNNING state',
+            )
+
         # unset delegate so parent can resume normal handling
         self.delegate = None
         self.delegateAction = None
 
     async def _step(self) -> None:
         """Executes a single step of the parent or delegate agent. Detects stuck agents and limits on the number of iterations and the task budget."""
-        if self.get_agent_state() != AgentState.RUNNING:
+        current_state = self.get_agent_state()
+
+        # Skip processing if the agent is not in RUNNING state
+        if current_state != AgentState.RUNNING:
+            # Log if the agent is in DELEGATING state
+            if current_state == AgentState.DELEGATING:
+                self.log(
+                    'debug',
+                    f'Agent {self.agent.name} is in DELEGATING state, skipping step',
+                )
             return
 
         if self._pending_action:
