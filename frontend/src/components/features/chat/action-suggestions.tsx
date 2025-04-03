@@ -1,9 +1,11 @@
 import posthog from "posthog-js";
 import React from "react";
 import { useSelector } from "react-redux";
+import { useTranslation } from "react-i18next";
 import { SuggestionItem } from "#/components/features/suggestions/suggestion-item";
 import type { RootState } from "#/store";
 import { useAuth } from "#/context/auth-context";
+import { I18nKey } from "#/i18n/declaration";
 
 interface ActionSuggestionsProps {
   onSuggestionsClick: (value: string) => void;
@@ -12,6 +14,7 @@ interface ActionSuggestionsProps {
 export function ActionSuggestions({
   onSuggestionsClick,
 }: ActionSuggestionsProps) {
+  const { t } = useTranslation();
   const { providersAreSet } = useAuth();
   const { selectedRepository } = useSelector(
     (state: RootState) => state.initialQuery,
@@ -47,7 +50,7 @@ export function ActionSuggestions({
             <>
               <SuggestionItem
                 suggestion={{
-                  label: "Push to Branch",
+                  label: t(I18nKey.ACTION$PUSH_TO_BRANCH),
                   value: terms.pushToBranch,
                 }}
                 onClick={(value) => {
@@ -57,7 +60,7 @@ export function ActionSuggestions({
               />
               <SuggestionItem
                 suggestion={{
-                  label: `Push & Create ${terms.prShort}`,
+                  label: t(I18nKey.ACTION$PUSH_CREATE_PR),
                   value: terms.createPR,
                 }}
                 onClick={(value) => {
@@ -70,7 +73,7 @@ export function ActionSuggestions({
           ) : (
             <SuggestionItem
               suggestion={{
-                label: `Push changes to ${terms.prShort}`,
+                label: t(I18nKey.ACTION$PUSH_CHANGES_TO_PR),
                 value: terms.pushToPR,
               }}
               onClick={(value) => {

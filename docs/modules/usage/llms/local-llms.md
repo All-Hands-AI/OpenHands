@@ -64,7 +64,7 @@ Ensure `config.toml` exists by running `make setup-config` which will create one
 
 ```
 [core]
-workspace_base="./workspace"
+workspace_base="/path/to/your/workspace"
 
 [llm]
 embedding_model="local"

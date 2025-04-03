@@ -20,7 +20,7 @@ export const useCreateConversation = () => {
       if (variables.q) dispatch(setInitialPrompt(variables.q));
 
       return OpenHands.createConversation(
-        selectedRepository?.full_name || undefined,
+        selectedRepository || undefined,
         variables.q,
         files,
         replayJson || undefined,
