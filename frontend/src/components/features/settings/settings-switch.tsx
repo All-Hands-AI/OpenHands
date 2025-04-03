@@ -1,5 +1,7 @@
 import React from "react";
 import { StyledSwitchComponent } from "./styled-switch-component";
+import { Tooltip } from "@heroui/react";
+import InfoIcon from "#/assets/info";
 
 interface SettingsSwitchProps {
   testId?: string;
@@ -7,6 +9,7 @@ interface SettingsSwitchProps {
   onToggle?: (value: boolean) => void;
   defaultIsToggled?: boolean;
   isBeta?: boolean;
+  tooltip?: string;
 }
 
 export function SettingsSwitch({
@@ -16,6 +19,7 @@ export function SettingsSwitch({
   onToggle,
   defaultIsToggled,
   isBeta,
+  tooltip,
 }: React.PropsWithChildren<SettingsSwitchProps>) {
   const [isToggled, setIsToggled] = React.useState(defaultIsToggled ?? false);
 
@@ -43,6 +47,13 @@ export function SettingsSwitch({
           <span className="text-[11px] leading-4 text-[#0D0F11] font-[500] tracking-tighter bg-primary px-1 rounded-full">
             Beta
           </span>
+        )}
+        {tooltip && (
+          <Tooltip content={tooltip} closeDelay={100}>
+            <span className="cursor-help">
+              <InfoIcon />
+            </span>
+          </Tooltip>
         )}
       </div>
     </label>
