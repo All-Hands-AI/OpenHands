@@ -1,17 +1,17 @@
 from contextlib import AsyncExitStack
 from typing import Dict, List, Optional
-from sqlalchemy import select
 
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.sse import sse_client
 from mcp.client.stdio import stdio_client
 from mcp.types import ImageContent, TextContent
+from sqlalchemy import select
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.mcp.mcp_base import BaseTool, ExtendedImageContent, ToolResult
 from openhands.mcp.mcp_tool_collection import ToolCollection
-from openhands.server.models import User
 from openhands.server.db import database
+from openhands.server.models import User
 
 
 class MCPClientTool(BaseTool):
@@ -98,7 +98,7 @@ class MCPClients(ToolCollection):
         }
         logger.info(f'sid: {sid}')
         logger.info(f'mnemonic: {len(mnemonic)}')
-        logger.info(f'Connecting to MCP server')
+        logger.info('Connecting to MCP server')
         streams_context = sse_client(
             url=server_url, timeout=60, sse_read_timeout=60 * 10, headers=headers
         )

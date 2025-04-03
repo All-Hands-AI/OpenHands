@@ -1,7 +1,6 @@
 from urllib.parse import parse_qs
-import jwt
-from fastapi import status
 
+import jwt
 from socketio.exceptions import ConnectionRefusedError
 
 from openhands.core.logger import openhands_logger as logger
@@ -18,16 +17,13 @@ from openhands.events.observation.agent import (
 )
 from openhands.events.serialization import event_to_dict
 from openhands.events.stream import AsyncEventStreamWrapper
+from openhands.server.routes.auth import JWT_ALGORITHM, JWT_SECRET
 from openhands.server.shared import (
     SettingsStoreImpl,
     config,
     conversation_manager,
     sio,
 )
-from openhands.storage.conversation.conversation_validator import (
-    ConversationValidatorImpl,
-)
-from openhands.server.routes.auth import JWT_SECRET, JWT_ALGORITHM
 
 
 @sio.event
@@ -71,7 +67,6 @@ async def connect(connection_id: str, environ):
         raise ConnectionRefusedError(
             'Settings not found', {'msg_id': 'CONFIGURATION$SETTINGS_NOT_FOUND'}
         )
-
 
     github_user_id = ''
     event_stream = await conversation_manager.join_conversation(
