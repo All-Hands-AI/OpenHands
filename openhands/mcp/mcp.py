@@ -33,7 +33,7 @@ class MCPClientTool(BaseTool):
 
             # special case for image content
             if (
-                self.name == 'browser_take_screenshot'
+                self.name == 'browser_screenshot'
                 and isinstance(result.content, list)
                 and len(result.content) > 0
                 and isinstance(result.content[0], ImageContent)
