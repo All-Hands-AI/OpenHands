@@ -1,6 +1,5 @@
 export type JupyterLine = { type: "plaintext" | "image"; content: string };
 
-// Define a constant for the image prefix to avoid hardcoded strings
 const IMAGE_PREFIX = "![image](data:image/png;base64,";
 
 export const parseCellContent = (content: string) => {
