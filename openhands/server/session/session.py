@@ -43,6 +43,7 @@ class Session:
     file_store: FileStore
     user_id: str | None
     logger: LoggerAdapter
+    mnemonic: str | None
 
     def __init__(
         self,
@@ -51,6 +52,7 @@ class Session:
         file_store: FileStore,
         sio: socketio.AsyncServer | None,
         user_id: str | None = None,
+        mnemonic: str | None = None,
     ):
         self.sid = sid
         self.sio = sio
@@ -62,6 +64,7 @@ class Session:
             file_store,
             status_callback=self.queue_status_message,
             user_id=user_id,
+            mnemonic=mnemonic,
         )
         self.agent_session.event_stream.subscribe(
             EventStreamSubscriber.SERVER, self.on_event, self.sid

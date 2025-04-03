@@ -202,6 +202,7 @@ async def create_mcp_agents(
     args: List[List[str]],
     sid: Optional[str] = None,
     user_id: Optional[str] = None,
+    mnemonic: Optional[str] = None,
 ) -> List[MCPAgent]:
     mcp_agents: List[MCPAgent] = []
     # Initialize SSE connections
@@ -217,6 +218,7 @@ async def create_mcp_agents(
                     server_url=server_url,
                     sid=sid,
                     user_id=user_id,
+                    mnemonic=mnemonic,
                 )
                 mcp_agents.append(agent)
                 logger.info(f'Connected to MCP server {server_url} via SSE')

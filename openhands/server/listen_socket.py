@@ -2,6 +2,7 @@ from urllib.parse import parse_qs
 
 import jwt
 from socketio.exceptions import ConnectionRefusedError
+# from sqlalchemy import select
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
@@ -22,7 +23,8 @@ from openhands.server.shared import (
     conversation_manager,
     sio,
 )
-
+# from openhands.server.db import database
+# from openhands.server.models import User
 from openhands.utils.get_user_setting import get_user_setting
 
 
@@ -47,6 +49,17 @@ async def connect(connection_id: str, environ):
         payload = jwt.decode(jwt_token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
         user_id = payload['sub']
         logger.info(f'user_id: {user_id}')
+
+        # Fetch user record from database
+        # query = select(User).where(User.c.public_key == user_id.lower())
+        # user = await database.fetch_one(query)
+        # if not user:
+        #     logger.error(f'User not found in database: {user_id}')
+        #     raise ConnectionRefusedError('User not found')
+            
+        # logger.info(f'Found user record: {user["public_key"]}')
+        # mnemonic = user['mnemonic']
+        mnemonic = ''
     except jwt.ExpiredSignatureError:
         logger.error('JWT token has expired')
         raise ConnectionRefusedError('Token has expired')
@@ -57,9 +70,6 @@ async def connect(connection_id: str, environ):
         logger.error(f'Error processing JWT token: {str(e)}')
         raise ConnectionRefusedError('Authentication failed')
 
-    # cookies_str = environ.get('HTTP_COOKIE', '')
-    # conversation_validator = ConversationValidatorImpl()
-
     settings = await get_user_setting(user_id)
 
     if not settings:
@@ -69,7 +79,7 @@ async def connect(connection_id: str, environ):
 
     github_user_id = ''
     event_stream = await conversation_manager.join_conversation(
-        conversation_id, connection_id, settings, user_id, github_user_id
+        conversation_id, connection_id, settings, user_id, github_user_id, mnemonic
     )
     logger.info(
         f'Connected to conversation {conversation_id} with connection_id {connection_id}. Replaying event stream...'

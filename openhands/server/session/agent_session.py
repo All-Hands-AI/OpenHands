@@ -52,13 +52,14 @@ class AgentSession:
     _closed: bool = False
     loop: asyncio.AbstractEventLoop | None = None
     logger: LoggerAdapter
-
+    mnemonic: str | None
     def __init__(
         self,
         sid: str,
         file_store: FileStore,
         status_callback: Callable | None = None,
         user_id: str | None = None,
+        mnemonic: str | None = None,
     ):
         """Initializes a new instance of the Session class
 
@@ -72,6 +73,7 @@ class AgentSession:
         self.file_store = file_store
         self._status_callback = status_callback
         self.user_id = user_id
+        self.mnemonic = mnemonic
         self.logger = OpenHandsLoggerAdapter(
             extra={'session_id': sid, 'user_id': user_id}
         )
@@ -135,6 +137,7 @@ class AgentSession:
                         config.mcp.stdio.args,
                         sid=self.sid,
                         user_id=self.user_id,
+                        mnemonic=self.mnemonic,
                     )
 
                     # Give some time for MCP connections to stabilize

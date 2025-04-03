@@ -115,6 +115,7 @@ class StandaloneConversationManager(ConversationManager):
         settings: Settings,
         user_id: str | None,
         github_user_id: str | None,
+        mnemonic: str | None,
     ) -> EventStream:
         logger.info(
             f'join_conversation:{sid}:{connection_id}',
@@ -123,7 +124,7 @@ class StandaloneConversationManager(ConversationManager):
         await self.sio.enter_room(connection_id, ROOM_KEY.format(sid=sid))
         self._local_connection_id_to_session_id[connection_id] = sid
         event_stream = await self.maybe_start_agent_loop(
-            sid, settings, user_id, github_user_id=github_user_id
+            sid, settings, user_id, github_user_id=github_user_id, mnemonic=mnemonic
         )
         if not event_stream:
             logger.error(
@@ -254,6 +255,7 @@ class StandaloneConversationManager(ConversationManager):
         initial_user_msg: MessageAction | None = None,
         replay_json: str | None = None,
         github_user_id: str | None = None,
+        mnemonic: str | None = None,
     ) -> EventStream:
         logger.info(f'maybe_start_agent_loop:{sid}', extra={'session_id': sid})
         session: Session | None = None
@@ -283,6 +285,7 @@ class StandaloneConversationManager(ConversationManager):
                 config=self.config,
                 sio=self.sio,
                 user_id=user_id,
+                mnemonic=mnemonic,
             )
             self._local_agent_loops_by_sid[sid] = session
             asyncio.create_task(
