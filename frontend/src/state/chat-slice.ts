@@ -202,7 +202,7 @@ export const chatSlice = createSlice({
         const message: Message = {
           type: "action",
           sender: "assistant",
-          translationID: translationID,
+          translationID,
           eventID: observation.payload.id,
           content,
           imageUrls: [],
