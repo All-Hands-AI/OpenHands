@@ -17,10 +17,12 @@ from openhands.events.observation.commands import (
 class WindowsBashSession:
     """A direct PowerShell executor for Windows that doesn't maintain a session."""
     
-    def __init__(self, work_dir: str, username: str | None = None):
+    def __init__(self, work_dir: str, username: str | None = None, no_change_timeout_seconds: int = 30, max_memory_mb: int | None = None):
         self.work_dir = os.path.abspath(work_dir)
         self.username = username
         self._cwd = self.work_dir
+        self.no_change_timeout_seconds = no_change_timeout_seconds
+        self.max_memory_mb = max_memory_mb
         try:
             self._temp_dir = Path(tempfile.mkdtemp())
             print(f"[DEBUG] Created temp directory: {self._temp_dir}")
@@ -28,6 +30,11 @@ class WindowsBashSession:
             print(f"[ERROR] Failed to create temp directory: {e}")
             raise
         self._initialized = True  # Always initialized since we don't maintain a session
+    
+    @property
+    def cwd(self) -> str:
+        """Get the current working directory."""
+        return self._cwd
     
     def initialize(self):
         """No initialization needed since we run each command in a new process."""
@@ -64,6 +71,15 @@ class WindowsBashSession:
                 command="",
                 metadata=CmdOutputMetadata(exit_code=0, working_dir=self._cwd)
             )
+
+        # Handle git configuration command specially
+        if "git config" in command and "alias" in command:
+            # Convert bash-style git alias to PowerShell function
+            command = command.replace(
+                'alias git="git --no-pager"',
+                'Set-Item -Path Alias:git -Value { git.exe --no-pager $args }'
+            )
+            print(f"[DEBUG] Modified git command for PowerShell: {command}")
         
         # For normal commands, use file-based approach with a new process
         script_file = None
