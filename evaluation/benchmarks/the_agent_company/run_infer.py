@@ -38,8 +38,18 @@ def get_config(
     llm_config: LLMConfig,
     agent_config: AgentConfig | None,
 ) -> AppConfig:
+    search_api_key = os.environ.get('SEARCH_API_KEY', None)
+    assert search_api_key is not None, 'Environment variable SEARCH_API_KEY is not set.'
+
     sandbox_config = get_default_sandbox_config_for_eval()
     sandbox_config.base_container_image = base_container_image
+    sandbox_config.runtime_startup_env_vars = {
+        'SEARCH_API_KEY': search_api_key,
+    }
+    sandbox_config.enable_auto_lint = True
+    # If the web services are running on the host machine, this must be set to True
+    sandbox_config.use_host_network = True
+
     config = AppConfig(
         run_as_openhands=False,
         max_budget_per_task=4,
@@ -62,6 +72,7 @@ def get_config(
             enable_prompt_extensions=False,
         )
         config.set_agent_config(agent_config)
+    print(agent_config)
     return config
 
 
@@ -98,26 +109,28 @@ def init_task_env(runtime: Runtime, hostname: str, env_llm_config: LLMConfig):
     assert obs.exit_code == 0
 
 
+# TODO
 def codeact_user_response(state: State) -> str:
     msg = (
         'Please continue working on the task on whatever approach you think is suitable.\n'
-        'If you think you have solved the task, please finish the interaction.\n'
+        'If you think you have solved the task, please use the finish tool to end the interaction.\n'
         'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP.\n'
     )
 
-    if state.history:
-        # check if the agent has tried to talk to the user 3 times, if so, let the agent know it can give up
-        user_msgs = [
-            event
-            for event in state.history
-            if isinstance(event, MessageAction) and event.source == 'user'
-        ]
-        if len(user_msgs) >= 2:
-            # let the agent know that it can give up when it has tried 3 times
-            return (
-                msg
-                + 'If you want to give up, run: <execute_bash> exit </execute_bash>.\n'
-            )
+    # Planner will add user messages to event stream, so we shouldn't encourage agent to exit!
+    # if state.history:
+    #     # check if the agent has tried to talk to the user 3 times, if so, let the agent know it can give up
+    #     user_msgs = [
+    #         event
+    #         for event in state.history
+    #         if isinstance(event, MessageAction) and event.source == 'user'
+    #     ]
+    #     if len(user_msgs) >= 2:
+    #         # let the agent know that it can give up when it has tried 3 times
+    #         return (
+    #             msg
+    #             + 'If you want to give up, run: <execute_bash> exit </execute_bash>.\n'
+    #         )
     return msg
 
 
@@ -131,11 +144,20 @@ def run_solver(
     save_screenshots: bool,
     screenshots_dir: str,
 ) -> State:
-    instruction = 'Complete the task in /instruction/task.md'
-
+    instruction = """You have one task to complete. It is paramount that you solve the task successfully by completing all the requirements given in the task description.
+Give it all you can: I know for a fact that you have access to all the relevant tools to solve the given task. Failure or 'I cannot solve' will not be tolerated, success will be rewarded.
+You must make sure you successfully complete the given task! You MUST strictly follow the instructions given in the task below.
+Here is the task: """
+    cmd_action = CmdRunAction(command='cat /instruction/task.md')
+    obs = runtime.run_action(cmd_action)
+    task_description: str = obs.content
+    instruction += task_description
+    instruction += '\n\nIMPORTANT: If there are the-agent-company.com websites mentioned in the task description, NOTE that these websites are privately hosted.\n'
+    instruction += 'IMPORTANT: You should NEVER ask for Human Help.\n'
     if 'gitlab' in dependencies:
-        instruction += "\n\nGitlab username is 'root' and password is 'theagentcompany'"
-
+        instruction += "IMPORTANT: You are already signed in to Gitlab but here are the sign-in credentials for your reference. Gitlab username is 'root' and password is 'theagentcompany'"
+    print(instruction)
+    exit()
     state: State | None = asyncio.run(
         run_controller(
             config=config,

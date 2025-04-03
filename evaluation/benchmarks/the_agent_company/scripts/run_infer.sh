@@ -128,6 +128,7 @@ echo "Using tasks No. $start_line to $end_line (inclusive) out of 1-175 tasks"
 temp_file="tasks_${START_PERCENTILE}_${END_PERCENTILE}.md"
 sed -n "${start_line},${end_line}p" tasks.md > "$temp_file"
 
+cnt=0
 while IFS= read -r task_image; do
     # Remove prefix using ## to remove longest matching pattern from start
     task_name=${task_image##ghcr.io/theagentcompany/}
@@ -135,36 +136,31 @@ while IFS= read -r task_image; do
     # Remove suffix using % to remove shortest matching pattern from end
     task_name=${task_name%-image:*}
     echo "Use task image $task_image, task name $task_name..."
-
+    ((cnt+=1))
     # Check if evaluation file exists
     if [ -f "$OUTPUTS_PATH/eval_${task_name}-image.json" ]; then
         echo "Skipping $task_name - evaluation file already exists"
         continue
     fi
+    if (( cnt % 2 != 0 )); then
+        docker pull $task_image
 
-    docker pull $task_image
+        # Build the Python command
+        COMMAND="poetry run python evaluation/benchmarks/the_agent_company/run_infer.py \
+                --agent-llm-config \"$AGENT_LLM_CONFIG\" \
+                --env-llm-config \"$ENV_LLM_CONFIG\" \
+                --outputs-path \"$OUTPUTS_PATH\" \
+                --server-hostname \"$SERVER_HOSTNAME\" \
+                --task-image-name \"$task_image\""
 
-    # Build the Python command
-    COMMAND="poetry run python evaluation/benchmarks/the_agent_company/run_infer.py \
-            --agent-llm-config \"$AGENT_LLM_CONFIG\" \
-            --env-llm-config \"$ENV_LLM_CONFIG\" \
-            --outputs-path \"$OUTPUTS_PATH\" \
-            --server-hostname \"$SERVER_HOSTNAME\" \
-            --task-image-name \"$task_image\""
+        # Add agent-config if it's defined
+        if [ -n "$AGENT_CONFIG" ]; then
+            COMMAND="$COMMAND --agent-config $AGENT_CONFIG"
+        fi
 
-    # Add agent-config if it's defined
-    if [ -n "$AGENT_CONFIG" ]; then
-        COMMAND="$COMMAND --agent-config $AGENT_CONFIG"
+        export PYTHONPATH=evaluation/benchmarks/the_agent_company:$PYTHONPATH && \
+            eval "$COMMAND"
     fi
-
-    export PYTHONPATH=evaluation/benchmarks/the_agent_company:$PYTHONPATH && \
-        eval "$COMMAND"
-
-    # Prune unused images and volumes
-    docker image rm "$task_image"
-    docker images "ghcr.io/all-hands-ai/runtime" -q | xargs -r docker rmi -f
-    docker volume prune -f
-    docker system prune -f
 done < "$temp_file"
 
 rm tasks.md "$temp_file"
