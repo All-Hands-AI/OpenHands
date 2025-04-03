@@ -146,7 +146,6 @@ class GitLabService(GitService):
                 'per_page': str(PER_PAGE),
                 'order_by': order_by,
                 'sort': 'desc',  # GitLab uses sort for direction (asc/desc)
-                'owned': 1,  # Use 1 instead of True
                 'membership': 1,  # Use 1 instead of True
             }
             response, headers = await self._fetch_data(url, params)
