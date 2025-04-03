@@ -261,7 +261,7 @@ class AgentController:
             elif isinstance(e, RateLimitError):
                 await self.set_agent_state_to(AgentState.RATE_LIMITED)
                 return
-            await self.status_callback('error', err_id, self.state.last_error)
+            self.status_callback('error', err_id, self.state.last_error)
 
         # Set the agent state to ERROR after storing the reason
         await self.set_agent_state_to(AgentState.ERROR)
