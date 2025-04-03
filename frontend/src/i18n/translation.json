@@ -5324,6 +5324,21 @@
         "tr": "Konuşmayı dışa aktar",
         "ja": "会話をエクスポート"
     },
+    "BUTTON$SUMMARIZE_CONVERSATION": {
+        "en": "Summarize conversation",
+        "zh-CN": "总结对话",
+        "zh-TW": "總結對話",
+        "de": "Konversation zusammenfassen",
+        "ko-KR": "대화 요약",
+        "no": "Oppsummer samtale",
+        "it": "Riassumi conversazione",
+        "pt": "Resumir conversa",
+        "es": "Resumir conversación",
+        "ar": "تلخيص المحادثة",
+        "fr": "Résumer la conversation",
+        "tr": "Konuşmayı özetle",
+        "ja": "会話を要約"
+    },
     "BILLING$CLICK_TO_TOP_UP": {
         "en": "Add funds to Your Account",
         "ja": "アカウントに資金を追加",

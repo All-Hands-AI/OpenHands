@@ -1,5 +1,5 @@
 export type Message = {
-  sender: "user" | "assistant";
+  sender: "user" | "assistant" | "system";
   content: string;
   timestamp: string;
   imageUrls?: string[];

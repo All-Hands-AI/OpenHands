@@ -23,8 +23,9 @@ import { ActionSuggestions } from "./action-suggestions";
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { useGetTrajectory } from "#/hooks/mutation/use-get-trajectory";
+import { useSummarizeConversation } from "#/hooks/mutation/use-summarize-conversation";
 import { downloadTrajectory } from "#/utils/download-trajectory";
-import { displayErrorToast } from "#/utils/custom-toast-handlers";
+import { displayErrorToast, displaySuccessToast } from "#/utils/custom-toast-handlers";
 
 function getEntryPoint(
   hasRepository: boolean | null,
@@ -56,6 +57,7 @@ export function ChatInterface() {
   );
   const params = useParams();
   const { mutate: getTrajectory } = useGetTrajectory();
+  const { mutate: summarizeConversation } = useSummarizeConversation();
 
   const handleSendMessage = async (content: string, files: File[]) => {
     if (messages.length === 0) {
@@ -114,6 +116,37 @@ export function ChatInterface() {
     });
   };
 
+  const onClickSummarizeConversationButton = () => {
+    if (!params.conversationId) {
+      displayErrorToast(t(I18nKey.CONVERSATION$DOWNLOAD_ERROR));
+      return;
+    }
+
+    summarizeConversation(params.conversationId, {
+      onSuccess: (data) => {
+        if (data.summary) {
+          // Add the summary as a system message
+          const timestamp = new Date().toISOString();
+          dispatch(
+            addUserMessage({
+              content: `**Conversation Summary:**\n\n${data.summary}`,
+              imageUrls: [],
+              timestamp,
+              pending: false,
+              isSystemMessage: true,
+            })
+          );
+          displaySuccessToast("Conversation summarized successfully");
+        } else {
+          displayErrorToast("Failed to summarize conversation");
+        }
+      },
+      onError: () => {
+        displayErrorToast("Failed to summarize conversation");
+      },
+    });
+  };
+
   const isWaitingForUserInput =
     curAgentState === AgentState.AWAITING_USER_INPUT ||
     curAgentState === AgentState.FINISHED;
@@ -161,6 +194,7 @@ export function ChatInterface() {
               onClickShareFeedbackActionButton("negative")
             }
             onExportTrajectory={() => onClickExportTrajectoryButton()}
+            onSummarizeConversation={() => onClickSummarizeConversationButton()}
           />
 
           <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0">
