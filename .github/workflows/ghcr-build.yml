@@ -118,6 +118,7 @@ jobs:
         with:
           path: |
             ~/.cache/pypoetry
+            ~/.cache/ms-playwright
             ~/.virtualenvs
           key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
           restore-keys: |
@@ -169,6 +170,7 @@ jobs:
         with:
           path: |
             ~/.cache/pypoetry
+            ~/.cache/ms-playwright
             ~/.virtualenvs
           key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
           restore-keys: |
@@ -234,6 +236,7 @@ jobs:
         with:
           path: |
             ~/.cache/pypoetry
+            ~/.cache/ms-playwright
             ~/.virtualenvs
           key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
           restore-keys: |
