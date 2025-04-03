@@ -24,7 +24,6 @@ from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.security import APIKeyHeader
-from mcp.types import ImageContent
 from openhands_aci.editor.editor import OHEditor
 from openhands_aci.editor.exceptions import ToolError
 from openhands_aci.editor.results import ToolResult
@@ -64,6 +63,7 @@ from openhands.events.observation.playwright_mcp import (
 )
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.mcp.mcp_agent import MCPAgent
+from openhands.mcp.mcp_base import ExtendedImageContent
 from openhands.mcp.mcp_base import ToolResult as MCPToolResult
 from openhands.runtime.browser import browse
 from openhands.runtime.browser.browser_env import BrowserEnv
@@ -550,11 +550,8 @@ class ActionExecutor:
         logger.debug(f'MCP agents: {mcp_agents}')
         logger.debug(f'MCP action name: {action.name}')
         for agent in mcp_agents:
-            # Try to find the tool in either mcp_clients.tools or tool_schemas
-            if (
-                action.name in [tool.name for tool in agent.mcp_clients.tools]
-                or action.name in agent.tool_schemas
-            ):
+            agent.mcp_clients.tools
+            if action.name in [tool.name for tool in agent.mcp_clients.tools]:
                 logger.debug(f'agent.mcp_clients.tools: {agent.mcp_clients.tools}')
                 matching_agent = agent
                 break
@@ -566,11 +563,9 @@ class ActionExecutor:
         args_dict = json.loads(action.arguments)
         response = await matching_agent.run_tool(action.name, args_dict)
         logger.debug(f'MCP response: {response}')
-
-        # close agent connections
-        for agent in mcp_agents:
-            await agent.cleanup()
-
+        # # close agent connections
+        # for agent in mcp_agents:
+        #     await agent.cleanup()
         # special case for browser screenshot of playwright_mcp
         if action.name == 'browser_screenshot':
             return self.playwright_mcp_browser_screenshot(action, response)
@@ -589,13 +584,11 @@ class ActionExecutor:
             "url": "https://www.google.com"
         }
         """
-        screenshot_content: ImageContent = response.output
+        screenshot_content: ExtendedImageContent = response.output
         logger.debug(f'Screenshot content: {screenshot_content}')
         return PlaywrightMcpBrowserScreenshotObservation(
             content=f'{response}',
-            url=screenshot_content.url
-            if screenshot_content.get('url', '') is not None
-            else '',
+            url=screenshot_content.url if screenshot_content.url is not None else '',
             trigger_by_action=action.name,
             screenshot=f'data:image/png;base64,{screenshot_content.data}',
         )
