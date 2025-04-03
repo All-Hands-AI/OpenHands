@@ -26,6 +26,7 @@ class ServerConfig(ServerConfigInterface):
             raise ValueError('Unexpected config path provided')
 
     def get_config(self):
+        logger.info('Getting config')
         config = {
             'APP_MODE': self.app_mode,
             'GITHUB_CLIENT_ID': self.github_client_id,

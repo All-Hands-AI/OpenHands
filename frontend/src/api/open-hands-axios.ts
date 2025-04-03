@@ -1,13 +1,67 @@
-import axios from "axios";
+import usePersistStore from "#/zutand-stores/persist-config/usePersistStore";
+import axios, { InternalAxiosRequestConfig } from "axios";
 
-console.log(
-  "import.meta.env.VITE_BACKEND_BASE_URL",
-  import.meta.env.VITE_BACKEND_BASE_URL,
-);
+// Temporary fix to test CORS
+const baseURL = `${window.location.protocol}//${import.meta.env.VITE_BACKEND_BASE_URL || window?.location.host}`;
 
 export const openHands = axios.create({
-  baseURL: `${window.location.protocol}//${import.meta.env.VITE_BACKEND_BASE_URL || window?.location.host}`,
+  baseURL,
+  headers: {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+    "Access-Control-Allow-Headers":
+      "Origin, X-Requested-With, Content-Type, Accept, Authorization, x-github-token",
+  },
 });
+
+// Request interceptor
+openHands.interceptors.request.use(
+  (config: InternalAxiosRequestConfig) => {
+    // Check for JWT in store
+    const token = usePersistStore.getState().jwt;
+    if (token && config.headers) {
+      config.headers.Authorization = `Bearer ${token}`;
+
+      // Add CORS headers
+      Object.assign(config.headers, {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods":
+          "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+        "Access-Control-Allow-Headers":
+          "Origin, X-Requested-With, Content-Type, Accept, Authorization, x-github-token",
+      });
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  },
+);
+
+// // Response interceptor
+// openHands.interceptors.response.use(
+//   (response) => {
+//     return response;
+//   },
+//   (error) => {
+//     if (error.response) {
+//       switch (error.response.status) {
+//         case 401:
+//           break;
+//         case 403:
+//           break;
+//         case 404:
+//           break;
+//         case 500:
+//           break;
+//       }
+//     }
+//     return Promise.reject(error);
+//   },
+// );
+
 export const setAuthTokenHeader = (token: string) => {
   openHands.defaults.headers.common.Authorization = `Bearer ${token}`;
 };

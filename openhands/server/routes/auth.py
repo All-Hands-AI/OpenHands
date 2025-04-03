@@ -16,10 +16,11 @@ app = APIRouter(prefix='/api/auth')
 
 # TODO: implement get nonce for signing message later
 # Message that users will sign with their wallet
-AUTH_MESSAGE = 'Sign this message to authenticate with OpenHands'
+AUTH_MESSAGE = 'Sign to confirm account access to Thesis Capsule'
+
 # JWT settings
-JWT_SECRET = os.getenv('JWT_SECRET') 
-    
+JWT_SECRET = os.getenv('JWT_SECRET')
+
 JWT_ALGORITHM = 'HS256'
 JWT_EXPIRES_IN = None  # Token never expires
 

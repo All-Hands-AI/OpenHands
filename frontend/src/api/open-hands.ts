@@ -16,8 +16,11 @@ import { openHands } from "./open-hands-axios";
 import { ApiSettings, PostApiSettings } from "#/types/settings";
 
 interface VerifySignatureResponse {
-  public_key: string;
-  jwt: string;
+  user: {
+    id: string;
+    publicAddress: string;
+  };
+  token: string;
 }
 
 interface VerifySignatureRequest {
@@ -372,18 +375,18 @@ class OpenHands {
   /**
    * Verify user's wallet signature and get JWT token
    * @param signature The signature from MetaMask
-   * @param message The message that was signed
+   * @param publicAddress The public address of the user's wallet
    * @returns The user's public key and JWT token
    */
   static async verifySignature(
     signature: string,
-    message: string,
+    publicAddress: string,
   ): Promise<VerifySignatureResponse> {
     const { data } = await openHands.post<VerifySignatureResponse>(
-      "/api/users/verify",
+      "/api/auth/signup",
       {
         signature,
-        message,
+        publicAddress,
       },
     );
     return data;

@@ -42,6 +42,15 @@ export function UserActions({ onLogout, user, isLoading }: UserActionsProps) {
   const publicKey = useGetPublicKey();
   const listAddresses = useGetListAddresses();
 
+  // Initialize JWT from localStorage on component mount
+  useEffect(() => {
+    const storedJwt = localStorage.getItem("jwt");
+    if (storedJwt) {
+      setAuthTokenHeader(storedJwt);
+      setJwt(storedJwt);
+    }
+  }, [setJwt]);
+
   const [accountContextMenuIsVisible, setAccountContextMenuIsVisible] =
     React.useState(false);
 
@@ -54,6 +63,8 @@ export function UserActions({ onLogout, user, isLoading }: UserActionsProps) {
   };
 
   const handleLogout = () => {
+    localStorage.removeItem("jwt");
+    removeAuthTokenHeader();
     onLogout();
     closeAccountMenu();
   };
@@ -66,6 +77,7 @@ export function UserActions({ onLogout, user, isLoading }: UserActionsProps) {
     onDisconnect() {
       console.log("Disconnected!");
       reset();
+      localStorage.removeItem("jwt");
       removeAuthTokenHeader();
       handleLogout();
     },
@@ -85,14 +97,14 @@ export function UserActions({ onLogout, user, isLoading }: UserActionsProps) {
             // Verify signature with backend
             const response = await OpenHands.verifySignature(
               signature,
-              message,
+              account?.address,
             );
 
             // Store user data
             setSignedLogin(signature);
-            setPublicKey(response.public_key);
-            setJwt(response.jwt);
-            setAuthTokenHeader(response.jwt);
+            setPublicKey(response.user.publicAddress);
+            setJwt(response.token);
+            setAuthTokenHeader(response.token);
 
             displaySuccessToast("Successfully verified wallet");
           } catch (apiError) {
