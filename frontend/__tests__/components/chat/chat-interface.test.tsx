@@ -9,6 +9,11 @@ import * as ChatSlice from "#/state/chat-slice";
 import { WsClientProviderStatus } from "#/context/ws-client-provider";
 import { ChatInterface } from "#/components/features/chat/chat-interface";
 
+// Mock the ResearchModeToggle component
+vi.mock("#/components/features/chat/research-mode-toggle", () => ({
+  ResearchModeToggle: () => <div data-testid="research-mode-toggle">Research Mode Toggle</div>,
+}));
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const renderChatInterface = (messages: Message[]) =>
   renderWithProviders(<ChatInterface />);

@@ -2,7 +2,7 @@ export interface ActionMessage {
   id: number;
 
   // Either 'agent' or 'user'
-  source: "agent" | "user";
+  source: "agent" | "user" | "delegate";
 
   // The action to be taken
   action: string;

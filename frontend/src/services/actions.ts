@@ -49,7 +49,7 @@ const messageActions = {
           pending: false,
         }),
       );
-    } else {
+    } else if (message.source !== "delegate") {
       store.dispatch(addAssistantMessage(message.args.content));
     }
   },

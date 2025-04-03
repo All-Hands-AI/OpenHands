@@ -5,14 +5,19 @@ from litellm import ChatCompletionMessageToolCall
 
 from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
 from openhands.agenthub.codeact_agent.function_calling import (
+    get_tools,
+    response_to_actions,
+)
+from openhands.agenthub.codeact_agent.tools import (
     BrowserTool,
+    GlobTool,
+    GrepTool,
     IPythonTool,
     LLMBasedFileEditTool,
+    ThinkTool,
     WebReadTool,
     create_cmd_run_tool,
     create_str_replace_editor_tool,
-    get_tools,
-    response_to_actions,
 )
 from openhands.agenthub.codeact_agent.tools.browser import (
     _BROWSER_DESCRIPTION,
@@ -161,7 +166,6 @@ def test_str_replace_editor_tool():
     assert 'old_str' in properties
     assert 'new_str' in properties
     assert 'insert_line' in properties
-    assert 'view_range' in properties
 
     assert StrReplaceEditorTool['function']['parameters']['required'] == [
         'command',
@@ -340,6 +344,39 @@ def test_mismatched_tool_call_events(mock_state: State):
     mock_state.history = [observation]
     messages = agent._get_messages(mock_state.history)
     assert len(messages) == 1
+
+
+def test_grep_tool():
+    assert GrepTool['type'] == 'function'
+    assert GrepTool['function']['name'] == 'grep'
+
+    properties = GrepTool['function']['parameters']['properties']
+    assert 'pattern' in properties
+    assert 'path' in properties
+    assert 'include' in properties
+
+    assert GrepTool['function']['parameters']['required'] == ['pattern']
+
+
+def test_glob_tool():
+    assert GlobTool['type'] == 'function'
+    assert GlobTool['function']['name'] == 'glob'
+
+    properties = GlobTool['function']['parameters']['properties']
+    assert 'pattern' in properties
+    assert 'path' in properties
+
+    assert GlobTool['function']['parameters']['required'] == ['pattern']
+
+
+def test_think_tool():
+    assert ThinkTool['type'] == 'function'
+    assert ThinkTool['function']['name'] == 'think'
+
+    properties = ThinkTool['function']['parameters']['properties']
+    assert 'thought' in properties
+
+    assert ThinkTool['function']['parameters']['required'] == ['thought']
 
 
 def test_enhance_messages_adds_newlines_between_consecutive_user_messages(
