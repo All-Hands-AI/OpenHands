@@ -5,14 +5,14 @@ import { immer } from "zustand/middleware/immer";
 interface PersistStore {
   signedLogin: string;
   publicKey: string;
-  listAddresses: string[];
+  listAddresses: Record<string, string>;
   jwt: string;
 }
 
 export interface MultisigAction {
   setSignedLogin: (signedLogin: string) => void;
   setPublicKey: (publicKey: string) => void;
-  setListAddresses: (listAddresses: string[]) => void;
+  setListAddresses: (listAddresses: Record<string, string>) => void;
   setJwt: (jwt: string) => void;
   reset: () => void;
 }
@@ -20,7 +20,7 @@ export interface MultisigAction {
 const initialState = {
   signedLogin: "",
   publicKey: "",
-  listAddresses: [],
+  listAddresses: {},
   jwt: "",
 };
 
@@ -34,7 +34,8 @@ const usePersistStore = create<PersistStore & { actions: MultisigAction }>()(
       actions: {
         setSignedLogin: (signedLogin: string) => set({ signedLogin }),
         setPublicKey: (publicKey: string) => set({ publicKey }),
-        setListAddresses: (listAddresses: string[]) => set({ listAddresses }),
+        setListAddresses: (listAddresses: Record<string, string>) =>
+          set({ listAddresses }),
         setJwt: (jwt: string) => {
           set({ jwt });
         },
@@ -42,7 +43,7 @@ const usePersistStore = create<PersistStore & { actions: MultisigAction }>()(
           set((state) => ({
             signedLogin: "",
             publicKey: "",
-            listAddresses: [],
+            listAddresses: {},
             jwt: "",
             actions: state.actions,
           }));

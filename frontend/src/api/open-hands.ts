@@ -397,13 +397,16 @@ class OpenHands {
    * @param network The network to get the address for
    * @returns The address for the given network
    */
-  static async getAddressByNetwork(network: string): Promise<string> {
-    const { data } = await openHands.get<string>(
-      `/api/auth/address-by-network/${network}`,
-    );
-
-    return "0xE27d3094C4231150d421c3600DEd0d130cf74216";
-    return data;
+  static async getAddressByNetwork(network: string | number): Promise<string> {
+    try {
+      const { data } = await openHands.get<string>(
+        `/api/auth/address-by-network/${network}`,
+      );
+      return data;
+    } catch (error) {
+      console.error("getAddressByNetwork", error);
+      return "";
+    }
   }
 }
 

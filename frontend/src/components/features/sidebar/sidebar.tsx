@@ -14,12 +14,14 @@ import { cn } from "#/utils/utils";
 import posthog from "posthog-js";
 import React from "react";
 import { FaListUl } from "react-icons/fa";
+import { MdAccountBalanceWallet } from "react-icons/md";
 import { useDispatch } from "react-redux";
 import { NavLink, useLocation } from "react-router";
 import { useAccount } from "wagmi";
 import { ConversationPanel } from "../conversation-panel/conversation-panel";
 import { ConversationPanelWrapper } from "../conversation-panel/conversation-panel-wrapper";
 import { UserActions } from "./user-actions";
+import DepositModal from "#/components/features/modalDeposit/DepositModal";
 
 export function Sidebar() {
   const location = useLocation();
@@ -36,7 +38,7 @@ export function Sidebar() {
   const { mutateAsync: logout } = useLogout();
 
   const [settingsModalIsOpen, setSettingsModalIsOpen] = React.useState(false);
-
+  const [depositModalIsOpen, setDepositModalIsOpen] = React.useState(false);
   const [conversationPanelIsOpen, setConversationPanelIsOpen] =
     React.useState(false);
 
@@ -108,6 +110,19 @@ export function Sidebar() {
 
           <div className="flex flex-row md:flex-col md:items-center gap-[26px] md:mb-4">
             {/* <DocsButton /> */}
+            {account?.address && (
+              <TooltipButton
+                testId="toggle-deposit-modal"
+                tooltip="Deposit"
+                ariaLabel="Deposit"
+                onClick={() => setDepositModalIsOpen(true)}
+              >
+                <MdAccountBalanceWallet
+                  size={22}
+                  className="text-[#9099AC] hover:text-white transition-colors"
+                />
+              </TooltipButton>
+            )}
             <NavLink
               to="/settings"
               className={({ isActive }) =>
@@ -135,6 +150,11 @@ export function Sidebar() {
           onClose={() => setSettingsModalIsOpen(false)}
         />
       )}
+
+      <DepositModal
+        isOpen={depositModalIsOpen}
+        onClose={() => setDepositModalIsOpen(false)}
+      />
     </>
   );
 }

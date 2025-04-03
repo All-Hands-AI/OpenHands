@@ -18,9 +18,11 @@ import {
 } from "#/zutand-stores/persist-config/selector";
 import { useAccountModal, useConnectModal } from "@rainbow-me/rainbowkit";
 import { signMessage, disconnect } from "@wagmi/core";
+import { useEffect } from "react";
 import { FaUserAlt, FaWallet } from "react-icons/fa";
 import { twMerge } from "tailwind-merge";
 import { useAccount, useAccountEffect } from "wagmi";
+import { mainnet } from "wagmi/chains";
 
 interface UserActionsProps {
   onLogout: () => void;
@@ -31,7 +33,8 @@ export function UserActions({ onLogout, isLoading }: UserActionsProps) {
   const { openConnectModal } = useConnectModal();
   const { openAccountModal } = useAccountModal();
   const account = useAccount();
-  const { setSignedLogin, setPublicKey, setJwt, reset } = usePersistActions();
+  const { setSignedLogin, setPublicKey, setJwt, reset, setListAddresses } =
+    usePersistActions();
   const signedLogin = useGetSignedLogin();
   const publicKey = useGetPublicKey();
   const listAddresses = useGetListAddresses();
@@ -54,6 +57,35 @@ export function UserActions({ onLogout, isLoading }: UserActionsProps) {
       handleLogout();
     },
   });
+
+  useEffect(() => {
+    const getGeneratedUserAddress = async () => {
+      if (listAddresses["solana"] && listAddresses[mainnet.id]) {
+        return;
+      }
+
+      const [evmAddress, solanaAddress] = await Promise.all([
+        OpenHands.getAddressByNetwork(mainnet.id),
+        OpenHands.getAddressByNetwork("solana"),
+      ]);
+      console.log("response", { evmAddress, solanaAddress });
+
+      if (evmAddress) {
+        // setPublicKey(response);
+        setListAddresses({
+          ...listAddresses,
+          [mainnet.id]: evmAddress,
+        });
+      }
+      if (solanaAddress) {
+        setListAddresses({
+          ...listAddresses,
+          solana: solanaAddress,
+        });
+      }
+    };
+    getGeneratedUserAddress();
+  }, [account.address]);
 
   const onConnectEffect = async (account: any) => {
     try {

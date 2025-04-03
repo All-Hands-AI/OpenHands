@@ -84,6 +84,10 @@ eth-account = "^0.11.0"
 databases = {extras = ["postgresql"], version = "^0.9.0"}
 requests = "^2.32.3"
 mnemonic = "^0.21"
+hdwallet = "^2.2.1"
+solana = "^0.36.6"
+base58 = "^2.1.1"
+solders = "^0.26.0"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "0.11.0"
