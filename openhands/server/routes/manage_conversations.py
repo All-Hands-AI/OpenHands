@@ -63,7 +63,6 @@ async def _create_new_conversation(
     logger.info('Loading settings')
     settings_store = await SettingsStoreImpl.get_instance(config, user_id)
     settings = await settings_store.load()
-    logger.info('Settings loaded')
 
     session_init_args: dict = {}
     if settings:
