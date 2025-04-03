@@ -147,7 +147,7 @@ class AgentSession:
 
             repo_directory = None
             if self.runtime and runtime_connected and selected_repository:
-                repo_directory = selected_repository.split('/')[-1]
+                repo_directory = selected_repository.full_name.split('/')[-1]
             self.memory = await self._create_memory(
                 selected_repository=selected_repository,
                 repo_directory=repo_directory,
@@ -394,7 +394,7 @@ class AgentSession:
         return controller
 
     async def _create_memory(
-        self, selected_repository: str | None, repo_directory: str | None
+        self, selected_repository: Repository | None, repo_directory: str | None
     ) -> Memory:
         memory = Memory(
             event_stream=self.event_stream,
@@ -408,12 +408,12 @@ class AgentSession:
 
             # loads microagents from repo/.openhands/microagents
             microagents: list[BaseMicroAgent] = await call_sync_from_async(
-                self.runtime.get_microagents_from_selected_repo, selected_repository
+                self.runtime.get_microagents_from_selected_repo, selected_repository.full_name if selected_repository else None
             )
             memory.load_user_workspace_microagents(microagents)
 
             if selected_repository and repo_directory:
-                memory.set_repository_info(selected_repository, repo_directory)
+                memory.set_repository_info(selected_repository.full_name, repo_directory)
         return memory
 
     def _maybe_restore_state(self) -> State | None:
