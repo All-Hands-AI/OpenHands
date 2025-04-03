@@ -1,6 +1,8 @@
 import os
 from collections import deque
 
+from litellm import ChatCompletionToolParam
+
 import openhands.agenthub.codeact_agent.function_calling as codeact_function_calling
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
@@ -54,7 +56,10 @@ class CodeActAgent(Agent):
     ]
 
     def __init__(
-        self, llm: LLM, config: AgentConfig, mcp_tools: list[dict] | None = None
+        self,
+        llm: LLM,
+        config: AgentConfig,
+        mcp_tools: list[dict] | None = None,
     ) -> None:
         """Initializes a new instance of the CodeActAgent class.
 
@@ -76,11 +81,8 @@ class CodeActAgent(Agent):
         )
 
         self.tools = built_in_tools + (mcp_tools if mcp_tools is not None else [])
+        logger.debug(f'Tools: {self.tools}')
 
-        # Retrieve the enabled tools
-        logger.info(
-            f"TOOLS loaded for CodeActAgent: {', '.join([tool.get('function').get('name') for tool in self.tools])}"
-        )
         self.prompt_manager = PromptManager(
             prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
         )
@@ -141,6 +143,7 @@ class CodeActAgent(Agent):
             'messages': self.llm.format_messages_for_llm(messages),
         }
         params['tools'] = self.tools
+        logger.debug(f'Params: {params['tools']}')
         # log to litellm proxy if possible
         params['extra_body'] = {'metadata': state.to_llm_metadata(agent_name=self.name)}
         response = self.llm.completion(**params)

@@ -21,6 +21,7 @@ from openhands.agenthub.codeact_agent.tools import (
     create_str_replace_editor_tool,
 )
 from openhands.core.exceptions import (
+    FunctionCallNotExistsError,
     FunctionCallValidationError,
 )
 from openhands.core.logger import openhands_logger as logger
@@ -41,6 +42,7 @@ from openhands.events.action.mcp import McpAction
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.tool import ToolCallMetadata
 from openhands.llm import LLM
+from openhands.mcp.mcp_base import BaseTool
 
 
 def combine_thought(action: Action, thought: str) -> Action:
@@ -195,18 +197,17 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                 action = BrowseURLAction(url=arguments['url'])
 
             # ================================================
-            # Other cases -> McpTool (MCP)
+            # McpAction (MCP)
             # ================================================
-            else:
-                # if 'mcp_actions' not in arguments:
-                #     raise FunctionCallNotExistsError(
-                #     f'Tool {tool_call.function.name} is not registered. (arguments: {arguments}). Please check the tool name and retry with an existing tool.'
-                # )
+            elif tool_call.function.name.endswith(BaseTool.postfix()):
                 action = McpAction(
-                    name=tool_call.function.name, arguments=tool_call.function.arguments
+                    name=tool_call.function.name.rstrip(BaseTool.postfix()),
+                    arguments=tool_call.function.arguments,
                 )
-                # action.set_hard_timeout(120)
-                logger.debug(f'MCP action in function_calling.py: {action}')
+            else:
+                raise FunctionCallNotExistsError(
+                    f'Tool {tool_call.function.name} is not registered. (arguments: {arguments}). Please check the tool name and retry with an existing tool.'
+                )
 
             # We only add thought to the first action
             if i == 0:

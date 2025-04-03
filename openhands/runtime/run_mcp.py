@@ -9,7 +9,7 @@ from openhands.core.config.utils import get_parser, setup_config_from_args
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message, TextContent
 from openhands.llm.llm import LLM
-from openhands.mcp.mcp_agent import MCPAgent, convert_mcp_agents_to_tools
+from openhands.mcp.mcp import MCPClient, convert_mcp_clients_to_tools
 
 
 class MCPRunner:
@@ -20,7 +20,7 @@ class MCPRunner:
         llm_config = config.get_llm_config_from_agent(config.default_agent)
         self.config = config
         self.llm = LLM(config=llm_config)
-        self.mcp_agents: List[MCPAgent] = []
+        self.mcp_clients: List[MCPClient] = []
 
     async def initialize(self) -> None:
         """Initialize the MCP agent with multiple connections based on config."""
@@ -37,10 +37,10 @@ class MCPRunner:
                     f'Initializing MCP agent for {server_url} with SSE connection...'
                 )
 
-                agent = MCPAgent()
+                client = MCPClient()
                 try:
-                    await agent.initialize(connection_type='sse', server_url=server_url)
-                    self.mcp_agents.append(agent)
+                    await client.connect_sse(server_url)
+                    self.mcp_clients.append(client)
                     logger.info(f'Connected to MCP server {server_url} via SSE')
                 except Exception as e:
                     logger.error(f'Failed to connect to {server_url}: {str(e)}')
@@ -53,12 +53,10 @@ class MCPRunner:
                     f'Initializing MCP agent for {command} with stdio connection...'
                 )
 
-                agent = MCPAgent()
+                client = MCPClient()
                 try:
-                    await agent.initialize(
-                        connection_type='stdio', command=command, args=args
-                    )
-                    self.mcp_agents.append(agent)
+                    await client.connect_stdio(command, args)
+                    self.mcp_clients.append(client)
                     logger.info(
                         f'Connected to MCP server via stdio with command {command}'
                     )
@@ -66,7 +64,7 @@ class MCPRunner:
                     logger.error(f'Failed to connect with command {command}: {str(e)}')
                     raise
 
-        mcp_tools = convert_mcp_agents_to_tools(self.mcp_agents)
+        mcp_tools = convert_mcp_clients_to_tools(self.mcp_clients)
         logger.info(f'MCP tools: {mcp_tools}')
 
     async def run_single_prompt(self, prompt: str) -> None:
@@ -83,8 +81,8 @@ class MCPRunner:
 
     async def cleanup(self) -> None:
         """Clean up agent resources."""
-        for agent in self.mcp_agents:
-            await agent.cleanup()
+        for client in self.mcp_clients:
+            await client.disconnect()
         logger.info('Session ended')
 
 
