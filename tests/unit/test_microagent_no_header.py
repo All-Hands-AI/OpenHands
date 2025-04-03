@@ -14,7 +14,7 @@ def test_load_markdown_without_frontmatter():
 
     # Verify it's loaded as a repo agent with default values
     assert isinstance(agent, RepoMicroAgent)
-    assert agent.name == 'repo'
+    assert agent.name == 'default'
     assert agent.content == content
     assert agent.type == MicroAgentType.REPO_KNOWLEDGE
     assert agent.metadata.agent == 'CodeActAgent'
