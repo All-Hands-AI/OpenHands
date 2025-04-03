@@ -1,24 +1,16 @@
-import React from "react";
-import { useDispatch } from "react-redux";
-import posthog from "posthog-js";
-import { setReplayJson } from "#/state/initial-query-slice";
-import { useGitHubUser } from "#/hooks/query/use-github-user";
-import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
-import { useConfig } from "#/hooks/query/use-config";
-import { ReplaySuggestionBox } from "../../components/features/suggestions/replay-suggestion-box";
-import { GitHubRepositoriesSuggestionBox } from "#/components/features/github/github-repositories-suggestion-box";
-import { CodeNotInGitHubLink } from "#/components/features/github/code-not-in-github-link";
 import { HeroHeading } from "#/components/shared/hero-heading";
 import { TaskForm } from "#/components/shared/task-form";
-import { convertFileToText } from "#/utils/convert-file-to-text";
-import { ENABLE_TRAJECTORY_REPLAY } from "#/utils/feature-flags";
+import { useConfig } from "#/hooks/query/use-config";
+import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
+import React from "react";
+import { useDispatch } from "react-redux";
 
 function Home() {
   const dispatch = useDispatch();
   const formRef = React.useRef<HTMLFormElement>(null);
 
   const { data: config } = useConfig();
-  const { data: user } = useGitHubUser();
+  // const { data: user } = useGitHubUser();
 
   const gitHubAuthUrl = useGitHubAuthUrl({
     appMode: config?.APP_MODE || null,
@@ -36,7 +28,7 @@ function Home() {
           <TaskForm ref={formRef} />
         </div>
 
-        <div className="flex gap-4 w-full flex-col md:flex-row mt-8">
+        {/* <div className="flex gap-4 w-full flex-col md:flex-row mt-8">
           <GitHubRepositoriesSuggestionBox
             handleSubmit={() => formRef.current?.requestSubmit()}
             gitHubAuthUrl={gitHubAuthUrl}
@@ -59,7 +51,7 @@ function Home() {
         </div>
         <div className="w-full flex justify-start mt-2 ml-2">
           <CodeNotInGitHubLink />
-        </div>
+        </div> */}
       </div>
     </div>
   );

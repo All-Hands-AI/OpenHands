@@ -1,32 +1,30 @@
-import React from "react";
-import { FaListUl } from "react-icons/fa";
-import { useDispatch } from "react-redux";
-import posthog from "posthog-js";
-import { NavLink, useLocation } from "react-router";
-import { useGitHubUser } from "#/hooks/query/use-github-user";
-import { UserActions } from "./user-actions";
 import { AllHandsLogoButton } from "#/components/shared/buttons/all-hands-logo-button";
 import { DocsButton } from "#/components/shared/buttons/docs-button";
 import { ExitProjectButton } from "#/components/shared/buttons/exit-project-button";
 import { SettingsButton } from "#/components/shared/buttons/settings-button";
+import { TooltipButton } from "#/components/shared/buttons/tooltip-button";
 import { SettingsModal } from "#/components/shared/modals/settings/settings-modal";
+import { useLogout } from "#/hooks/mutation/use-logout";
+import { useConfig } from "#/hooks/query/use-config";
 import { useSettings } from "#/hooks/query/use-settings";
-import { ConversationPanel } from "../conversation-panel/conversation-panel";
 import { useEndSession } from "#/hooks/use-end-session";
 import { setCurrentAgentState } from "#/state/agent-slice";
 import { AgentState } from "#/types/agent-state";
-import { TooltipButton } from "#/components/shared/buttons/tooltip-button";
-import { ConversationPanelWrapper } from "../conversation-panel/conversation-panel-wrapper";
-import { useLogout } from "#/hooks/mutation/use-logout";
-import { useConfig } from "#/hooks/query/use-config";
-import { cn } from "#/utils/utils";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
+import { cn } from "#/utils/utils";
+import posthog from "posthog-js";
+import React from "react";
+import { FaListUl } from "react-icons/fa";
+import { useDispatch } from "react-redux";
+import { NavLink, useLocation } from "react-router";
+import { ConversationPanel } from "../conversation-panel/conversation-panel";
+import { ConversationPanelWrapper } from "../conversation-panel/conversation-panel-wrapper";
+import { UserActions } from "./user-actions";
 
 export function Sidebar() {
   const location = useLocation();
   const dispatch = useDispatch();
   const endSession = useEndSession();
-  const user = useGitHubUser();
   const { data: config } = useConfig();
   const {
     data: settings,
@@ -114,13 +112,7 @@ export function Sidebar() {
             >
               <SettingsButton />
             </NavLink>
-            <UserActions
-              user={
-                user.data ? { avatar_url: user.data.avatar_url } : undefined
-              }
-              onLogout={handleLogout}
-              isLoading={user.isFetching}
-            />
+            <UserActions onLogout={handleLogout} isLoading={false} />
           </div>
         </nav>
 

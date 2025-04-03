@@ -29,11 +29,10 @@ import {
 
 interface UserActionsProps {
   onLogout: () => void;
-  user?: { avatar_url: string };
   isLoading?: boolean;
 }
 
-export function UserActions({ onLogout, user, isLoading }: UserActionsProps) {
+export function UserActions({ onLogout, isLoading }: UserActionsProps) {
   const { openConnectModal } = useConnectModal();
   const { openAccountModal } = useAccountModal();
   const account = useAccount();
@@ -42,21 +41,9 @@ export function UserActions({ onLogout, user, isLoading }: UserActionsProps) {
   const publicKey = useGetPublicKey();
   const listAddresses = useGetListAddresses();
 
-  const [accountContextMenuIsVisible, setAccountContextMenuIsVisible] =
-    React.useState(false);
-
-  const toggleAccountMenu = () => {
-    setAccountContextMenuIsVisible((prev) => !prev);
-  };
-
-  const closeAccountMenu = () => {
-    setAccountContextMenuIsVisible(false);
-  };
-
   const handleLogout = () => {
     removeAuthTokenHeader();
     onLogout();
-    closeAccountMenu();
   };
 
   useAccountEffect({
