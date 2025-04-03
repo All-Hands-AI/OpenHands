@@ -33,7 +33,7 @@ def test_load_markdown_with_empty_frontmatter():
 
     # Verify it's loaded as a repo agent with default values
     assert isinstance(agent, RepoMicroAgent)
-    assert agent.name == 'repo'
+    assert agent.name == 'default'
     assert (
         agent.content
         == '# Test Content\nThis is a test markdown file with empty frontmatter.'
