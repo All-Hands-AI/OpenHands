@@ -1,3 +1,5 @@
+import traceback
+
 from fastapi import APIRouter, Request, status
 from fastapi.responses import JSONResponse
 from pydantic import SecretStr
@@ -9,6 +11,7 @@ from openhands.server.auth import get_provider_tokens, get_user_id
 from openhands.server.settings import GETSettingsModel, POSTSettingsModel, Settings
 from openhands.server.shared import SettingsStoreImpl, config, server_config
 from openhands.server.types import AppMode
+from openhands.utils.get_user_setting import get_user_setting
 
 app = APIRouter(prefix='/api')
 
@@ -17,8 +20,8 @@ app = APIRouter(prefix='/api')
 async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
     try:
         user_id = get_user_id(request)
-        settings_store = await SettingsStoreImpl.get_instance(config, user_id)
-        settings = await settings_store.load()
+        settings = await get_user_setting(user_id)
+
         if not settings:
             return JSONResponse(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -34,6 +37,7 @@ async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
         settings_with_token_data.llm_api_key = settings.llm_api_key
         return settings_with_token_data
     except Exception as e:
+        traceback.print_exc()
         logger.warning(f'Invalid token: {e}')
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -48,8 +52,8 @@ async def unset_settings_tokens(request: Request) -> JSONResponse:
             config, get_user_id(request)
         )
 
-        existing_settings = await settings_store.load()
-        # default_settings = Settings.from_config()
+        existing_settings = await get_user_setting(get_user_id(request))
+
         if existing_settings:
             settings = existing_settings.model_copy(
                 update={'secrets_store': SecretStore()}
@@ -93,7 +97,7 @@ async def reset_settings(request: Request) -> JSONResponse:
             confirmation_mode=False,
             #  llm_model="anthropic/claude-3-5-sonnet-20241022",
             #  llm_api_key="",
-            llm_model='anthropic/claude-3-5-sonnet-20240620',
+            llm_model='anthropic/claude-3-7-sonnet-20250219',
             llm_api_key='',
             llm_base_url='',
             remote_runtime_resource_factor=1,
@@ -118,8 +122,10 @@ async def reset_settings(request: Request) -> JSONResponse:
                 settings.llm_model = existing_settings.llm_model
 
         # TODO: FIXME: reset the settings to the default settings for key from server
-        settings.llm_model = 'anthropic/claude-3-5-sonnet-20240620'
-        settings.llm_api_key = default_settings.llm_api_key if default_settings else ''
+        if default_settings:
+            settings.llm_model = default_settings.llm_model
+            settings.llm_api_key = default_settings.llm_api_key
+            settings.llm_base_url = default_settings.llm_base_url
 
         await settings_store.store(settings)
         return JSONResponse(
@@ -163,10 +169,9 @@ async def store_settings(
                     )
 
     try:
-        settings_store = await SettingsStoreImpl.get_instance(
-            config, get_user_id(request)
-        )
-        existing_settings = await settings_store.load()
+        user_id = get_user_id(request)
+        settings_store = await SettingsStoreImpl.get_instance(config, user_id)
+        existing_settings = await get_user_setting(user_id)
 
         # Convert to Settings model and merge with existing settings
         if existing_settings:

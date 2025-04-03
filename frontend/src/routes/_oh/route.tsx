@@ -84,6 +84,7 @@ export default function MainApp() {
     }
   }, [settings?.LANGUAGE]);
 
+  // TODO: remove this once later USER_CONSENTS_TO_ANALYTICS
   React.useEffect(() => {
     const consentFormModalIsOpen =
       settings?.USER_CONSENTS_TO_ANALYTICS === null;

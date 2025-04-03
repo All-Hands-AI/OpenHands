@@ -17,14 +17,13 @@ from openhands.events.observation.agent import (
 from openhands.events.serialization import event_to_dict
 from openhands.events.stream import AsyncEventStreamWrapper
 from openhands.server.shared import (
-    SettingsStoreImpl,
-    config,
     conversation_manager,
     sio,
 )
 from openhands.storage.conversation.conversation_validator import (
     ConversationValidatorImpl,
 )
+from openhands.utils.get_user_setting import get_user_setting
 
 
 @sio.event
@@ -43,8 +42,7 @@ async def connect(connection_id: str, environ):
         conversation_id, cookies_str
     )
 
-    settings_store = await SettingsStoreImpl.get_instance(config, user_id)
-    settings = await settings_store.load()
+    settings = await get_user_setting(user_id)
 
     if not settings:
         raise ConnectionRefusedError(
