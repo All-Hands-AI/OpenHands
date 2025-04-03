@@ -15,7 +15,7 @@ ENV POETRY_VIRTUALENVS_PATH=/openhands/poetry \
 # Install base system dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        wget curl sudo apt-utils git jq tmux build-essential \
+        wget curl ca-certificates sudo apt-utils git jq tmux build-essential \
         {%- if 'ubuntu' in base_image and (base_image.endswith(':latest') or base_image.endswith(':24.04')) -%}
         libgl1 \
         {%- else %}
@@ -24,7 +24,9 @@ RUN apt-get update && \
         libasound2-plugins libatomic1 && \
     {%- if 'ubuntu' in base_image -%}
     curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
-    apt-get install -y nodejs python3.12 python-is-python3 && \
+    TZ=Etc/UTC DEBIAN_FRONTEND=noninteractive \
+        apt-get install -y --no-install-recommends nodejs python3.12 python-is-python3 && \
+    corepack enable yarn && \
     {% endif -%}
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
