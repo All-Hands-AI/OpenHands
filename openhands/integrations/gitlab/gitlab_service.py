@@ -174,16 +174,6 @@ class GitLabService(GitService):
             for repo in all_repos
         ]
 
-    async def does_repo_exist(self, repository: str) -> bool:
-        encoded_repo = quote_plus(repository)
-        url = f'{self.BASE_URL}/projects/{encoded_repo}'
-        try:
-            await self._fetch_data(url)
-            return True
-        except Exception as e:
-            print(e)
-            return False
-
 
 gitlab_service_cls = os.environ.get(
     'OPENHANDS_GITLAB_SERVICE_CLS',

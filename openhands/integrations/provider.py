@@ -228,32 +228,6 @@ class ProviderHandler:
 
         return all_repos
 
-    async def get_remote_repository_url(self, repository: str) -> str | None:
-        if not repository:
-            return None
-
-        provider_domains = {
-            ProviderType.GITHUB: 'github.com',
-            ProviderType.GITLAB: 'gitlab.com',
-        }
-
-        for provider in self.provider_tokens:
-            try:
-                service = self._get_service(provider)
-                repo_exists = await service.does_repo_exist(repository)
-                if repo_exists:
-                    git_token = self.provider_tokens[provider].token
-                    if git_token and provider in provider_domains:
-                        domain = provider_domains[provider]
-
-                        if provider == ProviderType.GITLAB:
-                            return f'https://oauth2:{git_token.get_secret_value()}@{domain}/{repository}.git'
-
-                        return f'https://{git_token.get_secret_value()}@{domain}/{repository}.git'
-            except Exception:
-                continue
-        return None
-
     async def set_event_stream_secrets(
         self,
         event_stream: EventStream,
