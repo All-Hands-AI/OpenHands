@@ -15,14 +15,12 @@ export const openHands = axios.create({
 // Request interceptor
 openHands.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const newConfig = { ...config };
     // Check for JWT in store
     const token = usePersistStore.getState().jwt;
-    if (token) {
-      newConfig.headers = newConfig.headers || {};
-      newConfig.headers.Authorization = `Bearer ${token}`;
+    if (token && config.headers) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
-    return newConfig;
+    return config;
   },
   (error) => {
     return Promise.reject(error);

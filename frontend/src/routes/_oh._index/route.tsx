@@ -31,12 +31,6 @@ function Home() {
   //   gitHubClientId: config?.GITHUB_CLIENT_ID || null,
   // });
 
-  useEffect(() => {
-    if (conversations?.length) {
-      navigate(`/oh/${conversations[0].conversation_id}`);
-    }
-  }, [conversations?.length]);
-
   return (
     <div
       data-testid="home-screen"
@@ -45,10 +39,13 @@ function Home() {
       <HeroHeading />
       <div className="flex flex-col gap-1 w-full mt-8 md:w-[600px] items-center">
         <div className="flex flex-col gap-2 w-full">
-          {isConnected ? <TaskForm ref={formRef} /> :
+          {isConnected ? (
+            <TaskForm ref={formRef} />
+          ) : (
             <div className="flex flex-col gap-2 w-full">
-              <div>Welcome to Thesis! We're currently in private beta.
-                To get started, Please enter connect your wallet.
+              <div>
+                Welcome to Thesis! We're currently in private beta. To get
+                started, Please enter connect your wallet.
               </div>
               <BrandButton
                 testId="connect-your-wallet"
@@ -59,7 +56,8 @@ function Home() {
               >
                 {t(I18nKey.BUTTON$CONNECT_WALLET)}
               </BrandButton>
-            </div>}
+            </div>
+          )}
         </div>
 
         {/* <div className="flex gap-4 w-full flex-col md:flex-row mt-8">
