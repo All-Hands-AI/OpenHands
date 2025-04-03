@@ -1,7 +1,13 @@
 import { useState, useEffect } from "react";
 import QRCode from "qrcode";
-import { useGetListAddresses } from "#/zutand-stores/persist-config/selector";
+import {
+  useGetJwt,
+  useGetListAddresses,
+  usePersistActions,
+} from "#/zutand-stores/persist-config/selector";
 import { reduceString } from "#/utils/utils";
+import OpenHands from "#/api/open-hands";
+import { useAccount } from "wagmi";
 
 interface Token {
   name: string;
@@ -23,7 +29,7 @@ interface DepositModalProps {
 // Example networks - replace with your actual networks
 const NETWORKS: Network[] = [
   {
-    chainId: "1",
+    chainId: "evm",
     name: "EVM",
     icon: "/eth-icon.png",
   },
@@ -40,17 +46,14 @@ const NETWORKS: Network[] = [
 ];
 
 const DepositModal = ({ isOpen, onClose }: DepositModalProps) => {
-  const [selectedNetwork, setSelectedNetwork] = useState<Network | null>(null);
+  const [selectedNetwork, setSelectedNetwork] = useState<Network | null>(
+    NETWORKS[0],
+  );
   const [qrUrl, setQrUrl] = useState<string>("");
   const [copied, setCopied] = useState(false);
   const listAddresses = useGetListAddresses();
-
-  // Set first network as default when modal opens
-  useEffect(() => {
-    if (isOpen && !selectedNetwork && NETWORKS.length > 0) {
-      setSelectedNetwork(NETWORKS[0]);
-    }
-  }, [isOpen]);
+  const jwt = useGetJwt();
+  const { setListAddresses } = usePersistActions();
 
   useEffect(() => {
     if (selectedNetwork?.chainId && listAddresses[selectedNetwork.chainId]) {
@@ -59,6 +62,26 @@ const DepositModal = ({ isOpen, onClose }: DepositModalProps) => {
         .catch((err: Error) => console.error("Error generating QR code:", err));
     }
   }, [selectedNetwork, listAddresses]);
+
+  useEffect(() => {
+    const getGeneratedUserAddress = async () => {
+      if (!!listAddresses["solana"] && !!listAddresses["evm"]) {
+        return;
+      }
+
+      const [evmAddress, solanaAddress] = await Promise.all([
+        OpenHands.getAddressByNetwork("evm"),
+        OpenHands.getAddressByNetwork("solana"),
+      ]);
+
+      setListAddresses({
+        ...listAddresses,
+        evm: evmAddress,
+        solana: solanaAddress,
+      });
+    };
+    getGeneratedUserAddress();
+  }, [jwt, selectedNetwork]);
 
   const handleCopy = async (text: string) => {
     try {

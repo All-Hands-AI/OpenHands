@@ -58,35 +58,6 @@ export function UserActions({ onLogout, isLoading }: UserActionsProps) {
     },
   });
 
-  useEffect(() => {
-    const getGeneratedUserAddress = async () => {
-      if (listAddresses["solana"] && listAddresses[mainnet.id]) {
-        return;
-      }
-
-      const [evmAddress, solanaAddress] = await Promise.all([
-        OpenHands.getAddressByNetwork(mainnet.id),
-        OpenHands.getAddressByNetwork("solana"),
-      ]);
-      console.log("response", { evmAddress, solanaAddress });
-
-      if (evmAddress) {
-        // setPublicKey(response);
-        setListAddresses({
-          ...listAddresses,
-          [mainnet.id]: evmAddress,
-        });
-      }
-      if (solanaAddress) {
-        setListAddresses({
-          ...listAddresses,
-          solana: solanaAddress,
-        });
-      }
-    };
-    getGeneratedUserAddress();
-  }, [account.address]);
-
   const onConnectEffect = async (account: any) => {
     try {
       if (account?.address && !signedLogin) {
