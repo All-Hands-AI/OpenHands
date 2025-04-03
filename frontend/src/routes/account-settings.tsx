@@ -486,15 +486,6 @@ function AccountSettings() {
                 </BrandButton>
               </>
             )}
-
-            <BrandButton
-              type="button"
-              variant="secondary"
-              onClick={handleLogout}
-              isDisabled={!isGitHubTokenSet}
-            >
-              {t(I18nKey.ACCOUNT_SETTINGS$DISCONNECT_FROM_GITHUB)}
-            </BrandButton>
           </section>
 
           <section className="flex flex-col gap-6">
