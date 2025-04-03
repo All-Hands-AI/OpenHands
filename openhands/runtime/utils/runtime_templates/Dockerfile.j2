@@ -29,11 +29,12 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-{%- if 'ubuntu' in base_image -%}
+{% if 'ubuntu' in base_image %}
 RUN corepack enable yarn && \
     pip install -U pip pipenv uv && \
     curl -fsSL --compressed https://install.python-poetry.org | python -
-{% endif -%}
+{% endif %}
+
 # Remove UID 1000 if it's called pn--this fixes the nikolaik image for ubuntu users
 RUN if getent passwd 1000 | grep -q pn; then userdel pn; fi
 
