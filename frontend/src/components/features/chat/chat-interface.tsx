@@ -25,7 +25,10 @@ import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { useGetTrajectory } from "#/hooks/mutation/use-get-trajectory";
 import { useSummarizeConversation } from "#/hooks/mutation/use-summarize-conversation";
 import { downloadTrajectory } from "#/utils/download-trajectory";
-import { displayErrorToast, displaySuccessToast } from "#/utils/custom-toast-handlers";
+import {
+  displayErrorToast,
+  displaySuccessToast,
+} from "#/utils/custom-toast-handlers";
 
 function getEntryPoint(
   hasRepository: boolean | null,
@@ -129,20 +132,20 @@ export function ChatInterface() {
           const timestamp = new Date().toISOString();
           dispatch(
             addUserMessage({
-              content: `**Conversation Summary:**\n\n${data.summary}`,
+              content: `${t(I18nKey.CONVERSATION$SUMMARY_HEADER)}${data.summary}`,
               imageUrls: [],
               timestamp,
               pending: false,
               isSystemMessage: true,
-            })
+            }),
           );
-          displaySuccessToast("Conversation summarized successfully");
+          displaySuccessToast(t(I18nKey.CONVERSATION$SUMMARY_SUCCESS));
         } else {
-          displayErrorToast("Failed to summarize conversation");
+          displayErrorToast(t(I18nKey.CONVERSATION$SUMMARY_FAILURE));
         }
       },
       onError: () => {
-        displayErrorToast("Failed to summarize conversation");
+        displayErrorToast(t(I18nKey.CONVERSATION$SUMMARY_FAILURE));
       },
     });
   };

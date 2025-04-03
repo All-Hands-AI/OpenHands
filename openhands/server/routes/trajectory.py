@@ -1,12 +1,13 @@
 from fastapi import APIRouter, Request, status
 from fastapi.responses import JSONResponse
 
-from openhands.core.config.condenser_config import LLMSummarizingCondenserConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.async_event_store_wrapper import AsyncEventStoreWrapper
 from openhands.events.serialization import event_to_trajectory
 from openhands.llm.llm import LLM
-from openhands.memory.condenser.impl.llm_summarizing_condenser import LLMSummarizingCondenser
+from openhands.memory.condenser.impl.llm_summarizing_condenser import (
+    LLMSummarizingCondenser,
+)
 from openhands.memory.view import View
 
 app = APIRouter(prefix='/api/conversations/{conversation_id}')
@@ -80,26 +81,23 @@ async def summarize_conversation(request: Request) -> JSONResponse:
             llm_config = request.state.conversation.config.get_llm_config()
 
         # Create the condenser
-        condenser_config = LLMSummarizingCondenserConfig(
-            llm_config=llm_config, keep_first=3, max_size=40
-        )
         llm = LLM(config=llm_config)
         condenser = LLMSummarizingCondenser(llm=llm, max_size=40, keep_first=3)
 
         # Force summarization by setting a large max_size
         original_max_size = condenser.max_size
         condenser.max_size = 0  # This ensures should_condense() returns True
-        
+
         # Get the condensation
         condensation = condenser.get_condensation(view)
-        
+
         # Restore the original max_size
         condenser.max_size = original_max_size
 
         # Return the summary
         return JSONResponse(
-            status_code=status.HTTP_200_OK, 
-            content={'summary': condensation.action.summary}
+            status_code=status.HTTP_200_OK,
+            content={'summary': condensation.action.summary},
         )
     except Exception as e:
         logger.error(f'Error summarizing conversation: {e}', exc_info=True)

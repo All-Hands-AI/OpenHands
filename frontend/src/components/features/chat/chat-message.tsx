@@ -52,7 +52,7 @@ export function ChatMessage({
         type === "user" && " max-w-[305px] p-4 bg-tertiary self-end",
         type === "assistant" && "mt-6 max-w-full bg-tranparent",
         type === "system" && "mt-6 max-w-full p-4",
-        className
+        className,
       )}
     >
       <CopyToClipboardButton
