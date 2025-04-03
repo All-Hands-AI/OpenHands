@@ -36,7 +36,7 @@ import { useSettings } from "#/hooks/query/use-settings";
 import { clearFiles, clearInitialPrompt } from "#/state/initial-query-slice";
 import { RootState } from "#/store";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
-import { useDocumentTitle } from "#/hooks/use-document-title";
+import { useDocumentTitleFromState } from "#/hooks/use-document-title-from-state";
 
 function AppContent() {
   useConversationConfig();
@@ -53,7 +53,7 @@ function AppContent() {
   const endSession = useEndSession();
 
   // Set the document title to the conversation title when available
-  useDocumentTitle(conversation?.title);
+  useDocumentTitleFromState();
 
   const [width, setWidth] = React.useState(window.innerWidth);
 
