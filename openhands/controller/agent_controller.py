@@ -251,17 +251,16 @@ class AgentController:
                 self.state.last_error = err_id
             elif isinstance(e, BadRequestError) and 'ExceededBudget' in str(e):
                 err_id = 'STATUS$ERROR_LLM_OUT_OF_CREDITS'
-                # Set error reason for budget exceeded
                 self.state.last_error = err_id
-            elif isinstance(e, RateLimitError):
-                await self.set_agent_state_to(AgentState.RATE_LIMITED)
-                return
             elif isinstance(e, ContentPolicyViolationError) or (
                 isinstance(e, BadRequestError)
                 and 'ContentPolicyViolationError' in str(e)
             ):
                 err_id = 'STATUS$ERROR_LLM_CONTENT_POLICY_VIOLATION'
                 self.state.last_error = err_id
+            elif isinstance(e, RateLimitError):
+                await self.set_agent_state_to(AgentState.RATE_LIMITED)
+                return
             await self.status_callback('error', err_id, self.state.last_error)
 
         # Set the agent state to ERROR after storing the reason
