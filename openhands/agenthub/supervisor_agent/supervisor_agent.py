@@ -615,6 +615,9 @@ If the trajectory is good (score 0-3), set "pattern_observed" to null.
                     overthinking_detected = True
                     logger.info('SupervisorAgent: Detected overthinking, restarting task with CodeActAgent')
                     
+                    # When overthinking is detected, we don't collect the git patch
+                    # as requested by the user
+                    
                     # Reset the agent state
                     self.delegated = False
                     self.finished = False
@@ -641,25 +644,83 @@ If the trajectory is good (score 0-3), set "pattern_observed" to null.
                             clear_history=True,
                         )
                     
-                    # Return a message action explaining the restart
+                    # Return a message action explaining the restart without git patch in outputs
                     return MessageAction(
                         content=(
                             f"I've detected overthinking in the CodeActAgent's approach "
                             f"(score: {overthinking_analysis['overthinking_score']}, "
                             f"patterns: {overthinking_analysis['pattern_observed']}). "
                             f"Restarting the task with a fresh approach."
-                        ),
+                        )
                     )
 
         # If delegate observation was found, no overthinking was detected, and history >= 5, finish normally
         if delegate_observation_found and not overthinking_detected and len(state.history) >= 5:
             self.finished = True
+            
+            # Collect git patch before finishing
+            git_patch = ""
+            if not self.skip_git_commands:
+                logger.info('SupervisorAgent: Collecting git patch before finishing')
+                
+                # Configure git to not use a pager
+                self.pending_actions.append(
+                    CmdRunAction(
+                        command='git config --global core.pager ""',
+                        thought='Configuring git to not use a pager',
+                    )
+                )
+                
+                # Add all files to git staging
+                self.pending_actions.append(
+                    CmdRunAction(
+                        command='git add -A',
+                        thought='Adding all files to git staging to prepare for diff',
+                    )
+                )
+                
+                # Get the base commit from state.inputs if available
+                base_commit = ""
+                if hasattr(state, 'inputs') and 'base_commit' in state.inputs:
+                    base_commit = state.inputs['base_commit']
+                
+                # Get the diff with retries
+                max_retries = 3
+                for retry in range(max_retries):
+                    # Get the diff
+                    self.pending_actions.append(
+                        CmdRunAction(
+                            command=f'git diff --no-color --cached {base_commit}',
+                            thought=f'Getting git diff to include in the final output (attempt {retry+1}/{max_retries})',
+                        )
+                    )
+                    
+                    # Process the pending actions to get the git patch
+                    while self.pending_actions:
+                        action = self.pending_actions.popleft()
+                        observation = state.runtime.run_action(action)
+                        
+                        # If this is the git diff command output, store the patch
+                        if (isinstance(observation, CmdOutputObservation) and 
+                            'git diff --no-color --cached' in observation.command):
+                            if observation.exit_code == 0:
+                                git_patch = observation.content.strip()
+                                logger.info(f'SupervisorAgent: Collected git patch: {git_patch[:100]}...')
+                                break  # Break out of the while loop
+                            else:
+                                logger.warning(f'SupervisorAgent: Failed to get git diff (attempt {retry+1}/{max_retries}): {observation.content}')
+                    
+                    # If we got the git patch, break out of the retry loop
+                    if git_patch:
+                        break
+            
             return AgentFinishAction(
                 final_thought=(
                     "The CodeActAgent has completed the task. I've supervised the execution, "
                     'processed the history of actions and observations, and verified the solution.'
                 ),
                 task_completed=AgentFinishTaskCompleted.TRUE,
+                outputs={'git_patch': git_patch}
             )
 
         # Check if we've already delegated to CodeActAgent
