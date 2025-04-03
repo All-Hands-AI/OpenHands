@@ -927,19 +927,20 @@ class AgentController:
                         f'Agent reached maximum {limit_type} in headless mode. '
                         f'Current {limit_type}: {current_str}, max {limit_type}: {max_str}'
                     )
-                    
+
                     # Create a delegate observation to return to the supervisor
                     observation = AgentDelegateObservation(
                         outputs={},
-                        content=f'CodeActAgent encountered an error during execution.',
+                        content='CodeActAgent encountered an error during execution.',
                     )
-                    observation.action = 'delegate_observation'
-                    
+                    # Add action attribute using setattr to avoid mypy error
+                    setattr(observation, 'action', 'delegate_observation')  # type: ignore
+
                     # Add the observation to the history
                     self.state.history.append(observation)
-                    
-                    # Set the agent state to DONE to return control to the supervisor
-                    await self.set_agent_state_to(AgentState.DONE)
+
+                    # Set the agent state to FINISHED to return control to the supervisor
+                    await self.set_agent_state_to(AgentState.FINISHED)
                 else:
                     # Original behavior for non-delegate agents
                     e = RuntimeError(
