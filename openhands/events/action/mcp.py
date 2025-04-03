@@ -10,9 +10,26 @@ class McpAction(Action):
     name: str
     arguments: str
     thought: str = ''
+    sid: str | None = None
     action: str = ActionType.MCP
     runnable: ClassVar[bool] = True
     security_risk: ActionSecurityRisk | None = None
+
+    def __init__(
+        self,
+        name: str,
+        arguments: str,
+        sid: str | None = None,
+        thought: str = '',
+        **kwargs,
+    ):
+        # Initialize first as Action with no args
+        super().__init__()
+        # Then assign our specific fields
+        self.name = name
+        self.arguments = arguments
+        self.sid = sid
+        self.thought = thought
 
     @property
     def message(self) -> str:

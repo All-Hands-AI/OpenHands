@@ -195,6 +195,7 @@ class DockerRuntime(ActionExecutionClient):
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
 
         use_host_network = self.config.sandbox.use_host_network
+        self.log('debug', f'use_host_network: {use_host_network}')
         network_mode: str | None = 'host' if use_host_network else None
 
         # Initialize port mappings

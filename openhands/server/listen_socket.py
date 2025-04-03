@@ -1,5 +1,6 @@
 from urllib.parse import parse_qs
 
+import jwt
 from socketio.exceptions import ConnectionRefusedError
 
 from openhands.core.logger import openhands_logger as logger
@@ -16,13 +17,12 @@ from openhands.events.observation.agent import (
 )
 from openhands.events.serialization import event_to_dict
 from openhands.events.stream import AsyncEventStreamWrapper
+from openhands.server.routes.auth import JWT_ALGORITHM, JWT_SECRET
 from openhands.server.shared import (
     conversation_manager,
     sio,
 )
-from openhands.storage.conversation.conversation_validator import (
-    ConversationValidatorImpl,
-)
+
 from openhands.utils.get_user_setting import get_user_setting
 
 
@@ -36,11 +36,29 @@ async def connect(connection_id: str, environ):
         logger.error('No conversation_id in query params')
         raise ConnectionRefusedError('No conversation_id in query params')
 
-    cookies_str = environ.get('HTTP_COOKIE', '')
-    conversation_validator = ConversationValidatorImpl()
-    user_id, github_user_id = await conversation_validator.validate(
-        conversation_id, cookies_str
-    )
+    # Get JWT token from query params
+    jwt_token = query_params.get('auth', [None])[0]
+    if not jwt_token:
+        logger.error('No JWT token provided')
+        raise ConnectionRefusedError('Authentication required')
+
+    try:
+        # Verify and decode JWT token
+        payload = jwt.decode(jwt_token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        user_id = payload['sub']
+        logger.info(f'user_id: {user_id}')
+    except jwt.ExpiredSignatureError:
+        logger.error('JWT token has expired')
+        raise ConnectionRefusedError('Token has expired')
+    except jwt.InvalidTokenError:
+        logger.error('Invalid JWT token')
+        raise ConnectionRefusedError('Invalid token')
+    except Exception as e:
+        logger.error(f'Error processing JWT token: {str(e)}')
+        raise ConnectionRefusedError('Authentication failed')
+
+    # cookies_str = environ.get('HTTP_COOKIE', '')
+    # conversation_validator = ConversationValidatorImpl()
 
     settings = await get_user_setting(user_id)
 
@@ -49,6 +67,7 @@ async def connect(connection_id: str, environ):
             'Settings not found', {'msg_id': 'CONFIGURATION$SETTINGS_NOT_FOUND'}
         )
 
+    github_user_id = ''
     event_stream = await conversation_manager.join_conversation(
         conversation_id, connection_id, settings, user_id, github_user_id
     )

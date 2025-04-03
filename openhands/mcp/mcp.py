@@ -5,10 +5,13 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.sse import sse_client
 from mcp.client.stdio import stdio_client
 from mcp.types import ImageContent, TextContent
+from sqlalchemy import select
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.mcp.mcp_base import BaseTool, ExtendedImageContent, ToolResult
 from openhands.mcp.mcp_tool_collection import ToolCollection
+from openhands.server.db import database
+from openhands.server.models import User
 
 
 class MCPClientTool(BaseTool):
@@ -30,7 +33,7 @@ class MCPClientTool(BaseTool):
 
             # special case for image content
             if (
-                self.name == 'browser_screenshot'
+                self.name == 'browser_take_screenshot'
                 and isinstance(result.content, list)
                 and len(result.content) > 0
                 and isinstance(result.content[0], ImageContent)
@@ -69,15 +72,35 @@ class MCPClients(ToolCollection):
         super().__init__()  # Initialize with empty tools list
         self.name = 'mcp'  # Keep name for backward compatibility
 
-    async def connect_sse(self, server_url: str) -> None:
+    async def connect_sse(
+        self, server_url: str, sid: Optional[str] = None, user_id: Optional[str] = None
+    ) -> None:
         """Connect to an MCP server using SSE transport."""
         if not server_url:
             raise ValueError('Server URL is required.')
         if self.session:
             await self.disconnect()
 
+        # Query user from database if user_id is provided
+        if not user_id:
+            raise ValueError('User ID is required.')
+
+        # Get user record and mnemonic
+        query = select(User).where(User.c.public_key == user_id.lower())
+        user = await database.fetch_one(query)
+        if not user or not user['mnemonic']:
+            logger.error(f'User not found or no mnemonic available: {user_id}')
+            raise ValueError('User not found or no mnemonic available')
+
+        mnemonic = user['mnemonic']
+        headers = {
+            k: v for k, v in {'sid': sid, 'mnemonic': mnemonic}.items() if v is not None
+        }
+        logger.info(f'sid: {sid}')
+        logger.info(f'mnemonic: {len(mnemonic)}')
+        logger.info('Connecting to MCP server')
         streams_context = sse_client(
-            url=server_url, timeout=60, sse_read_timeout=60 * 10
+            url=server_url, timeout=60, sse_read_timeout=60 * 10, headers=headers
         )
         streams = await self.exit_stack.enter_async_context(streams_context)
         self.session = await self.exit_stack.enter_async_context(

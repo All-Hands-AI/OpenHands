@@ -9,6 +9,7 @@ import {
   AssistantMessageAction,
   UserMessageAction,
 } from "#/types/core/actions";
+import { useGetJwt } from "#/zutand-stores/persist-config/selector";
 
 const isOpenHandsEvent = (event: unknown): event is OpenHandsParsedEvent =>
   typeof event === "object" &&
@@ -110,7 +111,7 @@ export function WsClientProvider({
   );
   const [events, setEvents] = React.useState<Record<string, unknown>[]>([]);
   const lastEventRef = React.useRef<Record<string, unknown> | null>(null);
-
+  const jwt = useGetJwt();
   const messageRateHandler = useRate({ threshold: 250 });
 
   function send(event: Record<string, unknown>) {
@@ -168,6 +169,7 @@ export function WsClientProvider({
     const query = {
       latest_event_id: lastEvent?.id ?? -1,
       conversation_id: conversationId,
+      auth: jwt,
     };
 
     const baseUrl =

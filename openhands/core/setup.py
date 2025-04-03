@@ -1,7 +1,7 @@
 import hashlib
 import os
 import uuid
-from typing import Callable, List, Tuple, Type
+from typing import Callable, List, Optional, Tuple, Type
 
 from pydantic import SecretStr
 
@@ -173,8 +173,13 @@ async def create_agent(config: AppConfig) -> Agent:
     agent_cls: Type[Agent] = Agent.get_cls(config.default_agent)
     agent_config = config.get_agent_config(config.default_agent)
     llm_config = config.get_llm_config_from_agent(config.default_agent)
+    # tmp create mcp agents for get list of tools
     mcp_agents = await create_mcp_agents(
-        config.mcp.sse.mcp_servers, config.mcp.stdio.commands, config.mcp.stdio.args
+        config.mcp.sse.mcp_servers,
+        config.mcp.stdio.commands,
+        config.mcp.stdio.args,
+        'tmp-sid',
+        'tmp-user-id',
     )
     mcp_tools = convert_mcp_agents_to_tools(mcp_agents)
     agent = agent_cls(
@@ -192,7 +197,11 @@ async def create_agent(config: AppConfig) -> Agent:
 
 
 async def create_mcp_agents(
-    sse_mcp_server: List[str], commands: List[str], args: List[List[str]]
+    sse_mcp_server: List[str],
+    commands: List[str],
+    args: List[List[str]],
+    sid: Optional[str] = None,
+    user_id: Optional[str] = None,
 ) -> List[MCPAgent]:
     mcp_agents: List[MCPAgent] = []
     # Initialize SSE connections
@@ -201,10 +210,14 @@ async def create_mcp_agents(
             logger.info(
                 f'Initializing MCP agent for {server_url} with SSE connection...'
             )
-
             agent = MCPAgent()
             try:
-                await agent.initialize(connection_type='sse', server_url=server_url)
+                await agent.initialize(
+                    connection_type='sse',
+                    server_url=server_url,
+                    sid=sid,
+                    user_id=user_id,
+                )
                 mcp_agents.append(agent)
                 logger.info(f'Connected to MCP server {server_url} via SSE')
             except Exception as e:

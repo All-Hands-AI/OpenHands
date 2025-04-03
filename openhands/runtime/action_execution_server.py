@@ -17,7 +17,7 @@ import time
 import traceback
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 from zipfile import ZipFile
 
 from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
@@ -63,6 +63,7 @@ from openhands.events.observation.playwright_mcp import (
     PlaywrightMcpBrowserScreenshotObservation,
 )
 from openhands.events.serialization import event_from_dict, event_to_dict
+from openhands.mcp.mcp_agent import MCPAgent
 from openhands.mcp.mcp_base import ToolResult as MCPToolResult
 from openhands.runtime.browser import browse
 from openhands.runtime.browser.browser_env import BrowserEnv
@@ -181,6 +182,7 @@ class ActionExecutor:
         self.last_execution_time = self.start_time
         self._initialized = False
         self.runtime_mode = runtime_mode
+        self.mcp_agents: List[MCPAgent] | None = None
 
         self.max_memory_gb: int | None = None
         if _override_max_memory_gb := os.environ.get('RUNTIME_MAX_MEMORY_GB', None):
@@ -537,14 +539,23 @@ class ActionExecutor:
             raise ValueError('No MCP servers or stdio MCP config found')
 
         logger.debug(f'SSE MCP servers: {mcp_server_urls}')
-        mcp_agents = await create_mcp_agents(mcp_server_urls, commands, args)
+        if self.mcp_agents is None:
+            self.mcp_agents = await create_mcp_agents(
+                mcp_server_urls, commands, args, sid=action.sid
+            )
+        mcp_agents = self.mcp_agents
         logger.debug(f'MCP action received: {action}')
         # Find the MCP agent that has the matching tool name
         matching_agent = None
         logger.debug(f'MCP agents: {mcp_agents}')
         logger.debug(f'MCP action name: {action.name}')
         for agent in mcp_agents:
-            if action.name in [tool.name for tool in agent.mcp_clients.tools]:
+            # Try to find the tool in either mcp_clients.tools or tool_schemas
+            if (
+                action.name in [tool.name for tool in agent.mcp_clients.tools]
+                or action.name in agent.tool_schemas
+            ):
+                logger.debug(f'agent.mcp_clients.tools: {agent.mcp_clients.tools}')
                 matching_agent = agent
                 break
         if matching_agent is None:
@@ -579,9 +590,12 @@ class ActionExecutor:
         }
         """
         screenshot_content: ImageContent = response.output
+        logger.debug(f'Screenshot content: {screenshot_content}')
         return PlaywrightMcpBrowserScreenshotObservation(
             content=f'{response}',
-            url=screenshot_content.url if screenshot_content.url is not None else '',
+            url=screenshot_content.url
+            if screenshot_content.get('url', '') is not None
+            else '',
             trigger_by_action=action.name,
             screenshot=f'data:image/png;base64,{screenshot_content.data}',
         )
