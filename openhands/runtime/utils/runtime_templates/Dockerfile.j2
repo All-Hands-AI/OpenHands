@@ -22,6 +22,7 @@ RUN apt-get update && \
         libgl1-mesa-glx \
         {% endif -%}
         libasound2-plugins libatomic1 && \
+    (apt-get upgrade -y libexpat1 || true) && \
     (apt-get remove -y libaom3 || true) && \
     (apt-get remove -y libjxl0.7 || true) && \
     (apt-get remove -y libharfbuzz0b || true) && \
