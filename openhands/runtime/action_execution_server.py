@@ -552,7 +552,7 @@ class ActionExecutor:
         for client in mcp_clients:
             await client.disconnect()
 
-        return MCPObservation(content=f'MCP result:{response}')
+        return MCPObservation(content=f'MCP result:{response.model_dump(mode="json")}')
 
     def close(self):
         self.memory_monitor.stop_monitoring()
