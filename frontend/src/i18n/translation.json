@@ -601,6 +601,21 @@
         "fr": "Paramètres GitHub",
         "tr": "GitHub Ayarları"
     },
+    "SETTINGS$REPOSITORY_MEMORY": {
+        "en": "Repository Memory",
+        "ja": "リポジトリメモリ",
+        "zh-CN": "仓库记忆",
+        "zh-TW": "倉庫記憶",
+        "ko-KR": "저장소 메모리",
+        "de": "Repository-Gedächtnis",
+        "no": "Repository-minne",
+        "it": "Memoria del repository",
+        "pt": "Memória do repositório",
+        "es": "Memoria del repositorio",
+        "ar": "ذاكرة المستودع",
+        "fr": "Mémoire du dépôt",
+        "tr": "Depo Belleği"
+    },
     "SETTINGS$SOUND_NOTIFICATIONS": {
         "en": "Sound Notifications",
         "ja": "サウンド通知",

@@ -17,6 +17,7 @@ export type Settings = {
   PROVIDER_TOKENS_SET: Record<Provider, boolean>;
   ENABLE_DEFAULT_CONDENSER: boolean;
   ENABLE_SOUND_NOTIFICATIONS: boolean;
+  ENABLE_REPOSITORY_MEMORY: boolean;
   USER_CONSENTS_TO_ANALYTICS: boolean | null;
   PROVIDER_TOKENS: Record<Provider, string>;
   IS_NEW_USER?: boolean;
@@ -34,6 +35,7 @@ export type ApiSettings = {
   remote_runtime_resource_factor: number | null;
   enable_default_condenser: boolean;
   enable_sound_notifications: boolean;
+  enable_repository_memory: boolean;
   user_consents_to_analytics: boolean | null;
   provider_tokens: Record<Provider, string>;
   provider_tokens_set: Record<Provider, boolean>;

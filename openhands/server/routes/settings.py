@@ -104,6 +104,7 @@ async def reset_settings(request: Request) -> JSONResponse:
             remote_runtime_resource_factor=1,
             enable_default_condenser=True,
             enable_sound_notifications=False,
+            enable_repository_memory=True,
             user_consents_to_analytics=existing_settings.user_consents_to_analytics
             if existing_settings
             else False,
