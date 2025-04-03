@@ -33,10 +33,6 @@ class LocalhostCORSMiddleware(CORSMiddleware):
             parsed = urlparse(origin)
             hostname = parsed.hostname or ''
 
-            logger.info(f'Checking origin: {origin}')
-            logger.info(f'Parsed: {parsed}')
-            logger.info(f'Hostname: {hostname}')
-
             # Allow any localhost/127.0.0.1 origin regardless of port
             if hostname in ['localhost', '127.0.0.1']:
                 return True
