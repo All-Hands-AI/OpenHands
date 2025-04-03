@@ -200,7 +200,8 @@ class Session:
             await self.send(event_to_dict(event))
         # NOTE: ipython observations are not sent here currently
         elif event.source == EventSource.ENVIRONMENT and isinstance(
-            event, (CmdOutputObservation, AgentStateChangedObservation, RecallObservation)
+            event,
+            (CmdOutputObservation, AgentStateChangedObservation, RecallObservation),
         ):
             # feedback from the environment to agent actions is understood as agent events by the UI
             event_dict = event_to_dict(event)

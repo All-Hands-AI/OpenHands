@@ -65,6 +65,11 @@ export interface GetTrajectoryResponse {
   error?: string;
 }
 
+export interface SummarizeConversationResponse {
+  summary: string | null;
+  error?: string;
+}
+
 export interface AuthenticateResponse {
   message?: string;
   error?: string;
