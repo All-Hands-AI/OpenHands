@@ -88,6 +88,6 @@ describe("Settings Billing", () => {
     await user.click(credits);
 
     const billingSection = await screen.findByTestId("billing-settings");
-    within(billingSection).getByText("Manage Credits");
+    within(billingSection).getByText("PAYMENT$MANAGE_CREDITS");
   });
 });

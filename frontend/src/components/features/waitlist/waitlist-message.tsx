@@ -1,34 +1,35 @@
+import { useTranslation } from "react-i18next";
+import { I18nKey } from "#/i18n/declaration";
+
 interface WaitlistMessageProps {
   content: "waitlist" | "sign-in";
 }
 
 export function WaitlistMessage({ content }: WaitlistMessageProps) {
+  const { t } = useTranslation();
+
   return (
     <div className="flex flex-col gap-2 w-full items-center text-center">
       <h1 className="text-2xl font-bold">
-        {content === "sign-in" && "Sign in with GitHub"}
-        {content === "waitlist" && "Just a little longer!"}
+        {content === "sign-in" && t(I18nKey.AUTH$SIGN_IN_WITH_GITHUB)}
+        {content === "waitlist" && t(I18nKey.WAITLIST$ALMOST_THERE)}
       </h1>
       {content === "sign-in" && (
         <p>
-          or{" "}
+          {t(I18nKey.LANDING$OR)}{" "}
           <a
             href="https://www.all-hands.dev/join-waitlist"
             target="_blank"
             rel="noreferrer noopener"
             className="text-blue-500 hover:underline underline-offset-2"
           >
-            join the waitlist
+            {t(I18nKey.WAITLIST$JOIN)}
           </a>{" "}
-          if you haven&apos;t already
+          {t(I18nKey.WAITLIST$IF_NOT_JOINED)}
         </p>
       )}
       {content === "waitlist" && (
-        <p className="text-sm">
-          Thanks for your patience! We&apos;re accepting new members
-          progressively. If you haven&apos;t joined the waitlist yet, now&apos;s
-          the time!
-        </p>
+        <p className="text-sm">{t(I18nKey.WAITLIST$PATIENCE_MESSAGE)}</p>
       )}
     </div>
   );

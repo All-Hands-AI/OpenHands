@@ -69,9 +69,18 @@ export const useSettings = () => {
   // that would prepopulate the data to the cache and mess with expectations. Read more:
   // https://tanstack.com/query/latest/docs/framework/react/guides/initial-query-data#using-initialdata-to-prepopulate-a-query
   if (query.error?.status === 404) {
+    // Create a new object with only the properties we need, avoiding rest destructuring
     return {
-      ...query,
       data: DEFAULT_SETTINGS,
+      error: query.error,
+      isError: query.isError,
+      isLoading: query.isLoading,
+      isFetching: query.isFetching,
+      isFetched: query.isFetched,
+      isSuccess: query.isSuccess,
+      status: query.status,
+      fetchStatus: query.fetchStatus,
+      refetch: query.refetch,
     };
   }
 

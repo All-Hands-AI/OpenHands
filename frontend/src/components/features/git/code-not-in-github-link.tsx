@@ -1,5 +1,7 @@
 import React from "react";
 import { useDispatch } from "react-redux";
+import { useTranslation } from "react-i18next";
+import { I18nKey } from "#/i18n/declaration";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { setInitialPrompt } from "#/state/initial-query-slice";
 
@@ -7,6 +9,7 @@ const INITIAL_PROMPT = "";
 
 export function CodeNotInGitLink() {
   const dispatch = useDispatch();
+  const { t } = useTranslation();
   const { mutate: createConversation } = useCreateConversation();
 
   const handleStartFromScratch = () => {
@@ -17,14 +20,14 @@ export function CodeNotInGitLink() {
 
   return (
     <div className="text-xs text-neutral-400">
-      Code not in Git?{" "}
+      {t(I18nKey.GITHUB$CODE_NOT_IN_GITHUB)}{" "}
       <span
         onClick={handleStartFromScratch}
         className="underline cursor-pointer"
       >
-        Start from scratch
+        {t(I18nKey.GITHUB$START_FROM_SCRATCH)}
       </span>{" "}
-      and use the VS Code link to upload and download your code.
+      {t(I18nKey.GITHUB$VSCODE_LINK_DESCRIPTION)}
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { FaListUl } from "react-icons/fa";
 import { useDispatch } from "react-redux";
 import posthog from "posthog-js";
 import { NavLink, useLocation } from "react-router";
+import { useTranslation } from "react-i18next";
 import { useGitUser } from "#/hooks/query/use-git-user";
 import { UserActions } from "./user-actions";
 import { AllHandsLogoButton } from "#/components/shared/buttons/all-hands-logo-button";
@@ -21,8 +22,10 @@ import { useLogout } from "#/hooks/mutation/use-logout";
 import { useConfig } from "#/hooks/query/use-config";
 import { cn } from "#/utils/utils";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
+import { I18nKey } from "#/i18n/declaration";
 
 export function Sidebar() {
+  const { t } = useTranslation();
   const location = useLocation();
   const dispatch = useDispatch();
   const endSession = useEndSession();
@@ -91,8 +94,8 @@ export function Sidebar() {
             <ExitProjectButton onClick={handleEndSession} />
             <TooltipButton
               testId="toggle-conversation-panel"
-              tooltip="Conversations"
-              ariaLabel="Conversations"
+              tooltip={t(I18nKey.SIDEBAR$CONVERSATIONS)}
+              ariaLabel={t(I18nKey.SIDEBAR$CONVERSATIONS)}
               onClick={() => setConversationPanelIsOpen((prev) => !prev)}
             >
               <FaListUl
