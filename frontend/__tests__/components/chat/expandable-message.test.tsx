@@ -10,11 +10,20 @@ vi.mock("react-i18next", async () => {
   return {
     ...actual,
     useTranslation: () => ({
-      t: (key: string) => key,
+      t: (key: string) => {
+        // Return a different value for translation keys to verify translation is happening
+        if (key === "STATUS$ERROR_LLM_INTERNAL_SERVER_ERROR") {
+          return "The request failed with an internal server error.";
+        }
+        return key;
+      },
       i18n: {
         changeLanguage: () => new Promise(() => {}),
         language: "en",
-        exists: () => true,
+        exists: (key: string) => {
+          // Return true for our test translation key
+          return key === "STATUS$ERROR_LLM_INTERNAL_SERVER_ERROR" || true;
+        },
       },
     }),
   };
@@ -131,11 +140,13 @@ describe("ExpandableMessage", () => {
       />,
     );
     
-    // Should show the translated headline (in our mock, it's the same as the key)
-    expect(screen.getByText("STATUS$ERROR_LLM_INTERNAL_SERVER_ERROR")).toBeInTheDocument();
+    // Should show the translated headline, not the raw key
+    expect(screen.getByText("The request failed with an internal server error.")).toBeInTheDocument();
     
-    // Verify that the expand/collapse button is not shown
-    // We can't directly test for the absence of the button since our mock always returns true for i18n.exists
-    // But we can verify the component renders without errors
+    // The raw key should not be visible
+    expect(screen.queryByText("STATUS$ERROR_LLM_INTERNAL_SERVER_ERROR")).not.toBeInTheDocument();
+    
+    // Verify that the expand/collapse arrows are not shown
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 });
