@@ -239,7 +239,13 @@ class Runtime(FileEditRuntimeMixin):
 
     def on_event(self, event: Event) -> None:
         if isinstance(event, Action):
-            asyncio.get_event_loop().run_until_complete(self._handle_action(event))
+            # Create a new event loop for this thread to avoid the "attached to a different loop" error
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                loop.run_until_complete(self._handle_action(event))
+            finally:
+                loop.close()
 
     async def _export_latest_git_provider_tokens(self, event: Action) -> None:
         """

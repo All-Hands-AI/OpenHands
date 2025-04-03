@@ -123,8 +123,8 @@ class GitLabService(GitService):
     async def get_repositories(
         self, sort: str, installation_id: int | None
     ) -> list[Repository]:
-        if installation_id:
-            return []  # Not implementing installation_token case yet
+        # if installation_id:
+        #     return []  # Not implementing installation_token case yet
 
         MAX_REPOS = 1000
         PER_PAGE = 100  # Maximum allowed by GitLab API
