@@ -4945,6 +4945,21 @@
         "es": "Navegación completada",
         "tr": "Gezinme tamamlandı"
     },
+    "OBSERVATION_MESSAGE$RECALL": {
+        "en": "MicroAgent Activated",
+        "ja": "マイクロエージェントが有効化されました",
+        "zh-CN": "微代理已激活",
+        "zh-TW": "微代理已啟動",
+        "ko-KR": "마이크로에이전트 활성화됨",
+        "no": "MikroAgent aktivert",
+        "it": "MicroAgent attivato",
+        "pt": "MicroAgent ativado",
+        "es": "MicroAgent activado",
+        "ar": "تم تنشيط الوكيل المصغر",
+        "fr": "MicroAgent activé",
+        "tr": "MikroAjan Etkinleştirildi",
+        "de": "MicroAgent aktiviert"
+    },
     "EXPANDABLE_MESSAGE$SHOW_DETAILS": {
         "en": "Show details",
         "zh-CN": "显示详情",
