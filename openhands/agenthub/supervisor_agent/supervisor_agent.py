@@ -6,7 +6,7 @@ from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
 from openhands.core.logger import openhands_logger as logger
-from openhands.core.schema import ActionType
+from openhands.core.schema import ActionType, ObservationType
 from openhands.events.action import (
     Action,
     AgentDelegateAction,
@@ -633,17 +633,61 @@ If the trajectory is good (score 0-3), set "pattern_observed" to null.
             # Check if the delegated agent has finished
             # Look for AgentDelegateObservation in the history
             delegate_observation_found = False
-            for event in reversed(state.history):
-                if hasattr(event, 'action') and event.action == 'delegate_observation':
+
+            # Log the entire history for debugging
+            logger.info(f'SupervisorAgent: History length: {len(state.history)}')
+            for j, hist_event in enumerate(state.history):
+                logger.info(
+                    f'SupervisorAgent: History event {j}: {type(hist_event).__name__}'
+                )
+
+            for i, event in enumerate(reversed(state.history)):
+                logger.info(
+                    f'SupervisorAgent: Checking event {i}: {type(event).__name__}'
+                )
+                if hasattr(event, 'action'):
+                    logger.info(
+                        f'SupervisorAgent: Event has action attribute: {event.action}'
+                    )
+
+                # Check for AgentDelegateObservation by either instance type or observation type
+                logger.info(
+                    f'SupervisorAgent: Checking if event is AgentDelegateObservation: {isinstance(event, AgentDelegateObservation)}'
+                )
+                if hasattr(event, 'observation'):
+                    logger.info(
+                        f'SupervisorAgent: Event has observation attribute: {event.observation}'
+                    )
+                    if hasattr(event.observation, '__eq__'):
+                        logger.info(
+                            f'SupervisorAgent: Observation equals DELEGATE: {event.observation == ObservationType.DELEGATE}'
+                        )
+
+                if (
+                    isinstance(event, AgentDelegateObservation)
+                    or (
+                        hasattr(event, 'observation')
+                        and event.observation == ObservationType.DELEGATE
+                    )
+                    or (
+                        hasattr(event, 'action')
+                        and event.action == 'delegate_observation'
+                    )
+                ):
+                    logger.info('SupervisorAgent: Found delegate observation')
                     delegate_observation_found = True
-                    
+
                     # Check if max iterations were reached
-                    max_iterations_reached = state.extra_data.get('max_iterations_reached', False)
+                    max_iterations_reached = state.extra_data.get(
+                        'max_iterations_reached', False
+                    )
                     if max_iterations_reached:
                         logger.info(
                             'SupervisorAgent: CodeActAgent reached maximum iterations, processing history and analyzing trajectory'
                         )
-                        reason = state.extra_data.get('max_iterations_reason', 'Unknown reason')
+                        reason = state.extra_data.get(
+                            'max_iterations_reason', 'Unknown reason'
+                        )
                         logger.info(f'SupervisorAgent: Max iterations reason: {reason}')
                     else:
                         logger.info(
