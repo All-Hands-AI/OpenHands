@@ -189,6 +189,8 @@ class ActionExecutor:
             in ['true', '1', 'yes']
         )
         self.memory_monitor.start_monitoring()
+        self.sse_mcp_servers: list[str] = []
+        self.stdio_mcp_config: tuple[list[str], list[list[str]]] = ([], [])
 
     @property
     def initial_cwd(self):
@@ -196,8 +198,10 @@ class ActionExecutor:
 
     def process_request(self, action_request: ActionRequest):
         # update the sse_mcp_servers and stdio_mcp_config to prepare for MCP action if needed
-        self.sse_mcp_servers = action_request.sse_mcp_config
-        self.stdio_mcp_config = action_request.stdio_mcp_config
+        if action_request.sse_mcp_config:
+            self.sse_mcp_servers = action_request.sse_mcp_config
+        if action_request.stdio_mcp_config:
+            self.stdio_mcp_config = action_request.stdio_mcp_config
 
     async def _init_browser_async(self):
         """Initialize the browser asynchronously."""
@@ -518,18 +522,19 @@ class ActionExecutor:
         return await browse(action, self.browser)
 
     async def call_tool_mcp(self, action: McpAction) -> Observation:
-        mcp_server_urls = self.sse_mcp_servers or []
         commands: list[str] = []
         args: list[list[str]] = []
         if self.stdio_mcp_config:
             commands = self.stdio_mcp_config[0]
             if len(self.stdio_mcp_config) > 1:
                 args = self.stdio_mcp_config[1]
-        if not mcp_server_urls and not commands:
+        if not self.sse_mcp_servers and not commands:
             raise ValueError('No MCP servers or stdio MCP config found')
 
-        logger.debug(f'SSE MCP servers: {mcp_server_urls}')
-        mcp_clients = await create_mcp_clients(mcp_server_urls, commands, args)
+        logger.debug(f'SSE MCP servers: {self.sse_mcp_servers}')
+        mcp_clients = await create_mcp_clients(
+            self.sse_mcp_servers or [], commands, args
+        )
         logger.debug(f'MCP action received: {action}')
         # Find the MCP agent that has the matching tool name
         matching_client = None
@@ -544,7 +549,7 @@ class ActionExecutor:
                 f'No matching MCP agent found for tool name: {action.name}'
             )
         logger.debug(f'Matching client: {matching_client}')
-        args_dict = json.loads(action.arguments)
+        args_dict = json.loads(action.arguments) if action.arguments else {}
         response = await matching_client.call_tool(action.name, args_dict)
         logger.debug(f'MCP response: {response}')
 
@@ -581,12 +586,12 @@ if __name__ == '__main__':
 
     # example: python client.py 8000 --working-dir /workspace --plugins JupyterRequirement
     args = parser.parse_args()
-    
+
     port_path = '/tmp/oh-server-url'
     os.makedirs(os.path.dirname(port_path), exist_ok=True)
     with open(port_path, 'w') as f:
         f.write(f'http://127.0.0.1:{args.port}')
-    
+
     plugins_to_load: list[Plugin] = []
     if args.plugins:
         for plugin in args.plugins:
