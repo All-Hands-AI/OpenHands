@@ -318,14 +318,6 @@ class GitHubService(GitService):
         except Exception:
             return []
 
-    async def does_repo_exist(self, repository: str) -> bool:
-        url = f'{self.BASE_URL}/repos/{repository}'
-        try:
-            await self._fetch_data(url)
-            return True
-        except Exception:
-            return False
-
 
 github_service_cls = os.environ.get(
     'OPENHANDS_GITHUB_SERVICE_CLS',
