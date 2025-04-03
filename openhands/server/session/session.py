@@ -9,6 +9,7 @@ from openhands.controller.agent import Agent
 from openhands.core.config import AppConfig
 from openhands.core.config.condenser_config import (
     LLMSummarizingCondenserConfig,
+    StructuredSummaryCondenserConfig,
 )
 from openhands.core.logger import OpenHandsLoggerAdapter
 from openhands.core.schema import AgentState
@@ -19,7 +20,6 @@ from openhands.events.observation import (
     CmdOutputObservation,
     NullObservation,
 )
-from openhands.events.observation.agent import RecallObservation
 from openhands.events.observation.error import ErrorObservation
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.events.stream import EventStreamSubscriber
@@ -128,9 +128,21 @@ class Session:
         agent_config = self.config.get_agent_config(agent_cls)
 
         if settings.enable_default_condenser:
-            default_condenser_config = LLMSummarizingCondenserConfig(
-                llm_config=llm.config, keep_first=3, max_size=40
-            )
+            # If function-calling is active we can use the structured summary
+            # condenser for more reliable summaries.
+            if llm.is_function_calling_active():
+                default_condenser_config = StructuredSummaryCondenserConfig(
+                    llm_config=llm.config, keep_first=3, max_size=80
+                )
+
+            # Otherwise, we'll fall back to the unstructured summary condenser.
+            # This is a good default but struggles more than the structured
+            # summary condenser with long messages.
+            else:
+                default_condenser_config = LLMSummarizingCondenserConfig(
+                    llm_config=llm.config, keep_first=3, max_size=80
+                )
+
             self.logger.info(f'Enabling default condenser: {default_condenser_config}')
             agent_config.condenser = default_condenser_config
 
@@ -200,7 +212,7 @@ class Session:
             await self.send(event_to_dict(event))
         # NOTE: ipython observations are not sent here currently
         elif event.source == EventSource.ENVIRONMENT and isinstance(
-            event, (CmdOutputObservation, AgentStateChangedObservation, RecallObservation)
+            event, (CmdOutputObservation, AgentStateChangedObservation)
         ):
             # feedback from the environment to agent actions is understood as agent events by the UI
             event_dict = event_to_dict(event)
