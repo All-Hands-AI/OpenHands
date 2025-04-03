@@ -144,15 +144,15 @@ def run_solver(
     save_screenshots: bool,
     screenshots_dir: str,
 ) -> State:
-    instruction = """You have one task to complete. It is paramount that you solve the task successfully by completing all the requirements given in the task description.
-Give it all you can: I know for a fact that you have access to all the relevant tools to solve the given task. Failure or 'I cannot solve' will not be tolerated, success will be rewarded.
-You must make sure you successfully complete the given task! You MUST strictly follow the instructions given in the task below.
-Here is the task: """
+    instruction = """Complete the following task: """
     cmd_action = CmdRunAction(command='cat /instruction/task.md')
     obs = runtime.run_action(cmd_action)
     task_description: str = obs.content
     instruction += task_description
     instruction += '\n\nIMPORTANT: If there are the-agent-company.com websites mentioned in the task description, NOTE that these websites are privately hosted.\n'
+    instruction += (
+        'IMPORTANT: If you want to close pop-ups, please press the escape key.\n'
+    )
     instruction += 'IMPORTANT: You should NEVER ask for Human Help.\n'
     if 'gitlab' in dependencies:
         instruction += "IMPORTANT: You are already signed in to Gitlab, but here are the sign-in credentials for your reference - Gitlab username is 'root' and password is 'theagentcompany'"
