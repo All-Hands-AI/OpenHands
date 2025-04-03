@@ -1,35 +1,55 @@
+from abc import ABC, abstractmethod
 from contextlib import AsyncExitStack
 from typing import Dict, List, Optional
 
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.sse import sse_client
 from mcp.client.stdio import stdio_client
-from mcp.types import TextContent
+from mcp.types import TextContent, CallToolResult, Tool
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.mcp.mcp_base import BaseTool, ToolResult
 from pydantic import BaseModel, Field
+
+class BaseTool(ABC, Tool):
+
+    @classmethod
+    def postfix(cls) -> str:
+        return '_mcp_tool_call'
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    @abstractmethod
+    async def execute(self, **kwargs) -> CallToolResult:
+        """Execute the tool with given parameters."""
+
+    def to_param(self) -> Dict:
+        """Convert tool to function call format."""
+        return {
+            'type': 'function',
+            'function': {
+                'name': self.name + self.postfix(),
+                'description': self.description,
+                'parameters': self.inputSchema,
+            },
+        }
 
 class MCPClientTool(BaseTool):
     """Represents a tool proxy that can be called on the MCP server from the client side."""
 
     session: Optional[ClientSession] = None
 
-    async def execute(self, **kwargs) -> ToolResult:
+    async def execute(self, **kwargs) -> CallToolResult:
         """Execute the tool by making a remote call to the MCP server."""
         if not self.session:
-            return ToolResult(error='Not connected to MCP server')
+            return CallToolResult(content=[TextContent(text='Not connected to MCP server')], isError=True)
 
         try:
             result = await self.session.call_tool(self.name, kwargs)
             logger.debug(f'MCP tool result: {result}')
-            content_str = ', '.join(
-                item.text for item in result.content if isinstance(item, TextContent)
-            )
-
-            return ToolResult(output=content_str or 'No output returned.')
+            return result
         except Exception as e:
-            return ToolResult(error=f'Error executing tool: {str(e)}')
+            return CallToolResult(content=[TextContent(text=f'Error executing tool: {str(e)}')], isError=True)
 
 
 class MCPClient(BaseModel):
@@ -40,8 +60,8 @@ class MCPClient(BaseModel):
     session: Optional[ClientSession] = None
     exit_stack: AsyncExitStack = AsyncExitStack()
     description: str = 'MCP client tools for server interaction'
-    tools: List[MCPClientTool] = Field(default_factory=list)
-    tool_map: Dict[str, MCPClientTool] = Field(default_factory=dict)
+    tools: List[BaseTool] = Field(default_factory=list)
+    tool_map: Dict[str, BaseTool] = Field(default_factory=dict)
     
     class Config:
         arbitrary_types_allowed = True
@@ -97,7 +117,7 @@ class MCPClient(BaseModel):
             server_tool = MCPClientTool(
                 name=tool.name,
                 description=tool.description,
-                parameters=tool.inputSchema,
+                inputSchema=tool.inputSchema,
                 session=self.session,
             )
             self.tool_map[tool.name] = server_tool
@@ -107,11 +127,11 @@ class MCPClient(BaseModel):
             f'Connected to server with tools: {[tool.name for tool in response.tools]}'
         )
         
-    async def call_tool(self, tool_name: str, args: Dict) -> ToolResult:
+    async def call_tool(self, tool_name: str, args: Dict):
         """Call a tool on the MCP server."""
         if tool_name not in self.tool_map:
             raise ValueError(f'Tool {tool_name} not found.')
-        return await self.tool_map[tool_name](**args)
+        return await self.tool_map[tool_name].execute(**args)
 
     async def disconnect(self) -> None:
         """Disconnect from the MCP server and clean up resources."""
@@ -138,7 +158,7 @@ def convert_mcp_clients_to_tools(mcp_clients: list[MCPClient] | None) -> list[di
         mcp_clients: List of MCPClient instances or None
 
     Returns:
-        List of ChatCompletionToolParam tools ready to be used by CodeActAgent
+        List of dicts of tools ready to be used by CodeActAgent
     """
     if mcp_clients is None:
         logger.warning('mcp_clients is None, returning empty list')
