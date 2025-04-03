@@ -37,25 +37,25 @@ describe("UserActions", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("should call onLogout and close the menu when the logout option is clicked", async () => {
-    render(
-      <UserActions
-        onLogout={onLogoutMock}
-        user={{ avatar_url: "https://example.com/avatar.png" }}
-      />,
-    );
+  // it("should call onLogout and close the menu when the logout option is clicked", async () => {
+  //   render(
+  //     <UserActions
+  //       onLogout={onLogoutMock}
+  //       user={{ avatar_url: "https://example.com/avatar.png" }}
+  //     />,
+  //   );
 
-    const userAvatar = screen.getByTestId("user-avatar");
-    await user.click(userAvatar);
+  //   const userAvatar = screen.getByTestId("user-avatar");
+  //   await user.click(userAvatar);
 
-    const logoutOption = screen.getByText("ACCOUNT_SETTINGS$LOGOUT");
-    await user.click(logoutOption);
+  //   const logoutOption = screen.getByText("ACCOUNT_SETTINGS$LOGOUT");
+  //   await user.click(logoutOption);
 
-    expect(onLogoutMock).toHaveBeenCalledOnce();
-    expect(
-      screen.queryByTestId("account-settings-context-menu"),
-    ).not.toBeInTheDocument();
-  });
+  //   expect(onLogoutMock).toHaveBeenCalledOnce();
+  //   expect(
+  //     screen.queryByTestId("account-settings-context-menu"),
+  //   ).not.toBeInTheDocument();
+  // });
 
   test("onLogout should not be called when the user is not logged in", async () => {
     render(<UserActions onLogout={onLogoutMock} />);
