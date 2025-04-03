@@ -690,94 +690,100 @@ If the trajectory is good (score 0-3), set "pattern_observed" to null.
                             'SupervisorAgent: CodeActAgent has finished, processing history and analyzing trajectory'
                         )
 
-                    # Process the history of actions and observations
-                    processed_history = self.process_history_with_observations(state)
+        # Always process history and run overthinking analysis if there are at least 2 events in the history
+        # This ensures we always run the analysis regardless of whether there's a delegate observation or finish action
+        overthinking_detected = False
+        if len(state.history) >= 2:
+            # Process the history of actions and observations
+            processed_history = self.process_history_with_observations(state)
 
-                    # Store the processed history in the state's extra_data
-                    state.extra_data['processed_history'] = processed_history
+            # Store the processed history in the state's extra_data
+            state.extra_data['processed_history'] = processed_history
 
-                    # Log a sample of the processed history
+            # Log a sample of the processed history
+            logger.info(
+                f'Processed history sample: {processed_history[:500]}...'
+            )
+
+            # Analyze the trajectory for overthinking
+            logger.info(
+                'SupervisorAgent: Analyzing trajectory for overthinking'
+            )
+            overthinking_analysis = self.analyze_trajectory(processed_history)
+
+            # Store the overthinking analysis in the state's extra_data
+            if overthinking_analysis:
+                state.extra_data['overthinking_analysis'] = (
+                    overthinking_analysis
+                )
+                logger.info(
+                    f'SupervisorAgent: Overthinking analysis: {overthinking_analysis}'
+                )
+
+                # Check if the trajectory shows overthinking
+                if overthinking_analysis['pattern_observed'] is not None:
+                    overthinking_detected = True
+                    # Restart the task with CodeActAgent
                     logger.info(
-                        f'Processed history sample: {processed_history[:500]}...'
+                        'SupervisorAgent: Detected overthinking, restarting task with CodeActAgent'
                     )
 
-                    # Analyze the trajectory for overthinking
-                    logger.info(
-                        'SupervisorAgent: Analyzing trajectory for overthinking'
-                    )
-                    overthinking_analysis = self.analyze_trajectory(processed_history)
+                    # Reset the agent state
+                    self.delegated = False
+                    self.finished = False
 
-                    # Store the overthinking analysis in the state's extra_data
-                    if overthinking_analysis:
-                        state.extra_data['overthinking_analysis'] = (
-                            overthinking_analysis
-                        )
+                    # Store the overthinking info for the restart sequence
+                    state.extra_data['restart_reason'] = {
+                        'score': overthinking_analysis['overthinking_score'],
+                        'patterns': overthinking_analysis['pattern_observed'],
+                    }
+
+                    # Store the delegation state in extra_data to ensure it persists between steps
+                    state.extra_data['delegated_state'] = False
+                    logger.info(
+                        f'SupervisorAgent: Set delegated_state in extra_data to False, self.delegated={self.delegated}'
+                    )
+
+                    # If skip_git_commands is True, skip the message and directly redelegate
+                    if self.skip_git_commands:
                         logger.info(
-                            f'SupervisorAgent: Overthinking analysis: {overthinking_analysis}'
+                            'SupervisorAgent: Skipping git commands (for testing)'
+                        )
+                        # Clear the restart reason and max iterations flags since we're handling them now
+                        state.extra_data.pop('restart_reason', None)
+                        state.extra_data.pop('max_iterations_reached', None)
+                        state.extra_data.pop('max_iterations_reason', None)
+                        # Update delegated state in both instance and extra_data
+                        self.delegated = True
+                        state.extra_data['delegated_state'] = True
+                        return AgentDelegateAction(
+                            agent='CodeActAgent',
+                            inputs=state.inputs,
+                            thought="I'll delegate this task to CodeActAgent again with a fresh approach, resetting the repository and clearing the history to start clean.",
+                            clear_history=True,  # Add this parameter to clear history before delegation
                         )
 
-                        # Check if the trajectory shows overthinking
-                        if overthinking_analysis['pattern_observed'] is not None:
-                            # Restart the task with CodeActAgent
-                            logger.info(
-                                'SupervisorAgent: Detected overthinking, restarting task with CodeActAgent'
-                            )
-
-                            # Reset the agent state
-                            self.delegated = False
-                            self.finished = False
-
-                            # Store the overthinking info for the restart sequence
-                            state.extra_data['restart_reason'] = {
-                                'score': overthinking_analysis['overthinking_score'],
-                                'patterns': overthinking_analysis['pattern_observed'],
-                            }
-
-                            # Store the delegation state in extra_data to ensure it persists between steps
-                            state.extra_data['delegated_state'] = False
-                            logger.info(
-                                f'SupervisorAgent: Set delegated_state in extra_data to False, self.delegated={self.delegated}'
-                            )
-
-                            # If skip_git_commands is True, skip the message and directly redelegate
-                            if self.skip_git_commands:
-                                logger.info(
-                                    'SupervisorAgent: Skipping git commands (for testing)'
-                                )
-                                # Clear the restart reason and max iterations flags since we're handling them now
-                                state.extra_data.pop('restart_reason', None)
-                                state.extra_data.pop('max_iterations_reached', None)
-                                state.extra_data.pop('max_iterations_reason', None)
-                                # Update delegated state in both instance and extra_data
-                                self.delegated = True
-                                state.extra_data['delegated_state'] = True
-                                return AgentDelegateAction(
-                                    agent='CodeActAgent',
-                                    inputs=state.inputs,
-                                    thought="I'll delegate this task to CodeActAgent again with a fresh approach, resetting the repository and clearing the history to start clean.",
-                                    clear_history=True,  # Add this parameter to clear history before delegation
-                                )
-
-                            # Return a message action explaining the restart
-                            return MessageAction(
-                                content=(
-                                    f"I've detected overthinking in the CodeActAgent's approach "
-                                    f"(score: {overthinking_analysis['overthinking_score']}, "
-                                    f"patterns: {overthinking_analysis['pattern_observed']}). "
-                                    f"Restarting the task with a fresh approach."
-                                ),
-                            )
-
-                    # If no overthinking was detected or analysis failed, finish normally
-                    self.finished = True
-                    return AgentFinishAction(
-                        final_thought=(
-                            "The CodeActAgent has completed the task. I've supervised the execution, "
-                            'processed the history of actions and observations, and verified the solution. '
-                            "The complete history is available in state.extra_data['processed_history']."
+                    # Return a message action explaining the restart
+                    return MessageAction(
+                        content=(
+                            f"I've detected overthinking in the CodeActAgent's approach "
+                            f"(score: {overthinking_analysis['overthinking_score']}, "
+                            f"patterns: {overthinking_analysis['pattern_observed']}). "
+                            f"Restarting the task with a fresh approach."
                         ),
-                        task_completed=AgentFinishTaskCompleted.TRUE,
                     )
+
+        # If delegate observation was found and no overthinking was detected or analysis failed, finish normally
+        if delegate_observation_found and not overthinking_detected:
+            self.finished = True
+            return AgentFinishAction(
+                final_thought=(
+                    "The CodeActAgent has completed the task. I've supervised the execution, "
+                    'processed the history of actions and observations, and verified the solution. '
+                    "The complete history is available in state.extra_data['processed_history']."
+                ),
+                task_completed=AgentFinishTaskCompleted.TRUE,
+            )
 
             # If we didn't find a delegate observation, we're still waiting
             if not delegate_observation_found:
