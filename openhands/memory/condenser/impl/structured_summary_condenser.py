@@ -164,7 +164,13 @@ class StructuredSummaryCondenser(RollingCondenser):
     Maintains a condensed history and forgets old events when it grows too large. Uses structured generation via function-calling to produce summaries that replace forgotten events.
     """
 
-    def __init__(self, llm: LLM, max_size: int = 100, keep_first: int = 1):
+    def __init__(
+        self,
+        llm: LLM,
+        max_size: int = 100,
+        keep_first: int = 1,
+        max_event_length: int = 10_000,
+    ):
         if keep_first >= max_size // 2:
             raise ValueError(
                 f'keep_first ({keep_first}) must be less than half of max_size ({max_size})'
@@ -181,9 +187,14 @@ class StructuredSummaryCondenser(RollingCondenser):
 
         self.max_size = max_size
         self.keep_first = keep_first
+        self.max_event_length = max_event_length
         self.llm = llm
 
         super().__init__()
+
+    def _truncate(self, content: str) -> str:
+        """Truncate the content to fit within the specified maximum event length."""
+        return truncate_content(content, max_chars=self.max_event_length)
 
     def get_condensation(self, view: View) -> Condensation:
         head = view[: self.keep_first]
@@ -223,15 +234,20 @@ Capture all relevant information, especially:
 
         prompt += '\n\n'
 
-        summary_event_content = truncate_content(
-            summary_event.message if summary_event.message else '', max_chars=10_000
+        # Add the previous summary if it exists. We'll always have a summary
+        # event, but the types aren't precise enought to guarantee that it has a
+        # message attribute.
+        summary_event_content = self._truncate(
+            summary_event.message if summary_event.message else ''
         )
         prompt += f'<PREVIOUS SUMMARY>\n{summary_event_content}\n</PREVIOUS SUMMARY>\n'
 
         prompt += '\n\n'
 
+        # Add all events that are being forgotten. We use the string
+        # representation defined by the event, and truncate it if necessary.
         for forgotten_event in forgotten_events:
-            event_content = truncate_content(str(forgotten_event), max_chars=10_000)
+            event_content = self._truncate(str(forgotten_event))
             prompt += f'<EVENT id={forgotten_event.id}>\n{event_content}\n</EVENT>\n'
 
         messages = [Message(role='user', content=[TextContent(text=prompt)])]
@@ -299,6 +315,7 @@ Capture all relevant information, especially:
             llm=LLM(config=config.llm_config),
             max_size=config.max_size,
             keep_first=config.keep_first,
+            max_event_length=config.max_event_length,
         )
 
 
