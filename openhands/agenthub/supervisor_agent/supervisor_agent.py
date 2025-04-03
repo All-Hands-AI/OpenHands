@@ -593,6 +593,21 @@ If the trajectory is good (score 0-3), set "pattern_observed" to null.
                 (hasattr(event, 'observation') and event.observation == ObservationType.DELEGATE)):
                 delegate_observation_found = True
                 break
+            
+            # Check for git command observations and update state accordingly
+            if (isinstance(event, CmdOutputObservation) and 
+                'git config --global core.pager' in event.command and
+                event.exit_code == 0 and
+                not hasattr(state, 'git_patch_collected')):
+                state.git_patch_collected = 'git_config'
+                logger.info('SupervisorAgent: Git config completed, marked state as git_config')
+            elif (isinstance(event, CmdOutputObservation) and 
+                'git add -A' in event.command and
+                event.exit_code == 0 and
+                hasattr(state, 'git_patch_collected') and
+                state.git_patch_collected == 'git_config'):
+                state.git_patch_collected = 'git_add'
+                logger.info('SupervisorAgent: Git add completed, marked state as git_add')
 
         # Process history and run overthinking analysis if there are at least 5 events in the history
         overthinking_detected = False
@@ -660,60 +675,62 @@ If the trajectory is good (score 0-3), set "pattern_observed" to null.
             
             # Collect git patch before finishing
             git_patch = ""
-            if not self.skip_git_commands:
+            
+            # Check if we have pending git actions to process
+            if self.pending_actions:
+                # Return the next pending action
+                return self.pending_actions.popleft()
+            
+            # If we don't have any pending actions but need to collect git patch
+            if not self.skip_git_commands and not hasattr(state, 'git_patch_collected'):
                 logger.info('SupervisorAgent: Collecting git patch before finishing')
                 
                 # Configure git to not use a pager
-                self.pending_actions.append(
-                    CmdRunAction(
-                        command='git config --global core.pager ""',
-                        thought='Configuring git to not use a pager',
-                    )
+                return CmdRunAction(
+                    command='git config --global core.pager ""',
+                    thought='Configuring git to not use a pager',
                 )
+            
+            # If we've configured git, add all files to git staging
+            elif not self.skip_git_commands and hasattr(state, 'git_patch_collected') and state.git_patch_collected == 'git_config':
+                # Mark that we've added files
+                state.git_patch_collected = 'git_add'
                 
-                # Add all files to git staging
-                self.pending_actions.append(
-                    CmdRunAction(
-                        command='git add -A',
-                        thought='Adding all files to git staging to prepare for diff',
-                    )
+                return CmdRunAction(
+                    command='git add -A',
+                    thought='Adding all files to git staging to prepare for diff',
                 )
-                
+            
+            # If we've added files, get the diff
+            elif not self.skip_git_commands and hasattr(state, 'git_patch_collected') and state.git_patch_collected == 'git_add':
                 # Get the base commit from state.inputs if available
                 base_commit = ""
                 if hasattr(state, 'inputs') and 'base_commit' in state.inputs:
                     base_commit = state.inputs['base_commit']
                 
-                # Get the diff with retries
-                max_retries = 3
-                for retry in range(max_retries):
-                    # Get the diff
-                    self.pending_actions.append(
-                        CmdRunAction(
-                            command=f'git diff --no-color --cached {base_commit}',
-                            thought=f'Getting git diff to include in the final output (attempt {retry+1}/{max_retries})',
-                        )
-                    )
-                    
-                    # Process the pending actions to get the git patch
-                    while self.pending_actions:
-                        action = self.pending_actions.popleft()
-                        observation = state.runtime.run_action(action)
-                        
-                        # If this is the git diff command output, store the patch
-                        if (isinstance(observation, CmdOutputObservation) and 
-                            'git diff --no-color --cached' in observation.command):
-                            if observation.exit_code == 0:
-                                git_patch = observation.content.strip()
-                                logger.info(f'SupervisorAgent: Collected git patch: {git_patch[:100]}...')
-                                break  # Break out of the while loop
-                            else:
-                                logger.warning(f'SupervisorAgent: Failed to get git diff (attempt {retry+1}/{max_retries}): {observation.content}')
-                    
-                    # If we got the git patch, break out of the retry loop
-                    if git_patch:
-                        break
+                # Mark that we've requested the diff
+                state.git_patch_collected = 'git_diff_requested'
+                
+                return CmdRunAction(
+                    command=f'git diff --no-color --cached {base_commit}',
+                    thought='Getting git diff to include in the final output',
+                )
             
+            # If we've requested the diff, check if we got it
+            elif not self.skip_git_commands and hasattr(state, 'git_patch_collected') and state.git_patch_collected == 'git_diff_requested':
+                # Look for the git diff command output in the history
+                for event in reversed(state.history):
+                    if (isinstance(event, CmdOutputObservation) and 
+                        'git diff --no-color --cached' in event.command):
+                        if event.exit_code == 0:
+                            git_patch = event.content.strip()
+                            logger.info(f'SupervisorAgent: Collected git patch: {git_patch[:100]}...')
+                            break
+                
+                # Mark that we've collected the git patch
+                state.git_patch_collected = 'done'
+            
+            # If we've skipped git commands or collected the git patch, finish
             return AgentFinishAction(
                 final_thought=(
                     "The CodeActAgent has completed the task. I've supervised the execution, "
