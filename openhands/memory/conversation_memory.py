@@ -317,16 +317,16 @@ class ConversationMemory:
         message: Message
 
         if isinstance(obs, CmdOutputObservation):
-            # if it doesn't have tool call metadata, it was triggered by a user action
+            # Note: CmdOutputObservation content is already truncated at initialization,
+            # and the observation content should not have been modified after initialization
+            # we keep this truncation for backwards compatibility for a time
             if obs.tool_call_metadata is None:
+                # if it doesn't have tool call metadata, it was triggered by a user action
                 text = truncate_content(
                     f'\nObserved result of command executed by user:\n{obs.to_agent_observation()}',
                     max_message_chars,
                 )
             else:
-                # Note: CmdOutputObservation content is already truncated at initialization,
-                # and the observation content should not have been modified after initialization
-                # we keep this truncation for backwards compatibility for a time
                 text = truncate_content(obs.to_agent_observation(), max_message_chars)
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, IPythonRunCellObservation):
