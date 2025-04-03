@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { useTranslation } from "react-i18next";
+import { useTranslation, Trans } from "react-i18next";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Link } from "react-router";
+import { PayloadAction } from "@reduxjs/toolkit";
 import { code } from "../markdown/code";
 import { ol, ul } from "../markdown/list";
 import ArrowUp from "#/icons/angle-up-solid.svg?react";
@@ -11,12 +12,22 @@ import CheckCircle from "#/icons/check-circle-solid.svg?react";
 import XCircle from "#/icons/x-circle-solid.svg?react";
 import { cn } from "#/utils/utils";
 import { useConfig } from "#/hooks/query/use-config";
+import { OpenHandsObservation } from "#/types/core/observations";
+import { OpenHandsAction } from "#/types/core/actions";
+import { MonoComponent } from "./mono-component";
+
+const trimText = (text: string, maxLength: number): string => {
+  if (!text) return '';
+  return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+};
 
 interface ExpandableMessageProps {
   id?: string;
   message: string;
   type: string;
   success?: boolean;
+  observation?: PayloadAction<OpenHandsObservation>;
+  action?: PayloadAction<OpenHandsAction>;
 }
 
 export function ExpandableMessage({
@@ -24,20 +35,58 @@ export function ExpandableMessage({
   message,
   type,
   success,
+  observation,
+  action,
 }: ExpandableMessageProps) {
   const { data: config } = useConfig();
   const { t, i18n } = useTranslation();
   const [showDetails, setShowDetails] = useState(true);
-  const [headline, setHeadline] = useState("");
   const [details, setDetails] = useState(message);
+  const [translationId, setTranslationId] = useState<string | undefined>(id);
+  const [translationParams, setTranslationParams] = useState<any>({
+    observation,
+    action,
+  });
 
   useEffect(() => {
     if (id && i18n.exists(id)) {
-      setHeadline(t(id));
+      let processedObservation = observation;
+      let processedAction = action;
+      
+      if (action && action.payload.action === 'run') {
+        const trimmedCommand = trimText(action.payload.args.command, 80);
+        processedAction = {
+          ...action,
+          payload: {
+            ...action.payload,
+            args: {
+              ...action.payload.args,
+              command: trimmedCommand
+            }
+          }
+        };
+      }
+      
+      if (observation && observation.payload.observation === 'run') {
+        const trimmedCommand = trimText(observation.payload.extras.command, 80);
+        processedObservation = {
+          ...observation,
+          payload: {
+            ...observation.payload,
+            extras: {
+              ...observation.payload.extras,
+              command: trimmedCommand
+            }
+          }
+        };
+      }
+      
+      setTranslationId(id);
+      setTranslationParams({ observation: processedObservation, action: processedAction });
       setDetails(message);
       setShowDetails(false);
     }
-  }, [id, message, i18n.language]);
+  }, [id, message, observation, action, i18n.language]);
 
   const statusIconClasses = "h-4 w-4 ml-2 inline";
 
@@ -77,36 +126,46 @@ export function ExpandableMessage({
         <div className="flex flex-row justify-between items-center w-full">
           <span
             className={cn(
-              headline ? "font-bold" : "",
+              "font-bold",
               type === "error" ? "text-danger" : "text-neutral-300",
             )}
           >
-            {headline && (
-              <>
-                {headline}
-                <button
-                  type="button"
-                  onClick={() => setShowDetails(!showDetails)}
-                  className="cursor-pointer text-left"
-                >
-                  {showDetails ? (
-                    <ArrowUp
-                      className={cn(
-                        "h-4 w-4 ml-2 inline",
-                        type === "error" ? "fill-danger" : "fill-neutral-300",
-                      )}
-                    />
-                  ) : (
-                    <ArrowDown
-                      className={cn(
-                        "h-4 w-4 ml-2 inline",
-                        type === "error" ? "fill-danger" : "fill-neutral-300",
-                      )}
-                    />
-                  )}
-                </button>
-              </>
-            )}
+            <>
+              {translationId && i18n.exists(translationId) ? (
+                <Trans
+                  i18nKey={translationId}
+                  values={translationParams}
+                  components={{
+                    bold: <strong />,
+                    path: <MonoComponent />,
+                    cmd: <MonoComponent />
+                  }}
+                />
+              ) : (
+                message
+              )}
+              <button
+                type="button"
+                onClick={() => setShowDetails(!showDetails)}
+                className="cursor-pointer text-left"
+              >
+                {showDetails ? (
+                  <ArrowUp
+                    className={cn(
+                      "h-4 w-4 ml-2 inline",
+                      type === "error" ? "fill-danger" : "fill-neutral-300",
+                    )}
+                  />
+                ) : (
+                  <ArrowDown
+                    className={cn(
+                      "h-4 w-4 ml-2 inline",
+                      type === "error" ? "fill-danger" : "fill-neutral-300",
+                    )}
+                  />
+                )}
+              </button>
+            </>
           </span>
           {type === "action" && success !== undefined && (
             <span className="flex-shrink-0">
@@ -124,7 +183,7 @@ export function ExpandableMessage({
             </span>
           )}
         </div>
-        {(!headline || showDetails) && (
+        {showDetails && (
           <div className="text-sm overflow-auto">
             <Markdown
               components={{
