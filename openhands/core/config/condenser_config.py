@@ -75,6 +75,10 @@ class LLMSummarizingCondenserConfig(BaseModel):
         description='Maximum size of the condensed history before triggering forgetting.',
         ge=2,
     )
+    max_event_length: int = Field(
+        default=10_000,
+        description='Maximum length of the event representations to be passed to the LLM.',
+    )
 
     model_config = {'extra': 'forbid'}
 
