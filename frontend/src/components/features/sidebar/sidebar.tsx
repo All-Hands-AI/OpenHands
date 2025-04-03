@@ -1,40 +1,31 @@
-import React from "react";
-import { FaListUl } from "react-icons/fa";
-import { useDispatch } from "react-redux";
-import posthog from "posthog-js";
-import { NavLink, useLocation } from "react-router";
-import { useGitHubUser } from "#/hooks/query/use-github-user";
-import { UserActions } from "./user-actions";
 import { AllHandsLogoButton } from "#/components/shared/buttons/all-hands-logo-button";
 import { ExitProjectButton } from "#/components/shared/buttons/exit-project-button";
 import { SettingsButton } from "#/components/shared/buttons/settings-button";
+import { TooltipButton } from "#/components/shared/buttons/tooltip-button";
 import { SettingsModal } from "#/components/shared/modals/settings/settings-modal";
+import { useLogout } from "#/hooks/mutation/use-logout";
+import { useConfig } from "#/hooks/query/use-config";
 import { useSettings } from "#/hooks/query/use-settings";
-import { ConversationPanel } from "../conversation-panel/conversation-panel";
 import { useEndSession } from "#/hooks/use-end-session";
 import { setCurrentAgentState } from "#/state/agent-slice";
 import { AgentState } from "#/types/agent-state";
-import { TooltipButton } from "#/components/shared/buttons/tooltip-button";
-import { ConversationPanelWrapper } from "../conversation-panel/conversation-panel-wrapper";
-import { useLogout } from "#/hooks/mutation/use-logout";
-import { useConfig } from "#/hooks/query/use-config";
-import { cn } from "#/utils/utils";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
+import { cn } from "#/utils/utils";
+import posthog from "posthog-js";
+import React from "react";
+import { FaListUl } from "react-icons/fa";
+import { useDispatch } from "react-redux";
+import { NavLink, useLocation } from "react-router";
 import { useAccount } from "wagmi";
-// import { useTranslation } from "react-i18next";
-// import { useSelector } from "react-redux";
-// import { Link } from "react-router-dom";
-// import { useConversation } from "#/context/conversation-context";
-// import { useUserConversations } from "#/hooks/query/use-user-conversations";
-// import { I18nKey } from "#/i18n/declaration";
-// import { RootState } from "#/store";
-// import { ConversationPanelSkeleton } from "../conversation-panel/conversation-panel-skeleton";
+import { ConversationPanel } from "../conversation-panel/conversation-panel";
+import { ConversationPanelWrapper } from "../conversation-panel/conversation-panel-wrapper";
+import { UserActions } from "./user-actions";
 
 export function Sidebar() {
   const location = useLocation();
   const dispatch = useDispatch();
   const endSession = useEndSession();
-  const user = useGitHubUser();
+  // const user = useGitHubUser();
   const { data: config } = useConfig();
   const {
     data: settings,
@@ -98,21 +89,21 @@ export function Sidebar() {
               <AllHandsLogoButton onClick={handleEndSession} />
             </div>
             <ExitProjectButton onClick={handleEndSession} />
-            {
-              account?.address &&  <TooltipButton
-              testId="toggle-conversation-panel"
-              tooltip="Conversations"
-              ariaLabel="Conversations"
-              onClick={() => setConversationPanelIsOpen((prev) => !prev)}
-            >
-              <FaListUl
-                size={22}
-                className={cn(
-                  conversationPanelIsOpen ? "text-white" : "text-[#9099AC]",
-                )}
-              />
-            </TooltipButton>
-            }
+            {account?.address && (
+              <TooltipButton
+                testId="toggle-conversation-panel"
+                tooltip="Conversations"
+                ariaLabel="Conversations"
+                onClick={() => setConversationPanelIsOpen((prev) => !prev)}
+              >
+                <FaListUl
+                  size={22}
+                  className={cn(
+                    conversationPanelIsOpen ? "text-white" : "text-[#9099AC]",
+                  )}
+                />
+              </TooltipButton>
+            )}
           </div>
 
           <div className="flex flex-row md:flex-col md:items-center gap-[26px] md:mb-4">
@@ -125,10 +116,7 @@ export function Sidebar() {
             >
               <SettingsButton />
             </NavLink>
-            <UserActions
-              onLogout={handleLogout}
-              isLoading={user.isFetching}
-            />
+            <UserActions onLogout={handleLogout} isLoading={false} />
           </div>
         </nav>
 

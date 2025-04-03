@@ -19,11 +19,11 @@ from openhands.events.serialization import event_to_dict
 from openhands.events.stream import AsyncEventStreamWrapper
 from openhands.server.routes.auth import JWT_ALGORITHM, JWT_SECRET
 from openhands.server.shared import (
-    SettingsStoreImpl,
-    config,
     conversation_manager,
     sio,
 )
+
+from openhands.utils.get_user_setting import get_user_setting
 
 
 @sio.event
@@ -60,8 +60,7 @@ async def connect(connection_id: str, environ):
     # cookies_str = environ.get('HTTP_COOKIE', '')
     # conversation_validator = ConversationValidatorImpl()
 
-    settings_store = await SettingsStoreImpl.get_instance(config, user_id)
-    settings = await settings_store.load()
+    settings = await get_user_setting(user_id)
 
     if not settings:
         raise ConnectionRefusedError(

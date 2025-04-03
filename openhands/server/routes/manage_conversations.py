@@ -25,7 +25,6 @@ from openhands.server.data_models.conversation_info_result_set import (
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.shared import (
     ConversationStoreImpl,
-    SettingsStoreImpl,
     config,
     conversation_manager,
     file_store,
@@ -34,6 +33,7 @@ from openhands.server.types import LLMAuthenticationError, MissingSettingsError
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.utils.async_utils import wait_all
+from openhands.utils.get_user_setting import get_user_setting
 
 app = APIRouter(prefix='/api')
 
@@ -61,8 +61,7 @@ async def _create_new_conversation(
         extra={'signal': 'create_conversation', 'user_id': user_id},
     )
     logger.info('Loading settings')
-    settings_store = await SettingsStoreImpl.get_instance(config, user_id)
-    settings = await settings_store.load()
+    settings = await get_user_setting(user_id)
 
     session_init_args: dict = {}
     if settings:
