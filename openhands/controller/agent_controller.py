@@ -737,6 +737,8 @@ class AgentController:
 
             # emit the delegate result observation
             obs = AgentDelegateObservation(outputs=delegate_outputs, content=content)
+            # Add action attribute using setattr to avoid mypy error
+            setattr(obs, 'action', 'delegate_observation')  # type: ignore
             self.event_stream.add_event(obs, EventSource.AGENT)
         else:
             # delegate state is ERROR
@@ -750,6 +752,8 @@ class AgentController:
 
             # emit the delegate result observation
             obs = AgentDelegateObservation(outputs=delegate_outputs, content=content)
+            # Add action attribute using setattr to avoid mypy error
+            setattr(obs, 'action', 'delegate_observation')  # type: ignore
             self.event_stream.add_event(obs, EventSource.AGENT)
 
         # Set the parent agent back to RUNNING state if it was in DELEGATING state
