@@ -524,13 +524,18 @@ function AccountSettings() {
               {t(I18nKey.SETTINGS$SOUND_NOTIFICATIONS)}
             </SettingsSwitch>
 
-            <SettingsSwitch
-              testId="enable-repository-memory-switch"
-              name="enable-repository-memory-switch"
-              defaultIsToggled={!!settings.ENABLE_REPOSITORY_MEMORY}
-            >
-              {t(I18nKey.SETTINGS$REPOSITORY_MEMORY)}
-            </SettingsSwitch>
+            <div className="flex flex-col gap-1">
+              <SettingsSwitch
+                testId="enable-repository-memory-switch"
+                name="enable-repository-memory-switch"
+                defaultIsToggled={!!settings.ENABLE_REPOSITORY_MEMORY}
+              >
+                {t(I18nKey.SETTINGS$REPOSITORY_MEMORY)}
+              </SettingsSwitch>
+              <p className="text-xs text-gray-500 ml-10">
+                {t(I18nKey.SETTINGS$REPOSITORY_MEMORY_TOOLTIP)}
+              </p>
+            </div>
           </section>
         </div>
       </form>
