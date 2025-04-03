@@ -4,6 +4,7 @@ This is similar to the functionality of `CodeActResponseParser`.
 """
 
 import json
+from typing import Optional
 
 from litellm import (
     ChatCompletionToolParam,
@@ -53,7 +54,7 @@ def combine_thought(action: Action, thought: str) -> Action:
     return action
 
 
-def response_to_actions(response: ModelResponse) -> list[Action]:
+def response_to_actions(response: ModelResponse, sid: Optional[str]) -> list[Action]:
     actions: list[Action] = []
     assert len(response.choices) == 1, 'Only one choice is supported for now'
     choice = response.choices[0]
@@ -203,7 +204,9 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                 #     f'Tool {tool_call.function.name} is not registered. (arguments: {arguments}). Please check the tool name and retry with an existing tool.'
                 # )
                 action = McpAction(
-                    name=tool_call.function.name, arguments=tool_call.function.arguments
+                    name=tool_call.function.name,
+                    arguments=tool_call.function.arguments,
+                    sid=sid,
                 )
                 action.set_hard_timeout(120)
                 logger.warning(f'MCP action in function_calling.py: {action}')

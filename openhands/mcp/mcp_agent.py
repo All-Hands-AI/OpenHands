@@ -32,14 +32,19 @@ class MCPAgent(BaseModel):
         server_url: Optional[str] = None,
         command: Optional[str] = None,
         args: Optional[List[str]] = None,
+        sid: Optional[str] = None,
+        user_id: Optional[str] = None,
     ) -> None:
         """Initialize the MCP connection.
+        It persists the MCP connection with sid and user_id if connection_type is sse.
 
         Args:
             connection_type: Type of connection to use ("stdio" or "sse")
             server_url: URL of the MCP server (for SSE connection)
             command: Command to run (for stdio connection)
             args: Arguments for the command (for stdio connection)
+            sid: Session ID
+            user_id: User ID
         """
         if connection_type:
             self.connection_type = connection_type
@@ -48,7 +53,9 @@ class MCPAgent(BaseModel):
         if self.connection_type == 'sse':
             if not server_url:
                 raise ValueError('Server URL is required for SSE connection')
-            await self.mcp_clients.connect_sse(server_url=server_url)
+            await self.mcp_clients.connect_sse(
+                server_url=server_url, sid=sid, user_id=user_id
+            )
         elif self.connection_type == 'stdio':
             if not command:
                 raise ValueError('Command is required for stdio connection')
