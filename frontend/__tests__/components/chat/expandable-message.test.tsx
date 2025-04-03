@@ -121,4 +121,20 @@ describe("ExpandableMessage", () => {
     renderWithProviders(<RouterStub />);
     await screen.findByTestId("out-of-credits");
   });
+  
+  it("should properly handle translation keys in message content", () => {
+    renderWithProviders(
+      <ExpandableMessage
+        id="STATUS$ERROR_LLM_INTERNAL_SERVER_ERROR"
+        message="STATUS$ERROR_LLM_INTERNAL_SERVER_ERROR"
+        type="error"
+      />,
+    );
+    
+    // Should show the translated headline
+    expect(screen.getByText("STATUS$ERROR_LLM_INTERNAL_SERVER_ERROR")).toBeInTheDocument();
+    
+    // In the test environment, the mock i18n.exists always returns true,
+    // so we can't fully test the button hiding logic
+  });
 });

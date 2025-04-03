@@ -33,12 +33,30 @@ export function ExpandableMessage({
   const [details, setDetails] = useState(message);
 
   useEffect(() => {
+    // Check if the message is a translation key
+    const isMessageTranslationKey =
+      message &&
+      message.includes("$") &&
+      Object.values(I18nKey).includes(message as I18nKey);
+
     if (id && i18n.exists(id)) {
       setHeadline(t(id));
-      setDetails(message);
+
+      // If the message is a translation key, use the translated version
+      if (isMessageTranslationKey) {
+        setDetails(t(id));
+        setShowDetails(false);
+      } else {
+        setDetails(message);
+        setShowDetails(message.length > 0);
+      }
+    } else if (isMessageTranslationKey && i18n.exists(message)) {
+      // If the message itself is a translation key but wasn't passed as id
+      setHeadline(t(message));
+      setDetails(t(message));
       setShowDetails(false);
     }
-  }, [id, message, i18n.language]);
+  }, [id, message, i18n.language, t]);
 
   const statusIconClasses = "h-4 w-4 ml-2 inline";
 
@@ -85,27 +103,29 @@ export function ExpandableMessage({
             {headline && (
               <>
                 {headline}
-                <button
-                  type="button"
-                  onClick={() => setShowDetails(!showDetails)}
-                  className="cursor-pointer text-left"
-                >
-                  {showDetails ? (
-                    <ArrowUp
-                      className={cn(
-                        "h-4 w-4 ml-2 inline",
-                        type === "error" ? "fill-danger" : "fill-neutral-300",
-                      )}
-                    />
-                  ) : (
-                    <ArrowDown
-                      className={cn(
-                        "h-4 w-4 ml-2 inline",
-                        type === "error" ? "fill-danger" : "fill-neutral-300",
-                      )}
-                    />
-                  )}
-                </button>
+                {details.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowDetails(!showDetails)}
+                    className="cursor-pointer text-left"
+                  >
+                    {showDetails ? (
+                      <ArrowUp
+                        className={cn(
+                          "h-4 w-4 ml-2 inline",
+                          type === "error" ? "fill-danger" : "fill-neutral-300",
+                        )}
+                      />
+                    ) : (
+                      <ArrowDown
+                        className={cn(
+                          "h-4 w-4 ml-2 inline",
+                          type === "error" ? "fill-danger" : "fill-neutral-300",
+                        )}
+                      />
+                    )}
+                  </button>
+                )}
               </>
             )}
           </span>
