@@ -4494,6 +4494,21 @@
         "tr": "OpenHands kredileriniz tükendi",
         "de": "Ihre OpenHands-Guthaben sind aufgebraucht"
     },
+    "STATUS$ERROR_LLM_CONTENT_POLICY_VIOLATION": {
+        "en": "Content policy violation. The output was blocked by content filtering policy.",
+        "ja": "コンテンツポリシー違反。出力はコンテンツフィルタリングポリシーによってブロックされました。",
+        "zh-CN": "内容政策违规。输出被内容过滤策略阻止。",
+        "zh-TW": "內容政策違規。輸出被內容過濾政策阻止。",
+        "ko-KR": "콘텐츠 정책 위반. 출력이 콘텐츠 필터링 정책에 의해 차단되었습니다.",
+        "de": "Verstoß gegen Inhaltsrichtlinien. Die Ausgabe wurde durch die Inhaltsfilterrichtlinie blockiert.",
+        "no": "Brudd på innholdspolicy. Utdata ble blokkert av innholdsfiltrering.",
+        "it": "Violazione della policy sui contenuti. L'output è stato bloccato dalla policy di filtraggio dei contenuti.",
+        "pt": "Violação da política de conteúdo. A saída foi bloqueada pela política de filtragem de conteúdo.",
+        "es": "Violación de la política de contenido. La salida fue bloqueada por la política de filtrado de contenido.",
+        "ar": "انتهاك سياسة المحتوى. تم حظر المخرجات بواسطة سياسة تصفية المحتوى.",
+        "fr": "Violation de la politique de contenu. La sortie a été bloquée par la politique de filtrage de contenu.",
+        "tr": "İçerik politikası ihlali. Çıktı, içerik filtreleme politikası tarafından engellendi."
+    },
     "STATUS$ERROR_RUNTIME_DISCONNECTED": {
         "en": "There was an error while connecting to the runtime. Please refresh the page.",
         "zh-CN": "运行时已断开连接",

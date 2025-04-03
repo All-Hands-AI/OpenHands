@@ -3,7 +3,7 @@ from unittest.mock import ANY, AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import pytest
-from litellm import ContextWindowExceededError
+from litellm import ContentPolicyViolationError, ContextWindowExceededError
 
 from openhands.controller.agent import Agent
 from openhands.controller.agent_controller import AgentController
@@ -163,6 +163,45 @@ async def test_react_to_exception(mock_agent, mock_event_stream, mock_status_cal
     error_message = 'Test error'
     await controller._react_to_exception(RuntimeError(error_message))
     controller.status_callback.assert_called_once()
+    await controller.close()
+
+
+@pytest.mark.asyncio
+async def test_react_to_content_policy_violation(
+    mock_agent, mock_event_stream, mock_status_callback
+):
+    """Test that the controller properly handles content policy violations from the LLM."""
+    controller = AgentController(
+        agent=mock_agent,
+        event_stream=mock_event_stream,
+        status_callback=mock_status_callback,
+        max_iterations=10,
+        sid='test',
+        confirmation_mode=False,
+        headless_mode=True,
+    )
+
+    controller.state.agent_state = AgentState.RUNNING
+
+    # Create and handle the content policy violation error
+    error = ContentPolicyViolationError(
+        message='Output blocked by content filtering policy',
+        model='gpt-4',
+        llm_provider='openai',
+    )
+    await controller._react_to_exception(error)
+
+    # Verify the status callback was called with correct parameters
+    mock_status_callback.assert_called_once_with(
+        'error',
+        'STATUS$ERROR_LLM_CONTENT_POLICY_VIOLATION',
+        'STATUS$ERROR_LLM_CONTENT_POLICY_VIOLATION',
+    )
+
+    # Verify the state was updated correctly
+    assert controller.state.last_error == 'STATUS$ERROR_LLM_CONTENT_POLICY_VIOLATION'
+    assert controller.state.agent_state == AgentState.ERROR
+
     await controller.close()
 
 
