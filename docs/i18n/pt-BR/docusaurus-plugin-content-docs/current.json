@@ -1,0 +1,210 @@
+{
+    "version.label": {
+        "message": "Atual",
+        "description": "The label for version current"
+    },
+    "sidebar.docsSidebar.category.🤖 Backends LLM": {
+        "message": "🤖 Backends LLM",
+        "description": "The label for category 🤖 Backends LLM in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.category.🚧 Dépannage": {
+        "message": "🚧 Solução de Problemas",
+        "description": "The label for category 🚧 Dépannage in sidebar docsSidebar"
+    },
+    "sidebar.apiSidebar.category.Backend": {
+        "message": "Backend",
+        "description": "The label for category Backend in sidebar apiSidebar"
+    },
+    "sidebar.docsSidebar.category.User Guides": {
+        "message": "Guias do Usuário",
+        "description": "The label for category User Guides in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.category.Running OpenHands": {
+        "message": "Executando OpenHands",
+        "description": "The label for category Running OpenHands in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.category.Prompting": {
+        "message": "Prompting",
+        "description": "The label for category Prompting in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.category.Architecture": {
+        "message": "Arquitetura",
+        "description": "The label for category Architecture in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.doc.Running OpenHands": {
+        "message": "Executando OpenHands",
+        "description": "The label for document Running OpenHands in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.doc.Getting Started": {
+        "message": "Começando",
+        "description": "The label for document Getting Started in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.doc.Key Features": {
+        "message": "Recursos Principais",
+        "description": "The label for document Key Features in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.category.Customization": {
+        "message": "Personalização",
+        "description": "The label for category Customization in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.category.Usage Methods": {
+        "message": "Métodos de Uso",
+        "description": "The label for category Usage Methods in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.category.Advanced Configuration": {
+        "message": "Configuração Avançada",
+        "description": "The label for category Advanced Configuration in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.doc.Troubleshooting": {
+        "message": "Solução de Problemas",
+        "description": "The label for document Troubleshooting in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.doc.Feedback": {
+        "message": "Feedback",
+        "description": "The label for document Feedback in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.category.For OpenHands Developers": {
+        "message": "Para Desenvolvedores OpenHands",
+        "description": "The label for category For OpenHands Developers in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.doc.About": {
+        "message": "Sobre",
+        "description": "The label for document About in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.doc.Best Practices": {
+        "message": "Melhores Práticas",
+        "description": "The label for document Best Practices in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.category.Microagents": {
+        "message": "Microagentes",
+        "description": "The label for category Microagents in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.doc.Overview": {
+        "message": "Visão Geral",
+        "description": "The label for document Overview in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.doc.Repository": {
+        "message": "Repositório",
+        "description": "The label for document Repository in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.doc.Public": {
+        "message": "Público",
+        "description": "The label for document Public in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.doc.Repository Customization": {
+        "message": "Personalização de Repositório",
+        "description": "The label for document Repository Customization in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.doc.GUI Mode": {
+        "message": "Modo GUI",
+        "description": "The label for document GUI Mode in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.doc.CLI Mode": {
+        "message": "Modo CLI",
+        "description": "The label for document CLI Mode in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.doc.Headless Mode": {
+        "message": "Modo Headless",
+        "description": "The label for document Headless Mode in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.doc.Github Action": {
+        "message": "GitHub Action",
+        "description": "The label for document Github Action in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.category.Cloud": {
+        "message": "Nuvem",
+        "description": "The label for category Cloud in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.doc.Openhands Cloud": {
+        "message": "OpenHands Cloud",
+        "description": "The label for document Openhands Cloud in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.doc.Cloud GitHub Resolver": {
+        "message": "Resolvedor GitHub Cloud",
+        "description": "The label for document Cloud GitHub Resolver in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.category.LLM Configuration": {
+        "message": "Configuração LLM",
+        "description": "The label for category LLM Configuration in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.category.Providers": {
+        "message": "Provedores",
+        "description": "The label for category Providers in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.doc.Azure": {
+        "message": "Azure",
+        "description": "The label for document Azure in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.doc.Google": {
+        "message": "Google",
+        "description": "The label for document Google in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.doc.Groq": {
+        "message": "Groq",
+        "description": "The label for document Groq in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.doc.LiteLLM Proxy": {
+        "message": "Proxy LiteLLM",
+        "description": "The label for document LiteLLM Proxy in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.doc.OpenAI": {
+        "message": "OpenAI",
+        "description": "The label for document OpenAI in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.doc.OpenRouter": {
+        "message": "OpenRouter",
+        "description": "The label for document OpenRouter in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.category.Runtime Configuration": {
+        "message": "Configuração de Runtime",
+        "description": "The label for category Runtime Configuration in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.doc.Docker Runtime": {
+        "message": "Runtime Docker",
+        "description": "The label for document Docker Runtime in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.doc.Remote Runtime": {
+        "message": "Runtime Remoto",
+        "description": "The label for document Remote Runtime in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.doc.Modal Runtime": {
+        "message": "Runtime Modal",
+        "description": "The label for document Modal Runtime in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.doc.Daytona Runtime": {
+        "message": "Runtime Daytona",
+        "description": "The label for document Daytona Runtime in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.doc.Local Runtime": {
+        "message": "Runtime Local",
+        "description": "The label for document Local Runtime in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.doc.Configuration Options": {
+        "message": "Opções de Configuração",
+        "description": "The label for document Configuration Options in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.doc.Custom Sandbox": {
+        "message": "Sandbox Personalizado",
+        "description": "The label for document Custom Sandbox in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.doc.Development Overview": {
+        "message": "Visão Geral de Desenvolvimento",
+        "description": "The label for document Development Overview in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.doc.Backend": {
+        "message": "Backend",
+        "description": "The label for document Backend in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.doc.Runtime": {
+        "message": "Runtime",
+        "description": "The label for document Runtime in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.doc.Debugging": {
+        "message": "Depuração",
+        "description": "The label for document Debugging in sidebar docsSidebar"
+    },
+    "sidebar.docsSidebar.doc.Evaluation": {
+        "message": "Avaliação",
+        "description": "The label for document Evaluation in sidebar docsSidebar"
+    }
+}

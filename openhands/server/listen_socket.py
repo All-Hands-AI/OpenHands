@@ -7,6 +7,7 @@ from openhands.events.action import (
     NullAction,
 )
 from openhands.events.action.agent import RecallAction
+from openhands.events.async_event_store_wrapper import AsyncEventStoreWrapper
 from openhands.events.observation import (
     NullObservation,
 )
@@ -15,7 +16,6 @@ from openhands.events.observation.agent import (
     RecallObservation,
 )
 from openhands.events.serialization import event_to_dict
-from openhands.events.stream import AsyncEventStreamWrapper
 from openhands.server.shared import (
     SettingsStoreImpl,
     config,
@@ -23,7 +23,7 @@ from openhands.server.shared import (
     sio,
 )
 from openhands.storage.conversation.conversation_validator import (
-    ConversationValidatorImpl,
+    create_conversation_validator,
 )
 
 
@@ -38,7 +38,7 @@ async def connect(connection_id: str, environ):
         raise ConnectionRefusedError('No conversation_id in query params')
 
     cookies_str = environ.get('HTTP_COOKIE', '')
-    conversation_validator = ConversationValidatorImpl()
+    conversation_validator = create_conversation_validator()
     user_id, github_user_id = await conversation_validator.validate(
         conversation_id, cookies_str
     )
@@ -58,8 +58,10 @@ async def connect(connection_id: str, environ):
         f'Connected to conversation {conversation_id} with connection_id {connection_id}. Replaying event stream...'
     )
     agent_state_changed = None
-    async_stream = AsyncEventStreamWrapper(event_stream, latest_event_id + 1)
-    async for event in async_stream:
+    if event_stream is None:
+        raise ConnectionRefusedError('Failed to join conversation')
+    async_store = AsyncEventStoreWrapper(event_stream, latest_event_id + 1)
+    async for event in async_store:
         logger.info(f'oh_event: {event.__class__.__name__}')
         if isinstance(
             event,

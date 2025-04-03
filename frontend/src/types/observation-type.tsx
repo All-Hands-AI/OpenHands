@@ -8,6 +8,9 @@ enum ObservationType {
   // The HTML contents of a URL
   BROWSE = "browse",
 
+  // Interactive browsing
+  BROWSE_INTERACTIVE = "browse_interactive",
+
   // The output of a command
   RUN = "run",
 

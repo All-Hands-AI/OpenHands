@@ -1,4 +1,4 @@
-def remove_fields(obj, fields: set[str]):
+def remove_fields(obj: dict | list | tuple, fields: set[str]) -> None:
     """Remove fields from an object.
 
     Parameters:
@@ -14,7 +14,7 @@ def remove_fields(obj, fields: set[str]):
     elif isinstance(obj, (list, tuple)):
         for item in obj:
             remove_fields(item, fields)
-    elif hasattr(obj, '__dataclass_fields__'):
+    if hasattr(obj, '__dataclass_fields__'):
         raise ValueError(
             'Object must not contain dataclass, consider converting to dict first'
         )

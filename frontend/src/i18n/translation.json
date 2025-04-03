@@ -2078,6 +2078,7 @@
         "tr": "Ajan hız sınırına ulaştı",
         "ja": "エージェントがレート制限中"
     },
+
     "CHAT_INTERFACE$AGENT_PAUSED_MESSAGE": {
         "en": "Agent has paused.",
         "de": "Agent pausiert.",
@@ -2238,7 +2239,19 @@
         "es": "No se encontraron resultados.",
         "de": "Keine Ergebnisse gefunden.",
         "it": "Nessun risultato trovato.",
-        "pt": "Nenhum resultado encontrado.",
+        "pt": "Nenhum resultado encontrado."
+    },
+    "GITHUB$LOADING_REPOSITORIES": {
+        "en": "Loading repositories...",
+        "ja": "リポジトリを読み込み中...",
+        "zh-CN": "正在加载仓库...",
+        "zh-TW": "正在加載倉庫...",
+        "ko-KR": "저장소 로딩 중...",
+        "fr": "Chargement des dépôts...",
+        "es": "Cargando repositorios...",
+        "de": "Lade Repositories...",
+        "it": "Caricamento dei repository...",
+        "pt": "Carregando repositórios...",
         "ar": "لم يتم العثور على نتائج.",
         "no": "Ingen resultater funnet.",
         "tr": "Sonuç bulunamadı"
@@ -2558,35 +2571,34 @@
         "no": "Åpne et repo",
         "tr": "Depo aç"
     },
-    "LANDING$IMPORT_PROJECT": {
-        "en": "+ Import Project",
-        "ja": "+ プロジェクトをインポート",
-        "zh-CN": "+ 导入项目",
-        "zh-TW": "+ 匯入專案",
-        "ko-KR": "+ 프로젝트 가져오기",
-        "fr": "+ Importer un projet",
-        "es": "+ Importar proyecto",
-        "de": "+ Projekt importieren",
-        "it": "+ Importa progetto",
-        "pt": "+ Importar projeto",
-        "ar": "+ استيراد مشروع",
-        "no": "+ Importer prosjekt",
-        "tr": "Proje içe aktar"
+    "LANDING$REPLAY": {
+        "en": "+ Replay Trajectory",
+        "ja": "+ Replay Trajectory",
+        "zh-CN": "+ Replay Trajectory",
+        "zh-TW": "+ Replay Trajectory",
+        "ko-KR": "+ Replay Trajectory",
+        "fr": "+ Replay Trajectory",
+        "es": "+ Replay Trajectory",
+        "de": "+ Replay Trajectory",
+        "it": "+ Replay Trajectory",
+        "pt": "+ Replay Trajectory",
+        "ar": "+ Replay Trajectory",
+        "no": "+ Replay Trajectory",
+        "tr": "+ Replay Trajectory"
     },
-    "LANDING$UPLOAD_ZIP": {
-        "en": "Upload a .zip",
-        "ja": ".zipファイルをアップロード",
-        "zh-CN": "上传.zip文件",
-        "zh-TW": "上傳 .zip 檔案",
-        "ko-KR": ".zip 파일 업로드",
-        "fr": "Télécharger un .zip",
-        "es": "Subir un .zip",
-        "de": "Eine .zip-Datei hochladen",
-        "it": "Carica un .zip",
-        "pt": "Fazer upload de um .zip",
-        "ar": "تحميل ملف .zip",
-        "no": "Last opp en .zip",
-        "tr": "ZIP yükle"
+    "LANDING$UPLOAD_TRAJECTORY": {
+        "en": "Upload a .json",
+        "zh-CN": "Upload a .json",
+        "zh-TW": "Upload a .json",
+        "ko-KR": "Upload a .json",
+        "fr": "Upload a .json",
+        "es": "Upload a .json",
+        "de": "Upload a .json",
+        "it": "Upload a .json",
+        "pt": "Upload a .json",
+        "ar": "Upload a .json",
+        "no": "Upload a .json",
+        "tr": "Upload a .json"
     },
     "LANDING$RECENT_CONVERSATION": {
         "en": "jump back to your most recent conversation",
@@ -3307,6 +3319,21 @@
         "fr": "Conteneur démarré.",
         "tr": "Konteyner başlatıldı.",
         "ja": "コンテナが開始されました"
+    },
+    "STATUS$SETTING_UP_WORKSPACE": {
+        "en": "Setting up workspace...",
+        "zh-CN": "正在设置工作区...",
+        "zh-TW": "正在設置工作區...",
+        "de": "Arbeitsbereich wird eingerichtet...",
+        "ko-KR": "작업 공간을 설정하는 중...",
+        "no": "Setter opp arbeidsområde...",
+        "it": "Configurazione dell'area di lavoro...",
+        "pt": "Configurando espaço de trabalho...",
+        "es": "Configurando espacio de trabajo...",
+        "ar": "جاري إعداد مساحة العمل...",
+        "fr": "Configuration de l'espace de travail...",
+        "tr": "Çalışma alanı ayarlanıyor...",
+        "ja": "ワークスペースを設定中..."
     },
     "ACCOUNT_SETTINGS_MODAL$DISCONNECT": {
         "en": "Disconnect",
@@ -4178,6 +4205,21 @@
         "es": "Navegando en la web",
         "tr": "Web'de geziniyor"
     },
+    "ACTION_MESSAGE$BROWSE_INTERACTIVE": {
+        "en": "Interactive browsing in progress...",
+        "zh-CN": "交互式浏览进行中...",
+        "zh-TW": "互動式瀏覽進行中...",
+        "ko-KR": "인터랙티브 브라우징 진행 중...",
+        "ja": "インタラクティブブラウジング進行中...",
+        "no": "Interaktiv surfing pågår...",
+        "ar": "التصفح التفاعلي قيد التقدم...",
+        "de": "Interaktives Browsen läuft...",
+        "fr": "Navigation interactive en cours...",
+        "it": "Navigazione interattiva in corso...",
+        "pt": "Navegação interativa em andamento...",
+        "es": "Navegación interactiva en progreso...",
+        "tr": "Etkileşimli tarama devam ediyor..."
+    },
     "ACTION_MESSAGE$THINK": {
         "en": "Thinking",
         "zh-CN": "思考",
@@ -4524,19 +4566,19 @@
         "no": "Ingen samtaler funnet",
         "tr": "Konuşma yok"
     },
-    "LANDING$SELECT_REPO": {
-        "en": "Select a GitHub project",
-        "ja": "GitHubプロジェクトを選択",
-        "zh-CN": "选择GitHub项目",
-        "zh-TW": "選擇 GitHub 專案",
-        "ko-KR": "GitHub 프로젝트 선택",
-        "fr": "Sélectionner un projet GitHub",
-        "es": "Seleccionar un proyecto de GitHub",
-        "de": "Ein GitHub-Projekt auswählen",
-        "it": "Seleziona un progetto GitHub",
-        "pt": "Selecionar um projeto do GitHub",
-        "ar": "اختر مشروع GitHub",
-        "no": "Velg et GitHub-prosjekt",
+    "LANDING$SELECT_GIT_REPO": {
+        "en": "Select a Git project",
+        "ja": "Gitプロジェクトを選択",
+        "zh-CN": "选择Git项目",
+        "zh-TW": "選擇 Git 專案",
+        "ko-KR": "Git 프로젝트 선택",
+        "fr": "Sélectionner un projet Git",
+        "es": "Seleccionar un proyecto de Git",
+        "de": "Ein Git-Projekt auswählen",
+        "it": "Seleziona un progetto Git",
+        "pt": "Selecionar um projeto do Git",
+        "ar": "اختر مشروع Git",
+        "no": "Velg et Git-prosjekt",
         "tr": "Depo seç"
     },
     "BUTTON$SEND": {

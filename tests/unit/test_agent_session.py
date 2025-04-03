@@ -127,7 +127,6 @@ async def test_agent_session_start_with_no_state(mock_agent):
         assert session.controller.agent.name == 'test-agent'
         assert session.controller.state.start_id == 0
         assert session.controller.state.end_id == -1
-        assert session.controller.state.truncation_id == -1
 
 
 @pytest.mark.asyncio
@@ -164,7 +163,6 @@ async def test_agent_session_start_with_restored_state(mock_agent):
     mock_restored_state = MagicMock(spec=State)
     mock_restored_state.start_id = -1
     mock_restored_state.end_id = -1
-    mock_restored_state.truncation_id = -1
     mock_restored_state.max_iterations = 5
 
     # Create a spy on set_initial_state by subclassing AgentController
@@ -211,4 +209,3 @@ async def test_agent_session_start_with_restored_state(mock_agent):
         assert session.controller.state.max_iterations == 5
         assert session.controller.state.start_id == 0
         assert session.controller.state.end_id == -1
-        assert session.controller.state.truncation_id == -1
