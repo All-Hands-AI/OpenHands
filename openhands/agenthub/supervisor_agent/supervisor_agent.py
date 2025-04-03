@@ -669,10 +669,6 @@ If the trajectory is good (score 0-3), set "pattern_observed" to null.
                         hasattr(event, 'observation')
                         and event.observation == ObservationType.DELEGATE
                     )
-                    or (
-                        hasattr(event, 'action')
-                        and event.action == 'delegate_observation'
-                    )
                 ):
                     logger.info('SupervisorAgent: Found delegate observation')
                     delegate_observation_found = True
