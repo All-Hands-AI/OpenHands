@@ -269,7 +269,6 @@ class ActionExecutionClient(Runtime):
             try:
                 execution_action_body = {
                     'action': event_to_dict(action),
-                    'caller_platform': platform.system(),
                 }
                 if self.config.mcp.sse.mcp_servers:
                     execution_action_body['sse_mcp_config'] = (

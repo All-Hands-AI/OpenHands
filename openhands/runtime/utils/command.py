@@ -18,7 +18,6 @@ def get_action_execution_server_startup_command(
     python_prefix: list[str] = DEFAULT_PYTHON_PREFIX,
     override_user_id: int | None = None,
     override_username: str | None = None,
-    runtime_mode: str = 'others',
 ) -> list[str]:
     sandbox_config = app_config.sandbox
 
@@ -56,8 +55,6 @@ def get_action_execution_server_startup_command(
         '--user-id',
         str(user_id),
         *browsergym_args,
-        '--runtime-mode',
-        runtime_mode,
     ]
 
     return base_cmd

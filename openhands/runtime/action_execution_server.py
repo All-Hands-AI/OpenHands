@@ -80,7 +80,6 @@ class ActionRequest(BaseModel):
     action: dict
     sse_mcp_config: Optional[list[str]] = None
     stdio_mcp_config: Optional[tuple[list[str], list[list[str]]]] = None
-    caller_platform: str = 'Linux'
 
 
 ROOT_GID = 0
@@ -159,7 +158,6 @@ class ActionExecutor:
         username: str,
         user_id: int,
         browsergym_eval_env: str | None,
-        runtime_mode: str,
     ) -> None:
         self.plugins_to_load = plugins_to_load
         self._initial_cwd = work_dir
@@ -181,7 +179,6 @@ class ActionExecutor:
         self.start_time = time.time()
         self.last_execution_time = self.start_time
         self._initialized = False
-        self.runtime_mode = runtime_mode
         self.mcp_agents: List[MCPAgent] | None = None
 
         self.max_memory_gb: int | None = None
@@ -198,6 +195,8 @@ class ActionExecutor:
             in ['true', '1', 'yes']
         )
         self.memory_monitor.start_monitoring()
+        self.sse_mcp_servers: Optional[list[str]] = None
+        self.stdio_mcp_config: Optional[tuple[list[str], list[list[str]]]] = None
 
     @property
     def initial_cwd(self):
@@ -205,9 +204,10 @@ class ActionExecutor:
 
     def process_request(self, action_request: ActionRequest):
         # update the sse_mcp_servers and stdio_mcp_config to prepare for MCP action if needed
-        self.sse_mcp_servers = action_request.sse_mcp_config
-        self.stdio_mcp_config = action_request.stdio_mcp_config
-        self.caller_platform = action_request.caller_platform
+        if action_request.sse_mcp_config:
+            self.sse_mcp_servers = action_request.sse_mcp_config
+        if action_request.stdio_mcp_config:
+            self.stdio_mcp_config = action_request.stdio_mcp_config
 
     async def _init_browser_async(self):
         """Initialize the browser asynchronously."""
@@ -641,7 +641,6 @@ if __name__ == '__main__':
             username=args.username,
             user_id=args.user_id,
             browsergym_eval_env=args.browsergym_eval_env,
-            runtime_mode=args.runtime_mode,
         )
         await client.ainit()
         yield
