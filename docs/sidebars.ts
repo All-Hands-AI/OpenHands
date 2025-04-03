@@ -1,7 +1,7 @@
-import type { SidebarsConfig } from "@docusaurus/plugin-content-docs";
+import type { SidebarsConfig } from '@docusaurus/plugin-content-docs';
 
 const sidebars: SidebarsConfig = {
-  apiSidebar: [require("./modules/python/sidebar.json")],
+  apiSidebar: [require('./modules/python/sidebar.json')],
   docsSidebar: [
     {
       type: 'doc',
@@ -38,13 +38,18 @@ const sidebars: SidebarsConfig = {
             },
             {
               type: 'doc',
-              label: 'Repository',
+              label: 'Repository-specific',
               id: 'usage/prompting/microagents-repo',
             },
             {
               type: 'doc',
               label: 'Public',
               id: 'usage/prompting/microagents-public',
+            },
+            {
+              type: 'doc',
+              label: 'Syntax',
+              id: 'usage/prompting/microagents-syntax',
             },
           ],
         },
@@ -135,6 +140,11 @@ const sidebars: SidebarsConfig = {
                   type: 'doc',
                   label: 'Groq',
                   id: 'usage/llms/groq',
+                },
+                {
+                  type: 'doc',
+                  label: 'Local LLMs with SGLang or vLLM',
+                  id: 'usage/llms/local-llms',
                 },
                 {
                   type: 'doc',
