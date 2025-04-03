@@ -48,7 +48,7 @@ Reminder:
 STOP_WORDS = ['</function']
 
 # NOTE: we need to make sure this example is always in-sync with the tool interface designed in openhands/agenthub/codeact_agent/function_calling.py
-IN_CONTEXT_LEARNING_EXAMPLE_PREFIX = """
+IN_CONTEXT_LEARNING_EXAMPLE_PREFIX_STR_REPLACE = """
 Here's a running example of how to perform a task with the provided tools.
 
 --------------------- START OF EXAMPLE ---------------------
@@ -220,6 +220,184 @@ Do NOT assume the environment is the same as in the example above.
 --------------------- NEW TASK DESCRIPTION ---------------------
 """.lstrip()
 
+IN_CONTEXT_LEARNING_EXAMPLE_PREFIX_LLM_EDIT = """
+Here's a running example of how to perform a task with the provided tools.
+
+--------------------- START OF EXAMPLE ---------------------
+
+USER: Create a list of numbers from 1 to 10, and display them in a web page at port 5000.
+
+ASSISTANT: Sure! Let me first check the current directory:
+<function=execute_bash>
+<parameter=command>
+pwd && ls
+</parameter>
+</function>
+
+USER: EXECUTION RESULT of [execute_bash]:
+/workspace
+openhands@runtime:~/workspace$
+
+ASSISTANT: There is no `app.py` file in the current directory. Let me create a Python file `app.py`:
+<function=edit_file>
+<parameter=path>/workspace/app.py</parameter>
+<parameter=start>1</parameter>
+<parameter=end>-1</parameter>
+<parameter=content>
+from flask import Flask
+app = Flask(__name__)
+
+@app.route('/')
+def index():
+    numbers = list(range(1, 11))
+    return str(numbers)
+
+if __name__ == '__main__':
+    app.run(port=5000)
+</parameter>
+</function>
+
+USER: EXECUTION RESULT of [edit_file]:
+File created successfully at: /workspace/app.py
+
+ASSISTANT: I have created a Python file `app.py` that will display a list of numbers from 1 to 10 when you run it. Let me run the Python file for you:
+<function=execute_bash>
+<parameter=command>
+python3 app.py > server.log 2>&1 &
+</parameter>
+</function>
+
+USER: EXECUTION RESULT of [execute_bash]:
+[1] 121
+[1]+  Exit 1                  python3 app.py > server.log 2>&1
+
+ASSISTANT: Looks like the server is running with PID 121 then crashed. Let me check the server log:
+<function=execute_bash>
+<parameter=command>
+cat server.log
+</parameter>
+</function>
+
+USER: EXECUTION RESULT of [execute_bash]:
+Traceback (most recent call last):
+  File "/workspace/app.py", line 2, in <module>
+    from flask import Flask
+ModuleNotFoundError: No module named 'flask'
+
+ASSISTANT: Looks like the server crashed because the `flask` module is not installed. Let me install the `flask` module for you:
+<function=execute_bash>
+<parameter=command>
+pip3 install flask
+</parameter>
+</function>
+
+USER: EXECUTION RESULT of [execute_bash]:
+Defaulting to user installation because normal site-packages is not writeable
+Collecting flask
+  Using cached flask-3.0.3-py3-none-any.whl (101 kB)
+Collecting blinker>=1.6.2
+  Using cached blinker-1.7.0-py3-none-any.whl (13 kB)
+Collecting Werkzeug>=3.0.0
+  Using cached werkzeug-3.0.2-py3-none-any.whl (226 kB)
+Collecting click>=8.1.3
+  Using cached click-8.1.7-py3-none-any.whl (97 kB)
+Collecting itsdangerous>=2.1.2
+  Using cached itsdangerous-2.2.0-py3-none-any.whl (16 kB)
+Requirement already satisfied: Jinja2>=3.1.2 in /home/openhands/.local/lib/python3.10/site-packages (from flask) (3.1.3)
+Requirement already satisfied: MarkupSafe>=2.0 in /home/openhands/.local/lib/python3.10/site-packages (from Jinja2>=3.1.2->flask) (2.1.5)
+Installing collected packages: Werkzeug, itsdangerous, click, blinker, flask
+Successfully installed Werkzeug-3.0.2 blinker-1.7.0 click-8.1.7 flask-3.0.3 itsdangerous-2.2.0
+
+ASSISTANT: The `flask` module is installed successfully. Let me run the Python file again:
+<function=execute_bash>
+<parameter=command>
+python3 app.py > server.log 2>&1 &
+</parameter>
+</function>
+
+USER: EXECUTION RESULT of [execute_bash]:
+[1] 124
+
+ASSISTANT:
+Let me check the server log again:
+<function=execute_bash>
+<parameter=command>
+cat server.log
+</parameter>
+</function>
+
+USER: EXECUTION RESULT of [execute_bash]:
+* Serving Flask app 'app'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:5000
+Press CTRL+C to quit
+
+ASSISTANT:
+The server is running on port 5000 with PID 124. You can access the list of numbers by visiting http://127.0.0.1:5000. If you have any further questions, feel free to ask!
+
+USER: Now kill the server, make it display the numbers in a table format.
+
+ASSISTANT:
+Sure! Let me stop the server first:
+<function=execute_bash>
+<parameter=command>
+kill 124
+</parameter>
+</function>
+
+USER: EXECUTION RESULT of [execute_bash]:
+[1]+  Terminated              python3 app.py > server.log 2>&1
+
+ASSISTANT:
+Now let me display the numbers in a table format:
+<function=edit_file>
+<parameter=path>/workspace/app.py</parameter>
+<parameter=start>6</parameter>
+<parameter=end>8</parameter>
+<parameter=content>
+    # no changes before
+    numbers = list(range(1, 11))
+    return '<table>' + ''.join([f'<tr><td>{i}</td></tr>' for i in numbers]) + '</table>'
+    # no changes after
+</parameter>
+</function>
+
+USER: EXECUTION RESULT of [edit_file]:
+The file /workspace/app.py has been edited. Here's the result of running `cat -n` on a snippet of /workspace/app.py:
+     3
+     4  @app.route('/')
+     5  def index():
+     6      numbers = list(range(1, 11))
+     7      return '<table>' + ''.join([f'<tr><td>{i}</td></tr>' for i in numbers]) + '</table>'
+     8
+     9  if __name__ == '__main__':
+    10      app.run(port=5000)
+Review the changes and make sure they are as expected. Edit the file again if necessary.
+
+ASSISTANT:
+Running the updated file:
+<function=execute_bash>
+<parameter=command>
+python3 app.py > server.log 2>&1 &
+</parameter>
+</function>
+
+USER: EXECUTION RESULT of [execute_bash]:
+[1] 126
+
+ASSISTANT:
+The server is running on port 5000 with PID 126. You can access the list of numbers in a table format by visiting http://127.0.0.1:5000. Let me know if you have any further requests!
+<function=finish>
+</function>
+
+--------------------- END OF EXAMPLE ---------------------
+
+Do NOT assume the environment is the same as in the example above.
+
+--------------------- NEW TASK DESCRIPTION ---------------------
+""".lstrip()
+
 IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX = """
 --------------------- END OF NEW TASK DESCRIPTION ---------------------
 
@@ -308,6 +486,7 @@ def convert_fncall_messages_to_non_fncall_messages(
     messages: list[dict],
     tools: list[ChatCompletionToolParam],
     add_in_context_learning_example: bool = True,
+    use_llm_edit: bool = True,
 ) -> list[dict]:
     """Convert function calling messages to non-function calling messages."""
     messages = copy.deepcopy(messages)
@@ -357,19 +536,43 @@ def convert_fncall_messages_to_non_fncall_messages(
                         )
                         for tool in tools
                     )
-                    and any(
+                    and (
                         (
-                            tool['type'] == 'function'
-                            and tool['function']['name'] == 'str_replace_editor'
-                            and 'path' in tool['function']['parameters']['properties']
-                            and 'file_text'
-                            in tool['function']['parameters']['properties']
-                            and 'old_str'
-                            in tool['function']['parameters']['properties']
-                            and 'new_str'
-                            in tool['function']['parameters']['properties']
+                            use_llm_edit
+                            and any(
+                                (
+                                    tool['type'] == 'function'
+                                    and tool['function']['name'] == 'edit_file'
+                                    and 'path'
+                                    in tool['function']['parameters']['properties']
+                                    and 'content'
+                                    in tool['function']['parameters']['properties']
+                                    and 'start'
+                                    in tool['function']['parameters']['properties']
+                                    and 'end'
+                                    in tool['function']['parameters']['properties']
+                                )
+                                for tool in tools
+                            )
                         )
-                        for tool in tools
+                        or (
+                            not use_llm_edit
+                            and any(
+                                (
+                                    tool['type'] == 'function'
+                                    and tool['function']['name'] == 'str_replace_editor'
+                                    and 'path'
+                                    in tool['function']['parameters']['properties']
+                                    and 'file_text'
+                                    in tool['function']['parameters']['properties']
+                                    and 'old_str'
+                                    in tool['function']['parameters']['properties']
+                                    and 'new_str'
+                                    in tool['function']['parameters']['properties']
+                                )
+                                for tool in tools
+                            )
+                        )
                     )
                 ):
                     raise FunctionCallConversionError(
@@ -378,16 +581,19 @@ def convert_fncall_messages_to_non_fncall_messages(
                     )
 
                 # add in-context learning example
+                example_prefix = (
+                    IN_CONTEXT_LEARNING_EXAMPLE_PREFIX_LLM_EDIT
+                    if use_llm_edit
+                    else IN_CONTEXT_LEARNING_EXAMPLE_PREFIX_STR_REPLACE
+                )
                 if isinstance(content, str):
                     content = (
-                        IN_CONTEXT_LEARNING_EXAMPLE_PREFIX
-                        + content
-                        + IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX
+                        example_prefix + content + IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX
                     )
                 elif isinstance(content, list):
                     if content and content[0]['type'] == 'text':
                         content[0]['text'] = (
-                            IN_CONTEXT_LEARNING_EXAMPLE_PREFIX
+                            example_prefix
                             + content[0]['text']
                             + IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX
                         )
@@ -396,7 +602,7 @@ def convert_fncall_messages_to_non_fncall_messages(
                             [
                                 {
                                     'type': 'text',
-                                    'text': IN_CONTEXT_LEARNING_EXAMPLE_PREFIX,
+                                    'text': example_prefix,
                                 }
                             ]
                             + content
@@ -562,6 +768,7 @@ def _fix_stopword(content: str) -> str:
 def convert_non_fncall_messages_to_fncall_messages(
     messages: list[dict],
     tools: list[ChatCompletionToolParam],
+    use_llm_edit: bool = True,
 ) -> list[dict]:
     """Convert non-function calling messages back to function calling messages."""
     messages = copy.deepcopy(messages)
@@ -594,15 +801,18 @@ def convert_non_fncall_messages_to_fncall_messages(
             # Check & replace in-context learning example
             if not first_user_message_encountered:
                 first_user_message_encountered = True
+                example_prefix = (
+                    IN_CONTEXT_LEARNING_EXAMPLE_PREFIX_LLM_EDIT
+                    if use_llm_edit
+                    else IN_CONTEXT_LEARNING_EXAMPLE_PREFIX_STR_REPLACE
+                )
                 if isinstance(content, str):
-                    content = content.replace(IN_CONTEXT_LEARNING_EXAMPLE_PREFIX, '')
+                    content = content.replace(example_prefix, '')
                     content = content.replace(IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX, '')
                 elif isinstance(content, list):
                     for item in content:
                         if item['type'] == 'text':
-                            item['text'] = item['text'].replace(
-                                IN_CONTEXT_LEARNING_EXAMPLE_PREFIX, ''
-                            )
+                            item['text'] = item['text'].replace(example_prefix, '')
                             item['text'] = item['text'].replace(
                                 IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX, ''
                             )
@@ -747,7 +957,7 @@ def convert_non_fncall_messages_to_fncall_messages(
 
         else:
             raise FunctionCallConversionError(
-                f'Unexpected role {role}. Expected system, user, or assistant in non-function calling messages.'
+                f'Unexpected role {role}. Expected system, user, assistant or tool.'
             )
     return converted_messages
 

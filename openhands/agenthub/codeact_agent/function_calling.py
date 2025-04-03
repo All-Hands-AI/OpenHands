@@ -131,6 +131,9 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                     content=arguments['content'],
                     start=arguments.get('start', 1),
                     end=arguments.get('end', -1),
+                    impl_source=arguments.get(
+                        'impl_source', FileEditSource.LLM_BASED_EDIT
+                    ),
                 )
             elif (
                 tool_call.function.name

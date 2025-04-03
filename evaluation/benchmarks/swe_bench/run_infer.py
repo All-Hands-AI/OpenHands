@@ -34,6 +34,7 @@ from openhands.core.config import (
     AppConfig,
     get_llm_config_arg,
     get_parser,
+    load_from_toml,
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
@@ -207,11 +208,17 @@ def get_config(
     agent_config = AgentConfig(
         codeact_enable_jupyter=False,
         codeact_enable_browsing=RUN_WITH_BROWSING,
-        codeact_enable_llm_editor=False,
+        codeact_enable_llm_editor=True,
         condenser=metadata.condenser_config,
         enable_prompt_extensions=False,
     )
     config.set_agent_config(agent_config)
+
+    # copy 'draft_editor' config if exists
+    config_copy = copy.deepcopy(config)
+    load_from_toml(config_copy)
+    if 'draft_editor' in config_copy.llms:
+        config.set_llm_config(config_copy.llms['draft_editor'], 'draft_editor')
     return config
 
 
