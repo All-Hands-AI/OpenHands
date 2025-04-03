@@ -81,7 +81,7 @@ CODE_STATE: {File paths, function signatures, data structures}
 TESTS: {Failing cases, error messages, outputs}
 CHANGES: {Code edits, variable updates}
 DEPS: {Dependencies, imports, external calls}
-VC_STATUS: {Repository state, current branch, PR status, commit history}
+VERSION_CONTROL_STATUS: {Repository state, current branch, PR status, commit history}
 
 PRIORITIZE:
 1. Adapt tracking format to match the actual task type
@@ -101,7 +101,7 @@ CODE_STATE: mod_float() in card.py updated
 TESTS: test_format() passed
 CHANGES: str(val) replaces f"{val:.16G}"
 DEPS: None modified
-VC_STATUS: Branch: fix-float-precision, Latest commit: a1b2c3d
+VERSION_CONTROL_STATUS: Branch: fix-float-precision, Latest commit: a1b2c3d
 
 For other tasks:
 USER_CONTEXT: Write 20 haikus based on coin flip results
