@@ -33,7 +33,6 @@ export function ExpandableMessage({
   const [details, setDetails] = useState(message);
 
   useEffect(() => {
-    // Check if the message is a translation key
     const isMessageTranslationKey =
       message &&
       message.includes("$") &&
@@ -42,21 +41,14 @@ export function ExpandableMessage({
     if (id && i18n.exists(id)) {
       setHeadline(t(id));
 
-      // If the message is the same as the ID or is itself a translation key
       if (message === id || isMessageTranslationKey) {
-        // Set details to the translated message instead of empty string
-        // This ensures we show the proper translated text
         setDetails(t(id));
-        // Don't show the expand/collapse button since it's redundant
         setShowDetails(false);
       } else {
-        // Show the message as details
         setDetails(message);
-        // Only show the expand/collapse button if there are actual details
         setShowDetails(message.length > 0);
       }
     } else if (isMessageTranslationKey && i18n.exists(message)) {
-      // If the message itself is a translation key but wasn't passed as id
       setHeadline(t(message));
       setDetails(t(message));
       setShowDetails(false);
