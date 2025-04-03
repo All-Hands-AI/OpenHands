@@ -100,6 +100,7 @@ class GitHubService(GitService):
             email=response.get('email'),
         )
 
+
     async def _fetch_paginated_repos(
         self, url: str, params: dict, max_repos: int, extract_key: str | None = None
     ) -> list[dict]:
@@ -193,7 +194,14 @@ class GitHubService(GitService):
         self, query: str, per_page: int, sort: str, order: str
     ) -> list[Repository]:
         url = f'{self.BASE_URL}/search/repositories'
-        params = {'q': query, 'per_page': per_page, 'sort': sort, 'order': order}
+        # Add is:public to the query to ensure we only search for public repositories
+        query_with_visibility = f'{query} is:public'
+        params = {
+            'q': query_with_visibility,
+            'per_page': per_page,
+            'sort': sort,
+            'order': order,
+        }
 
         response, _ = await self._fetch_data(url, params)
         repos = response.get('items', [])
@@ -350,14 +358,6 @@ class GitHubService(GitService):
             return tasks
         except Exception:
             return []
-
-    async def does_repo_exist(self, repository: str) -> bool:
-        url = f'{self.BASE_URL}/repos/{repository}'
-        try:
-            await self._fetch_data(url)
-            return True
-        except Exception:
-            return False
 
 
 github_service_cls = os.environ.get(

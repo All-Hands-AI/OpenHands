@@ -224,7 +224,7 @@ class OpenHands {
   }
 
   static async createConversation(
-    selectedRepository?: string,
+    selectedRepository?: GitRepository,
     initialUserMsg?: string,
     imageUrls?: string[],
     replayJson?: string,

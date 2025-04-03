@@ -91,6 +91,3 @@ class GitService(Protocol):
     async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
         """Get repositories for the authenticated user"""
         ...
-
-    async def does_repo_exist(self, repository: str) -> bool:
-        """Check if a repository exists for the user"""
