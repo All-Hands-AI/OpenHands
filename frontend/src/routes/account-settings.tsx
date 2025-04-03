@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
+import { Tooltip } from "@heroui/react";
 import { I18nKey } from "#/i18n/declaration";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { HelpLink } from "#/components/features/settings/help-link";
@@ -12,6 +13,7 @@ import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import { ModelSelector } from "#/components/shared/modals/settings/model-selector";
 import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
+import InfoIcon from "#/assets/info";
 import { useAIConfigOptions } from "#/hooks/query/use-ai-config-options";
 import { useConfig } from "#/hooks/query/use-config";
 import { useSettings } from "#/hooks/query/use-settings";
@@ -525,16 +527,23 @@ function AccountSettings() {
             </SettingsSwitch>
 
             <div className="flex flex-col gap-1">
-              <SettingsSwitch
-                testId="enable-repository-memory-switch"
-                name="enable-repository-memory-switch"
-                defaultIsToggled={!!settings.ENABLE_REPOSITORY_MEMORY}
-              >
-                {t(I18nKey.SETTINGS$REPOSITORY_MEMORY)}
-              </SettingsSwitch>
-              <p className="text-xs text-gray-500 ml-10">
-                {t(I18nKey.SETTINGS$REPOSITORY_MEMORY_TOOLTIP)}
-              </p>
+              <div className="flex items-center gap-2">
+                <SettingsSwitch
+                  testId="enable-repository-memory-switch"
+                  name="enable-repository-memory-switch"
+                  defaultIsToggled={!!settings.ENABLE_REPOSITORY_MEMORY}
+                >
+                  {t(I18nKey.SETTINGS$REPOSITORY_MEMORY)}
+                </SettingsSwitch>
+                <Tooltip
+                  content={t(I18nKey.SETTINGS$REPOSITORY_MEMORY_TOOLTIP)}
+                  closeDelay={100}
+                >
+                  <span className="cursor-help">
+                    <InfoIcon />
+                  </span>
+                </Tooltip>
+              </div>
             </div>
           </section>
         </div>
