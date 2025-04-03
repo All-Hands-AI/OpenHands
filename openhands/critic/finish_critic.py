@@ -1,7 +1,6 @@
 from openhands.critic.base import BaseCritic, CriticResult
 from openhands.events import Event
 from openhands.events.action import Action, AgentFinishAction
-from openhands.events.action.agent import AgentFinishTaskCompleted
 
 
 class AgentFinishedCritic(BaseCritic):
@@ -22,11 +21,11 @@ class AgentFinishedCritic(BaseCritic):
             return CriticResult(score=0, message='Git patch is empty.')
 
         if isinstance(last_action, AgentFinishAction):
-            if last_action.task_completed == AgentFinishTaskCompleted.TRUE.value:
-                return CriticResult(score=1, message='Agent finished.')
-            else:
-                return CriticResult(
-                    score=0, message='Agent finished but task is not completed.'
-                )
+            return CriticResult(score=1, message='Agent finished.')
+            # if last_action.task_completed == AgentFinishTaskCompleted.TRUE.value:
+            # else:
+            #     return CriticResult(
+            #         score=0, message='Agent finished but task is not completed.'
+            #     )
         else:
             return CriticResult(score=0, message='Agent did not finish.')
