@@ -45,7 +45,6 @@ class LLMCacheCodeAgent(CodeActAgent):
         # Override the condenser created by the parent class
         # Create and set the LLMAgentCacheCondenser, passing self as the agent
         self.condenser = LLMAgentCacheCondenser(agent=self)
-        self._condenser = self.condenser  # For compatibility with our tests
 
     @classmethod
     def get_condenser_class(cls) -> Type[Condenser]:
