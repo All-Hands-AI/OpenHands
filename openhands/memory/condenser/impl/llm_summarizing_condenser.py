@@ -4,6 +4,7 @@ from openhands.core.config.condenser_config import LLMSummarizingCondenserConfig
 from openhands.core.message import Message, TextContent
 from openhands.events.action.agent import CondensationAction
 from openhands.events.observation.agent import AgentCondensationObservation
+from openhands.events.serialization.event import truncate_content
 from openhands.llm import LLM
 from openhands.memory.condenser.condenser import (
     Condensation,
@@ -99,16 +100,16 @@ CURRENT_STATE: Last flip: Heads, Haiku count: 15/20"""
 
         prompt += '\n\n'
 
-        prompt += (
-            f'<PREVIOUS SUMMARY>\n{summary_event.message}\n</PREVIOUS SUMMARY>\n'
-            if summary_event.message
-            else ''
+        summary_event_content = truncate_content(
+            summary_event.message if summary_event.message else '', max_chars=10_000
         )
+        prompt += f'<PREVIOUS SUMMARY>\n{summary_event_content}\n</PREVIOUS SUMMARY>\n'
 
         prompt += '\n\n'
 
         for forgotten_event in forgotten_events:
-            prompt += f'<EVENT id={forgotten_event.id}>\n{forgotten_event}\n</EVENT>\n'
+            event_content = truncate_content(str(forgotten_event), max_chars=10_000)
+            prompt += f'<EVENT id={forgotten_event.id}>\n{event_content}\n</EVENT>\n'
 
         if forgotten_events:
             prompt += 'Now summarize the events using the rules above.'
