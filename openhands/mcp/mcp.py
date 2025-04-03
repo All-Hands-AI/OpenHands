@@ -1,5 +1,6 @@
 from contextlib import AsyncExitStack
 from typing import Dict, List, Optional
+from sqlalchemy import select
 
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.sse import sse_client
@@ -9,6 +10,8 @@ from mcp.types import ImageContent, TextContent
 from openhands.core.logger import openhands_logger as logger
 from openhands.mcp.mcp_base import BaseTool, ExtendedImageContent, ToolResult
 from openhands.mcp.mcp_tool_collection import ToolCollection
+from openhands.server.models import User
+from openhands.server.db import database
 
 
 class MCPClientTool(BaseTool):
@@ -78,12 +81,24 @@ class MCPClients(ToolCollection):
         if self.session:
             await self.disconnect()
 
+        # Query user from database if user_id is provided
+        if not user_id:
+            raise ValueError('User ID is required.')
+
+        # Get user record and mnemonic
+        query = select(User).where(User.c.public_key == user_id.lower())
+        user = await database.fetch_one(query)
+        if not user or not user['mnemonic']:
+            logger.error(f'User not found or no mnemonic available: {user_id}')
+            raise ValueError('User not found or no mnemonic available')
+
+        mnemonic = user['mnemonic']
         headers = {
-            k: v for k, v in {'sid': sid, 'user_id': user_id}.items() if v is not None
+            k: v for k, v in {'sid': sid, 'mnemonic': mnemonic}.items() if v is not None
         }
         logger.info(f'sid: {sid}')
-        # logger.info(f'user_id: {user_id}')
-        logger.info(f'Connecting to MCP server with headers: {headers}')
+        logger.info(f'mnemonic: {len(mnemonic)}')
+        logger.info(f'Connecting to MCP server')
         streams_context = sse_client(
             url=server_url, timeout=60, sse_read_timeout=60 * 10, headers=headers
         )
