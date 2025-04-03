@@ -25,7 +25,7 @@ RUN apt-get update && \
     {%- if 'ubuntu' in base_image -%}
     curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
     TZ=Etc/UTC DEBIAN_FRONTEND=noninteractive \
-        apt-get install -y --no-install-recommends nodejs python3.12 python-is-python3 && \
+        apt-get install -y --no-install-recommends nodejs python3.12 python-is-python3 python3-pip python3.12-venv && \
     corepack enable yarn && \
     {% endif -%}
     apt-get clean && \
@@ -34,9 +34,8 @@ RUN apt-get update && \
 {% if 'ubuntu' in base_image %}
 RUN ln -s "$(dirname $(which node))/corepack" /usr/local/bin/corepack && \
     npm install -g corepack && corepack enable yarn && \
-    python3.12 -m ensurepip --upgrade && \
-    pip install -U pipenv uv && \
-    curl -fsSL --compressed https://install.python-poetry.org | python -
+    curl -fsSL --compressed https://install.python-poetry.org | python - && \
+    curl -LsSf https://astral.sh/uv/install.sh | sh
 {% endif %}
 
 # Remove UID 1000 if it's called pn--this fixes the nikolaik image for ubuntu users
