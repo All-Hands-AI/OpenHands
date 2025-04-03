@@ -9,9 +9,9 @@ recommendations for model selection. Our latest benchmarking results can be foun
 
 Based on these findings and community feedback, the following models have been verified to work reasonably well with OpenHands:
 
-- anthropic/claude-3-5-sonnet-20241022 (recommended)
-- anthropic/claude-3-5-haiku-20241022
+- anthropic/claude-3-7-sonnet-20250219 (recommended)
 - deepseek/deepseek-chat
+- OpenHands LM
 - gpt-4o
 
 :::warning
@@ -56,6 +56,7 @@ We have a few guides for running OpenHands with specific model providers:
 - [Azure](llms/azure-llms)
 - [Google](llms/google-llms)
 - [Groq](llms/groq)
+- [Local LLMs with SGLang or vLLM](llms/../local-llms.md)
 - [LiteLLM Proxy](llms/litellm-proxy)
 - [OpenAI](llms/openai-llms)
 - [OpenRouter](llms/openrouter)
