@@ -25,7 +25,6 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  BASE_IMAGE_FOR_HASH_EQUIVALENCE_TEST: nikolaik/python-nodejs:python3.12-nodejs22
   RELEVANT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 
 jobs:
@@ -37,6 +36,7 @@ jobs:
       contents: read
       packages: write
     outputs:
+      # Since this job uses outputs it cannot use matrix
       hash_from_app_image: ${{ steps.get_hash_in_app_image.outputs.hash_from_app_image }}
     steps:
       - name: Checkout
@@ -89,6 +89,8 @@ jobs:
         base_image:
           - image: 'nikolaik/python-nodejs:python3.12-nodejs22'
             tag: nikolaik
+          - image: 'ubuntu:24.04'
+            tag: ubuntu
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -156,6 +158,8 @@ jobs:
       fail-fast: false
       matrix:
         base_image: ['nikolaik']
+    env:
+      BASE_IMAGE_FOR_HASH_EQUIVALENCE_TEST: nikolaik/python-nodejs:python3.12-nodejs22
     steps:
       - uses: actions/checkout@v4
         with:
@@ -208,7 +212,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        base_image: ['nikolaik']
+        base_image: ['nikolaik', 'ubuntu']
     steps:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
@@ -273,7 +277,7 @@ jobs:
     needs: [ghcr_build_runtime]
     strategy:
       matrix:
-        base_image: ['nikolaik']
+        base_image: ['nikolaik', 'ubuntu']
     steps:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
@@ -379,7 +383,7 @@ jobs:
             -p 3000:3000 \
             -v /var/run/docker.sock:/var/run/docker.sock \
             --add-host host.docker.internal:host-gateway \
-            -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:$SHORT_SHA-nikolaik \
+            -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:$SHORT_SHA-ubuntu \
             --name openhands-app-$SHORT_SHA \
             docker.all-hands.dev/all-hands-ai/openhands:$SHORT_SHA"
 
