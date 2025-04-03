@@ -533,10 +533,10 @@ function AccountSettings() {
                   name="enable-repository-memory-switch"
                   defaultIsToggled={!!settings.ENABLE_REPOSITORY_MEMORY}
                 >
-                  {t(I18nKey.SETTINGS$REPOSITORY_MEMORY)}
+                  {t(I18nKey.SETTINGS$LONGTERM_MEMORY)}
                 </SettingsSwitch>
                 <Tooltip
-                  content={t(I18nKey.SETTINGS$REPOSITORY_MEMORY_TOOLTIP)}
+                  content={t(I18nKey.SETTINGS$LONGTERM_MEMORY_TOOLTIP)}
                   closeDelay={100}
                 >
                   <span className="cursor-help">

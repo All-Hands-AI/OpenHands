@@ -601,7 +601,7 @@
         "fr": "Paramètres GitHub",
         "tr": "GitHub Ayarları"
     },
-    "SETTINGS$REPOSITORY_MEMORY": {
+    "SETTINGS$LONGTERM_MEMORY": {
         "en": "Enable long-term memory",
         "ja": "長期記憶を有効化",
         "zh-CN": "启用长期记忆",
@@ -616,7 +616,7 @@
         "fr": "Activer la mémoire à long terme",
         "tr": "Uzun süreli belleği etkinleştir"
     },
-    "SETTINGS$REPOSITORY_MEMORY_TOOLTIP": {
+    "SETTINGS$LONGTERM_MEMORY_TOOLTIP": {
         "en": "Allows the agent to learn from experience and remember important information across sessions.",
         "ja": "エージェントが将来のセッションのためにリポジトリに関する重要な情報を保存して思い出すことを可能にします。",
         "zh-CN": "允许智能体从经验中学习并在不同会话之间记住重要信息。",
