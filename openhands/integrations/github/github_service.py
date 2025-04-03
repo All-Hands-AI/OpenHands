@@ -104,13 +104,15 @@ class GitHubService(GitService):
     ) -> list[Repository]:
         MAX_REPOS = 1000
         PER_PAGE = 100  # Maximum allowed by GitHub API
-        all_repos: list[dict]= []
+        all_repos: list[dict] = []
         page = 1
 
         while len(all_repos) < MAX_REPOS:
             params = {'page': str(page), 'per_page': str(PER_PAGE)}
             if installation_id:
-                url = f'{self.BASE_URL}/user/installations/{installation_id}/repositories'
+                url = (
+                    f'{self.BASE_URL}/user/installations/{installation_id}/repositories'
+                )
                 response, headers = await self._fetch_data(url, params)
                 response = response.get('repositories', [])
             else:
@@ -136,7 +138,7 @@ class GitHubService(GitService):
                 id=repo.get('id'),
                 full_name=repo.get('full_name'),
                 stargazers_count=repo.get('stargazers_count'),
-                git_provider=ProviderType.GITHUB
+                git_provider=ProviderType.GITHUB,
             )
             for repo in all_repos
         ]
@@ -151,7 +153,14 @@ class GitHubService(GitService):
         self, query: str, per_page: int, sort: str, order: str
     ) -> list[Repository]:
         url = f'{self.BASE_URL}/search/repositories'
-        params = {'q': query, 'per_page': per_page, 'sort': sort, 'order': order}
+        # Add is:public to the query to ensure we only search for public repositories
+        query_with_visibility = f'{query} is:public'
+        params = {
+            'q': query_with_visibility,
+            'per_page': per_page,
+            'sort': sort,
+            'order': order,
+        }
 
         response, _ = await self._fetch_data(url, params)
         repos = response.get('items', [])
@@ -161,7 +170,7 @@ class GitHubService(GitService):
                 id=repo.get('id'),
                 full_name=repo.get('full_name'),
                 stargazers_count=repo.get('stargazers_count'),
-                git_provider=ProviderType.GITHUB
+                git_provider=ProviderType.GITHUB,
             )
             for repo in repos
         ]
@@ -308,14 +317,6 @@ class GitHubService(GitService):
             return tasks
         except Exception:
             return []
-
-    async def does_repo_exist(self, repository: str) -> bool:
-        url = f'{self.BASE_URL}/repos/{repository}'
-        try:
-            await self._fetch_data(url)
-            return True
-        except Exception:
-            return False
 
 
 github_service_cls = os.environ.get(

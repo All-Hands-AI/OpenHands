@@ -40,6 +40,9 @@ def get_config(
 ) -> AppConfig:
     sandbox_config = get_default_sandbox_config_for_eval()
     sandbox_config.base_container_image = base_container_image
+    sandbox_config.enable_auto_lint = True
+    # If the web services are running on the host machine, this must be set to True
+    sandbox_config.use_host_network = True
     config = AppConfig(
         run_as_openhands=False,
         max_budget_per_task=4,
