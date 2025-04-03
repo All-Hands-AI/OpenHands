@@ -1,6 +1,6 @@
 import React from "react";
-import { StyledSwitchComponent } from "./styled-switch-component";
 import { Tooltip } from "@heroui/react";
+import { StyledSwitchComponent } from "./styled-switch-component";
 import InfoIcon from "#/assets/info";
 
 interface SettingsSwitchProps {

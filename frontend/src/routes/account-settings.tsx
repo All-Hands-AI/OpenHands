@@ -1,7 +1,6 @@
 import React from "react";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
-import { Tooltip } from "@heroui/react";
 import { I18nKey } from "#/i18n/declaration";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { HelpLink } from "#/components/features/settings/help-link";
@@ -13,7 +12,6 @@ import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import { ModelSelector } from "#/components/shared/modals/settings/model-selector";
 import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
-import InfoIcon from "#/assets/info";
 import { useAIConfigOptions } from "#/hooks/query/use-ai-config-options";
 import { useConfig } from "#/hooks/query/use-config";
 import { useSettings } from "#/hooks/query/use-settings";
@@ -534,7 +532,6 @@ function AccountSettings() {
             >
               {t(I18nKey.SETTINGS$SOUND_NOTIFICATIONS)}
             </SettingsSwitch>
-
           </section>
         </div>
       </form>
