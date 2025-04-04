@@ -1,5 +1,6 @@
 import os
 from typing import Any
+from urllib.parse import quote_plus
 
 import httpx
 from pydantic import SecretStr
@@ -12,6 +13,7 @@ from openhands.integrations.service_types import (
     UnknownException,
     User,
 )
+from openhands.server.types import AppMode
 from openhands.utils.import_utils import get_impl
 
 
@@ -119,12 +121,7 @@ class GitLabService(GitService):
 
         return repos
 
-    async def get_repositories(
-        self, sort: str, installation_id: int | None
-    ) -> list[Repository]:
-        if installation_id:
-            return []  # Not implementing installation_token case yet
-
+    async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
         MAX_REPOS = 1000
         PER_PAGE = 100  # Maximum allowed by GitLab API
         all_repos: list[dict] = []
