@@ -104,11 +104,8 @@ class MCPClient(BaseModel):
                     await connection_task
                 except asyncio.CancelledError:
                     pass
-                raise TimeoutError(f'Connection to {server_url} timed out after {timeout} seconds')
         except Exception as e:
-            if not isinstance(e, TimeoutError):
-                logger.error(f'Error connecting to {server_url}: {str(e)}')
-            raise
+            logger.error(f'Error connecting to {server_url}: {str(e)}')
 
     async def _connect_sse_internal(self, server_url: str) -> None:
         """Internal method to establish SSE connection."""
@@ -154,11 +151,8 @@ class MCPClient(BaseModel):
                     await connection_task
                 except asyncio.CancelledError:
                     pass
-                raise TimeoutError(f'Connection to {command} timed out after {timeout} seconds')
         except Exception as e:
-            if not isinstance(e, TimeoutError):
-                logger.error(f'Error connecting to {command}: {str(e)}')
-            raise
+            logger.error(f'Error connecting to {command}: {str(e)}')
 
     async def _connect_stdio_internal(self, command: str, args: List[str], envs: List[tuple[str, str]]) -> None:
         """Internal method to establish stdio connection."""
