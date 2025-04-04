@@ -260,36 +260,6 @@ class AzureDevOpsService(GitService):
         except httpx.RequestError as e:
             raise UnknownException(f'Request error: {str(e)}')
 
-    async def does_repo_exist(self, repository: str) -> bool:
-        """
-        Check if a repository exists for the user in Azure DevOps
-        """
-        await self.load_settings()        
-        if not self.organization:
-            return False
-
-        # Extract repository name from full path (organization/project/repository)
-        parts = repository.split('/')
-        if len(parts) < 2:
-            return False
-
-        repo_name = parts[-1]
-
-        headers = await self._get_azuredevops_headers()
-
-        try:
-            # Check if repository exists
-            async with httpx.AsyncClient() as client:
-                response = await client.get(
-                    f'{self.BASE_URL}/_apis/git/repositories/{repo_name}?api-version=7.0',
-                    headers=headers,
-                )
-
-            print(f'response: {response.status_code}')
-            return response.status_code == 200
-        except httpx.RequestError:
-            return False
-
     async def get_repo_url(self, repository: str) -> str:
         """
         Get the URL of a repository in Azure DevOps

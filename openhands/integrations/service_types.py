@@ -3,6 +3,8 @@ from typing import Protocol
 
 from pydantic import BaseModel, SecretStr
 
+from openhands.server.types import AppMode
+
 
 class ProviderType(Enum):
     GITHUB = 'github'
@@ -87,16 +89,9 @@ class GitService(Protocol):
         """Search for repositories"""
         ...
 
-    async def get_repositories(
-        self,
-        sort: str,
-        installation_id: int | None,
-    ) -> list[Repository]:
+    async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
         """Get repositories for the authenticated user"""
         ...
-
-    async def does_repo_exist(self, repository: str) -> bool:
-        """Check if a repository exists for the user"""
     
     async def get_repo_url(self, repository: str) -> str:
         """Get the URL of a repository"""

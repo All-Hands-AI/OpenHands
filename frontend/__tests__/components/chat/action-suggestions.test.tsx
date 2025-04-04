@@ -19,6 +19,20 @@ vi.mock("#/context/auth-context", () => ({
   useAuth: vi.fn(),
 }));
 
+// Mock react-i18next
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({
+    t: (key: string) => {
+      const translations: Record<string, string> = {
+        "ACTION$PUSH_TO_BRANCH": "Push to Branch",
+        "ACTION$PUSH_CREATE_PR": "Push & Create PR",
+        "ACTION$PUSH_CHANGES_TO_PR": "Push Changes to PR"
+      };
+      return translations[key] || key;
+    },
+  }),
+}));
+
 describe("ActionSuggestions", () => {
   // Setup mocks for each test
   beforeEach(() => {
@@ -84,7 +98,7 @@ describe("ActionSuggestions", () => {
     const pushBranchPrompt =
       "Please push the changes to a remote branch on GitHub, but do NOT create a pull request. Please use the exact SAME branch name as the one you are currently on.";
     const createPRPrompt =
-      "Please push the changes to GitHub and open a pull request. Please create a meaningful branch name that describes the changes.";
+      "Please push the changes to GitHub and open a pull request. Please create a meaningful branch name that describes the changes. If a pull request template exists in the repository, please follow it when creating the PR description.";
 
     // Verify the prompts are different
     expect(pushBranchPrompt).not.toEqual(createPRPrompt);

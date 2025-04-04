@@ -15,7 +15,6 @@ from pydantic import (
 )
 from pydantic.json import pydantic_encoder
 
-from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.action import Action
 from openhands.events.action.commands import CmdRunAction
 from openhands.events.stream import EventStream
@@ -31,6 +30,7 @@ from openhands.integrations.service_types import (
     Repository,
     User,
 )
+from openhands.server.types import AppMode
 
 
 class ProviderToken(BaseModel):
@@ -193,11 +193,7 @@ class ProviderHandler:
         service = self._get_service(provider)
         return await service.get_latest_token()
 
-    async def get_repositories(
-        self,
-        sort: str,
-        installation_id: int | None,
-    ) -> list[Repository]:
+    async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
         """
         Get repositories from a selected providers with pagination support
         """
@@ -208,7 +204,7 @@ class ProviderHandler:
         for provider in self.provider_tokens:
             try:
                 service = self._get_service(provider)
-                service_repos = await service.get_repositories(sort, installation_id)
+                service_repos = await service.get_repositories(sort, app_mode)
                 all_repos.extend(service_repos)
             except Exception:
                 continue
@@ -235,20 +231,13 @@ class ProviderHandler:
 
         return all_repos
 
-    async def get_remote_repository_url(self, repository: str) -> str | None:
-        if not repository:
-            return None
-        
-        for provider in self.provider_tokens:
-            try:
-                service = self._get_service(provider)
-                repo_exists = await service.does_repo_exist(repository)
-                if repo_exists:                    
-                    return await service.get_repo_url(repository)           
-
-            except Exception:
-                continue
-        return None
+    async def get_repo_url(
+        self, repository: str, provider: ProviderType) -> str:
+        """
+        Get the repository URL from the provider
+        """
+        service = self._get_service(provider)
+        return await service.get_repo_url(repository)
 
     async def set_event_stream_secrets(
         self,
@@ -315,9 +304,7 @@ class ProviderHandler:
             get_latest: Get the latest working token for the providers if True, otherwise get the existing ones
         """
 
-        # TODO: We should remove `not get_latest` in the future. More
-        # details about the error this fixes is in the next comment below
-        if not self.provider_tokens and not get_latest:
+        if not self.provider_tokens:
             return {}
 
         env_vars: dict[ProviderType, SecretStr] = {}
@@ -337,20 +324,6 @@ class ProviderHandler:
 
                 if token:
                     env_vars[provider] = token
-
-        # TODO: we have an error where reinitializing the runtime doesn't happen with
-        # the provider tokens; thus the code above believes that github isn't a provider
-        # when it really is. We need to share information about current providers set
-        # for the user when the socket event for connect is sent
-        if ProviderType.GITHUB not in env_vars and get_latest:
-            logger.info(
-                f'Force refresh runtime token for user: {self.external_auth_id}'
-            )
-            service = GithubServiceImpl(
-                external_auth_id=self.external_auth_id,
-                external_token_manager=self.external_token_manager,
-            )
-            env_vars[ProviderType.GITHUB] = await service.get_latest_token()
 
         if not expose_secrets:
             return env_vars

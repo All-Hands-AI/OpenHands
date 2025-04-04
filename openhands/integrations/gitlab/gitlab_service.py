@@ -13,6 +13,7 @@ from openhands.integrations.service_types import (
     UnknownException,
     User,
 )
+from openhands.server.types import AppMode
 from openhands.utils.import_utils import get_impl
 
 
@@ -98,14 +99,15 @@ class GitLabService(GitService):
     async def search_repositories(
         self, query: str, per_page: int = 30, sort: str = 'updated', order: str = 'desc'
     ) -> list[Repository]:
-        url = f'{self.BASE_URL}/search'
+        url = f'{self.BASE_URL}/projects'
         params = {
-            'scope': 'projects',
             'search': query,
             'per_page': per_page,
-            'order_by': sort,
+            'order_by': 'last_activity_at',
             'sort': order,
+            'visibility': 'public',
         }
+
         response, _ = await self._fetch_data(url, params)
         repos = [
             Repository(
@@ -119,12 +121,7 @@ class GitLabService(GitService):
 
         return repos
 
-    async def get_repositories(
-        self, sort: str, installation_id: int | None
-    ) -> list[Repository]:
-        if installation_id:
-            return []  # Not implementing installation_token case yet
-
+    async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
         MAX_REPOS = 1000
         PER_PAGE = 100  # Maximum allowed by GitLab API
         all_repos: list[dict] = []
@@ -145,7 +142,6 @@ class GitLabService(GitService):
                 'per_page': str(PER_PAGE),
                 'order_by': order_by,
                 'sort': 'desc',  # GitLab uses sort for direction (asc/desc)
-                'owned': 1,  # Use 1 instead of True
                 'membership': 1,  # Use 1 instead of True
             }
             response, headers = await self._fetch_data(url, params)
@@ -172,16 +168,6 @@ class GitLabService(GitService):
             )
             for repo in all_repos
         ]
-
-    async def does_repo_exist(self, repository: str) -> bool:
-        encoded_repo = quote_plus(repository)
-        url = f'{self.BASE_URL}/projects/{encoded_repo}'
-        try:
-            await self._fetch_data(url)
-            return True
-        except Exception as e:
-            print(e)
-            return False
 
     async def get_repo_url(self, repository: str) -> str:
         return f'https://oauth2:{await self.get_latest_token()}@gitlab.com/{repository}.git'
