@@ -40,14 +40,12 @@ export function ExpandableMessage({
 
     if (id && i18n.exists(id)) {
       setHeadline(t(id));
-
       if (message === id || isMessageTranslationKey) {
         setDetails(t(id));
-        setShowDetails(false);
       } else {
         setDetails(message);
-        setShowDetails(message.length > 0);
       }
+      setShowDetails(false);
     } else if (isMessageTranslationKey && i18n.exists(message)) {
       setHeadline(t(message));
       setDetails(t(message));
@@ -100,29 +98,27 @@ export function ExpandableMessage({
             {headline && (
               <>
                 {headline}
-                {details.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setShowDetails(!showDetails)}
-                    className="cursor-pointer text-left"
-                  >
-                    {showDetails ? (
-                      <ArrowUp
-                        className={cn(
-                          "h-4 w-4 ml-2 inline",
-                          type === "error" ? "fill-danger" : "fill-neutral-300",
-                        )}
-                      />
-                    ) : (
-                      <ArrowDown
-                        className={cn(
-                          "h-4 w-4 ml-2 inline",
-                          type === "error" ? "fill-danger" : "fill-neutral-300",
-                        )}
-                      />
-                    )}
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={() => setShowDetails(!showDetails)}
+                  className="cursor-pointer text-left"
+                >
+                  {showDetails ? (
+                    <ArrowUp
+                      className={cn(
+                        "h-4 w-4 ml-2 inline",
+                        type === "error" ? "fill-danger" : "fill-neutral-300",
+                      )}
+                    />
+                  ) : (
+                    <ArrowDown
+                      className={cn(
+                        "h-4 w-4 ml-2 inline",
+                        type === "error" ? "fill-danger" : "fill-neutral-300",
+                      )}
+                    />
+                  )}
+                </button>
               </>
             )}
           </span>
