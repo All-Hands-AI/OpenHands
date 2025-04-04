@@ -48,14 +48,15 @@ class MCPRunner:
 
         # Initialize stdio connections
         if mcp_config.stdio.commands:
-            for command, args in zip(mcp_config.stdio.commands, mcp_config.stdio.args):
+            for command, args, envs in zip(mcp_config.stdio.commands, mcp_config.stdio.args, mcp_config.stdio.envs):
                 logger.info(
                     f'Initializing MCP agent for {command} with stdio connection...'
                 )
-
+                logger.info(f'Args: {args}')
+                logger.info(f'Environments: {envs}')
                 client = MCPClient()
                 try:
-                    await client.connect_stdio(command, args)
+                    await client.connect_stdio(command, args, envs)
                     self.mcp_clients.append(client)
                     logger.info(
                         f'Connected to MCP server via stdio with command {command}'

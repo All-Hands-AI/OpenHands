@@ -41,7 +41,8 @@ class MCPStdioConfig(BaseModel):
 
     commands: List[str] = Field(default_factory=list)
     args: List[List[str]] = Field(default_factory=list)
-
+    envs: List[List[tuple[str, str]]] = Field(default_factory=list)
+    
     model_config = {'extra': 'forbid'}
 
     def validate_stdio(self) -> None:
