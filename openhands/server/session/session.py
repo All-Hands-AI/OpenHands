@@ -24,7 +24,7 @@ from openhands.events.observation.error import ErrorObservation
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm import LLM
-from openhands.mcp.mcp import convert_mcp_clients_to_tools, create_mcp_clients
+from openhands.mcp.mcp import convert_mcp_clients_to_tools, create_mcp_clients, fetch_mcp_tools_from_config
 from openhands.server.session.agent_session import AgentSession
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.settings import Settings
@@ -147,19 +147,9 @@ class Session:
             self.logger.info(f'Enabling default condenser: {default_condenser_config}')
             agent_config.condenser = default_condenser_config
 
-        mcp_clients = await create_mcp_clients(
-            self.config.mcp.sse.mcp_servers,
-            self.config.mcp.stdio.commands,
-            self.config.mcp.stdio.args,
-        )
-        mcp_tools = convert_mcp_clients_to_tools(mcp_clients)
-        if mcp_tools:
-            agent = Agent.get_cls(agent_cls)(llm, agent_config, mcp_tools)
-        else:
-            agent = Agent.get_cls(agent_cls)(llm, agent_config)
-        # close all mcp clients after extracting tools
-        for mcp_client in mcp_clients:
-            await mcp_client.disconnect()
+        mcp_tools = await fetch_mcp_tools_from_config(self.config.mcp)
+        agent = Agent.get_cls(agent_cls)(llm, agent_config)
+        agent.set_mcp_tools(mcp_tools)
 
         git_provider_tokens = None
         selected_repository = None
