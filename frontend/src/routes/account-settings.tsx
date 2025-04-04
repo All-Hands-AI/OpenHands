@@ -1,11 +1,7 @@
 import { BrandButton } from "#/components/features/settings/brand-button";
-import { HelpLink } from "#/components/features/settings/help-link";
-import { KeyStatusIcon } from "#/components/features/settings/key-status-icon";
 import { SettingsDropdownInput } from "#/components/features/settings/settings-dropdown-input";
-import { SettingsInput } from "#/components/features/settings/settings-input";
 import { SettingsSwitch } from "#/components/features/settings/settings-switch";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
-import { ModelSelector } from "#/components/shared/modals/settings/model-selector";
 import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 import { useAIConfigOptions } from "#/hooks/query/use-ai-config-options";
 import { useConfig } from "#/hooks/query/use-config";
@@ -21,7 +17,7 @@ import { hasAdvancedSettingsSet } from "#/utils/has-advanced-settings-set";
 import { isCustomModel } from "#/utils/is-custom-model";
 import { organizeModelsAndProviders } from "#/utils/organize-models-and-providers";
 import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
-import { Modal, ModalBody, ModalContent, Tab, Tabs } from "@heroui/react";
+import { Modal, ModalBody, ModalContent } from "@heroui/react";
 import React from "react";
 import { useNavigate } from "react-router";
 
