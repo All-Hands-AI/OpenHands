@@ -1,6 +1,6 @@
 # Using the OpenHands GitHub Action
 
-This guide explains how to use the OpenHands GitHub Action, both within the OpenHands repository and in your own projects.
+This guide explains how to use the OpenHands GitHub Action in your own projects.
 
 ## Using the Action in the OpenHands Repository
 

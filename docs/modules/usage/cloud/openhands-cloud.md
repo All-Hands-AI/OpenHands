@@ -4,9 +4,7 @@ OpenHands Cloud is the cloud hosted version of OpenHands by All Hands AI.
 
 ## Accessing OpenHands Cloud
 
-Currently, users are being admitted to access OpenHands Cloud in waves. To sign up,
-[join the waitlist](https://www.all-hands.dev/join-waitlist). Once you are approved, you will get an email with
-instructions on how to access it.
+OpenHands Cloud can be accessed at https://app.all-hands.dev/.
 
 ## Getting Started
 
