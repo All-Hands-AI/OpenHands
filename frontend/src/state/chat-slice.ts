@@ -23,6 +23,7 @@ const HANDLED_ACTIONS: OpenHandsEventType[] = [
   "browse",
   "browse_interactive",
   "edit",
+  "user_feedback",
   "recall",
 ];
 
@@ -295,6 +296,22 @@ export const chatSlice = createSlice({
     clearMessages(state: SliceState) {
       state.messages = [];
     },
+
+    setMessageFeedback(
+      state: SliceState,
+      action: PayloadAction<{
+        messageId: number;
+        feedbackType: "positive" | "negative";
+      }>,
+    ) {
+      const { messageId, feedbackType } = action.payload;
+      const messageIndex = state.messages.findIndex(
+        (message) => message.eventID === messageId,
+      );
+      if (messageIndex !== -1) {
+        state.messages[messageIndex].feedback = feedbackType;
+      }
+    },
   },
 });
 
@@ -305,5 +322,6 @@ export const {
   addAssistantObservation,
   addErrorMessage,
   clearMessages,
+  setMessageFeedback,
 } = chatSlice.actions;
 export default chatSlice.reducer;

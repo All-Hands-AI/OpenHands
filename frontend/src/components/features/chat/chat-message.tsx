@@ -6,15 +6,20 @@ import { cn } from "#/utils/utils";
 import { ul, ol } from "../markdown/list";
 import { CopyToClipboardButton } from "#/components/shared/buttons/copy-to-clipboard-button";
 import { anchor } from "../markdown/anchor";
+import { MessageFeedback } from "./message-feedback";
 
 interface ChatMessageProps {
   type: "user" | "assistant";
   message: string;
+  messageId?: number;
+  feedback?: "positive" | "negative" | null;
 }
 
 export function ChatMessage({
   type,
   message,
+  messageId,
+  feedback,
   children,
 }: React.PropsWithChildren<ChatMessageProps>) {
   const [isHovering, setIsHovering] = React.useState(false);
@@ -70,6 +75,12 @@ export function ChatMessage({
           {message}
         </Markdown>
       </div>
+      
+      {/* Add feedback buttons only for assistant messages */}
+      {type === "assistant" && messageId && (
+        <MessageFeedback messageId={messageId} feedback={feedback} />
+      )}
+      
       {children}
     </article>
   );
