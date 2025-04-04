@@ -370,6 +370,41 @@ class AgentController:
         if not any(isinstance(event, filter_type) for filter_type in self.filter_out):
             self.state.history.append(event)
 
+            # If this is a delegate agent, also add the event to the parent's delegated_histories
+            if self.is_delegate and self.parent:
+                # Ensure parent has a delegated_histories attribute
+                if not hasattr(self.parent.state, 'delegated_histories'):
+                    self.log(
+                        'warning',
+                        'Parent state has no delegated_histories attribute, initializing it',
+                    )
+                    self.parent.state.delegated_histories = []
+
+                # Get the correct index for this delegation's history in the parent
+                # Default to the last index if delegated_history_index is not set on parent
+                history_index = getattr(
+                    self.parent,
+                    'delegated_history_index',
+                    len(self.parent.state.delegated_histories) - 1,
+                )
+
+                # Ensure the index exists in parent's delegated_histories
+                while len(self.parent.state.delegated_histories) <= history_index:
+                    self.parent.state.delegated_histories.append([])
+                    self.log(
+                        'warning',
+                        f'Added missing delegated history at index {len(self.parent.state.delegated_histories)-1} in parent',
+                    )
+
+                # Add to the correct list in the parent's delegated_histories
+                self.parent.state.delegated_histories[history_index].append(event)
+
+                # Log for debugging
+                self.log(
+                    'debug',
+                    f'Added event to parent delegated_histories[{history_index}], now has {len(self.parent.state.delegated_histories[history_index])} events',
+                )
+
         if isinstance(event, Action):
             await self._handle_action(event)
         elif isinstance(event, Observation):
@@ -664,6 +699,28 @@ class AgentController:
             # Update the start_id to be after the message we just added
             start_id = self.event_stream.get_latest_event_id() + 1
 
+        # Ensure delegated_histories is initialized
+        if not hasattr(self.state, 'delegated_histories'):
+            self.state.delegated_histories = []
+            self.log(
+                'warning', 'delegated_histories attribute was missing, initializing it'
+            )
+
+        # Add a new empty list to the parent's delegated_histories to track this delegation
+        self.state.delegated_histories.append([])
+        self.log(
+            'info',
+            f'Added new list to delegated_histories, now has {len(self.state.delegated_histories)} delegations',
+        )
+
+        # Store the index of this delegation in the parent's delegated_histories
+        # This will be used to ensure events are added to the correct list
+        self.delegated_history_index = len(self.state.delegated_histories) - 1
+        self.log(
+            'info',
+            f'Stored delegated_history_index={self.delegated_history_index} for this delegation',
+        )
+
         state = State(
             session_id=self.id.removesuffix('-delegate'),
             inputs=action.inputs or {},
@@ -716,6 +773,104 @@ class AgentController:
 
         # update iteration that is shared across agents
         self.state.iteration = self.delegate.state.iteration
+
+        # Ensure the delegated history is properly preserved
+        # At this point, the delegated_histories[-1] should already contain all events
+        # from the delegate's history due to our _on_event modification
+
+        # Ensure delegated_histories is initialized
+        if not hasattr(self.state, 'delegated_histories'):
+            self.log(
+                'warning', 'delegated_histories attribute was missing, initializing it'
+            )
+            self.state.delegated_histories = []
+
+        # If delegated_histories is empty, initialize it
+        if not self.state.delegated_histories:
+            self.log('warning', 'delegated_histories is empty, initializing it')
+            self.state.delegated_histories.append([])
+
+        # Get the correct index for this delegation's history
+        # Default to the last index if delegated_history_index is not set
+        history_index = getattr(
+            self, 'delegated_history_index', len(self.state.delegated_histories) - 1
+        )
+        self.log(
+            'info', f'Using delegated_history_index={history_index} for this delegation'
+        )
+
+        # Ensure the index exists in delegated_histories
+        while len(self.state.delegated_histories) <= history_index:
+            self.state.delegated_histories.append([])
+            self.log(
+                'warning',
+                f'Added missing delegated history at index {len(self.state.delegated_histories)-1}',
+            )
+
+        # If the delegated history is empty but the delegate has events, copy them over
+        if (
+            not self.state.delegated_histories[history_index]
+            and self.delegate.state.history
+        ):
+            self.log(
+                'warning',
+                f'delegated_histories[{history_index}] is empty but delegate has events, copying them over',
+            )
+            self.state.delegated_histories[history_index].extend(
+                self.delegate.state.history
+            )
+
+        # Ensure all events from delegate are in delegated_histories
+        # This is a safety measure in case some events were missed during delegation
+        if self.delegate.state.history:
+            # Get the set of event IDs already in delegated_histories
+            existing_ids = {
+                id(event) for event in self.state.delegated_histories[history_index]
+            }
+
+            # Add any events from delegate.state.history that aren't already in delegated_histories
+            for event in self.delegate.state.history:
+                if id(event) not in existing_ids:
+                    self.log(
+                        'warning',
+                        f'Found event in delegate history that was not in delegated_histories[{history_index}], adding it: {type(event).__name__}',
+                    )
+                    self.state.delegated_histories[history_index].append(event)
+                    existing_ids.add(id(event))
+
+        # Log the number of events in the delegated history for debugging
+        self.log(
+            'info',
+            f'Delegate {self.delegate.agent.name} history has {len(self.delegate.state.history)} events, '
+            + f'delegated_histories[{history_index}] has {len(self.state.delegated_histories[history_index])} events',
+        )
+
+        # Log a sample of events from both histories for comparison
+        if self.delegate.state.history:
+            self.log(
+                'debug',
+                f'First event in delegate history: {type(self.delegate.state.history[0]).__name__}',
+            )
+
+        if (
+            self.state.delegated_histories
+            and len(self.state.delegated_histories) > history_index
+            and self.state.delegated_histories[history_index]
+        ):
+            self.log(
+                'debug',
+                f'First event in delegated_histories[{history_index}]: {type(self.state.delegated_histories[history_index][0]).__name__}',
+            )
+
+        # Store the delegate's state in the parent's extra_data for easier access
+        # This will allow the SupervisorAgent to access the delegated agent's history directly
+        if not hasattr(self.state, 'extra_data'):
+            self.state.extra_data = {}
+        self.state.extra_data['delegated_state'] = self.delegate.state
+        self.log(
+            'info',
+            'Stored delegate state in parent state.extra_data["delegated_state"]',
+        )
 
         # close the delegate controller before adding new events
         asyncio.get_event_loop().run_until_complete(self.delegate.close())

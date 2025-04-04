@@ -85,7 +85,9 @@ class State:
     history: list[Event] = field(default_factory=list)
     # List of histories from delegated agents
     # Each time an agent is delegated to, a new list is added to delegated_histories
-    # and all events from that agent's history are added to the last list in delegated_histories
+    # and all events from that agent's history are added to the corresponding list in delegated_histories
+    # The parent agent keeps track of which index in delegated_histories corresponds to the current delegation
+    # using the delegated_history_index attribute
     delegated_histories: list[list[Event]] = field(default_factory=list)
     inputs: dict = field(default_factory=dict)
     outputs: dict = field(default_factory=dict)
@@ -176,11 +178,16 @@ class State:
         state = self.__dict__.copy()
         state['history'] = []
 
-        # We also don't pickle delegated_histories, as they can be large
-        # and will be rebuilt as needed
-        state['delegated_histories'] = []
+        # We DO pickle delegated_histories to ensure they're preserved across serialization
+        # This is important for maintaining the history of delegated agents
+        # We keep this data because it's critical for the SupervisorAgent to access
+        # the history of delegated agents
 
-        # Remove any view caching attributes. They'll be rebuilt frmo the
+        # Ensure delegated_histories exists before serialization
+        if not hasattr(self, 'delegated_histories'):
+            state['delegated_histories'] = []
+
+        # Remove any view caching attributes. They'll be rebuilt from the
         # history after that gets reloaded.
         state.pop('_history_checksum', None)
         state.pop('_view', None)
@@ -197,6 +204,57 @@ class State:
         # make sure we always have the attribute delegated_histories
         if not hasattr(self, 'delegated_histories'):
             self.delegated_histories = []
+
+    def get_delegated_history(self, index: int = -1) -> list[Event]:
+        """
+        Retrieves the history of a specific delegated agent.
+
+        Args:
+            index: Index of the delegated history to retrieve. Defaults to -1 (most recent).
+
+        Returns:
+            List of events from the specified delegated agent's history.
+        """
+        if not hasattr(self, 'delegated_histories') or not self.delegated_histories:
+            logger.debug('No delegated histories available')
+            return []
+
+        try:
+            return self.delegated_histories[index]
+        except IndexError:
+            logger.warning(
+                f'Delegated history index {index} out of range (0-{len(self.delegated_histories)-1})'
+            )
+            return []
+
+    def add_to_delegated_history(self, events: list[Event], index: int = -1) -> None:
+        """
+        Adds events to a specific delegated history.
+
+        Args:
+            events: List of events to add
+            index: Index of the delegated history to add to. Defaults to -1 (most recent).
+        """
+        if not hasattr(self, 'delegated_histories'):
+            self.delegated_histories = []
+            logger.debug('Initialized delegated_histories')
+
+        # Ensure we have enough delegated history lists
+        while (
+            len(self.delegated_histories) <= abs(index)
+            if index < 0
+            else index >= len(self.delegated_histories)
+        ):
+            self.delegated_histories.append([])
+            logger.debug(
+                f'Created new delegated history at index {len(self.delegated_histories)-1}'
+            )
+
+        target_index = index if index >= 0 else len(self.delegated_histories) + index
+        self.delegated_histories[target_index].extend(events)
+        logger.debug(
+            f'Added {len(events)} events to delegated history at index {target_index}'
+        )
 
     def get_current_user_intent(self) -> tuple[str | None, list[str] | None]:
         """Returns the latest user message and image(if provided) that appears after a FinishAction, or the first (the task) if nothing was finished yet."""
