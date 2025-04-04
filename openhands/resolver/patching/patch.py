@@ -156,6 +156,9 @@ def parse_diff_header(text: str | list[str]) -> header | None:
         (unified_header_new_line, parse_unified_header),
         (context_header_old_line, parse_context_header),
         (diffcmd_header, parse_diffcmd_header),
+        # TODO:
+        # git_header can handle version-less unified headers, but
+        # will trim a/ and b/ in the paths if they exist...
         (git_header_new_line, parse_git_header)
     ]
 
@@ -163,7 +166,7 @@ def parse_diff_header(text: str | list[str]) -> header | None:
         if any(regex.match(line) for line in lines):
             return parser(lines)
 
-    return None
+    return None  # no header?
 
 
 def parse_diff(text: str | list[str]) -> list[Change] | None:
@@ -236,6 +239,8 @@ def parse_git_header(text: str | list[str]) -> header | None:
 
         return header(
             index_path=None,
+            # wow, I kind of hate this:
+            # assume /dev/null if the versions are zeroed out
             old_path='/dev/null' if old_version == '0000000' else cmd_old_path,
             old_version=old_version,
             new_path='/dev/null' if new_version == '0000000' else cmd_new_path,
