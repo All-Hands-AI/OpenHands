@@ -296,7 +296,8 @@ class LLM(RetryMixin, DebugMixin):
                     )
                 resp.choices[0].message = fn_call_response_message
 
-            if len(resp.choices) < 1:
+            # Check if resp has 'choices' key with at least one item
+            if not resp.get('choices') or len(resp['choices']) < 1:
                 # Just try again
                 raise litellm.InternalServerError(
                     'Response choices is less than 1 - This is only seen in Gemini models so far. Response: '
