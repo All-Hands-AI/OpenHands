@@ -23,6 +23,7 @@ from litellm.exceptions import (
 from litellm.types.utils import CostPerToken, ModelResponse, Usage
 from litellm.utils import create_pretrained_tokenizer
 
+from openhands.core.exceptions import LLMNoResponseError
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message
 from openhands.llm.debug_mixin import DebugMixin
@@ -41,6 +42,7 @@ LLM_RETRY_EXCEPTIONS: tuple[type[Exception], ...] = (
     RateLimitError,
     litellm.Timeout,
     litellm.InternalServerError,
+    LLMNoResponseError,
 )
 
 # cache prompt supporting models
@@ -272,15 +274,10 @@ class LLM(RetryMixin, DebugMixin):
 
             # if we mocked function calling, and we have tools, convert the response back to function calling format
             if mock_function_calling and mock_fncall_tools is not None:
-                logger.debug(f'Response choices: {len(resp.choices)}')
                 if len(resp.choices) < 1:
-                    # Just try again
-                    raise litellm.InternalServerError(
+                    raise LLMNoResponseError(
                         'Response choices is less than 1 - This is only seen in Gemini models so far. Response: '
-                        + str(resp),
-                        self.config.custom_llm_provider,
-                        self.config.model,
-                        response=resp,
+                        + str(resp)
                     )
 
                 non_fncall_response_message = resp.choices[0].message
@@ -298,14 +295,11 @@ class LLM(RetryMixin, DebugMixin):
 
             # Check if resp has 'choices' key with at least one item
             if not resp.get('choices') or len(resp['choices']) < 1:
-                # Just try again
-                raise litellm.InternalServerError(
+                raise LLMNoResponseError(
                     'Response choices is less than 1 - This is only seen in Gemini models so far. Response: '
-                    + str(resp),
-                    self.config.custom_llm_provider,
-                    self.config.model,
-                    response=resp,
+                    + str(resp)
                 )
+
             message_back: str = resp['choices'][0]['message']['content'] or ''
             tool_calls: list[ChatCompletionMessageToolCall] = resp['choices'][0][
                 'message'
