@@ -324,9 +324,9 @@ class AgentSession:
             return False
 
         if selected_repository and git_provider_tokens:
-            await self.runtime.clone_repo(git_provider_tokens,
-                                          selected_repository,
-                                          selected_branch)
+            await self.runtime.clone_repo(
+                git_provider_tokens, selected_repository, selected_branch
+            )
             await call_sync_from_async(self.runtime.maybe_run_setup_script)
 
         self.logger.debug(
@@ -408,12 +408,15 @@ class AgentSession:
 
             # loads microagents from repo/.openhands/microagents
             microagents: list[BaseMicroAgent] = await call_sync_from_async(
-                self.runtime.get_microagents_from_selected_repo, selected_repository.full_name if selected_repository else None
+                self.runtime.get_microagents_from_selected_repo,
+                selected_repository.full_name if selected_repository else None,
             )
             memory.load_user_workspace_microagents(microagents)
 
             if selected_repository and repo_directory:
-                memory.set_repository_info(selected_repository.full_name, repo_directory)
+                memory.set_repository_info(
+                    selected_repository.full_name, repo_directory
+                )
         return memory
 
     def _maybe_restore_state(self) -> State | None:

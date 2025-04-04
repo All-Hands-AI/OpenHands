@@ -16,6 +16,7 @@ from openhands.integrations.service_types import (
     UnknownException,
     User,
 )
+from openhands.server.types import AppMode
 from openhands.utils.import_utils import get_impl
 
 
@@ -99,31 +100,36 @@ class GitHubService(GitService):
             email=response.get('email'),
         )
 
-    async def get_repositories(
-        self, sort: str, installation_id: int | None
-    ) -> list[Repository]:
-        MAX_REPOS = 1000
-        PER_PAGE = 100  # Maximum allowed by GitHub API
-        all_repos: list[dict] = []
+
+    async def _fetch_paginated_repos(
+        self, url: str, params: dict, max_repos: int, extract_key: str | None = None
+    ) -> list[dict]:
+        """
+        Fetch repositories with pagination support.
+
+        Args:
+            url: The API endpoint URL
+            params: Query parameters for the request
+            max_repos: Maximum number of repositories to fetch
+            extract_key: If provided, extract repositories from this key in the response
+
+        Returns:
+            List of repository dictionaries
+        """
+        repos: list[dict] = []
         page = 1
 
-        while len(all_repos) < MAX_REPOS:
-            params = {'page': str(page), 'per_page': str(PER_PAGE)}
-            if installation_id:
-                url = (
-                    f'{self.BASE_URL}/user/installations/{installation_id}/repositories'
-                )
-                response, headers = await self._fetch_data(url, params)
-                response = response.get('repositories', [])
-            else:
-                url = f'{self.BASE_URL}/user/repos'
-                params['sort'] = sort
-                response, headers = await self._fetch_data(url, params)
+        while len(repos) < max_repos:
+            page_params = {**params, 'page': str(page)}
+            response, headers = await self._fetch_data(url, page_params)
 
-            if not response:  # No more repositories
+            # Extract repositories from response
+            page_repos = response.get(extract_key, []) if extract_key else response
+
+            if not page_repos:  # No more repositories
                 break
 
-            all_repos.extend(response)
+            repos.extend(page_repos)
             page += 1
 
             # Check if we've reached the last page
@@ -131,8 +137,43 @@ class GitHubService(GitService):
             if 'rel="next"' not in link_header:
                 break
 
-        # Trim to MAX_REPOS if needed and convert to Repository objects
-        all_repos = all_repos[:MAX_REPOS]
+        return repos[:max_repos]  # Trim to max_repos if needed
+
+    async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
+        MAX_REPOS = 1000
+        PER_PAGE = 100  # Maximum allowed by GitHub API
+        all_repos: list[dict] = []
+
+        if app_mode == AppMode.SAAS:
+            # Get all installation IDs and fetch repos for each one
+            installation_ids = await self.get_installation_ids()
+
+            # Iterate through each installation ID
+            for installation_id in installation_ids:
+                params = {'per_page': str(PER_PAGE)}
+                url = (
+                    f'{self.BASE_URL}/user/installations/{installation_id}/repositories'
+                )
+
+                # Fetch repositories for this installation
+                installation_repos = await self._fetch_paginated_repos(
+                    url, params, MAX_REPOS - len(all_repos), extract_key='repositories'
+                )
+
+                all_repos.extend(installation_repos)
+
+                # If we've already reached MAX_REPOS, no need to check other installations
+                if len(all_repos) >= MAX_REPOS:
+                    break
+        else:
+            # Original behavior for non-SaaS mode
+            params = {'per_page': str(PER_PAGE), 'sort': sort}
+            url = f'{self.BASE_URL}/user/repos'
+
+            # Fetch user repositories
+            all_repos = await self._fetch_paginated_repos(url, params, MAX_REPOS)
+
+        # Convert to Repository objects
         return [
             Repository(
                 id=repo.get('id'),

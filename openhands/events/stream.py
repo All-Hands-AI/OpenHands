@@ -52,6 +52,7 @@ class EventStream(EventStore):
     _queue_loop: asyncio.AbstractEventLoop | None
     _thread_pools: dict[str, dict[str, ThreadPoolExecutor]]
     _thread_loops: dict[str, dict[str, asyncio.AbstractEventLoop]]
+    _write_page_cache: list[dict]
 
     def __init__(self, sid: str, file_store: FileStore, user_id: str | None = None):
         super().__init__(sid, file_store, user_id)
@@ -66,6 +67,7 @@ class EventStream(EventStore):
         self._subscribers = {}
         self._lock = threading.Lock()
         self.secrets = {}
+        self._write_page_cache = []
 
     def _init_thread_loop(self, subscriber_id: str, callback_id: str) -> None:
         loop = asyncio.new_event_loop()
@@ -171,7 +173,21 @@ class EventStream(EventStore):
             self.file_store.write(
                 self._get_filename_for_id(event.id, self.user_id), json.dumps(data)
             )
+            self._write_page_cache.append(data)
+            self._store_cache_page()
         self._queue.put(event)
+
+    def _store_cache_page(self):
+        """Store a page in the cache. Reading individual events is slow when there are a lot of them, so we use pages."""
+        current_write_page = self._write_page_cache
+        if len(current_write_page) < self.cache_size:
+            return
+        self._write_page_cache = []
+        start = current_write_page[0]['id']
+        end = start + self.cache_size
+        contents = json.dumps(current_write_page)
+        cache_filename = self._get_filename_for_cache(start, end)
+        self.file_store.write(cache_filename, contents)
 
     def set_secrets(self, secrets: dict[str, str]) -> None:
         self.secrets = secrets.copy()

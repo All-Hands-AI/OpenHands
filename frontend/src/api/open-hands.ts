@@ -323,11 +323,6 @@ class OpenHands {
     return user;
   }
 
-  static async getGitHubUserInstallationIds(): Promise<number[]> {
-    const response = await openHands.get<number[]>("/api/user/installations");
-    return response.data;
-  }
-
   static async searchGitRepositories(
     query: string,
     per_page = 5,

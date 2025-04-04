@@ -18,6 +18,9 @@ from openhands.memory.condenser.impl.observation_masking_condenser import (
 from openhands.memory.condenser.impl.recent_events_condenser import (
     RecentEventsCondenser,
 )
+from openhands.memory.condenser.impl.structured_summary_condenser import (
+    StructuredSummaryCondenser,
+)
 
 __all__ = [
     'AmortizedForgettingCondenser',
@@ -28,4 +31,5 @@ __all__ = [
     'ObservationMaskingCondenser',
     'BrowserOutputCondenser',
     'RecentEventsCondenser',
+    'StructuredSummaryCondenser',
 ]

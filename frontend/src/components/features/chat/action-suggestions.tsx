@@ -38,7 +38,7 @@ export function ActionSuggestions({
     }, but do NOT create a ${pr}. Please use the exact SAME branch name as the one you are currently on.`,
     createPR: `Please push the changes to ${
       isGitLab ? "GitLab" : "GitHub"
-    } and open a ${pr}. Please create a meaningful branch name that describes the changes.`,
+    } and open a ${pr}. Please create a meaningful branch name that describes the changes. If a ${pr} template exists in the repository, please follow it when creating the ${prShort} description.`,
     pushToPR: `Please push the latest changes to the existing ${pr}.`,
   };
 
