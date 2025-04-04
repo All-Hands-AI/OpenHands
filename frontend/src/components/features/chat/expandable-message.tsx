@@ -100,8 +100,7 @@ export function ExpandableMessage({
             {headline && (
               <>
                 {headline}
-                {/* Only show the expand/collapse button if showDetails is true and there are details */}
-                {details.length > 0 && showDetails !== false && (
+                {details.length > 0 && (
                   <button
                     type="button"
                     onClick={() => setShowDetails(!showDetails)}
