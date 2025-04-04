@@ -40,6 +40,7 @@ from openhands.events.observation import (
 from openhands.io import read_task
 
 prompt_session = PromptSession()
+from openhands.mcp.mcp import fetch_mcp_tools_from_config
 
 
 def display_message(message: str) -> None:
@@ -193,8 +194,9 @@ async def main(loop: asyncio.AbstractEventLoop) -> None:
     sid = str(uuid4())
     display_message(f'Session ID: {sid}')
 
-    agent = await create_agent(config)
-
+    agent = create_agent(config)
+    mcp_tools = await fetch_mcp_tools_from_config(config.mcp)
+    agent.set_mcp_tools(mcp_tools)
     runtime = create_runtime(
         config,
         sid=sid,

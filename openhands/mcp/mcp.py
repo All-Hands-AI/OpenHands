@@ -8,6 +8,7 @@ from mcp.client.stdio import stdio_client
 from mcp.types import CallToolResult, TextContent, Tool
 from pydantic import BaseModel, Field
 
+from openhands.core.config.mcp_config import MCPConfig
 from openhands.core.logger import openhands_logger as logger
 
 
@@ -178,7 +179,6 @@ def convert_mcp_clients_to_tools(mcp_clients: list[MCPClient] | None) -> list[di
             # The ToolCollection has a to_params method that converts tools to ChatCompletionToolParam format
             for tool in client.tools:
                 mcp_tools = tool.to_param()
-                logger.warn(f'MCP tool: {mcp_tools}')
                 all_mcp_tools.append(mcp_tools)
     except Exception as e:
         logger.error(f'Error in convert_mcp_clients_to_tools: {e}')
@@ -223,3 +223,15 @@ async def create_mcp_clients(
                 raise
 
     return mcp_clients
+
+async def fetch_mcp_tools_from_config(mcp_config: MCPConfig) -> list[dict]:
+    """
+    Retrieves the list of MCP tools from the MCP clients.
+    """
+    mcp_clients = await create_mcp_clients(
+        mcp_config.sse.mcp_servers, mcp_config.stdio.commands, mcp_config.stdio.args
+    )
+    mcp_tools = convert_mcp_clients_to_tools(mcp_clients)
+    for mcp_client in mcp_clients:
+        await mcp_client.disconnect()
+    return mcp_tools

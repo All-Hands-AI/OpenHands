@@ -17,7 +17,6 @@ from openhands.events import EventStream
 from openhands.events.event import Event
 from openhands.integrations.provider import ProviderToken, ProviderType, SecretStore
 from openhands.llm.llm import LLM
-from openhands.mcp.mcp import convert_mcp_clients_to_tools, create_mcp_clients
 from openhands.memory.memory import Memory
 from openhands.microagent.microagent import BaseMicroAgent
 from openhands.runtime import get_runtime_cls
@@ -172,31 +171,15 @@ def create_memory(
     return memory
 
 
-async def create_agent(config: AppConfig) -> Agent:
+def create_agent(config: AppConfig) -> Agent:
     agent_cls: Type[Agent] = Agent.get_cls(config.default_agent)
     agent_config = config.get_agent_config(config.default_agent)
     llm_config = config.get_llm_config_from_agent(config.default_agent)
-    mcp_clients = await create_mcp_clients(
-        config.mcp.sse.mcp_servers, config.mcp.stdio.commands, config.mcp.stdio.args
-    )
-    mcp_tools = convert_mcp_clients_to_tools(mcp_clients)
-    logger.warn(f'MCP tools: {mcp_tools}')
-    if mcp_tools:
-        agent = agent_cls(
-            llm=LLM(config=llm_config),
-            config=agent_config,
-            mcp_tools=mcp_tools,
-        )
-    else:
-        agent = agent_cls(
-            llm=LLM(config=llm_config),
-            config=agent_config,
-        )
 
-    # We only need to get the tools from the MCP clients, so we can safely close them after that
-    # the actual calls will be done in a sandbox environment, not here
-    for mcp_client in mcp_clients:
-        await mcp_client.disconnect()
+    agent = agent_cls(
+        llm=LLM(config=llm_config),
+        config=agent_config,
+    )
 
     return agent
 
