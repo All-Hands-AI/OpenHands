@@ -21,14 +21,18 @@ OpenHands fournit un mode Interface Graphique (GUI) convivial pour interagir ave
 3. Entrez la `Clé API` correspondante pour le fournisseur choisi.
 4. Cliquez sur "Enregistrer" pour appliquer les paramètres.
 
-### Configuration du Jeton GitHub
+### Jetons de Contrôle de Version
+
+OpenHands prend en charge plusieurs fournisseurs de contrôle de version. Vous pouvez configurer des jetons pour plusieurs fournisseurs simultanément.
+
+#### Configuration du Jeton GitHub
 
 OpenHands exporte automatiquement un `GITHUB_TOKEN` vers l'environnement shell s'il est disponible. Cela peut se produire de deux manières :
 
 1. **Localement (OSS)** : L'utilisateur saisit directement son jeton GitHub
 2. **En ligne (SaaS)** : Le jeton est obtenu via l'authentification OAuth GitHub
 
-#### Configuration d'un Jeton GitHub Local
+##### Configuration d'un Jeton GitHub Local
 
 1. **Générer un Personal Access Token (PAT)** :
    - Allez dans Paramètres GitHub > Paramètres développeur > Personal Access Tokens > Tokens (classique)
@@ -40,11 +44,11 @@ OpenHands exporte automatiquement un `GITHUB_TOKEN` vers l'environnement shell s
 
 2. **Entrer le Jeton dans OpenHands** :
    - Cliquez sur le bouton Paramètres (icône d'engrenage) en haut à droite
-   - Accédez à la section "GitHub"
+   - Accédez à la section "Git Provider Settings"
    - Collez votre jeton dans le champ "Jeton GitHub"
    - Cliquez sur "Enregistrer" pour appliquer les modifications
 
-#### Politiques de Jetons Organisationnels
+##### Politiques de Jetons Organisationnels
 
 Si vous travaillez avec des dépôts organisationnels, une configuration supplémentaire peut être nécessaire :
 
@@ -59,7 +63,7 @@ Si vous travaillez avec des dépôts organisationnels, une configuration supplé
    - Si nécessaire, cliquez sur "Activer SSO" à côté de votre organisation
    - Terminez le processus d'autorisation SSO
 
-#### Authentification OAuth (Mode En Ligne)
+##### Authentification OAuth (Mode En Ligne)
 
 Lorsque vous utilisez OpenHands en mode en ligne, le flux OAuth GitHub :
 
@@ -74,7 +78,7 @@ Lorsque vous utilisez OpenHands en mode en ligne, le flux OAuth GitHub :
    - Autorisez OpenHands à accéder à votre compte GitHub
    - Si vous utilisez une organisation, autorisez l'accès à l'organisation si vous y êtes invité
 
-#### Dépannage
+##### Dépannage
 
 Problèmes courants et solutions :
 
@@ -94,6 +98,43 @@ Problèmes courants et solutions :
    - Essayez d'accéder à un dépôt pour confirmer les autorisations
    - Vérifiez la console du navigateur pour tout message d'erreur
    - Utilisez le bouton "Tester la connexion" dans les paramètres s'il est disponible
+
+#### Configuration du Jeton GitLab
+
+OpenHands exporte automatiquement un `GITLAB_TOKEN` vers l'environnement shell, uniquement pour les installations locales, s'il est disponible.
+
+##### Configuration d'un Jeton GitLab
+
+1. **Générer un Personal Access Token (PAT)** :
+   - Sur GitLab, allez dans Paramètres utilisateur > Jetons d'accès
+   - Créez un nouveau jeton avec les portées suivantes :
+     - `api` (Accès API)
+     - `read_user` (Lecture des informations utilisateur)
+     - `read_repository` (Lecture du dépôt)
+     - `write_repository` (Écriture du dépôt)
+   - Définissez une date d'expiration ou laissez vide pour un jeton sans expiration
+
+2. **Entrer le Jeton dans OpenHands** :
+   - Cliquez sur le bouton Paramètres (icône d'engrenage)
+   - Accédez à la section `Git Provider Settings`
+   - Collez votre jeton dans le champ `Jeton GitLab`
+   - Si vous utilisez GitLab auto-hébergé, entrez l'URL de votre instance GitLab
+   - Cliquez sur `Enregistrer les modifications` pour appliquer les changements
+
+##### Dépannage
+
+Problèmes courants et solutions :
+
+1. **Jeton Non Reconnu** :
+   - Assurez-vous que le jeton est correctement enregistré dans les paramètres
+   - Vérifiez que le jeton n'a pas expiré
+   - Vérifiez que le jeton a les portées requises
+   - Pour les instances auto-hébergées, vérifiez l'URL correcte de l'instance
+
+2. **Accès Refusé** :
+   - Vérifiez les permissions d'accès au projet
+   - Vérifiez si le jeton possède les portées nécessaires
+   - Pour les dépôts de groupe/organisation, assurez-vous d'avoir les accès appropriés
 
 ### Paramètres Avancés
 
