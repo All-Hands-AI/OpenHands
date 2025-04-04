@@ -10,18 +10,12 @@ export function StyledSwitchComponent({
   return (
     <div
       className={cn(
-        "w-12 h-6 rounded-xl flex items-center p-1.5 cursor-pointer",
-        isToggled && "justify-end bg-primary",
-        !isToggled &&
-          "justify-start bg-base-secondary border border-tertiary-light",
+        "w-9 h-5 rounded-full flex items-center p-[2px] cursor-pointer",
+        isToggled && "justify-end bg-primary ",
+        !isToggled && "justify-start bg-[#1E1E1F]",
       )}
     >
-      <div
-        className={cn(
-          "w-3 h-3 rounded-xl",
-          isToggled ? "bg-base-secondary" : "bg-tertiary-light",
-        )}
-      />
+      <div className="w-4 h-4 rounded-full bg-white" />
     </div>
   );
 }

@@ -23,19 +23,19 @@ export function Container({
   return (
     <div
       className={clsx(
-        "bg-base-secondary border border-neutral-600 rounded-xl flex flex-col",
+        "bg-gray-300 border border-gray-200 rounded-xl flex flex-col",
         className,
       )}
     >
       {labels && (
-        <div className="flex text-xs h-[36px]">
+        <div className="flex text-xs h-12">
           {labels.map(({ label: l, to, icon, isBeta }) => (
             <NavTab key={to} to={to} label={l} icon={icon} isBeta={isBeta} />
           ))}
         </div>
       )}
       {!labels && label && (
-        <div className="px-2 h-[36px] border-b border-neutral-600 text-xs flex items-center">
+        <div className="px-2 h-12 border-b border-gray-200 text-xs flex items-center">
           {label}
         </div>
       )}

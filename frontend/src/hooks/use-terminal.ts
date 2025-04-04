@@ -1,10 +1,10 @@
-import { FitAddon } from "@xterm/addon-fit";
-import { Terminal } from "@xterm/xterm";
-import React from "react";
 import { useWsClient } from "#/context/ws-client-provider";
 import { getTerminalCommand } from "#/services/terminal-service";
 import { Command } from "#/state/command-slice";
 import { parseTerminalOutput } from "#/utils/parse-terminal-output";
+import { FitAddon } from "@xterm/addon-fit";
+import { Terminal } from "@xterm/xterm";
+import React from "react";
 // import { useLocation } from "react-router";
 
 /*
@@ -63,7 +63,7 @@ export const useTerminal = ({
       fontFamily: "Menlo, Monaco, 'Courier New', monospace",
       fontSize: 14,
       theme: {
-        background: "#1A1C28",
+        background: "#0F0F0F",
       },
     });
 

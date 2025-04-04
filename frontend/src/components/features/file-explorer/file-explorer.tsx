@@ -1,17 +1,17 @@
-import React from "react";
-import { useSelector } from "react-redux";
-import { useTranslation } from "react-i18next";
-import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
-import { ExplorerTree } from "#/components/features/file-explorer/explorer-tree";
-import toast from "#/utils/toast";
-import { RootState } from "#/store";
-import { I18nKey } from "#/i18n/declaration";
-import { useListFiles } from "#/hooks/query/use-list-files";
-import { cn } from "#/utils/utils";
-import { FileExplorerHeader } from "./file-explorer-header";
-import { useVSCodeUrl } from "#/hooks/query/use-vscode-url";
-import { BrandButton } from "../settings/brand-button";
 import VSCodeIcon from "#/assets/vscode-alt.svg?react";
+import { ExplorerTree } from "#/components/features/file-explorer/explorer-tree";
+import { useListFiles } from "#/hooks/query/use-list-files";
+import { useVSCodeUrl } from "#/hooks/query/use-vscode-url";
+import { I18nKey } from "#/i18n/declaration";
+import { RootState } from "#/store";
+import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
+import toast from "#/utils/toast";
+import { cn } from "#/utils/utils";
+import React from "react";
+import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
+import { BrandButton } from "../settings/brand-button";
+import { FileExplorerHeader } from "./file-explorer-header";
 
 interface FileExplorerProps {
   isOpen: boolean;
@@ -55,7 +55,7 @@ export function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
     <div data-testid="file-explorer" className="relative h-full">
       <div
         className={cn(
-          "bg-base-secondary h-full border-r-1 border-r-neutral-600 flex flex-col",
+          "bg-gray-300 h-full border-r-1 border-r-gray-200 flex flex-col",
           !isOpen ? "w-12" : "w-60",
         )}
       >

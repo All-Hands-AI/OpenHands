@@ -1,36 +1,38 @@
-import React from "react";
 import { BrandButton } from "#/components/features/settings/brand-button";
-// import { HelpLink } from "#/components/features/settings/help-link";
-// import { KeyStatusIcon } from "#/components/features/settings/key-status-icon";
+import { HelpLink } from "#/components/features/settings/help-link";
+import { KeyStatusIcon } from "#/components/features/settings/key-status-icon";
 import { SettingsDropdownInput } from "#/components/features/settings/settings-dropdown-input";
-// import { SettingsInput } from "#/components/features/settings/settings-input";
+import { SettingsInput } from "#/components/features/settings/settings-input";
 import { SettingsSwitch } from "#/components/features/settings/settings-switch";
-// import { LoadingSpinner } from "#/components/shared/loading-spinner";
-import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
-// import { ModelSelector } from "#/components/shared/modals/settings/model-selector";
+import { LoadingSpinner } from "#/components/shared/loading-spinner";
+import { ModelSelector } from "#/components/shared/modals/settings/model-selector";
 import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 import { useAIConfigOptions } from "#/hooks/query/use-ai-config-options";
 import { useConfig } from "#/hooks/query/use-config";
 import { useSettings } from "#/hooks/query/use-settings";
-// import { useAppLogout } from "#/hooks/use-app-logout";
 import { AvailableLanguages } from "#/i18n";
 import { DEFAULT_SETTINGS } from "#/services/settings";
-import { handleCaptureConsent } from "#/utils/handle-capture-consent";
-import { hasAdvancedSettingsSet } from "#/utils/has-advanced-settings-set";
-import { isCustomModel } from "#/utils/is-custom-model";
-import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
 import {
   displayErrorToast,
   displaySuccessToast,
 } from "#/utils/custom-toast-handlers";
+import { handleCaptureConsent } from "#/utils/handle-capture-consent";
+import { hasAdvancedSettingsSet } from "#/utils/has-advanced-settings-set";
+import { isCustomModel } from "#/utils/is-custom-model";
+import { organizeModelsAndProviders } from "#/utils/organize-models-and-providers";
+import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
+import { Modal, ModalBody, ModalContent, Tab, Tabs } from "@heroui/react";
+import React from "react";
+import { useNavigate } from "react-router";
 
 const REMOTE_RUNTIME_OPTIONS = [
   { key: 1, label: "1x (2 core, 8G)" },
   { key: 2, label: "2x (4 core, 16G)" },
 ];
 
-function AccountSettings() {
-  let {
+const AccountSettings = () => {
+  const navigate = useNavigate();
+  const {
     data: settings,
     isFetching: isFetchingSettings,
     isFetched,
@@ -44,47 +46,43 @@ function AccountSettings() {
     isSuccess: isSuccessfulResources,
   } = useAIConfigOptions();
   const { mutate: saveSettings } = useSaveSettings();
-  // const { handleLogout } = useAppLogout();
 
   const isFetching = isFetchingSettings || isFetchingResources;
   console.log("isFetching", isFetching);
   const isSuccess = isSuccessfulSettings && isSuccessfulResources;
-
   const isSaas = config?.APP_MODE === "saas";
   const shouldHandleSpecialSaasCase =
     config?.FEATURE_FLAGS.HIDE_LLM_SETTINGS && isSaas;
 
   const determineWhetherToToggleAdvancedSettings = () => {
     if (shouldHandleSpecialSaasCase) return true;
-
     if (isSuccess) {
       return (
         isCustomModel(resources.models, settings?.LLM_MODEL || "") ||
         hasAdvancedSettingsSet({
           ...settings,
-          PROVIDER_TOKENS: settings?.PROVIDER_TOKENS || { github: "", gitlab: "" },
+          PROVIDER_TOKENS: settings?.PROVIDER_TOKENS || {
+            github: "",
+            gitlab: "",
+          },
         } as any)
       );
     }
-
     return false;
   };
 
-  // const hasAppSlug = !!config?.APP_SLUG;
-  // const isGitHubTokenSet = settings?.GITHUB_TOKEN_IS_SET;
   const isLLMKeySet = settings?.LLM_API_KEY === "**********";
   const isAnalyticsEnabled = settings?.USER_CONSENTS_TO_ANALYTICS;
   const isAdvancedSettingsSet = determineWhetherToToggleAdvancedSettings();
 
-  // const modelsAndProviders = organizeModelsAndProviders(
-  //   resources?.models || [],
-  // );
+  const modelsAndProviders = organizeModelsAndProviders(
+    resources?.models || [],
+  );
 
-  const [llmConfigMode, setLlmConfigMode] = React.useState<
-    "basic" | "advanced"
-  >(isAdvancedSettingsSet ? "advanced" : "basic");
-  console.log("llmConfigMode", llmConfigMode);
-  const [confirmationModeIsEnabled, _] =
+  const [llmConfigMode, setLlmConfigMode] = React.useState(
+    isAdvancedSettingsSet ? "advanced" : "basic",
+  );
+  const [confirmationModeIsEnabled, setConfirmationModeIsEnabled] =
     React.useState(!!settings?.SECURITY_ANALYZER);
   const [resetSettingsModalIsOpen, setResetSettingsModalIsOpen] =
     React.useState(false);
@@ -118,11 +116,8 @@ function AccountSettings() {
     const llmBaseUrl = formData.get("base-url-input")?.toString() || "";
     const llmApiKey =
       formData.get("llm-api-key-input")?.toString() ||
-      (isLLMKeySet
-        ? undefined // don't update if it's already set
-        : ""); // reset if it's first time save to avoid 500 error
+      (isLLMKeySet ? undefined : "");
 
-    // we don't want the user to be able to modify these settings in SaaS
     const finalLlmModel = shouldHandleSpecialSaasCase
       ? undefined
       : customLlmModel || fullLlmModel;
@@ -135,10 +130,7 @@ function AccountSettings() {
     const newSettings = {
       github_token: githubToken,
       provider_tokens: githubToken
-        ? {
-            github: githubToken,
-            gitlab: "",
-          }
+        ? { github: githubToken, gitlab: "" }
         : undefined,
       LANGUAGE: languageValue,
       user_consents_to_analytics: userConsentsToAnalytics,
@@ -180,267 +172,181 @@ function AccountSettings() {
   };
 
   React.useEffect(() => {
-    // If settings is still loading by the time the state is set, it will always
-    // default to basic settings. This is a workaround to ensure the correct
-    // settings are displayed.
     setLlmConfigMode(isAdvancedSettingsSet ? "advanced" : "basic");
   }, [isAdvancedSettingsSet]);
 
   if (isFetched && !settings) {
-    return <div>Failed to fetch settings. Please try reloading.</div>;
+    return (
+      <div className="text-white">
+        Failed to fetch settings. Please try reloading.
+      </div>
+    );
   }
 
-  // const onToggleAdvancedMode = (isToggled: boolean) => {
-  //   setLlmConfigMode(isToggled ? "advanced" : "basic");
-  //   if (!isToggled) {
-  //     // reset advanced state
-  //     setConfirmationModeIsEnabled(!!settings?.SECURITY_ANALYZER);
-  //   }
-  // };
-
-  // if (isFetching || !settings) {
-  //   return (
-  //     <div className="flex grow p-4">
-  //       <LoadingSpinner size="large" />
-  //     </div>
-  //   );
-  // }
+  if (isFetching || !settings) {
+    return (
+      <div className="flex items-center justify-center grow p-4">
+        <LoadingSpinner size="large" />
+      </div>
+    );
+  }
 
   return (
     <>
       <form
-        data-testid="account-settings-form"
         ref={formRef}
         action={onSubmit}
-        className="flex flex-col grow overflow-auto"
+        className="flex flex-col grow overflow-auto p-3 md:p-6"
       >
-        <div className="flex flex-col gap-12 px-11 py-9">
+        <div className="max-w-[680px]">
           {/* {!shouldHandleSpecialSaasCase && (
-            <section
-              data-testid="llm-settings-section"
-              className="flex flex-col gap-6"
-            >
-              <div className="flex items-center gap-7">
-                <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">
-                  LLM Settings
-                </h2>
-                {!shouldHandleSpecialSaasCase && (
-                  <SettingsSwitch
-                    testId="advanced-settings-switch"
-                    defaultIsToggled={isAdvancedSettingsSet}
-                    onToggle={onToggleAdvancedMode}
-                  >
-                    Advanced
-                  </SettingsSwitch>
-                )}
-              </div>
-
-              {llmConfigMode === "basic" && !shouldHandleSpecialSaasCase && (
+            <section className="flex flex-col gap-6">
+              <h3 className="text-[18px] font-semibold text-[#EFEFEF]">
+                LLM Settings
+              </h3>
+              <Tabs
+                selectedKey={llmConfigMode}
+                onSelectionChange={(key: any) => setLlmConfigMode(key)}
+                classNames={{
+                  base: "w-full",
+                  tabList: "rounded-[12px]",
+                  cursor: "bg-[#080808] rounded-lg",
+                  tabContent:
+                    "text-[14px] font-semibold text-[#595B57] group-data-[selected=true]:text-[#EFEFEF] ",
+                }}
+              >
+                <Tab key="basic" title="Basic" />
+                <Tab key="advanced" title="Advanced" />
+              </Tabs>
+              {llmConfigMode === "basic" && (
                 <ModelSelector
                   models={modelsAndProviders}
                   currentModel={settings.LLM_MODEL}
                 />
               )}
-
-              {llmConfigMode === "advanced" && !shouldHandleSpecialSaasCase && (
-                <SettingsInput
-                  testId="llm-custom-model-input"
-                  name="llm-custom-model-input"
-                  label="Custom Model"
-                  defaultValue={settings.LLM_MODEL}
-                  placeholder="anthropic/claude-3-5-sonnet-20241022"
-                  type="text"
-                  className="w-[680px]"
-                />
+              {llmConfigMode === "advanced" && (
+                <>
+                  <SettingsInput
+                    testId="llm-custom-model-input"
+                    name="llm-custom-model-input"
+                    label="Custom Model"
+                    defaultValue={settings.LLM_MODEL}
+                    placeholder="anthropic/claude-3-5-sonnet-20241022"
+                    type="text"
+                    className="w-full"
+                  />
+                  <SettingsInput
+                    testId="base-url-input"
+                    name="base-url-input"
+                    label="Base URL"
+                    defaultValue={settings.LLM_BASE_URL}
+                    placeholder="https://api.openai.com"
+                    type="text"
+                    className="w-full"
+                  />
+                  <SettingsDropdownInput
+                    testId="agent-input"
+                    name="agent-input"
+                    label="Agent"
+                    items={
+                      resources?.agents.map((agent) => ({
+                        key: agent,
+                        label: agent,
+                      })) || []
+                    }
+                    defaultSelectedKey={settings.AGENT}
+                    isClearable={false}
+                  />
+                  {isSaas && (
+                    <SettingsDropdownInput
+                      testId="runtime-settings-input"
+                      name="runtime-settings-input"
+                      label={
+                        <>
+                          Runtime Settings (
+                          <a
+                            href="mailto:contact@all-hands.dev"
+                            className="text-orange-500"
+                          >
+                            get in touch for access
+                          </a>
+                          )
+                        </>
+                      }
+                      items={REMOTE_RUNTIME_OPTIONS}
+                      defaultSelectedKey={settings.REMOTE_RUNTIME_RESOURCE_FACTOR?.toString()}
+                      isDisabled
+                      isClearable={false}
+                    />
+                  )}
+                  <div className="flex flex-col md:flex-row md:items-center gap-8">
+                    <SettingsSwitch
+                      testId="enable-confirmation-mode-switch"
+                      onToggle={setConfirmationModeIsEnabled}
+                      defaultIsToggled={!!settings.CONFIRMATION_MODE}
+                      isBeta
+                    >
+                      Enable confirmation mode
+                    </SettingsSwitch>
+                    <SettingsSwitch
+                      testId="enable-memory-condenser-switch"
+                      name="enable-memory-condenser-switch"
+                      defaultIsToggled={!!settings.ENABLE_DEFAULT_CONDENSER}
+                    >
+                      Enable memory condensation
+                    </SettingsSwitch>
+                  </div>
+                  {confirmationModeIsEnabled && (
+                    <SettingsDropdownInput
+                      testId="security-analyzer-input"
+                      name="security-analyzer-input"
+                      label="Security Analyzer"
+                      items={
+                        resources?.securityAnalyzers.map((analyzer) => ({
+                          key: analyzer,
+                          label: analyzer,
+                        })) || []
+                      }
+                      defaultSelectedKey={settings.SECURITY_ANALYZER}
+                      isClearable
+                      showOptionalTag
+                    />
+                  )}
+                </>
               )}
-              {llmConfigMode === "advanced" && !shouldHandleSpecialSaasCase && (
-                <SettingsInput
-                  testId="base-url-input"
-                  name="base-url-input"
-                  label="Base URL"
-                  defaultValue={settings.LLM_BASE_URL}
-                  placeholder="https://api.openai.com"
-                  type="text"
-                  className="w-[680px]"
-                />
-              )}
 
-              {!shouldHandleSpecialSaasCase && (
+              <div className="relative ">
                 <SettingsInput
                   testId="llm-api-key-input"
                   name="llm-api-key-input"
                   label="API Key"
                   type="password"
-                  className="w-[680px]"
+                  className="w-full"
                   startContent={
                     isLLMKeySet && <KeyStatusIcon isSet={isLLMKeySet} />
                   }
-                  placeholder={isLLMKeySet ? "<hidden>" : ""}
+                  placeholder={isLLMKeySet ? "<hidden>" : "Enter"}
                 />
-              )}
-
-              {!shouldHandleSpecialSaasCase && (
-                <HelpLink
-                  testId="llm-api-key-help-anchor"
-                  text="Don't know your API key?"
-                  linkText="Click here for instructions"
-                  href="https://docs.all-hands.dev/modules/usage/installation#getting-an-api-key"
-                />
-              )}
-
-              {llmConfigMode === "advanced" && (
-                <SettingsDropdownInput
-                  testId="agent-input"
-                  name="agent-input"
-                  label="Agent"
-                  items={
-                    resources?.agents.map((agent) => ({
-                      key: agent,
-                      label: agent,
-                    })) || []
-                  }
-                  defaultSelectedKey={settings.AGENT}
-                  isClearable={false}
-                />
-              )}
-
-              {isSaas && llmConfigMode === "advanced" && (
-                <SettingsDropdownInput
-                  testId="runtime-settings-input"
-                  name="runtime-settings-input"
-                  label={
-                    <>
-                      Runtime Settings (
-                      <a href="mailto:contact@all-hands.dev">
-                        get in touch for access
-                      </a>
-                      )
-                    </>
-                  }
-                  items={REMOTE_RUNTIME_OPTIONS}
-                  defaultSelectedKey={settings.REMOTE_RUNTIME_RESOURCE_FACTOR?.toString()}
-                  isDisabled
-                  isClearable={false}
-                />
-              )}
-
-              {llmConfigMode === "advanced" && (
-                <SettingsSwitch
-                  testId="enable-confirmation-mode-switch"
-                  onToggle={setConfirmationModeIsEnabled}
-                  defaultIsToggled={!!settings.CONFIRMATION_MODE}
-                  isBeta
-                >
-                  Enable confirmation mode
-                </SettingsSwitch>
-              )}
-
-              {llmConfigMode === "advanced" && (
-                <SettingsSwitch
-                  testId="enable-memory-condenser-switch"
-                  name="enable-memory-condenser-switch"
-                  defaultIsToggled={!!settings.ENABLE_DEFAULT_CONDENSER}
-                >
-                  Enable memory condensation
-                </SettingsSwitch>
-              )}
-
-              {llmConfigMode === "advanced" && confirmationModeIsEnabled && (
-                <div>
-                  <SettingsDropdownInput
-                    testId="security-analyzer-input"
-                    name="security-analyzer-input"
-                    label="Security Analyzer"
-                    items={
-                      resources?.securityAnalyzers.map((analyzer) => ({
-                        key: analyzer,
-                        label: analyzer,
-                      })) || []
-                    }
-                    defaultSelectedKey={settings.SECURITY_ANALYZER}
-                    isClearable
-                    showOptionalTag
+                <div className="absolute top-0 right-0">
+                  <HelpLink
+                    testId="llm-api-key-help-anchor"
+                    // text="Don't know your API key?"
+                    text=""
+                    linkText="Click here for instructions"
+                    href="https://docs.all-hands.dev/modules/usage/installation#getting-an-api-key"
+                    classNames={{
+                      linkText: "text-[#FF6100]",
+                    }}
                   />
                 </div>
-              )}
+              </div>
             </section>
-          )} */}
-
-          {/* <section className="flex flex-col gap-6">
-            <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">
-              GitHub Settings
-            </h2>
-            {isSaas && hasAppSlug && (
-              <Link
-                to={`https://github.com/apps/${config.APP_SLUG}/installations/new`}
-                target="_blank"
-                rel="noreferrer noopener"
-              >
-                <BrandButton type="button" variant="secondary">
-                  Configure GitHub Repositories
-                </BrandButton>
-              </Link>
-            )}
-            {!isSaas && (
-              <>
-                <SettingsInput
-                  testId="github-token-input"
-                  name="github-token-input"
-                  label="GitHub Token"
-                  type="password"
-                  className="w-[680px]"
-                  startContent={
-                    isGitHubTokenSet && (
-                      <KeyStatusIcon isSet={!!isGitHubTokenSet} />
-                    )
-                  }
-                  placeholder={isGitHubTokenSet ? "<hidden>" : ""}
-                />
-                <p data-testid="github-token-help-anchor" className="text-xs">
-                  {" "}
-                  Generate a token on{" "}
-                  <b>
-                    {" "}
-                    <a
-                      href="https://github.com/settings/tokens/new?description=openhands-app&scopes=repo,user,workflow"
-                      target="_blank"
-                      className="underline underline-offset-2"
-                      rel="noopener noreferrer"
-                    >
-                      GitHub
-                    </a>{" "}
-                  </b>
-                  or see the{" "}
-                  <b>
-                    <a
-                      href="https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token"
-                      target="_blank"
-                      className="underline underline-offset-2"
-                      rel="noopener noreferrer"
-                    >
-                      documentation
-                    </a>
-                  </b>
-                  .
-                </p>
-              </>
-            )}
-
-            <BrandButton
-              type="button"
-              variant="secondary"
-              onClick={handleLogout}
-              isDisabled={!isGitHubTokenSet}
-            >
-              Disconnect from GitHub
-            </BrandButton>
-          </section> */}
-
+          )}
+          <div className="my-7 h-[1px] w-full bg-[#1B1C1A]" /> */}
           <section className="flex flex-col gap-6">
-            <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">
+            <h3 className="text-[18px] font-semibold text-[#EFEFEF]">
               Additional Settings
-            </h2>
-
+            </h3>
             <SettingsDropdownInput
               testId="language-input"
               name="language-input"
@@ -452,80 +358,81 @@ function AccountSettings() {
               defaultSelectedKey={settings?.LANGUAGE}
               isClearable={false}
             />
-
-            <SettingsSwitch
-              testId="enable-analytics-switch"
-              name="enable-analytics-switch"
-              defaultIsToggled={!!isAnalyticsEnabled}
-            >
-              Enable analytics
-            </SettingsSwitch>
-
-            <SettingsSwitch
-              testId="enable-sound-notifications-switch"
-              name="enable-sound-notifications-switch"
-              defaultIsToggled={!!settings?.ENABLE_SOUND_NOTIFICATIONS}
-            >
-              Enable sound notifications
-            </SettingsSwitch>
+            <div className="flex flex-col md:flex-row md:items-center gap-8">
+              <SettingsSwitch
+                testId="enable-analytics-switch"
+                name="enable-analytics-switch"
+                defaultIsToggled={!!isAnalyticsEnabled}
+              >
+                Enable analytics
+              </SettingsSwitch>
+              <SettingsSwitch
+                testId="enable-sound-notifications-switch"
+                name="enable-sound-notifications-switch"
+                defaultIsToggled={!!settings.ENABLE_SOUND_NOTIFICATIONS}
+              >
+                Enable sound notifications
+              </SettingsSwitch>
+            </div>
           </section>
         </div>
       </form>
-
-      <footer className="flex gap-6 p-6 justify-end border-t border-t-tertiary">
+      <footer className="flex justify-end gap-4 w-full px-3 py-2 md:p-6 md:py-4 border-t border-t-[#232521] bg-[#080808] rounded-b-xl">
         <BrandButton
           type="button"
           variant="secondary"
           onClick={() => setResetSettingsModalIsOpen(true)}
+          className="bg-[#1E1E1F] text-[14px] font-semibold text-[#EFEFEF] px-4 py-[10px] rounded-lg border-[0px]"
         >
           Reset to defaults
         </BrandButton>
         <BrandButton
           type="button"
           variant="primary"
-          onClick={() => {
-            formRef.current?.requestSubmit();
-          }}
+          onClick={() => formRef.current?.requestSubmit()}
+          className="bg-primary text-[14px] font-semibold text-[#080808] px-4 py-[10px] rounded-lg border-[0px]"
         >
           Save Changes
         </BrandButton>
       </footer>
-
       {resetSettingsModalIsOpen && (
-        <ModalBackdrop>
-          <div
-            data-testid="reset-modal"
-            className="bg-base-secondary p-4 rounded-xl flex flex-col gap-4 border border-tertiary"
-          >
-            <p>Are you sure you want to reset all settings?</p>
-            <div className="w-full flex gap-2">
-              <BrandButton
-                type="button"
-                variant="primary"
-                className="grow"
-                onClick={() => {
-                  handleReset();
-                }}
-              >
-                Reset
-              </BrandButton>
-
-              <BrandButton
-                type="button"
-                variant="secondary"
-                className="grow"
-                onClick={() => {
-                  setResetSettingsModalIsOpen(false);
-                }}
-              >
-                Cancel
-              </BrandButton>
-            </div>
-          </div>
-        </ModalBackdrop>
+        <Modal
+          isOpen={resetSettingsModalIsOpen}
+          onClose={() => setResetSettingsModalIsOpen(false)}
+          classNames={{
+            backdrop: "bg-black/40 backdrop-blur-[12px]",
+            base: "bg-[#0F0F0F] max-w-[559px] rounded-2xl w-full",
+          }}
+        >
+          <ModalContent>
+            <ModalBody className="p-6">
+              <p className="text-[#EFEFEF] mb-4 text-[16px] font-semibold">
+                Are you sure you want to reset all settings?
+              </p>
+              <div className="flex gap-2">
+                <BrandButton
+                  type="button"
+                  variant="primary"
+                  onClick={handleReset}
+                  className="bg-primary text-[14px] font-semibold text-[#080808] px-4 py-[10px] rounded-lg flex-1 border-[0px]"
+                >
+                  Reset
+                </BrandButton>
+                <BrandButton
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setResetSettingsModalIsOpen(false)}
+                  className="bg-[#1E1E1F] text-[14px] font-semibold text-[#EFEFEF] px-4 py-[10px] rounded-lg flex-1 border-[0px]"
+                >
+                  Cancel
+                </BrandButton>
+              </div>
+            </ModalBody>
+          </ModalContent>
+        </Modal>
       )}
     </>
   );
-}
+};
 
 export default AccountSettings;
