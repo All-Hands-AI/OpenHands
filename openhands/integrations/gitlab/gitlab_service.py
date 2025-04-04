@@ -1,5 +1,6 @@
 import os
 from typing import Any
+from urllib.parse import quote_plus
 
 import httpx
 from pydantic import SecretStr
@@ -7,10 +8,12 @@ from pydantic import SecretStr
 from openhands.integrations.service_types import (
     AuthenticationError,
     GitService,
+    ProviderType,
     Repository,
     UnknownException,
     User,
 )
+from openhands.server.types import AppMode
 from openhands.utils.import_utils import get_impl
 
 
@@ -95,22 +98,76 @@ class GitLabService(GitService):
 
     async def search_repositories(
         self, query: str, per_page: int = 30, sort: str = 'updated', order: str = 'desc'
-    ):
-        url = f'{self.BASE_URL}/search'
+    ) -> list[Repository]:
+        url = f'{self.BASE_URL}/projects'
         params = {
-            'scope': 'projects',
             'search': query,
             'per_page': per_page,
-            'order_by': sort,
+            'order_by': 'last_activity_at',
             'sort': order,
+            'visibility': 'public',
         }
-        response, headers = await self._fetch_data(url, params)
-        return response, headers
 
-    async def get_repositories(
-        self, page: int, per_page: int, sort: str, installation_id: int | None
-    ) -> list[Repository]:
-        return []
+        response, _ = await self._fetch_data(url, params)
+        repos = [
+            Repository(
+                id=repo.get('id'),
+                full_name=repo.get('path_with_namespace'),
+                stargazers_count=repo.get('star_count'),
+                git_provider=ProviderType.GITLAB,
+            )
+            for repo in response
+        ]
+
+        return repos
+
+    async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
+        MAX_REPOS = 1000
+        PER_PAGE = 100  # Maximum allowed by GitLab API
+        all_repos: list[dict] = []
+        page = 1
+
+        url = f'{self.BASE_URL}/projects'
+        # Map GitHub's sort values to GitLab's order_by values
+        order_by = {
+            'pushed': 'last_activity_at',
+            'updated': 'last_activity_at',
+            'created': 'created_at',
+            'full_name': 'name',
+        }.get(sort, 'last_activity_at')
+
+        while len(all_repos) < MAX_REPOS:
+            params = {
+                'page': str(page),
+                'per_page': str(PER_PAGE),
+                'order_by': order_by,
+                'sort': 'desc',  # GitLab uses sort for direction (asc/desc)
+                'membership': 1,  # Use 1 instead of True
+            }
+            response, headers = await self._fetch_data(url, params)
+
+            if not response:  # No more repositories
+                break
+
+            all_repos.extend(response)
+            page += 1
+
+            # Check if we've reached the last page
+            link_header = headers.get('Link', '')
+            if 'rel="next"' not in link_header:
+                break
+
+        # Trim to MAX_REPOS if needed and convert to Repository objects
+        all_repos = all_repos[:MAX_REPOS]
+        return [
+            Repository(
+                id=repo.get('id'),
+                full_name=repo.get('path_with_namespace'),
+                stargazers_count=repo.get('star_count'),
+                git_provider=ProviderType.GITLAB,
+            )
+            for repo in all_repos
+        ]
 
 
 gitlab_service_cls = os.environ.get(

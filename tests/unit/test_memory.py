@@ -261,3 +261,146 @@ REPOSITORY INSTRUCTIONS: This is a test repository.
 
     # Clean up
     os.remove(os.path.join(prompt_dir, 'micro', f'{repo_microagent_name}.md'))
+
+
+@pytest.mark.asyncio
+async def test_memory_with_agent_microagents():
+    """
+    Test that Memory processes microagent based on trigger words from agent messages.
+    """
+    # Create a mock event stream
+    event_stream = MagicMock(spec=EventStream)
+
+    # Initialize Memory to use the global microagents dir
+    memory = Memory(
+        event_stream=event_stream,
+        sid='test-session',
+    )
+
+    # Verify microagents were loaded - at least one microagent should be loaded
+    # from the global directory that's in the repo
+    assert len(memory.knowledge_microagents) > 0
+
+    # We know 'flarglebargle' exists in the global directory
+    assert 'flarglebargle' in memory.knowledge_microagents
+
+    # Create a microagent action with the trigger word
+    microagent_action = RecallAction(
+        query='Hello, flarglebargle!', recall_type=RecallType.KNOWLEDGE
+    )
+
+    # Set the source to AGENT
+    microagent_action._source = EventSource.AGENT  # type: ignore[attr-defined]
+
+    # Mock the event_stream.add_event method
+    added_events = []
+
+    def original_add_event(event, source):
+        added_events.append((event, source))
+
+    event_stream.add_event = original_add_event
+
+    # Add the microagent action to the event stream
+    event_stream.add_event(microagent_action, EventSource.AGENT)
+
+    # Clear the events list to only capture new events
+    added_events.clear()
+
+    # Process the microagent action
+    await memory._on_event(microagent_action)
+
+    # Verify a RecallObservation was added to the event stream
+    assert len(added_events) == 1
+    observation, source = added_events[0]
+    assert isinstance(observation, RecallObservation)
+    assert source == EventSource.ENVIRONMENT
+    assert observation.recall_type == RecallType.KNOWLEDGE
+    assert len(observation.microagent_knowledge) == 1
+    assert observation.microagent_knowledge[0].name == 'flarglebargle'
+    assert observation.microagent_knowledge[0].trigger == 'flarglebargle'
+    assert 'magic word' in observation.microagent_knowledge[0].content
+
+
+def test_memory_multiple_repo_microagents(prompt_dir):
+    """Test that Memory loads and concatenates multiple repo microagents correctly."""
+    # Create an in-memory file store and real event stream
+    file_store = InMemoryFileStore()
+    event_stream = EventStream(sid='test-session', file_store=file_store)
+
+    # Create two test repo microagents
+    repo_microagent1_name = 'test_repo_microagent1'
+    repo_microagent1_content = """---
+REPOSITORY INSTRUCTIONS: This is the first test repository.
+"""
+
+    repo_microagent2_name = 'test_repo_microagent2'
+    repo_microagent2_content = """---
+name: test_repo2
+type: repo
+agent: CodeActAgent
+---
+
+REPOSITORY INSTRUCTIONS: This is the second test repository.
+"""
+
+    # Create temporary repo microagent files
+    os.makedirs(os.path.join(prompt_dir, 'micro'), exist_ok=True)
+    with open(
+        os.path.join(prompt_dir, 'micro', f'{repo_microagent1_name}.md'), 'w'
+    ) as f:
+        f.write(repo_microagent1_content)
+
+    with open(
+        os.path.join(prompt_dir, 'micro', f'{repo_microagent2_name}.md'), 'w'
+    ) as f:
+        f.write(repo_microagent2_content)
+
+    # Patch the global microagents directory to use our test directory
+    test_microagents_dir = os.path.join(prompt_dir, 'micro')
+    with patch('openhands.memory.memory.GLOBAL_MICROAGENTS_DIR', test_microagents_dir):
+        # Initialize Memory
+        memory = Memory(
+            event_stream=event_stream,
+            sid='test-session',
+        )
+
+        # Set repository info
+        memory.set_repository_info('owner/repo', '/workspace/repo')
+
+        # Create and add the first user message
+        user_message = MessageAction(content='First user message')
+        user_message._source = EventSource.USER  # type: ignore[attr-defined]
+        event_stream.add_event(user_message, EventSource.USER)
+
+        # Create and add the microagent action
+        microagent_action = RecallAction(
+            query='First user message', recall_type=RecallType.WORKSPACE_CONTEXT
+        )
+        microagent_action._source = EventSource.USER  # type: ignore[attr-defined]
+        event_stream.add_event(microagent_action, EventSource.USER)
+
+        # Give it a little time to process
+        time.sleep(0.3)
+
+        # Get all events from the stream
+        events = list(event_stream.get_events())
+
+        # Find the RecallObservation event
+        microagent_obs_events = [
+            event for event in events if isinstance(event, RecallObservation)
+        ]
+
+        # We should have one RecallObservation
+        assert len(microagent_obs_events) > 0
+
+        # Get the first RecallObservation
+        observation = microagent_obs_events[0]
+        assert observation.recall_type == RecallType.WORKSPACE_CONTEXT
+        assert observation.repo_name == 'owner/repo'
+        assert observation.repo_directory == '/workspace/repo'
+        assert 'This is the first test repository' in observation.repo_instructions
+        assert 'This is the second test repository' in observation.repo_instructions
+
+    # Clean up
+    os.remove(os.path.join(prompt_dir, 'micro', f'{repo_microagent1_name}.md'))
+    os.remove(os.path.join(prompt_dir, 'micro', f'{repo_microagent2_name}.md'))

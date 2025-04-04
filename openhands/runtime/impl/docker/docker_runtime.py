@@ -1,9 +1,10 @@
+import os
 from functools import lru_cache
 from typing import Callable
 from uuid import UUID
 
 import docker
-import requests
+import httpx
 import tenacity
 from docker.models.containers import Container
 
@@ -35,6 +36,16 @@ EXECUTION_SERVER_PORT_RANGE = (30000, 39999)
 VSCODE_PORT_RANGE = (40000, 49999)
 APP_PORT_RANGE_1 = (50000, 54999)
 APP_PORT_RANGE_2 = (55000, 59999)
+
+
+def _is_retryable_wait_until_alive_error(exception):
+    if isinstance(exception, tenacity.RetryError):
+        cause = exception.last_attempt.exception()
+        return _is_retryable_wait_until_alive_error(cause)
+
+    return isinstance(
+        exception, (ConnectionError, httpx.NetworkError, httpx.RemoteProtocolError)
+    )
 
 
 class DockerRuntime(ActionExecutionClient):
@@ -76,6 +87,14 @@ class DockerRuntime(ActionExecutionClient):
         self._container_port = -1
         self._vscode_port = -1
         self._app_ports: list[int] = []
+
+        if os.environ.get('DOCKER_HOST_ADDR'):
+            logger.info(
+                f'Using DOCKER_HOST_IP: {os.environ["DOCKER_HOST_ADDR"]} for local_runtime_url'
+            )
+            self.config.sandbox.local_runtime_url = (
+                f'http://{os.environ["DOCKER_HOST_ADDR"]}'
+            )
 
         self.docker_client: docker.DockerClient = self._init_docker_client()
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
@@ -355,9 +374,7 @@ class DockerRuntime(ActionExecutionClient):
 
     @tenacity.retry(
         stop=tenacity.stop_after_delay(120) | stop_if_should_exit(),
-        retry=tenacity.retry_if_exception_type(
-            (ConnectionError, requests.exceptions.ConnectionError)
-        ),
+        retry=tenacity.retry_if_exception(_is_retryable_wait_until_alive_error),
         reraise=True,
         wait=tenacity.wait_fixed(2),
     )

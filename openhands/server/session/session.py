@@ -9,8 +9,8 @@ from openhands.controller.agent import Agent
 from openhands.core.config import AppConfig
 from openhands.core.config.condenser_config import (
     LLMSummarizingCondenserConfig,
+    StructuredSummaryCondenserConfig,
 )
-from openhands.core.const.guide_url import TROUBLESHOOTING_URL
 from openhands.core.logger import OpenHandsLoggerAdapter
 from openhands.core.schema import AgentState
 from openhands.events.action import MessageAction, NullAction
@@ -128,9 +128,21 @@ class Session:
         agent_config = self.config.get_agent_config(agent_cls)
 
         if settings.enable_default_condenser:
-            default_condenser_config = LLMSummarizingCondenserConfig(
-                llm_config=llm.config, keep_first=3, max_size=40
-            )
+            # If function-calling is active we can use the structured summary
+            # condenser for more reliable summaries.
+            if llm.is_function_calling_active():
+                default_condenser_config = StructuredSummaryCondenserConfig(
+                    llm_config=llm.config, keep_first=3, max_size=80
+                )
+
+            # Otherwise, we'll fall back to the unstructured summary condenser.
+            # This is a good default but struggles more than the structured
+            # summary condenser with long messages.
+            else:
+                default_condenser_config = LLMSummarizingCondenserConfig(
+                    llm_config=llm.config, keep_first=3, max_size=80
+                )
+
             self.logger.info(f'Enabling default condenser: {default_condenser_config}')
             agent_config.condenser = default_condenser_config
 
@@ -161,9 +173,8 @@ class Session:
             )
         except Exception as e:
             self.logger.exception(f'Error creating agent_session: {e}')
-            await self.send_error(
-                f'Error creating agent_session. Please check Docker is running and visit `{TROUBLESHOOTING_URL}` for more debugging information..'
-            )
+            err_class = e.__class__.__name__
+            await self.send_error(f'Failed to create agent session: {err_class}')
             return
 
     def _create_llm(self, agent_cls: str | None) -> LLM:
