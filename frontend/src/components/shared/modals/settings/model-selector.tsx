@@ -65,9 +65,11 @@ export function ModelSelector({
   const { t } = useTranslation();
 
   return (
-    <div className="flex w-[680px] justify-between gap-[46px]">
-      <fieldset className="flex flex-col gap-2.5 w-full">
-        <label className="text-sm">{t(I18nKey.LLM$PROVIDER)}</label>
+    <div className="flex flex-col w-full justify-between gap-6">
+      <fieldset className="flex flex-col gap-2 w-full">
+        <label className="text-[14px] font-medium text-[#595B57]">
+          {t(I18nKey.LLM$PROVIDER)}
+        </label>
         <Autocomplete
           data-testid="llm-provider-input"
           isRequired
@@ -84,12 +86,14 @@ export function ModelSelector({
           defaultSelectedKey={selectedProvider ?? undefined}
           selectedKey={selectedProvider}
           classNames={{
-            popoverContent: "bg-tertiary rounded-xl border border-[#717888]",
+            popoverContent:
+              "bg-[#1E1E1F] rounded-xl border border-[#232521] text-[14px] font-medium text-[#EFEFEF]",
           }}
           inputProps={{
             classNames: {
               inputWrapper:
-                "bg-tertiary border border-[#717888] h-10 w-full rounded p-2 placeholder:italic",
+                "bg-[#1E1E1F] border border-[#232521] h-11 w-full rounded-lg p-2 placeholder:italic",
+              input: "text-[14px] font-medium text-[#EFEFEF]",
             },
           }}
         >
@@ -117,8 +121,10 @@ export function ModelSelector({
         </Autocomplete>
       </fieldset>
 
-      <fieldset className="flex flex-col gap-2.5 w-full">
-        <label className="text-sm">{t(I18nKey.LLM$MODEL)}</label>
+      <fieldset className="flex flex-col gap-2 w-full">
+        <label className="text-[14px] font-medium text-[#595B57]">
+          {t(I18nKey.LLM$MODEL)}
+        </label>
         <Autocomplete
           data-testid="llm-model-input"
           isRequired
@@ -134,12 +140,14 @@ export function ModelSelector({
           selectedKey={selectedModel}
           defaultSelectedKey={selectedModel ?? undefined}
           classNames={{
-            popoverContent: "bg-tertiary rounded-xl border border-[#717888]",
+            popoverContent:
+              "bg-[#1E1E1F] rounded-xl border border-[#232521] text-[14px] font-medium text-[#EFEFEF]",
           }}
           inputProps={{
             classNames: {
               inputWrapper:
-                "bg-tertiary border border-[#717888] h-10 w-full rounded p-2 placeholder:italic",
+                "bg-[#1E1E1F] border border-[#232521] h-11 w-full rounded-lg p-2 placeholder:italic",
+              input: "text-[14px] font-medium text-[#EFEFEF]",
             },
           }}
         >

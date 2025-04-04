@@ -21,20 +21,20 @@ export function SettingsModal({ onClose, settings }: SettingsModalProps) {
     <ModalBackdrop>
       <div
         data-testid="ai-config-modal"
-        className="bg-base-secondary min-w-[384px] p-6 rounded-xl flex flex-col gap-2 border border-tertiary"
+        className="bg-[#0F0F0F] min-w-[384px] p-6 rounded-xl flex flex-col gap-2 border border-sea-stone-900"
       >
         {aiConfigOptions.error && (
           <p className="text-danger text-xs">{aiConfigOptions.error.message}</p>
         )}
-        <span className="text-xl leading-6 font-semibold -tracking-[0.01em]">
+        <span className="text-[18px] font-semibold -tracking-[0.01em]">
           {t(I18nKey.AI_SETTINGS$TITLE)}
         </span>
-        <p className="text-xs text-[#A3A3A3]">
+        <p className="text-xs text-[#979995]">
           {t(I18nKey.SETTINGS$DESCRIPTION)} For other options,{" "}
           <Link
             data-testid="advanced-settings-link"
             to="/settings"
-            className="underline underline-offset-2 text-white"
+            className="underline underline-offset-2 text-primary"
           >
             see advanced settings
           </Link>

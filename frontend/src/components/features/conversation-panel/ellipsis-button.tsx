@@ -1,4 +1,4 @@
-import { FaEllipsisV } from "react-icons/fa";
+import { IoEllipsisVertical } from "react-icons/io5";
 
 interface EllipsisButtonProps {
   onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
@@ -7,7 +7,7 @@ interface EllipsisButtonProps {
 export function EllipsisButton({ onClick }: EllipsisButtonProps) {
   return (
     <button data-testid="ellipsis-button" type="button" onClick={onClick}>
-      <FaEllipsisV fill="#a3a3a3" />
+      <IoEllipsisVertical fill="#494949" />
     </button>
   );
 }

@@ -1,11 +1,11 @@
+import { CopyToClipboardButton } from "#/components/shared/buttons/copy-to-clipboard-button";
+import { cn } from "#/utils/utils";
 import React from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { code } from "../markdown/code";
-import { cn } from "#/utils/utils";
-import { ul, ol } from "../markdown/list";
-import { CopyToClipboardButton } from "#/components/shared/buttons/copy-to-clipboard-button";
 import { anchor } from "../markdown/anchor";
+import { code } from "../markdown/code";
+import { ol, ul } from "../markdown/list";
 
 interface ChatMessageProps {
   type: "user" | "assistant";
@@ -47,8 +47,8 @@ export function ChatMessage({
       className={cn(
         "rounded-xl relative",
         "flex flex-col gap-2",
-        type === "user" && " max-w-[305px] p-4 bg-tertiary self-end",
-        type === "assistant" && "mt-6 max-w-full bg-tranparent",
+        type === "user" && " max-w-[305px] p-4 bg-gray-100 self-end",
+        type === "assistant" && "mt-6 max-w-full bg-transparent",
       )}
     >
       <CopyToClipboardButton

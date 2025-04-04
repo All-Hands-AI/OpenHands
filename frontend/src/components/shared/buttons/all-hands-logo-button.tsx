@@ -7,12 +7,8 @@ interface AllHandsLogoButtonProps {
 
 export function AllHandsLogoButton({ onClick }: AllHandsLogoButtonProps) {
   return (
-    <TooltipButton
-      tooltip="All Hands AI"
-      ariaLabel="All Hands Logo"
-      onClick={onClick}
-    >
-      <AllHandsLogo width={34} height={34} />
+    <TooltipButton tooltip="Thesis" ariaLabel="Thesis Logo" onClick={onClick}>
+      <AllHandsLogo />
     </TooltipButton>
   );
 }

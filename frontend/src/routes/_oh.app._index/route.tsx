@@ -1,9 +1,9 @@
+import { FileExplorer } from "#/components/features/file-explorer/file-explorer";
+import { useFiles } from "#/context/files";
 import React from "react";
 import { useRouteError } from "react-router";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
-import { FileExplorer } from "#/components/features/file-explorer/file-explorer";
-import { useFiles } from "#/context/files";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -77,7 +77,7 @@ function FileViewer() {
   return (
     <div className="flex h-full bg-base-secondary relative">
       <FileExplorer isOpen={fileExplorerIsOpen} onToggle={toggleFileExplorer} />
-      <div className="w-full h-full flex flex-col">
+      <div className="w-full h-full flex flex-col bg-gray-300">
         {selectedPath && files[selectedPath] && (
           <div className="h-full w-full overflow-auto">
             <SyntaxHighlighter

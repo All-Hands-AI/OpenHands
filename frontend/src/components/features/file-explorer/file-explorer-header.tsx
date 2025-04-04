@@ -1,6 +1,6 @@
-import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import { cn } from "#/utils/utils";
+import { useTranslation } from "react-i18next";
 import { ExplorerActions } from "./file-explorer-actions";
 
 interface FileExplorerHeaderProps {
@@ -19,7 +19,7 @@ export function FileExplorerHeader({
   return (
     <div
       className={cn(
-        "sticky top-0 bg-base-secondary",
+        "sticky top-0 bg-gray-300",
         "flex items-center",
         !isOpen ? "justify-center" : "justify-between",
       )}

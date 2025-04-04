@@ -15,7 +15,7 @@ export function SubmitButton({ isDisabled, onClick }: SubmitButtonProps) {
       disabled={isDisabled}
       onClick={onClick}
       type="submit"
-      className="border border-white rounded-lg w-6 h-6 hover:bg-neutral-500 focus:bg-neutral-500 flex items-center justify-center"
+      className="rounded-lg bg-[#dedede] hover:bg-[#ececec] w-10 h-10 flex items-center justify-center"
     >
       <ArrowSendIcon />
     </button>

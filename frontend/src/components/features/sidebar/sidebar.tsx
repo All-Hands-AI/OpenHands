@@ -1,3 +1,4 @@
+import DepositModal from "#/components/features/modalDeposit/DepositModal";
 import { AllHandsLogoButton } from "#/components/shared/buttons/all-hands-logo-button";
 import { ExitProjectButton } from "#/components/shared/buttons/exit-project-button";
 import { SettingsButton } from "#/components/shared/buttons/settings-button";
@@ -7,13 +8,13 @@ import { useLogout } from "#/hooks/mutation/use-logout";
 import { useConfig } from "#/hooks/query/use-config";
 import { useSettings } from "#/hooks/query/use-settings";
 import { useEndSession } from "#/hooks/use-end-session";
+import ChatIcon from "#/icons/chat-icon.svg?react";
 import { setCurrentAgentState } from "#/state/agent-slice";
 import { AgentState } from "#/types/agent-state";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { cn } from "#/utils/utils";
 import posthog from "posthog-js";
 import React from "react";
-import { FaListUl } from "react-icons/fa";
 import { MdAccountBalanceWallet } from "react-icons/md";
 import { useDispatch } from "react-redux";
 import { NavLink, useLocation } from "react-router";
@@ -21,7 +22,6 @@ import { useAccount } from "wagmi";
 import { ConversationPanel } from "../conversation-panel/conversation-panel";
 import { ConversationPanelWrapper } from "../conversation-panel/conversation-panel-wrapper";
 import { UserActions } from "./user-actions";
-import DepositModal from "#/components/features/modalDeposit/DepositModal";
 
 export function Sidebar() {
   const location = useLocation();
@@ -84,9 +84,9 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className="h-[40px] md:h-auto px-1 flex flex-row md:flex-col gap-1">
+      <aside className="h-[50px] bg-[#141415] md:h-auto px-3 py-3 flex flex-row md:flex-col gap-1">
         <nav className="flex flex-row md:flex-col items-center justify-between w-full h-auto md:w-auto md:h-full">
-          <div className="flex flex-row md:flex-col items-center gap-[26px]">
+          <div className="flex flex-row md:flex-col items-center gap-[26px] max-md:gap-4">
             <div className="flex items-center justify-center">
               <AllHandsLogoButton onClick={handleEndSession} />
             </div>
@@ -98,10 +98,10 @@ export function Sidebar() {
                 ariaLabel="Conversations"
                 onClick={() => setConversationPanelIsOpen((prev) => !prev)}
               >
-                <FaListUl
-                  size={22}
+                <ChatIcon
                   className={cn(
-                    conversationPanelIsOpen ? "text-white" : "text-[#9099AC]",
+                    "opacity-50 transition-colors",
+                    conversationPanelIsOpen && "opacity-100",
                   )}
                 />
               </TooltipButton>

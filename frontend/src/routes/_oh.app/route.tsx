@@ -1,8 +1,3 @@
-import { useDisclosure } from "@heroui/react";
-import React from "react";
-import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
-import { Outlet } from "react-router";
 import { Controls } from "#/components/features/controls/controls";
 import { TerminalStatusLabel } from "#/components/features/terminal/terminal-status-label";
 import { Container } from "#/components/layout/container";
@@ -25,12 +20,18 @@ import { useEndSession } from "#/hooks/use-end-session";
 import { I18nKey } from "#/i18n/declaration";
 import CodeIcon from "#/icons/code.svg?react";
 import GlobeIcon from "#/icons/globe.svg?react";
+import TerminalIcon from "#/icons/terminal.svg?react";
 import { addUserMessage, clearMessages } from "#/state/chat-slice";
 import { clearTerminal } from "#/state/command-slice";
 import { clearFiles, clearInitialPrompt } from "#/state/initial-query-slice";
 import { clearJupyter } from "#/state/jupyter-slice";
 import { RootState } from "#/store";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
+import { useDisclosure } from "@heroui/react";
+import React from "react";
+import { useTranslation } from "react-i18next";
+import { useDispatch, useSelector } from "react-redux";
+import { Outlet } from "react-router";
 import { ChatInterface } from "../../components/features/chat/chat-interface";
 import { EventHandler } from "./event-handler";
 
@@ -118,12 +119,12 @@ function AppContent() {
         orientation={Orientation.HORIZONTAL}
         className="grow h-full min-h-0 min-w-0"
         initialSize={550}
-        firstClassName="rounded-xl overflow-hidden border border-neutral-600 bg-base-secondary"
+        firstClassName="rounded-xl overflow-hidden "
         secondClassName="flex flex-col overflow-hidden"
         firstChild={<ChatInterface />}
         secondChild={
           <Container
-            className="h-full"
+            className="h-full mt-4 rounded-xl !mb-4"
             labels={[
               {
                 label: t(I18nKey.WORKSPACE$TITLE),
@@ -139,7 +140,7 @@ function AppContent() {
               {
                 label: <TerminalStatusLabel />,
                 to: "terminal",
-                // icon: <ListIcon />,
+                icon: <TerminalIcon />,
               },
               {
                 label: (
@@ -152,9 +153,16 @@ function AppContent() {
               },
             ]}
           >
-            <FilesProvider>
-              <Outlet />
-            </FilesProvider>
+            <div className="flex flex-col h-full">
+              <FilesProvider>
+                <Outlet />
+              </FilesProvider>
+
+              <Controls
+                setSecurityOpen={onSecurityModalOpen}
+                showSecurityLock={!!settings?.SECURITY_ANALYZER}
+              />
+            </div>
           </Container>
         }
       />
@@ -167,10 +175,10 @@ function AppContent() {
         <div data-testid="app-route" className="flex flex-col h-full gap-3">
           <div className="flex h-full overflow-auto">{renderMain()}</div>
 
-          <Controls
+          {/* <Controls
             setSecurityOpen={onSecurityModalOpen}
             showSecurityLock={!!settings?.SECURITY_ANALYZER}
-          />
+          /> */}
           {settings && (
             <Security
               isOpen={securityModalIsOpen}

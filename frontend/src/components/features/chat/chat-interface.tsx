@@ -1,28 +1,28 @@
-import { useDispatch, useSelector } from "react-redux";
-import React from "react";
-import posthog from "posthog-js";
-import { useParams } from "react-router";
-import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
-import { TrajectoryActions } from "../trajectory/trajectory-actions";
+import { useWsClient } from "#/context/ws-client-provider";
+import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom";
+import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
 import { createChatMessage } from "#/services/chat-service";
-import { InteractiveChatBox } from "./interactive-chat-box";
 import { addUserMessage } from "#/state/chat-slice";
 import { RootState } from "#/store";
 import { AgentState } from "#/types/agent-state";
-import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
+import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
+import posthog from "posthog-js";
+import React from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useParams } from "react-router";
 import { FeedbackModal } from "../feedback/feedback-modal";
-import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom";
-import { TypingIndicator } from "./typing-indicator";
-import { useWsClient } from "#/context/ws-client-provider";
-import { Messages } from "./messages";
-import { ChatSuggestions } from "./chat-suggestions";
+import { TrajectoryActions } from "../trajectory/trajectory-actions";
 import { ActionSuggestions } from "./action-suggestions";
+import { ChatSuggestions } from "./chat-suggestions";
+import { InteractiveChatBox } from "./interactive-chat-box";
+import { Messages } from "./messages";
+import { TypingIndicator } from "./typing-indicator";
 
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { useGetTrajectory } from "#/hooks/mutation/use-get-trajectory";
-import { downloadTrajectory } from "#/utils/download-trajectory";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
+import { downloadTrajectory } from "#/utils/download-trajectory";
 
 function getEntryPoint(
   hasRepository: boolean | null,
