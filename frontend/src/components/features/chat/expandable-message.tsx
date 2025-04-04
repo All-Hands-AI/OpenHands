@@ -33,12 +33,25 @@ export function ExpandableMessage({
   const [details, setDetails] = useState(message);
 
   useEffect(() => {
+    const isMessageTranslationKey =
+      message &&
+      message.includes("$") &&
+      Object.values(I18nKey).includes(message as I18nKey);
+
     if (id && i18n.exists(id)) {
       setHeadline(t(id));
-      setDetails(message);
+      if (message === id || isMessageTranslationKey) {
+        setDetails(t(id));
+      } else {
+        setDetails(message);
+      }
+      setShowDetails(false);
+    } else if (isMessageTranslationKey && i18n.exists(message)) {
+      setHeadline(t(message));
+      setDetails(t(message));
       setShowDetails(false);
     }
-  }, [id, message, i18n.language]);
+  }, [id, message, i18n.language, t]);
 
   const statusIconClasses = "h-4 w-4 ml-2 inline";
 
