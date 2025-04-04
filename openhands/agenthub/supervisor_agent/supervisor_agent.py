@@ -2,6 +2,8 @@ import json
 from collections import deque
 from typing import List, Optional, TypedDict
 
+import litellm
+
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
@@ -277,9 +279,8 @@ If the trajectory is good (score 0-3), set "pattern_observed" to null.
         """
         try:
             prompt = self.create_analysis_prompt(processed_history)
-            response = self.llm.completion(
-                messages=[{'role': 'user', 'content': prompt}],
-            )
+            prompt = self.create_analysis_prompt(processed_history)
+            response = None
 
             llm_response = response['choices'][0]['message']['content'].strip()
 
@@ -299,7 +300,7 @@ If the trajectory is good (score 0-3), set "pattern_observed" to null.
                 # Convert to OverthinkingAnalysis
                 analysis: OverthinkingAnalysis = {
                     'overthinking_score': analysis_json['overthinking_score'],
-                    'pattern_observed': analysis_json['pattern_observed'],
+                    'pattern_observed': None,
                     'reasoning': analysis_json['reasoning'],
                 }
 
@@ -419,13 +420,79 @@ If the trajectory is good (score 0-3), set "pattern_observed" to null.
 
         # Process all events in the selected history
         for i, event in enumerate(events_to_process):
-            if isinstance(event, MessageAction) and event.source == EventSource.AGENT:
-                agent_responses.append((i, event.content))
-            elif isinstance(event, Observation) and not isinstance(
-                event, AgentDelegateObservation
-            ):
+            if isinstance(event, Action) and event.source == EventSource.AGENT:
+                # Format different action types properly
+                if isinstance(event, MessageAction):
+                    content = event.content
+                elif isinstance(event, CmdRunAction):
+                    content = f"<function=execute_bash>\n<parameter=command>\n{event.command}\n</parameter>\n</function>"
+                elif isinstance(event, AgentThinkAction):
+                    content = f"THINKING: {event.thought}"
+                elif isinstance(event, AgentFinishAction):
+                    content = f"FINISH: {event.final_thought}\nTask completed: {event.task_completed}"
+                elif isinstance(event, AgentDelegateAction):
+                    content = f"DELEGATE to {event.agent}: {event.thought}"
+                # File operations
+                elif hasattr(event, 'path') and hasattr(event, '__class__') and 'File' in event.__class__.__name__:
+                    if 'Read' in event.__class__.__name__:
+                        content = f"<function=file_read>\n<parameter=path>{event.path}</parameter>\n"
+                        if hasattr(event, 'start') and hasattr(event, 'end'):
+                            content += f"<parameter=start>{event.start}</parameter>\n<parameter=end>{event.end}</parameter>\n"
+                        content += "</function>"
+                    elif 'Write' in event.__class__.__name__ or 'Create' in event.__class__.__name__:
+                        content = f"<function=str_replace_editor>\n<parameter=command>create</parameter>\n<parameter=path>{event.path}</parameter>\n"
+                        if hasattr(event, 'content'):
+                            content += f"<parameter=file_text>\n{event.content}\n</parameter>\n"
+                        elif hasattr(event, 'text'):
+                            content += f"<parameter=file_text>\n{event.text}\n</parameter>\n"
+                        content += "</function>"
+                    elif 'Remove' in event.__class__.__name__:
+                        content = f"<function=file_remove>\n<parameter=path>{event.path}</parameter>\n</function>"
+                    elif 'Search' in event.__class__.__name__:
+                        content = f"<function=file_search>\n<parameter=path>{event.path}</parameter>\n"
+                        if hasattr(event, 'query'):
+                            content += f"<parameter=query>{event.query}</parameter>\n"
+                        content += "</function>"
+                    elif 'Replace' in event.__class__.__name__:
+                        content = f"<function=str_replace_editor>\n<parameter=command>str_replace</parameter>\n<parameter=path>{event.path}</parameter>\n"
+                        if hasattr(event, 'old_str') and hasattr(event, 'new_str'):
+                            content += f"<parameter=old_str>{event.old_str}</parameter>\n"
+                            content += f"<parameter=new_str>{event.new_str}</parameter>\n"
+                        content += "</function>"
+                    else:
+                        # Generic file operation
+                        content = f"<function=file_operation>\n<parameter=operation>{event.__class__.__name__}</parameter>\n<parameter=path>{event.path}</parameter>\n</function>"
+                # Web operations
+                elif hasattr(event, '__class__') and 'Web' in event.__class__.__name__:
+                    if hasattr(event, 'query'):
+                        content = f"<function=web_search>\n<parameter=query>{event.query}</parameter>\n</function>"
+                    elif hasattr(event, 'url'):
+                        content = f"<function=web_browse>\n<parameter=url>{event.url}</parameter>\n</function>"
+                    else:
+                        content = f"{event.__class__.__name__}: {str(event)}"
+                # Model query operations
+                elif hasattr(event, '__class__') and ('ModelQuery' in event.__class__.__name__ or 'VectorSearch' in event.__class__.__name__):
+                    content = f"<function=model_query>\n"
+                    if hasattr(event, 'query'):
+                        content += f"<parameter=query>{event.query}</parameter>\n"
+                    if hasattr(event, 'model'):
+                        content += f"<parameter=model>{event.model}</parameter>\n"
+                    content += "</function>"
+                # For actions that implement NullAction
+                elif hasattr(event, '__class__') and 'NullAction' in event.__class__.__name__:
+                    content = "NullAction: No operation performed"
+                # Other specialized actions
+                elif hasattr(event, 'action') and hasattr(event.action, 'name'):
+                    # Use the action type name if available
+                    content = f"ACTION [{event.action.name}]: {str(event)}"
+                else:
+                    # For any other Action types
+                    content = f"{event.__class__.__name__}: {str(event)}"
+                
+                agent_responses.append((i, content))
+            elif isinstance(event, Observation):
                 observations.append((i, event))
-
+        import pdb; pdb.set_trace()
         # Pair responses with observations
         for i in range(len(agent_responses) - 1):
             response_idx, response = agent_responses[i]
@@ -445,13 +512,39 @@ If the trajectory is good (score 0-3), set "pattern_observed" to null.
             ]
 
             # Combine observations into a single string
-            observation_text = '\n'.join(
-                [
-                    f"{obs.__class__.__name__}: {obs.content if hasattr(obs, 'content') else str(obs)}"
-                    for obs in relevant_observations
-                ]
-            )
-
+            observation_texts = []
+            for obs in relevant_observations:
+                # Format different observation types properly
+                if isinstance(obs, CmdOutputObservation):
+                    observation_text = f"EXECUTION RESULT of [execute_bash]:\n{obs.content}"
+                    if hasattr(obs, 'exit_code') and obs.exit_code != 0:
+                        observation_text += f"\nExit code: {obs.exit_code}"
+                elif hasattr(obs, '__class__') and 'Web' in obs.__class__.__name__:
+                    if 'Search' in obs.__class__.__name__:
+                        observation_text = f"EXECUTION RESULT of [web_search]:\n{obs.content if hasattr(obs, 'content') else str(obs)}"
+                    elif 'Browse' in obs.__class__.__name__:
+                        observation_text = f"EXECUTION RESULT of [web_browse]:\n{obs.content if hasattr(obs, 'content') else str(obs)}"
+                    else:
+                        observation_text = f"{obs.__class__.__name__}: {obs.content if hasattr(obs, 'content') else str(obs)}"
+                elif isinstance(obs, AgentDelegateObservation):
+                    observation_text = f"EXECUTION RESULT of [delegate]:\nAgent {obs.agent} has completed its task"
+                    if hasattr(obs, 'outputs') and obs.outputs:
+                        observation_text += "\nOutputs: " + str(obs.outputs)
+                elif hasattr(obs, 'observation') and hasattr(obs.observation, 'name') and obs.observation.name == 'DELEGATE':
+                    observation_text = f"EXECUTION RESULT of [delegate]:\nDelegation completed"
+                    if hasattr(obs, 'outputs') and obs.outputs:
+                        observation_text += "\nOutputs: " + str(obs.outputs)
+                elif hasattr(obs, '__class__') and ('ModelQuery' in obs.__class__.__name__ or 'VectorSearch' in obs.__class__.__name__):
+                    observation_text = f"EXECUTION RESULT of [model_query]:\n{obs.content if hasattr(obs, 'content') else str(obs)}"
+                else:
+                    # Generic observation formatting
+                    observation_text = f"{obs.__class__.__name__}: {obs.content if hasattr(obs, 'content') else str(obs)}"
+                
+                observation_texts.append(observation_text)
+            
+            # Join all observation texts
+            observation_text = '\n\n'.join(observation_texts)
+            
             # If there are no observations, use a placeholder
             if not observation_text:
                 observation_text = 'No observations recorded'
@@ -493,7 +586,7 @@ If the trajectory is good (score 0-3), set "pattern_observed" to null.
                 formatted_output += (
                     f"\nFINISH REASON: {output_data['final_finish_reason']}\n"
                 )
-
+        import pdb; pdb.set_trace()
         return formatted_output
 
     def step(self, state: State) -> Action:
@@ -633,6 +726,7 @@ If the trajectory is good (score 0-3), set "pattern_observed" to null.
                         'SupervisorAgent: Delegating to CodeActAgent with clear_history=True'
                     )
                     state.extra_data['delegated_state'] = True
+                    self.delegated = True
                     return AgentDelegateAction(
                         agent='CodeActAgent',
                         inputs=state.inputs,
@@ -641,8 +735,6 @@ If the trajectory is good (score 0-3), set "pattern_observed" to null.
                     )
 
             # Start the git command sequence
-            self.delegated = True
-            state.extra_data['delegated_state'] = True
             return CmdRunAction(
                 command='git status --porcelain',
                 thought='Checking if there are any changes to commit before delegation',
