@@ -24,9 +24,9 @@ export function SettingsDropdownInput({
   isClearable,
 }: SettingsDropdownInputProps) {
   return (
-    <label className="flex flex-col gap-2.5 w-[680px]">
+    <label className="flex flex-col gap-2 w-full">
       <div className="flex items-center gap-1">
-        <span className="text-sm">{label}</span>
+        <span className="text-[14px] font-medium text-[#595B57]">{label}</span>
         {showOptionalTag && <OptionalTag />}
       </div>
       <Autocomplete
@@ -39,12 +39,14 @@ export function SettingsDropdownInput({
         isDisabled={isDisabled}
         className="w-full"
         classNames={{
-          popoverContent: "bg-tertiary rounded-xl border border-[#717888]",
+          popoverContent:
+            "bg-[#1E1E1F] rounded-xl border border-[#232521] text-[14px] font-medium text-[#EFEFEF]",
         }}
         inputProps={{
           classNames: {
             inputWrapper:
-              "bg-tertiary border border-[#717888] h-10 w-full rounded p-2 placeholder:italic",
+              "bg-[#1E1E1F] border border-[#232521] h-11 w-full rounded-lg p-2 placeholder:italic",
+            input: "text-[14px] font-medium text-[#EFEFEF]",
           },
         }}
       >

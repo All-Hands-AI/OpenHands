@@ -11,17 +11,17 @@ function SettingsScreen() {
   return (
     <main
       data-testid="settings-screen"
-      className="bg-base-secondary border border-tertiary h-full rounded-xl flex flex-col"
+      className="bg-[#080808] h-full flex flex-col"
     >
-      <header className="px-3 py-1.5 border-b border-b-tertiary flex items-center gap-2">
-        <SettingsIcon width={16} height={16} />
-        <h1 className="text-sm leading-6">Settings</h1>
+      <header className="px-3 md:px-5 py-1.5 border-b border-b-[#232521] flex items-center gap-2">
+        <SettingsIcon width={24} height={24} />
+        <h1 className="text-[18px] font-semibold text-[#EFEFEF]">Settings</h1>
       </header>
 
       {isSaas && billingIsEnabled && (
         <nav
           data-testid="settings-navbar"
-          className="flex items-end gap-12 px-11 border-b border-tertiary"
+          className="flex items-end gap-12 px-6 border-b border-[#232521]"
         >
           {[
             { to: "/settings", text: "Account" },
@@ -38,7 +38,9 @@ function SettingsScreen() {
                 )
               }
             >
-              <ul className="text-[#F9FBFE] text-sm">{text}</ul>
+              <ul className="text-[#EFEFEF] font-semibold text-[14px]">
+                {text}
+              </ul>
             </NavLink>
           ))}
         </nav>

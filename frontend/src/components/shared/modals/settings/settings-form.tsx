@@ -84,7 +84,7 @@ export function SettingsForm({ settings, models, onClose }: SettingsFormProps) {
         className="flex flex-col gap-6"
         onSubmit={handleSubmit}
       >
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-6">
           <ModelSelector
             models={organizeModelsAndProviders(models)}
             currentModel={settings.LLM_MODEL}
@@ -105,6 +105,10 @@ export function SettingsForm({ settings, models, onClose }: SettingsFormProps) {
             text="Don't know your API key?"
             linkText="Click here for instructions"
             href="https://docs.all-hands.dev/modules/usage/installation#getting-an-api-key"
+            classNames={{
+              text: "text-[#979995]",
+              linkText: "text-primary",
+            }}
           />
         </div>
 
@@ -113,7 +117,7 @@ export function SettingsForm({ settings, models, onClose }: SettingsFormProps) {
             testId="save-settings-button"
             type="submit"
             variant="primary"
-            className="w-full"
+            className="w-full text-[14px] font-semibold text-[#080808] h-11 rounded-lg"
           >
             {t(I18nKey.BUTTON$SAVE)}
           </BrandButton>

@@ -34,7 +34,7 @@ function Home() {
   return (
     <div
       data-testid="home-screen"
-      className="bg-base-secondary h-full rounded-xl flex flex-col items-center justify-center relative overflow-y-auto px-2"
+      className="bg-[#080808] h-full rounded-xl flex flex-col items-center justify-center relative overflow-y-auto px-2"
     >
       <HeroHeading />
       <div className="flex flex-col gap-1 w-full mt-8 md:w-[600px] items-center">

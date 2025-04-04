@@ -29,10 +29,10 @@ export function SettingsInput({
   onChange,
 }: SettingsInputProps) {
   return (
-    <label className={cn("flex flex-col gap-2.5 w-fit", className)}>
+    <label className={cn("flex flex-col gap-2 w-fit", className)}>
       <div className="flex items-center gap-2">
         {startContent}
-        <span className="text-sm">{label}</span>
+        <span className="text-[14px] font-medium text-[#595B57]">{label}</span>
         {showOptionalTag && <OptionalTag />}
       </div>
       <input
@@ -44,7 +44,7 @@ export function SettingsInput({
         defaultValue={defaultValue}
         placeholder={placeholder}
         className={cn(
-          "bg-tertiary border border-[#717888] h-10 w-full rounded p-2 placeholder:italic placeholder:text-tertiary-alt",
+          "bg-[#1E1E1F] border border-[#232521] h-11 w-full rounded-lg p-2 placeholder:italic placeholder:text-[#595B57]",
           "disabled:bg-[#2D2F36] disabled:border-[#2D2F36] disabled:cursor-not-allowed",
         )}
       />
