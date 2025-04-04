@@ -378,35 +378,3 @@ type = "noop"
 #model = "gpt-4o"
 #temperature = 0.1
 #max_tokens = 1024
-
-#################################### Eval ####################################
-# Configuration for the evaluation, please refer to the specific evaluation
-# plugin for the available options
-##############################################################################
-
-#################################### MCP ####################################
-# Configuration for MCP (Model Context Protocol) settings
-##############################################################################
-[mcp-sse]
-# List of MCP server URLs, separated by quotes
-# Example: mcp_servers = ["http://server1:8080/sse", "http://server2:8080/sse"]
-#mcp_servers = []
-
-#################################### MCP ####################################
-# Configuration for MCP (Model Context Protocol) settings
-##############################################################################
-[mcp-stdio]
-# List of MCP server URLs, separated by quotes
-# Example: commands = [""]
-#commands = ["node"]
-#args = [
-#  [
-#    "path/to/mcp-server/dist/index.js",
-#  ],
-#]
-# envs = [
-#   [
-#     ["FOO", "BAR"], 
-#     ["FOO2", "BAR2"]
-#   ]
-# ]
