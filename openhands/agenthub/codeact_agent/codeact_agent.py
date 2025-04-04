@@ -59,19 +59,16 @@ class CodeActAgent(Agent):
         self,
         llm: LLM,
         config: AgentConfig,
-        mcp_tools: list[dict] | None = None,
     ) -> None:
         """Initializes a new instance of the CodeActAgent class.
 
         Parameters:
         - llm (LLM): The llm to be used by this agent
         - config (AgentConfig): The configuration for this agent
-        - mcp_tools (list[dict] | None, optional): List of MCP tools to be used by this agent. Defaults to None.
         """
-        super().__init__(llm, config, mcp_tools)
+        super().__init__(llm, config)
         self.pending_actions: deque[Action] = deque()
         self.reset()
-        logger.debug(f'MCP tools: {mcp_tools}')
 
         built_in_tools = codeact_function_calling.get_tools(
             codeact_enable_browsing=self.config.codeact_enable_browsing,
@@ -80,8 +77,7 @@ class CodeActAgent(Agent):
             llm=self.llm,
         )
 
-        self.tools = built_in_tools + (mcp_tools if mcp_tools is not None else [])
-        logger.debug(f'Tools: {self.tools}')
+        self.tools = built_in_tools
 
         self.prompt_manager = PromptManager(
             prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
@@ -143,7 +139,17 @@ class CodeActAgent(Agent):
             'messages': self.llm.format_messages_for_llm(messages),
         }
         params['tools'] = self.tools
-        logger.debug(f'Params: {params['tools']}')
+        
+        
+        if self.mcp_tools:
+            # Only add tools with unique names
+            existing_names = {tool['function']['name'] for tool in params['tools']}
+            unique_mcp_tools = [
+                tool for tool in self.mcp_tools 
+                if tool['function']['name'] not in existing_names
+            ]
+            params['tools'] += unique_mcp_tools
+
         # log to litellm proxy if possible
         params['extra_body'] = {'metadata': state.to_llm_metadata(agent_name=self.name)}
         response = self.llm.completion(**params)

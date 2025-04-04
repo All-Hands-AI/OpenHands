@@ -35,7 +35,6 @@ from uvicorn import run
 
 from openhands.core.exceptions import BrowserUnavailableException
 from openhands.core.logger import openhands_logger as logger
-from openhands.core.setup import create_mcp_clients
 from openhands.events.action import (
     Action,
     BrowseInteractiveAction,
@@ -59,6 +58,7 @@ from openhands.events.observation import (
 )
 from openhands.events.observation.mcp import MCPObservation
 from openhands.events.serialization import event_from_dict, event_to_dict
+from openhands.mcp.mcp import create_mcp_clients
 from openhands.runtime.browser import browse
 from openhands.runtime.browser.browser_env import BrowserEnv
 from openhands.runtime.plugins import ALL_PLUGINS, JupyterPlugin, Plugin, VSCodePlugin
@@ -531,15 +531,15 @@ class ActionExecutor:
         if not self.sse_mcp_servers and not commands:
             raise ValueError('No MCP servers or stdio MCP config found')
 
-        logger.debug(f'SSE MCP servers: {self.sse_mcp_servers}')
+        logger.warning(f'SSE MCP servers: {self.sse_mcp_servers}')
         mcp_clients = await create_mcp_clients(
-            self.sse_mcp_servers or [], commands, args
+            self.sse_mcp_servers, commands, args
         )
-        logger.debug(f'MCP action received: {action}')
+        logger.warn(f'MCP action received: {action}')
         # Find the MCP agent that has the matching tool name
         matching_client = None
-        logger.debug(f'MCP clients: {mcp_clients}')
-        logger.debug(f'MCP action name: {action.name}')
+        logger.warning(f'MCP clients: {mcp_clients}')
+        logger.warning(f'MCP action name: {action.name}')
         for client in mcp_clients:
             if action.name in [tool.name for tool in client.tools]:
                 matching_client = client
@@ -548,10 +548,10 @@ class ActionExecutor:
             raise ValueError(
                 f'No matching MCP agent found for tool name: {action.name}'
             )
-        logger.debug(f'Matching client: {matching_client}')
+        logger.warning(f'Matching client: {matching_client}')
         args_dict = json.loads(action.arguments) if action.arguments else {}
         response = await matching_client.call_tool(action.name, args_dict)
-        logger.debug(f'MCP response: {response}')
+        logger.warning(f'MCP response: {response}')
 
         # close client connections
         for client in mcp_clients:
