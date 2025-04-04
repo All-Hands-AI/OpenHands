@@ -51,7 +51,7 @@ docker run -it \
 
 ### Use of Note and Warning
 
-When adding a note, use the built in note and warning syntax.
+When adding a note or warning, use the built-in note and warning syntax.
 
 Example:
 :::note
