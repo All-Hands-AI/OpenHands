@@ -5,6 +5,7 @@ from tenacity import (
     wait_exponential,
 )
 
+from openhands.core.exceptions import LLMNoResponseError
 from openhands.core.logger import openhands_logger as logger
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
@@ -34,6 +35,15 @@ class RetryMixin:
             self.log_retry_attempt(retry_state)
             if retry_listener:
                 retry_listener(retry_state.attempt_number, num_retries)
+
+            # Check if the exception is LLMNoResponseError
+            exception = retry_state.outcome.exception()
+            if isinstance(exception, LLMNoResponseError):
+                logger.debug(
+                    'LLMNoResponseError detected, setting temperature to 0.2 for next attempt'
+                )
+                if hasattr(retry_state, 'kwargs'):
+                    retry_state.kwargs['temperature'] = 0.2
 
         return retry(
             before_sleep=before_sleep,
