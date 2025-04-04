@@ -153,10 +153,10 @@ def test_multiple_multiline_commands(temp_dir, runtime_cls, run_as_openhands):
         _close_test_runtime(runtime)
 
 
-def test_complex_commands(temp_dir, runtime_cls):
+def test_complex_commands(temp_dir, runtime_cls, run_as_openhands):
     cmd = """count=0; tries=0; while [ $count -lt 3 ]; do result=$(echo "Heads"); tries=$((tries+1)); echo "Flip $tries: $result"; if [ "$result" = "Heads" ]; then count=$((count+1)); else count=0; fi; done; echo "Got 3 heads in a row after $tries flips!";"""
 
-    runtime, config = _load_runtime(temp_dir, runtime_cls)
+    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         obs = _run_cmd_action(runtime, cmd)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})

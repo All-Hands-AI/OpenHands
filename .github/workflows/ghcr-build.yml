@@ -25,7 +25,6 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  BASE_IMAGE_FOR_HASH_EQUIVALENCE_TEST: nikolaik/python-nodejs:python3.12-nodejs22
   RELEVANT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 
 jobs:
@@ -37,6 +36,7 @@ jobs:
       contents: read
       packages: write
     outputs:
+      # Since this job uses outputs it cannot use matrix
       hash_from_app_image: ${{ steps.get_hash_in_app_image.outputs.hash_from_app_image }}
     steps:
       - name: Checkout
@@ -89,6 +89,8 @@ jobs:
         base_image:
           - image: 'nikolaik/python-nodejs:python3.12-nodejs22'
             tag: nikolaik
+          - image: 'ubuntu:24.04'
+            tag: ubuntu
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -116,6 +118,7 @@ jobs:
         with:
           path: |
             ~/.cache/pypoetry
+            ~/.cache/ms-playwright
             ~/.virtualenvs
           key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
           restore-keys: |
@@ -156,6 +159,8 @@ jobs:
       fail-fast: false
       matrix:
         base_image: ['nikolaik']
+    env:
+      BASE_IMAGE_FOR_HASH_EQUIVALENCE_TEST: nikolaik/python-nodejs:python3.12-nodejs22
     steps:
       - uses: actions/checkout@v4
         with:
@@ -165,6 +170,7 @@ jobs:
         with:
           path: |
             ~/.cache/pypoetry
+            ~/.cache/ms-playwright
             ~/.virtualenvs
           key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
           restore-keys: |
@@ -208,7 +214,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        base_image: ['nikolaik']
+        base_image: ['nikolaik', 'ubuntu']
     steps:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
@@ -230,6 +236,7 @@ jobs:
         with:
           path: |
             ~/.cache/pypoetry
+            ~/.cache/ms-playwright
             ~/.virtualenvs
           key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
           restore-keys: |
@@ -255,8 +262,11 @@ jobs:
 
           image_name=ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image }}
 
+          # Setting RUN_AS_OPENHANDS to false means use root.
+          # That should mean SANDBOX_USER_ID is ignored but some tests do not check for RUN_AS_OPENHANDS.
+
           TEST_RUNTIME=docker \
-          SANDBOX_USER_ID=$(id -u) \
+          SANDBOX_USER_ID=1001 \
           SANDBOX_RUNTIME_CONTAINER_IMAGE=$image_name \
           TEST_IN_CI=true \
           RUN_AS_OPENHANDS=false \
@@ -273,7 +283,11 @@ jobs:
     needs: [ghcr_build_runtime]
     strategy:
       matrix:
-        base_image: ['nikolaik']
+        base_image:
+          - tag: nikolaik
+            sandbox_user_id: 1000
+          - tag: ubuntu
+            sandbox_user_id: 1001
     steps:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
@@ -284,12 +298,12 @@ jobs:
         if: github.event.pull_request.head.repo.fork
         uses: actions/download-artifact@v4
         with:
-          name: runtime-${{ matrix.base_image }}
+          name: runtime-${{ matrix.base_image.tag }}
           path: /tmp
       - name: Load runtime image for fork
         if: github.event.pull_request.head.repo.fork
         run: |
-          docker load --input /tmp/runtime-${{ matrix.base_image }}.tar
+          docker load --input /tmp/runtime-${{ matrix.base_image.tag }}.tar
       - name: Cache Poetry dependencies
         uses: useblacksmith/cache@v5
         with:
@@ -318,10 +332,10 @@ jobs:
           # Install to be able to retry on failures for flaky tests
           poetry run pip install pytest-rerunfailures
 
-          image_name=ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image }}
+          image_name=ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
 
           TEST_RUNTIME=docker \
-          SANDBOX_USER_ID=$(id -u) \
+          SANDBOX_USER_ID=${{ matrix.base_image.sandbox_user_id }} \
           SANDBOX_RUNTIME_CONTAINER_IMAGE=$image_name \
           TEST_IN_CI=true \
           RUN_AS_OPENHANDS=true \
@@ -379,7 +393,7 @@ jobs:
             -p 3000:3000 \
             -v /var/run/docker.sock:/var/run/docker.sock \
             --add-host host.docker.internal:host-gateway \
-            -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:$SHORT_SHA-nikolaik \
+            -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:$SHORT_SHA-ubuntu \
             --name openhands-app-$SHORT_SHA \
             docker.all-hands.dev/all-hands-ai/openhands:$SHORT_SHA"
 
