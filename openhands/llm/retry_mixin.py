@@ -39,11 +39,18 @@ class RetryMixin:
             # Check if the exception is LLMNoResponseError
             exception = retry_state.outcome.exception()
             if isinstance(exception, LLMNoResponseError):
-                logger.warning(
-                    'LLMNoResponseError detected, setting temperature to 0.2 for next attempt'
-                )
                 if hasattr(retry_state, 'kwargs'):
-                    retry_state.kwargs['temperature'] = 0.2
+                    # Only change temperature if it's zero or not set
+                    current_temp = retry_state.kwargs.get('temperature', 0)
+                    if current_temp == 0:
+                        logger.warning(
+                            'LLMNoResponseError detected with temperature=0, setting temperature to 0.2 for next attempt'
+                        )
+                        retry_state.kwargs['temperature'] = 0.2
+                    else:
+                        logger.warning(
+                            f'LLMNoResponseError detected with temperature={current_temp}, keeping original temperature'
+                        )
 
         return retry(
             before_sleep=before_sleep,

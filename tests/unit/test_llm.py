@@ -452,11 +452,11 @@ def test_completion_retry_with_llm_no_response_error_nonzero_temp(
 ):
     """
     Test that the retry decorator works for LLMNoResponseError when initial temperature is non-zero,
-    and changes the temperature to 0.2 on retry.
+    and keeps the original temperature on retry.
 
     This test verifies that when LLMNoResponseError is raised with a non-zero temperature:
     1. The retry mechanism is triggered
-    2. The temperature is changed to 0.2 on the retry attempt
+    2. The temperature remains unchanged (not set to 0.2)
     3. After all retries are exhausted, the exception is propagated
     """
     # Define a side effect function that always raises LLMNoResponseError
@@ -483,9 +483,70 @@ def test_completion_retry_with_llm_no_response_error_nonzero_temp(
     first_call_kwargs = mock_litellm_completion.call_args_list[0][1]
     assert first_call_kwargs.get('temperature') == 0.7
 
-    # Check the temperature in the second call (should be changed to 0.2)
+    # Check the temperature in the second call (should remain 0.7, not changed to 0.2)
     second_call_kwargs = mock_litellm_completion.call_args_list[1][1]
-    assert second_call_kwargs.get('temperature') == 0.2
+    assert second_call_kwargs.get('temperature') == 0.7
+
+
+@patch('openhands.llm.llm.litellm_completion')
+def test_completion_retry_with_llm_no_response_error_nonzero_temp_successful_retry(
+    mock_litellm_completion, default_config
+):
+    """
+    Test that the retry decorator works for LLMNoResponseError with non-zero temperature
+    and successfully retries while preserving the original temperature.
+
+    This test verifies that:
+    1. First call to llm_completion with temperature=0.7 throws LLMNoResponseError
+    2. Second call with the same temperature=0.7 returns a successful response
+    """
+
+    # Define a side effect function that raises LLMNoResponseError on first call
+    # and returns a successful response on second call
+    def side_effect(*args, **kwargs):
+        temperature = kwargs.get('temperature', 0)
+
+        if mock_litellm_completion.call_count == 1:
+            # First call should raise LLMNoResponseError
+            raise LLMNoResponseError('LLM did not return a response')
+        else:
+            # Second call should return a successful response
+            return {
+                'choices': [
+                    {
+                        'message': {
+                            'content': f'Successful response with temperature={temperature}'
+                        }
+                    }
+                ]
+            }
+
+    mock_litellm_completion.side_effect = side_effect
+
+    # Create LLM instance and make a completion call with non-zero temperature
+    llm = LLM(config=default_config)
+    response = llm.completion(
+        messages=[{'role': 'user', 'content': 'Hello!'}],
+        stream=False,
+        temperature=0.7,  # Non-zero temperature
+    )
+
+    # Verify the response after retry
+    assert (
+        response['choices'][0]['message']['content']
+        == 'Successful response with temperature=0.7'
+    )
+
+    # Verify that litellm_completion was called twice
+    assert mock_litellm_completion.call_count == 2
+
+    # Check the temperature in the first call (should be 0.7)
+    first_call_kwargs = mock_litellm_completion.call_args_list[0][1]
+    assert first_call_kwargs.get('temperature') == 0.7
+
+    # Check the temperature in the second call (should still be 0.7)
+    second_call_kwargs = mock_litellm_completion.call_args_list[1][1]
+    assert second_call_kwargs.get('temperature') == 0.7
 
 
 @patch('openhands.llm.llm.litellm_completion')
@@ -493,10 +554,11 @@ def test_completion_retry_with_llm_no_response_error_successful_retry(
     mock_litellm_completion, default_config
 ):
     """
-    Test that the retry decorator works for LLMNoResponseError and successfully retries with temperature=0.2.
+    Test that the retry decorator works for LLMNoResponseError with zero temperature
+    and successfully retries with temperature=0.2.
 
     This test verifies that:
-    1. First call to llm_completion throws LLMNoResponseError
+    1. First call to llm_completion with temperature=0 throws LLMNoResponseError
     2. Second call with temperature=0.2 returns a successful response
     """
 
@@ -522,11 +584,12 @@ def test_completion_retry_with_llm_no_response_error_successful_retry(
 
     mock_litellm_completion.side_effect = side_effect
 
-    # Create LLM instance and make a completion call
+    # Create LLM instance and make a completion call with explicit temperature=0
     llm = LLM(config=default_config)
     response = llm.completion(
         messages=[{'role': 'user', 'content': 'Hello!'}],
         stream=False,
+        temperature=0,  # Explicitly set temperature to 0
     )
 
     # Verify the response after retry
