@@ -276,7 +276,7 @@ class LLM(RetryMixin, DebugMixin):
                 if len(resp.choices) < 1:
                     # Just try again
                     raise litellm.InternalServerError(
-                        'Response choices is less than 1 - This is only seen in Gemini Pro 2.5 so far. Response: '
+                        'Response choices is less than 1 - This is only seen in Gemini models so far. Response: '
                         + str(resp),
                         self.config.custom_llm_provider,
                         self.config.model,
