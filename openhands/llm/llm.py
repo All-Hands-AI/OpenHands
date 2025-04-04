@@ -23,6 +23,7 @@ from litellm.exceptions import (
 from litellm.types.utils import CostPerToken, ModelResponse, Usage
 from litellm.utils import create_pretrained_tokenizer
 
+from openhands.core.exceptions import LLMNoResponseError
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message
 from openhands.llm.debug_mixin import DebugMixin
@@ -37,7 +38,12 @@ from openhands.llm.retry_mixin import RetryMixin
 __all__ = ['LLM']
 
 # tuple of exceptions to retry on
-LLM_RETRY_EXCEPTIONS: tuple[type[Exception], ...] = (RateLimitError,)
+LLM_RETRY_EXCEPTIONS: tuple[type[Exception], ...] = (
+    RateLimitError,
+    litellm.Timeout,
+    litellm.InternalServerError,
+    LLMNoResponseError,
+)
 
 # cache prompt supporting models
 # remove this when we gemini and deepseek are supported
@@ -63,6 +69,7 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     'o1-2024-12-17',
     'o3-mini-2025-01-31',
     'o3-mini',
+    'gemini-2.5-pro',
 ]
 
 REASONING_EFFORT_SUPPORTED_MODELS = [
@@ -267,8 +274,12 @@ class LLM(RetryMixin, DebugMixin):
 
             # if we mocked function calling, and we have tools, convert the response back to function calling format
             if mock_function_calling and mock_fncall_tools is not None:
-                logger.debug(f'Response choices: {len(resp.choices)}')
-                assert len(resp.choices) >= 1
+                if len(resp.choices) < 1:
+                    raise LLMNoResponseError(
+                        'Response choices is less than 1 - This is only seen in Gemini models so far. Response: '
+                        + str(resp)
+                    )
+
                 non_fncall_response_message = resp.choices[0].message
                 fn_call_messages_with_response = (
                     convert_non_fncall_messages_to_fncall_messages(
@@ -281,6 +292,13 @@ class LLM(RetryMixin, DebugMixin):
                         **fn_call_response_message
                     )
                 resp.choices[0].message = fn_call_response_message
+
+            # Check if resp has 'choices' key with at least one item
+            if not resp.get('choices') or len(resp['choices']) < 1:
+                raise LLMNoResponseError(
+                    'Response choices is less than 1 - This is only seen in Gemini models so far. Response: '
+                    + str(resp)
+                )
 
             message_back: str = resp['choices'][0]['message']['content'] or ''
             tool_calls: list[ChatCompletionMessageToolCall] = resp['choices'][0][
