@@ -257,6 +257,8 @@ class LocalRuntime(ActionExecutionClient):
         logger.info(f'POETRY_VIRTUALENVS_PATH: {poetry_venvs_path}')
 
         check_dependencies(code_repo_path, poetry_venvs_path)
+        logger.info(f'Running server command: {" ".join(cmd)}')
+        logger.info(f'Server CWD: {code_repo_path}')
         self.server_process = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
@@ -264,19 +266,30 @@ class LocalRuntime(ActionExecutionClient):
             universal_newlines=True,
             bufsize=1,
             env=env,
+            cwd=code_repo_path,  # Explicitly set the working directory
         )
 
         # Start a thread to read and log server output
         def log_output():
-            while (
-                self.server_process
-                and self.server_process.poll()
-                and self.server_process.stdout
-            ):
-                line = self.server_process.stdout.readline()
-                if not line:
-                    break
-                self.log('debug', f'Server: {line.strip()}')
+            if not self.server_process or not self.server_process.stdout:
+                self.log('error', 'Server process or stdout not available for logging.')
+                return
+
+            try:
+                # Read lines while the process is running and stdout is available
+                while self.server_process.poll() is None:
+                    line = self.server_process.stdout.readline()
+                    if not line:
+                        # Process might have exited between poll() and readline()
+                        break
+                    self.log('debug', f'Server: {line.strip()}')
+
+                # Capture any remaining output after the process exits
+                for line in self.server_process.stdout:
+                    self.log('debug', f'Server (remaining): {line.strip()}')
+
+            except Exception as e:
+                self.log('error', f'Error reading server output: {e}')
 
         self._log_thread = threading.Thread(target=log_output, daemon=True)
         self._log_thread.start()
@@ -290,7 +303,7 @@ class LocalRuntime(ActionExecutionClient):
             await call_sync_from_async(self.setup_initial_env)
 
         self.log(
-            'debug',
+            'info',
             f'Server initialized with plugins: {[plugin.name for plugin in self.plugins]}',
         )
         if not self.attach_to_existing:
