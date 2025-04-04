@@ -73,7 +73,6 @@ class MCPClients(ToolCollection):
         self,
         server_url: str,
         sid: Optional[str] = None,
-        user_id: Optional[str] = None,
         mnemonic: Optional[str] = None,
     ) -> None:
         """Connect to an MCP server using SSE transport."""
@@ -87,7 +86,7 @@ class MCPClients(ToolCollection):
         #     raise ValueError('User ID is required.')
 
         headers = {
-            k: v for k, v in {'sid': sid, 'mnemonic': None}.items() if v is not None
+            k: v for k, v in {'sid': sid, 'mnemonic': mnemonic}.items() if v is not None
         }
         logger.info(f'sid: {sid}')
         logger.info('Connecting to MCP server')

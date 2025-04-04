@@ -56,7 +56,7 @@ class MCPAgent(BaseModel):
             if not server_url:
                 raise ValueError('Server URL is required for SSE connection')
             await self.mcp_clients.connect_sse(
-                server_url=server_url, sid=sid, user_id=user_id, mnemonic=mnemonic
+                server_url=server_url, sid=sid, mnemonic=mnemonic
             )
         elif self.connection_type == 'stdio':
             if not command:
