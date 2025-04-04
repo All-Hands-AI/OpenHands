@@ -30,8 +30,8 @@ export function PaymentForm() {
     setButtonIsDisabled(true);
   };
 
-  const handleTopUpInputChange = (value: string) => {
-    setButtonIsDisabled(!amountIsValid(value));
+  const handleTopUpInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setButtonIsDisabled(!amountIsValid(e.target.value));
   };
 
   return (
