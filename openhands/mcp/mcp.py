@@ -7,6 +7,7 @@ from mcp.client.sse import sse_client
 from mcp.client.stdio import stdio_client
 from mcp.types import CallToolResult, TextContent, Tool
 from pydantic import BaseModel, Field
+from termcolor import colored
 
 from openhands.core.config.mcp_config import MCPConfig
 from openhands.core.logger import openhands_logger as logger
@@ -90,14 +91,17 @@ class MCPClient(BaseModel):
 
         await self._initialize_and_list_tools()
 
-    async def connect_stdio(self, command: str, args: List[str]) -> None:
+    async def connect_stdio(self, command: str, args: List[str], envs: List[tuple[str, str]]) -> None:
         """Connect to an MCP server using stdio transport."""
         if not command:
             raise ValueError('Server command is required.')
         if self.session:
             await self.disconnect()
 
-        server_params = StdioServerParameters(command=command, args=args)
+        envs_dict: dict[str, str] = {}
+        for env in envs:
+            envs_dict[env[0]] = env[1]
+        server_params = StdioServerParameters(command=command, args=args, env=envs_dict)
         stdio_transport = await self.exit_stack.enter_async_context(
             stdio_client(server_params)
         )
@@ -187,7 +191,7 @@ def convert_mcp_clients_to_tools(mcp_clients: list[MCPClient] | None) -> list[di
 
 
 async def create_mcp_clients(
-    sse_mcp_server: List[str], commands: List[str], args: List[List[str]]
+    sse_mcp_server: List[str], commands: List[str], args: List[List[str]], envs: List[List[tuple[str, str]]]
 ) -> List[MCPClient]:
     mcp_clients: List[MCPClient] = []
     # Initialize SSE connections
@@ -208,14 +212,14 @@ async def create_mcp_clients(
 
     # Initialize stdio connections
     if commands:
-        for command, command_args in zip(commands, args):
+        for command, command_args, command_envs in zip(commands, args, envs):
             logger.info(
                 f'Initializing MCP agent for {command} with stdio connection...'
             )
 
             client = MCPClient()
             try:
-                await client.connect_stdio(command, command_args)
+                await client.connect_stdio(command, command_args, command_envs)
                 mcp_clients.append(client)
                 logger.info(f'Connected to MCP server via stdio with command {command}')
             except Exception as e:
@@ -229,7 +233,7 @@ async def fetch_mcp_tools_from_config(mcp_config: MCPConfig) -> list[dict]:
     Retrieves the list of MCP tools from the MCP clients.
     """
     mcp_clients = await create_mcp_clients(
-        mcp_config.sse.mcp_servers, mcp_config.stdio.commands, mcp_config.stdio.args
+        mcp_config.sse.mcp_servers, mcp_config.stdio.commands, mcp_config.stdio.args, mcp_config.stdio.envs
     )
     mcp_tools = convert_mcp_clients_to_tools(mcp_clients)
     for mcp_client in mcp_clients:

@@ -74,7 +74,7 @@ from openhands.utils.async_utils import call_sync_from_async, wait_all
 class ActionRequest(BaseModel):
     action: dict
     sse_mcp_config: Optional[list[str]] = None
-    stdio_mcp_config: Optional[tuple[list[str], list[list[str]]]] = None
+    stdio_mcp_config: Optional[tuple[list[str], list[list[str]], list[list[tuple[str, str]]]]] = None
 
 
 ROOT_GID = 0
@@ -190,7 +190,7 @@ class ActionExecutor:
         )
         self.memory_monitor.start_monitoring()
         self.sse_mcp_servers: list[str] = []
-        self.stdio_mcp_config: tuple[list[str], list[list[str]]] = ([], [])
+        self.stdio_mcp_config: tuple[list[str], list[list[str]], list[list[tuple[str, str]]]] = ([], [], [])
 
     @property
     def initial_cwd(self):
@@ -524,16 +524,19 @@ class ActionExecutor:
     async def call_tool_mcp(self, action: McpAction) -> Observation:
         commands: list[str] = []
         args: list[list[str]] = []
+        envs: list[list[tuple[str, str]]] = []
         if self.stdio_mcp_config:
             commands = self.stdio_mcp_config[0]
             if len(self.stdio_mcp_config) > 1:
                 args = self.stdio_mcp_config[1]
+            if len(self.stdio_mcp_config) > 2:
+                envs = self.stdio_mcp_config[2]
         if not self.sse_mcp_servers and not commands:
             raise ValueError('No MCP servers or stdio MCP config found')
 
         logger.warning(f'SSE MCP servers: {self.sse_mcp_servers}')
         mcp_clients = await create_mcp_clients(
-            self.sse_mcp_servers, commands, args
+            self.sse_mcp_servers, commands, args, envs
         )
         logger.warn(f'MCP action received: {action}')
         # Find the MCP agent that has the matching tool name

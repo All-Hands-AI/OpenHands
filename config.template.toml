@@ -398,5 +398,15 @@ type = "noop"
 [mcp-stdio]
 # List of MCP server URLs, separated by quotes
 # Example: commands = [""]
-#commands = []
-#args = []
+#commands = ["node"]
+#args = [
+#  [
+#    "path/to/mcp-server/dist/index.js",
+#  ],
+#]
+# envs = [
+#   [
+#     ["FOO", "BAR"], 
+#     ["FOO2", "BAR2"]
+#   ]
+# ]
