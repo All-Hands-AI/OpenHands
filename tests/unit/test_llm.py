@@ -404,13 +404,6 @@ def test_completion_retry_with_llm_no_response_error_zero_temp(
         if temperature == 0:
             raise LLMNoResponseError('LLM did not return a response')
 
-        # Second call with temperature=0.2 should return a successful response
-        elif temperature == 0.2:
-            return {
-                'choices': [{'message': {'content': 'Successful response after retry'}}]
-            }
-
-        # Any other temperature value should return a different response
         else:
             return {
                 'choices': [
@@ -430,8 +423,7 @@ def test_completion_retry_with_llm_no_response_error_zero_temp(
 
     # Verify the response after retry
     assert (
-        response['choices'][0]['message']['content']
-        == 'Successful response after retry'
+        response['choices'][0]['message']['content'] == 'Response with temperature=1.0'
     )
 
     # Verify that litellm_completion was called twice
@@ -441,9 +433,9 @@ def test_completion_retry_with_llm_no_response_error_zero_temp(
     first_call_kwargs = mock_litellm_completion.call_args_list[0][1]
     assert first_call_kwargs.get('temperature') == 0
 
-    # Check the temperature in the second call (should be 0.2)
+    # Check the temperature in the second call (should be 1.0)
     second_call_kwargs = mock_litellm_completion.call_args_list[1][1]
-    assert second_call_kwargs.get('temperature') == 0.2
+    assert second_call_kwargs.get('temperature') == 1.0
 
 
 @patch('openhands.llm.llm.litellm_completion')
@@ -595,7 +587,7 @@ def test_completion_retry_with_llm_no_response_error_successful_retry(
     # Verify the response after retry
     assert (
         response['choices'][0]['message']['content']
-        == 'Successful response with temperature=0.2'
+        == 'Successful response with temperature=1.0'
     )
 
     # Verify that litellm_completion was called twice
@@ -605,9 +597,9 @@ def test_completion_retry_with_llm_no_response_error_successful_retry(
     first_call_kwargs = mock_litellm_completion.call_args_list[0][1]
     assert first_call_kwargs.get('temperature') == 0
 
-    # Check the temperature in the second call (should be 0.2)
+    # Check the temperature in the second call (should be 1.0)
     second_call_kwargs = mock_litellm_completion.call_args_list[1][1]
-    assert second_call_kwargs.get('temperature') == 0.2
+    assert second_call_kwargs.get('temperature') == 1.0
 
 
 @patch('openhands.llm.llm.litellm_completion')
