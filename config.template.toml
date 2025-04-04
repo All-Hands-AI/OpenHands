@@ -201,6 +201,7 @@ model = "gpt-4o"
 #native_tool_calling = None
 
 
+
 [llm.gpt4o-mini]
 api_key = ""
 model = "gpt-4o"
@@ -378,3 +379,8 @@ type = "noop"
 #model = "gpt-4o"
 #temperature = 0.1
 #max_tokens = 1024
+
+#################################### Eval ####################################
+# Configuration for the evaluation, please refer to the specific evaluation
+# plugin for the available options
+##############################################################################
