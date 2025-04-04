@@ -83,6 +83,10 @@ class State:
     max_iterations: int = 100
     confirmation_mode: bool = False
     history: list[Event] = field(default_factory=list)
+    # List of histories from delegated agents
+    # Each time an agent is delegated to, a new list is added to delegated_histories
+    # and all events from that agent's history are added to the last list in delegated_histories
+    delegated_histories: list[list[Event]] = field(default_factory=list)
     inputs: dict = field(default_factory=dict)
     outputs: dict = field(default_factory=dict)
     agent_state: AgentState = AgentState.LOADING
@@ -97,6 +101,8 @@ class State:
     # start_id and end_id track the range of events in history
     start_id: int = -1
     end_id: int = -1
+    # Flag to track if git patch has been collected
+    git_patch_collected: str = ''
 
     delegates: dict[tuple[int, int], tuple[str, str]] = field(default_factory=dict)
     # NOTE: This will never be used by the controller, but it can be used by different
@@ -170,6 +176,10 @@ class State:
         state = self.__dict__.copy()
         state['history'] = []
 
+        # We also don't pickle delegated_histories, as they can be large
+        # and will be rebuilt as needed
+        state['delegated_histories'] = []
+
         # Remove any view caching attributes. They'll be rebuilt frmo the
         # history after that gets reloaded.
         state.pop('_history_checksum', None)
@@ -183,6 +193,10 @@ class State:
         # make sure we always have the attribute history
         if not hasattr(self, 'history'):
             self.history = []
+
+        # make sure we always have the attribute delegated_histories
+        if not hasattr(self, 'delegated_histories'):
+            self.delegated_histories = []
 
     def get_current_user_intent(self) -> tuple[str | None, list[str] | None]:
         """Returns the latest user message and image(if provided) that appears after a FinishAction, or the first (the task) if nothing was finished yet."""
