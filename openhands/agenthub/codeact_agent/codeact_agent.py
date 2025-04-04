@@ -10,6 +10,7 @@ from openhands.core.message import Message, TextContent
 from openhands.events.action import (
     Action,
     AgentFinishAction,
+    MessageAction,
 )
 from openhands.events.event import Event
 from openhands.llm.llm import LLM
@@ -113,6 +114,19 @@ class CodeActAgent(Agent):
 
         # if we're done, go back
         latest_user_message = state.get_last_user_message()
+
+        # Check if we have a user message, if not, check if we have an issue in state.inputs
+        # This is needed when the agent is delegated from SupervisorAgent
+        if not latest_user_message and 'issue' in state.inputs:
+            # Create a MessageAction with the issue information
+            issue = state.inputs.get('issue')
+            if issue is not None and isinstance(issue, str):
+                message_action = MessageAction(content=issue)
+                # Add the message action to pending_actions so it will be processed first
+                self.pending_actions.append(message_action)
+                # Return the message action
+                return self.pending_actions.popleft()
+
         if latest_user_message and latest_user_message.content.strip() == '/exit':
             return AgentFinishAction()
 
