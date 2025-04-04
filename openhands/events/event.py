@@ -115,7 +115,7 @@ class Event:
     def llm_metrics(self, value: Metrics) -> None:
         self._llm_metrics = value
 
-    # optional field
+    # optional field, metadata about the tool call, if the event has a tool call
     @property
     def tool_call_metadata(self) -> ToolCallMetadata | None:
         if hasattr(self, '_tool_call_metadata'):
@@ -126,3 +126,14 @@ class Event:
     @tool_call_metadata.setter
     def tool_call_metadata(self, value: ToolCallMetadata) -> None:
         self._tool_call_metadata = value
+
+    # optional field, the id of the response from the LLM
+    @property
+    def response_id(self) -> str | None:
+        if hasattr(self, '_response_id'):
+            return self._response_id  # type: ignore[attr-defined]
+        return None
+
+    @response_id.setter
+    def response_id(self, value: str) -> None:
+        self._response_id = value

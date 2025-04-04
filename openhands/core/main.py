@@ -148,7 +148,7 @@ async def run_controller(
     )
 
     # start event is a MessageAction with the task, either resumed or new
-    if initial_state is not None:
+    if initial_state is not None and initial_state.last_error:
         # we're resuming the previous session
         event_stream.add_event(
             MessageAction(
@@ -211,7 +211,7 @@ async def run_controller(
             file_path = config.save_trajectory_path
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         histories = controller.get_trajectory(config.save_screenshots_in_trajectory)
-        with open(file_path, 'w') as f:
+        with open(file_path, 'w') as f:  # noqa: ASYNC101
             json.dump(histories, f, indent=4)
 
     return state

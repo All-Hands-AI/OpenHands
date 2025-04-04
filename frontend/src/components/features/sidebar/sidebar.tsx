@@ -3,7 +3,8 @@ import { FaListUl } from "react-icons/fa";
 import { useDispatch } from "react-redux";
 import posthog from "posthog-js";
 import { NavLink, useLocation } from "react-router";
-import { useGitHubUser } from "#/hooks/query/use-github-user";
+import { useTranslation } from "react-i18next";
+import { useGitUser } from "#/hooks/query/use-git-user";
 import { UserActions } from "./user-actions";
 import { AllHandsLogoButton } from "#/components/shared/buttons/all-hands-logo-button";
 import { DocsButton } from "#/components/shared/buttons/docs-button";
@@ -21,13 +22,14 @@ import { useLogout } from "#/hooks/mutation/use-logout";
 import { useConfig } from "#/hooks/query/use-config";
 import { cn } from "#/utils/utils";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
-import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
+import { I18nKey } from "#/i18n/declaration";
 
 export function Sidebar() {
+  const { t } = useTranslation();
   const location = useLocation();
   const dispatch = useDispatch();
   const endSession = useEndSession();
-  const user = useGitHubUser();
+  const user = useGitUser();
   const { data: config } = useConfig();
   const {
     data: settings,
@@ -36,7 +38,6 @@ export function Sidebar() {
     isFetching: isFetchingSettings,
   } = useSettings();
   const { mutateAsync: logout } = useLogout();
-  const { mutate: saveUserSettings } = useSaveSettings();
 
   const [settingsModalIsOpen, setSettingsModalIsOpen] = React.useState(false);
 
@@ -78,8 +79,7 @@ export function Sidebar() {
   };
 
   const handleLogout = async () => {
-    if (config?.APP_MODE === "saas") await logout();
-    else saveUserSettings({ unset_github_token: true });
+    await logout();
     posthog.reset();
   };
 
@@ -94,8 +94,8 @@ export function Sidebar() {
             <ExitProjectButton onClick={handleEndSession} />
             <TooltipButton
               testId="toggle-conversation-panel"
-              tooltip="Conversations"
-              ariaLabel="Conversations"
+              tooltip={t(I18nKey.SIDEBAR$CONVERSATIONS)}
+              ariaLabel={t(I18nKey.SIDEBAR$CONVERSATIONS)}
               onClick={() => setConversationPanelIsOpen((prev) => !prev)}
             >
               <FaListUl

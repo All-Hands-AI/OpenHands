@@ -5,7 +5,7 @@ import warnings
 from functools import partial
 from typing import Any, Callable
 
-import requests
+import httpx
 
 from openhands.core.config import LLMConfig
 
@@ -210,7 +210,11 @@ class LLM(RetryMixin, DebugMixin):
             # if the agent or caller has defined tools, and we mock via prompting, convert the messages
             if mock_function_calling and 'tools' in kwargs:
                 messages = convert_fncall_messages_to_non_fncall_messages(
-                    messages, kwargs['tools']
+                    messages,
+                    kwargs['tools'],
+                    add_in_context_learning_example=bool(
+                        'openhands-lm' not in self.config.model
+                    ),
                 )
                 kwargs['messages'] = messages
 
@@ -219,8 +223,14 @@ class LLM(RetryMixin, DebugMixin):
                     kwargs['stop'] = STOP_WORDS
 
                 mock_fncall_tools = kwargs.pop('tools')
-                # tool_choice should not be specified when mocking function calling
-                kwargs.pop('tool_choice', None)
+                if 'openhands-lm' in self.config.model:
+                    # If we don't have this, we might run into issue when serving openhands-lm
+                    # using SGLang
+                    # BadRequestError: litellm.BadRequestError: OpenAIException - Error code: 400 - {'object': 'error', 'message': '400', 'type': 'Failed to parse fc related info to json format!', 'param': None, 'code': 400}
+                    kwargs['tool_choice'] = 'none'
+                else:
+                    # tool_choice should not be specified when mocking function calling
+                    kwargs.pop('tool_choice', None)
 
             # if we have no messages, something went very wrong
             if not messages:
@@ -347,7 +357,7 @@ class LLM(RetryMixin, DebugMixin):
         if self.config.model.startswith('litellm_proxy/'):
             # IF we are using LiteLLM proxy, get model info from LiteLLM proxy
             # GET {base_url}/v1/model/info with litellm_model_id as path param
-            response = requests.get(
+            response = httpx.get(
                 f'{self.config.base_url}/v1/model/info',
                 headers={
                     'Authorization': f'Bearer {self.config.api_key.get_secret_value() if self.config.api_key else None}'
@@ -541,14 +551,16 @@ class LLM(RetryMixin, DebugMixin):
                 'prompt_tokens_details'
             )
             cache_hit_tokens = (
-                prompt_tokens_details.cached_tokens if prompt_tokens_details else 0
+                prompt_tokens_details.cached_tokens
+                if prompt_tokens_details and prompt_tokens_details.cached_tokens
+                else 0
             )
             if cache_hit_tokens:
                 stats += 'Input tokens (cache hit): ' + str(cache_hit_tokens) + '\n'
 
             # For Anthropic, the cache writes have a different cost than regular input tokens
             # but litellm doesn't separate them in the usage stats
-            # so we can read it from the provider-specific extra field
+            # we can read it from the provider-specific extra field
             model_extra = usage.get('model_extra', {})
             cache_write_tokens = model_extra.get('cache_creation_input_tokens', 0)
             if cache_write_tokens:

@@ -2,7 +2,8 @@ import { useDispatch, useSelector } from "react-redux";
 import React from "react";
 import posthog from "posthog-js";
 import { useParams } from "react-router";
-// import { useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
+import { I18nKey } from "#/i18n/declaration";
 import hotToast from "react-hot-toast";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
 import { TrajectoryActions } from "../trajectory/trajectory-actions";
@@ -37,6 +38,7 @@ function getEntryPoint(
 export function ChatInterface() {
   const { send, isLoadingMessages } = useWsClient();
   const dispatch = useDispatch();
+  const { t } = useTranslation();
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const { scrollDomToBottom, onChatBodyScroll, hitBottom } =
     useScrollToBottom(scrollRef);
@@ -101,19 +103,19 @@ export function ChatInterface() {
 
   const onClickExportTrajectoryButton = () => {
     if (!params.conversationId) {
-      displayErrorToast("ConversationId unknown, cannot download trajectory");
+      displayErrorToast(t(I18nKey.CONVERSATION$DOWNLOAD_ERROR));
       return;
     }
 
     getTrajectory(params.conversationId, {
       onSuccess: async (data) => {
         await downloadTrajectory(
-          params.conversationId ?? "unknown",
+          params.conversationId ?? t(I18nKey.CONVERSATION$UNKNOWN),
           data.trajectory,
         );
       },
-      onError: (error) => {
-        displayErrorToast(error.message);
+      onError: () => {
+        displayErrorToast(t(I18nKey.CONVERSATION$DOWNLOAD_ERROR));
       },
     });
   };
