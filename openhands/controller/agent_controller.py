@@ -248,7 +248,14 @@ class AgentController:
                 self.state.last_error = err_id
             elif isinstance(e, InternalServerError):
                 err_id = 'STATUS$ERROR_LLM_INTERNAL_SERVER_ERROR'
+                message_id = 'STATUS$ERROR_LLM_INTERNAL_SERVER_ERROR_MESSAGE'
                 self.state.last_error = err_id
+                # Call status_callback with the more descriptive message
+                self.status_callback('error', err_id, message_id)
+                # Set the agent state to ERROR before returning
+                await self.set_agent_state_to(AgentState.ERROR)
+                # Return early since we've already called the status_callback
+                return
             elif isinstance(e, BadRequestError) and 'ExceededBudget' in str(e):
                 err_id = 'STATUS$ERROR_LLM_OUT_OF_CREDITS'
                 self.state.last_error = err_id

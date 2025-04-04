@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { screen } from "@testing-library/react";
+import { screen, fireEvent } from "@testing-library/react";
 import { renderWithProviders } from "test-utils";
 import { createRoutesStub } from "react-router";
 import { ExpandableMessage } from "#/components/features/chat/expandable-message";
@@ -15,14 +15,19 @@ vi.mock("react-i18next", async () => {
         if (key === "STATUS$ERROR_LLM_INTERNAL_SERVER_ERROR") {
           return "The request failed with an internal server error.";
         }
+        if (key === "STATUS$ERROR_LLM_INTERNAL_SERVER_ERROR_MESSAGE") {
+          return "Something went wrong with the AI provider. This could be due to server overload or temporary issues. Please try again later.";
+        }
         return key;
       },
       i18n: {
         changeLanguage: () => new Promise(() => {}),
         language: "en",
         exists: (key: string) => {
-          // Return true for our test translation key
-          return key === "STATUS$ERROR_LLM_INTERNAL_SERVER_ERROR" || true;
+          // Return true for our test translation keys
+          return key === "STATUS$ERROR_LLM_INTERNAL_SERVER_ERROR" || 
+                 key === "STATUS$ERROR_LLM_INTERNAL_SERVER_ERROR_MESSAGE" || 
+                 true;
         },
       },
     }),
@@ -150,5 +155,21 @@ describe("ExpandableMessage", () => {
     // we need to update the test to expect a button to be present
     const button = screen.getByRole("button");
     expect(button).toBeInTheDocument();
+  });
+  
+  it("should properly handle the more descriptive error message", () => {
+    renderWithProviders(
+      <ExpandableMessage
+        id="STATUS$ERROR_LLM_INTERNAL_SERVER_ERROR"
+        message="STATUS$ERROR_LLM_INTERNAL_SERVER_ERROR_MESSAGE"
+        type="error"
+      />,
+    );
+
+    // Should show the translated headline from the id
+    expect(screen.getByText("The request failed with an internal server error.")).toBeInTheDocument();
+
+    // The raw key should not be visible
+    expect(screen.queryByText("STATUS$ERROR_LLM_INTERNAL_SERVER_ERROR_MESSAGE")).not.toBeInTheDocument();
   });
 });
