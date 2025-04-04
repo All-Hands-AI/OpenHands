@@ -7,7 +7,10 @@ import { SettingsInput } from "#/components/features/settings/settings-input";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import ApiKeysClient, { ApiKey, CreateApiKeyResponse } from "#/api/api-keys";
-import { displayErrorToast, displaySuccessToast } from "#/utils/custom-toast-handlers";
+import {
+  displayErrorToast,
+  displaySuccessToast,
+} from "#/utils/custom-toast-handlers";
 import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
 
 export function ApiKeysManager() {
@@ -20,7 +23,8 @@ export function ApiKeysManager() {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [keyToDelete, setKeyToDelete] = useState<ApiKey | null>(null);
-  const [newlyCreatedKey, setNewlyCreatedKey] = useState<CreateApiKeyResponse | null>(null);
+  const [newlyCreatedKey, setNewlyCreatedKey] =
+    useState<CreateApiKeyResponse | null>(null);
   const [showNewKeyModal, setShowNewKeyModal] = useState(false);
 
   const fetchApiKeys = async () => {
@@ -29,7 +33,10 @@ export function ApiKeysManager() {
       const keys = await ApiKeysClient.getApiKeys();
       setApiKeys(keys);
     } catch (error) {
-      displayErrorToast(retrieveAxiosErrorMessage(error as AxiosError) || t(I18nKey.ERROR$GENERIC));
+      displayErrorToast(
+        retrieveAxiosErrorMessage(error as AxiosError) ||
+          t(I18nKey.ERROR$GENERIC),
+      );
     } finally {
       setIsLoading(false);
     }
@@ -54,7 +61,10 @@ export function ApiKeysManager() {
       await fetchApiKeys();
       displaySuccessToast(t(I18nKey.SETTINGS$API_KEY_CREATED));
     } catch (error) {
-      displayErrorToast(retrieveAxiosErrorMessage(error as AxiosError) || t(I18nKey.ERROR$GENERIC));
+      displayErrorToast(
+        retrieveAxiosErrorMessage(error as AxiosError) ||
+          t(I18nKey.ERROR$GENERIC),
+      );
     } finally {
       setIsCreating(false);
       setNewKeyName("");
@@ -72,7 +82,10 @@ export function ApiKeysManager() {
       setKeyToDelete(null);
       displaySuccessToast(t(I18nKey.SETTINGS$API_KEY_DELETED));
     } catch (error) {
-      displayErrorToast(retrieveAxiosErrorMessage(error as AxiosError) || t(I18nKey.ERROR$GENERIC));
+      displayErrorToast(
+        retrieveAxiosErrorMessage(error as AxiosError) ||
+          t(I18nKey.ERROR$GENERIC),
+      );
     } finally {
       setIsDeleting(false);
     }
@@ -103,15 +116,17 @@ export function ApiKeysManager() {
           {t(I18nKey.SETTINGS$API_KEYS_DESCRIPTION)}
         </p>
 
-        {isLoading ? (
+        {isLoading && (
           <div className="flex justify-center p-4">
             <LoadingSpinner size="large" />
           </div>
-        ) : apiKeys.length === 0 ? (
+        )}
+        {!isLoading && apiKeys.length === 0 && (
           <div className="text-center p-4 border border-tertiary rounded-md">
             {t(I18nKey.SETTINGS$NO_API_KEYS)}
           </div>
-        ) : (
+        )}
+        {!isLoading && apiKeys.length > 0 && (
           <div className="border border-tertiary rounded-md overflow-hidden">
             <table className="w-full">
               <thead className="bg-base-tertiary">
@@ -138,8 +153,12 @@ export function ApiKeysManager() {
                   <tr key={key.id} className="border-t border-tertiary">
                     <td className="p-3 text-sm">{key.name}</td>
                     <td className="p-3 text-sm font-mono">{key.prefix}...</td>
-                    <td className="p-3 text-sm">{formatDate(key.created_at)}</td>
-                    <td className="p-3 text-sm">{formatDate(key.last_used_at)}</td>
+                    <td className="p-3 text-sm">
+                      {formatDate(key.created_at)}
+                    </td>
+                    <td className="p-3 text-sm">
+                      {formatDate(key.last_used_at)}
+                    </td>
                     <td className="p-3 text-right">
                       <BrandButton
                         type="button"
@@ -178,7 +197,7 @@ export function ApiKeysManager() {
               label={t(I18nKey.SETTINGS$NAME)}
               placeholder={t(I18nKey.SETTINGS$API_KEY_NAME_PLACEHOLDER)}
               value={newKeyName}
-              onChange={(e) => setNewKeyName(e.target.value)}
+              onChange={(value) => setNewKeyName(value)}
               className="w-full"
               type="text"
             />

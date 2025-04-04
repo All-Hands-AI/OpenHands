@@ -13,7 +13,7 @@ interface SettingsInputProps {
   isDisabled?: boolean;
   startContent?: React.ReactNode;
   className?: string;
-  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onChange?: (value: string) => void;
 }
 
 export function SettingsInput({
@@ -39,7 +39,7 @@ export function SettingsInput({
       </div>
       <input
         data-testid={testId}
-        onChange={onChange}
+        onChange={(e) => onChange && onChange(e.target.value)}
         name={name}
         disabled={isDisabled}
         type={type}

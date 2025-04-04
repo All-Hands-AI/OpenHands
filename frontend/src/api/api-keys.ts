@@ -30,9 +30,12 @@ class ApiKeysClient {
    * @param name - A descriptive name for the API key
    */
   static async createApiKey(name: string): Promise<CreateApiKeyResponse> {
-    const { data } = await openHands.post<CreateApiKeyResponse>("/api/api-keys", {
-      name,
-    });
+    const { data } = await openHands.post<CreateApiKeyResponse>(
+      "/api/api-keys",
+      {
+        name,
+      },
+    );
     return data;
   }
 
