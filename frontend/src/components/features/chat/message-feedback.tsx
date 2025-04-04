@@ -1,12 +1,12 @@
 import React from "react";
 import { useDispatch } from "react-redux";
+import { useTranslation } from "react-i18next";
 import { useWsClient } from "#/context/ws-client-provider";
 import ThumbsUpIcon from "#/icons/thumbs-up.svg?react";
 import ThumbDownIcon from "#/icons/thumbs-down.svg?react";
 import { TrajectoryActionButton } from "#/components/shared/buttons/trajectory-action-button";
 import { createUserFeedback } from "#/services/chat-service";
 import { setMessageFeedback } from "#/state/chat-slice";
-import { useTranslation } from "react-i18next";
 
 interface MessageFeedbackProps {
   messageId: number;
@@ -21,10 +21,10 @@ export function MessageFeedback({ messageId, feedback }: MessageFeedbackProps) {
   const handleFeedback = (feedbackType: "positive" | "negative") => {
     // Don't send if already selected
     if (feedback === feedbackType) return;
-    
+
     // Update local state
     dispatch(setMessageFeedback({ messageId, feedbackType }));
-    
+
     // Send to backend
     send(createUserFeedback(feedbackType, "message", messageId));
   };
@@ -35,14 +35,14 @@ export function MessageFeedback({ messageId, feedback }: MessageFeedbackProps) {
         testId={`positive-${messageId}`}
         onClick={() => handleFeedback("positive")}
         icon={<ThumbsUpIcon width={15} height={15} />}
-        tooltip={t("BUTTON$MARK_HELPFUL")}
+        tooltip={t(I18nKey.BUTTON$MARK_HELPFUL)}
         className={feedback === "positive" ? "bg-neutral-700" : ""}
       />
       <TrajectoryActionButton
         testId={`negative-${messageId}`}
         onClick={() => handleFeedback("negative")}
         icon={<ThumbDownIcon width={15} height={15} />}
-        tooltip={t("BUTTON$MARK_NOT_HELPFUL")}
+        tooltip={t(I18nKey.BUTTON$MARK_NOT_HELPFUL)}
         className={feedback === "negative" ? "bg-neutral-700" : ""}
       />
     </div>

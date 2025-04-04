@@ -5984,6 +5984,66 @@
         "tr": "Geri bildiriminizi değerlendiriyoruz. Lütfen düşüncelerinizi bizimle paylaşın.",
         "de": "Wir schätzen Ihr Feedback. Bitte teilen Sie uns Ihre Gedanken mit."
     },
+    "FEEDBACK$ENHANCED_DESCRIPTION": {
+        "en": "Please select the categories that apply and provide any additional feedback."
+    },
+    "FEEDBACK$CATEGORIES_LABEL": {
+        "en": "Select applicable categories:"
+    },
+    "FEEDBACK$ADDITIONAL_FEEDBACK_LABEL": {
+        "en": "Additional feedback (optional):"
+    },
+    "FEEDBACK$ADDITIONAL_FEEDBACK_PLACEHOLDER": {
+        "en": "Please provide any additional details about your experience..."
+    },
+    "FEEDBACK$SUBMIT_LABEL": {
+        "en": "Submit Feedback"
+    },
+    "FEEDBACK$POSITIVE_SENT": {
+        "en": "Positive feedback sent"
+    },
+    "FEEDBACK$NEGATIVE_SENT": {
+        "en": "Negative feedback sent"
+    },
+    "FEEDBACK$POSITIVE_TITLE": {
+        "en": "Positive Feedback"
+    },
+    "FEEDBACK$NEGATIVE_TITLE": {
+        "en": "Negative Feedback"
+    },
+    "FEEDBACK$CATEGORY_SOLVED_COMPLETELY": {
+        "en": "Solved my problem completely"
+    },
+    "FEEDBACK$CATEGORY_GOOD_CODE": {
+        "en": "Good code quality"
+    },
+    "FEEDBACK$CATEGORY_CLEAR_EXPLANATIONS": {
+        "en": "Clear explanations"
+    },
+    "FEEDBACK$CATEGORY_EFFICIENT_SOLUTION": {
+        "en": "Efficient solution"
+    },
+    "FEEDBACK$CATEGORY_GOOD_CONTEXT": {
+        "en": "Good understanding of context"
+    },
+    "FEEDBACK$CATEGORY_STUCK_LOOP": {
+        "en": "Agent stuck in loop"
+    },
+    "FEEDBACK$CATEGORY_POOR_CONTEXT": {
+        "en": "Didn't understand context well"
+    },
+    "FEEDBACK$CATEGORY_WRONG_EDITS": {
+        "en": "Made wrong edits"
+    },
+    "FEEDBACK$CATEGORY_INCOMPLETE": {
+        "en": "Incomplete solution"
+    },
+    "FEEDBACK$CATEGORY_POOR_CODE": {
+        "en": "Poor code quality"
+    },
+    "FEEDBACK$CATEGORY_SLOW": {
+        "en": "Slow performance"
+    },
     "EXIT_PROJECT$WARNING": {
         "en": "Are you sure you want to exit this project? Any unsaved changes will be lost.",
         "ja": "このプロジェクトを終了してもよろしいですか？保存されていない変更は失われます。",

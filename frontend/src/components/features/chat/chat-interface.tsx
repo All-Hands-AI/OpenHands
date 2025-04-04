@@ -3,8 +3,8 @@ import React from "react";
 import posthog from "posthog-js";
 import { useParams } from "react-router";
 import { useTranslation } from "react-i18next";
-import { I18nKey } from "#/i18n/declaration";
 import hotToast from "react-hot-toast";
+import { I18nKey } from "#/i18n/declaration";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
 import { TrajectoryActions } from "../trajectory/trajectory-actions";
 import { createChatMessage, createUserFeedback } from "#/services/chat-service";
@@ -19,6 +19,7 @@ import { useWsClient } from "#/context/ws-client-provider";
 import { Messages } from "./messages";
 import { ChatSuggestions } from "./chat-suggestions";
 import { ActionSuggestions } from "./action-suggestions";
+import { EnhancedFeedbackModal } from "../feedback/enhanced-feedback-modal";
 
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
@@ -46,6 +47,10 @@ export function ChatInterface() {
   const { messages } = useSelector((state: RootState) => state.chat);
   const { curAgentState } = useSelector((state: RootState) => state.agent);
 
+  const [feedbackModalIsOpen, setFeedbackModalIsOpen] = React.useState(false);
+  const [feedbackPolarity, setFeedbackPolarity] = React.useState<
+    "positive" | "negative"
+  >("positive");
   const [messageToSend, setMessageToSend] = React.useState<string | null>(null);
   const { selectedRepository, replayJson } = useSelector(
     (state: RootState) => state.initialQuery,
@@ -84,21 +89,47 @@ export function ChatInterface() {
     send(generateAgentStateChangeEvent(AgentState.STOPPED));
   };
 
-  // We'll use the translation function in the future
-  // const { t } = useTranslation();
-
   const onClickShareFeedbackActionButton = (
     polarity: "positive" | "negative",
   ) => {
-    // Just send the feedback action
-    send(createUserFeedback(polarity, "trajectory"));
+    // Open the feedback modal with the selected polarity
+    setFeedbackPolarity(polarity);
+    setFeedbackModalIsOpen(true);
+
+    // Track the feedback button click
+    posthog.capture("feedback_button_clicked", {
+      polarity,
+    });
+  };
+
+  const handleFeedbackSubmit = (
+    categories: string[],
+    additionalFeedback: string,
+  ) => {
+    // Send the feedback action with categories and additional feedback
+    send(
+      createUserFeedback(
+        feedbackPolarity,
+        "trajectory",
+        undefined,
+        categories,
+        additionalFeedback,
+      ),
+    );
 
     // Show a toast notification to confirm feedback was sent
     hotToast.success(
-      polarity === "positive"
-        ? "Positive feedback sent"
-        : "Negative feedback sent",
+      feedbackPolarity === "positive"
+        ? t(I18nKey.FEEDBACK$POSITIVE_SENT)
+        : t(I18nKey.FEEDBACK$NEGATIVE_SENT),
     );
+
+    // Track the feedback submission
+    posthog.capture("feedback_submitted", {
+      polarity: feedbackPolarity,
+      categories,
+      has_additional_feedback: additionalFeedback.length > 0,
+    });
   };
 
   const onClickExportTrajectoryButton = () => {
@@ -189,7 +220,12 @@ export function ChatInterface() {
         />
       </div>
 
-      {/* Feedback modal removed */}
+      <EnhancedFeedbackModal
+        isOpen={feedbackModalIsOpen}
+        onClose={() => setFeedbackModalIsOpen(false)}
+        polarity={feedbackPolarity}
+        onSubmit={handleFeedbackSubmit}
+      />
     </div>
   );
 }
