@@ -43,10 +43,11 @@ class RetryMixin:
                     # Only change temperature if it's zero or not set
                     current_temp = retry_state.kwargs.get('temperature', 0)
                     if current_temp == 0:
+                        retry_state.kwargs['temperature'] = 1.0
                         logger.warning(
-                            'LLMNoResponseError detected with temperature=0, setting temperature to 0.2 for next attempt'
+                            'LLMNoResponseError detected with temperature=0, setting temperature to 1.0 for next attempt. kwargs: '
+                            + str(retry_state.kwargs)
                         )
-                        retry_state.kwargs['temperature'] = 0.2
                     else:
                         logger.warning(
                             f'LLMNoResponseError detected with temperature={current_temp}, keeping original temperature'
