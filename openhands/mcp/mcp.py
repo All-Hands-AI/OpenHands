@@ -74,15 +74,46 @@ class MCPClient(BaseModel):
     class Config:
         arbitrary_types_allowed = True
 
-    async def connect_sse(self, server_url: str) -> None:
-        """Connect to an MCP server using SSE transport."""
+    async def connect_sse(self, server_url: str, timeout: float = 30.0) -> None:
+        """Connect to an MCP server using SSE transport.
+        
+        Args:
+            server_url: The URL of the SSE server to connect to.
+            timeout: Connection timeout in seconds. Default is 30 seconds.
+        """
         if not server_url:
             raise ValueError('Server URL is required.')
         if self.session:
             await self.disconnect()
 
+        try:
+            import asyncio
+            from asyncio import TimeoutError
+            
+            # Create a task for the connection
+            connection_task = asyncio.create_task(self._connect_sse_internal(server_url))
+            
+            # Wait for the connection with timeout
+            try:
+                await asyncio.wait_for(connection_task, timeout=timeout)
+            except TimeoutError:
+                logger.error(f'Connection to {server_url} timed out after {timeout} seconds')
+                # Cancel the connection task
+                connection_task.cancel()
+                try:
+                    await connection_task
+                except asyncio.CancelledError:
+                    pass
+                raise TimeoutError(f'Connection to {server_url} timed out after {timeout} seconds')
+        except Exception as e:
+            if not isinstance(e, TimeoutError):
+                logger.error(f'Error connecting to {server_url}: {str(e)}')
+            raise
+
+    async def _connect_sse_internal(self, server_url: str) -> None:
+        """Internal method to establish SSE connection."""
         streams_context = sse_client(
-            url=server_url, timeout=60, sse_read_timeout=60 * 10
+            url=server_url, 
         )
         streams = await self.exit_stack.enter_async_context(streams_context)
         self.session = await self.exit_stack.enter_async_context(
@@ -91,13 +122,46 @@ class MCPClient(BaseModel):
 
         await self._initialize_and_list_tools()
 
-    async def connect_stdio(self, command: str, args: List[str], envs: List[tuple[str, str]]) -> None:
-        """Connect to an MCP server using stdio transport."""
+    async def connect_stdio(self, command: str, args: List[str], envs: List[tuple[str, str]], timeout: float = 30.0) -> None:
+        """Connect to an MCP server using stdio transport.
+        
+        Args:
+            command: The command to execute.
+            args: The arguments to pass to the command.
+            envs: Environment variables as a list of tuples [name, value].
+            timeout: Connection timeout in seconds. Default is 30 seconds.
+        """
         if not command:
             raise ValueError('Server command is required.')
         if self.session:
             await self.disconnect()
 
+        try:
+            import asyncio
+            from asyncio import TimeoutError
+            
+            # Create a task for the connection
+            connection_task = asyncio.create_task(self._connect_stdio_internal(command, args, envs))
+            
+            # Wait for the connection with timeout
+            try:
+                await asyncio.wait_for(connection_task, timeout=timeout)
+            except TimeoutError:
+                logger.error(f'Connection to {command} timed out after {timeout} seconds')
+                # Cancel the connection task
+                connection_task.cancel()
+                try:
+                    await connection_task
+                except asyncio.CancelledError:
+                    pass
+                raise TimeoutError(f'Connection to {command} timed out after {timeout} seconds')
+        except Exception as e:
+            if not isinstance(e, TimeoutError):
+                logger.error(f'Error connecting to {command}: {str(e)}')
+            raise
+
+    async def _connect_stdio_internal(self, command: str, args: List[str], envs: List[tuple[str, str]]) -> None:
+        """Internal method to establish stdio connection."""
         envs_dict: dict[str, str] = {}
         for env in envs:
             envs_dict[env[0]] = env[1]
@@ -208,11 +272,16 @@ async def create_mcp_clients(
                 logger.info(f'Connected to MCP server {server_url} via SSE')
             except Exception as e:
                 logger.error(f'Failed to connect to {server_url}: {str(e)}')
-                raise
+                # Don't raise the exception, just log it and continue
+                # Make sure to disconnect the client to clean up resources
+                try:
+                    await client.disconnect()
+                except Exception as disconnect_error:
+                    logger.error(f'Error during disconnect after failed connection: {str(disconnect_error)}')
 
     # Initialize stdio connections
     if commands:
-        for command, command_args, command_envs in zip(commands, args, envs):
+        for i, (command, command_args, command_envs) in enumerate(zip(commands, args, envs)):
             logger.info(
                 f'Initializing MCP agent for {command} with stdio connection...'
             )
@@ -224,18 +293,44 @@ async def create_mcp_clients(
                 logger.info(f'Connected to MCP server via stdio with command {command}')
             except Exception as e:
                 logger.error(f'Failed to connect with command {command}: {str(e)}')
-                raise
+                # Don't raise the exception, just log it and continue
+                # Make sure to disconnect the client to clean up resources
+                try:
+                    await client.disconnect()
+                except Exception as disconnect_error:
+                    logger.error(f'Error during disconnect after failed connection: {str(disconnect_error)}')
 
     return mcp_clients
 
 async def fetch_mcp_tools_from_config(mcp_config: MCPConfig) -> list[dict]:
     """
     Retrieves the list of MCP tools from the MCP clients.
+    
+    Returns:
+        A list of tool dictionaries. Returns an empty list if no connections could be established.
     """
-    mcp_clients = await create_mcp_clients(
-        mcp_config.sse.mcp_servers, mcp_config.stdio.commands, mcp_config.stdio.args, mcp_config.stdio.envs
-    )
-    mcp_tools = convert_mcp_clients_to_tools(mcp_clients)
-    for mcp_client in mcp_clients:
-        await mcp_client.disconnect()
+    mcp_clients = []
+    mcp_tools = []
+    
+    try:
+        mcp_clients = await create_mcp_clients(
+            mcp_config.sse.mcp_servers, mcp_config.stdio.commands, mcp_config.stdio.args, mcp_config.stdio.envs
+        )
+        
+        if not mcp_clients:
+            logger.warning("No MCP clients were successfully connected")
+            return []
+            
+        mcp_tools = convert_mcp_clients_to_tools(mcp_clients)
+    except Exception as e:
+        logger.error(f"Error fetching MCP tools: {str(e)}")
+        return []
+    finally:
+        # Always disconnect clients to clean up resources
+        for mcp_client in mcp_clients:
+            try:
+                await mcp_client.disconnect()
+            except Exception as disconnect_error:
+                logger.error(f"Error disconnecting MCP client: {str(disconnect_error)}")
+    
     return mcp_tools
