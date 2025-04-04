@@ -31,12 +31,15 @@ export function ApiKeysManager() {
     try {
       setIsLoading(true);
       const keys = await ApiKeysClient.getApiKeys();
-      setApiKeys(keys);
+      // Ensure keys is always an array
+      setApiKeys(Array.isArray(keys) ? keys : []);
     } catch (error) {
       displayErrorToast(
         retrieveAxiosErrorMessage(error as AxiosError) ||
           t(I18nKey.ERROR$GENERIC),
       );
+      // Set empty array on error
+      setApiKeys([]);
     } finally {
       setIsLoading(false);
     }
@@ -121,12 +124,12 @@ export function ApiKeysManager() {
             <LoadingSpinner size="large" />
           </div>
         )}
-        {!isLoading && apiKeys.length === 0 && (
+        {!isLoading && Array.isArray(apiKeys) && apiKeys.length === 0 && (
           <div className="text-center p-4 border border-tertiary rounded-md">
             {t(I18nKey.SETTINGS$NO_API_KEYS)}
           </div>
         )}
-        {!isLoading && apiKeys.length > 0 && (
+        {!isLoading && Array.isArray(apiKeys) && apiKeys.length > 0 && (
           <div className="border border-tertiary rounded-md overflow-hidden">
             <table className="w-full">
               <thead className="bg-base-tertiary">

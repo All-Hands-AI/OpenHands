@@ -21,8 +21,9 @@ class ApiKeysClient {
    * Get all API keys for the current user
    */
   static async getApiKeys(): Promise<ApiKey[]> {
-    const { data } = await openHands.get<ApiKey[]>("/api/api-keys");
-    return data;
+    const { data } = await openHands.get<unknown>("/api/api-keys");
+    // Ensure we always return an array, even if the API returns something else
+    return Array.isArray(data) ? (data as ApiKey[]) : [];
   }
 
   /**
