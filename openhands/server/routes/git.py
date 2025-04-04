@@ -17,6 +17,7 @@ from openhands.integrations.service_types import (
     User,
 )
 from openhands.server.auth import get_access_token, get_provider_tokens
+from openhands.server.shared import server_config
 
 app = APIRouter(prefix='/api/user')
 
@@ -24,7 +25,6 @@ app = APIRouter(prefix='/api/user')
 @app.get('/repositories', response_model=list[Repository])
 async def get_user_repositories(
     sort: str = 'pushed',
-    installation_id: int | None = None,
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     access_token: SecretStr | None = Depends(get_access_token),
 ):
@@ -35,7 +35,7 @@ async def get_user_repositories(
 
         try:
             repos: list[Repository] = await client.get_repositories(
-                sort, installation_id
+                sort, server_config.app_mode
             )
             return repos
 

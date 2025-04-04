@@ -224,7 +224,7 @@ class OpenHands {
   }
 
   static async createConversation(
-    selectedRepository?: string,
+    selectedRepository?: GitRepository,
     initialUserMsg?: string,
     imageUrls?: string[],
     replayJson?: string,
@@ -321,11 +321,6 @@ class OpenHands {
     };
 
     return user;
-  }
-
-  static async getGitHubUserInstallationIds(): Promise<number[]> {
-    const response = await openHands.get<number[]>("/api/user/installations");
-    return response.data;
   }
 
   static async searchGitRepositories(
