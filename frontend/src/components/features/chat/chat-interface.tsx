@@ -19,7 +19,7 @@ import { useWsClient } from "#/context/ws-client-provider";
 import { Messages } from "./messages";
 import { ChatSuggestions } from "./chat-suggestions";
 import { ActionSuggestions } from "./action-suggestions";
-import { EnhancedFeedbackModal } from "../feedback/enhanced-feedback-modal";
+import { FeedbackModal } from "../feedback/feedback-modal";
 
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
@@ -220,7 +220,7 @@ export function ChatInterface() {
         />
       </div>
 
-      <EnhancedFeedbackModal
+      <FeedbackModal
         isOpen={feedbackModalIsOpen}
         onClose={() => setFeedbackModalIsOpen(false)}
         polarity={feedbackPolarity}
