@@ -23,6 +23,7 @@ from litellm.exceptions import (
 from litellm.types.utils import CostPerToken, ModelResponse, Usage
 from litellm.utils import create_pretrained_tokenizer
 
+from openhands.core.exceptions import LLMNoResponseError
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message
 from openhands.llm.debug_mixin import DebugMixin
@@ -41,6 +42,7 @@ LLM_RETRY_EXCEPTIONS: tuple[type[Exception], ...] = (
     RateLimitError,
     litellm.Timeout,
     litellm.InternalServerError,
+    LLMNoResponseError,
 )
 
 # cache prompt supporting models
@@ -272,15 +274,10 @@ class LLM(RetryMixin, DebugMixin):
 
             # if we mocked function calling, and we have tools, convert the response back to function calling format
             if mock_function_calling and mock_fncall_tools is not None:
-                logger.debug(f'Response choices: {len(resp.choices)}')
                 if len(resp.choices) < 1:
-                    # Just try again
-                    raise litellm.InternalServerError(
-                        'Response choices is less than 1 - This is only seen in Gemini Pro 2.5 so far. Response: '
-                        + str(resp),
-                        self.config.custom_llm_provider,
-                        self.config.model,
-                        response=resp,
+                    raise LLMNoResponseError(
+                        'Response choices is less than 1 - This is only seen in Gemini models so far. Response: '
+                        + str(resp)
                     )
 
                 non_fncall_response_message = resp.choices[0].message
@@ -296,15 +293,13 @@ class LLM(RetryMixin, DebugMixin):
                     )
                 resp.choices[0].message = fn_call_response_message
 
-            if len(resp.choices) < 1:
-                # Just try again
-                raise litellm.InternalServerError(
-                    'Response choices is less than 1 - This is only seen in Gemini Pro 2.5 so far. Response: '
-                    + str(resp),
-                    self.config.custom_llm_provider,
-                    self.config.model,
-                    response=resp,
+            # Check if resp has 'choices' key with at least one item
+            if not resp.get('choices') or len(resp['choices']) < 1:
+                raise LLMNoResponseError(
+                    'Response choices is less than 1 - This is only seen in Gemini models so far. Response: '
+                    + str(resp)
                 )
+
             message_back: str = resp['choices'][0]['message']['content'] or ''
             tool_calls: list[ChatCompletionMessageToolCall] = resp['choices'][0][
                 'message'
@@ -574,14 +569,16 @@ class LLM(RetryMixin, DebugMixin):
                 'prompt_tokens_details'
             )
             cache_hit_tokens = (
-                prompt_tokens_details.cached_tokens if prompt_tokens_details else 0
+                prompt_tokens_details.cached_tokens
+                if prompt_tokens_details and prompt_tokens_details.cached_tokens
+                else 0
             )
             if cache_hit_tokens:
                 stats += 'Input tokens (cache hit): ' + str(cache_hit_tokens) + '\n'
 
             # For Anthropic, the cache writes have a different cost than regular input tokens
             # but litellm doesn't separate them in the usage stats
-            # so we can read it from the provider-specific extra field
+            # we can read it from the provider-specific extra field
             model_extra = usage.get('model_extra', {})
             cache_write_tokens = model_extra.get('cache_creation_input_tokens', 0)
             if cache_write_tokens:

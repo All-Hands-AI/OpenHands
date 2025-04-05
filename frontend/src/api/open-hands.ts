@@ -14,6 +14,7 @@ import {
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
 import { ApiSettings, PostApiSettings } from "#/types/settings";
+import { GitUser, GitRepository } from "#/types/git";
 
 class OpenHands {
   /**
@@ -223,7 +224,7 @@ class OpenHands {
   }
 
   static async createConversation(
-    selectedRepository?: string,
+    selectedRepository?: GitRepository,
     initialUserMsg?: string,
     imageUrls?: string[],
     replayJson?: string,
@@ -305,12 +306,12 @@ class OpenHands {
     return data.credits;
   }
 
-  static async getGitHubUser(): Promise<GitHubUser> {
-    const response = await openHands.get<GitHubUser>("/api/github/user");
+  static async getGitUser(): Promise<GitUser> {
+    const response = await openHands.get<GitUser>("/api/user/info");
 
     const { data } = response;
 
-    const user: GitHubUser = {
+    const user: GitUser = {
       id: data.id,
       login: data.login,
       avatar_url: data.avatar_url,
@@ -322,17 +323,12 @@ class OpenHands {
     return user;
   }
 
-  static async getGitHubUserInstallationIds(): Promise<number[]> {
-    const response = await openHands.get<number[]>("/api/github/installations");
-    return response.data;
-  }
-
-  static async searchGitHubRepositories(
+  static async searchGitRepositories(
     query: string,
     per_page = 5,
-  ): Promise<GitHubRepository[]> {
-    const response = await openHands.get<GitHubRepository[]>(
-      "/api/github/search/repositories",
+  ): Promise<GitRepository[]> {
+    const response = await openHands.get<GitRepository[]>(
+      "/api/user/search/repositories",
       {
         params: {
           query,
