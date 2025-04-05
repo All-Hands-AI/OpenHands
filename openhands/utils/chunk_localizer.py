@@ -25,7 +25,7 @@ class Chunk(BaseModel):
         return ret
 
 
-def _create_chunks_from_raw_string(content: str, size: int):
+def _create_chunks_from_raw_string(content: str, size: int) -> list[Chunk]:
     lines = content.split('\n')
     ret = []
     for i in range(0, len(lines), size):
@@ -66,7 +66,7 @@ def normalized_lcs(chunk: str, query: str) -> float:
     if len(chunk) == 0:
         return 0.0
     _score = pylcs.lcs_sequence_length(chunk, query)
-    return _score / len(chunk)
+    return float(_score / len(chunk))
 
 
 def get_top_k_chunk_matches(
@@ -93,7 +93,7 @@ def get_top_k_chunk_matches(
     ]
     sorted_chunks = sorted(
         chunks_with_lcs,
-        key=lambda x: x.normalized_lcs,  # type: ignore
+        key=lambda x: x.normalized_lcs if x.normalized_lcs is not None else 0.0,
         reverse=True,
     )
     return sorted_chunks[:k]

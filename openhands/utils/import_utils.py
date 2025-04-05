@@ -1,11 +1,11 @@
 import importlib
 from functools import lru_cache
-from typing import Type, TypeVar
+from typing import Any, Type, TypeVar, cast
 
 T = TypeVar('T')
 
 
-def import_from(qual_name: str):
+def import_from(qual_name: str) -> Any:
     """Import the value from the qualified name given"""
     parts = qual_name.split('.')
     module_name = '.'.join(parts[:-1])
@@ -21,4 +21,4 @@ def get_impl(cls: Type[T], impl_name: str | None) -> Type[T]:
         return cls
     impl_class = import_from(impl_name)
     assert cls == impl_class or issubclass(impl_class, cls)
-    return impl_class
+    return cast(Type[T], impl_class)

@@ -15,15 +15,15 @@ Hopefully, this will be fixed soon and we can remove this abomination.
 """
 
 import contextlib
-from typing import Callable
+from typing import Any, Callable, Iterator, Optional, TypeVar, cast
 
 import httpx
 
 
 @contextlib.contextmanager
-def ensure_httpx_close():
+def ensure_httpx_close() -> Iterator[None]:
     wrapped_class = httpx.Client
-    proxys = []
+    proxys: list["ClientProxy"] = []
 
     class ClientProxy:
         """
@@ -35,44 +35,50 @@ def ensure_httpx_close():
         client_constructor: Callable
         args: tuple
         kwargs: dict
-        client: httpx.Client
+        client: Optional[httpx.Client]
 
-        def __init__(self, *args, **kwargs):
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
             self.args = args
             self.kwargs = kwargs
             self.client = wrapped_class(*self.args, **self.kwargs)
             proxys.append(self)
 
-        def __getattr__(self, name):
+        def __getattr__(self, name: str) -> Any:
             # Invoke a method on the proxied client - create one if required
             if self.client is None:
                 self.client = wrapped_class(*self.args, **self.kwargs)
             return getattr(self.client, name)
 
-        def close(self):
+        def close(self) -> None:
             # Close the client if it is open
             if self.client:
                 self.client.close()
                 self.client = None
 
-        def __iter__(self, *args, **kwargs):
+        def __iter__(self, *args: Any, **kwargs: Any) -> Any:
             # We have to override this as debuggers invoke it causing the client to reopen
             if self.client:
-                return self.client.iter(*args, **kwargs)
+                # Use getattr instead of direct attribute access to avoid mypy error
+                iter_method = getattr(self.client, "iter", None)
+                if iter_method:
+                    return iter_method(*args, **kwargs)
             return object.__getattribute__(self, 'iter')(*args, **kwargs)
 
         @property
-        def is_closed(self):
+        def is_closed(self) -> bool:
             # Check if closed
             if self.client is None:
                 return True
             return self.client.is_closed
 
-    httpx.Client = ClientProxy
+    # Use a variable to hold the original class to avoid mypy error
+    original_client = httpx.Client
+    httpx.Client = cast(type[httpx.Client], ClientProxy)  # type: ignore
     try:
         yield
     finally:
-        httpx.Client = wrapped_class
+        # Restore the original class
+        httpx.Client = original_client  # type: ignore
         while proxys:
             proxy = proxys.pop()
             proxy.close()
