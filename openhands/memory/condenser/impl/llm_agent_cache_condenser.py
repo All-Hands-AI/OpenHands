@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, List, Tuple, Union
+from typing import Any, List, Tuple, Union
 
 from openhands.controller.state.state import State
+from openhands.core.config.condenser_config import LLMAgentCacheCondenserConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message, TextContent
 from openhands.core.schema.action import ActionType
@@ -12,26 +13,18 @@ from openhands.events.event import Event, EventSource
 from openhands.memory.condenser.condenser import Condensation, View
 from openhands.memory.condenser.impl.caching_condenser import CachingCondenser
 
-if TYPE_CHECKING:
-    from typing import Optional
-
-    from openhands.controller.agent import Agent
-
 
 class LLMAgentCacheCondenser(CachingCondenser):
     def __init__(
         self,
-        agent: Optional['Agent'] = None,
         max_size: int = 100,
         trigger_word: str = 'CONDENSE!',
     ):
         """Initialize the condenser.
         Args:
-            agent: Optional agent instance for agent-aware condensation
             max_size: Maximum number of events before condensation is triggered
             trigger_word: Word that triggers condensation when found in user messages
         """
-        self.agent = agent
         self.max_size = max_size
         self.trigger_word = trigger_word
         super().__init__()
@@ -283,6 +276,12 @@ Respond ONLY with KEEP and REWRITE commands, nothing else.
             )
         )
 
+    @classmethod
+    def from_config(
+        cls, config: LLMAgentCacheCondenserConfig
+    ) -> LLMAgentCacheCondenser:
+        return LLMAgentCacheCondenser(**config.model_dump(exclude=['type']))
+
 
 @dataclass
 class RewriteCommand:
@@ -291,3 +290,6 @@ class RewriteCommand:
     start: int
     end: int
     content: str
+
+
+LLMAgentCacheCondenser.register_config(LLMAgentCacheCondenserConfig)

@@ -125,7 +125,7 @@ class CodeActAgent(Agent, LLMCompletionProvider):
         # event we'll just return that instead of an action. The controller will
         # immediately ask the agent to step again with the new view.
         condensed_history: list[Event] = []
-        match self.condenser.condensed_history(state):
+        match self.condenser.condensed_history(state, self):
             case View(events=events):
                 condensed_history = events
 

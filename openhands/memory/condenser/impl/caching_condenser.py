@@ -77,12 +77,19 @@ class CachingCondenser(Condenser, ABC):
             A Condensation or View object
         """
         # Convert events to messages using the agent's method
-        params = agent.build_llm_completion_params(events, state)
-        base_messages = params['messages']
+        base_messages = agent._get_messages(events)
 
         # Add condensation instructions
         base_messages.append(
             self.createCondensationPrompt(events, state, base_messages)
+        )
+
+        # Use the agent's method to build the parameters
+        # This ensures that the parameters are consistent with the agent's LLM
+        params = agent.build_llm_completion_params(events, state)
+        # Now we add our own prompt at the end
+        params['messages'] += agent.llm.format_messages_for_llm(
+            [self.createCondensationPrompt(events, state, base_messages)]
         )
 
         # Get the LLM response
