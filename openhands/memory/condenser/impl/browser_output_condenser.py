@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from openhands.controller.state.state import State
 from openhands.core.config.condenser_config import BrowserOutputCondenserConfig
 from openhands.events.event import Event
 from openhands.events.observation import BrowserOutputObservation
@@ -17,7 +18,7 @@ class BrowserOutputCondenser(Condenser):
         self.attention_window = attention_window
         super().__init__()
 
-    def condense(self, view: View) -> View | Condensation:
+    def condense(self, view: View, state: State, agent=None) -> View | Condensation:
         """Replace the content of browser observations outside of the attention window with a placeholder."""
         results: list[Event] = []
         cnt: int = 0

@@ -1,10 +1,12 @@
-from unittest.mock import MagicMock
+from typing import cast
+from unittest.mock import MagicMock, Mock
 
-from openhands.agenthub.llm_cache_code_agent.llm_cache_code_agent import (
-    LLMCacheCodeAgent,
-)
+import pytest
+
+from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
 from openhands.controller.state.state import State
 from openhands.core.config.agent_config import AgentConfig
+from openhands.core.config.llm_config import LLMConfig
 from openhands.events.action.agent import ChangeAgentStateAction
 from openhands.events.action.message import MessageAction
 from openhands.events.event import Event, RecallType
@@ -17,36 +19,49 @@ from openhands.memory.condenser.impl.llm_agent_cache_condenser import (
 )
 
 
+@pytest.fixture
+def agent() -> CodeActAgent:
+    config = AgentConfig()
+    agent = CodeActAgent(llm=LLM(LLMConfig()), config=config)
+    agent.llm = Mock(LLM)
+    agent.llm.config = Mock()
+    agent.llm.config.max_message_chars = 1000
+    agent.llm.is_caching_prompt_active.return_value = True
+    agent.llm.format_messages_for_llm = lambda messages: messages
+    return agent
+
+
+def set_next_llm_response(agent, response: str):
+    """Set the next LLM response for the given agent."""
+    mock_response = MagicMock()
+    mock_response.choices = [MagicMock()]
+    mock_response.choices[0].message.content = response
+    agent.llm.completion.return_value = mock_response
+
+
 def test_contains_trigger_word():
     """Test that the containsTriggerWord method correctly identifies the CONDENSE! keyword."""
-    # Mock the LLM
-    mock_llm = MagicMock(spec=LLM)
-    mock_llm.is_caching_prompt_active.return_value = True
-
-    # Mock the agent
-    mock_agent = MagicMock()
-    mock_agent.llm = mock_llm
 
     # Create the condenser
-    condenser = LLMAgentCacheCondenser(agent=mock_agent, max_size=10)
+    condenser = LLMAgentCacheCondenser(max_size=10)
 
     # Test case 1: Empty events list
-    assert not condenser.containsTriggerWord([])
+    assert not condenser._contains_trigger_word([])
 
     # Test case 2: Single event (not enough events)
     event = MessageAction('Please CONDENSE! the conversation history.')
-    assert not condenser.containsTriggerWord([event])
+    assert not condenser._contains_trigger_word([event])
 
     # Test case 3: User message with CONDENSE! keyword
     user_event = MessageAction('Please CONDENSE! the conversation history.')
-    user_event._source = 'user'
+    user_event._source = 'user'  # type: ignore [attr-defined]
     agent_event = MessageAction('Agent response')
-    agent_event._source = 'agent'
-    assert condenser.containsTriggerWord([user_event, agent_event])
+    agent_event._source = 'agent'  # type: ignore [attr-defined]
+    assert condenser._contains_trigger_word([user_event, agent_event])
 
     # Test case 4: User message without CONDENSE! keyword
     user_event.content = 'Please summarize the conversation history.'
-    assert not condenser.containsTriggerWord([user_event, agent_event])
+    assert not condenser._contains_trigger_word([user_event, agent_event])
 
     # Test case 5: RecallObservation followed by user message with CONDENSE! keyword
     user_event.content = 'Please CONDENSE! the conversation history.'
@@ -54,90 +69,59 @@ def test_contains_trigger_word():
         recall_type=RecallType.KNOWLEDGE, content='saw a thing'
     )
     events = [agent_event, user_event, recall_event]
-    assert condenser.containsTriggerWord(events)
+    assert condenser._contains_trigger_word(events)
 
     # Test case 6: Multiple user messages, only the most recent one matters
     user_event1 = MessageAction('First message without keyword')
-    user_event1._source = 'user'
+    user_event1._source = 'user'  # type: ignore [attr-defined]
     user_event2 = MessageAction('Please CONDENSE! the conversation history.')
-    user_event2._source = 'user'
+    user_event2._source = 'user'  # type: ignore [attr-defined]
     events = [user_event1, agent_event, user_event2]
-    assert condenser.containsTriggerWord(events)
+    assert condenser._contains_trigger_word(events)
 
     # Test case 7: Multiple user messages, most recent one doesn't have keyword
     events = [user_event2, agent_event, user_event1]
-    assert not condenser.containsTriggerWord(events)
+    assert not condenser._contains_trigger_word(events)
 
 
-def test_llm_agent_cache_condenser_with_state_no_need():
+def test_llm_agent_cache_condenser_with_state_no_need(agent: CodeActAgent):
     """Test that the LLMAgentCacheCondenser returns a View when no condensation is needed."""
-    # Mock the LLM
-    mock_llm = MagicMock(spec=LLM)
-    mock_llm.is_caching_prompt_active.return_value = True
 
-    # Mock the agent
-    mock_agent = MagicMock()
-    mock_agent.llm = mock_llm
+    condenser = LLMAgentCacheCondenser(max_size=10)
 
-    # Create the condenser with max_size=10
-    condenser = LLMAgentCacheCondenser(agent=mock_agent, max_size=10)
+    # Create real events
+    events = [MessageAction(f'Message {i}') for i in range(5)]
+    for i, event in enumerate(events):
+        event._id = i  # type: ignore [attr-defined]
 
-    # Create mock events (less than max_size)
-    mock_events = [MagicMock(spec=Event) for _ in range(5)]
-    for i, event in enumerate(mock_events):
-        event.id = i
+    state = State(history=cast(list[Event], events))
 
-    # Create a mock state with the events
-    mock_state = MagicMock(spec=State)
-    mock_state.history = mock_events
-
-    # Condense the events
-    result = condenser.condenseWithState(mock_state)
+    result = condenser.condensed_history(state, agent)
 
     # Verify that a View is returned
     assert isinstance(result, View)
     assert len(result.events) == 5
 
 
-def test_llm_agent_cache_condenser_with_state_keep():
+def test_llm_agent_cache_condenser_with_state_keep(agent: CodeActAgent):
     """Test that the condenser uses the LLM to condense events when dependencies are available."""
-    # Create a real LLM instance with caching enabled
-    mock_llm = MagicMock(spec=LLM)
-    mock_llm.is_caching_prompt_active.return_value = True
-    mock_llm_config = MagicMock()
-    mock_llm_config.max_message_chars = 1000
-    mock_llm.config = mock_llm_config
-    mock_llm.vision_is_active.return_value = False
 
-    # Add metrics attribute to the LLM
-    mock_metrics = MagicMock()
-    mock_metrics.get.return_value = {'tokens': 100}
-    mock_llm.metrics = mock_metrics
+    set_next_llm_response(agent, 'KEEP: 0\nKEEP: 1\nKEEP: 3\nKEEP: 5')
 
-    # Mock the LLM response
-    mock_response = MagicMock()
-    mock_response.choices = [MagicMock()]
-    mock_response.choices[0].message.content = 'KEEP: 0\nKEEP: 1\nKEEP: 3\nKEEP: 5'
-    mock_llm.completion.return_value = mock_response
-
-    agentConfig = AgentConfig()
-    agent = LLMCacheCodeAgent(mock_llm, agentConfig)
-
-    condenser = agent.condenser
+    condenser = LLMAgentCacheCondenser()
     condenser.max_size = 5
+    agent.condenser = condenser
 
     events = [FileReadObservation(f'{i}.txt', 'content.' * i) for i in range(6)]
     for i, event in enumerate(events):
         # Assigning IDs starting from 1, so that they match the index of the messages
         # that the LLM is told to use.
-        event._id = i + 1
-
-    # Create a mock state with the events
-    mock_state = MagicMock(spec=State)
-    mock_state.history = events
+        event._id = i + 1  # type: ignore [attr-defined]
 
     # Condense the events
-    result = condenser.condenseWithState(mock_state)
+    result = condenser.condensed_history(
+        State(history=cast(list[Event], events)), agent
+    )
 
     # Verify that a Condensation is returned
     assert isinstance(result, Condensation)
@@ -145,53 +129,30 @@ def test_llm_agent_cache_condenser_with_state_keep():
     assert result.action.forgotten_event_ids == [2, 4, 6]
 
 
-def test_llm_agent_cache_condenser_with_state_with_rewrite():
+def test_llm_agent_cache_condenser_with_state_with_rewrite(agent: CodeActAgent):
     """Test that the condenser correctly handles REWRITE commands."""
-    # Mock the LLM
-    mock_llm = MagicMock(spec=LLM)
-    mock_llm.is_caching_prompt_active.return_value = True
-    mock_llm_config = MagicMock()
-    mock_llm_config.max_message_chars = 1000
-    mock_llm.config = mock_llm_config
-    mock_llm.vision_is_active.return_value = False
+    set_next_llm_response(
+        agent,
+        """
+        KEEP: 0
+        KEEP: 1
+        REWRITE 2 TO 4 WITH:
+        User asked about database schema and agent explained the tables and relationships.
+        END-REWRITE
+        KEEP: 5
+        """,
+    )
 
-    # Add metrics attribute to the mock LLM
-    mock_metrics = MagicMock()
-    mock_metrics.get.return_value = {'tokens': 100}
-    mock_metrics.add = MagicMock()
-    mock_llm.metrics = mock_metrics
-
-    # Mock the LLM response with a REWRITE command
-    mock_response = MagicMock()
-    mock_response.choices = [MagicMock()]
-    mock_response.choices[0].message = MagicMock()
-    mock_response.choices[0].message.content = """
-KEEP: 0
-KEEP: 1
-REWRITE 2 TO 4 WITH:
-User asked about database schema and agent explained the tables and relationships.
-END-REWRITE
-KEEP: 5
-"""
-    mock_response.model_dump = MagicMock(return_value={})
-    mock_llm.completion.return_value = mock_response
-    mock_llm.format_messages_for_llm = lambda x: x
-
-    agentConfig = AgentConfig()
-    agent = LLMCacheCodeAgent(mock_llm, agentConfig)
-
-    condenser = agent.condenser
-    condenser.max_size = 5
+    condenser = LLMAgentCacheCondenser(max_size=5)
+    agent.condenser = condenser
 
     events = [FileReadObservation(f'{i}.txt', 'content.' * i) for i in range(6)]
     for i, event in enumerate(events):
-        event._id = i
+        event._id = i  # type: ignore [attr-defined]
 
-    # Create a mock state with the events
-    mock_state = MagicMock(spec=State)
-    mock_state.history = events
+    state = State(history=cast(list[Event], events))
 
-    result = condenser.condenseWithState(mock_state)
+    result = condenser.condensed_history(state, agent)
 
     # Verify that a Condensation is returned with a summary
     assert isinstance(result, Condensation)
@@ -200,208 +161,112 @@ KEEP: 5
     assert 'User asked about database schema' in result.action.summary
 
 
-def test_llm_agent_cache_condenser_should_condense():
+def test_llm_agent_cache_condenser_should_condense(agent: CodeActAgent):
     """Test that the LLMAgentCacheCondenser correctly determines when to condense based on size."""
-    # Mock the LLM
-    mock_llm = MagicMock(spec=LLM)
-    mock_llm.is_caching_prompt_active.return_value = True
-
-    # Mock the agent
-    mock_agent = MagicMock()
-    mock_agent.llm = mock_llm
-
-    # Create the condenser with max_size=5
-    condenser = LLMAgentCacheCondenser(agent=mock_agent, max_size=5)
+    condenser = LLMAgentCacheCondenser(max_size=10)
 
     # Create mock events
-    mock_events_small = [MagicMock(spec=Event) for _ in range(5)]
-    mock_events_large = [MagicMock(spec=Event) for _ in range(6)]
+    events_small = [MessageAction(f'Message {i}') for i in range(5)]
+    events_large = [MessageAction(f'Message {i}') for i in range(11)]
 
     # Test should_condense with small number of events
-    assert not condenser.should_condense(mock_events_small)
+    assert not condenser.should_condense(View(events=events_small))
 
     # Test should_condense with large number of events
-    assert condenser.should_condense(mock_events_large)
+    assert condenser.should_condense(View(events=events_large))
 
 
-def test_llm_agent_cache_condenser_simulated_mixed_condensation():
+def test_llm_agent_cache_condenser_simulated_mixed_condensation(agent: CodeActAgent):
     """Test simulated condensation with a mix of messages and observations."""
-    # Create a mock LLM with caching enabled
-    mock_llm = MagicMock(spec=LLM)
-    mock_llm.is_caching_prompt_active.return_value = True
-    mock_llm.config = MagicMock(max_message_chars=1000)
-    mock_llm.vision_is_active.return_value = False
-    mock_llm.metrics = MagicMock()
-    mock_llm.metrics.get.return_value = {'tokens': 100}
+    set_next_llm_response(
+        agent,
+        """
+        KEEP: 0
+        KEEP: 1
+        KEEP: 2
+        REWRITE 4 TO 5 WITH:
+        Summary <mention content of message 4,5>
+        END-REWRITE
+        KEEP: 6
+        """,
+    )
 
-    # Create an agent instance with the mock LLM
-    agent_config = AgentConfig()
-    agent = LLMCacheCodeAgent(mock_llm, agent_config)
+    condenser = LLMAgentCacheCondenser(max_size=5)
+    agent.condenser = condenser
 
-    # Configure the condenser
-    condenser = agent.condenser
-    condenser.max_size = 5
-
-    # Create a mix of events: alternating between MessageAction and FileReadObservation
     events = []
     for i in range(1, 8):
         if i % 2 == 0:
             event = MessageAction(f'Test message {i}')
         else:
             event = FileReadObservation(f'File content for event {i}', f'{i}.txt')
-        event._id = i  # Use _id instead of id
+        event._id = i  # type: ignore [attr-defined]
         events.append(event)
 
-    mock_state = MagicMock(spec=State)
-    mock_state.history = events
+    state = State(history=cast(list[Event], events))
 
-    # Simulate the LLM response for condensation
-    mock_response = MagicMock()
-    mock_response.choices = [MagicMock()]
-    mock_response.choices[0].message.content = (
-        'KEEP: 0\n'
-        'KEEP: 1\n'
-        'KEEP: 2\n'
-        'REWRITE 4 TO 5 WITH:\n'
-        'Summary <mention content of message 4,5>\n'
-        'END-REWRITE\n'
-        'KEEP: 6'
-    )
-    mock_llm.completion.return_value = mock_response
+    result = condenser.condensed_history(state, agent)
 
-    result = condenser.condenseWithState(mock_state)
+    # Verify that a Condensation is returned
     assert isinstance(result, Condensation)
-
     assert result.action.forgotten_event_ids == [3, 4, 5, 7]
     assert 'Summary <mention content of message 4,5>' in result.action.summary
 
 
-def test_llm_agent_cache_condenser_with_agent_state_change_action():
+def test_llm_agent_cache_condenser_with_agent_state_change_action(agent: CodeActAgent):
     """Test that AgentStateChangesAction is not removed during condensation."""
-    # Mock the LLM
-    mock_llm = MagicMock(spec=LLM)
-    mock_llm.is_caching_prompt_active.return_value = True
-    mock_llm.config = MagicMock(max_message_chars=1000)
-    mock_llm.vision_is_active.return_value = False
-    mock_llm.metrics = MagicMock()
-    mock_llm.metrics.get.return_value = {'tokens': 100}
+    set_next_llm_response(agent, 'KEEP: 0\nKEEP: 1')
 
-    # Create an agent instance with the mock LLM
-    agent_config = AgentConfig()
-    agent = LLMCacheCodeAgent(mock_llm, agent_config)
-
-    condenser = agent.condenser
+    condenser = LLMAgentCacheCondenser()
+    agent.condenser = condenser
 
     first_message_event = MessageAction('first message')
-    first_message_event._source = 'user'
-    first_message_event._id = 1
-    # this event is not sent to the llm at all. So it should be kept
-    # and not forgotten
+    first_message_event._source = 'user'  # type: ignore [attr-defined]
+    first_message_event._id = 1  # type: ignore [attr-defined]
     agent_state_change_event = ChangeAgentStateAction(agent_state='active')
-    agent_state_change_event._id = 2
+    agent_state_change_event._id = 2  # type: ignore [attr-defined]
     message_action_condense = MessageAction('CONDENSE!')
-    message_action_condense._source = 'user'
-    message_action_condense._id = 3
+    message_action_condense._source = 'user'  # type: ignore [attr-defined]
+    message_action_condense._id = 3  # type: ignore [attr-defined]
 
     state = State(
         history=[first_message_event, agent_state_change_event, message_action_condense]
     )
 
-    # Simulate the LLM response for condensation
-    mock_response = MagicMock()
-    mock_response.choices = [MagicMock()]
-    mock_response.choices[0].message.content = 'KEEP: 0\nKEEP: 1'
-    mock_llm.completion.return_value = mock_response
+    result = condenser.condensed_history(state, agent)
 
-    condensation = condenser.condenseWithState(state)
-
-    assert isinstance(condensation, Condensation)
-    assert condensation.action.forgotten_event_ids == [message_action_condense.id]
+    # Verify that a Condensation is returned
+    assert isinstance(result, Condensation)
+    assert result.action.forgotten_event_ids == [message_action_condense.id]
 
     # Apply the condensation
-    condensation.action._id = 4
-    state.history.append(condensation.action)
-    view = condenser.condenseWithState(state)
+    result.action._id = 4  # type: ignore [attr-defined]
+    state.history.append(result.action)
+    view = condenser.condensed_history(state, agent)
     assert isinstance(view, View)
     assert view.events == [
         first_message_event,
         agent_state_change_event,
-        condensation.action,
-    ]
-
-    # Continue after condensation
-    msg_afer_condensation = MessageAction('First message after second condensation')
-    msg_afer_condensation._id = 5
-    state.history.append(msg_afer_condensation)
-    view = condenser.condenseWithState(state)
-    assert isinstance(view, View)
-    assert view.events == [
-        first_message_event,
-        agent_state_change_event,
-        condensation.action,
-        msg_afer_condensation,
-    ]
-
-    # Do a second condensation
-    message_action_condense2 = MessageAction(
-        'Remember this important info. Then CONDENSE!'
-    )
-    message_action_condense2._source = 'user'
-    message_action_condense2._id = 6
-    state.history.append(message_action_condense2)
-
-    # Simulate the LLM response for condensation
-    mock_response = MagicMock()
-    mock_response.choices = [MagicMock()]
-    mock_response.choices[0].message.content = 'KEEP: 0\nKEEP: 3'
-    mock_llm.completion.return_value = mock_response
-
-    condensation2 = condenser.condenseWithState(state)
-
-    # Verify that a Condensation is returned and both events are kept
-    assert isinstance(condensation2, Condensation)
-    assert condensation2.action.forgotten_event_ids == [
-        first_message_event.id,
-        msg_afer_condensation.id,
-    ]
-
-    # Apply the condensation
-    condensation2.action._id = 7
-    state.history.append(condensation2.action)
-    view = condenser.condenseWithState(state)
-    assert isinstance(view, View)
-    assert view.events == [
-        agent_state_change_event,
-        condensation.action,
-        message_action_condense2,
-        condensation2.action,
+        result.action,
     ]
 
 
-def test_llm_agent_cache_condenser_always_keep_system_prompt():
+def test_llm_agent_cache_condenser_always_keep_system_prompt(agent: CodeActAgent):
     """Test that the system prompt is not removed if the agent does not send KEEP 0."""
+    set_next_llm_response(agent, 'KEEP: 1\nKEEP: 2')
 
-    mock_llm = MagicMock(spec=LLM)
-    mock_llm.is_caching_prompt_active.return_value = True
-    mock_llm.config = MagicMock(max_message_chars=1000)
-    mock_llm.vision_is_active.return_value = False
-    mock_llm.metrics = MagicMock()
-    mock_llm.metrics.get.return_value = {'tokens': 100}
-
-    agent_config = AgentConfig()
-    agent = LLMCacheCodeAgent(mock_llm, agent_config)
-
-    condenser = agent.condenser
+    condenser = LLMAgentCacheCondenser()
+    agent.condenser = condenser
 
     first_message = MessageAction('Hello, how are you?')
-    first_message._source = 'user'
-    first_message._id = 1
+    first_message._source = 'user'  # type: ignore [attr-defined]
+    first_message._id = 1  # type: ignore [attr-defined]
     assistant_message_event = MessageAction('Great!')
-    assistant_message_event._source = 'agent'
-    assistant_message_event._id = 2
+    assistant_message_event._source = 'agent'  # type: ignore [attr-defined]
+    assistant_message_event._id = 2  # type: ignore [attr-defined]
     user_condensation_message_event = MessageAction('NOW CONDENSE!')
-    user_condensation_message_event._source = 'user'
-    user_condensation_message_event._id = 3
+    user_condensation_message_event._source = 'user'  # type: ignore [attr-defined]
+    user_condensation_message_event._id = 3  # type: ignore [attr-defined]
 
     state = State(
         history=[
@@ -411,23 +276,17 @@ def test_llm_agent_cache_condenser_always_keep_system_prompt():
         ]
     )
 
-    # Simulate the LLM response for condensation
-    mock_response = MagicMock()
-    mock_response.choices = [MagicMock()]
-    mock_response.choices[0].message.content = 'KEEP: 1\nKEEP: 2'
-    mock_llm.completion.return_value = mock_response
+    result = condenser.condensed_history(state, agent)
 
-    # Perform condensation
-    condensation = condenser.condenseWithState(state)
+    # Verify that a Condensation is returned
+    assert isinstance(result, Condensation)
+    result.action._id = 7  # type: ignore [attr-defined]
+    state.history.append(result.action)
+    assert result.action.forgotten_event_ids == [3]
 
-    assert isinstance(condensation, Condensation)
-    condensation.action._id = 7
-    state.history.append(condensation.action)
-    assert condensation.action.forgotten_event_ids == [3]
-
-    view = condenser.condenseWithState(state)
+    view = condenser.condensed_history(state, agent)
     assert isinstance(view, View)
-    assert view.events == [first_message, assistant_message_event, condensation.action]
+    assert view.events == [first_message, assistant_message_event, result.action]
 
     messages = agent._get_messages(view.events)
     assert messages[0].role == 'system'
@@ -435,30 +294,21 @@ def test_llm_agent_cache_condenser_always_keep_system_prompt():
     assert len(messages) == 3
 
 
-def test_llm_agent_cache_condenser_first_message_user_message():
-    """Do not allow the LLM to remove all conversation messages"""
+def test_llm_agent_cache_condenser_first_message_user_message(agent: CodeActAgent):
+    """Do not allow the LLM to remove all conversation messages."""
 
-    mock_llm = MagicMock(spec=LLM)
-    mock_llm.is_caching_prompt_active.return_value = True
-    mock_llm.config = MagicMock(max_message_chars=1000)
-    mock_llm.vision_is_active.return_value = False
-    mock_llm.metrics = MagicMock()
-    mock_llm.metrics.get.return_value = {'tokens': 100}
-
-    agent_config = AgentConfig()
-    agent = LLMCacheCodeAgent(mock_llm, agent_config)
-
-    condenser = agent.condenser
+    condenser = LLMAgentCacheCondenser()
+    agent.condenser = condenser
 
     first_message = MessageAction('Hello, how are you?')
-    first_message._source = 'user'
-    first_message._id = 1
+    first_message._source = 'user'  # type: ignore [attr-defined]
+    first_message._id = 1  # type: ignore [attr-defined]
     assistant_message_event = MessageAction('Great!')
-    assistant_message_event._source = 'agent'
-    assistant_message_event._id = 2
+    assistant_message_event._source = 'agent'  # type: ignore [attr-defined]
+    assistant_message_event._id = 2  # type: ignore [attr-defined]
     user_condensation_message_event = MessageAction('NOW CONDENSE!')
-    user_condensation_message_event._source = 'user'
-    user_condensation_message_event._id = 3
+    user_condensation_message_event._source = 'user'  # type: ignore [attr-defined]
+    user_condensation_message_event._id = 3  # type: ignore [attr-defined]
 
     state = State(
         history=[
@@ -468,21 +318,21 @@ def test_llm_agent_cache_condenser_first_message_user_message():
         ]
     )
 
-    # Simulate the LLM response for condensation
-    mock_response = MagicMock()
-    mock_response.choices = [MagicMock()]
-    mock_response.choices[0].message.content = 'KEEP: 0'
-    mock_llm.completion.return_value = mock_response
+    set_next_llm_response(agent, 'KEEP: 0')
 
-    # Perform condensation
-    condensation = condenser.condenseWithState(state)
+    result = condenser.condensed_history(state, agent)
 
-    assert isinstance(condensation, Condensation)
-    condensation.action._id = 7
-    state.history.append(condensation.action)
-    # Would be 1,2,3. But we put 1 back in so we have a message at least.
-    assert condensation.action.forgotten_event_ids == [2, 3]
+    # Verify that a Condensation is returned
+    assert isinstance(result, Condensation)
+    result.action._id = 7  # type: ignore [attr-defined]
+    state.history.append(result.action)
+    assert result.action.forgotten_event_ids == [2, 3]
 
-    view = condenser.condenseWithState(state)
+    view = condenser.condensed_history(state, agent)
     assert isinstance(view, View)
-    assert view.events == [first_message, condensation.action]
+    assert view.events == [first_message, result.action]
+
+    messages = agent._get_messages(view.events)
+    assert messages[0].role == 'system'
+    assert 'You are OpenHands' in messages[0].content[0].text
+    assert len(messages) == 2
