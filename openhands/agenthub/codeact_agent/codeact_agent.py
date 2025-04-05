@@ -23,6 +23,7 @@ from openhands.runtime.plugins import (
     PluginRequirement,
 )
 from openhands.utils.prompt import PromptManager
+from openhands.events.event import EventSource
 
 
 class CodeActAgent(Agent):
@@ -118,15 +119,20 @@ class CodeActAgent(Agent):
         # Check if we have a user message, if not, check if we have an issue in state.inputs
         # This is needed when the agent is delegated from SupervisorAgent
         if not latest_user_message and 'issue' in state.inputs:
-            # Create a MessageAction with the issue information
-            issue = state.inputs.get('issue')
-            if issue is not None and isinstance(issue, str):
+            # Get the issue information
+            issue = state.inputs.get('issue')['content']
+            if isinstance(issue, str):
+                # Create a user message with the issue content
+                user_message = Message(role="user", content=[TextContent(text=issue)])
+                # Add the message to state history as a MessageAction
                 message_action = MessageAction(content=issue)
-                # Add the message action to pending_actions so it will be processed first
-                self.pending_actions.append(message_action)
-                # Return the message action
-                return self.pending_actions.popleft()
-
+                # Set the source attribute directly
+                message_action._source = EventSource.USER
+                message_action._message = user_message
+                state.history.append(message_action)
+                # Update latest_user_message to use this new message
+                latest_user_message = message_action
+            
         if latest_user_message and latest_user_message.content.strip() == '/exit':
             return AgentFinishAction()
 
