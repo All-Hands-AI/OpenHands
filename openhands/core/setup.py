@@ -1,7 +1,7 @@
 import hashlib
 import os
 import uuid
-from typing import Callable, Tuple, Type
+from typing import Callable, List, Tuple, Type
 
 from pydantic import SecretStr
 
@@ -175,6 +175,7 @@ def create_agent(config: AppConfig) -> Agent:
     agent_cls: Type[Agent] = Agent.get_cls(config.default_agent)
     agent_config = config.get_agent_config(config.default_agent)
     llm_config = config.get_llm_config_from_agent(config.default_agent)
+
     agent = agent_cls(
         llm=LLM(config=llm_config),
         config=agent_config,

@@ -15,6 +15,7 @@ from openhands.events.action.files import (
     FileReadAction,
     FileWriteAction,
 )
+from openhands.events.action.mcp import McpAction
 from openhands.events.action.message import MessageAction
 
 __all__ = [
@@ -35,4 +36,5 @@ __all__ = [
     'ActionConfirmationStatus',
     'AgentThinkAction',
     'RecallAction',
+    'McpAction',
 ]

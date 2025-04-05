@@ -5,7 +5,6 @@ from uuid import uuid4
 
 from termcolor import colored
 
-import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands.core.config import (
     AppConfig,
     parse_arguments,
@@ -37,6 +36,7 @@ from openhands.events.observation import (
     FileEditObservation,
 )
 from openhands.io import read_input, read_task
+from openhands.mcp.mcp import fetch_mcp_tools_from_config
 
 
 def display_message(message: str):
@@ -109,7 +109,8 @@ async def main(loop: asyncio.AbstractEventLoop):
     display_message(f'Session ID: {sid}')
 
     agent = create_agent(config)
-
+    mcp_tools = await fetch_mcp_tools_from_config(config.mcp)
+    agent.set_mcp_tools(mcp_tools)
     runtime = create_runtime(
         config,
         sid=sid,

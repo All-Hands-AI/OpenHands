@@ -38,6 +38,10 @@ class ActionType(str, Enum):
     """Interact with the browser instance.
     """
 
+    MCP = 'call_tool_mcp'
+    """Interact with the MCP server.
+    """
+
     DELEGATE = 'delegate'
     """Delegates a task to another agent.
     """

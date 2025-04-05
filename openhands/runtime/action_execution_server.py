@@ -8,6 +8,7 @@ NOTE: this will be executed inside the docker sandbox.
 import argparse
 import asyncio
 import base64
+import json
 import mimetypes
 import os
 import shutil
@@ -16,6 +17,7 @@ import time
 import traceback
 from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import Optional
 from zipfile import ZipFile
 
 from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
@@ -43,6 +45,7 @@ from openhands.events.action import (
     FileWriteAction,
     IPythonRunCellAction,
 )
+from openhands.events.action.mcp import McpAction
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.observation import (
     CmdOutputObservation,
@@ -53,7 +56,9 @@ from openhands.events.observation import (
     IPythonRunCellObservation,
     Observation,
 )
+from openhands.events.observation.mcp import MCPObservation
 from openhands.events.serialization import event_from_dict, event_to_dict
+from openhands.mcp.mcp import create_mcp_clients
 from openhands.runtime.browser import browse
 from openhands.runtime.browser.browser_env import BrowserEnv
 from openhands.runtime.plugins import ALL_PLUGINS, JupyterPlugin, Plugin, VSCodePlugin
@@ -68,6 +73,8 @@ from openhands.utils.async_utils import call_sync_from_async, wait_all
 
 class ActionRequest(BaseModel):
     action: dict
+    sse_mcp_config: Optional[list[str]] = None
+    stdio_mcp_config: Optional[tuple[list[str], list[list[str]], list[list[tuple[str, str]]]]] = None
 
 
 ROOT_GID = 0
@@ -182,10 +189,19 @@ class ActionExecutor:
             in ['true', '1', 'yes']
         )
         self.memory_monitor.start_monitoring()
+        self.sse_mcp_servers: list[str] = []
+        self.stdio_mcp_config: tuple[list[str], list[list[str]], list[list[tuple[str, str]]]] = ([], [], [])
 
     @property
     def initial_cwd(self):
         return self._initial_cwd
+
+    def process_request(self, action_request: ActionRequest):
+        # update the sse_mcp_servers and stdio_mcp_config to prepare for MCP action if needed
+        if action_request.sse_mcp_config:
+            self.sse_mcp_servers = action_request.sse_mcp_config
+        if action_request.stdio_mcp_config:
+            self.stdio_mcp_config = action_request.stdio_mcp_config
 
     async def _init_browser_async(self):
         """Initialize the browser asynchronously."""
@@ -257,6 +273,7 @@ class ActionExecutor:
 
         logger.debug('Initializing bash commands')
         await self._init_bash_commands()
+
         logger.debug('Runtime client initialized.')
         self._initialized = True
 
@@ -299,9 +316,7 @@ class ActionExecutor:
     async def run_action(self, action) -> Observation:
         async with self.lock:
             action_type = action.action
-            logger.debug(f'Running action:\n{action}')
             observation = await getattr(self, action_type)(action)
-            logger.debug(f'Action output:\n{observation}')
             return observation
 
     async def run(
@@ -506,6 +521,47 @@ class ActionExecutor:
         await self._ensure_browser_ready()
         return await browse(action, self.browser)
 
+    async def call_tool_mcp(self, action: McpAction) -> Observation:
+        commands: list[str] = []
+        args: list[list[str]] = []
+        envs: list[list[tuple[str, str]]] = []
+        if self.stdio_mcp_config:
+            commands = self.stdio_mcp_config[0]
+            if len(self.stdio_mcp_config) > 1:
+                args = self.stdio_mcp_config[1]
+            if len(self.stdio_mcp_config) > 2:
+                envs = self.stdio_mcp_config[2]
+        if not self.sse_mcp_servers and not commands:
+            raise ValueError('No MCP servers or stdio MCP config found')
+
+        logger.warning(f'SSE MCP servers: {self.sse_mcp_servers}')
+        mcp_clients = await create_mcp_clients(
+            self.sse_mcp_servers, commands, args, envs
+        )
+        logger.warn(f'MCP action received: {action}')
+        # Find the MCP agent that has the matching tool name
+        matching_client = None
+        logger.warning(f'MCP clients: {mcp_clients}')
+        logger.warning(f'MCP action name: {action.name}')
+        for client in mcp_clients:
+            if action.name in [tool.name for tool in client.tools]:
+                matching_client = client
+                break
+        if matching_client is None:
+            raise ValueError(
+                f'No matching MCP agent found for tool name: {action.name}'
+            )
+        logger.warning(f'Matching client: {matching_client}')
+        args_dict = json.loads(action.arguments) if action.arguments else {}
+        response = await matching_client.call_tool(action.name, args_dict)
+        logger.warning(f'MCP response: {response}')
+
+        # close client connections
+        for client in mcp_clients:
+            await client.disconnect()
+
+        return MCPObservation(content=f'MCP result:{response.model_dump(mode="json")}')
+
     def close(self):
         self.memory_monitor.stop_monitoring()
         if self.bash_session is not None:
@@ -515,6 +571,7 @@ class ActionExecutor:
 
 
 if __name__ == '__main__':
+    logger.warning('Starting Action Execution Server')
     parser = argparse.ArgumentParser()
     parser.add_argument('port', type=int, help='Port to listen on')
     parser.add_argument('--working-dir', type=str, help='Working directory')
@@ -529,6 +586,7 @@ if __name__ == '__main__':
         help='BrowserGym environment used for browser evaluation',
         default=None,
     )
+
     # example: python client.py 8000 --working-dir /workspace --plugins JupyterRequirement
     args = parser.parse_args()
 
@@ -623,6 +681,8 @@ if __name__ == '__main__':
             if not isinstance(action, Action):
                 raise HTTPException(status_code=400, detail='Invalid action type')
             client.last_execution_time = time.time()
+
+            client.process_request(action_request)
             observation = await client.run_action(action)
             return event_to_dict(observation)
         except Exception as e:
