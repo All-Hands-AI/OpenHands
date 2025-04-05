@@ -1,6 +1,7 @@
 export const ProviderOptions = {
   github: "github",
   gitlab: "gitlab",
+  azuredevops: "azuredevops",
 } as const;
 
 export type Provider = keyof typeof ProviderOptions;
@@ -20,6 +21,8 @@ export type Settings = {
   USER_CONSENTS_TO_ANALYTICS: boolean | null;
   PROVIDER_TOKENS: Record<Provider, string>;
   IS_NEW_USER?: boolean;
+  AZURE_DEVOPS_ORG: string | null;
+  AZURE_DEVOPS_PROJECT: string | null;
 };
 
 export type ApiSettings = {
@@ -37,6 +40,8 @@ export type ApiSettings = {
   user_consents_to_analytics: boolean | null;
   provider_tokens: Record<Provider, string>;
   provider_tokens_set: Record<Provider, boolean>;
+  azure_devops_org: string | null;
+  azure_devops_project: string | null;
 };
 
 export type PostSettings = Settings & {

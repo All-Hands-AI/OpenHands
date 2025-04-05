@@ -11,15 +11,18 @@ export const DEFAULT_SETTINGS: Settings = {
   CONFIRMATION_MODE: false,
   SECURITY_ANALYZER: "",
   REMOTE_RUNTIME_RESOURCE_FACTOR: 1,
-  PROVIDER_TOKENS_SET: { github: false, gitlab: false },
+  PROVIDER_TOKENS_SET: { github: false, gitlab: false, azuredevops: false },
   ENABLE_DEFAULT_CONDENSER: true,
   ENABLE_SOUND_NOTIFICATIONS: false,
   USER_CONSENTS_TO_ANALYTICS: false,
   PROVIDER_TOKENS: {
     github: "",
     gitlab: "",
+    azuredevops: "",
   },
   IS_NEW_USER: true,
+  AZURE_DEVOPS_ORG: null,
+  AZURE_DEVOPS_PROJECT: null,
 };
 
 /**

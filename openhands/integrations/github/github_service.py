@@ -360,6 +360,10 @@ class GitHubService(GitService):
             return []
 
 
+    async def get_repo_url(self, repository: str) -> str:
+        return f'https://{await self.get_latest_token()}@github.com/{repository}.git'        
+
+
 github_service_cls = os.environ.get(
     'OPENHANDS_GITHUB_SERVICE_CLS',
     'openhands.integrations.github.github_service.GitHubService',
