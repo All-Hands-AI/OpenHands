@@ -32,11 +32,13 @@ class Agent(ABC):
         self,
         llm: LLM,
         config: 'AgentConfig',
+        **kwargs,
     ):
         self.llm = llm
         self.config = config
         self._complete = False
         self.prompt_manager: 'PromptManager' | None = None
+        self.active_llm: LLM | None = None  # The LLM chosen by the router
 
     @property
     def complete(self) -> bool:

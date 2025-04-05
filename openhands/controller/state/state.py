@@ -92,11 +92,16 @@ class State:
     metrics: Metrics = field(default_factory=Metrics)
     # local metrics for the current subtask
     local_metrics: Metrics = field(default_factory=Metrics)
+    # local routing LLM metrics for the current task
+    local_routing_metrics: list[Metrics] = field(default_factory=list)
     # root agent has level 0, and every delegate increases the level by one
     delegate_level: int = 0
     # start_id and end_id track the range of events in history
     start_id: int = -1
     end_id: int = -1
+    routing_history: list[int] = field(
+        default_factory=list
+    )  # 1 means routing activated, 0 means not
 
     delegates: dict[tuple[int, int], tuple[str, str]] = field(default_factory=dict)
     # NOTE: This will never be used by the controller, but it can be used by different

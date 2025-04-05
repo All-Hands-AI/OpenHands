@@ -34,6 +34,7 @@ from openhands.core.config import (
     AppConfig,
     get_llm_config_arg,
     get_parser,
+    load_from_toml,
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
@@ -204,14 +205,19 @@ def get_config(
             metadata.llm_config, metadata.eval_output_dir, instance['instance_id']
         )
     )
+    config_copy = copy.deepcopy(config)
+    load_from_toml(config_copy)
     agent_config = AgentConfig(
         codeact_enable_jupyter=False,
         codeact_enable_browsing=RUN_WITH_BROWSING,
         codeact_enable_llm_editor=False,
         condenser=metadata.condenser_config,
         enable_prompt_extensions=False,
+        enable_model_routing=config_copy.get_agent_config().enable_model_routing,
     )
     config.set_agent_config(agent_config)
+    config.routing_llms = config_copy.routing_llms
+    config.model_routing = config_copy.model_routing
     return config
 
 
@@ -581,6 +587,7 @@ def process_instance(
         history=histories,
         metrics=metrics,
         error=state.last_error if state and state.last_error else None,
+        routing_history=state.routing_history,
     )
     return output
 

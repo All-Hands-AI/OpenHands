@@ -222,6 +222,12 @@ class AgentController:
     async def update_state_after_step(self):
         # update metrics especially for cost. Use deepcopy to avoid it being modified by agent._reset()
         self.state.local_metrics = copy.deepcopy(self.agent.llm.metrics)
+        self.state.local_routing_metrics = []
+
+        if not hasattr(self.agent, 'routing_llms'):
+            return
+        for routing_llm in self.agent.routing_llms:
+            self.state.local_routing_metrics.append(copy.deepcopy(routing_llm.metrics))
 
     async def _react_to_exception(
         self,
@@ -406,10 +412,14 @@ class AgentController:
         elif isinstance(action, AgentFinishAction):
             self.state.outputs = action.outputs
             self.state.metrics.merge(self.state.local_metrics)
+            for metric in self.state.local_routing_metrics:
+                self.state.metrics.merge(metric)
             await self.set_agent_state_to(AgentState.FINISHED)
         elif isinstance(action, AgentRejectAction):
             self.state.outputs = action.outputs
             self.state.metrics.merge(self.state.local_metrics)
+            for metric in self.state.local_routing_metrics:
+                self.state.metrics.merge(metric)
             await self.set_agent_state_to(AgentState.REJECTED)
 
     async def _handle_observation(self, observation: Observation) -> None:
@@ -419,9 +429,13 @@ class AgentController:
             observation (observation): The observation to handle.
         """
         observation_to_print = copy.deepcopy(observation)
-        if len(observation_to_print.content) > self.agent.llm.config.max_message_chars:
+        if self.agent.active_llm and (
+            len(observation_to_print.content)
+            > self.agent.active_llm.config.max_message_chars
+        ):
             observation_to_print.content = truncate_content(
-                observation_to_print.content, self.agent.llm.config.max_message_chars
+                observation_to_print.content,
+                self.agent.active_llm.config.max_message_chars,
             )
         # Use info level if LOG_ALL_EVENTS is set
         log_level = 'info' if os.getenv('LOG_ALL_EVENTS') in ('true', '1') else 'debug'
@@ -445,6 +459,8 @@ class AgentController:
         elif isinstance(observation, ErrorObservation):
             if self.state.agent_state == AgentState.ERROR:
                 self.state.metrics.merge(self.state.local_metrics)
+                for metric in self.state.local_routing_metrics:
+                    self.state.metrics.merge(metric)
 
     async def _handle_message_action(self, action: MessageAction) -> None:
         """Handles message actions from the event stream.
@@ -551,6 +567,8 @@ class AgentController:
             # sync existing metrics BEFORE resetting the agent
             await self.update_state_after_step()
             self.state.metrics.merge(self.state.local_metrics)
+            for metric in self.state.local_routing_metrics:
+                self.state.metrics.merge(metric)
             self._reset()
         elif (
             new_state == AgentState.RUNNING

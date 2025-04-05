@@ -76,6 +76,9 @@ class EvalOutput(BaseModel):
     # Optionally save the input test instance
     instance: dict[str, Any] | None = None
 
+    # For model routing analysis
+    routing_history: list[int] | None = None
+
 
 class EvalException(Exception):
     pass

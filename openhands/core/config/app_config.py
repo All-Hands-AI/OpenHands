@@ -11,6 +11,7 @@ from openhands.core.config.config_utils import (
 )
 from openhands.core.config.extended_config import ExtendedConfig
 from openhands.core.config.llm_config import LLMConfig
+from openhands.core.config.model_routing_config import ModelRoutingConfig
 from openhands.core.config.sandbox_config import SandboxConfig
 from openhands.core.config.security_config import SecurityConfig
 
@@ -21,10 +22,13 @@ class AppConfig(BaseModel):
     Attributes:
         llms: Dictionary mapping LLM names to their configurations.
             The default configuration is stored under the 'llm' key.
+        routing_llms: Dictionary mapping LLM for routing' names to their configurations.
         agents: Dictionary mapping agent names to their configurations.
             The default configuration is stored under the 'agent' key.
         default_agent: Name of the default agent to use.
         sandbox: Sandbox configuration settings.
+        security: Security configuration settings.
+        model_routing: Model routing configuration settings.
         runtime: Runtime environment identifier.
         file_store: Type of file store to use.
         file_store_path: Path to the file store.
@@ -50,10 +54,12 @@ class AppConfig(BaseModel):
     """
 
     llms: dict[str, LLMConfig] = Field(default_factory=dict)
+    routing_llms: dict[str, LLMConfig] = Field(default_factory=dict)
     agents: dict = Field(default_factory=dict)
     default_agent: str = Field(default=OH_DEFAULT_AGENT)
     sandbox: SandboxConfig = Field(default_factory=SandboxConfig)
     security: SecurityConfig = Field(default_factory=SecurityConfig)
+    model_routing: ModelRoutingConfig = Field(default_factory=ModelRoutingConfig)
     extended: ExtendedConfig = Field(default_factory=lambda: ExtendedConfig({}))
     runtime: str = Field(default='docker')
     file_store: str = Field(default='local')
@@ -106,7 +112,10 @@ class AppConfig(BaseModel):
         return self.llms['llm']
 
     def set_llm_config(self, value: LLMConfig, name='llm') -> None:
-        self.llms[name] = value
+        if value.for_routing:
+            self.routing_llms[name] = value
+        else:
+            self.llms[name] = value
 
     def get_agent_config(self, name='agent') -> AgentConfig:
         """'agent' is the name for default config (for backward compatibility prior to 0.8)."""

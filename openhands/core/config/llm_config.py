@@ -44,6 +44,7 @@ class LLMConfig(BaseModel):
         native_tool_calling: Whether to use native tool calling if supported by the model. Can be True, False, or not set.
         reasoning_effort: The effort to put into reasoning. This is a string that can be one of 'low', 'medium', 'high', or 'none'. Exclusive for o1 models.
         seed: The seed to use for the LLM.
+        for_routing: Whether this LLM is used for routing. This is set to True for models used in conjunction with the main LLM in the model routing feature.
     """
 
     model: str = Field(default='claude-3-7-sonnet-20250219')
@@ -84,6 +85,7 @@ class LLMConfig(BaseModel):
     native_tool_calling: bool | None = Field(default=None)
     reasoning_effort: str | None = Field(default='high')
     seed: int | None = Field(default=None)
+    for_routing: bool = Field(default=False)
 
     model_config = {'extra': 'forbid'}
 
