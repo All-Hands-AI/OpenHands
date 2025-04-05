@@ -133,6 +133,8 @@ function AccountSettings() {
 
     const githubToken = formData.get("github-token-input")?.toString();
     const gitlabToken = formData.get("gitlab-token-input")?.toString();
+    const hostUrl = formData.get("host-url-input")?.toString();
+
     // we don't want the user to be able to modify these settings in SaaS
     const finalLlmModel = shouldHandleSpecialSaasCase
       ? undefined
@@ -146,7 +148,12 @@ function AccountSettings() {
       provider_tokens:
         githubToken || gitlabToken
           ? {
-              github: githubToken || "",
+              github: githubToken
+                ? {
+                    token: githubToken,
+                    host_url: hostUrl || "",
+                  }
+                : "",
               gitlab: gitlabToken || "",
             }
           : undefined,
@@ -407,6 +414,19 @@ function AccountSettings() {
                   }
                   placeholder={isGitHubTokenSet ? "<hidden>" : ""}
                 />
+                <SettingsInput
+                  testId="host-url-input"
+                  name="host-url-input"
+                  label="GitHub Enterprise Server Host URL"
+                  type="text"
+                  className="w-[680px]"
+                  defaultValue={
+                    typeof settings.PROVIDER_TOKENS?.github === 'object'
+                      ? settings.PROVIDER_TOKENS?.github?.host_url || ""
+                      : ""
+                  }
+                  placeholder="https://github.example.com"
+                />
                 <p data-testid="github-token-help-anchor" className="text-xs">
                   {" "}
                   {t(I18nKey.GITHUB$GET_TOKEN)}{" "}
@@ -476,6 +496,7 @@ function AccountSettings() {
                   </b>
                   .
                 </p>
+
                 <BrandButton
                   type="button"
                   variant="secondary"
