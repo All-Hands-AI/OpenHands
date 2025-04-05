@@ -77,25 +77,31 @@ Also the development Python environment is already set up for you (i.e., all dep
 Your task is to make the minimal changes to non-test files in the /workspace/{workspace_dir_name} directory to ensure the <issue_description> is satisfied.
 
 Follow these steps to resolve the issue:
+
 1. EXPLORATION: First, thoroughly explore the repository structure using tools like `find` and `grep`.
    - Identify all files mentioned in the problem statement
    - Locate where the issue occurs in the codebase
    - Understand the surrounding context and dependencies
    - Use `grep` to search for relevant functions, classes, or error messages
+
 2. ANALYSIS: Based on your exploration, think carefully about the problem and propose 2-5 possible approaches to fix the issue.
    - Analyze the root cause of the problem
    - Consider trade-offs between different solutions
    - Select the most promising approach and explain your reasoning
+
 3. TEST CREATION: Before implementing any fix, create a script to reproduce and verify the issue.
    - Look at existing test files in the repository to understand the test format/structure
    - Create a minimal reproduction script that demonstrates the issue
    - Run your script to confirm the error exists
+
 4. IMPLEMENTATION: Edit the source code to implement your chosen solution.
    - Make minimal, focused changes to fix the issue
+
 5. VERIFICATION: Test your implementation thoroughly.
    - Run your reproduction script to verify the fix works
    - Add edge cases to your test script to ensure comprehensive coverage
    - Run existing tests related to the modified code to ensure you haven't broken anything
+
 6. FINAL REVIEW: Carefully re-read the problem description and compare your changes with the base commit {instance["base_commit"]}.
    - Ensure you've fully addressed all requirements
    - Run any tests in the repository related to:
