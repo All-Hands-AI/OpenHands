@@ -119,7 +119,11 @@ def initialize_repository_for_runtime(
     if selected_repository and provider_tokens:
         logger.debug(f'Selected repository {selected_repository}.')
         repo_directory = call_async_from_sync(
-            runtime.clone_repo, GENERAL_TIMEOUT, github_token, selected_repository, None
+            runtime.clone_repo,
+            GENERAL_TIMEOUT,
+            provider_tokens,
+            selected_repository,
+            None,
         )
         # Run setup script if it exists
         runtime.maybe_run_setup_script()
