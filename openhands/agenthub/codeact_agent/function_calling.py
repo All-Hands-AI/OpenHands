@@ -42,7 +42,7 @@ from openhands.events.action.mcp import McpAction
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.tool import ToolCallMetadata
 from openhands.llm import LLM
-from openhands.mcp.mcp import BaseTool
+from openhands.mcp import MCPClientTool
 
 
 def combine_thought(action: Action, thought: str) -> Action:
@@ -199,9 +199,9 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
             # ================================================
             # McpAction (MCP)
             # ================================================
-            elif tool_call.function.name.endswith(BaseTool.postfix()):
+            elif tool_call.function.name.endswith(MCPClientTool.postfix()):
                 action = McpAction(
-                    name=tool_call.function.name.rstrip(BaseTool.postfix()),
+                    name=tool_call.function.name.rstrip(MCPClientTool.postfix()),
                     arguments=tool_call.function.arguments,
                 )
             else:
