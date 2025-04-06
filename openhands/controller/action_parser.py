@@ -1,6 +1,10 @@
 from abc import ABC, abstractmethod
+from typing import Any, Dict, TypeVar
 
 from openhands.events.action import Action
+
+# Define a type variable for the response type
+ResponseType = TypeVar('ResponseType', str, Dict[str, Any])
 
 
 class ActionParseError(Exception):
@@ -25,11 +29,11 @@ class ResponseParser(ABC):
         self.action_parsers: list[ActionParser] = []
 
     @abstractmethod
-    def parse(self, response: str) -> Action:
+    def parse(self, response: Any) -> Action:
         """Parses the action from the response from the LLM.
 
         Parameters:
-        - response (str): The response from the LLM.
+        - response: The response from the LLM, which can be a string or a dictionary.
 
         Returns:
         - action (Action): The action parsed from the response.
@@ -37,11 +41,11 @@ class ResponseParser(ABC):
         pass
 
     @abstractmethod
-    def parse_response(self, response: str) -> str:
+    def parse_response(self, response: Any) -> str:
         """Parses the action from the response from the LLM.
 
         Parameters:
-        - response (str): The response from the LLM.
+        - response: The response from the LLM, which can be a string or a dictionary.
 
         Returns:
         - action_str (str): The action str parsed from the response.
