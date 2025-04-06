@@ -53,11 +53,8 @@ class VSCodePlugin(Plugin):
         # read stdout until the kernel gateway is ready
         output = ''
         while should_continue():
-            line = ''  # Placeholder for reading output
-            print(line)
-            output += line
-            if 'at' in line:
-                break
+            # Original code doesn't actually read from stdout in a meaningful way
+            # We're keeping the same behavior while adding type annotations
             time.sleep(1)
             logger.debug('Waiting for VSCode server to start...')
 
