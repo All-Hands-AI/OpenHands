@@ -39,15 +39,15 @@ from openhands.events.observation import (
 from openhands.io import read_input, read_task
 
 
-def display_message(message: str):
+def display_message(message: str) -> None:
     print(colored('🤖 ' + message + '\n', 'yellow'))
 
 
-def display_command(command: str):
+def display_command(command: str) -> None:
     print('❯ ' + colored(command + '\n', 'green'))
 
 
-def display_confirmation(confirmation_state: ActionConfirmationStatus):
+def display_confirmation(confirmation_state: ActionConfirmationStatus) -> None:
     if confirmation_state == ActionConfirmationStatus.CONFIRMED:
         print(colored('✅ ' + confirmation_state + '\n', 'green'))
     elif confirmation_state == ActionConfirmationStatus.REJECTED:
@@ -56,7 +56,7 @@ def display_confirmation(confirmation_state: ActionConfirmationStatus):
         print(colored('⏳ ' + confirmation_state + '\n', 'yellow'))
 
 
-def display_command_output(output: str):
+def display_command_output(output: str) -> None:
     lines = output.split('\n')
     for line in lines:
         if line.startswith('[Python Interpreter') or line.startswith('openhands@'):
@@ -66,11 +66,11 @@ def display_command_output(output: str):
     print('\n')
 
 
-def display_file_edit(event: FileEditAction | FileEditObservation):
+def display_file_edit(event: FileEditAction | FileEditObservation) -> None:
     print(colored(str(event), 'green'))
 
 
-def display_event(event: Event, config: AppConfig):
+def display_event(event: Event, config: AppConfig) -> None:
     if isinstance(event, Action):
         if hasattr(event, 'thought'):
             display_message(event.thought)
@@ -89,7 +89,7 @@ def display_event(event: Event, config: AppConfig):
         display_confirmation(event.confirmation_state)
 
 
-async def main(loop: asyncio.AbstractEventLoop):
+async def main(loop: asyncio.AbstractEventLoop) -> None:
     """Runs the agent in CLI mode."""
 
     args = parse_arguments()
@@ -121,7 +121,7 @@ async def main(loop: asyncio.AbstractEventLoop):
 
     event_stream = runtime.event_stream
 
-    async def prompt_for_next_task():
+    async def prompt_for_next_task() -> None:
         # Run input() in a thread pool to avoid blocking the event loop
         next_message = await loop.run_in_executor(
             None, read_input, config.cli_multiline_input
@@ -136,13 +136,13 @@ async def main(loop: asyncio.AbstractEventLoop):
         action = MessageAction(content=next_message)
         event_stream.add_event(action, EventSource.USER)
 
-    async def prompt_for_user_confirmation():
+    async def prompt_for_user_confirmation() -> bool:
         user_confirmation = await loop.run_in_executor(
             None, lambda: input('Confirm action (possible security risk)? (y/n) >> ')
         )
         return user_confirmation.lower() == 'y'
 
-    async def on_event_async(event: Event):
+    async def on_event_async(event: Event) -> None:
         display_event(event, config)
         if isinstance(event, AgentStateChangedObservation):
             if event.agent_state in [
