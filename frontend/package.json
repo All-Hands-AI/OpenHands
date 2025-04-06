@@ -1,6 +1,6 @@
 {
   "name": "openhands-frontend",
-  "version": "0.30.1",
+  "version": "0.31.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -79,6 +79,9 @@
     ]
   },
   "devDependencies": {
+    "@babel/parser": "^7.27.0",
+    "@babel/traverse": "^7.27.0",
+    "@babel/types": "^7.27.0",
     "@mswjs/socket.io-binding": "^0.1.1",
     "@playwright/test": "^1.51.1",
     "@react-router/dev": "^7.4.0",

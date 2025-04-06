@@ -1,3 +1,4 @@
+import { GitRepository } from "#/types/git";
 import { extractNextPageFromLink } from "#/utils/extract-next-page-from-link";
 import { openHands } from "./open-hands-axios";
 
@@ -14,8 +15,8 @@ export const retrieveGitHubAppRepositories = async (
   per_page = 30,
 ) => {
   const installationId = installations[installationIndex];
-  const response = await openHands.get<GitHubRepository[]>(
-    "/api/github/repositories",
+  const response = await openHands.get<GitRepository[]>(
+    "/api/user/repositories",
     {
       params: {
         sort: "pushed",
@@ -53,21 +54,17 @@ export const retrieveGitHubAppRepositories = async (
  * Given a PAT, retrieves the repositories of the user
  * @returns A list of repositories
  */
-export const retrieveGitHubUserRepositories = async (
-  page = 1,
-  per_page = 30,
-) => {
-  const response = await openHands.get<GitHubRepository[]>(
-    "/api/github/repositories",
+export const retrieveUserGitRepositories = async () => {
+  const response = await openHands.get<GitRepository[]>(
+    "/api/user/repositories",
     {
       params: {
         sort: "pushed",
-        page,
-        per_page,
       },
     },
   );
 
+  // Check if any provider has more results
   const link =
     response.data.length > 0 && response.data[0].link_header
       ? response.data[0].link_header
