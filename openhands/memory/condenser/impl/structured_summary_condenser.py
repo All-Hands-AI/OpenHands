@@ -196,7 +196,7 @@ class StructuredSummaryCondenser(RollingCondenser):
         """Truncate the content to fit within the specified maximum event length."""
         return truncate_content(content, max_chars=self.max_event_length)
 
-    def get_condensation(self, view: View) -> Condensation:
+    def get_condensation(self, view: View, state=None, agent=None) -> Condensation:
         head = view[: self.keep_first]
         target_size = self.max_size // 2
         # Number of events to keep from the tail -- target size, minus however many
