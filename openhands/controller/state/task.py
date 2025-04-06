@@ -6,11 +6,11 @@ from openhands.core.exceptions import (
 )
 from openhands.core.logger import openhands_logger as logger
 
-OPEN_STATE = "open"
-COMPLETED_STATE = "completed"
-ABANDONED_STATE = "abandoned"
-IN_PROGRESS_STATE = "in_progress"
-VERIFIED_STATE = "verified"
+OPEN_STATE = 'open'
+COMPLETED_STATE = 'completed'
+ABANDONED_STATE = 'abandoned'
+IN_PROGRESS_STATE = 'in_progress'
+VERIFIED_STATE = 'verified'
 STATES = [
     OPEN_STATE,
     COMPLETED_STATE,
@@ -23,15 +23,15 @@ STATES = [
 class Task:
     id: str
     goal: str
-    parent: Union["Task", None]
-    subtasks: list["Task"]
+    parent: Union['Task', None]
+    subtasks: list['Task']
 
     def __init__(
         self,
-        parent: "Task",
+        parent: 'Task',
         goal: str,
         state: str = OPEN_STATE,
-        subtasks: Union[list[Union[dict, "Task"]], None] = None,  # noqa: B006
+        subtasks: Union[list[Union[dict, 'Task']], None] = None,  # noqa: B006
     ) -> None:
         """Initializes a new instance of the Task class.
 
@@ -44,26 +44,26 @@ class Task:
         if subtasks is None:
             subtasks = []
         if parent.id:
-            self.id = parent.id + "." + str(len(parent.subtasks))
+            self.id = parent.id + '.' + str(len(parent.subtasks))
         else:
             self.id = str(len(parent.subtasks))
         self.parent = parent
         self.goal = goal
-        logger.debug(f"Creating task {self.id} with parent={parent.id}, goal={goal}")
+        logger.debug(f'Creating task {self.id} with parent={parent.id}, goal={goal}')
         self.subtasks = []
         for subtask in subtasks or []:
             if isinstance(subtask, Task):
                 self.subtasks.append(subtask)
             else:
-                goal = str(subtask.get("goal", ""))
-                state = str(subtask.get("state", OPEN_STATE))
-                subtasks = subtask.get("subtasks")
-                logger.debug(f"Reading: {goal}, {state}, {subtasks}")
+                goal = str(subtask.get('goal', ''))
+                state = str(subtask.get('state', OPEN_STATE))
+                subtasks = subtask.get('subtasks')
+                logger.debug(f'Reading: {goal}, {state}, {subtasks}')
                 self.subtasks.append(Task(self, goal, state, subtasks))
 
         self.state = OPEN_STATE
 
-    def to_string(self, indent: str = "") -> str:
+    def to_string(self, indent: str = '') -> str:
         """Returns a string representation of the task and its subtasks.
 
         Args:
@@ -72,20 +72,20 @@ class Task:
         Returns:
             A string representation of the task and its subtasks.
         """
-        emoji = ""
+        emoji = ''
         if self.state == VERIFIED_STATE:
-            emoji = "✅"
+            emoji = '✅'
         elif self.state == COMPLETED_STATE:
-            emoji = "🟢"
+            emoji = '🟢'
         elif self.state == ABANDONED_STATE:
-            emoji = "❌"
+            emoji = '❌'
         elif self.state == IN_PROGRESS_STATE:
-            emoji = "💪"
+            emoji = '💪'
         elif self.state == OPEN_STATE:
-            emoji = "🔵"
-        result = indent + emoji + " " + self.id + " " + self.goal + "\n"
+            emoji = '🔵'
+        result = indent + emoji + ' ' + self.id + ' ' + self.goal + '\n'
         for subtask in self.subtasks:
-            result += subtask.to_string(indent + "    ")
+            result += subtask.to_string(indent + '    ')
         return result
 
     def to_dict(self) -> dict:
@@ -95,10 +95,10 @@ class Task:
             A dictionary containing the task's attributes.
         """
         return {
-            "id": self.id,
-            "goal": self.goal,
-            "state": self.state,
-            "subtasks": [t.to_dict() for t in self.subtasks],
+            'id': self.id,
+            'goal': self.goal,
+            'state': self.state,
+            'subtasks': [t.to_dict() for t in self.subtasks],
         }
 
     def set_state(self, state: str) -> None:
@@ -111,7 +111,7 @@ class Task:
             TaskInvalidStateError: If the provided state is invalid.
         """
         if state not in STATES:
-            logger.error("Invalid state: %s", state)
+            logger.error('Invalid state: %s', state)
             raise TaskInvalidStateError(state)
         self.state = state
         if (
@@ -126,7 +126,7 @@ class Task:
             if self.parent is not None:
                 self.parent.set_state(state)
 
-    def get_current_task(self) -> Union["Task", None]:
+    def get_current_task(self) -> Union['Task', None]:
         """Retrieves the current task in progress.
 
         Returns:
@@ -154,8 +154,8 @@ class RootTask(Task):
         state: The state of the root_task.
     """
 
-    id: str = ""
-    goal: str = ""
+    id: str = ''
+    goal: str = ''
     parent: None = None
 
     def __init__(self) -> None:
@@ -182,18 +182,18 @@ class RootTask(Task):
         Raises:
             AgentMalformedActionError: If the provided task ID is invalid or does not exist.
         """
-        if id == "":
+        if id == '':
             return self
         if len(self.subtasks) == 0:
-            raise LLMMalformedActionError("Task does not exist:" + id)
+            raise LLMMalformedActionError('Task does not exist:' + id)
         try:
-            parts = [int(p) for p in id.split(".")]
+            parts = [int(p) for p in id.split('.')]
         except ValueError:
-            raise LLMMalformedActionError("Invalid task id:" + id)
+            raise LLMMalformedActionError('Invalid task id:' + id)
         task: Task = self
         for part in parts:
             if part >= len(task.subtasks):
-                raise LLMMalformedActionError("Task does not exist:" + id)
+                raise LLMMalformedActionError('Task does not exist:' + id)
             task = task.subtasks[part]
         return task
 
@@ -223,7 +223,7 @@ class RootTask(Task):
             state: The new state of the subtask.
         """
         task = self.get_task_by_id(id)
-        logger.debug("Setting task {task.id} from state {task.state} to {state}")
+        logger.debug('Setting task {task.id} from state {task.state} to {state}')
         task.set_state(state)
         unfinished_tasks = [
             t
