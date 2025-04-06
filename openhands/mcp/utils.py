@@ -1,6 +1,4 @@
-from typing import List
-
-from openhands.core.config.mcp_config import MCPConfig
+from openhands.core.config.mcp_config import MCPConfig, MCPStdioConfigEntry
 from openhands.core.logger import openhands_logger as logger
 from openhands.mcp.client import MCPClient
 
@@ -35,12 +33,10 @@ def convert_mcp_clients_to_tools(mcp_clients: list[MCPClient] | None) -> list[di
 
 
 async def create_mcp_clients(
-    sse_mcp_server: List[str],
-    commands: List[str],
-    args: List[List[str]],
-    envs: List[List[tuple[str, str]]],
-) -> List[MCPClient]:
-    mcp_clients: List[MCPClient] = []
+    sse_mcp_server: list[str],
+    stdio_mcp_tool_configs: dict[str, MCPStdioConfigEntry],
+) -> list[MCPClient]:
+    mcp_clients: list[MCPClient] = []
     # Initialize SSE connections
     if sse_mcp_server:
         for server_url in sse_mcp_server:
@@ -65,21 +61,24 @@ async def create_mcp_clients(
                     )
 
     # Initialize stdio connections
-    if commands:
-        for i, (command, command_args, command_envs) in enumerate(
-            zip(commands, args, envs)
-        ):
+    if stdio_mcp_tool_configs:
+        for name, tool in stdio_mcp_tool_configs.items():
             logger.info(
-                f'Initializing MCP agent for {command} with stdio connection...'
+                f'Initializing MCP tool [{name}] for [{tool.command}] with stdio connection...'
             )
-
             client = MCPClient()
             try:
-                await client.connect_stdio(command, command_args, command_envs)
+                await client.connect_stdio(
+                    tool.command,
+                    tool.args,
+                    [(k, v) for k, v in tool.env.items()],
+                )
                 mcp_clients.append(client)
-                logger.info(f'Connected to MCP server via stdio with command {command}')
+                logger.info(
+                    f'Connected to MCP server via stdio with command {tool.command}'
+                )
             except Exception as e:
-                logger.error(f'Failed to connect with command {command}: {str(e)}')
+                logger.error(f'Failed to connect with command {tool.command}: {str(e)}')
                 # Don't raise the exception, just log it and continue
                 # Make sure to disconnect the client to clean up resources
                 try:
@@ -88,7 +87,6 @@ async def create_mcp_clients(
                     logger.error(
                         f'Error during disconnect after failed connection: {str(disconnect_error)}'
                     )
-
     return mcp_clients
 
 
@@ -103,11 +101,10 @@ async def fetch_mcp_tools_from_config(mcp_config: MCPConfig) -> list[dict]:
     mcp_tools = []
 
     try:
+        logger.debug(f'Creating MCP clients with config: {mcp_config}')
         mcp_clients = await create_mcp_clients(
             mcp_config.sse.mcp_servers,
-            mcp_config.stdio.commands,
-            mcp_config.stdio.args,
-            mcp_config.stdio.envs,
+            mcp_config.stdio.tools,
         )
 
         if not mcp_clients:
@@ -126,4 +123,5 @@ async def fetch_mcp_tools_from_config(mcp_config: MCPConfig) -> list[dict]:
             except Exception as disconnect_error:
                 logger.error(f'Error disconnecting MCP client: {str(disconnect_error)}')
 
+    logger.debug(f'MCP tools: {mcp_tools}')
     return mcp_tools

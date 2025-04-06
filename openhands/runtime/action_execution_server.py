@@ -17,7 +17,6 @@ import time
 import traceback
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Optional
 from zipfile import ZipFile
 
 from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
@@ -33,6 +32,7 @@ from starlette.background import BackgroundTask
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from uvicorn import run
 
+from openhands.core.config.mcp_config import MCPStdioConfigEntry
 from openhands.core.exceptions import BrowserUnavailableException
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
@@ -73,10 +73,8 @@ from openhands.utils.async_utils import call_sync_from_async, wait_all
 
 class ActionRequest(BaseModel):
     action: dict
-    sse_mcp_config: Optional[list[str]] = None
-    stdio_mcp_config: Optional[
-        tuple[list[str], list[list[str]], list[list[tuple[str, str]]]]
-    ] = None
+    sse_mcp_config: list[str] | None = None
+    stdio_mcp_tool_configs: dict[str, MCPStdioConfigEntry] | None = None
 
 
 ROOT_GID = 0
@@ -192,20 +190,18 @@ class ActionExecutor:
         )
         self.memory_monitor.start_monitoring()
         self.sse_mcp_servers: list[str] = []
-        self.stdio_mcp_config: tuple[
-            list[str], list[list[str]], list[list[tuple[str, str]]]
-        ] = ([], [], [])
+        self.stdio_mcp_tool_configs: dict[str, MCPStdioConfigEntry] = {}
 
     @property
     def initial_cwd(self):
         return self._initial_cwd
 
     def process_request(self, action_request: ActionRequest):
-        # update the sse_mcp_servers and stdio_mcp_config to prepare for MCP action if needed
+        # update the sse_mcp_servers and stdio_mcp_tool_configs to prepare for MCP action if needed
         if action_request.sse_mcp_config:
             self.sse_mcp_servers = action_request.sse_mcp_config
-        if action_request.stdio_mcp_config:
-            self.stdio_mcp_config = action_request.stdio_mcp_config
+        if action_request.stdio_mcp_tool_configs:
+            self.stdio_mcp_tool_configs = action_request.stdio_mcp_tool_configs
 
     async def _init_browser_async(self):
         """Initialize the browser asynchronously."""
@@ -526,21 +522,13 @@ class ActionExecutor:
         return await browse(action, self.browser)
 
     async def call_tool_mcp(self, action: McpAction) -> Observation:
-        commands: list[str] = []
-        args: list[list[str]] = []
-        envs: list[list[tuple[str, str]]] = []
-        if self.stdio_mcp_config:
-            commands = self.stdio_mcp_config[0]
-            if len(self.stdio_mcp_config) > 1:
-                args = self.stdio_mcp_config[1]
-            if len(self.stdio_mcp_config) > 2:
-                envs = self.stdio_mcp_config[2]
-        if not self.sse_mcp_servers and not commands:
+        if not self.sse_mcp_servers and not self.stdio_mcp_tool_configs:
             raise ValueError('No MCP servers or stdio MCP config found')
 
         logger.warning(f'SSE MCP servers: {self.sse_mcp_servers}')
         mcp_clients = await create_mcp_clients(
-            self.sse_mcp_servers, commands, args, envs
+            self.sse_mcp_servers,
+            self.stdio_mcp_tool_configs,
         )
         logger.warn(f'MCP action received: {action}')
         # Find the MCP agent that has the matching tool name
