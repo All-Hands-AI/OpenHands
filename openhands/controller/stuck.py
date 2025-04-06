@@ -159,7 +159,12 @@ class StuckDetector:
                         "SyntaxError: unterminated string literal (detected at line"
                     ):
                         if self._check_for_consistent_line_error(
-                            last_observations[:3], error_message
+                            [
+                                obs
+                                for obs in last_observations[:3]
+                                if isinstance(obs, IPythonRunCellObservation)
+                            ],
+                            error_message,
                         ):
                             logger.warning(warning)
                             return True
@@ -167,7 +172,12 @@ class StuckDetector:
                         "SyntaxError: invalid syntax. Perhaps you forgot a comma?",
                         "SyntaxError: incomplete input",
                     ) and self._check_for_consistent_invalid_syntax(
-                        last_observations[:3], error_message
+                        [
+                            obs
+                            for obs in last_observations[:3]
+                            if isinstance(obs, IPythonRunCellObservation)
+                        ],
+                        error_message,
                     ):
                         logger.warning(warning)
                         return True
