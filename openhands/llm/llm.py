@@ -186,7 +186,7 @@ class LLM(RetryMixin, DebugMixin):
             retry_multiplier=self.config.retry_multiplier,
             retry_listener=self.retry_listener,
         )
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             """Wrapper for the litellm completion function. Logs the input and output of the completion function."""
             from openhands.io import json
 
@@ -355,14 +355,14 @@ class LLM(RetryMixin, DebugMixin):
         self._completion = wrapper
 
     @property
-    def completion(self):
+    def completion(self) -> Callable:
         """Decorator for the litellm completion function.
 
         Check the complete documentation at https://litellm.vercel.app/docs/completion
         """
         return self._completion
 
-    def init_model_info(self):
+    def init_model_info(self) -> None:
         if self._tried_model_info:
             return
         self._tried_model_info = True
@@ -622,10 +622,12 @@ class LLM(RetryMixin, DebugMixin):
         # try to get the token count with the default litellm tokenizers
         # or the custom tokenizer if set for this LLM configuration
         try:
-            return litellm.token_counter(
-                model=self.config.model,
-                messages=messages,
-                custom_tokenizer=self.tokenizer,
+            return int(
+                litellm.token_counter(
+                    model=self.config.model,
+                    messages=messages,
+                    custom_tokenizer=self.tokenizer,
+                )
             )
         except Exception as e:
             # limit logspam in case token count is not supported
@@ -654,7 +656,7 @@ class LLM(RetryMixin, DebugMixin):
                 return True
         return False
 
-    def _completion_cost(self, response) -> float:
+    def _completion_cost(self, response: Any) -> float:
         """Calculate completion cost and update metrics with running total.
 
         Calculate the cost of a completion response based on the model. Local models are treated as free.
@@ -707,21 +709,21 @@ class LLM(RetryMixin, DebugMixin):
                 logger.debug(
                     f'Using fallback model name {_model_name} to get cost: {cost}'
                 )
-            self.metrics.add_cost(cost)
-            return cost
+            self.metrics.add_cost(float(cost))
+            return float(cost)
         except Exception:
             self.cost_metric_supported = False
             logger.debug('Cost calculation not supported for this model.')
         return 0.0
 
-    def __str__(self):
+    def __str__(self) -> str:
         if self.config.api_version:
             return f'LLM(model={self.config.model}, api_version={self.config.api_version}, base_url={self.config.base_url})'
         elif self.config.base_url:
             return f'LLM(model={self.config.model}, base_url={self.config.base_url})'
         return f'LLM(model={self.config.model})'
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return str(self)
 
     def reset(self) -> None:

@@ -46,7 +46,7 @@ from openhands.utils.http_session import HttpSession
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
 
-def _is_retryable_check_alive_error(exception):
+def _is_retryable_error(exception):
     return isinstance(
         exception, (httpx.RemoteProtocolError, httpcore.RemoteProtocolError)
     )
@@ -94,6 +94,11 @@ class ActionExecutionClient(Runtime):
     def _get_action_execution_server_host(self) -> str:
         pass
 
+    @retry(
+        retry=retry_if_exception(_is_retryable_error),
+        stop=stop_after_attempt(5) | stop_if_should_exit(),
+        wait=wait_exponential(multiplier=1, min=4, max=15),
+    )
     def _send_action_server_request(
         self,
         method: str,
@@ -115,11 +120,6 @@ class ActionExecutionClient(Runtime):
         """
         return send_request(self.session, method, url, **kwargs)
 
-    @retry(
-        retry=retry_if_exception(_is_retryable_check_alive_error),
-        stop=stop_after_attempt(5) | stop_if_should_exit(),
-        wait=wait_exponential(multiplier=1, min=4, max=15),
-    )
     def check_if_alive(self) -> None:
         response = self._send_action_server_request(
             'GET',
