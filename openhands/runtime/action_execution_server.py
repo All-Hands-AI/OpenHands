@@ -262,33 +262,44 @@ class ActionExecutor:
         is_local_runtime = os.environ.get('LOCAL_RUNTIME_MODE') == '1'
         is_windows = platform.system() == 'Windows'
 
-        # Base git config commands
+        # Determine base git config command
         if is_local_runtime:
-            base_git_config = (
-                'git config --file ./.git_config user.name "openhands" && '
-                'git config --file ./.git_config user.email "openhands@all-hands.dev" && '
-                'export GIT_CONFIG=$(pwd)/.git_config'
-            )
+            if is_windows:
+                # Windows, local
+                base_git_config = (
+                    'git config --file ./.git_config user.name "openhands"; '
+                    'git config --file ./.git_config user.email "openhands@all-hands.dev"; '
+                    '$env:GIT_CONFIG = (Get-Location).Path + "\\\\.git_config"'
+                )
+            else:
+                # Linux/macOS, local
+                base_git_config = (
+                    'git config --file ./.git_config user.name "openhands" && '
+                    'git config --file ./.git_config user.email "openhands@all-hands.dev" && '
+                    'export GIT_CONFIG=$(pwd)/.git_config'
+                )
         else:
+            # Non-local (implies Linux/macOS)
             base_git_config = (
                 'git config --global user.name "openhands" && '
                 'git config --global user.email "openhands@all-hands.dev"'
             )
 
-        # Define the no-pager command based on OS
+        # Determine no-pager command
         if is_windows:
             no_pager_cmd = 'function git { git.exe --no-pager $args }'
         else:
             no_pager_cmd = 'alias git="git --no-pager"'
 
-        # Add commands to the list
-        if is_windows and not is_local_runtime:
-            # On Windows (non-local), run commands separately
-            INIT_COMMANDS.append(base_git_config)
-            INIT_COMMANDS.append(no_pager_cmd)
+        # Combine commands based on OS
+        # If windows, it must be local runtime, use semicolon.
+        # If not windows (Linux/macOS), use && (works for both local and non-local).
+        if is_windows:
+            command_to_run = f'{base_git_config}; {no_pager_cmd}'
         else:
-            # On Linux/macOS or Windows (local), combine commands
-            INIT_COMMANDS.append(f'{base_git_config} && {no_pager_cmd}')
+            command_to_run = f'{base_git_config} && {no_pager_cmd}'
+
+        INIT_COMMANDS.append(command_to_run)
 
         logger.info(f'Initializing by running {len(INIT_COMMANDS)} bash commands...')
         for command in INIT_COMMANDS:
