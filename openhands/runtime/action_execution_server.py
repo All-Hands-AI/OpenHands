@@ -74,7 +74,9 @@ from openhands.utils.async_utils import call_sync_from_async, wait_all
 class ActionRequest(BaseModel):
     action: dict
     sse_mcp_config: Optional[list[str]] = None
-    stdio_mcp_config: Optional[tuple[list[str], list[list[str]], list[list[tuple[str, str]]]]] = None
+    stdio_mcp_config: Optional[
+        tuple[list[str], list[list[str]], list[list[tuple[str, str]]]]
+    ] = None
 
 
 ROOT_GID = 0
@@ -190,7 +192,9 @@ class ActionExecutor:
         )
         self.memory_monitor.start_monitoring()
         self.sse_mcp_servers: list[str] = []
-        self.stdio_mcp_config: tuple[list[str], list[list[str]], list[list[tuple[str, str]]]] = ([], [], [])
+        self.stdio_mcp_config: tuple[
+            list[str], list[list[str]], list[list[tuple[str, str]]]
+        ] = ([], [], [])
 
     @property
     def initial_cwd(self):

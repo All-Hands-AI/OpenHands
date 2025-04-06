@@ -37,16 +37,17 @@ class MCPStdioConfig(BaseModel):
     Attributes:
         commands: List of commands to run.
         args: List of arguments for each command.
+        envs: List of environment variable tuples for each command.
     """
 
     commands: List[str] = Field(default_factory=list)
     args: List[List[str]] = Field(default_factory=list)
     envs: List[List[tuple[str, str]]] = Field(default_factory=list)
-    
+
     model_config = {'extra': 'forbid'}
 
     def validate_stdio(self) -> None:
-        """Validate that commands and args are properly configured."""
+        """Validate that commands, args, and envs are properly configured."""
 
         # Check if number of commands matches number of args lists
         if len(self.commands) != len(self.args):
@@ -54,6 +55,26 @@ class MCPStdioConfig(BaseModel):
                 f'Number of commands ({len(self.commands)}) does not match '
                 f'number of args lists ({len(self.args)})'
             )
+
+        # Check if number of commands matches number of envs lists
+        if len(self.commands) != len(self.envs):
+            raise ValueError(
+                f'Number of commands ({len(self.commands)}) does not match '
+                f'number of envs lists ({len(self.envs)})'
+            )
+
+        # Validate each environment variable tuple
+        for i, env_list in enumerate(self.envs):
+            for j, env_tuple in enumerate(env_list):
+                if not isinstance(env_tuple, tuple) or len(env_tuple) != 2:
+                    raise ValueError(
+                        f'Environment variable at index {j} for command {i} must be a tuple of (key, value)'
+                    )
+                key, value = env_tuple
+                if not isinstance(key, str) or not isinstance(value, str):
+                    raise ValueError(
+                        f'Environment variable key and value at index {j} for command {i} must be strings'
+                    )
 
 
 class MCPConfig(BaseModel):

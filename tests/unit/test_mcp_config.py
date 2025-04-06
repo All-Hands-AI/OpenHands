@@ -1,4 +1,5 @@
 import pytest
+from pydantic import ValidationError
 
 from openhands.core.config.mcp_config import MCPConfig, MCPSSEConfig, MCPStdioConfig
 
@@ -34,14 +35,16 @@ def test_duplicate_sse_urls():
 def test_valid_stdio_config():
     """Test a valid stdio configuration."""
     config = MCPStdioConfig(
-        commands=['python', 'python3'], args=[['-m', 'server1'], ['-m', 'server2']]
+        commands=['python', 'python3'],
+        args=[['-m', 'server1'], ['-m', 'server2']],
+        envs=[[('KEY1', 'value1')], [('KEY2', 'value2')]],
     )
     config.validate_stdio()  # Should not raise any exception
 
 
 def test_empty_stdio_config():
     """Test stdio configuration with empty commands list."""
-    config = MCPStdioConfig(commands=[], args=[])
+    config = MCPStdioConfig(commands=[], args=[], envs=[])
     config.validate_stdio()
 
 
@@ -50,6 +53,7 @@ def test_mismatched_stdio_lengths():
     config = MCPStdioConfig(
         commands=['python', 'python3'],
         args=[['-m', 'server1']],  # Only one args list for two commands
+        envs=[[('KEY1', 'value1')], [('KEY2', 'value2')]],
     )
     with pytest.raises(ValueError) as exc_info:
         config.validate_stdio()
@@ -58,11 +62,49 @@ def test_mismatched_stdio_lengths():
     )
 
 
+def test_mismatched_envs_lengths():
+    """Test stdio configuration with mismatched number of commands and envs."""
+    config = MCPStdioConfig(
+        commands=['python', 'python3'],
+        args=[['-m', 'server1'], ['-m', 'server2']],
+        envs=[[('KEY1', 'value1')]],  # Only one envs list for two commands
+    )
+    with pytest.raises(ValueError) as exc_info:
+        config.validate_stdio()
+    assert 'Number of commands (2) does not match number of envs lists (1)' in str(
+        exc_info.value
+    )
+
+
+def test_invalid_env_tuple_format():
+    """Test stdio configuration with invalid environment variable tuple format."""
+    with pytest.raises(ValidationError) as exc_info:
+        MCPStdioConfig(
+            commands=['python'],
+            args=[['-m', 'server1']],
+            envs=[[('KEY1', 'value1', 'extra')]],  # Invalid tuple with 3 elements
+        )
+    assert 'Tuple should have at most 2 items' in str(exc_info.value)
+
+
+def test_invalid_env_tuple_types():
+    """Test stdio configuration with invalid environment variable types."""
+    with pytest.raises(ValidationError) as exc_info:
+        MCPStdioConfig(
+            commands=['python'],
+            args=[['-m', 'server1']],
+            envs=[[(123, 'value1')]],  # Invalid key type (integer instead of string)
+        )
+    assert 'Input should be a valid string' in str(exc_info.value)
+
+
 def test_valid_combined_config():
     """Test a valid combined MCP configuration with both SSE and stdio."""
     MCPConfig(
         sse=MCPSSEConfig(mcp_servers=['http://server1:8080']),
-        stdio=MCPStdioConfig(commands=['python'], args=[['-m', 'server1']]),
+        stdio=MCPStdioConfig(
+            commands=['python'], args=[['-m', 'server1']], envs=[[('KEY1', 'value1')]]
+        ),
     )
     # Should not raise any exception
 
@@ -71,20 +113,29 @@ def test_from_toml_section_valid():
     """Test creating config from valid TOML section."""
     data = {
         'mcp-sse': {'mcp_servers': ['http://server1:8080']},
-        'mcp-stdio': {'commands': ['python'], 'args': [['-m', 'server1']]},
+        'mcp-stdio': {
+            'commands': ['python'],
+            'args': [['-m', 'server1']],
+            'envs': [[('KEY1', 'value1')]],
+        },
     }
     result = MCPConfig.from_toml_section(data)
     assert 'mcp' in result
     assert result['mcp'].sse.mcp_servers == ['http://server1:8080']
     assert result['mcp'].stdio.commands == ['python']
     assert result['mcp'].stdio.args == [['-m', 'server1']]
+    assert result['mcp'].stdio.envs == [[('KEY1', 'value1')]]
 
 
 def test_from_toml_section_invalid_sse():
     """Test creating config from TOML section with invalid SSE URL."""
     data = {
         'mcp-sse': {'mcp_servers': ['not_a_url']},
-        'mcp-stdio': {'commands': ['python'], 'args': [['-m', 'server1']]},
+        'mcp-stdio': {
+            'commands': ['python'],
+            'args': [['-m', 'server1']],
+            'envs': [[('KEY1', 'value1')]],
+        },
     }
     with pytest.raises(ValueError) as exc_info:
         MCPConfig.from_toml_section(data)
@@ -98,6 +149,7 @@ def test_from_toml_section_invalid_stdio():
         'mcp-stdio': {
             'commands': ['python', 'python3'],
             'args': [['-m', 'server1']],  # Only one args list for two commands
+            'envs': [[('KEY1', 'value1')], [('KEY2', 'value2')]],
         },
     }
     with pytest.raises(ValueError) as exc_info:

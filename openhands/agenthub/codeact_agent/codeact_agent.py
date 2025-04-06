@@ -1,8 +1,6 @@
 import os
 from collections import deque
 
-from litellm import ChatCompletionToolParam
-
 import openhands.agenthub.codeact_agent.function_calling as codeact_function_calling
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
@@ -139,13 +137,13 @@ class CodeActAgent(Agent):
             'messages': self.llm.format_messages_for_llm(messages),
         }
         params['tools'] = self.tools
-        
-        
+
         if self.mcp_tools:
             # Only add tools with unique names
             existing_names = {tool['function']['name'] for tool in params['tools']}
             unique_mcp_tools = [
-                tool for tool in self.mcp_tools 
+                tool
+                for tool in self.mcp_tools
                 if tool['function']['name'] not in existing_names
             ]
             params['tools'] += unique_mcp_tools

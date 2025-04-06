@@ -1,7 +1,7 @@
 import hashlib
 import os
 import uuid
-from typing import Callable, List, Tuple, Type
+from typing import Callable, Tuple, Type
 
 from pydantic import SecretStr
 
