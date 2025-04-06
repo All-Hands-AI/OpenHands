@@ -50,7 +50,7 @@ class AppConfig(BaseModel):
     """
 
     llms: dict[str, LLMConfig] = Field(default_factory=dict)
-    agents: dict = Field(default_factory=dict)
+    agents: dict[str, AgentConfig] = Field(default_factory=dict)
     default_agent: str = Field(default=OH_DEFAULT_AGENT)
     sandbox: SandboxConfig = Field(default_factory=SandboxConfig)
     security: SecurityConfig = Field(default_factory=SecurityConfig)
@@ -111,10 +111,10 @@ class AppConfig(BaseModel):
     def get_agent_config(self, name: str = 'agent') -> AgentConfig:
         """'agent' is the name for default config (for backward compatibility prior to 0.8)."""
         if name in self.agents:
-            return self.agents[name]  # type: ignore
+            return self.agents[name]
         if 'agent' not in self.agents:
             self.agents['agent'] = AgentConfig()
-        return self.agents['agent']  # type: ignore
+        return self.agents['agent']
 
     def set_agent_config(self, value: AgentConfig, name: str = 'agent') -> None:
         self.agents[name] = value
@@ -126,8 +126,10 @@ class AppConfig(BaseModel):
     def get_llm_config_from_agent(self, name: str | None = 'agent') -> LLMConfig:
         agent_name = name if name is not None else 'agent'
         agent_config: AgentConfig = self.get_agent_config(agent_name)
-        llm_config_name = agent_config.llm_config
-        return self.get_llm_config(llm_config_name)  # type: ignore
+        llm_config_name = (
+            agent_config.llm_config if agent_config.llm_config is not None else 'llm'
+        )
+        return self.get_llm_config(llm_config_name)
 
     def get_agent_configs(self) -> dict[str, AgentConfig]:
         return self.agents

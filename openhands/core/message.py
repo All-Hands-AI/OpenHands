@@ -14,7 +14,7 @@ class Content(BaseModel):
     type: str
     cache_prompt: bool = False
 
-    @model_serializer  # type: ignore
+    @model_serializer(mode='plain')
     def serialize_model(
         self,
     ) -> Union[
@@ -28,7 +28,7 @@ class TextContent(Content):
     type: str = ContentType.TEXT.value
     text: str
 
-    @model_serializer  # type: ignore
+    @model_serializer(mode='plain')
     def serialize_model(self) -> Dict[str, Union[str, Dict[str, str]]]:
         data: Dict[str, Union[str, Dict[str, str]]] = {
             'type': self.type,
@@ -43,7 +43,7 @@ class ImageContent(Content):
     type: str = ContentType.IMAGE_URL.value
     image_urls: list[str]
 
-    @model_serializer  # type: ignore
+    @model_serializer(mode='plain')
     def serialize_model(self) -> List[Dict[str, Union[str, Dict[str, str]]]]:
         images: List[Dict[str, Union[str, Dict[str, str]]]] = []
         for url in self.image_urls:
@@ -74,7 +74,7 @@ class Message(BaseModel):
     def contains_image(self) -> bool:
         return any(isinstance(content, ImageContent) for content in self.content)
 
-    @model_serializer  # type: ignore
+    @model_serializer(mode='plain')
     def serialize_model(self) -> Dict[str, Any]:
         # We need two kinds of serializations:
         # - into a single string: for providers that don't support list of content items (e.g. no vision, no tool calls)
