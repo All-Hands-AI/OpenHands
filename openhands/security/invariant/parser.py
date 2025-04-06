@@ -1,4 +1,4 @@
-from typing import List, Optional, Tuple, Union
+from typing import List, Tuple, Union
 
 from pydantic import BaseModel, Field
 
@@ -31,7 +31,7 @@ def get_next_id(trace: List[TraceElement]) -> str:
 
 def get_last_id(
     trace: List[TraceElement],
-) -> Optional[str]:
+) -> str | None:
     for el in reversed(trace):
         if type(el) == ToolCall:
             return el.id

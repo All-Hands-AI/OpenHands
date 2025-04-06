@@ -1,7 +1,7 @@
 import ast
 import re
 import uuid
-from typing import Any, Dict, List, Optional, Tuple, cast
+from typing import Any, Dict, List, Tuple, cast
 
 import docker
 from fastapi import HTTPException, Request
@@ -40,13 +40,13 @@ class InvariantAnalyzer(SecurityAnalyzer):
     settings: Dict[str, Any] = {}
 
     check_browsing_alignment: bool = False
-    guardrail_llm: Optional[LLM] = None
+    guardrail_llm: LLM | None = None
 
     def __init__(
         self,
         event_stream: EventStream,
-        policy: Optional[str] = None,
-        sid: Optional[str] = None,
+        policy: str | None = None,
+        sid: str | None = None,
     ) -> None:
         """Initializes a new instance of the InvariantAnalzyer class."""
         super().__init__(event_stream)
@@ -202,16 +202,16 @@ class InvariantAnalyzer(SecurityAnalyzer):
 
     def parse_browser_action(
         self, browser_action: str
-    ) -> List[Tuple[Optional[str], List[str]]]:
+    ) -> List[Tuple[str | None, List[str]]]:
         assert browser_action[-1] == ')'
         tree = ast.parse(browser_action, mode='exec')
-        function_calls: List[Tuple[Optional[str], List[str]]] = []
+        function_calls: List[Tuple[str | None, List[str]]] = []
 
         for node in tree.body:
             if isinstance(node, ast.Expr) and isinstance(node.value, ast.Call):
                 call_node = node.value  # This contains the actual function call
                 # Extract function name
-                func_name: Optional[str] = None
+                func_name: str | None = None
                 if isinstance(call_node.func, ast.Name):
                     func_name = call_node.func.id
                 elif isinstance(call_node.func, ast.Attribute):

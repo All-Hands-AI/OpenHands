@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
+from typing import Any, Dict, Iterable, List, Tuple, Union
 
 from pydantic import BaseModel, Field
 from pydantic.dataclasses import dataclass
@@ -11,7 +11,7 @@ class LLM:
 
 
 class Event(BaseModel):
-    metadata: Optional[Dict[str, Any]] = Field(
+    metadata: Dict[str, Any] | None = Field(
         default_factory=lambda: dict(), description='Metadata associated with the event'
     )
 
@@ -29,8 +29,8 @@ class ToolCall(Event):
 
 class Message(Event):
     role: str
-    content: Optional[str]
-    tool_calls: Optional[List[ToolCall]] = None
+    content: str | None
+    tool_calls: List[ToolCall] | None = None
 
     def __rich_repr__(
         self,
@@ -44,6 +44,6 @@ class Message(Event):
 class ToolOutput(Event):
     role: str
     content: str
-    tool_call_id: Optional[str] = None
+    tool_call_id: str | None = None
 
-    _tool_call: Optional[ToolCall] = None
+    _tool_call: ToolCall | None = None
