@@ -5,6 +5,7 @@ from uuid import uuid4
 
 from termcolor import colored
 
+import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands.core.config import (
     AppConfig,
     parse_arguments,
