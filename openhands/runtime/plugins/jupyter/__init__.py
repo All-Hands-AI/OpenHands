@@ -74,9 +74,11 @@ class JupyterPlugin(Plugin):
         )
         # read stdout until the kernel gateway is ready
         output = ''
-        while should_continue():
-            # Original code doesn't actually read from stdout in a meaningful way
-            # We're keeping the same behavior while adding type annotations
+        while should_continue() and self.gateway_process.stdout is not None:
+            line = self.gateway_process.stdout.readline().decode('utf-8')
+            output += line
+            if 'at' in line:
+                break
             time.sleep(1)
             logger.debug('Waiting for jupyter kernel gateway to start...')
 
