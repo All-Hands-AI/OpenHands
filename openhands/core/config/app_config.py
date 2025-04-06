@@ -123,8 +123,9 @@ class AppConfig(BaseModel):
         """Get a map of agent names to llm configs."""
         return {name: self.get_llm_config_from_agent(name) for name in self.agents}
 
-    def get_llm_config_from_agent(self, name: str = 'agent') -> LLMConfig:
-        agent_config: AgentConfig = self.get_agent_config(name)
+    def get_llm_config_from_agent(self, name: str | None = 'agent') -> LLMConfig:
+        agent_name = name if name is not None else 'agent'
+        agent_config: AgentConfig = self.get_agent_config(agent_name)
         llm_config_name = agent_config.llm_config
         return self.get_llm_config(llm_config_name)  # type: ignore
 
