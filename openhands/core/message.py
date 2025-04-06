@@ -17,7 +17,10 @@ class Content(BaseModel):
     @model_serializer  # type: ignore
     def serialize_model(
         self,
-    ) -> Union[Dict[str, Union[str, Dict[str, str]]], List[Dict[str, Union[str, Dict[str, str]]]]]:
+    ) -> Union[
+        Dict[str, Union[str, Dict[str, str]]],
+        List[Dict[str, Union[str, Dict[str, str]]]],
+    ]:
         raise NotImplementedError('Subclasses should implement this method.')
 
 
