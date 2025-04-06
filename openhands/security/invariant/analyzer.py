@@ -288,7 +288,7 @@ class InvariantAnalyzer(SecurityAnalyzer):
                     break
 
     async def should_confirm(self, event: Event) -> bool:
-        risk = getattr(event, 'security_risk', None)
+        risk = event.security_risk if hasattr(event, 'security_risk') else None  # type: ignore [attr-defined]
         return (
             risk is not None
             and risk < self.settings.get('RISK_SEVERITY', ActionSecurityRisk.MEDIUM)
