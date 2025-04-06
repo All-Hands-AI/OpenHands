@@ -1,7 +1,7 @@
 from unittest.mock import Mock
 
 import pytest
-from litellm import ChatCompletionMessageToolCall, ModelResponse
+from litellm import ChatCompletionMessageToolCall
 
 from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
 from openhands.agenthub.codeact_agent.function_calling import (

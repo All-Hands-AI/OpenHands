@@ -100,7 +100,6 @@ class GitHubService(GitService):
             email=response.get('email'),
         )
 
-
     async def _fetch_paginated_repos(
         self, url: str, params: dict, max_repos: int, extract_key: str | None = None
     ) -> list[dict]:

@@ -139,8 +139,3 @@ class AppConfig(BaseModel):
         super().model_post_init(__context)
         if not AppConfig.defaults_dict:  # Only set defaults_dict if it's empty
             AppConfig.defaults_dict = model_defaults_to_dict(self)
-        # Validate MCP configurations
-        if self.mcp.sse.mcp_servers:
-            self.mcp.sse.validate_servers()
-        if self.mcp.stdio.commands:
-            self.mcp.stdio.validate_stdio()

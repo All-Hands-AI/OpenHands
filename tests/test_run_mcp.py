@@ -48,7 +48,9 @@ class MCPRunner:
 
         # Initialize stdio connections
         if mcp_config.stdio.commands:
-            for command, args, envs in zip(mcp_config.stdio.commands, mcp_config.stdio.args, mcp_config.stdio.envs):
+            for command, args, envs in zip(
+                mcp_config.stdio.commands, mcp_config.stdio.args, mcp_config.stdio.envs
+            ):
                 logger.info(
                     f'Initializing MCP agent for {command} with stdio connection...'
                 )
