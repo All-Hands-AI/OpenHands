@@ -32,7 +32,7 @@ def _run_cmd_action(runtime, custom_command: str):
 def test_bash_command_env(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
-        obs = runtime.run_action(CmdRunAction(command='env'))
+        obs = runtime.run_action(CmdRunAction(command="Write-Output 'Hello World'"))
         assert isinstance(
             obs, CmdOutputObservation
         ), 'The observation should be a CmdOutputObservation.'

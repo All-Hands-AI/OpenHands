@@ -258,11 +258,38 @@ class ActionExecutor:
             )
 
     async def _init_bash_commands(self):
-        INIT_COMMANDS = [
-            'git config --file ./.git_config user.name "openhands" && git config --file ./.git_config user.email "openhands@all-hands.dev" && alias git="git --no-pager" && export GIT_CONFIG=$(pwd)/.git_config'
-            if os.environ.get('LOCAL_RUNTIME_MODE') == '1'
-            else 'git config --global user.name "openhands" && git config --global user.email "openhands@all-hands.dev" && alias git="git --no-pager"'
-        ]
+        INIT_COMMANDS = []
+        is_local_runtime = os.environ.get('LOCAL_RUNTIME_MODE') == '1'
+        is_windows = platform.system() == 'Windows'
+
+        # Base git config commands
+        if is_local_runtime:
+            base_git_config = (
+                'git config --file ./.git_config user.name "openhands" && '
+                'git config --file ./.git_config user.email "openhands@all-hands.dev" && '
+                'export GIT_CONFIG=$(pwd)/.git_config'
+            )
+        else:
+            base_git_config = (
+                'git config --global user.name "openhands" && '
+                'git config --global user.email "openhands@all-hands.dev"'
+            )
+
+        # Define the no-pager command based on OS
+        if is_windows:
+            no_pager_cmd = 'function git { git.exe --no-pager $args }'
+        else:
+            no_pager_cmd = 'alias git="git --no-pager"'
+
+        # Add commands to the list
+        if is_windows and not is_local_runtime:
+            # On Windows (non-local), run commands separately
+            INIT_COMMANDS.append(base_git_config)
+            INIT_COMMANDS.append(no_pager_cmd)
+        else:
+            # On Linux/macOS or Windows (local), combine commands
+            INIT_COMMANDS.append(f'{base_git_config} && {no_pager_cmd}')
+
         logger.info(f'Initializing by running {len(INIT_COMMANDS)} bash commands...')
         for command in INIT_COMMANDS:
             action = CmdRunAction(command=command)
@@ -725,7 +752,7 @@ if __name__ == '__main__':
 
         To list files:
         ```sh
-        curl http://localhost:3000/api/list-files
+        curl -X POST -d '{"path": "/"}' http://localhost:3000/list_files
         ```
 
         Args:
