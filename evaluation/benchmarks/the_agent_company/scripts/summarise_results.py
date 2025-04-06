@@ -15,7 +15,7 @@ def calculate_cost(model: str, prompt_tokens: int, completion_tokens: int) -> fl
     """
     Calculate the cost of the model call.
     """
-    if 'claude-3-5-sonnet' in model.lower():
+    if 'claude-3-5-sonnet' in model.lower() or 'claude-3-7-sonnet' in model.lower():
         # https://www.anthropic.com/pricing#anthropic-api, accessed 12/11/2024
         return 0.000003 * prompt_tokens + 0.000015 * completion_tokens
     elif 'gpt-4o' in model.lower():
@@ -293,6 +293,8 @@ def main():
                 for _, _, _, _, _, nature_category in detailed_results
                 if nature_category == task_nature
             )
+            if num_of_tasks == 0:
+                continue
             task_nature_score = (
                 sum(
                     score
