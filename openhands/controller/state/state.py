@@ -22,13 +22,13 @@ from openhands.storage.locations import get_conversation_agent_state_filename
 
 class TrafficControlState(str, Enum):
     # default state, no rate limiting
-    NORMAL = "normal"
+    NORMAL = 'normal'
 
     # task paused due to traffic control
-    THROTTLING = "throttling"
+    THROTTLING = 'throttling'
 
     # traffic control is temporarily paused
-    PAUSED = "paused"
+    PAUSED = 'paused'
 
 
 RESUMABLE_STATES = [
@@ -74,7 +74,7 @@ class State:
     """
 
     root_task: RootTask = field(default_factory=RootTask)
-    session_id: str = ""
+    session_id: str = ''
     # global iteration for the current task
     iteration: int = 0
     # local iteration for the current subtask
@@ -102,14 +102,14 @@ class State:
     # NOTE: This will never be used by the controller, but it can be used by different
     # evaluation tasks to store extra data needed to track the progress/state of the task.
     extra_data: dict[str, Any] = field(default_factory=dict)
-    last_error: str = ""
+    last_error: str = ''
 
     def save_to_session(
         self, sid: str, file_store: FileStore, user_id: str | None
     ) -> None:
         pickled = pickle.dumps(self)
-        logger.debug(f"Saving state to session {sid}:{self.agent_state}")
-        encoded = base64.b64encode(pickled).decode("utf-8")
+        logger.debug(f'Saving state to session {sid}:{self.agent_state}')
+        encoded = base64.b64encode(pickled).decode('utf-8')
         try:
             file_store.write(
                 get_conversation_agent_state_filename(sid, user_id), encoded
@@ -123,13 +123,13 @@ class State:
                 except Exception:
                     pass
         except Exception as e:
-            logger.error(f"Failed to save state to session: {e}")
+            logger.error(f'Failed to save state to session: {e}')
             raise e
 
     @staticmethod
     def restore_from_session(
         sid: str, file_store: FileStore, user_id: str | None = None
-    ) -> "State":
+    ) -> 'State':
         """
         Restores the state from the previously saved session.
         """
@@ -151,10 +151,10 @@ class State:
                 state = pickle.loads(pickled)
             else:
                 raise FileNotFoundError(
-                    f"Could not restore state from session file for sid: {sid}"
+                    f'Could not restore state from session file for sid: {sid}'
                 )
         except Exception as e:
-            logger.debug(f"Could not restore state from session: {e}")
+            logger.debug(f'Could not restore state from session: {e}')
             raise e
 
         # update state
@@ -170,12 +170,12 @@ class State:
     def __getstate__(self) -> dict:
         # don't pickle history, it will be restored from the event stream
         state = self.__dict__.copy()
-        state["history"] = []
+        state['history'] = []
 
         # Remove any view caching attributes. They'll be rebuilt frmo the
         # history after that gets reloaded.
-        state.pop("_history_checksum", None)
-        state.pop("_view", None)
+        state.pop('_history_checksum', None)
+        state.pop('_view', None)
 
         return state
 
@@ -183,7 +183,7 @@ class State:
         self.__dict__.update(state)
 
         # make sure we always have the attribute history
-        if not hasattr(self, "history"):
+        if not hasattr(self, 'history'):
             self.history = []
 
     def get_current_user_intent(self) -> tuple[str | None, list[str] | None]:
@@ -191,7 +191,7 @@ class State:
         last_user_message = None
         last_user_message_image_urls: list[str] | None = []
         for event in reversed(self.view):
-            if isinstance(event, MessageAction) and event.source == "user":
+            if isinstance(event, MessageAction) and event.source == 'user':
                 last_user_message = event.content
                 last_user_message_image_urls = event.image_urls
             elif isinstance(event, AgentFinishAction):
@@ -214,12 +214,12 @@ class State:
 
     def to_llm_metadata(self, agent_name: str) -> dict:
         return {
-            "session_id": self.session_id,
-            "trace_version": openhands.__version__,
-            "tags": [
-                f"agent:{agent_name}",
+            'session_id': self.session_id,
+            'trace_version': openhands.__version__,
+            'tags': [
+                f'agent:{agent_name}',
                 f"web_host:{os.environ.get('WEB_HOST', 'unspecified')}",
-                f"openhands_version:{openhands.__version__}",
+                f'openhands_version:{openhands.__version__}',
             ],
         }
 
@@ -228,7 +228,7 @@ class State:
         # Compute a simple checksum from the history to see if we can re-use any
         # cached view.
         history_checksum = len(self.history)
-        old_history_checksum = getattr(self, "_history_checksum", -1)
+        old_history_checksum = getattr(self, '_history_checksum', -1)
 
         # If the history has changed, we need to re-create the view and update
         # the caching.
