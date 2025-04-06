@@ -1,5 +1,6 @@
-import asyncio
 import os
+import subprocess
+import time
 from dataclasses import dataclass
 
 from openhands.core.logger import openhands_logger as logger
@@ -20,7 +21,7 @@ class JupyterPlugin(Plugin):
     name: str = 'jupyter'
     kernel_gateway_port: int
     kernel_id: str
-    gateway_process: asyncio.subprocess.Process
+    gateway_process: subprocess.Popen
     python_interpreter_path: str
 
     async def initialize(
@@ -66,21 +67,19 @@ class JupyterPlugin(Plugin):
         )
         logger.debug(f'Jupyter launch command: {jupyter_launch_command}')
 
-        # Use asyncio.create_subprocess_shell instead of subprocess.Popen
-        self.gateway_process = await asyncio.create_subprocess_shell(
+        self.gateway_process = subprocess.Popen(
             jupyter_launch_command,
-            stderr=asyncio.subprocess.STDOUT,
-            stdout=asyncio.subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            shell=True,
         )
         # read stdout until the kernel gateway is ready
         output = ''
-        while should_continue() and self.gateway_process.stdout is not None:
-            line = self.gateway_process.stdout.readline().decode('utf-8')
+        while should_continue():
+            line = ''  # Placeholder for reading output
             output += line
             if 'at' in line:
                 break
-            # Use asyncio.sleep instead of time.sleep in async function
-            await asyncio.sleep(1)
+            time.sleep(1)
             logger.debug('Waiting for jupyter kernel gateway to start...')
 
         logger.debug(

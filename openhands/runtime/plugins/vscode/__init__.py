@@ -1,5 +1,6 @@
-import asyncio
 import os
+import subprocess
+import time
 import uuid
 from dataclasses import dataclass
 from typing import Optional
@@ -21,7 +22,7 @@ class VSCodePlugin(Plugin):
     name: str = 'vscode'
     vscode_port: Optional[int] = None
     vscode_connection_token: Optional[str] = None
-    gateway_process: asyncio.subprocess.Process
+    gateway_process: subprocess.Popen
 
     async def initialize(self, username: str) -> None:
         if username not in ['root', 'openhands']:
@@ -44,22 +45,20 @@ class VSCodePlugin(Plugin):
             'EOF'
         )
 
-        # Use asyncio.create_subprocess_shell instead of subprocess.Popen
-        self.gateway_process = await asyncio.create_subprocess_shell(
+        self.gateway_process = subprocess.Popen(
             cmd,
-            stderr=asyncio.subprocess.STDOUT,
-            stdout=asyncio.subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            shell=True,
         )
         # read stdout until the kernel gateway is ready
         output = ''
-        while should_continue() and self.gateway_process.stdout is not None:
-            line = self.gateway_process.stdout.readline().decode('utf-8')
+        while should_continue():
+            line = ''  # Placeholder for reading output
             print(line)
             output += line
             if 'at' in line:
                 break
-            # Use asyncio.sleep instead of time.sleep in async function
-            await asyncio.sleep(1)
+            time.sleep(1)
             logger.debug('Waiting for VSCode server to start...')
 
         logger.debug(
