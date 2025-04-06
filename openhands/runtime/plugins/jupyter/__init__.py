@@ -1,6 +1,5 @@
+import asyncio
 import os
-import subprocess
-import time
 from dataclasses import dataclass
 
 from openhands.core.logger import openhands_logger as logger
@@ -19,8 +18,14 @@ class JupyterRequirement(PluginRequirement):
 
 class JupyterPlugin(Plugin):
     name: str = 'jupyter'
+    kernel_gateway_port: int
+    kernel_id: str
+    gateway_process: asyncio.subprocess.Process
+    python_interpreter_path: str
 
-    async def initialize(self, username: str, kernel_id: str = 'openhands-default'):
+    async def initialize(
+        self, username: str, kernel_id: str = 'openhands-default'
+    ) -> None:
         self.kernel_gateway_port = find_available_tcp_port(40000, 49999)
         self.kernel_id = kernel_id
         if username in ['root', 'openhands']:
@@ -61,10 +66,11 @@ class JupyterPlugin(Plugin):
         )
         logger.debug(f'Jupyter launch command: {jupyter_launch_command}')
 
-        self.gateway_process = subprocess.Popen(
+        # Use asyncio.create_subprocess_shell instead of subprocess.Popen
+        self.gateway_process = await asyncio.create_subprocess_shell(
             jupyter_launch_command,
-            stderr=subprocess.STDOUT,
-            shell=True,
+            stderr=asyncio.subprocess.STDOUT,
+            stdout=asyncio.subprocess.PIPE,
         )
         # read stdout until the kernel gateway is ready
         output = ''
@@ -73,7 +79,8 @@ class JupyterPlugin(Plugin):
             output += line
             if 'at' in line:
                 break
-            time.sleep(1)
+            # Use asyncio.sleep instead of time.sleep in async function
+            await asyncio.sleep(1)
             logger.debug('Waiting for jupyter kernel gateway to start...')
 
         logger.debug(
