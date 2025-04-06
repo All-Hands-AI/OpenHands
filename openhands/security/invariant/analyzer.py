@@ -1,7 +1,7 @@
 import ast
 import re
 import uuid
-from typing import Any, Dict, List, Tuple, cast
+from typing import Any, cast
 
 import docker
 from fastapi import HTTPException, Request
@@ -31,13 +31,13 @@ from openhands.utils.async_utils import call_sync_from_async
 class InvariantAnalyzer(SecurityAnalyzer):
     """Security analyzer based on Invariant."""
 
-    trace: List[TraceElement]
-    input: List[Dict[str, Any]]
+    trace: list[TraceElement]
+    input: list[dict[str, Any]]
     container_name: str = 'openhands-invariant-server'
     image_name: str = 'ghcr.io/invariantlabs-ai/server:openhands'
     api_host: str = 'http://localhost'
     timeout: int = 180
-    settings: Dict[str, Any] = {}
+    settings: dict[str, Any] = {}
 
     check_browsing_alignment: bool = False
     guardrail_llm: LLM | None = None
@@ -116,19 +116,19 @@ class InvariantAnalyzer(SecurityAnalyzer):
             element = parse_element(self.trace, event)
             self.trace.extend(element)
             self.input.extend(
-                [cast(Dict[str, Any], e.model_dump(exclude_none=True)) for e in element]
+                [cast(dict[str, Any], e.model_dump(exclude_none=True)) for e in element]
             )
         else:
             logger.debug('Invariant skipping element: event')
 
-    def get_risk(self, results: List[str]) -> ActionSecurityRisk:
+    def get_risk(self, results: list[str]) -> ActionSecurityRisk:
         mapping = {
             'high': ActionSecurityRisk.HIGH,
             'medium': ActionSecurityRisk.MEDIUM,
             'low': ActionSecurityRisk.LOW,
         }
         regex = r'(?<=risk=)\w+'
-        risks: List[ActionSecurityRisk] = []
+        risks: list[ActionSecurityRisk] = []
         for result in results:
             m = re.search(regex, result)
             if m and m.group() in mapping:
@@ -202,10 +202,10 @@ class InvariantAnalyzer(SecurityAnalyzer):
 
     def parse_browser_action(
         self, browser_action: str
-    ) -> List[Tuple[str | None, List[str]]]:
+    ) -> list[tuple[str | None, list[str]]]:
         assert browser_action[-1] == ')'
         tree = ast.parse(browser_action, mode='exec')
-        function_calls: List[Tuple[str | None, List[str]]] = []
+        function_calls: list[tuple[str | None, list[str]]] = []
 
         for node in tree.body:
             if isinstance(node, ast.Expr) and isinstance(node.value, ast.Call):
@@ -309,7 +309,7 @@ class InvariantAnalyzer(SecurityAnalyzer):
         logger.debug('Calling security_risk on InvariantAnalyzer')
         new_elements = parse_element(self.trace, event)
         input_data = [
-            cast(Dict[str, Any], e.model_dump(exclude_none=True)) for e in new_elements
+            cast(dict[str, Any], e.model_dump(exclude_none=True)) for e in new_elements
         ]
         self.trace.extend(new_elements)
         check_result = self.monitor.check(self.input, input_data)

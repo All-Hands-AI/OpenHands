@@ -1,4 +1,4 @@
-from typing import List, Tuple, Union
+from typing import Union
 
 from pydantic import BaseModel, Field
 
@@ -21,7 +21,7 @@ from openhands.security.invariant.nodes import Function, Message, ToolCall, Tool
 TraceElement = Union[Message, ToolCall, ToolOutput, Function]
 
 
-def get_next_id(trace: List[TraceElement]) -> str:
+def get_next_id(trace: list[TraceElement]) -> str:
     used_ids = [el.id for el in trace if type(el) == ToolCall]
     for i in range(1, len(used_ids) + 2):
         if str(i) not in used_ids:
@@ -30,7 +30,7 @@ def get_next_id(trace: List[TraceElement]) -> str:
 
 
 def get_last_id(
-    trace: List[TraceElement],
+    trace: list[TraceElement],
 ) -> str | None:
     for el in reversed(trace):
         if type(el) == ToolCall:
@@ -38,9 +38,9 @@ def get_last_id(
     return None
 
 
-def parse_action(trace: List[TraceElement], action: Action) -> List[TraceElement]:
+def parse_action(trace: list[TraceElement], action: Action) -> list[TraceElement]:
     next_id = get_next_id(trace)
-    inv_trace: List[TraceElement] = []
+    inv_trace: list[TraceElement] = []
     if type(action) == MessageAction:
         if action.source == EventSource.USER:
             inv_trace.append(Message(role='user', content=action.content))
@@ -62,8 +62,8 @@ def parse_action(trace: List[TraceElement], action: Action) -> List[TraceElement
 
 
 def parse_observation(
-    trace: List[TraceElement], obs: Observation
-) -> List[TraceElement]:
+    trace: list[TraceElement], obs: Observation
+) -> list[TraceElement]:
     last_id = get_last_id(trace)
     if type(obs) in [NullObservation, AgentStateChangedObservation]:
         return []
@@ -75,15 +75,15 @@ def parse_observation(
 
 
 def parse_element(
-    trace: List[TraceElement], element: Union[Action, Observation]
-) -> List[TraceElement]:
+    trace: list[TraceElement], element: Union[Action, Observation]
+) -> list[TraceElement]:
     if isinstance(element, Action):
         return parse_action(trace, element)
     return parse_observation(trace, element)
 
 
-def parse_trace(trace: List[Tuple[Action, Observation]]) -> List[TraceElement]:
-    inv_trace: List[TraceElement] = []
+def parse_trace(trace: list[tuple[Action, Observation]]) -> list[TraceElement]:
+    inv_trace: list[TraceElement] = []
     for action, obs in trace:
         inv_trace.extend(parse_action(inv_trace, action))
         inv_trace.extend(parse_observation(inv_trace, obs))
@@ -91,7 +91,7 @@ def parse_trace(trace: List[Tuple[Action, Observation]]) -> List[TraceElement]:
 
 
 class InvariantState(BaseModel):
-    trace: List[TraceElement] = Field(default_factory=list)
+    trace: list[TraceElement] = Field(default_factory=list)
 
     def add_action(self, action: Action) -> None:
         self.trace.extend(parse_action(self.trace, action))

@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterable, List, Tuple, Union
+from typing import Any, Iterable, Union
 
 from pydantic import BaseModel, Field
 from pydantic.dataclasses import dataclass
@@ -11,14 +11,14 @@ class LLM:
 
 
 class Event(BaseModel):
-    metadata: Dict[str, Any] | None = Field(
+    metadata: dict[str, Any] | None = Field(
         default_factory=lambda: dict(), description='Metadata associated with the event'
     )
 
 
 class Function(BaseModel):
     name: str
-    arguments: Dict[str, Any]
+    arguments: dict[str, Any]
 
 
 class ToolCall(Event):
@@ -30,11 +30,11 @@ class ToolCall(Event):
 class Message(Event):
     role: str
     content: str | None
-    tool_calls: List[ToolCall] | None = None
+    tool_calls: list[ToolCall] | None = None
 
     def __rich_repr__(
         self,
-    ) -> Iterable[Union[Any, Tuple[Any], Tuple[str, Any], Tuple[str, Any, Any]]]:
+    ) -> Iterable[Union[Any, tuple[Any], tuple[str, Any], tuple[str, Any, Any]]]:
         # Print on separate line
         yield 'role', self.role
         yield 'content', self.content

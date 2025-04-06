@@ -1,5 +1,5 @@
 import time
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 import httpx
 
@@ -17,7 +17,7 @@ class InvariantClient:
 
     def _create_session(
         self, session_id: str | None = None
-    ) -> Tuple[str | None, Exception | None]:
+    ) -> tuple[str | None, Exception | None]:
         elapsed = 0
         while elapsed < self.timeout:
             try:
@@ -54,7 +54,7 @@ class InvariantClient:
             self.session_id = invariant.session_id
             self.policy_id: str | None = None
 
-        def _create_policy(self, rule: str) -> Tuple[str | None, Exception | None]:
+        def _create_policy(self, rule: str) -> tuple[str | None, Exception | None]:
             try:
                 response = httpx.post(
                     f'{self.server}/policy/new?session_id={self.session_id}',
@@ -66,7 +66,7 @@ class InvariantClient:
             except (ConnectionError, httpx.TimeoutException, httpx.HTTPError) as err:
                 return None, err
 
-        def get_template(self) -> Tuple[str | None, Exception | None]:
+        def get_template(self) -> tuple[str | None, Exception | None]:
             try:
                 response = httpx.get(
                     f'{self.server}/policy/template',
@@ -84,7 +84,7 @@ class InvariantClient:
             self.policy_id = policy_id
             return self
 
-        def analyze(self, trace: List[Dict[str, Any]]) -> Tuple[Any, Exception | None]:
+        def analyze(self, trace: list[dict[str, Any]]) -> tuple[Any, Exception | None]:
             try:
                 response = httpx.post(
                     f'{self.server}/policy/{self.policy_id}/analyze?session_id={self.session_id}',
@@ -103,7 +103,7 @@ class InvariantClient:
             self.policy = ''
             self.monitor_id: str | None = None
 
-        def _create_monitor(self, rule: str) -> Tuple[str | None, Exception | None]:
+        def _create_monitor(self, rule: str) -> tuple[str | None, Exception | None]:
             try:
                 response = httpx.post(
                     f'{self.server}/monitor/new?session_id={self.session_id}',
@@ -125,9 +125,9 @@ class InvariantClient:
 
         def check(
             self,
-            past_events: List[Dict[str, Any]],
-            pending_events: List[Dict[str, Any]],
-        ) -> Tuple[Any, Exception | None]:
+            past_events: list[dict[str, Any]],
+            pending_events: list[dict[str, Any]],
+        ) -> tuple[Any, Exception | None]:
             try:
                 response = httpx.post(
                     f'{self.server}/monitor/{self.monitor_id}/check?session_id={self.session_id}',
