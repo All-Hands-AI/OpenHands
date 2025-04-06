@@ -17,9 +17,9 @@ from openhands.events.observation.observation import Observation
 
 class StuckDetector:
     SYNTAX_ERROR_MESSAGES = [
-        'SyntaxError: unterminated string literal (detected at line',
-        'SyntaxError: invalid syntax. Perhaps you forgot a comma?',
-        'SyntaxError: incomplete input',
+        "SyntaxError: unterminated string literal (detected at line",
+        "SyntaxError: invalid syntax. Perhaps you forgot a comma?",
+        "SyntaxError: incomplete input",
     ]
 
     def __init__(self, state: State):
@@ -109,7 +109,9 @@ class StuckDetector:
 
         return False
 
-    def _is_stuck_repeating_action_observation(self, last_actions: list[Event], last_observations: list[Event]) -> bool:
+    def _is_stuck_repeating_action_observation(
+        self, last_actions: list[Event], last_observations: list[Event]
+    ) -> bool:
         # scenario 1: same action, same observation
         # it takes 4 actions and 4 observations to detect a loop
         # assert len(last_actions) == 4 and len(last_observations) == 4
@@ -125,12 +127,14 @@ class StuckDetector:
             )
 
             if actions_equal and observations_equal:
-                logger.warning('Action, Observation loop detected')
+                logger.warning("Action, Observation loop detected")
                 return True
 
         return False
 
-    def _is_stuck_repeating_action_error(self, last_actions: list[Event], last_observations: list[Event]) -> bool:
+    def _is_stuck_repeating_action_error(
+        self, last_actions: list[Event], last_observations: list[Event]
+    ) -> bool:
         # scenario 2: same action, errors
         # it takes 3 actions and 3 observations to detect a loop
         # check if the last three actions are the same and result in errors
@@ -142,17 +146,17 @@ class StuckDetector:
         if all(self._eq_no_pid(last_actions[0], action) for action in last_actions[:3]):
             # and the last three observations are all errors?
             if all(isinstance(obs, ErrorObservation) for obs in last_observations[:3]):
-                logger.warning('Action, ErrorObservation loop detected')
+                logger.warning("Action, ErrorObservation loop detected")
                 return True
             # or, are the last three observations all IPythonRunCellObservation with SyntaxError?
             elif all(
                 isinstance(obs, IPythonRunCellObservation)
                 for obs in last_observations[:3]
             ):
-                warning = 'Action, IPythonRunCellObservation loop detected'
+                warning = "Action, IPythonRunCellObservation loop detected"
                 for error_message in self.SYNTAX_ERROR_MESSAGES:
                     if error_message.startswith(
-                        'SyntaxError: unterminated string literal (detected at line'
+                        "SyntaxError: unterminated string literal (detected at line"
                     ):
                         if self._check_for_consistent_line_error(
                             last_observations[:3], error_message
@@ -160,8 +164,8 @@ class StuckDetector:
                             logger.warning(warning)
                             return True
                     elif error_message in (
-                        'SyntaxError: invalid syntax. Perhaps you forgot a comma?',
-                        'SyntaxError: incomplete input',
+                        "SyntaxError: invalid syntax. Perhaps you forgot a comma?",
+                        "SyntaxError: incomplete input",
                     ) and self._check_for_consistent_invalid_syntax(
                         last_observations[:3], error_message
                     ):
@@ -169,27 +173,29 @@ class StuckDetector:
                         return True
         return False
 
-    def _check_for_consistent_invalid_syntax(self, observations: list[IPythonRunCellObservation], error_message: str) -> bool:
+    def _check_for_consistent_invalid_syntax(
+        self, observations: list[IPythonRunCellObservation], error_message: str
+    ) -> bool:
         first_lines = []
         valid_observations = []
 
         for obs in observations:
             content = obs.content
-            lines = content.strip().split('\n')
+            lines = content.strip().split("\n")
 
             if len(lines) < 6:  # 6 because a real syntax error has at least 6 lines
                 return False
 
             line1 = lines[0].strip()
-            if not line1.startswith('Cell In[1], line'):
+            if not line1.startswith("Cell In[1], line"):
                 return False
 
             first_lines.append(line1)  # Store the first line of each observation
 
             # Check last three lines
             if (
-                lines[-1].startswith('[Jupyter Python interpreter:')
-                and lines[-2].startswith('[Jupyter current working directory:')
+                lines[-1].startswith("[Jupyter Python interpreter:")
+                and lines[-2].startswith("[Jupyter current working directory:")
                 and error_message in lines[-3]
             ):
                 valid_observations.append(obs)
@@ -203,19 +209,21 @@ class StuckDetector:
             and len(valid_observations) == 3
             and len(
                 set(
-                    obs.content.strip().split('\n')[:-2][-1]
+                    obs.content.strip().split("\n")[:-2][-1]
                     for obs in valid_observations
                 )
             )
             == 1
         )
 
-    def _check_for_consistent_line_error(self, observations: list[IPythonRunCellObservation], error_message: str) -> bool:
+    def _check_for_consistent_line_error(
+        self, observations: list[IPythonRunCellObservation], error_message: str
+    ) -> bool:
         error_lines = []
 
         for obs in observations:
             content = obs.content
-            lines = content.strip().split('\n')
+            lines = content.strip().split("\n")
 
             if len(lines) < 3:
                 return False
@@ -224,8 +232,8 @@ class StuckDetector:
 
             # Check if the last two lines are our own
             if not (
-                last_lines[-2].startswith('[Jupyter current working directory:')
-                and last_lines[-1].startswith('[Jupyter Python interpreter:')
+                last_lines[-2].startswith("[Jupyter current working directory:")
+                and last_lines[-1].startswith("[Jupyter Python interpreter:")
             ):
                 return False
 
@@ -267,11 +275,13 @@ class StuckDetector:
                         break
 
                 if not has_observation_between:
-                    logger.warning('Repeated MessageAction with source=AGENT detected')
+                    logger.warning("Repeated MessageAction with source=AGENT detected")
                     return True
         return False
 
-    def _is_stuck_action_observation_pattern(self, filtered_history: list[Event]) -> bool:
+    def _is_stuck_action_observation_pattern(
+        self, filtered_history: list[Event]
+    ) -> bool:
         # scenario 4: action, observation pattern on the last six steps
         # check if the agent repeats the same (Action, Observation)
         # every other step in the last six steps
@@ -309,7 +319,7 @@ class StuckDetector:
             )
 
             if actions_equal and observations_equal:
-                logger.warning('Action, Observation pattern detected')
+                logger.warning("Action, Observation pattern detected")
                 return True
         return False
 
@@ -355,7 +365,7 @@ class StuckDetector:
 
             if not has_other_events:
                 logger.warning(
-                    'Context window error loop detected - repeated condensation events'
+                    "Context window error loop detected - repeated condensation events"
                 )
                 return True
 
@@ -368,12 +378,12 @@ class StuckDetector:
             # for loop detection on edit actions, ignore the thought, compare some code
             # the code should have at least 3 lines, to avoid simple one-liners
             if (
-                'edit_file_by_replace(' in obj1.code
-                and 'edit_file_by_replace(' in obj2.code
+                "edit_file_by_replace(" in obj1.code
+                and "edit_file_by_replace(" in obj2.code
             ):
                 return (
-                    len(obj1.code.split('\n')) > 2
-                    and obj1.code.split('\n')[:3] == obj2.code.split('\n')[:3]
+                    len(obj1.code.split("\n")) > 2
+                    and obj1.code.split("\n")[:3] == obj2.code.split("\n")[:3]
                 )
             else:
                 # default comparison
