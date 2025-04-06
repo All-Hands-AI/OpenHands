@@ -1,10 +1,10 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, TypeVar
+from typing import Any, TypeVar
 
 from openhands.events.action import Action
 
 # Define a type variable for the response type
-ResponseType = TypeVar('ResponseType', str, Dict[str, Any])
+ResponseType = TypeVar('ResponseType', str, dict[str, Any])
 
 
 class ActionParseError(Exception):
