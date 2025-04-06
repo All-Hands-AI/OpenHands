@@ -73,7 +73,7 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
         # Process each tool call to OpenHands action
         for i, tool_call in enumerate(assistant_msg.tool_calls):
             action: Action
-            logger.warning(f'Tool call in function_calling.py: {tool_call}')
+            logger.debug(f'Tool call in function_calling.py: {tool_call}')
             try:
                 arguments = json.loads(tool_call.function.arguments)
             except json.decoder.JSONDecodeError as e:
