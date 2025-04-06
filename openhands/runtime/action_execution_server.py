@@ -587,12 +587,9 @@ if __name__ == '__main__':
         request: Request, exc: RequestValidationError
     ):
         logger.error(f'Validation error occurred: {exc}')
-        # Convert errors to a serializable format (e.g., string representation)
-        # This handles cases where error details might contain non-serializable types like bytes
-        serializable_errors = str(exc.errors())
         return JSONResponse(
             status_code=422,
-            content={'detail': 'Invalid request parameters', 'errors': serializable_errors},
+            content={'detail': 'Invalid request parameters', 'errors': str(exc.errors())},
         )
 
     @app.middleware('http')
