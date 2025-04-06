@@ -37,7 +37,7 @@ from openhands.events.observation import (
     FileEditObservation,
 )
 from openhands.io import read_input, read_task
-from openhands.mcp.mcp import fetch_mcp_tools_from_config
+from openhands.mcp import fetch_mcp_tools_from_config
 
 
 def display_message(message: str):
