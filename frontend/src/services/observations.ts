@@ -52,6 +52,7 @@ export function handleObservationMessage(message: ObservationMessage) {
     case ObservationType.EDIT:
     case ObservationType.THINK:
     case ObservationType.NULL:
+    case ObservationType.MCP:
       break; // We don't display the default message for these observations
     default:
       store.dispatch(addAssistantMessage(message.message));
@@ -233,6 +234,17 @@ export function handleObservationMessage(message: ObservationMessage) {
           }),
         );
         break;
+      case ObservationType.MCP:
+        store.dispatch(
+          addAssistantObservation({
+            ...baseObservation,
+            observation: ObservationType.MCP,
+            extras: {
+              content: String(message.extras.content || ""),
+            },
+          }),
+        );
+        break
       case "error":
         store.dispatch(
           addAssistantObservation({

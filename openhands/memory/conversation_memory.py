@@ -335,7 +335,7 @@ class ConversationMemory:
         # FIXME: This is a temporary solution to test MCP. Not sure if it's the best way to do it.
         elif isinstance(obs, MCPObservation):
             # logger.warning(f'MCPObservation: {obs}')
-            message = Message(role='assistant', content=[TextContent(text=obs.content)])
+            message = Message(role='user', content=[TextContent(text=obs.content)])
         elif isinstance(obs, PlaywrightMcpBrowserScreenshotObservation):
             text = 'Image: Current webpage screenshot\n'
             screenshot_content = json.loads(obs.content)

@@ -41,6 +41,9 @@ enum ActionType {
 
   // Take a screenshot of the browser
   PLAYWRIGHT_MCP_BROWSER_SCREENSHOT = "playwright_mcp_browser_screenshot",
+
+  // Interact with the MCP server
+  MCP = "call_tool_mcp",
 }
 
 export default ActionType;

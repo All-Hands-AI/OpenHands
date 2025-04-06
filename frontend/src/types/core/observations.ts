@@ -119,6 +119,14 @@ export interface PlaywrightMcpBrowserScreenshotObservation
     trigger_by_action: string;
   };
 }
+
+export interface MCPObservation
+  extends OpenHandsObservationEvent<"mcp"> {
+  source: "agent";
+  extras: {
+    content: string;
+  };
+}
 export type OpenHandsObservation =
   | AgentStateChangeObservation
   | AgentThinkObservation
@@ -131,4 +139,5 @@ export type OpenHandsObservation =
   | ReadObservation
   | EditObservation
   | ErrorObservation
-  | PlaywrightMcpBrowserScreenshotObservation;
+  | PlaywrightMcpBrowserScreenshotObservation
+  | MCPObservation;
