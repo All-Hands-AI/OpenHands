@@ -79,7 +79,7 @@ class ReplayManager:
         return event
 
     @staticmethod
-    def get_replay_events(trajectory) -> list[Event]:
+    def get_replay_events(trajectory: list[dict]) -> list[Event]:
         if not isinstance(trajectory, list):
             raise ValueError(
                 f'Expected a list in {trajectory}, got {type(trajectory).__name__}'

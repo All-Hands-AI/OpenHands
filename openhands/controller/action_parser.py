@@ -9,7 +9,7 @@ class ActionParseError(Exception):
     def __init__(self, error: str):
         self.error = error
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.error
 
 
@@ -20,9 +20,9 @@ class ResponseParser(ABC):
 
     def __init__(
         self,
-    ):
+    ) -> None:
         # Need pay attention to the item order in self.action_parsers
-        self.action_parsers = []
+        self.action_parsers: list[ActionParser] = []
 
     @abstractmethod
     def parse(self, response: str) -> Action:
@@ -37,7 +37,7 @@ class ResponseParser(ABC):
         pass
 
     @abstractmethod
-    def parse_response(self, response) -> str:
+    def parse_response(self, response: str) -> str:
         """Parses the action from the response from the LLM.
 
         Parameters:

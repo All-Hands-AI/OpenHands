@@ -163,7 +163,7 @@ class AgentController:
         # replay-related
         self._replay_manager = ReplayManager(replay_events)
 
-    async def close(self, set_stop_state=True) -> None:
+    async def close(self, set_stop_state: bool = True) -> None:
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream.
 
         Note that it's fairly important that this closes properly, otherwise the state is incomplete.
@@ -215,18 +215,18 @@ class AgentController:
         extra_merged = {'session_id': self.id, **extra}
         getattr(logger, level)(message, extra=extra_merged, stacklevel=2)
 
-    def update_state_before_step(self):
+    def update_state_before_step(self) -> None:
         self.state.iteration += 1
         self.state.local_iteration += 1
 
-    async def update_state_after_step(self):
+    async def update_state_after_step(self) -> None:
         # update metrics especially for cost. Use deepcopy to avoid it being modified by agent._reset()
         self.state.local_metrics = copy.deepcopy(self.agent.llm.metrics)
 
     async def _react_to_exception(
         self,
         e: Exception,
-    ):
+    ) -> None:
         """React to an exception by setting the agent state to error and sending a status message."""
         # Store the error reason before setting the agent state
         self.state.last_error = f'{type(e).__name__}: {str(e)}'
@@ -266,10 +266,10 @@ class AgentController:
         # Set the agent state to ERROR after storing the reason
         await self.set_agent_state_to(AgentState.ERROR)
 
-    def step(self):
+    def step(self) -> None:
         asyncio.create_task(self._step_with_exception_handling())
 
-    async def _step_with_exception_handling(self):
+    async def _step_with_exception_handling(self) -> None:
         try:
             await self._step()
         except Exception as e:
@@ -1147,7 +1147,7 @@ class AgentController:
             extra={'msg_type': 'METRICS'},
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f'AgentController(id={getattr(self, "id", "<uninitialized>")}, '
             f'agent={getattr(self, "agent", "<uninitialized>")!r}, '
@@ -1157,7 +1157,7 @@ class AgentController:
             f'_pending_action={getattr(self, "_pending_action", "<uninitialized>")!r})'
         )
 
-    def _is_awaiting_observation(self):
+    def _is_awaiting_observation(self) -> bool:
         events = self.event_stream.get_events(reverse=True)
         for event in events:
             if isinstance(event, AgentStateChangedObservation):
