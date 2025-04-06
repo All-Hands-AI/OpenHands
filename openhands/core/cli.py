@@ -41,7 +41,7 @@ from openhands.events.observation import (
 from openhands.io import read_task
 
 prompt_session = PromptSession()
-from openhands.mcp.mcp import fetch_mcp_tools_from_config
+from openhands.mcp import fetch_mcp_tools_from_config
 
 
 def display_message(message: str) -> None:
