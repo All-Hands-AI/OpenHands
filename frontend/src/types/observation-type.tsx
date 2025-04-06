@@ -11,7 +11,11 @@ enum ObservationType {
   // Interactive browsing
   BROWSE_INTERACTIVE = "browse_interactive",
 
-  PLAYWRIGHT_MCP_BROWSER_SCREENSHOT = 'playwright_mcp_browser_screenshot',
+  // The screenshot of a Playwright MCP Browser
+  PLAYWRIGHT_MCP_BROWSER_SCREENSHOT = "playwright_mcp_browser_screenshot",
+
+  // The result of a MCP Server operation
+  MCP = "mcp",
 
   // The output of a command
   RUN = "run",

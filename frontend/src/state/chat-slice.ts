@@ -22,6 +22,9 @@ const HANDLED_ACTIONS: OpenHandsEventType[] = [
   "browse",
   "browse_interactive",
   "edit",
+  "mcp",
+  "call_tool_mcp",
+  "playwright_mcp_browser_screenshot",
 ];
 
 function getRiskText(risk: ActionSecurityRisk) {
@@ -121,6 +124,8 @@ export const chatSlice = createSlice({
         }
       } else if (actionID === "think") {
         text = action.payload.args.thought;
+      } else if (actionID === "call_tool_mcp") {
+        text = `**Action:**\n\n${action.payload.message}\n\n`;
       }
       const message: Message = {
         type: "action",
@@ -203,6 +208,18 @@ export const chatSlice = createSlice({
           content = `${content.slice(0, MAX_CONTENT_LENGTH)}...(truncated)`;
         }
         causeMessage.content = content;
+      } else if (observationID === "mcp") {
+        let { content } = observation.payload;
+        if (content.length > MAX_CONTENT_LENGTH) {
+          content = `${content.slice(0, MAX_CONTENT_LENGTH)}...`;
+        }
+        content = `${
+          causeMessage.content
+        }\n\nOutput:\n\`\`\`\n${content.trim() || "[MCP finished execution with no output]"}\n\`\`\``;
+        causeMessage.content = content;
+
+        causeMessage.success =
+          content.length > 0 && !content.toLowerCase().includes("error");
       }
     },
 

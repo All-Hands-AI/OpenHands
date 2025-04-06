@@ -34,8 +34,7 @@ class McpAction(Action):
     @property
     def message(self) -> str:
         return (
-            f'I am interacting with the MCP server with name:\n'
-            f'```\n{self.name}\n```\n'
+            f'I am interacting with the MCP server with name: {self.name}\n'
             f'and arguments:\n'
             f'```\n{self.arguments}\n```'
         )

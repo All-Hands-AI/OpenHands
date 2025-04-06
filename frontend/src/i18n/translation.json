@@ -4327,6 +4327,9 @@
     "es": "Navegación completada",
     "tr": "Gezinme tamamlandı"
   },
+  "OBSERVATION_MESSAGE$MCP": {
+    "en": "MCP Server Result"
+  },
   "EXPANDABLE_MESSAGE$SHOW_DETAILS": {
     "en": "Show details",
     "zh-CN": "显示详情",
