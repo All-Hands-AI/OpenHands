@@ -6,7 +6,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.mcp import McpAction
 from openhands.events.observation import Observation
 from openhands.events.serialization import event_to_dict
-from openhands.mcp.mcp import CallToolResult, MCPClientTool, TextContent
+from openhands.mcp.utils import CallToolResult, MCPClientTool, TextContent
 from openhands.runtime.action_execution_server import ActionExecutor, ActionRequest
 
 

@@ -9,7 +9,7 @@ from openhands.core.config.utils import get_parser, setup_config_from_args
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message, TextContent
 from openhands.llm.llm import LLM
-from openhands.mcp.mcp import MCPClient, convert_mcp_clients_to_tools
+from openhands.mcp import MCPClient, convert_mcp_clients_to_tools
 
 
 class MCPRunner:

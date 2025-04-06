@@ -30,7 +30,7 @@ from openhands.events.action.action import Action
 from openhands.events.event import Event
 from openhands.events.observation import AgentStateChangedObservation
 from openhands.io import read_input, read_task
-from openhands.mcp.mcp import fetch_mcp_tools_from_config
+from openhands.mcp import fetch_mcp_tools_from_config
 from openhands.memory.memory import Memory
 from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync

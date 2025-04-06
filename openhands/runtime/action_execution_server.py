@@ -58,7 +58,7 @@ from openhands.events.observation import (
 )
 from openhands.events.observation.mcp import MCPObservation
 from openhands.events.serialization import event_from_dict, event_to_dict
-from openhands.mcp.mcp import create_mcp_clients
+from openhands.mcp import create_mcp_clients
 from openhands.runtime.browser import browse
 from openhands.runtime.browser.browser_env import BrowserEnv
 from openhands.runtime.plugins import ALL_PLUGINS, JupyterPlugin, Plugin, VSCodePlugin
