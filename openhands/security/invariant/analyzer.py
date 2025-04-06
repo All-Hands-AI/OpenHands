@@ -317,10 +317,6 @@ class InvariantAnalyzer(SecurityAnalyzer):
         risk = ActionSecurityRisk.UNKNOWN
 
         # Process check_result
-        if not isinstance(check_result, tuple):
-            logger.warning(f'Error checking policy: {check_result}')
-            return risk
-
         result, err = check_result
         if err:
             logger.warning(f'Error checking policy: {err}')
