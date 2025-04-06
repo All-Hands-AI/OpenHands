@@ -622,11 +622,13 @@ class LLM(RetryMixin, DebugMixin):
         # try to get the token count with the default litellm tokenizers
         # or the custom tokenizer if set for this LLM configuration
         try:
-            return int(litellm.token_counter(
-                model=self.config.model,
-                messages=messages,
-                custom_tokenizer=self.tokenizer,
-            ))
+            return int(
+                litellm.token_counter(
+                    model=self.config.model,
+                    messages=messages,
+                    custom_tokenizer=self.tokenizer,
+                )
+            )
         except Exception as e:
             # limit logspam in case token count is not supported
             logger.error(
