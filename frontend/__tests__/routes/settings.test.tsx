@@ -61,17 +61,6 @@ describe("Settings Screen", () => {
   };
 
   it("should render", async () => {
-    // Mock the config to ensure LLM Settings are visible
-    getConfigSpy.mockResolvedValue({
-      APP_MODE: "oss",
-      GITHUB_CLIENT_ID: "test-github-client-id",
-      POSTHOG_CLIENT_KEY: "test-posthog-client-key",
-      FEATURE_FLAGS: {
-        ENABLE_BILLING: false,
-        HIDE_LLM_SETTINGS: false,
-      },
-    });
-
     renderSettingsScreen();
 
     await waitFor(() => {
