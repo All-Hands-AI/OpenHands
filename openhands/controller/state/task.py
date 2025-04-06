@@ -1,3 +1,5 @@
+from typing import Union
+
 from openhands.core.exceptions import (
     LLMMalformedActionError,
     TaskInvalidStateError,
@@ -21,7 +23,7 @@ STATES = [
 class Task:
     id: str
     goal: str
-    parent: 'Task' | None
+    parent: Union['Task', None]
     subtasks: list['Task']
 
     def __init__(
@@ -29,7 +31,7 @@ class Task:
         parent: 'Task',
         goal: str,
         state: str = OPEN_STATE,
-        subtasks: list[dict | 'Task'] | None = None,  # noqa: B006
+        subtasks: Union[list[Union[dict, 'Task']], None] = None,  # noqa: B006
     ) -> None:
         """Initializes a new instance of the Task class.
 
@@ -124,7 +126,7 @@ class Task:
             if self.parent is not None:
                 self.parent.set_state(state)
 
-    def get_current_task(self) -> 'Task' | None:
+    def get_current_task(self) -> Union['Task', None]:
         """Retrieves the current task in progress.
 
         Returns:
@@ -199,7 +201,7 @@ class RootTask(Task):
         self,
         parent_id: str,
         goal: str,
-        subtasks: list[dict | Task] | None = None,
+        subtasks: Union[list[Union[dict, Task]], None] = None,
     ) -> None:
         """Adds a subtask to a parent task.
 
