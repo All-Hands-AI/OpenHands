@@ -74,7 +74,7 @@ class SecretStore(BaseModel):
     @field_serializer('provider_tokens')
     def provider_tokens_serializer(
         self, provider_tokens: PROVIDER_TOKEN_TYPE, info: SerializationInfo
-    ):
+    ) -> dict[str, dict[str, str | Any]]:
         tokens = {}
         expose_secrets = info.context and info.context.get('expose_secrets', False)
 
@@ -100,12 +100,12 @@ class SecretStore(BaseModel):
     @classmethod
     def convert_dict_to_mappingproxy(
         cls, data: dict[str, dict[str, dict[str, str]]] | PROVIDER_TOKEN_TYPE
-    ) -> dict[str, MappingProxyType]:
+    ) -> dict[str, MappingProxyType[Any, Any]]:
         """Custom deserializer to convert dictionary into MappingProxyType"""
         if not isinstance(data, dict):
             raise ValueError('SecretStore must be initialized with a dictionary')
 
-        new_data = {}
+        new_data: dict[str, MappingProxyType[Any, Any]] = {}
 
         if 'provider_tokens' in data:
             tokens = data['provider_tokens']
@@ -210,7 +210,7 @@ class ProviderHandler:
         per_page: int,
         sort: str,
         order: str,
-    ):
+    ) -> list[Repository]:
         all_repos: list[Repository] = []
         for provider in self.provider_tokens:
             try:
@@ -228,7 +228,7 @@ class ProviderHandler:
         self,
         event_stream: EventStream,
         env_vars: dict[ProviderType, SecretStr] | None = None,
-    ):
+    ) -> None:
         """
         This ensures that the latest provider tokens are masked from the event stream
         It is called when the provider tokens are first initialized in the runtime or when tokens are re-exported with the latest working ones
