@@ -241,7 +241,7 @@ class LLM(RetryMixin, DebugMixin):
                     kwargs.pop('tool_choice', None)
 
             # if we have no messages, something went very wrong
-            if not messages:
+            if not messages or len(messages) < 1:
                 raise ValueError(
                     'The messages list is empty. At least one message is required.'
                 )
@@ -649,7 +649,7 @@ class LLM(RetryMixin, DebugMixin):
             boolean: True if executing a local model.
         """
         if self.config.base_url is not None:
-            for substring in ['localhost', '127.0.0.1' '0.0.0.0']:
+            for substring in ['localhost', '127.0.0.10.0.0.0']:
                 if substring in self.config.base_url:
                     return True
         elif self.config.model is not None:
