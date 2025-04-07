@@ -9,10 +9,12 @@ recommendations for model selection. Our latest benchmarking results can be foun
 
 Based on these findings and community feedback, the following models have been verified to work reasonably well with OpenHands:
 
-- anthropic/claude-3-7-sonnet-20250219 (recommended)
-- deepseek/deepseek-chat
-- OpenHands LM
-- gpt-4o
+- [anthropic/claude-3-7-sonnet-20250219](https://www.anthropic.com/api) (recommended)
+- [gemini/gemini-2.5-pro](https://blog.google/technology/google-deepmind/gemini-model-thinking-updates-march-2025/)
+- [deepseek/deepseek-chat](https://api-docs.deepseek.com/)
+- [openai/o3-mini](https://openai.com/index/openai-o3-mini/)
+- [all-hands/openhands-lm-32b-v0.1](https://www.all-hands.dev/blog/introducing-openhands-lm-32b----a-strong-open-coding-agent-model) -- available through [OpenRouter](https://openrouter.ai/all-hands/openhands-lm-32b-v0.1)
+
 
 :::warning
 OpenHands will issue many prompts to the LLM you configure. Most of these LLMs cost money, so be sure to set spending
