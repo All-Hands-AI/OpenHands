@@ -12,6 +12,7 @@ from inspect import signature
 from typing import Any, Awaitable, Callable, TextIO
 
 import pandas as pd
+from litellm.exceptions import RateLimitError
 from pydantic import BaseModel
 from tqdm import tqdm
 
@@ -39,6 +40,7 @@ from openhands.events.event import Event
 from openhands.events.serialization.event import event_to_dict
 from openhands.events.utils import get_pairs_from_events
 from openhands.memory.condenser import get_condensation_metadata
+from openhands.runtime.utils.request import RequestHTTPError
 
 
 class EvalMetadata(BaseModel):
@@ -522,13 +524,14 @@ def compatibility_for_eval_history_pairs(
 
 def is_fatal_evaluation_error(error: str | None) -> bool:
     """
-    The AgentController class overrides last error for certain exceptions
-    We want to ensure those exeption do not overlap with fatal exceptions defined here
-    This is because we do a comparisino against the stringified error
+    Check if the error is a fatal evaluation error, which triggers a rerun.
     """
     if not error:
         return False
 
+    # IMPORTANT: The AgentController class overrides last error for certain exceptions
+    # We need to ensure those exceptions do not overlap with fatal exceptions defined here
+    # This is because we do a comparison against the stringified error
     FATAL_EXCEPTIONS = [
         AgentRuntimeError,
         AgentRuntimeBuildError,
@@ -538,6 +541,8 @@ def is_fatal_evaluation_error(error: str | None) -> bool:
         AgentRuntimeDisconnectedError,
         AgentRuntimeNotFoundError,
         ConnectionError,
+        RequestHTTPError,
+        RateLimitError,
     ]
 
     if any(exception.__name__ in error for exception in FATAL_EXCEPTIONS):
