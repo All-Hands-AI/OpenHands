@@ -72,7 +72,7 @@ from openhands.llm.metrics import Metrics, TokenUsage
 TRAFFIC_CONTROL_REMINDER = (
     "Please click on resume button if you'd like to continue, or start a new task."
 )
-ERROR_ACTION_NOT_EXECUTED = 'The action has not been executed. This likely occurred because the runtime system crashed and was rebooted due to resource limitations. Be aware that any dependencies, environment variables, or other system state previously set up by the agent may have been lost after the reboot process.'
+ERROR_ACTION_NOT_EXECUTED = 'The action has not been executed. This may have occurred because the user pressed the stop button, or because the runtime system crashed and restarted due to resource constraints. Any previously established system state, dependencies, or environment variables may have been lost.'
 
 
 class AgentController:
