@@ -1,5 +1,6 @@
 import json
 import re
+from typing import Any, Callable
 
 from tenacity import (
     retry,
@@ -90,7 +91,7 @@ class RetryMixin:
 
         return default_wait
 
-    def retry_decorator(self, **kwargs):
+    def retry_decorator(self, **kwargs: Any) -> Callable:
         """
         Create a LLM retry decorator with customizable parameters. This is used for 429 errors, and a few other exceptions in LLM classes.
 
@@ -109,7 +110,7 @@ class RetryMixin:
         self.retry_multiplier = kwargs.get('retry_multiplier')
         retry_listener = kwargs.get('retry_listener')
 
-        def before_sleep(retry_state):
+        def before_sleep(retry_state: Any) -> None:
             self.log_retry_attempt(retry_state)
             if retry_listener:
                 retry_listener(retry_state.attempt_number, self.num_retries)
@@ -130,15 +131,16 @@ class RetryMixin:
                             f'LLMNoResponseError detected with temperature={current_temp}, keeping original temperature'
                         )
 
-        return retry(
+        retry_decorator: Callable = retry(
             before_sleep=before_sleep,
             stop=stop_after_attempt(self.num_retries) | stop_if_should_exit(),
             reraise=True,
             retry=retry_if_exception_type(self.retry_exceptions),
             wait=self.custom_wait_strategy,
         )
+        return retry_decorator
 
-    def log_retry_attempt(self, retry_state):
+    def log_retry_attempt(self, retry_state: Any) -> None:
         """Log retry attempts."""
         exception = retry_state.outcome.exception()
         logger.error(
