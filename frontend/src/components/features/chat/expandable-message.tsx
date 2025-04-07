@@ -40,8 +40,10 @@ export function ExpandableMessage({
 
     if (id && i18n.exists(id)) {
       setHeadline(t(id));
-      if (message === id || isMessageTranslationKey) {
+      if (message === id) {
         setDetails(t(id));
+      } else if (isMessageTranslationKey) {
+        setDetails(t(message));
       } else {
         setDetails(message);
       }
