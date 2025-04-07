@@ -50,7 +50,7 @@ export function SettingsForm({ settings, models, onClose }: SettingsFormProps) {
 
         posthog.capture("settings_saved", {
           LLM_MODEL: newSettings.LLM_MODEL,
-          LLM_API_KEY: newSettings.LLM_API_KEY ? "SET" : "UNSET",
+          LLM_API_KEY_SET: newSettings.LLM_API_KEY_SET ? "SET" : "UNSET",
           REMOTE_RUNTIME_RESOURCE_FACTOR:
             newSettings.REMOTE_RUNTIME_RESOURCE_FACTOR,
         });
@@ -74,7 +74,7 @@ export function SettingsForm({ settings, models, onClose }: SettingsFormProps) {
     }
   };
 
-  const isLLMKeySet = settings.LLM_API_KEY === "**********";
+  const isLLMKeySet = settings.LLM_API_KEY_SET;
 
   return (
     <div>
@@ -93,7 +93,7 @@ export function SettingsForm({ settings, models, onClose }: SettingsFormProps) {
           <SettingsInput
             testId="llm-api-key-input"
             name="llm-api-key-input"
-            label="API Key"
+            label={t(I18nKey.SETTINGS_FORM$API_KEY)}
             type="password"
             className="w-[680px]"
             placeholder={isLLMKeySet ? "<hidden>" : ""}
@@ -102,8 +102,8 @@ export function SettingsForm({ settings, models, onClose }: SettingsFormProps) {
 
           <HelpLink
             testId="llm-api-key-help-anchor"
-            text="Don't know your API key?"
-            linkText="Click here for instructions"
+            text={t(I18nKey.SETTINGS$DONT_KNOW_API_KEY)}
+            linkText={t(I18nKey.SETTINGS$CLICK_FOR_INSTRUCTIONS)}
             href="https://docs.all-hands.dev/modules/usage/installation#getting-an-api-key"
           />
         </div>
