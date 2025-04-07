@@ -17,6 +17,7 @@ interface ExpandableMessageProps {
   message: string;
   type: string;
   success?: boolean;
+  messageActionID?: string;
 }
 
 export function ExpandableMessage({
@@ -24,6 +25,7 @@ export function ExpandableMessage({
   message,
   type,
   success,
+  messageActionID,
 }: ExpandableMessageProps) {
   const { data: config } = useConfig();
   const { t, i18n } = useTranslation();
@@ -33,7 +35,7 @@ export function ExpandableMessage({
 
   useEffect(() => {
     if (id && i18n.exists(id)) {
-      setHeadline(t(id));
+      setHeadline(t(id) + ` (${messageActionID})`);
       setDetails(message);
       setShowDetails(false);
     }

@@ -98,6 +98,7 @@ export const chatSlice = createSlice({
       if (!HANDLED_ACTIONS.includes(actionID)) {
         return;
       }
+      let messageActionID = actionID as string;
       const translationID = `ACTION_MESSAGE$${actionID.toUpperCase()}`;
       let text = "";
       if (actionID === "run") {
@@ -126,6 +127,7 @@ export const chatSlice = createSlice({
         text = action.payload.args.thought;
       } else if (actionID === "call_tool_mcp") {
         text = `**Action:**\n\n${action.payload.message}\n\n`;
+        messageActionID = action.payload.args.name;
       }
       const message: Message = {
         type: "action",
@@ -135,6 +137,7 @@ export const chatSlice = createSlice({
         content: text,
         imageUrls: [],
         timestamp: new Date().toISOString(),
+        messageActionID,
       };
 
       state.messages.push(message);
