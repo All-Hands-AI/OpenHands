@@ -121,7 +121,7 @@ Be thorough in your exploration, testing, and reasoning. It's fine if your think
         )
 
     if 'image_assets' in instance:
-        assets = instance['image_assets']
+        assets = json.loads(instance['image_assets'])
         assert (
             'problem_statement' in assets
         ), 'problem_statement is required in image_assets'
@@ -331,15 +331,18 @@ def initialize_runtime(
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert_and_raise(obs.exit_code == 0, f'Failed to remove git remotes: {str(obs)}')
 
-    action = CmdRunAction(command='which python')
-    action.set_hard_timeout(600)
-    logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = runtime.run_action(action)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert_and_raise(
-        obs.exit_code == 0 and 'testbed' in obs.content,
-        f'Expected to find python interpreter from testbed, but got: {str(obs)}',
-    )
+    if 'multimodal' not in metadata.dataset.lower():
+        # Only for non-multimodal datasets, we need to activate the testbed environment for Python
+        # SWE-Bench multimodal datasets are not using the testbed environment
+        action = CmdRunAction(command='which python')
+        action.set_hard_timeout(600)
+        logger.info(action, extra={'msg_type': 'ACTION'})
+        obs = runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert_and_raise(
+            obs.exit_code == 0 and 'testbed' in obs.content,
+            f'Expected to find python interpreter from testbed, but got: {str(obs)}',
+        )
 
     logger.info('-' * 30)
     logger.info('END Runtime Initialization Fn')
