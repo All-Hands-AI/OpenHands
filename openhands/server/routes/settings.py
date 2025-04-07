@@ -145,10 +145,11 @@ async def store_settings(
     )
     existing_settings = await settings_store.load()    
 
-    existing_settings.azure_devops_org = settings.azure_devops_org
-    existing_settings.azure_devops_project = settings.azure_devops_project
+    if settings.azure_devops_org and settings.azure_devops_project:
+        existing_settings.azure_devops_org = settings.azure_devops_org
+        existing_settings.azure_devops_project = settings.azure_devops_project
 
-    await settings_store.store(existing_settings)
+        await settings_store.store(existing_settings)
 
     # Check provider tokens are valid
     if settings.provider_tokens:

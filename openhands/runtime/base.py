@@ -330,6 +330,7 @@ class Runtime(FileEditRuntimeMixin):
         selected_branch: str | None,
         repository_provider: ProviderType = ProviderType.GITHUB,
     ) -> str:
+        
         chosen_provider = (
             repository_provider
             if isinstance(selected_repository, str)
@@ -348,7 +349,7 @@ class Runtime(FileEditRuntimeMixin):
             else selected_repository.full_name
         )
 
-        remote_repo_url = provider_handler.get_repo_url(
+        remote_repo_url = await provider_handler.get_repo_url(
             repository=repository,
             provider=chosen_provider,
         )       

@@ -168,8 +168,6 @@ class AzureDevOpsService(GitService):
 
             url = f'{self.BASE_URL}/_apis/git/repositories?searchCriteria.searchText={quote_plus(query)}&api-version=7.0'
 
-            print(f'URL: {url}')
-
             # Search for repositories in the organization
             async with httpx.AsyncClient() as client:
                 response = await client.get(
@@ -221,10 +219,7 @@ class AzureDevOpsService(GitService):
 
         try:
 
-            url = f'{self.BASE_URL}/_apis/git/repositories?api-version=7.0'
-
-            print(f'URL: {url}')
-
+            url = f'{self.BASE_URL}/_apis/git/repositories?api-version=7.0'            
             # Get all repositories in the organization
             async with httpx.AsyncClient() as client:
                 response = await client.get(
