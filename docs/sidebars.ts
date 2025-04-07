@@ -211,6 +211,11 @@ const sidebars: SidebarsConfig = {
           label: 'Custom Sandbox',
           id: 'usage/how-to/custom-sandbox-guide',
         },
+        {
+          type: 'doc',
+          label: 'Logging',
+          id: 'usage/logging',
+        },
       ],
     },
     {
