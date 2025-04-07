@@ -432,9 +432,9 @@ class StandaloneConversationManager(ConversationManager):
             # Update token usage
             if hasattr(metrics, 'accumulated_token_usage'):
                 token_usage = metrics.accumulated_token_usage
-                conversation.prompt_tokens += token_usage.prompt_tokens
-                conversation.completion_tokens += token_usage.completion_tokens
-                conversation.total_tokens += token_usage.prompt_tokens + token_usage.completion_tokens
+                conversation.prompt_tokens = token_usage.prompt_tokens
+                conversation.completion_tokens = token_usage.completion_tokens
+                conversation.total_tokens = token_usage.prompt_tokens + token_usage.completion_tokens
         
         await conversation_store.save_metadata(conversation)
 
