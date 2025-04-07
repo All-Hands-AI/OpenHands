@@ -79,6 +79,7 @@ memory-profiler = "^0.61.0"
 daytona-sdk = "0.12.1"
 python-json-logger = "^3.2.1"
 playwright = "^1.51.0"
+prompt-toolkit = "^3.0.50"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "0.11.4"
