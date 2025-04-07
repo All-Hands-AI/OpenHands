@@ -322,11 +322,12 @@ def issue_handler_factory(
     llm_config: LLMConfig,
     platform: Platform,
     username: str | None = None,
+    base_domain: str = "github.com",
 ) -> ServiceContextIssue | ServiceContextPR:
     if issue_type == 'issue':
         if platform == Platform.GITHUB:
             return ServiceContextIssue(
-                GithubIssueHandler(owner, repo, token, username), llm_config
+                GithubIssueHandler(owner, repo, token, username, base_domain), llm_config
             )
         else:  # platform == Platform.GITLAB
             return ServiceContextIssue(
@@ -335,7 +336,7 @@ def issue_handler_factory(
     elif issue_type == 'pr':
         if platform == Platform.GITHUB:
             return ServiceContextPR(
-                GithubPRHandler(owner, repo, token, username), llm_config
+                GithubPRHandler(owner, repo, token, username, base_domain), llm_config
             )
         else:  # platform == Platform.GITLAB
             return ServiceContextPR(
@@ -361,6 +362,7 @@ async def resolve_issue(
     issue_number: int,
     comment_id: int | None,
     reset_logger: bool = False,
+    base_domain: str = "github.com",
 ) -> None:
     """Resolve a single issue.
 
@@ -383,7 +385,7 @@ async def resolve_issue(
         reset_logger: Whether to reset the logger for multiprocessing.
     """
     issue_handler = issue_handler_factory(
-        issue_type, owner, repo, token, llm_config, platform, username
+        issue_type, owner, repo, token, llm_config, platform, username, base_domain
     )
 
     # Load dataset
@@ -629,6 +631,12 @@ def main() -> None:
         type=lambda x: x.lower() == 'true',
         help='Whether to run in experimental mode.',
     )
+    parser.add_argument(
+        '--base-domain',
+        type=str,
+        default="github.com",
+        help='Base domain for GitHub Enterprise (default: github.com)',
+    )
 
     my_args = parser.parse_args()
 
@@ -651,7 +659,7 @@ def main() -> None:
     if not token:
         raise ValueError('Token is required.')
 
-    platform = identify_token(token, my_args.selected_repo)
+    platform = identify_token(token, my_args.selected_repo, my_args.base_domain)
     if platform == Platform.INVALID:
         raise ValueError('Token is invalid.')
 
@@ -699,6 +707,7 @@ def main() -> None:
             repo_instruction=repo_instruction,
             issue_number=my_args.issue_number,
             comment_id=my_args.comment_id,
+            base_domain=my_args.base_domain,
         )
     )
 
