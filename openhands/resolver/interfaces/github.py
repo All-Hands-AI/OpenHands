@@ -1,6 +1,6 @@
 from typing import Any
 
-import requests
+import httpx
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.resolver.interfaces.issue import (
@@ -121,9 +121,7 @@ class GithubIssueHandler(IssueHandlerInterface):
         all_issues = []
 
         while True:
-            response = requests.get(
-                self.download_url, headers=self.headers, params=params
-            )
+            response = httpx.get(self.download_url, headers=self.headers, params=params)
             response.raise_for_status()
             issues = response.json()
 
@@ -152,7 +150,7 @@ class GithubIssueHandler(IssueHandlerInterface):
         all_comments = []
 
         while True:
-            response = requests.get(url, headers=self.headers, params=params)
+            response = httpx.get(url, headers=self.headers, params=params)
             response.raise_for_status()
             comments = response.json()
 
@@ -178,12 +176,12 @@ class GithubIssueHandler(IssueHandlerInterface):
         return all_comments if all_comments else None
 
     def branch_exists(self, branch_name: str) -> bool:
-        print(f'Checking if branch {branch_name} exists...')
-        response = requests.get(
+        logger.info(f'Checking if branch {branch_name} exists...')
+        response = httpx.get(
             f'{self.base_url}/branches/{branch_name}', headers=self.headers
         )
         exists = response.status_code == 200
-        print(f'Branch {branch_name} exists: {exists}')
+        logger.info(f'Branch {branch_name} exists: {exists}')
         return exists
 
     def get_branch_name(self, base_branch_name: str) -> str:
@@ -216,7 +214,7 @@ class GithubIssueHandler(IssueHandlerInterface):
             'Content-Type': 'application/json',
         }
 
-        response = requests.post(
+        response = httpx.post(
             url, json={'query': query, 'variables': variables}, headers=headers
         )
         response.raise_for_status()
@@ -225,7 +223,7 @@ class GithubIssueHandler(IssueHandlerInterface):
         return f'https://github.com/{self.owner}/{self.repo}/pull/{pr_number}'
 
     def get_default_branch_name(self) -> str:
-        response = requests.get(f'{self.base_url}', headers=self.headers)
+        response = httpx.get(f'{self.base_url}', headers=self.headers)
         response.raise_for_status()
         data = response.json()
         return str(data['default_branch'])
@@ -233,9 +231,7 @@ class GithubIssueHandler(IssueHandlerInterface):
     def create_pull_request(self, data: dict[str, Any] | None = None) -> dict[str, Any]:
         if data is None:
             data = {}
-        response = requests.post(
-            f'{self.base_url}/pulls', headers=self.headers, json=data
-        )
+        response = httpx.post(f'{self.base_url}/pulls', headers=self.headers, json=data)
         if response.status_code == 403:
             raise RuntimeError(
                 'Failed to create pull request due to missing permissions. '
@@ -247,14 +243,14 @@ class GithubIssueHandler(IssueHandlerInterface):
 
     def request_reviewers(self, reviewer: str, pr_number: int) -> None:
         review_data = {'reviewers': [reviewer]}
-        review_response = requests.post(
+        review_response = httpx.post(
             f'{self.base_url}/pulls/{pr_number}/requested_reviewers',
             headers=self.headers,
             json=review_data,
         )
         if review_response.status_code != 201:
-            print(
-                f'Warning: Failed to request review from {reviewer}: {review_response.text}'
+            logger.warning(
+                f'Failed to request review from {reviewer}: {review_response.text}'
             )
 
     def send_comment_msg(self, issue_number: int, msg: str) -> None:
@@ -267,15 +263,15 @@ class GithubIssueHandler(IssueHandlerInterface):
         # Post a comment on the PR
         comment_url = f'{self.base_url}/issues/{issue_number}/comments'
         comment_data = {'body': msg}
-        comment_response = requests.post(
+        comment_response = httpx.post(
             comment_url, headers=self.headers, json=comment_data
         )
         if comment_response.status_code != 201:
-            print(
+            logger.error(
                 f'Failed to post comment: {comment_response.status_code} {comment_response.text}'
             )
         else:
-            print(f'Comment added to the PR: {msg}')
+            logger.info(f'Comment added to the PR: {msg}')
 
     def get_context_from_external_issues_references(
         self,
@@ -366,7 +362,7 @@ class GithubPRHandler(GithubIssueHandler):
             'Content-Type': 'application/json',
         }
 
-        response = requests.post(
+        response = httpx.post(
             url, json={'query': query, 'variables': variables}, headers=headers
         )
         response.raise_for_status()
@@ -457,7 +453,7 @@ class GithubPRHandler(GithubIssueHandler):
         all_comments = []
 
         while True:
-            response = requests.get(url, headers=headers, params=params)
+            response = httpx.get(url, headers=headers, params=params)
             response.raise_for_status()
             comments = response.json()
 
@@ -522,13 +518,13 @@ class GithubPRHandler(GithubIssueHandler):
                     'Authorization': f'Bearer {self.token}',
                     'Accept': 'application/vnd.github.v3+json',
                 }
-                response = requests.get(url, headers=headers)
+                response = httpx.get(url, headers=headers)
                 response.raise_for_status()
                 issue_data = response.json()
                 issue_body = issue_data.get('body', '')
                 if issue_body:
                     closing_issues.append(issue_body)
-            except requests.exceptions.RequestException as e:
+            except httpx.HTTPError as e:
                 logger.warning(f'Failed to fetch issue {issue_number}: {str(e)}')
 
         return closing_issues

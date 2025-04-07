@@ -28,6 +28,7 @@ from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import CmdRunAction, MessageAction
 from openhands.events.observation import BrowserOutputObservation, CmdOutputObservation
 from openhands.runtime.base import Runtime
+from openhands.utils.async_utils import call_async_from_sync
 
 
 def get_config(
@@ -39,6 +40,9 @@ def get_config(
 ) -> AppConfig:
     sandbox_config = get_default_sandbox_config_for_eval()
     sandbox_config.base_container_image = base_container_image
+    sandbox_config.enable_auto_lint = True
+    # If the web services are running on the host machine, this must be set to True
+    sandbox_config.use_host_network = True
     config = AppConfig(
         run_as_openhands=False,
         max_budget_per_task=4,
@@ -275,7 +279,7 @@ if __name__ == '__main__':
         args.task_image_name, task_short_name, temp_dir, agent_llm_config, agent_config
     )
     runtime: Runtime = create_runtime(config)
-
+    call_async_from_sync(runtime.connect)
     init_task_env(runtime, args.server_hostname, env_llm_config)
 
     dependencies = load_dependencies(runtime)

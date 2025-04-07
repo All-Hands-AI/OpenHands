@@ -1,7 +1,7 @@
 import asyncio
 from argparse import Namespace
 from pathlib import Path
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
@@ -17,13 +17,18 @@ def mock_runtime():
     with patch('openhands.core.cli.create_runtime') as mock_create_runtime:
         mock_runtime_instance = AsyncMock()
         # Mock the event stream with proper async methods
-        mock_runtime_instance.event_stream = AsyncMock()
-        mock_runtime_instance.event_stream.subscribe = AsyncMock()
-        mock_runtime_instance.event_stream.add_event = AsyncMock()
+        mock_event_stream = AsyncMock()
+        mock_event_stream.subscribe = AsyncMock()
+        mock_event_stream.add_event = AsyncMock()
+        mock_event_stream.get_events = AsyncMock(return_value=[])
+        mock_event_stream.get_latest_event_id = AsyncMock(return_value=0)
+        mock_runtime_instance.event_stream = mock_event_stream
         # Mock connect method to return immediately
         mock_runtime_instance.connect = AsyncMock()
         # Ensure status_callback is None
         mock_runtime_instance.status_callback = None
+        # Mock get_microagents_from_selected_repo
+        mock_runtime_instance.get_microagents_from_selected_repo = Mock(return_value=[])
         mock_create_runtime.return_value = mock_runtime_instance
         yield mock_runtime_instance
 
@@ -32,6 +37,16 @@ def mock_runtime():
 def mock_agent():
     with patch('openhands.core.cli.create_agent') as mock_create_agent:
         mock_agent_instance = AsyncMock()
+        mock_agent_instance.name = 'test-agent'
+        mock_agent_instance.llm = AsyncMock()
+        mock_agent_instance.llm.config = AsyncMock()
+        mock_agent_instance.llm.config.model = 'test-model'
+        mock_agent_instance.llm.config.base_url = 'http://test'
+        mock_agent_instance.llm.config.max_message_chars = 1000
+        mock_agent_instance.config = AsyncMock()
+        mock_agent_instance.config.disabled_microagents = []
+        mock_agent_instance.sandbox_plugins = []
+        mock_agent_instance.prompt_manager = AsyncMock()
         mock_create_agent.return_value = mock_agent_instance
         yield mock_agent_instance
 

@@ -2,8 +2,8 @@ import asyncio
 import json
 import os
 
+import httpx
 import pandas as pd
-import requests
 
 from evaluation.benchmarks.gorilla.utils import encode_question, get_data_for_hub
 from evaluation.utils.shared import (
@@ -26,6 +26,7 @@ from openhands.core.config import (
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import MessageAction
+from openhands.utils.async_utils import call_async_from_sync
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
@@ -82,6 +83,7 @@ def process_instance(
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
     runtime = create_runtime(config)
+    call_async_from_sync(runtime.connect)
     state: State | None = asyncio.run(
         run_controller(
             config=config,
@@ -180,7 +182,7 @@ if __name__ == '__main__':
     # Check if the file exists
     if not os.path.exists(file_path):
         url = 'https://raw.githubusercontent.com/ShishirPatil/gorilla/main/eval/eval-scripts/codebleu/parser/my-languages.so'
-        response = requests.get(url)
+        response = httpx.get(url)
         with open(file_path, 'wb') as f:
             f.write(response.content)
     else:

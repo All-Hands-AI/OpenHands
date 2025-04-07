@@ -2,11 +2,15 @@
 
 This folder contains the evaluation harness that we built on top of the original [SWE-Bench benchmark](https://www.swebench.com/) ([paper](https://arxiv.org/abs/2310.06770)).
 
+**UPDATE (03/27/2025): We now support SWE-Bench multimodal evaluation! Simply use "princeton-nlp/SWE-bench_Multimodal" as the dataset name in the `run_infer.sh` script to evaluate on multimodal instances.**
+
+**UPDATE (2/18/2025): We now support running SWE-Gym using the same evaluation harness here. For more details, checkout [this README](./SWE-Gym.md).**
+
 **UPDATE (7/1/2024): We now support the official SWE-Bench dockerized evaluation as announced [here](https://github.com/princeton-nlp/SWE-bench/blob/main/docs/20240627_docker/README.md).**
 
 The evaluation consists of three steps:
 
-1. Environment setup: [install python environment](../../README.md#development-environment), [configure LLM config](../../README.md#configure-openhands-and-your-llm), and [pull docker](#openhands-swe-bench-instance-level-docker-support).
+1. Environment setup: [install python environment](../../README.md#development-environment) and [configure LLM config](../../README.md#configure-openhands-and-your-llm).
 2. [Run inference](#run-inference-on-swe-bench-instances): Generate a edit patch for each Github issue
 3. [Evaluate patches using SWE-Bench docker](#evaluate-generated-patches)
 
@@ -14,22 +18,35 @@ The evaluation consists of three steps:
 
 Please follow instruction [here](../../README.md#setup) to setup your local development environment and LLM.
 
-## OpenHands SWE-Bench Instance-level Docker Support
+## Run Inference (Rollout) on SWE-Bench Instances: Generate Patch from Problem Statement
 
-OpenHands now support using the [official evaluation docker](https://github.com/princeton-nlp/SWE-bench/blob/main/docs/20240627_docker/README.md) for both **[inference](#run-inference-on-swe-bench-instances) and [evaluation](#evaluate-generated-patches)**.
-This is now the default behavior.
+> [!NOTE]
+> **Iterative Evaluation Protocol**
+>
+> We have an iterative approach for more stable and reproducible results:
+> - For each instance, we attempt to generate a solution up to 3 times
+> - Each attempt continues until either:
+>   1. The agent successfully produces a patch with `AgentFinishAction`, or
+>   2. The attempt reaches the maximum iteration limit
+> - If an attempt fails, we retry with a fresh attempt (up to the 3-attempt maximum)
+> - If your LLM config has temperature=0, we will automatically use temperature=0.1 for the 2nd and 3rd attempts
+>
+> To enable this iterative protocol, set `export ITERATIVE_EVAL_MODE=true`
 
-## Run Inference on SWE-Bench Instances
 
-Make sure your Docker daemon is running, and you have ample disk space (at least 200-500GB, depends on the SWE-Bench set you are running on) for the [instance-level docker image](#openhands-swe-bench-instance-level-docker-support).
+### Running Locally with Docker
 
-When the `run_infer.sh` script is started, it will automatically pull the relevant SWE-Bench images. For example, for instance ID `django_django-11011`, it will try to pull our pre-build docker image `sweb.eval.x86_64.django_s_django-11011` from DockerHub. This image will be used create an OpenHands runtime image where the agent will operate on.
+Make sure your Docker daemon is running, and you have ample disk space (at least 200-500GB, depends on the SWE-Bench set you are running on) for the instance-level docker image.
+
+When the `run_infer.sh` script is started, it will automatically pull the relevant SWE-Bench images.
+For example, for instance ID `django_django-11011`, it will try to pull our pre-build docker image `sweb.eval.x86_64.django_s_django-11011` from DockerHub.
+This image will be used create an OpenHands runtime image where the agent will operate on.
 
 ```bash
 ./evaluation/benchmarks/swe_bench/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit] [max_iter] [num_workers] [dataset] [dataset_split]
 
 # Example
-./evaluation/benchmarks/swe_bench/scripts/run_infer.sh llm.eval_gpt4_1106_preview HEAD CodeActAgent 300 30 1 princeton-nlp/SWE-bench_Lite test
+./evaluation/benchmarks/swe_bench/scripts/run_infer.sh llm.eval_gpt4_1106_preview HEAD CodeActAgent 500 100 1 princeton-nlp/SWE-bench_Verified test
 ```
 
 where `model_config` is mandatory, and the rest are optional.
@@ -44,17 +61,19 @@ to `CodeActAgent`.
 default, the script evaluates the entire SWE-bench_Lite test set (300 issues). Note:
 in order to use `eval_limit`, you must also set `agent`.
 - `max_iter`, e.g. `20`, is the maximum number of iterations for the agent to run. By
-default, it is set to 30.
+default, it is set to 60.
 - `num_workers`, e.g. `3`, is the number of parallel workers to run the evaluation. By
 default, it is set to 1.
-- `dataset`, a huggingface dataset name. e.g. `princeton-nlp/SWE-bench` or `princeton-nlp/SWE-bench_Lite`, specifies which dataset to evaluate on.
+- `dataset`, a huggingface dataset name. e.g. `princeton-nlp/SWE-bench`, `princeton-nlp/SWE-bench_Lite`, `princeton-nlp/SWE-bench_Verified`, or `princeton-nlp/SWE-bench_Multimodal`, specifies which dataset to evaluate on.
 - `dataset_split`, split for the huggingface dataset. e.g., `test`, `dev`. Default to `test`.
 
-There are also two optional environment variables you can set.
+> [!CAUTION]
+> Setting `num_workers` larger than 1 is not officially tested, YMMV.
+
+There is also one optional environment variable you can set.
 
 ```bash
 export USE_HINT_TEXT=true # if you want to use hint text in the evaluation. Default to false. Ignore this if you are not sure.
-export USE_INSTANCE_IMAGE=true # if you want to use instance-level docker images. Default to true
 ```
 
 Let's say you'd like to run 10 instances using `llm.eval_gpt4_1106_preview` and CodeActAgent,
@@ -65,9 +84,18 @@ then your command would be:
 ./evaluation/benchmarks/swe_bench/scripts/run_infer.sh llm.eval_gpt4_1106_preview HEAD CodeActAgent 10
 ```
 
-### Run Inference on `RemoteRuntime` (experimental)
+For multimodal evaluation, you can use:
 
-This is in limited beta. Contact Xingyao over slack if you want to try this out!
+```bash
+# Example for running multimodal SWE-Bench evaluation
+./evaluation/benchmarks/swe_bench/scripts/run_infer.sh llm.eval_gpt4_vision HEAD CodeActAgent 10 100 1 princeton-nlp/SWE-bench_Multimodal test
+```
+
+### Running in parallel with RemoteRuntime
+
+OpenHands Remote Runtime is currently in beta (read [here](https://runtime.all-hands.dev/) for more details), it allows you to run rollout in parallel in the cloud, so you don't need a powerful machine to run evaluation.
+
+Fill out [this form](https://docs.google.com/forms/d/e/1FAIpQLSckVz_JFwg2_mOxNZjCtr7aoBFI2Mwdan3f75J_TrdMS1JV2g/viewform) to apply if you want to try this out!
 
 ```bash
 ./evaluation/benchmarks/swe_bench/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit] [max_iter] [num_workers] [dataset] [dataset_split]
@@ -100,41 +128,14 @@ After running the inference, you will obtain a `output.jsonl` (by default it wil
 
 ## Evaluate Generated Patches
 
-### Download Docker Images
-
-**(Recommended for reproducibility)** If you have extra local space (e.g., 200GB), you can try pull the [instance-level docker images](https://github.com/princeton-nlp/SWE-bench/blob/main/docs/20240627_docker/README.md#choosing-the-right-cache_level) we've prepared by running:
-
-```bash
-evaluation/benchmarks/swe_bench/scripts/docker/pull_all_eval_docker.sh instance
-```
-
-If you want to save disk space a bit (e.g., with ~50GB free disk space), while speeding up the image pre-build process, you can pull the environment-level docker images:
-
-```bash
-evaluation/benchmarks/swe_bench/scripts/docker/pull_all_eval_docker.sh env
-```
-
-If you want to evaluate on the full SWE-Bench test set:
-
-```bash
-evaluation/benchmarks/swe_bench/scripts/docker/pull_all_eval_docker.sh instance full
-```
-
-### Run evaluation
+### Run evaluation with official SWE-Bench harness (Recommend if you have local disk space)
 
 With `output.jsonl` file, you can run `eval_infer.sh` to evaluate generated patches, and produce a fine-grained report.
-
 **This evaluation is performed using the official dockerized evaluation announced [here](https://github.com/princeton-nlp/SWE-bench/blob/main/docs/20240627_docker/README.md).**
 
-> If you want to evaluate existing results, you should first run this to clone existing outputs
->
->```bash
->git clone https://huggingface.co/spaces/OpenHands/evaluation evaluation/evaluation_outputs
->```
+> [!NOTE]
+> This process will automatically download docker images from SWE-Bench official docker hub, please make sure you have enough disk space!
 
-NOTE, you should have already pulled the instance-level OR env-level docker images following [this section](#openhands-swe-bench-instance-level-docker-support).
-
-Then you can run the following:
 
 ```bash
 ./evaluation/benchmarks/swe_bench/scripts/eval_infer.sh $YOUR_OUTPUT_JSONL [instance_id] [dataset_name] [split]
@@ -155,7 +156,7 @@ For example, to evaluate a specific instance with a custom dataset and split:
 ./evaluation/benchmarks/swe_bench/scripts/eval_infer.sh $YOUR_OUTPUT_JSONL instance_123 princeton-nlp/SWE-bench test
 ```
 
-> You can also pass in a JSONL with [SWE-Bench format](https://github.com/princeton-nlp/SWE-bench/blob/main/tutorials/evaluation.md#-creating-predictions) to `./evaluation/benchmarks/swe_bench/scripts/eval_infer.sh`, where each line is a JSON of `{"model_patch": "XXX", "model_name_or_path": "YYY", "instance_id": "ZZZ"}`.
+> You can also pass in a JSONL with [SWE-Bench format](https://github.com/SWE-bench/SWE-bench/blob/main/assets/evaluation.md#-creating-predictions) to `./evaluation/benchmarks/swe_bench/scripts/eval_infer.sh`, where each line is a JSON of `{"model_patch": "XXX", "model_name_or_path": "YYY", "instance_id": "ZZZ"}`.
 
 The final results will be saved to `evaluation/evaluation_outputs/outputs/swe_bench/CodeActAgent/gpt-4-1106-preview_maxiter_50_N_v1.0/` with the following files/directory:
 
@@ -163,9 +164,10 @@ The final results will be saved to `evaluation/evaluation_outputs/outputs/swe_be
 - `report.json`: a JSON file that contains keys like `"resolved_ids"` pointing to instance IDs that are resolved by the agent.
 - `logs/`: a directory of test logs
 
-### Run evaluation with `RemoteRuntime` (experimental)
+### Run evaluation with `RemoteRuntime`
 
-This is in limited beta. Contact Xingyao over slack if you want to try this out!
+OpenHands Remote Runtime is currently in beta (read [here](https://runtime.all-hands.dev/) for more details), it allows you to run rollout in parallel in the cloud, so you don't need a powerful machine to run evaluation.
+Fill out [this form](https://docs.google.com/forms/d/e/1FAIpQLSckVz_JFwg2_mOxNZjCtr7aoBFI2Mwdan3f75J_TrdMS1JV2g/viewform) to apply if you want to try this out!
 
 ```bash
 ./evaluation/benchmarks/swe_bench/scripts/eval_infer_remote.sh [output.jsonl filepath] [num_workers]
@@ -180,35 +182,3 @@ To clean-up all existing runtimes that you've already started, run:
 ```bash
 ALLHANDS_API_KEY="YOUR-API-KEY" ./evaluation/utils/scripts/cleanup_remote_runtime.sh
 ```
-
-## Visualize Results
-
-First you need to clone `https://huggingface.co/spaces/OpenHands/evaluation` and add your own running results from openhands into the `outputs` of the cloned repo.
-
-```bash
-git clone https://huggingface.co/spaces/OpenHands/evaluation
-```
-
-**(optional) setup streamlit environment with conda**:
-
-```bash
-cd evaluation
-conda create -n streamlit python=3.10
-conda activate streamlit
-pip install -r requirements.txt
-```
-
-**run the visualizer**:
-Then, in a separate Python environment with `streamlit` library, you can run the following:
-
-```bash
-# Make sure you are inside the cloned `evaluation` repo
-conda activate streamlit # if you follow the optional conda env setup above
-streamlit run app.py --server.port 8501 --server.address 0.0.0.0
-```
-
-Then you can access the SWE-Bench trajectory visualizer at `localhost:8501`.
-
-## Submit your evaluation results
-
-You can start your own fork of [our huggingface evaluation outputs](https://huggingface.co/spaces/OpenHands/evaluation) and submit a PR of your evaluation results following the guide [here](https://huggingface.co/docs/hub/en/repositories-pull-requests-discussions#pull-requests-and-discussions).

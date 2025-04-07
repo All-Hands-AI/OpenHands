@@ -12,7 +12,8 @@ export type OpenHandsEventType =
   | "reject"
   | "think"
   | "finish"
-  | "error";
+  | "error"
+  | "recall";
 
 interface OpenHandsBaseEvent {
   id: number;

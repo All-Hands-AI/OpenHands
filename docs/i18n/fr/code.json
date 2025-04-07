@@ -402,5 +402,26 @@
   "theme.unlistedContent.message": {
     "message": "Cette page n'est pas répertoriée. Les moteurs de recherche ne l'indexeront pas, et seuls les utilisateurs ayant un lien direct peuvent y accéder.",
     "description": "The unlisted content banner message"
+  },
+  "Use AI to tackle the toil in your backlog. Our agents have all the same tools as a human developer: they can modify code, run commands, browse the web, call APIs, and yes-even copy code snippets from StackOverflow.": {
+    "message": "Utilisez l'IA pour gérer les tâches répétitives de votre backlog. Nos agents disposent des mêmes outils qu'un développeur humain : ils peuvent modifier du code, exécuter des commandes, naviguer sur le web, appeler des API et même copier des extraits de code depuis StackOverflow."
+  },
+  "Get started with OpenHands.": {
+    "message": "Commencer avec OpenHands"
+  },
+  "Most Popular Links": {
+    "message": "Liens Populaires"
+  },
+  "Customizing OpenHands to a repository": {
+    "message": "Personnaliser OpenHands pour un dépôt"
+  },
+  "Integrating OpenHands with Github": {
+    "message": "Intégrer OpenHands avec Github"
+  },
+  "Recommended models to use": {
+    "message": "Modèles recommandés"
+  },
+  "Connecting OpenHands to your filesystem": {
+    "message": "Connecter OpenHands à votre système de fichiers"
   }
 }

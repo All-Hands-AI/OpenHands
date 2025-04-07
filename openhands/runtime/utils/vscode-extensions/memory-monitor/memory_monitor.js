@@ -21,15 +21,15 @@ class MemoryMonitor {
 
         this.isMonitoring = true;
         this.statusBarItem.show();
-        
+
         // Initial update
         this.updateMemoryInfo();
-        
+
         // Set interval for updates
         this.intervalId = setInterval(() => {
             this.updateMemoryInfo();
         }, interval);
-        
+
         vscode.window.showInformationMessage('Memory monitoring started');
     }
 
@@ -41,7 +41,7 @@ class MemoryMonitor {
         this.isMonitoring = false;
         clearInterval(this.intervalId);
         this.statusBarItem.hide();
-        
+
         vscode.window.showInformationMessage('Memory monitoring stopped');
     }
 
@@ -49,18 +49,18 @@ class MemoryMonitor {
         const totalMem = os.totalmem();
         const freeMem = os.freemem();
         const usedMem = totalMem - freeMem;
-        
+
         // Calculate memory usage percentage
         const memUsagePercent = Math.round((usedMem / totalMem) * 100);
-        
+
         // Format memory values to MB
         const usedMemMB = Math.round(usedMem / (1024 * 1024));
         const totalMemMB = Math.round(totalMem / (1024 * 1024));
-        
+
         // Update status bar
         this.statusBarItem.text = `$(pulse) Mem: ${memUsagePercent}%`;
         this.statusBarItem.tooltip = `Memory Usage: ${usedMemMB}MB / ${totalMemMB}MB`;
-        
+
         // Store memory data in history
         this.memoryHistory.push({
             timestamp: new Date(),
@@ -69,7 +69,7 @@ class MemoryMonitor {
             memUsagePercent,
             processMemory: process.memoryUsage()
         });
-        
+
         // Limit history length
         if (this.memoryHistory.length > this.maxHistoryLength) {
             this.memoryHistory.shift();
@@ -86,7 +86,7 @@ class MemoryMonitor {
                 enableScripts: true
             }
         );
-        
+
         // Set up message handler for real-time updates
         panel.webview.onDidReceiveMessage(
             message => {
@@ -97,60 +97,60 @@ class MemoryMonitor {
             undefined,
             this.context ? this.context.subscriptions : []
         );
-        
+
         // Initial update
         this.updateWebviewContent(panel);
-        
+
         // Handle panel disposal
         panel.onDidDispose(() => {
             // Clean up any resources if needed
         }, null, this.context ? this.context.subscriptions : []);
     }
-    
+
     updateWebviewContent(panel) {
         // Get system memory info
         const totalMem = os.totalmem();
         const freeMem = os.freemem();
         const usedMem = totalMem - freeMem;
-        
+
         // Format memory values
         const usedMemMB = Math.round(usedMem / (1024 * 1024));
         const freeMemMB = Math.round(freeMem / (1024 * 1024));
         const totalMemMB = Math.round(totalMem / (1024 * 1024));
-        
+
         // Get process memory usage
         const processMemory = process.memoryUsage();
         const rss = Math.round(processMemory.rss / (1024 * 1024));
         const heapTotal = Math.round(processMemory.heapTotal / (1024 * 1024));
         const heapUsed = Math.round(processMemory.heapUsed / (1024 * 1024));
-        
+
         // Get process information
         this.processMonitor.getProcessInfo((error, processInfo) => {
             if (error) {
                 console.error('Error getting process info:', error);
                 return;
             }
-            
+
             // Create HTML content for the webview
             const htmlContent = this.generateHtmlReport(
-                usedMemMB, freeMemMB, totalMemMB, 
+                usedMemMB, freeMemMB, totalMemMB,
                 rss, heapTotal, heapUsed,
                 processInfo
             );
-            
+
             // Set the webview's HTML content
             panel.webview.html = htmlContent;
         });
     }
-    
+
     generateHtmlReport(usedMemMB, freeMemMB, totalMemMB, rss, heapTotal, heapUsed, processInfo) {
         // Create memory usage history data for chart
         const memoryLabels = this.memoryHistory.map((entry, index) => index);
         const memoryData = this.memoryHistory.map(entry => entry.memUsagePercent);
-        const heapData = this.memoryHistory.map(entry => 
+        const heapData = this.memoryHistory.map(entry =>
             Math.round(entry.processMemory.heapUsed / (1024 * 1024))
         );
-        
+
         // Format process info table
         let processTable = '';
         if (processInfo && processInfo.processes) {
@@ -174,7 +174,7 @@ class MemoryMonitor {
                 </table>
             `;
         }
-        
+
         return `
             <!DOCTYPE html>
             <html lang="en">
@@ -237,7 +237,7 @@ class MemoryMonitor {
             </head>
             <body>
                 <h1>Memory Monitor</h1>
-                
+
                 <div class="memory-card">
                     <h2>System Memory</h2>
                     <div class="memory-info">
@@ -259,7 +259,7 @@ class MemoryMonitor {
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="memory-card">
                     <h2>Process Memory (VSCode Extension Host)</h2>
                     <div class="memory-info">
@@ -277,18 +277,18 @@ class MemoryMonitor {
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="memory-card">
                     <h2>Memory Usage History</h2>
                     <div class="chart-container">
                         <canvas id="memoryChart"></canvas>
                     </div>
                 </div>
-                
+
                 <div class="memory-card">
                     ${processTable}
                 </div>
-                
+
                 <script>
                     // Create memory usage chart
                     const ctx = document.getElementById('memoryChart').getContext('2d');
@@ -323,10 +323,10 @@ class MemoryMonitor {
                             }
                         }
                     });
-                    
+
                     // Set up real-time updates
                     const vscode = acquireVsCodeApi();
-                    
+
                     // Request updates every 5 seconds
                     setInterval(() => {
                         vscode.postMessage({

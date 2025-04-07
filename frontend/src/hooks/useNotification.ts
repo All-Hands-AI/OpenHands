@@ -1,9 +1,9 @@
 import { useCallback, useRef } from "react";
 import notificationSound from "../assets/notification.mp3";
-import { useCurrentSettings } from "../context/settings-context";
+import { useSettings } from "./query/use-settings";
 
 export const useNotification = () => {
-  const { settings } = useCurrentSettings();
+  const { data: settings } = useSettings();
   const audioRef = useRef<HTMLAudioElement | undefined>(undefined);
 
   // Initialize audio only in browser environment

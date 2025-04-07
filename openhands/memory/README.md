@@ -2,7 +2,6 @@
 
 - Short Term History
 - Memory Condenser
-- Long Term Memory
 
 ## Short Term History
 - Short term history filters the event stream and computes the messages that are injected into the context
@@ -17,7 +16,3 @@
 - Then it does the same for later chunks of events between user messages
 - If there are no more agent events, it summarizes the user messages, this time one by one, if they're large enough and not immediately after an AgentFinishAction event (we assume those are tasks, potentially important)
 - Summaries are retrieved from the LLM as AgentSummarizeAction, and are saved in State.
-
-## Long Term Memory
-- Long term memory component stores embeddings for events and prompts in a vector store
-- The agent can query it when it needs detailed information about a past event or to learn new actions

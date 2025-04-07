@@ -3,7 +3,6 @@ import React from "react";
 import { Outlet } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
 import { FaServer } from "react-icons/fa";
-import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import {
@@ -36,6 +35,8 @@ import { TerminalStatusLabel } from "#/components/features/terminal/terminal-sta
 import { useSettings } from "#/hooks/query/use-settings";
 import { clearFiles, clearInitialPrompt } from "#/state/initial-query-slice";
 import { RootState } from "#/store";
+import { displayErrorToast } from "#/utils/custom-toast-handlers";
+import { useDocumentTitleFromState } from "#/hooks/use-document-title-from-state";
 
 function AppContent() {
   useConversationConfig();
@@ -50,6 +51,9 @@ function AppContent() {
   );
   const dispatch = useDispatch();
   const endSession = useEndSession();
+
+  // Set the document title to the conversation title when available
+  useDocumentTitleFromState();
 
   const [width, setWidth] = React.useState(window.innerWidth);
 
@@ -66,7 +70,7 @@ function AppContent() {
 
   React.useEffect(() => {
     if (isFetched && !conversation) {
-      toast.error(
+      displayErrorToast(
         "This conversation does not exist, or you do not have permission to access it.",
       );
       endSession();

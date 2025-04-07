@@ -3,6 +3,7 @@ import json
 import pytest
 
 from openhands.storage.conversation.file_conversation_store import FileConversationStore
+from openhands.storage.locations import get_conversation_metadata_filename
 from openhands.storage.memory import InMemoryFileStore
 from openhands.utils.search_utils import iterate, offset_to_page_id, page_id_to_offset
 
@@ -44,19 +45,21 @@ async def test_iterate_single_page():
     store = FileConversationStore(
         InMemoryFileStore(
             {
-                'sessions/conv1/metadata.json': json.dumps(
+                get_conversation_metadata_filename('conv1'): json.dumps(
                     {
                         'conversation_id': 'conv1',
                         'github_user_id': '123',
+                        'user_id': '123',
                         'selected_repository': 'repo1',
                         'title': 'First conversation',
                         'created_at': '2025-01-16T19:51:04Z',
                     }
                 ),
-                'sessions/conv2/metadata.json': json.dumps(
+                get_conversation_metadata_filename('conv2'): json.dumps(
                     {
                         'conversation_id': 'conv2',
                         'github_user_id': '123',
+                        'user_id': '123',
                         'selected_repository': 'repo1',
                         'title': 'Second conversation',
                         'created_at': '2025-01-17T19:51:04Z',
@@ -81,10 +84,11 @@ async def test_iterate_multiple_pages():
     store = FileConversationStore(
         InMemoryFileStore(
             {
-                f'sessions/conv{i}/metadata.json': json.dumps(
+                get_conversation_metadata_filename(f'conv{i}'): json.dumps(
                     {
                         'conversation_id': f'conv{i}',
                         'github_user_id': '123',
+                        'user_id': '123',
                         'selected_repository': 'repo1',
                         'title': f'Conversation {i}',
                         'created_at': f'2025-01-{15+i}T19:51:04Z',
@@ -115,16 +119,19 @@ async def test_iterate_with_invalid_conversation():
     store = FileConversationStore(
         InMemoryFileStore(
             {
-                'sessions/conv1/metadata.json': json.dumps(
+                get_conversation_metadata_filename('conv1'): json.dumps(
                     {
                         'conversation_id': 'conv1',
                         'github_user_id': '123',
+                        'user_id': '123',
                         'selected_repository': 'repo1',
                         'title': 'Valid conversation',
                         'created_at': '2025-01-16T19:51:04Z',
                     }
                 ),
-                'sessions/conv2/metadata.json': 'invalid json',  # Invalid conversation
+                get_conversation_metadata_filename(
+                    'conv2'
+                ): 'invalid json',  # Invalid conversation
             }
         )
     )

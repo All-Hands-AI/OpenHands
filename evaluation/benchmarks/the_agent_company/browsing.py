@@ -7,7 +7,7 @@ import os
 import re
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Union
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import BrowseInteractiveAction
@@ -133,7 +133,7 @@ def parse_content_to_elements(content: str) -> Dict[str, str]:
     return elements
 
 
-def find_matching_anchor(content: str, selector: str) -> Optional[str]:
+def find_matching_anchor(content: str, selector: str) -> str | None:
     """Find the anchor ID that matches the given selector description"""
     elements = parse_content_to_elements(content)
 

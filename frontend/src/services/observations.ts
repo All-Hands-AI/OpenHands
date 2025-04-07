@@ -30,6 +30,7 @@ export function handleObservationMessage(message: ObservationMessage) {
       store.dispatch(appendJupyterOutput(message.content));
       break;
     case ObservationType.BROWSE:
+    case ObservationType.BROWSE_INTERACTIVE:
       if (message.extras?.screenshot) {
         store.dispatch(setScreenshotSrc(message.extras?.screenshot));
       }
@@ -50,6 +51,7 @@ export function handleObservationMessage(message: ObservationMessage) {
     case ObservationType.EDIT:
     case ObservationType.THINK:
     case ObservationType.NULL:
+    case ObservationType.RECALL:
       break; // We don't display the default message for these observations
     default:
       store.dispatch(addAssistantMessage(message.message));
@@ -75,6 +77,21 @@ export function handleObservationMessage(message: ObservationMessage) {
           }),
         );
         break;
+      case "recall":
+        store.dispatch(
+          addAssistantObservation({
+            ...baseObservation,
+            observation: "recall" as const,
+            extras: {
+              ...(message.extras || {}),
+              recall_type:
+                (message.extras?.recall_type as
+                  | "workspace_context"
+                  | "knowledge") || "knowledge",
+            },
+          }),
+        );
+        break;
       case "run":
         store.dispatch(
           addAssistantObservation({
@@ -95,6 +112,7 @@ export function handleObservationMessage(message: ObservationMessage) {
             observation,
             extras: {
               path: String(message.extras.path || ""),
+              impl_source: String(message.extras.impl_source || ""),
             },
           }),
         );
@@ -107,6 +125,7 @@ export function handleObservationMessage(message: ObservationMessage) {
             extras: {
               path: String(message.extras.path || ""),
               diff: String(message.extras.diff || ""),
+              impl_source: String(message.extras.impl_source || ""),
             },
           }),
         );
@@ -141,6 +160,46 @@ export function handleObservationMessage(message: ObservationMessage) {
           addAssistantObservation({
             ...baseObservation,
             observation: "browse" as const,
+            extras: {
+              url: String(message.extras.url || ""),
+              screenshot: String(message.extras.screenshot || ""),
+              error: Boolean(message.extras.error),
+              open_page_urls: Array.isArray(message.extras.open_page_urls)
+                ? message.extras.open_page_urls
+                : [],
+              active_page_index: Number(message.extras.active_page_index || 0),
+              dom_object:
+                typeof message.extras.dom_object === "object"
+                  ? (message.extras.dom_object as Record<string, unknown>)
+                  : {},
+              axtree_object:
+                typeof message.extras.axtree_object === "object"
+                  ? (message.extras.axtree_object as Record<string, unknown>)
+                  : {},
+              extra_element_properties:
+                typeof message.extras.extra_element_properties === "object"
+                  ? (message.extras.extra_element_properties as Record<
+                      string,
+                      unknown
+                    >)
+                  : {},
+              last_browser_action: String(
+                message.extras.last_browser_action || "",
+              ),
+              last_browser_action_error:
+                message.extras.last_browser_action_error,
+              focused_element_bid: String(
+                message.extras.focused_element_bid || "",
+              ),
+            },
+          }),
+        );
+        break;
+      case "browse_interactive":
+        store.dispatch(
+          addAssistantObservation({
+            ...baseObservation,
+            observation: "browse_interactive" as const,
             extras: {
               url: String(message.extras.url || ""),
               screenshot: String(message.extras.screenshot || ""),

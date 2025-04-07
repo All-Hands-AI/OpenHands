@@ -1,4 +1,3 @@
-import inspect
 import os
 
 import socketio
@@ -46,15 +45,9 @@ ConversationManagerImpl = get_impl(
     server_config.conversation_manager_class,
 )
 
-if len(inspect.signature(ConversationManagerImpl.get_instance).parameters) == 3:
-    # This conditional prevents a breaking change in February 2025.
-    # It should be safe to remove by April.
-    conversation_manager = ConversationManagerImpl.get_instance(sio, config, file_store)
-else:
-    # This is the new signature.
-    conversation_manager = ConversationManagerImpl.get_instance(  # type: ignore
-        sio, config, file_store, monitoring_listener
-    )
+conversation_manager = ConversationManagerImpl.get_instance(  # type: ignore
+    sio, config, file_store, server_config, monitoring_listener
+)
 
 SettingsStoreImpl = get_impl(SettingsStore, server_config.settings_store_class)  # type: ignore
 

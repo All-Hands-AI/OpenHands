@@ -10,7 +10,7 @@ jobs:
   trigger-job:
     name: Trigger remote eval job
     if: ${{ github.event.label.name == 'run-eval-xs' || github.event.label.name == 'run-eval-s' || github.event.label.name == 'run-eval-m' }}
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2204
 
     steps:
       - name: Checkout PR branch
@@ -19,9 +19,10 @@ jobs:
           ref: ${{ github.head_ref }}
 
       - name: Trigger remote job
+        env:
+          PR_BRANCH: ${{ github.head_ref }}
         run: |
           REPO_URL="https://github.com/${{ github.repository }}"
-          PR_BRANCH="${{ github.head_ref }}"
           echo "Repository URL: $REPO_URL"
           echo "PR Branch: $PR_BRANCH"
 

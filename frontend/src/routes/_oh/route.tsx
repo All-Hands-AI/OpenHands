@@ -1,5 +1,14 @@
 import React from "react";
-import { useRouteError, isRouteErrorResponse, Outlet } from "react-router";
+import {
+  useRouteError,
+  isRouteErrorResponse,
+  Outlet,
+  useNavigate,
+  useLocation,
+  useSearchParams,
+} from "react-router";
+import { useTranslation } from "react-i18next";
+import { I18nKey } from "#/i18n/declaration";
 import i18n from "#/i18n";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useIsAuthed } from "#/hooks/query/use-is-authed";
@@ -10,9 +19,13 @@ import { AnalyticsConsentFormModal } from "#/components/features/analytics/analy
 import { useSettings } from "#/hooks/query/use-settings";
 import { useAuth } from "#/context/auth-context";
 import { useMigrateUserConsent } from "#/hooks/use-migrate-user-consent";
+import { useBalance } from "#/hooks/query/use-balance";
+import { SetupPaymentModal } from "#/components/features/payment/setup-payment-modal";
+import { displaySuccessToast } from "#/utils/custom-toast-handlers";
 
 export function ErrorBoundary() {
   const error = useRouteError();
+  const { t } = useTranslation();
 
   if (isRouteErrorResponse(error)) {
     return (
@@ -30,7 +43,7 @@ export function ErrorBoundary() {
   if (error instanceof Error) {
     return (
       <div>
-        <h1>Uh oh, an error occurred!</h1>
+        <h1>{t(I18nKey.ERROR$GENERIC)}</h1>
         <pre>{error.message}</pre>
       </div>
     );
@@ -38,17 +51,20 @@ export function ErrorBoundary() {
 
   return (
     <div>
-      <h1>Uh oh, an unknown error occurred!</h1>
+      <h1>{t(I18nKey.ERROR$UNKNOWN)}</h1>
     </div>
   );
 }
 
 export default function MainApp() {
-  const { githubTokenIsSet } = useAuth();
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const [searchParams] = useSearchParams();
+  const { providersAreSet } = useAuth();
   const { data: settings } = useSettings();
+  const { error, isFetching } = useBalance();
   const { migrateUserConsent } = useMigrateUserConsent();
-
-  const [consentFormIsOpen, setConsentFormIsOpen] = React.useState(false);
+  const { t } = useTranslation();
 
   const config = useConfig();
   const {
@@ -61,6 +77,8 @@ export default function MainApp() {
     appMode: config.data?.APP_MODE || null,
     gitHubClientId: config.data?.GITHUB_CLIENT_ID || null,
   });
+
+  const [consentFormIsOpen, setConsentFormIsOpen] = React.useState(false);
 
   React.useEffect(() => {
     if (settings?.LANGUAGE) {
@@ -84,6 +102,17 @@ export default function MainApp() {
     });
   }, []);
 
+  React.useEffect(() => {
+    // Don't allow users to use the app if it 402s
+    if (error?.status === 402 && pathname !== "/") {
+      navigate("/");
+    } else if (!isFetching && searchParams.get("free_credits") === "success") {
+      displaySuccessToast(t(I18nKey.BILLING$YOURE_IN));
+      searchParams.delete("free_credits");
+      navigate("/");
+    }
+  }, [error?.status, pathname, isFetching]);
+
   const userIsAuthed = !!isAuthed && !authError;
   const renderWaitlistModal =
     !isFetchingAuth && !userIsAuthed && config.data?.APP_MODE === "saas";
@@ -104,7 +133,7 @@ export default function MainApp() {
 
       {renderWaitlistModal && (
         <WaitlistModal
-          ghTokenIsSet={githubTokenIsSet}
+          ghTokenIsSet={providersAreSet}
           githubAuthUrl={gitHubAuthUrl}
         />
       )}
@@ -116,6 +145,10 @@ export default function MainApp() {
           }}
         />
       )}
+
+      {config.data?.FEATURE_FLAGS.ENABLE_BILLING &&
+        config.data?.APP_MODE === "saas" &&
+        settings?.IS_NEW_USER && <SetupPaymentModal />}
     </div>
   );
 }
