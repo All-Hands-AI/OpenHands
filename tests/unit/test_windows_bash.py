@@ -130,7 +130,7 @@ def test_command_timeout(windows_bash_session):
     assert isinstance(result, CmdOutputObservation)
     # Check for timeout specific content and metadata
     assert f"Command timed out after {test_timeout_sec} seconds" in result.content
-    assert result.metadata.exit_code == 124 # Standard timeout exit code
+    assert result.metadata.exit_code == -1
     assert f"timed out after {test_timeout_sec} seconds" in result.metadata.suffix
     # Check that it actually timed out near the specified time
     assert abs(duration - test_timeout_sec) < 0.5 # Allow some buffer

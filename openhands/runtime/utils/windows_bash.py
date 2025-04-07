@@ -238,16 +238,27 @@ Write-Host "[PS_SCRIPT] Script execution complete."
             except subprocess.TimeoutExpired:
                 print(f"[ERROR] Script execution timed out after {timeout} seconds.")
                 if process:
+                    print(f"[DEBUG] Killing process {process.pid}")
                     process.kill()
-                    stdout_data, stderr_data = process.communicate()
-                    print(f"[DEBUG] Post-kill STDOUT:\n{stdout_data}")
-                    print(f"[DEBUG] Post-kill STDERR:\n{stderr_data}")
+                    print(f"[DEBUG] Process killed, waiting for completion...")
+                    # Add a short timeout to communicate after kill to prevent hangs
+                    try:
+                        stdout_data, stderr_data = process.communicate(timeout=2) # Timeout after 2 seconds
+                        print(f"[DEBUG] Post-kill STDOUT:\n{stdout_data}")
+                        print(f"[DEBUG] Post-kill STDERR:\n{stderr_data}")
+                    except subprocess.TimeoutExpired:
+                        print("[WARN] Timed out waiting for output after killing process. Output might be incomplete.")
+                        # Ensure the process is really dead
+                        process.kill()
+                    except Exception as comm_err:
+                        print(f"[WARN] Error during post-kill communicate: {comm_err}")
+
                 # Handle timeout
                 return CmdOutputObservation(
                     content=f"Command timed out after {timeout} seconds.",
                     command=command,
                     metadata=CmdOutputMetadata(
-                        exit_code=124,  # Standard timeout exit code
+                        exit_code=-1,
                         working_dir=self._cwd,
                         suffix=f"\n[Command timed out after {timeout} seconds]"
                     )

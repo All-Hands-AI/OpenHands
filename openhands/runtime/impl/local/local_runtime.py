@@ -282,14 +282,14 @@ class LocalRuntime(ActionExecutionClient):
                     if not line:
                         # Process might have exited between poll() and readline()
                         break
-                    self.log('debug', f'Server: {line.strip()}')
+                    self.log('info', f'Server: {line.strip()}')
 
                 # Capture any remaining output after the process exits
                 for line in self.server_process.stdout:
-                    self.log('debug', f'Server (remaining): {line.strip()}')
+                    self.log('info', f'Server (remaining): {line.strip()}')
 
             except Exception as e:
-                self.log('error', f'Error reading server output: {e}')
+                self.log('info', f'Error reading server output: {e}')
 
         self._log_thread = threading.Thread(target=log_output, daemon=True)
         self._log_thread.start()
@@ -318,9 +318,9 @@ class LocalRuntime(ActionExecutionClient):
         return port
 
     @tenacity.retry(
-        wait=tenacity.wait_exponential(min=1, max=10),
+        wait=tenacity.wait_exponential(min=5, max=10),
         stop=tenacity.stop_after_attempt(10) | stop_if_should_exit(),
-        before_sleep=lambda retry_state: logger.debug(
+        before_sleep=lambda retry_state: logger.info(
             f'Waiting for server to be ready... (attempt {retry_state.attempt_number})'
         ),
     )

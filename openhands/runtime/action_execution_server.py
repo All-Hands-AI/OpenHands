@@ -326,7 +326,9 @@ class ActionExecutor:
         self, action: CmdRunAction
     ) -> CmdOutputObservation | ErrorObservation:
         assert self.bash_session is not None
+        logger.info(f'Executing CmdRunAction: {action.command}')
         obs = await call_sync_from_async(self.bash_session.execute, action)
+        logger.info(f'CmdRunAction finished execution. Observation: {obs}')
         return obs
 
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
@@ -633,15 +635,21 @@ if __name__ == '__main__':
     @app.post('/execute_action')
     async def execute_action(action_request: ActionRequest):
         assert client is not None
+        logger.info(f"Received request for /execute_action: {action_request.action.get('action')}")
         try:
             action = event_from_dict(action_request.action)
             if not isinstance(action, Action):
                 raise HTTPException(status_code=400, detail='Invalid action type')
             client.last_execution_time = time.time()
+            logger.info(f"Executing action: {action}")
             observation = await client.run_action(action)
-            return event_to_dict(observation)
+            logger.info(f"Action executed. Observation: {observation}")
+            obs_dict = event_to_dict(observation)
+            logger.info(f"Returning response for /execute_action: {obs_dict}")
+            return obs_dict
         except Exception as e:
             logger.error(f'Error while running /execute_action: {str(e)}')
+            logger.exception("Full traceback for /execute_action error:")
             raise HTTPException(
                 status_code=500,
                 detail=traceback.format_exc(),
