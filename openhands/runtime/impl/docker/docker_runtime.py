@@ -252,8 +252,9 @@ class DockerRuntime(ActionExecutionClient):
         # Combine environment variables
         environment = {
             'port': str(self._container_port),
-            'PYTHONUNBUFFERED': 1,
+            'PYTHONUNBUFFERED': '1',
             'VSCODE_PORT': str(self._vscode_port),
+            'PIP_BREAK_SYSTEM_PACKAGES': '1',
         }
         if self.config.debug or DEBUG:
             environment['DEBUG'] = 'true'
