@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
 import { TrajectoryActions } from "../trajectory/trajectory-actions";
+import { TrajectorySummary } from "../trajectory/trajectory-summary";
 import { createChatMessage } from "#/services/chat-service";
 import { InteractiveChatBox } from "./interactive-chat-box";
 import { addUserMessage } from "#/state/chat-slice";
@@ -23,8 +24,10 @@ import { ActionSuggestions } from "./action-suggestions";
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { useGetTrajectory } from "#/hooks/mutation/use-get-trajectory";
+import { useGetTrajectorySummary } from "#/hooks/mutation/use-get-trajectory-summary";
 import { downloadTrajectory } from "#/utils/download-trajectory";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
+import { TrajectorySummarySegment } from "#/api/open-hands.types";
 
 function getEntryPoint(
   hasRepository: boolean | null,
@@ -56,6 +59,43 @@ export function ChatInterface() {
   );
   const params = useParams();
   const { mutate: getTrajectory } = useGetTrajectory();
+  const { mutate: getTrajectorySummary } = useGetTrajectorySummary();
+
+  // State for trajectory summary
+  const [showSummary, setShowSummary] = React.useState(false);
+  const [overallSummary, setOverallSummary] = React.useState("");
+  const [summarySegments, setSummarySegments] = React.useState<TrajectorySummarySegment[]>([]);
+  const [userMessageCount, setUserMessageCount] = React.useState(0);
+  const [lastSummarizedCount, setLastSummarizedCount] = React.useState(0);
+
+  // Count user messages
+  React.useEffect(() => {
+    const userMessages = messages.filter(msg => msg.sender === "user");
+    setUserMessageCount(userMessages.length);
+  }, [messages]);
+
+  // Trigger summarization after every 2 user messages
+  React.useEffect(() => {
+    const shouldSummarize =
+      userMessageCount > 0 &&
+      userMessageCount % 2 === 0 &&
+      userMessageCount !== lastSummarizedCount &&
+      curAgentState !== AgentState.RUNNING;
+
+    if (shouldSummarize && params.conversationId) {
+      getTrajectorySummary(params.conversationId, {
+        onSuccess: (data) => {
+          setOverallSummary(data.overall_summary);
+          setSummarySegments(data.segments);
+          setShowSummary(true);
+          setLastSummarizedCount(userMessageCount);
+        },
+        onError: (error) => {
+          console.error("Error fetching summary:", error);
+        }
+      });
+    }
+  }, [userMessageCount, lastSummarizedCount, curAgentState, params.conversationId, getTrajectorySummary]);
 
   const handleSendMessage = async (content: string, files: File[]) => {
     if (messages.length === 0) {
@@ -135,8 +175,19 @@ export function ChatInterface() {
           </div>
         )}
 
-        {!isLoadingMessages && (
+        {!isLoadingMessages && !showSummary && (
           <Messages
+            messages={messages}
+            isAwaitingUserConfirmation={
+              curAgentState === AgentState.AWAITING_USER_CONFIRMATION
+            }
+          />
+        )}
+
+        {!isLoadingMessages && showSummary && (
+          <TrajectorySummary
+            overallSummary={overallSummary}
+            segments={summarySegments}
             messages={messages}
             isAwaitingUserConfirmation={
               curAgentState === AgentState.AWAITING_USER_CONFIRMATION
@@ -153,15 +204,40 @@ export function ChatInterface() {
 
       <div className="flex flex-col gap-[6px] px-4 pb-4">
         <div className="flex justify-between relative">
-          <TrajectoryActions
-            onPositiveFeedback={() =>
-              onClickShareFeedbackActionButton("positive")
-            }
-            onNegativeFeedback={() =>
-              onClickShareFeedbackActionButton("negative")
-            }
-            onExportTrajectory={() => onClickExportTrajectoryButton()}
-          />
+          <div className="flex items-center gap-2">
+            <TrajectoryActions
+              onPositiveFeedback={() =>
+                onClickShareFeedbackActionButton("positive")
+              }
+              onNegativeFeedback={() =>
+                onClickShareFeedbackActionButton("negative")
+              }
+              onExportTrajectory={() => onClickExportTrajectoryButton()}
+            />
+
+            {/* Summary Toggle Button - only show if summary is available */}
+            {summarySegments.length > 0 && (
+              <button
+                onClick={() => setShowSummary(!showSummary)}
+                className="flex items-center gap-1 text-xs px-2 py-1 rounded bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                title={showSummary ? "Show original messages" : "Show conversation summary"}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h6a1 1 0 110 2H4a1 1 0 01-1-1z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                {showSummary ? "Original View" : "Summary View"}
+              </button>
+            )}
+          </div>
 
           <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0">
             {curAgentState === AgentState.RUNNING && <TypingIndicator />}

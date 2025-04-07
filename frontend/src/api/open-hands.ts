@@ -349,6 +349,15 @@ class OpenHands {
     return data;
   }
 
+  static async getTrajectorySummary(
+    conversationId: string,
+  ): Promise<GetTrajectorySummaryResponse> {
+    const { data } = await openHands.get<GetTrajectorySummaryResponse>(
+      `/api/conversations/${conversationId}/summary`,
+    );
+    return data;
+  }
+
   static async logout(appMode: GetConfigResponse["APP_MODE"]): Promise<void> {
     const endpoint =
       appMode === "saas" ? "/api/logout" : "/api/unset-settings-tokens";

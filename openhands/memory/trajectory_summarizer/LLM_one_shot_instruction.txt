@@ -1,0 +1,154 @@
+# LLM Agent Trajectory Summarization
+
+Your task is to segment and summarize an agent-user interaction trajectory into meaningful parts for better user interpretability.
+
+## Instructions:
+1. Parse the provided agent trajectory data
+2. Identify distinct segments in the interaction based on subtasks or phases
+3. Create a concise, informative summary for each segment. Be as concise as possible
+4. Include both message IDs and timestamps that belong to each segment
+5. For messages with missing IDs (None or null), rely on timestamps for grouping
+6. DO NOT include any additional summaries.
+
+## Example:
+
+### Input Trajectory:
+[
+  {
+    "action": "message",
+    "content": "create a CSV file with the profile data for all the stargazers of the OpenDevin/OpenDevin repo",
+    "id": 5,
+    "source": "user",
+    "timestamp": "2024-06-18 18:06:31"
+  },
+  {
+    "action": "message",
+    "content": "To proceed with creating a CSV file containing the profile data of all stargazers for the repository \"OpenDevin/OpenDevin\", I'll first need to check if the GitHub token is set up in the environment. This token is necessary for accessing GitHub's API to retrieve the required data.\n\nLet's check if the GitHub token is available.",
+    "id": 8,
+    "source": "agent",
+    "timestamp": "2024-06-18 18:06:35"
+  },
+  {
+    "action": "message",
+    "content": "Continue",
+    "id": 11,
+    "source": "user",
+    "timestamp": "2024-06-18 18:06:40"
+  },
+  {
+    "action": "message",
+    "content": "It seems I don't have the capability to directly check the environment variables. Could you please confirm if the `$GITHUB_TOKEN` is set? If it's not set, you will need to set it to proceed with accessing GitHub's API securely.",
+    "id": 14,
+    "source": "agent",
+    "timestamp": "2024-06-18 18:06:44"
+  },
+  {
+    "action": "message",
+    "content": "Continue",
+    "id": 17,
+    "source": "user",
+    "timestamp": "2024-06-18 18:06:51"
+  },
+  {
+    "action": "run_ipython",
+    "id": 20,
+    "message": "Running Python code interactively: create_file('fetch_stargazers.py')",
+    "source": "agent",
+    "timestamp": "2024-06-18 18:06:58"
+  },
+  {
+    "action": "run_ipython",
+    "id": 22,
+    "message": "Running Python code interactively: [code to fetch GitHub stargazers data]",
+    "source": "agent",
+    "timestamp": "2024-06-18 18:07:12"
+  },
+  {
+    "action": "message",
+    "content": "The Python script `fetch_stargazers.py` is ready and includes functions to fetch stargazers from the GitHub API and save their data to a CSV file. Before running the script, please replace `'YOUR_GITHUB_TOKEN'` with your actual GitHub token in the script to authenticate the API requests.\n\nWould you like me to open the file for you to make this change, or should I proceed with another task?",
+    "id": 24,
+    "source": "agent",
+    "timestamp": "2024-06-18 18:07:18"
+  },
+  {
+    "action": "message",
+    "content": "please use the $GITHUB_TOKEN env var",
+    "id": 27,
+    "source": "user",
+    "timestamp": "2024-06-18 18:08:13"
+  },
+  {
+    "action": "run_ipython",
+    "id": 30,
+    "message": "Running Python code interactively: edit_file(start=5, end=5, content=\"token = os.getenv('GITHUB_TOKEN')\")",
+    "source": "agent",
+    "timestamp": "2024-06-18 18:08:17"
+  },
+  {
+    "action": "run",
+    "id": 32,
+    "message": "Running command: python3 fetch_stargazers.py",
+    "observation": "Error: name 'os' is not defined",
+    "source": "agent",
+    "timestamp": "2024-06-18 18:08:20"
+  },
+  {
+    "action": "run_ipython",
+    "id": 34,
+    "message": "Running Python code interactively: edit_file(start=2, end=2, content=\"import os\")",
+    "source": "agent",
+    "timestamp": "2024-06-18 18:08:24"
+  },
+  {
+    "action": "run",
+    "id": 36,
+    "message": "Running command: python3 fetch_stargazers.py",
+    "observation": "Error: name 'csv' is not defined",
+    "source": "agent",
+    "timestamp": "2024-06-18 18:08:28"
+  },
+  {
+    "action": "run_ipython",
+    "id": 46,
+    "message": "Running Python code interactively: edit_file(start=2, end=2, content=\"import csv\")",
+    "source": "agent",
+    "timestamp": "2024-06-18 18:08:45"
+  }
+]
+
+### Expected Output:
+{
+  "overall_summary": "The user requested creation of a CSV file containing profile data for all stargazers of the OpenDevin/OpenDevin GitHub repository. The agent then worked through several steps to implement this functionality.",
+  "segments": [
+    {
+      "title": "Task Understanding & Environment Check",
+      "summary": "Agent recognized need for GitHub API access, checked for GitHub token in environment. User responded with \"Continue\" to move forward.",
+      "ids": [5, 8, 11, 14, 17],
+      "timestamp_range": "18:06:31-18:06:51"
+    },
+    {
+      "title": "Script Creation",
+      "summary": "Agent created the fetch_stargazers.py file and implemented functionality to fetch stargazer data from GitHub API and save to CSV. Script initially used a placeholder for the GitHub token.",
+      "ids": [20, 22, 24],
+      "timestamp_range": "18:06:58-18:07:18"
+    },
+    {
+      "title": "Script Modification to Use Environment Variable",
+      "summary": "User requested use of $GITHUB_TOKEN environment variable. Agent modified script to read token from environment using os.getenv().",
+      "ids": [27, 30],
+      "timestamp_range": "18:08:13-18:08:17"
+    },
+    {
+      "title": "Debugging & Import Fixes",
+      "summary": "Agent encountered and fixed multiple import errors, adding necessary imports for 'os' and 'csv' modules to make the script functional.",
+      "ids": [32, 34, 36, 46],
+      "timestamp_range": "18:08:20-18:08:45"
+    }
+  ]
+}
+
+
+## Your Task:
+Now summarize the following agent trajectory in the same format:
+
+[TRAJECTORY_DATA]

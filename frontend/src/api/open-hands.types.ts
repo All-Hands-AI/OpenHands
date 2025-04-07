@@ -65,6 +65,21 @@ export interface GetTrajectoryResponse {
   error?: string;
 }
 
+export interface TrajectorySummarySegment {
+  title: string;
+  summary: string;
+  ids: number[];
+  timestamp_range: string;
+  start_timestamp?: string;
+  end_timestamp?: string;
+}
+
+export interface GetTrajectorySummaryResponse {
+  overall_summary: string;
+  segments: TrajectorySummarySegment[];
+  error?: string;
+}
+
 export interface AuthenticateResponse {
   message?: string;
   error?: string;
