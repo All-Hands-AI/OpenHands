@@ -266,7 +266,7 @@ jobs:
           # That should mean SANDBOX_USER_ID is ignored but some tests do not check for RUN_AS_OPENHANDS.
 
           TEST_RUNTIME=docker \
-          SANDBOX_USER_ID=1001 \
+          SANDBOX_USER_ID=1000 \
           SANDBOX_RUNTIME_CONTAINER_IMAGE=$image_name \
           TEST_IN_CI=true \
           RUN_AS_OPENHANDS=false \
@@ -287,7 +287,7 @@ jobs:
           - tag: nikolaik
             sandbox_user_id: 1000
           - tag: ubuntu
-            sandbox_user_id: 1001
+            sandbox_user_id: 1000
     steps:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx

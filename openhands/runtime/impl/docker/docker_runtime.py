@@ -293,6 +293,7 @@ class DockerRuntime(ActionExecutionClient):
             self.container = self.docker_client.containers.run(
                 self.runtime_container_image,
                 command=command,
+                entrypoint=[],
                 network_mode=network_mode,
                 ports=port_mapping,
                 working_dir='/openhands/code/',  # do not change this!
