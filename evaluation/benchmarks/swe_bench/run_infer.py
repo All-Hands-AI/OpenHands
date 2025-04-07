@@ -146,7 +146,7 @@ def get_instance_docker_image(
         # swebench/sweb.eval.x86_64.django_1776_django-11333:v1
         docker_image_prefix = 'docker.io/swebench/'
         repo, name = instance_id.split('__')
-        image_name = f'swebench/sweb.eval.x86_64.{repo}_1776_{name}:latest'
+        image_name = f'swebench/sweb.eval.x86_64.{repo}_1776_{name}:latest'.lower()
         logger.debug(f'Using official SWE-Bench image: {image_name}')
         return image_name
     else:
