@@ -231,39 +231,41 @@ class AgentController:
         # Store the error reason before setting the agent state
         self.state.last_error = f'{type(e).__name__}: {str(e)}'
 
-        if self.status_callback is not None:
-            err_id = ''
-            if isinstance(e, AuthenticationError):
-                err_id = 'STATUS$ERROR_LLM_AUTHENTICATION'
-                self.state.last_error = err_id
-            elif isinstance(
-                e,
-                (
-                    ServiceUnavailableError,
-                    APIConnectionError,
-                    APIError,
-                ),
-            ):
-                err_id = 'STATUS$ERROR_LLM_SERVICE_UNAVAILABLE'
-                self.state.last_error = err_id
-            elif isinstance(e, InternalServerError):
-                err_id = 'STATUS$ERROR_LLM_INTERNAL_SERVER_ERROR'
-                self.state.last_error = err_id
-            elif isinstance(e, BadRequestError) and 'ExceededBudget' in str(e):
-                err_id = 'STATUS$ERROR_LLM_OUT_OF_CREDITS'
-                self.state.last_error = err_id
-            elif isinstance(e, ContentPolicyViolationError) or (
-                isinstance(e, BadRequestError)
-                and 'ContentPolicyViolationError' in str(e)
-            ):
-                err_id = 'STATUS$ERROR_LLM_CONTENT_POLICY_VIOLATION'
-                self.state.last_error = err_id
-            elif isinstance(e, RateLimitError):
-                await self.set_agent_state_to(AgentState.RATE_LIMITED)
-                return
-            self.status_callback('error', err_id, self.state.last_error)
+        if isinstance(e, RateLimitError):
+            await self.set_agent_state_to(AgentState.RATE_LIMITED)
+            return
 
-        # Set the agent state to ERROR after storing the reason
+        err_id = ''
+        err_details = type(e).__name__
+        if isinstance(e, AuthenticationError):
+            err_id = 'STATUS$ERROR_LLM_AUTHENTICATION'
+        elif isinstance(
+            e,
+            (
+                ServiceUnavailableError,
+                APIConnectionError,
+                APIError,
+            ),
+        ):
+            err_id = 'STATUS$ERROR_LLM_SERVICE_UNAVAILABLE'
+        elif isinstance(e, InternalServerError):
+            err_id = 'STATUS$ERROR_LLM_INTERNAL_SERVER_ERROR'
+        elif isinstance(e, BadRequestError) and 'ExceededBudget' in str(e):
+            err_id = 'STATUS$ERROR_LLM_OUT_OF_CREDITS'
+        elif isinstance(e, ContentPolicyViolationError) or (
+            isinstance(e, BadRequestError) and 'ContentPolicyViolationError' in str(e)
+        ):
+            err_id = 'STATUS$ERROR_LLM_CONTENT_POLICY_VIOLATION'
+
+        self.state.last_error = err_id
+        if err_id:
+            # These err_details will end up on the frontend. We only plumb through known errors
+            # listed above to avoid exposing sensitive information
+            err_details = type(e).__name__ + ': ' + str(e)
+
+        if self.status_callback is not None:
+            self.status_callback('error', err_id, err_details)
+
         await self.set_agent_state_to(AgentState.ERROR)
 
     def step(self):
