@@ -1,12 +1,13 @@
 from unittest import mock
 
 import pytest
+from mcp.types import CallToolResult, TextContent
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.mcp import McpAction
 from openhands.events.observation import Observation
 from openhands.events.serialization import event_to_dict
-from openhands.mcp.utils import CallToolResult, MCPClientTool, TextContent
+from openhands.mcp.client import MCPClientTool
 from openhands.runtime.action_execution_server import ActionExecutor, ActionRequest
 
 
@@ -28,7 +29,6 @@ async def test_mcp_action_execution():
 
         # Set up MCP configuration
         executor.sse_mcp_servers = ['http://localhost:8000']
-        executor.stdio_mcp_config = [['test_command'], [['arg1', 'arg2']]]
 
         # Create a McpAction instance with arguments
         action = McpAction(name='test_action', arguments='{}')
@@ -44,6 +44,9 @@ async def test_mcp_action_execution():
             content=[TextContent(text='MCP action received', type='text')]
         )
         mock_client.tools = [mock_tool]  # Add the tool to the client
+
+        # Mock the connect_sse method to succeed
+        mock_client.connect_sse = mock.AsyncMock()
 
         # Mock create_mcp_clients to return our mock client
         with mock.patch(

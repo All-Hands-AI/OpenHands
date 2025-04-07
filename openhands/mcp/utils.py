@@ -1,4 +1,4 @@
-from openhands.core.config.mcp_config import MCPConfig, MCPStdioConfigEntry
+from openhands.core.config.mcp_config import MCPConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.mcp.client import MCPClient
 
@@ -34,7 +34,6 @@ def convert_mcp_clients_to_tools(mcp_clients: list[MCPClient] | None) -> list[di
 
 async def create_mcp_clients(
     sse_mcp_server: list[str],
-    stdio_mcp_tool_configs: dict[str, MCPStdioConfigEntry],
 ) -> list[MCPClient]:
     mcp_clients: list[MCPClient] = []
     # Initialize SSE connections
@@ -47,6 +46,7 @@ async def create_mcp_clients(
             client = MCPClient()
             try:
                 await client.connect_sse(server_url)
+                # Only add the client to the list after a successful connection
                 mcp_clients.append(client)
                 logger.info(f'Connected to MCP server {server_url} via SSE')
             except Exception as e:
@@ -60,33 +60,6 @@ async def create_mcp_clients(
                         f'Error during disconnect after failed connection: {str(disconnect_error)}'
                     )
 
-    # Initialize stdio connections
-    if stdio_mcp_tool_configs:
-        for name, tool in stdio_mcp_tool_configs.items():
-            logger.info(
-                f'Initializing MCP tool [{name}] for [{tool.command}] with stdio connection...'
-            )
-            client = MCPClient()
-            try:
-                await client.connect_stdio(
-                    tool.command,
-                    tool.args,
-                    [(k, v) for k, v in tool.env.items()],
-                )
-                mcp_clients.append(client)
-                logger.info(
-                    f'Connected to MCP server via stdio with command {tool.command}'
-                )
-            except Exception as e:
-                logger.error(f'Failed to connect with command {tool.command}: {str(e)}')
-                # Don't raise the exception, just log it and continue
-                # Make sure to disconnect the client to clean up resources
-                try:
-                    await client.disconnect()
-                except Exception as disconnect_error:
-                    logger.error(
-                        f'Error during disconnect after failed connection: {str(disconnect_error)}'
-                    )
     return mcp_clients
 
 
@@ -104,7 +77,6 @@ async def fetch_mcp_tools_from_config(mcp_config: MCPConfig) -> list[dict]:
         logger.debug(f'Creating MCP clients with config: {mcp_config}')
         mcp_clients = await create_mcp_clients(
             mcp_config.sse.mcp_servers,
-            mcp_config.stdio.tools,
         )
 
         if not mcp_clients:

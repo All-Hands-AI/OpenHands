@@ -286,12 +286,6 @@ class ActionExecutionClient(Runtime):
                     execution_action_body['sse_mcp_config'] = (
                         self.config.mcp.sse.mcp_servers
                     )
-                if self.config.mcp.stdio.commands:
-                    execution_action_body['stdio_mcp_config'] = (
-                        self.config.mcp.stdio.commands,
-                        self.config.mcp.stdio.args,
-                        self.config.mcp.stdio.envs,
-                    )
                 response = self._send_action_server_request(
                     'POST',
                     f'{self._get_action_execution_server_host()}/execute_action',

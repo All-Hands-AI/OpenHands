@@ -207,8 +207,6 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
     mcp_sections = {}
     if 'mcp-sse' in toml_config:
         mcp_sections['mcp-sse'] = toml_config['mcp-sse']
-    if 'mcp-stdio' in toml_config:
-        mcp_sections['mcp-stdio'] = toml_config['mcp-stdio']
 
     if mcp_sections:
         try:
@@ -282,7 +280,6 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
         'sandbox',
         'condenser',
         'mcp-sse',
-        'mcp-stdio',
     }
     for key in toml_config:
         if key.lower() not in known_sections:

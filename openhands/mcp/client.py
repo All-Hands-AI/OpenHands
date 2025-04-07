@@ -1,9 +1,8 @@
 from contextlib import AsyncExitStack
 from typing import Dict, List, Optional
 
-from mcp import ClientSession, StdioServerParameters
+from mcp import ClientSession
 from mcp.client.sse import sse_client
-from mcp.client.stdio import stdio_client
 from pydantic import BaseModel, Field
 
 from openhands.core.logger import openhands_logger as logger
@@ -58,8 +57,12 @@ class MCPClient(BaseModel):
                     await connection_task
                 except asyncio.CancelledError:
                     pass
+                # Re-raise the TimeoutError to indicate connection failure
+                raise
         except Exception as e:
             logger.error(f'Error connecting to {server_url}: {str(e)}')
+            # Re-raise the exception to indicate connection failure
+            raise
 
     async def _connect_sse_internal(self, server_url: str) -> None:
         """Internal method to establish SSE connection."""
@@ -69,69 +72,6 @@ class MCPClient(BaseModel):
         streams = await self.exit_stack.enter_async_context(streams_context)
         self.session = await self.exit_stack.enter_async_context(
             ClientSession(*streams)
-        )
-
-        await self._initialize_and_list_tools()
-
-    async def connect_stdio(
-        self,
-        command: str,
-        args: List[str],
-        envs: List[tuple[str, str]],
-        timeout: float = 30.0,
-    ) -> None:
-        """Connect to an MCP server using stdio transport.
-
-        Args:
-            command: The command to execute.
-            args: The arguments to pass to the command.
-            envs: Environment variables as a list of tuples [name, value].
-            timeout: Connection timeout in seconds. Default is 30 seconds.
-        """
-        if not command:
-            raise ValueError('Server command is required.')
-        if self.session:
-            await self.disconnect()
-
-        try:
-            import asyncio
-            from asyncio import TimeoutError
-
-            # Create a task for the connection
-            connection_task = asyncio.create_task(
-                self._connect_stdio_internal(command, args, envs)
-            )
-
-            # Wait for the connection with timeout
-            try:
-                await asyncio.wait_for(connection_task, timeout=timeout)
-            except TimeoutError:
-                logger.error(
-                    f'Connection to {command} timed out after {timeout} seconds'
-                )
-                # Cancel the connection task
-                connection_task.cancel()
-                try:
-                    await connection_task
-                except asyncio.CancelledError:
-                    pass
-        except Exception as e:
-            logger.error(f'Error connecting to {command}: {str(e)}')
-
-    async def _connect_stdio_internal(
-        self, command: str, args: List[str], envs: List[tuple[str, str]]
-    ) -> None:
-        """Internal method to establish stdio connection."""
-        envs_dict: dict[str, str] = {}
-        for env in envs:
-            envs_dict[env[0]] = env[1]
-        server_params = StdioServerParameters(command=command, args=args, env=envs_dict)
-        stdio_transport = await self.exit_stack.enter_async_context(
-            stdio_client(server_params)
-        )
-        read, write = stdio_transport
-        self.session = await self.exit_stack.enter_async_context(
-            ClientSession(read, write)
         )
 
         await self._initialize_and_list_tools()

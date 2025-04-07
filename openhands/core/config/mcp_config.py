@@ -31,55 +31,14 @@ class MCPSSEConfig(BaseModel):
                 raise ValueError(f'Invalid URL {url}: {str(e)}')
 
 
-class MCPStdioConfigEntry(BaseModel):
-    """Configuration for a single MCP stdio entry.
-
-    Attributes:
-        command: The command to run.
-        args: List of arguments for the command.
-        env: Dictionary of environment variables.
-    """
-
-    command: str
-    args: list[str] = Field(default_factory=list)
-    env: dict[str, str] = Field(default_factory=dict)
-
-    model_config = {'extra': 'forbid'}
-
-
-class MCPStdioConfig(BaseModel):
-    """Configuration for MCP stdio settings.
-
-    Attributes:
-        tools: Dictionary of tool configurations, where keys are tool names.
-    """
-
-    tools: dict[str, MCPStdioConfigEntry] = Field(default_factory=dict)
-
-    model_config = {'extra': 'forbid'}
-
-    def validate_stdio(self) -> None:
-        """Validate that tools are properly configured."""
-        # Tool names validation
-        for tool_name in self.tools:
-            if not tool_name.strip():
-                raise ValueError('Tool names cannot be empty')
-            if not tool_name.replace('-', '').isalnum():
-                raise ValueError(
-                    f'Invalid tool name: {tool_name}. Tool names must be alphanumeric (hyphens allowed)'
-                )
-
-
 class MCPConfig(BaseModel):
     """Configuration for MCP (Message Control Protocol) settings.
 
     Attributes:
         sse: SSE-specific configuration.
-        stdio: stdio-specific configuration.
     """
 
     sse: MCPSSEConfig = Field(default_factory=MCPSSEConfig)
-    stdio: MCPStdioConfig = Field(default_factory=MCPStdioConfig)
 
     model_config = {'extra': 'forbid'}
 
@@ -101,12 +60,8 @@ class MCPConfig(BaseModel):
             sse_config = MCPSSEConfig.model_validate(data.get('mcp-sse', {}))
             sse_config.validate_servers()
 
-            # Create stdio config if present
-            stdio_config = MCPStdioConfig.model_validate(data.get('mcp-stdio', {}))
-            stdio_config.validate_stdio()
-
             # Create the main MCP config
-            mcp_mapping['mcp'] = cls(sse=sse_config, stdio=stdio_config)
+            mcp_mapping['mcp'] = cls(sse=sse_config)
         except ValidationError as e:
             raise ValueError(f'Invalid MCP configuration: {e}')
 
