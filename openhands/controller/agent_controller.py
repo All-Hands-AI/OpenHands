@@ -72,6 +72,7 @@ from openhands.llm.metrics import Metrics, TokenUsage
 TRAFFIC_CONTROL_REMINDER = (
     "Please click on resume button if you'd like to continue, or start a new task."
 )
+ERROR_ACTION_NOT_EXECUTED_ID = 'ERROR_ACTION_NOT_EXECUTED'
 ERROR_ACTION_NOT_EXECUTED = 'The action has not been executed. This may have occurred because the user pressed the stop button, or because the runtime system crashed and restarted due to resource constraints. Any previously established system state, dependencies, or environment variables may have been lost.'
 
 
@@ -523,7 +524,10 @@ class AgentController:
 
             # make a new ErrorObservation with the tool call metadata
             if not found_observation:
-                obs = ErrorObservation(content=ERROR_ACTION_NOT_EXECUTED)
+                obs = ErrorObservation(
+                    content=ERROR_ACTION_NOT_EXECUTED,
+                    error_id=ERROR_ACTION_NOT_EXECUTED_ID,
+                )
                 obs.tool_call_metadata = self._pending_action.tool_call_metadata
                 obs._cause = self._pending_action.id  # type: ignore[attr-defined]
                 self.event_stream.add_event(obs, EventSource.AGENT)
