@@ -254,21 +254,19 @@ Respond ONLY with KEEP and REWRITE commands, nothing else.
             except IndexError:
                 pass
 
-        # Check that there is at least one user message left
-        if not any(event.source == EventSource.USER for event in keep_events):
-            for event in events:
-                if event.source == EventSource.USER:
-                    keep_events.append(event)
-                    break
-
-        # Create a list of event IDs to forget
-        forgotten_event_ids = [event.id for event in events if event not in keep_events]
-
         if rewrite_commands:
             summary = '\n'.join([rewrite.content for rewrite in rewrite_commands])
         else:
             summary = None
+            # if we have no summary, make sure we keep at least one user message
+            if not any(event.source == EventSource.USER for event in keep_events):
+                for event in events:
+                    if event.source == EventSource.USER:
+                        keep_events.append(event)
+                        break
 
+        # Create a list of event IDs to forget
+        forgotten_event_ids = [event.id for event in events if event not in keep_events]
         # Create and return the condensation action
         return Condensation(
             action=CondensationAction(

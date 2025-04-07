@@ -10,7 +10,10 @@ from openhands.core.config.llm_config import LLMConfig
 from openhands.events.action.agent import ChangeAgentStateAction
 from openhands.events.action.message import MessageAction
 from openhands.events.event import Event, RecallType
-from openhands.events.observation.agent import RecallObservation
+from openhands.events.observation.agent import (
+    AgentCondensationObservation,
+    RecallObservation,
+)
 from openhands.events.observation.files import FileReadObservation
 from openhands.llm import LLM
 from openhands.memory.condenser.condenser import Condensation, View
@@ -335,4 +338,58 @@ def test_llm_agent_cache_condenser_first_message_user_message(agent: CodeActAgen
     messages = agent._get_messages(view.events)
     assert messages[0].role == 'system'
     assert 'You are OpenHands' in messages[0].content[0].text
+    assert len(messages) == 2
+
+
+def test_llm_agent_cache_condenser_full_rewrite(agent: CodeActAgent):
+    """A condensation where the whole conversation is rewritten."""
+
+    condenser = LLMAgentCacheCondenser()
+    agent.condenser = condenser
+
+    first_message = MessageAction('Hello, how are you?')
+    first_message._source = 'user'  # type: ignore [attr-defined]
+    first_message._id = 1  # type: ignore [attr-defined]
+    assistant_message_event = MessageAction('Great!')
+    assistant_message_event._source = 'agent'  # type: ignore [attr-defined]
+    assistant_message_event._id = 2  # type: ignore [attr-defined]
+    user_condensation_message_event = MessageAction('NOW CONDENSE!')
+    user_condensation_message_event._source = 'user'  # type: ignore [attr-defined]
+    user_condensation_message_event._id = 3  # type: ignore [attr-defined]
+
+    state = State(
+        history=[
+            first_message,
+            assistant_message_event,
+            user_condensation_message_event,
+        ]
+    )
+
+    set_next_llm_response(
+        agent,
+        """KEEP: 0
+REWRITE 1 TO 2 WITH:
+user and ai greeted each other
+END-REWRITE""",
+    )
+
+    result = condenser.condensed_history(state, agent)
+
+    # Verify that a Condensation is returned
+    assert isinstance(result, Condensation)
+    result.action._id = 7  # type: ignore [attr-defined]
+    state.history.append(result.action)
+    assert result.action.forgotten_event_ids == [1, 2, 3]
+
+    view = condenser.condensed_history(state, agent)
+    assert isinstance(view, View)
+    assert view.events[0] == result.action
+    assert len(view.events) == 2
+    assert isinstance(view.events[1], AgentCondensationObservation)
+
+    messages = agent._get_messages(view.events)
+    assert messages[0].role == 'system'
+    assert 'You are OpenHands' in messages[0].content[0].text
+    assert messages[1].role == 'user'
+    assert 'user and ai greeted each other' in messages[1].content[0].text
     assert len(messages) == 2
