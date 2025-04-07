@@ -42,10 +42,11 @@ Créez un fichier ```config.toml``` dans le répertoire OpenHands et entrez ces 
 [core]
 workspace_base="./workspace"
 run_as_openhands=true
-sandbox_base_container_image="image_personnalisée"
+[sandbox]
+base_container_image="image_personnalisée"
 ```
 
-> Assurez-vous que ```sandbox_base_container_image``` est défini sur le nom de votre image personnalisée précédente.
+> Assurez-vous que ```base_container_image``` est défini sur le nom de votre image personnalisée précédente.
 
 ## Exécution
 
@@ -59,37 +60,20 @@ Félicitations !
 
 ## Explication technique
 
-Lorsqu'une image personnalisée est utilisée pour la première fois, elle ne sera pas trouvée et donc elle sera construite (à l'exécution ultérieure, l'image construite sera trouvée et renvoyée).
-
-L'image personnalisée est construite avec [_build_sandbox_image()](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/docker/image_agnostic_util.py#L29), qui crée un fichier docker en utilisant votre image personnalisée comme base et configure ensuite l'environnement pour OpenHands, comme ceci:
-
-```python
-dockerfile_content = (
-        f'FROM {base_image}\n'
-        'RUN apt update && apt install -y openssh-server wget sudo\n'
-        'RUN mkdir -p -m0755 /var/run/sshd\n'
-        'RUN mkdir -p /openhands && mkdir -p /openhands/logs && chmod 777 /openhands/logs\n'
-        'RUN wget "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"\n'
-        'RUN bash Miniforge3-$(uname)-$(uname -m).sh -b -p /openhands/miniforge3\n'
-        'RUN bash -c ". /openhands/miniforge3/etc/profile.d/conda.sh && conda config --set changeps1 False && conda config --append channels conda-forge"\n'
-        'RUN echo "export PATH=/openhands/miniforge3/bin:$PATH" >> ~/.bashrc\n'
-        'RUN echo "export PATH=/openhands/miniforge3/bin:$PATH" >> /openhands/bash.bashrc\n'
-    ).strip()
-```
-
-> Remarque: Le nom de l'image est modifié via [_get_new_image_name()](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/docker/image_agnostic_util.py#L63) et c'est ce nom modifié qui sera recherché lors des exécutions ultérieures.
+Veuillez consulter le [chapitre sur les images Docker personnalisées dans la documentation d'exécution](https://docs.all-hands.dev/fr/modules/usage/architecture/runtime) pour obtenir des explications plus détaillées.
 
 ## Dépannage / Erreurs
 
 ### Erreur: ```useradd: UID 1000 est non unique```
-Si vous voyez cette erreur dans la sortie de la console, il s'agit du fait que OpenHands essaie de créer le utilisateur openhands dans le sandbox avec un ID d'utilisateur de 1000, cependant cet ID d'utilisateur est déjà utilisé dans l'image (pour une raison inconnue). Pour résoudre ce problème, changez la valeur du champ sandbox_user_id dans le fichier config.toml en une valeur différente:
+Si vous voyez cette erreur dans la sortie de la console, il s'agit du fait que OpenHands essaie de créer le utilisateur openhands dans le sandbox avec un ID d'utilisateur de 1000, cependant cet ID d'utilisateur est déjà utilisé dans l'image (pour une raison inconnue). Pour résoudre ce problème, changez la valeur du champ user_id dans le fichier config.toml en une valeur différente:
 
 ```toml
 [core]
 workspace_base="./workspace"
 run_as_openhands=true
-sandbox_base_container_image="image_personnalisée"
-sandbox_user_id="1001"
+[sandbox]
+base_container_image="image_personnalisée"
+user_id="1001"
 ```
 
 ### Erreurs de port d'utilisation

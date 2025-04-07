@@ -41,9 +41,18 @@ export interface IPythonAction extends OpenHandsActionEvent<"run_ipython"> {
   };
 }
 
+export interface ThinkAction extends OpenHandsActionEvent<"think"> {
+  source: "agent";
+  args: {
+    thought: string;
+  };
+}
+
 export interface FinishAction extends OpenHandsActionEvent<"finish"> {
   source: "agent";
   args: {
+    final_thought: string;
+    task_completed: "success" | "failure" | "partial";
     outputs: Record<string, unknown>;
     thought: string;
   };
@@ -124,11 +133,21 @@ export interface RejectAction extends OpenHandsActionEvent<"reject"> {
   };
 }
 
+export interface RecallAction extends OpenHandsActionEvent<"recall"> {
+  source: "agent";
+  args: {
+    recall_type: "workspace_context" | "knowledge";
+    query: string;
+    thought: string;
+  };
+}
+
 export type OpenHandsAction =
   | UserMessageAction
   | AssistantMessageAction
   | CommandAction
   | IPythonAction
+  | ThinkAction
   | FinishAction
   | DelegateAction
   | BrowseAction
@@ -136,4 +155,5 @@ export type OpenHandsAction =
   | FileReadAction
   | FileEditAction
   | FileWriteAction
-  | RejectAction;
+  | RejectAction
+  | RecallAction;

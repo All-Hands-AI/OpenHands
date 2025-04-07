@@ -36,7 +36,7 @@ export default {
   settingsChanged: (msg: string) => {
     toast(msg, {
       position: "bottom-right",
-      className: "bg-neutral-700",
+      className: "bg-tertiary",
 
       icon: "⚙️",
       style: {
@@ -49,7 +49,7 @@ export default {
   info: (msg: string) => {
     toast(msg, {
       position: "top-center",
-      className: "bg-neutral-700",
+      className: "bg-tertiary",
 
       style: {
         background: "#333",

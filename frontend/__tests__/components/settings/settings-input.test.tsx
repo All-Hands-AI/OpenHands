@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import userEvent from "@testing-library/user-event";
 import { SettingsInput } from "#/components/features/settings/settings-input";
 
 describe("SettingsInput", () => {
@@ -84,5 +85,25 @@ describe("SettingsInput", () => {
     );
 
     expect(screen.getByText("Start Content")).toBeInTheDocument();
+  });
+
+  it("should call onChange with the input value", async () => {
+    const onChangeMock = vi.fn();
+    const user = userEvent.setup();
+
+    render(
+      <SettingsInput
+        testId="test-input"
+        label="Test Input"
+        type="text"
+        onChange={onChangeMock}
+      />,
+    );
+
+    const input = screen.getByTestId("test-input");
+    await user.type(input, "Test");
+
+    expect(onChangeMock).toHaveBeenCalledTimes(4);
+    expect(onChangeMock).toHaveBeenNthCalledWith(4, "Test");
   });
 });

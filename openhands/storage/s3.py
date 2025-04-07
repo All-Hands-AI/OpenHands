@@ -1,9 +1,22 @@
 import os
+from typing import Any, List, TypedDict
 
 import boto3
 import botocore
 
 from openhands.storage.files import FileStore
+
+
+class S3ObjectDict(TypedDict):
+    Key: str
+
+
+class GetObjectOutputDict(TypedDict):
+    Body: Any
+
+
+class ListObjectsV2OutputDict(TypedDict):
+    Contents: List[S3ObjectDict] | None
 
 
 class S3FileStore(FileStore):
@@ -14,8 +27,8 @@ class S3FileStore(FileStore):
         endpoint = self._ensure_url_scheme(secure, os.getenv('AWS_S3_ENDPOINT'))
         if bucket_name is None:
             bucket_name = os.environ['AWS_S3_BUCKET']
-        self.bucket = bucket_name
-        self.client = boto3.client(
+        self.bucket: str = bucket_name
+        self.client: Any = boto3.client(
             's3',
             aws_access_key_id=access_key,
             aws_secret_access_key=secret_key,
@@ -44,9 +57,11 @@ class S3FileStore(FileStore):
 
     def read(self, path: str) -> str:
         try:
-            response = self.client.get_object(Bucket=self.bucket, Key=path)
+            response: GetObjectOutputDict = self.client.get_object(
+                Bucket=self.bucket, Key=path
+            )
             with response['Body'] as stream:
-                return stream.read().decode('utf-8')
+                return str(stream.read().decode('utf-8'))
         except botocore.exceptions.ClientError as e:
             # Catch all S3-related errors
             if e.response['Error']['Code'] == 'NoSuchBucket':
@@ -78,13 +93,15 @@ class S3FileStore(FileStore):
         #   ping.txt
         # prefix=None, delimiter="/"   yields  ["ping.txt"]  # :(
         # prefix="foo", delimiter="/"  yields  []  # :(
-        results = set()
+        results: set[str] = set()
         prefix_len = len(path)
-        response = self.client.list_objects_v2(Bucket=self.bucket, Prefix=path)
+        response: ListObjectsV2OutputDict = self.client.list_objects_v2(
+            Bucket=self.bucket, Prefix=path
+        )
         contents = response.get('Contents')
         if not contents:
             return []
-        paths = [obj['Key'] for obj in response['Contents']]
+        paths = [obj['Key'] for obj in contents]
         for sub_path in paths:
             if sub_path == path:
                 continue

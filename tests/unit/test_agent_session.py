@@ -6,9 +6,11 @@ from openhands.controller.agent import Agent
 from openhands.controller.agent_controller import AgentController
 from openhands.controller.state.state import State
 from openhands.core.config import AppConfig, LLMConfig
+from openhands.core.config.agent_config import AgentConfig
 from openhands.events import EventStream, EventStreamSubscriber
 from openhands.llm import LLM
 from openhands.llm.metrics import Metrics
+from openhands.memory.memory import Memory
 from openhands.runtime.base import Runtime
 from openhands.server.session.agent_session import AgentSession
 from openhands.storage.memory import InMemoryFileStore
@@ -22,11 +24,15 @@ def mock_agent():
     llm = MagicMock(spec=LLM)
     metrics = MagicMock(spec=Metrics)
     llm_config = MagicMock(spec=LLMConfig)
+    agent_config = MagicMock(spec=AgentConfig)
 
     # Configure the LLM config
     llm_config.model = 'test-model'
     llm_config.base_url = 'http://test'
     llm_config.max_message_chars = 1000
+
+    # Configure the agent config
+    agent_config.disabled_microagents = []
 
     # Set up the chain of mocks
     llm.metrics = metrics
@@ -34,6 +40,8 @@ def mock_agent():
     agent.llm = llm
     agent.name = 'test-agent'
     agent.sandbox_plugins = []
+    agent.config = agent_config
+    agent.prompt_manager = MagicMock()
 
     return agent
 
@@ -44,7 +52,10 @@ async def test_agent_session_start_with_no_state(mock_agent):
 
     # Setup
     file_store = InMemoryFileStore({})
-    session = AgentSession(sid='test-session', file_store=file_store)
+    session = AgentSession(
+        sid='test-session',
+        file_store=file_store,
+    )
 
     # Create a mock runtime and set it up
     mock_runtime = MagicMock(spec=Runtime)
@@ -52,6 +63,7 @@ async def test_agent_session_start_with_no_state(mock_agent):
     # Mock the runtime creation to set up the runtime attribute
     async def mock_create_runtime(*args, **kwargs):
         session.runtime = mock_runtime
+        return True
 
     session._create_runtime = AsyncMock(side_effect=mock_create_runtime)
 
@@ -74,7 +86,11 @@ async def test_agent_session_start_with_no_state(mock_agent):
             self.test_initial_state = state
             super().set_initial_state(*args, state=state, **kwargs)
 
-    # Patch AgentController and State.restore_from_session to fail
+    # Create a real Memory instance with the mock event stream
+    memory = Memory(event_stream=mock_event_stream, sid='test-session')
+    memory.microagents_dir = 'test-dir'
+
+    # Patch AgentController and State.restore_from_session to fail; patch Memory in AgentSession
     with patch(
         'openhands.server.session.agent_session.AgentController', SpyAgentController
     ), patch(
@@ -83,7 +99,7 @@ async def test_agent_session_start_with_no_state(mock_agent):
     ), patch(
         'openhands.controller.state.state.State.restore_from_session',
         side_effect=Exception('No state found'),
-    ):
+    ), patch('openhands.server.session.agent_session.Memory', return_value=memory):
         await session.start(
             runtime_name='test-runtime',
             config=AppConfig(),
@@ -92,9 +108,15 @@ async def test_agent_session_start_with_no_state(mock_agent):
         )
 
         # Verify EventStream.subscribe was called with correct parameters
-        mock_event_stream.subscribe.assert_called_with(
+        mock_event_stream.subscribe.assert_any_call(
             EventStreamSubscriber.AGENT_CONTROLLER,
             session.controller.on_event,
+            session.controller.id,
+        )
+
+        mock_event_stream.subscribe.assert_any_call(
+            EventStreamSubscriber.MEMORY,
+            session.memory.on_event,
             session.controller.id,
         )
 
@@ -105,7 +127,6 @@ async def test_agent_session_start_with_no_state(mock_agent):
         assert session.controller.agent.name == 'test-agent'
         assert session.controller.state.start_id == 0
         assert session.controller.state.end_id == -1
-        assert session.controller.state.truncation_id == -1
 
 
 @pytest.mark.asyncio
@@ -114,7 +135,10 @@ async def test_agent_session_start_with_restored_state(mock_agent):
 
     # Setup
     file_store = InMemoryFileStore({})
-    session = AgentSession(sid='test-session', file_store=file_store)
+    session = AgentSession(
+        sid='test-session',
+        file_store=file_store,
+    )
 
     # Create a mock runtime and set it up
     mock_runtime = MagicMock(spec=Runtime)
@@ -122,6 +146,7 @@ async def test_agent_session_start_with_restored_state(mock_agent):
     # Mock the runtime creation to set up the runtime attribute
     async def mock_create_runtime(*args, **kwargs):
         session.runtime = mock_runtime
+        return True
 
     session._create_runtime = AsyncMock(side_effect=mock_create_runtime)
 
@@ -138,7 +163,6 @@ async def test_agent_session_start_with_restored_state(mock_agent):
     mock_restored_state = MagicMock(spec=State)
     mock_restored_state.start_id = -1
     mock_restored_state.end_id = -1
-    mock_restored_state.truncation_id = -1
     mock_restored_state.max_iterations = 5
 
     # Create a spy on set_initial_state by subclassing AgentController
@@ -151,7 +175,10 @@ async def test_agent_session_start_with_restored_state(mock_agent):
             self.test_initial_state = state
             super().set_initial_state(*args, state=state, **kwargs)
 
-    # Patch AgentController and State.restore_from_session to succeed
+    # create a mock Memory
+    mock_memory = MagicMock(spec=Memory)
+
+    # Patch AgentController and State.restore_from_session to succeed, patch Memory in AgentSession
     with patch(
         'openhands.server.session.agent_session.AgentController', SpyAgentController
     ), patch(
@@ -160,7 +187,7 @@ async def test_agent_session_start_with_restored_state(mock_agent):
     ), patch(
         'openhands.controller.state.state.State.restore_from_session',
         return_value=mock_restored_state,
-    ):
+    ), patch('openhands.server.session.agent_session.Memory', mock_memory):
         await session.start(
             runtime_name='test-runtime',
             config=AppConfig(),
@@ -182,4 +209,3 @@ async def test_agent_session_start_with_restored_state(mock_agent):
         assert session.controller.state.max_iterations == 5
         assert session.controller.state.start_id == 0
         assert session.controller.state.end_id == -1
-        assert session.controller.state.truncation_id == -1

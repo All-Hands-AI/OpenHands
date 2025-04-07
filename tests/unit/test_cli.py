@@ -1,7 +1,7 @@
 from unittest.mock import patch
 
-from openhands.core.cli import read_input
 from openhands.core.config import AppConfig
+from openhands.io import read_input
 
 
 def test_single_line_input():
@@ -10,7 +10,7 @@ def test_single_line_input():
     config.cli_multiline_input = False
 
     with patch('builtins.input', return_value='hello world'):
-        result = read_input(config)
+        result = read_input(config.cli_multiline_input)
         assert result == 'hello world'
 
 
@@ -23,5 +23,5 @@ def test_multiline_input():
     mock_inputs = ['line 1', 'line 2', 'line 3', '/exit']
 
     with patch('builtins.input', side_effect=mock_inputs):
-        result = read_input(config)
+        result = read_input(config.cli_multiline_input)
         assert result == 'line 1\nline 2\nline 3'

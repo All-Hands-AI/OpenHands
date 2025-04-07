@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 PROCESS_FILEPATH=$1
 if [ -z "$PROCESS_FILEPATH" ]; then

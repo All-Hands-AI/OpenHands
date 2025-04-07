@@ -16,7 +16,10 @@ class DummyAgent:
         self.llm = type(
             'DummyLLM',
             (),
-            {'metrics': Metrics()},
+            {
+                'metrics': Metrics(),
+                'config': type('DummyConfig', (), {'max_message_chars': 10000})(),
+            },
         )()
 
     def reset(self):

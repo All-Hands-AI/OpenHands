@@ -10,8 +10,10 @@ export type OpenHandsEventType =
   | "browse"
   | "browse_interactive"
   | "reject"
+  | "think"
   | "finish"
-  | "error";
+  | "error"
+  | "recall";
 
 interface OpenHandsBaseEvent {
   id: number;

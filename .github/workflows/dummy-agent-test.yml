@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2204
     steps:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
@@ -24,15 +24,19 @@ jobs:
         uses: docker/setup-buildx-action@v3
       - name: Install tmux
         run: sudo apt-get update && sudo apt-get install -y tmux
+      - name: Setup Node.js
+        uses: useblacksmith/setup-node@v5
+        with:
+          node-version: '22.x'
       - name: Install poetry via pipx
         run: pipx install poetry
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: useblacksmith/setup-python@v6
         with:
           python-version: '3.12'
           cache: 'poetry'
       - name: Install Python dependencies using Poetry
-        run: poetry install --without evaluation,llama-index
+        run: poetry install --without evaluation
       - name: Build Environment
         run: make build
       - name: Run tests

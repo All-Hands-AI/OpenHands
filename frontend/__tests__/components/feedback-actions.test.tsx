@@ -1,6 +1,7 @@
-import { render, screen, within } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { renderWithProviders } from "test-utils";
 import { TrajectoryActions } from "#/components/features/trajectory/trajectory-actions";
 
 describe("TrajectoryActions", () => {
@@ -14,7 +15,7 @@ describe("TrajectoryActions", () => {
   });
 
   it("should render correctly", () => {
-    render(
+    renderWithProviders(
       <TrajectoryActions
         onPositiveFeedback={onPositiveFeedback}
         onNegativeFeedback={onNegativeFeedback}
@@ -25,10 +26,11 @@ describe("TrajectoryActions", () => {
     const actions = screen.getByTestId("feedback-actions");
     within(actions).getByTestId("positive-feedback");
     within(actions).getByTestId("negative-feedback");
+    within(actions).getByTestId("export-trajectory");
   });
 
   it("should call onPositiveFeedback when positive feedback is clicked", async () => {
-    render(
+    renderWithProviders(
       <TrajectoryActions
         onPositiveFeedback={onPositiveFeedback}
         onNegativeFeedback={onNegativeFeedback}
@@ -43,7 +45,7 @@ describe("TrajectoryActions", () => {
   });
 
   it("should call onNegativeFeedback when negative feedback is clicked", async () => {
-    render(
+    renderWithProviders(
       <TrajectoryActions
         onPositiveFeedback={onPositiveFeedback}
         onNegativeFeedback={onNegativeFeedback}
@@ -57,8 +59,8 @@ describe("TrajectoryActions", () => {
     expect(onNegativeFeedback).toHaveBeenCalled();
   });
 
-  it("should call onExportTrajectory when negative feedback is clicked", async () => {
-    render(
+  it("should call onExportTrajectory when export button is clicked", async () => {
+    renderWithProviders(
       <TrajectoryActions
         onPositiveFeedback={onPositiveFeedback}
         onNegativeFeedback={onNegativeFeedback}

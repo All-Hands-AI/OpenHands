@@ -8,5 +8,5 @@ When running OpenHands, you'll need to set the following in the OpenHands UI thr
 * `LLM Provider` to `OpenRouter`
 * `LLM Model` to the model you will be using.
 [Visit here to see a full list of OpenRouter models](https://openrouter.ai/models).
-If the model is not in the list, toggle `Advanced Options`, and enter it in `Custom Model` (e.g. openrouter/&lt;model-name&gt; like `openrouter/anthropic/claude-3.5-sonnet`).
+If the model is not in the list, toggle `Advanced` options, and enter it in `Custom Model` (e.g. openrouter/&lt;model-name&gt; like `openrouter/anthropic/claude-3.5-sonnet`).
 * `API Key` to your OpenRouter API key.

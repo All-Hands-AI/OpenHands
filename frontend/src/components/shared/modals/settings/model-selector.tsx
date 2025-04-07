@@ -84,33 +84,32 @@ export function ModelSelector({
           defaultSelectedKey={selectedProvider ?? undefined}
           selectedKey={selectedProvider}
           classNames={{
-            popoverContent: "bg-[#454545] rounded-xl border border-[#717888]",
+            popoverContent: "bg-tertiary rounded-xl border border-[#717888]",
           }}
           inputProps={{
             classNames: {
               inputWrapper:
-                "bg-[#454545] border border-[#717888] h-10 w-full rounded p-2 placeholder:italic",
+                "bg-tertiary border border-[#717888] h-10 w-full rounded p-2 placeholder:italic",
             },
           }}
         >
-          <AutocompleteSection title="Verified">
+          <AutocompleteSection title={t(I18nKey.MODEL_SELECTOR$VERIFIED)}>
             {Object.keys(models)
               .filter((provider) => VERIFIED_PROVIDERS.includes(provider))
               .map((provider) => (
                 <AutocompleteItem
                   data-testid={`provider-item-${provider}`}
                   key={provider}
-                  value={provider}
                 >
                   {mapProvider(provider)}
                 </AutocompleteItem>
               ))}
           </AutocompleteSection>
-          <AutocompleteSection title="Others">
+          <AutocompleteSection title={t(I18nKey.MODEL_SELECTOR$OTHERS)}>
             {Object.keys(models)
               .filter((provider) => !VERIFIED_PROVIDERS.includes(provider))
               .map((provider) => (
-                <AutocompleteItem key={provider} value={provider}>
+                <AutocompleteItem key={provider}>
                   {mapProvider(provider)}
                 </AutocompleteItem>
               ))}
@@ -135,32 +134,29 @@ export function ModelSelector({
           selectedKey={selectedModel}
           defaultSelectedKey={selectedModel ?? undefined}
           classNames={{
-            popoverContent: "bg-[#454545] rounded-xl border border-[#717888]",
+            popoverContent: "bg-tertiary rounded-xl border border-[#717888]",
           }}
           inputProps={{
             classNames: {
               inputWrapper:
-                "bg-[#454545] border border-[#717888] h-10 w-full rounded p-2 placeholder:italic",
+                "bg-tertiary border border-[#717888] h-10 w-full rounded p-2 placeholder:italic",
             },
           }}
         >
-          <AutocompleteSection title="Verified">
+          <AutocompleteSection title={t(I18nKey.MODEL_SELECTOR$VERIFIED)}>
             {models[selectedProvider || ""]?.models
               .filter((model) => VERIFIED_MODELS.includes(model))
               .map((model) => (
-                <AutocompleteItem key={model} value={model}>
-                  {model}
-                </AutocompleteItem>
+                <AutocompleteItem key={model}>{model}</AutocompleteItem>
               ))}
           </AutocompleteSection>
-          <AutocompleteSection title="Others">
+          <AutocompleteSection title={t(I18nKey.MODEL_SELECTOR$OTHERS)}>
             {models[selectedProvider || ""]?.models
               .filter((model) => !VERIFIED_MODELS.includes(model))
               .map((model) => (
                 <AutocompleteItem
                   data-testid={`model-item-${model}`}
                   key={model}
-                  value={model}
                 >
                   {model}
                 </AutocompleteItem>

@@ -10,17 +10,24 @@ from openhands.events.action import (
 
 
 class BrowsingResponseParser(ResponseParser):
-    def __init__(self):
+    def __init__(self) -> None:
         # Need to pay attention to the item order in self.action_parsers
         super().__init__()
         self.action_parsers = [BrowsingActionParserMessage()]
         self.default_parser = BrowsingActionParserBrowseInteractive()
 
-    def parse(self, response: str) -> Action:
-        action_str = self.parse_response(response)
+    def parse(
+        self, response: str | dict[str, list[dict[str, dict[str, str | None]]]]
+    ) -> Action:
+        if isinstance(response, str):
+            action_str = response
+        else:
+            action_str = self.parse_response(response)
         return self.parse_action(action_str)
 
-    def parse_response(self, response) -> str:
+    def parse_response(
+        self, response: dict[str, list[dict[str, dict[str, str | None]]]]
+    ) -> str:
         action_str = response['choices'][0]['message']['content']
         if action_str is None:
             return ''
@@ -47,9 +54,7 @@ class BrowsingActionParserMessage(ActionParser):
     - BrowseInteractiveAction(browser_actions) - unexpected response format, message back to user
     """
 
-    def __init__(
-        self,
-    ):
+    def __init__(self) -> None:
         pass
 
     def check_condition(self, action_str: str) -> bool:
@@ -69,9 +74,7 @@ class BrowsingActionParserBrowseInteractive(ActionParser):
     - BrowseInteractiveAction(browser_actions) - handle send message to user function call in BrowserGym
     """
 
-    def __init__(
-        self,
-    ):
+    def __init__(self) -> None:
         pass
 
     def check_condition(self, action_str: str) -> bool:

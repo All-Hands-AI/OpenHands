@@ -20,6 +20,8 @@ To evaluate an agent, you can provide the agent's name to the `run_infer.py` pro
 ### Evaluating Different LLMs
 
 OpenHands in development mode uses `config.toml` to keep track of most configuration.
+**IMPORTANT: For evaluation, only the LLM section in `config.toml` will be used. Other configurations, such as `save_trajectory_path`, are not applied during evaluation.**
+
 Here's an example configuration file you can use to define and use multiple LLMs:
 
 ```toml
@@ -39,6 +41,8 @@ base_url = "https://OPENAI_COMPATIBLE_URL/v1"
 api_key = "XXX"
 temperature = 0.0
 ```
+
+For other configurations specific to evaluation, such as `save_trajectory_path`, these are typically set in the `get_config` function of the respective `run_infer.py` file for each benchmark.
 
 ## Supported Benchmarks
 

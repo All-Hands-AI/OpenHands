@@ -1,8 +1,0 @@
-name: ManagerAgent
-description: Delegates tasks to microagents based on their area of expertise
-generates: Action
-inputs:
-  task: string
-outputs:
-  summary: string # if finished
-  reason: string # if rejected

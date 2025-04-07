@@ -8,9 +8,7 @@ interface KeyStatusIconProps {
 export function KeyStatusIcon({ isSet }: KeyStatusIconProps) {
   return (
     <span data-testid={isSet ? "set-indicator" : "unset-indicator"}>
-      <SuccessIcon
-        className={cn(isSet ? "text-[#A5E75E]" : "text-[#E76A5E]")}
-      />
+      <SuccessIcon className={cn(isSet ? "text-success" : "text-danger")} />
     </span>
   );
 }

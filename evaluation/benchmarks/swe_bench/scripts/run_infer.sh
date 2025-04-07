@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -eo pipefail
 
 source "evaluation/utils/version_control.sh"
@@ -25,13 +25,8 @@ if [ -z "$AGENT" ]; then
 fi
 
 if [ -z "$MAX_ITER" ]; then
-  echo "MAX_ITER not specified, use default 100"
-  MAX_ITER=100
-fi
-
-if [ -z "$USE_INSTANCE_IMAGE" ]; then
-  echo "USE_INSTANCE_IMAGE not specified, use default true"
-  USE_INSTANCE_IMAGE=true
+  echo "MAX_ITER not specified, use default 60"
+  MAX_ITER=60
 fi
 
 if [ -z "$RUN_WITH_BROWSING" ]; then
@@ -50,8 +45,6 @@ if [ -z "$SPLIT" ]; then
   SPLIT="test"
 fi
 
-export USE_INSTANCE_IMAGE=$USE_INSTANCE_IMAGE
-echo "USE_INSTANCE_IMAGE: $USE_INSTANCE_IMAGE"
 export RUN_WITH_BROWSING=$RUN_WITH_BROWSING
 echo "RUN_WITH_BROWSING: $RUN_WITH_BROWSING"
 

@@ -8,6 +8,9 @@ enum ObservationType {
   // The HTML contents of a URL
   BROWSE = "browse",
 
+  // Interactive browsing
+  BROWSE_INTERACTIVE = "browse_interactive",
+
   // The output of a command
   RUN = "run",
 
@@ -22,6 +25,15 @@ enum ObservationType {
 
   // Delegate result
   DELEGATE = "delegate",
+
+  // A response to the agent's thought (usually a static message)
+  THINK = "think",
+
+  // An observation that shows agent's context extension
+  RECALL = "recall",
+
+  // A no-op observation
+  NULL = "null",
 }
 
 export default ObservationType;

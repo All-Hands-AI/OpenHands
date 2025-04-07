@@ -75,7 +75,7 @@ def load_completions(instance_id: str):
     # create messages
     messages = result['messages']
     messages.append(result['response']['choices'][0]['message'])
-    tools = result['kwargs']['tools']
+    tools = result['kwargs'].get('tools', None)
     return {
         'messages': messages,
         'tools': tools,
@@ -248,6 +248,22 @@ def write_row_to_md_file(row, instance_id_to_test_result):
 
     completions = load_completions(instance_id)
 
+    # report file
+    global output_dir
+    report_file = os.path.join(output_dir, 'eval_outputs', instance_id, 'report.json')
+    if os.path.exists(report_file):
+        with open(report_file, 'r') as f:
+            report = json.load(f)
+    else:
+        report = None
+
+    test_output_file = os.path.join(
+        output_dir, 'eval_outputs', instance_id, 'test_output.txt'
+    )
+    if test_output is None and os.path.exists(test_output_file):
+        with open(test_output_file, 'r') as f:
+            test_output = f.read()
+
     with open(filepath, 'w') as f:
         f.write(f'# {instance_id} (resolved: {resolved})\n')
 
@@ -269,8 +285,14 @@ def write_row_to_md_file(row, instance_id_to_test_result):
         f.write('## Model Patch\n')
         f.write(f'{process_git_patch(model_patch)}\n')
 
+        if report is not None:
+            f.write('## Report\n')
+            f.write(json.dumps(report, indent=2))
+            f.write('\n')
+
         f.write('## Test Output\n')
         f.write(str(test_output))
+        f.write('\n')
 
 
 instance_id_to_test_result = {}

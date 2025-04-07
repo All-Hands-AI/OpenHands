@@ -2,8 +2,8 @@ import asyncio
 import json
 import os
 
+import httpx
 import pandas as pd
-import requests
 
 from evaluation.benchmarks.gorilla.utils import encode_question, get_data_for_hub
 from evaluation.utils.shared import (
@@ -11,6 +11,7 @@ from evaluation.utils.shared import (
     EvalOutput,
     codeact_user_response,
     compatibility_for_eval_history_pairs,
+    get_default_sandbox_config_for_eval,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -19,7 +20,6 @@ from evaluation.utils.shared import (
 from openhands.controller.state.state import State
 from openhands.core.config import (
     AppConfig,
-    SandboxConfig,
     get_llm_config_arg,
     get_parser,
 )
@@ -40,17 +40,14 @@ AGENT_CLS_TO_INST_SUFFIX = {
 def get_config(
     metadata: EvalMetadata,
 ) -> AppConfig:
+    sandbox_config = get_default_sandbox_config_for_eval()
+    sandbox_config.base_container_image = 'python:3.12-bookworm'
     config = AppConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
         runtime='docker',
         max_iterations=metadata.max_iterations,
-        sandbox=SandboxConfig(
-            base_container_image='python:3.12-bookworm',
-            enable_auto_lint=True,
-            use_host_network=False,
-            remote_runtime_enable_retries=True,
-        ),
+        sandbox=sandbox_config,
         # do not mount workspace
         workspace_base=None,
         workspace_mount_path=None,
@@ -185,7 +182,7 @@ if __name__ == '__main__':
     # Check if the file exists
     if not os.path.exists(file_path):
         url = 'https://raw.githubusercontent.com/ShishirPatil/gorilla/main/eval/eval-scripts/codebleu/parser/my-languages.so'
-        response = requests.get(url)
+        response = httpx.get(url)
         with open(file_path, 'wb') as f:
             f.write(response.content)
     else:

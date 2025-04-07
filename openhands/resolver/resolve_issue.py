@@ -10,6 +10,7 @@ import subprocess
 from typing import Any
 from uuid import uuid4
 
+from pydantic import SecretStr
 from termcolor import colored
 
 import openhands
@@ -18,6 +19,7 @@ from openhands.core.config import AgentConfig, AppConfig, LLMConfig, SandboxConf
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import CmdRunAction, MessageAction
+from openhands.events.event import Event
 from openhands.events.observation import (
     CmdOutputObservation,
     ErrorObservation,
@@ -48,7 +50,7 @@ AGENT_CLASS = 'CodeActAgent'
 def initialize_runtime(
     runtime: Runtime,
     platform: Platform,
-):
+) -> None:
     """Initialize the runtime for the agent.
 
     This function is called before the runtime is used to run the agent.
@@ -192,26 +194,28 @@ async def process_issue(
     # This code looks unnecessary because these are default values in the config class
     # they're set by default if nothing else overrides them
     # FIXME we should remove them here
-    kwargs = {}
-    if os.getenv('GITLAB_CI') == 'True':
-        kwargs['local_runtime_url'] = os.getenv('LOCAL_RUNTIME_URL', 'http://localhost')
+    sandbox_config = SandboxConfig(
+        runtime_container_image=runtime_container_image,
+        enable_auto_lint=False,
+        use_host_network=False,
+        # large enough timeout, since some testcases take very long to run
+        timeout=300,
+    )
+
+    if os.getenv('GITLAB_CI') == 'true':
+        sandbox_config.local_runtime_url = os.getenv(
+            'LOCAL_RUNTIME_URL', 'http://localhost'
+        )
         user_id = os.getuid() if hasattr(os, 'getuid') else 1000
         if user_id == 0:
-            kwargs['user_id'] = get_unique_uid()
+            sandbox_config.user_id = get_unique_uid()
 
     config = AppConfig(
         default_agent='CodeActAgent',
         runtime='docker',
         max_budget_per_task=4,
         max_iterations=max_iterations,
-        sandbox=SandboxConfig(
-            runtime_container_image=runtime_container_image,
-            enable_auto_lint=False,
-            use_host_network=False,
-            # large enough timeout, since some testcases take very long to run
-            timeout=300,
-            **kwargs,
-        ),
+        sandbox=sandbox_config,
         # do not mount workspace
         workspace_base=workspace_base,
         workspace_mount_path=workspace_base,
@@ -222,7 +226,7 @@ async def process_issue(
     runtime = create_runtime(config)
     await runtime.connect()
 
-    def on_event(evt):
+    def on_event(evt: Event) -> None:
         logger.info(evt)
 
     runtime.event_stream.subscribe(EventStreamSubscriber.MAIN, on_event, str(uuid4()))
@@ -425,7 +429,7 @@ async def resolve_issue(
     # checkout the repo
     repo_dir = os.path.join(output_dir, 'repo')
     if not os.path.exists(repo_dir):
-        checkout_output = subprocess.check_output(
+        checkout_output = subprocess.check_output(  # noqa: ASYNC101
             [
                 'git',
                 'clone',
@@ -438,7 +442,7 @@ async def resolve_issue(
 
     # get the commit id of current repo for reproducibility
     base_commit = (
-        subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo_dir)
+        subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo_dir)  # noqa: ASYNC101
         .decode('utf-8')
         .strip()
     )
@@ -448,7 +452,7 @@ async def resolve_issue(
         # Check for .openhands_instructions file in the workspace directory
         openhands_instructions_path = os.path.join(repo_dir, '.openhands_instructions')
         if os.path.exists(openhands_instructions_path):
-            with open(openhands_instructions_path, 'r') as f:
+            with open(openhands_instructions_path, 'r') as f:  # noqa: ASYNC101
                 repo_instruction = f.read()
 
     # OUTPUT FILE
@@ -457,7 +461,7 @@ async def resolve_issue(
 
     # Check if this issue was already processed
     if os.path.exists(output_file):
-        with open(output_file, 'r') as f:
+        with open(output_file, 'r') as f:  # noqa: ASYNC101
             for line in f:
                 data = ResolverOutput.model_validate_json(line)
                 if data.issue.number == issue_number:
@@ -466,7 +470,7 @@ async def resolve_issue(
                     )
                     return
 
-    output_fp = open(output_file, 'a')
+    output_fp = open(output_file, 'a')  # noqa: ASYNC101
 
     logger.info(
         f'Resolving issue {issue_number} with Agent {AGENT_CLASS}, model {model_name}, max iterations {max_iterations}.'
@@ -485,20 +489,20 @@ async def resolve_issue(
 
             # Fetch the branch first to ensure it exists locally
             fetch_cmd = ['git', 'fetch', 'origin', branch_to_use]
-            subprocess.check_output(
+            subprocess.check_output(  # noqa: ASYNC101
                 fetch_cmd,
                 cwd=repo_dir,
             )
 
             # Checkout the branch
             checkout_cmd = ['git', 'checkout', branch_to_use]
-            subprocess.check_output(
+            subprocess.check_output(  # noqa: ASYNC101
                 checkout_cmd,
                 cwd=repo_dir,
             )
 
             base_commit = (
-                subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo_dir)
+                subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo_dir)  # noqa: ASYNC101
                 .decode('utf-8')
                 .strip()
             )
@@ -524,10 +528,10 @@ async def resolve_issue(
         logger.info('Finished.')
 
 
-def main():
+def main() -> None:
     import argparse
 
-    def int_or_none(value):
+    def int_or_none(value: str) -> int | None:
         if value.lower() == 'none':
             return None
         else:
@@ -535,7 +539,7 @@ def main():
 
     parser = argparse.ArgumentParser(description='Resolve a single issue.')
     parser.add_argument(
-        '--repo',
+        '--selected-repo',
         type=str,
         required=True,
         help='repository to resolve issues in form of `owner/repo`.',
@@ -634,9 +638,9 @@ def main():
             f'ghcr.io/all-hands-ai/runtime:{openhands.__version__}-nikolaik'
         )
 
-    parts = my_args.repo.rsplit('/', 1)
+    parts = my_args.selected_repo.rsplit('/', 1)
     if len(parts) < 2:
-        raise ValueError('Invalid repo name')
+        raise ValueError('Invalid repository format. Expected owner/repo')
     owner, repo = parts
 
     token = my_args.token or os.getenv('GITHUB_TOKEN') or os.getenv('GITLAB_TOKEN')
@@ -647,14 +651,14 @@ def main():
     if not token:
         raise ValueError('Token is required.')
 
-    platform = identify_token(token)
+    platform = identify_token(token, my_args.selected_repo)
     if platform == Platform.INVALID:
         raise ValueError('Token is invalid.')
 
     api_key = my_args.llm_api_key or os.environ['LLM_API_KEY']
     llm_config = LLMConfig(
         model=my_args.llm_model or os.environ['LLM_MODEL'],
-        api_key=str(api_key) if api_key else None,
+        api_key=SecretStr(api_key) if api_key else None,
         base_url=my_args.llm_base_url or os.environ.get('LLM_BASE_URL', None),
     )
 

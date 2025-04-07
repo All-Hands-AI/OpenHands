@@ -307,11 +307,17 @@ class InvariantAnalyzer(SecurityAnalyzer):
         new_elements = parse_element(self.trace, event)
         input = [e.model_dump(exclude_none=True) for e in new_elements]  # type: ignore [call-overload]
         self.trace.extend(new_elements)
-        result, err = self.monitor.check(self.input, input)
+        check_result = self.monitor.check(self.input, input)
         self.input.extend(input)
         risk = ActionSecurityRisk.UNKNOWN
-        if err:
-            logger.warning(f'Error checking policy: {err}')
+
+        if isinstance(check_result, tuple):
+            result, err = check_result
+            if err:
+                logger.warning(f'Error checking policy: {err}')
+                return risk
+        else:
+            logger.warning(f'Error checking policy: {check_result}')
             return risk
 
         risk = self.get_risk(result)

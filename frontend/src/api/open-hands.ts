@@ -14,6 +14,7 @@ import {
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
 import { ApiSettings, PostApiSettings } from "#/types/settings";
+import { GitUser, GitRepository } from "#/types/git";
 
 class OpenHands {
   /**
@@ -174,7 +175,7 @@ class OpenHands {
     code: string,
   ): Promise<GitHubAccessTokenResponse> {
     const { data } = await openHands.post<GitHubAccessTokenResponse>(
-      "/api/github/callback",
+      "/api/keycloak/callback",
       {
         code,
       },
@@ -223,24 +224,23 @@ class OpenHands {
   }
 
   static async createConversation(
-    selectedRepository?: string,
+    selectedRepository?: GitRepository,
     initialUserMsg?: string,
     imageUrls?: string[],
+    replayJson?: string,
   ): Promise<Conversation> {
     const body = {
       selected_repository: selectedRepository,
       selected_branch: undefined,
       initial_user_msg: initialUserMsg,
       image_urls: imageUrls,
+      replay_json: replayJson,
     };
 
     const { data } = await openHands.post<Conversation>(
       "/api/conversations",
       body,
     );
-
-    // TODO: remove this once we have a multi-conversation UI
-    localStorage.setItem("latest_conversation_id", data.conversation_id);
 
     return data;
   }
@@ -274,12 +274,44 @@ class OpenHands {
     return data.status === 200;
   }
 
-  static async getGitHubUser(): Promise<GitHubUser> {
-    const response = await openHands.get<GitHubUser>("/api/github/user");
+  /**
+   * Reset user settings in server
+   */
+  static async resetSettings(): Promise<boolean> {
+    const response = await openHands.post("/api/reset-settings");
+    return response.status === 200;
+  }
+
+  static async createCheckoutSession(amount: number): Promise<string> {
+    const { data } = await openHands.post(
+      "/api/billing/create-checkout-session",
+      {
+        amount,
+      },
+    );
+    return data.redirect_url;
+  }
+
+  static async createBillingSessionResponse(): Promise<string> {
+    const { data } = await openHands.post(
+      "/api/billing/create-customer-setup-session",
+    );
+    return data.redirect_url;
+  }
+
+  static async getBalance(): Promise<string> {
+    const { data } = await openHands.get<{ credits: string }>(
+      "/api/billing/credits",
+    );
+    return data.credits;
+  }
+
+  static async getGitUser(): Promise<GitUser> {
+    const response = await openHands.get<GitUser>("/api/user/info");
 
     const { data } = response;
 
-    const user: GitHubUser = {
+    const user: GitUser = {
       id: data.id,
       login: data.login,
       avatar_url: data.avatar_url,
@@ -291,17 +323,12 @@ class OpenHands {
     return user;
   }
 
-  static async getGitHubUserInstallationIds(): Promise<number[]> {
-    const response = await openHands.get<number[]>("/api/github/installations");
-    return response.data;
-  }
-
-  static async searchGitHubRepositories(
+  static async searchGitRepositories(
     query: string,
     per_page = 5,
-  ): Promise<GitHubRepository[]> {
-    const response = await openHands.get<GitHubRepository[]>(
-      "/api/github/search/repositories",
+  ): Promise<GitRepository[]> {
+    const response = await openHands.get<GitRepository[]>(
+      "/api/user/search/repositories",
       {
         params: {
           query,
@@ -322,8 +349,10 @@ class OpenHands {
     return data;
   }
 
-  static async logout(): Promise<void> {
-    await openHands.post("/api/logout");
+  static async logout(appMode: GetConfigResponse["APP_MODE"]): Promise<void> {
+    const endpoint =
+      appMode === "saas" ? "/api/logout" : "/api/unset-settings-tokens";
+    await openHands.post(endpoint);
   }
 }
 

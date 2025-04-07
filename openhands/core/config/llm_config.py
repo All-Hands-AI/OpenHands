@@ -3,9 +3,10 @@ from __future__ import annotations
 import os
 from typing import Any
 
-from pydantic import BaseModel, Field, SecretStr
+from pydantic import BaseModel, Field, SecretStr, ValidationError
 
 from openhands.core.logger import LOG_DIR
+from openhands.core.logger import openhands_logger as logger
 
 
 class LLMConfig(BaseModel):
@@ -14,11 +15,8 @@ class LLMConfig(BaseModel):
     Attributes:
         model: The model to use.
         api_key: The API key to use.
-        base_url: The base URL for the API. This is necessary for local LLMs. It is also used for Azure embeddings.
+        base_url: The base URL for the API. This is necessary for local LLMs.
         api_version: The version of the API.
-        embedding_model: The embedding model to use.
-        embedding_base_url: The base URL for the embedding API.
-        embedding_deployment_name: The name of the deployment for the embedding API. This is used for Azure OpenAI.
         aws_access_key_id: The AWS access key ID.
         aws_secret_access_key: The AWS secret access key.
         aws_region_name: The AWS region name.
@@ -45,24 +43,23 @@ class LLMConfig(BaseModel):
         custom_tokenizer: A custom tokenizer to use for token counting.
         native_tool_calling: Whether to use native tool calling if supported by the model. Can be True, False, or not set.
         reasoning_effort: The effort to put into reasoning. This is a string that can be one of 'low', 'medium', 'high', or 'none'. Exclusive for o1 models.
+        seed: The seed to use for the LLM.
     """
 
-    model: str = Field(default='claude-3-5-sonnet-20241022')
+    model: str = Field(default='claude-3-7-sonnet-20250219')
     api_key: SecretStr | None = Field(default=None)
     base_url: str | None = Field(default=None)
     api_version: str | None = Field(default=None)
-    embedding_model: str = Field(default='local')
-    embedding_base_url: str | None = Field(default=None)
-    embedding_deployment_name: str | None = Field(default=None)
     aws_access_key_id: SecretStr | None = Field(default=None)
     aws_secret_access_key: SecretStr | None = Field(default=None)
     aws_region_name: str | None = Field(default=None)
     openrouter_site_url: str = Field(default='https://docs.all-hands.dev/')
     openrouter_app_name: str = Field(default='OpenHands')
-    num_retries: int = Field(default=8)
+    # total wait time: 5 + 10 + 20 + 30 = 65 seconds
+    num_retries: int = Field(default=4)
     retry_multiplier: float = Field(default=2)
-    retry_min_wait: int = Field(default=15)
-    retry_max_wait: int = Field(default=120)
+    retry_min_wait: int = Field(default=5)
+    retry_max_wait: int = Field(default=30)
     timeout: int | None = Field(default=None)
     max_message_chars: int = Field(
         default=30_000
@@ -86,8 +83,73 @@ class LLMConfig(BaseModel):
     custom_tokenizer: str | None = Field(default=None)
     native_tool_calling: bool | None = Field(default=None)
     reasoning_effort: str | None = Field(default='high')
+    seed: int | None = Field(default=None)
 
     model_config = {'extra': 'forbid'}
+
+    @classmethod
+    def from_toml_section(cls, data: dict) -> dict[str, LLMConfig]:
+        """
+        Create a mapping of LLMConfig instances from a toml dictionary representing the [llm] section.
+
+        The default configuration is built from all non-dict keys in data.
+        Then, each key with a dict value (e.g. [llm.random_name]) is treated as a custom LLM configuration,
+        and its values override the default configuration.
+
+        Example:
+        Apply generic LLM config with custom LLM overrides, e.g.
+            [llm]
+            model=...
+            num_retries = 5
+            [llm.claude]
+            model="claude-3-5-sonnet"
+        results in num_retries APPLIED to claude-3-5-sonnet.
+
+        Returns:
+            dict[str, LLMConfig]: A mapping where the key "llm" corresponds to the default configuration
+            and additional keys represent custom configurations.
+        """
+
+        # Initialize the result mapping
+        llm_mapping: dict[str, LLMConfig] = {}
+
+        # Extract base config data (non-dict values)
+        base_data = {}
+        custom_sections: dict[str, dict] = {}
+        for key, value in data.items():
+            if isinstance(value, dict):
+                custom_sections[key] = value
+            else:
+                base_data[key] = value
+
+        # Try to create the base config
+        try:
+            base_config = cls.model_validate(base_data)
+            llm_mapping['llm'] = base_config
+        except ValidationError:
+            logger.warning(
+                'Cannot parse [llm] config from toml. Continuing with defaults.'
+            )
+            # If base config fails, create a default one
+            base_config = cls()
+            # Still add it to the mapping
+            llm_mapping['llm'] = base_config
+
+        # Process each custom section independently
+        for name, overrides in custom_sections.items():
+            try:
+                # Merge base config with overrides
+                merged = {**base_config.model_dump(), **overrides}
+                custom_config = cls.model_validate(merged)
+                llm_mapping[name] = custom_config
+            except ValidationError:
+                logger.warning(
+                    f'Cannot parse [{name}] config from toml. This section will be skipped.'
+                )
+                # Skip this custom section but continue with others
+                continue
+
+        return llm_mapping
 
     def model_post_init(self, __context: Any):
         """Post-initialization hook to assign OpenRouter-related variables to environment variables.
@@ -101,3 +163,9 @@ class LLMConfig(BaseModel):
             os.environ['OR_SITE_URL'] = self.openrouter_site_url
         if self.openrouter_app_name:
             os.environ['OR_APP_NAME'] = self.openrouter_app_name
+
+        # Assign an API version for Azure models
+        # While it doesn't seem required, the format supported by the API without version seems old and will likely break.
+        # Azure issue: https://github.com/All-Hands-AI/OpenHands/issues/6777
+        if self.model.startswith('azure') and self.api_version is None:
+            self.api_version = '2024-08-01-preview'

@@ -1,7 +1,7 @@
 from typing import Any
 from urllib.parse import quote
 
-import requests
+import httpx
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.resolver.interfaces.issue import (
@@ -23,38 +23,38 @@ class GitlabIssueHandler(IssueHandlerInterface):
         self.clone_url = self.get_clone_url()
         self.headers = self.get_headers()
 
-    def set_owner(self, owner: str):
+    def set_owner(self, owner: str) -> None:
         self.owner = owner
 
-    def get_headers(self):
+    def get_headers(self) -> dict[str, str]:
         return {
             'Authorization': f'Bearer {self.token}',
             'Accept': 'application/json',
         }
 
-    def get_base_url(self):
-        project_path = quote(f'{self.owner}/{self.repo}', safe="")
+    def get_base_url(self) -> str:
+        project_path = quote(f'{self.owner}/{self.repo}', safe='')
         return f'https://gitlab.com/api/v4/projects/{project_path}'
 
-    def get_authorize_url(self):
+    def get_authorize_url(self) -> str:
         return f'https://{self.username}:{self.token}@gitlab.com/'
 
-    def get_branch_url(self, branch_name: str):
+    def get_branch_url(self, branch_name: str) -> str:
         return self.get_base_url() + f'/repository/branches/{branch_name}'
 
-    def get_download_url(self):
+    def get_download_url(self) -> str:
         return f'{self.base_url}/issues'
 
-    def get_clone_url(self):
+    def get_clone_url(self) -> str:
         username_and_token = self.token
         if self.username:
             username_and_token = f'{self.username}:{self.token}'
         return f'https://{username_and_token}@gitlab.com/{self.owner}/{self.repo}.git'
 
-    def get_graphql_url(self):
+    def get_graphql_url(self) -> str:
         return 'https://gitlab.com/api/graphql'
 
-    def get_compare_url(self, branch_name: str):
+    def get_compare_url(self, branch_name: str) -> str:
         return f'https://gitlab.com/{self.owner}/{self.repo}/-/compare/{self.get_default_branch_name()}...{branch_name}'
 
     def get_converted_issues(
@@ -124,9 +124,7 @@ class GitlabIssueHandler(IssueHandlerInterface):
         all_issues = []
 
         while True:
-            response = requests.get(
-                self.download_url, headers=self.headers, params=params
-            )
+            response = httpx.get(self.download_url, headers=self.headers, params=params)
             response.raise_for_status()
             issues = response.json()
 
@@ -155,7 +153,7 @@ class GitlabIssueHandler(IssueHandlerInterface):
         all_comments = []
 
         while True:
-            response = requests.get(url, headers=self.headers, params=params)
+            response = httpx.get(url, headers=self.headers, params=params)
             response.raise_for_status()
             comments = response.json()
 
@@ -181,15 +179,15 @@ class GitlabIssueHandler(IssueHandlerInterface):
         return all_comments if all_comments else None
 
     def branch_exists(self, branch_name: str) -> bool:
-        print(f'Checking if branch {branch_name} exists...')
-        response = requests.get(
+        logger.info(f'Checking if branch {branch_name} exists...')
+        response = httpx.get(
             f'{self.base_url}/repository/branches/{branch_name}', headers=self.headers
         )
         exists = response.status_code == 200
-        print(f'Branch {branch_name} exists: {exists}')
+        logger.info(f'Branch {branch_name} exists: {exists}')
         return exists
 
-    def get_branch_name(self, base_branch_name: str):
+    def get_branch_name(self, base_branch_name: str) -> str:
         branch_name = base_branch_name
         attempt = 1
         while self.branch_exists(branch_name):
@@ -197,8 +195,8 @@ class GitlabIssueHandler(IssueHandlerInterface):
             branch_name = f'{base_branch_name}-try{attempt}'
         return branch_name
 
-    def reply_to_comment(self, pr_number: int, comment_id: str, reply: str):
-        response = requests.get(
+    def reply_to_comment(self, pr_number: int, comment_id: str, reply: str) -> None:
+        response = httpx.get(
             f'{self.base_url}/merge_requests/{pr_number}/discussions/{comment_id.split('/')[-1]}',
             headers=self.headers,
         )
@@ -209,25 +207,28 @@ class GitlabIssueHandler(IssueHandlerInterface):
                 'body': f'Openhands fix success summary\n\n\n{reply}',
                 'note_id': discussions.get('notes', [])[-1]['id'],
             }
-            response = requests.post(
+            response = httpx.post(
                 f'{self.base_url}/merge_requests/{pr_number}/discussions/{comment_id.split('/')[-1]}/notes',
                 headers=self.headers,
                 json=data,
             )
             response.raise_for_status()
 
-    def get_pull_url(self, pr_number: int):
+    def get_pull_url(self, pr_number: int) -> str:
         return (
             f'https://gitlab.com/{self.owner}/{self.repo}/-/merge_requests/{pr_number}'
         )
 
     def get_default_branch_name(self) -> str:
-        response = requests.get(f'{self.base_url}', headers=self.headers)
+        response = httpx.get(f'{self.base_url}', headers=self.headers)
         response.raise_for_status()
-        return response.json()['default_branch']
+        data = response.json()
+        return str(data['default_branch'])
 
-    def create_pull_request(self, data=dict) -> dict:
-        response = requests.post(
+    def create_pull_request(self, data: dict[str, Any] | None = None) -> dict[str, Any]:
+        if data is None:
+            data = {}
+        response = httpx.post(
             f'{self.base_url}/merge_requests', headers=self.headers, json=data
         )
         if response.status_code == 403:
@@ -243,10 +244,10 @@ class GitlabIssueHandler(IssueHandlerInterface):
         if 'iid' in pr_data:
             pr_data['number'] = pr_data['iid']
 
-        return pr_data
+        return dict(pr_data)
 
-    def request_reviewers(self, reviewer: str, pr_number: int):
-        response = requests.get(
+    def request_reviewers(self, reviewer: str, pr_number: int) -> None:
+        response = httpx.get(
             f'https://gitlab.com/api/v4/users?username={reviewer}',
             headers=self.headers,
         )
@@ -254,17 +255,17 @@ class GitlabIssueHandler(IssueHandlerInterface):
         user_data = response.json()
         if len(user_data) > 0:
             review_data = {'reviewer_ids': [user_data[0]['id']]}
-            review_response = requests.put(
+            review_response = httpx.put(
                 f'{self.base_url}/merge_requests/{pr_number}',
                 headers=self.headers,
                 json=review_data,
             )
             if review_response.status_code != 200:
-                print(
-                    f'Warning: Failed to request review from {reviewer}: {review_response.text}'
+                logger.warning(
+                    f'Failed to request review from {reviewer}: {review_response.text}'
                 )
 
-    def send_comment_msg(self, issue_number: int, msg: str):
+    def send_comment_msg(self, issue_number: int, msg: str) -> None:
         """Send a comment message to a GitHub issue or pull request.
 
         Args:
@@ -274,15 +275,15 @@ class GitlabIssueHandler(IssueHandlerInterface):
         # Post a comment on the PR
         comment_url = f'{self.base_url}/issues/{issue_number}/notes'
         comment_data = {'body': msg}
-        comment_response = requests.post(
+        comment_response = httpx.post(
             comment_url, headers=self.headers, json=comment_data
         )
         if comment_response.status_code != 201:
-            print(
+            logger.error(
                 f'Failed to post comment: {comment_response.status_code} {comment_response.text}'
             )
         else:
-            print(f'Comment added to the PR: {msg}')
+            logger.info(f'Comment added to the PR: {msg}')
 
     def get_context_from_external_issues_references(
         self,
@@ -292,8 +293,8 @@ class GitlabIssueHandler(IssueHandlerInterface):
         review_comments: list[str] | None,
         review_threads: list[ReviewThread],
         thread_comments: list[str] | None,
-    ):
-        pass
+    ) -> list[str]:
+        return []
 
 
 class GitlabPRHandler(GitlabIssueHandler):
@@ -322,7 +323,7 @@ class GitlabPRHandler(GitlabIssueHandler):
         """
         # Using graphql as REST API doesn't indicate resolved status for review comments
         # TODO: grabbing the first 10 issues, 100 review threads, and 100 coments; add pagination to retrieve all
-        response = requests.get(
+        response = httpx.get(
             f'{self.base_url}/merge_requests/{pull_number}/related_issues',
             headers=self.headers,
         )
@@ -364,7 +365,7 @@ class GitlabPRHandler(GitlabIssueHandler):
         project_path = f'{self.owner}/{self.repo}'
         variables = {'projectPath': project_path, 'pr': str(pull_number)}
 
-        response = requests.post(
+        response = httpx.post(
             self.get_graphql_url(),
             json={'query': query, 'variables': variables},
             headers=self.headers,
@@ -441,7 +442,7 @@ class GitlabPRHandler(GitlabIssueHandler):
         all_comments = []
 
         while True:
-            response = requests.get(url, headers=self.headers, params=params)
+            response = httpx.get(url, headers=self.headers, params=params)
             response.raise_for_status()
             comments = response.json()
             comments = [
@@ -479,7 +480,7 @@ class GitlabPRHandler(GitlabIssueHandler):
         review_comments: list[str] | None,
         review_threads: list[ReviewThread],
         thread_comments: list[str] | None,
-    ):
+    ) -> list[str]:
         new_issue_references = []
 
         if issue_body:
@@ -507,13 +508,13 @@ class GitlabPRHandler(GitlabIssueHandler):
         for issue_number in unique_issue_references:
             try:
                 url = f'{self.base_url}/issues/{issue_number}'
-                response = requests.get(url, headers=self.headers)
+                response = httpx.get(url, headers=self.headers)
                 response.raise_for_status()
                 issue_data = response.json()
                 issue_body = issue_data.get('description', '')
                 if issue_body:
                     closing_issues.append(issue_body)
-            except requests.exceptions.RequestException as e:
+            except httpx.HTTPError as e:
                 logger.warning(f'Failed to fetch issue {issue_number}: {str(e)}')
 
         return closing_issues

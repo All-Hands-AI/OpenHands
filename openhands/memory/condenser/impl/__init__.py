@@ -1,6 +1,9 @@
 from openhands.memory.condenser.impl.amortized_forgetting_condenser import (
     AmortizedForgettingCondenser,
 )
+from openhands.memory.condenser.impl.browser_output_condenser import (
+    BrowserOutputCondenser,
+)
 from openhands.memory.condenser.impl.llm_attention_condenser import (
     ImportantEventSelection,
     LLMAttentionCondenser,
@@ -15,6 +18,9 @@ from openhands.memory.condenser.impl.observation_masking_condenser import (
 from openhands.memory.condenser.impl.recent_events_condenser import (
     RecentEventsCondenser,
 )
+from openhands.memory.condenser.impl.structured_summary_condenser import (
+    StructuredSummaryCondenser,
+)
 
 __all__ = [
     'AmortizedForgettingCondenser',
@@ -23,5 +29,7 @@ __all__ = [
     'LLMSummarizingCondenser',
     'NoOpCondenser',
     'ObservationMaskingCondenser',
+    'BrowserOutputCondenser',
     'RecentEventsCondenser',
+    'StructuredSummaryCondenser',
 ]

@@ -1,9 +1,10 @@
+import os
 from functools import lru_cache
 from typing import Callable
 from uuid import UUID
 
 import docker
-import requests
+import httpx
 import tenacity
 from docker.models.containers import Container
 
@@ -35,6 +36,16 @@ EXECUTION_SERVER_PORT_RANGE = (30000, 39999)
 VSCODE_PORT_RANGE = (40000, 49999)
 APP_PORT_RANGE_1 = (50000, 54999)
 APP_PORT_RANGE_2 = (55000, 59999)
+
+
+def _is_retryable_wait_until_alive_error(exception):
+    if isinstance(exception, tenacity.RetryError):
+        cause = exception.last_attempt.exception()
+        return _is_retryable_wait_until_alive_error(cause)
+
+    return isinstance(
+        exception, (ConnectionError, httpx.NetworkError, httpx.RemoteProtocolError)
+    )
 
 
 class DockerRuntime(ActionExecutionClient):
@@ -76,6 +87,14 @@ class DockerRuntime(ActionExecutionClient):
         self._container_port = -1
         self._vscode_port = -1
         self._app_ports: list[int] = []
+
+        if os.environ.get('DOCKER_HOST_ADDR'):
+            logger.info(
+                f'Using DOCKER_HOST_IP: {os.environ["DOCKER_HOST_ADDR"]} for local_runtime_url'
+            )
+            self.config.sandbox.local_runtime_url = (
+                f'http://{os.environ["DOCKER_HOST_ADDR"]}'
+            )
 
         self.docker_client: docker.DockerClient = self._init_docker_client()
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
@@ -121,7 +140,7 @@ class DockerRuntime(ActionExecutionClient):
                     'error',
                     f'Container {self.container_name} not found.',
                 )
-                raise e
+                raise AgentRuntimeDisconnectedError from e
             if self.runtime_container_image is None:
                 if self.base_container_image is None:
                     raise ValueError(
@@ -201,16 +220,29 @@ class DockerRuntime(ActionExecutionClient):
         port_mapping: dict[str, list[dict[str, str]]] | None = None
         if not use_host_network:
             port_mapping = {
-                f'{self._container_port}/tcp': [{'HostPort': str(self._host_port)}],
+                f'{self._container_port}/tcp': [
+                    {
+                        'HostPort': str(self._host_port),
+                        'HostIp': self.config.sandbox.runtime_binding_address,
+                    }
+                ],
             }
 
             if self.vscode_enabled:
                 port_mapping[f'{self._vscode_port}/tcp'] = [
-                    {'HostPort': str(self._vscode_port)}
+                    {
+                        'HostPort': str(self._vscode_port),
+                        'HostIp': self.config.sandbox.runtime_binding_address,
+                    }
                 ]
 
             for port in self._app_ports:
-                port_mapping[f'{port}/tcp'] = [{'HostPort': str(port)}]
+                port_mapping[f'{port}/tcp'] = [
+                    {
+                        'HostPort': str(port),
+                        'HostIp': self.config.sandbox.runtime_binding_address,
+                    }
+                ]
         else:
             self.log(
                 'warn',
@@ -255,7 +287,6 @@ class DockerRuntime(ActionExecutionClient):
             server_port=self._container_port,
             plugins=self.plugins,
             app_config=self.config,
-            use_nice_for_root=False,
         )
 
         try:
@@ -307,6 +338,7 @@ class DockerRuntime(ActionExecutionClient):
         self.container = self.docker_client.containers.get(self.container_name)
         if self.container.status == 'exited':
             self.container.start()
+
         config = self.container.attrs['Config']
         for env_var in config['Env']:
             if env_var.startswith('port='):
@@ -314,11 +346,18 @@ class DockerRuntime(ActionExecutionClient):
                 self._container_port = self._host_port
             elif env_var.startswith('VSCODE_PORT='):
                 self._vscode_port = int(env_var.split('VSCODE_PORT=')[1])
+
         self._app_ports = []
-        for exposed_port in config['ExposedPorts'].keys():
-            exposed_port = int(exposed_port.split('/tcp')[0])
-            if exposed_port != self._host_port and exposed_port != self._vscode_port:
-                self._app_ports.append(exposed_port)
+        exposed_ports = config.get('ExposedPorts')
+        if exposed_ports:
+            for exposed_port in exposed_ports.keys():
+                exposed_port = int(exposed_port.split('/tcp')[0])
+                if (
+                    exposed_port != self._host_port
+                    and exposed_port != self._vscode_port
+                ):
+                    self._app_ports.append(exposed_port)
+
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
         self.log(
             'debug',
@@ -327,9 +366,7 @@ class DockerRuntime(ActionExecutionClient):
 
     @tenacity.retry(
         stop=tenacity.stop_after_delay(120) | stop_if_should_exit(),
-        retry=tenacity.retry_if_exception_type(
-            (ConnectionError, requests.exceptions.ConnectionError)
-        ),
+        retry=tenacity.retry_if_exception(_is_retryable_wait_until_alive_error),
         reraise=True,
         wait=tenacity.wait_fixed(2),
     )

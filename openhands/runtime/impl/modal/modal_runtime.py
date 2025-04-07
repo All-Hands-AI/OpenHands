@@ -3,8 +3,8 @@ import tempfile
 from pathlib import Path
 from typing import Callable
 
+import httpx
 import modal
-import requests
 import tenacity
 
 from openhands.core.config import AppConfig
@@ -151,9 +151,7 @@ class ModalRuntime(ActionExecutionClient):
 
     @tenacity.retry(
         stop=tenacity.stop_after_delay(120) | stop_if_should_exit(),
-        retry=tenacity.retry_if_exception_type(
-            (ConnectionError, requests.exceptions.ConnectionError)
-        ),
+        retry=tenacity.retry_if_exception_type((ConnectionError, httpx.NetworkError)),
         reraise=True,
         wait=tenacity.wait_fixed(2),
     )
@@ -270,7 +268,10 @@ echo 'export INPUTRC=/etc/inputrc' >> /etc/bash.bashrc
 
         tunnel = self.sandbox.tunnels()[self._vscode_port]
         tunnel_url = tunnel.url
-        self._vscode_url = tunnel_url + f'/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
+        self._vscode_url = (
+            tunnel_url
+            + f'/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
+        )
 
         self.log(
             'debug',

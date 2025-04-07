@@ -3,7 +3,6 @@ import tempfile
 
 from fastapi import (
     APIRouter,
-    BackgroundTasks,
     HTTPException,
     Request,
     UploadFile,
@@ -12,6 +11,7 @@ from fastapi import (
 from fastapi.responses import FileResponse, JSONResponse
 from pathspec import PathSpec
 from pathspec.patterns import GitWildMatchPattern
+from starlette.background import BackgroundTask
 
 from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import openhands_logger as logger
@@ -309,31 +309,25 @@ async def save_file(request: Request):
 
 
 @app.get('/zip-directory')
-async def zip_current_workspace(
-    request: Request, conversation_id: str, background_tasks: BackgroundTasks
-):
+def zip_current_workspace(request: Request, conversation_id: str):
     try:
         logger.debug('Zipping workspace')
         runtime: Runtime = request.state.conversation.runtime
         path = runtime.config.workspace_mount_path_in_sandbox
         try:
-            zip_file = await call_sync_from_async(runtime.copy_from, path)
+            zip_file_path = runtime.copy_from(path)
         except AgentRuntimeUnavailableError as e:
             logger.error(f'Error zipping workspace: {e}')
             return JSONResponse(
                 status_code=500,
                 content={'error': f'Error zipping workspace: {e}'},
             )
-        response = FileResponse(
-            path=zip_file,
+        return FileResponse(
+            path=zip_file_path,
             filename='workspace.zip',
-            media_type='application/x-zip-compressed',
+            media_type='application/zip',
+            background=BackgroundTask(lambda: os.unlink(zip_file_path)),
         )
-
-        # This will execute after the response is sent (So the file is not deleted before being sent)
-        background_tasks.add_task(zip_file.unlink)
-
-        return response
     except Exception as e:
         logger.error(f'Error zipping workspace: {e}')
         raise HTTPException(

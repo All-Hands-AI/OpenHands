@@ -42,12 +42,13 @@ docker build -t custom-image .
 
 ### 指定基础沙箱镜像
 
-在 OpenHands 目录中的 `config.toml` 文件中，将 `sandbox_base_container_image` 设置为你要使用的镜像。这可以是你已经拉取的镜像或你构建的镜像：
+在 OpenHands 目录中的 `config.toml` 文件中，将 `base_container_image` 设置为你要使用的镜像。这可以是你已经拉取的镜像或你构建的镜像：
 
 ```bash
 [core]
 ...
-sandbox_base_container_image="custom-image"
+[sandbox]
+base_container_image="custom-image"
 ```
 
 ### 运行

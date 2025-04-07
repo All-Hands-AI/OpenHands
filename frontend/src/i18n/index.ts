@@ -26,6 +26,7 @@ i18n
   .init({
     fallbackLng: "en",
     debug: import.meta.env.NODE_ENV === "development",
+    load: "languageOnly",
   });
 
 export default i18n;

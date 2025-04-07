@@ -1,6 +1,6 @@
 # 💿 如何创建自定义 Docker 沙箱
 
-默认的 OpenHands 沙箱包含一个[最小化 ubuntu 配置](https://github.com/All-Hands-AI/OpenHands/blob/main/containers/sandbox/Dockerfile)。您的应用场景可能需要在默认状态下安装额外的软件。本指南将教您如何通过使用自定义 Docker 映像来实现这一目标。
+默认的 OpenHands 沙箱包含一个[最小化 ubuntu 配置](https://github.com/All-Hands-AI/OpenHands/blob/main/containers/e2b-sandbox/Dockerfile)。您的应用场景可能需要在默认状态下安装额外的软件。本指南将教您如何通过使用自定义 Docker 映像来实现这一目标。
 
 目前提供两种实现方案：
 1. 从 Docker Hub 拉取已有镜像。例如，如果您想安装 `nodejs` ，您可以通过使用 `node:20` 镜像来实现。
@@ -58,10 +58,11 @@ docker build -t custom_image .
 [core]
 workspace_base="./workspace"
 run_as_openhands=true
-sandbox_base_container_image="custom_image"
+[sandbox]
+base_container_image="custom_image"
 ```
 
-对于 `sandbox_base_container_image` 的值, 您可以选择以下任意一项：
+对于 `base_container_image` 的值, 您可以选择以下任意一项：
 1. 在上一步中您构建的自定义镜像的名称（例如，`“custom_image”`）
 2. 从 Docker Hub 拉取的镜像（例如，`“node:20”`，如果你需要一个预装 `Node.js` 的沙箱环境）
 
@@ -83,14 +84,15 @@ sandbox_base_container_image="custom_image"
 
 ### 错误：```useradd: UID 1000 is not unique```
 
-如果在控制台输出中看到此错误，说明 OpenHands 尝试在沙箱中以 UID 1000 创建 openhands 用户，但该 UID 已经被映像中的其他部分使用（不知何故）。要解决这个问题，请更改 config.toml 文件中的 sandbox_user_id 字段为不同的值：
+如果在控制台输出中看到此错误，说明 OpenHands 尝试在沙箱中以 UID 1000 创建 openhands 用户，但该 UID 已经被映像中的其他部分使用（不知何故）。要解决这个问题，请更改 config.toml 文件中的 user_id 字段为不同的值：
 
 ```
 [core]
 workspace_base="./workspace"
 run_as_openhands=true
-sandbox_base_container_image="custom_image"
-sandbox_user_id="1001"
+[sandbox]
+base_container_image="custom_image"
+user_id="1001"
 ```
 
 ### 端口使用错误

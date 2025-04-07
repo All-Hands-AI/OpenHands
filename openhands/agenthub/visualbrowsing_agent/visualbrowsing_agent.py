@@ -29,7 +29,9 @@ def get_error_prefix(obs: BrowserOutputObservation) -> str:
     return f'## Error from previous action:\n{obs.last_browser_action_error}\n'
 
 
-def create_goal_prompt(goal: str, image_urls: list[str] | None):
+def create_goal_prompt(
+    goal: str, image_urls: list[str] | None
+) -> tuple[str, list[str]]:
     goal_txt: str = f"""\
 # Instructions
 Review the current state of the page and all other information to find the best possible next action to accomplish your goal. Your answer will be interpreted and executed by a program, make sure to follow the formatting instructions.
@@ -52,7 +54,7 @@ def create_observation_prompt(
     focused_element: str,
     error_prefix: str,
     som_screenshot: str | None,
-):
+) -> tuple[str, str | None]:
     txt_observation = f"""
 # Observation of current step:
 {tabs}{axtree_txt}{focused_element}{error_prefix}
@@ -200,14 +202,15 @@ Note:
         tabs = ''
         last_obs = None
         last_action = None
+        set_of_marks = None  # Initialize set_of_marks to None
 
-        if len(state.history) == 1:
+        if len(state.view) == 1:
             # for visualwebarena, webarena and miniwob++ eval, we need to retrieve the initial observation already in browser env
             # initialize and retrieve the first observation by issuing an noop OP
             # For non-benchmark browsing, the browser env starts with a blank page, and the agent is expected to first navigate to desired websites
             return BrowseInteractiveAction(browser_actions='noop(1000)')
 
-        for event in state.history:
+        for event in state.view:
             if isinstance(event, BrowseInteractiveAction):
                 prev_actions.append(event)
                 last_action = event
@@ -215,6 +218,9 @@ Note:
                 # agent has responded, task finished.
                 return AgentFinishAction(outputs={'content': event.content})
             elif isinstance(event, Observation):
+                # Only process BrowserOutputObservation and skip other observation types
+                if not isinstance(event, BrowserOutputObservation):
+                    continue
                 last_obs = event
 
         if len(prev_actions) >= 1:  # ignore noop()
@@ -273,7 +279,9 @@ Note:
         observation_txt, som_screenshot = create_observation_prompt(
             cur_axtree_txt, tabs, focused_element, error_prefix, set_of_marks
         )
-        human_prompt = [TextContent(type='text', text=goal_txt)]
+        human_prompt: list[TextContent | ImageContent] = [
+            TextContent(type='text', text=goal_txt)
+        ]
         if len(goal_images) > 0:
             human_prompt.append(ImageContent(image_urls=goal_images))
         human_prompt.append(TextContent(type='text', text=observation_txt))

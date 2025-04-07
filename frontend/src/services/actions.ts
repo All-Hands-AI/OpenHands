@@ -9,6 +9,7 @@ import { appendSecurityAnalyzerInput } from "#/state/security-analyzer-slice";
 import { setCode, setActiveFilepath } from "#/state/code-slice";
 import { appendJupyterInput } from "#/state/jupyter-slice";
 import { setCurStatusMessage } from "#/state/status-slice";
+import { setMetrics } from "#/state/metrics-slice";
 import store from "#/store";
 import ActionType from "#/types/action-type";
 import {
@@ -57,11 +58,41 @@ const messageActions = {
       store.dispatch(appendJupyterInput(message.args.code));
     }
   },
+  [ActionType.FINISH]: (message: ActionMessage) => {
+    store.dispatch(addAssistantMessage(message.args.final_thought));
+    let successPrediction = "";
+    if (message.args.task_completed === "partial") {
+      successPrediction =
+        "I believe that the task was **completed partially**.";
+    } else if (message.args.task_completed === "false") {
+      successPrediction = "I believe that the task was **not completed**.";
+    } else if (message.args.task_completed === "true") {
+      successPrediction =
+        "I believe that the task was **completed successfully**.";
+    }
+    if (successPrediction) {
+      // if final_thought is not empty, add a new line before the success prediction
+      if (message.args.final_thought) {
+        store.dispatch(addAssistantMessage(`\n${successPrediction}`));
+      } else {
+        store.dispatch(addAssistantMessage(successPrediction));
+      }
+    }
+  },
 };
 
 export function handleActionMessage(message: ActionMessage) {
   if (message.args?.hidden) {
     return;
+  }
+
+  // Update metrics if available
+  if (message.llm_metrics) {
+    const metrics = {
+      cost: message.llm_metrics?.accumulated_cost ?? null,
+      usage: message.llm_metrics?.accumulated_token_usage ?? null,
+    };
+    store.dispatch(setMetrics(metrics));
   }
 
   if (message.action === ActionType.RUN) {

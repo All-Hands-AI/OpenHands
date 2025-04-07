@@ -8,7 +8,7 @@ When running OpenHands, you'll need to set the following in the OpenHands UI thr
 - `LLM Provider` to `Groq`
 - `LLM Model` to the model you will be using. [Visit here to see the list of
 models that Groq hosts](https://console.groq.com/docs/models). If the model is not in the list, toggle
-`Advanced Options`, and enter it in `Custom Model` (e.g. groq/&lt;model-name&gt; like `groq/llama3-70b-8192`).
+`Advanced` options, and enter it in `Custom Model` (e.g. groq/&lt;model-name&gt; like `groq/llama3-70b-8192`).
 - `API key` to your Groq API key. To find or create your Groq API Key, [see here](https://console.groq.com/keys).
 
 
@@ -17,7 +17,7 @@ models that Groq hosts](https://console.groq.com/docs/models). If the model is n
 
 The Groq endpoint for chat completion is [mostly OpenAI-compatible](https://console.groq.com/docs/openai). Therefore, you can access Groq models as you
 would access any OpenAI-compatible endpoint. In the OpenHands UI through the Settings:
-1. Enable `Advanced Options`
+1. Enable `Advanced` options
 2. Set the following:
    - `Custom Model` to the prefix `openai/` + the model you will be using (e.g. `openai/llama3-70b-8192`)
    - `Base URL` to `https://api.groq.com/openai/v1`

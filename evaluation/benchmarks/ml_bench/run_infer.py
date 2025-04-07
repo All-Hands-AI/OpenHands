@@ -25,6 +25,7 @@ from evaluation.utils.shared import (
     EvalOutput,
     codeact_user_response,
     compatibility_for_eval_history_pairs,
+    get_default_sandbox_config_for_eval,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -33,7 +34,6 @@ from evaluation.utils.shared import (
 from openhands.controller.state.state import State
 from openhands.core.config import (
     AppConfig,
-    SandboxConfig,
     get_llm_config_arg,
     get_parser,
     load_app_config,
@@ -77,16 +77,14 @@ ID2CONDA = {
 def get_config(
     metadata: EvalMetadata,
 ) -> AppConfig:
+    sandbox_config = get_default_sandbox_config_for_eval()
+    sandbox_config.base_container_image = 'public.ecr.aws/i5g0m1f6/ml-bench'
     config = AppConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
         runtime='docker',
         max_iterations=metadata.max_iterations,
-        sandbox=SandboxConfig(
-            base_container_image='public.ecr.aws/i5g0m1f6/ml-bench',
-            enable_auto_lint=True,
-            use_host_network=False,
-        ),
+        sandbox=sandbox_config,
         # do not mount workspace
         workspace_base=None,
         workspace_mount_path=None,

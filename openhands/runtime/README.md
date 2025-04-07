@@ -52,6 +52,11 @@ There are currently four implementations:
 * Modal (uses the Modal API)
 * Runloop (uses the Runloop API)
 
+You may also add your own `Runtime` subclass to the classpath and configure it like this:
+
+```toml
+runtime = "app.my.CustomRuntime"
+```
 
 ## Workflow Description
 

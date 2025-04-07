@@ -1,6 +1,6 @@
 import os
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 
 
 class SandboxConfig(BaseModel):
@@ -15,8 +15,10 @@ class SandboxConfig(BaseModel):
         timeout: The timeout for the default sandbox action execution.
         remote_runtime_init_timeout: The timeout for the remote runtime to start.
         remote_runtime_api_timeout: The timeout for the remote runtime API requests.
+        remote_runtime_enable_retries: Whether to enable retries (on recoverable errors like requests.ConnectionError) for the remote runtime API requests.
         enable_auto_lint: Whether to enable auto-lint.
         use_host_network: Whether to use the host network.
+        runtime_binding_address: The binding address for the runtime ports.  It specifies which network interface on the host machine Docker should bind the runtime ports to.
         initialize_plugins: Whether to initialize plugins.
         force_rebuild_runtime: Whether to force rebuild the runtime image.
         runtime_extra_deps: The extra dependencies to install in the runtime image (typically used for evaluation).
@@ -41,6 +43,7 @@ class SandboxConfig(BaseModel):
     remote_runtime_api_url: str | None = Field(default='http://localhost:8000')
     local_runtime_url: str = Field(default='http://localhost')
     keep_runtime_alive: bool = Field(default=False)
+    pause_closed_runtimes: bool = Field(default=True)
     rm_all_containers: bool = Field(default=False)
     api_key: str | None = Field(default=None)
     base_container_image: str = Field(
@@ -51,11 +54,15 @@ class SandboxConfig(BaseModel):
     timeout: int = Field(default=120)
     remote_runtime_init_timeout: int = Field(default=180)
     remote_runtime_api_timeout: int = Field(default=10)
-    remote_runtime_enable_retries: bool = Field(default=False)
+    remote_runtime_enable_retries: bool = Field(default=True)
+    remote_runtime_class: str | None = Field(
+        default=None
+    )  # can be "None" (default to gvisor) or "sysbox" (support docker inside runtime + more stable)
     enable_auto_lint: bool = Field(
-        default=False  # once enabled, OpenHands would lint files after editing
-    )
+        default=False
+    )  # once enabled, OpenHands would lint files after editing
     use_host_network: bool = Field(default=False)
+    runtime_binding_address: str = Field(default='0.0.0.0')
     runtime_extra_build_args: list[str] | None = Field(default=None)
     initialize_plugins: bool = Field(default=True)
     force_rebuild_runtime: bool = Field(default=False)
@@ -66,6 +73,28 @@ class SandboxConfig(BaseModel):
     close_delay: int = Field(default=15)
     remote_runtime_resource_factor: int = Field(default=1)
     enable_gpu: bool = Field(default=False)
-    docker_runtime_kwargs: str | None = Field(default=None)
+    docker_runtime_kwargs: dict | None = Field(default=None)
+    selected_repo: str | None = Field(default=None)
 
     model_config = {'extra': 'forbid'}
+
+    @classmethod
+    def from_toml_section(cls, data: dict) -> dict[str, 'SandboxConfig']:
+        """
+        Create a mapping of SandboxConfig instances from a toml dictionary representing the [sandbox] section.
+
+        The configuration is built from all keys in data.
+
+        Returns:
+            dict[str, SandboxConfig]: A mapping where the key "sandbox" corresponds to the [sandbox] configuration
+        """
+        # Initialize the result mapping
+        sandbox_mapping: dict[str, SandboxConfig] = {}
+
+        # Try to create the configuration instance
+        try:
+            sandbox_mapping['sandbox'] = cls.model_validate(data)
+        except ValidationError as e:
+            raise ValueError(f'Invalid sandbox configuration: {e}')
+
+        return sandbox_mapping

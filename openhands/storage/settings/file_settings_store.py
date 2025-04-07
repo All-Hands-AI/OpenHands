@@ -25,7 +25,7 @@ class FileSettingsStore(SettingsStore):
         except FileNotFoundError:
             return None
 
-    async def store(self, settings: Settings):
+    async def store(self, settings: Settings) -> None:
         json_str = settings.model_dump_json(context={'expose_secrets': True})
         await call_sync_from_async(self.file_store.write, self.path, json_str)
 

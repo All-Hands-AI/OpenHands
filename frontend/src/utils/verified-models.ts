@@ -3,6 +3,7 @@ export const VERIFIED_PROVIDERS = ["openai", "azure", "anthropic", "deepseek"];
 export const VERIFIED_MODELS = [
   "o3-mini-2025-01-31",
   "claude-3-5-sonnet-20241022",
+  "claude-3-7-sonnet-20250219",
   "deepseek-chat",
 ];
 
@@ -31,4 +32,5 @@ export const VERIFIED_ANTHROPIC_MODELS = [
   "claude-3-haiku-20240307",
   "claude-3-opus-20240229",
   "claude-3-sonnet-20240229",
+  "claude-3-7-sonnet-20250219",
 ];

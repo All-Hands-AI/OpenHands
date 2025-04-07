@@ -5,10 +5,13 @@ import subprocess
 import tempfile
 
 from .exceptions import HunkApplyException, SubprocessException
+from .patch import Change, diffobj
 from .snippets import remove, which
 
 
-def _apply_diff_with_subprocess(diff, lines, reverse=False):
+def _apply_diff_with_subprocess(
+    diff: diffobj, lines: list[str], reverse: bool = False
+) -> tuple[list[str], list[str] | None]:
     # call out to patch program
     patchexec = which('patch')
     if not patchexec:
@@ -63,21 +66,21 @@ def _apply_diff_with_subprocess(diff, lines, reverse=False):
     return lines, rejlines
 
 
-def _reverse(changes):
-    def _reverse_change(c):
+def _reverse(changes: list[Change]) -> list[Change]:
+    def _reverse_change(c: Change) -> Change:
         return c._replace(old=c.new, new=c.old)
 
     return [_reverse_change(c) for c in changes]
 
 
-def apply_diff(diff, text, reverse=False, use_patch=False):
-    try:
-        lines = text.splitlines()
-    except AttributeError:
-        lines = list(text)
+def apply_diff(
+    diff: diffobj, text: str | list[str], reverse: bool = False, use_patch: bool = False
+) -> list[str]:
+    lines = text.splitlines() if isinstance(text, str) else list(text)
 
     if use_patch:
-        return _apply_diff_with_subprocess(diff, lines, reverse)
+        lines, _ = _apply_diff_with_subprocess(diff, lines, reverse)
+        return lines
 
     n_lines = len(lines)
 
