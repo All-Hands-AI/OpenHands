@@ -111,7 +111,3 @@ Example:
    - Regularly review logs for accidentally exposed sensitive data
    - Use `SensitiveDataFilter` for custom logging implementations
 
-4. **Log Management**
-   - Implement log rotation for production deployments
-   - Monitor log directory size when `LOG_TO_FILE` is enabled
-   - Consider forwarding JSON logs to a log aggregation service
