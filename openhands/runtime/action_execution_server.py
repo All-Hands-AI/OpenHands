@@ -42,6 +42,7 @@ from openhands.events.action import (
     FileReadAction,
     FileWriteAction,
     IPythonRunCellAction,
+    WaitAction,
 )
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.observation import (
@@ -53,6 +54,7 @@ from openhands.events.observation import (
     IPythonRunCellObservation,
     Observation,
 )
+from openhands.events.observation.commands import CmdOutputMetadata
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.runtime.browser import browse
 from openhands.runtime.browser.browser_env import BrowserEnv
@@ -347,6 +349,19 @@ class ActionExecutor:
             raise RuntimeError(
                 'JupyterRequirement not found. Unable to run IPython action.'
             )
+
+    async def wait(self, action: WaitAction) -> Observation:
+        """Wait for the specified number of seconds."""
+        logger.debug(f'Waiting for {action.seconds} seconds')
+
+        # Sleep for the specified number of seconds
+        await asyncio.sleep(action.seconds)
+
+        return CmdOutputObservation(
+            content=f'Waited for {action.seconds} seconds',
+            command=f'wait {action.seconds}',
+            metadata=CmdOutputMetadata(),
+        )
 
     def _resolve_path(self, path: str, working_dir: str) -> str:
         filepath = Path(path)

@@ -60,3 +60,24 @@ class IPythonRunCellAction(Action):
     @property
     def message(self) -> str:
         return f'Running Python code interactively: {self.code}'
+
+
+@dataclass
+class WaitAction(Action):
+    seconds: int  # Number of seconds to wait
+    thought: str = ''
+    action: str = ActionType.WAIT
+    runnable: ClassVar[bool] = True
+    confirmation_state: ActionConfirmationStatus = ActionConfirmationStatus.CONFIRMED
+    security_risk: ActionSecurityRisk | None = None
+
+    @property
+    def message(self) -> str:
+        return f'Waiting for {self.seconds} seconds'
+
+    def __str__(self) -> str:
+        ret = f'**WaitAction (source={self.source})**\n'
+        if self.thought:
+            ret += f'THOUGHT: {self.thought}\n'
+        ret += f'WAITING FOR: {self.seconds} seconds'
+        return ret

@@ -10,6 +10,7 @@ from openhands.events.action import (
     FileWriteAction,
     MessageAction,
     RecallAction,
+    WaitAction,
 )
 from openhands.events.action.action import ActionConfirmationStatus
 from openhands.events.action.files import FileEditSource, FileReadSource
@@ -396,3 +397,29 @@ def test_file_read_action_legacy_serialization():
     # Read-specific arguments in serialized form
     assert event_dict['args']['start'] == 0
     assert event_dict['args']['end'] == -1
+
+
+def test_wait_action_serialization_deserialization():
+    """Test serialization and deserialization of WaitAction."""
+    original_action_dict = {
+        'action': 'wait',
+        'args': {
+            'seconds': 30,
+            'thought': 'Waiting for the process to complete',
+            'confirmation_state': 'confirmed',
+        },
+    }
+
+    serialization_deserialization(original_action_dict, WaitAction)
+
+    # Test with minimal arguments
+    minimal_action_dict = {
+        'action': 'wait',
+        'args': {
+            'seconds': 5,
+            'thought': '',
+            'confirmation_state': 'confirmed',
+        },
+    }
+
+    serialization_deserialization(minimal_action_dict, WaitAction)
