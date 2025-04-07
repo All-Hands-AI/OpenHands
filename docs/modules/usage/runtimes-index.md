@@ -1,7 +1,7 @@
 # Runtime Configuration
 
 :::note
-This section is for users that would like to try out a different runtime for OpenHands.
+This section is for users that would like to use a runtime other than Docker for OpenHands.
 :::
 
 A Runtime is an environment where the OpenHands agent can edit files and run
