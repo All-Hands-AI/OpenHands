@@ -1,6 +1,5 @@
 import os
 from typing import Any
-from urllib.parse import quote_plus
 
 import httpx
 from pydantic import SecretStr
@@ -18,7 +17,7 @@ from openhands.utils.import_utils import get_impl
 
 
 class GitLabService(GitService):
-    BASE_URL = 'https://gitlab.com/api/v4'
+    DEFAULT_BASE_URL = 'https://gitlab.com/api/v4'
     token: SecretStr = SecretStr('')
     refresh = False
 
@@ -29,9 +28,15 @@ class GitLabService(GitService):
         external_auth_token: SecretStr | None = None,
         token: SecretStr | None = None,
         external_token_manager: bool = False,
+        base_url: str | None = None,
     ):
         self.user_id = user_id
         self.external_token_manager = external_token_manager
+
+        # Set BASE_URL from parameter or use default
+        self.BASE_URL = (
+            base_url.strip() if base_url and base_url.strip() else self.DEFAULT_BASE_URL
+        )
 
         if token:
             self.token = token

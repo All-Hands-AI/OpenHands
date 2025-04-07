@@ -59,7 +59,9 @@ class GitHubService(GitService):
             elif '/api/v3' in base_url:
                 # Already in the correct format for REST API
                 self.BASE_URL = base_url
-                self.GRAPHQL_URL = base_url.replace('/api/v3', '/api/graphql')
+                # For GitHub Enterprise, GraphQL endpoint should be at /api/graphql
+                # But we need to maintain the full path structure
+                self.GRAPHQL_URL = f'{base_url}/graphql'
             else:
                 # Assume this is a GitHub Enterprise Server hostname
                 # Append /api/v3 for REST API
