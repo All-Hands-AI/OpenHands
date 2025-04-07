@@ -4480,19 +4480,19 @@
         "tr": "Çalışma zamanına bağlanırken bir hata oluştu. Lütfen sayfayı yenileyin."
     },
     "STATUS$ERROR_LLM_INTERNAL_SERVER_ERROR_MESSAGE": {
-        "en": "Something went wrong with the AI provider. This could be due to server overload or temporary issues. Please try again later.",
+        "en": "Something went wrong with the LLM provider. This could be due to server overload or temporary issues. Please try again later.",
         "es": "Algo salió mal con el proveedor de IA. Esto podría deberse a una sobrecarga del servidor o problemas temporales. Por favor, inténtelo de nuevo más tarde.",
-        "zh-CN": "AI提供商出现问题。这可能是由于服务器过载或临时问题。请稍后再试。",
-        "zh-TW": "AI提供商出現問題。這可能是由於服務器過載或臨時問題。請稍後再試。",
-        "ko-KR": "AI 제공업체에 문제가 발생했습니다. 서버 과부하 또는 일시적인 문제일 수 있습니다. 나중에 다시 시도해주세요.",
-        "ja": "AIプロバイダーに問題が発生しました。これはサーバーの過負荷や一時的な問題が原因である可能性があります。後でもう一度お試しください。",
-        "no": "Noe gikk galt med AI-leverandøren. Dette kan skyldes serveroverbelastning eller midlertidige problemer. Vennligst prøv igjen senere.",
+        "zh-CN": "LLM提供商出现问题。这可能是由于服务器过载或临时问题。请稍后再试。",
+        "zh-TW": "LLM提供商出現問題。這可能是由於服務器過載或臨時問題。請稍後再試。",
+        "ko-KR": "LLM 제공업체에 문제가 발생했습니다. 서버 과부하 또는 일시적인 문제일 수 있습니다. 나중에 다시 시도해주세요.",
+        "ja": "LLMプロバイダーに問題が発生しました。これはサーバーの過負荷や一時的な問題が原因である可能性があります。後でもう一度お試しください。",
+        "no": "Noe gikk galt med LLM-leverandøren. Dette kan skyldes serveroverbelastning eller midlertidige problemer. Vennligst prøv igjen senere.",
         "ar": "حدث خطأ ما مع مزود الذكاء الاصطناعي. قد يكون هذا بسبب التحميل الزائد على الخادم أو مشاكل مؤقتة. الرجاء المحاولة مرة أخرى لاحقًا.",
         "de": "Bei dem KI-Anbieter ist etwas schiefgelaufen. Dies könnte auf eine Serverüberlastung oder vorübergehende Probleme zurückzuführen sein. Bitte versuchen Sie es später erneut.",
         "fr": "Un problème est survenu avec le fournisseur d'IA. Cela pourrait être dû à une surcharge du serveur ou à des problèmes temporaires. Veuillez réessayer plus tard.",
-        "it": "Qualcosa è andato storto con il fornitore di AI. Ciò potrebbe essere dovuto a un sovraccarico del server o a problemi temporanei. Si prega di riprovare più tardi.",
+        "it": "Qualcosa è andato storto con il fornitore di LLM. Ciò potrebbe essere dovuto a un sovraccarico del server o a problemi temporanei. Si prega di riprovare più tardi.",
         "pt": "Algo deu errado com o provedor de IA. Isso pode ser devido à sobrecarga do servidor ou problemas temporários. Por favor, tente novamente mais tarde.",
-        "tr": "AI sağlayıcısıyla ilgili bir sorun oluştu. Bu, sunucu aşırı yüklenmesi veya geçici sorunlardan kaynaklanıyor olabilir. Lütfen daha sonra tekrar deneyin."
+        "tr": "LLM sağlayıcısıyla ilgili bir sorun oluştu. Bu, sunucu aşırı yüklenmesi veya geçici sorunlardan kaynaklanıyor olabilir. Lütfen daha sonra tekrar deneyin."
     },
     "STATUS$ERROR_LLM_OUT_OF_CREDITS": {
         "en": "You're out of OpenHands Credits",
