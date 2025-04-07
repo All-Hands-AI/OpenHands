@@ -94,18 +94,6 @@ Example:
 "API key: ******, GitHub token: ******"
 ```
 
-## Log Colors and Formatting
-
-When logging to the console, OpenHands uses color-coded output for better readability:
-
-- ACTION: Green
-- USER_ACTION: Light Red
-- OBSERVATION: Yellow
-- USER_OBSERVATION: Light Green
-- DETAIL: Cyan
-- ERROR: Red
-- PLAN: Light Magenta
-
 ## Best Practices
 
 1. **Production Settings**
