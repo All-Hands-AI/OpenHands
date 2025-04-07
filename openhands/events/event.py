@@ -22,16 +22,6 @@ class FileReadSource(str, Enum):
     DEFAULT = 'default'
 
 
-class RecallType(str, Enum):
-    """The type of information that can be retrieved from microagents."""
-
-    WORKSPACE_CONTEXT = 'workspace_context'
-    """Workspace context (repo instructions, runtime, etc.)"""
-
-    KNOWLEDGE = 'knowledge'
-    """A knowledge microagent."""
-
-
 @dataclass
 class Event:
     INVALID_ID = -1
@@ -39,23 +29,19 @@ class Event:
     @property
     def message(self) -> str | None:
         if hasattr(self, '_message'):
-            msg = getattr(self, '_message')
-            return str(msg) if msg is not None else None
+            return self._message  # type: ignore[attr-defined]
         return ''
 
     @property
     def id(self) -> int:
         if hasattr(self, '_id'):
-            id_val = getattr(self, '_id')
-            return int(id_val) if id_val is not None else Event.INVALID_ID
+            return self._id  # type: ignore[attr-defined]
         return Event.INVALID_ID
 
     @property
-    def timestamp(self) -> str | None:
+    def timestamp(self):
         if hasattr(self, '_timestamp') and isinstance(self._timestamp, str):
-            ts = getattr(self, '_timestamp')
-            return str(ts) if ts is not None else None
-        return None
+            return self._timestamp
 
     @timestamp.setter
     def timestamp(self, value: datetime) -> None:
@@ -65,25 +51,22 @@ class Event:
     @property
     def source(self) -> EventSource | None:
         if hasattr(self, '_source'):
-            src = getattr(self, '_source')
-            return EventSource(src) if src is not None else None
+            return self._source  # type: ignore[attr-defined]
         return None
 
     @property
     def cause(self) -> int | None:
         if hasattr(self, '_cause'):
-            cause_val = getattr(self, '_cause')
-            return int(cause_val) if cause_val is not None else None
+            return self._cause  # type: ignore[attr-defined]
         return None
 
     @property
-    def timeout(self) -> float | None:
+    def timeout(self) -> int | None:
         if hasattr(self, '_timeout'):
-            timeout_val = getattr(self, '_timeout')
-            return float(timeout_val) if timeout_val is not None else None
+            return self._timeout  # type: ignore[attr-defined]
         return None
 
-    def set_hard_timeout(self, value: float | None, blocking: bool = True) -> None:
+    def set_hard_timeout(self, value: int | None, blocking: bool = True) -> None:
         """Set the timeout for the event.
 
         NOTE, this is a hard timeout, meaning that the event will be blocked
@@ -107,33 +90,20 @@ class Event:
     @property
     def llm_metrics(self) -> Metrics | None:
         if hasattr(self, '_llm_metrics'):
-            metrics = getattr(self, '_llm_metrics')
-            return metrics if isinstance(metrics, Metrics) else None
+            return self._llm_metrics  # type: ignore[attr-defined]
         return None
 
     @llm_metrics.setter
     def llm_metrics(self, value: Metrics) -> None:
         self._llm_metrics = value
 
-    # optional field, metadata about the tool call, if the event has a tool call
+    # optional field
     @property
     def tool_call_metadata(self) -> ToolCallMetadata | None:
         if hasattr(self, '_tool_call_metadata'):
-            metadata = getattr(self, '_tool_call_metadata')
-            return metadata if isinstance(metadata, ToolCallMetadata) else None
+            return self._tool_call_metadata  # type: ignore[attr-defined]
         return None
 
     @tool_call_metadata.setter
     def tool_call_metadata(self, value: ToolCallMetadata) -> None:
         self._tool_call_metadata = value
-
-    # optional field, the id of the response from the LLM
-    @property
-    def response_id(self) -> str | None:
-        if hasattr(self, '_response_id'):
-            return self._response_id  # type: ignore[attr-defined]
-        return None
-
-    @response_id.setter
-    def response_id(self, value: str) -> None:
-        self._response_id = value

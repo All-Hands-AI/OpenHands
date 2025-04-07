@@ -2,7 +2,7 @@ import json
 import re
 import traceback
 from dataclasses import dataclass, field
-from typing import Any, Self
+from typing import Self
 
 from pydantic import BaseModel
 
@@ -105,10 +105,10 @@ class CmdOutputObservation(Observation):
         content: str,
         command: str,
         observation: str = ObservationType.RUN,
-        metadata: dict[str, Any] | CmdOutputMetadata | None = None,
+        metadata: dict | CmdOutputMetadata | None = None,
         hidden: bool = False,
-        **kwargs: Any,
-    ) -> None:
+        **kwargs,
+    ):
         super().__init__(content)
         self.command = command
         self.observation = observation

@@ -1,85 +1,82 @@
-from enum import Enum
+from pydantic import BaseModel, Field
+
+__all__ = ['ActionType']
 
 
-class ActionType(str, Enum):
-    MESSAGE = 'message'
+class ActionTypeSchema(BaseModel):
+    MESSAGE: str = Field(default='message')
     """Represents a message.
     """
 
-    START = 'start'
+    START: str = Field(default='start')
     """Starts a new development task OR send chat from the user. Only sent by the client.
     """
 
-    READ = 'read'
+    READ: str = Field(default='read')
     """Reads the content of a file.
     """
 
-    WRITE = 'write'
+    WRITE: str = Field(default='write')
     """Writes the content to a file.
     """
 
-    EDIT = 'edit'
+    EDIT: str = Field(default='edit')
     """Edits a file by providing a draft.
     """
 
-    RUN = 'run'
+    RUN: str = Field(default='run')
     """Runs a command.
     """
 
-    RUN_IPYTHON = 'run_ipython'
+    RUN_IPYTHON: str = Field(default='run_ipython')
     """Runs a IPython cell.
     """
 
-    BROWSE = 'browse'
+    BROWSE: str = Field(default='browse')
     """Opens a web page.
     """
 
-    BROWSE_INTERACTIVE = 'browse_interactive'
+    BROWSE_INTERACTIVE: str = Field(default='browse_interactive')
     """Interact with the browser instance.
     """
 
-    DELEGATE = 'delegate'
+    DELEGATE: str = Field(default='delegate')
     """Delegates a task to another agent.
     """
 
-    THINK = 'think'
-    """Logs a thought.
-    """
-
-    FINISH = 'finish'
+    FINISH: str = Field(default='finish')
     """If you're absolutely certain that you've completed your task and have tested your work,
     use the finish action to stop working.
     """
 
-    REJECT = 'reject'
+    REJECT: str = Field(default='reject')
     """If you're absolutely certain that you cannot complete the task with given requirements,
     use the reject action to stop working.
     """
 
-    NULL = 'null'
+    NULL: str = Field(default='null')
 
-    PAUSE = 'pause'
+    SUMMARIZE: str = Field(default='summarize')
+
+    PAUSE: str = Field(default='pause')
     """Pauses the task.
     """
 
-    RESUME = 'resume'
+    RESUME: str = Field(default='resume')
     """Resumes the task.
     """
 
-    STOP = 'stop'
+    STOP: str = Field(default='stop')
     """Stops the task. Must send a start action to restart a new task.
     """
 
-    CHANGE_AGENT_STATE = 'change_agent_state'
+    CHANGE_AGENT_STATE: str = Field(default='change_agent_state')
 
-    PUSH = 'push'
+    PUSH: str = Field(default='push')
     """Push a branch to github."""
 
-    SEND_PR = 'send_pr'
+    SEND_PR: str = Field(default='send_pr')
     """Send a PR to github."""
 
-    RECALL = 'recall'
-    """Retrieves content from a user workspace, microagent, or other source."""
 
-    CONDENSATION = 'condensation'
-    """Condenses a list of events into a summary."""
+ActionType = ActionTypeSchema()

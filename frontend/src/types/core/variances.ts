@@ -17,10 +17,11 @@ export interface InitConfig {
     AGENT: string;
     CONFIRMATION_MODE: boolean;
     LANGUAGE: string;
-    LLM_API_KEY_SET: boolean;
+    LLM_API_KEY: string;
     LLM_MODEL: string;
   };
   token?: string;
+  github_token?: string;
   latest_event_id?: unknown; // Not sure what this is
 }
 

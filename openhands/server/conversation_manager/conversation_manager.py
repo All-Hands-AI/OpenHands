@@ -6,12 +6,9 @@ import socketio
 
 from openhands.core.config import AppConfig
 from openhands.events.action import MessageAction
-from openhands.events.event_store import EventStore
-from openhands.server.config.server_config import ServerConfig
-from openhands.server.monitoring import MonitoringListener
+from openhands.events.stream import EventStream
 from openhands.server.session.conversation import Conversation
 from openhands.server.settings import Settings
-from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.files import FileStore
 
 
@@ -26,7 +23,6 @@ class ConversationManager(ABC):
     sio: socketio.AsyncServer
     config: AppConfig
     file_store: FileStore
-    conversation_store: ConversationStore
 
     @abstractmethod
     async def __aenter__(self):
@@ -37,9 +33,7 @@ class ConversationManager(ABC):
         """Clean up the conversation manager."""
 
     @abstractmethod
-    async def attach_to_conversation(
-        self, sid: str, user_id: str | None = None
-    ) -> Conversation | None:
+    async def attach_to_conversation(self, sid: str) -> Conversation | None:
         """Attach to an existing conversation or create a new one."""
 
     @abstractmethod
@@ -48,13 +42,8 @@ class ConversationManager(ABC):
 
     @abstractmethod
     async def join_conversation(
-        self,
-        sid: str,
-        connection_id: str,
-        settings: Settings,
-        user_id: str | None,
-        github_user_id: str | None,
-    ) -> EventStore | None:
+        self, sid: str, connection_id: str, settings: Settings, user_id: str | None
+    ) -> EventStream | None:
         """Join a conversation and return its event stream."""
 
     async def is_agent_loop_running(self, sid: str) -> bool:
@@ -81,9 +70,7 @@ class ConversationManager(ABC):
         settings: Settings,
         user_id: str | None,
         initial_user_msg: MessageAction | None = None,
-        replay_json: str | None = None,
-        github_user_id: str | None = None,
-    ) -> EventStore:
+    ) -> EventStream:
         """Start an event loop if one is not already running"""
 
     @abstractmethod
@@ -105,7 +92,5 @@ class ConversationManager(ABC):
         sio: socketio.AsyncServer,
         config: AppConfig,
         file_store: FileStore,
-        server_config: ServerConfig,
-        monitoring_listener: MonitoringListener,
     ) -> ConversationManager:
-        """Get a conversation manager instance"""
+        """Get a store for the user represented by the token given"""

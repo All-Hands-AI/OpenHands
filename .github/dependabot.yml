@@ -10,6 +10,12 @@ updates:
       pre-commit:
         patterns:
           - "pre-commit"
+      llama:
+        patterns:
+          - "llama*"
+      chromadb:
+        patterns:
+          - "chromadb"
       browsergym:
         patterns:
           - "browsergym*"

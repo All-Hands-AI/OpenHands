@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import { Feedback } from "#/api/open-hands.types";
 import { useSubmitFeedback } from "#/hooks/mutation/use-submit-feedback";
-import { BrandButton } from "../settings/brand-button";
+import { ModalButton } from "#/components/shared/buttons/modal-button";
 
 const FEEDBACK_VERSION = "1.0";
 const VIEWER_PAGE = "https://www.all-hands.dev/share";
@@ -121,23 +121,18 @@ export function FeedbackForm({ onClose, polarity }: FeedbackFormProps) {
       </div>
 
       <div className="flex gap-2">
-        <BrandButton
+        <ModalButton
+          disabled={isPending}
           type="submit"
-          variant="primary"
-          className="grow"
-          isDisabled={isPending}
-        >
-          {t(I18nKey.FEEDBACK$SHARE_LABEL)}
-        </BrandButton>
-        <BrandButton
-          type="button"
-          variant="secondary"
-          className="grow"
+          text={t(I18nKey.FEEDBACK$SHARE_LABEL)}
+          className="bg-[#4465DB] grow"
+        />
+        <ModalButton
+          disabled={isPending}
+          text={t(I18nKey.FEEDBACK$CANCEL_LABEL)}
           onClick={onClose}
-          isDisabled={isPending}
-        >
-          {t(I18nKey.FEEDBACK$CANCEL_LABEL)}
-        </BrandButton>
+          className="bg-[#737373] grow"
+        />
       </div>
     </form>
   );

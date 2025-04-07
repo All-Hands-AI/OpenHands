@@ -1,141 +1,136 @@
-<a name="readme-top"></a>
-
 <div align="center">
-  <img src="./docs/static/img/logo.png" alt="Logo" width="200">
-  <h1 align="center">OpenHands: Code Less, Make More</h1>
+ 👋 Hi, everyone! 
+    <br>
+    We are <b>ByteDance Seed team.</b>
 </div>
-
-
-<div align="center">
-  <a href="https://github.com/All-Hands-AI/OpenHands/graphs/contributors"><img src="https://img.shields.io/github/contributors/All-Hands-AI/OpenHands?style=for-the-badge&color=blue" alt="Contributors"></a>
-  <a href="https://github.com/All-Hands-AI/OpenHands/stargazers"><img src="https://img.shields.io/github/stars/All-Hands-AI/OpenHands?style=for-the-badge&color=blue" alt="Stargazers"></a>
-  <a href="https://codecov.io/github/All-Hands-AI/OpenHands?branch=main"><img alt="CodeCov" src="https://img.shields.io/codecov/c/github/All-Hands-AI/OpenHands?style=for-the-badge&color=blue"></a>
-  <a href="https://github.com/All-Hands-AI/OpenHands/blob/main/LICENSE"><img src="https://img.shields.io/github/license/All-Hands-AI/OpenHands?style=for-the-badge&color=blue" alt="MIT License"></a>
-  <br/>
-  <a href="https://join.slack.com/t/openhands-ai/shared_invite/zt-2ngejmfw6-9gW4APWOC9XUp1n~SiQ6iw"><img src="https://img.shields.io/badge/Slack-Join%20Us-red?logo=slack&logoColor=white&style=for-the-badge" alt="Join our Slack community"></a>
-  <a href="https://discord.gg/ESHStjSjD4"><img src="https://img.shields.io/badge/Discord-Join%20Us-purple?logo=discord&logoColor=white&style=for-the-badge" alt="Join our Discord community"></a>
-  <a href="https://github.com/All-Hands-AI/OpenHands/blob/main/CREDITS.md"><img src="https://img.shields.io/badge/Project-Credits-blue?style=for-the-badge&color=FFE165&logo=github&logoColor=white" alt="Credits"></a>
-  <br/>
-  <a href="https://docs.all-hands.dev/modules/usage/getting-started"><img src="https://img.shields.io/badge/Documentation-000?logo=googledocs&logoColor=FFE165&style=for-the-badge" alt="Check out the documentation"></a>
-  <a href="https://arxiv.org/abs/2407.16741"><img src="https://img.shields.io/badge/Paper%20on%20Arxiv-000?logoColor=FFE165&logo=arxiv&style=for-the-badge" alt="Paper on Arxiv"></a>
-  <a href="https://huggingface.co/spaces/OpenHands/evaluation"><img src="https://img.shields.io/badge/Benchmark%20score-000?logoColor=FFE165&logo=huggingface&style=for-the-badge" alt="Evaluation Benchmark Score"></a>
-  <hr>
-</div>
-
-Welcome to OpenHands (formerly OpenDevin), a platform for software development agents powered by AI.
-
-OpenHands agents can do anything a human developer can: modify code, run commands, browse the web,
-call APIs, and yes—even copy code snippets from StackOverflow.
-
-Learn more at [docs.all-hands.dev](https://docs.all-hands.dev), or jump to the [Quick Start](#-quick-start).
-
-> [!IMPORTANT]
-> Using OpenHands for work? We'd love to chat! Fill out
-> [this short form](https://docs.google.com/forms/d/e/1FAIpQLSet3VbGaz8z32gW9Wm-Grl4jpt5WgMXPgJ4EDPVmCETCBpJtQ/viewform)
-> to join our Design Partner program, where you'll get early access to commercial features and the opportunity to provide input on our product roadmap.
-
-![App screenshot](./docs/static/img/screenshot.png)
-
-## ⚡ Quick Start
-
-The easiest way to run OpenHands is in Docker.
-See the [Running OpenHands](https://docs.all-hands.dev/modules/usage/installation) guide for
-system requirements and more information.
-
-```bash
-docker pull docker.all-hands.dev/all-hands-ai/runtime:0.31-nikolaik
-
-docker run -it --rm --pull=always \
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.31-nikolaik \
-    -e LOG_ALL_EVENTS=true \
-    -v /var/run/docker.sock:/var/run/docker.sock \
-    -v ~/.openhands-state:/.openhands-state \
-    -p 3000:3000 \
-    --add-host host.docker.internal:host-gateway \
-    --name openhands-app \
-    docker.all-hands.dev/all-hands-ai/openhands:0.31
-```
-
-> [!WARNING]
-> On a public network? See our [Hardened Docker Installation](https://docs.all-hands.dev/modules/usage/runtimes/docker#hardened-docker-installation) guide
-> to secure your deployment by restricting network binding and implementing additional security measures.
-
-You'll find OpenHands running at [http://localhost:3000](http://localhost:3000)!
-
-Finally, you'll need a model provider and API key.
-[Anthropic's Claude 3.5 Sonnet](https://www.anthropic.com/api) (`anthropic/claude-3-5-sonnet-20241022`)
-works best, but you have [many options](https://docs.all-hands.dev/modules/usage/llms).
-
----
-
-You can also [connect OpenHands to your local filesystem](https://docs.all-hands.dev/modules/usage/runtimes/docker#connecting-to-your-filesystem),
-run OpenHands in a scriptable [headless mode](https://docs.all-hands.dev/modules/usage/how-to/headless-mode),
-interact with it via a [friendly CLI](https://docs.all-hands.dev/modules/usage/how-to/cli-mode),
-or run it on tagged issues with [a github action](https://docs.all-hands.dev/modules/usage/how-to/github-action).
-
-Visit [Running OpenHands](https://docs.all-hands.dev/modules/usage/installation) for more information and setup instructions.
-
-> [!CAUTION]
-> OpenHands is meant to be run by a single user on their local workstation.
-> It is not appropriate for multi-tenant deployments where multiple users share the same instance. There is no built-in isolation or scalability.
->
-> If you're interested in running OpenHands in a multi-tenant environment, please
-> [get in touch with us](https://docs.google.com/forms/d/e/1FAIpQLSet3VbGaz8z32gW9Wm-Grl4jpt5WgMXPgJ4EDPVmCETCBpJtQ/viewform)
-> for advanced deployment options.
-
-If you want to modify the OpenHands source code, check out [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
-
-Having issues? The [Troubleshooting Guide](https://docs.all-hands.dev/modules/usage/troubleshooting) can help.
-
-## 📖 Documentation
-
-To learn more about the project, and for tips on using OpenHands,
-check out our [documentation](https://docs.all-hands.dev/modules/usage/getting-started).
-
-There you'll find resources on how to use different LLM providers,
-troubleshooting resources, and advanced configuration options.
-
-## 🤝 How to Join the Community
-
-OpenHands is a community-driven project, and we welcome contributions from everyone. We do most of our communication
-through Slack, so this is the best place to start, but we also are happy to have you contact us on Discord or Github:
-
-- [Join our Slack workspace](https://join.slack.com/t/openhands-ai/shared_invite/zt-2ngejmfw6-9gW4APWOC9XUp1n~SiQ6iw) - Here we talk about research, architecture, and future development.
-- [Join our Discord server](https://discord.gg/ESHStjSjD4) - This is a community-run server for general discussion, questions, and feedback.
-- [Read or post Github Issues](https://github.com/All-Hands-AI/OpenHands/issues) - Check out the issues we're working on, or add your own ideas.
-
-See more about the community in [COMMUNITY.md](./COMMUNITY.md) or find details on contributing in [CONTRIBUTING.md](./CONTRIBUTING.md).
-
-## 📈 Progress
-
-See the monthly OpenHands roadmap [here](https://github.com/orgs/All-Hands-AI/projects/1) (updated at the maintainer's meeting at the end of each month).
 
 <p align="center">
-  <a href="https://star-history.com/#All-Hands-AI/OpenHands&Date">
-    <img src="https://api.star-history.com/svg?repos=All-Hands-AI/OpenHands&type=Date" width="500" alt="Star History Chart">
-  </a>
+  You can get to know us better through the following channels👇
+  <br>
+  <a href="https://team.doubao.com/">
+    <img src="https://img.shields.io/badge/Website-%231e37ff?style=for-the-badge&logo=bytedance&logoColor=white"></a>
+  <a href="https://github.com/user-attachments/assets/93481cda-a7f3-47f3-b333-fe6b3da86b78">
+    <img src="https://img.shields.io/badge/WeChat-07C160?style=for-the-badge&logo=wechat&logoColor=white"></a>
+ <a href="https://www.xiaohongshu.com/user/profile/668e7e15000000000303157d?xsec_token=ABl2-aqekpytY6A8TuxjrwnZskU-6BsMRE_ufQQaSAvjc%3D&xsec_source=pc_search">
+    <img src="https://img.shields.io/badge/Xiaohongshu-%23FF2442?style=for-the-badge&logo=xiaohongshu&logoColor=white"></a>
+  <a href="https://www.zhihu.com/org/dou-bao-da-mo-xing-tuan-dui/">
+    <img src="https://img.shields.io/badge/zhihu-%230084FF?style=for-the-badge&logo=zhihu&logoColor=white"></a>
 </p>
 
-## 📜 License
+![seed logo](https://github.com/user-attachments/assets/c42e675e-497c-4508-8bb9-093ad4d1f216)
 
-Distributed under the MIT License. See [`LICENSE`](./LICENSE) for more information.
+<!-- 注释：以上为Seed官方信息，可直接复制使用，请注意导入"Seed WeChat"（第12行）、"Seed logo"(第20行)图片替换 -->
 
-## 🙏 Acknowledgements
 
-OpenHands is built by a large number of contributors, and every contribution is greatly appreciated! We also build upon other open source projects, and we are deeply thankful for their work.
+## 🚀 Mopenhands: Multi-SWE-Bench Infer with OpenHands
+<p align="center">
+  <a href="https://github.com/multi-swe-bench/multi-swe-bench">
+    <img src="https://img.shields.io/badge/Multi_SWE_bench-Project Page-yellow"></a>
+  <a href="https://arxiv.org/pdf/2502.19811">
+    <img src="https://img.shields.io/badge/Multi_SWE_bench-Tech Report-red"></a>
+  <a href="https://huggingface.co/datasets/bytedance-research/Multi-SWE-Bench">
+    <img src="https://img.shields.io/badge/Multi_SWE_bench-Hugging Face-orange"></a>
+  <br>
+  <a href="https://huggingface.co/Multi-SWE-RL">
+    <img src="https://img.shields.io/badge/Multi_SWE_RL_Community-Hugging Face-EE9A12"></a>
+  <a href="https://discord.gg/EtfbkfqUuN">
+    <img src="https://img.shields.io/badge/Multi_SWE_RL_Community-Discord-1449DA"></a>
+  <a href="https://github.com/multi-swe-bench/multi-swe-bench/blob/main/LICENSE">
+    <img src="https://img.shields.io/badge/License-Apache-blue"></a>
+</p>
 
-For a list of open source projects and licenses used in OpenHands, please see our [CREDITS.md](./CREDITS.md) file.
+We have modified the original [**Openhands**](https://github.com/All-Hands-AI/OpenHands) (0.25.0 version) compatible with [**Multi-SWE-Bench**](https://github.com/multi-swe-bench/multi-swe-bench)! MopenHands can be used to evaluate the performance of LLMs across 7 languages(c++, c, java, go, rust, typescript, javascript) in the [**Multi-SWE-Bench** dataset](https://huggingface.co/datasets/bytedance-research/Multi-SWE-Bench).
 
-## 📚 Cite
-
+<!-- 注释：以上为项目基础信息，以项目COMET举例，Comet一级标题（第25行）、徽章Comet名字（第28、30、32、34行）记得替换，徽章可按需使用
+请注意，徽章可根据具体项目自定义，如技术成果落地页、技术成果报告/Paper、Hugging Face、项目微信交流群、License、打榜榜单等，更换名字和链接即可；
+专属微信群出现在两个位置，第34行、第42行，可以联系EB同学创建 -->
+## To Start
+### 1. Environment Preparing
+```bash
+conda create -n openhands python=3.12 conda-forge::nodejs conda-forge::poetry
+conda activate openhands
+make build
 ```
-@misc{openhands,
-      title={{OpenHands: An Open Platform for AI Software Developers as Generalist Agents}},
-      author={Xingyao Wang and Boxuan Li and Yufan Song and Frank F. Xu and Xiangru Tang and Mingchen Zhuge and Jiayi Pan and Yueqi Song and Bowen Li and Jaskirat Singh and Hoang H. Tran and Fuqiang Li and Ren Ma and Mingzhang Zheng and Bill Qian and Yanjun Shao and Niklas Muennighoff and Yizhe Zhang and Binyuan Hui and Junyang Lin and Robert Brennan and Hao Peng and Heng Ji and Graham Neubig},
-      year={2024},
-      eprint={2407.16741},
-      archivePrefix={arXiv},
-      primaryClass={cs.SE},
-      url={https://arxiv.org/abs/2407.16741},
+Make sure you have docker environment in your local device
+You should first create a file named config.toml, and update your model key in the file, for example:
+```bash
+[llm.YYY]
+model = "llm.xxx"
+base_url = "xxx"
+api_key = "xxx"
+```
+
+### 2. Dataset Preparing
+You should first download the [**Multi-SWE-Bench** dataset](https://huggingface.co/datasets/bytedance-research/Multi-SWE-Bench).
+And change the dataset following /evaluation/benchmarks/swe_bench/data/data_change.py
+
+
+## Run Inference on SWE-Bench Instances
+
+```bash
+bash evaluation/benchmarks/swe_bench/infer.sh
+```
+### Explanation
+
+- `models`, e.g. `llm.eval_gpt4_1106_preview`, is the config group name for your
+LLM settings, as defined in your `config.toml`.
+- `git-version`, e.g. `HEAD`, is the git commit hash of the OpenHands version you would
+like to evaluate. It could also be a release tag like `0.6.2`.
+- `agent`, e.g. `CodeActAgent`, is the name of the agent for benchmarks, defaulting to `CodeActAgent`.
+- `eval_limit`, e.g. `10`, limits the evaluation to the first `eval_limit` instances. By
+default, the script evaluates the (500 issues), which will no exceed the maximum of the dataset number.
+- `max_iter`, e.g. `20`, is the maximum number of iterations for the agent to run. By
+default, it is set to 50.
+- `num_workers`, e.g. `3`, is the number of parallel workers to run the evaluation. By
+default, it is set to 1.
+- `language`, the language of your evaluating dataset.
+- `dataset`, the absolute position of the dataset jsonl.
+
+### Images
+We provide the images for each instance. You can use the following command to download the images directly from [our docker hub site](https://hub.docker.com/u/mswebench) rather than build them locally.
+
+## 📊 Evaluation
+after running the agent, all the predicted patches will be save in `evaluation/evaluation_outputs` directory, named as `output.jsonl`. You can extract the `git_patch` of each instance and then you can evaluate in the [multi-swe-bench](https://github.com/multi-swe-bench/multi-swe-bench) repo
+
+### Run Evaluation
+
+To run the evaluation, you need to prepare the following:
+
+1. Patch Files: Some patch files in JSONL format, each item containing:
+   - `org`: Organization Name
+   - `repo`: Repository Name
+   - `number`: Pull Request Number
+   - `fix_patch`: Fix Patch Content
+2. Dataset Files: Dataset files in JSONL format available on Hugging Face, such as [Multi-SWE-Bench](https://huggingface.co/datasets/Multi-SWE-RL/Multi-SWE-Bench)
+
+Then you can run the evaluation using the following command:
+
+```bash
+cd multi-swe-bench
+python -m multi_swe_bench.harness.run_evaluation --config /path/to/your/config.json
+```
+
+## 📜 License
+This project is licensed under Apache License 2.0. See the [LICENSE](/LICENSE) flie for details.
+## 📖 Citation
+If you find XXX useful for your research and applications, feel free to give us a star ⭐ or cite us using:
+
+```bibtex
+@article{zan2024swe,
+  title={Swe-bench-java: A github issue resolving benchmark for java},
+  author={Zan, Daoguang and Huang, Zhirong and Yu, Ailun and Lin, Shaoxin and Shi, Yifan and Liu, Wei and Chen, Dong and Qi, Zongshuai and Yu, Hao and Yu, Lei and others},
+  journal={arXiv preprint arXiv:2408.14354},
+  year={2024}
 }
 ```
+## 🏢 About [ByteDance Seed Team](https://team.doubao.com/)
+
+Founded in 2023, ByteDance Seed Team is dedicated to crafting the industry's most advanced AI foundation models. The team aspires to become a world-class research team and make significant contributions to the advancement of science and society.
+
+
+
+
+
+
+
+

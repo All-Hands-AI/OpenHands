@@ -5,12 +5,23 @@ interface ConversationRepoLinkProps {
 export function ConversationRepoLink({
   selectedRepository,
 }: ConversationRepoLinkProps) {
+  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    window.open(
+      `https://github.com/${selectedRepository}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
+  };
+
   return (
-    <span
+    <button
+      type="button"
       data-testid="conversation-card-selected-repository"
-      className="text-xs text-neutral-400"
+      onClick={handleClick}
+      className="text-xs text-neutral-400 hover:text-neutral-200"
     >
       {selectedRepository}
-    </span>
+    </button>
   );
 }

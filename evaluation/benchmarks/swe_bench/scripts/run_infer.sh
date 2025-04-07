@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 set -eo pipefail
 
 source "evaluation/utils/version_control.sh"
@@ -10,8 +10,9 @@ EVAL_LIMIT=$4
 MAX_ITER=$5
 NUM_WORKERS=$6
 DATASET=$7
-SPLIT=$8
-N_RUNS=$9
+# SPLIT=$8
+LANGUAGE=$8
+# N_RUNS=$10
 
 if [ -z "$NUM_WORKERS" ]; then
   NUM_WORKERS=1
@@ -25,8 +26,13 @@ if [ -z "$AGENT" ]; then
 fi
 
 if [ -z "$MAX_ITER" ]; then
-  echo "MAX_ITER not specified, use default 60"
-  MAX_ITER=60
+  echo "MAX_ITER not specified, use default 100"
+  MAX_ITER=100
+fi
+
+if [ -z "$USE_INSTANCE_IMAGE" ]; then
+  echo "USE_INSTANCE_IMAGE not specified, use default true"
+  USE_INSTANCE_IMAGE=true
 fi
 
 if [ -z "$RUN_WITH_BROWSING" ]; then
@@ -40,13 +46,45 @@ if [ -z "$DATASET" ]; then
   DATASET="princeton-nlp/SWE-bench_Lite"
 fi
 
-if [ -z "$SPLIT" ]; then
-  echo "SPLIT not specified, use default test"
-  SPLIT="test"
+if [ -z "$LANGUAGE" ]; then
+  echo "LANUGUAGE not specified, use default python"
+  LANGUAGE="python"
 fi
 
+if [ -z "$SPLIT" ]; then
+  echo "LANUGUAGE not specified, use default python"
+  SPLIT="train"
+fi
+
+##TODO:适配多语言的版本
+# if [ -z "$SPLIT" ]; then
+#   if [ "$LANGUAGE" = "python" ]; then
+#   echo "SPLIT is test as LANUGUAGE is python"
+#     SPLIT="test"
+#   elif [ "$LANGUAGE" = "java" ]; then
+#   echo "SPLIT is java_verified as LANUGUAGE is java"
+#     SPLIT="java_verified"
+#   fi
+# fi
+
+if [ -z "$EVAL_DOCKER_IMAGE_PREFIX" ]; then
+  if [ "$LANGUAGE" = "python" ]; then
+  echo "EVAL_DOCKER_IMAGE_PREFIX is docker.io/xingyaoww/ as default as LANUGUAGE is python"
+    EVAL_DOCKER_IMAGE_PREFIX="docker.io/xingyaoww/"
+  elif [ "$LANGUAGE" = "java" ]; then
+  echo "EVAL_DOCKER_IMAGE_PREFIX is java_verified as LANUGUAGE is java"
+    EVAL_DOCKER_IMAGE_PREFIX=""
+  fi
+fi
+
+export EVAL_DOCKER_IMAGE_PREFIX=$EVAL_DOCKER_IMAGE_PREFIX
+echo "EVAL_DOCKER_IMAGE_PREFIX: $EVAL_DOCKER_IMAGE_PREFIX"
+export USE_INSTANCE_IMAGE=$USE_INSTANCE_IMAGE
+echo "USE_INSTANCE_IMAGE: $USE_INSTANCE_IMAGE"
 export RUN_WITH_BROWSING=$RUN_WITH_BROWSING
 echo "RUN_WITH_BROWSING: $RUN_WITH_BROWSING"
+export LANGUAGE=$LANGUAGE
+echo "LANGUAGE: $LANGUAGE"
 
 get_openhands_version
 

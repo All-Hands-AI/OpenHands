@@ -247,21 +247,11 @@ def prepare_dataset(
             f'Starting evaluation with skipping first {skip_num} instances ({len(dataset)} instances to run).'
         )
         if eval_n_limit and eval_n_limit > 0:
-            # Use fixed random seed 42 for sampling without replacement
-            dataset = dataset.sample(
-                min(eval_n_limit, len(dataset)), random_state=42, replace=False
-            )
-            logger.info(
-                f'Randomly sampling {eval_n_limit} unique instances with random seed 42.'
-            )
+            dataset = dataset.head(eval_n_limit)
+            logger.info(f'Limiting evaluation to {eval_n_limit} instances.')
     elif eval_n_limit and eval_n_limit > 0:
-        # Use fixed random seed 42 for sampling without replacement
-        dataset = dataset.sample(
-            min(eval_n_limit, len(dataset)), random_state=42, replace=False
-        )
-        logger.info(
-            f'Randomly sampling {eval_n_limit} unique instances with random seed 42.'
-        )
+        dataset = dataset.head(eval_n_limit)
+        logger.info(f'Limiting evaluation to first {eval_n_limit} instances.')
 
     new_dataset = [
         instance
@@ -521,11 +511,6 @@ def compatibility_for_eval_history_pairs(
 
 
 def is_fatal_evaluation_error(error: str | None) -> bool:
-    """
-    The AgentController class overrides last error for certain exceptions
-    We want to ensure those exeption do not overlap with fatal exceptions defined here
-    This is because we do a comparisino against the stringified error
-    """
     if not error:
         return False
 
@@ -578,7 +563,6 @@ def get_default_sandbox_config_for_eval() -> SandboxConfig:
         # large enough timeout, since some testcases take very long to run
         timeout=300,
         api_key=os.environ.get('ALLHANDS_API_KEY', None),
-        runtime_startup_env_vars={'NO_CHANGE_TIMEOUT_SECONDS': '30'},
         remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL'),
         keep_runtime_alive=False,
         remote_runtime_init_timeout=3600,

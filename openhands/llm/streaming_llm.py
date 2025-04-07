@@ -1,6 +1,6 @@
 import asyncio
 from functools import partial
-from typing import Any, Callable
+from typing import Any
 
 from openhands.core.exceptions import UserCancelledError
 from openhands.core.logger import openhands_logger as logger
@@ -11,7 +11,7 @@ from openhands.llm.llm import REASONING_EFFORT_SUPPORTED_MODELS
 class StreamingLLM(AsyncLLM):
     """Streaming LLM class."""
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self._async_streaming_completion = partial(
@@ -40,7 +40,7 @@ class StreamingLLM(AsyncLLM):
             retry_max_wait=self.config.retry_max_wait,
             retry_multiplier=self.config.retry_multiplier,
         )
-        async def async_streaming_completion_wrapper(*args: Any, **kwargs: Any) -> Any:
+        async def async_streaming_completion_wrapper(*args, **kwargs):
             messages: list[dict[str, Any]] | dict[str, Any] = []
 
             # some callers might send the model and messages directly
@@ -108,6 +108,6 @@ class StreamingLLM(AsyncLLM):
         self._async_streaming_completion = async_streaming_completion_wrapper
 
     @property
-    def async_streaming_completion(self) -> Callable:
+    def async_streaming_completion(self):
         """Decorator for the async litellm acompletion function with streaming."""
         return self._async_streaming_completion

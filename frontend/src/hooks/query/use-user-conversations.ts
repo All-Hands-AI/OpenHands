@@ -9,5 +9,6 @@ export const useUserConversations = () => {
     queryKey: ["user", "conversations"],
     queryFn: OpenHands.getUserConversations,
     enabled: !!userIsAuthenticated,
+    staleTime: 0,
   });
 };

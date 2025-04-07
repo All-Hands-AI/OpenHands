@@ -1,4 +1,5 @@
 import os
+import shutil
 import tempfile
 import threading
 from abc import abstractmethod
@@ -6,9 +7,7 @@ from pathlib import Path
 from typing import Any
 from zipfile import ZipFile
 
-import httpcore
-import httpx
-from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
+import requests
 
 from openhands.core.config import AppConfig
 from openhands.core.exceptions import (
@@ -17,7 +16,6 @@ from openhands.core.exceptions import (
 from openhands.events import EventStream
 from openhands.events.action import (
     ActionConfirmationStatus,
-    AgentThinkAction,
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
@@ -29,7 +27,6 @@ from openhands.events.action import (
 from openhands.events.action.action import Action
 from openhands.events.action.files import FileEditSource
 from openhands.events.observation import (
-    AgentThinkObservation,
     ErrorObservation,
     NullObservation,
     Observation,
@@ -37,18 +34,12 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
-from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.runtime.base import Runtime
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.request import send_request
 from openhands.utils.http_session import HttpSession
-from openhands.utils.tenacity_stop import stop_if_should_exit
 
-
-def _is_retryable_error(exception):
-    return isinstance(
-        exception, (httpx.RemoteProtocolError, httpcore.RemoteProtocolError)
-    )
+import pdb
 
 
 class ActionExecutionClient(Runtime):
@@ -68,8 +59,7 @@ class ActionExecutionClient(Runtime):
         status_callback: Any | None = None,
         attach_to_existing: bool = False,
         headless_mode: bool = True,
-        user_id: str | None = None,
-        git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
+        github_user_id: str | None = None,
     ):
         self.session = HttpSession()
         self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
@@ -85,25 +75,19 @@ class ActionExecutionClient(Runtime):
             status_callback,
             attach_to_existing,
             headless_mode,
-            user_id,
-            git_provider_tokens,
+            github_user_id,
         )
 
     @abstractmethod
     def _get_action_execution_server_host(self) -> str:
         pass
 
-    @retry(
-        retry=retry_if_exception(_is_retryable_error),
-        stop=stop_after_attempt(5) | stop_if_should_exit(),
-        wait=wait_exponential(multiplier=1, min=4, max=15),
-    )
     def _send_action_server_request(
         self,
         method: str,
         url: str,
         **kwargs,
-    ) -> httpx.Response:
+    ) -> requests.Response:
         """Send a request to the action execution server.
 
         Args:
@@ -120,12 +104,12 @@ class ActionExecutionClient(Runtime):
         return send_request(self.session, method, url, **kwargs)
 
     def check_if_alive(self) -> None:
-        response = self._send_action_server_request(
+        with self._send_action_server_request(
             'GET',
             f'{self._get_action_execution_server_host()}/alive',
             timeout=5,
-        )
-        assert response.is_closed
+        ):
+            pass
 
     def list_files(self, path: str | None = None) -> list[str]:
         """List files in the sandbox.
@@ -138,17 +122,16 @@ class ActionExecutionClient(Runtime):
             if path is not None:
                 data['path'] = path
 
-            response = self._send_action_server_request(
+            with self._send_action_server_request(
                 'POST',
                 f'{self._get_action_execution_server_host()}/list_files',
                 json=data,
                 timeout=10,
-            )
-            assert response.is_closed
-            response_json = response.json()
-            assert isinstance(response_json, list)
-            return response_json
-        except httpx.TimeoutException:
+            ) as response:
+                response_json = response.json()
+                assert isinstance(response_json, list)
+                return response_json
+        except requests.Timeout:
             raise TimeoutError('List files operation timed out')
 
     def copy_from(self, path: str) -> Path:
@@ -156,20 +139,19 @@ class ActionExecutionClient(Runtime):
 
         try:
             params = {'path': path}
-            with self.session.stream(
+            with self._send_action_server_request(
                 'GET',
                 f'{self._get_action_execution_server_host()}/download_files',
                 params=params,
+                stream=True,
                 timeout=30,
             ) as response:
                 with tempfile.NamedTemporaryFile(
                     suffix='.zip', delete=False
                 ) as temp_file:
-                    for chunk in response.iter_bytes():
-                        temp_file.write(chunk)
-                    temp_file.flush()
+                    shutil.copyfileobj(response.raw, temp_file, length=16 * 1024)
                     return Path(temp_file.name)
-        except httpx.TimeoutException:
+        except requests.Timeout:
             raise TimeoutError('Copy operation timed out')
 
     def copy_to(
@@ -200,17 +182,17 @@ class ActionExecutionClient(Runtime):
 
             params = {'destination': sandbox_dest, 'recursive': str(recursive).lower()}
 
-            response = self._send_action_server_request(
+            with self._send_action_server_request(
                 'POST',
                 f'{self._get_action_execution_server_host()}/upload_file',
                 files=upload_data,
                 params=params,
                 timeout=300,
-            )
-            self.log(
-                'debug',
-                f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}. Response: {response.text}',
-            )
+            ) as response:
+                self.log(
+                    'debug',
+                    f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}. Response: {response.text}',
+                )
         finally:
             if recursive:
                 os.unlink(temp_zip_path)
@@ -222,21 +204,22 @@ class ActionExecutionClient(Runtime):
         if self.vscode_enabled and self._runtime_initialized:
             if self._vscode_token is not None:  # cached value
                 return self._vscode_token
-            response = self._send_action_server_request(
+            with self._send_action_server_request(
                 'GET',
                 f'{self._get_action_execution_server_host()}/vscode/connection_token',
                 timeout=10,
-            )
-            response_json = response.json()
-            assert isinstance(response_json, dict)
-            if response_json['token'] is None:
-                return ''
-            self._vscode_token = response_json['token']
-            return response_json['token']
+            ) as response:
+                response_json = response.json()
+                assert isinstance(response_json, dict)
+                if response_json['token'] is None:
+                    return ''
+                self._vscode_token = response_json['token']
+                return response_json['token']
         else:
             return ''
 
     def send_action_for_execution(self, action: Action) -> Observation:
+        # pdb.set_trace()
         if (
             isinstance(action, FileEditAction)
             and action.impl_source == FileEditSource.LLM_BASED_EDIT
@@ -250,8 +233,6 @@ class ActionExecutionClient(Runtime):
 
         with self.action_semaphore:
             if not action.runnable:
-                if isinstance(action, AgentThinkAction):
-                    return AgentThinkObservation('Your thought has been logged.')
                 return NullObservation('')
             if (
                 hasattr(action, 'confirmation_state')
@@ -278,27 +259,28 @@ class ActionExecutionClient(Runtime):
             assert action.timeout is not None
 
             try:
-                response = self._send_action_server_request(
+                with self._send_action_server_request(
                     'POST',
                     f'{self._get_action_execution_server_host()}/execute_action',
                     json={'action': event_to_dict(action)},
                     # wait a few more seconds to get the timeout error from client side
                     timeout=action.timeout + 5,
-                )
-                assert response.is_closed
-                output = response.json()
-                obs = observation_from_dict(output)
-                obs._cause = action.id  # type: ignore[attr-defined]
-            except httpx.TimeoutException:
+                ) as response:
+                    output = response.json()
+                    obs = observation_from_dict(output)
+                    obs._cause = action.id  # type: ignore[attr-defined]
+            except requests.Timeout:
                 raise AgentRuntimeTimeoutError(
                     f'Runtime failed to return execute_action before the requested timeout of {action.timeout}s'
                 )
             return obs
 
     def run(self, action: CmdRunAction) -> Observation:
+        # pdb.set_trace()
         return self.send_action_for_execution(action)
 
     def run_ipython(self, action: IPythonRunCellAction) -> Observation:
+        # pdb.set_trace()
         return self.send_action_for_execution(action)
 
     def read(self, action: FileReadAction) -> Observation:

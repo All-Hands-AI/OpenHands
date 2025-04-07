@@ -5,6 +5,9 @@ export function Demo() {
   const videoRef = React.useRef<HTMLVideoElement>(null);
 
   return (
+    <div
+      style={{ paddingBottom: "10px", paddingTop: "10px", textAlign: "center" }}
+    >
       <video
         playsInline
         autoPlay={true}
@@ -17,5 +20,6 @@ export function Demo() {
       >
         <source src="img/teaser.mp4" type="video/mp4"></source>
       </video>
+    </div>
   );
 }

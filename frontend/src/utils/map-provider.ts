@@ -1,4 +1,3 @@
-// These are provider names, not user-facing text
 export const MAP_PROVIDER = {
   openai: "OpenAI",
   azure: "Azure",

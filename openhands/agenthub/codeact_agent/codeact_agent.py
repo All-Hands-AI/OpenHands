@@ -1,21 +1,24 @@
+import json
 import os
 from collections import deque
 
+import openhands
 import openhands.agenthub.codeact_agent.function_calling as codeact_function_calling
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message, TextContent
+from openhands.core.message_utils import (
+    apply_prompt_caching,
+    events_to_messages,
+)
 from openhands.events.action import (
     Action,
     AgentFinishAction,
 )
-from openhands.events.event import Event
 from openhands.llm.llm import LLM
 from openhands.memory.condenser import Condenser
-from openhands.memory.condenser.condenser import Condensation, View
-from openhands.memory.conversation_memory import ConversationMemory
 from openhands.runtime.plugins import (
     AgentSkillsRequirement,
     JupyterRequirement,
@@ -32,7 +35,7 @@ class CodeActAgent(Agent):
 
     ### Overview
 
-    This agent implements the CodeAct idea ([paper](https://arxiv.org/abs/2402.01030), [tweet](https://twitter.com/xingyaow_/status/1754556835703751087)) that consolidates LLM agents' **act**ions into a unified **code** action space for both *simplicity* and *performance* (see paper for more details).
+    This agent implements the CodeAct idea ([paper](https://arxiv.org/abs/2402.01030), [tweet](https://twitter.com/xingyaow_/status/1754556835703751087)) that consolidates LLM agents’ **act**ions into a unified **code** action space for both *simplicity* and *performance* (see paper for more details).
 
     The conceptual idea is illustrated below. At each turn, the agent can:
 
@@ -72,20 +75,23 @@ class CodeActAgent(Agent):
             codeact_enable_browsing=self.config.codeact_enable_browsing,
             codeact_enable_jupyter=self.config.codeact_enable_jupyter,
             codeact_enable_llm_editor=self.config.codeact_enable_llm_editor,
-            llm=self.llm,
         )
         logger.debug(
-            f"TOOLS loaded for CodeActAgent: {', '.join([tool.get('function').get('name') for tool in self.tools])}"
+            f'TOOLS loaded for CodeActAgent: {json.dumps(self.tools, indent=2, ensure_ascii=False).replace("\\n", "\n")}'
         )
         self.prompt_manager = PromptManager(
+            microagent_dir=os.path.join(
+                os.path.dirname(os.path.dirname(openhands.__file__)),
+                'microagents',
+            )
+            if self.config.enable_prompt_extensions
+            else None,
             prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
+            disabled_microagents=self.config.disabled_microagents,
         )
 
-        # Create a ConversationMemory instance
-        self.conversation_memory = ConversationMemory(self.config, self.prompt_manager)
-
         self.condenser = Condenser.from_config(self.config.condenser)
-        logger.debug(f'Using condenser: {type(self.condenser)}')
+        logger.debug(f'Using condenser: {self.condenser}')
 
     def reset(self) -> None:
         """Resets the CodeAct Agent."""
@@ -94,7 +100,6 @@ class CodeActAgent(Agent):
 
     def step(self, state: State) -> Action:
         """Performs one step using the CodeAct Agent.
-
         This includes gathering info on previous steps and prompting the model to make a command to execute.
 
         Parameters:
@@ -116,36 +121,19 @@ class CodeActAgent(Agent):
         if latest_user_message and latest_user_message.content.strip() == '/exit':
             return AgentFinishAction()
 
-        # Condense the events from the state. If we get a view we'll pass those
-        # to the conversation manager for processing, but if we get a condensation
-        # event we'll just return that instead of an action. The controller will
-        # immediately ask the agent to step again with the new view.
-        condensed_history: list[Event] = []
-        match self.condenser.condensed_history(state):
-            case View(events=events):
-                condensed_history = events
-
-            case Condensation(action=condensation_action):
-                return condensation_action
-
-        logger.debug(
-            f'Processing {len(condensed_history)} events from a total of {len(state.history)} events'
-        )
-
-        messages = self._get_messages(condensed_history)
+        # prepare what we want to send to the LLM
+        messages = self._get_messages(state)
         params: dict = {
             'messages': self.llm.format_messages_for_llm(messages),
         }
         params['tools'] = self.tools
-        # log to litellm proxy if possible
-        params['extra_body'] = {'metadata': state.to_llm_metadata(agent_name=self.name)}
         response = self.llm.completion(**params)
         actions = codeact_function_calling.response_to_actions(response)
         for action in actions:
             self.pending_actions.append(action)
         return self.pending_actions.popleft()
 
-    def _get_messages(self, events: list[Event]) -> list[Message]:
+    def _get_messages(self, state: State) -> list[Message]:
         """Constructs the message history for the LLM conversation.
 
         This method builds a structured conversation history by processing events from the state
@@ -161,7 +149,7 @@ class CodeActAgent(Agent):
         6. Adds environment reminders for non-function-calling mode
 
         Args:
-            events: The list of events to convert to messages
+            state (State): The current state object containing conversation history and other metadata
 
         Returns:
             list[Message]: A list of formatted messages ready for LLM consumption, including:
@@ -180,25 +168,40 @@ class CodeActAgent(Agent):
         if not self.prompt_manager:
             raise Exception('Prompt Manager not instantiated.')
 
-        # Use ConversationMemory to process initial messages
-        messages = self.conversation_memory.process_initial_messages(
-            with_caching=self.llm.is_caching_prompt_active()
-        )
+        messages: list[Message] = self._initial_messages()
 
-        # Use ConversationMemory to process events
-        messages = self.conversation_memory.process_events(
-            condensed_history=events,
-            initial_messages=messages,
+        # Condense the events from the state.
+        events = self.condenser.condensed_history(state)
+
+        messages += events_to_messages(
+            events,
             max_message_chars=self.llm.config.max_message_chars,
             vision_is_active=self.llm.vision_is_active(),
+            enable_som_visual_browsing=self.config.enable_som_visual_browsing,
         )
 
         messages = self._enhance_messages(messages)
 
         if self.llm.is_caching_prompt_active():
-            self.conversation_memory.apply_prompt_caching(messages)
+            apply_prompt_caching(messages)
 
         return messages
+
+    def _initial_messages(self) -> list[Message]:
+        """Creates the initial messages (including the system prompt) for the LLM conversation."""
+        assert self.prompt_manager, 'Prompt Manager not instantiated.'
+
+        return [
+            Message(
+                role='system',
+                content=[
+                    TextContent(
+                        text=self.prompt_manager.get_system_message(),
+                        cache_prompt=self.llm.is_caching_prompt_active(),
+                    )
+                ],
+            )
+        ]
 
     def _enhance_messages(self, messages: list[Message]) -> list[Message]:
         """Enhances the user message with additional context based on keywords matched.
@@ -213,7 +216,6 @@ class CodeActAgent(Agent):
 
         results: list[Message] = []
         is_first_message_handled = False
-        prev_role = None
 
         for msg in messages:
             if msg.role == 'user' and not is_first_message_handled:
@@ -221,17 +223,14 @@ class CodeActAgent(Agent):
                 # compose the first user message with examples
                 self.prompt_manager.add_examples_to_initial_message(msg)
 
-            elif msg.role == 'user':
-                # Add double newline between consecutive user messages
-                if prev_role == 'user' and len(msg.content) > 0:
-                    # Find the first TextContent in the message to add newlines
-                    for content_item in msg.content:
-                        if isinstance(content_item, TextContent):
-                            # If the previous message was also from a user, prepend two newlines to ensure separation
-                            content_item.text = '\n\n' + content_item.text
-                            break
+                # and/or repo/runtime info
+                if self.config.enable_prompt_extensions:
+                    self.prompt_manager.add_info_to_initial_message(msg)
+
+            # enhance the user message with additional context based on keywords matched
+            if msg.role == 'user':
+                self.prompt_manager.enhance_message(msg)
 
             results.append(msg)
-            prev_role = msg.role
 
         return results

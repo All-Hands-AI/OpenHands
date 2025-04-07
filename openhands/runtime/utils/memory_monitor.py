@@ -2,7 +2,7 @@
 
 import threading
 
-from memory_profiler import memory_usage  # type: ignore
+from memory_profiler import memory_usage
 
 from openhands.core.logger import openhands_logger as logger
 
@@ -10,11 +10,11 @@ from openhands.core.logger import openhands_logger as logger
 class LogStream:
     """Stream-like object that redirects writes to a logger."""
 
-    def write(self, message: str) -> None:
+    def write(self, message):
         if message and not message.isspace():
             logger.info(f'[Memory usage] {message.strip()}')
 
-    def flush(self) -> None:
+    def flush(self):
         pass
 
 
@@ -26,7 +26,7 @@ class MemoryMonitor:
         self.log_stream = LogStream()
         self.enable = enable
 
-    def start_monitoring(self) -> None:
+    def start_monitoring(self):
         """Start monitoring memory usage."""
         if not self.enable:
             return
@@ -34,7 +34,7 @@ class MemoryMonitor:
         if self._monitoring_thread is not None:
             return
 
-        def monitor_process() -> None:
+        def monitor_process():
             try:
                 # Use memory_usage's built-in monitoring loop
                 mem_usage = memory_usage(
@@ -55,7 +55,7 @@ class MemoryMonitor:
         self._monitoring_thread.start()
         logger.info('Memory monitoring started')
 
-    def stop_monitoring(self) -> None:
+    def stop_monitoring(self):
         """Stop monitoring memory usage."""
         if not self.enable:
             return

@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 source ~/.bashrc
 SWEUTIL_DIR=/swe_util
@@ -7,6 +7,11 @@ SWEUTIL_DIR=/swe_util
 # SWE_INSTANCE_ID=django__django-11099
 if [ -z "$SWE_INSTANCE_ID" ]; then
     echo "Error: SWE_INSTANCE_ID is not set." >&2
+    exit 1
+fi
+
+if [ -z "$REPO_NAME" ]; then
+    echo "Error: REPO_NAME is not set." >&2
     exit 1
 fi
 
@@ -33,8 +38,8 @@ if [ -d /workspace/$WORKSPACE_NAME ]; then
     rm -rf /workspace/$WORKSPACE_NAME
 fi
 mkdir -p /workspace
-cp -r /testbed /workspace/$WORKSPACE_NAME
+cp -r /home/$REPO_NAME /workspace/$WORKSPACE_NAME
 
 # Activate instance-specific environment
-. /opt/miniconda3/etc/profile.d/conda.sh
-conda activate testbed
+# . /opt/miniconda3/etc/profile.d/conda.sh
+# conda activate testbed

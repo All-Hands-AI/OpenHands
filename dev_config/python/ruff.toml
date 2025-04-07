@@ -6,7 +6,6 @@ select = [
     "I",
     "Q",
     "B",
-    "ASYNC",
 ]
 
 ignore = [

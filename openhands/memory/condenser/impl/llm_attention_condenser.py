@@ -4,13 +4,9 @@ from litellm import supports_response_schema
 from pydantic import BaseModel
 
 from openhands.core.config.condenser_config import LLMAttentionCondenserConfig
-from openhands.events.action.agent import CondensationAction
+from openhands.events.event import Event
 from openhands.llm.llm import LLM
-from openhands.memory.condenser.condenser import (
-    Condensation,
-    RollingCondenser,
-    View,
-)
+from openhands.memory.condenser.condenser import RollingCondenser
 
 
 class ImportantEventSelection(BaseModel):
@@ -22,7 +18,7 @@ class ImportantEventSelection(BaseModel):
 class LLMAttentionCondenser(RollingCondenser):
     """Rolling condenser strategy that uses an LLM to select the most important events when condensing the history."""
 
-    def __init__(self, llm: LLM, max_size: int = 100, keep_first: int = 1):
+    def __init__(self, llm: LLM, max_size: int = 100, keep_first: int = 0):
         if keep_first >= max_size // 2:
             raise ValueError(
                 f'keep_first ({keep_first}) must be less than half of max_size ({max_size})'
@@ -47,11 +43,15 @@ class LLMAttentionCondenser(RollingCondenser):
 
         super().__init__()
 
-    def get_condensation(self, view: View) -> Condensation:
-        target_size = self.max_size // 2
-        head_event_ids = [event.id for event in view.events[: self.keep_first]]
+    def condense(self, events: list[Event]) -> list[Event]:
+        """If the history is too long, use an LLM to select the most important events."""
+        if len(events) <= self.max_size:
+            return events
 
-        events_from_tail = target_size - len(head_event_ids)
+        target_size = self.max_size // 2
+        head = events[: self.keep_first]
+
+        events_from_tail = target_size - len(head)
 
         message: str = """You will be given a list of actions, observations, and thoughts from a coding agent.
         Each item in the list has an identifier. Please sort the identifiers in order of how important the
@@ -66,7 +66,7 @@ class LLMAttentionCondenser(RollingCondenser):
                         'content': f'<ID>{e.id}</ID>\n<CONTENT>{e.message}</CONTENT>',
                         'role': 'user',
                     }
-                    for e in view
+                    for e in events
                 ],
             ],
             response_format={
@@ -82,35 +82,27 @@ class LLMAttentionCondenser(RollingCondenser):
             response.choices[0].message.content
         ).ids
 
+        self.add_metadata('all_event_ids', [event.id for event in events])
+        self.add_metadata('response_ids', response_ids)
         self.add_metadata('metrics', self.llm.metrics.get())
 
         # Filter out any IDs from the head and trim the results down
+        head_ids = [event.id for event in head]
         response_ids = [
-            response_id
-            for response_id in response_ids
-            if response_id not in head_event_ids
+            response_id for response_id in response_ids if response_id not in head_ids
         ][:events_from_tail]
 
         # If the response IDs aren't _long_ enough, iterate backwards through the events and add any unfound IDs to the list.
-        for event in reversed(view):
+        for event in reversed(events):
             if len(response_ids) >= events_from_tail:
                 break
             if event.id not in response_ids:
                 response_ids.append(event.id)
 
-        # Now that we've found the right number of events to keep, convert this into a list of events to forget.
-        event = CondensationAction(
-            forgotten_event_ids=[
-                event.id
-                for event in view
-                if event.id not in response_ids and event.id not in head_event_ids
-            ],
-        )
+        # Grab the events associated with the response IDs
+        tail = [event for event in events if event.id in response_ids]
 
-        return Condensation(action=event)
-
-    def should_condense(self, view: View) -> bool:
-        return len(view) > self.max_size
+        return head + tail
 
     @classmethod
     def from_config(cls, config: LLMAttentionCondenserConfig) -> LLMAttentionCondenser:

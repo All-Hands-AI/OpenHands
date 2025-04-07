@@ -1,7 +1,7 @@
-import type { SidebarsConfig } from '@docusaurus/plugin-content-docs';
+import type { SidebarsConfig } from "@docusaurus/plugin-content-docs";
 
 const sidebars: SidebarsConfig = {
-  apiSidebar: [require('./modules/python/sidebar.json')],
+  apiSidebar: [require("./modules/python/sidebar.json")],
   docsSidebar: [
     {
       type: 'doc',
@@ -12,11 +12,6 @@ const sidebars: SidebarsConfig = {
       type: 'doc',
       label: 'Getting Started',
       id: 'usage/getting-started',
-    },
-    {
-      type: 'doc',
-      label: 'Key Features',
-      id: 'usage/key-features',
     },
     {
       type: 'category',
@@ -38,7 +33,7 @@ const sidebars: SidebarsConfig = {
             },
             {
               type: 'doc',
-              label: 'Repository-specific',
+              label: 'Repository',
               id: 'usage/prompting/microagents-repo',
             },
             {
@@ -46,23 +41,7 @@ const sidebars: SidebarsConfig = {
               label: 'Public',
               id: 'usage/prompting/microagents-public',
             },
-            {
-              type: 'doc',
-              label: 'Syntax',
-              id: 'usage/prompting/microagents-syntax',
-            },
           ],
-        },
-      ],
-    },
-    {
-      type: 'category',
-      label: 'Customization',
-      items: [
-        {
-          type: 'doc',
-          label: 'Repository Customization',
-          id: 'usage/customization/repository',
         },
       ],
     },
@@ -143,11 +122,6 @@ const sidebars: SidebarsConfig = {
                 },
                 {
                   type: 'doc',
-                  label: 'Local LLMs with SGLang or vLLM',
-                  id: 'usage/llms/local-llms',
-                },
-                {
-                  type: 'doc',
                   label: 'LiteLLM Proxy',
                   id: 'usage/llms/litellm-proxy',
                 },
@@ -166,40 +140,9 @@ const sidebars: SidebarsConfig = {
           ],
         },
         {
-          type: 'category',
+          type: 'doc',
           label: 'Runtime Configuration',
-          items: [
-            {
-              type: 'doc',
-              label: 'Overview',
-              id: 'usage/runtimes-index',
-            },
-            {
-              type: 'doc',
-              label: 'Docker Runtime',
-              id: 'usage/runtimes/docker',
-            },
-            {
-              type: 'doc',
-              label: 'Remote Runtime',
-              id: 'usage/runtimes/remote',
-            },
-            {
-              type: 'doc',
-              label: 'Modal Runtime',
-              id: 'usage/runtimes/modal',
-            },
-            {
-              type: 'doc',
-              label: 'Daytona Runtime',
-              id: 'usage/runtimes/daytona',
-            },
-            {
-              type: 'doc',
-              label: 'Local Runtime',
-              id: 'usage/runtimes/local',
-            },
-          ],
+          id: 'usage/runtimes',
         },
         {
           type: 'doc',
@@ -227,11 +170,6 @@ const sidebars: SidebarsConfig = {
       type: 'category',
       label: 'For OpenHands Developers',
       items: [
-        {
-          type: 'doc',
-          label: 'Development Overview',
-          id: 'usage/how-to/development-overview',
-        },
         {
           type: 'category',
           label: 'Architecture',

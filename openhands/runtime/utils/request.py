@@ -1,17 +1,17 @@
 import json
 from typing import Any
 
-import httpx
+import requests
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
 from openhands.utils.http_session import HttpSession
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
 
-class RequestHTTPError(httpx.HTTPStatusError):
+class RequestHTTPError(requests.HTTPError):
     """Exception raised when an error occurs in a request with details."""
 
-    def __init__(self, *args: Any, detail: Any = None, **kwargs: Any) -> None:
+    def __init__(self, *args, detail=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.detail = detail
 
@@ -22,9 +22,9 @@ class RequestHTTPError(httpx.HTTPStatusError):
         return s
 
 
-def is_retryable_error(exception: Any) -> bool:
+def is_retryable_error(exception):
     return (
-        isinstance(exception, httpx.HTTPStatusError)
+        isinstance(exception, requests.HTTPError)
         and exception.response.status_code == 429
     )
 
@@ -40,21 +40,20 @@ def send_request(
     url: str,
     timeout: int = 10,
     **kwargs: Any,
-) -> httpx.Response:
+) -> requests.Response:
     response = session.request(method, url, timeout=timeout, **kwargs)
     try:
         response.raise_for_status()
-    except httpx.HTTPError as e:
+    except requests.HTTPError as e:
         try:
             _json = response.json()
-        except json.decoder.JSONDecodeError:
+        except (requests.exceptions.JSONDecodeError, json.decoder.JSONDecodeError):
             _json = None
         finally:
             response.close()
         raise RequestHTTPError(
             e,
-            request=e.request,
             response=e.response,
             detail=_json.get('detail') if _json is not None else None,
         ) from e
-    return response  # type: ignore
+    return response

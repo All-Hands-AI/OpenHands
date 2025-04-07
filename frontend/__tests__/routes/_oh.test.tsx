@@ -55,8 +55,7 @@ describe("frontend/routes/_oh", () => {
     });
   });
 
-  // FIXME: This test fails when it shouldn't be, please investigate
-  it.skip("should render and capture the user's consent if oss mode", async () => {
+  it("should render and capture the user's consent if oss mode", async () => {
     const user = userEvent.setup();
     const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
     const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
@@ -69,10 +68,6 @@ describe("frontend/routes/_oh", () => {
       APP_MODE: "oss",
       GITHUB_CLIENT_ID: "test-id",
       POSTHOG_CLIENT_KEY: "test-key",
-      FEATURE_FLAGS: {
-        ENABLE_BILLING: false,
-        HIDE_LLM_SETTINGS: false,
-      },
     });
 
     // @ts-expect-error - We only care about the user_consents_to_analytics field
@@ -104,10 +99,6 @@ describe("frontend/routes/_oh", () => {
       APP_MODE: "saas",
       GITHUB_CLIENT_ID: "test-id",
       POSTHOG_CLIENT_KEY: "test-key",
-      FEATURE_FLAGS: {
-        ENABLE_BILLING: false,
-        HIDE_LLM_SETTINGS: false,
-      },
     });
 
     renderWithProviders(<RouteStub />);

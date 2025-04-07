@@ -11,6 +11,7 @@ from typing import Any, Awaitable, TextIO
 from pydantic import SecretStr
 from tqdm import tqdm
 
+import openhands
 from openhands.core.config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.resolver.interfaces.issue import Issue
@@ -26,9 +27,9 @@ from openhands.resolver.utils import (
 
 
 def cleanup() -> None:
-    logger.info('Cleaning up child processes...')
+    print('Cleaning up child processes...')
     for process in mp.active_children():
-        logger.info(f'Terminating child process: {process.name}')
+        print(f'Terminating child process: {process.name}')
         process.terminate()
         process.join()
 
@@ -110,7 +111,7 @@ async def resolve_issues(
     # checkout the repo
     repo_dir = os.path.join(output_dir, 'repo')
     if not os.path.exists(repo_dir):
-        checkout_output = subprocess.check_output(  # noqa: ASYNC101
+        checkout_output = subprocess.check_output(
             [
                 'git',
                 'clone',
@@ -123,7 +124,7 @@ async def resolve_issues(
 
     # get the commit id of current repo for reproducibility
     base_commit = (
-        subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo_dir)  # noqa: ASYNC101
+        subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo_dir)
         .decode('utf-8')
         .strip()
     )
@@ -133,7 +134,7 @@ async def resolve_issues(
         # Check for .openhands_instructions file in the workspace directory
         openhands_instructions_path = os.path.join(repo_dir, '.openhands_instructions')
         if os.path.exists(openhands_instructions_path):
-            with open(openhands_instructions_path, 'r') as f:  # noqa: ASYNC101
+            with open(openhands_instructions_path, 'r') as f:
                 repo_instruction = f.read()
 
     # OUTPUT FILE
@@ -141,14 +142,14 @@ async def resolve_issues(
     logger.info(f'Writing output to {output_file}')
     finished_numbers = set()
     if os.path.exists(output_file):
-        with open(output_file, 'r') as f:  # noqa: ASYNC101
+        with open(output_file, 'r') as f:
             for line in f:
                 data = ResolverOutput.model_validate_json(line)
                 finished_numbers.add(data.issue.number)
         logger.warning(
             f'Output file {output_file} already exists. Loaded {len(finished_numbers)} finished issues.'
         )
-    output_fp = open(output_file, 'a')  # noqa: ASYNC101
+    output_fp = open(output_file, 'a')
 
     logger.info(
         f'Resolving issues with model {model_name}, max iterations {max_iterations}.'
@@ -181,13 +182,13 @@ async def resolve_issues(
                     f'Checking out to PR branch {issue.head_branch} for issue {issue.number}'
                 )
 
-                subprocess.check_output(  # noqa: ASYNC101
+                subprocess.check_output(
                     ['git', 'checkout', f'{issue.head_branch}'],
                     cwd=repo_dir,
                 )
 
                 base_commit = (
-                    subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo_dir)  # noqa: ASYNC101
+                    subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo_dir)
                     .decode('utf-8')
                     .strip()
                 )
@@ -221,7 +222,7 @@ async def resolve_issues(
         await asyncio.gather(*[run_with_semaphore(task) for task in tasks])
 
     except KeyboardInterrupt:
-        logger.info('KeyboardInterrupt received. Cleaning up...')
+        print('KeyboardInterrupt received. Cleaning up...')
         cleanup()
 
     output_fp.close()
@@ -233,7 +234,7 @@ def main() -> None:
         description='Resolve multiple issues from Github or Gitlab.'
     )
     parser.add_argument(
-        '--selected-repo',
+        '--repo',
         type=str,
         required=True,
         help='Github or Gitlab repository to resolve issues in form of `owner/repo`.',
@@ -328,9 +329,11 @@ def main() -> None:
 
     runtime_container_image = my_args.runtime_container_image
     if runtime_container_image is None:
-        runtime_container_image = 'ghcr.io/all-hands-ai/runtime:0.31.0-nikolaik'
+        runtime_container_image = (
+            f'ghcr.io/all-hands-ai/runtime:{openhands.__version__}-nikolaik'
+        )
 
-    owner, repo = my_args.selected_repo.split('/')
+    owner, repo = my_args.repo.split('/')
     token = my_args.token or os.getenv('GITHUB_TOKEN') or os.getenv('GITLAB_TOKEN')
     username = my_args.username if my_args.username else os.getenv('GIT_USERNAME')
     if not username:
@@ -339,7 +342,7 @@ def main() -> None:
     if not token:
         raise ValueError('Token is required.')
 
-    platform = identify_token(token, my_args.selected_repo)
+    platform = identify_token(token)
     if platform == Platform.INVALID:
         raise ValueError('Token is invalid.')
 

@@ -17,12 +17,12 @@ class MessageAction(Action):
         return self.content
 
     @property
-    def images_urls(self) -> list[str] | None:
+    def images_urls(self):
         # Deprecated alias for backward compatibility
         return self.image_urls
 
     @images_urls.setter
-    def images_urls(self, value: list[str] | None) -> None:
+    def images_urls(self, value):
         self.image_urls = value
 
     def __str__(self) -> str:

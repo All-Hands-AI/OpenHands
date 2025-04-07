@@ -7,7 +7,6 @@ interface BrandButtonProps {
   isDisabled?: boolean;
   className?: string;
   onClick?: () => void;
-  startContent?: React.ReactNode;
 }
 
 export function BrandButton({
@@ -18,7 +17,6 @@ export function BrandButton({
   isDisabled,
   className,
   onClick,
-  startContent,
 }: React.PropsWithChildren<BrandButtonProps>) {
   return (
     <button
@@ -32,11 +30,9 @@ export function BrandButton({
         "w-fit p-2 rounded disabled:opacity-30 disabled:cursor-not-allowed",
         variant === "primary" && "bg-primary text-[#0D0F11]",
         variant === "secondary" && "border border-primary text-primary",
-        startContent && "flex items-center justify-center gap-2",
         className,
       )}
     >
-      {startContent}
       {children}
     </button>
   );

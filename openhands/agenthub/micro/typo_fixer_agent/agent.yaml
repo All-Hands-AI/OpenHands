@@ -1,0 +1,6 @@
+name: TypoFixerAgent
+description: Fixes typos in files in the current working directory
+inputs:
+  task: string
+outputs:
+  summary: string

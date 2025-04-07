@@ -12,7 +12,7 @@ export const useVSCodeUrl = (config: { enabled: boolean }) => {
       return OpenHands.getVSCodeUrl(conversationId);
     },
     enabled: !!conversationId && config.enabled,
-    refetchOnMount: true,
+    refetchOnMount: false,
   });
 
   return data;

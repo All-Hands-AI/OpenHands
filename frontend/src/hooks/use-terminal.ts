@@ -40,7 +40,7 @@ export const useTerminal = ({
       fontFamily: "Menlo, Monaco, 'Courier New', monospace",
       fontSize: 14,
       theme: {
-        background: "#24272E",
+        background: "#262626",
       },
     });
 

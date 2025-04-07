@@ -8,7 +8,6 @@ export const useBalance = () => {
   return useQuery({
     queryKey: ["user", "balance"],
     queryFn: OpenHands.getBalance,
-    enabled:
-      config?.APP_MODE === "saas" && config?.FEATURE_FLAGS.ENABLE_BILLING,
+    enabled: config?.APP_MODE === "saas",
   });
 };

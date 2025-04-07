@@ -148,9 +148,7 @@ class AttachConversationMiddleware(SessionMiddlewareInterface):
         Attach the user's session based on the provided authentication token.
         """
         request.state.conversation = (
-            await shared.conversation_manager.attach_to_conversation(
-                request.state.sid, get_user_id(request)
-            )
+            await shared.conversation_manager.attach_to_conversation(request.state.sid)
         )
         if not request.state.conversation:
             return JSONResponse(
@@ -185,7 +183,7 @@ class AttachConversationMiddleware(SessionMiddlewareInterface):
         return response
 
 
-class ProviderTokenMiddleware(SessionMiddlewareInterface):
+class GitHubTokenMiddleware(SessionMiddlewareInterface):
     def __init__(self, app):
         self.app = app
 
@@ -196,14 +194,10 @@ class ProviderTokenMiddleware(SessionMiddlewareInterface):
         settings = await settings_store.load()
 
         # TODO: To avoid checks like this we should re-add the abilty to have completely different middleware in SAAS as in OSS
-        if getattr(request.state, 'provider_tokens', None) is None:
-            if (
-                settings
-                and settings.secrets_store
-                and settings.secrets_store.provider_tokens
-            ):
-                request.state.provider_tokens = settings.secrets_store.provider_tokens
+        if getattr(request.state, 'github_token', None) is None:
+            if settings and settings.github_token:
+                request.state.github_token = settings.github_token
             else:
-                request.state.provider_tokens = None
+                request.state.github_token = None
 
         return await call_next(request)

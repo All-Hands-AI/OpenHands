@@ -93,23 +93,24 @@ export function ModelSelector({
             },
           }}
         >
-          <AutocompleteSection title={t(I18nKey.MODEL_SELECTOR$VERIFIED)}>
+          <AutocompleteSection title="Verified">
             {Object.keys(models)
               .filter((provider) => VERIFIED_PROVIDERS.includes(provider))
               .map((provider) => (
                 <AutocompleteItem
                   data-testid={`provider-item-${provider}`}
                   key={provider}
+                  value={provider}
                 >
                   {mapProvider(provider)}
                 </AutocompleteItem>
               ))}
           </AutocompleteSection>
-          <AutocompleteSection title={t(I18nKey.MODEL_SELECTOR$OTHERS)}>
+          <AutocompleteSection title="Others">
             {Object.keys(models)
               .filter((provider) => !VERIFIED_PROVIDERS.includes(provider))
               .map((provider) => (
-                <AutocompleteItem key={provider}>
+                <AutocompleteItem key={provider} value={provider}>
                   {mapProvider(provider)}
                 </AutocompleteItem>
               ))}
@@ -143,20 +144,23 @@ export function ModelSelector({
             },
           }}
         >
-          <AutocompleteSection title={t(I18nKey.MODEL_SELECTOR$VERIFIED)}>
+          <AutocompleteSection title="Verified">
             {models[selectedProvider || ""]?.models
               .filter((model) => VERIFIED_MODELS.includes(model))
               .map((model) => (
-                <AutocompleteItem key={model}>{model}</AutocompleteItem>
+                <AutocompleteItem key={model} value={model}>
+                  {model}
+                </AutocompleteItem>
               ))}
           </AutocompleteSection>
-          <AutocompleteSection title={t(I18nKey.MODEL_SELECTOR$OTHERS)}>
+          <AutocompleteSection title="Others">
             {models[selectedProvider || ""]?.models
               .filter((model) => !VERIFIED_MODELS.includes(model))
               .map((model) => (
                 <AutocompleteItem
                   data-testid={`model-item-${model}`}
                   key={model}
+                  value={model}
                 >
                   {model}
                 </AutocompleteItem>

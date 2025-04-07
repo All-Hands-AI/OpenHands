@@ -202,15 +202,14 @@ Note:
         tabs = ''
         last_obs = None
         last_action = None
-        set_of_marks = None  # Initialize set_of_marks to None
 
-        if len(state.view) == 1:
+        if len(state.history) == 1:
             # for visualwebarena, webarena and miniwob++ eval, we need to retrieve the initial observation already in browser env
             # initialize and retrieve the first observation by issuing an noop OP
             # For non-benchmark browsing, the browser env starts with a blank page, and the agent is expected to first navigate to desired websites
             return BrowseInteractiveAction(browser_actions='noop(1000)')
 
-        for event in state.view:
+        for event in state.history:
             if isinstance(event, BrowseInteractiveAction):
                 prev_actions.append(event)
                 last_action = event
@@ -218,9 +217,6 @@ Note:
                 # agent has responded, task finished.
                 return AgentFinishAction(outputs={'content': event.content})
             elif isinstance(event, Observation):
-                # Only process BrowserOutputObservation and skip other observation types
-                if not isinstance(event, BrowserOutputObservation):
-                    continue
                 last_obs = event
 
         if len(prev_actions) >= 1:  # ignore noop()

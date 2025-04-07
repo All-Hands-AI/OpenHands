@@ -46,12 +46,8 @@ class BaseMicroAgent(BaseModel):
         file_io = io.StringIO(file_content)
         loaded = frontmatter.load(file_io)
         content = loaded.content
-
-        # Handle case where there's no frontmatter or empty frontmatter
-        metadata_dict = loaded.metadata or {}
-
         try:
-            metadata = MicroAgentMetadata(**metadata_dict)
+            metadata = MicroAgentMetadata(**loaded.metadata)
         except Exception as e:
             raise MicroAgentValidationError(f'Error loading metadata: {e}') from e
 

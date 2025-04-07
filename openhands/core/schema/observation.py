@@ -1,51 +1,51 @@
-from enum import Enum
+from pydantic import BaseModel, Field
+
+__all__ = ['ObservationType']
 
 
-class ObservationType(str, Enum):
-    READ = 'read'
+class ObservationTypeSchema(BaseModel):
+    READ: str = Field(default='read')
     """The content of a file
     """
 
-    WRITE = 'write'
+    WRITE: str = Field(default='write')
 
-    EDIT = 'edit'
+    EDIT: str = Field(default='edit')
 
-    BROWSE = 'browse'
+    BROWSE: str = Field(default='browse')
     """The HTML content of a URL
     """
 
-    RUN = 'run'
+    RUN: str = Field(default='run')
     """The output of a command
     """
 
-    RUN_IPYTHON = 'run_ipython'
+    RUN_IPYTHON: str = Field(default='run_ipython')
     """Runs a IPython cell.
     """
 
-    CHAT = 'chat'
+    CHAT: str = Field(default='chat')
     """A message from the user
     """
 
-    DELEGATE = 'delegate'
+    DELEGATE: str = Field(default='delegate')
     """The result of a task delegated to another agent
     """
 
-    MESSAGE = 'message'
+    MESSAGE: str = Field(default='message')
 
-    ERROR = 'error'
+    ERROR: str = Field(default='error')
 
-    SUCCESS = 'success'
+    SUCCESS: str = Field(default='success')
 
-    NULL = 'null'
+    NULL: str = Field(default='null')
 
-    THINK = 'think'
+    AGENT_STATE_CHANGED: str = Field(default='agent_state_changed')
 
-    AGENT_STATE_CHANGED = 'agent_state_changed'
+    USER_REJECTED: str = Field(default='user_rejected')
 
-    USER_REJECTED = 'user_rejected'
-
-    CONDENSE = 'condense'
+    CONDENSE: str = Field(default='condense')
     """Result of a condensation operation."""
 
-    RECALL = 'recall'
-    """Result of a recall operation. This can be the workspace context, a microagent, or other types of information."""
+
+ObservationType = ObservationTypeSchema()

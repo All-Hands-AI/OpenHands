@@ -24,11 +24,7 @@ export function ConversationProvider({
 
   const value = useMemo(() => ({ conversationId }), [conversationId]);
 
-  return (
-    <ConversationContext.Provider value={value}>
-      {children}
-    </ConversationContext.Provider>
-  );
+  return <ConversationContext value={value}>{children}</ConversationContext>;
 }
 
 export function useConversation() {

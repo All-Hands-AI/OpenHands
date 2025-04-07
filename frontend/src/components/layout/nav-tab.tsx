@@ -15,19 +15,18 @@ export function NavTab({ to, label, icon, isBeta }: NavTabProps) {
       end
       key={to}
       to={to}
-      className={cn(
-        "px-2 border-b border-r border-neutral-600 bg-base-secondary flex-1",
-        "first-of-type:rounded-tl-xl last-of-type:rounded-tr-xl last-of-type:border-r-0",
-        "flex items-center gap-2",
-      )}
+      className={({ isActive }) =>
+        cn(
+          "px-2 border-b border-r border-neutral-600 bg-base flex-1",
+          "first-of-type:rounded-tl-xl last-of-type:rounded-tr-xl last-of-type:border-r-0",
+          "flex items-center gap-2",
+          isActive && "bg-base-secondary",
+        )
+      }
     >
-      {({ isActive }) => (
-        <>
-          <div className={cn(isActive && "text-logo")}>{icon}</div>
-          {label}
-          {isBeta && <BetaBadge />}
-        </>
-      )}
+      {icon}
+      {label}
+      {isBeta && <BetaBadge />}
     </NavLink>
   );
 }

@@ -12,6 +12,8 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.builder.base import RuntimeBuilder
 from openhands.utils.term_color import TermColor, colorize
 
+import pdb
+
 
 class DockerRuntimeBuilder(RuntimeBuilder):
     def __init__(self, docker_client: docker.DockerClient):
@@ -19,30 +21,19 @@ class DockerRuntimeBuilder(RuntimeBuilder):
 
         version_info = self.docker_client.version()
         server_version = version_info.get('Version', '').replace('-', '.')
-        self.is_podman = (
-            version_info.get('Components')[0].get('Name').startswith('Podman')
-        )
-        if (
-            tuple(map(int, server_version.split('.')[:2])) < (18, 9)
-            and not self.is_podman
-        ):
+        if tuple(map(int, server_version.split('.')[:2])) < (18, 9):
             raise AgentRuntimeBuildError(
                 'Docker server version must be >= 18.09 to use BuildKit'
             )
 
-        if self.is_podman and tuple(map(int, server_version.split('.')[:2])) < (4, 9):
-            raise AgentRuntimeBuildError('Podman server version must be >= 4.9.0')
-
         self.rolling_logger = RollingLogger(max_lines=10)
 
     @staticmethod
-    def check_buildx(is_podman: bool = False):
+    def check_buildx():
         """Check if Docker Buildx is available"""
         try:
             result = subprocess.run(
-                ['docker' if not is_podman else 'podman', 'buildx', 'version'],
-                capture_output=True,
-                text=True,
+                ['docker', 'buildx', 'version'], capture_output=True, text=True
             )
             return result.returncode == 0
         except FileNotFoundError:
@@ -78,19 +69,13 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         """
         self.docker_client = docker.from_env()
         version_info = self.docker_client.version()
-        server_version = version_info.get('Version', '').split('+')[0].replace('-', '.')
-        self.is_podman = (
-            version_info.get('Components')[0].get('Name').startswith('Podman')
-        )
-        if tuple(map(int, server_version.split('.'))) < (18, 9) and not self.is_podman:
+        server_version = version_info.get('Version', '').replace('-', '.')
+        if tuple(map(int, server_version.split('.'))) < (18, 9):
             raise AgentRuntimeBuildError(
                 'Docker server version must be >= 18.09 to use BuildKit'
             )
 
-        if self.is_podman and tuple(map(int, server_version.split('.'))) < (4, 9):
-            raise AgentRuntimeBuildError('Podman server version must be >= 4.9.0')
-
-        if not DockerRuntimeBuilder.check_buildx(self.is_podman):
+        if not DockerRuntimeBuilder.check_buildx():
             # when running openhands in a container, there might not be a "docker"
             # binary available, in which case we need to download docker binary.
             # since the official openhands app image is built from debian, we use
@@ -123,23 +108,25 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             logger.info('Downloaded and installed docker binary')
 
         target_image_hash_name = tags[0]
-        target_image_repo, target_image_source_tag = target_image_hash_name.split(':')
-        target_image_tag = tags[1].split(':')[1] if len(tags) > 1 else None
-
+        # target_image_repo, target_image_source_tag = target_image_hash_name.split(':')
+        # target_image_tag = tags[1].split(':')[1] if len(tags) > 1 else None
+        # pdb.set_trace()
         buildx_cmd = [
-            'docker' if not self.is_podman else 'podman',
+            'docker',
             'buildx',
             'build',
             '--progress=plain',
+            '--pull=false',
             f'--build-arg=OPENHANDS_RUNTIME_VERSION={oh_version}',
             f'--build-arg=OPENHANDS_RUNTIME_BUILD_TIME={datetime.datetime.now().isoformat()}',
             f'--tag={target_image_hash_name}',
             '--load',
+            '--network=host',
         ]
 
-        # Include the platform argument only if platform is specified
-        if platform:
-            buildx_cmd.append(f'--platform={platform}')
+        # # Include the platform argument only if platform is specified
+        # if platform:
+        #     buildx_cmd.append(f'--platform={platform}')
 
         cache_dir = '/tmp/.buildx-cache'
         if use_local_cache and self._is_cache_usable(cache_dir):
@@ -154,9 +141,10 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             buildx_cmd.extend(extra_build_args)
 
         buildx_cmd.append(path)  # must be last!
+        # pdb.set_trace()
 
         self.rolling_logger.start(
-            f'================ {buildx_cmd[0].upper()} BUILD STARTED ================'
+            '================ DOCKER BUILD STARTED ================'
         )
 
         try:
@@ -172,6 +160,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
                 for line in iter(process.stdout.readline, ''):
                     line = line.strip()
                     if line:
+                        print(line)
                         self._output_logs(line)
 
             return_code = process.wait()
@@ -213,12 +202,12 @@ class DockerRuntimeBuilder(RuntimeBuilder):
 
         logger.info(f'Image [{target_image_hash_name}] build finished.')
 
-        if target_image_tag:
-            image = self.docker_client.images.get(target_image_hash_name)
-            image.tag(target_image_repo, target_image_tag)
-            logger.info(
-                f'Re-tagged image [{target_image_hash_name}] with more generic tag [{target_image_tag}]'
-            )
+        # if target_image_tag:
+        #     image = self.docker_client.images.get(target_image_hash_name)
+        #     image.tag(target_image_repo, target_image_tag)
+        #     logger.info(
+        #         f'Re-tagged image [{target_image_hash_name}] with more generic tag [{target_image_tag}]'
+        #     )
 
         # Check if the image is built successfully
         image = self.docker_client.images.get(target_image_hash_name)
@@ -227,14 +216,14 @@ class DockerRuntimeBuilder(RuntimeBuilder):
                 f'Build failed: Image {target_image_hash_name} not found'
             )
 
-        tags_str = (
-            f'{target_image_source_tag}, {target_image_tag}'
-            if target_image_tag
-            else target_image_source_tag
-        )
-        logger.info(
-            f'Image {target_image_repo} with tags [{tags_str}] built successfully'
-        )
+        # tags_str = (
+        #     f'{target_image_source_tag}, {target_image_tag}'
+        #     if target_image_tag
+        #     else target_image_source_tag
+        # )
+        # logger.info(
+        #     f'Image {target_image_repo} with tags [{tags_str}] built successfully'
+        # )
         return target_image_hash_name
 
     def image_exists(self, image_name: str, pull_from_repo: bool = True) -> bool:
@@ -252,6 +241,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
 
         try:
             logger.debug(f'Checking, if image exists locally:\n{image_name}')
+            # pdb.set_trace()
             self.docker_client.images.get(image_name)
             logger.debug('Image found locally.')
             return True

@@ -65,12 +65,6 @@ describe("extractModelAndProvider", () => {
       separator: "/",
     });
 
-    expect(extractModelAndProvider("claude-3-7-sonnet-20250219")).toEqual({
-      provider: "anthropic",
-      model: "claude-3-7-sonnet-20250219",
-      separator: "/",
-    });
-
     expect(extractModelAndProvider("claude-3-haiku-20240307")).toEqual({
       provider: "anthropic",
       model: "claude-3-haiku-20240307",

@@ -1,0 +1,24 @@
+name: MathAgent
+description: "Solves simple and complex math problems using python"
+container: python:3.12.3-bookworm
+inputs:
+  task: string
+outputs:
+  answer: string
+examples:
+  - inputs:
+      task: "What is 2 + 2?"
+    outputs:
+      answer: "4"
+  - inputs:
+      task: "What is the area of a circle with radius 7.324 inches?"
+    output:
+      answer: "168.518 square inches"
+  - inputs:
+      task: "What day of the week is 2099-01-01?"
+    outputs:
+      answer: "Saturday"
+  - inputs:
+      task: "What is the integral of sin(x^2) evaluated from -1 to 1?"
+    outputs:
+      answer: "0.603848"

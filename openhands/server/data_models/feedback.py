@@ -1,7 +1,7 @@
 import json
-from typing import Any, Literal
+from typing import Any, Literal, Optional
 
-import httpx
+import requests
 from pydantic import BaseModel
 
 from openhands.core.logger import openhands_logger as logger
@@ -15,7 +15,7 @@ class FeedbackDataModel(BaseModel):
         'positive', 'negative'
     ]  # TODO: remove this, its here for backward compatibility
     permissions: Literal['public', 'private']
-    trajectory: list[dict[str, Any]] | None
+    trajectory: Optional[list[dict[str, Any]]]
 
 
 FEEDBACK_URL = 'https://share-od-trajectory-3u9bw9tx.uc.gateway.dev/share_od_trajectory'
@@ -33,7 +33,7 @@ def store_feedback(feedback: FeedbackDataModel) -> dict[str, str]:
         display_feedback['token'] = 'elided'
     logger.debug(f'Got feedback: {display_feedback}')
     # Start actual request
-    response = httpx.post(
+    response = requests.post(
         FEEDBACK_URL,
         headers={'Content-Type': 'application/json'},
         json=feedback.model_dump(),

@@ -127,14 +127,11 @@ function SecurityInvariant() {
       <>
         <div className="flex justify-between items-center border-b border-neutral-600 mb-4 p-4">
           <h2 className="text-2xl">{t(I18nKey.INVARIANT$LOG_LABEL)}</h2>
-          <Button onPress={() => exportTraces()} className="bg-tertiary">
+          <Button onPress={() => exportTraces()} className="bg-neutral-700">
             {t(I18nKey.INVARIANT$EXPORT_TRACE_LABEL)}
           </Button>
         </div>
-        <div
-          className="flex-1 p-4 max-h-screen overflow-y-auto fast-smooth-scroll"
-          ref={logsRef}
-        >
+        <div className="flex-1 p-4 max-h-screen overflow-y-auto" ref={logsRef}>
           {logs.map((log: SecurityAnalyzerLog, index: number) => (
             <div
               key={index}
@@ -164,7 +161,7 @@ function SecurityInvariant() {
         <div className="flex justify-between items-center border-b border-neutral-600 mb-4 p-4">
           <h2 className="text-2xl">{t(I18nKey.INVARIANT$POLICY_LABEL)}</h2>
           <Button
-            className="bg-tertiary"
+            className="bg-neutral-700"
             onPress={() => updatePolicy({ policy })}
           >
             {t(I18nKey.INVARIANT$UPDATE_POLICY_LABEL)}
@@ -186,7 +183,7 @@ function SecurityInvariant() {
         <div className="flex justify-between items-center border-b border-neutral-600 mb-4 p-4">
           <h2 className="text-2xl">{t(I18nKey.INVARIANT$SETTINGS_LABEL)}</h2>
           <Button
-            className="bg-tertiary"
+            className="bg-neutral-700"
             onPress={() => updateRiskSeverity({ riskSeverity: selectedRisk })}
           >
             {t(I18nKey.INVARIANT$UPDATE_SETTINGS_LABEL)}

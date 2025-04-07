@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import List
 
 import docker
-from dirhash import dirhash  # type: ignore
+from dirhash import dirhash
 from jinja2 import Environment, FileSystemLoader
 
 import openhands
@@ -17,6 +17,7 @@ from openhands import __version__ as oh_version
 from openhands.core.exceptions import AgentRuntimeBuildError
 from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.builder import DockerRuntimeBuilder, RuntimeBuilder
+import pdb
 
 
 class BuildFromImageType(Enum):
@@ -25,7 +26,7 @@ class BuildFromImageType(Enum):
     LOCK = 'lock'  # Fastest: Reuse the most recent image with the exact SAME dependencies (lock files)
 
 
-def get_runtime_image_repo() -> str:
+def get_runtime_image_repo():
     return os.getenv('OH_RUNTIME_RUNTIME_IMAGE_REPO', 'ghcr.io/all-hands-ai/runtime')
 
 
@@ -44,6 +45,7 @@ def _generate_dockerfile(
     Returns:
     - str: The resulting Dockerfile content
     """
+    # pdb.set_trace()
     env = Environment(
         loader=FileSystemLoader(
             searchpath=os.path.join(os.path.dirname(__file__), 'runtime_templates')
@@ -169,20 +171,26 @@ def build_runtime_image_in_folder(
     platform: str | None = None,
     extra_build_args: List[str] | None = None,
 ) -> str:
-    runtime_image_repo, _ = get_runtime_image_repo_and_tag(base_image)
-    lock_tag = f'oh_v{oh_version}_{get_hash_for_lock_files(base_image)}'
-    versioned_tag = (
-        # truncate the base image to 96 characters to fit in the tag max length (128 characters)
-        f'oh_v{oh_version}_{get_tag_for_versioned_image(base_image)}'
-    )
-    versioned_image_name = f'{runtime_image_repo}:{versioned_tag}'
-    source_tag = f'{lock_tag}_{get_hash_for_source_files()}'
-    hash_image_name = f'{runtime_image_repo}:{source_tag}'
+    # pdb.set_trace()
+    # runtime_image_repo, _ = get_runtime_image_repo_and_tag(base_image)
+    # lock_tag = f'oh_v{oh_version}_{get_hash_for_lock_files(base_image)}'
+    # versioned_tag = (
+    #     # truncate the base image to 96 characters to fit in the tag max length (128 characters)
+    #     f'oh_v{oh_version}_{get_tag_for_versioned_image(base_image)}'
+    # )
+    # versioned_image_name = f'{runtime_image_repo}:{versioned_tag}'
+    # source_tag = f'{lock_tag}_{get_hash_for_source_files()}'
+    # hash_image_name = f'{runtime_image_repo}:{source_tag}'
 
-    logger.info(f'Building image: {hash_image_name}')
+    # logger.info(f'Building image: {hash_image_name}')
+    # pdb.set_trace()
+    runtime_image_repo = base_image + "_runtime"
+    # repo, tag = base_image.split(":")
+    # runtime_image_repo = f"{repo}_runtime:{tag}"
+    logger.info(f'Building image: {runtime_image_repo}')
     if force_rebuild:
         logger.debug(
-            f'Force rebuild: [{runtime_image_repo}:{source_tag}] from scratch.'
+            f'Force rebuild: [{runtime_image_repo}] from scratch.'
         )
         prep_build_folder(
             build_folder,
@@ -195,37 +203,34 @@ def build_runtime_image_in_folder(
                 build_folder,
                 runtime_builder,
                 runtime_image_repo,
-                source_tag,
-                lock_tag,
-                versioned_tag,
                 platform,
                 extra_build_args=extra_build_args,
             )
-        return hash_image_name
+        return runtime_image_repo
 
-    lock_image_name = f'{runtime_image_repo}:{lock_tag}'
+    # lock_image_name = f'{runtime_image_repo}:{lock_tag}'
     build_from = BuildFromImageType.SCRATCH
 
     # If the exact image already exists, we do not need to build it
-    if runtime_builder.image_exists(hash_image_name, False):
-        logger.debug(f'Reusing Image [{hash_image_name}]')
-        return hash_image_name
+    if runtime_builder.image_exists(runtime_image_repo, False):
+        logger.info(f'Reusing Image [{runtime_image_repo}]')
+        return runtime_image_repo
 
     # We look for an existing image that shares the same lock_tag. If such an image exists, we
     # can use it as the base image for the build and just copy source files. This makes the build
     # much faster.
-    if runtime_builder.image_exists(lock_image_name):
-        logger.debug(f'Build [{hash_image_name}] from lock image [{lock_image_name}]')
-        build_from = BuildFromImageType.LOCK
-        base_image = lock_image_name
-    elif runtime_builder.image_exists(versioned_image_name):
-        logger.info(
-            f'Build [{hash_image_name}] from versioned image [{versioned_image_name}]'
-        )
-        build_from = BuildFromImageType.VERSIONED
-        base_image = versioned_image_name
-    else:
-        logger.debug(f'Build [{hash_image_name}] from scratch')
+    # if runtime_builder.image_exists(lock_image_name):
+        # logger.debug(f'Build [{hash_image_name}] from lock image [{lock_image_name}]')
+        # build_from = BuildFromImageType.LOCK
+        # base_image = lock_image_name
+    # elif runtime_builder.image_exists(versioned_image_name):
+    #     logger.info(
+    #         f'Build [{hash_image_name}] from versioned image [{versioned_image_name}]'
+    #     )
+    #     build_from = BuildFromImageType.VERSIONED
+    #     base_image = versioned_image_name
+    # else:
+    #     logger.debug(f'Build [{hash_image_name}] from scratch')
 
     prep_build_folder(build_folder, base_image, build_from, extra_deps)
     if not dry_run:
@@ -233,18 +238,11 @@ def build_runtime_image_in_folder(
             build_folder,
             runtime_builder,
             runtime_image_repo,
-            source_tag=source_tag,
-            lock_tag=lock_tag,
-            # Only tag the versioned image if we are building from scratch.
-            # This avoids too much layers when you lay one image on top of another multiple times
-            versioned_tag=versioned_tag
-            if build_from == BuildFromImageType.SCRATCH
-            else None,
             platform=platform,
             extra_build_args=extra_build_args,
         )
 
-    return hash_image_name
+    return runtime_image_repo
 
 
 def prep_build_folder(
@@ -252,7 +250,7 @@ def prep_build_folder(
     base_image: str,
     build_from: BuildFromImageType,
     extra_deps: str | None,
-) -> None:
+):
     # Copy the source code to directory. It will end up in build_folder/code
     # If package is not found, build from source code
     openhands_source_dir = Path(openhands.__file__).parent
@@ -284,6 +282,7 @@ def prep_build_folder(
         build_from=build_from,
         extra_deps=extra_deps,
     )
+    # pdb.set_trace()
     with open(Path(build_folder, 'Dockerfile'), 'w') as file:  # type: ignore
         file.write(dockerfile_content)  # type: ignore
 
@@ -301,7 +300,7 @@ def truncate_hash(hash: str) -> str:
     return ''.join(result)
 
 
-def get_hash_for_lock_files(base_image: str) -> str:
+def get_hash_for_lock_files(base_image: str):
     openhands_source_dir = Path(openhands.__file__).parent
     md5 = hashlib.md5()
     md5.update(base_image.encode())
@@ -318,11 +317,11 @@ def get_hash_for_lock_files(base_image: str) -> str:
     return result
 
 
-def get_tag_for_versioned_image(base_image: str) -> str:
+def get_tag_for_versioned_image(base_image: str):
     return base_image.replace('/', '_s_').replace(':', '_t_').lower()[-96:]
 
 
-def get_hash_for_source_files() -> str:
+def get_hash_for_source_files():
     openhands_source_dir = Path(openhands.__file__).parent
     dir_hash = dirhash(
         openhands_source_dir,
@@ -343,19 +342,19 @@ def _build_sandbox_image(
     build_folder: Path,
     runtime_builder: RuntimeBuilder,
     runtime_image_repo: str,
-    source_tag: str,
-    lock_tag: str,
-    versioned_tag: str | None,
     platform: str | None = None,
     extra_build_args: List[str] | None = None,
-) -> str:
+):
     """Build and tag the sandbox image. The image will be tagged with all tags that do not yet exist."""
-    names = [
-        f'{runtime_image_repo}:{source_tag}',
-        f'{runtime_image_repo}:{lock_tag}',
-    ]
-    if versioned_tag is not None:
-        names.append(f'{runtime_image_repo}:{versioned_tag}')
+    
+    # names = [
+    #     f'{runtime_image_repo}:{source_tag}',
+    #     f'{runtime_image_repo}:{lock_tag}',
+    # ]
+    # if versioned_tag is not None:
+    #     names.append(f'{runtime_image_repo}:{versioned_tag}')
+    # pdb.set_trace()
+    names = [runtime_image_repo]
     names = [name for name in names if not runtime_builder.image_exists(name, False)]
 
     image_name = runtime_builder.build(

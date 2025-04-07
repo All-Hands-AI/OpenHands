@@ -36,7 +36,7 @@ def apply_patch(repo_dir: str, patch: str) -> None:
     diffs = parse_patch(patch)
     for diff in diffs:
         if not diff.header.new_path:
-            logger.warning('Could not determine file to patch')
+            print('Warning: Could not determine file to patch')
             continue
 
         # Remove both "a/" and "b/" prefixes from paths
@@ -56,7 +56,7 @@ def apply_patch(repo_dir: str, patch: str) -> None:
             assert old_path is not None
             if os.path.exists(old_path):
                 os.remove(old_path)
-                logger.info(f'Deleted file: {old_path}')
+                print(f'Deleted file: {old_path}')
             continue
 
         # Handle file rename
@@ -106,7 +106,7 @@ def apply_patch(repo_dir: str, patch: str) -> None:
             split_content = []
 
         if diff.changes is None:
-            logger.warning(f'No changes to apply for {old_path}')
+            print(f'Warning: No changes to apply for {old_path}')
             continue
 
         new_content = apply_diff(diff, split_content)
@@ -119,7 +119,7 @@ def apply_patch(repo_dir: str, patch: str) -> None:
             for line in new_content:
                 print(line, file=f)
 
-    logger.info('Patch applied successfully')
+    print('Patch applied successfully')
 
 
 def initialize_repo(
@@ -143,7 +143,7 @@ def initialize_repo(
         shutil.rmtree(dest_dir)
 
     shutil.copytree(src_dir, dest_dir)
-    logger.info(f'Copied repository to {dest_dir}')
+    print(f'Copied repository to {dest_dir}')
 
     # Checkout the base commit if provided
     if base_commit:
@@ -154,7 +154,7 @@ def initialize_repo(
             text=True,
         )
         if result.returncode != 0:
-            logger.info(f'Error checking out commit: {result.stderr}')
+            print(f'Error checking out commit: {result.stderr}')
             raise RuntimeError('Failed to check out commit')
 
     return dest_dir
@@ -185,14 +185,14 @@ def make_commit(repo_dir: str, issue: Issue, issue_type: str) -> None:
             shell=True,
             check=True,
         )
-        logger.info('Git user configured as openhands')
+        print('Git user configured as openhands')
 
     # Add all changes to the git index
     result = subprocess.run(
         f'git -C {repo_dir} add .', shell=True, capture_output=True, text=True
     )
     if result.returncode != 0:
-        logger.error(f'Error adding files: {result.stderr}')
+        print(f'Error adding files: {result.stderr}')
         raise RuntimeError('Failed to add files to git')
 
     # Check the status of the git index
@@ -205,9 +205,7 @@ def make_commit(repo_dir: str, issue: Issue, issue_type: str) -> None:
 
     # If there are no changes, raise an error
     if not status_result.stdout.strip():
-        logger.error(
-            f'No changes to commit for issue #{issue.number}. Skipping commit.'
-        )
+        print(f'No changes to commit for issue #{issue.number}. Skipping commit.')
         raise RuntimeError('ERROR: Openhands failed to make code changes.')
 
     # Prepare the commit message
@@ -271,7 +269,7 @@ def send_pull_request(
     )
 
     # Get the default branch or use specified target branch
-    logger.info('Getting base branch...')
+    print('Getting base branch...')
     if target_branch:
         base_branch = target_branch
         exists = handler.branch_exists(branch_name=target_branch)
@@ -279,17 +277,17 @@ def send_pull_request(
             raise ValueError(f'Target branch {target_branch} does not exist')
     else:
         base_branch = handler.get_default_branch_name()
-    logger.info(f'Base branch: {base_branch}')
+    print(f'Base branch: {base_branch}')
 
     # Create and checkout the new branch
-    logger.info('Creating new branch...')
+    print('Creating new branch...')
     result = subprocess.run(
         ['git', '-C', patch_dir, 'checkout', '-b', branch_name],
         capture_output=True,
         text=True,
     )
     if result.returncode != 0:
-        logger.error(f'Error creating new branch: {result.stderr}')
+        print(f'Error creating new branch: {result.stderr}')
         raise RuntimeError(
             f'Failed to create a new branch {branch_name} in {patch_dir}:'
         )
@@ -299,7 +297,7 @@ def send_pull_request(
 
     handler._strategy.set_owner(push_owner)
 
-    logger.info('Pushing changes...')
+    print('Pushing changes...')
     push_url = handler.get_clone_url()
     result = subprocess.run(
         ['git', '-C', patch_dir, 'push', push_url, branch_name],
@@ -307,7 +305,7 @@ def send_pull_request(
         text=True,
     )
     if result.returncode != 0:
-        logger.error(f'Error pushing changes: {result.stderr}')
+        print(f'Error pushing changes: {result.stderr}')
         raise RuntimeError('Failed to push changes to the remote repository')
 
     # Prepare the PR data: title and body
@@ -336,12 +334,13 @@ def send_pull_request(
         pr_data = handler.create_pull_request(data)
         url = pr_data['html_url']
 
+        print(pr_data)
         # Request review if a reviewer was specified
         if reviewer and pr_type != 'branch':
             number = pr_data['number']
             handler.request_reviewers(reviewer, number)
 
-    logger.info(
+    print(
         f'{pr_type} created: {url}\n\n--- Title: {final_pr_title}\n\n--- Body:\n{pr_body}'
     )
 
@@ -394,11 +393,11 @@ def update_existing_pull_request(
     # Push the changes to the existing branch
     result = subprocess.run(push_command, shell=True, capture_output=True, text=True)
     if result.returncode != 0:
-        logger.error(f'Error pushing changes: {result.stderr}')
+        print(f'Error pushing changes: {result.stderr}')
         raise RuntimeError('Failed to push changes to the remote repository')
 
     pr_url = handler.get_pull_url(issue.number)
-    logger.info(f'Updated pull request {pr_url} with new patches.')
+    print(f'Updated pull request {pr_url} with new patches.')
 
     # Generate a summary of all comment success indicators for PR message
     if not comment_message and additional_message:
@@ -464,7 +463,7 @@ def process_single_issue(
     pr_title: str | None = None,
 ) -> None:
     if not resolver_output.success and not send_on_failure:
-        logger.info(
+        print(
             f'Issue {resolver_output.issue.number} was not successfully resolved. Skipping PR creation.'
         )
         return
@@ -530,7 +529,7 @@ def process_all_successful_issues(
     output_path = os.path.join(output_dir, 'output.jsonl')
     for resolver_output in load_all_resolver_outputs(output_path):
         if resolver_output.success:
-            logger.info(f'Processing issue {resolver_output.issue.number}')
+            print(f'Processing issue {resolver_output.issue.number}')
             process_single_issue(
                 output_dir,
                 resolver_output,

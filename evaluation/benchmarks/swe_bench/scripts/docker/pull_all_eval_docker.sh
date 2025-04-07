@@ -1,36 +1,66 @@
-#!/usr/bin/env bash
+#!/bin/bash
 set -e
 
-SET=$1
-# check set is in ["full", "lite", "verified"]
-if [ "$SET" != "full" ] && [ "$SET" != "lite" ] && [ "$SET" != "verified" ]; then
-    echo "Error: argument 1 must be one of: full, lite, verified"
+LEVEL=$1
+# three levels:
+# - base, keyword "sweb.base"
+# - env, keyword "sweb.env"
+# - instance, keyword "sweb.eval"
+SET=$2
+
+if [ -z "$LEVEL" ]; then
+    echo "Usage: $0 <cache_level> <set>"
+    echo "cache_level: base, env, or instance"
+    echo "set: lite, full"
     exit 1
 fi
 
-input_file=evaluation/benchmarks/swe_bench/scripts/docker/all-swebench-${SET}-instance-images.txt
-echo "Downloading images based on ${input_file}"
-# Check if the file exists
-if [ ! -f "$input_file" ]; then
-    echo "Error: File '$input_file' not found"
-    exit 1
+if [ -z "$SET" ]; then
+    echo "Usage: $0 <cache_level> <set>"
+    echo "cache_level: base, env, or instance"
+    echo "set: lite, full, default is lite"
+    SET="lite"
 fi
 
-# Get total number of images
-total_images=$(wc -l < "${input_file}")
-counter=0
+# Check if namespace is provided via argument $3, otherwise default to 'xingyaoww'
+NAMESPACE=${3:-xingyaoww}
 
-echo "Starting to pull ${total_images} images"
+echo "Using namespace: $NAMESPACE"
 
-# Read the file line by line and pull each image
-while IFS= read -r image; do
-    # Skip empty lines or comments
-    if [ -n "$image" ] && [[ ! "$image" =~ ^[[:space:]]*# ]]; then
-        counter=$((counter + 1))
-        echo "[${counter}/${total_images}] Pulling ${image}"
-        docker pull "${image}"
-        sleep 2
-    fi
-done < "${input_file}"
+if [ "$SET" == "lite" ]; then
+    IMAGE_FILE="$(dirname "$0")/all-swebench-lite-instance-images.txt"
+else
+    IMAGE_FILE="$(dirname "$0")/all-swebench-full-instance-images.txt"
+fi
 
-echo "Finished pulling all images"
+# Define a pattern based on the level
+case $LEVEL in
+    base)
+        PATTERN="sweb.base"
+        ;;
+    env)
+        PATTERN="sweb.base\|sweb.env"
+        ;;
+    instance)
+        PATTERN="sweb.base\|sweb.env\|sweb.eval"
+        ;;
+    *)
+        echo "Invalid cache level: $LEVEL"
+        echo "Valid levels are: base, env, instance"
+        exit 1
+        ;;
+esac
+
+echo "Pulling docker images for [$LEVEL] level"
+
+echo "Pattern: $PATTERN"
+echo "Image file: $IMAGE_FILE"
+
+# Read each line from the file, filter by pattern, and pull the docker image
+grep "$PATTERN" "$IMAGE_FILE" | while IFS= read -r image; do
+    echo "Pulling $NAMESPACE/$image into $image"
+    docker pull $NAMESPACE/$image
+    # replace _s_ to __ in the image name
+    renamed_image=$(echo "$image" | sed 's/_s_/__/g')
+    docker tag $NAMESPACE/$image $renamed_image
+done

@@ -4,28 +4,33 @@ Microagents are specialized prompts that enhance OpenHands with domain-specific 
 and task-specific workflows. They help by providing expert guidance, automating common tasks, and ensuring
 consistent practices across projects.
 
-## Microagent Categories
+## Microagent Types
 
-Currently OpenHands supports two categories of microagents:
+Currently OpenHands supports the following types of microagents:
 
-- [Repository-specific Microagents](./microagents-repo): Repository-specific context and guidelines for OpenHands.
-- [Public Microagents](./microagents-public): General guidelines triggered by keywords for all OpenHands users.
-
-A microagent is classified as repository-specific or public depending on its location:
-
-- Repository-specific microagents are located in a repository's `.openhands/microagents/` directory
-- Public microagents are located in the official OpenHands repository inside the `/microagents` folder
+* [Repository Microagents](./microagents-repo): Repository-specific context and guidelines for OpenHands.
+* [Public Microagents](./microagents-public): General guidelines triggered by keywords for all OpenHands users.
 
 When OpenHands works with a repository, it:
 
-1. Loads **repository-specific** microagents from `.openhands/microagents/` if present in the repository.
-2. Loads **public knowledge** microagents triggered by keywords in conversations
-3. Loads **public tasks** microagents when explicitly requested by the user
-
-You can check out the existing public microagents at the [official OpenHands repository](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/).
+1. Loads repository-specific instructions from `.openhands/microagents/` if present in the repository.
+2. Loads general guidelines triggered by keywords in conversations.
+See current [Public Microagents](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/knowledge).
 
 ## Microagent Format
 
-All microagents use markdown files with YAML frontmatter that have special instructions to help OpenHands activate them.
+All microagents use markdown files with YAML frontmatter that have special instructions to help OpenHands accomplish
+tasks:
+```
+---
+name: <Name of the microagent>
+type: <MicroAgent type>
+version: <MicroAgent version>
+agent: <The agent type (Typically CodeActAgent)>
+triggers:
+- <Optional keywords triggering the microagent. If triggers are removed, it will always be included>
+---
 
-Check out the [syntax documentation](./microagents-syntax) for a comprehensive guide on how to configure your microagents.
+<Markdown with any special guidelines, instructions, and prompts that OpenHands should follow.
+Check out the specific documentation for each microagent on best practices for more information.>
+```

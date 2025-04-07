@@ -9,7 +9,6 @@ import {
   AssistantMessageAction,
   UserMessageAction,
 } from "#/types/core/actions";
-import { useAuth } from "./auth-context";
 
 const isOpenHandsEvent = (event: unknown): event is OpenHandsParsedEvent =>
   typeof event === "object" &&
@@ -79,7 +78,7 @@ export function updateStatusWhenErrorMessagePresent(data: ErrorArg | unknown) {
     !!val && typeof val === "object";
   const isString = (val: unknown): val is string => typeof val === "string";
   if (isObject(data) && "message" in data && isString(data.message)) {
-    if (data.message === "websocket error" || data.message === "timeout") {
+    if (data.message === "websocket error") {
       return;
     }
     let msgId: string | undefined;
@@ -111,7 +110,6 @@ export function WsClientProvider({
   );
   const [events, setEvents] = React.useState<Record<string, unknown>[]>([]);
   const lastEventRef = React.useRef<Record<string, unknown> | null>(null);
-  const { providerTokensSet } = useAuth();
 
   const messageRateHandler = useRate({ threshold: 250 });
 
@@ -120,7 +118,7 @@ export function WsClientProvider({
       EventLogger.error("WebSocket is not connected.");
       return;
     }
-    sioRef.current.emit("oh_user_action", event);
+    sioRef.current.emit("oh_action", event);
   }
 
   function handleConnect() {
@@ -170,7 +168,6 @@ export function WsClientProvider({
     const query = {
       latest_event_id: lastEvent?.id ?? -1,
       conversation_id: conversationId,
-      providers_set: providerTokensSet,
     };
 
     const baseUrl =

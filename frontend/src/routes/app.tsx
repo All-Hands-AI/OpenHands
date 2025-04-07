@@ -1,13 +1,10 @@
 import React from "react";
 import { FaArrowRotateRight } from "react-icons/fa6";
 import { FaExternalLinkAlt, FaHome } from "react-icons/fa";
-import { useTranslation } from "react-i18next";
 import { useActiveHost } from "#/hooks/query/use-active-host";
 import { PathForm } from "#/components/features/served-host/path-form";
-import { I18nKey } from "#/i18n/declaration";
 
 function ServedApp() {
-  const { t } = useTranslation();
   const { activeHost } = useActiveHost();
   const [refreshKey, setRefreshKey] = React.useState(0);
   const [currentActiveHost, setCurrentActiveHost] = React.useState<
@@ -87,7 +84,7 @@ function ServedApp() {
       </div>
       <iframe
         key={refreshKey}
-        title={t(I18nKey.SERVED_APP$TITLE)}
+        title="Served App"
         src={fullUrl}
         className="w-full h-full"
       />
