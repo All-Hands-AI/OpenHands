@@ -66,33 +66,40 @@ logs/
 
 ## Security Features
 
-### SensitiveDataFilter
+### Sensitive Data Protection
 
-OpenHands includes a sophisticated filter to prevent sensitive data from appearing in logs:
+OpenHands provides two complementary approaches to protect sensitive data in logs:
 
-1. **Environment Variables**
-   - Automatically masks values from environment variables containing:
-     - SECRET
-     - _KEY
-     - _CODE
-     - _TOKEN
+1. **SensitiveDataFilter (Pattern-Based)**
+   - Automatically masks values based on patterns
+   - Primarily used for environment variables and known formats:
+     - SECRET, _KEY, _CODE, _TOKEN in variable names
+     - Common patterns like API keys, tokens, credentials
+   - Example:
+     ```python
+     # Original: "API key: sk-1234567890"
+     # Filtered: "API key: ******"
+     ```
 
-2. **Known Sensitive Patterns**
-   - Masks common sensitive values like:
-     - API keys
-     - Access tokens
-     - Authentication credentials
-     - AWS credentials
-     - GitHub tokens
+2. **Secret Management (Explicit)**
+   - Uses `set_secrets()` and `update_secrets()` to track specific values
+   - Replaces exact matches of secret values with `<secret_hidden>`
+   - More precise than pattern matching
+   - Usage:
+     ```python
+     from openhands.events.stream import EventStream
 
-Example:
-```python
-# Original log message
-"API key: sk-1234567890, GitHub token: ghp_abcdef"
+     stream = EventStream(...)
+     stream.set_secrets({
+         "github_token": "ghp_actual_token",
+         "api_key": "sk_live_123456"
+     })
+     # All occurrences of these exact values will be replaced
+     ```
 
-# Filtered log message
-"API key: ******, GitHub token: ******"
-```
+Choose the appropriate method based on your needs:
+- Use `SensitiveDataFilter` for general protection against accidental exposure
+- Use `set_secrets()` when you need precise control over specific secret values
 
 ## Best Practices
 
