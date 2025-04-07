@@ -46,10 +46,6 @@ export function ExpandableMessage({
         setDetails(message);
       }
       setShowDetails(false);
-    } else if (isMessageTranslationKey && i18n.exists(message)) {
-      setHeadline(t(message));
-      setDetails(t(message));
-      setShowDetails(false);
     }
   }, [id, message, i18n.language, t]);
 
