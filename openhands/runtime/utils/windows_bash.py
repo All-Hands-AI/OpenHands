@@ -86,6 +86,8 @@ class WindowsBashSession:
         output_file = None
         error_file = None
         status_file = None
+        stdout_data = ''
+        stderr_data = ''
         try:
             # Create unique files for this command
             run_uuid = uuid.uuid4()
@@ -254,13 +256,14 @@ Write-Host "[PS_SCRIPT] Script execution complete."
                         print(f"[WARN] Error during post-kill communicate: {comm_err}")
 
                 # Handle timeout
+                # Use captured stdout as content, keep timeout message in metadata
                 return CmdOutputObservation(
-                    content=f"Command timed out after {timeout} seconds.",
+                    content=stdout_data or "", # Use captured stdout, ensure it's a string
                     command=command,
                     metadata=CmdOutputMetadata(
                         exit_code=-1,
                         working_dir=self._cwd,
-                        suffix=f"\n[Command timed out after {timeout} seconds]"
+                        suffix=f"\\n[Command timed out after {timeout} seconds]"
                     )
                 )
             except Exception as run_err:
