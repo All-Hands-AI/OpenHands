@@ -144,6 +144,9 @@ class Condenser(ABC):
         Raises:
             ValueError: If the condenser type is not recognized.
         """
+        # trigger the conderser implementations to register themselves
+        import openhands.memory.condenser.impl  # noqa: F401
+
         try:
             condenser_class = CONDENSER_REGISTRY[type(config)]
             return condenser_class.from_config(config)
