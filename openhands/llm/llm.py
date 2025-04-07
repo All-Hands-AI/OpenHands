@@ -246,6 +246,12 @@ class LLM(RetryMixin, DebugMixin):
                     'The messages list is empty. At least one message is required.'
                 )
 
+            # anthropic requires at least one user message.
+            if not any(message.get('role') == 'user' for message in messages):
+                raise ValueError(
+                    'At least one message with role "user" is required for the completion.'
+                )
+
             # log the entire LLM prompt
             self.log_prompt(messages)
 
