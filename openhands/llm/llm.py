@@ -171,6 +171,7 @@ class LLM(RetryMixin, DebugMixin):
             custom_llm_provider=self.config.custom_llm_provider,
             timeout=self.config.timeout,
             top_p=self.config.top_p,
+            top_k=self.config.top_k,
             drop_params=self.config.drop_params,
             seed=self.config.seed,
             **kwargs,
