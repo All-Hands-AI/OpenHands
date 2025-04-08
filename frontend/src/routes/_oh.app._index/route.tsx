@@ -2,15 +2,17 @@ import React from "react";
 import { useRouteError } from "react-router";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { useTranslation } from "react-i18next";
 import { FileExplorer } from "#/components/features/file-explorer/file-explorer";
 import { useFiles } from "#/context/files";
 
 export function ErrorBoundary() {
   const error = useRouteError();
+  const { t } = useTranslation();
 
   return (
     <div className="w-full h-full border border-danger rounded-b-xl flex flex-col items-center justify-center gap-2 bg-red-500/5">
-      <h1 className="text-3xl font-bold">Oops! An error occurred!</h1>
+      <h1 className="text-3xl font-bold">{t("ERROR$GENERIC")}</h1>
       {error instanceof Error && <pre>{error.message}</pre>}
     </div>
   );

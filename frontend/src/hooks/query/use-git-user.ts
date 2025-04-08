@@ -6,16 +6,16 @@ import OpenHands from "#/api/open-hands";
 import { useAuth } from "#/context/auth-context";
 import { useLogout } from "../mutation/use-logout";
 
-export const useGitHubUser = () => {
-  const { githubTokenIsSet } = useAuth();
+export const useGitUser = () => {
+  const { providersAreSet, providerTokensSet } = useAuth();
   const { mutateAsync: logout } = useLogout();
 
   const { data: config } = useConfig();
 
   const user = useQuery({
-    queryKey: ["user", githubTokenIsSet],
-    queryFn: OpenHands.getGitHubUser,
-    enabled: githubTokenIsSet && !!config?.APP_MODE,
+    queryKey: ["user", providerTokensSet],
+    queryFn: OpenHands.getGitUser,
+    enabled: providersAreSet && !!config?.APP_MODE,
     retry: false,
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 15, // 15 minutes

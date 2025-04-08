@@ -9,5 +9,5 @@ You'll then need to set the following environment variables when starting OpenHa
 docker run # ...
     -e RUNTIME=modal \
     -e MODAL_API_TOKEN_ID="your-id" \
-    -e MODAL_API_TOKEN_SECRET="your-secret" \
+    -e MODAL_API_TOKEN_SECRET="modal-api-key" \
 ```

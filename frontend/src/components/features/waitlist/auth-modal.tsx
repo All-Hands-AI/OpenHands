@@ -1,4 +1,6 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
+import { I18nKey } from "#/i18n/declaration";
 import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import { ModalBody } from "#/components/shared/modals/modal-body";
@@ -12,6 +14,7 @@ interface AuthModalProps {
 }
 
 export function AuthModal({ githubAuthUrl }: AuthModalProps) {
+  const { t } = useTranslation();
   const [isTosAccepted, setIsTosAccepted] = React.useState(false);
 
   const handleGitHubAuth = () => {
@@ -39,7 +42,7 @@ export function AuthModal({ githubAuthUrl }: AuthModalProps) {
           className="w-full"
           startContent={<GitHubLogo width={20} height={20} />}
         >
-          Connect to GitHub
+          {t(I18nKey.GITHUB$CONNECT_TO_GITHUB)}
         </BrandButton>
       </ModalBody>
     </ModalBackdrop>
