@@ -349,6 +349,7 @@ def main() -> None:
         model=my_args.llm_model or os.environ['LLM_MODEL'],
         api_key=SecretStr(api_key) if api_key else None,
         base_url=my_args.llm_base_url or os.environ.get('LLM_BASE_URL', None),
+        api_version=os.environ.get('LLM_API_VERSION', None),
     )
 
     repo_instruction = None
