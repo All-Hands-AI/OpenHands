@@ -8,6 +8,7 @@ import MainApp from "#/routes/root-layout";
 import SettingsScreen from "#/routes/settings";
 import Home from "#/routes/home";
 import OpenHands from "#/api/open-hands";
+import { SettingsService } from "#/api/settings-service/settings-service.api";
 
 const createAxiosNotFoundErrorObject = () =>
   new AxiosError(
@@ -25,7 +26,7 @@ const createAxiosNotFoundErrorObject = () =>
     },
   );
 
-const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+const getSettingsSpy = vi.spyOn(SettingsService, "getSettings");
 
 const RouterStub = createRoutesStub([
   {

@@ -1,0 +1,27 @@
+export type GitProvider = "github" | "gitlab";
+
+export interface UserSettings {
+  llm_model: string;
+  llm_base_url: string;
+  agent: string;
+  language: string;
+  llm_api_key_set: boolean;
+  confirmation_mode: boolean;
+  security_analyzer: string;
+  remote_runtime_resource_factor: number | null;
+  github_token_is_set: boolean;
+  enable_default_condenser: boolean;
+  enable_sound_notifications: boolean;
+  user_consents_to_analytics: boolean | null;
+  provider_tokens_set: Record<GitProvider, boolean>;
+}
+
+// These are settings that are only used on the client side and should not be sent to the server
+export interface ClientUserSettings extends UserSettings {
+  is_new_user: boolean;
+}
+
+// These are settings that are used on the server side and should be sent to the server
+export interface ServerUserSettings extends UserSettings {
+  github_token: string | null;
+}

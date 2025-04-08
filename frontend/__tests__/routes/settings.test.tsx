@@ -7,25 +7,26 @@ import OpenHands from "#/api/open-hands";
 import { AuthProvider } from "#/context/auth-context";
 import SettingsScreen from "#/routes/settings";
 import * as AdvancedSettingsUtlls from "#/utils/has-advanced-settings-set";
-import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
 import * as ConsentHandlers from "#/utils/handle-capture-consent";
 import AccountSettings from "#/routes/account-settings";
-import { Provider } from "#/types/settings";
+import { DEFAULT_SETTINGS } from "#/services/settings";
+import { SettingsService } from "#/api/settings-service/settings-service.api";
+import { GitProvider } from "#/api/settings-service/settings-service.types";
 
 const toggleAdvancedSettings = async (user: UserEvent) => {
   const advancedSwitch = await screen.findByTestId("advanced-settings-switch");
   await user.click(advancedSwitch);
 };
 
-const mock_provider_tokens_are_set: Record<Provider, boolean> = {
+const MOCK_PROVIDER_TOKENS_ARE_SET: Record<GitProvider, boolean> = {
   github: true,
   gitlab: false,
 };
 
 describe("Settings Screen", () => {
-  const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
-  const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
-  const resetSettingsSpy = vi.spyOn(OpenHands, "resetSettings");
+  const getSettingsSpy = vi.spyOn(SettingsService, "getSettings");
+  const saveSettingsSpy = vi.spyOn(SettingsService, "saveSettings");
+  const resetSettingsSpy = vi.spyOn(SettingsService, "resetSettings");
   const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
 
   const { handleLogoutMock } = vi.hoisted(() => ({
@@ -65,7 +66,9 @@ describe("Settings Screen", () => {
 
     await waitFor(() => {
       // Use queryAllByText to handle multiple elements with the same text
-      expect(screen.queryAllByText("SETTINGS$LLM_SETTINGS")).not.toHaveLength(0);
+      expect(screen.queryAllByText("SETTINGS$LLM_SETTINGS")).not.toHaveLength(
+        0,
+      );
       screen.getByText("ACCOUNT_SETTINGS$ADDITIONAL_SETTINGS");
       screen.getByText("BUTTON$RESET_TO_DEFAULTS");
       screen.getByText("BUTTON$SAVE");
@@ -98,9 +101,7 @@ describe("Settings Screen", () => {
 
     // TODO: Set a better unset indicator
     it.skip("should render an indicator if the GitHub token is not set", async () => {
-      getSettingsSpy.mockResolvedValue({
-        ...MOCK_DEFAULT_USER_SETTINGS,
-      });
+      getSettingsSpy.mockResolvedValue(DEFAULT_SETTINGS);
 
       renderSettingsScreen();
 
@@ -119,8 +120,8 @@ describe("Settings Screen", () => {
 
     it("should set '<hidden>' placeholder if the GitHub token is set", async () => {
       getSettingsSpy.mockResolvedValue({
-        ...MOCK_DEFAULT_USER_SETTINGS,
-        provider_tokens_set: mock_provider_tokens_are_set,
+        ...DEFAULT_SETTINGS,
+        provider_tokens_set: MOCK_PROVIDER_TOKENS_ARE_SET,
       });
 
       renderSettingsScreen();
@@ -133,8 +134,8 @@ describe("Settings Screen", () => {
 
     it("should render an indicator if the GitHub token is set", async () => {
       getSettingsSpy.mockResolvedValue({
-        ...MOCK_DEFAULT_USER_SETTINGS,
-        provider_tokens_set: mock_provider_tokens_are_set,
+        ...DEFAULT_SETTINGS,
+        provider_tokens_set: MOCK_PROVIDER_TOKENS_ARE_SET,
       });
 
       renderSettingsScreen();
@@ -149,8 +150,6 @@ describe("Settings Screen", () => {
         throw new Error("GitHub token input parent not found");
       }
     });
-
-    // Tests for DISCONNECT_FROM_GITHUB button removed as the button is no longer included in main
 
     it("should not render the 'Configure GitHub Repositories' button if OSS mode", async () => {
       getConfigSpy.mockResolvedValue({
@@ -210,7 +209,7 @@ describe("Settings Screen", () => {
     it.skip("should not reset LLM Provider and Model if GitHub token is invalid", async () => {
       const user = userEvent.setup();
       getSettingsSpy.mockResolvedValue({
-        ...MOCK_DEFAULT_USER_SETTINGS,
+        ...DEFAULT_SETTINGS,
         llm_model: "anthropic/claude-3-5-sonnet-20241022",
       });
       saveSettingsSpy.mockRejectedValueOnce(new Error("Invalid GitHub token"));
@@ -331,8 +330,8 @@ describe("Settings Screen", () => {
     // TODO: Set a better unset indicator
     it.skip("should render an indicator if the LLM API key is not set", async () => {
       getSettingsSpy.mockResolvedValueOnce({
-        ...MOCK_DEFAULT_USER_SETTINGS,
-        llm_api_key: null,
+        ...DEFAULT_SETTINGS,
+        llm_api_key_set: null,
       });
 
       renderSettingsScreen();
@@ -352,7 +351,7 @@ describe("Settings Screen", () => {
 
     it("should render an indicator if the LLM API key is set", async () => {
       getSettingsSpy.mockResolvedValueOnce({
-        ...MOCK_DEFAULT_USER_SETTINGS,
+        ...DEFAULT_SETTINGS,
         llm_api_key_set: true,
       });
 
@@ -373,7 +372,7 @@ describe("Settings Screen", () => {
 
     it("should set '<hidden>' placeholder if the LLM API key is set", async () => {
       getSettingsSpy.mockResolvedValueOnce({
-        ...MOCK_DEFAULT_USER_SETTINGS,
+        ...DEFAULT_SETTINGS,
         llm_api_key_set: true,
       });
 
@@ -388,7 +387,7 @@ describe("Settings Screen", () => {
     describe("Basic Model Selector", () => {
       it("should set the provider and model", async () => {
         getSettingsSpy.mockResolvedValue({
-          ...MOCK_DEFAULT_USER_SETTINGS,
+          ...DEFAULT_SETTINGS,
           llm_model: "anthropic/claude-3-5-sonnet-20241022",
         });
 
@@ -455,7 +454,7 @@ describe("Settings Screen", () => {
         });
 
         getSettingsSpy.mockResolvedValue({
-          ...MOCK_DEFAULT_USER_SETTINGS,
+          ...DEFAULT_SETTINGS,
           remote_runtime_resource_factor: 1,
         });
 
@@ -495,7 +494,7 @@ describe("Settings Screen", () => {
         });
 
         getSettingsSpy.mockResolvedValue({
-          ...MOCK_DEFAULT_USER_SETTINGS,
+          ...DEFAULT_SETTINGS,
         });
 
         renderSettingsScreen();
@@ -546,7 +545,7 @@ describe("Settings Screen", () => {
         const user = userEvent.setup();
 
         getSettingsSpy.mockResolvedValueOnce({
-          ...MOCK_DEFAULT_USER_SETTINGS,
+          ...DEFAULT_SETTINGS,
         });
 
         renderSettingsScreen();
@@ -563,7 +562,7 @@ describe("Settings Screen", () => {
         // Mock the settings that will be returned after reset
         // This should be the default settings with no advanced settings enabled
         getSettingsSpy.mockResolvedValueOnce({
-          ...MOCK_DEFAULT_USER_SETTINGS,
+          ...DEFAULT_SETTINGS,
           llm_base_url: "",
           confirmation_mode: false,
           security_analyzer: "",
@@ -614,7 +613,7 @@ describe("Settings Screen", () => {
 
     it("should toggle advanced if user had set a custom model", async () => {
       getSettingsSpy.mockResolvedValue({
-        ...MOCK_DEFAULT_USER_SETTINGS,
+        ...DEFAULT_SETTINGS,
         llm_model: "some/custom-model",
       });
       renderSettingsScreen();
@@ -649,7 +648,7 @@ describe("Settings Screen", () => {
 
     it("should have confirmation mode enabled if the user previously had it enabled", async () => {
       getSettingsSpy.mockResolvedValue({
-        ...MOCK_DEFAULT_USER_SETTINGS,
+        ...DEFAULT_SETTINGS,
         confirmation_mode: true,
       });
 
@@ -666,7 +665,7 @@ describe("Settings Screen", () => {
     // FIXME: security analyzer is not found for some reason...
     it.skip("should have the values set if the user previously had them set", async () => {
       getSettingsSpy.mockResolvedValue({
-        ...MOCK_DEFAULT_USER_SETTINGS,
+        ...DEFAULT_SETTINGS,
         language: "no",
         user_consents_to_analytics: true,
         llm_base_url: "https://test.com",
@@ -701,7 +700,7 @@ describe("Settings Screen", () => {
     it("should save the settings when the 'Save Changes' button is clicked", async () => {
       const user = userEvent.setup();
       getSettingsSpy.mockResolvedValue({
-        ...MOCK_DEFAULT_USER_SETTINGS,
+        ...DEFAULT_SETTINGS,
       });
 
       renderSettingsScreen();
@@ -728,7 +727,7 @@ describe("Settings Screen", () => {
     it("should properly save basic LLM model settings", async () => {
       const user = userEvent.setup();
       getSettingsSpy.mockResolvedValue({
-        ...MOCK_DEFAULT_USER_SETTINGS,
+        ...DEFAULT_SETTINGS,
       });
 
       renderSettingsScreen();
@@ -764,7 +763,7 @@ describe("Settings Screen", () => {
 
     it("should reset the settings when the 'Reset to defaults' button is clicked", async () => {
       const user = userEvent.setup();
-      getSettingsSpy.mockResolvedValue(MOCK_DEFAULT_USER_SETTINGS);
+      getSettingsSpy.mockResolvedValue(DEFAULT_SETTINGS);
 
       renderSettingsScreen();
 
@@ -795,7 +794,7 @@ describe("Settings Screen", () => {
 
       // Mock the settings response after reset
       getSettingsSpy.mockResolvedValueOnce({
-        ...MOCK_DEFAULT_USER_SETTINGS,
+        ...DEFAULT_SETTINGS,
         llm_base_url: "",
         confirmation_mode: false,
         security_analyzer: "",
@@ -820,7 +819,7 @@ describe("Settings Screen", () => {
 
     it("should cancel the reset when the 'Cancel' button is clicked", async () => {
       const user = userEvent.setup();
-      getSettingsSpy.mockResolvedValue(MOCK_DEFAULT_USER_SETTINGS);
+      getSettingsSpy.mockResolvedValue(DEFAULT_SETTINGS);
 
       renderSettingsScreen();
 
@@ -928,7 +927,7 @@ describe("Settings Screen", () => {
     it("should not send an empty LLM API Key if the user submits an empty string but already has it set", async () => {
       const user = userEvent.setup();
       getSettingsSpy.mockResolvedValue({
-        ...MOCK_DEFAULT_USER_SETTINGS,
+        ...DEFAULT_SETTINGS,
         llm_api_key_set: true,
       });
 
