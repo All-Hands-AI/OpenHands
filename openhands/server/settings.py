@@ -30,7 +30,7 @@ class Settings(BaseModel):
     llm_base_url: str | None = None
     remote_runtime_resource_factor: int | None = None
     secrets_store: SecretStore = Field(default_factory=SecretStore, frozen=True)
-    enable_default_condenser: bool = False
+    enable_default_condenser: bool = True
     enable_sound_notifications: bool = False
     user_consents_to_analytics: bool | None = None
     sandbox_base_container_image: str | None = None
