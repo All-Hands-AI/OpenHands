@@ -16,7 +16,11 @@ OpenHandsは、AI アシスタントとやり取りするためのグラフィ�
 3. 選択したプロバイダーに対応する`API Key`を入力します。
 4. `Save Changes`をクリックして設定を適用します。
 
-### GitHubトークンの設定
+### バージョン管理トークン
+
+OpenHandsは複数のバージョン管理プロバイダーをサポートしています。複数のプロバイダーのトークンを同時に設定できます。
+
+#### GitHubトークンの設定
 
 OpenHandsは、利用可能な場合、自動的に`GITHUB_TOKEN`をシェル環境にエクスポートします。これは2つの方法で行われます。
 
@@ -34,7 +38,7 @@ OpenHandsは、利用可能な場合、自動的に`GITHUB_TOKEN`をシェル環
      - Minimal Permissions（検索用に**Meta Data = Read-only**を選択し、ブランチ作成用に**Pull Requests = Read and Write**、**Content = Read and Write**を選択します）
   2. **OpenHandsにトークンを入力**:
    - 設定ボタン（歯車アイコン）をクリックします。
-   - `GitHub Settings`セクションに移動します。
+   - `Git Provider Settings`セクションに移動します。
    - `GitHub Token`フィールドにトークンを貼り付けます。
    - `Save Changes`をクリックして変更を適用します。
 </details>
@@ -92,6 +96,46 @@ OpenHandsは、利用可能な場合、自動的に`GITHUB_TOKEN`をシェル環
    - 要求された権限を確認します。
    - OpenHandsがGitHubアカウントにアクセスすることを承認します。
    - 組織を使用している場合は、プロンプトが表示されたら組織へのアクセスを承認します。
+</details>
+
+#### GitLabトークンの設定
+
+OpenHandsは、利用可能な場合、ローカルインストールのみ、自動的に`GITLAB_TOKEN`をシェル環境にエクスポートします。
+
+<details>
+  <summary>GitLabトークンの設定</summary>
+
+  1. **Personal Access Token（PAT）の生成**:
+   - GitLabで、User Settings > Access Tokensに移動します。
+   - 以下のスコープを持つ新しいトークンを作成します:
+     - `api`（APIアクセス）
+     - `read_user`（ユーザー情報の読み取り）
+     - `read_repository`（リポジトリ読み取り）
+     - `write_repository`（リポジトリ書き込み）
+   - 有効期限を設定するか、無期限トークンの場合は空白のままにします。
+  2. **OpenHandsにトークンを入力**:
+   - 設定ボタン（歯車アイコン）をクリックします。
+   - `Git Provider Settings`セクションに移動します。
+   - `GitLab Token`フィールドにトークンを貼り付けます。
+   - セルフホスト型GitLabを使用している場合は、GitLabインスタンスのURLを入力します。
+   - `Save Changes`をクリックして変更を適用します。
+</details>
+
+<details>
+  <summary>トラブルシューティング</summary>
+
+  一般的な問題と解決策:
+
+  - **トークンが認識されない**:
+     - トークンが設定に正しく保存されていることを確認します。
+     - トークンの有効期限が切れていないことを確認します。
+     - トークンに必要なスコープがあることを確認します。
+     - セルフホスト型インスタンスの場合は、正しいインスタンスURLを確認します。
+
+  - **アクセスが拒否された**:
+     - プロジェクトのアクセス権限を確認します。
+     - トークンに必要なスコープがあるかどうかを確認します。
+     - グループ/組織のリポジトリの場合は、適切なアクセス権があることを確認します。
 </details>
 
 ### 高度な設定
