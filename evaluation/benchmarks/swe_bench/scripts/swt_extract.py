@@ -4,7 +4,6 @@ import logging
 
 
 import unidiff
-from unidiff import PatchSet
 
 from evaluation.benchmarks.swe_bench.resource.constants import MAP_VERSION_TO_INSTALL
 
@@ -20,7 +19,14 @@ def remove_setup_files(model_patch: str, instance: dict, delete_setup_changes: b
         for file in setup_files
         if any(file in install and "sed" in install for install in pre_install)
     ] if delete_setup_changes else []
-    patch = unidiff.PatchSet(model_patch)
+    for i in range(10):
+        try:
+            # Appearently outputs.jsonl has .strip() applied, so we try to reconstruct the original patch by adding auxiliary whitespace
+            patch = unidiff.PatchSet(model_patch + i*"\n")
+            break
+        except unidiff.UnidiffParseError as e:
+            pass
+
     to_delete = []
     for i, file in enumerate(patch):
         if any(f in file.source_file for f in relevant_files) or file.target_file.count("/") == 1:
@@ -48,15 +54,12 @@ def main(
                 git_diff = remove_setup_files(git_diff, pred["instance"], ci_mode)
             except:
                 _LOGGER.warning("Warning: Invalid git diff found for instance %s", pred["instance_id"])
-            try:
-                print(json.dumps({
-                    "instance_id": pred["instance_id"],
-                    "model_name_or_path": f'{pred["metadata"]["llm_config"]["openrouter_app_name"]}__{pred["metadata"]["agent_class"]}__{pred["metadata"]["llm_config"]["model"]}',
-                    "model_patch": git_diff,
-                    "full_output": json.dumps(pred),
-                }))
-            except KeyError:
-                _LOGGER.warning("No git diff found for instance %s", pred["instance_id"])
+            print(json.dumps({
+                "instance_id": pred["instance_id"],
+                "model_name_or_path": f'{pred["metadata"]["llm_config"]["openrouter_app_name"]}__{pred["metadata"]["agent_class"]}__{pred["metadata"]["llm_config"]["model"]}',
+                "model_patch": git_diff,
+                "full_output": json.dumps(pred),
+            }))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
