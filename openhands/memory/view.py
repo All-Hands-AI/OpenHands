@@ -5,7 +5,6 @@ from typing import overload
 from pydantic import BaseModel
 
 from openhands.events.action.agent import CondensationAction
-from openhands.events.action.context_reorganization import ContextReorganizationAction
 from openhands.events.event import Event
 from openhands.events.observation.agent import AgentCondensationObservation
 from openhands.events.observation.context_reorganization import (
@@ -59,7 +58,6 @@ class View(BaseModel):
         # If we have a summary, insert it at the specified offset.
         summary: str | None = None
         summary_offset: int | None = None
-        context_reorganization: ContextReorganizationAction | None = None
         context_reorganization_index: int | None = None
 
         # Process events to find the most recent condensation or context reorganization
@@ -71,25 +69,18 @@ class View(BaseModel):
                     summary_offset = event.summary_offset
                     break
 
-            # Handle ContextReorganizationAction
-            elif isinstance(event, ContextReorganizationAction):
-                context_reorganization = event
+            # Handle ContextReorganizationObservation
+            elif isinstance(event, ContextReorganizationObservation):
                 context_reorganization_index = len(events) - i - 1
                 break
 
         # Handle context reorganization if available
-        if (
-            context_reorganization is not None
-            and context_reorganization_index is not None
-        ):
+        if context_reorganization_index is not None:
             # Create a new list with only the ContextReorganizationObservation and events after it
-            new_events: list[Event] = [
-                ContextReorganizationObservation(
-                    content=context_reorganization.summary,
-                    summary=context_reorganization.summary,
-                    files=context_reorganization.files,
-                )
-            ]
+            new_events: list[Event] = []
+
+            # Add the ContextReorganizationObservation
+            new_events.append(events[context_reorganization_index])
 
             # Add only events that come after the context_reorganization_index
             for event in events[context_reorganization_index + 1 :]:

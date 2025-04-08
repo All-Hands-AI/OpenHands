@@ -20,7 +20,10 @@ from openhands.events.event import (
     FileReadSource,
     RecallType,
 )
-from openhands.events.observation import CmdOutputObservation
+from openhands.events.observation import (
+    CmdOutputObservation,
+    ContextReorganizationObservation,
+)
 from openhands.events.observation.agent import (
     MicroagentKnowledge,
     RecallObservation,
@@ -351,6 +354,115 @@ def test_process_events_with_user_reject_observation(conversation_memory):
     assert isinstance(result.content[0], TextContent)
     assert 'Action rejected' in result.content[0].text
     assert '[Last action has been rejected by the user]' in result.content[0].text
+
+
+def test_process_events_with_context_reorganization_observation(conversation_memory):
+    """Test that context reorganization observations are processed correctly."""
+    # Create a context reorganization observation with file content
+    file_content = """def hello_world():
+    print("Hello, world!")
+
+# This is a sample file
+if __name__ == "__main__":
+    hello_world()
+"""
+    obs = ContextReorganizationObservation(
+        content=file_content,
+        summary='Important information from the conversation',
+        files=['file1.py', 'file2.py'],
+    )
+
+    initial_messages = [
+        Message(role='system', content=[TextContent(text='System message')])
+    ]
+
+    messages = conversation_memory.process_events(
+        condensed_history=[obs],
+        initial_messages=initial_messages,
+        max_message_chars=None,
+        vision_is_active=False,
+    )
+
+    assert len(messages) == 2
+    result = messages[1]
+    assert result.role == 'user'
+    assert len(result.content) == 1
+    assert isinstance(result.content[0], TextContent)
+
+    # Check header and summary
+    assert 'CONTEXT REORGANIZATION:' in result.content[0].text
+    assert (
+        'Summary: Important information from the conversation' in result.content[0].text
+    )
+
+    # Check file listing
+    assert 'Files included in context:' in result.content[0].text
+    assert 'File: file1.py' in result.content[0].text
+    assert 'File: file2.py' in result.content[0].text
+
+    # Check file content
+    assert 'def hello_world():' in result.content[0].text
+    assert 'print("Hello, world!")' in result.content[0].text
+    assert '# This is a sample file' in result.content[0].text
+    assert 'if __name__ == "__main__":' in result.content[0].text
+    assert 'hello_world()' in result.content[0].text
+
+
+def test_process_observation_with_context_reorganization(conversation_memory):
+    """Test that _process_observation correctly handles ContextReorganizationObservation."""
+    # Create a context reorganization observation with file content
+    file_content = """# Sample Python file
+class Calculator:
+    def add(self, a, b):
+        return a + b
+
+    def subtract(self, a, b):
+        return a - b
+"""
+    obs = ContextReorganizationObservation(
+        content=file_content,
+        summary='Context reorganized with calculator class',
+        files=['calculator.py'],
+    )
+
+    # Call _process_observation directly
+    messages = conversation_memory._process_observation(
+        obs=obs,
+        max_message_chars=None,
+        vision_is_active=False,
+        tool_call_id_to_message={},  # Empty dict since we're not testing tool calls
+    )
+
+    # Verify we got a list with one message
+    assert isinstance(messages, list)
+    assert len(messages) == 1
+
+    # Get the message
+    message = messages[0]
+
+    # Verify the message structure
+    assert message.role == 'user'
+    assert len(message.content) == 1
+    assert isinstance(message.content[0], TextContent)
+
+    # Check the content formatting
+    text = message.content[0].text
+
+    # Header and summary
+    assert 'CONTEXT REORGANIZATION:' in text
+    assert 'Summary: Context reorganized with calculator class' in text
+
+    # File listing
+    assert 'Files included in context:' in text
+    assert 'File: calculator.py' in text
+
+    # File content
+    assert '# Sample Python file' in text
+    assert 'class Calculator:' in text
+    assert 'def add(self, a, b):' in text
+    assert 'return a + b' in text
+    assert 'def subtract(self, a, b):' in text
+    assert 'return a - b' in text
 
 
 def test_process_events_with_empty_environment_info(conversation_memory):

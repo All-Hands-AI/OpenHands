@@ -26,6 +26,7 @@ from openhands.events.observation import (
     AgentThinkObservation,
     BrowserOutputObservation,
     CmdOutputObservation,
+    ContextReorganizationObservation,
     FileEditObservation,
     FileReadObservation,
     IPythonRunCellObservation,
@@ -397,6 +398,40 @@ class ConversationMemory:
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, AgentCondensationObservation):
             text = truncate_content(obs.content, max_message_chars)
+            message = Message(role='user', content=[TextContent(text=text)])
+        elif isinstance(obs, ContextReorganizationObservation):
+            # Format the context reorganization observation with a clear header
+            header = 'CONTEXT REORGANIZATION:\n'
+            summary_text = f'Summary: {obs.summary}\n\n' if obs.summary else ''
+
+            # Include file information in the observation
+            files_section = ''
+            if obs.files:
+                files_section = 'Files included in context:\n'
+                for file_info in obs.files:
+                    file_path = file_info.get('path', 'unknown_path')
+
+                    # Check if we have a view_range specified
+                    view_range_info = ''
+                    if 'view_range' in file_info and file_info['view_range']:
+                        view_range = file_info['view_range']
+                        view_range_info = f' (lines {view_range[0]}-{view_range[1]})'
+
+                    files_section += f'File: {file_path}{view_range_info}\n'
+
+            # Combine all sections
+            # The content field should contain the file contents if they were retrieved
+            text = header + summary_text + files_section
+
+            # Add the content if it's not just the summary (which would indicate no file contents were retrieved)
+            if obs.content and obs.content != obs.summary:
+                text += obs.content
+            else:
+                # If no file contents were retrieved, add a note
+                if obs.files:
+                    text += '\nNote: File contents could not be retrieved. Please use the file_read tool to view specific files.'
+
+            text = truncate_content(text, max_message_chars)
             message = Message(role='user', content=[TextContent(text=text)])
         elif (
             isinstance(obs, RecallObservation)

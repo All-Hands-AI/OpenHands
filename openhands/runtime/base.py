@@ -27,6 +27,7 @@ from openhands.events.action import (
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
+    ContextReorganizationAction,
     FileReadAction,
     FileWriteAction,
     IPythonRunCellAction,
@@ -35,6 +36,7 @@ from openhands.events.event import Event
 from openhands.events.observation import (
     AgentThinkObservation,
     CmdOutputObservation,
+    ContextReorganizationObservation,
     ErrorObservation,
     FileReadObservation,
     NullObservation,
@@ -507,6 +509,9 @@ class Runtime(FileEditRuntimeMixin):
         if action_type not in ACTION_TYPE_TO_CLASS:
             return ErrorObservation(f'Action {action_type} does not exist.')
         if not hasattr(self, action_type):
+            # Special case for ContextReorganizationAction
+            if isinstance(action, ContextReorganizationAction):
+                return self.context_reorganization(action)
             return ErrorObservation(
                 f'Action {action_type} is not supported in the current runtime.'
             )
@@ -561,6 +566,67 @@ class Runtime(FileEditRuntimeMixin):
     @abstractmethod
     def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
         pass
+
+    def context_reorganization(
+        self, action: ContextReorganizationAction
+    ) -> Observation:
+        """Handle a context reorganization action.
+
+        This method:
+        1. Creates FileReadAction instances for each file in the action
+        2. Executes these actions to get the file contents
+        3. Combines the file contents into a single string
+        4. Creates a ContextReorganizationObservation with the summary and combined file contents
+
+        Args:
+            action: The ContextReorganizationAction to handle
+
+        Returns:
+            A ContextReorganizationObservation with the summary and file contents
+        """
+        # Create a list to store file contents
+        file_contents = []
+
+        # Create and execute FileReadAction instances for each file
+        for file_info in action.files:
+            file_path = file_info.get('path')
+            view_range = file_info.get('view_range')
+
+            if not file_path:
+                self.log('warning', f'Skipping file with missing path: {file_info}')
+                continue
+
+            # Create a FileReadAction for this file
+            file_read_action = FileReadAction(path=file_path, view_range=view_range)
+
+            # Execute the action and get the observation
+            try:
+                observation = self.read(file_read_action)
+                if isinstance(observation, FileReadObservation):
+                    # Add the file content to our list
+                    file_contents.append(
+                        f'\n\n--- File: {file_path} ---\n{observation.content}'
+                    )
+                else:
+                    self.log(
+                        'warning', f'Failed to read file {file_path}: {observation}'
+                    )
+                    file_contents.append(
+                        f'\n\n--- File: {file_path} ---\nError: Could not read file content'
+                    )
+            except Exception as e:
+                self.log('error', f'Error reading file {file_path}: {e}')
+                file_contents.append(f'\n\n--- File: {file_path} ---\nError: {str(e)}')
+
+        # Combine the summary and file contents
+        combined_content = action.summary
+        if file_contents:
+            combined_content += '\n\nFile Contents:' + ''.join(file_contents)
+
+        # Create and return the observation
+        return ContextReorganizationObservation(
+            content=combined_content, summary=action.summary, files=action.files
+        )
 
     # ====================================================================
     # File operations

@@ -1,6 +1,10 @@
 from inspect import signature
 
-from openhands.runtime.plugins.agent_skills import file_ops, file_reader
+from openhands.runtime.plugins.agent_skills import (
+    context_reorganize,
+    file_ops,
+    file_reader,
+)
 from openhands.runtime.plugins.agent_skills.utils.dependency import import_functions
 
 import_functions(
@@ -9,7 +13,12 @@ import_functions(
 import_functions(
     module=file_reader, function_names=file_reader.__all__, target_globals=globals()
 )
-__all__ = file_ops.__all__ + file_reader.__all__
+import_functions(
+    module=context_reorganize,
+    function_names=context_reorganize.__all__,
+    target_globals=globals(),
+)
+__all__ = file_ops.__all__ + file_reader.__all__ + context_reorganize.__all__
 
 DOCUMENTATION = ''
 for func_name in __all__:
