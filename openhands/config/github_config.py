@@ -14,7 +14,7 @@ def get_github_config() -> dict:
     """
     config = load_app_config(set_logging_levels=False)
     github_config = {}
-    
+
     # Check if 'github' section exists in the extended config
     if hasattr(config, 'extended') and hasattr(config.extended, 'config'):
         github_config = config.extended.config.get('github', {})
@@ -33,6 +33,10 @@ def get_github_config() -> dict:
     # If enterprise_url is set but graphql_url is not, use default GraphQL path
     if enterprise_url and not graphql_url:
         graphql_url = f'{enterprise_url}/api/graphql'
+
+    # If api_url is set but graphql_url is not, derive graphql_url from api_url
+    if api_url and not graphql_url:
+        graphql_url = f'{api_url}/graphql'
 
     return {
         'enterprise_url': enterprise_url,
