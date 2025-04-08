@@ -11,7 +11,7 @@ from evaluation.benchmarks.swe_bench.resource.constants import MAP_VERSION_TO_IN
 _LOGGER = logging.getLogger(__name__)
 
 
-def remove_setup_files(model_patch: str, instance: dict):
+def remove_setup_files(model_patch: str, instance: dict, delete_setup_changes: bool):
     """ Discard all changes that a patch applies to files changes by the pre_install script and that are reproduction scripts (top-level script)"""
     setup_files = ["setup.py", "tox.ini", "pyproject.toml"]
     pre_install = MAP_VERSION_TO_INSTALL.get(instance["repo"], {}).get(instance["version"], {}).get("pre_install", [])
@@ -19,7 +19,7 @@ def remove_setup_files(model_patch: str, instance: dict):
         file
         for file in setup_files
         if any(file in install and "sed" in install for install in pre_install)
-    ]
+    ] if delete_setup_changes else []
     patch = unidiff.PatchSet(model_patch)
     to_delete = []
     for i, file in enumerate(patch):
@@ -42,15 +42,12 @@ def main(
             try:
                 git_diff = pred["test_result"]["git_patch"]
             except KeyError:
-                _LOGGER.warning("No git diff found for instance %s", pred["instance_id"])
+                _LOGGER.warning("Warning: No git diff found for instance %s", pred["instance_id"])
                 continue
             try:
-                if ci_mode:
-                    git_diff = remove_setup_files(git_diff, pred["instance"])
-                else:
-                    PatchSet(git_diff)
+                git_diff = remove_setup_files(git_diff, pred["instance"], ci_mode)
             except:
-                _LOGGER.warning("Invalid git diff found for instance %s", pred["instance_id"])
+                _LOGGER.warning("Warning: Invalid git diff found for instance %s", pred["instance_id"])
             try:
                 print(json.dumps({
                     "instance_id": pred["instance_id"],

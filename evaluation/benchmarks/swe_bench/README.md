@@ -211,8 +211,8 @@ The evaluation of these results is done leveraging [the SWT-Bench evaluation har
 In order to run evaluation of the obtained inference results in the SWT-Bench harness, we transform the results to a format that the SWT-Bench using the extractions script `swt_extract.py`.
 
 ```bash
-# python3 evaluation/benchmarks/swe_bench/scripts/swt_extract.py [output.jsonl] > [output_swt.jsonl]
-python3 evaluation/evaluation_outputs/outputs/princeton-nlp__SWE-bench_Verified-test/CodeActAgent/gpt-4o-2024-11-20_maxiter_100_N_v0.31.0-no-hint-run_1/output.jsonl  > OpenHands-gpt-4o-2024-11-20.jsonl
+# python3 evaluation/benchmarks/swe_bench/scripts/swt_extract.py --prediction_file [output.jsonl] > [output_swt.jsonl]
+python3 evaluation/benchmarks/swe_bench/scripts/swt_extract.py --prediction_file "evaluation/evaluation_outputs/outputs/princeton-nlp__SWE-bench_Verified-test/CodeActAgent/gpt-4o-2024-11-20_maxiter_100_N_v0.31.0-no-hint-run_1/output.jsonl" > OpenHands-gpt-4o-2024-11-20.jsonl
 ```
 
 #### Running the results in SWT-Bench
