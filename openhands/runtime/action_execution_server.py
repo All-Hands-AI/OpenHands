@@ -473,41 +473,30 @@ class ActionExecutor:
         return FileWriteObservation(content='', path=filepath)
 
     async def edit(self, action: FileEditAction) -> Observation:
-        assert action.impl_source in (FileEditSource.OH_ACI, FileEditSource.FENCED_DIFF)
-        if action.impl_source == FileEditSource.OH_ACI:
-            result_str, (old_content, new_content) = _execute_file_editor(
-                self.file_editor,
-                command=action.command,
-                path=action.path,
-                file_text=action.file_text,
-                old_str=action.old_str,
-                new_str=action.new_str,
-                insert_line=action.insert_line,
-                enable_linting=False,
-            )
-            diff = get_diff(
+        assert action.impl_source == FileEditSource.OH_ACI
+        result_str, (old_content, new_content) = _execute_file_editor(
+            self.file_editor,
+            command=action.command,
+            path=action.path,
+            file_text=action.file_text,
+            old_str=action.old_str,
+            new_str=action.new_str,
+            insert_line=action.insert_line,
+            enable_linting=False,
+        )
+
+        return FileEditObservation(
+            content=result_str,
+            path=action.path,
+            old_content=action.old_str,
+            new_content=action.new_str,
+            impl_source=FileEditSource.OH_ACI,
+            diff=get_diff(
                 old_contents=old_content or '',
                 new_contents=new_content or '',
                 filepath=action.path,
-            )
-            # FileEditObservation content is the result_str (editor output)
-            # and old/new content should be passed if available for diff display
-            return FileEditObservation(
-                content=result_str,
-                path=action.path,
-                old_content=old_content,
-                new_content=new_content,
-                impl_source=FileEditSource.OH_ACI,
-                diff=diff,
-            )
-        else:
-            # FENCED_DIFF is handled client-side via FileEditRuntimeMixin
-            logger.error(
-                f'Received FENCED_DIFF action in server-side edit method, which is unexpected. Action: {action}'
-            )
-            return ErrorObservation(
-                f'Unexpected FENCED_DIFF action received by server for path: {action.path}'
-            )
+            ),
+        )
 
     async def browse(self, action: BrowseURLAction) -> Observation:
         await self._ensure_browser_ready()
