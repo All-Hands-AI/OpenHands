@@ -1,8 +1,7 @@
-"""Tests for the View.from_events method with ContextReorganizationAction."""
+"""Tests for the View.from_events method with ContextReorganizationObservation."""
 
 from openhands.core.schema import ObservationType
 from openhands.events.action import MessageAction
-from openhands.events.action.context_reorganization import ContextReorganizationAction
 from openhands.events.observation import NullObservation
 from openhands.events.observation.context_reorganization import (
     ContextReorganizationObservation,
@@ -11,7 +10,7 @@ from openhands.memory.view import View
 
 
 def test_context_reorganization_replaces_previous_events():
-    """Test that ContextReorganizationAction replaces all previous events with a single observation."""
+    """Test that ContextReorganizationObservation replaces all previous events with a single observation."""
     # Create a series of events
     events = [
         MessageAction(content='Hello', wait_for_response=True),
@@ -20,12 +19,14 @@ def test_context_reorganization_replaces_previous_events():
         NullObservation(content=''),
     ]
 
-    # Create a ContextReorganizationAction
+    # Create a ContextReorganizationObservation
     summary = 'User greeted the assistant and asked how it was doing. Assistant responded positively.'
     files = [{'path': '/workspace/test.py'}]
-    context_reorganization = ContextReorganizationAction(summary=summary, files=files)
+    context_reorganization = ContextReorganizationObservation(
+        content=summary, summary=summary, files=files
+    )
 
-    # Add the ContextReorganizationAction to the events
+    # Add the ContextReorganizationObservation to the events
     all_events = events + [context_reorganization]
 
     # Create a view from the events
@@ -40,19 +41,21 @@ def test_context_reorganization_replaces_previous_events():
 
 
 def test_context_reorganization_preserves_subsequent_events():
-    """Test that ContextReorganizationAction preserves events that come after it."""
+    """Test that ContextReorganizationObservation preserves events that come after it."""
     # Create a series of events
     events_before = [
         MessageAction(content='Hello', wait_for_response=True),
         NullObservation(content=''),
     ]
 
-    # Create a ContextReorganizationAction
+    # Create a ContextReorganizationObservation
     summary = 'User greeted the assistant.'
     files = [{'path': '/workspace/test.py'}]
-    context_reorganization = ContextReorganizationAction(summary=summary, files=files)
+    context_reorganization = ContextReorganizationObservation(
+        content=summary, summary=summary, files=files
+    )
 
-    # Create events that come after the ContextReorganizationAction
+    # Create events that come after the ContextReorganizationObservation
     events_after = [
         MessageAction(content='How are you?', wait_for_response=True),
         NullObservation(content=''),
@@ -78,7 +81,7 @@ def test_context_reorganization_preserves_subsequent_events():
 
 
 def test_multiple_context_reorganizations():
-    """Test that multiple ContextReorganizationActions work correctly."""
+    """Test that multiple ContextReorganizationObservations work correctly."""
     # Create initial events
     initial_events = [
         MessageAction(content='Hello', wait_for_response=True),
@@ -86,8 +89,10 @@ def test_multiple_context_reorganizations():
     ]
 
     # First reorganization
-    reorg1 = ContextReorganizationAction(
-        summary='Initial greeting', files=[{'path': '/workspace/test1.py'}]
+    reorg1 = ContextReorganizationObservation(
+        content='Initial greeting',
+        summary='Initial greeting',
+        files=[{'path': '/workspace/test1.py'}],
     )
 
     # Events after first reorganization
@@ -97,7 +102,8 @@ def test_multiple_context_reorganizations():
     ]
 
     # Second reorganization
-    reorg2 = ContextReorganizationAction(
+    reorg2 = ContextReorganizationObservation(
+        content='Full conversation summary',
         summary='Full conversation summary',
         files=[{'path': '/workspace/test1.py'}, {'path': '/workspace/test2.py'}],
     )

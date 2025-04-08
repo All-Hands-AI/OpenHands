@@ -51,26 +51,13 @@ class View(BaseModel):
         forgotten_event_ids: set[int] = set()
         for event in events:
             if isinstance(event, CondensationAction):
-                forgotten_event_ids.update(event.forgotten)
+                if event.forgotten_event_ids is not None:
+                    forgotten_event_ids.update(event.forgotten_event_ids)
 
-        kept_events = [event for event in events if event.id not in forgotten_event_ids]
-
-        # If we have a summary, insert it at the specified offset.
-        summary: str | None = None
-        summary_offset: int | None = None
+        # Find the most recent context reorganization
         context_reorganization_index: int | None = None
-
-        # Process events to find the most recent condensation or context reorganization
         for i, event in enumerate(reversed(events)):
-            # Handle CondensationAction
-            if isinstance(event, CondensationAction):
-                if event.summary is not None and event.summary_offset is not None:
-                    summary = event.summary
-                    summary_offset = event.summary_offset
-                    break
-
-            # Handle ContextReorganizationObservation
-            elif isinstance(event, ContextReorganizationObservation):
+            if isinstance(event, ContextReorganizationObservation):
                 context_reorganization_index = len(events) - i - 1
                 break
 
@@ -82,17 +69,67 @@ class View(BaseModel):
             # Add the ContextReorganizationObservation
             new_events.append(events[context_reorganization_index])
 
-            # Add only events that come after the context_reorganization_index
+            # Find condensation actions that come after the context reorganization
+            post_reorg_condensations = []
+            for i, event in enumerate(events[context_reorganization_index + 1 :]):
+                if (
+                    isinstance(event, CondensationAction)
+                    and event.summary is not None
+                    and event.summary_offset is not None
+                ):
+                    post_reorg_condensations.append((i, event))
+
+            # Process each condensation action
+            for i, condensation in post_reorg_condensations:
+                # Insert the condensation summary at the specified offset
+                # Adjust the offset to be relative to the new_events list
+                if (
+                    condensation.summary is not None
+                    and condensation.summary_offset is not None
+                ):
+                    offset = min(condensation.summary_offset, len(new_events))
+                    new_events.insert(
+                        offset,
+                        AgentCondensationObservation(content=condensation.summary),
+                    )
+
+            # Add only events that come after the context_reorganization_index and are not forgotten
             for event in events[context_reorganization_index + 1 :]:
-                if event.id not in forgotten_event_ids:
+                if (
+                    not isinstance(event, CondensationAction)
+                    and event.id not in forgotten_event_ids
+                ):
                     new_events.append(event)
 
             return View(events=new_events)
 
-        # If no context reorganization, handle regular condensation summary if available
-        if summary is not None and summary_offset is not None:
+        # If no context reorganization, handle regular condensation
+        kept_events = [
+            event
+            for event in events
+            if event.id not in forgotten_event_ids
+            and not isinstance(event, CondensationAction)
+        ]
+
+        # Find the most recent condensation action
+        condensation_summary: str | None = None
+        condensation_offset: int | None = None
+        for event in reversed(events):
+            if (
+                isinstance(event, CondensationAction)
+                and event.summary is not None
+                and event.summary_offset is not None
+            ):
+                condensation_summary = event.summary
+                condensation_offset = event.summary_offset
+                break
+
+        # Insert the condensation summary if available
+        if condensation_summary is not None and condensation_offset is not None:
+            # Ensure offset is a valid integer
+            offset_value = min(condensation_offset, len(kept_events))
             kept_events.insert(
-                summary_offset, AgentCondensationObservation(content=summary)
+                offset_value, AgentCondensationObservation(content=condensation_summary)
             )
 
         return View(events=kept_events)
