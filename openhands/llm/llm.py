@@ -3,7 +3,7 @@ import os
 import time
 import warnings
 from functools import partial
-from typing import Any, Callable, Dict, List, Tuple
+from typing import Any, Callable
 
 import httpx
 
@@ -26,6 +26,7 @@ from litellm.utils import create_pretrained_tokenizer
 from openhands.core.exceptions import LLMNoResponseError
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message
+from openhands.llm.critic import LLMCritic
 from openhands.llm.debug_mixin import DebugMixin
 from openhands.llm.fn_call_converter import (
     STOP_WORDS,
@@ -34,7 +35,6 @@ from openhands.llm.fn_call_converter import (
 )
 from openhands.llm.metrics import Metrics
 from openhands.llm.retry_mixin import RetryMixin
-from openhands.llm.critic import LLMCritic
 
 __all__ = ['LLM']
 
@@ -124,7 +124,7 @@ class LLM(RetryMixin, DebugMixin):
                     'log_completions_folder is required when log_completions is enabled'
                 )
             os.makedirs(self.config.log_completions_folder, exist_ok=True)
-            
+
         # Initialize critic if enabled
         self.critic = None
         if self.config.use_critic:
@@ -266,30 +266,32 @@ class LLM(RetryMixin, DebugMixin):
 
             # Record start time for latency measurement
             start_time = time.time()
-            
+
             # Check if critic is enabled
             if self.critic is not None:
                 # Generate multiple candidate responses
                 logger.debug(
                     f'LLM: generating {self.config.critic_num_candidates} candidate responses for critic evaluation'
                 )
-                
+
                 # Add n parameter to generate multiple responses
                 critic_kwargs = copy.deepcopy(kwargs)
                 critic_kwargs['n'] = self.config.critic_num_candidates
-                
+
                 # Generate candidate responses
                 candidate_responses = []
                 for _ in range(self.config.critic_num_candidates):
                     candidate = self._completion_unwrapped(*args, **kwargs)
                     candidate_responses.append(candidate)
-                
+
                 # Use critic to select the best response
-                resp, critic_results = self.critic.evaluate_candidates(messages, candidate_responses)
-                
+                resp, critic_results = self.critic.evaluate_candidates(
+                    messages, candidate_responses
+                )
+
                 # Log critic results
                 logger.debug(f'LLM critic results: {critic_results}')
-                
+
                 # Store critic results in the response for logging
                 resp['critic_results'] = critic_results
                 resp['candidate_responses'] = candidate_responses
@@ -298,7 +300,7 @@ class LLM(RetryMixin, DebugMixin):
                 logger.debug(
                     f'LLM: calling litellm completion with model: {self.config.model}, base_url: {self.config.base_url}, args: {args}, kwargs: {kwargs}'
                 )
-                resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
+                resp = self._completion_unwrapped(*args, **kwargs)
 
             # Calculate and record latency
             latency = time.time() - start_time
@@ -373,7 +375,7 @@ class LLM(RetryMixin, DebugMixin):
                     'timestamp': time.time(),
                     'cost': cost,
                 }
-                
+
                 # Add critic information if available
                 if 'critic_results' in resp:
                     _d['critic_results'] = resp['critic_results']
@@ -385,12 +387,18 @@ class LLM(RetryMixin, DebugMixin):
                                 'choices': [
                                     {
                                         'message': {
-                                            'content': choice.get('message', {}).get('content', ''),
-                                            'tool_calls': choice.get('message', {}).get('tool_calls', [])
+                                            'content': choice.get('message', {}).get(
+                                                'content', ''
+                                            ),
+                                            'tool_calls': choice.get('message', {}).get(
+                                                'tool_calls', []
+                                            ),
                                         }
-                                    } for choice in candidate.get('choices', [])
-                                ]
-                            } for candidate in resp.get('candidate_responses', [])
+                                    }
+                                    for choice in candidate.get('choices', [])
+                                ],
+                            }
+                            for candidate in resp.get('candidate_responses', [])
                         ]
                         # Remove from resp to avoid duplication
                         resp.pop('candidate_responses', None)
