@@ -2,7 +2,7 @@
 
 This folder contains the evaluation harness that we built on top of the original [SWE-Bench benchmark](https://www.swebench.com/) ([paper](https://arxiv.org/abs/2310.06770)).
 
-**UPDATE (4/8/2025): We now support running SWT-Bench using the same evaluation harness here. For more details, checkout [this README](./SWT-Bench.md).**
+**UPDATE (4/8/2025): We now support running SWT-Bench using the same evaluation harness here. For more details, checkout [the corresponding section](#SWT-Bench).**
 
 **UPDATE (03/27/2025): We now support SWE-Bench multimodal evaluation! Simply use "princeton-nlp/SWE-bench_Multimodal" as the dataset name in the `run_infer.sh` script to evaluate on multimodal instances.**
 
@@ -128,6 +128,8 @@ In this case, `eval_limit` option applies to tasks that are in the `selected_ids
 
 After running the inference, you will obtain a `output.jsonl` (by default it will be saved to `evaluation/evaluation_outputs`).
 
+
+
 ## Evaluate Generated Patches
 
 ### Run evaluation with official SWE-Bench harness (Recommend if you have local disk space)
@@ -183,4 +185,52 @@ To clean-up all existing runtimes that you've already started, run:
 
 ```bash
 ALLHANDS_API_KEY="YOUR-API-KEY" ./evaluation/utils/scripts/cleanup_remote_runtime.sh
+```
+
+## SWT-Bench Evaluation
+
+[SWT-Bench benchmark](https://swtbench.com/) ([paper](https://arxiv.org/abs/2406.12952)) is a benchmark for evaluating the performance of LLMs creating unit tests. It is very similar to SWE-Bench, but requires its own evaluation harness. We therefore detail below how to leverage the inference script in this folder to run inference on SWT-Bench and how to use the SWT-Bench evaluation harness to evaluate them.
+
+### Run inference on SWT-Bench
+
+To run inference on [SWT-Bench](https://swtbench.com), you can use the same `run_infer.sh` script as described for evaluation on plain SWE-Bench. The two differences are that i) you need to specify the corresponding SWT-Bench dataset and ii) you need to specify the `mode` parameter to `swt` or `swt-ci` when running the script. For example, to run inference on SWT-Bench Verified, run the following command:
+
+```bash
+./evaluation/benchmarks/swe_bench/scripts/run_infer.sh llm.eval_gpt4_1106_preview HEAD CodeActAgent 500 100 1 nmuendler/SWT-bench_Verified_bm25_27k_zsp test 1 swt
+```
+
+The two modes `swt` and `swt-ci` have the following effect:
+- `swt`: This mode will change the prompt to instruct the agent to generate reproducing test cases instead of resolving the issue.
+- `swt-ci`: In addition to the changes by `swt`, this mode i) pre-installs the environment in the docker image, such that the test framework can be executed without errors and ii) tells the model the exact command to run the test framework.
+
+### Run evaluation for SWT-bench
+
+The evaluation of these results is done in [the SWT-Bench evlauation harness](https://github.com/logic-star-ai/swt-bench/tree/master).
+
+#### Extracting results into SWT-Bench harness format
+In order to run evaluation of the obtained inference results in the SWT-Bench harness, we transform the results to a format that the SWT-Bench using the extractions script `swt_extract.py`.
+
+```bash
+# python3 evaluation/benchmarks/swe_bench/scripts/swt_extract.py [output.jsonl] > [output_swt.jsonl]
+python3 evaluation/benchmarks/swe_bench/scripts/swt_extract.py evaluation/evaluation_outputs/outputs/nmuendler__SWT-bench_Verified_bm25_27k_zsp-test/CodeActAgent/gpt-4-1106-vision-preview_maxiter_100_N_v0.31.0-no-hint-run_1/output.jsonl > OpenHands-gpt-4-1106-vision-preview.jsonl
+```
+
+#### Running the results in SWT-Bench
+
+Next, we run the [SWT-Bench evaluation harness](https://github.com/logic-star-ai/swt-bench/tree/master) with these results.
+First set-up and validate the setup as described in the harness [here](https://github.com/logic-star-ai/swt-bench/tree/master?tab=readme-ov-file#-set-up).
+Then, run the evaluation with the following command:
+
+```bash
+python -m src.main \
+    --dataset_name princeton_nlp/SWE-bench_Verified \
+    --predictions_path <pathTo>/OpenHands-gpt-4-1106-vision-preview.jsonl \
+    --max_workers 12 \
+    --run_id OpenHands-gpt-4-1106-vision-preview  --patch_types vanilla  --build_mode api
+```
+
+The results of the evaluation can be obtained by running the reporting script of the harness.
+
+```bash
+python -m src.report run_instance_swt_logs/OpenHands-gpt-4-1106-vision-preview/OpenHands-gpt-4-1106-vision-preview__SWE-bench_Lite --dataset lite
 ```

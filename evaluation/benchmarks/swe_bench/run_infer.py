@@ -49,6 +49,7 @@ from openhands.utils.shutdown_listener import sleep_if_should_continue
 
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false').lower() == 'true'
 RUN_WITH_BROWSING = os.environ.get('RUN_WITH_BROWSING', 'false').lower() == 'true'
+BenchMode = Literal["swe", "swt", "swt-ci"]
 
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
@@ -60,10 +61,10 @@ def _get_swebench_workspace_dir_name(instance: pd.Series) -> str:
     return f'{instance.repo}__{instance.version}'.replace('/', '__')
 
 
-def get_instruction(instance: pd.Series, metadata: EvalMetadata, mode: Literal["swt", "swe", "swt-ci"]) -> MessageAction:
+def get_instruction(instance: pd.Series, metadata: EvalMetadata, mode: BenchMode) -> MessageAction:
     workspace_dir_name = _get_swebench_workspace_dir_name(instance)
     if mode.startswith('swt'):
-        test_instructions = f"The following command can be used to run the tests: `{list(MAP_REPO_TO_TEST_FRAMEWORK_VERBOSE[instance.repo].values())[0]}`. Make sure they fail in the expected way.\n"
+        test_instructions = f"The following command can be used to run the tests: `{list(MAP_REPO_TO_TEST_FRAMEWORK_VERBOSE[instance.repo].values())[0]}`. Make sure they fail in the expected way.\n" if mode.endswith("ci") else ""
         instruction = f"""\
 <uploaded_files>
 /workspace/{workspace_dir_name}
@@ -244,7 +245,7 @@ def get_config(
 def initialize_runtime(
     runtime: Runtime,
     instance: pd.Series,  # this argument is not required
-    mode: Literal["swt", "swe", "swt-ci"],
+    mode: BenchMode,
 ):
     """Initialize the runtime for the agent.
 
@@ -541,7 +542,7 @@ def process_instance(
     runtime_failure_count: int = 0,
 ) -> EvalOutput:
     config = get_config(instance, metadata)
-    mode: Literal["swe", "swt", "swt-ci"] = metadata.details['mode']
+    mode: BenchMode = metadata.details['mode']
 
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
