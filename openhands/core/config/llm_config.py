@@ -164,7 +164,7 @@ class LLMConfig(BaseModel):
         if self.openrouter_app_name:
             os.environ['OR_APP_NAME'] = self.openrouter_app_name
 
-        # Assign an API version by default for Azure models
+        # Set an API version by default for Azure models
         # Required for newer models.
         # Azure issue: https://github.com/All-Hands-AI/OpenHands/issues/7755
         if self.model.startswith('azure') and self.api_version is None:
