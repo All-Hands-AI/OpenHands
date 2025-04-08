@@ -1,11 +1,8 @@
 import { render, screen } from "@testing-library/react";
 import { test, expect, describe, vi } from "vitest";
-import path from "path";
 import { InteractiveChatBox } from "#/components/features/chat/interactive-chat-box";
 import { ChatInput } from "#/components/features/chat/chat-input";
-import { scanDirectoryForUnlocalizedStrings } from "#/utils/scan-unlocalized-strings-ast";
 
-// Mock react-i18next
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
     t: (key: string) => key,
