@@ -10,12 +10,12 @@ import toml
 from datasets import load_dataset
 
 import openhands.agenthub
-from evaluation.benchmarks.swe_bench.resource.mapping import (
-    get_instance_resource_factor,
-)
 from evaluation.benchmarks.swe_bench.binary_patch_utils import (
     remove_binary_diffs,
     remove_binary_files_from_git,
+)
+from evaluation.benchmarks.swe_bench.resource.mapping import (
+    get_instance_resource_factor,
 )
 from evaluation.utils.shared import (
     EvalException,
@@ -42,8 +42,12 @@ from openhands.core.config import (
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.critic import AgentFinishedCritic
-from openhands.events.action import CmdRunAction, MessageAction, FileReadAction
-from openhands.events.observation import CmdOutputObservation, ErrorObservation
+from openhands.events.action import CmdRunAction, FileReadAction, MessageAction
+from openhands.events.observation import (
+    CmdOutputObservation,
+    ErrorObservation,
+    FileReadObservation,
+)
 from openhands.events.serialization.event import event_from_dict, event_to_dict
 from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
@@ -239,7 +243,8 @@ def initialize_runtime(
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert_and_raise(
-        obs.exit_code == 0, f'Failed to export SWE_INSTANCE_ID and configure git: {str(obs)}'
+        obs.exit_code == 0,
+        f'Failed to export SWE_INSTANCE_ID and configure git: {str(obs)}',
     )
 
     action = CmdRunAction(command="""export USER=$(whoami); echo USER=${USER} """)
@@ -486,9 +491,22 @@ def complete_runtime(
                 logger.info(action, extra={'msg_type': 'ACTION'})
                 obs = runtime.run_action(action)
                 logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-                if hasattr(obs, 'content'):
+                if isinstance(obs, FileReadObservation):
                     git_patch = obs.content
                     break
+                elif isinstance(obs, ErrorObservation):
+                    # Fall back to cat "patch.diff" to get the patch
+                    assert 'File could not be decoded as utf-8' in obs.content
+                    action = CmdRunAction(command='cat patch.diff')
+                    action.set_hard_timeout(max(300 + 100 * n_retries, 600))
+                    logger.info(action, extra={'msg_type': 'ACTION'})
+                    obs = runtime.run_action(action)
+                    assert isinstance(obs, CmdOutputObservation) and obs.exit_code == 0
+                    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+                    git_patch = obs.content
+                    break
+                else:
+                    assert_and_raise(False, f'Unexpected observation type: {str(obs)}')
             else:
                 logger.info('Failed to get git diff, retrying...')
                 sleep_if_should_continue(10)
@@ -499,7 +517,7 @@ def complete_runtime(
             assert_and_raise(False, f'Unexpected observation type: {str(obs)}')
 
     assert_and_raise(git_patch is not None, 'Failed to get git diff (None)')
-    
+
     # Remove binary diffs from the patch
     git_patch = remove_binary_diffs(git_patch)
 
@@ -827,7 +845,11 @@ if __name__ == '__main__':
             with open(cur_output_file, 'r') as f:
                 for line in f:
                     instance = json.loads(line)
-                    if instance['instance_id'] not in added_instance_ids:
+                    # Also make sure git_patch is not empty - otherwise we fall back to previous attempt (empty patch is worse than anything else)
+                    if (
+                        instance['instance_id'] not in added_instance_ids
+                        and instance['test_result']['git_patch'].strip()
+                    ):
                         fout.write(line)
                         added_instance_ids.add(instance['instance_id'])
             logger.info(
