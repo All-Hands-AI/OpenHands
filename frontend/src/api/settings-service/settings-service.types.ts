@@ -16,10 +16,12 @@ export interface UserSettings {
   provider_tokens: Record<GitProvider, string>;
 }
 
+// These are settings that are only used on the client side and should not be sent to the server
 export interface ClientUserSettings extends UserSettings {
   is_new_user: boolean;
 }
 
+// These are settings that are used on the server side and should be sent to the server
 export interface ServerUserSettings extends UserSettings {
   github_token: string | null;
 }
