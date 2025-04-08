@@ -156,6 +156,7 @@ class Session:
                 selected_branch=selected_branch,
                 initial_message=initial_message,
                 replay_json=replay_json,
+                gitlab_base_url=settings.gitlab_base_url,
             )
         except Exception as e:
             self.logger.exception(f'Error creating agent_session: {e}')

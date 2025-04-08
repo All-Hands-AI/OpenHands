@@ -138,6 +138,7 @@ class ProviderHandler:
         external_auth_id: str | None = None,
         external_auth_token: SecretStr | None = None,
         external_token_manager: bool = False,
+        gitlab_base_url: str | None = None,
     ):
         if not isinstance(provider_tokens, MappingProxyType):
             raise TypeError(
@@ -152,6 +153,7 @@ class ProviderHandler:
         self.external_auth_id = external_auth_id
         self.external_auth_token = external_auth_token
         self.external_token_manager = external_token_manager
+        self.gitlab_base_url = gitlab_base_url
         self._provider_tokens = provider_tokens
 
     @property
@@ -169,6 +171,7 @@ class ProviderHandler:
             external_auth_token=self.external_auth_token,
             token=token.token,
             external_token_manager=self.external_token_manager,
+            gitlab_base_url=self.gitlab_base_url,
         )
 
     async def get_user(self) -> User:

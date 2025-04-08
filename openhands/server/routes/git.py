@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 from pydantic import SecretStr
-from openhands.server.shared import server_config
+
 from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
@@ -15,8 +15,12 @@ from openhands.integrations.service_types import (
     UnknownException,
     User,
 )
-from openhands.server.auth import get_access_token, get_provider_tokens
-from openhands.server.types import AppMode
+from openhands.server.auth import (
+    get_access_token,
+    get_gitlab_base_url,
+    get_provider_tokens,
+)
+from openhands.server.shared import server_config
 
 app = APIRouter(prefix='/api/user')
 
@@ -26,14 +30,19 @@ async def get_user_repositories(
     sort: str = 'pushed',
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     access_token: SecretStr | None = Depends(get_access_token),
+    gitlab_base_url: str | None = Depends(get_gitlab_base_url),
 ):
     if provider_tokens:
         client = ProviderHandler(
-            provider_tokens=provider_tokens, external_auth_token=access_token
+            provider_tokens=provider_tokens,
+            external_auth_token=access_token,
+            gitlab_base_url=gitlab_base_url,
         )
 
         try:
-            repos: list[Repository] = await client.get_repositories(sort, server_config.app_mode)
+            repos: list[Repository] = await client.get_repositories(
+                sort, server_config.app_mode
+            )
             return repos
 
         except AuthenticationError as e:
@@ -58,10 +67,13 @@ async def get_user_repositories(
 async def get_user(
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     access_token: SecretStr | None = Depends(get_access_token),
+    gitlab_base_url: str | None = Depends(get_gitlab_base_url),
 ):
     if provider_tokens:
         client = ProviderHandler(
-            provider_tokens=provider_tokens, external_auth_token=access_token
+            provider_tokens=provider_tokens,
+            external_auth_token=access_token,
+            gitlab_base_url=gitlab_base_url,
         )
 
         try:
@@ -127,10 +139,13 @@ async def search_repositories(
     order: str = 'desc',
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     access_token: SecretStr | None = Depends(get_access_token),
+    gitlab_base_url: str | None = Depends(get_gitlab_base_url),
 ):
     if provider_tokens:
         client = ProviderHandler(
-            provider_tokens=provider_tokens, external_auth_token=access_token
+            provider_tokens=provider_tokens,
+            external_auth_token=access_token,
+            gitlab_base_url=gitlab_base_url,
         )
         try:
             repos: list[Repository] = await client.search_repositories(

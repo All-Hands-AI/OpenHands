@@ -32,3 +32,7 @@ def get_github_user_id(request: Request) -> str | None:
         return provider_tokens[ProviderType.GITHUB].user_id
 
     return None
+
+
+def get_gitlab_base_url(request: Request) -> str | None:
+    return getattr(request.state, 'gitlab_base_url', None)

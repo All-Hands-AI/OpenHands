@@ -6044,6 +6044,21 @@
         "tr": "GitLab Jetonu",
         "de": "GitLab-Token"
     },
+    "GITLAB$BASE_URL": {
+        "en": "GitLab Base URL",
+        "ja": "GitLab 基本 URL",
+        "zh-CN": "GitLab 基础 URL",
+        "zh-TW": "GitLab 基礎 URL",
+        "ko-KR": "GitLab 기본 URL",
+        "no": "GitLab Base-URL",
+        "it": "URL di base GitLab",
+        "pt": "URL base do GitLab",
+        "es": "URL base de GitLab",
+        "ar": "عنوان URL الأساسي لـ GitLab",
+        "fr": "URL de base GitLab",
+        "tr": "GitLab Temel URL",
+        "de": "GitLab-Basis-URL"
+    },
     "GITLAB$GET_TOKEN": {
         "en": "Generate a token on",
         "ja": "トークンを生成する",

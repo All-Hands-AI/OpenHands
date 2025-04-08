@@ -110,6 +110,7 @@ class Runtime(FileEditRuntimeMixin):
         headless_mode: bool = False,
         user_id: str | None = None,
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
+        gitlab_base_url: str | None = None,
     ):
         self.sid = sid
         self.event_stream = event_stream
@@ -138,6 +139,7 @@ class Runtime(FileEditRuntimeMixin):
             or cast(PROVIDER_TOKEN_TYPE, MappingProxyType({})),
             external_auth_id=user_id,
             external_token_manager=True,
+            gitlab_base_url=gitlab_base_url,
         )
         raw_env_vars: dict[str, str] = call_async_from_sync(
             self.provider_handler.get_env_vars, GENERAL_TIMEOUT, True, None, False
@@ -329,10 +331,13 @@ class Runtime(FileEditRuntimeMixin):
         selected_repository: str | Repository,
         selected_branch: str | None,
         repository_provider: ProviderType = ProviderType.GITHUB,
+        gitlab_base_url: str | None = None,
     ) -> str:
         provider_domains = {
             ProviderType.GITHUB: 'github.com',
-            ProviderType.GITLAB: 'gitlab.com',
+            ProviderType.GITLAB: gitlab_base_url.replace('https://', '')
+            if gitlab_base_url
+            else 'gitlab.com',
         }
 
         chosen_provider = (

@@ -11,6 +11,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request as StarletteRequest
 from starlette.types import ASGIApp
 
+from openhands.integrations.service_types import ProviderType
 from openhands.server import shared
 from openhands.server.auth import get_user_id
 from openhands.server.types import SessionMiddlewareInterface
@@ -205,5 +206,10 @@ class ProviderTokenMiddleware(SessionMiddlewareInterface):
                 request.state.provider_tokens = settings.secrets_store.provider_tokens
             else:
                 request.state.provider_tokens = None
+
+        # update gitlab_base_url
+        provider_tokens = request.state.provider_tokens
+        if provider_tokens and ProviderType.GITLAB in provider_tokens:
+            request.state.gitlab_base_url = settings.gitlab_base_url
 
         return await call_next(request)
