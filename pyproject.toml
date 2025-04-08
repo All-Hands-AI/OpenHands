@@ -48,6 +48,7 @@ google-cloud-aiplatform = "*"
 anthropic = {extras = ["vertex"], version = "*"}
 tree-sitter = "^0.24.0"
 bashlex = "^0.18"
+posthog = "^3.5.0"
 pyjwt = "^2.9.0"
 dirhash = "*"
 python-frontmatter = "^1.1.0"

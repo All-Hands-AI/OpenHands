@@ -112,7 +112,9 @@ async def _create_new_conversation(
             title=conversation_title,
             user_id=user_id,
             github_user_id=None,
-            selected_repository=selected_repository.full_name if selected_repository else selected_repository,
+            selected_repository=selected_repository.full_name
+            if selected_repository
+            else selected_repository,
             selected_branch=selected_branch,
         )
     )
@@ -160,9 +162,10 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     replay_json = data.replay_json
 
     try:
+        user_id = get_user_id(request)
         # Create conversation with initial message
         conversation_id = await _create_new_conversation(
-            get_user_id(request),
+            user_id,
             provider_tokens,
             selected_repository,
             selected_branch,
@@ -170,6 +173,26 @@ async def new_conversation(request: Request, data: InitSessionRequest):
             image_urls,
             replay_json,
         )
+
+        # Track conversation creation in analytics
+        try:
+            # Get user settings to check if they've opted into analytics
+            settings_store = await SettingsStoreImpl.get_instance(config, user_id)
+            settings = await settings_store.load()
+
+            # Track the event if we have settings and the user has consented
+            if settings:
+                request.state.monitoring_listener.on_conversation_created(
+                    user_id=user_id,
+                    conversation_id=conversation_id,
+                    has_initial_message=bool(initial_user_msg),
+                    has_repository=bool(selected_repository),
+                    has_images=bool(image_urls),
+                    user_consents_to_analytics=settings.user_consents_to_analytics,
+                )
+        except Exception as e:
+            # Don't let analytics failures affect the application
+            logger.error(f'Error tracking conversation creation analytics: {e}')
 
         return JSONResponse(
             content={'status': 'ok', 'conversation_id': conversation_id}
