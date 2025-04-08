@@ -40,7 +40,6 @@ def remove_setup_files(model_patch: str, instance: dict, delete_setup_changes: b
 
 def main(
         prediction_file: str,
-        ci_mode: bool = False,
 ):
     with open(prediction_file) as f:
         for line in f:
@@ -50,6 +49,7 @@ def main(
             except KeyError:
                 _LOGGER.warning("Warning: No git diff found for instance %s", pred["instance_id"])
                 continue
+            ci_mode = pred["metadata"]["details"].get("mode", "") == "swt-ci"
             try:
                 git_diff = remove_setup_files(git_diff, pred["instance"], ci_mode)
             except:
@@ -68,11 +68,6 @@ if __name__ == '__main__':
         type=str,
         required=True,
         help="Path to the prediction file (.../outputs.jsonl)",
-    )
-    parser.add_argument(
-        "--ci_mode",
-        action="store_true",
-        help="Whether agent was run in CI mode, with pre-install set up. Set flag if infer was run with `swt-ci`.",
     )
     args = parser.parse_args()
 
