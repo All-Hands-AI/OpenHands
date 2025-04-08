@@ -5,7 +5,7 @@ from openhands.server.shared import (
 )
 
 
-async def get_user_setting(user_id: str | None, useDefaultSettings: bool = False):
+async def get_user_setting(user_id: str | None, useDefaultSettings: bool = True):
     settings_store = await SettingsStoreImpl.get_instance(config, user_id)
     settings = await settings_store.load()
     if useDefaultSettings:

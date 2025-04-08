@@ -36,22 +36,22 @@ class MCPClientTool(BaseTool):
                 and len(result.content) > 0
                 and isinstance(result.content[0], ImageContent)
             ):
-                screenshot_content = result.content[0]
-                if screenshot_content.url is not None:
-                    logger.debug(
-                        f'MCP screenshot content url: {screenshot_content.url}'
-                    )
-                    return ToolResult(
-                        output=ExtendedImageContent(
-                            url=screenshot_content.url,
-                            mimeType=screenshot_content.mimeType,
-                            data=screenshot_content.data,
-                            type=screenshot_content.type,
-                            annotations=screenshot_content.annotations,
-                        )
-                    )
-                else:
-                    return ToolResult(output=result.content[0])
+                # screenshot_content = result.content[0]
+                # if 'url' in screenshot_content:
+                #     logger.debug(
+                #         f'MCP screenshot content url: {screenshot_content.url}'
+                #     )
+                #     return ToolResult(
+                #         output=ExtendedImageContent(
+                #             url=screenshot_content.url,
+                #             mimeType=screenshot_content.mimeType,
+                #             data=screenshot_content.data,
+                #             type=screenshot_content.type,
+                #             annotations=screenshot_content.annotations,
+                #         )
+                #     )
+                # else:
+                return ToolResult(output=result.content[0])
             return ToolResult(output=content_str or 'No output returned.')
         except Exception as e:
             return ToolResult(error=f'Error executing tool: {str(e)}')
