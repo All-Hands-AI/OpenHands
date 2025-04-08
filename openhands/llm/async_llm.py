@@ -1,6 +1,8 @@
 import asyncio
+import copy
+import time
 from functools import partial
-from typing import Any, Callable
+from typing import Any, Callable, Dict, List
 
 from litellm import acompletion as litellm_acompletion
 
@@ -11,6 +13,7 @@ from openhands.llm.llm import (
     LLM_RETRY_EXCEPTIONS,
     REASONING_EFFORT_SUPPORTED_MODELS,
 )
+from openhands.llm.critic import LLMCritic
 from openhands.utils.shutdown_listener import should_continue
 
 
@@ -90,8 +93,31 @@ class AsyncLLM(LLM):
             stop_check_task = asyncio.create_task(check_stopped())
 
             try:
-                # Directly call and await litellm_acompletion
-                resp = await async_completion_unwrapped(*args, **kwargs)
+                # Check if critic is enabled
+                if self.critic is not None:
+                    # Generate multiple candidate responses
+                    logger.debug(
+                        f'AsyncLLM: generating {self.config.critic_num_candidates} candidate responses for critic evaluation'
+                    )
+                    
+                    # Generate candidate responses
+                    candidate_responses = []
+                    for _ in range(self.config.critic_num_candidates):
+                        candidate = await async_completion_unwrapped(*args, **kwargs)
+                        candidate_responses.append(candidate)
+                    
+                    # Use critic to select the best response
+                    resp, critic_results = self.critic.evaluate_candidates(messages, candidate_responses)
+                    
+                    # Log critic results
+                    logger.debug(f'AsyncLLM critic results: {critic_results}')
+                    
+                    # Store critic results in the response for logging
+                    resp['critic_results'] = critic_results
+                    resp['candidate_responses'] = candidate_responses
+                else:
+                    # Standard single response generation
+                    resp = await async_completion_unwrapped(*args, **kwargs)
 
                 message_back = resp['choices'][0]['message']['content']
                 self.log_response(message_back)

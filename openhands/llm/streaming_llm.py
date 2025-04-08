@@ -13,6 +13,10 @@ class StreamingLLM(AsyncLLM):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
+        
+        # Warn if critic is enabled, as it's not compatible with streaming
+        if self.config.use_critic:
+            logger.warning("LLM critic is enabled but not compatible with streaming. The critic will be disabled for streaming completions.")
 
         self._async_streaming_completion = partial(
             self._call_acompletion,
