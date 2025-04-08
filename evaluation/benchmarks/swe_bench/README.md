@@ -2,7 +2,7 @@
 
 This folder contains the evaluation harness that we built on top of the original [SWE-Bench benchmark](https://www.swebench.com/) ([paper](https://arxiv.org/abs/2310.06770)).
 
-**UPDATE (4/8/2025): We now support running SWT-Bench using the same evaluation harness here. For more details, checkout [the corresponding section](#SWT-Bench-Evaluation).**
+**UPDATE (4/8/2025): We now support running SWT-Bench evaluation! For more details, checkout [the corresponding section](#SWT-Bench-Evaluation).**
 
 **UPDATE (03/27/2025): We now support SWE-Bench multimodal evaluation! Simply use "princeton-nlp/SWE-bench_Multimodal" as the dataset name in the `run_infer.sh` script to evaluate on multimodal instances.**
 
@@ -187,13 +187,16 @@ ALLHANDS_API_KEY="YOUR-API-KEY" ./evaluation/utils/scripts/cleanup_remote_runtim
 
 ## SWT-Bench Evaluation
 
-[SWT-Bench benchmark](https://swtbench.com/) ([paper](https://arxiv.org/abs/2406.12952)) is a benchmark for evaluating the performance of LLMs creating unit tests. It is very similar to SWE-Bench, but requires its own evaluation harness. We therefore detail below how to leverage the inference script in this folder to run inference on SWT-Bench and how to use the SWT-Bench evaluation harness to evaluate them.
+[SWT-Bench](https://swtbench.com/) ([paper](https://arxiv.org/abs/2406.12952)) is a benchmark for evaluating the capability of LLMs at creating unit tests. It is performed on the same instances as SWE-Bench, but requires a separate evaluation harness to capture coverage and issue reproduction. We therefore detail below how to leverage the inference script in this folder to run inference on SWT-Bench and how to use the SWT-Bench evaluation harness to evaluate them.
 
 ### Run inference on SWT-Bench
 
-To run inference on [SWT-Bench](https://swtbench.com), you can use the same `run_infer.sh` script as described for evaluation on plain SWE-Bench. The only differences is that you need to specify the `mode` parameter to `swt` or `swt-ci` when running the script. For example, to run inference on SWT-Bench Verified, run the following command:
+To run inference on SWT-Bench, you can use the same `run_infer.sh` script as described for evaluation on plain SWE-Bench. The only differences is that you need to specify the `mode` parameter to `swt` or `swt-ci` when running the script. For example, to run inference on SWT-Bench Verified, run the following command:
 
 ```bash
+./evaluation/benchmarks/swe_bench/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit] [max_iter] [num_workers] [swe-dataset] test 1 swt
+
+# Example - This runs evaluation on CodeActAgent for 500 instances on "SWT-bench_Verified"'s test set (corresponding to SWE-bench_Verified), with max 100 iteration per instances, with 1 number of workers running in parallel
 ./evaluation/benchmarks/swe_bench/scripts/run_infer.sh llm.eval_gpt4o-2024-11-20 HEAD CodeActAgent 500 100 1 princeton-nlp/SWE-bench_Verified test 1 swt
 ```
 
@@ -209,7 +212,9 @@ The evaluation of these results is done leveraging [the SWT-Bench evaluation har
 In order to run evaluation of the obtained inference results in the SWT-Bench harness, we transform the results to a format that the SWT-Bench using the extractions script `swt_extract.py`.
 
 ```bash
-# python3 evaluation/benchmarks/swe_bench/scripts/swt_extract.py --prediction_file [output.jsonl] > [output_swt.jsonl]
+python3 evaluation/benchmarks/swe_bench/scripts/swt_extract.py --prediction_file [output.jsonl] > [output_swt.jsonl]
+
+# Example  
 python3 evaluation/benchmarks/swe_bench/scripts/swt_extract.py --prediction_file "evaluation/evaluation_outputs/outputs/princeton-nlp__SWE-bench_Verified-test/CodeActAgent/gpt-4o-2024-11-20_maxiter_100_N_v0.31.0-no-hint-swt-run_1/output.jsonl" > OpenHands-gpt-4o-2024-11-20.jsonl
 ```
 
@@ -220,6 +225,7 @@ First set-up and validate the setup as described in the harness [here](https://g
 Then, run the evaluation with the following command:
 
 ```bash
+# Example
 python3 -m src.main \
     --dataset_name princeton-nlp/SWE-bench_Verified \
     --predictions_path <pathTo>/OpenHands-gpt-4o-2024-11-20.jsonl \
@@ -230,5 +236,6 @@ python3 -m src.main \
 The results of the evaluation can be obtained by running the reporting script of the harness.
 
 ```bash
+# Example
 python -m src.report run_instance_swt_logs/OpenHands-CodeAct-gpt-4o-2024-11-20/OpenHands__CodeActAgent__gpt-4o-2024-11-20 --dataset verified
 ```
