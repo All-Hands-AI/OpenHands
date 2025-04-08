@@ -182,6 +182,7 @@ class ConversationMemory:
             rather than being returned immediately. They will be processed later when all corresponding
             tool call results are available.
         """
+        messages = []
         # create a regular message from an event
         if isinstance(
             action,
@@ -243,12 +244,12 @@ class ConversationMemory:
                 action.tool_call_metadata = None
             if role not in ('user', 'system', 'assistant', 'tool'):
                 raise ValueError(f'Invalid role: {role}')
-            return [
+            messages.append(
                 Message(
                     role=role,  # type: ignore[arg-type]
                     content=[TextContent(text=action.thought)],
                 )
-            ]
+            )
         elif isinstance(action, MessageAction):
             role = 'user' if action.source == 'user' else 'assistant'
             content = [TextContent(text=action.content or '')]
@@ -256,23 +257,26 @@ class ConversationMemory:
                 content.append(ImageContent(image_urls=action.image_urls))
             if role not in ('user', 'system', 'assistant', 'tool'):
                 raise ValueError(f'Invalid role: {role}')
-            return [
+            messages.append(
                 Message(
                     role=role,  # type: ignore[arg-type]
                     content=content,
                 )
-            ]
+            )
         elif isinstance(action, CmdRunAction) and action.source == 'user':
             content = [
                 TextContent(text=f'User executed the command:\n{action.command}')
             ]
-            return [
+            messages.append(
                 Message(
                     role='user',  # Always user for CmdRunAction
                     content=content,
                 )
-            ]
-        return []
+            )
+
+        for message in messages:
+            message._event = action
+        return messages
 
     def _process_observation(
         self,
@@ -498,15 +502,13 @@ class ConversationMemory:
                         formatted_text = self.prompt_manager.build_microagent_info(
                             triggered_agents=filtered_agents,
                         )
-
-                        return [
-                            Message(
-                                role='user', content=[TextContent(text=formatted_text)]
-                            )
-                        ]
-
-                # Return empty list if no microagents to include or all were disabled
-                return []
+                        message = Message(
+                            role='user',
+                            content=[TextContent(text=formatted_text)],
+                        )
+                else:
+                    # Return empty list if no microagents to include or all were disabled
+                    return []
         elif (
             isinstance(obs, RecallObservation)
             and not self.agent_config.enable_prompt_extensions
@@ -527,11 +529,13 @@ class ConversationMemory:
                 tool_call_id=tool_call_metadata.tool_call_id,
                 name=tool_call_metadata.function_name,
             )
+            tool_call_id_to_message[tool_call_metadata.tool_call_id]._event = obs
             # No need to return the observation message
             # because it will be added by get_action_message when all the corresponding
             # tool calls in the SAME request are processed
             return []
 
+        message._event = obs
         return [message]
 
     def apply_prompt_caching(self, messages: list[Message]) -> None:

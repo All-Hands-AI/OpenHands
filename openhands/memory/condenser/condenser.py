@@ -86,22 +86,32 @@ class Condenser(ABC):
             self.write_metadata(state)
 
     @abstractmethod
-    def condense(self, View) -> View | Condensation:
+    def condense(self, view: View, state: State, agent=None) -> View | Condensation:
         """Condense a sequence of events into a potentially smaller list.
 
         New condenser strategies should override this method to implement their own condensation logic. Call `self.add_metadata` in the implementation to record any relevant per-condensation diagnostic information.
 
         Args:
-            View: A view of the history containing all events that should be condensed.
+            view: A view of the history containing all events that should be condensed.
+            state: Optional state for context.
+            agent: Optional agent for agent-aware condensation.
 
         Returns:
             View | Condensation: A condensed view of the events or an event indicating the history has been condensed.
         """
 
-    def condensed_history(self, state: State) -> View | Condensation:
-        """Condense the state's history."""
+    def condensed_history(self, state: State, agent=None) -> View | Condensation:
+        """Condense the state's history.
+
+        Args:
+            state: The current state.
+            agent: Optional agent to use for agent-aware condensation.
+
+        Returns:
+            A View or Condensation object.
+        """
         with self.metadata_batch(state):
-            return self.condense(state.view)
+            return self.condense(state.view, state, agent)
 
     @classmethod
     def register_config(cls, configuration_type: type[CondenserConfig]) -> None:
@@ -134,6 +144,9 @@ class Condenser(ABC):
         Raises:
             ValueError: If the condenser type is not recognized.
         """
+        # trigger the conderser implementations to register themselves
+        import openhands.memory.condenser.impl  # noqa: F401
+
         try:
             condenser_class = CONDENSER_REGISTRY[type(config)]
             return condenser_class.from_config(config)
@@ -154,14 +167,14 @@ class RollingCondenser(Condenser, ABC):
         """Determine if a view should be condensed."""
 
     @abstractmethod
-    def get_condensation(self, view: View) -> Condensation:
+    def get_condensation(self, view: View, state: State, agent=None) -> Condensation:
         """Get the condensation from a view."""
 
-    def condense(self, view: View) -> View | Condensation:
+    def condense(self, view: View, state: State, agent=None) -> View | Condensation:
         # If we trigger the condenser-specific condensation threshold, compute and return
         # the condensation.
         if self.should_condense(view):
-            return self.get_condensation(view)
+            return self.get_condensation(view, state, agent)
 
         # Otherwise we're safe to just return the view.
         else:

@@ -1,7 +1,11 @@
 import os
 from collections import deque
+from typing import Any
 
 import openhands.agenthub.codeact_agent.function_calling as codeact_function_calling
+from openhands.agenthub.agent_interface import (
+    LLMCompletionProvider,
+)
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
@@ -24,7 +28,7 @@ from openhands.runtime.plugins import (
 from openhands.utils.prompt import PromptManager
 
 
-class CodeActAgent(Agent):
+class CodeActAgent(Agent, LLMCompletionProvider):
     VERSION = '2.2'
     """
     The Code Act Agent is a minimalist agent.
@@ -75,7 +79,7 @@ class CodeActAgent(Agent):
             llm=self.llm,
         )
         logger.debug(
-            f"TOOLS loaded for CodeActAgent: {', '.join([tool.get('function').get('name') for tool in self.tools])}"
+            f'TOOLS loaded for CodeActAgent: {", ".join([tool.get("function").get("name") for tool in self.tools])}'
         )
         self.prompt_manager = PromptManager(
             prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
@@ -121,7 +125,7 @@ class CodeActAgent(Agent):
         # event we'll just return that instead of an action. The controller will
         # immediately ask the agent to step again with the new view.
         condensed_history: list[Event] = []
-        match self.condenser.condensed_history(state):
+        match self.condenser.condensed_history(state, self):
             case View(events=events):
                 condensed_history = events
 
@@ -132,18 +136,21 @@ class CodeActAgent(Agent):
             f'Processing {len(condensed_history)} events from a total of {len(state.history)} events'
         )
 
-        messages = self._get_messages(condensed_history)
-        params: dict = {
-            'messages': self.llm.format_messages_for_llm(messages),
-        }
-        params['tools'] = self.tools
-        # log to litellm proxy if possible
-        params['extra_body'] = {'metadata': state.to_llm_metadata(agent_name=self.name)}
+        params = self.build_llm_completion_params(condensed_history, state)
         response = self.llm.completion(**params)
         actions = codeact_function_calling.response_to_actions(response)
         for action in actions:
             self.pending_actions.append(action)
         return self.pending_actions.popleft()
+
+    def build_llm_completion_params(
+        self, events: list[Event], state: State
+    ) -> dict[str, Any]:
+        return {
+            'messages': self.llm.format_messages_for_llm(self._get_messages(events)),
+            'tools': self.tools,
+            'extra_body': {'metadata': state.to_llm_metadata(agent_name=self.name)},
+        }
 
     def _get_messages(self, events: list[Event]) -> list[Message]:
         """Constructs the message history for the LLM conversation.
@@ -200,6 +207,8 @@ class CodeActAgent(Agent):
 
         return messages
 
+    # we should consider moving this method to the ConversationMemory class.
+    # Currently it is the class that deals with the conversion between Events to Messages.
     def _enhance_messages(self, messages: list[Message]) -> list[Message]:
         """Enhances the user message with additional context based on keywords matched.
 
