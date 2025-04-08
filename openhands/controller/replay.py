@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.action import Action
 from openhands.events.action.message import MessageAction
