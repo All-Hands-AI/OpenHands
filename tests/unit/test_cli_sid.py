@@ -1,9 +1,13 @@
 import asyncio
 from argparse import Namespace
+from io import StringIO
 from pathlib import Path
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
+from prompt_toolkit.application import create_app_session
+from prompt_toolkit.input import create_pipe_input
+from prompt_toolkit.output import create_output
 
 from openhands.core.cli import main
 from openhands.core.config import AppConfig
@@ -83,34 +87,41 @@ def mock_config(task_file: Path):
 
 @pytest.mark.asyncio
 async def test_cli_session_id_output(
-    mock_runtime, mock_agent, mock_controller, mock_config, capsys
+    mock_runtime, mock_agent, mock_controller, mock_config
 ):
     # status_callback is set when initializing the runtime
     mock_controller.status_callback = None
 
+    buffer = StringIO()
+
     # Use input patch just for the exit command
     with patch('builtins.input', return_value='exit'):
-        # Create a task for main
-        main_task = asyncio.create_task(main(asyncio.get_event_loop()))
+        with create_app_session(
+            input=create_pipe_input(), output=create_output(stdout=buffer)
+        ):
+            # Create a task for main
+            main_task = asyncio.create_task(main(asyncio.get_event_loop()))
 
-        # Give it a moment to display the session ID
-        await asyncio.sleep(0.1)
+            # Give it a moment to display the session ID
+            await asyncio.sleep(0.1)
 
-        # Trigger agent state change to STOPPED to end the main loop
-        event = AgentStateChangedObservation(
-            content='Stop', agent_state=AgentState.STOPPED
-        )
-        event._source = EventSource.AGENT
-        await mock_runtime.event_stream.add_event(event)
+            # Trigger agent state change to STOPPED to end the main loop
+            event = AgentStateChangedObservation(
+                content='Stop', agent_state=AgentState.STOPPED
+            )
+            event._source = EventSource.AGENT
+            await mock_runtime.event_stream.add_event(event)
 
-        # Wait for main to finish with a timeout
-        try:
-            await asyncio.wait_for(main_task, timeout=1.0)
-        except asyncio.TimeoutError:
-            main_task.cancel()
+            # Wait for main to finish with a timeout
+            try:
+                await asyncio.wait_for(main_task, timeout=1.0)
+            except asyncio.TimeoutError:
+                main_task.cancel()
 
-        # Check the output
-        captured = capsys.readouterr()
-        assert 'Session ID:' in captured.out
-        # Also verify that our task message was processed
-        assert 'Ask me what your task is' in str(mock_runtime.mock_calls)
+            buffer.seek(0)
+            output = buffer.read()
+
+            # Check the output
+            assert 'Session ID:' in output
+            # Also verify that our task message was processed
+            assert 'Ask me what your task is' in str(mock_runtime.mock_calls)
