@@ -57,6 +57,6 @@ describe("Browser", () => {
     });
 
     expect(screen.getByText("https://example.com")).toBeInTheDocument();
-    expect(screen.getByAltText(/browser screenshot/i)).toBeInTheDocument();
+    expect(screen.getByAltText("BROWSER$SCREENSHOT_ALT")).toBeInTheDocument();
   });
 });
