@@ -120,7 +120,7 @@ jobs:
             ~/.cache/pypoetry
             ~/.virtualenvs
           key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
-          lookup-only: true
+          # This is the one that saves the cache, the others set 'lookup-only: true'
           restore-keys: |
             ${{ runner.os }}-poetry-
       - name: Install poetry via pipx
@@ -301,13 +301,13 @@ jobs:
         run: |
           docker load --input /tmp/runtime-${{ matrix.base_image }}.tar
       - name: Cache Poetry dependencies
-        # This is the one that saves the cache, the others set 'lookup-only: true'
         uses: useblacksmith/cache@v5
         with:
           path: |
             ~/.cache/pypoetry
             ~/.virtualenvs
           key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          lookup-only: true
           restore-keys: |
             ${{ runner.os }}-poetry-
       - name: Set up Python
