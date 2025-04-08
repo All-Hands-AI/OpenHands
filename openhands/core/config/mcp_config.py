@@ -57,7 +57,7 @@ class MCPConfig(BaseModel):
 
         try:
             # Create SSE config if present
-            sse_config = MCPSSEConfig.model_validate(data.get('mcp', {}))
+            sse_config = MCPSSEConfig.model_validate(data)
             sse_config.validate_servers()
 
             # Create the main MCP config

@@ -34,7 +34,7 @@ def test_duplicate_sse_urls():
 def test_from_toml_section_valid():
     """Test creating config from valid TOML section."""
     data = {
-        'mcp': {'mcp_servers': ['http://server1:8080']},
+        'mcp_servers': ['http://server1:8080'],
     }
     result = MCPConfig.from_toml_section(data)
     assert 'mcp' in result
@@ -44,7 +44,7 @@ def test_from_toml_section_valid():
 def test_from_toml_section_invalid_sse():
     """Test creating config from TOML section with invalid SSE URL."""
     data = {
-        'mcp': {'mcp_servers': ['not_a_url']},
+        'mcp_servers': ['not_a_url'],
     }
     with pytest.raises(ValueError) as exc_info:
         MCPConfig.from_toml_section(data)

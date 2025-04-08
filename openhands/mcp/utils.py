@@ -1,5 +1,10 @@
+import json
+
 from openhands.core.config.mcp_config import MCPConfig
 from openhands.core.logger import openhands_logger as logger
+from openhands.events.action.mcp import McpAction
+from openhands.events.observation.mcp import MCPObservation
+from openhands.events.observation.observation import Observation
 from openhands.mcp.client import MCPClient
 
 
@@ -51,8 +56,6 @@ async def create_mcp_clients(
                 logger.info(f'Connected to MCP server {server_url} via SSE')
             except Exception as e:
                 logger.error(f'Failed to connect to {server_url}: {str(e)}')
-                # Don't raise the exception, just log it and continue
-                # Make sure to disconnect the client to clean up resources
                 try:
                     await client.disconnect()
                 except Exception as disconnect_error:
@@ -72,7 +75,6 @@ async def fetch_mcp_tools_from_config(mcp_config: MCPConfig) -> list[dict]:
     """
     mcp_clients = []
     mcp_tools = []
-
     try:
         logger.debug(f'Creating MCP clients with config: {mcp_config}')
         mcp_clients = await create_mcp_clients(
@@ -84,16 +86,57 @@ async def fetch_mcp_tools_from_config(mcp_config: MCPConfig) -> list[dict]:
             return []
 
         mcp_tools = convert_mcp_clients_to_tools(mcp_clients)
-    except Exception as e:
-        logger.error(f'Error fetching MCP tools: {str(e)}')
-        return []
-    finally:
+
         # Always disconnect clients to clean up resources
         for mcp_client in mcp_clients:
             try:
                 await mcp_client.disconnect()
             except Exception as disconnect_error:
                 logger.error(f'Error disconnecting MCP client: {str(disconnect_error)}')
+    except Exception as e:
+        logger.error(f'Error fetching MCP tools: {str(e)}')
+        return []
 
     logger.debug(f'MCP tools: {mcp_tools}')
     return mcp_tools
+
+
+async def call_tool_mcp(action: McpAction, sse_mcp_servers: list[str]) -> Observation:
+    """
+    Call a tool on an MCP server and return the observation.
+
+    Args:
+        action: The MCP action to execute
+        sse_mcp_servers: List of SSE MCP server URLs
+
+    Returns:
+        The observation from the MCP server
+    """
+    if not sse_mcp_servers:
+        raise ValueError('No MCP servers found')
+
+    logger.debug(f'SSE MCP servers: {sse_mcp_servers}')
+    mcp_clients = await create_mcp_clients(
+        sse_mcp_servers,
+    )
+    logger.debug(f'MCP action received: {action}')
+    # Find the MCP agent that has the matching tool name
+    matching_client = None
+    logger.debug(f'MCP clients: {mcp_clients}')
+    logger.debug(f'MCP action name: {action.name}')
+    for client in mcp_clients:
+        if action.name in [tool.name for tool in client.tools]:
+            matching_client = client
+            break
+    if matching_client is None:
+        raise ValueError(f'No matching MCP agent found for tool name: {action.name}')
+    logger.debug(f'Matching client: {matching_client}')
+    args_dict = json.loads(action.arguments) if action.arguments else {}
+    response = await matching_client.call_tool(action.name, args_dict)
+    logger.debug(f'MCP response: {response}')
+
+    # Close all client connections
+    for client in mcp_clients:
+        await client.disconnect()
+
+    return MCPObservation(content=f'MCP result:{response.model_dump(mode="json")}')

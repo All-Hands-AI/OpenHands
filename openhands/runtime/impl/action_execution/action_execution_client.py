@@ -39,6 +39,7 @@ from openhands.events.observation import (
 from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
+from openhands.mcp import call_tool_mcp as call_tool_mcp_handler
 from openhands.runtime.base import Runtime
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.request import send_request
@@ -282,10 +283,6 @@ class ActionExecutionClient(Runtime):
                 execution_action_body: dict[str, Any] = {
                     'action': event_to_dict(action),
                 }
-                if self.config.mcp.sse.mcp_servers:
-                    execution_action_body['sse_mcp_config'] = (
-                        self.config.mcp.sse.mcp_servers
-                    )
                 response = self._send_action_server_request(
                     'POST',
                     f'{self._get_action_execution_server_host()}/execute_action',
@@ -324,8 +321,10 @@ class ActionExecutionClient(Runtime):
     def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
         return self.send_action_for_execution(action)
 
-    def call_tool_mcp(self, action: McpAction) -> Observation:
-        return self.send_action_for_execution(action)
+    async def call_tool_mcp(self, action: McpAction) -> Observation:
+        return await call_tool_mcp_handler(
+            action, self.config.mcp.sse.mcp_servers or []
+        )
 
     def close(self) -> None:
         # Make sure we don't close the session multiple times

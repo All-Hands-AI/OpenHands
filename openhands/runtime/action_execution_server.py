@@ -8,7 +8,6 @@ NOTE: this will be executed inside the docker sandbox.
 import argparse
 import asyncio
 import base64
-import json
 import mimetypes
 import os
 import shutil
@@ -44,7 +43,6 @@ from openhands.events.action import (
     FileWriteAction,
     IPythonRunCellAction,
 )
-from openhands.events.action.mcp import McpAction
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.observation import (
     CmdOutputObservation,
@@ -55,9 +53,7 @@ from openhands.events.observation import (
     IPythonRunCellObservation,
     Observation,
 )
-from openhands.events.observation.mcp import MCPObservation
 from openhands.events.serialization import event_from_dict, event_to_dict
-from openhands.mcp import create_mcp_clients
 from openhands.runtime.browser import browse
 from openhands.runtime.browser.browser_env import BrowserEnv
 from openhands.runtime.plugins import ALL_PLUGINS, JupyterPlugin, Plugin, VSCodePlugin
@@ -72,7 +68,6 @@ from openhands.utils.async_utils import call_sync_from_async, wait_all
 
 class ActionRequest(BaseModel):
     action: dict
-    sse_mcp_config: list[str] | None = None
 
 
 ROOT_GID = 0
@@ -187,16 +182,10 @@ class ActionExecutor:
             in ['true', '1', 'yes']
         )
         self.memory_monitor.start_monitoring()
-        self.sse_mcp_servers: list[str] = []
 
     @property
     def initial_cwd(self):
         return self._initial_cwd
-
-    def process_request(self, action_request: ActionRequest):
-        # update the sse_mcp_servers  to prepare for MCP action if needed
-        if action_request.sse_mcp_config:
-            self.sse_mcp_servers = action_request.sse_mcp_config
 
     async def _init_browser_async(self):
         """Initialize the browser asynchronously."""
@@ -516,38 +505,6 @@ class ActionExecutor:
         await self._ensure_browser_ready()
         return await browse(action, self.browser)
 
-    async def call_tool_mcp(self, action: McpAction) -> Observation:
-        if not self.sse_mcp_servers:
-            raise ValueError('No MCP servers found')
-
-        logger.warning(f'SSE MCP servers: {self.sse_mcp_servers}')
-        mcp_clients = await create_mcp_clients(
-            self.sse_mcp_servers,
-        )
-        logger.warn(f'MCP action received: {action}')
-        # Find the MCP agent that has the matching tool name
-        matching_client = None
-        logger.warning(f'MCP clients: {mcp_clients}')
-        logger.warning(f'MCP action name: {action.name}')
-        for client in mcp_clients:
-            if action.name in [tool.name for tool in client.tools]:
-                matching_client = client
-                break
-        if matching_client is None:
-            raise ValueError(
-                f'No matching MCP agent found for tool name: {action.name}'
-            )
-        logger.warning(f'Matching client: {matching_client}')
-        args_dict = json.loads(action.arguments) if action.arguments else {}
-        response = await matching_client.call_tool(action.name, args_dict)
-        logger.warning(f'MCP response: {response}')
-
-        # close client connections
-        for client in mcp_clients:
-            await client.disconnect()
-
-        return MCPObservation(content=f'MCP result:{response.model_dump(mode="json")}')
-
     def close(self):
         self.memory_monitor.stop_monitoring()
         if self.bash_session is not None:
@@ -671,7 +628,6 @@ if __name__ == '__main__':
                 raise HTTPException(status_code=400, detail='Invalid action type')
             client.last_execution_time = time.time()
 
-            client.process_request(action_request)
             observation = await client.run_action(action)
             return event_to_dict(observation)
         except Exception as e:

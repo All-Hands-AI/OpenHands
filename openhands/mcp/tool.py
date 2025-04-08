@@ -4,8 +4,6 @@ from typing import Dict, Optional
 from mcp import ClientSession
 from mcp.types import CallToolResult, TextContent, Tool
 
-from openhands.core.logger import openhands_logger as logger
-
 
 class BaseTool(ABC, Tool):
     @classmethod
@@ -40,15 +38,17 @@ class MCPClientTool(BaseTool):
         """Execute the tool by making a remote call to the MCP server."""
         if not self.session:
             return CallToolResult(
-                content=[TextContent(text='Not connected to MCP server')], isError=True
+                content=[TextContent(text='Not connected to MCP server', type='text')],
+                isError=True,
             )
 
         try:
             result = await self.session.call_tool(self.name, kwargs)
-            logger.debug(f'MCP tool result: {result}')
             return result
         except Exception as e:
             return CallToolResult(
-                content=[TextContent(text=f'Error executing tool: {str(e)}')],
+                content=[
+                    TextContent(text=f'Error executing tool: {str(e)}', type='text')
+                ],
                 isError=True,
             )

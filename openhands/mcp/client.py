@@ -36,45 +36,18 @@ class MCPClient(BaseModel):
             await self.disconnect()
 
         try:
-            import asyncio
-            from asyncio import TimeoutError
-
-            # Create a task for the connection
-            connection_task = asyncio.create_task(
-                self._connect_sse_internal(server_url)
+            streams_context = sse_client(
+                url=server_url,
+            )
+            streams = await self.exit_stack.enter_async_context(streams_context)
+            self.session = await self.exit_stack.enter_async_context(
+                ClientSession(*streams)
             )
 
-            # Wait for the connection with timeout
-            try:
-                await asyncio.wait_for(connection_task, timeout=timeout)
-            except TimeoutError:
-                logger.error(
-                    f'Connection to {server_url} timed out after {timeout} seconds'
-                )
-                # Cancel the connection task
-                connection_task.cancel()
-                try:
-                    await connection_task
-                except asyncio.CancelledError:
-                    pass
-                # Re-raise the TimeoutError to indicate connection failure
-                raise
+            await self._initialize_and_list_tools()
         except Exception as e:
             logger.error(f'Error connecting to {server_url}: {str(e)}')
-            # Re-raise the exception to indicate connection failure
             raise
-
-    async def _connect_sse_internal(self, server_url: str) -> None:
-        """Internal method to establish SSE connection."""
-        streams_context = sse_client(
-            url=server_url,
-        )
-        streams = await self.exit_stack.enter_async_context(streams_context)
-        self.session = await self.exit_stack.enter_async_context(
-            ClientSession(*streams)
-        )
-
-        await self._initialize_and_list_tools()
 
     async def _initialize_and_list_tools(self) -> None:
         """Initialize session and populate tool map."""

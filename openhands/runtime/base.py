@@ -299,9 +299,11 @@ class Runtime(FileEditRuntimeMixin):
         assert event.timeout is not None
         try:
             await self._export_latest_git_provider_tokens(event)
-            observation: Observation = await call_sync_from_async(
-                self.run_action, event
-            )
+            if isinstance(event, McpAction):
+                # we don't call call_tool_mcp impl directly because there can be other action ActionExecutionClient
+                observation: Observation = await getattr(self, McpAction.action)(event)
+            else:
+                observation = await call_sync_from_async(self.run_action, event)
         except Exception as e:
             err_id = ''
             if isinstance(e, httpx.NetworkError) or isinstance(
@@ -564,7 +566,7 @@ class Runtime(FileEditRuntimeMixin):
         pass
 
     @abstractmethod
-    def call_tool_mcp(self, action: McpAction) -> Observation:
+    async def call_tool_mcp(self, action: McpAction) -> Observation:
         pass
 
     # ====================================================================
