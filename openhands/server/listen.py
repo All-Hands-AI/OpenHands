@@ -16,6 +16,8 @@ from openhands.server.static import SPAStaticFiles
 base_app.mount(
     '/', SPAStaticFiles(directory='./frontend/build', html=True), name='dist'
 )
+base_app.middleware('http')(AttachConversationMiddleware(base_app))
+base_app.middleware('http')(GitHubTokenMiddleware(base_app))
 
 # Add middleware to the base app - need to be added before the other middlewares
 base_app.add_middleware(JWTAuthMiddleware)
@@ -32,7 +34,5 @@ base_app.add_middleware(
     RateLimitMiddleware,
     rate_limiter=InMemoryRateLimiter(requests=10, seconds=1),
 )
-base_app.middleware('http')(AttachConversationMiddleware(base_app))
-base_app.middleware('http')(GitHubTokenMiddleware(base_app))
 
 app = socketio.ASGIApp(sio, other_asgi_app=base_app)
