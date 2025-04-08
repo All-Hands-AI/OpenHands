@@ -50,8 +50,8 @@ const IGNORE_PATHS = [
   "routes.ts", // Route definitions
   "root.tsx", // Root component
   "entry.client.tsx", // Client entry point
-  "utils/scan-unlocalized-strings.ts", // Original scanner
-  "utils/scan-unlocalized-strings-ast.ts", // This file itself
+  "scan-unlocalized-strings.ts", // Original scanner
+  "scan-unlocalized-strings-ast.ts", // This file itself
 ];
 
 // Extensions to scan

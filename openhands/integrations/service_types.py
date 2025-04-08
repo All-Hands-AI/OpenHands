@@ -9,6 +9,7 @@ from openhands.server.types import AppMode
 class ProviderType(Enum):
     GITHUB = 'github'
     GITLAB = 'gitlab'
+    AZUREDEVOPS = 'azuredevops'
 
 
 class TaskType(str, Enum):
@@ -90,4 +91,8 @@ class GitService(Protocol):
 
     async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
         """Get repositories for the authenticated user"""
+        ...
+    
+    async def get_repo_url(self, repository: str) -> str:
+        """Get the URL of a repository"""
         ...

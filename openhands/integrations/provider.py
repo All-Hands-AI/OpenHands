@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from types import MappingProxyType
 from typing import Annotated, Any, Coroutine, Literal, overload
 
@@ -17,6 +18,9 @@ from pydantic.json import pydantic_encoder
 from openhands.events.action.action import Action
 from openhands.events.action.commands import CmdRunAction
 from openhands.events.stream import EventStream
+from openhands.integrations.azuredevops.azuredevops_service import (
+    AzureDevOpsServiceImpl,
+)
 from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
 from openhands.integrations.service_types import (
@@ -147,6 +151,7 @@ class ProviderHandler:
         self.service_class_map: dict[ProviderType, type[GitService]] = {
             ProviderType.GITHUB: GithubServiceImpl,
             ProviderType.GITLAB: GitLabServiceImpl,
+            ProviderType.AZUREDEVOPS: AzureDevOpsServiceImpl,
         }
 
         self.external_auth_id = external_auth_id
@@ -193,6 +198,8 @@ class ProviderHandler:
         Get repositories from a selected providers with pagination support
         """
 
+        print(f'provider tokens: {self.provider_tokens}')
+
         all_repos: list[Repository] = []
         for provider in self.provider_tokens:
             try:
@@ -223,6 +230,14 @@ class ProviderHandler:
                 continue
 
         return all_repos
+
+    async def get_repo_url(
+        self, repository: str, provider: ProviderType) -> str:
+        """
+        Get the repository URL from the provider
+        """
+        service = self._get_service(provider)
+        return await service.get_repo_url(repository)
 
     async def set_event_stream_secrets(
         self,
