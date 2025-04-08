@@ -29,7 +29,9 @@ export function AuthModal({ githubAuthUrl }: AuthModalProps) {
       <ModalBody className="border border-tertiary">
         <AllHandsLogo width={68} height={46} />
         <div className="flex flex-col gap-2 w-full items-center text-center">
-          <h1 className="text-2xl font-bold">Sign in with GitHub</h1>
+          <h1 className="text-2xl font-bold">
+            {t(I18nKey.AUTH$SIGN_IN_WITH_GITHUB)}
+          </h1>
         </div>
 
         <TOSCheckbox onChange={() => setIsTosAccepted((prev) => !prev)} />
