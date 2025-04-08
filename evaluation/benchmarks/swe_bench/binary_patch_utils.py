@@ -33,14 +33,14 @@ def remove_binary_diffs(patch_text):
         cleaned_lines.extend(block)
     return "\n".join(cleaned_lines)
 
-def remove_binary_files_from_git(command):
+def remove_binary_files_from_git():
     """
     Generate a bash command to remove binary files from git staging.
     
     Returns:
         str: A bash command that removes binary files from git staging
     """
-    return f'''
+    return '''
     for file in $(git status --porcelain | grep -E "^(M| M|\\?\\?|A| A)" | cut -c4-); do
         if [ -f "$file" ] && (file "$file" | grep -q "executable" || git check-attr binary "$file" | grep -q "binary: set"); then
             git rm -f "$file" 2>/dev/null || rm -f "$file"
