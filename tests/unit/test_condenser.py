@@ -13,6 +13,7 @@ from openhands.core.config.condenser_config import (
     NoOpCondenserConfig,
     ObservationMaskingCondenserConfig,
     RecentEventsCondenserConfig,
+    StructuredSummaryCondenserConfig,
 )
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.message import Message, TextContent
@@ -32,6 +33,7 @@ from openhands.memory.condenser.impl import (
     NoOpCondenser,
     ObservationMaskingCondenser,
     RecentEventsCondenser,
+    StructuredSummaryCondenser,
 )
 
 
@@ -84,6 +86,8 @@ def mock_llm() -> LLM:
     mock_llm.format_messages_for_llm = lambda events: [
         Message(role='user', content=[TextContent(text=str(event))]) for event in events
     ]
+
+    mock_llm.is_function_calling_active.return_value = True
 
     return mock_llm
 
@@ -600,3 +604,93 @@ def test_llm_attention_condenser_handles_keep_first_events(mock_llm):
     for i, view in enumerate(harness.views(events)):
         assert len(view) == harness.expected_size(i, max_size)
         assert view[:keep_first] == events[: min(keep_first, i + 1)]
+
+
+def test_structured_summary_condenser_from_config():
+    """Test that StructuredSummaryCondenser objects can be made from config."""
+    config = StructuredSummaryCondenserConfig(
+        max_size=50,
+        keep_first=10,
+        llm_config=LLMConfig(
+            model='gpt-4o',
+            api_key='test_key',
+        ),
+    )
+    condenser = Condenser.from_config(config)
+
+    assert isinstance(condenser, StructuredSummaryCondenser)
+    assert condenser.llm.config.model == 'gpt-4o'
+    assert condenser.llm.config.api_key.get_secret_value() == 'test_key'
+    assert condenser.max_size == 50
+    assert condenser.keep_first == 10
+
+
+def test_structured_summary_condenser_invalid_config():
+    """Test that StructuredSummaryCondenser raises error when keep_first > max_size."""
+    # Since the condenser only works when function calling is on, we need to
+    # mock up the check for that.
+    llm = MagicMock()
+    llm.is_function_calling_active.return_value = True
+
+    pytest.raises(
+        ValueError,
+        StructuredSummaryCondenser,
+        llm=llm,
+        max_size=4,
+        keep_first=2,
+    )
+
+    pytest.raises(ValueError, StructuredSummaryCondenser, llm=llm, max_size=0)
+    pytest.raises(ValueError, StructuredSummaryCondenser, llm=llm, keep_first=-1)
+
+    # If all other parameters are good but there's no function calling the
+    # condenser still counts as improperly configured.
+    llm.is_function_calling_active.return_value = False
+    pytest.raises(
+        ValueError, StructuredSummaryCondenser, llm=llm, max_size=40, keep_first=2
+    )
+
+
+def test_structured_summary_condenser_gives_expected_view_size(mock_llm):
+    """Test that StructuredSummaryCondenser maintains the correct view size."""
+    max_size = 10
+    condenser = StructuredSummaryCondenser(max_size=max_size, llm=mock_llm)
+
+    events = [create_test_event(f'Event {i}', id=i) for i in range(max_size * 10)]
+
+    # Set up mock LLM response
+    mock_llm.set_mock_response_content('Summary of forgotten events')
+
+    harness = RollingCondenserTestHarness(condenser)
+
+    for i, view in enumerate(harness.views(events)):
+        assert len(view) == harness.expected_size(i, max_size)
+
+
+def test_structured_summary_condenser_keeps_first_and_summary_events(mock_llm):
+    """Test that the StructuredSummaryCondenser appropriately maintains the event prefix and any summary events."""
+    max_size = 10
+    keep_first = 3
+    condenser = StructuredSummaryCondenser(
+        max_size=max_size, keep_first=keep_first, llm=mock_llm
+    )
+
+    mock_llm.set_mock_response_content('Summary of forgotten events')
+
+    events = [create_test_event(f'Event {i}', id=i) for i in range(max_size * 10)]
+    harness = RollingCondenserTestHarness(condenser)
+
+    for i, view in enumerate(harness.views(events)):
+        assert len(view) == harness.expected_size(i, max_size)
+
+        # Ensure that the we've called out the summarizing LLM once per condensation
+        assert mock_llm.completion.call_count == harness.expected_condensations(
+            i, max_size
+        )
+
+        # Ensure that the prefix is appropiately maintained
+        assert view[:keep_first] == events[: min(keep_first, i + 1)]
+
+        # If we've condensed, ensure that the summary event is present
+        if i > max_size:
+            assert isinstance(view[keep_first], AgentCondensationObservation)

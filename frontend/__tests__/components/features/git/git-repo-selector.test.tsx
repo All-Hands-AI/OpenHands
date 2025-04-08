@@ -1,16 +1,17 @@
 import { screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "test-utils";
-import { GitHubRepositorySelector } from "#/components/features/github/github-repo-selector";
+import { GitRepositorySelector } from "#/components/features/git/git-repo-selector";
 import OpenHands from "#/api/open-hands";
+import { Provider } from "#/types/settings";
 
-describe("GitHubRepositorySelector", () => {
+describe("GitRepositorySelector", () => {
   const onInputChangeMock = vi.fn();
   const onSelectMock = vi.fn();
 
   it("should render the search input", () => {
     renderWithProviders(
-      <GitHubRepositorySelector
+      <GitRepositorySelector
         onInputChange={onInputChangeMock}
         onSelect={onSelectMock}
         publicRepositories={[]}
@@ -19,7 +20,7 @@ describe("GitHubRepositorySelector", () => {
     );
 
     expect(
-      screen.getByPlaceholderText("LANDING$SELECT_REPO"),
+      screen.getByPlaceholderText("LANDING$SELECT_GIT_REPO"),
     ).toBeInTheDocument();
   });
 
@@ -37,7 +38,7 @@ describe("GitHubRepositorySelector", () => {
     });
 
     renderWithProviders(
-      <GitHubRepositorySelector
+      <GitRepositorySelector
         onInputChange={onInputChangeMock}
         onSelect={onSelectMock}
         publicRepositories={[]}
@@ -53,23 +54,25 @@ describe("GitHubRepositorySelector", () => {
       {
         id: 1,
         full_name: "test/repo1",
+        git_provider: "github" as Provider,
         stargazers_count: 100,
       },
       {
         id: 2,
         full_name: "test/repo2",
+        git_provider: "github" as Provider,
         stargazers_count: 200,
       },
     ];
 
     const searchPublicRepositoriesSpy = vi.spyOn(
       OpenHands,
-      "searchGitHubRepositories",
+      "searchGitRepositories",
     );
     searchPublicRepositoriesSpy.mockResolvedValue(mockSearchedRepos);
 
     renderWithProviders(
-      <GitHubRepositorySelector
+      <GitRepositorySelector
         onInputChange={onInputChangeMock}
         onSelect={onSelectMock}
         publicRepositories={[]}

@@ -9,12 +9,14 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.service_types import (
     AuthenticationError,
     GitService,
+    ProviderType,
     Repository,
     SuggestedTask,
     TaskType,
     UnknownException,
     User,
 )
+from openhands.server.types import AppMode
 from openhands.utils.import_utils import get_impl
 
 
@@ -98,30 +100,89 @@ class GitHubService(GitService):
             email=response.get('email'),
         )
 
-    async def get_repositories(
-        self, page: int, per_page: int, sort: str, installation_id: int | None
-    ) -> list[Repository]:
-        params = {'page': str(page), 'per_page': str(per_page)}
-        if installation_id:
-            url = f'{self.BASE_URL}/user/installations/{installation_id}/repositories'
-            response, headers = await self._fetch_data(url, params)
-            response = response.get('repositories', [])
-        else:
-            url = f'{self.BASE_URL}/user/repos'
-            params['sort'] = sort
-            response, headers = await self._fetch_data(url, params)
 
-        next_link: str = headers.get('Link', '')
-        repos = [
+    async def _fetch_paginated_repos(
+        self, url: str, params: dict, max_repos: int, extract_key: str | None = None
+    ) -> list[dict]:
+        """
+        Fetch repositories with pagination support.
+
+        Args:
+            url: The API endpoint URL
+            params: Query parameters for the request
+            max_repos: Maximum number of repositories to fetch
+            extract_key: If provided, extract repositories from this key in the response
+
+        Returns:
+            List of repository dictionaries
+        """
+        repos: list[dict] = []
+        page = 1
+
+        while len(repos) < max_repos:
+            page_params = {**params, 'page': str(page)}
+            response, headers = await self._fetch_data(url, page_params)
+
+            # Extract repositories from response
+            page_repos = response.get(extract_key, []) if extract_key else response
+
+            if not page_repos:  # No more repositories
+                break
+
+            repos.extend(page_repos)
+            page += 1
+
+            # Check if we've reached the last page
+            link_header = headers.get('Link', '')
+            if 'rel="next"' not in link_header:
+                break
+
+        return repos[:max_repos]  # Trim to max_repos if needed
+
+    async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
+        MAX_REPOS = 1000
+        PER_PAGE = 100  # Maximum allowed by GitHub API
+        all_repos: list[dict] = []
+
+        if app_mode == AppMode.SAAS:
+            # Get all installation IDs and fetch repos for each one
+            installation_ids = await self.get_installation_ids()
+
+            # Iterate through each installation ID
+            for installation_id in installation_ids:
+                params = {'per_page': str(PER_PAGE)}
+                url = (
+                    f'{self.BASE_URL}/user/installations/{installation_id}/repositories'
+                )
+
+                # Fetch repositories for this installation
+                installation_repos = await self._fetch_paginated_repos(
+                    url, params, MAX_REPOS - len(all_repos), extract_key='repositories'
+                )
+
+                all_repos.extend(installation_repos)
+
+                # If we've already reached MAX_REPOS, no need to check other installations
+                if len(all_repos) >= MAX_REPOS:
+                    break
+        else:
+            # Original behavior for non-SaaS mode
+            params = {'per_page': str(PER_PAGE), 'sort': sort}
+            url = f'{self.BASE_URL}/user/repos'
+
+            # Fetch user repositories
+            all_repos = await self._fetch_paginated_repos(url, params, MAX_REPOS)
+
+        # Convert to Repository objects
+        return [
             Repository(
                 id=repo.get('id'),
                 full_name=repo.get('full_name'),
                 stargazers_count=repo.get('stargazers_count'),
-                link_header=next_link,
+                git_provider=ProviderType.GITHUB,
             )
-            for repo in response
+            for repo in all_repos
         ]
-        return repos
 
     async def get_installation_ids(self) -> list[int]:
         url = f'{self.BASE_URL}/user/installations'
@@ -133,7 +194,14 @@ class GitHubService(GitService):
         self, query: str, per_page: int, sort: str, order: str
     ) -> list[Repository]:
         url = f'{self.BASE_URL}/search/repositories'
-        params = {'q': query, 'per_page': per_page, 'sort': sort, 'order': order}
+        # Add is:public to the query to ensure we only search for public repositories
+        query_with_visibility = f'{query} is:public'
+        params = {
+            'q': query_with_visibility,
+            'per_page': per_page,
+            'sort': sort,
+            'order': order,
+        }
 
         response, _ = await self._fetch_data(url, params)
         repos = response.get('items', [])
@@ -143,6 +211,7 @@ class GitHubService(GitService):
                 id=repo.get('id'),
                 full_name=repo.get('full_name'),
                 stargazers_count=repo.get('stargazers_count'),
+                git_provider=ProviderType.GITHUB,
             )
             for repo in repos
         ]
