@@ -357,12 +357,11 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
         ret_obs.llm_metrics = self.draft_editor_llm.metrics
         return ret_obs
 
-    # Helper function for exact multi-line replacement (similar to Aider's perfect_replace)
-    # Now a method within the mixin
     def _exact_replace(
         self, whole_lines: list[str], part_lines: list[str], replace_lines: list[str]
     ) -> str | None:
-        """Attempts to find an exact match of part_lines within whole_lines and replace it."""
+        """Attempts to find an exact match of part_lines within whole_lines and replace it.
+        Adapted from Aider's perfect_replace logic."""
         part_tup = tuple(part_lines)
         part_len = len(part_lines)
 
@@ -388,6 +387,9 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
                 return res
         return None
 
+    # Fenced diff is adapted from the logic in Aider
+    # Copyright Paul Gauthier
+    # Licensed under Apache 2.0: http://www.apache.org/licenses/LICENSE-2.0
     def fenced_diff_edit(self, action: FileEditAction) -> Observation:
         """Handles FileEditAction with FENCED_DIFF source using SEARCH/REPLACE blocks."""
         logger.info(f'Executing fenced diff edit for: {action.path}')
