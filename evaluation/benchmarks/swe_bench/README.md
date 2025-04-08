@@ -209,13 +209,13 @@ The two modes `swt` and `swt-ci` have the following effect:
 The evaluation of these results is done leveraging [the SWT-Bench evaluation harness](https://github.com/logic-star-ai/swt-bench/tree/master).
 
 #### Extracting results into SWT-Bench harness format
-In order to run evaluation of the obtained inference results in the SWT-Bench harness, we transform the results to a format that the SWT-Bench using the extractions script `swt_extract.py`.
+In order to run evaluation of the obtained inference results in the SWT-Bench harness, we transform the results to a format that the SWT-Bench.
 
 ```bash
-python3 evaluation/benchmarks/swe_bench/scripts/swt_extract.py --prediction_file [output.jsonl] > [output_swt.jsonl]
+python3 evaluation/benchmarks/swe_bench/scripts/swtbench/convert.py --prediction_file [output.jsonl] > [output_swt.jsonl]
 
 # Example  
-python3 evaluation/benchmarks/swe_bench/scripts/swt_extract.py --prediction_file "evaluation/evaluation_outputs/outputs/princeton-nlp__SWE-bench_Verified-test/CodeActAgent/gpt-4o-2024-11-20_maxiter_100_N_v0.31.0-no-hint-swt-run_1/output.jsonl" > OpenHands-gpt-4o-2024-11-20.jsonl
+python3 evaluation/benchmarks/swe_bench/scripts/swtbench/convert.py --prediction_file "evaluation/evaluation_outputs/outputs/princeton-nlp__SWE-bench_Verified-test/CodeActAgent/gpt-4o-2024-11-20_maxiter_100_N_v0.31.0-no-hint-swt-run_1/output.jsonl" > OpenHands-gpt-4o-2024-11-20.jsonl
 ```
 
 #### Running the results in SWT-Bench
