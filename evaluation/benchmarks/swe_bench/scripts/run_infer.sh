@@ -84,13 +84,13 @@ fi
 if [ -n "$EXP_NAME" ]; then
   EVAL_NOTE="$EVAL_NOTE-$EXP_NAME"
 fi
+# if mode != swe, add mode to the eval note
+if [ "$MODE" != "swe" ]; then
+  EVAL_NOTE="${EVAL_NOTE}-${MODE}"
+fi
 
 function run_eval() {
-  local eval_note="${MODEL_CONFIG}"
-  # if mode != swe, add mode to the eval note
-  if [ "$MODE" != "swe" ]; then
-    eval_note="${eval_note}-${10}"
-  fi
+  local eval_note="${1}"
   COMMAND="poetry run python evaluation/benchmarks/swe_bench/run_infer.py \
     --agent-cls $AGENT \
     --llm-config $MODEL_CONFIG \
