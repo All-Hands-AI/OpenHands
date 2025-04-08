@@ -28,6 +28,28 @@ env:
   RELEVANT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 
 jobs:
+  define-matrix:
+    runs-on: blacksmith-4vcpu-ubuntu-2204
+    outputs:
+      base_image: ${{ steps.define-base-images.outputs.base_image }}
+    steps:
+      - name: Define base images
+        shell: bash
+        id: define-base-images
+        run: |
+          # Only build nikolaik on PRs, otherwise build both nikolaik and ubuntu.
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+            json=$(jq -n -c '[
+                { image: "nikolaik/python-nodejs:python3.12-nodejs22", tag: "nikolaik" }
+              ]')
+          else
+            json=$(jq -n -c '[
+                { image: "nikolaik/python-nodejs:python3.12-nodejs22", tag: "nikolaik" },
+                { image: "ubuntu:24.04", tag: "ubuntu" }
+              ]')
+          fi
+          echo "base_image=$json" >> "$GITHUB_OUTPUT"
+
   # Builds the OpenHands Docker images
   ghcr_build_app:
     name: Build App Image
@@ -84,13 +106,10 @@ jobs:
     permissions:
       contents: read
       packages: write
+    needs: define-matrix
     strategy:
       matrix:
-        base_image:
-          - image: 'nikolaik/python-nodejs:python3.12-nodejs22'
-            tag: nikolaik
-          - image: 'ubuntu:24.04'
-            tag: ubuntu
+        base_image: ${{ fromJson(needs.define-matrix.outputs.base_image) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -209,12 +228,12 @@ jobs:
   # Run unit tests with the Docker runtime Docker images as root
   test_runtime_root:
     name: RT Unit Tests (Root)
-    needs: [ghcr_build_runtime]
+    needs: [ghcr_build_runtime, define-matrix]
     runs-on: blacksmith-4vcpu-ubuntu-2204
     strategy:
       fail-fast: false
       matrix:
-        base_image: ['nikolaik', 'ubuntu']
+        base_image: ${{ fromJson(needs.define-matrix.outputs.base_image) }}
     steps:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
@@ -225,12 +244,12 @@ jobs:
         if: github.event.pull_request.head.repo.fork
         uses: actions/download-artifact@v4
         with:
-          name: runtime-${{ matrix.base_image }}
+          name: runtime-${{ matrix.base_image.tag }}
           path: /tmp
       - name: Load runtime image for fork
         if: github.event.pull_request.head.repo.fork
         run: |
-          docker load --input /tmp/runtime-${{ matrix.base_image }}.tar
+          docker load --input /tmp/runtime-${{ matrix.base_image.tag }}.tar
       - name: Cache Poetry dependencies
         uses: useblacksmith/cache@v5
         with:
@@ -260,7 +279,7 @@ jobs:
           # Install to be able to retry on failures for flaky tests
           poetry run pip install pytest-rerunfailures
 
-          image_name=ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image }}
+          image_name=ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
 
           # Setting RUN_AS_OPENHANDS to false means use root.
           # That should mean SANDBOX_USER_ID is ignored but some tests do not check for RUN_AS_OPENHANDS.
@@ -280,10 +299,10 @@ jobs:
   test_runtime_oh:
     name: RT Unit Tests (openhands)
     runs-on: blacksmith-4vcpu-ubuntu-2204
-    needs: [ghcr_build_runtime]
+    needs: [ghcr_build_runtime, define-matrix]
     strategy:
       matrix:
-        base_image: [nikolaik, ubuntu]
+        base_image: ${{ fromJson(needs.define-matrix.outputs.base_image) }}
     steps:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
@@ -294,12 +313,12 @@ jobs:
         if: github.event.pull_request.head.repo.fork
         uses: actions/download-artifact@v4
         with:
-          name: runtime-${{ matrix.base_image }}
+          name: runtime-${{ matrix.base_image.tag }}
           path: /tmp
       - name: Load runtime image for fork
         if: github.event.pull_request.head.repo.fork
         run: |
-          docker load --input /tmp/runtime-${{ matrix.base_image }}.tar
+          docker load --input /tmp/runtime-${{ matrix.base_image.tag }}.tar
       - name: Cache Poetry dependencies
         uses: useblacksmith/cache@v5
         with:
@@ -328,7 +347,7 @@ jobs:
           # Install to be able to retry on failures for flaky tests
           poetry run pip install pytest-rerunfailures
 
-          image_name=ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image }}
+          image_name=ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
 
           TEST_RUNTIME=docker \
           SANDBOX_USER_ID=$(id -u) \
