@@ -100,7 +100,6 @@ class GitHubService(GitService):
             email=response.get('email'),
         )
 
-
     async def _fetch_paginated_repos(
         self, url: str, params: dict, max_repos: int, extract_key: str | None = None
     ) -> list[dict]:
@@ -204,7 +203,7 @@ class GitHubService(GitService):
         }
 
         response, _ = await self._fetch_data(url, params)
-        repos = response.get('items', [])
+        repo_items = response.get('items', [])
 
         repos = [
             Repository(
@@ -213,7 +212,7 @@ class GitHubService(GitService):
                 stargazers_count=repo.get('stargazers_count'),
                 git_provider=ProviderType.GITHUB,
             )
-            for repo in repos
+            for repo in repo_items
         ]
 
         return repos
@@ -238,7 +237,7 @@ class GitHubService(GitService):
                         f"GraphQL query error: {json.dumps(result['errors'])}"
                     )
 
-                return result
+                return dict(result)
 
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 401:
