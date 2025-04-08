@@ -585,11 +585,12 @@ class ActionExecutor:
             "url": "https://www.google.com"
         }
         """
-        screenshot_content: ExtendedImageContent = response.output
+        screenshot_content: ImageContent = response.output
         logger.debug(f'Screenshot content: {screenshot_content}')
         return PlaywrightMcpBrowserScreenshotObservation(
             content=f'{response}',
-            url=screenshot_content.url if screenshot_content.url is not None else '',
+            # url=screenshot_content.url if screenshot_content.url is not None else '',
+            url='',
             trigger_by_action=action.name,
             screenshot=f'data:image/png;base64,{screenshot_content.data}',
         )
