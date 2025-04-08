@@ -27,7 +27,7 @@ from openhands.events.action import (
     IPythonRunCellAction,
 )
 from openhands.events.action.action import Action
-from openhands.events.action.files import FileEditSource
+from openhands.events.event import FileEditSource
 from openhands.events.observation import (
     AgentThinkObservation,
     ErrorObservation,
@@ -237,11 +237,8 @@ class ActionExecutionClient(Runtime):
             return ''
 
     def send_action_for_execution(self, action: Action) -> Observation:
-        if (
-            isinstance(action, FileEditAction)
-            and action.impl_source == FileEditSource.LLM_BASED_EDIT
-        ):
-            return self.llm_based_edit(action)
+        # NOTE: Dispatch for LLM_BASED_EDIT and FENCED_DIFF now happens in the `edit` method.
+        # This method now only forwards actions to the server.
 
         # set timeout to default if not set
         if action.timeout is None:
@@ -307,8 +304,14 @@ class ActionExecutionClient(Runtime):
     def write(self, action: FileWriteAction) -> Observation:
         return self.send_action_for_execution(action)
 
-    def edit(self, action: FileEditAction) -> Observation:
-        return self.send_action_for_execution(action)
+    async def edit(self, action: FileEditAction) -> Observation:
+        # Dispatch based on impl_source
+        if action.impl_source == FileEditSource.LLM_BASED_EDIT:
+            return self.llm_based_edit(action)
+        elif action.impl_source == FileEditSource.FENCED_DIFF:
+            return self.fenced_diff_edit(action)
+        else:  # Default or OH_ACI
+            return self.send_action_for_execution(action)
 
     def browse(self, action: BrowseURLAction) -> Observation:
         return self.send_action_for_execution(action)

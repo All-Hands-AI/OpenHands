@@ -14,6 +14,7 @@ from openhands.events.action import (
     FileWriteAction,
     IPythonRunCellAction,
 )
+from openhands.events.event import FileEditSource
 from openhands.events.observation import (
     ErrorObservation,
     FileEditObservation,
@@ -355,3 +356,146 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
         )
         ret_obs.llm_metrics = self.draft_editor_llm.metrics
         return ret_obs
+
+    # Helper function for exact multi-line replacement (similar to Aider's perfect_replace)
+    # Now a method within the mixin
+    def _exact_replace(
+        self, whole_lines: list[str], part_lines: list[str], replace_lines: list[str]
+    ) -> str | None:
+        """Attempts to find an exact match of part_lines within whole_lines and replace it."""
+        part_tup = tuple(part_lines)
+        part_len = len(part_lines)
+
+        if not part_len:  # Cannot search for an empty block
+            return None
+
+        for i in range(len(whole_lines) - part_len + 1):
+            whole_tup = tuple(whole_lines[i : i + part_len])
+            if part_tup == whole_tup:
+                res_lines = (
+                    whole_lines[:i] + replace_lines + whole_lines[i + part_len :]
+                )
+                # Ensure the result ends with a newline if the original or replacement did
+                # or if the original file ended with one.
+                res = ''.join(res_lines)
+                if (
+                    (part_lines and part_lines[-1].endswith('\n'))
+                    or (replace_lines and replace_lines[-1].endswith('\n'))
+                    or (whole_lines and whole_lines[-1].endswith('\n'))
+                ):
+                    if not res.endswith('\n'):
+                        res += '\n'
+                return res
+        return None
+
+    def fenced_diff_edit(self, action: FileEditAction) -> Observation:
+        """Handles FileEditAction with FENCED_DIFF source using SEARCH/REPLACE blocks."""
+        logger.info(f'Executing fenced diff edit for: {action.path}')
+        assert (
+            action.search_block is not None
+        ), 'search_block cannot be None for FENCED_DIFF'
+        assert (
+            action.replace_block is not None
+        ), 'replace_block cannot be None for FENCED_DIFF'
+
+        # 1. Read file content using the interface method
+        read_obs = self.read(FileReadAction(path=action.path))
+
+        original_content: str
+        prev_exist: bool = True
+        if (
+            isinstance(read_obs, ErrorObservation)
+            and 'File not found'.lower() in read_obs.content.lower()
+        ):
+            logger.info(
+                f'File not found for fenced diff: {action.path}. Will attempt to create if search_block is empty.'
+            )
+            original_content = ''
+            prev_exist = False
+        elif isinstance(read_obs, ErrorObservation):
+            return read_obs  # Propagate other read errors
+        elif isinstance(read_obs, FileReadObservation):
+            original_content = read_obs.content
+        else:
+            return ErrorObservation(
+                f'Unexpected observation type {type(read_obs)} received during read for fenced diff.'
+            )
+
+        # 2. Handle Empty Search Block (Append/Create)
+        if not action.search_block.strip():
+            if not prev_exist:
+                logger.info(f'Creating new file {action.path} with content.')
+                new_content = action.replace_block
+            else:
+                logger.info(f'Appending content to {action.path}.')
+                if original_content and not original_content.endswith('\n'):
+                    original_content += '\n'
+                new_content = original_content + action.replace_block
+
+            # Write the new content using the interface method
+            write_obs = self.write(
+                FileWriteAction(path=action.path, content=new_content)
+            )
+            if isinstance(write_obs, ErrorObservation):
+                return write_obs
+
+            diff = get_diff(original_content, new_content, action.path)
+            return FileEditObservation(
+                content=f'Appended content to {action.path}'
+                if prev_exist
+                else f'Created file {action.path}',
+                path=action.path,
+                old_content=original_content,
+                new_content=new_content,
+                impl_source=FileEditSource.FENCED_DIFF,
+                diff=diff,
+                prev_exist=prev_exist,
+            )
+
+        # 3. Implement Exact Search/Replace Logic
+        original_lines = original_content.splitlines(keepends=True)
+        search_lines = action.search_block.splitlines(keepends=True)
+        replace_lines = action.replace_block.splitlines(keepends=True)
+
+        # Ensure search/replace blocks are not empty lists if input was just whitespace
+        if action.search_block and not search_lines:
+            search_lines = ['\n'] * action.search_block.count('\n') + (
+                [''] if not action.search_block.endswith('\n') else []
+            )
+        if action.replace_block and not replace_lines:
+            replace_lines = ['\n'] * action.replace_block.count('\n') + (
+                [''] if not action.replace_block.endswith('\n') else []
+            )
+        if not action.replace_block:
+            replace_lines = []
+
+        new_content_str = self._exact_replace(
+            original_lines, search_lines, replace_lines
+        )
+
+        # 4. Handle errors (search_block not found)
+        if new_content_str is None:
+            # TODO: Optionally implement more flexible matching here (e.g., whitespace)
+            logger.warning(f'Exact search_block not found in {action.path}')
+            error_message = f'Failed to apply fenced diff edit: The specified search_block was not found exactly in {action.path}.\n'
+            error_message += 'SEARCH BLOCK:\n```\n' + action.search_block + '\n```'
+            return ErrorObservation(error_message)
+
+        # 5. Write modified content back using the interface method
+        write_obs = self.write(
+            FileWriteAction(path=action.path, content=new_content_str)
+        )
+        if isinstance(write_obs, ErrorObservation):
+            return write_obs
+
+        # 6. Return FileEditObservation
+        diff = get_diff(original_content, new_content_str, action.path)
+        return FileEditObservation(
+            content=f'Applied fenced diff edit to {action.path}',
+            path=action.path,
+            old_content=original_content,
+            new_content=new_content_str,
+            impl_source=FileEditSource.FENCED_DIFF,
+            diff=diff,
+            prev_exist=prev_exist,
+        )
