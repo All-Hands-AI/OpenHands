@@ -7,9 +7,7 @@ import socketio
 
 from openhands.controller.agent import Agent
 from openhands.core.config import AppConfig
-from openhands.core.config.condenser_config import (
-    LLMSummarizingCondenserConfig,
-)
+from openhands.core.config.condenser_config import LLMSummarizingCondenserConfig
 from openhands.core.logger import OpenHandsLoggerAdapter
 from openhands.core.schema import AgentState
 from openhands.events.action import MessageAction, NullAction
@@ -128,8 +126,9 @@ class Session:
 
         if settings.enable_default_condenser:
             default_condenser_config = LLMSummarizingCondenserConfig(
-                llm_config=llm.config, keep_first=3, max_size=40
+                llm_config=llm.config, keep_first=3, max_size=80
             )
+
             self.logger.info(f'Enabling default condenser: {default_condenser_config}')
             agent_config.condenser = default_condenser_config
 
@@ -168,8 +167,9 @@ class Session:
         """
         Initialize LLM, extracted for testing.
         """
+        agent_name = agent_cls if agent_cls is not None else 'agent'
         return LLM(
-            config=self.config.get_llm_config_from_agent(agent_cls),
+            config=self.config.get_llm_config_from_agent(agent_name),
             retry_listener=self._notify_on_llm_retry,
         )
 

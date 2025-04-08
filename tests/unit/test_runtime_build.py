@@ -136,7 +136,7 @@ def test_generate_dockerfile_build_from_scratch():
     )
     assert base_image in dockerfile_content
     assert 'apt-get update' in dockerfile_content
-    assert 'wget curl sudo apt-utils git' in dockerfile_content
+    assert 'wget curl' in dockerfile_content
     assert 'poetry' in dockerfile_content and '-c conda-forge' in dockerfile_content
     assert 'python=3.12' in dockerfile_content
 

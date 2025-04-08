@@ -7,12 +7,14 @@ import {
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import { STRIPE_BILLING_HANDLERS } from "./billing-handlers";
 import { ApiSettings, PostApiSettings } from "#/types/settings";
+import { FILE_SERVICE_HANDLERS } from "./file-service-handlers";
 import { GitUser } from "#/types/git";
 
 export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
   llm_model: DEFAULT_SETTINGS.LLM_MODEL,
   llm_base_url: DEFAULT_SETTINGS.LLM_BASE_URL,
-  llm_api_key: DEFAULT_SETTINGS.LLM_API_KEY,
+  llm_api_key: null,
+  llm_api_key_set: DEFAULT_SETTINGS.LLM_API_KEY_SET,
   agent: DEFAULT_SETTINGS.AGENT,
   language: DEFAULT_SETTINGS.LANGUAGE,
   confirmation_mode: DEFAULT_SETTINGS.CONFIRMATION_MODE,
@@ -90,52 +92,6 @@ const openHandsHandlers = [
     HttpResponse.json(["mock-invariant"]),
   ),
 
-  http.get(
-    "http://localhost:3001/api/conversations/:conversationId/list-files",
-    async ({ params }) => {
-      await delay();
-
-      const cid = params.conversationId?.toString();
-      if (!cid) return HttpResponse.json([], { status: 404 });
-
-      let data = ["file1.txt", "file2.txt", "file3.txt"];
-      if (cid === "3") {
-        data = [
-          "reboot_skynet.exe",
-          "target_list.txt",
-          "terminator_blueprint.txt",
-        ];
-      }
-
-      return HttpResponse.json(data);
-    },
-  ),
-
-  http.post("http://localhost:3001/api/save-file", () =>
-    HttpResponse.json(null, { status: 200 }),
-  ),
-
-  http.get("http://localhost:3001/api/select-file", async ({ request }) => {
-    await delay();
-
-    const token = request.headers
-      .get("Authorization")
-      ?.replace("Bearer", "")
-      .trim();
-
-    if (!token) {
-      return HttpResponse.json([], { status: 401 });
-    }
-
-    const url = new URL(request.url);
-    const file = url.searchParams.get("file")?.toString();
-    if (file) {
-      return HttpResponse.json({ code: `Content of ${file}` });
-    }
-
-    return HttpResponse.json(null, { status: 404 });
-  }),
-
   http.post("http://localhost:3001/api/submit-feedback", async () => {
     await delay(1200);
 
@@ -148,6 +104,7 @@ const openHandsHandlers = [
 
 export const handlers = [
   ...STRIPE_BILLING_HANDLERS,
+  ...FILE_SERVICE_HANDLERS,
   ...openHandsHandlers,
   http.get("/api/user/repositories", () =>
     HttpResponse.json([

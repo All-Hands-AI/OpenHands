@@ -8,15 +8,15 @@ import {
   useSearchParams,
 } from "react-router";
 import { useTranslation } from "react-i18next";
+import { I18nKey } from "#/i18n/declaration";
 import i18n from "#/i18n";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useIsAuthed } from "#/hooks/query/use-is-authed";
 import { useConfig } from "#/hooks/query/use-config";
 import { Sidebar } from "#/components/features/sidebar/sidebar";
-import { WaitlistModal } from "#/components/features/waitlist/waitlist-modal";
+import { AuthModal } from "#/components/features/waitlist/auth-modal";
 import { AnalyticsConsentFormModal } from "#/components/features/analytics/analytics-consent-form-modal";
 import { useSettings } from "#/hooks/query/use-settings";
-import { useAuth } from "#/context/auth-context";
 import { useMigrateUserConsent } from "#/hooks/use-migrate-user-consent";
 import { useBalance } from "#/hooks/query/use-balance";
 import { SetupPaymentModal } from "#/components/features/payment/setup-payment-modal";
@@ -24,6 +24,7 @@ import { displaySuccessToast } from "#/utils/custom-toast-handlers";
 
 export function ErrorBoundary() {
   const error = useRouteError();
+  const { t } = useTranslation();
 
   if (isRouteErrorResponse(error)) {
     return (
@@ -41,7 +42,7 @@ export function ErrorBoundary() {
   if (error instanceof Error) {
     return (
       <div>
-        <h1>Uh oh, an error occurred!</h1>
+        <h1>{t(I18nKey.ERROR$GENERIC)}</h1>
         <pre>{error.message}</pre>
       </div>
     );
@@ -49,7 +50,7 @@ export function ErrorBoundary() {
 
   return (
     <div>
-      <h1>Uh oh, an unknown error occurred!</h1>
+      <h1>{t(I18nKey.ERROR$UNKNOWN)}</h1>
     </div>
   );
 }
@@ -58,7 +59,6 @@ export default function MainApp() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [searchParams] = useSearchParams();
-  const { providersAreSet } = useAuth();
   const { data: settings } = useSettings();
   const { error, isFetching } = useBalance();
   const { migrateUserConsent } = useMigrateUserConsent();
@@ -105,14 +105,14 @@ export default function MainApp() {
     if (error?.status === 402 && pathname !== "/") {
       navigate("/");
     } else if (!isFetching && searchParams.get("free_credits") === "success") {
-      displaySuccessToast(t("BILLING$YOURE_IN"));
+      displaySuccessToast(t(I18nKey.BILLING$YOURE_IN));
       searchParams.delete("free_credits");
       navigate("/");
     }
   }, [error?.status, pathname, isFetching]);
 
   const userIsAuthed = !!isAuthed && !authError;
-  const renderWaitlistModal =
+  const renderAuthModal =
     !isFetchingAuth && !userIsAuthed && config.data?.APP_MODE === "saas";
 
   return (
@@ -129,13 +129,7 @@ export default function MainApp() {
         <Outlet />
       </div>
 
-      {renderWaitlistModal && (
-        <WaitlistModal
-          ghTokenIsSet={providersAreSet}
-          githubAuthUrl={gitHubAuthUrl}
-        />
-      )}
-
+      {renderAuthModal && <AuthModal githubAuthUrl={gitHubAuthUrl} />}
       {config.data?.APP_MODE === "oss" && consentFormIsOpen && (
         <AnalyticsConsentFormModal
           onClose={() => {
