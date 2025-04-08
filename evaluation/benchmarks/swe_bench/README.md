@@ -201,7 +201,7 @@ To run inference on [SWT-Bench](https://swtbench.com), you can use the same `run
 
 The two modes `swt` and `swt-ci` have the following effect:
 - `swt`: This mode will change the prompt to instruct the agent to generate reproducing test cases instead of resolving the issue.
-- `swt-ci`: In addition to the changes by `swt`, this mode i) pre-installs the environment in the docker image, such that the test framework can be executed without errors and ii) tells the model the exact command to run the test framework.
+- `swt-ci`: In addition to the changes by `swt`, this mode sets up the CI environment by i) pre-installing the environment in the docker image, such that the test framework can be executed without errors and ii) telling the model the exact command to run the test framework.
 
 ### Run evaluation for SWT-bench
 
@@ -215,6 +215,8 @@ In order to run evaluation of the obtained inference results in the SWT-Bench ha
 python3 evaluation/benchmarks/swe_bench/scripts/swt_extract.py --prediction_file "evaluation/evaluation_outputs/outputs/princeton-nlp__SWE-bench_Verified-test/CodeActAgent/gpt-4o-2024-11-20_maxiter_100_N_v0.31.0-no-hint-run_1/output.jsonl" > OpenHands-gpt-4o-2024-11-20.jsonl
 ```
 
+If you ran the evaluation in mode `swt-ci`, add the flag `--ci_mode` to the swt_extract.py script. This ensures that modifications due to the CI setup script are reversed in the patch.
+
 #### Running the results in SWT-Bench
 
 Next, we run the [SWT-Bench evaluation harness](https://github.com/logic-star-ai/swt-bench/tree/master) with these results.
@@ -222,15 +224,15 @@ First set-up and validate the setup as described in the harness [here](https://g
 Then, run the evaluation with the following command:
 
 ```bash
-python -m src.main \
-    --dataset_name princeton_nlp/SWE-bench_Verified \
-    --predictions_path <pathTo>/OpenHands-gpt-4-1106-vision-preview.jsonl \
+python3 -m src.main \
+    --dataset_name princeton-nlp/SWE-bench_Verified \
+    --predictions_path <pathTo>/OpenHands-gpt-4o-2024-11-20.jsonl \
     --max_workers 12 \
-    --run_id OpenHands-gpt-4-1106-vision-preview  --patch_types vanilla  --build_mode api
+    --run_id OpenHands-CodeAct-gpt-4o-2024-11-20  --patch_types vanilla  --build_mode api
 ```
 
 The results of the evaluation can be obtained by running the reporting script of the harness.
 
 ```bash
-python -m src.report run_instance_swt_logs/OpenHands-gpt-4-1106-vision-preview/OpenHands-gpt-4-1106-vision-preview__SWE-bench_Lite --dataset lite
+python -m src.report run_instance_swt_logs/OpenHands-CodeAct-gpt-4o-2024-11-20/OpenHands__CodeActAgent__gpt-4o-2024-11-20 --dataset verified
 ```
