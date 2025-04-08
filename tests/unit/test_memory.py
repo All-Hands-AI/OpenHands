@@ -28,7 +28,7 @@ from openhands.storage.memory import InMemoryFileStore
 @pytest.fixture
 def file_store():
     """Create a temporary file store for testing."""
-    return InMemoryFileStore()
+    return InMemoryFileStore({})
 
 
 @pytest.fixture
@@ -190,10 +190,9 @@ async def test_memory_with_microagents():
     assert 'magic word' in observation.microagent_knowledge[0].content
 
 
-def test_memory_repository_info(prompt_dir):
+def test_memory_repository_info(prompt_dir, file_store):
     """Test that Memory adds repository info to RecallObservations."""
-    # Create an in-memory file store and real event stream
-    file_store = InMemoryFileStore()
+    # real event stream
     event_stream = EventStream(sid='test-session', file_store=file_store)
 
     # Create a test repo microagent first
@@ -319,3 +318,87 @@ async def test_memory_with_agent_microagents():
     assert observation.microagent_knowledge[0].name == 'flarglebargle'
     assert observation.microagent_knowledge[0].trigger == 'flarglebargle'
     assert 'magic word' in observation.microagent_knowledge[0].content
+
+
+def test_memory_multiple_repo_microagents(prompt_dir, file_store):
+    """Test that Memory loads and concatenates multiple repo microagents correctly."""
+    # Create real event stream
+    event_stream = EventStream(sid='test-session', file_store=file_store)
+
+    # Create two test repo microagents
+    repo_microagent1_name = 'test_repo_microagent1'
+    repo_microagent1_content = """---
+REPOSITORY INSTRUCTIONS: This is the first test repository.
+"""
+
+    repo_microagent2_name = 'test_repo_microagent2'
+    repo_microagent2_content = """---
+name: test_repo2
+type: repo
+agent: CodeActAgent
+---
+
+REPOSITORY INSTRUCTIONS: This is the second test repository.
+"""
+
+    # Create temporary repo microagent files
+    os.makedirs(os.path.join(prompt_dir, 'micro'), exist_ok=True)
+    with open(
+        os.path.join(prompt_dir, 'micro', f'{repo_microagent1_name}.md'), 'w'
+    ) as f:
+        f.write(repo_microagent1_content)
+
+    with open(
+        os.path.join(prompt_dir, 'micro', f'{repo_microagent2_name}.md'), 'w'
+    ) as f:
+        f.write(repo_microagent2_content)
+
+    # Patch the global microagents directory to use our test directory
+    test_microagents_dir = os.path.join(prompt_dir, 'micro')
+    with patch('openhands.memory.memory.GLOBAL_MICROAGENTS_DIR', test_microagents_dir):
+        # Initialize Memory
+        memory = Memory(
+            event_stream=event_stream,
+            sid='test-session',
+        )
+
+        # Set repository info
+        memory.set_repository_info('owner/repo', '/workspace/repo')
+
+        # Create and add the first user message
+        user_message = MessageAction(content='First user message')
+        user_message._source = EventSource.USER  # type: ignore[attr-defined]
+        event_stream.add_event(user_message, EventSource.USER)
+
+        # Create and add the microagent action
+        microagent_action = RecallAction(
+            query='First user message', recall_type=RecallType.WORKSPACE_CONTEXT
+        )
+        microagent_action._source = EventSource.USER  # type: ignore[attr-defined]
+        event_stream.add_event(microagent_action, EventSource.USER)
+
+        # Give it a little time to process
+        time.sleep(0.3)
+
+        # Get all events from the stream
+        events = list(event_stream.get_events())
+
+        # Find the RecallObservation event
+        microagent_obs_events = [
+            event for event in events if isinstance(event, RecallObservation)
+        ]
+
+        # We should have one RecallObservation
+        assert len(microagent_obs_events) > 0
+
+        # Get the first RecallObservation
+        observation = microagent_obs_events[0]
+        assert observation.recall_type == RecallType.WORKSPACE_CONTEXT
+        assert observation.repo_name == 'owner/repo'
+        assert observation.repo_directory == '/workspace/repo'
+        assert 'This is the first test repository' in observation.repo_instructions
+        assert 'This is the second test repository' in observation.repo_instructions
+
+    # Clean up
+    os.remove(os.path.join(prompt_dir, 'micro', f'{repo_microagent1_name}.md'))
+    os.remove(os.path.join(prompt_dir, 'micro', f'{repo_microagent2_name}.md'))

@@ -3,6 +3,13 @@ from typing import Protocol
 
 from pydantic import BaseModel, SecretStr
 
+from openhands.server.types import AppMode
+
+
+class ProviderType(Enum):
+    GITHUB = 'github'
+    GITLAB = 'gitlab'
+
 
 class TaskType(str, Enum):
     MERGE_CONFLICTS = 'MERGE_CONFLICTS'
@@ -31,8 +38,10 @@ class User(BaseModel):
 class Repository(BaseModel):
     id: int
     full_name: str
+    git_provider: ProviderType
     stargazers_count: int | None = None
     link_header: str | None = None
+    pushed_at: str | None = None  # ISO 8601 format date string
 
 
 class AuthenticationError(ValueError):
@@ -79,12 +88,6 @@ class GitService(Protocol):
         """Search for repositories"""
         ...
 
-    async def get_repositories(
-        self,
-        page: int,
-        per_page: int,
-        sort: str,
-        installation_id: int | None,
-    ) -> list[Repository]:
+    async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
         """Get repositories for the authenticated user"""
         ...

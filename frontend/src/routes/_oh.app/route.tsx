@@ -38,6 +38,7 @@ import { useSettings } from "#/hooks/query/use-settings";
 import { clearFiles, clearInitialPrompt } from "#/state/initial-query-slice";
 import { RootState } from "#/store";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
+import { useDocumentTitleFromState } from "#/hooks/use-document-title-from-state";
 
 function AppContent() {
   useConversationConfig();
@@ -54,6 +55,9 @@ function AppContent() {
   const endSession = useEndSession();
 
   const isFetchingGitChanges = useIsFetching({ queryKey: ["file_changes"] });
+  // Set the document title to the conversation title when available
+  useDocumentTitleFromState();
+
   const [width, setWidth] = React.useState(window.innerWidth);
 
   const secrets = React.useMemo(
