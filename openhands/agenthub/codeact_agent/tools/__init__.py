@@ -1,5 +1,6 @@
 from .bash import create_cmd_run_tool
 from .browser import BrowserTool
+from .fenced_diff_edit import FencedDiffEditTool
 from .finish import FinishTool
 from .ipython import IPythonTool
 from .llm_based_edit import LLMBasedFileEditTool
@@ -10,6 +11,7 @@ from .web_read import WebReadTool
 __all__ = [
     'BrowserTool',
     'create_cmd_run_tool',
+    'FencedDiffEditTool',
     'FinishTool',
     'IPythonTool',
     'LLMBasedFileEditTool',

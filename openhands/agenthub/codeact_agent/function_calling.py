@@ -12,6 +12,7 @@ from litellm import (
 
 from openhands.agenthub.codeact_agent.tools import (
     BrowserTool,
+    FencedDiffEditTool,
     FinishTool,
     IPythonTool,
     LLMBasedFileEditTool,
@@ -167,6 +168,28 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                         **other_kwargs,
                     )
             # ================================================
+            # FencedDiffEditTool (Aider-style SEARCH/REPLACE)
+            # ================================================
+            elif tool_call.function.name == FencedDiffEditTool['function']['name']:
+                if 'path' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "path" in tool call {tool_call.function.name}'
+                    )
+                if 'search_block' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "search_block" in tool call {tool_call.function.name}'
+                    )
+                if 'replace_block' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "replace_block" in tool call {tool_call.function.name}'
+                    )
+                action = FileEditAction(
+                    path=arguments['path'],
+                    search_block=arguments['search_block'],
+                    replace_block=arguments['replace_block'],
+                    impl_source=FileEditSource.FENCED_DIFF,
+                )
+            # ================================================
             # AgentThinkAction
             # ================================================
             elif tool_call.function.name == ThinkTool['function']['name']:
@@ -229,6 +252,7 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
 def get_tools(
     codeact_enable_browsing: bool = False,
     codeact_enable_llm_editor: bool = False,
+    codeact_enable_fenced_diff: bool = False,
     codeact_enable_jupyter: bool = False,
     llm: LLM | None = None,
 ) -> list[ChatCompletionToolParam]:
@@ -251,12 +275,22 @@ def get_tools(
         tools.append(BrowserTool)
     if codeact_enable_jupyter:
         tools.append(IPythonTool)
+
+    # Determine which editor tool(s) to add
+    added_editor = False
+    if codeact_enable_fenced_diff:
+        tools.append(FencedDiffEditTool)
+        added_editor = True
     if codeact_enable_llm_editor:
         tools.append(LLMBasedFileEditTool)
-    else:
+        added_editor = True
+
+    # Fallback to str_replace_editor if no other editor is enabled
+    if not added_editor:
         tools.append(
             create_str_replace_editor_tool(
                 use_simplified_description=use_simplified_tool_desc
             )
         )
+
     return tools
