@@ -214,7 +214,9 @@ unknown_attr = "should_not_exist"
     assert custom_invalid.num_retries == 3  # default value
 
 
-def test_azure_model_api_version(default_config: AppConfig, tmp_path: pathlib.Path) -> None:
+def test_azure_model_api_version(
+    default_config: AppConfig, tmp_path: pathlib.Path
+) -> None:
     """Test that Azure models get the correct API version by default."""
     toml_content = """
 [core]
