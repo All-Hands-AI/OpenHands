@@ -71,7 +71,7 @@ class Session:
     async def close(self):
         if self.sio:
             await self.sio.emit(
-                'oh_event',
+                'dev_event',
                 event_to_dict(
                     AgentStateChangedObservation('', AgentState.STOPPED.value)
                 ),
@@ -248,7 +248,7 @@ class Session:
             if not self.is_alive:
                 return False
             if self.sio:
-                await self.sio.emit('oh_event', data, to=ROOM_KEY.format(sid=self.sid))
+                await self.sio.emit('dev_event', data, to=ROOM_KEY.format(sid=self.sid))
             await asyncio.sleep(0.001)  # This flushes the data to the client
             self.last_active_ts = int(time.time())
             return True

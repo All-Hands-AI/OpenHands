@@ -1,4 +1,4 @@
-export type OpenHandsEventType =
+export type DevEventType =
   | "message"
   | "agent_state_changed"
   | "run"
@@ -15,21 +15,21 @@ export type OpenHandsEventType =
   | "error"
   | "recall";
 
-interface OpenHandsBaseEvent {
+interface DevBaseEvent {
   id: number;
   source: "agent" | "user";
   message: string;
   timestamp: string; // ISO 8601
 }
 
-export interface OpenHandsActionEvent<T extends OpenHandsEventType>
-  extends OpenHandsBaseEvent {
+export interface DevActionEvent<T extends DevEventType>
+  extends DevBaseEvent {
   action: T;
   args: Record<string, unknown>;
 }
 
-export interface OpenHandsObservationEvent<T extends OpenHandsEventType>
-  extends OpenHandsBaseEvent {
+export interface DevObservationEvent<T extends DevEventType>
+  extends DevBaseEvent {
   cause: number;
   observation: T;
   content: string;

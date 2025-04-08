@@ -17,6 +17,7 @@ class SessionMiddlewareInterface(Protocol):
 class ServerConfigInterface(ABC):
     CONFIG_PATH: ClassVar[str | None]
     APP_MODE: ClassVar[AppMode]
+    APP_NAME: ClassVar[str]
     POSTHOG_CLIENT_KEY: ClassVar[str]
     GITHUB_CLIENT_ID: ClassVar[str]
     ATTACH_SESSION_MIDDLEWARE_PATH: ClassVar[str]

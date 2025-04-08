@@ -4,14 +4,14 @@ import EventLogger from "#/utils/event-logger";
 import { handleAssistantMessage } from "#/services/actions";
 import { showChatError } from "#/utils/error-handler";
 import { useRate } from "#/hooks/use-rate";
-import { OpenHandsParsedEvent } from "#/types/core";
+import { DevParsedEvent } from "#/types/core";
 import {
   AssistantMessageAction,
   UserMessageAction,
 } from "#/types/core/actions";
 import { useAuth } from "./auth-context";
 
-const isOpenHandsEvent = (event: unknown): event is OpenHandsParsedEvent =>
+const isDevEvent = (event: unknown): event is DevParsedEvent =>
   typeof event === "object" &&
   event !== null &&
   "id" in event &&
@@ -20,7 +20,7 @@ const isOpenHandsEvent = (event: unknown): event is OpenHandsParsedEvent =>
   "timestamp" in event;
 
 const isUserMessage = (
-  event: OpenHandsParsedEvent,
+  event: DevParsedEvent,
 ): event is UserMessageAction =>
   "source" in event &&
   "type" in event &&
@@ -28,7 +28,7 @@ const isUserMessage = (
   event.type === "message";
 
 const isAssistantMessage = (
-  event: OpenHandsParsedEvent,
+  event: DevParsedEvent,
 ): event is AssistantMessageAction =>
   "source" in event &&
   "type" in event &&
@@ -36,7 +36,7 @@ const isAssistantMessage = (
   event.type === "message";
 
 const isMessageAction = (
-  event: OpenHandsParsedEvent,
+  event: DevParsedEvent,
 ): event is UserMessageAction | AssistantMessageAction =>
   isUserMessage(event) || isAssistantMessage(event);
 
@@ -120,7 +120,7 @@ export function WsClientProvider({
       EventLogger.error("WebSocket is not connected.");
       return;
     }
-    sioRef.current.emit("oh_user_action", event);
+    sioRef.current.emit("dev_user_action", event);
   }
 
   function handleConnect() {
@@ -128,7 +128,7 @@ export function WsClientProvider({
   }
 
   function handleMessage(event: Record<string, unknown>) {
-    if (isOpenHandsEvent(event) && isMessageAction(event)) {
+    if (isDevEvent(event) && isMessageAction(event)) {
       messageRateHandler.record(new Date().getTime());
     }
     setEvents((prevEvents) => [...prevEvents, event]);
@@ -181,7 +181,7 @@ export function WsClientProvider({
       query,
     });
     sio.on("connect", handleConnect);
-    sio.on("oh_event", handleMessage);
+    sio.on("dev_event", handleMessage);
     sio.on("connect_error", handleError);
     sio.on("connect_failed", handleError);
     sio.on("disconnect", handleDisconnect);
@@ -190,7 +190,7 @@ export function WsClientProvider({
 
     return () => {
       sio.off("connect", handleConnect);
-      sio.off("oh_event", handleMessage);
+      sio.off("dev_event", handleMessage);
       sio.off("connect_error", handleError);
       sio.off("connect_failed", handleError);
       sio.off("disconnect", handleDisconnect);

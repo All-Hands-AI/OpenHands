@@ -1,15 +1,15 @@
 import { AgentState } from "../agent-state";
-import { OpenHandsObservationEvent } from "./base";
+import { DevObservationEvent } from "./base";
 
 export interface AgentStateChangeObservation
-  extends OpenHandsObservationEvent<"agent_state_changed"> {
+  extends DevObservationEvent<"agent_state_changed"> {
   source: "agent";
   extras: {
     agent_state: AgentState;
   };
 }
 
-export interface CommandObservation extends OpenHandsObservationEvent<"run"> {
+export interface CommandObservation extends DevObservationEvent<"run"> {
   source: "agent";
   extras: {
     command: string;
@@ -19,7 +19,7 @@ export interface CommandObservation extends OpenHandsObservationEvent<"run"> {
 }
 
 export interface IPythonObservation
-  extends OpenHandsObservationEvent<"run_ipython"> {
+  extends DevObservationEvent<"run_ipython"> {
   source: "agent";
   extras: {
     code: string;
@@ -27,14 +27,14 @@ export interface IPythonObservation
 }
 
 export interface DelegateObservation
-  extends OpenHandsObservationEvent<"delegate"> {
+  extends DevObservationEvent<"delegate"> {
   source: "agent";
   extras: {
     outputs: Record<string, unknown>;
   };
 }
 
-export interface BrowseObservation extends OpenHandsObservationEvent<"browse"> {
+export interface BrowseObservation extends DevObservationEvent<"browse"> {
   source: "agent";
   extras: {
     url: string;
@@ -52,7 +52,7 @@ export interface BrowseObservation extends OpenHandsObservationEvent<"browse"> {
 }
 
 export interface BrowseInteractiveObservation
-  extends OpenHandsObservationEvent<"browse_interactive"> {
+  extends DevObservationEvent<"browse_interactive"> {
   source: "agent";
   extras: {
     url: string;
@@ -69,7 +69,7 @@ export interface BrowseInteractiveObservation
   };
 }
 
-export interface WriteObservation extends OpenHandsObservationEvent<"write"> {
+export interface WriteObservation extends DevObservationEvent<"write"> {
   source: "agent";
   extras: {
     path: string;
@@ -77,7 +77,7 @@ export interface WriteObservation extends OpenHandsObservationEvent<"write"> {
   };
 }
 
-export interface ReadObservation extends OpenHandsObservationEvent<"read"> {
+export interface ReadObservation extends DevObservationEvent<"read"> {
   source: "agent";
   extras: {
     path: string;
@@ -85,7 +85,7 @@ export interface ReadObservation extends OpenHandsObservationEvent<"read"> {
   };
 }
 
-export interface EditObservation extends OpenHandsObservationEvent<"edit"> {
+export interface EditObservation extends DevObservationEvent<"edit"> {
   source: "agent";
   extras: {
     path: string;
@@ -94,7 +94,7 @@ export interface EditObservation extends OpenHandsObservationEvent<"edit"> {
   };
 }
 
-export interface ErrorObservation extends OpenHandsObservationEvent<"error"> {
+export interface ErrorObservation extends DevObservationEvent<"error"> {
   source: "user";
   extras: {
     error_id?: string;
@@ -102,7 +102,7 @@ export interface ErrorObservation extends OpenHandsObservationEvent<"error"> {
 }
 
 export interface AgentThinkObservation
-  extends OpenHandsObservationEvent<"think"> {
+  extends DevObservationEvent<"think"> {
   source: "agent";
   extras: {
     thought: string;
@@ -115,7 +115,7 @@ export interface MicroagentKnowledge {
   content: string;
 }
 
-export interface RecallObservation extends OpenHandsObservationEvent<"recall"> {
+export interface RecallObservation extends DevObservationEvent<"recall"> {
   source: "agent";
   extras: {
     recall_type?: "workspace_context" | "knowledge";
@@ -129,7 +129,7 @@ export interface RecallObservation extends OpenHandsObservationEvent<"recall"> {
   };
 }
 
-export type OpenHandsObservation =
+export type DevObservation =
   | AgentStateChangeObservation
   | AgentThinkObservation
   | CommandObservation

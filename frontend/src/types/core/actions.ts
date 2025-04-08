@@ -1,7 +1,7 @@
-import { OpenHandsActionEvent } from "./base";
+import { DevActionEvent } from "./base";
 import { ActionSecurityRisk } from "#/state/security-analyzer-slice";
 
-export interface UserMessageAction extends OpenHandsActionEvent<"message"> {
+export interface UserMessageAction extends DevActionEvent<"message"> {
   source: "user";
   args: {
     content: string;
@@ -9,7 +9,7 @@ export interface UserMessageAction extends OpenHandsActionEvent<"message"> {
   };
 }
 
-export interface CommandAction extends OpenHandsActionEvent<"run"> {
+export interface CommandAction extends DevActionEvent<"run"> {
   source: "agent";
   args: {
     command: string;
@@ -21,7 +21,7 @@ export interface CommandAction extends OpenHandsActionEvent<"run"> {
 }
 
 export interface AssistantMessageAction
-  extends OpenHandsActionEvent<"message"> {
+  extends DevActionEvent<"message"> {
   source: "agent";
   args: {
     thought: string;
@@ -30,7 +30,7 @@ export interface AssistantMessageAction
   };
 }
 
-export interface IPythonAction extends OpenHandsActionEvent<"run_ipython"> {
+export interface IPythonAction extends DevActionEvent<"run_ipython"> {
   source: "agent";
   args: {
     code: string;
@@ -41,14 +41,14 @@ export interface IPythonAction extends OpenHandsActionEvent<"run_ipython"> {
   };
 }
 
-export interface ThinkAction extends OpenHandsActionEvent<"think"> {
+export interface ThinkAction extends DevActionEvent<"think"> {
   source: "agent";
   args: {
     thought: string;
   };
 }
 
-export interface FinishAction extends OpenHandsActionEvent<"finish"> {
+export interface FinishAction extends DevActionEvent<"finish"> {
   source: "agent";
   args: {
     final_thought: string;
@@ -58,7 +58,7 @@ export interface FinishAction extends OpenHandsActionEvent<"finish"> {
   };
 }
 
-export interface DelegateAction extends OpenHandsActionEvent<"delegate"> {
+export interface DelegateAction extends DevActionEvent<"delegate"> {
   source: "agent";
   timeout: number;
   args: {
@@ -68,7 +68,7 @@ export interface DelegateAction extends OpenHandsActionEvent<"delegate"> {
   };
 }
 
-export interface BrowseAction extends OpenHandsActionEvent<"browse"> {
+export interface BrowseAction extends DevActionEvent<"browse"> {
   source: "agent";
   args: {
     url: string;
@@ -77,7 +77,7 @@ export interface BrowseAction extends OpenHandsActionEvent<"browse"> {
 }
 
 export interface BrowseInteractiveAction
-  extends OpenHandsActionEvent<"browse_interactive"> {
+  extends DevActionEvent<"browse_interactive"> {
   source: "agent";
   timeout: number;
   args: {
@@ -87,7 +87,7 @@ export interface BrowseInteractiveAction
   };
 }
 
-export interface FileReadAction extends OpenHandsActionEvent<"read"> {
+export interface FileReadAction extends DevActionEvent<"read"> {
   source: "agent";
   args: {
     path: string;
@@ -98,7 +98,7 @@ export interface FileReadAction extends OpenHandsActionEvent<"read"> {
   };
 }
 
-export interface FileWriteAction extends OpenHandsActionEvent<"write"> {
+export interface FileWriteAction extends DevActionEvent<"write"> {
   source: "agent";
   args: {
     path: string;
@@ -107,7 +107,7 @@ export interface FileWriteAction extends OpenHandsActionEvent<"write"> {
   };
 }
 
-export interface FileEditAction extends OpenHandsActionEvent<"edit"> {
+export interface FileEditAction extends DevActionEvent<"edit"> {
   source: "agent";
   args: {
     path: string;
@@ -126,14 +126,14 @@ export interface FileEditAction extends OpenHandsActionEvent<"edit"> {
   };
 }
 
-export interface RejectAction extends OpenHandsActionEvent<"reject"> {
+export interface RejectAction extends DevActionEvent<"reject"> {
   source: "agent";
   args: {
     thought: string;
   };
 }
 
-export interface RecallAction extends OpenHandsActionEvent<"recall"> {
+export interface RecallAction extends DevActionEvent<"recall"> {
   source: "agent";
   args: {
     recall_type: "workspace_context" | "knowledge";
@@ -142,7 +142,7 @@ export interface RecallAction extends OpenHandsActionEvent<"recall"> {
   };
 }
 
-export type OpenHandsAction =
+export type DevAction =
   | UserMessageAction
   | AssistantMessageAction
   | CommandAction

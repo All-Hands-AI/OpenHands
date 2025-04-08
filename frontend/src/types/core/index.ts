@@ -1,8 +1,8 @@
-import { OpenHandsAction } from "./actions";
-import { OpenHandsObservation } from "./observations";
-import { OpenHandsVariance } from "./variances";
+import { DevAction } from "./actions";
+import { DevObservation } from "./observations";
+import { DevVariance } from "./variances";
 
-export type OpenHandsParsedEvent =
-  | OpenHandsAction
-  | OpenHandsObservation
-  | OpenHandsVariance;
+export type DevParsedEvent =
+  | DevAction
+  | DevObservation
+  | DevVariance;
