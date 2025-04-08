@@ -177,7 +177,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
         # Track conversation creation in analytics
         try:
             # The UserAnalytics class will check for user consent internally
-            await request.state.monitoring_listener.on_conversation_created(
+            await request.state.monitoring_listener.on_create_conversation(
                 user_id=user_id,
                 conversation_id=conversation_id,
                 has_initial_message=bool(initial_user_msg),

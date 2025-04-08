@@ -1,5 +1,3 @@
-from typing import Optional
-
 from openhands.core.config.app_config import AppConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.event import Event
@@ -33,23 +31,16 @@ class MonitoringListener:
         """
         pass
 
-    def on_create_conversation(self) -> None:
-        """
-        Track the beginning of conversation creation.
-        Does not currently capture whether it succeed.
-        """
-        pass
-
-    async def on_conversation_created(
+    async def on_create_conversation(
         self,
-        user_id: str,
-        conversation_id: str,
+        user_id: str = None,
+        conversation_id: str = None,
         has_initial_message: bool = False,
         has_repository: bool = False,
         has_images: bool = False,
     ) -> None:
         """
-        Track when a new conversation is created.
+        Track the beginning of conversation creation.
 
         Args:
             user_id: The ID of the user
@@ -58,6 +49,11 @@ class MonitoringListener:
             has_repository: Whether the conversation was created with a repository
             has_images: Whether the conversation was created with images
         """
+        # If no user_id or conversation_id is provided, just log the event without tracking
+        if not user_id or not conversation_id:
+            logger.debug("Conversation creation started")
+            return
+            
         try:
             # The UserAnalytics class will check for user consent internally
             await self.user_analytics.track_conversation_created(
