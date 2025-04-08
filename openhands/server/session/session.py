@@ -7,10 +7,7 @@ import socketio
 
 from openhands.controller.agent import Agent
 from openhands.core.config import AppConfig
-from openhands.core.config.condenser_config import (
-    LLMSummarizingCondenserConfig,
-    StructuredSummaryCondenserConfig,
-)
+from openhands.core.config.condenser_config import LLMSummarizingCondenserConfig
 from openhands.core.logger import OpenHandsLoggerAdapter
 from openhands.core.schema import AgentState
 from openhands.events.action import MessageAction, NullAction
@@ -128,20 +125,9 @@ class Session:
         agent_config = self.config.get_agent_config(agent_cls)
 
         if settings.enable_default_condenser:
-            # If function-calling is active we can use the structured summary
-            # condenser for more reliable summaries.
-            if llm.is_function_calling_active():
-                default_condenser_config = StructuredSummaryCondenserConfig(
-                    llm_config=llm.config, keep_first=3, max_size=80
-                )
-
-            # Otherwise, we'll fall back to the unstructured summary condenser.
-            # This is a good default but struggles more than the structured
-            # summary condenser with long messages.
-            else:
-                default_condenser_config = LLMSummarizingCondenserConfig(
-                    llm_config=llm.config, keep_first=3, max_size=80
-                )
+            default_condenser_config = LLMSummarizingCondenserConfig(
+                llm_config=llm.config, keep_first=3, max_size=80
+            )
 
             self.logger.info(f'Enabling default condenser: {default_condenser_config}')
             agent_config.condenser = default_condenser_config
@@ -181,8 +167,9 @@ class Session:
         """
         Initialize LLM, extracted for testing.
         """
+        agent_name = agent_cls if agent_cls is not None else 'agent'
         return LLM(
-            config=self.config.get_llm_config_from_agent(agent_cls),
+            config=self.config.get_llm_config_from_agent(agent_name),
             retry_listener=self._notify_on_llm_retry,
         )
 

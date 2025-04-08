@@ -121,7 +121,7 @@ Be thorough in your exploration, testing, and reasoning. It's fine if your think
         )
 
     if 'image_assets' in instance:
-        assets = instance['image_assets']
+        assets = json.loads(instance['image_assets'])
         assert (
             'problem_statement' in assets
         ), 'problem_statement is required in image_assets'
@@ -146,8 +146,8 @@ def get_instance_docker_image(
         # swebench/sweb.eval.x86_64.django_1776_django-11333:v1
         docker_image_prefix = 'docker.io/swebench/'
         repo, name = instance_id.split('__')
-        image_name = f'swebench/sweb.eval.x86_64.{repo}_1776_{name}:latest'
-        logger.info(f'Using official SWE-Bench image: {image_name}')
+        image_name = f'swebench/sweb.eval.x86_64.{repo}_1776_{name}:latest'.lower()
+        logger.debug(f'Using official SWE-Bench image: {image_name}')
         return image_name
     else:
         # OpenHands version of the image
@@ -164,10 +164,7 @@ def get_config(
     metadata: EvalMetadata,
 ) -> AppConfig:
     # We use a different instance image for the each instance of swe-bench eval
-    use_swebench_official_image = bool(
-        ('verified' in metadata.dataset.lower() or 'lite' in metadata.dataset.lower())
-        and 'swe-gym' not in metadata.dataset.lower()
-    )
+    use_swebench_official_image = 'swe-gym' not in metadata.dataset.lower()
     base_container_image = get_instance_docker_image(
         instance['instance_id'],
         swebench_official_image=use_swebench_official_image,
@@ -334,15 +331,18 @@ def initialize_runtime(
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert_and_raise(obs.exit_code == 0, f'Failed to remove git remotes: {str(obs)}')
 
-    action = CmdRunAction(command='which python')
-    action.set_hard_timeout(600)
-    logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = runtime.run_action(action)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert_and_raise(
-        obs.exit_code == 0 and 'testbed' in obs.content,
-        f'Expected to find python interpreter from testbed, but got: {str(obs)}',
-    )
+    if 'multimodal' not in metadata.dataset.lower():
+        # Only for non-multimodal datasets, we need to activate the testbed environment for Python
+        # SWE-Bench multimodal datasets are not using the testbed environment
+        action = CmdRunAction(command='which python')
+        action.set_hard_timeout(600)
+        logger.info(action, extra={'msg_type': 'ACTION'})
+        obs = runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert_and_raise(
+            obs.exit_code == 0 and 'testbed' in obs.content,
+            f'Expected to find python interpreter from testbed, but got: {str(obs)}',
+        )
 
     logger.info('-' * 30)
     logger.info('END Runtime Initialization Fn')
@@ -761,9 +761,19 @@ if __name__ == '__main__':
             with open(cur_output_file, 'r') as f:
                 for line in f:
                     instance = json.loads(line)
-                    history = [event_from_dict(event) for event in instance['history']]
-                    critic_result = critic.evaluate(history)
-                    if not critic_result.success:
+                    try:
+                        history = [
+                            event_from_dict(event) for event in instance['history']
+                        ]
+                        critic_result = critic.evaluate(
+                            history, instance['test_result'].get('git_patch', '')
+                        )
+                        if not critic_result.success:
+                            instances_failed.append(instance['instance_id'])
+                    except Exception as e:
+                        logger.error(
+                            f'Error loading history for instance {instance["instance_id"]}: {e}'
+                        )
                         instances_failed.append(instance['instance_id'])
             logger.info(
                 f'{len(instances_failed)} instances failed the current attempt {attempt}: {instances_failed}'
