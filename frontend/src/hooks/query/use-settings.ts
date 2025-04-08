@@ -12,10 +12,11 @@ const settingsQueryFn = async (): Promise<ClientUserSettings> => {
 };
 
 export const useSettings = () => {
-  const { setGitHubTokenIsSet, githubTokenIsSet } = useAuth();
+  const { setProviderTokensSet, providerTokensSet, setProvidersAreSet } =
+    useAuth();
 
   const query = useQuery({
-    queryKey: ["settings", githubTokenIsSet],
+    queryKey: ["settings", providerTokensSet],
     queryFn: settingsQueryFn,
     // Only retry if the error is not a 404 because we
     // would want to show the modal immediately if the
@@ -29,14 +30,24 @@ export const useSettings = () => {
   });
 
   React.useEffect(() => {
-    if (query.isFetched && query.data?.llm_api_key) {
+    if (query.isFetched && query.data?.llm_api_key_set) {
       posthog.capture("user_activated");
     }
-  }, [query.data?.llm_api_key, query.isFetched]);
+  }, [query.data?.llm_api_key_set, query.isFetched]);
 
   React.useEffect(() => {
-    if (query.isFetched) setGitHubTokenIsSet(!!query.data?.github_token_is_set);
-  }, [query.data?.github_token_is_set, query.isFetched]);
+    if (query.isFetched && query.data?.provider_tokens_set) {
+      const providers = query.data.provider_tokens_set;
+      const setProviders = (
+        Object.keys(providers) as Array<keyof typeof providers>
+      ).filter((key) => providers[key]);
+      setProviderTokensSet(setProviders);
+      const atLeastOneSet = Object.values(query.data.provider_tokens_set).some(
+        (value) => value,
+      );
+      setProvidersAreSet(atLeastOneSet);
+    }
+  }, [query.data?.provider_tokens_set, query.isFetched]);
 
   if (query.error?.status === 404) {
     // Object rest destructuring on a query will observe all changes to the query, leading to excessive re-renders.

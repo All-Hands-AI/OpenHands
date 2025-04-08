@@ -17,10 +17,10 @@ const saveSettingsMutationFn = async (
     ...settings,
     agent: settings.agent || DEFAULT_SETTINGS.agent,
     language: settings.language || DEFAULT_SETTINGS.language,
-    llm_api_key:
-      settings.llm_api_key === ""
+    llm_api_key_set:
+      settings.llm_api_key_set === ""
         ? ""
-        : settings.llm_api_key?.trim() || undefined,
+        : settings.llm_api_key_set?.trim() || undefined,
   };
 
   await SettingsService.saveSettings(safeSettings);

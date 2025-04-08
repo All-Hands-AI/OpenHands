@@ -15,7 +15,7 @@ export const SETTINGS_HANDLERS = [
 
     if (!settings) return HttpResponse.json(null, { status: 404 });
 
-    if (Object.keys(settings.provider_tokens).length > 0)
+    if (Object.keys(settings.provider_tokens_set).length > 0)
       settings.github_token_is_set = true;
 
     return HttpResponse.json(settings);

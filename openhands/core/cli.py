@@ -3,7 +3,9 @@ import logging
 import sys
 from uuid import uuid4
 
-from termcolor import colored
+from prompt_toolkit import PromptSession, print_formatted_text
+from prompt_toolkit.formatted_text import FormattedText
+from prompt_toolkit.key_binding import KeyBindings
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands.core.config import (
@@ -36,24 +38,66 @@ from openhands.events.observation import (
     CmdOutputObservation,
     FileEditObservation,
 )
-from openhands.io import read_input, read_task
+from openhands.io import read_task
+
+prompt_session = PromptSession()
 
 
 def display_message(message: str):
-    print(colored('🤖 ' + message + '\n', 'yellow'))
+    print_formatted_text(
+        FormattedText(
+            [
+                ('ansiyellow', '🤖 '),
+                ('ansiyellow', message),
+                ('', '\n'),
+            ]
+        )
+    )
 
 
 def display_command(command: str):
-    print('❯ ' + colored(command + '\n', 'green'))
+    print_formatted_text(
+        FormattedText(
+            [
+                ('', '❯ '),
+                ('ansigreen', command),
+                ('', '\n'),
+            ]
+        )
+    )
 
 
 def display_confirmation(confirmation_state: ActionConfirmationStatus):
     if confirmation_state == ActionConfirmationStatus.CONFIRMED:
-        print(colored('✅ ' + confirmation_state + '\n', 'green'))
+        print_formatted_text(
+            FormattedText(
+                [
+                    ('ansigreen', '✅ '),
+                    ('ansigreen', str(confirmation_state)),
+                    ('', '\n'),
+                ]
+            )
+        )
     elif confirmation_state == ActionConfirmationStatus.REJECTED:
-        print(colored('❌ ' + confirmation_state + '\n', 'red'))
+        print_formatted_text(
+            FormattedText(
+                [
+                    ('ansired', '❌ '),
+                    ('ansired', str(confirmation_state)),
+                    ('', '\n'),
+                ]
+            )
+        )
     else:
-        print(colored('⏳ ' + confirmation_state + '\n', 'yellow'))
+        print_formatted_text(
+            FormattedText(
+                [
+                    ('ansiyellow', '⏳ '),
+                    ('ansiyellow', str(confirmation_state)),
+                    ('', '\n'),
+                ]
+            )
+        )
 
 
 def display_command_output(output: str):
@@ -62,12 +106,19 @@ def display_command_output(output: str):
         if line.startswith('[Python Interpreter') or line.startswith('openhands@'):
             # TODO: clean this up once we clean up terminal output
             continue
-        print(colored(line, 'blue'))
-    print('\n')
+        print_formatted_text(FormattedText([('ansiblue', line)]))
+    print_formatted_text('')
 
 
 def display_file_edit(event: FileEditAction | FileEditObservation):
-    print(colored(str(event), 'green'))
+    print_formatted_text(
+        FormattedText(
+            [
+                ('ansigreen', str(event)),
+                ('', '\n'),
+            ]
+        )
+    )
 
 
 def display_event(event: Event, config: AppConfig):
@@ -87,6 +138,41 @@ def display_event(event: Event, config: AppConfig):
         display_file_edit(event)
     if hasattr(event, 'confirmation_state') and config.security.confirmation_mode:
         display_confirmation(event.confirmation_state)
+
+
+async def read_prompt_input(multiline=False):
+    try:
+        if multiline:
+            kb = KeyBindings()
+
+            @kb.add('c-d')
+            def _(event):
+                event.current_buffer.validate_and_handle()
+
+            message = await prompt_session.prompt_async(
+                'Enter your message and press Ctrl+D to finish:\n',
+                multiline=True,
+                key_bindings=kb,
+            )
+        else:
+            message = await prompt_session.prompt_async(
+                '>> ',
+            )
+        return message
+    except KeyboardInterrupt:
+        return 'exit'
+    except EOFError:
+        return 'exit'
+
+
+async def read_confirmation_input():
+    try:
+        confirmation = await prompt_session.prompt_async(
+            'Confirm action (possible security risk)? (y/n) >> ',
+        )
+        return confirmation.lower() == 'y'
+    except (KeyboardInterrupt, EOFError):
+        return False
 
 
 async def main(loop: asyncio.AbstractEventLoop):
@@ -122,10 +208,7 @@ async def main(loop: asyncio.AbstractEventLoop):
     event_stream = runtime.event_stream
 
     async def prompt_for_next_task():
-        # Run input() in a thread pool to avoid blocking the event loop
-        next_message = await loop.run_in_executor(
-            None, read_input, config.cli_multiline_input
-        )
+        next_message = await read_prompt_input(config.cli_multiline_input)
         if not next_message.strip():
             await prompt_for_next_task()
         if next_message == 'exit':
@@ -136,12 +219,6 @@ async def main(loop: asyncio.AbstractEventLoop):
         action = MessageAction(content=next_message)
         event_stream.add_event(action, EventSource.USER)
 
-    async def prompt_for_user_confirmation():
-        user_confirmation = await loop.run_in_executor(
-            None, lambda: input('Confirm action (possible security risk)? (y/n) >> ')
-        )
-        return user_confirmation.lower() == 'y'
-
     async def on_event_async(event: Event):
         display_event(event, config)
         if isinstance(event, AgentStateChangedObservation):
@@ -151,7 +228,7 @@ async def main(loop: asyncio.AbstractEventLoop):
             ]:
                 await prompt_for_next_task()
             if event.agent_state == AgentState.AWAITING_USER_CONFIRMATION:
-                user_confirmed = await prompt_for_user_confirmation()
+                user_confirmed = await read_confirmation_input()
                 if user_confirmed:
                     event_stream.add_event(
                         ChangeAgentStateAction(AgentState.USER_CONFIRMED),

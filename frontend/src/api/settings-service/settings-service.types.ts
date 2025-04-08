@@ -5,7 +5,7 @@ export interface UserSettings {
   llm_base_url: string;
   agent: string;
   language: string;
-  llm_api_key: string | null;
+  llm_api_key_set: boolean;
   confirmation_mode: boolean;
   security_analyzer: string;
   remote_runtime_resource_factor: number | null;
@@ -13,7 +13,7 @@ export interface UserSettings {
   enable_default_condenser: boolean;
   enable_sound_notifications: boolean;
   user_consents_to_analytics: boolean | null;
-  provider_tokens: Record<GitProvider, string>;
+  provider_tokens_set: Record<GitProvider, boolean>;
 }
 
 // These are settings that are only used on the client side and should not be sent to the server

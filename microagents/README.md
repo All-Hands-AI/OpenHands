@@ -51,7 +51,7 @@ When OpenHands works with a repository, it:
 
 ## Types of MicroAgents
 
-All microagents use markdown files with YAML frontmatter.
+Most microagents use markdown files with YAML frontmatter. For repository agents (repo.md), the frontmatter is optional - if not provided, the file will be loaded with default settings as a repository agent.
 
 
 ### 1. Knowledge Agents
@@ -147,6 +147,7 @@ You can see an example of a task-based agent in [OpenHands's pull request updati
    - Specify testing and build procedures
    - List environment requirements
    - Maintain up-to-date team practices
+   - YAML frontmatter is optional - files without frontmatter will be loaded with default settings
 
 ### Submission Process
 

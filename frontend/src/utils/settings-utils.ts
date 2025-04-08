@@ -73,13 +73,13 @@ export const extractSettings = (formData: FormData): Partial<UserSettings> => {
 
   return {
     llm_model: CUSTOM_LLM_MODEL || LLM_MODEL,
-    llm_api_key: LLM_API_KEY,
+    llm_api_key_set: LLM_API_KEY,
     agent: AGENT,
     language: LANGUAGE,
     llm_base_url: LLM_BASE_URL,
     confirmation_mode: CONFIRMATION_MODE,
     security_analyzer: SECURITY_ANALYZER,
     enable_default_condenser: ENABLE_DEFAULT_CONDENSER,
-    provider_tokens: providerTokens,
+    provider_tokens_set: providerTokens,
   };
 };

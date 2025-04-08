@@ -25,13 +25,27 @@ async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
                 content={'error': 'Settings not found'},
             )
 
-        github_token_is_set = bool(user_id) or bool(get_provider_tokens(request))
+        provider_tokens_set = {}
+
+        if bool(user_id):
+            provider_tokens_set[ProviderType.GITHUB.value] = True
+
+        provider_tokens = get_provider_tokens(request)
+        if provider_tokens:
+            all_provider_types = [provider.value for provider in ProviderType]
+            provider_tokens_types = [provider.value for provider in provider_tokens]
+            for provider_type in all_provider_types:
+                if provider_type in provider_tokens_types:
+                    provider_tokens_set[provider_type] = True
+                else:
+                    provider_tokens_set[provider_type] = False
+
         settings_with_token_data = GETSettingsModel(
             **settings.model_dump(exclude='secrets_store'),
-            github_token_is_set=github_token_is_set,
+            llm_api_key_set=settings.llm_api_key is not None,
+            provider_tokens_set=provider_tokens_set,
         )
-
-        settings_with_token_data.llm_api_key = settings.llm_api_key
+        settings_with_token_data.llm_api_key = None
         return settings_with_token_data
     except Exception as e:
         logger.warning(f'Invalid token: {e}')
