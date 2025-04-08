@@ -11,10 +11,10 @@ from evaluation.benchmarks.swe_bench.resource.constants import MAP_VERSION_TO_IN
 _LOGGER = logging.getLogger(__name__)
 
 
-def remove_setup_files(model_patch: str):
+def remove_setup_files(model_patch: str, instance: dict):
     """ Discard all changes that a patch applies to files changes by the pre_install script and that are reproduction scripts (top-level script)"""
     setup_files = ["setup.py", "tox.ini", "pyproject.toml"]
-    pre_install = MAP_VERSION_TO_INSTALL.get(exec_spec.repo, {}).get(exec_spec.version, {}).get("pre_install", [])
+    pre_install = MAP_VERSION_TO_INSTALL.get(instance["repo"], {}).get(instance["version"], {}).get("pre_install", [])
     relevant_files = [
         file
         for file in setup_files
@@ -45,13 +45,16 @@ def main(
                 _LOGGER.warning("No git diff found for instance %s", pred["instance_id"])
                 continue
             try:
-                patchset = PatchSet(git_diff)
+                if ci_mode:
+                    git_diff = remove_setup_files(git_diff, pred["instance"])
+                else:
+                    PatchSet(git_diff)
             except:
                 _LOGGER.warning("Invalid git diff found for instance %s", pred["instance_id"])
             try:
                 print(json.dumps({
                     "instance_id": pred["instance_id"],
-                    "model_name_or_path": "OpenHands-Claude-Sonnet-3.5",
+                    "model_name_or_path": f'{pred["metadata"]["llm_config"]["openrouter_app_name"]}__{pred["metadata"]["agent_class"]}__{pred["metadata"]["llm_config"]["model"]}',
                     "model_patch": git_diff,
                     "full_output": json.dumps(pred),
                 }))

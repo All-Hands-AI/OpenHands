@@ -193,10 +193,10 @@ ALLHANDS_API_KEY="YOUR-API-KEY" ./evaluation/utils/scripts/cleanup_remote_runtim
 
 ### Run inference on SWT-Bench
 
-To run inference on [SWT-Bench](https://swtbench.com), you can use the same `run_infer.sh` script as described for evaluation on plain SWE-Bench. The two differences are that i) you need to specify the corresponding SWT-Bench dataset and ii) you need to specify the `mode` parameter to `swt` or `swt-ci` when running the script. For example, to run inference on SWT-Bench Verified, run the following command:
+To run inference on [SWT-Bench](https://swtbench.com), you can use the same `run_infer.sh` script as described for evaluation on plain SWE-Bench. The only differences is that you need to specify the `mode` parameter to `swt` or `swt-ci` when running the script. For example, to run inference on SWT-Bench Verified, run the following command:
 
 ```bash
-./evaluation/benchmarks/swe_bench/scripts/run_infer.sh llm.eval_gpt4_1106_preview HEAD CodeActAgent 500 100 1 nmuendler/SWT-bench_Verified_bm25_27k_zsp test 1 swt
+./evaluation/benchmarks/swe_bench/scripts/run_infer.sh llm.eval_gpt4o-2024-11-20 HEAD CodeActAgent 500 100 1 princeton-nlp/SWE-bench_Verified test 1 swt
 ```
 
 The two modes `swt` and `swt-ci` have the following effect:
@@ -205,14 +205,14 @@ The two modes `swt` and `swt-ci` have the following effect:
 
 ### Run evaluation for SWT-bench
 
-The evaluation of these results is done in [the SWT-Bench evlauation harness](https://github.com/logic-star-ai/swt-bench/tree/master).
+The evaluation of these results is done leveraging [the SWT-Bench evaluation harness](https://github.com/logic-star-ai/swt-bench/tree/master).
 
 #### Extracting results into SWT-Bench harness format
 In order to run evaluation of the obtained inference results in the SWT-Bench harness, we transform the results to a format that the SWT-Bench using the extractions script `swt_extract.py`.
 
 ```bash
 # python3 evaluation/benchmarks/swe_bench/scripts/swt_extract.py [output.jsonl] > [output_swt.jsonl]
-python3 evaluation/benchmarks/swe_bench/scripts/swt_extract.py evaluation/evaluation_outputs/outputs/nmuendler__SWT-bench_Verified_bm25_27k_zsp-test/CodeActAgent/gpt-4-1106-vision-preview_maxiter_100_N_v0.31.0-no-hint-run_1/output.jsonl > OpenHands-gpt-4-1106-vision-preview.jsonl
+python3 evaluation/evaluation_outputs/outputs/princeton-nlp__SWE-bench_Verified-test/CodeActAgent/gpt-4o-2024-11-20_maxiter_100_N_v0.31.0-no-hint-run_1/output.jsonl  > OpenHands-gpt-4o-2024-11-20.jsonl
 ```
 
 #### Running the results in SWT-Bench
