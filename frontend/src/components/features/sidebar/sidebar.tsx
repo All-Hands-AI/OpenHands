@@ -61,9 +61,11 @@ export function Sidebar() {
       displayErrorToast(
         "Something went wrong while fetching settings. Please reload the page.",
       );
-    } else if (config?.APP_MODE === "oss" && settingsError?.status === 404) {
-      setSettingsModalIsOpen(true);
     }
+    // TODO: Enable this when user can customize llm settings
+    // else if (config?.APP_MODE === "oss" && settingsError?.status === 404) {
+    //   setSettingsModalIsOpen(true);
+    // }
   }, [
     settingsError?.status,
     settingsError,
