@@ -11,7 +11,8 @@ from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.agent import AgentState
 from openhands.events.action import MessageAction
-from openhands.events.stream import EventStream, EventStreamSubscriber, session_exists
+from openhands.events.event_store import EventStore
+from openhands.events.stream import EventStreamSubscriber, session_exists
 from openhands.server.config.server_config import ServerConfig
 from openhands.server.monitoring import MonitoringListener
 from openhands.server.session.agent_session import WAIT_TIME_BEFORE_CLOSE
@@ -115,7 +116,7 @@ class StandaloneConversationManager(ConversationManager):
         settings: Settings,
         user_id: str | None,
         github_user_id: str | None,
-    ) -> EventStream:
+    ) -> EventStore:
         logger.info(
             f'join_conversation:{sid}:{connection_id}',
             extra={'session_id': sid, 'user_id': user_id},
@@ -254,7 +255,7 @@ class StandaloneConversationManager(ConversationManager):
         initial_user_msg: MessageAction | None = None,
         replay_json: str | None = None,
         github_user_id: str | None = None,
-    ) -> EventStream:
+    ) -> EventStore:
         logger.info(f'maybe_start_agent_loop:{sid}', extra={'session_id': sid})
         session: Session | None = None
         if not await self.is_agent_loop_running(sid):
@@ -300,23 +301,29 @@ class StandaloneConversationManager(ConversationManager):
             except ValueError:
                 pass  # Already subscribed - take no action
 
-        event_stream = await self._get_event_stream(sid, user_id)
-        if not event_stream:
+        event_store = await self._get_event_store(sid, user_id)
+        if not event_store:
             logger.error(
                 f'No event stream after starting agent loop: {sid}',
                 extra={'session_id': sid},
             )
             raise RuntimeError(f'no_event_stream:{sid}')
-        return event_stream
+        return event_store
 
-    async def _get_event_stream(
+    async def _get_event_store(
         self, sid: str, user_id: str | None
-    ) -> EventStream | None:
-        logger.info(f'_get_event_stream:{sid}', extra={'session_id': sid})
+    ) -> EventStore | None:
+        logger.info(f'_get_event_store:{sid}', extra={'session_id': sid})
         session = self._local_agent_loops_by_sid.get(sid)
         if session:
             logger.info(f'found_local_agent_loop:{sid}', extra={'session_id': sid})
-            return session.agent_session.event_stream
+            event_stream = session.agent_session.event_stream
+            return EventStore(
+                event_stream.sid,
+                event_stream.file_store,
+                event_stream.user_id,
+                event_stream.cur_id,
+            )
         return None
 
     async def send_to_event_stream(self, connection_id: str, data: dict):
@@ -395,23 +402,40 @@ class StandaloneConversationManager(ConversationManager):
     def _create_conversation_update_callback(
         self, user_id: str | None, github_user_id: str | None, conversation_id: str
     ) -> Callable:
-        def callback(*args, **kwargs):
+        def callback(event, *args, **kwargs):
             call_async_from_sync(
-                self._update_timestamp_for_conversation,
+                self._update_conversation_for_event,
                 GENERAL_TIMEOUT,
                 user_id,
                 github_user_id,
                 conversation_id,
+                event,
             )
 
         return callback
 
-    async def _update_timestamp_for_conversation(
-        self, user_id: str, github_user_id: str, conversation_id: str
+    async def _update_conversation_for_event(
+        self, user_id: str, github_user_id: str, conversation_id: str, event=None
     ):
         conversation_store = await self._get_conversation_store(user_id, github_user_id)
         conversation = await conversation_store.get_metadata(conversation_id)
         conversation.last_updated_at = datetime.now(timezone.utc)
+        
+        # Update cost/token metrics if event has llm_metrics
+        if event and hasattr(event, 'llm_metrics') and event.llm_metrics:
+            metrics = event.llm_metrics
+            
+            # Update accumulated cost
+            if hasattr(metrics, 'accumulated_cost'):
+                conversation.accumulated_cost = metrics.accumulated_cost
+            
+            # Update token usage
+            if hasattr(metrics, 'accumulated_token_usage'):
+                token_usage = metrics.accumulated_token_usage
+                conversation.prompt_tokens = token_usage.prompt_tokens
+                conversation.completion_tokens = token_usage.completion_tokens
+                conversation.total_tokens = token_usage.prompt_tokens + token_usage.completion_tokens
+        
         await conversation_store.save_metadata(conversation)
 
 
