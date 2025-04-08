@@ -16,7 +16,10 @@ from openhands.llm.llm import LLM
 from openhands.memory.condenser import Condenser
 from openhands.memory.condenser.condenser import Condensation, View
 from openhands.memory.conversation_memory import ConversationMemory
-from openhands.router import BaseRouter, CostSavingRouter
+from openhands.router import (
+    BaseRouter,
+    ThresholdBasedCostSavingRouter,
+)
 from openhands.runtime.plugins import (
     AgentSkillsRequirement,
     JupyterRequirement,
@@ -96,7 +99,7 @@ class CodeActAgent(Agent):
 
         if config.enable_model_routing:
             assert model_routing_config is not None and routing_llms is not None
-            self.router = CostSavingRouter(
+            self.router = ThresholdBasedCostSavingRouter(
                 llm=self.llm,
                 routing_llms=routing_llms or dict(),
                 model_routing_config=model_routing_config,
