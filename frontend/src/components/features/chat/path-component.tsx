@@ -1,5 +1,5 @@
-import EventLogger from "#/utils/event-logger";
 import { ReactNode } from "react";
+import EventLogger from "#/utils/event-logger";
 
 /**
  * Decodes HTML entities in a string
