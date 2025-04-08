@@ -48,7 +48,7 @@ fi
 
 if [ -z "$MODE" ]; then
   MODE="swe"
-  echo "MODE not specified, use default $NUM_WORKERS"
+  echo "MODE not specified, use default $MODE"
 fi
 
 export RUN_WITH_BROWSING=$RUN_WITH_BROWSING

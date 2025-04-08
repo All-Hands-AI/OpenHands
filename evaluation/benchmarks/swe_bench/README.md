@@ -128,8 +128,6 @@ In this case, `eval_limit` option applies to tasks that are in the `selected_ids
 
 After running the inference, you will obtain a `output.jsonl` (by default it will be saved to `evaluation/evaluation_outputs`).
 
-
-
 ## Evaluate Generated Patches
 
 ### Run evaluation with official SWE-Bench harness (Recommend if you have local disk space)
@@ -145,7 +143,7 @@ With `output.jsonl` file, you can run `eval_infer.sh` to evaluate generated patc
 ./evaluation/benchmarks/swe_bench/scripts/eval_infer.sh $YOUR_OUTPUT_JSONL [instance_id] [dataset_name] [split]
 
 # Example
-./evaluation/benchmarks/swe_bench/scripts/eval_infer.sh evaluation/evaluation_outputs/outputs/swe_bench/CodeActAgent/gpt-4-1106-preview_maxiter_50_N_v1.0/output.jsonl
+./evaluation/benchmarks/swe_bench/scripts/eval_infer.sh evaluation/evaluation_outputs/outputs/princeton-nlp__SWE-bench_Lite/CodeActAgent/gpt-4-1106-preview_maxiter_50_N_v1.0/output.jsonl
 ```
 
 The script now accepts optional arguments:
