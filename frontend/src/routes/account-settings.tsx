@@ -417,7 +417,7 @@ function AccountSettings() {
                 <SettingsInput
                   testId="host-url-input"
                   name="host-url-input"
-                  label="GitHub Enterprise Server Host URL"
+                  label={t(I18nKey.GITHUB$ENTERPRISE_HOST_URL)}
                   type="text"
                   className="w-[680px]"
                   defaultValue={
