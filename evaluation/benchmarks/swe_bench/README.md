@@ -2,7 +2,7 @@
 
 This folder contains the evaluation harness that we built on top of the original [SWE-Bench benchmark](https://www.swebench.com/) ([paper](https://arxiv.org/abs/2310.06770)).
 
-**UPDATE (4/8/2025): We now support running SWT-Bench using the same evaluation harness here. For more details, checkout [the corresponding section](#SWT-Bench).**
+**UPDATE (4/8/2025): We now support running SWT-Bench using the same evaluation harness here. For more details, checkout [the corresponding section](#SWT-Bench-Evaluation).**
 
 **UPDATE (03/27/2025): We now support SWE-Bench multimodal evaluation! Simply use "princeton-nlp/SWE-bench_Multimodal" as the dataset name in the `run_infer.sh` script to evaluate on multimodal instances.**
 
