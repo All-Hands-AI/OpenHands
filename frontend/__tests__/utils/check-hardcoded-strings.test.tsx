@@ -40,22 +40,6 @@ describe("Check for hardcoded English strings", () => {
     screen.getByPlaceholderText("SUGGESTIONS$WHAT_TO_BUILD");
   });
 
-  test("No unlocalized strings should exist in frontend code", () => {
-    const srcPath = path.resolve(__dirname, '../../src');
-    
-    // Get unlocalized strings using the AST scanner
-    // The scanner now properly handles CSS classes using AST information
-    const results = scanDirectoryForUnlocalizedStrings(srcPath);
-    
-    // If we found any unlocalized strings, format them for output
-    if (results.size > 0) {
-      const formattedResults = Array.from(results.entries())
-        .map(([file, strings]) => `\n${file}:\n  ${strings.join('\n  ')}`)
-        .join('\n');
-      
-      throw new Error(
-        `Found unlocalized strings in the following files:${formattedResults}`
-      );
-    }
-  });
+  // Test "No unlocalized strings should exist in frontend code" has been moved to a pre-commit hook
+  // See /frontend/scripts/check-unlocalized-strings.cjs
 });

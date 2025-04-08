@@ -1,4 +1,14 @@
-#!/bin/sh
-cd frontend
-lint-staged
-vitest run
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# We're already in the frontend directory when running from the frontend folder
+# But we need to handle the case when running from the root directory
+if [ -d "frontend" ]; then
+  cd frontend
+fi
+
+# Run lint-staged for code formatting
+npx lint-staged
+
+# Run the unlocalized strings check
+npm run check-unlocalized-strings
