@@ -9,6 +9,7 @@ from openhands.events.action.agent import (
 )
 from openhands.events.action.browse import BrowseInteractiveAction, BrowseURLAction
 from openhands.events.action.commands import CmdRunAction, IPythonRunCellAction
+from openhands.events.action.context_reorganization import ContextReorganizationAction
 from openhands.events.action.empty import NullAction
 from openhands.events.action.files import (
     FileEditAction,
@@ -30,6 +31,7 @@ __all__ = [
     'AgentRejectAction',
     'AgentDelegateAction',
     'ChangeAgentStateAction',
+    'ContextReorganizationAction',
     'IPythonRunCellAction',
     'MessageAction',
     'ActionConfirmationStatus',

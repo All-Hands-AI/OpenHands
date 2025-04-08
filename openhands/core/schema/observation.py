@@ -47,5 +47,8 @@ class ObservationType(str, Enum):
     CONDENSE = 'condense'
     """Result of a condensation operation."""
 
+    CONTEXT_REORGANIZATION = 'context_reorganization'
+    """Result of a context reorganization operation."""
+
     RECALL = 'recall'
     """Result of a recall operation. This can be the workspace context, a microagent, or other types of information."""

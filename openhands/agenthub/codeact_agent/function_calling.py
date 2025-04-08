@@ -12,6 +12,7 @@ from litellm import (
 
 from openhands.agenthub.codeact_agent.tools import (
     BrowserTool,
+    ContextReorganizeTool,
     FinishTool,
     IPythonTool,
     LLMBasedFileEditTool,
@@ -37,6 +38,7 @@ from openhands.events.action import (
     IPythonRunCellAction,
     MessageAction,
 )
+from openhands.events.action.context_reorganization import ContextReorganizationAction
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.tool import ToolCallMetadata
 from openhands.llm import LLM
@@ -132,6 +134,9 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                     start=arguments.get('start', 1),
                     end=arguments.get('end', -1),
                 )
+            # ================================================
+            # StringReplaceEditor (view/create/str_replace/insert/undo_edit)
+            # ================================================
             elif (
                 tool_call.function.name
                 == create_str_replace_editor_tool()['function']['name']
@@ -191,6 +196,25 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                         f'Missing required argument "url" in tool call {tool_call.function.name}'
                     )
                 action = BrowseURLAction(url=arguments['url'])
+
+            # ================================================
+            # ContextReorganizeTool
+            # ================================================
+            elif tool_call.function.name == ContextReorganizeTool['function']['name']:
+                if 'summary' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "summary" in tool call {tool_call.function.name}'
+                    )
+                if 'files' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "files" in tool call {tool_call.function.name}'
+                    )
+
+                # Create a ContextReorganizationAction
+                action = ContextReorganizationAction(
+                    summary=arguments['summary'],
+                    files=arguments['files'],
+                )
             else:
                 raise FunctionCallNotExistsError(
                     f'Tool {tool_call.function.name} is not registered. (arguments: {arguments}). Please check the tool name and retry with an existing tool.'
@@ -245,6 +269,7 @@ def get_tools(
         create_cmd_run_tool(use_simplified_description=use_simplified_tool_desc),
         ThinkTool,
         FinishTool,
+        ContextReorganizeTool,
     ]
     if codeact_enable_browsing:
         tools.append(WebReadTool)

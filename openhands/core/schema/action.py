@@ -83,3 +83,6 @@ class ActionType(str, Enum):
 
     CONDENSATION = 'condensation'
     """Condenses a list of events into a summary."""
+
+    CONTEXT_REORGANIZATION = 'context_reorganization'
+    """Reorganizes the context with a summary and important files."""

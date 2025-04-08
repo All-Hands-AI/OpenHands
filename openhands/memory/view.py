@@ -5,8 +5,12 @@ from typing import overload
 from pydantic import BaseModel
 
 from openhands.events.action.agent import CondensationAction
+from openhands.events.action.context_reorganization import ContextReorganizationAction
 from openhands.events.event import Event
 from openhands.events.observation.agent import AgentCondensationObservation
+from openhands.events.observation.context_reorganization import (
+    ContextReorganizationObservation,
+)
 
 
 class View(BaseModel):
@@ -55,18 +59,38 @@ class View(BaseModel):
         # If we have a summary, insert it at the specified offset.
         summary: str | None = None
         summary_offset: int | None = None
+        context_reorganization: ContextReorganizationAction | None = None
 
-        # The relevant summary is always in the last condensation event (i.e., the most recent one).
+        # Process events to find the most recent condensation or context reorganization
         for event in reversed(events):
+            # Handle CondensationAction
             if isinstance(event, CondensationAction):
                 if event.summary is not None and event.summary_offset is not None:
                     summary = event.summary
                     summary_offset = event.summary_offset
                     break
 
+            # Handle ContextReorganizationAction
+            elif isinstance(event, ContextReorganizationAction):
+                context_reorganization = event
+                break
+
+        # Insert regular condensation summary if available
         if summary is not None and summary_offset is not None:
             kept_events.insert(
                 summary_offset, AgentCondensationObservation(content=summary)
+            )
+
+        # Handle context reorganization if available
+        if context_reorganization is not None:
+            # Insert at the beginning of the kept events
+            kept_events.insert(
+                0,
+                ContextReorganizationObservation(
+                    content=context_reorganization.summary,
+                    summary=context_reorganization.summary,
+                    files=context_reorganization.files,
+                ),
             )
 
         return View(events=kept_events)

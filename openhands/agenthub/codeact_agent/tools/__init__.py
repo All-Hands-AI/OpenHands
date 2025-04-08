@@ -1,5 +1,6 @@
 from .bash import create_cmd_run_tool
 from .browser import BrowserTool
+from .context_reorganize import ContextReorganizeTool
 from .finish import FinishTool
 from .ipython import IPythonTool
 from .llm_based_edit import LLMBasedFileEditTool
@@ -9,6 +10,7 @@ from .web_read import WebReadTool
 
 __all__ = [
     'BrowserTool',
+    'ContextReorganizeTool',
     'create_cmd_run_tool',
     'FinishTool',
     'IPythonTool',
