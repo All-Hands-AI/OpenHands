@@ -25,7 +25,7 @@ class Chunk(BaseModel):
         return ret
 
 
-def _create_chunks_from_raw_string(content: str, size: int):
+def _create_chunks_from_raw_string(content: str, size: int) -> list[Chunk]:
     lines = content.split('\n')
     ret = []
     for i in range(0, len(lines), size):
@@ -65,7 +65,7 @@ def normalized_lcs(chunk: str, query: str) -> float:
     """
     if len(chunk) == 0:
         return 0.0
-    _score = pylcs.lcs_sequence_length(chunk, query)
+    _score = float(pylcs.lcs_sequence_length(chunk, query))
     return _score / len(chunk)
 
 

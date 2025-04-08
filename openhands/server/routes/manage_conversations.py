@@ -112,7 +112,9 @@ async def _create_new_conversation(
             title=conversation_title,
             user_id=user_id,
             github_user_id=None,
-            selected_repository=selected_repository.full_name if selected_repository else selected_repository,
+            selected_repository=selected_repository.full_name
+            if selected_repository
+            else selected_repository,
             selected_branch=selected_branch,
         )
     )
@@ -380,7 +382,7 @@ async def delete_conversation(
 async def _get_conversation_info(
     conversation: ConversationMetadata,
     is_running: bool,
-) -> ConversationInfo | None:
+) -> ConversationInfo:
     try:
         title = conversation.title
         if not title:
@@ -400,4 +402,12 @@ async def _get_conversation_info(
             f'Error loading conversation {conversation.conversation_id}: {str(e)}',
             extra={'session_id': conversation.conversation_id},
         )
-        return None
+        # Create a default ConversationInfo object instead of returning None
+        return ConversationInfo(
+            conversation_id=conversation.conversation_id,
+            title=get_default_conversation_title(conversation.conversation_id),
+            last_updated_at=conversation.last_updated_at,
+            created_at=conversation.created_at,
+            selected_repository='',
+            status=ConversationStatus.STOPPED,
+        )
