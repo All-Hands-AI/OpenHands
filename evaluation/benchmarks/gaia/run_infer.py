@@ -151,6 +151,10 @@ def initialize_runtime(
     obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
+    action = CmdRunAction(
+        command='apt-get update && apt-get install -y ffmpeg && apt-get install -y ffprobe'
+    )
+    runtime.run_action(action)
     logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
 
 
