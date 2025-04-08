@@ -16,6 +16,7 @@ import { cn } from "#/utils/utils";
 import { code } from "../markdown/code";
 import { ol, ul } from "../markdown/list";
 import { MonoComponent } from "./mono-component";
+import { PathComponent } from "./path-component";
 
 const trimText = (text: string, maxLength: number): string => {
   if (!text) return "";
@@ -142,7 +143,7 @@ export function ExpandableMessage({
                 values={translationParams}
                 components={{
                   bold: <strong />,
-                  path: <MonoComponent />,
+                  path: <PathComponent />,
                   cmd: <MonoComponent />,
                 }}
               />

@@ -1,5 +1,5 @@
-import EventLogger from "#/utils/event-logger";
 import { ReactNode } from "react";
+import EventLogger from "#/utils/event-logger";
 
 const decodeHtmlEntities = (text: string): string => {
   const textarea = document.createElement("textarea");
