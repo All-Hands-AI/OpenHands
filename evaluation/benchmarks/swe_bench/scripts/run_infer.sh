@@ -86,7 +86,11 @@ if [ -n "$EXP_NAME" ]; then
 fi
 
 function run_eval() {
-  local eval_note=$1
+  local eval_note="${MODEL_CONFIG}"
+  # if mode != swe, add mode to the eval note
+  if [ "$MODE" != "swe" ]; then
+    eval_note="${eval_note}-${10}"
+  fi
   COMMAND="poetry run python evaluation/benchmarks/swe_bench/run_infer.py \
     --agent-cls $AGENT \
     --llm-config $MODEL_CONFIG \
