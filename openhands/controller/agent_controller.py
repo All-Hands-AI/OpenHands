@@ -10,6 +10,7 @@ from litellm.exceptions import (  # noqa
     APIError,
     AuthenticationError,
     BadRequestError,
+    ContentPolicyViolationError,
     ContextWindowExceededError,
     InternalServerError,
     NotFoundError,
@@ -54,10 +55,9 @@ from openhands.events.action import (
     MessageAction,
     NullAction,
 )
-from openhands.events.action.agent import RecallAction
+from openhands.events.action.agent import CondensationAction, RecallAction
 from openhands.events.event import Event
 from openhands.events.observation import (
-    AgentCondensationObservation,
     AgentDelegateObservation,
     AgentStateChangedObservation,
     ErrorObservation,
@@ -228,11 +228,14 @@ class AgentController:
         e: Exception,
     ):
         """React to an exception by setting the agent state to error and sending a status message."""
-        await self.set_agent_state_to(AgentState.ERROR)
+        # Store the error reason before setting the agent state
+        self.state.last_error = f'{type(e).__name__}: {str(e)}'
+
         if self.status_callback is not None:
             err_id = ''
             if isinstance(e, AuthenticationError):
                 err_id = 'STATUS$ERROR_LLM_AUTHENTICATION'
+                self.state.last_error = err_id
             elif isinstance(
                 e,
                 (
@@ -242,14 +245,26 @@ class AgentController:
                 ),
             ):
                 err_id = 'STATUS$ERROR_LLM_SERVICE_UNAVAILABLE'
+                self.state.last_error = err_id
             elif isinstance(e, InternalServerError):
                 err_id = 'STATUS$ERROR_LLM_INTERNAL_SERVER_ERROR'
+                self.state.last_error = err_id
             elif isinstance(e, BadRequestError) and 'ExceededBudget' in str(e):
                 err_id = 'STATUS$ERROR_LLM_OUT_OF_CREDITS'
+                self.state.last_error = err_id
+            elif isinstance(e, ContentPolicyViolationError) or (
+                isinstance(e, BadRequestError)
+                and 'ContentPolicyViolationError' in str(e)
+            ):
+                err_id = 'STATUS$ERROR_LLM_CONTENT_POLICY_VIOLATION'
+                self.state.last_error = err_id
             elif isinstance(e, RateLimitError):
                 await self.set_agent_state_to(AgentState.RATE_LIMITED)
                 return
-            self.status_callback('error', err_id, type(e).__name__ + ': ' + str(e))
+            self.status_callback('error', err_id, self.state.last_error)
+
+        # Set the agent state to ERROR after storing the reason
+        await self.set_agent_state_to(AgentState.ERROR)
 
     def step(self):
         asyncio.create_task(self._step_with_exception_handling())
@@ -274,6 +289,7 @@ class AgentController:
                 or isinstance(e, InternalServerError)
                 or isinstance(e, AuthenticationError)
                 or isinstance(e, RateLimitError)
+                or isinstance(e, ContentPolicyViolationError)
                 or isinstance(e, LLMContextWindowExceedError)
             ):
                 reported = e
@@ -304,6 +320,8 @@ class AgentController:
                 # TODO: this is fragile, but how else to check if eligible?
                 return True
             if isinstance(event, AgentDelegateAction):
+                return True
+            if isinstance(event, CondensationAction):
                 return True
             return False
         if isinstance(event, Observation):
@@ -479,8 +497,11 @@ class AgentController:
 
             if self.get_agent_state() != AgentState.RUNNING:
                 await self.set_agent_state_to(AgentState.RUNNING)
-        elif action.source == EventSource.AGENT and action.wait_for_response:
-            await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
+
+        elif action.source == EventSource.AGENT:
+            # If the agent is waiting for a response, set the appropriate state
+            if action.wait_for_response:
+                await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
 
     def _reset(self) -> None:
         """Resets the agent controller."""
@@ -570,8 +591,14 @@ class AgentController:
             self.event_stream.add_event(self._pending_action, EventSource.AGENT)
 
         self.state.agent_state = new_state
+
+        # Create observation with reason field if it's an error state
+        reason = ''
+        if new_state == AgentState.ERROR:
+            reason = self.state.last_error
+
         self.event_stream.add_event(
-            AgentStateChangedObservation('', self.state.agent_state),
+            AgentStateChangedObservation('', self.state.agent_state, reason),
             EventSource.ENVIRONMENT,
         )
 
@@ -916,12 +943,6 @@ class AgentController:
         - For delegate events (between AgentDelegateAction and AgentDelegateObservation):
             - Excludes all events between the action and observation
             - Includes the delegate action and observation themselves
-
-        The history is loaded in two parts if truncation_id is set:
-        1. First user message from start_id onwards
-        2. Rest of history from truncation_id to the end
-
-        Otherwise loads normally from start_id.
         """
         # define range of events to fetch
         # delegates start with a start_id and initially won't find any events
@@ -943,29 +964,6 @@ class AgentController:
             return
 
         events: list[Event] = []
-
-        # If we have a truncation point, get first user message and then rest of history
-        if hasattr(self.state, 'truncation_id') and self.state.truncation_id > 0:
-            # Find first user message from stream
-            first_user_msg = next(
-                (
-                    e
-                    for e in self.event_stream.get_events(
-                        start_id=start_id,
-                        end_id=end_id,
-                        reverse=False,
-                        filter_out_type=self.filter_out,
-                        filter_hidden=True,
-                    )
-                    if isinstance(e, MessageAction) and e.source == EventSource.USER
-                ),
-                None,
-            )
-            if first_user_msg:
-                events.append(first_user_msg)
-
-            # the rest of the events are from the truncation point
-            start_id = self.state.truncation_id
 
         # Get rest of history
         events_to_add = list(
@@ -1034,7 +1032,10 @@ class AgentController:
 
     def _handle_long_context_error(self) -> None:
         # When context window is exceeded, keep roughly half of agent interactions
-        self.state.history = self._apply_conversation_window(self.state.history)
+        kept_event_ids = {
+            e.id for e in self._apply_conversation_window(self.state.history)
+        }
+        forgotten_event_ids = {e.id for e in self.state.history} - kept_event_ids
 
         # Save the ID of the first event in our truncated history for future reloading
         if self.state.history:
@@ -1042,8 +1043,9 @@ class AgentController:
 
         # Add an error event to trigger another step by the agent
         self.event_stream.add_event(
-            AgentCondensationObservation(
-                content='Trimming prompt to meet context window limitations'
+            CondensationAction(
+                forgotten_events_start_id=min(forgotten_event_ids),
+                forgotten_events_end_id=max(forgotten_event_ids),
             ),
             EventSource.AGENT,
         )
@@ -1082,48 +1084,8 @@ class AgentController:
         # cut in half
         mid_point = max(1, len(events) // 2)
         kept_events = events[mid_point:]
-
-        # Handle first event in truncated history
-        if kept_events:
-            i = 0
-            while i < len(kept_events):
-                first_event = kept_events[i]
-                if isinstance(first_event, Observation) and first_event.cause:
-                    # Find its action and include it
-                    matching_action = next(
-                        (
-                            e
-                            for e in reversed(events[:mid_point])
-                            if isinstance(e, Action) and e.id == first_event.cause
-                        ),
-                        None,
-                    )
-                    if matching_action:
-                        kept_events = [matching_action] + kept_events
-                    else:
-                        self.log(
-                            'warning',
-                            f'Found Observation without matching Action at id={first_event.id}',
-                        )
-                        # drop this observation
-                        kept_events = kept_events[1:]
-                    break
-
-                elif isinstance(first_event, MessageAction) or (
-                    isinstance(first_event, Action)
-                    and first_event.source == EventSource.USER
-                ):
-                    # if it's a message action or a user action, keep it and continue to find the next event
-                    i += 1
-                    continue
-
-                else:
-                    # if it's an action with source == EventSource.AGENT, we're good
-                    break
-
-        # Save where to continue from in next reload
-        if kept_events:
-            self.state.truncation_id = kept_events[0].id
+        if len(kept_events) > 0 and isinstance(kept_events[0], Observation):
+            kept_events = kept_events[1:]
 
         # Ensure first user message is included
         if first_user_msg and first_user_msg not in kept_events:

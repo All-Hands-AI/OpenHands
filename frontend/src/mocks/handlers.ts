@@ -7,18 +7,20 @@ import {
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import { STRIPE_BILLING_HANDLERS } from "./billing-handlers";
 import { ApiSettings, PostApiSettings } from "#/types/settings";
+import { GitUser } from "#/types/git";
 
 export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
   llm_model: DEFAULT_SETTINGS.LLM_MODEL,
   llm_base_url: DEFAULT_SETTINGS.LLM_BASE_URL,
-  llm_api_key: DEFAULT_SETTINGS.LLM_API_KEY,
+  llm_api_key: null,
+  llm_api_key_set: DEFAULT_SETTINGS.LLM_API_KEY_SET,
   agent: DEFAULT_SETTINGS.AGENT,
   language: DEFAULT_SETTINGS.LANGUAGE,
   confirmation_mode: DEFAULT_SETTINGS.CONFIRMATION_MODE,
   security_analyzer: DEFAULT_SETTINGS.SECURITY_ANALYZER,
   remote_runtime_resource_factor:
     DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
-  github_token_is_set: DEFAULT_SETTINGS.GITHUB_TOKEN_IS_SET,
+  provider_tokens_set: DEFAULT_SETTINGS.PROVIDER_TOKENS_SET,
   enable_default_condenser: DEFAULT_SETTINGS.ENABLE_DEFAULT_CONDENSER,
   enable_sound_notifications: DEFAULT_SETTINGS.ENABLE_SOUND_NOTIFICATIONS,
   user_consents_to_analytics: DEFAULT_SETTINGS.USER_CONSENTS_TO_ANALYTICS,
@@ -148,14 +150,14 @@ const openHandsHandlers = [
 export const handlers = [
   ...STRIPE_BILLING_HANDLERS,
   ...openHandsHandlers,
-  http.get("/api/github/repositories", () =>
+  http.get("/api/user/repositories", () =>
     HttpResponse.json([
       { id: 1, full_name: "octocat/hello-world" },
       { id: 2, full_name: "octocat/earth" },
     ]),
   ),
-  http.get("/api/github/user", () => {
-    const user: GitHubUser = {
+  http.get("/api/user/info", () => {
+    const user: GitUser = {
       id: 1,
       login: "octocat",
       avatar_url: "https://avatars.githubusercontent.com/u/583231?v=4",
@@ -190,12 +192,13 @@ export const handlers = [
   }),
   http.get("/api/settings", async () => {
     await delay();
+
     const { settings } = MOCK_USER_PREFERENCES;
 
     if (!settings) return HttpResponse.json(null, { status: 404 });
 
-    if (Object.keys(settings.provider_tokens).length > 0)
-      settings.github_token_is_set = true;
+    if (Object.keys(settings.provider_tokens_set).length > 0)
+      settings.provider_tokens_set = { github: false, gitlab: false };
 
     return HttpResponse.json(settings);
   }),

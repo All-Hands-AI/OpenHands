@@ -7,10 +7,7 @@ import socketio
 
 from openhands.controller.agent import Agent
 from openhands.core.config import AppConfig
-from openhands.core.config.condenser_config import (
-    LLMSummarizingCondenserConfig,
-)
-from openhands.core.const.guide_url import TROUBLESHOOTING_URL
+from openhands.core.config.condenser_config import LLMSummarizingCondenserConfig
 from openhands.core.logger import OpenHandsLoggerAdapter
 from openhands.core.schema import AgentState
 from openhands.events.action import MessageAction, NullAction
@@ -129,8 +126,9 @@ class Session:
 
         if settings.enable_default_condenser:
             default_condenser_config = LLMSummarizingCondenserConfig(
-                llm_config=llm.config, keep_first=3, max_size=40
+                llm_config=llm.config, keep_first=3, max_size=80
             )
+
             self.logger.info(f'Enabling default condenser: {default_condenser_config}')
             agent_config.condenser = default_condenser_config
 
@@ -161,9 +159,8 @@ class Session:
             )
         except Exception as e:
             self.logger.exception(f'Error creating agent_session: {e}')
-            await self.send_error(
-                f'Error creating agent_session. Please check Docker is running and visit `{TROUBLESHOOTING_URL}` for more debugging information..'
-            )
+            err_class = e.__class__.__name__
+            await self.send_error(f'Failed to create agent session: {err_class}')
             return
 
     def _create_llm(self, agent_cls: str | None) -> LLM:
