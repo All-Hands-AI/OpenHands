@@ -1,4 +1,4 @@
-from typing import ClassVar
+from typing import Any, ClassVar
 
 from pydantic import BaseModel, Field, SecretStr
 
@@ -50,7 +50,7 @@ class AppConfig(BaseModel):
     """
 
     llms: dict[str, LLMConfig] = Field(default_factory=dict)
-    agents: dict = Field(default_factory=dict)
+    agents: dict[str, AgentConfig] = Field(default_factory=dict)
     default_agent: str = Field(default=OH_DEFAULT_AGENT)
     sandbox: SandboxConfig = Field(default_factory=SandboxConfig)
     security: SecurityConfig = Field(default_factory=SecurityConfig)
@@ -93,7 +93,7 @@ class AppConfig(BaseModel):
 
     model_config = {'extra': 'forbid'}
 
-    def get_llm_config(self, name='llm') -> LLMConfig:
+    def get_llm_config(self, name: str = 'llm') -> LLMConfig:
         """'llm' is the name for default config (for backward compatibility prior to 0.8)."""
         if name in self.llms:
             return self.llms[name]
@@ -105,10 +105,10 @@ class AppConfig(BaseModel):
             self.llms['llm'] = LLMConfig()
         return self.llms['llm']
 
-    def set_llm_config(self, value: LLMConfig, name='llm') -> None:
+    def set_llm_config(self, value: LLMConfig, name: str = 'llm') -> None:
         self.llms[name] = value
 
-    def get_agent_config(self, name='agent') -> AgentConfig:
+    def get_agent_config(self, name: str = 'agent') -> AgentConfig:
         """'agent' is the name for default config (for backward compatibility prior to 0.8)."""
         if name in self.agents:
             return self.agents[name]
@@ -116,22 +116,24 @@ class AppConfig(BaseModel):
             self.agents['agent'] = AgentConfig()
         return self.agents['agent']
 
-    def set_agent_config(self, value: AgentConfig, name='agent') -> None:
+    def set_agent_config(self, value: AgentConfig, name: str = 'agent') -> None:
         self.agents[name] = value
 
     def get_agent_to_llm_config_map(self) -> dict[str, LLMConfig]:
         """Get a map of agent names to llm configs."""
         return {name: self.get_llm_config_from_agent(name) for name in self.agents}
 
-    def get_llm_config_from_agent(self, name='agent') -> LLMConfig:
+    def get_llm_config_from_agent(self, name: str = 'agent') -> LLMConfig:
         agent_config: AgentConfig = self.get_agent_config(name)
-        llm_config_name = agent_config.llm_config
+        llm_config_name = (
+            agent_config.llm_config if agent_config.llm_config is not None else 'llm'
+        )
         return self.get_llm_config(llm_config_name)
 
     def get_agent_configs(self) -> dict[str, AgentConfig]:
         return self.agents
 
-    def model_post_init(self, __context):
+    def model_post_init(self, __context: Any) -> None:
         """Post-initialization hook, called when the instance is created with only default values."""
         super().model_post_init(__context)
         if not AppConfig.defaults_dict:  # Only set defaults_dict if it's empty
