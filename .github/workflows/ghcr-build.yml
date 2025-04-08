@@ -137,9 +137,9 @@ jobs:
         with:
           path: |
             ~/.cache/pypoetry
-            ~/.cache/ms-playwright
             ~/.virtualenvs
           key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          # This is the one that saves the cache, the others set 'lookup-only: true'
           restore-keys: |
             ${{ runner.os }}-poetry-
       - name: Install poetry via pipx
@@ -189,9 +189,9 @@ jobs:
         with:
           path: |
             ~/.cache/pypoetry
-            ~/.cache/ms-playwright
             ~/.virtualenvs
           key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          lookup-only: true
           restore-keys: |
             ${{ runner.os }}-poetry-
       - name: Set up Python
@@ -255,9 +255,9 @@ jobs:
         with:
           path: |
             ~/.cache/pypoetry
-            ~/.cache/ms-playwright
             ~/.virtualenvs
           key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          lookup-only: true
           restore-keys: |
             ${{ runner.os }}-poetry-
       - name: Set up Python
@@ -326,6 +326,7 @@ jobs:
             ~/.cache/pypoetry
             ~/.virtualenvs
           key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          lookup-only: true
           restore-keys: |
             ${{ runner.os }}-poetry-
       - name: Set up Python
