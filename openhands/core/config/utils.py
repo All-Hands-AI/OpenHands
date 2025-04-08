@@ -204,13 +204,9 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
             raise ValueError('Error in [sandbox] section in config.toml')
 
     # Process MCP sections if present
-    mcp_sections = {}
-    if 'mcp-sse' in toml_config:
-        mcp_sections['mcp-sse'] = toml_config['mcp-sse']
-
-    if mcp_sections:
+    if 'mcp' in toml_config:
         try:
-            mcp_mapping = MCPConfig.from_toml_section(mcp_sections)
+            mcp_mapping = MCPConfig.from_toml_section(toml_config['mcp'])
             # We only use the base mcp config for now
             if 'mcp' in mcp_mapping:
                 cfg.mcp = mcp_mapping['mcp']
@@ -279,7 +275,7 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
         'security',
         'sandbox',
         'condenser',
-        'mcp-sse',
+        'mcp',
     }
     for key in toml_config:
         if key.lower() not in known_sections:
