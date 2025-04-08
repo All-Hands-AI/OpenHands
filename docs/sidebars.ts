@@ -20,12 +20,40 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: 'category',
+      label: 'OpenHands Cloud',
+      items: [
+        {
+          type: 'doc',
+          label: 'Openhands Cloud',
+          id: 'usage/cloud/openhands-cloud',
+        },
+
+        {
+          type: 'doc',
+          label: 'Cloud GitHub Resolver',
+          id: 'usage/cloud/cloud-github-resolver',
+        },
+      ],
+    },
+    {
+      type: 'category',
       label: 'Prompting',
       items: [
         {
           type: 'doc',
           label: 'Best Practices',
           id: 'usage/prompting/prompting-best-practices',
+        },
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Customization',
+      items: [
+        {
+          type: 'doc',
+          label: 'Repository Customization',
+          id: 'usage/customization/repository',
         },
         {
           type: 'category',
@@ -57,17 +85,6 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: 'category',
-      label: 'Customization',
-      items: [
-        {
-          type: 'doc',
-          label: 'Repository Customization',
-          id: 'usage/customization/repository',
-        },
-      ],
-    },
-    {
-      type: 'category',
       label: 'Usage Methods',
       items: [
         {
@@ -89,23 +106,6 @@ const sidebars: SidebarsConfig = {
           type: 'doc',
           label: 'Github Action',
           id: 'usage/how-to/github-action',
-        },
-        {
-          type: 'category',
-          label: 'Cloud',
-          items: [
-            {
-              type: 'doc',
-              label: 'Openhands Cloud',
-              id: 'usage/cloud/openhands-cloud',
-            },
-
-            {
-              type: 'doc',
-              label: 'Cloud GitHub Resolver',
-              id: 'usage/cloud/cloud-github-resolver',
-            },
-          ],
         },
       ],
     },
@@ -143,6 +143,11 @@ const sidebars: SidebarsConfig = {
                 },
                 {
                   type: 'doc',
+                  label: 'Local LLMs with SGLang or vLLM',
+                  id: 'usage/llms/local-llms',
+                },
+                {
+                  type: 'doc',
                   label: 'LiteLLM Proxy',
                   id: 'usage/llms/litellm-proxy',
                 },
@@ -155,11 +160,6 @@ const sidebars: SidebarsConfig = {
                   type: 'doc',
                   label: 'OpenRouter',
                   id: 'usage/llms/openrouter',
-                },
-                {
-                  type: 'doc',
-                  label: 'Local LLMs with SGLang or vLLM',
-                  id: 'usage/llms/local-llms',
                 },
               ],
             },
