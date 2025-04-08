@@ -1,38 +1,20 @@
-# SWE-Bench Evaluation with OpenHands SWE-Bench Docker Image
+# SWT-Bench Evaluation with OpenHands SWE-Bench Docker Image
 
-This folder contains the evaluation harness that we built on top of the original [SWE-Bench benchmark](https://www.swebench.com/) ([paper](https://arxiv.org/abs/2310.06770)).
-
-**UPDATE (4/8/2025): We now support running SWT-Bench using the same evaluation harness here. For more details, checkout [this README](./SWT-Bench.md).**
-
-**UPDATE (2/18/2025): We now support running SWE-Gym using the same evaluation harness here. For more details, checkout [this README](./SWE-Gym.md).**
-
-**UPDATE (7/1/2024): We now support the official SWE-Bench dockerized evaluation as announced [here](https://github.com/princeton-nlp/SWE-bench/blob/main/docs/20240627_docker/README.md).**
+This folder contains the evaluation harness built on top of the [SWT-Bench benchmark](https://swtbench.com/) ([paper](https://arxiv.org/abs/2406.12952)), which is based on the [SWE-Bench benchmark](https://www.swebench.com/) ([paper](https://arxiv.org/abs/2310.06770)).
 
 The evaluation consists of three steps:
 
 1. Environment setup: [install python environment](../../README.md#development-environment) and [configure LLM config](../../README.md#configure-openhands-and-your-llm).
 2. [Run inference](#run-inference-on-swe-bench-instances): Generate a edit patch for each Github issue
-3. [Evaluate patches using SWE-Bench docker](#evaluate-generated-patches)
+3. [Evaluate patches using SWT-Bench](#evaluate-generated-patches)
 
 ## Setup Environment and LLM Configuration
 
 Please follow instruction [here](../../README.md#setup) to setup your local development environment and LLM.
 
-## Run Inference (Rollout) on SWE-Bench Instances: Generate Patch from Problem Statement
+## Run Inference (Rollout) on SWT-Bench Instances: Generate Patch from Problem Statement
 
-> [!NOTE]
-> **Iterative Evaluation Protocol**
->
-> We have an iterative approach for more stable and reproducible results:
-> - For each instance, we attempt to generate a solution up to 3 times
-> - Each attempt continues until either:
->   1. The agent successfully produces a patch with `AgentFinishAction`, or
->   2. The attempt reaches the maximum iteration limit
-> - If an attempt fails, we retry with a fresh attempt (up to the 3-attempt maximum)
-> - If your LLM config has temperature=0, we will automatically use temperature=0.1 for the 2nd and 3rd attempts
->
-> To enable this iterative protocol, set `export ITERATIVE_EVAL_MODE=true`
-
+> [!NOTE] This section is based on the equivalent section for SWE-bench [in the main README](./README.md#run-inference-rollout-on-swe-bench-instances-generate-patch-from-problem-statement).
 
 ### Running Locally with Docker
 
