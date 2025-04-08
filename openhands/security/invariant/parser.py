@@ -1,5 +1,3 @@
-from typing import Union
-
 from pydantic import BaseModel, Field
 
 from openhands.core.logger import openhands_logger as logger
@@ -18,7 +16,7 @@ from openhands.events.observation import (
 from openhands.events.serialization.event import event_to_dict
 from openhands.security.invariant.nodes import Function, Message, ToolCall, ToolOutput
 
-TraceElement = Union[Message, ToolCall, ToolOutput, Function]
+TraceElement = Message | ToolCall | ToolOutput | Function
 
 
 def get_next_id(trace: list[TraceElement]) -> str:
@@ -75,7 +73,7 @@ def parse_observation(
 
 
 def parse_element(
-    trace: list[TraceElement], element: Union[Action, Observation]
+    trace: list[TraceElement], element: Action | Observation
 ) -> list[TraceElement]:
     if isinstance(element, Action):
         return parse_action(trace, element)

@@ -1,4 +1,4 @@
-from typing import Any, Iterable, Union
+from typing import Any, Iterable
 
 from pydantic import BaseModel, Field
 from pydantic.dataclasses import dataclass
@@ -34,7 +34,7 @@ class Message(Event):
 
     def __rich_repr__(
         self,
-    ) -> Iterable[Union[Any, tuple[Any], tuple[str, Any], tuple[str, Any, Any]]]:
+    ) -> Iterable[Any | tuple[Any] | tuple[str, Any] | tuple[str, Any, Any]]:
         # Print on separate line
         yield 'role', self.role
         yield 'content', self.content
