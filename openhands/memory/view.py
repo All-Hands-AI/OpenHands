@@ -60,9 +60,10 @@ class View(BaseModel):
         summary: str | None = None
         summary_offset: int | None = None
         context_reorganization: ContextReorganizationAction | None = None
+        context_reorganization_index: int | None = None
 
         # Process events to find the most recent condensation or context reorganization
-        for event in reversed(events):
+        for i, event in enumerate(reversed(events)):
             # Handle CondensationAction
             if isinstance(event, CondensationAction):
                 if event.summary is not None and event.summary_offset is not None:
@@ -73,24 +74,34 @@ class View(BaseModel):
             # Handle ContextReorganizationAction
             elif isinstance(event, ContextReorganizationAction):
                 context_reorganization = event
+                context_reorganization_index = len(events) - i - 1
                 break
 
-        # Insert regular condensation summary if available
-        if summary is not None and summary_offset is not None:
-            kept_events.insert(
-                summary_offset, AgentCondensationObservation(content=summary)
-            )
-
         # Handle context reorganization if available
-        if context_reorganization is not None:
-            # Insert at the beginning of the kept events
-            kept_events.insert(
-                0,
+        if (
+            context_reorganization is not None
+            and context_reorganization_index is not None
+        ):
+            # Create a new list with only the ContextReorganizationObservation and events after it
+            new_events: list[Event] = [
                 ContextReorganizationObservation(
                     content=context_reorganization.summary,
                     summary=context_reorganization.summary,
                     files=context_reorganization.files,
-                ),
+                )
+            ]
+
+            # Add only events that come after the context_reorganization_index
+            for event in events[context_reorganization_index + 1 :]:
+                if event.id not in forgotten_event_ids:
+                    new_events.append(event)
+
+            return View(events=new_events)
+
+        # If no context reorganization, handle regular condensation summary if available
+        if summary is not None and summary_offset is not None:
+            kept_events.insert(
+                summary_offset, AgentCondensationObservation(content=summary)
             )
 
         return View(events=kept_events)
