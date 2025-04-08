@@ -1,3 +1,4 @@
+import EventLogger from "#/utils/event-logger";
 import { ReactNode } from "react";
 
 const decodeHtmlEntities = (text: string): string => {
@@ -13,7 +14,7 @@ function MonoComponent(props: { children?: ReactNode }) {
     try {
       return decodeHtmlEntities(str);
     } catch (e) {
-      console.error('Error decoding HTML entities:', e);
+      EventLogger.error(String(e));
       return str;
     }
   };

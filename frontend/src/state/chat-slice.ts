@@ -1,5 +1,5 @@
-import type { Message } from "#/message";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import type { Message } from "#/message";
 
 import { ActionSecurityRisk } from "#/state/security-analyzer-slice";
 import { OpenHandsAction } from "#/types/core/actions";
@@ -255,8 +255,7 @@ export const chatSlice = createSlice({
         if (content.length > MAX_CONTENT_LENGTH) {
           content = `${content.slice(0, MAX_CONTENT_LENGTH)}...`;
         }
-        content = `${causeMessage.content
-          }\n\nOutput:\n\`\`\`\n${content.trim() || "[Command finished execution with no output]"}\n\`\`\``;
+        content = `${causeMessage.content}\n\nOutput:\n\`\`\`\n${content.trim() || "[Command finished execution with no output]"}\n\`\`\``;
         causeMessage.content = content; // Observation content includes the action
       } else if (observationID === "read") {
         causeMessage.content = `\`\`\`\n${observation.payload.content}\n\`\`\``; // Content is already truncated by the ACI
