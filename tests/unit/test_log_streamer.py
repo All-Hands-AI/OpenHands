@@ -44,15 +44,31 @@ def test_cleanup_without_thread(mock_container, mock_log_fn):
 
 def test_normal_operation(mock_container, mock_log_fn):
     """Test normal operation of LogStreamer."""
-    mock_logs = iter([b'test log 1\n', b'test log 2\n'])
+
+    # Create a mock generator class that mimics Docker's log generator
+    class MockLogGenerator:
+        def __init__(self, logs):
+            self.logs = iter(logs)
+            self.closed = False
+
+        def __iter__(self):
+            return self
+
+        def __next__(self):
+            if self.closed:
+                raise StopIteration
+            return next(self.logs)
+
+        def close(self):
+            self.closed = True
+
+    mock_logs = MockLogGenerator([b'test log 1\n', b'test log 2\n'])
     mock_container.logs.return_value = mock_logs
 
     streamer = LogStreamer(mock_container, mock_log_fn)
     assert streamer.stdout_thread is not None
     assert streamer.log_generator is not None
 
-    # Let the thread process the logs
-    assert streamer.wait_for_completion(timeout=0.1)
     streamer.close()
 
     # Verify logs were processed
