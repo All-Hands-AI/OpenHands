@@ -165,13 +165,23 @@ class ProviderHandler:
         """Helper method to instantiate a service for a given provider"""
         token = self.provider_tokens[provider]
         service_class = self.service_class_map[provider]
+
+        if provider == ProviderType.GITLAB:
+            return service_class(
+                user_id=token.user_id,
+                external_auth_id=self.external_auth_id,
+                external_auth_token=self.external_auth_token,
+                token=token.token,
+                external_token_manager=self.external_token_manager,
+                gitlab_base_url=self.gitlab_base_url,
+            )
+
         return service_class(
             user_id=token.user_id,
             external_auth_id=self.external_auth_id,
             external_auth_token=self.external_auth_token,
             token=token.token,
             external_token_manager=self.external_token_manager,
-            gitlab_base_url=self.gitlab_base_url,
         )
 
     async def get_user(self) -> User:
