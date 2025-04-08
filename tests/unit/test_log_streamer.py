@@ -44,7 +44,7 @@ def test_cleanup_without_thread(mock_container, mock_log_fn):
 
 def test_normal_operation(mock_container, mock_log_fn):
     """Test normal operation of LogStreamer."""
-    mock_logs = [b'test log 1\n', b'test log 2\n']
+    mock_logs = iter([b'test log 1\n', b'test log 2\n'])
     mock_container.logs.return_value = mock_logs
 
     streamer = LogStreamer(mock_container, mock_log_fn)
@@ -52,6 +52,7 @@ def test_normal_operation(mock_container, mock_log_fn):
     assert streamer.log_generator is not None
 
     # Let the thread process the logs
+    assert streamer.wait_for_completion(timeout=0.1)
     streamer.close()
 
     # Verify logs were processed
