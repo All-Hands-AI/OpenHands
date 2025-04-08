@@ -26,7 +26,10 @@ from litellm.utils import create_pretrained_tokenizer
 from openhands.core.exceptions import LLMNoResponseError
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message
-from openhands.llm.critic import LLMCritic
+from openhands.llm.critic import (
+    LLMCritic,
+    convert_fncall_messages_and_candidate_responses_for_critic,
+)
 from openhands.llm.debug_mixin import DebugMixin
 from openhands.llm.fn_call_converter import (
     STOP_WORDS,
@@ -129,6 +132,13 @@ class LLM(RetryMixin, DebugMixin):
         self.critic = None
         if self.config.use_critic:
             logger.debug('LLM: critic enabled')
+            assert (
+                self.config.temperature != 0.0
+            ), 'Critic is not supported with temperature == 0.0'
+            if self.config.temperature < 0.5:
+                logger.warning(
+                    'LLM: critic is enabled, but the temperature is less than 0.5. This is not recommended as it may lead to degraded results.'
+                )
             self.critic = LLMCritic(self.config)
 
         # call init_model_info to initialize config.max_output_tokens
@@ -267,40 +277,20 @@ class LLM(RetryMixin, DebugMixin):
             # Record start time for latency measurement
             start_time = time.time()
 
-            # Check if critic is enabled
+            llm_responses_for_metrics = []  # track all responses for cost calculation purposes
+            critic_metadata = None
             if self.critic is not None:
-                # Generate multiple candidate responses
-                logger.debug(
-                    f'LLM: generating {self.config.critic_num_candidates} candidate responses for critic evaluation'
+                resp, critic_metadata = self.handle_critic_scoring(
+                    args, kwargs, mock_function_calling
                 )
-
-                # Add n parameter to generate multiple responses
-                critic_kwargs = copy.deepcopy(kwargs)
-                critic_kwargs['n'] = self.config.critic_num_candidates
-
-                # Generate candidate responses
-                candidate_responses = []
-                for _ in range(self.config.critic_num_candidates):
-                    candidate = self._completion_unwrapped(*args, **kwargs)
-                    candidate_responses.append(candidate)
-
-                # Use critic to select the best response
-                resp, critic_results = self.critic.evaluate_candidates(
-                    messages, candidate_responses
-                )
-
-                # Log critic results
-                logger.debug(f'LLM critic results: {critic_results}')
-
-                # Store critic results in the response for logging
-                resp['critic_results'] = critic_results
-                resp['candidate_responses'] = candidate_responses
+                llm_responses_for_metrics.extend(critic_metadata['responses'])
             else:
                 # Standard single response generation
                 logger.debug(
                     f'LLM: calling litellm completion with model: {self.config.model}, base_url: {self.config.base_url}, args: {args}, kwargs: {kwargs}'
                 )
                 resp = self._completion_unwrapped(*args, **kwargs)
+                llm_responses_for_metrics.append(resp)
 
             # Calculate and record latency
             latency = time.time() - start_time
@@ -351,7 +341,7 @@ class LLM(RetryMixin, DebugMixin):
             self.log_response(message_back)
 
             # post-process the response first to calculate cost
-            cost = self._post_completion(resp)
+            cost = self._update_metrics(llm_responses_for_metrics)
 
             # log for evals or other scripts that need the raw completion
             if self.config.log_completions:
@@ -377,31 +367,8 @@ class LLM(RetryMixin, DebugMixin):
                 }
 
                 # Add critic information if available
-                if 'critic_results' in resp:
-                    _d['critic_results'] = resp['critic_results']
-                    # Remove candidate_responses from resp to avoid duplicating large amounts of data
-                    if 'candidate_responses' in resp:
-                        _d['candidate_responses'] = [
-                            {
-                                'id': candidate.get('id', 'unknown'),
-                                'choices': [
-                                    {
-                                        'message': {
-                                            'content': choice.get('message', {}).get(
-                                                'content', ''
-                                            ),
-                                            'tool_calls': choice.get('message', {}).get(
-                                                'tool_calls', []
-                                            ),
-                                        }
-                                    }
-                                    for choice in candidate.get('choices', [])
-                                ],
-                            }
-                            for candidate in resp.get('candidate_responses', [])
-                        ]
-                        # Remove from resp to avoid duplication
-                        resp.pop('candidate_responses', None)
+                if critic_metadata is not None:
+                    _d['critic_results'] = critic_metadata
 
                 # if non-native function calling, save messages/response separately
                 if mock_function_calling:
@@ -586,15 +553,22 @@ class LLM(RetryMixin, DebugMixin):
         """
         return self._function_calling_active
 
-    def _post_completion(self, response: ModelResponse) -> float:
-        """Post-process the completion response.
+    def _update_metrics_for_single_completion(self, response: ModelResponse) -> float:
+        """Post-process a single completion response.
 
         Logs the cost and usage stats of the completion call.
+        Returns the cost of the completion.
         """
         try:
             cur_cost = self._completion_cost(response)
         except Exception:
             cur_cost = 0
+            # Log the error if cost calculation fails for a single response
+            response_id = response.get('id', 'unknown')
+            logger.warning(
+                f'Could not calculate cost for response_id: {response_id}',
+                exc_info=True,
+            )
 
         stats = ''
         if self.cost_metric_supported:
@@ -605,6 +579,9 @@ class LLM(RetryMixin, DebugMixin):
             )
 
         # Add latency to stats if available
+        # Assuming latency is tracked elsewhere and added to metrics before this call
+        # If processing a list, latency might need different handling (e.g., average, total)
+        # For simplicity, we'll log latency based on the latest entry if available
         if self.metrics.response_latencies:
             latest_latency = self.metrics.response_latencies[-1]
             stats += 'Response Latency: %.3f seconds\n' % latest_latency.latency
@@ -658,11 +635,32 @@ class LLM(RetryMixin, DebugMixin):
                 response_id=response_id,
             )
 
-        # log the stats
+        # log the stats for this single response
         if stats:
-            logger.debug(stats)
+            logger.debug(f'Stats for response_id {response_id}:\n{stats}')
 
         return cur_cost
+
+    def _update_metrics(self, llm_responses_for_metrics: list[ModelResponse]) -> float:
+        """Post-process the completion response(s).
+
+        Logs the cost and usage stats for single or multiple completion calls.
+        Returns the total cost.
+        """
+        assert len(llm_responses_for_metrics) > 0, 'expected at least one response'
+        total_cost = 0.0
+        logger.debug(f'Processing {len(llm_responses_for_metrics)} responses.')
+        for i, resp in enumerate(llm_responses_for_metrics):
+            # Process each response individually
+            cost = self._update_metrics_for_single_completion(resp)
+            total_cost += cost
+            logger.debug(
+                f'Processed response {i+1}/{len(llm_responses_for_metrics)}. Cost: {cost:.4f} USD. Accumulated total: {total_cost:.4f} USD'
+            )
+        logger.debug(
+            f'Finished processing list of {len(llm_responses_for_metrics)} responses. Total cost: {total_cost:.4f} USD.'
+        )
+        return total_cost
 
     def get_token_count(self, messages: list[dict] | list[Message]) -> int:
         """Get the number of tokens in a list of messages. Use dicts for better token counting.
@@ -807,3 +805,97 @@ class LLM(RetryMixin, DebugMixin):
 
         # let pydantic handle the serialization
         return [message.model_dump() for message in messages]
+
+    def handle_critic_scoring(
+        self,
+        llm_args: Any,
+        llm_kwargs: Any,
+        mock_function_calling: bool,
+    ) -> tuple[ModelResponse, dict[str, Any]]:
+        """Handle critic scoring."""
+        assert self.critic is not None, 'critic is not enabled'
+        # Generate multiple candidate responses
+        logger.debug(
+            f'LLM: generating {self.config.critic_num_candidates} candidate responses for critic evaluation'
+        )
+
+        # Add n parameter to generate multiple responses
+        critic_kwargs = copy.deepcopy(llm_kwargs)
+        critic_kwargs['n'] = self.config.critic_num_candidates
+
+        candidate_responses = []
+        candidate_response_messages = []
+        # Setting `n` is the most cost-effective way to generate multiple responses
+        try:
+            resp = self._completion_unwrapped(*llm_args, **critic_kwargs)
+            candidate_responses.append(resp)
+            for response in resp.choices:
+                candidate_response_messages.append(response.message)
+        except litellm.UnsupportedParamsError:
+            logger.debug(
+                'LLM: critic is enabled, but the model does not support n parameter. Fallback to doing single response generation multiple times.'
+            )
+            for _ in range(self.config.critic_num_candidates):
+                candidate_resp = self._completion_unwrapped(*llm_args, **llm_kwargs)
+                candidate_responses.append(candidate_resp)
+                assert len(candidate_resp.choices) == 1, 'Expected 1 choice'
+                for response in candidate_resp.choices:
+                    candidate_response_messages.append(response.message)
+
+        assert (
+            'messages' in llm_kwargs and llm_kwargs['messages'] is not None
+        ), 'expected messages to be provided for critic scoring'
+        messages = llm_kwargs['messages']
+
+        # NOTE: We need to convert all these to non-fncall messages for critic scoring IF we are using function calling
+        if not mock_function_calling:
+            assert (
+                'tools' in llm_kwargs and llm_kwargs['tools'] is not None
+            ), 'expected tools to be provided for critic scoring with function calling'
+            list_of_messages_for_scoring = (
+                convert_fncall_messages_and_candidate_responses_for_critic(
+                    messages,
+                    candidate_response_messages,
+                    tools=llm_kwargs['tools'],
+                )
+            )
+        else:
+            list_of_messages_for_scoring = [
+                copy.deepcopy(messages) + [candidate_response_messages[i]]
+                for i in range(len(candidate_response_messages))
+            ]
+        assert len(list_of_messages_for_scoring) == len(
+            candidate_response_messages
+        ), 'Expected the same number of messages for scoring as candidate responses'
+        # Score the candidate responses
+        logger.debug(
+            f'LLM critic: scoring {len(list_of_messages_for_scoring)} candidate responses'
+        )
+        critic_results = self.critic.evaluate_candidates(list_of_messages_for_scoring)
+
+        # Pick the best response
+        sorted_critic_results = sorted(
+            critic_results, key=lambda x: x[1].last_reward, reverse=True
+        )
+        logger.debug(
+            f'LLM critic first 5 rewards: {[x[1].assistant_rewards[:5] for x in sorted_critic_results]}'
+        )
+        logger.debug(
+            f'LLM critic rewards: {[x[1].last_reward for x in sorted_critic_results]}'
+        )
+        for i, (response_index, critic_result) in enumerate(sorted_critic_results):
+            logger.debug(
+                f'LLM critic response {i+1}; reward: {critic_result.last_reward}'
+            )
+            logger.debug(
+                f'Response content: {candidate_responses[response_index].choices[0].message.content}\n'
+            )
+
+        best_response_index, best_response_score = sorted_critic_results[0]
+        resp = candidate_responses[best_response_index]  # use the best response object
+        critic_metadata = {
+            'critic_results': sorted_critic_results,
+            'responses': candidate_responses,
+        }
+
+        return resp, critic_metadata

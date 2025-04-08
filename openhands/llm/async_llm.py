@@ -1,8 +1,6 @@
 import asyncio
-import copy
-import time
 from functools import partial
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable
 
 from litellm import acompletion as litellm_acompletion
 
@@ -13,7 +11,6 @@ from openhands.llm.llm import (
     LLM_RETRY_EXCEPTIONS,
     REASONING_EFFORT_SUPPORTED_MODELS,
 )
-from openhands.llm.critic import LLMCritic
 from openhands.utils.shutdown_listener import should_continue
 
 
@@ -22,6 +19,9 @@ class AsyncLLM(LLM):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
+
+        if self.config.use_critic:
+            raise NotImplementedError('critic is not supported for async LLM')
 
         self._async_completion = partial(
             self._call_acompletion,
@@ -93,37 +93,14 @@ class AsyncLLM(LLM):
             stop_check_task = asyncio.create_task(check_stopped())
 
             try:
-                # Check if critic is enabled
-                if self.critic is not None:
-                    # Generate multiple candidate responses
-                    logger.debug(
-                        f'AsyncLLM: generating {self.config.critic_num_candidates} candidate responses for critic evaluation'
-                    )
-                    
-                    # Generate candidate responses
-                    candidate_responses = []
-                    for _ in range(self.config.critic_num_candidates):
-                        candidate = await async_completion_unwrapped(*args, **kwargs)
-                        candidate_responses.append(candidate)
-                    
-                    # Use critic to select the best response
-                    resp, critic_results = self.critic.evaluate_candidates(messages, candidate_responses)
-                    
-                    # Log critic results
-                    logger.debug(f'AsyncLLM critic results: {critic_results}')
-                    
-                    # Store critic results in the response for logging
-                    resp['critic_results'] = critic_results
-                    resp['candidate_responses'] = candidate_responses
-                else:
-                    # Standard single response generation
-                    resp = await async_completion_unwrapped(*args, **kwargs)
+                # Directly call and await litellm_acompletion
+                resp = await async_completion_unwrapped(*args, **kwargs)
 
                 message_back = resp['choices'][0]['message']['content']
                 self.log_response(message_back)
 
                 # log costs and tokens used
-                self._post_completion(resp)
+                self._update_metrics_for_single_completion(resp)
 
                 # We do not support streaming in this method, thus return resp
                 return resp
