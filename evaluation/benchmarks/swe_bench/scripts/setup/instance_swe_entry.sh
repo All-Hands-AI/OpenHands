@@ -18,16 +18,6 @@ if [[ -z "$item" ]]; then
   exit 1
 fi
 
-# Setup environment and repository
-if [ -f /root/setup_env.sh ]; then
-    chmod +x /root/setup_env.sh
-    /bin/bash -c 'source ~/.bashrc && /root/setup_env.sh'
-fi
-if [ -f /root/setup_repo.sh ]; then
-    chmod +x /root/setup_repo.sh
-    /bin/bash -c 'source ~/.bashrc && /root/setup_repo.sh'
-fi
-
 
 WORKSPACE_NAME=$(echo "$item" | jq -r '(.repo | tostring) + "__" + (.version | tostring) | gsub("/"; "__")')
 
