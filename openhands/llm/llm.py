@@ -2,6 +2,7 @@ import copy
 import os
 import time
 import warnings
+from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from typing import Any, Callable
 
@@ -139,6 +140,9 @@ class LLM(RetryMixin, DebugMixin):
                 logger.warning(
                     'LLM: critic is enabled, but the temperature is less than 0.5. This is not recommended as it may lead to degraded results.'
                 )
+            assert (
+                self.config.critic_num_candidates > 1
+            ), 'Expected at least 2 responses for critic'
             self.critic = LLMCritic(self.config)
 
         # call init_model_info to initialize config.max_output_tokens
@@ -806,6 +810,40 @@ class LLM(RetryMixin, DebugMixin):
         # let pydantic handle the serialization
         return [message.model_dump() for message in messages]
 
+    def _caching_aware_repeated_llm_completion(
+        self, n: int, llm_args: Any, llm_kwargs: Any
+    ) -> list[ModelResponse]:
+        """Call the LLM with the given messages in parallel, respecting caching."""
+        ret_responses = []
+        assert n > 1, 'Expected at least 2 responses for parallel completion'
+
+        # Make the first request separately to make sure prompt is cached
+        _start_time = time.time()
+        candidate_resp = self._completion_unwrapped(*llm_args, **llm_kwargs)
+        ret_responses.append(candidate_resp)
+        logger.debug(
+            f'Made 1st request for LLM completion in {time.time() - _start_time} seconds'
+        )
+
+        # Make the remaining requests in parallel
+        logger.debug(f'Making {n-1} parallel requests for LLM completions')
+        _start_time = time.time()
+        with ThreadPoolExecutor(max_workers=n - 1) as executor:
+            futures = []
+            for _ in range(n - 1):
+                # Submit each candidate message list to the executor for scoring
+                future = executor.submit(
+                    self._completion_unwrapped, *llm_args, **llm_kwargs
+                )
+                futures.append(future)
+            for future in futures:
+                # Get the result from the completed future
+                ret_responses.append(future.result())
+        logger.debug(
+            f'Made {n-1} parallel requests for LLM completions in {time.time() - _start_time} seconds'
+        )
+        return ret_responses
+
     def handle_critic_scoring(
         self,
         llm_args: Any,
@@ -835,12 +873,13 @@ class LLM(RetryMixin, DebugMixin):
             logger.debug(
                 'LLM: critic is enabled, but the model does not support n parameter. Fallback to doing single response generation multiple times.'
             )
-            for _ in range(self.config.critic_num_candidates):
-                candidate_resp = self._completion_unwrapped(*llm_args, **llm_kwargs)
-                candidate_responses.append(candidate_resp)
-                assert len(candidate_resp.choices) == 1, 'Expected 1 choice'
-                for response in candidate_resp.choices:
-                    candidate_response_messages.append(response.message)
+            candidate_responses = self._caching_aware_repeated_llm_completion(
+                self.config.critic_num_candidates, llm_args, llm_kwargs
+            )
+            for response in candidate_responses:
+                candidate_responses.append(response)
+                assert len(response.choices) == 1, 'Expected 1 choice'
+                candidate_response_messages.append(response.choices[0].message)
 
         assert (
             'messages' in llm_kwargs and llm_kwargs['messages'] is not None
