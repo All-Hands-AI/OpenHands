@@ -40,14 +40,13 @@ class MonitoringListener:
         """
         pass
 
-    def on_conversation_created(
+    async def on_conversation_created(
         self,
         user_id: str,
         conversation_id: str,
         has_initial_message: bool = False,
         has_repository: bool = False,
         has_images: bool = False,
-        user_consents_to_analytics: Optional[bool] = None,
     ) -> None:
         """
         Track when a new conversation is created.
@@ -58,21 +57,19 @@ class MonitoringListener:
             has_initial_message: Whether the conversation was created with an initial message
             has_repository: Whether the conversation was created with a repository
             has_images: Whether the conversation was created with images
-            user_consents_to_analytics: Whether the user has consented to analytics
         """
-        # Only track if the user has explicitly consented to analytics
-        if user_consents_to_analytics is True:
-            try:
-                self.user_analytics.track_conversation_created(
-                    user_id,
-                    conversation_id,
-                    has_initial_message,
-                    has_repository,
-                    has_images,
-                )
-            except Exception as e:
-                # Don't let analytics failures affect the application
-                logger.error(f'Error tracking conversation creation: {e}')
+        try:
+            # The UserAnalytics class will check for user consent internally
+            await self.user_analytics.track_conversation_created(
+                user_id,
+                conversation_id,
+                has_initial_message,
+                has_repository,
+                has_images,
+            )
+        except Exception as e:
+            # Don't let analytics failures affect the application
+            logger.error(f'Error tracking conversation creation: {e}')
 
     @classmethod
     def get_instance(
