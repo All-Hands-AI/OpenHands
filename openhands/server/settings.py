@@ -97,7 +97,6 @@ class Settings(BaseModel):
             llm_model=llm_config.model,
             llm_api_key=llm_config.api_key,
             llm_base_url=llm_config.base_url,
-            gitlab_base_url=app_config.gitlab.base_url,
             remote_runtime_resource_factor=app_config.sandbox.remote_runtime_resource_factor,
             provider_tokens={},
         )
