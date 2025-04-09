@@ -14,8 +14,6 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "^3.12"
-datasets = "*"
-pandas = "*"
 litellm = "^1.60.0"
 aiohttp = ">=3.9.0,!=3.11.13"  # Pin to avoid yanked version 3.11.13
 google-generativeai = "*" # To use litellm with Gemini Pro API
@@ -23,7 +21,6 @@ google-api-python-client = "^2.164.0" # For Google Sheets API
 google-auth-httplib2 = "*" # For Google Sheets authentication
 google-auth-oauthlib = "*" # For Google Sheets OAuth
 termcolor = "*"
-seaborn = "*"
 docker = "*"
 fastapi = "*"
 toml = "*"
@@ -39,8 +36,6 @@ jinja2 = "^3.1.3"
 python-multipart = "*"
 boto3 = "*"
 minio = "^7.2.8"
-gevent = "^24.2.1"
-pyarrow = "19.0.1" # transitive dependency, pinned here to avoid conflicts
 tenacity = ">=8.5,<10.0"
 zope-interface = "7.2"
 pathspec = "^0.12.1"
@@ -96,6 +91,7 @@ pytest-xdist = "*"
 openai = "*"
 pandas = "*"
 reportlab = "*"
+gevent = "^24.2.1"
 
 [tool.coverage.run]
 concurrency = ["gevent"]
@@ -149,6 +145,8 @@ browsergym-webarena = "0.13.3"
 browsergym-miniwob = "0.13.3"
 browsergym-visualwebarena = "0.13.3"
 boto3-stubs = {extras = ["s3"], version = "^1.37.19"}
+pyarrow = "19.0.1" # transitive dependency, pinned here to avoid conflicts
+datasets = "*"
 
 [tool.poetry-dynamic-versioning]
 enable = true
