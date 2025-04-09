@@ -33,7 +33,7 @@ class Agent(ABC):
         llm: LLM,
         config: 'AgentConfig',
         mcp_tools: list[dict] | None = None,
-        workspace_mount_path_in_sandbox_store_in_session: bool = False
+        workspace_mount_path_in_sandbox_store_in_session: bool = True
     ):
         self.llm = llm
         self.config = config
