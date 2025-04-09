@@ -1,12 +1,12 @@
-import pytest
 from unittest.mock import patch
+
 from openhands.core.config import LLMConfig
 from openhands.llm.llm import LLM
-from pydantic import SecretStr
+
 
 def test_base_url_protocol_is_fixed_before_request():
     """
-    Test that LLM automatically prepends a protocol to the base_url 
+    Test that LLM automatically prepends a protocol to the base_url
     if it is missing, to prevent httpx.UnsupportedProtocol error.
 
     This avoids runtime crashes when users forget to include 'http://' or 'https://'
@@ -22,15 +22,13 @@ def test_base_url_protocol_is_fixed_before_request():
 
     # Create config with base_url missing protocol
     config = LLMConfig(
-        model="litellm_proxy/test-model",
-        api_key="fake-key",
-        base_url="api.example.com"
+        model='litellm_proxy/test-model', api_key='fake-key', base_url='api.example.com'
     )
 
     # Patch httpx.get to intercept the actual request
-    with patch("httpx.get") as mock_get:
+    with patch('httpx.get') as mock_get:
         mock_get.return_value.status_code = 200
-        mock_get.return_value.json.return_value = {"model": "mock"}
+        mock_get.return_value.json.return_value = {'model': 'mock'}
 
         llm = LLM(config=config)
 
@@ -39,6 +37,6 @@ def test_base_url_protocol_is_fixed_before_request():
 
         # Extract the requested URL and assert protocol is included
         called_url = mock_get.call_args[0][0]
-        print("Final URL used:", called_url)
+        print('Final URL used:', called_url)
 
-        assert called_url.startswith("http://") or called_url.startswith("https://")
+        assert called_url.startswith('http://') or called_url.startswith('https://')

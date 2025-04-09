@@ -685,20 +685,20 @@ function scanDirectoryForUnlocalizedStrings(dirPath) {
 try {
   const srcPath = path.resolve(__dirname, '../src');
   console.log('Checking for unlocalized strings in frontend code...');
-  
+
   // Get unlocalized strings using the AST scanner
   const results = scanDirectoryForUnlocalizedStrings(srcPath);
-  
+
   // If we found any unlocalized strings, format them for output and exit with error
   if (results.size > 0) {
     const formattedResults = Array.from(results.entries())
       .map(([file, strings]) => `\n${file}:\n  ${strings.join('\n  ')}`)
       .join('\n');
-    
+
     console.error(`Error: Found unlocalized strings in the following files:${formattedResults}`);
     process.exit(1);
   }
-  
+
   console.log('✅ No unlocalized strings found in frontend code.');
   process.exit(0);
 } catch (error) {
