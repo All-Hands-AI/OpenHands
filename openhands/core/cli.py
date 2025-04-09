@@ -687,23 +687,33 @@ async def main(loop: asyncio.AbstractEventLoop):
     usage_metrics = UsageMetrics()
 
     async def prompt_for_next_task():
-        next_message = await read_prompt_input(config.cli_multiline_input)
-        if not next_message.strip():
-            await prompt_for_next_task()
-        if next_message == '/exit':
-            event_stream.add_event(
-                ChangeAgentStateAction(AgentState.STOPPED), EventSource.ENVIRONMENT
-            )
-            shutdown(usage_metrics, sid)
+        while True:
+            next_message = await read_prompt_input(config.cli_multiline_input)
+
+            if not next_message.strip():
+                continue
+
+            if next_message == '/exit':
+                event_stream.add_event(
+                    ChangeAgentStateAction(AgentState.STOPPED), EventSource.ENVIRONMENT
+                )
+                shutdown(usage_metrics, sid)
+                return
+            elif next_message == '/help':
+                display_help()
+                continue
+            elif next_message == '/init':
+                if config.runtime == 'local':
+                    await init_repository(current_dir)
+                else:
+                    print_formatted_text(
+                        '\nRepository initialization through the CLI is only supported for local runtime.\n'
+                    )
+                continue
+
+            action = MessageAction(content=next_message)
+            event_stream.add_event(action, EventSource.USER)
             return
-        if next_message == '/help':
-            display_help()
-            await prompt_for_next_task()
-        if next_message == '/init':
-            await init_repository(current_dir)
-            await prompt_for_next_task()
-        action = MessageAction(content=next_message)
-        event_stream.add_event(action, EventSource.USER)
 
     async def on_event_async(event: Event):
         display_event(event, config)
