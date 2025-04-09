@@ -3,7 +3,7 @@ import {
   Orientation,
   ResizablePanel,
 } from "#/components/layout/resizable-panel";
-import DistillComputer from "#/components/layout/RightSideContent";
+import ThesisComputer from "#/components/layout/RightSideContent";
 import Security from "#/components/shared/modals/security/security";
 import {
   ConversationProvider,
@@ -118,12 +118,56 @@ function AppContent() {
         secondChild={
           <Container className="h-full mt-4 rounded-xl !mb-4">
             <div className="flex flex-col h-full">
-              <DistillComputer />
+              <ThesisComputer />
             </div>
           </Container>
         }
       />
     );
+  }
+
+  {
+    /* <Container
+            className="h-full mt-4 rounded-xl !mb-4"
+            labels={[
+              {
+                label: t(I18nKey.WORKSPACE$TITLE),
+                to: "",
+                icon: <CodeIcon />,
+              },
+              // { label: "Jupyter", to: "jupyter", icon: <ListIcon /> },
+              // {
+              //   label: <ServedAppLabel />,
+              //   to: "served",
+              //   icon: <FaServer />,
+              // },
+              {
+                label: <TerminalStatusLabel />,
+                to: "terminal",
+                icon: <TerminalIcon />,
+              },
+              {
+                label: (
+                  <div className="flex items-center gap-1">
+                    {t(I18nKey.BROWSER$TITLE)}
+                  </div>
+                ),
+                to: "browser",
+                icon: <GlobeIcon />,
+              },
+            ]}
+          >
+            <div className="flex flex-col h-full">
+              <FilesProvider>
+                <Outlet />
+              </FilesProvider>
+
+              <Controls
+                setSecurityOpen={onSecurityModalOpen}
+                showSecurityLock={!!settings?.SECURITY_ANALYZER}
+              />
+            </div>
+          </Container> */
   }
 
   return (

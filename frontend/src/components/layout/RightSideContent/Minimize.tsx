@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { ExpandAltOutlined } from "@ant-design/icons";
 import {
   toggleViewDistillComputer,

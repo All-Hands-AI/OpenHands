@@ -1,13 +1,12 @@
 import {
-  Check,
-  ChevronDown,
-  ChevronUp,
-  CircleDashed,
-  Clock,
-} from "lucide-react";
-import parseJson from "parse-json";
+  LuCheck,
+  LuChevronDown,
+  LuChevronUp,
+  LuCircleDashed,
+  LuClock,
+} from "react-icons/lu";
+// import parseJson from "parse-json";
 import { useState } from "react";
-import { useDistillComputerStore } from "~/core/store";
 
 const STEP_STATUSES = {
   COMPLETED: "completed",
@@ -17,18 +16,19 @@ const STEP_STATUSES = {
 
 const TaskProgress = () => {
   const [isFinalizeCollapsed, setIsFinalizeCollapsed] = useState(true);
-  const tasksProgress = useDistillComputerStore((state) => state.tasksProgress);
+  const tasksProgress = {};
 
   const mapStatusToIcon = {
-    [STEP_STATUSES.COMPLETED]: <Check color="#008000" width={18} />,
+    [STEP_STATUSES.COMPLETED]: <LuCheck color="#008000" width={18} />,
     [STEP_STATUSES.IN_PROGRESS]: (
-      <CircleDashed className="animate-spin" width={18} />
+      <LuCircleDashed className="animate-spin" width={18} />
     ),
-    [STEP_STATUSES.NOT_STARTED]: <Clock width={18} />,
+    [STEP_STATUSES.NOT_STARTED]: <LuClock width={18} />,
   } as any;
 
   const taskProgressContent =
-    tasksProgress?.content && parseJson(tasksProgress.content);
+    // @ts-ignore
+    tasksProgress?.content && JSON.parse(tasksProgress.content);
 
   const taskSteps = taskProgressContent?.steps;
   const taskStatus = taskProgressContent?.step_statuses;
@@ -59,9 +59,9 @@ const TaskProgress = () => {
         <div className="flex w-full items-start justify-between">
           <div className="animate-slide-up flex gap-2 transition-all duration-300">
             {!!isTaskInProgress ? (
-              <CircleDashed className="animate-spin" width={18} />
+              <LuCircleDashed className="animate-spin" width={18} />
             ) : (
-              <Check color="#008000" width={18} />
+              <LuCheck color="#008000" width={18} />
             )}
             <div className="flex max-w-[500px] flex-col">
               <span className="text-mercury-950 text-14 truncate font-semibold">
@@ -84,7 +84,7 @@ const TaskProgress = () => {
                 : taskStatus?.length}
               /{taskStatus?.length}
             </span>
-            <ChevronUp className="h-5 w-5" />
+            <LuChevronUp className="h-5 w-5" />
           </div>
         </div>
       ) : (
@@ -105,7 +105,7 @@ const TaskProgress = () => {
                   : taskStatus?.length}
                 /{taskStatus?.length}
               </span>
-              <ChevronDown className="h-5 w-5" />
+              <LuChevronDown className="h-5 w-5" />
             </div>
           </div>
           <div className="max-h-[min(calc(100vh-200px),400px)] overflow-y-auto">

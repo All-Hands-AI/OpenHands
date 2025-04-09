@@ -1,15 +1,16 @@
+// @ts-nocheck
 import { setCurrentAgentState } from "#/state/agent-slice";
-import { setUrl, setScreenshotSrc } from "#/state/browser-slice";
-import store from "#/store";
-import { ObservationMessage } from "#/types/message";
-import { AgentState } from "#/types/agent-state";
-import { appendOutput } from "#/state/command-slice";
-import { appendJupyterOutput } from "#/state/jupyter-slice";
-import ObservationType from "#/types/observation-type";
+import { setScreenshotSrc, setUrl } from "#/state/browser-slice";
 import {
   addAssistantMessage,
   addAssistantObservation,
 } from "#/state/chat-slice";
+import { appendOutput } from "#/state/command-slice";
+import { appendJupyterOutput } from "#/state/jupyter-slice";
+import store from "#/store";
+import { AgentState } from "#/types/agent-state";
+import { ObservationMessage } from "#/types/message";
+import ObservationType from "#/types/observation-type";
 
 export function handleObservationMessage(message: ObservationMessage) {
   switch (message.observation) {
@@ -244,7 +245,7 @@ export function handleObservationMessage(message: ObservationMessage) {
             },
           }),
         );
-        break
+        break;
       case "error":
         store.dispatch(
           addAssistantObservation({

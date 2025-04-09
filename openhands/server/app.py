@@ -37,9 +37,12 @@ async def _lifespan(app: FastAPI):
         # Connect to database
         await database.connect()
 
+        logger.info('database connected')
+
         # Initialize database connection
         await init(engine)
         await init_initial_data()
+        logger.info('init engine connected')
 
         # Start conversation manager
         async with conversation_manager:
