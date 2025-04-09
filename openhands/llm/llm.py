@@ -873,10 +873,10 @@ class LLM(RetryMixin, DebugMixin):
             logger.debug(
                 'LLM: critic is enabled, but the model does not support n parameter. Fallback to doing single response generation multiple times.'
             )
-            candidate_responses = self._caching_aware_repeated_llm_completion(
+            _candidate_responses = self._caching_aware_repeated_llm_completion(
                 self.config.critic_num_candidates, llm_args, llm_kwargs
             )
-            for response in candidate_responses:
+            for response in _candidate_responses:
                 candidate_responses.append(response)
                 assert len(response.choices) == 1, 'Expected 1 choice'
                 candidate_response_messages.append(response.choices[0].message)
