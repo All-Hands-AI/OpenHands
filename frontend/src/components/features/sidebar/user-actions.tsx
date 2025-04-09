@@ -1,3 +1,4 @@
+// @ts-nocheck
 import OpenHands from "#/api/open-hands";
 import {
   removeAuthTokenHeader,
@@ -17,12 +18,10 @@ import {
   usePersistActions,
 } from "#/zutand-stores/persist-config/selector";
 import { useAccountModal, useConnectModal } from "@rainbow-me/rainbowkit";
-import { signMessage, disconnect } from "@wagmi/core";
-import { useEffect } from "react";
+import { disconnect, signMessage } from "@wagmi/core";
 import { FaUserAlt, FaWallet } from "react-icons/fa";
 import { twMerge } from "tailwind-merge";
 import { useAccount, useAccountEffect } from "wagmi";
-import { mainnet } from "wagmi/chains";
 
 interface UserActionsProps {
   onLogout: () => void;

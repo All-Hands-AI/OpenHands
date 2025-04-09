@@ -19,11 +19,17 @@ export default {
         "tertiary-light": "#B7BDC2", // lighter gray, used for borders and placeholder text
         content: "#ECEDEE", // light gray, used mostly for text
         "content-2": "#F9FBFE",
-        "gray-100": "#1E1E1F",
-        "gray-200": "#232521",
-        "gray-300": "#0F0F0F",
-        "gray-400": "#19191A",
-        "gray-500": "#171717",
+        gray: {
+          100: "#1E1E1F",
+          200: "#232521",
+          300: "#0F0F0F",
+          400: "#19191A",
+          500: "#171717",
+        },
+        neutral: {
+          1: "#292929",
+          2: "#979995",
+        },
         "sea-stone": {
           900: "#181A17",
         },
