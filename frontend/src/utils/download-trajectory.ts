@@ -26,8 +26,9 @@ export async function downloadTrajectory(
           accept: {
             "application/json": [".json"],
           },
-        ],
-      };
+        },
+      ],
+    };
 
     const fileHandle = await window.showSaveFilePicker(options);
     const writable = await fileHandle.createWritable();
