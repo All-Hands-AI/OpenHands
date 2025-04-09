@@ -3,3 +3,8 @@ export interface TaskItem {
   title: string;
   description: string;
 }
+
+export interface RepositoryTaskGroup {
+  title: string;
+  tasks: TaskItem[];
+}

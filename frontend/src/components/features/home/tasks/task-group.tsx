@@ -1,4 +1,5 @@
 import { TaskCard } from "./task-card";
+import { TaskItemTitle } from "./task-item-title";
 import { TaskItem } from "./task.types";
 
 interface TaskGroupProps {
@@ -9,9 +10,7 @@ interface TaskGroupProps {
 export function TaskGroup({ title, tasks }: TaskGroupProps) {
   return (
     <div className="text-content-2">
-      <div className="py-3 border-b-1 border-[#717888]">
-        <h3 className="text-[16px] leading-6 font-[500]">{title}</h3>
-      </div>
+      <TaskItemTitle>{title}</TaskItemTitle>
 
       <ul className="text-sm">
         {tasks.map((task) => (
