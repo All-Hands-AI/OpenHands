@@ -1,6 +1,7 @@
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { HeroHeading } from "#/components/shared/hero-heading";
 import { TaskForm } from "#/components/shared/task-form";
+import { UseCaseList } from "#/components/shared/use-case-list";
 // import { useConfig } from "#/hooks/query/use-config";
 // import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useSettings } from "#/hooks/query/use-settings";
@@ -60,6 +61,10 @@ function Home() {
             </div>
           )}
         </div>
+        <div className="text-tertiary font-semibold text-[16px] mt-8 md:mt-10 text-left w-full">
+          Try our use case
+        </div>
+        <UseCaseList />
 
         {/* <div className="flex gap-4 w-full flex-col md:flex-row mt-8">
           <GitHubRepositoriesSuggestionBox

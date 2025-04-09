@@ -116,6 +116,7 @@ export function ChatInput({
       className="flex items-end justify-end grow gap-1 min-h-6 w-full"
     >
       <TextareaAutosize
+        disabled={disabled}
         ref={textareaRef}
         name={name}
         placeholder={t(I18nKey.SUGGESTIONS$WHAT_TO_BUILD)}

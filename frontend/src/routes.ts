@@ -19,5 +19,16 @@ export default [
       route("terminal", "routes/_oh.app.terminal.tsx"),
       route("served", "routes/app.tsx"),
     ]),
+    route(
+      "shares/conversations/:conversationId",
+      "routes/_oh.share.app/route.tsx",
+      [
+        index("routes/_oh.share.app._index/route.tsx"),
+        route("browser", "routes/nested-share-routes/_oh.app.browser.tsx"),
+        route("jupyter", "routes/nested-share-routes/_oh.app.jupyter.tsx"),
+        route("terminal", "routes/nested-share-routes/_oh.app.terminal.tsx"),
+        // route("served", "routes/app.tsx"),
+      ],
+    ),
   ]),
 ] satisfies RouteConfig;

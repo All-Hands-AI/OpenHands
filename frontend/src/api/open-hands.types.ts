@@ -55,6 +55,8 @@ export interface GetConfigResponse {
   };
 }
 
+export type GetUseCasesItemResponse = any;
+
 export interface GetVSCodeUrlResponse {
   vscode_url: string | null;
   error?: string;

@@ -117,3 +117,5 @@ export function reduceString(
     ? `${str.substring(0, from)}...${str.substring(str.length - end)}`
     : "-";
 }
+
+export const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));

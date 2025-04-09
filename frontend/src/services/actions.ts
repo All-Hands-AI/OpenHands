@@ -155,15 +155,20 @@ export function handleStatusMessage(message: StatusMessage) {
   }
 }
 
+const listMsg: Record<string, unknown>[] = [];
+
 export function handleAssistantMessage(message: Record<string, unknown>) {
   if (message.action) {
     console.log("message-handleAssistantMessage", message);
+    listMsg.push(message);
     handleActionMessage(message as unknown as ActionMessage);
   } else if (message.observation) {
     console.log("message-handleObservationMessage", message);
+    listMsg.push(message);
     handleObservationMessage(message as unknown as ObservationMessage);
   } else if (message.status_update) {
     console.log("message-handleStatusMessage", message);
+    listMsg.push(message);
     handleStatusMessage(message as unknown as StatusMessage);
   } else {
     const errorMsg = "Unknown message type received";
@@ -178,4 +183,6 @@ export function handleAssistantMessage(message: Record<string, unknown>) {
       }),
     );
   }
+
+  console.log("listMsg", listMsg);
 }
