@@ -37,6 +37,9 @@ enum ObservationType {
 
   // A no-op observation
   NULL = "null",
+
+  // error message
+  ERROR = "error",
 }
 
 export default ObservationType;

@@ -20,7 +20,7 @@ export function BrowserPanel({ computerItem }: { computerItem: any }) {
 
   return (
     <div className="h-full w-full flex flex-col text-neutral-400 rounded">
-      <div className="w-full p-3 bg-gray-400 truncate border-b border-gray-200 rounded-t-lg">
+      <div className="w-full p-3 bg-neutral-800 truncate border-b border-gray-200 rounded-t-lg">
         {browserUrl}
       </div>
       <div className="overflow-y-auto grow scrollbar-hide rounded-xl">

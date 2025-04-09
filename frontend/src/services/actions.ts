@@ -21,6 +21,7 @@ import { handleObservationMessage } from "./observations";
 import { appendInput } from "#/state/command-slice";
 import { setComputerList } from "#/state/computer-slice";
 import { list } from "postcss";
+import ObservationType from "#/types/observation-type";
 
 const messageActions = {
   [ActionType.BROWSE]: (message: ActionMessage) => {
@@ -164,7 +165,7 @@ export function handleAssistantMessage(message: Record<string, unknown>) {
     // TODO: check type browse_interactive of observation
     message.source === "agent" &&
     message.observation &&
-    !["agent_state_changed"].includes(message.observation as string)
+    ![ObservationType.AGENT_STATE_CHANGED, ObservationType.ERROR].includes(message.observation as ObservationType)
   ) {
     store.dispatch(setComputerList(message));
   }

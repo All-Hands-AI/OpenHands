@@ -10,6 +10,7 @@ import Markdown, { Components } from "react-markdown";
 import { useSelector } from "react-redux";
 import EditorContent from "./EditorContent";
 import TaskProgress from "./TaskProgress";
+import CodeView from "./CodeView";
 
 const EditorNotification = () => {
   return (
@@ -116,6 +117,8 @@ const ThesisComputer = () => {
       .join(" ");
   };
 
+  console.log('computerList', computerList)
+
   const renderToolCalls = (toolCalls: any) => {
     const nameValue = toolCalls?.function?.name;
     const results = toolCalls?.results;
@@ -191,16 +194,17 @@ const ThesisComputer = () => {
                 return <BrowserPanel computerItem={computerItem} />;
               }
 
-              if (computerItem.observation === ObservationType.RUN) {
+              if ([ObservationType.RUN].includes(computerItem.observation)) {
                 return <TerminalPage />;
+              }
+
+              if (computerItem.observation === ObservationType.RUN_IPYTHON) {
+                return <CodeView fileContent={computerItem.extras.code} />;
               }
 
               return <div />;
             })}
           <div ref={scrollRef} />
-          {/* TODO: check render section later */}
-          {/* <TerminalPage /> */}
-          {/* <Files /> */}
         </div>
 
         <div className="border-t-neutral-2 flex h-11 w-full items-center gap-2 rounded-b-2xl border-t bg-white px-4">
