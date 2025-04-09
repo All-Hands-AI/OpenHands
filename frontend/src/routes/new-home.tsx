@@ -3,7 +3,7 @@ import { BrandButton } from "#/components/features/settings/brand-button";
 
 function RepoConnector() {
   return (
-    <section className="flex-1">
+    <section className="w-full">
       <h2 className="heading">Connect to a Repository</h2>
       <select aria-label="Select a Repo">
         <option>Select a Repo</option>
@@ -60,13 +60,13 @@ function HomeScreen() {
   return (
     <div
       data-testid="home-screen"
-      className="bg-base-secondary h-full rounded-xl p-[42px]"
+      className="bg-base-secondary h-full flex flex-col rounded-xl p-[42px] gap-8"
     >
       <HomeHeader />
 
       <hr className="border-[#717888]" />
 
-      <main className="flex justify-between">
+      <main className="flex justify-between overflow-y-auto">
         <RepoConnector />
         <TaskSuggestions />
       </main>

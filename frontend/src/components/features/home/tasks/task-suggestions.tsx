@@ -10,10 +10,10 @@ export function TaskSuggestions() {
   });
 
   return (
-    <section className="flex-1">
+    <section className="flex flex-col w-full">
       <h2 className="heading">Suggested Tasks</h2>
 
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-6 overflow-y-auto">
         {suggestedTasks?.length === 0 && <NoSuggestedTasksMessage />}
         {suggestedTasks?.map((taskGroup, index) => (
           <TaskGroup
