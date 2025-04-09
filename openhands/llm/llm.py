@@ -34,6 +34,15 @@ from openhands.llm.fn_call_converter import (
 )
 from openhands.llm.metrics import Metrics
 from openhands.llm.retry_mixin import RetryMixin
+from traceloop.sdk.decorators import workflow
+from opentelemetry import trace
+from traceloop.sdk import Traceloop
+
+
+if os.getenv('TRACELOOP_BASE_URL'):
+    Traceloop.init(
+        disable_batch=True
+    )
 
 __all__ = ['LLM']
 
@@ -99,6 +108,8 @@ class LLM(RetryMixin, DebugMixin):
         config: LLMConfig,
         metrics: Metrics | None = None,
         retry_listener: Callable[[int, int], None] | None = None,
+        session_id: str | None = None,
+        user_id: str | None = None,
     ):
         """Initializes the LLM. If LLMConfig is passed, its values will be the fallback.
 
@@ -108,12 +119,20 @@ class LLM(RetryMixin, DebugMixin):
             config: The LLM configuration.
             metrics: The metrics to use.
         """
+        if session_id and user_id:
+            Traceloop.set_association_properties({
+                'session_id': session_id,
+                'user_id': user_id
+            })
         self._tried_model_info = False
         self.metrics: Metrics = (
             metrics if metrics is not None else Metrics(model_name=config.model)
         )
         self.cost_metric_supported: bool = True
         self.config: LLMConfig = copy.deepcopy(config)
+        # Store session_id and user_id as instance attributes
+        self.session_id = session_id
+        self.user_id = user_id
 
         self.model_info: ModelInfo | None = None
         self.retry_listener = retry_listener
@@ -178,6 +197,7 @@ class LLM(RetryMixin, DebugMixin):
 
         self._completion_unwrapped = self._completion
 
+        @workflow(name='llm_completion')
         @self.retry_decorator(
             num_retries=self.config.num_retries,
             retry_exceptions=LLM_RETRY_EXCEPTIONS,
@@ -192,6 +212,16 @@ class LLM(RetryMixin, DebugMixin):
 
             messages: list[dict[str, Any]] | dict[str, Any] = []
             mock_function_calling = not self.is_function_calling_active()
+
+            # Add session_id and user_id as span attributes if they exist
+            try:
+                span = trace.get_current_span()
+                if self.session_id:
+                    span.set_attribute("session_id", self.session_id)
+                if self.user_id:
+                    span.set_attribute("user_id", self.user_id)
+            except Exception:
+                pass
 
             # some callers might send the model and messages directly
             # litellm allows positional args, like completion(model, messages, **kwargs)
@@ -315,6 +345,24 @@ class LLM(RetryMixin, DebugMixin):
 
             # post-process the response first to calculate cost
             cost = self._post_completion(resp)
+            if cost and resp.get('usage'):
+                try:
+                    resp['usage']['cost'] = cost
+                    span.set_attribute("llm.cost", cost)
+                except Exception:
+                    pass
+
+            # Add cost and token usage to the current span
+            usage = resp.get('usage')
+            if usage:
+                try:
+                    span = trace.get_current_span()
+                    prompt_tokens = usage.get('prompt_tokens', 0)
+                    completion_tokens = usage.get('completion_tokens', 0)
+                    span.set_attribute("llm.usage.prompt_tokens", prompt_tokens)
+                    span.set_attribute("llm.usage.completion_tokens", completion_tokens)
+                except Exception:
+                    pass
 
             # log for evals or other scripts that need the raw completion
             if self.config.log_completions:

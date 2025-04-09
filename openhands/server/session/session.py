@@ -177,6 +177,8 @@ class Session:
         return LLM(
             config=self.config.get_llm_config_from_agent(agent_name),
             retry_listener=self._notify_on_llm_retry,
+            session_id=self.sid,
+            user_id=self.user_id,
         )
 
     def _notify_on_llm_retry(self, retries: int, max: int) -> None:
