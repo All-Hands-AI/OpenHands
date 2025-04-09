@@ -2,6 +2,7 @@ import os
 import re
 import tempfile
 from abc import ABC, abstractmethod
+from difflib import SequenceMatcher
 from typing import Any
 
 from openhands_aci.utils.diff import get_diff  # type: ignore
@@ -387,6 +388,171 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
                 return res
         return None
 
+    def _match_but_for_leading_whitespace(
+        self, whole_lines: list[str], part_lines: list[str]
+    ) -> str | None:
+        """Checks if part_lines matches whole_lines ignoring consistent leading whitespace.
+
+        Returns the common leading whitespace if they match, otherwise None.
+        Adapted from Aider.
+        """
+        num = len(whole_lines)
+        if len(part_lines) != num:
+            return None
+
+        # Check if the content matches after stripping leading whitespace
+        if not all(
+            whole_lines[i].lstrip() == part_lines[i].lstrip() for i in range(num)
+        ):
+            return None
+
+        # Check if the leading whitespace difference is consistent
+        leading_diffs = set()
+        for i in range(num):
+            if whole_lines[i].strip():  # Only consider lines with content
+                whole_lead = whole_lines[i][
+                    : len(whole_lines[i]) - len(whole_lines[i].lstrip())
+                ]
+                part_lead = part_lines[i][
+                    : len(part_lines[i]) - len(part_lines[i].lstrip())
+                ]
+                # Ensure part line's leading whitespace is a prefix of whole line's
+                if not whole_lead.startswith(part_lead):
+                    return None
+                leading_diffs.add(whole_lead[len(part_lead) :])
+
+        if len(leading_diffs) > 1:
+            # Inconsistent leading whitespace difference
+            return None
+        elif len(leading_diffs) == 1:
+            # Consistent difference found
+            return leading_diffs.pop()
+        else:
+            # No difference, or only whitespace lines
+            # Check if any part line had *more* whitespace than the whole line (invalid)
+            for i in range(num):
+                if whole_lines[i].strip():
+                    whole_lead_len = len(whole_lines[i]) - len(whole_lines[i].lstrip())
+                    part_lead_len = len(part_lines[i]) - len(part_lines[i].lstrip())
+                    if part_lead_len > whole_lead_len:
+                        return None
+            # If we passed the check above, it means the leading whitespace is identical or only differs on empty lines
+            return ''
+
+    def _whitespace_flexible_replace(
+        self, whole_lines: list[str], part_lines: list[str], replace_lines: list[str]
+    ) -> str | None:
+        """Attempts to find part_lines in whole_lines ignoring consistent leading whitespace.
+        Adapted from Aider.
+        """
+        num_part_lines = len(part_lines)
+        if not num_part_lines:
+            return None
+
+        for i in range(len(whole_lines) - num_part_lines + 1):
+            chunk_to_check = whole_lines[i : i + num_part_lines]
+            common_leading_whitespace = self._match_but_for_leading_whitespace(
+                chunk_to_check, part_lines
+            )
+
+            if common_leading_whitespace is not None:
+                # Match found! Apply the replacement with the correct leading whitespace.
+                adjusted_replace_lines = [
+                    common_leading_whitespace + rline if rline.strip() else rline
+                    for rline in replace_lines
+                ]
+                res_lines = (
+                    whole_lines[:i]
+                    + adjusted_replace_lines
+                    + whole_lines[i + num_part_lines :]
+                )
+                res = ''.join(res_lines)
+                # Ensure trailing newline consistency (similar to _exact_replace)
+                if (
+                    (part_lines and part_lines[-1].endswith('\n'))
+                    or (replace_lines and replace_lines[-1].endswith('\n'))
+                    or (whole_lines and whole_lines[-1].endswith('\n'))
+                ):
+                    if not res.endswith('\n'):
+                        res += '\n'
+                return res
+        return None
+
+    def _find_most_similar_block(
+        self, content: str, search_block: str, context_lines: int = 5
+    ) -> str:
+        """Finds the block in content most similar to search_block.
+        Adapted from Aider's find_similar_lines.
+        """
+        if not search_block.strip() or not content.strip():
+            return ''
+
+        search_lines = search_block.splitlines()
+        content_lines = content.splitlines()
+        search_len = len(search_lines)
+
+        if not search_len or not content_lines:
+            return ''
+
+        best_ratio = 0.0
+        best_match_start = -1
+
+        # Use SequenceMatcher to find the best matching block
+        seq_matcher = SequenceMatcher(None, content_lines, search_lines, autojunk=True)
+        best_match_info = seq_matcher.find_longest_match(
+            0, len(content_lines), 0, search_len
+        )
+
+        # Use get_matching_blocks to find potentially better, slightly shorter matches
+        matching_blocks = seq_matcher.get_matching_blocks()
+        best_ratio = 0.0
+        best_match_start = -1
+        best_match_len = 0
+
+        for block in matching_blocks:
+            # block = (i, j, n) -> content_lines[i:i+n] == search_lines[j:j+n]
+            # We want the block in content_lines that corresponds to the *longest* match from search_lines
+            # Let's calculate ratio based on the length of the match in *search_lines*
+            current_ratio = block.size / search_len
+            if current_ratio > best_ratio:
+                # Check if this match covers a significant portion of the search block
+                if block.size / search_len > 0.5:  # Heuristic threshold
+                    best_ratio = current_ratio
+                    best_match_start = block.a
+                    best_match_len = block.size
+
+        # Fallback to longest match if ratio-based approach didn't find a good candidate
+        if best_match_start == -1 and best_match_info.size > 0:
+            best_match_start = best_match_info.a
+            best_match_len = best_match_info.size
+            best_ratio = best_match_info.size / search_len
+
+        if best_ratio < 0.3:  # Similarity threshold
+            return ''
+
+        # Extract the best matching block from content_lines
+        best_match_end = (
+            best_match_start + search_len
+        )  # Use original search length for context window size
+
+        # Add context lines, ensuring we don't go out of bounds
+        context_start = max(0, best_match_start - context_lines)
+        context_end = min(len(content_lines), best_match_end + context_lines)
+
+        context_snippet_lines = content_lines[context_start:context_end]
+
+        # Indicate the likely match area within the snippet
+        indicator_prefix = '> '
+        result_lines = []
+        for idx, line in enumerate(context_snippet_lines):
+            actual_line_num = context_start + idx
+            if best_match_start <= actual_line_num < best_match_start + best_match_len:
+                result_lines.append(indicator_prefix + line)
+            else:
+                result_lines.append('  ' + line)
+
+        return '\n'.join(result_lines)
+
     # Fenced diff is adapted from the logic in Aider
     # Copyright Paul Gauthier
     # Licensed under Apache 2.0: http://www.apache.org/licenses/LICENSE-2.0
@@ -471,16 +637,45 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
         if not action.replace_block:
             replace_lines = []
 
+        # Attempt 1: Exact match
         new_content_str = self._exact_replace(
             original_lines, search_lines, replace_lines
         )
 
-        # 4. Handle errors (search_block not found)
+        # Attempt 2: Whitespace flexible match
         if new_content_str is None:
-            # TODO: Optionally implement more flexible matching here (e.g., whitespace)
-            logger.warning(f'Exact search_block not found in {action.path}')
-            error_message = f'Failed to apply fenced diff edit: The specified search_block was not found exactly in {action.path}.\n'
-            error_message += 'SEARCH BLOCK:\n```\n' + action.search_block + '\n```'
+            logger.info(
+                f'Exact match failed for {action.path}, trying whitespace flexible match.'
+            )
+            new_content_str = self._whitespace_flexible_replace(
+                original_lines, search_lines, replace_lines
+            )
+
+        # 4. Handle errors (search_block not found by either method)
+        if new_content_str is None:
+            logger.warning(
+                f'Exact and whitespace-flexible search_block match failed for {action.path}'
+            )
+            error_message = (
+                f'Failed to apply fenced diff edit: The specified search_block was not found exactly '
+                f'or with flexible whitespace in {action.path}.\n'
+                'SEARCH BLOCK:\n```\n' + action.search_block + '\n```\n'
+            )
+            # Find and add the most similar block as a hint
+            similar_block = self._find_most_similar_block(
+                original_content, action.search_block
+            )
+            if similar_block:
+                error_message += (
+                    'Did you mean to match something like this block from the file?\n'
+                    '(Lines starting with ">" indicate the potential match area):\n'
+                    '```\n' + similar_block + '\n```\n'
+                )
+            error_message += (
+                'Please ensure the SEARCH block matches the existing code exactly '
+                '(including indentation and whitespace) or uses consistent indentation '
+                'if whitespace differs.'
+            )
             return ErrorObservation(error_message)
 
         # 5. Write modified content back using the interface method
