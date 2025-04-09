@@ -118,7 +118,7 @@ Then you can run the following:
 ./evaluation/benchmarks/visual_swe_bench/scripts/eval_infer.sh $YOUR_OUTPUT_JSONL [instance_id]
 
 # Example
-./evaluation/benchmarks/visual_swe_bench/scripts/eval_infer.sh evaluation/evaluation_outputs/outputs/visual_swe_bench/CodeActAgent/gpt-4-1106-preview_maxiter_50_N_v1.0/output.jsonl
+./evaluation/benchmarks/visual_swe_bench/scripts/eval_infer.sh evaluation/evaluation_outputs/outputs/luolin101__Visual-SWE-bench-test/CodeActAgent/gpt-4-1106-preview_maxiter_50_N_v1.0/output.jsonl
 ```
 
 The script now accepts optional arguments:
