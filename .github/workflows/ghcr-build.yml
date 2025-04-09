@@ -170,7 +170,7 @@ jobs:
         with:
           push: true
           tags: ${{ env.DOCKER_TAGS }}
-          platform: ${{ env.DOCKER_PLATFORM }}
+          platforms: ${{ env.DOCKER_PLATFORM }}
           build-args: ${{ env.DOCKER_BUILD_ARGS }}
           context: containers/runtime
           provenance: false
