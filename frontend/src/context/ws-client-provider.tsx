@@ -131,6 +131,12 @@ export function WsClientProvider({
     if (isOpenHandsEvent(event) && isMessageAction(event)) {
       messageRateHandler.record(new Date().getTime());
     }
+
+    // Debug log for context reorganization
+    if (event.observation === "context_reorganization") {
+      console.log("WebSocket received context_reorganization event:", event);
+    }
+
     setEvents((prevEvents) => [...prevEvents, event]);
     if (!Number.isNaN(parseInt(event.id as string, 10))) {
       lastEventRef.current = event;

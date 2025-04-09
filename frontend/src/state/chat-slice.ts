@@ -7,6 +7,7 @@ import {
   CommandObservation,
   IPythonObservation,
   RecallObservation,
+  ContextReorganizationObservation,
 } from "#/types/core/observations";
 import { OpenHandsAction } from "#/types/core/actions";
 import { OpenHandsEventType } from "#/types/core/base";
@@ -24,6 +25,7 @@ const HANDLED_ACTIONS: OpenHandsEventType[] = [
   "browse_interactive",
   "edit",
   "recall",
+  "context_reorganization",
 ];
 
 function getRiskText(risk: ActionSecurityRisk) {
@@ -198,6 +200,35 @@ export const chatSlice = createSlice({
             content += `\n\n- **${knowledge.name}** (triggered by keyword: ${knowledge.trigger})\n\n\`\`\`\n${knowledge.content}\n\`\`\``;
           }
         }
+
+        const message: Message = {
+          type: "action",
+          sender: "assistant",
+          translationID,
+          eventID: observation.payload.id,
+          content,
+          imageUrls: [],
+          timestamp: new Date().toISOString(),
+          success: true,
+        };
+
+        state.messages.push(message);
+        return; // Skip the normal observation handling below
+      }
+
+      // Special handling for ContextReorganizationObservation - create a new message instead of updating an existing one
+      if (observationID === "context_reorganization") {
+        const contextReorgObs = observation.payload as ContextReorganizationObservation;
+        let content = `**Context Reorganization**\n\n${contextReorgObs.extras.summary || ""}`;
+
+        if (contextReorgObs.extras.files && Array.isArray(contextReorgObs.extras.files) && contextReorgObs.extras.files.length > 0) {
+          content += `\n\n**Files:**`;
+          for (const file of contextReorgObs.extras.files) {
+            content += `\n- ${file.path}${file.view_range ? ` (lines ${file.view_range[0]}-${file.view_range[1]})` : ''}`;
+          }
+        }
+
+        const translationID = `OBSERVATION_MESSAGE$${observationID.toUpperCase()}`;
 
         const message: Message = {
           type: "action",

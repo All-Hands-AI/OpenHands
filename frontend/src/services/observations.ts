@@ -12,6 +12,9 @@ import {
 } from "#/state/chat-slice";
 
 export function handleObservationMessage(message: ObservationMessage) {
+  // Debug log for all observations
+  console.log("Handling observation message:", message.observation, message);
+
   switch (message.observation) {
     case ObservationType.RUN: {
       if (message.extras.hidden) break;
@@ -53,6 +56,10 @@ export function handleObservationMessage(message: ObservationMessage) {
     case ObservationType.NULL:
     case ObservationType.RECALL:
       break; // We don't display the default message for these observations
+    case ObservationType.CONTEXT_REORGANIZATION:
+      console.log("Context reorganization observation detected in switch statement");
+      // We'll handle this in the chat-slice.ts, so don't add a message here
+      break;
     default:
       store.dispatch(addAssistantMessage(message.message));
       break;
@@ -246,6 +253,22 @@ export function handleObservationMessage(message: ObservationMessage) {
             },
           }),
         );
+        break;
+      case "context_reorganization":
+        console.log("Handling context_reorganization observation:", message);
+        store.dispatch(
+          addAssistantObservation({
+            ...baseObservation,
+            observation: "context_reorganization" as const,
+            extras: {
+              summary: String(message.extras.summary || ""),
+              files: Array.isArray(message.extras.files)
+                ? message.extras.files
+                : [],
+            },
+          }),
+        );
+        // We'll let chat-slice.ts handle creating the message with detailed file information
         break;
       default:
         // For any unhandled observation types, just ignore them

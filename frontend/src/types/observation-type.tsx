@@ -34,6 +34,9 @@ enum ObservationType {
 
   // A no-op observation
   NULL = "null",
+
+  // Context reorganization
+  CONTEXT_REORGANIZATION = "context_reorganization",
 }
 
 export default ObservationType;

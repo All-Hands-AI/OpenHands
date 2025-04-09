@@ -15,6 +15,9 @@ from openhands.events.observation.commands import (
     CmdOutputObservation,
     IPythonRunCellObservation,
 )
+from openhands.events.observation.context_reorganization import (
+    ContextReorganizationObservation,
+)
 from openhands.events.observation.delegate import AgentDelegateObservation
 from openhands.events.observation.empty import (
     NullObservation,
@@ -45,6 +48,7 @@ observations = (
     AgentCondensationObservation,
     AgentThinkObservation,
     RecallObservation,
+    ContextReorganizationObservation,
 )
 
 OBSERVATION_TYPE_TO_CLASS = {

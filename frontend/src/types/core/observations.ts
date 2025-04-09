@@ -129,6 +129,17 @@ export interface RecallObservation extends OpenHandsObservationEvent<"recall"> {
   };
 }
 
+export interface ContextReorganizationObservation extends OpenHandsObservationEvent<"context_reorganization"> {
+  source: "agent";
+  extras: {
+    summary: string;
+    files: Array<{
+      path: string;
+      view_range?: [number, number];
+    }>;
+  };
+}
+
 export type OpenHandsObservation =
   | AgentStateChangeObservation
   | AgentThinkObservation
@@ -141,4 +152,5 @@ export type OpenHandsObservation =
   | ReadObservation
   | EditObservation
   | ErrorObservation
-  | RecallObservation;
+  | RecallObservation
+  | ContextReorganizationObservation;
