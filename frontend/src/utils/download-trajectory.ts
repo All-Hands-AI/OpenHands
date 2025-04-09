@@ -13,6 +13,7 @@ export async function downloadTrajectory(
 
   if (!isSaveFilePickerSupported()) {
     // Fallback for browsers that don't support File System Access API (Safari, Firefox)
+    // This method dumps the JSON data right into the download folder
     downloadJSON(jsonData as object, `trajectory-${conversationId}.json`);
     return;
   }
@@ -34,9 +35,9 @@ export async function downloadTrajectory(
     const writable = await fileHandle.createWritable();
     await writable.write(JSON.stringify(data, null, 2));
     await writable.close();
+
   } catch (error) {
-    // If the user cancels the save dialog or any other error occurs,
-    // fall back to the traditional download method
+    // If an error occurs, fall back to the downloadJSON method
     if (error instanceof Error && error.name !== "AbortError") {
       downloadJSON(jsonData as object, `trajectory-${conversationId}.json`);
     }
