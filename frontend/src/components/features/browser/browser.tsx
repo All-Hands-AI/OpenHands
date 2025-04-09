@@ -3,23 +3,28 @@ import { useSelector } from "react-redux";
 import { BrowserSnapshot } from "./browser-snapshot";
 import { EmptyBrowserMessage } from "./empty-browser-message";
 
-export function BrowserPanel() {
+export function BrowserPanel({ computerItem }: { computerItem: any }) {
   const { url, screenshotSrc } = useSelector(
     (state: RootState) => state.browser,
   );
 
+  const { url: browserUrl, screenshot } = computerItem?.extras || {
+    url,
+    screenshot: screenshotSrc,
+  };
+
   const imgSrc =
-    screenshotSrc && screenshotSrc.startsWith("data:image/png;base64,")
-      ? screenshotSrc
-      : `data:image/png;base64,${screenshotSrc || ""}`;
+    screenshot && screenshot.startsWith("data:image/png;base64,")
+      ? screenshot
+      : `data:image/png;base64,${screenshot || ""}`;
 
   return (
     <div className="h-full w-full flex flex-col text-neutral-400 rounded">
       <div className="w-full p-3 bg-gray-400 truncate border-b border-gray-200 rounded-t-lg">
-        {url}
+        {browserUrl}
       </div>
       <div className="overflow-y-auto grow scrollbar-hide rounded-xl">
-        {screenshotSrc ? (
+        {screenshot ? (
           <BrowserSnapshot src={imgSrc} />
         ) : (
           <EmptyBrowserMessage />

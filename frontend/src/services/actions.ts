@@ -159,7 +159,12 @@ export function handleStatusMessage(message: StatusMessage) {
 const listMsg: Record<string, unknown>[] = [];
 
 export function handleAssistantMessage(message: Record<string, unknown>) {
-  if (message.source === "agent" && (message.action || message.observation)) {
+  if (
+    message.source === "agent" &&
+    (message.action || message.observation) &&
+    !["agent_state_changed"].includes(message.observation as string) &&
+    !["browse"].includes(message.action as string)
+  ) {
     store.dispatch(setComputerList(message));
   }
 

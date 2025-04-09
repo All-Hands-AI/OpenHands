@@ -13,6 +13,7 @@ import { useSelector } from "react-redux";
 import EditorContent from "./EditorContent";
 import TaskProgress from "./TaskProgress";
 import Markdown, { Components } from "react-markdown";
+import { BrowserPanel } from "#/components/features/browser/browser";
 
 const EditorNotification = () => {
   return (
@@ -191,6 +192,10 @@ const ThesisComputer = () => {
                 computerItem.observation === ObservationType.READ
               ) {
                 return <EditorContent computerItem={computerItem} />;
+              }
+
+              if (computerItem.observation === ObservationType.BROWSE) {
+                return <BrowserPanel computerItem={computerItem} />;
               }
 
               return <div />;
