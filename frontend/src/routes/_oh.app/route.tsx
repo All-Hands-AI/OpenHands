@@ -1,26 +1,20 @@
-import { Controls } from "#/components/features/controls/controls";
-import { TerminalStatusLabel } from "#/components/features/terminal/terminal-status-label";
 import { Container } from "#/components/layout/container";
 import {
   Orientation,
   ResizablePanel,
 } from "#/components/layout/resizable-panel";
+import ThesisComputer from "#/components/layout/RightSideContent";
 import Security from "#/components/shared/modals/security/security";
 import {
   ConversationProvider,
   useConversation,
 } from "#/context/conversation-context";
-import { FilesProvider } from "#/context/files";
 import { WsClientProvider } from "#/context/ws-client-provider";
 import { useConversationConfig } from "#/hooks/query/use-conversation-config";
 import { useSettings } from "#/hooks/query/use-settings";
 import { useUserConversation } from "#/hooks/query/use-user-conversation";
 import { useEffectOnce } from "#/hooks/use-effect-once";
 import { useEndSession } from "#/hooks/use-end-session";
-import { I18nKey } from "#/i18n/declaration";
-import CodeIcon from "#/icons/code.svg?react";
-import GlobeIcon from "#/icons/globe.svg?react";
-import TerminalIcon from "#/icons/terminal.svg?react";
 import { addUserMessage, clearMessages } from "#/state/chat-slice";
 import { clearTerminal } from "#/state/command-slice";
 import { clearFiles, clearInitialPrompt } from "#/state/initial-query-slice";
@@ -31,7 +25,6 @@ import { useDisclosure } from "@heroui/react";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import { Outlet } from "react-router";
 import { ChatInterface } from "../../components/features/chat/chat-interface";
 import { EventHandler } from "./event-handler";
 
@@ -123,7 +116,18 @@ function AppContent() {
         secondClassName="flex flex-col overflow-hidden"
         firstChild={<ChatInterface />}
         secondChild={
-          <Container
+          <Container className="h-full mt-4 rounded-xl !mb-4">
+            <div className="flex flex-col h-full">
+              <ThesisComputer />
+            </div>
+          </Container>
+        }
+      />
+    );
+  }
+
+  {
+    /* <Container
             className="h-full mt-4 rounded-xl !mb-4"
             labels={[
               {
@@ -163,10 +167,7 @@ function AppContent() {
                 showSecurityLock={!!settings?.SECURITY_ANALYZER}
               />
             </div>
-          </Container>
-        }
-      />
-    );
+          </Container> */
   }
 
   return (

@@ -137,13 +137,14 @@ export default function MainApp() {
         />
       )}
 
-      {config.data?.APP_MODE === "oss" && consentFormIsOpen && (
+      {/* TODO: check this later if need to use */}
+      {/* {config.data?.APP_MODE === "oss" && consentFormIsOpen && (
         <AnalyticsConsentFormModal
           onClose={() => {
             setConsentFormIsOpen(false);
           }}
         />
-      )}
+      )} */}
 
       {config.data?.FEATURE_FLAGS.ENABLE_BILLING &&
         config.data?.APP_MODE === "saas" &&

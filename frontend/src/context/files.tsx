@@ -37,6 +37,7 @@ interface FilesProviderProps {
 function FilesProvider({ children }: FilesProviderProps) {
   const [paths, setPaths] = React.useState<string[]>([]);
   const [files, setFiles] = React.useState<Record<string, string>>({});
+
   const [selectedPath, setSelectedPath] = React.useState<string | null>(null);
 
   const setFileContent = React.useCallback((path: string, content: string) => {

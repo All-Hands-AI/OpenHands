@@ -5,10 +5,11 @@ import { I18nKey } from "#/i18n/declaration";
 export function HeroHeading() {
   const { t } = useTranslation();
   return (
-    <div className="w-[304px] text-center flex flex-col gap-4 items-center py-4">
+    <div className="w-[404px] text-center flex flex-col gap-4 items-center py-4">
       <BuildIt />
       <h1 className="text-[38px] leading-[32px] font-medium -tracking-[0.02em]">
-        {t(I18nKey.LANDING$TITLE)}
+        {/* {t(I18nKey.LANDING$TITLE)} */}
+        From curiosity to clarity!
       </h1>
       <p className="mx-4 text-sm flex flex-col gap-2">
         <span className="text-[#979995]">

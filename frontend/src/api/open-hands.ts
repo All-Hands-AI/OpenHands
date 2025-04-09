@@ -66,8 +66,8 @@ class OpenHands {
     return data;
   }
 
-  static async getUseCases(): Promise<GetUseCasesItemResponse[]> {
-    const { data } = await openHands.get<GetUseCasesItemResponse[]>(
+  static async getUseCases(): Promise<GetUseCasesItemResponse> {
+    const { data } = await openHands.get<GetUseCasesItemResponse>(
       "/api/options/use-cases",
     );
     return data;
