@@ -26,7 +26,7 @@ RUN apt-get update -y \
 
 COPY ./pyproject.toml ./poetry.lock ./
 RUN touch README.md
-RUN export POETRY_CACHE_DIR && poetry install --without evaluation,llama-index --no-root && rm -rf $POETRY_CACHE_DIR
+RUN export POETRY_CACHE_DIR && poetry install --without evaluation --no-root && rm -rf $POETRY_CACHE_DIR
 
 FROM python:3.12.3-slim AS openhands-app
 
@@ -48,7 +48,8 @@ RUN mkdir -p $FILE_STORE_PATH
 RUN mkdir -p $WORKSPACE_BASE
 
 RUN apt-get update -y \
-    && apt-get install -y curl ssh sudo
+    && apt-get install -y curl ssh sudo \
+    && rm -rf /var/lib/apt/lists/*
 
 # Default is 1000, but OSX is often 501
 RUN sed -i 's/^UID_MIN.*/UID_MIN 499/' /etc/login.defs

@@ -1,6 +1,6 @@
 # Commit0 Evaluation with OpenHands
 
-This folder contains the evaluation harness that we built on top of the original [Commit0](https://commit-0.github.io/) ([paper](TBD)).
+This folder contains the evaluation harness that we built on top of the original [Commit0](https://commit-0.github.io/) ([paper](https://arxiv.org/abs/2412.01769v1)).
 
 The evaluation consists of three steps:
 

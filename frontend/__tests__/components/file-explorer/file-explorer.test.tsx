@@ -1,15 +1,12 @@
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "test-utils";
-import { describe, it, expect, vi, Mock, afterEach } from "vitest";
-import toast from "#/utils/toast";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import { AgentState } from "#/types/agent-state";
-import OpenHands from "#/api/open-hands";
 import { FileExplorer } from "#/components/features/file-explorer/file-explorer";
+import { FileService } from "#/api/file-service/file-service.api";
 
-const toastSpy = vi.spyOn(toast, "error");
-const uploadFilesSpy = vi.spyOn(OpenHands, "uploadFiles");
-const getFilesSpy = vi.spyOn(OpenHands, "getFiles");
+const getFilesSpy = vi.spyOn(FileService, "getFiles");
 
 vi.mock("../../services/fileService", async () => ({
   uploadFiles: vi.fn(),
@@ -63,42 +60,5 @@ describe.skip("FileExplorer", () => {
 
     expect(folder1).toBeInTheDocument();
     expect(folder1).not.toBeVisible();
-  });
-
-  it("should upload files", async () => {
-    const user = userEvent.setup();
-    renderFileExplorerWithRunningAgentState();
-
-    const file = new File([""], "file-name");
-    const uploadFileInput = await screen.findByTestId("file-input");
-    await user.upload(uploadFileInput, file);
-
-    // TODO: Improve this test by passing expected argument to `uploadFiles`
-    expect(uploadFilesSpy).toHaveBeenCalledOnce();
-    expect(getFilesSpy).toHaveBeenCalled();
-
-    const file2 = new File([""], "file-name-2");
-    const uploadDirInput = await screen.findByTestId("file-input");
-    await user.upload(uploadDirInput, [file, file2]);
-
-    expect(uploadFilesSpy).toHaveBeenCalledTimes(2);
-    expect(getFilesSpy).toHaveBeenCalled();
-  });
-
-  it("should display an error toast if file upload fails", async () => {
-    (uploadFilesSpy as Mock).mockRejectedValue(new Error());
-    const user = userEvent.setup();
-    renderFileExplorerWithRunningAgentState();
-
-    const uploadFileInput = await screen.findByTestId("file-input");
-    const file = new File([""], "test");
-
-    await user.upload(uploadFileInput, file);
-
-    expect(uploadFilesSpy).rejects.toThrow();
-    expect(toastSpy).toHaveBeenCalledWith(
-      expect.stringContaining("upload-error"),
-      expect.any(String),
-    );
   });
 });

@@ -4,16 +4,17 @@ OpenHands provides a Graphical User Interface (GUI) mode for interacting with th
 
 ## Installation and Setup
 
-1. Follow the instructions in the [Installation](../installation) guide to install OpenHands.
+1. Follow the installation instructions to install OpenHands.
 2. After running the command, access OpenHands at [http://localhost:3000](http://localhost:3000).
 
 ## Interacting with the GUI
 
 ### Initial Setup
 
-1. Upon first launch, you'll see a settings page.
+1. Upon first launch, you'll see a settings popup.
 2. Select an `LLM Provider` and `LLM Model` from the dropdown menus. If the required model does not exist in the list,
-   toggle `Advanced` options and enter it with the correct prefix in the `Custom Model` text box.
+   select `see advanced settings`. Then toggle `Advanced` options and enter it with the correct prefix in the
+   `Custom Model` text box.
 3. Enter the corresponding `API Key` for your chosen provider.
 4. Click `Save Changes` to apply the settings.
 
@@ -21,14 +22,18 @@ OpenHands provides a Graphical User Interface (GUI) mode for interacting with th
 
 OpenHands automatically exports a `GITHUB_TOKEN` to the shell environment if it is available. This can happen in two ways:
 
-- **Local Installation**: The user directly inputs their GitHub token.
+**Local Installation**: The user directly inputs their GitHub token.
 <details>
   <summary>Setting Up a GitHub Token</summary>
+
   1. **Generate a Personal Access Token (PAT)**:
    - On GitHub, go to Settings > Developer Settings > Personal Access Tokens > Tokens (classic).
-   - Click `Generate new token (classic)`.
-   - Required scopes:
+   - **New token (classic)**
+     - Required scopes:
      - `repo` (Full control of private repositories)
+   - **Fine-Grained Tokens**
+     - All Repositories (You can select specific repositories, but this will impact what returns in repo search)
+     - Minimal Permissions ( Select `Meta Data = Read-only` read for search, `Pull Requests = Read and Write` and `Content = Read and Write` for branch creation)
   2. **Enter Token in OpenHands**:
    - Click the Settings button (gear icon).
    - Navigate to the `GitHub Settings` section.
@@ -74,7 +79,7 @@ OpenHands automatically exports a `GITHUB_TOKEN` to the shell environment if it 
      - Check the browser console for any error messages.
 </details>
 
-- **OpenHands Cloud**: The token is obtained through GitHub OAuth authentication.
+**OpenHands Cloud**: The token is obtained through GitHub OAuth authentication.
 
 <details>
   <summary>OAuth Authentication</summary>

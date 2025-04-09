@@ -15,7 +15,7 @@ class MicroAgentMetadata(BaseModel):
     """Metadata for all microagents."""
 
     name: str = 'default'
-    type: MicroAgentType = Field(default=MicroAgentType.KNOWLEDGE)
+    type: MicroAgentType = Field(default=MicroAgentType.REPO_KNOWLEDGE)
     version: str = Field(default='1.0.0')
     agent: str = Field(default='CodeActAgent')
     triggers: list[str] = []  # optional, only exists for knowledge microagents

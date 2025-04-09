@@ -1,8 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { screen } from "@testing-library/react";
 import { renderWithProviders } from "test-utils";
+import { createRoutesStub } from "react-router";
 import { ExpandableMessage } from "#/components/features/chat/expandable-message";
-import { vi } from "vitest"
+import OpenHands from "#/api/open-hands";
 
 vi.mock("react-i18next", async () => {
   const actual = await vi.importActual("react-i18next");
@@ -22,7 +23,7 @@ vi.mock("react-i18next", async () => {
 describe("ExpandableMessage", () => {
   it("should render with neutral border for non-action messages", () => {
     renderWithProviders(<ExpandableMessage message="Hello" type="thought" />);
-    const element = screen.getByText("Hello");
+    const element = screen.getAllByText("Hello")[0];
     const container = element.closest(
       "div.flex.gap-2.items-center.justify-start",
     );
@@ -34,7 +35,7 @@ describe("ExpandableMessage", () => {
     renderWithProviders(
       <ExpandableMessage message="Error occurred" type="error" />,
     );
-    const element = screen.getByText("Error occurred");
+    const element = screen.getAllByText("Error occurred")[0];
     const container = element.closest(
       "div.flex.gap-2.items-center.justify-start",
     );
@@ -48,7 +49,7 @@ describe("ExpandableMessage", () => {
         id="OBSERVATION_MESSAGE$RUN"
         message="Command executed successfully"
         type="action"
-        success={true}
+        success
       />,
     );
     const element = screen.getByText("OBSERVATION_MESSAGE$RUN");
@@ -92,5 +93,32 @@ describe("ExpandableMessage", () => {
     );
     expect(container).toHaveClass("border-neutral-300");
     expect(screen.queryByTestId("status-icon")).not.toBeInTheDocument();
+  });
+
+  it("should render the out of credits message when the user is out of credits", async () => {
+    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    // @ts-expect-error - We only care about the APP_MODE and FEATURE_FLAGS fields
+    getConfigSpy.mockResolvedValue({
+      APP_MODE: "saas",
+      FEATURE_FLAGS: {
+        ENABLE_BILLING: true,
+        HIDE_LLM_SETTINGS: false,
+      },
+    });
+    const RouterStub = createRoutesStub([
+      {
+        Component: () => (
+          <ExpandableMessage
+            id="STATUS$ERROR_LLM_OUT_OF_CREDITS"
+            message=""
+            type=""
+          />
+        ),
+        path: "/",
+      },
+    ]);
+
+    renderWithProviders(<RouterStub />);
+    await screen.findByTestId("out-of-credits");
   });
 });

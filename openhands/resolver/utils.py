@@ -6,8 +6,8 @@ import re
 from enum import Enum
 from typing import Callable
 
+import httpx
 import pandas as pd
-import requests
 
 from openhands.controller.state.state import State
 from openhands.core.logger import get_console_handler
@@ -22,13 +22,13 @@ class Platform(Enum):
     GITLAB = 2
 
 
-def identify_token(token: str, repo: str | None = None) -> Platform:
+def identify_token(token: str, selected_repo: str | None = None) -> Platform:
     """
     Identifies whether a token belongs to GitHub or GitLab.
 
     Parameters:
         token (str): The personal access token to check.
-        repo (str): Repository in format "owner/repo" for GitHub Actions token validation.
+        selected_repo (str): Repository in format "owner/repo" for GitHub Actions token validation.
 
     Returns:
         Platform: "GitHub" if the token is valid for GitHub,
@@ -36,44 +36,43 @@ def identify_token(token: str, repo: str | None = None) -> Platform:
              "Invalid" if the token is not recognized by either.
     """
     # Try GitHub Actions token format (Bearer) with repo endpoint if repo is provided
-    if repo:
-        github_repo_url = f'https://api.github.com/repos/{repo}'
+    if selected_repo:
+        github_repo_url = f'https://api.github.com/repos/{selected_repo}'
         github_bearer_headers = {
             'Authorization': f'Bearer {token}',
             'Accept': 'application/vnd.github+json',
         }
 
         try:
-            github_repo_response = requests.get(
+            github_repo_response = httpx.get(
                 github_repo_url, headers=github_bearer_headers, timeout=5
             )
             if github_repo_response.status_code == 200:
                 return Platform.GITHUB
-        except requests.RequestException as e:
-            print(f'Error connecting to GitHub API (repo check): {e}')
+        except httpx.HTTPError as e:
+            logger.error(f'Error connecting to GitHub API (selected_repo check): {e}')
 
     # Try GitHub PAT format (token)
     github_url = 'https://api.github.com/user'
     github_headers = {'Authorization': f'token {token}'}
 
     try:
-        github_response = requests.get(github_url, headers=github_headers, timeout=5)
+        github_response = httpx.get(github_url, headers=github_headers, timeout=5)
         if github_response.status_code == 200:
             return Platform.GITHUB
-    except requests.RequestException as e:
-        print(f'Error connecting to GitHub API: {e}')
+    except httpx.HTTPError as e:
+        logger.error(f'Error connecting to GitHub API: {e}')
 
     # Try GitLab token
     gitlab_url = 'https://gitlab.com/api/v4/user'
     gitlab_headers = {'Authorization': f'Bearer {token}'}
 
     try:
-        gitlab_response = requests.get(gitlab_url, headers=gitlab_headers, timeout=5)
+        gitlab_response = httpx.get(gitlab_url, headers=gitlab_headers, timeout=5)
         if gitlab_response.status_code == 200:
             return Platform.GITLAB
-    except requests.RequestException as e:
-        print(f'Error connecting to GitLab API: {e}')
-
+    except httpx.HTTPError as e:
+        logger.error(f'Error connecting to GitLab API: {e}')
     return Platform.INVALID
 
 
@@ -128,9 +127,9 @@ def codeact_user_response(
 
 
 def cleanup() -> None:
-    print('Cleaning up child processes...')
+    logger.info('Cleaning up child processes...')
     for process in mp.active_children():
-        print(f'Terminating child process: {process.name}')
+        logger.info(f'Terminating child process: {process.name}')
         process.terminate()
         process.join()
 

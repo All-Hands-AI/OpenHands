@@ -67,7 +67,7 @@ docker run -it --rm --pull=always \
     docker.all-hands.dev/all-hands-ai/openhands:${OPENHANDS_VERSION}
 ```
 
-> **Tip:** If you don't want your sandboxes to default to the US region, you can set the `DAYTONA_TARGET` environment variable to `eu`
+> **Tip:** If you don't want your sandboxes to default to the EU region, you can set the `DAYTONA_TARGET` environment variable to `us`
 
 ### Running OpenHands Locally Without Docker
 
