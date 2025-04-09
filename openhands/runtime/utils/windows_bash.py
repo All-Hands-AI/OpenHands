@@ -108,10 +108,13 @@ class WindowsBashSession:
 Write-Host "[PS_SCRIPT] Starting script execution"
 # Create empty files first
 Write-Host "[PS_SCRIPT] Creating temp files..."
-$null > '{output_file}'
-$null > '{error_file}'
-$null > '{status_file}'
-Write-Host "[PS_SCRIPT] Temp files created."
+$outputFilePath = '{output_file}'
+$errorFilePath = '{error_file}'
+$statusFilePath = '{status_file}'
+$null > $outputFilePath
+$null > $errorFilePath
+$null > $statusFilePath
+Write-Host "[PS_SCRIPT] Temp files created: out=$outputFilePath, err=$errorFilePath, status=$statusFilePath"
 
 # Save current directory
 $originalDir = Get-Location
@@ -119,15 +122,25 @@ $originalDirPath = $originalDir.Path
 Write-Host "[PS_SCRIPT] Original directory: $originalDirPath"
 
 # Change to working directory
-Write-Host "[PS_SCRIPT] Changing to working directory: {self._cwd}"
-Set-Location '{self._cwd}'
-Write-Host "[PS_SCRIPT] Changed directory."
+$targetWorkDir = '{self._cwd}'
+Write-Host "[PS_SCRIPT] Changing to working directory: $targetWorkDir"
+try {{
+    Set-Location $targetWorkDir
+    Write-Host "[PS_SCRIPT] Changed directory successfully."
+}} catch {{
+    Write-Host "[PS_SCRIPT] ERROR changing to working directory '$targetWorkDir': $($_.Exception.Message)"
+    # Write error to error file and status file, then exit
+    $errorDetails = "Failed to change working directory: $($_.Exception.Message)"
+    $errorDetails | Out-File -FilePath $errorFilePath -Encoding utf8 -Append
+    "EXIT_CODE=1`nWORKING_DIR=$originalDirPath" | Out-File -FilePath $statusFilePath -Encoding utf8
+    exit 1 # Exit the script early
+}}
+
 
 try {{
-    # Log original command for clarity - use escaped version in single quotes
+    # Log original command for clarity
     Write-Host '[PS_SCRIPT] Executing command (Base64 Encoded): {base64_encoded_command[:100]}...'
 
-    # Use the command escaped in Python (single quotes replaced with '')
     $base64Command = '{base64_encoded_command}'
     Write-Host "[PS_SCRIPT] Decoding Base64 command..."
     try {{
@@ -136,71 +149,71 @@ try {{
         Write-Host "[PS_SCRIPT] Decoded command successfully (first 50 chars): $($decodedCommand.Substring(0, [System.Math]::Min(50, $decodedCommand.Length)))..."
     }} catch {{
         Write-Host "[PS_SCRIPT] ERROR decoding Base64 command: $($_.Exception.Message)"
-        throw "Failed to decode Base64 command." # Propagate error
+        throw "Failed to decode Base64 command." # Propagate error to main catch block
     }}
 
-    # Create and execute the script block using the decoded command, capturing all output streams
-    Write-Host "[PS_SCRIPT] Creating script block from decoded command..."
-    $scriptBlock = [ScriptBlock]::Create($decodedCommand)
-    Write-Host "[PS_SCRIPT] Executing script block..."
-    $allOutput = & $scriptBlock *>&1
-    
-    # Separate Error Records and Standard Output
-    $errorOutput = $allOutput | Where-Object {{ $_ -is [System.Management.Automation.ErrorRecord] }}
-    $standardOutput = $allOutput | Where-Object {{ $_ -isnot [System.Management.Automation.ErrorRecord] }}
+    # Execute the script block, redirecting ALL output streams (stdout, stderr, verbose, warning, etc.)
+    # and APPENDING (>>) them to the output file AS THEY ARE GENERATED.
+    Write-Host "[PS_SCRIPT] Executing script block and redirecting all output streams (*) appending (>>) to $outputFilePath..."
+    & {{
+        # $ErrorActionPreference = 'Continue' # Keep default or as inherited
+        Invoke-Command -ScriptBlock ([ScriptBlock]::Create($decodedCommand))
+    }} *>> $outputFilePath # Key change: Redirect all streams, append to file
 
-    Write-Host "[PS_SCRIPT] Command execution finished."
-    
-    # Save exit code
+    # Get exit code AFTER execution attempt
+    # Note: $LASTEXITCODE might not be reliable if the command was purely PowerShell (e.g., Write-Output)
+    # or if Invoke-Command itself had issues. Check $? as well.
+    $successStatus = $? # True if the last command succeeded, False otherwise
     $exitCode = $LASTEXITCODE
-    if ($null -eq $exitCode) {{ $exitCode = 0 }} # Check if command itself set exit code
-    Write-Host "[PS_SCRIPT] Final exit code: $exitCode"
-    
-    # Write standard output to output file
-    Write-Host "[PS_SCRIPT] Writing output to {output_file}"
-    $standardOutput | Out-File -FilePath '{output_file}' -Encoding utf8
-    Write-Host "[PS_SCRIPT] Output written."
-    
-    # Write error output to error file if any
-    if ($errorOutput) {{
-        Write-Host "[PS_SCRIPT] Writing error to {error_file}"
-        # Format error records nicely
-        $formattedErrors = $errorOutput | ForEach-Object {{ $_.ToString() }}
-        $formattedErrors | Out-File -FilePath '{error_file}' -Encoding utf8
-        Write-Host "[PS_SCRIPT] Error written."
+    if ($successStatus -and ($null -eq $exitCode -or $exitCode -eq 0)) {{
+        $exitCode = 0 # Consider successful if $? is true and exit code is null or 0
+        Write-Host "[PS_SCRIPT] Command completed successfully ($? is True, LASTEXITCODE is $exitCode)."
+    }} elseif (-not $successStatus) {{
+         if ($null -eq $exitCode -or $exitCode -eq 0) {{ $exitCode = 1 }} # If $? is False but exit code is 0/null, force to 1
+         Write-Host "[PS_SCRIPT] Command failed ($? is False). Setting exit code to $exitCode."
+    }} else {{
+         # $? is True, but $LASTEXITCODE is non-zero. Use $LASTEXITCODE.
+         Write-Host "[PS_SCRIPT] Command completed ($? is True) but with non-zero exit code: $exitCode."
     }}
-    
+
+    Write-Host "[PS_SCRIPT] Final exit code determined: $exitCode"
+
+    # Output/Error streams were redirected directly, no need to write them here.
+
     # Get current directory (may have changed)
     $newDir = Get-Location
     $newDirPath = $newDir.Path
     Write-Host "[PS_SCRIPT] New directory: $newDirPath"
-    
+
     # Write status information (exit code and current directory)
-    Write-Host "[PS_SCRIPT] Writing status to {status_file}"
-    "EXIT_CODE=$exitCode`nWORKING_DIR=$newDirPath" | Out-File -FilePath '{status_file}' -Encoding utf8
+    Write-Host "[PS_SCRIPT] Writing status to $statusFilePath"
+    "EXIT_CODE=$exitCode`nWORKING_DIR=$newDirPath" | Out-File -FilePath $statusFilePath -Encoding utf8
     Write-Host "[PS_SCRIPT] Status written."
+
 }} catch {{
-    Write-Host "[PS_SCRIPT] Caught exception during command execution."
-    # Write error details
-    Write-Host "[PS_SCRIPT] Writing error to {error_file}"
-    # Try to include specific error details
+    Write-Host "[PS_SCRIPT] Caught exception during command execution or setup."
+    # Write error details to error file
+    Write-Host "[PS_SCRIPT] Writing error details to $errorFilePath"
     $errorDetails = $_.ToString()
     if ($_.Exception) {{ $errorDetails += "`nException Message: $($_.Exception.Message)" }}
     if ($_.InvocationInfo) {{ $errorDetails += "`nScript Line Number: $($_.InvocationInfo.ScriptLineNumber)" }}
-    $errorDetails | Out-File -FilePath '{error_file}' -Encoding utf8
-    Write-Host "[PS_SCRIPT] Error written."
-    
+    # Append error details to the error file
+    $errorDetails | Out-File -FilePath $errorFilePath -Encoding utf8 -Append
+    Write-Host "[PS_SCRIPT] Error details written."
+
     # Write failure status (always exit code 1 in catch block)
-    Write-Host "[PS_SCRIPT] Writing failure status to {status_file}"
-    "EXIT_CODE=1`nWORKING_DIR=$originalDirPath" | Out-File -FilePath '{status_file}' -Encoding utf8
+    Write-Host "[PS_SCRIPT] Writing failure status to $statusFilePath"
+    "EXIT_CODE=1`nWORKING_DIR=$originalDirPath" | Out-File -FilePath $statusFilePath -Encoding utf8
     Write-Host "[PS_SCRIPT] Failure status written."
+}} finally {{
+    # Ensure Set-Location back to original directory? Not strictly necessary as process exits.
+    # Set-Location $originalDirPath
+    Write-Host "[PS_SCRIPT] Script execution finished."
 }}
-Write-Host "[PS_SCRIPT] Script execution complete."
 """
             # Write script to file
             print(f"[DEBUG] Writing PowerShell script to {script_file}")
             script_file.write_text(script_content, encoding='utf-8')
-            print(f"[DEBUG] Script written successfully.")
             
             powershell_executable = "powershell.exe"
             # Check if pwsh (PowerShell 7+) exists
@@ -239,31 +252,94 @@ Write-Host "[PS_SCRIPT] Script execution complete."
 
             except subprocess.TimeoutExpired:
                 print(f"[ERROR] Script execution timed out after {timeout} seconds.")
+                stdout_after_kill = ""
+                stderr_after_kill = ""
                 if process:
                     print(f"[DEBUG] Killing process {process.pid}")
-                    process.kill()
-                    print(f"[DEBUG] Process killed, waiting for completion...")
-                    # Add a short timeout to communicate after kill to prevent hangs
+                    # Try to kill the process tree using taskkill first
                     try:
-                        stdout_data, stderr_data = process.communicate(timeout=2) # Timeout after 2 seconds
-                        print(f"[DEBUG] Post-kill STDOUT:\n{stdout_data}")
-                        print(f"[DEBUG] Post-kill STDERR:\n{stderr_data}")
+                        kill_result = subprocess.run(['taskkill', '/F', '/T', '/PID', str(process.pid)], check=False, capture_output=True, timeout=5)
+                        print(f"[DEBUG] Attempted taskkill /T on PID {process.pid}. Result: {kill_result.returncode}, Output: {kill_result.stdout.decode(errors='replace')}, Error: {kill_result.stderr.decode(errors='replace')}")
+                        if kill_result.returncode != 0:
+                             print(f"[WARN] taskkill failed or process {process.pid} not found, falling back to process.kill()")
+                             process.kill() # Fallback if taskkill fails
+                    except FileNotFoundError:
+                         print("[WARN] taskkill command not found. Falling back to process.kill()")
+                         process.kill() # Fallback if taskkill command doesn't exist
+                    except Exception as kill_err:
+                        print(f"[WARN] Error during taskkill for {process.pid}: {kill_err}. Falling back to process.kill()")
+                        process.kill() # Fallback on other errors
+
+                    print(f"[DEBUG] Process killed/terminated, attempting final communication...")
+                    try:
+                        # Explicitly wait for the process to ensure it's terminated after kill signal
+                        print(f"[DEBUG] Waiting briefly for process {process.pid} to terminate...")
+                        process.wait(timeout=2) # Wait up to 2 seconds
+                        print(f"[DEBUG] Process {process.pid} terminated.")
+                    except subprocess.TimeoutExpired:
+                        print(f"[WARN] Process {process.pid} did not terminate quickly after kill signal.")
+                    except Exception as wait_err:
+                        print(f"[WARN] Error waiting for process {process.pid} termination: {wait_err}")
+
+                    try:
+                        # Try short communicate to get remaining output/errors
+                        stdout_after_kill, stderr_after_kill = process.communicate(timeout=1) # Short timeout
+                        print(f"[DEBUG] Post-kill STDOUT:\n{stdout_after_kill}")
+                        print(f"[DEBUG] Post-kill STDERR:\n{stderr_after_kill}")
                     except subprocess.TimeoutExpired:
                         print("[WARN] Timed out waiting for output after killing process. Output might be incomplete.")
-                        # Ensure the process is really dead
-                        process.kill()
+                        # Ensure the process is really dead if communicate times out again
+                        try:
+                            process.kill()
+                        except OSError:
+                            pass # Process already dead
                     except Exception as comm_err:
                         print(f"[WARN] Error during post-kill communicate: {comm_err}")
 
+                # Combine any potentially captured output
+                # Priority to stdout captured post-kill, fallback to empty
+                final_output = stdout_after_kill or ""
+                if stderr_after_kill: # Append any stderr captured post-kill
+                     final_output += f"\n[POST_KILL_STDERR] {stderr_after_kill}"
+
+                # Also read from output and error files, as they contain the direct stream
+                file_output = ""
+                if output_file and output_file.exists():
+                    try:
+                        file_output = output_file.read_text(encoding='utf-8', errors='replace')
+                        print(f"[DEBUG] Read {len(file_output)} chars from output file ({output_file}) on timeout.")
+                    except Exception as e:
+                        print(f"[WARN] Failed to read output file {output_file} on timeout: {e}")
+                        file_output = f"[Error reading output file: {e}]"
+                else:
+                    print(f"[DEBUG] Output file {output_file} not found on timeout.")
+
+                if error_file and error_file.exists():
+                    try:
+                        if error_file.stat().st_size > 0:
+                            error_text = error_file.read_text(encoding='utf-8', errors='replace')
+                            print(f"[DEBUG] Read {len(error_text)} chars from error file ({error_file}) on timeout.")
+                            # Append error file content to file_output
+                            if error_text.strip():
+                                file_output += f"\n[ERROR_FILE_CONTENT] {error_text}"
+                    except Exception as e:
+                        print(f"[WARN] Failed to read error file {error_file} on timeout: {e}")
+                        file_output += f"\n[Error reading error file: {e}]"
+
+                # Prepend file content (which has the direct stream) to the final output
+                # If file_output is empty, this does nothing
+                # If final_output (from communicate) is empty, this uses just file_output
+                final_output = file_output + final_output
+
                 # Handle timeout
-                # Use captured stdout as content, keep timeout message in metadata
+                # Return timeout observation with combined captured output
                 return CmdOutputObservation(
-                    content=stdout_data or "", # Use captured stdout, ensure it's a string
+                    content=final_output, # Use combined file and communicate output
                     command=command,
                     metadata=CmdOutputMetadata(
                         exit_code=-1,
                         working_dir=self._cwd,
-                        suffix=f"\\n[Command timed out after {timeout} seconds]"
+                        suffix=f"\n[Command timed out after {timeout} seconds]"
                     )
                 )
             except Exception as run_err:

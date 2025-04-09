@@ -54,13 +54,15 @@ def test_bash_command_env(temp_dir, runtime_cls, run_as_openhands):
 def test_bash_server(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
-        action = CmdRunAction(command='python3 -m http.server 8080')
-        action.set_hard_timeout(1)
+        # Use python -u for unbuffered output, potentially helping capture initial output on Windows
+        # Also redirect stderr to stdout (2>&1)
+        action = CmdRunAction(command='python3 -u -m http.server 8081 2>&1')
+        action.set_hard_timeout(60)
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert isinstance(obs, CmdOutputObservation)
         assert obs.exit_code == -1
-        assert 'Serving HTTP on 0.0.0.0 port 8080' in obs.content
+        assert 'Serving HTTP on 0.0.0.0 port 8081' in obs.content
         assert (
             "[The command timed out after 1 seconds. You may wait longer to see additional output by sending empty command '', send other commands to interact with the current process, or send keys to interrupt/kill the command.]"
             in obs.metadata.suffix
@@ -85,13 +87,14 @@ def test_bash_server(temp_dir, runtime_cls, run_as_openhands):
         assert config.workspace_mount_path_in_sandbox in obs.metadata.working_dir
 
         # run it again!
-        action = CmdRunAction(command='python3 -m http.server 8080')
+        # Use python -u for unbuffered output and redirect stderr
+        action = CmdRunAction(command='python -u -m http.server 8081 2>&1')
         action.set_hard_timeout(1)
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert isinstance(obs, CmdOutputObservation)
         assert obs.exit_code == -1
-        assert 'Serving HTTP on 0.0.0.0 port 8080' in obs.content
+        assert 'Serving HTTP on 0.0.0.0 port 8081' in obs.content
 
     finally:
         _close_test_runtime(runtime)

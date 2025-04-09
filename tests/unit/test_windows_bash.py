@@ -322,5 +322,44 @@ def test_execute_popen_failure(temp_work_dir):
         assert "Failed to execute PowerShell script" in result.content
         assert error_message in result.content
 
+
+def test_background_process_initial_output_timeout(windows_bash_session):
+    """
+    Test that initial output from a background-like process (like the python http server)
+    is captured before a timeout occurs.
+
+    This test specifically targets the behavior observed where initial output
+    might be missed due to the output capturing mechanism on Windows.
+    """
+    # Match the message from the python http.server
+    initial_message = "Serving HTTP on 0.0.0.0 port 8081"
+    # sleep_duration is not needed as the server runs until stopped/killed
+    timeout_duration = 2 # Seconds, short enough to trigger before much happens
+
+    # Use python -u to force unbuffered output
+    command = "python -u -m http.server 8081"
+
+    action = CmdRunAction(command=command)
+    action.set_hard_timeout(timeout_duration)
+
+    start_time = time.monotonic()
+    result = windows_bash_session.execute(action)
+    duration = time.monotonic() - start_time
+
+    print(f"DEBUG - Test Result Content: {result.content}") # Add debug print
+    print(f"DEBUG - Test Result Metadata: {result.metadata}")
+
+    assert isinstance(result, CmdOutputObservation)
+    # Check for timeout metadata
+    assert result.metadata.exit_code == -1, "Exit code should be -1 for timeout"
+    assert f"timed out after {timeout_duration} seconds" in result.metadata.suffix.lower(), "Timeout message should be in suffix"
+    # Check that it actually timed out near the specified time
+    assert abs(duration - timeout_duration) < 5.0, f"Duration ({duration:.2f}s) should be close to timeout ({timeout_duration}s)"
+
+    # Check for the start of the expected message, allowing for IP variations (0.0.0.0 vs ::)
+    expected_start = "Serving HTTP on "
+    assert result.content.strip().startswith(expected_start), \
+        f"Expected output to start with '{expected_start}', but got: '{result.content.strip()}'"
+
 # Remove test_initialization_process_dies as it's less relevant now
 # def test_initialization_process_dies(): ... 
