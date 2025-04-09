@@ -1,58 +1,58 @@
-import { useWsClient } from "#/context/ws-client-provider";
-import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom";
-import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
-import { createChatMessage } from "#/services/chat-service";
-import { addUserMessage } from "#/state/chat-slice";
-import { RootState } from "#/store";
-import { AgentState } from "#/types/agent-state";
-import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
-import posthog from "posthog-js";
-import React from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { useParams } from "react-router";
-import { FeedbackModal } from "../feedback/feedback-modal";
-import { TrajectoryActions } from "../trajectory/trajectory-actions";
-import { ActionSuggestions } from "./action-suggestions";
-import { ChatSuggestions } from "./chat-suggestions";
-import { InteractiveChatBox } from "./interactive-chat-box";
-import { Messages } from "./messages";
-import { TypingIndicator } from "./typing-indicator";
+import { useWsClient } from "#/context/ws-client-provider"
+import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom"
+import { generateAgentStateChangeEvent } from "#/services/agent-state-service"
+import { createChatMessage } from "#/services/chat-service"
+import { addUserMessage } from "#/state/chat-slice"
+import { RootState } from "#/store"
+import { AgentState } from "#/types/agent-state"
+import { convertImageToBase64 } from "#/utils/convert-image-to-base-64"
+import posthog from "posthog-js"
+import React from "react"
+import { useDispatch, useSelector } from "react-redux"
+import { useParams } from "react-router"
+import { FeedbackModal } from "../feedback/feedback-modal"
+import { TrajectoryActions } from "../trajectory/trajectory-actions"
+import { ActionSuggestions } from "./action-suggestions"
+import { ChatSuggestions } from "./chat-suggestions"
+import { InteractiveChatBox } from "./interactive-chat-box"
+import { Messages } from "./messages"
+import { TypingIndicator } from "./typing-indicator"
 
-import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
-import { LoadingSpinner } from "#/components/shared/loading-spinner";
-import { useGetTrajectory } from "#/hooks/mutation/use-get-trajectory";
-import { displayErrorToast } from "#/utils/custom-toast-handlers";
-import { downloadTrajectory } from "#/utils/download-trajectory";
+import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button"
+import { LoadingSpinner } from "#/components/shared/loading-spinner"
+import { useGetTrajectory } from "#/hooks/mutation/use-get-trajectory"
+import { displayErrorToast } from "#/utils/custom-toast-handlers"
+import { downloadTrajectory } from "#/utils/download-trajectory"
 
 function getEntryPoint(
   hasRepository: boolean | null,
   hasReplayJson: boolean | null,
 ): string {
-  if (hasRepository) return "github";
-  if (hasReplayJson) return "replay";
-  return "direct";
+  if (hasRepository) return "github"
+  if (hasReplayJson) return "replay"
+  return "direct"
 }
 
 export function ChatInterface() {
-  const { send, isLoadingMessages } = useWsClient();
-  const dispatch = useDispatch();
-  const scrollRef = React.useRef<HTMLDivElement>(null);
+  const { send, isLoadingMessages } = useWsClient()
+  const dispatch = useDispatch()
+  const scrollRef = React.useRef<HTMLDivElement>(null)
   const { scrollDomToBottom, onChatBodyScroll, hitBottom } =
-    useScrollToBottom(scrollRef);
+    useScrollToBottom(scrollRef)
 
-  const { messages } = useSelector((state: RootState) => state.chat);
-  const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const { messages } = useSelector((state: RootState) => state.chat)
+  const { curAgentState } = useSelector((state: RootState) => state.agent)
 
   const [feedbackPolarity, setFeedbackPolarity] = React.useState<
     "positive" | "negative"
-  >("positive");
-  const [feedbackModalIsOpen, setFeedbackModalIsOpen] = React.useState(false);
-  const [messageToSend, setMessageToSend] = React.useState<string | null>(null);
+  >("positive")
+  const [feedbackModalIsOpen, setFeedbackModalIsOpen] = React.useState(false)
+  const [messageToSend, setMessageToSend] = React.useState<string | null>(null)
   const { selectedRepository, replayJson } = useSelector(
     (state: RootState) => state.initialQuery,
-  );
-  const params = useParams();
-  const { mutate: getTrajectory } = useGetTrajectory();
+  )
+  const params = useParams()
+  const { mutate: getTrajectory } = useGetTrajectory()
 
   const handleSendMessage = async (content: string, files: File[]) => {
     if (messages.length === 0) {
@@ -63,39 +63,39 @@ export function ChatInterface() {
         ),
         query_character_length: content.length,
         replay_json_size: replayJson?.length,
-      });
+      })
     } else {
       posthog.capture("user_message_sent", {
         session_message_count: messages.length,
         current_message_length: content.length,
-      });
+      })
     }
-    const promises = files.map((file) => convertImageToBase64(file));
-    const imageUrls = await Promise.all(promises);
+    const promises = files.map((file) => convertImageToBase64(file))
+    const imageUrls = await Promise.all(promises)
 
-    const timestamp = new Date().toISOString();
-    const pending = true;
-    dispatch(addUserMessage({ content, imageUrls, timestamp, pending }));
-    send(createChatMessage(content, imageUrls, timestamp));
-    setMessageToSend(null);
-  };
+    const timestamp = new Date().toISOString()
+    const pending = true
+    dispatch(addUserMessage({ content, imageUrls, timestamp, pending }))
+    send(createChatMessage(content, imageUrls, timestamp))
+    setMessageToSend(null)
+  }
 
   const handleStop = () => {
-    posthog.capture("stop_button_clicked");
-    send(generateAgentStateChangeEvent(AgentState.STOPPED));
-  };
+    posthog.capture("stop_button_clicked")
+    send(generateAgentStateChangeEvent(AgentState.STOPPED))
+  }
 
   const onClickShareFeedbackActionButton = async (
     polarity: "positive" | "negative",
   ) => {
-    setFeedbackModalIsOpen(true);
-    setFeedbackPolarity(polarity);
-  };
+    setFeedbackModalIsOpen(true)
+    setFeedbackPolarity(polarity)
+  }
 
   const onClickExportTrajectoryButton = () => {
     if (!params.conversationId) {
-      displayErrorToast("ConversationId unknown, cannot download trajectory");
-      return;
+      displayErrorToast("ConversationId unknown, cannot download trajectory")
+      return
     }
 
     getTrajectory(params.conversationId, {
@@ -103,19 +103,17 @@ export function ChatInterface() {
         await downloadTrajectory(
           params.conversationId ?? "unknown",
           data.trajectory,
-        );
+        )
       },
       onError: (error) => {
-        displayErrorToast(error.message);
+        displayErrorToast(error.message)
       },
-    });
-  };
+    })
+  }
 
   const isWaitingForUserInput =
     curAgentState === AgentState.AWAITING_USER_INPUT ||
-    curAgentState === AgentState.FINISHED;
-
-  console.log("messages", messages);
+    curAgentState === AgentState.FINISHED
 
   return (
     <div className="mx-auto flex h-full max-w-[800px] flex-col justify-between">
@@ -188,5 +186,5 @@ export function ChatInterface() {
         polarity={feedbackPolarity}
       />
     </div>
-  );
+  )
 }

@@ -1,43 +1,45 @@
-import { CopyToClipboardButton } from "#/components/shared/buttons/copy-to-clipboard-button";
-import { cn } from "#/utils/utils";
-import React from "react";
-import Markdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import { anchor } from "../markdown/anchor";
-import { code } from "../markdown/code";
-import { ol, ul } from "../markdown/list";
+import { CopyToClipboardButton } from "#/components/shared/buttons/copy-to-clipboard-button"
+import { cn } from "#/utils/utils"
+import React from "react"
+import Markdown from "react-markdown"
+import remarkGfm from "remark-gfm"
+import { anchor } from "../markdown/anchor"
+import { code } from "../markdown/code"
+import { ol, ul } from "../markdown/list"
 
 interface ChatMessageProps {
-  type: "user" | "assistant";
-  message: string;
+  type: "user" | "assistant"
+  message: string
+  className?: string
 }
 
 export function ChatMessage({
   type,
   message,
   children,
+  className,
 }: React.PropsWithChildren<ChatMessageProps>) {
-  const [isHovering, setIsHovering] = React.useState(false);
-  const [isCopy, setIsCopy] = React.useState(false);
+  const [isHovering, setIsHovering] = React.useState(false)
+  const [isCopy, setIsCopy] = React.useState(false)
 
   const handleCopyToClipboard = async () => {
-    await navigator.clipboard.writeText(message);
-    setIsCopy(true);
-  };
+    await navigator.clipboard.writeText(message)
+    setIsCopy(true)
+  }
 
   React.useEffect(() => {
-    let timeout: NodeJS.Timeout;
+    let timeout: NodeJS.Timeout
 
     if (isCopy) {
       timeout = setTimeout(() => {
-        setIsCopy(false);
-      }, 2000);
+        setIsCopy(false)
+      }, 2000)
     }
 
     return () => {
-      clearTimeout(timeout);
-    };
-  }, [isCopy]);
+      clearTimeout(timeout)
+    }
+  }, [isCopy])
 
   return (
     <article
@@ -50,6 +52,7 @@ export function ChatMessage({
         type === "user" &&
           "max-w-[305px] self-end rounded-br-none border border-neutral-1000 bg-white p-4 dark:bg-gray-100",
         type === "assistant" && "mt-4 max-w-full bg-transparent",
+        className,
       )}
     >
       <CopyToClipboardButton
@@ -73,5 +76,5 @@ export function ChatMessage({
       </div>
       {children}
     </article>
-  );
+  )
 }
