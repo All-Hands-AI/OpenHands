@@ -118,7 +118,7 @@ export function ChatInterface() {
   console.log("messages", messages);
 
   return (
-    <div className="h-full flex flex-col justify-between">
+    <div className="mx-auto flex h-full max-w-[800px] flex-col justify-between">
       {messages.length === 0 && (
         <ChatSuggestions onSuggestionsClick={setMessageToSend} />
       )}
@@ -126,7 +126,7 @@ export function ChatInterface() {
       <div
         ref={scrollRef}
         onScroll={(e) => onChatBodyScroll(e.currentTarget)}
-        className="flex flex-col grow overflow-y-auto overflow-x-hidden px-4 pt-4 gap-2"
+        className="flex grow flex-col gap-2 overflow-y-auto overflow-x-hidden px-4 pt-4"
       >
         {isLoadingMessages && (
           <div className="flex justify-center">
@@ -151,7 +151,7 @@ export function ChatInterface() {
       </div>
 
       <div className="flex flex-col gap-[6px] px-4 pb-4">
-        <div className="flex justify-between relative">
+        <div className="relative flex justify-between">
           <TrajectoryActions
             onPositiveFeedback={() =>
               onClickShareFeedbackActionButton("positive")
@@ -162,7 +162,7 @@ export function ChatInterface() {
             onExportTrajectory={() => onClickExportTrajectoryButton()}
           />
 
-          <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0">
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 transform">
             {curAgentState === AgentState.RUNNING && <TypingIndicator />}
           </div>
 

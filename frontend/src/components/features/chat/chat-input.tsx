@@ -113,7 +113,7 @@ export function ChatInput({
   return (
     <div
       data-testid="chat-input"
-      className="flex items-end justify-end grow gap-1 min-h-14 w-full"
+      className="flex min-h-14 w-full grow items-end justify-end gap-1"
     >
       <TextareaAutosize
         ref={textareaRef}
@@ -132,10 +132,10 @@ export function ChatInput({
         maxRows={maxRows}
         data-dragging-over={isDraggingOver}
         className={cn(
-          "grow text-sm self-center placeholder:text-neutral-400 text-white resize-none outline-none ring-0",
+          "grow resize-none self-center rounded-xl text-sm text-white outline-none ring-0 placeholder:text-neutral-400",
           "transition-all duration-200 ease-in-out",
           isDraggingOver
-            ? "bg-neutral-600/50 rounded-lg px-2"
+            ? "rounded-xl bg-neutral-600/50 px-2"
             : "bg-transparent",
           className,
         )}

@@ -35,7 +35,7 @@ export function TaskForm({ ref }: TaskFormProps) {
   };
 
   return (
-    <div className="flex flex-col gap-1 w-full">
+    <div className="flex w-full flex-col gap-1">
       <form
         ref={ref}
         onSubmit={handleSubmit}
@@ -43,7 +43,7 @@ export function TaskForm({ ref }: TaskFormProps) {
       >
         <div
           className={cn(
-            "px-2 rounded-lg text-[16px] leading-5 w-full transition-colors duration-200",
+            "w-full rounded-xl px-3 text-[16px] leading-5 transition-colors duration-200",
             inputIsFocused
               ? "bg-white dark:bg-[#171717]"
               : "bg-white dark:bg-[#171717]",
@@ -73,7 +73,7 @@ export function TaskForm({ ref }: TaskFormProps) {
                 value={text}
                 maxRows={15}
                 showButton={!!text}
-                className="text-[16px] placeholder:text-[##979995] leading-5 py-3 pl-8 bg-white text-neutral-100 dark:bg-[#171717]"
+                className="bg-white py-3 pl-8 text-[16px] leading-5 text-neutral-100 placeholder:text-[##979995] dark:bg-[#171717]"
                 buttonClassName="pb-[8px] "
                 disabled={navigation.state === "submitting"}
               />

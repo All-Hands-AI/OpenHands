@@ -48,7 +48,7 @@ export function ChatMessage({
         "relative rounded-[20px]",
         "flex flex-col gap-2",
         type === "user" &&
-          "max-w-[305px] self-end rounded-br-none bg-white p-4 dark:bg-gray-100",
+          "max-w-[305px] self-end rounded-br-none border border-neutral-1000 bg-white p-4 dark:bg-gray-100",
         type === "assistant" && "mt-4 max-w-full bg-transparent",
       )}
     >
