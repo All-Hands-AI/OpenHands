@@ -185,7 +185,7 @@ test:
 
 build-frontend:
 	@echo "$(YELLOW)Building frontend...$(RESET)"
-	@cd frontend && npm run build
+	@cd frontend && npm run prepare && npm run build
 
 # Start backend
 start-backend:

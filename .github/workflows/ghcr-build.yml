@@ -28,6 +28,28 @@ env:
   RELEVANT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 
 jobs:
+  define-matrix:
+    runs-on: blacksmith
+    outputs:
+      base_image: ${{ steps.define-base-images.outputs.base_image }}
+    steps:
+      - name: Define base images
+        shell: bash
+        id: define-base-images
+        run: |
+          # Only build nikolaik on PRs, otherwise build both nikolaik and ubuntu.
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+            json=$(jq -n -c '[
+                { image: "nikolaik/python-nodejs:python3.12-nodejs22", tag: "nikolaik" }
+              ]')
+          else
+            json=$(jq -n -c '[
+                { image: "nikolaik/python-nodejs:python3.12-nodejs22", tag: "nikolaik" },
+                { image: "ubuntu:24.04", tag: "ubuntu" }
+              ]')
+          fi
+          echo "base_image=$json" >> "$GITHUB_OUTPUT"
+
   # Builds the OpenHands Docker images
   ghcr_build_app:
     name: Build App Image
@@ -84,13 +106,10 @@ jobs:
     permissions:
       contents: read
       packages: write
+    needs: define-matrix
     strategy:
       matrix:
-        base_image:
-          - image: 'nikolaik/python-nodejs:python3.12-nodejs22'
-            tag: nikolaik
-          - image: 'ubuntu:24.04'
-            tag: ubuntu
+        base_image: ${{ fromJson(needs.define-matrix.outputs.base_image) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -118,9 +137,9 @@ jobs:
         with:
           path: |
             ~/.cache/pypoetry
-            ~/.cache/ms-playwright
             ~/.virtualenvs
           key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          # This is the one that saves the cache, the others set 'lookup-only: true'
           restore-keys: |
             ${{ runner.os }}-poetry-
       - name: Install poetry via pipx
@@ -132,14 +151,33 @@ jobs:
       - name: Lowercase Repository Owner
         run: |
           echo REPO_OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
+      - name: Short SHA
+        run: |
+          echo SHORT_SHA=$(git rev-parse --short "$RELEVANT_SHA") >> $GITHUB_ENV
+      - name: Determine docker build params
+        if: github.event.pull_request.head.repo.fork != true
+        shell: bash
+        run: |
+          ./containers/build.sh -i runtime -o ${{ env.REPO_OWNER }} -t ${{ matrix.base_image.tag }} --dry
+
+          DOCKER_BUILD_JSON=$(jq -c . < docker-build-dry.json)
+          echo "DOCKER_TAGS=$(echo "$DOCKER_BUILD_JSON" | jq -r '.tags | join(",")')" >> $GITHUB_ENV
+          echo "DOCKER_PLATFORM=$(echo "$DOCKER_BUILD_JSON" | jq -r '.platform')" >> $GITHUB_ENV
+          echo "DOCKER_BUILD_ARGS=$(echo "$DOCKER_BUILD_JSON" | jq -r '.build_args | join(",")')" >> $GITHUB_ENV
       - name: Build and push runtime image ${{ matrix.base_image.image }}
         if: github.event.pull_request.head.repo.fork != true
-        run: |
-          ./containers/build.sh -i runtime -o ${{ env.REPO_OWNER }} --push -t ${{ matrix.base_image.tag }}
+        uses: useblacksmith/build-push-action@v1
+        with:
+          push: true
+          tags: ${{ env.DOCKER_TAGS }}
+          platforms: ${{ env.DOCKER_PLATFORM }}
+          build-args: ${{ env.DOCKER_BUILD_ARGS }}
+          context: containers/runtime
+          provenance: false
       # Forked repos can't push to GHCR, so we need to upload the image as an artifact
       - name: Build runtime image ${{ matrix.base_image.image }} for fork
         if: github.event.pull_request.head.repo.fork
-        uses: docker/build-push-action@v6
+        uses: useblacksmith/build-push-action@v1
         with:
           tags: ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
           outputs: type=docker,dest=/tmp/runtime-${{ matrix.base_image.tag }}.tar
@@ -170,9 +208,9 @@ jobs:
         with:
           path: |
             ~/.cache/pypoetry
-            ~/.cache/ms-playwright
             ~/.virtualenvs
           key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          lookup-only: true
           restore-keys: |
             ${{ runner.os }}-poetry-
       - name: Set up Python
@@ -209,12 +247,12 @@ jobs:
   # Run unit tests with the Docker runtime Docker images as root
   test_runtime_root:
     name: RT Unit Tests (Root)
-    needs: [ghcr_build_runtime]
+    needs: [ghcr_build_runtime, define-matrix]
     runs-on: blacksmith-4vcpu-ubuntu-2204
     strategy:
       fail-fast: false
       matrix:
-        base_image: ['nikolaik', 'ubuntu']
+        base_image: ${{ fromJson(needs.define-matrix.outputs.base_image) }}
     steps:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
@@ -225,20 +263,20 @@ jobs:
         if: github.event.pull_request.head.repo.fork
         uses: actions/download-artifact@v4
         with:
-          name: runtime-${{ matrix.base_image }}
+          name: runtime-${{ matrix.base_image.tag }}
           path: /tmp
       - name: Load runtime image for fork
         if: github.event.pull_request.head.repo.fork
         run: |
-          docker load --input /tmp/runtime-${{ matrix.base_image }}.tar
+          docker load --input /tmp/runtime-${{ matrix.base_image.tag }}.tar
       - name: Cache Poetry dependencies
         uses: useblacksmith/cache@v5
         with:
           path: |
             ~/.cache/pypoetry
-            ~/.cache/ms-playwright
             ~/.virtualenvs
           key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          lookup-only: true
           restore-keys: |
             ${{ runner.os }}-poetry-
       - name: Set up Python
@@ -260,7 +298,7 @@ jobs:
           # Install to be able to retry on failures for flaky tests
           poetry run pip install pytest-rerunfailures
 
-          image_name=ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image }}
+          image_name=ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
 
           # Setting RUN_AS_OPENHANDS to false means use root.
           # That should mean SANDBOX_USER_ID is ignored but some tests do not check for RUN_AS_OPENHANDS.
@@ -280,10 +318,10 @@ jobs:
   test_runtime_oh:
     name: RT Unit Tests (openhands)
     runs-on: blacksmith-4vcpu-ubuntu-2204
-    needs: [ghcr_build_runtime]
+    needs: [ghcr_build_runtime, define-matrix]
     strategy:
       matrix:
-        base_image: [nikolaik, ubuntu]
+        base_image: ${{ fromJson(needs.define-matrix.outputs.base_image) }}
     steps:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
@@ -294,12 +332,12 @@ jobs:
         if: github.event.pull_request.head.repo.fork
         uses: actions/download-artifact@v4
         with:
-          name: runtime-${{ matrix.base_image }}
+          name: runtime-${{ matrix.base_image.tag }}
           path: /tmp
       - name: Load runtime image for fork
         if: github.event.pull_request.head.repo.fork
         run: |
-          docker load --input /tmp/runtime-${{ matrix.base_image }}.tar
+          docker load --input /tmp/runtime-${{ matrix.base_image.tag }}.tar
       - name: Cache Poetry dependencies
         uses: useblacksmith/cache@v5
         with:
@@ -307,6 +345,7 @@ jobs:
             ~/.cache/pypoetry
             ~/.virtualenvs
           key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          lookup-only: true
           restore-keys: |
             ${{ runner.os }}-poetry-
       - name: Set up Python
@@ -328,7 +367,7 @@ jobs:
           # Install to be able to retry on failures for flaky tests
           poetry run pip install pytest-rerunfailures
 
-          image_name=ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image }}
+          image_name=ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
 
           TEST_RUNTIME=docker \
           SANDBOX_USER_ID=$(id -u) \
