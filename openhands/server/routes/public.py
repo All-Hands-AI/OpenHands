@@ -123,8 +123,8 @@ async def get_config() -> dict[str, Any]:
 
 @app.get('/use-cases', response_model=ConversationInfoResultSet)
 async def get_conversations(
-    user_address: str = "0x9b60c97c53e3e8c55c7d32f55c1b518b6ea417f7",
-    # user_address: str = '0xe27d3094c4231150d421c3600ded0d130cf74216',
+    # user_address: str = "0x9b60c97c53e3e8c55c7d32f55c1b518b6ea417f7",
+    user_address: str = '0xe27d3094c4231150d421c3600ded0d130cf74216',
     limit: int = 8,
 ) -> ConversationInfoResultSet:
     """Get list of conversations for a user.
@@ -188,9 +188,10 @@ async def get_conversations(
 
 @app.get('/use-cases/conversations/{conversation_id}')
 async def get_conversation(
-    conversation_id: str | None = None
+    conversation_id: str | None = None,
 ) -> ConversationInfo | None:
-    whitelisted_user_id = "0x9b60c97c53e3e8c55c7d32f55c1b518b6ea417f7"
+    # whitelisted_user_id = "0x9b60c97c53e3e8c55c7d32f55c1b518b6ea417f7"
+    whitelisted_user_id = '0xe27d3094c4231150d421c3600ded0d130cf74216'
     conversation_store = await ConversationStoreImpl.get_instance(
         config, whitelisted_user_id, None
     )

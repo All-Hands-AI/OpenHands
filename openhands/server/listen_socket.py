@@ -23,11 +23,12 @@ from openhands.server.models import User
 from openhands.server.routes.auth import JWT_ALGORITHM, JWT_SECRET
 from openhands.server.shared import (
     ConversationStoreImpl,
+    config,
     conversation_manager,
     sio,
-    config,
 )
 from openhands.utils.get_user_setting import get_user_setting
+
 
 @sio.event
 async def connect(connection_id: str, environ):
@@ -46,17 +47,20 @@ async def connect(connection_id: str, environ):
 
     # Check if conversation_id belongs to whitelisted user
     is_whitelisted = False
-    whitelisted_user_id = "0x9b60c97c53e3e8c55c7d32f55c1b518b6ea417f7"
-    # whitelisted_user_id = '0xe27d3094c4231150d421c3600ded0d130cf74216',
+    # whitelisted_user_id = "0x9b60c97c53e3e8c55c7d32f55c1b518b6ea417f7"
+    whitelisted_user_id = ('0xe27d3094c4231150d421c3600ded0d130cf74216',)
     if jwt_token is None:
         conversation_store = await ConversationStoreImpl.get_instance(
             config, whitelisted_user_id, None
         )
-        conversation_metadata_result_set = await conversation_store.get_metadata(conversation_id)
+        conversation_metadata_result_set = await conversation_store.get_metadata(
+            conversation_id
+        )
         if conversation_metadata_result_set.user_id == whitelisted_user_id:
             is_whitelisted = True
-            logger.info(f'Whitelisted access for user {user_id} and conversation {conversation_id}')
-
+            logger.info(
+                f'Whitelisted access for user {user_id} and conversation {conversation_id}'
+            )
 
     if not is_whitelisted:
         # Normal authentication flow for non-whitelisted users/conversations
@@ -76,7 +80,7 @@ async def connect(connection_id: str, environ):
             if not user:
                 logger.error(f'User not found in database: {user_id}')
                 raise ConnectionRefusedError('User not found')
-                
+
             logger.info(f'Found user record: {user["public_key"]}')
             mnemonic = user['mnemonic']
         except jwt.ExpiredSignatureError:
