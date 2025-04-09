@@ -1,37 +1,27 @@
+import { BrowserPanel } from "#/components/features/browser/browser";
 import { useSettings } from "#/hooks/query/use-settings";
 import { RootState } from "#/store";
 import ObservationType from "#/types/observation-type";
 import { Slider, useDisclosure } from "@heroui/react";
 import { useEffect, useRef, useState } from "react";
-import {
-  LuCompass,
-  LuSquareChartGantt,
-  LuStepBack,
-  LuStepForward,
-} from "react-icons/lu";
+import { LuSquareChartGantt, LuStepBack, LuStepForward } from "react-icons/lu";
+import Markdown, { Components } from "react-markdown";
 import { useSelector } from "react-redux";
 import EditorContent from "./EditorContent";
 import TaskProgress from "./TaskProgress";
-import Markdown, { Components } from "react-markdown";
-import { BrowserPanel } from "#/components/features/browser/browser";
 
 const EditorNotification = () => {
   return (
-    <div className="flex max-w-md items-center rounded-lg p-3">
-      <div className="bg-gray-200 rounded-md p-2">
-        <LuCompass size={16} />
-      </div>
-      <div className="text-14 ml-3">
-        <p className="text-neutral-2">
-          Thesis is using <span className="text-mercury-900">Browsing</span>
-        </p>
-        {/* <p className="bg-mercury-70 border-mercury-100 mt-1 rounded-full border px-2 py-1 text-gray-950">
+    <div className="flex max-w-md items-center rounded-lg mb-3">
+      <p className="text-[#666] font-medium">
+        Thesis is using <span className="text-mercury-900">Browsing</span>
+      </p>
+      {/* <p className="bg-mercury-70 border-mercury-100 mt-1 rounded-full border px-2 py-1 text-gray-950">
           Distill is using{" "}
           <p className="mt-1 inline-block rounded-md px-2 py-1 text-gray-300">
             Browsing
           </p>
         </p> */}
-      </div>
     </div>
   );
 };
@@ -39,7 +29,8 @@ const EditorNotification = () => {
 const ThesisComputer = () => {
   const isViewDrawer = true;
   const { computerList } = useSelector((state: RootState) => state.computer);
-  console.log("🚀 ~ ThesisComputer ~ computerList:", computerList);
+  const { curAgentState } = useSelector((state: RootState) => state.agent);
+  console.log("🚀 ~ ThesisComputer ~ curAgentState:", curAgentState);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const { data: settings } = useSettings();
@@ -161,7 +152,7 @@ const ThesisComputer = () => {
   };
 
   return (
-    <div className=" flex w-full h-full flex-col overflow-y-auto  border bg-white p-4">
+    <div className=" flex w-full h-full flex-col overflow-y-auto  border bg-white p-4 rounded-xl">
       <div className="flex items-center justify-between">
         <h4 className="text-neutral-1 text-18 font-semibold">Thesis</h4>
         {/* <Tooltip>

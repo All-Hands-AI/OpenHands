@@ -108,10 +108,8 @@ function AppContent() {
         secondClassName="flex flex-col overflow-hidden"
         firstChild={<ChatInterface />}
         secondChild={
-          <Container className="h-full mt-4 rounded-xl !mb-4">
-            <div className="flex flex-col h-full">
-              <ThesisComputer />
-            </div>
+          <Container className="h-full mt-4 rounded-xl !mb-4 bg-white border-none">
+            <ThesisComputer />
           </Container>
         }
       />
