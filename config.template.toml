@@ -69,6 +69,9 @@ workspace_base = "./workspace"
 # Path to mount the workspace in the sandbox
 #workspace_mount_path_in_sandbox = "/workspace"
 
+# Whether to store the workspace mount path in session instead of using the default workspace_mount_path_in_sandbox
+#workspace_mount_path_in_sandbox_store_in_session = true
+
 # Path to mount the workspace
 #workspace_mount_path = ""
 

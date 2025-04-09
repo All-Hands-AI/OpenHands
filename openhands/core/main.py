@@ -128,6 +128,7 @@ async def run_controller(
         )
 
     replay_events: list[Event] | None = None
+    print(f'Replaying trajectory from {config.replay_trajectory_path}')
     if config.replay_trajectory_path:
         logger.info('Trajectory replay is enabled')
         assert isinstance(initial_user_action, NullAction)
@@ -203,12 +204,14 @@ async def run_controller(
     state = controller.get_state()
 
     # save trajectories if applicable
+    print(f'Saving trajectory to {config.save_trajectory_path}')
     if config.save_trajectory_path is not None:
         # if save_trajectory_path is a folder, use session id as file name
         if os.path.isdir(config.save_trajectory_path):
             file_path = os.path.join(config.save_trajectory_path, sid + '.json')
         else:
             file_path = config.save_trajectory_path
+        print(f'Saving trajectory to {file_path}')
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         histories = controller.get_trajectory(config.save_screenshots_in_trajectory)
         with open(file_path, 'w') as f:
