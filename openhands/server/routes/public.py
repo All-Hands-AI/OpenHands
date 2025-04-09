@@ -1,3 +1,4 @@
+import os
 import warnings
 from datetime import datetime, timezone
 from typing import Any
@@ -123,7 +124,7 @@ async def get_config() -> dict[str, Any]:
 
 @app.get('/use-cases', response_model=ConversationInfoResultSet)
 async def get_conversations(
-    user_address: str = "0x9b60c97c53e3e8c55c7d32f55c1b518b6ea417f7",
+    user_address: str = os.getenv('USER_USE_CASE_SAMPLE'),
     # user_address: str = '0xe27d3094c4231150d421c3600ded0d130cf74216',
     limit: int = 8,
 ) -> ConversationInfoResultSet:
@@ -190,7 +191,7 @@ async def get_conversations(
 async def get_conversation(
     conversation_id: str | None = None
 ) -> ConversationInfo | None:
-    whitelisted_user_id = "0x9b60c97c53e3e8c55c7d32f55c1b518b6ea417f7"
+    whitelisted_user_id = os.getenv('USER_USE_CASE_SAMPLE') 
     conversation_store = await ConversationStoreImpl.get_instance(
         config, whitelisted_user_id, None
     )
