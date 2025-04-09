@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 
 interface UseListFileConfig {
   path: string;
+  enabled?: boolean;
 }
 
 export const useListFile = (config: UseListFileConfig) => {
@@ -11,6 +12,6 @@ export const useListFile = (config: UseListFileConfig) => {
   return useQuery({
     queryKey: ["file", conversationId, config.path],
     queryFn: () => OpenHands.getFile(conversationId, config.path),
-    enabled: false, // don't fetch by default, trigger manually via `refetch`
+    enabled: config?.enabled, // don't fetch by default, trigger manually via `refetch`
   });
 };
