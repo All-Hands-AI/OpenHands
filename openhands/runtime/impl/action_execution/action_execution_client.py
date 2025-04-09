@@ -1,5 +1,4 @@
 import os
-import platform
 import tempfile
 import threading
 from abc import abstractmethod

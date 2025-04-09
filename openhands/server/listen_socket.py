@@ -18,13 +18,13 @@ from openhands.events.observation.agent import (
 )
 from openhands.events.serialization import event_to_dict
 from openhands.events.stream import AsyncEventStreamWrapper
+from openhands.server.db import database
+from openhands.server.models import User
 from openhands.server.routes.auth import JWT_ALGORITHM, JWT_SECRET
 from openhands.server.shared import (
     conversation_manager,
     sio,
 )
-from openhands.server.db import database
-from openhands.server.models import User
 from openhands.utils.get_user_setting import get_user_setting
 
 
@@ -56,7 +56,7 @@ async def connect(connection_id: str, environ):
         if not user:
             logger.error(f'User not found in database: {user_id}')
             raise ConnectionRefusedError('User not found')
-            
+
         logger.info(f'Found user record: {user["public_key"]}')
         mnemonic = user['mnemonic']
     except jwt.ExpiredSignatureError:

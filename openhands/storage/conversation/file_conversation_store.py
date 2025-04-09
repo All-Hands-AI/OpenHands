@@ -87,8 +87,10 @@ class FileConversationStore(ConversationStore):
             try:
                 metadata = await self.get_metadata(conversation_id)
                 # Only include conversations that belong to this user
-                if (self.user_id and metadata.user_id == self.user_id) or \
-                   (self.github_user_id and metadata.github_user_id == self.github_user_id):
+                if (self.user_id and metadata.user_id == self.user_id) or (
+                    self.github_user_id
+                    and metadata.github_user_id == self.github_user_id
+                ):
                     conversations.append(metadata)
             except Exception:
                 logger.warning(
