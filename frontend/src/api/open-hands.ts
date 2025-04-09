@@ -14,6 +14,7 @@ import {
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
 import { ApiSettings, PostApiSettings } from "#/types/settings";
+import { displayErrorToast } from "#/utils/custom-toast-handlers";
 
 interface VerifySignatureResponse {
   user: {
@@ -240,21 +241,29 @@ class OpenHands {
     initialUserMsg?: string,
     imageUrls?: string[],
     replayJson?: string,
-  ): Promise<Conversation> {
-    const body = {
-      selected_repository: selectedRepository,
-      selected_branch: undefined,
-      initial_user_msg: initialUserMsg,
-      image_urls: imageUrls,
-      replay_json: replayJson,
-    };
+  ): Promise<Conversation | undefined> {
+    try {
+      const body = {
+        selected_repository: selectedRepository,
+        selected_branch: undefined,
+        initial_user_msg: initialUserMsg,
+        image_urls: imageUrls,
+        replay_json: replayJson,
+      };
 
-    const { data } = await openHands.post<Conversation>(
-      "/api/conversations",
-      body,
-    );
+      const { data } = await openHands.post<Conversation>(
+        "/api/conversations",
+        body,
+      );
 
-    return data;
+      return data;
+    } catch (error: any) {
+      displayErrorToast(
+        "response" in error
+          ? (error.response?.data?.detail ?? "Error create new conversation")
+          : "Error create new conversation",
+      );
+    }
   }
 
   static async getConversation(
