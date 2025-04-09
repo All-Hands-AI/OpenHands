@@ -1,6 +1,6 @@
+import asyncio
 from contextlib import AsyncExitStack
 from typing import Dict, List, Optional
-import asyncio
 
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.sse import sse_client
@@ -8,7 +8,7 @@ from mcp.client.stdio import stdio_client
 from mcp.types import ImageContent, TextContent
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.mcp.mcp_base import BaseTool, ExtendedImageContent, ToolResult
+from openhands.mcp.mcp_base import BaseTool, ToolResult
 from openhands.mcp.mcp_tool_collection import ToolCollection
 
 
@@ -78,7 +78,7 @@ class MCPClients(ToolCollection):
         timeout: float = 5,
     ) -> None:
         """Connect to an MCP server using SSE transport.
-        
+
         Args:
             server_url: The URL of the MCP server
             sid: Optional session ID
@@ -100,13 +100,13 @@ class MCPClients(ToolCollection):
         }
         logger.info(f'sid: {sid}')
         logger.info('Connecting to MCP server')
-        
+
         try:
             streams_context = sse_client(
                 url=server_url, timeout=timeout, sse_read_timeout=15, headers=headers
             )
             logger.info('Connected to MCP server')
-            
+
             async def connect_with_timeout():
                 streams = await self.exit_stack.enter_async_context(streams_context)
                 self.session = await self.exit_stack.enter_async_context(
@@ -114,16 +114,18 @@ class MCPClients(ToolCollection):
                 )
                 logger.info('Connected to MCP server with client session')
                 await self._initialize_and_list_tools()
-                
+
             await asyncio.wait_for(connect_with_timeout(), timeout=timeout)
         except asyncio.TimeoutError:
             logger.error(f'Connection to MCP server timed out after {timeout} seconds')
         except Exception as e:
             logger.error(f'Error connecting to MCP server: {str(e)}')
 
-    async def connect_stdio(self, command: str, args: List[str], timeout: float = 5.0) -> None:
+    async def connect_stdio(
+        self, command: str, args: List[str], timeout: float = 5.0
+    ) -> None:
         """Connect to an MCP server using stdio transport.
-        
+
         Args:
             command: The command to execute
             args: List of arguments for the command
@@ -136,7 +138,7 @@ class MCPClients(ToolCollection):
 
         try:
             server_params = StdioServerParameters(command=command, args=args)
-            
+
             async def connect_with_timeout():
                 stdio_transport = await self.exit_stack.enter_async_context(
                     stdio_client(server_params)
@@ -146,10 +148,12 @@ class MCPClients(ToolCollection):
                     ClientSession(read, write)
                 )
                 await self._initialize_and_list_tools()
-                
+
             await asyncio.wait_for(connect_with_timeout(), timeout=timeout)
         except asyncio.TimeoutError:
-            logger.error(f'Connection to MCP server via stdio timed out after {timeout} seconds')
+            logger.error(
+                f'Connection to MCP server via stdio timed out after {timeout} seconds'
+            )
         except Exception as e:
             logger.error(f'Error connecting to MCP server via stdio: {str(e)}')
 
