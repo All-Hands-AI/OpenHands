@@ -35,7 +35,6 @@ export async function downloadTrajectory(
     const writable = await fileHandle.createWritable();
     await writable.write(JSON.stringify(data, null, 2));
     await writable.close();
-
   } catch (error) {
     // If an error occurs, fall back to the downloadJSON method
     if (error instanceof Error && error.name !== "AbortError") {
