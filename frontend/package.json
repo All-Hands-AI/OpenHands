@@ -65,12 +65,8 @@
     "lint": "eslint src --ext .ts,.tsx,.js && prettier --check src/**/*.{ts,tsx}",
     "lint:fix": "eslint src --ext .ts,.tsx,.js --fix && prettier --write src/**/*.{ts,tsx}",
     "prepare": "cd .. && husky frontend/.husky",
-    "typecheck": "react-router typegen && tsc"
-  },
-  "husky": {
-    "hooks": {
-      "pre-commit": "npm run test && lint-staged"
-    }
+    "typecheck": "react-router typegen && tsc",
+    "check-unlocalized-strings": "node scripts/check-unlocalized-strings.cjs"
   },
   "lint-staged": {
     "src/**/*.{ts,tsx,js}": [
@@ -111,7 +107,7 @@
     "eslint-plugin-prettier": "^5.2.5",
     "eslint-plugin-react": "^7.37.4",
     "eslint-plugin-react-hooks": "^4.6.2",
-    "husky": "^9.1.6",
+    "husky": "^9.1.7",
     "jsdom": "^26.0.0",
     "lint-staged": "^15.5.0",
     "msw": "^2.6.6",
