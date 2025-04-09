@@ -174,8 +174,7 @@ const ThesisComputer = () => {
       <EditorNotification />
 
       <div className="bg-mercury-30 border-neutral-2 mb-3 flex h-[82%] w-full flex-1 flex-col rounded-2xl border">
-        <div className="flex-1 overflow-y-auto px-4 py-2 w-full h-full">
-          {computerList.length > 0 &&
+        {/* {computerList.length > 0 &&
             computerList.map((computerItem: any) => {
               if (
                 computerItem.observation === ObservationType.EDIT ||
@@ -185,7 +184,23 @@ const ThesisComputer = () => {
               }
 
               return <div></div>;
+            })} */}
+
+        <div className="flex-1 overflow-y-auto px-4 py-2 w-full h-full">
+          {computerList.length > 0 &&
+            computerList.map((computerItem, index) => {
+              if (index !== currentStep) return null;
+
+              if (
+                computerItem.observation === ObservationType.EDIT ||
+                computerItem.observation === ObservationType.READ
+              ) {
+                return <EditorContent computerItem={computerItem} />;
+              }
+
+              return <div />;
             })}
+          <div ref={scrollRef} />
         </div>
         <div className="border-t-neutral-2 flex h-11 w-full items-center gap-2 rounded-b-2xl border-t bg-white px-4">
           <div className="flex items-center gap-2">
@@ -204,10 +219,8 @@ const ThesisComputer = () => {
           </div>
           <Slider
             value={[Math.floor((currentStep / (totalSteps - 1)) * 100)]}
-            //@ts-ignore
-            onValueChange={(value) => handleSliderChange(value[0] ?? 0)}
-            max={100}
-            step={2}
+            onChange={(value) => handleSliderChange(value[0] ?? 0)}
+            step={1}
             size="sm"
           />
         </div>
