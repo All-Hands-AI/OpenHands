@@ -223,21 +223,58 @@ def display_event(event: Event, config: AppConfig):
 
 
 def display_help(style=DEFAULT_STYLE):
-    print_formatted_text(HTML(f'<grey>OpenHands CLI v{__version__}</grey>'))
+    print_formatted_text(
+        HTML(f'\n<grey>OpenHands CLI v{__version__}</grey>\n'), style=style
+    )
 
-    print('\nSample tasks:')
-    print('- Create a simple todo list application')
-    print('- Create a simple web server')
-    print('- Create a REST API')
-    print('- Create a chat application')
+    print_formatted_text(
+        HTML(
+            '<gold>OpenHands CLI lets you interact with the OpenHands agent from the command line.</gold>'
+        )
+    )
+    print_formatted_text('')
 
-    print_formatted_text(HTML('\nInteractive commands:'), style=style)
+    print_formatted_text('Things that you can try:')
+    print_formatted_text(
+        HTML('• Ask questions about the codebase <grey>> How does main.py work?</grey>')
+    )
+    print_formatted_text(
+        HTML(
+            '• Edit files or add new features <grey>> Add a new function to ...</grey>'
+        )
+    )
+    print_formatted_text(
+        HTML('• Find and fix issues <grey>> Fix the type error in ...</grey>')
+    )
+    print_formatted_text('')
+
+    print_formatted_text('Some tips to get the most out of OpenHands:')
+    print_formatted_text(
+        '• Be as specific as possible about the desired outcome or the problem to be solved.'
+    )
+    print_formatted_text(
+        '• Provide context, including relevant file paths and line numbers if available.'
+    )
+    print_formatted_text('• Break large tasks into smaller, manageable prompts.')
+    print_formatted_text('• Include relevant error messages or logs.')
+    print_formatted_text(
+        '• Specify the programming language or framework, if not obvious.'
+    )
+    print_formatted_text('')
+
+    print_formatted_text(HTML('Interactive commands:'), style=style)
     for command, description in COMMANDS.items():
         print_formatted_text(
             HTML(f'<gold><b>{command}</b></gold> - <grey>{description}</grey>'),
             style=style,
         )
-    print('')
+    print_formatted_text('')
+    print_formatted_text(
+        HTML(
+            '<grey>Learn more at: https://docs.all-hands.dev/modules/usage/getting-started</grey>'
+        )
+    )
+    print_formatted_text('')
 
 
 def display_banner(session_id: str, is_loaded: asyncio.Event):
