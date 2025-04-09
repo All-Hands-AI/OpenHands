@@ -18,7 +18,7 @@ export function Controls({ setSecurityOpen, showSecurityLock }: ControlsProps) {
   useAutoTitle();
 
   return (
-    <div className="flex items-center justify-between flex-wrap gap-2 p-4 bg-[#000000] border-t border-gray-200">
+    <div className="rounded-lg flex items-center justify-between flex-wrap gap-2 p-4 bg-transparent">
       <div className="flex items-center gap-2">
         <AgentControlBar />
         <AgentStatusBar />

@@ -1,4 +1,8 @@
-import { Slider } from "@heroui/react";
+import { Controls } from "#/components/features/controls/controls";
+import Security from "#/components/shared/modals/security/security";
+import { useSettings } from "#/hooks/query/use-settings";
+import TerminalPage from "#/routes/_oh.app.terminal";
+import { Slider, useDisclosure } from "@heroui/react";
 import { useEffect, useRef, useState } from "react";
 import {
   LuCompass,
@@ -9,9 +13,8 @@ import {
   LuStepForward,
 } from "react-icons/lu";
 import Markdown, { Components } from "react-markdown";
-import Files from "./Files";
 import TaskProgress from "./TaskProgress";
-import TerminalPage from "#/routes/_oh.app.terminal";
+import Files from "./Files";
 
 const EditorNotification = () => {
   return (
@@ -39,10 +42,17 @@ const ThesisComputer = () => {
   const distilledComputers = [];
 
   const scrollRef = useRef<HTMLDivElement>(null);
+  const { data: settings } = useSettings();
 
   const [currentStep, setCurrentStep] = useState(0);
   const totalSteps = distilledComputers.length;
   const [sliderValue, setSliderValue] = useState(0);
+
+  const {
+    isOpen: securityModalIsOpen,
+    onOpen: onSecurityModalOpen,
+    onOpenChange: onSecurityModalOpenChange,
+  } = useDisclosure();
 
   const handleNextStep = () => {
     if (currentStep < totalSteps - 1) {
@@ -232,6 +242,7 @@ const ThesisComputer = () => {
           {/* <TerminalPage /> */}
           <Files />
         </div>
+
         <div className="border-t-neutral-2 flex h-11 w-full items-center gap-2 rounded-b-2xl border-t bg-white px-4">
           <div className="flex items-center gap-2">
             <div

@@ -52,7 +52,7 @@ export default defineConfig(({ mode }) => {
         },
       },
       watch: {
-        ignored: ['**/node_modules/**', '**/.git/**'],
+        ignored: ["**/node_modules/**", "**/.git/**"],
       },
     },
     ssr: {
@@ -64,6 +64,7 @@ export default defineConfig(({ mode }) => {
       setupFiles: ["vitest.setup.ts"],
       exclude: [...configDefaults.exclude, "tests"],
       coverage: {
+        provider: "istanbul",
         reporter: ["text", "json", "html", "lcov", "text-summary"],
         reportsDirectory: "coverage",
         include: ["src/**/*.{ts,tsx}"],
