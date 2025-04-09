@@ -1,5 +1,6 @@
 import { BrowserPanel } from "#/components/features/browser/browser";
 import { useSettings } from "#/hooks/query/use-settings";
+import TerminalPage from "#/routes/_oh.app.terminal";
 import { RootState } from "#/store";
 import ObservationType from "#/types/observation-type";
 import { Slider, useDisclosure } from "@heroui/react";
@@ -185,8 +186,13 @@ const ThesisComputer = () => {
                 return <EditorContent computerItem={computerItem} />;
               }
 
+              // TODO: check type browse_interactive of observation
               if (computerItem.observation === ObservationType.BROWSE) {
                 return <BrowserPanel computerItem={computerItem} />;
+              }
+
+              if (computerItem.observation === ObservationType.RUN) {
+                return <TerminalPage />;
               }
 
               return <div />;
