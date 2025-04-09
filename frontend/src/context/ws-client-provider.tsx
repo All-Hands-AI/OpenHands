@@ -11,7 +11,9 @@ import {
 } from "#/types/core/actions";
 import { useGetJwt } from "#/zutand-stores/persist-config/selector";
 
-const isOpenHandsEvent = (event: unknown): event is OpenHandsParsedEvent =>
+export const isOpenHandsEvent = (
+  event: unknown,
+): event is OpenHandsParsedEvent =>
   typeof event === "object" &&
   event !== null &&
   "id" in event &&
@@ -19,7 +21,7 @@ const isOpenHandsEvent = (event: unknown): event is OpenHandsParsedEvent =>
   "message" in event &&
   "timestamp" in event;
 
-const isUserMessage = (
+export const isUserMessage = (
   event: OpenHandsParsedEvent,
 ): event is UserMessageAction =>
   "source" in event &&
@@ -27,7 +29,7 @@ const isUserMessage = (
   event.source === "user" &&
   event.type === "message";
 
-const isAssistantMessage = (
+export const isAssistantMessage = (
   event: OpenHandsParsedEvent,
 ): event is AssistantMessageAction =>
   "source" in event &&
@@ -35,7 +37,7 @@ const isAssistantMessage = (
   event.source === "agent" &&
   event.type === "message";
 
-const isMessageAction = (
+export const isMessageAction = (
   event: OpenHandsParsedEvent,
 ): event is UserMessageAction | AssistantMessageAction =>
   isUserMessage(event) || isAssistantMessage(event);
@@ -61,16 +63,16 @@ const WsClientContext = React.createContext<UseWsClient>({
   },
 });
 
-interface WsClientProviderProps {
+export interface WsClientProviderProps {
   conversationId: string;
 }
 
-interface ErrorArg {
+export interface ErrorArg {
   message?: string;
   data?: ErrorArgData | unknown;
 }
 
-interface ErrorArgData {
+export interface ErrorArgData {
   msg_id: string;
 }
 
