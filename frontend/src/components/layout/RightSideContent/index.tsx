@@ -160,6 +160,22 @@ const ThesisComputer = () => {
     );
   };
 
+  const renderProcessContent = (content: any) => {
+    if (content && content.length > 0) {
+      return content.map((item: any, index: number) => {
+        if (item.dtype === "text") {
+          return (
+            <div key={index} className="gap-2">
+              <Markdown components={components}>{item.content}</Markdown>
+            </div>
+          );
+        }
+        return <span key={index}>image</span>;
+      });
+    }
+    return null;
+  };
+
   return (
     <div className=" flex w-full h-full flex-col overflow-y-auto  border bg-white p-4">
       <div className="flex items-center justify-between">
@@ -209,7 +225,6 @@ const ThesisComputer = () => {
               return <div />;
             })}
           <div ref={scrollRef} />
-
           {/* TODO: check render section later */}
           {/* <TerminalPage /> */}
           {/* <Files /> */}

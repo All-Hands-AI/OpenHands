@@ -57,3 +57,11 @@ code {
 .markdown-body td {
   padding: 0.1rem 1rem;
 }
+
+.xterm-viewport {
+  border-radius: 12px;
+}
+
+.terminal.xterm {
+  padding: 12px;
+}
