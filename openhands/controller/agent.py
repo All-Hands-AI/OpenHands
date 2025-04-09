@@ -33,14 +33,17 @@ class Agent(ABC):
         llm: LLM,
         config: 'AgentConfig',
         mcp_tools: list[dict] | None = None,
-        workspace_mount_path_in_sandbox_store_in_session: bool = True
+        workspace_mount_path_in_sandbox_store_in_session: bool = True,
     ):
         self.llm = llm
         self.config = config
         self._complete = False
         self.prompt_manager: 'PromptManager' | None = None
         self.mcp_tools = mcp_tools
-        self.workspace_mount_path_in_sandbox_store_in_session = workspace_mount_path_in_sandbox_store_in_session
+        self.workspace_mount_path_in_sandbox_store_in_session = (
+            workspace_mount_path_in_sandbox_store_in_session
+        )
+
     @property
     def complete(self) -> bool:
         """Indicates whether the current instruction execution is complete.
