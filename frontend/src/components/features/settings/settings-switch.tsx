@@ -38,7 +38,7 @@ export function SettingsSwitch({
       <StyledSwitchComponent isToggled={isToggled} />
 
       <div className="flex items-center gap-1">
-        <span className="text-[14px] font-medium text-[#979995]">
+        <span className="text-[14px] font-medium text-neutral-700 dark:text-[#979995]">
           {children}
         </span>
         {isBeta && (

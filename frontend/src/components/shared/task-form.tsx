@@ -35,7 +35,7 @@ export function TaskForm({ ref }: TaskFormProps) {
   };
 
   return (
-    <div className="flex flex-col gap-1 w-full">
+    <div className="flex w-full flex-col gap-1">
       <form
         ref={ref}
         onSubmit={handleSubmit}
@@ -43,12 +43,14 @@ export function TaskForm({ ref }: TaskFormProps) {
       >
         <div
           className={cn(
-            "px-4 rounded-lg text-[17px] leading-5 w-full transition-colors duration-200",
-            inputIsFocused ? "bg-[#171717]" : "bg-[#171717]",
+            "w-full rounded-xl px-3 text-[16px] leading-5 transition-colors duration-200",
+            inputIsFocused
+              ? "bg-white dark:bg-[#171717]"
+              : "bg-white dark:bg-[#171717]",
           )}
         >
           {isPending ? (
-            <div className="flex justify-center py-[17px]">
+            <div className="flex justify-center py-3">
               <LoadingSpinner size="small" />
             </div>
           ) : (
@@ -71,11 +73,11 @@ export function TaskForm({ ref }: TaskFormProps) {
                 value={text}
                 maxRows={15}
                 showButton={!!text}
-                className="text-[17px] leading-5 py-[17px] pl-7 bg-[#171717]"
-                buttonClassName="pb-[7px]"
+                className="bg-white py-3 pl-8 text-[16px] leading-5 text-neutral-100 placeholder:text-[##979995] dark:bg-[#171717]"
+                buttonClassName="pb-[8px] "
                 disabled={navigation.state === "submitting"}
               />
-              <div className="absolute left-[-7px] top-1/2 -translate-y-1/2">
+              <div className="absolute left-[-2px] top-1/2 -translate-y-1/2">
                 <UploadImageInput
                   onUpload={async (uploadedFiles) => {
                     const promises = uploadedFiles.map(convertImageToBase64);
@@ -84,7 +86,7 @@ export function TaskForm({ ref }: TaskFormProps) {
                       dispatch(addFile(base64));
                     });
                   }}
-                  label={<AttachImageLabel />}
+                  label={<AttachImageLabel className="text-neutral-100" />}
                 />
               </div>
             </div>

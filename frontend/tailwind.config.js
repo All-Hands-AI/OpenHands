@@ -33,13 +33,27 @@ export default {
         "sea-stone": {
           900: "#181A17",
         },
+        neutral: {
+          100: "#0F0F0F",
+          200: "#141414",
+          300: "#1F1F1F",
+          400: "#292929",
+          500: "#3D3D3D",
+          600: "#525252",
+          700: "#666",
+          800: "#A3A3A3",
+          900: "#B8B8B8",
+          1000: "#E6E6E6",
+          1100: "#F5F5F5",
+          1200: "#FFF",
+        },
       },
     },
   },
   darkMode: "class",
   plugins: [
     heroui({
-      defaultTheme: "dark",
+      defaultTheme: "light",
       layout: {
         radius: {
           small: "5px",

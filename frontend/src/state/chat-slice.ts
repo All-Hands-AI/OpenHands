@@ -14,7 +14,7 @@ type SliceState = { messages: Message[] };
 
 const MAX_CONTENT_LENGTH = 1000;
 
-const HANDLED_ACTIONS: OpenHandsEventType[] = [
+export const HANDLED_ACTIONS: OpenHandsEventType[] = [
   "run",
   "run_ipython",
   "write",

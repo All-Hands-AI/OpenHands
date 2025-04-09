@@ -14,7 +14,7 @@ export function ConversationPanelWrapper({
   if (!portalTarget) return null;
 
   return ReactDOM.createPortal(
-    <div className="absolute h-full w-full left-0 top-0 z-20 bg-black/80 rounded-xl">
+    <div className="absolute h-full w-full left-0 top-0 z-20 dark:bg-black/80">
       {children}
     </div>,
     portalTarget,

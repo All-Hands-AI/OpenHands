@@ -40,7 +40,7 @@ export function AnalyticsConsentFormModal({
         onSubmit={handleSubmit}
         className="flex flex-col gap-2"
       >
-        <ModalBody className="border border-tertiary">
+        <ModalBody className="border border-neutral-1000 dark:border-tertiary">
           <BaseModalTitle title="Your Privacy Preferences" />
           <BaseModalDescription>
             We use tools to understand how our application is used to improve
@@ -48,7 +48,7 @@ export function AnalyticsConsentFormModal({
             preferences will be stored and can be updated anytime.
           </BaseModalDescription>
 
-          <label className="flex gap-2 items-center self-start">
+          <label className="flex gap-2 items-center self-start text-neutral-100">
             <input name="analytics" type="checkbox" defaultChecked />
             Send anonymous usage data
           </label>
@@ -57,7 +57,7 @@ export function AnalyticsConsentFormModal({
             testId="confirm-preferences"
             type="submit"
             variant="primary"
-            className="w-full"
+            className="w-full text-neutral-100 font-semibold rounded-lg"
           >
             Confirm Preferences
           </BrandButton>

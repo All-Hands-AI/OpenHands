@@ -21,6 +21,7 @@ import { useMigrateUserConsent } from "#/hooks/use-migrate-user-consent";
 import { useBalance } from "#/hooks/query/use-balance";
 import { SetupPaymentModal } from "#/components/features/payment/setup-payment-modal";
 import { displaySuccessToast } from "#/utils/custom-toast-handlers";
+import { useTheme } from "#/components/layout/theme-provider";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -116,16 +117,18 @@ export default function MainApp() {
   const renderWaitlistModal =
     !isFetchingAuth && !userIsAuthed && config.data?.APP_MODE === "saas";
 
+  const { setTheme } = useTheme();
+
   return (
     <div
       data-testid="root-layout"
-      className="bg-[#080808] h-screen md:min-w-[1024px] overflow-x-hidden flex flex-col md:flex-row "
+      className="h-dvh md:min-w-[1024px] overflow-x-hidden flex flex-col md:flex-row"
     >
       <Sidebar />
 
       <div
         id="root-outlet"
-        className="h-[calc(100%-50px)] md:h-full w-full relative"
+        className="h-[calc(100%-50px)] md:h-full w-full relative bg-neutral-1100 dark:bg-neutral-200"
       >
         <Outlet />
       </div>

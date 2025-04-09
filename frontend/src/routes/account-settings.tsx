@@ -340,7 +340,7 @@ const AccountSettings = () => {
           )}
           <div className="my-7 h-[1px] w-full bg-[#1B1C1A]" /> */}
           <section className="flex flex-col gap-6">
-            <h3 className="text-[18px] font-semibold text-[#EFEFEF]">
+            <h3 className="text-[18px] font-semibold text-neutral-100 dark:text-[#EFEFEF]">
               Additional Settings
             </h3>
             <SettingsDropdownInput
@@ -373,7 +373,7 @@ const AccountSettings = () => {
           </section>
         </div>
       </form>
-      <footer className="flex justify-end gap-4 w-full px-3 py-2 md:p-6 md:py-4 border-t border-t-[#232521] bg-[#080808] rounded-b-xl">
+      <footer className="flex justify-end gap-4 w-full px-3 py-2 md:p-6 md:py-4 border-t border-t-neutral-1000 dark:border-t-[#232521] bg-neutral-1100 dark:bg-[#080808] rounded-b-xl">
         <BrandButton
           type="button"
           variant="secondary"

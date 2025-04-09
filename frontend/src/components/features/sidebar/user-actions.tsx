@@ -6,6 +6,7 @@ import {
 } from "#/api/open-hands-axios";
 import { TooltipButton } from "#/components/shared/buttons/tooltip-button";
 import { wagmiConfig } from "#/config/config";
+import UserIcon from "#/icons/user-icon.svg?react";
 import {
   displayErrorToast,
   displaySuccessToast,
@@ -19,7 +20,7 @@ import {
 } from "#/zutand-stores/persist-config/selector";
 import { useAccountModal, useConnectModal } from "@rainbow-me/rainbowkit";
 import { disconnect, signMessage } from "@wagmi/core";
-import { FaUserAlt, FaWallet } from "react-icons/fa";
+import { FaWallet } from "react-icons/fa";
 import { twMerge } from "tailwind-merge";
 import { useAccount, useAccountEffect } from "wagmi";
 
@@ -29,8 +30,8 @@ interface UserActionsProps {
 }
 
 export function UserActions({ onLogout, isLoading }: UserActionsProps) {
-  const { openConnectModal } = useConnectModal();
-  const { openAccountModal } = useAccountModal();
+  const { openConnectModal, connectModalOpen } = useConnectModal();
+  const { openAccountModal, accountModalOpen } = useAccountModal();
   const account = useAccount();
   const { setSignedLogin, setPublicKey, setJwt, reset, setListAddresses } =
     usePersistActions();
@@ -102,7 +103,7 @@ export function UserActions({ onLogout, isLoading }: UserActionsProps) {
   };
 
   return (
-    <div data-testid="user-actions" className="w-8 h-8 relative">
+    <div data-testid="user-actions" className="w-10 h-10 relative">
       {/* <ConnectButton
         accountStatus={"avatar"}
         showBalance={false}
@@ -112,31 +113,27 @@ export function UserActions({ onLogout, isLoading }: UserActionsProps) {
         <button
           onClick={openConnectModal}
           type="button"
-          className="w-8 h-8 rounded-full flex items-center justify-center bg-background"
+          className="w-10 h-10 rounded-full flex items-center justify-center bg-background"
         >
           <FaWallet />
         </button>
       )}
 
       {openAccountModal && (
-        <button
+        <TooltipButton
+          testId="user-avatar"
+          tooltip={reduceString(account?.address || "")}
+          ariaLabel={reduceString(account?.address || "")}
           onClick={openAccountModal}
-          type="button"
-          className="w-8 h-8 rounded-full flex items-center justify-center"
+          className={twMerge(
+            "w-10 h-10 p-2 rounded-lg flex items-center justify-center  text-neutral-800 hover:bg-neutral-1000 hover:text-neutral-100",
+            isLoading && "bg-transparent",
+            (connectModalOpen || accountModalOpen) &&
+              "bg-neutral-1000 text-neutral-100",
+          )}
         >
-          <TooltipButton
-            testId="user-avatar"
-            tooltip={reduceString(account?.address || "")}
-            ariaLabel={reduceString(account?.address || "")}
-            onClick={openAccountModal}
-            className={twMerge(
-              "w-8 h-8 rounded-full flex items-center justify-center bg-background",
-              isLoading && "bg-transparent",
-            )}
-          >
-            <FaUserAlt />
-          </TooltipButton>
-        </button>
+          <UserIcon />
+        </TooltipButton>
       )}
 
       {/* <button onClick={openConnectModal}>
