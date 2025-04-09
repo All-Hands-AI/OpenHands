@@ -6,6 +6,7 @@ import {
   addAssistantObservation,
 } from "#/state/chat-slice";
 import { appendOutput } from "#/state/command-slice";
+import { setComputerList } from "#/state/computer-slice";
 import { appendJupyterOutput } from "#/state/jupyter-slice";
 import store from "#/store";
 import { AgentState } from "#/types/agent-state";
@@ -48,6 +49,10 @@ export function handleObservationMessage(message: ObservationMessage) {
       if (message.content) {
         store.dispatch(addAssistantMessage(message.content));
       }
+      break;
+    case ObservationType.READ:
+    case ObservationType.EDIT:
+      store.dispatch(setComputerList(message));
       break;
     case ObservationType.READ:
     case ObservationType.EDIT:

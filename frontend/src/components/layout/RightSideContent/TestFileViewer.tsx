@@ -1,9 +1,8 @@
-import { FileExplorer } from "#/components/features/file-explorer/file-explorer";
 import { useListFile } from "#/hooks/query/use-list-file";
 import React from "react";
 import { useRouteError } from "react-router";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
+import oneLight from "react-syntax-highlighter/dist/cjs/styles/prism/one-light";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -67,33 +66,29 @@ function getLanguageFromPath(path: string): string {
 }
 
 function FileViewer({ currentPath }: { currentPath: string }) {
-  console.log("🚀 ~ FileViewer ~ currentPath:", currentPath);
-
   const [fileExplorerIsOpen, setFileExplorerIsOpen] = React.useState(true);
-
   const { data: fileContent } = useListFile({
     path: currentPath,
-    enabled: true,
+    enabled: !!currentPath,
   });
-  console.log("🚀 ~ 6666666 ~ fileContent:", fileContent);
 
   const toggleFileExplorer = () => {
     setFileExplorerIsOpen((prev) => !prev);
   };
 
   return (
-    <div className="flex h-full bg-base-secondary relative">
-      <FileExplorer isOpen={fileExplorerIsOpen} onToggle={toggleFileExplorer} />
-      <div className="w-full h-full flex flex-col bg-gray-300">
+    <div className="flex h-full bg-white relative">
+      {/* <FileExplorer isOpen={fileExplorerIsOpen} onToggle={toggleFileExplorer} /> */}
+      <div className="w-full h-full flex flex-col bg-white">
         <div className="h-full w-full overflow-auto">
           <SyntaxHighlighter
             language={getLanguageFromPath(currentPath)}
-            style={vscDarkPlus}
+            style={oneLight}
             customStyle={{
               margin: 0,
               padding: "10px",
               height: "100%",
-              background: "#171717",
+              background: "#FFFF",
               fontSize: "0.875rem",
               borderRadius: 0,
             }}

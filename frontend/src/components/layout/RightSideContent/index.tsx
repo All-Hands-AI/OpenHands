@@ -1,20 +1,18 @@
-import { Controls } from "#/components/features/controls/controls";
-import Security from "#/components/shared/modals/security/security";
 import { useSettings } from "#/hooks/query/use-settings";
-import TerminalPage from "#/routes/_oh.app.terminal";
+import { RootState } from "#/store";
+import ObservationType from "#/types/observation-type";
 import { Slider, useDisclosure } from "@heroui/react";
 import { useEffect, useRef, useState } from "react";
 import {
   LuCompass,
-  LuFile,
-  LuNotepadText,
   LuSquareChartGantt,
   LuStepBack,
   LuStepForward,
 } from "react-icons/lu";
 import Markdown, { Components } from "react-markdown";
+import { useSelector } from "react-redux";
+import EditorContent from "./EditorContent";
 import TaskProgress from "./TaskProgress";
-import Files from "./Files";
 
 const EditorNotification = () => {
   return (
@@ -40,6 +38,8 @@ const EditorNotification = () => {
 const ThesisComputer = () => {
   const isViewDrawer = true;
   const distilledComputers = [];
+  const { computerList } = useSelector((state: RootState) => state.computer);
+  console.log("🚀 ~ ThesisComputer ~ computerList:", computerList);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const { data: settings } = useSettings();
@@ -182,65 +182,37 @@ const ThesisComputer = () => {
       <EditorNotification />
 
       <div className="bg-mercury-30 border-neutral-2 mb-3 flex h-[82%] w-full flex-1 flex-col rounded-2xl border">
-        <div className="max-w-[1024px] flex-1 overflow-y-auto px-4 py-2 max-sm:max-w-[691px]">
-          {distilledComputers.map((distilledComputer, index) => {
-            const content = distilledComputer?.content?.content;
-            const mtype = distilledComputer?.content?.mtype;
-            const tool_calls = distilledComputer?.content?.tool_calls;
+        {/* {computerList.length > 0 &&
+            computerList.map((computerItem: any) => {
+              if (
+                computerItem.observation === ObservationType.EDIT ||
+                computerItem.observation === ObservationType.READ
+              ) {
+                return <EditorContent computerItem={computerItem} />;
+              }
 
-            if (index !== currentStep) return null;
+              return <div></div>;
+            })} */}
 
-            if (tool_calls && Array.isArray(tool_calls)) {
-              return (
-                <div key={distilledComputer?.id}>
-                  <div>
-                    {tool_calls.map((toolCalls: any) => {
-                      return renderToolCalls(toolCalls);
-                    })}
-                  </div>
-                </div>
-              );
-            }
+        <div className="flex-1 overflow-y-auto px-4 py-2 w-full h-full">
+          {computerList.length > 0 &&
+            computerList.map((computerItem, index) => {
+              if (index !== currentStep) return null;
 
-            if (mtype === "planning") {
-              return (
-                <div key={distilledComputer?.id}>
-                  <div className="mb-2 flex items-center justify-center gap-1 border-b-[1px] pb-2">
-                    <LuNotepadText size={20} />
-                    <span className="text-neutral-1 text-16 font-bold">
-                      Planning Checklist
-                    </span>
-                  </div>
+              if (
+                computerItem.observation === ObservationType.EDIT ||
+                computerItem.observation === ObservationType.READ
+              ) {
+                return <EditorContent computerItem={computerItem} />;
+              }
 
-                  <div key={distilledComputer?.id} className="">
-                    <Markdown components={components}>{content}</Markdown>
-                  </div>
-                </div>
-              );
-            }
-
-            if (mtype === "final_final_answer") {
-              return (
-                <div key={distilledComputer?.id}>
-                  <div className="mb-2 flex items-center justify-center gap-1 border-b-[1px] pb-2">
-                    <LuFile size={20} />
-                    <span className="text-neutral-1 text-16 font-bold">
-                      Final Answer
-                    </span>
-                  </div>
-
-                  <Markdown components={components}>{content}</Markdown>
-                </div>
-              );
-            }
-
-            return <div />;
-          })}
+              return <div />;
+            })}
           <div ref={scrollRef} />
 
           {/* TODO: check render section later */}
           {/* <TerminalPage /> */}
-          <Files />
+          {/* <Files /> */}
         </div>
 
         <div className="border-t-neutral-2 flex h-11 w-full items-center gap-2 rounded-b-2xl border-t bg-white px-4">
@@ -260,10 +232,8 @@ const ThesisComputer = () => {
           </div>
           <Slider
             value={[Math.floor((currentStep / (totalSteps - 1)) * 100)]}
-            //@ts-ignore
-            onValueChange={(value) => handleSliderChange(value[0] ?? 0)}
-            max={100}
-            step={2}
+            onChange={(value) => handleSliderChange(value[0] ?? 0)}
+            step={1}
             size="sm"
           />
         </div>
