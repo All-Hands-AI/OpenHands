@@ -4,7 +4,6 @@ import {
   ResizablePanel,
 } from "#/components/layout/resizable-panel";
 import ThesisComputer from "#/components/layout/RightSideContent";
-import Security from "#/components/shared/modals/security/security";
 import {
   ConversationProvider,
   useConversation,
@@ -21,7 +20,6 @@ import { clearFiles, clearInitialPrompt } from "#/state/initial-query-slice";
 import { clearJupyter } from "#/state/jupyter-slice";
 import { RootState } from "#/store";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
-import { useDisclosure } from "@heroui/react";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
@@ -92,12 +90,6 @@ function AppContent() {
       window.removeEventListener("resize", handleResize);
     };
   }, []);
-
-  const {
-    isOpen: securityModalIsOpen,
-    onOpen: onSecurityModalOpen,
-    onOpenChange: onSecurityModalOpenChange,
-  } = useDisclosure();
 
   function renderMain() {
     if (width <= 640) {
@@ -176,17 +168,18 @@ function AppContent() {
         <div data-testid="app-route" className="flex flex-col h-full gap-3">
           <div className="flex h-full overflow-auto">{renderMain()}</div>
 
-          {/* <Controls
+          {/*
+          <Controls
             setSecurityOpen={onSecurityModalOpen}
             showSecurityLock={!!settings?.SECURITY_ANALYZER}
           /> */}
-          {settings && (
+          {/* {settings && (
             <Security
               isOpen={securityModalIsOpen}
               onOpenChange={onSecurityModalOpenChange}
               securityAnalyzer={settings.SECURITY_ANALYZER}
             />
-          )}
+          )} */}
         </div>
       </EventHandler>
     </WsClientProvider>

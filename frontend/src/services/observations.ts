@@ -52,10 +52,6 @@ export function handleObservationMessage(message: ObservationMessage) {
       break;
     case ObservationType.READ:
     case ObservationType.EDIT:
-      store.dispatch(setComputerList(message));
-      break;
-    case ObservationType.READ:
-    case ObservationType.EDIT:
     case ObservationType.THINK:
     case ObservationType.NULL:
     case ObservationType.MCP:

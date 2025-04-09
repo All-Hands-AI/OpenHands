@@ -53,6 +53,7 @@ class AgentSession:
     loop: asyncio.AbstractEventLoop | None = None
     logger: LoggerAdapter
     mnemonic: str | None
+
     def __init__(
         self,
         sid: str,

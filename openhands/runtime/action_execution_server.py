@@ -24,6 +24,7 @@ from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.security import APIKeyHeader
+from mcp.types import ImageContent
 from openhands_aci.editor.editor import OHEditor
 from openhands_aci.editor.exceptions import ToolError
 from openhands_aci.editor.results import ToolResult
@@ -74,7 +75,6 @@ from openhands.runtime.utils.memory_monitor import MemoryMonitor
 from openhands.runtime.utils.runtime_init import init_user_and_working_directory
 from openhands.runtime.utils.system_stats import get_system_stats
 from openhands.utils.async_utils import call_sync_from_async, wait_all
-from mcp.types import ImageContent
 
 
 class ActionRequest(BaseModel):
@@ -568,7 +568,9 @@ class ActionExecutor:
         # for agent in mcp_agents:
         #     await agent.cleanup()
         # special case for browser screenshot of playwright_mcp
-        if action.name == 'browser_screenshot' and isinstance(response.output, (ImageContent, ExtendedImageContent)):
+        if action.name == 'browser_screenshot' and isinstance(
+            response.output, (ImageContent, ExtendedImageContent)
+        ):
             return self.playwright_mcp_browser_screenshot(action, response)
 
         return MCPObservation(content=f'MCP result:{response}')

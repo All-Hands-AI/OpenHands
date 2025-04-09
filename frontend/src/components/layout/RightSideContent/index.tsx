@@ -1,11 +1,18 @@
+import { useSettings } from "#/hooks/query/use-settings";
 import { RootState } from "#/store";
 import ObservationType from "#/types/observation-type";
-import { Slider } from "@heroui/react";
+import { Slider, useDisclosure } from "@heroui/react";
 import { useEffect, useRef, useState } from "react";
-import { LuCompass, LuStepBack, LuStepForward } from "react-icons/lu";
+import {
+  LuCompass,
+  LuSquareChartGantt,
+  LuStepBack,
+  LuStepForward,
+} from "react-icons/lu";
 import { useSelector } from "react-redux";
 import EditorContent from "./EditorContent";
 import TaskProgress from "./TaskProgress";
+import Markdown, { Components } from "react-markdown";
 
 const EditorNotification = () => {
   return (
@@ -34,10 +41,17 @@ const ThesisComputer = () => {
   console.log("🚀 ~ ThesisComputer ~ computerList:", computerList);
 
   const scrollRef = useRef<HTMLDivElement>(null);
+  const { data: settings } = useSettings();
 
   const [currentStep, setCurrentStep] = useState(0);
   const totalSteps = computerList.length;
   const [sliderValue, setSliderValue] = useState(0);
+
+  const {
+    isOpen: securityModalIsOpen,
+    onOpen: onSecurityModalOpen,
+    onOpenChange: onSecurityModalOpenChange,
+  } = useDisclosure();
 
   const handleNextStep = () => {
     if (currentStep < totalSteps - 1) {
@@ -79,6 +93,72 @@ const ThesisComputer = () => {
     return <div />;
   }
 
+  const components: Partial<Components> = {
+    ol: ({ children }) => (
+      <ol style={{ listStyleType: "decimal", paddingLeft: "16px" }}>
+        {children}
+      </ol>
+    ),
+    li: ({ children }) => {
+      return <li className="text-[14px]">{children}</li>;
+    },
+    a: ({ href, children }) => (
+      <a href={href} target="_blank" rel="noopener noreferrer">
+        {children}
+      </a>
+    ),
+    p: ({ children }) => <p className="text-[14px]">{children}</p>,
+    h1: ({ children }) => <h1 className="text-[14px]">{children}</h1>,
+    h2: ({ children }) => <h2 className="text-[14px]">{children}</h2>,
+    h3: ({ children }) => <h3 className="text-[14px]">{children}</h3>,
+    h4: ({ children }) => <h4 className="text-[14px]">{children}</h4>,
+    h5: ({ children }) => <h5 className="text-[14px]">{children}</h5>,
+    h6: ({ children }) => <h6 className="text-[14px]">{children}</h6>,
+  };
+
+  const toPascalCase = (str: string) => {
+    return str
+      .split("_")
+      .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  };
+
+  const renderToolCalls = (toolCalls: any) => {
+    const nameValue = toolCalls?.function?.name;
+    const results = toolCalls?.results;
+
+    return (
+      <div>
+        <div className="mb-2 flex items-center justify-center gap-1 border-b-[1px] pb-2">
+          <LuSquareChartGantt size={20} />
+          <span className="text-neutral-1 text-16 font-bold">
+            {nameValue === "final_answer"
+              ? "Step Answer"
+              : toPascalCase(nameValue)}
+          </span>
+        </div>
+
+        <div className="mb-2">
+          {results &&
+            Array.isArray(results) &&
+            results.length > 0 &&
+            results.map((result, index) => {
+              if (result.dtype === "text") {
+                return (
+                  <div key={index} className="gap-2">
+                    <Markdown components={components}>
+                      {result.content}
+                    </Markdown>
+                  </div>
+                );
+              }
+              return <span key={index}>image</span>;
+            })}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className=" flex w-full h-full flex-col overflow-y-auto  border bg-white p-4">
       <div className="flex items-center justify-between">
@@ -116,6 +196,9 @@ const ThesisComputer = () => {
               return <div />;
             })}
           <div ref={scrollRef} />
+          {/* TODO: check render section later */}
+          {/* <TerminalPage /> */}
+          {/* <Files /> */}
         </div>
 
         <div className="border-t-neutral-2 flex h-11 w-full items-center gap-2 rounded-b-2xl border-t bg-white px-4">

@@ -123,8 +123,8 @@ async def get_config() -> dict[str, Any]:
 @app.get('/use-cases', response_model=ConversationInfoResultSet)
 async def get_conversations(
     # user_address: str = "0x9b60c97c53e3e8c55c7d32f55c1b518b6ea417f7",
-    user_address: str = '0xE27d3094C4231150d421c3600DEd0d130cf74216',
-    limit: int = 10,
+    user_address: str = '0xe27d3094c4231150d421c3600ded0d130cf74216',
+    limit: int = 8,
 ) -> ConversationInfoResultSet:
     """Get list of conversations for a user.
 
@@ -144,7 +144,6 @@ async def get_conversations(
         )
 
         conversation_metadata_result_set = await conversation_store.search(None, limit)
-
         # Filter conversations by age
         now = datetime.now(timezone.utc)
         max_age = config.conversation_max_age_seconds

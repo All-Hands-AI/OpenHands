@@ -21,8 +21,12 @@ import { TypingIndicator } from "./typing-indicator";
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { useGetTrajectory } from "#/hooks/mutation/use-get-trajectory";
+import { useSettings } from "#/hooks/query/use-settings";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { downloadTrajectory } from "#/utils/download-trajectory";
+import { useDisclosure } from "@heroui/react";
+import { Controls } from "../controls/controls";
+import Security from "#/components/shared/modals/security/security";
 
 function getEntryPoint(
   hasRepository: boolean | null,
@@ -35,6 +39,13 @@ function getEntryPoint(
 
 export function ChatInterface() {
   const { send, isLoadingMessages } = useWsClient();
+  const { data: settings } = useSettings();
+  const {
+    isOpen: securityModalIsOpen,
+    onOpen: onSecurityModalOpen,
+    onOpenChange: onSecurityModalOpenChange,
+  } = useDisclosure();
+
   const dispatch = useDispatch();
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const { scrollDomToBottom, onChatBodyScroll, hitBottom } =
@@ -178,6 +189,17 @@ export function ChatInterface() {
           value={messageToSend ?? undefined}
           onChange={setMessageToSend}
         />
+        <Controls
+          setSecurityOpen={onSecurityModalOpen}
+          showSecurityLock={!!settings?.SECURITY_ANALYZER}
+        />
+        {settings && (
+          <Security
+            isOpen={securityModalIsOpen}
+            onOpenChange={onSecurityModalOpenChange}
+            securityAnalyzer={settings.SECURITY_ANALYZER}
+          />
+        )}
       </div>
 
       <FeedbackModal
