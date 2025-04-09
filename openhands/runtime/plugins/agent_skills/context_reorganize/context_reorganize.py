@@ -2,7 +2,7 @@
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import FileReadAction
-from openhands.events.action.context_reorganization import ContextReorganizationAction
+from openhands.events.action.agent import ContextReorganizationAction
 from openhands.events.observation import FileReadObservation
 from openhands.events.observation.context_reorganization import (
     ContextReorganizationObservation,

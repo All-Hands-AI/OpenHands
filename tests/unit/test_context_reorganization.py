@@ -3,7 +3,7 @@
 import unittest
 from unittest.mock import MagicMock
 
-from openhands.events.action.context_reorganization import ContextReorganizationAction
+from openhands.events.action.agent import ContextReorganizationAction
 from openhands.events.observation import FileReadObservation
 from openhands.events.observation.context_reorganization import (
     ContextReorganizationObservation,

@@ -38,7 +38,7 @@ from openhands.events.action import (
     IPythonRunCellAction,
     MessageAction,
 )
-from openhands.events.action.context_reorganization import ContextReorganizationAction
+from openhands.events.action.agent import ContextReorganizationAction
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.tool import ToolCallMetadata
 from openhands.llm import LLM

@@ -27,11 +27,11 @@ from openhands.events.action import (
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
-    ContextReorganizationAction,
     FileReadAction,
     FileWriteAction,
     IPythonRunCellAction,
 )
+from openhands.events.action.agent import ContextReorganizationAction
 from openhands.events.event import Event
 from openhands.events.observation import (
     AgentThinkObservation,
@@ -509,9 +509,6 @@ class Runtime(FileEditRuntimeMixin):
         if action_type not in ACTION_TYPE_TO_CLASS:
             return ErrorObservation(f'Action {action_type} does not exist.')
         if not hasattr(self, action_type):
-            # Special case for ContextReorganizationAction
-            if isinstance(action, ContextReorganizationAction):
-                return self.context_reorganization(action)
             return ErrorObservation(
                 f'Action {action_type} is not supported in the current runtime.'
             )

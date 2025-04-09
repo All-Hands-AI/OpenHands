@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, List, Optional
 
-from openhands.events.action.context_reorganization import ContextReorganizationAction
+from openhands.events.action.agent import ContextReorganizationAction
 
 __all__ = ['ContextReorganizeTool']
 
