@@ -177,7 +177,7 @@ const ThesisComputer = () => {
       <EditorNotification />
 
       <div className="bg-mercury-30 border-neutral-1000 mb-3 flex h-[82%] w-full flex-1 flex-col rounded-2xl border">
-        <div className="flex-1 overflow-y-auto px-4 py-2 w-full h-full">
+        <div className="flex-1 overflow-y-auto px-4 py-2 w-full h-full relative">
           {computerList.length > 0 &&
             computerList.map((computerItem, index) => {
               if (index !== currentStep) return null;

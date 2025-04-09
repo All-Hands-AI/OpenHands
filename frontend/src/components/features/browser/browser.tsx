@@ -3,7 +3,7 @@ import { useSelector } from "react-redux";
 import { BrowserSnapshot } from "./browser-snapshot";
 import { EmptyBrowserMessage } from "./empty-browser-message";
 
-export function BrowserPanel({ computerItem }: { computerItem: any }) {
+export function BrowserPanel({ computerItem }: { computerItem?: any }) {
   const { url, screenshotSrc } = useSelector(
     (state: RootState) => state.browser,
   );
