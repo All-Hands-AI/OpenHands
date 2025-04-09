@@ -276,9 +276,11 @@ class OpenHands {
 
   static async getConversation(
     conversationId: string,
+    isAuth?: boolean | null,
   ): Promise<Conversation | null> {
+    const path = isAuth ? `/api/conversations/${conversationId}` : `/api/options/use-cases/conversations/${conversationId}`;
     const { data } = await openHands.get<Conversation | null>(
-      `/api/conversations/${conversationId}`,
+      path,
     );
 
     return data;

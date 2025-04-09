@@ -25,14 +25,17 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { ChatInterface } from "../../components/features/chat/chat-interface";
 import { EventHandler } from "./event-handler";
+import { useAccount } from "wagmi";
 
 function AppContent() {
   useConversationConfig();
   const { t } = useTranslation();
   const { data: settings } = useSettings();
   const { conversationId } = useConversation();
+  const account = useAccount();
   const { data: conversation, isFetched } = useUserConversation(
     conversationId || null,
+    !!account?.address
   );
   const { initialPrompt, files } = useSelector(
     (state: RootState) => state.initialQuery,
