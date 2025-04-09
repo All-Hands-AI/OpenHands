@@ -4,9 +4,10 @@ import { OptionalTag } from "./optional-tag";
 
 interface SettingsDropdownInputProps {
   testId: string;
-  label: ReactNode;
   name: string;
   items: { key: React.Key; label: string }[];
+  label?: ReactNode;
+  placeholder?: string;
   showOptionalTag?: boolean;
   isDisabled?: boolean;
   defaultSelectedKey?: string;
@@ -18,6 +19,7 @@ export function SettingsDropdownInput({
   label,
   name,
   items,
+  placeholder,
   showOptionalTag,
   isDisabled,
   defaultSelectedKey,
@@ -25,10 +27,12 @@ export function SettingsDropdownInput({
 }: SettingsDropdownInputProps) {
   return (
     <label className="flex flex-col gap-2.5 w-[680px]">
-      <div className="flex items-center gap-1">
-        <span className="text-sm">{label}</span>
-        {showOptionalTag && <OptionalTag />}
-      </div>
+      {label && (
+        <div className="flex items-center gap-1">
+          <span className="text-sm">{label}</span>
+          {showOptionalTag && <OptionalTag />}
+        </div>
+      )}
       <Autocomplete
         aria-label={typeof label === "string" ? label : name}
         data-testid={testId}
@@ -37,6 +41,7 @@ export function SettingsDropdownInput({
         defaultSelectedKey={defaultSelectedKey}
         isClearable={isClearable}
         isDisabled={isDisabled}
+        placeholder={placeholder}
         className="w-full"
         classNames={{
           popoverContent: "bg-tertiary rounded-xl border border-[#717888]",
