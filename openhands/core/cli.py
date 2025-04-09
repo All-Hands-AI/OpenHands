@@ -223,8 +223,7 @@ def display_event(event: Event, config: AppConfig):
 
 
 def display_help(style=DEFAULT_STYLE):
-    print_formatted_text(HTML('<grey>OpenHands CLI</grey>'))
-    print_formatted_text(HTML(f'<grey>OpenHands version: {__version__}</grey>'))
+    print_formatted_text(HTML(f'<grey>OpenHands CLI v{__version__}</grey>'))
 
     print('\nSample tasks:')
     print('- Create a simple todo list application')
@@ -254,8 +253,7 @@ def display_banner(session_id: str, is_loaded: asyncio.Event):
         style=DEFAULT_STYLE,
     )
 
-    print_formatted_text(HTML('<grey>OpenHands CLI</grey>'))
-    print_formatted_text(HTML(f'<grey>OpenHands version: {__version__}</grey>'))
+    print_formatted_text(HTML(f'<grey>OpenHands CLI v{__version__}</grey>'))
 
     banner_text = (
         'Initialized session' if is_loaded.is_set() else 'Initializing session'
@@ -323,6 +321,91 @@ async def read_confirmation_input():
         return confirmation.lower() == 'y'
     except (KeyboardInterrupt, EOFError):
         return False
+
+
+async def init_repository(current_dir: str):
+    repo_file_path = Path(current_dir) / '.openhands' / 'microagents' / 'repo.md'
+
+    # Check if the file already exists
+    if repo_file_path.exists():
+        try:
+            content = await asyncio.get_event_loop().run_in_executor(
+                None, read_file, repo_file_path
+            )
+
+            container = Frame(
+                TextArea(
+                    text=content,
+                    read_only=True,
+                    style=COLOR_GREY,
+                    wrap_lines=True,
+                ),
+                title='Repository File (repo.md)',
+                style=f'fg:{COLOR_GREY}',
+            )
+            print_container(container)
+            print_formatted_text('')  # Add a newline after the frame
+        except Exception as e:
+            print_formatted_text(
+                FormattedText(
+                    [
+                        ('ansired', f'Error reading repository instructions: {e}'),
+                        ('', '\n'),
+                    ]
+                )
+            )
+    else:
+        print_formatted_text('\nRepository instructions file not found.')
+        confirm = cli_confirm(
+            'Do you want to create the repository instructions file?',
+            ['Yes, create', 'No, dismiss'],
+        )
+
+        if not confirm:
+            return
+
+        kb = KeyBindings()
+
+        @kb.add('c-d')
+        def _(event):
+            event.current_buffer.validate_and_handle()
+
+        content = await prompt_session.prompt_async(
+            '\nEnter content for the repository instructions file. Press Ctrl+D when finished:\n\n',
+            multiline=True,
+            key_bindings=kb,
+        )
+
+        prompt_session.multiline = False
+
+        # Use run_in_executor for directory creation
+        await asyncio.get_event_loop().run_in_executor(
+            None, lambda: repo_file_path.parent.mkdir(parents=True, exist_ok=True)
+        )
+
+        try:
+            # Use run_in_executor for file writing
+            await asyncio.get_event_loop().run_in_executor(
+                None, write_to_file, repo_file_path, content
+            )
+
+            print_formatted_text(
+                f'\nRepository instructions file created: {repo_file_path}\n'
+            )
+        except Exception as e:
+            print_formatted_text(
+                f'\nError creating repository instructions file: {e}\n'
+            )
+
+
+def read_file(file_path):
+    with open(file_path, 'r') as f:
+        return f.read()
+
+
+def write_to_file(file_path, content):
+    with open(file_path, 'w') as f:
+        f.write(content)
 
 
 def cli_confirm(question: str = 'Are you sure?', choices: Optional[List[str]] = None):
@@ -528,6 +611,12 @@ async def main(loop: asyncio.AbstractEventLoop):
     # Load config from toml and override with command line arguments
     config: AppConfig = setup_config_from_args(args)
 
+    # TODO: Set working directory from config or use current working directory?
+    current_dir = config.workspace_base
+
+    if not current_dir:
+        raise ValueError('Workspace base directory not specified')
+
     # Read task from file, CLI args, or stdin
     task_str = read_task(args, config.cli_multiline_input)
 
@@ -574,7 +663,7 @@ async def main(loop: asyncio.AbstractEventLoop):
             display_help()
             await prompt_for_next_task()
         if next_message == '/init':
-            # TODO: Implement init command
+            await init_repository(current_dir)
             await prompt_for_next_task()
         action = MessageAction(content=next_message)
         event_stream.add_event(action, EventSource.USER)
@@ -627,9 +716,6 @@ async def main(loop: asyncio.AbstractEventLoop):
 
     # Clear loading animation
     is_loaded.set()
-
-    # TODO: Set working directory from config or use current working directory?
-    current_dir = config.workspace_base
 
     if not check_folder_security_agreement(current_dir):
         # User rejected, exit application
