@@ -87,7 +87,7 @@ class FileEditAction(Action):
     Usage:
         - For LLM-based editing: Use path, content, start, and end attributes.
         - For ACI-based editing: Use path, command, and the appropriate attributes for the specific command.
-        - For Fenced Diff editing: Use path, search_block, and replace_block attributes.
+        - For Fenced Diff editing: Use path, search, and replace attributes.
 
     Note:
         - If start is set to -1 in LLM-based editing, the content will be appended to the file.
@@ -109,8 +109,8 @@ class FileEditAction(Action):
     end: int = -1
 
     # Fenced Diff arguments
-    search_block: str | None = None
-    replace_block: str | None = None
+    search: str | None = None
+    replace: str | None = None
 
     # Shared arguments
     thought: str = ''
@@ -128,8 +128,8 @@ class FileEditAction(Action):
             ret += f'Range: [L{self.start}:L{self.end}]\n'
             ret += f'Content:\n```\n{self.content}\n```\n'
         elif self.impl_source == FileEditSource.FENCED_DIFF:
-            ret += f'Search Block:\n```\n{self.search_block}\n```\n'
-            ret += f'Replace Block:\n```\n{self.replace_block}\n```\n'
+            ret += f'SEARCH:\n```\n{self.search}\n```\n'
+            ret += f'REPLACE:\n```\n{self.replace}\n```\n'
         else:  # OH_ACI mode
             ret += f'Command: {self.command}\n'
             if self.command == 'create':

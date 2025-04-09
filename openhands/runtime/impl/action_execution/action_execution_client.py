@@ -304,7 +304,7 @@ class ActionExecutionClient(Runtime):
     def write(self, action: FileWriteAction) -> Observation:
         return self.send_action_for_execution(action)
 
-    async def edit(self, action: FileEditAction) -> Observation:
+    def edit(self, action: FileEditAction) -> Observation:
         # Dispatch based on impl_source
         if action.impl_source == FileEditSource.LLM_BASED_EDIT:
             return self.llm_based_edit(action)

@@ -175,18 +175,18 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                     raise FunctionCallValidationError(
                         f'Missing required argument "path" in tool call {tool_call.function.name}'
                     )
-                if 'search_block' not in arguments:
+                if 'search' not in arguments:
                     raise FunctionCallValidationError(
-                        f'Missing required argument "search_block" in tool call {tool_call.function.name}'
+                        f'Missing required argument "search" in tool call {tool_call.function.name}'
                     )
-                if 'replace_block' not in arguments:
+                if 'replace' not in arguments:
                     raise FunctionCallValidationError(
-                        f'Missing required argument "replace_block" in tool call {tool_call.function.name}'
+                        f'Missing required argument "replace" in tool call {tool_call.function.name}'
                     )
                 action = FileEditAction(
                     path=arguments['path'],
-                    search_block=arguments['search_block'],
-                    replace_block=arguments['replace_block'],
+                    search=arguments['search'],
+                    replace=arguments['replace'],
                     impl_source=FileEditSource.FENCED_DIFF,
                 )
             # ================================================

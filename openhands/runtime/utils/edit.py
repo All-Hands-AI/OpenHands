@@ -559,12 +559,8 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
     def fenced_diff_edit(self, action: FileEditAction) -> Observation:
         """Handles FileEditAction with FENCED_DIFF source using SEARCH/REPLACE blocks."""
         logger.info(f'Executing fenced diff edit for: {action.path}')
-        assert (
-            action.search_block is not None
-        ), 'search_block cannot be None for FENCED_DIFF'
-        assert (
-            action.replace_block is not None
-        ), 'replace_block cannot be None for FENCED_DIFF'
+        assert action.search is not None, 'search cannot be None for FENCED_DIFF'
+        assert action.replace is not None, 'replace cannot be None for FENCED_DIFF'
 
         # 1. Read file content using the interface method
         read_obs = self.read(FileReadAction(path=action.path))
@@ -576,7 +572,7 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
             and 'File not found'.lower() in read_obs.content.lower()
         ):
             logger.info(
-                f'File not found for fenced diff: {action.path}. Will attempt to create if search_block is empty.'
+                f'File not found for fenced diff: {action.path}. Will attempt to create if SEARCH is empty.'
             )
             original_content = ''
             prev_exist = False
@@ -590,15 +586,15 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
             )
 
         # 2. Handle Empty Search Block (Append/Create)
-        if not action.search_block.strip():
+        if not action.search.strip():
             if not prev_exist:
                 logger.info(f'Creating new file {action.path} with content.')
-                new_content = action.replace_block
+                new_content = action.replace
             else:
                 logger.info(f'Appending content to {action.path}.')
                 if original_content and not original_content.endswith('\n'):
                     original_content += '\n'
-                new_content = original_content + action.replace_block
+                new_content = original_content + action.replace
 
             # Write the new content using the interface method
             write_obs = self.write(
@@ -622,19 +618,19 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
 
         # 3. Implement Exact Search/Replace Logic
         original_lines = original_content.splitlines(keepends=True)
-        search_lines = action.search_block.splitlines(keepends=True)
-        replace_lines = action.replace_block.splitlines(keepends=True)
+        search_lines = action.search.splitlines(keepends=True)
+        replace_lines = action.replace.splitlines(keepends=True)
 
         # Ensure search/replace blocks are not empty lists if input was just whitespace
-        if action.search_block and not search_lines:
-            search_lines = ['\n'] * action.search_block.count('\n') + (
-                [''] if not action.search_block.endswith('\n') else []
+        if action.search and not search_lines:
+            search_lines = ['\n'] * action.search.count('\n') + (
+                [''] if not action.search.endswith('\n') else []
             )
-        if action.replace_block and not replace_lines:
-            replace_lines = ['\n'] * action.replace_block.count('\n') + (
-                [''] if not action.replace_block.endswith('\n') else []
+        if action.replace and not replace_lines:
+            replace_lines = ['\n'] * action.replace.count('\n') + (
+                [''] if not action.replace.endswith('\n') else []
             )
-        if not action.replace_block:
+        if not action.replace:
             replace_lines = []
 
         # Attempt 1: Exact match
@@ -651,19 +647,19 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
                 original_lines, search_lines, replace_lines
             )
 
-        # 4. Handle errors (search_block not found by either method)
+        # 4. Handle errors (search not found by either method)
         if new_content_str is None:
             logger.warning(
-                f'Exact and whitespace-flexible search_block match failed for {action.path}'
+                f'Exact and whitespace-flexible SEARCH block match failed for {action.path}'
             )
             error_message = (
-                f'Failed to apply fenced diff edit: The specified search_block was not found exactly '
+                f'Failed to apply fenced diff edit: The specified SEARCH block was not found exactly '
                 f'or with flexible whitespace in {action.path}.\n'
-                'SEARCH BLOCK:\n```\n' + action.search_block + '\n```\n'
+                'SEARCH block:\n```\n' + action.search + '\n```\n'
             )
             # Find and add the most similar block as a hint
             similar_block = self._find_most_similar_block(
-                original_content, action.search_block
+                original_content, action.search
             )
             if similar_block:
                 error_message += (
