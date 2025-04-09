@@ -53,14 +53,14 @@ export function ExpandableMessage({
     return (
       <div
         data-testid="out-of-credits"
-        className="flex gap-2 items-center justify-start border-l-2 pl-2 my-2 py-2 border-danger"
+        className="my-2 flex items-center justify-start gap-2 border-l-2 border-danger py-2 pl-2"
       >
-        <div className="text-sm w-full">
+        <div className="w-full text-sm">
           <div className="font-bold text-danger">
             {t("STATUS$ERROR_LLM_OUT_OF_CREDITS")}
           </div>
           <Link
-            className="mt-2 mb-2 w-full h-10 rounded flex items-center justify-center gap-2 bg-primary text-[#0D0F11]"
+            className="mb-2 mt-2 flex h-10 w-full items-center justify-center gap-2 rounded bg-primary text-[#0D0F11]"
             to="/settings/billing"
           >
             {t("BILLING$CLICK_TO_TOP_UP")}
@@ -73,12 +73,12 @@ export function ExpandableMessage({
   return (
     <div
       className={cn(
-        "flex gap-2 items-center justify-start my-2 py-2",
+        "flex items-center justify-start gap-2 py-2",
         type === "error" ? "border-danger" : "border-neutral-300",
       )}
     >
-      <div className="text-sm w-full">
-        <div className="flex flex-row items-center w-full">
+      <div className="w-full text-sm">
+        <div className="flex w-full flex-row items-center">
           {/* {type === "action" && success === undefined && (
             <span className="flex-shrink-0">
               <div className="w-4 h-4 mr-2 rounded-full bg-neutral-100"></div>
@@ -89,12 +89,12 @@ export function ExpandableMessage({
               {success ? (
                 <CheckCircle
                   data-testid="status-icon"
-                  className={cn(statusIconClasses, "fill-[#0F0F0F90]")}
+                  className={cn(statusIconClasses, "fill-neutral-700")}
                 />
               ) : (
                 <XCircle
                   data-testid="status-icon"
-                  className={cn(statusIconClasses, "fill-[#0F0F0F90]")}
+                  className={cn(statusIconClasses, "fill-neutral-700")}
                 />
               )}
             </span>
@@ -102,7 +102,9 @@ export function ExpandableMessage({
           <span
             className={cn(
               headline ? "font-bold" : "",
-              type === "error" ? "text-danger" : "text-neutral-300",
+              type === "error"
+                ? "text-danger"
+                : "text-neutral-600 dark:text-white",
             )}
           >
             {headline && (
@@ -116,15 +118,15 @@ export function ExpandableMessage({
                   {showDetails ? (
                     <ArrowUp
                       className={cn(
-                        "h-4 w-4 ml-2 inline",
-                        type === "error" ? "fill-danger" : "fill-neutral-300",
+                        "ml-2 inline h-4 w-4",
+                        type === "error" ? "fill-danger" : "fill-neutral-700",
                       )}
                     />
                   ) : (
                     <ArrowDown
                       className={cn(
-                        "h-4 w-4 ml-2 inline",
-                        type === "error" ? "fill-danger" : "fill-neutral-300",
+                        "ml-2 inline h-4 w-4",
+                        type === "error" ? "fill-danger" : "fill-neutral-700",
                       )}
                     />
                   )}
@@ -134,8 +136,8 @@ export function ExpandableMessage({
           </span>
         </div>
         {(!headline || showDetails) && (
-          <div className="text-sm flex">
-            <div className="w-6 relative shrink-0">
+          <div className="flex text-sm">
+            <div className="relative w-6 shrink-0">
               {/* <div className="border-l border-dashed border-neutral-300 absolute start-[7px] top-0 bottom-2"></div> */}
             </div>
             <div className="flex-1 overflow-auto">

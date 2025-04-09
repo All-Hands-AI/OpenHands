@@ -22,6 +22,7 @@ import { useAccount } from "wagmi";
 import { ConversationPanel } from "../conversation-panel/conversation-panel";
 import { ConversationPanelWrapper } from "../conversation-panel/conversation-panel-wrapper";
 import { UserActions } from "./user-actions";
+import { ModeButton } from "#/components/shared/buttons/mode-button";
 
 export function Sidebar() {
   const location = useLocation();
@@ -86,54 +87,71 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className="h-[50px] bg-[#141415] md:h-auto px-3 py-3 flex flex-row md:flex-col gap-1">
+      <aside className="h-[50px] bg-neutral-1200 dark:bg-neutral-300 md:h-auto px-3 py-3 flex flex-row md:flex-col gap-1">
         <nav className="flex flex-row md:flex-col items-center justify-between w-full h-auto md:w-auto md:h-full">
-          <div className="flex flex-row md:flex-col items-center gap-[26px] max-md:gap-4">
+          <div className="flex flex-row md:flex-col items-center gap-8 max-md:gap-4">
             <div className="flex items-center justify-center">
               <AllHandsLogoButton onClick={handleEndSession} />
             </div>
-            <ExitProjectButton onClick={handleEndSession} />
-            {account?.address && (
-              <TooltipButton
-                testId="toggle-conversation-panel"
-                tooltip="Conversations"
-                ariaLabel="Conversations"
-                onClick={() => setConversationPanelIsOpen((prev) => !prev)}
-              >
-                <ChatIcon
+            <div className="flex flex-col gap-4">
+              <ExitProjectButton onClick={handleEndSession} />
+              {account?.address && (
+                <TooltipButton
+                  testId="toggle-conversation-panel"
+                  tooltip="Conversations"
+                  ariaLabel="Conversations"
+                  onClick={() => setConversationPanelIsOpen((prev) => !prev)}
                   className={cn(
-                    "opacity-50 transition-colors",
-                    conversationPanelIsOpen && "opacity-100",
+                    "rounded-lg p-2 transition-colors w-10 h-10 group/item",
+                    "hover:bg-neutral-1000 dark:hover:bg-[#262525]",
+                    conversationPanelIsOpen &&
+                      "bg-neutral-1000 dark:bg-[#262525]",
                   )}
-                />
-              </TooltipButton>
-            )}
+                >
+                  <ChatIcon
+                    className={cn(
+                      "transition-colors text-neutral-800",
+                      "group-hover/item:text-neutral-100 dark:group-hover/item:text-white",
+                      conversationPanelIsOpen &&
+                        "text-neutral-100 dark:text-white",
+                    )}
+                  />
+                </TooltipButton>
+              )}
+            </div>
           </div>
 
-          <div className="flex flex-row md:flex-col md:items-center gap-[26px] md:mb-4">
+          <div className="flex flex-row md:flex-col md:items-center gap-4">
             {/* <DocsButton /> */}
+            {/* <ModeButton /> */}
             {account?.address && (
               <TooltipButton
                 testId="toggle-deposit-modal"
                 tooltip="Deposit"
                 ariaLabel="Deposit"
                 onClick={() => setDepositModalIsOpen(true)}
+                className="rounded-lg p-2 hover:bg-neutral-1000  transition-colors group/item"
               >
                 <MdAccountBalanceWallet
-                  size={22}
-                  className="text-[#9099AC] hover:text-white transition-colors"
+                  size={24}
+                  className="text-neutral-800 group-hover/item:text-neutral-100"
                 />
               </TooltipButton>
             )}
+            <UserActions onLogout={handleLogout} isLoading={false} />
             <NavLink
               to="/settings"
               className={({ isActive }) =>
-                `${isActive ? "text-white" : "text-[#9099AC]"} mt-0.5 md:mt-0`
+                cn(
+                  "p-2 h-10 w-10 flex items-center justify-center rounded-lg hover:bg-neutral-1000 hover:text-neutral-100",
+                  isActive
+                    ? "text-neutral-100 bg-neutral-1000"
+                    : "text-neutral-800",
+                )
               }
             >
-              <SettingsButton />
+              <SettingsButton className="p-2 h-10 w-10" />
             </NavLink>
-            <UserActions onLogout={handleLogout} isLoading={false} />
           </div>
         </nav>
 

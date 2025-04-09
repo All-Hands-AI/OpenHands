@@ -17,7 +17,7 @@ export function UploadImageInput({ onUpload, label }: UploadImageInputProps) {
           data-testid="default-label"
           width={24}
           height={24}
-          className=" rotate-45"
+          className="rotate-45"
         />
       )}
       <input

@@ -13,10 +13,15 @@ import {
 import "./index.css";
 import "./tailwind.css";
 
-import { darkTheme, RainbowKitProvider } from "@rainbow-me/rainbowkit";
+import {
+  darkTheme,
+  lightTheme,
+  RainbowKitProvider,
+} from "@rainbow-me/rainbowkit";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { WagmiProvider } from "wagmi";
 import { queryClient, wagmiConfig } from "./config/config";
+import { useTheme } from "./components/layout/theme-provider";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -39,14 +44,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 export const meta: MetaFunction = () => [
   { title: "Thesis Capsule" },
-  { name: "description", content: "Let's Start Building!" },
+  { name: "description", content: "From curiosity to clarity!" },
 ];
 
 export default function App() {
+  const { theme } = useTheme();
+
   return (
     <WagmiProvider config={wagmiConfig}>
       <RainbowKitProvider
-        theme={darkTheme()}
+        theme={theme === "light" ? lightTheme() : darkTheme()}
         locale="en-US"
         modalSize="compact"
         appInfo={{

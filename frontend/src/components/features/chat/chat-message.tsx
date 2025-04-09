@@ -45,10 +45,11 @@ export function ChatMessage({
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
       className={cn(
-        "rounded-xl relative",
+        "relative rounded-[20px]",
         "flex flex-col gap-2",
-        type === "user" && " max-w-[305px] p-4 bg-gray-100 self-end",
-        type === "assistant" && "mt-6 max-w-full bg-transparent",
+        type === "user" &&
+          "max-w-[305px] self-end rounded-br-none bg-white p-4 dark:bg-gray-100",
+        type === "assistant" && "mt-4 max-w-full bg-transparent",
       )}
     >
       <CopyToClipboardButton
@@ -57,7 +58,7 @@ export function ChatMessage({
         onClick={handleCopyToClipboard}
         mode={isCopy ? "copied" : "copy"}
       />
-      <div className="text-sm overflow-auto break-words">
+      <div className="overflow-auto break-words text-sm text-neutral-100 dark:text-white">
         <Markdown
           components={{
             code,

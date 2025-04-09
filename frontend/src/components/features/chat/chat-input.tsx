@@ -113,7 +113,7 @@ export function ChatInput({
   return (
     <div
       data-testid="chat-input"
-      className="flex items-end justify-end grow gap-1 min-h-6 w-full"
+      className="flex items-end justify-end grow gap-1 min-h-14 w-full"
     >
       <TextareaAutosize
         ref={textareaRef}

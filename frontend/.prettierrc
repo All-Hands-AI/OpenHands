@@ -1,0 +1,4 @@
+{
+  "trailingComma": "all",
+  "plugins": ["prettier-plugin-tailwindcss"]
+}

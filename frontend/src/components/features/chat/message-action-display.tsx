@@ -27,11 +27,11 @@ const MessageActionDisplay: React.FC<{
     switch (messageActionID as OpenHandsEventType) {
       case "edit":
         return (
-          <div className="items-center text-neutral-600 hover:opacity-70 gap-2 rounded-[15px] px-[10px] py-[3px] border border-neutral-300 inline-flex max-w-full bg-[#37352f10]">
-            <div className="text-neutral-600 shrink-0">
+          <div className="inline-flex max-w-full items-center gap-2 rounded-[15px] border border-neutral-1000 bg-[#37352f10] px-[10px] py-[3px] text-neutral-600 hover:opacity-70 dark:border-neutral-300">
+            <div className="shrink-0 text-neutral-600">
               <FaEdit />
             </div>
-            <div className="flex-1 max-w-[100%] text-ellipsis overflow-hidden whitespace-nowrap text-[13px]">
+            <div className="max-w-[100%] flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-[13px]">
               Editing file: {getDiffPath(content)}
             </div>
           </div>
@@ -40,11 +40,11 @@ const MessageActionDisplay: React.FC<{
       case "run":
       case "run_ipython":
         return (
-          <div className="items-center text-neutral-600 hover:opacity-70 gap-2 rounded-[15px] px-[10px] py-[3px] border border-neutral-300 inline-flex max-w-full bg-[#37352f10]">
+          <div className="inline-flex max-w-full items-center gap-2 rounded-[15px] border border-neutral-1000 bg-[#37352f10] px-[10px] py-[3px] text-neutral-600 hover:opacity-70 dark:border-neutral-300">
             <div className="text-neutral-600">
               <FaTerminal />
             </div>
-            <div className="flex-1 max-w-[100%] text-ellipsis overflow-hidden whitespace-nowrap text-[13px]">
+            <div className="max-w-[100%] flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-[13px]">
               Executing command: {getCommand(content)}
             </div>
           </div>
@@ -52,11 +52,11 @@ const MessageActionDisplay: React.FC<{
 
       case "read":
         return (
-          <div className="items-center text-neutral-600 hover:opacity-70 gap-2 rounded-[15px] px-[10px] py-[3px] border border-neutral-300 inline-flex max-w-full bg-[#37352f10]">
+          <div className="inline-flex max-w-full items-center gap-2 rounded-[15px] border border-neutral-1000 bg-[#37352f10] px-[10px] py-[3px] text-neutral-600 hover:opacity-70 dark:border-neutral-300">
             <div className="text-neutral-600">
               <FaRegFileAlt />
             </div>
-            <div className="flex-1 max-w-[100%] text-ellipsis overflow-hidden whitespace-nowrap text-[13px]">
+            <div className="max-w-[100%] flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-[13px]">
               Reading file: {getCatFilePath(content)}
             </div>
           </div>
@@ -65,11 +65,11 @@ const MessageActionDisplay: React.FC<{
       case "browse":
       case "browse_interactive":
         return (
-          <div className="items-center text-neutral-600 hover:opacity-70 gap-2 rounded-[15px] px-[10px] py-[3px] border border-neutral-300 inline-flex max-w-full bg-[#37352f10]">
+          <div className="inline-flex max-w-full items-center gap-2 rounded-[15px] border border-neutral-1000 bg-[#37352f10] px-[10px] py-[3px] text-neutral-600 hover:opacity-70 dark:border-neutral-300">
             <div className="text-neutral-600">
               <FaGlobe />
             </div>
-            <div className="flex-1 max-w-[100%] text-ellipsis overflow-hidden whitespace-nowrap text-[13px]">
+            <div className="max-w-[100%] flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-[13px]">
               Browsing: {getUrlBrowser(content)}
             </div>
           </div>
@@ -77,11 +77,11 @@ const MessageActionDisplay: React.FC<{
 
       case "write":
         return (
-          <div className="items-center text-neutral-600 hover:opacity-70 gap-2 rounded-[15px] px-[10px] py-[3px] border border-neutral-300 inline-flex max-w-full bg-[#37352f10]">
+          <div className="inline-flex max-w-full items-center gap-2 rounded-[15px] border border-neutral-1000 bg-[#37352f10] px-[10px] py-[3px] text-neutral-600 hover:opacity-70 dark:border-neutral-300">
             <div className="text-neutral-600">
               <FaPencilAlt />
             </div>
-            <div className="flex-1 max-w-[100%] text-ellipsis overflow-hidden whitespace-nowrap text-[13px]">
+            <div className="max-w-[100%] flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-[13px]">
               Writing file: {getDiffPath(content)}
             </div>
           </div>
@@ -91,7 +91,7 @@ const MessageActionDisplay: React.FC<{
       // case "call_tool_mcp":
       // case "playwright_mcp_browser_screenshot":
       //   return (
-      //     <div className="items-center hover:opacity-70 gap-2 rounded-[15px] px-[10px] py-[3px] border border-neutral-300 inline-flex max-w-full bg-[#37352f10]">
+      //     <div className="items-center hover:opacity-70 gap-2 rounded-[15px] px-[10px] py-[3px] border border-neutral-1000 dark:border-neutral-300 inline-flex max-w-full bg-[#37352f10]">
       //       <div className="text-neutral-600">
       //         <FaTools />
       //       </div>
@@ -117,7 +117,7 @@ const MessageActionDisplay: React.FC<{
     }
   };
 
-  return <div className="mt-2">{renderContent()}</div>;
+  return <div className="mt-2 max-w-[500px]">{renderContent()}</div>;
 };
 
 export default MessageActionDisplay;
