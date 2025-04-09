@@ -101,6 +101,7 @@ class AgentController:
         event_stream: EventStream,
         max_iterations: int,
         max_budget_per_task: float | None = None,
+        warning_budget_increment: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
         sid: str | None = None,
@@ -118,6 +119,8 @@ class AgentController:
             event_stream: The event stream to publish events to.
             max_iterations: The maximum number of iterations the agent can run.
             max_budget_per_task: The maximum budget (in USD) allowed per task, beyond which the agent will stop.
+            warning_budget_increment: The budget increment (in USD) at which to warn the user and ask for approval to continue.
+                For example, if set to 5.0, the agent will pause and ask for approval at $5, $10, $15, etc.
             agent_to_llm_config: A dictionary mapping agent names to LLM configurations in the case that
                 we delegate to a different agent.
             agent_configs: A dictionary mapping agent names to agent configurations in the case that
@@ -151,6 +154,7 @@ class AgentController:
             confirmation_mode=confirmation_mode,
         )
         self.max_budget_per_task = max_budget_per_task
+        self.warning_budget_increment = warning_budget_increment
         self.agent_to_llm_config = agent_to_llm_config if agent_to_llm_config else {}
         self.agent_configs = agent_configs if agent_configs else {}
         self._initial_max_iterations = max_iterations
@@ -552,14 +556,15 @@ class AgentController:
             await self.update_state_after_step()
             self.state.metrics.merge(self.state.local_metrics)
             self._reset()
-        elif (
-            new_state == AgentState.RUNNING
-            and self.state.agent_state == AgentState.PAUSED
-            # TODO: do we really need both THROTTLING and PAUSED states, or can we clean up one of them completely?
-            and self.state.traffic_control_state == TrafficControlState.THROTTLING
-        ):
-            # user intends to interrupt traffic control and let the task resume temporarily
-            self.state.traffic_control_state = TrafficControlState.PAUSED
+        elif new_state == AgentState.RUNNING:
+            # When the agent starts running from a paused state
+            if (
+                self.state.agent_state == AgentState.PAUSED
+                # TODO: do we really need both THROTTLING and PAUSED states, or can we clean up one of them completely?
+                and self.state.traffic_control_state == TrafficControlState.THROTTLING
+            ):
+                # user intends to interrupt traffic control and let the task resume temporarily
+                self.state.traffic_control_state = TrafficControlState.PAUSED
             # User has chosen to deliberately continue - lets double the max iterations
             if (
                 self.state.iteration is not None
@@ -655,6 +660,7 @@ class AgentController:
             event_stream=self.event_stream,
             max_iterations=self.state.max_iterations,
             max_budget_per_task=self.max_budget_per_task,
+            warning_budget_increment=self.warning_budget_increment,
             agent_to_llm_config=self.agent_to_llm_config,
             agent_configs=self.agent_configs,
             initial_state=state,
@@ -733,6 +739,31 @@ class AgentController:
             stop_step = await self._handle_traffic_control(
                 'iteration', self.state.iteration, self.state.max_iterations
             )
+
+        # Check for warning budget increment
+        if (
+            self.state.metrics.accumulated_cost is not None
+            and self.warning_budget_increment is not None
+            and self.warning_budget_increment > 0
+            and self.get_agent_state() == AgentState.RUNNING
+        ):
+            # Calculate the current threshold we're at and the next threshold
+            current_cost = self.state.metrics.accumulated_cost
+            current_threshold = (
+                int(current_cost / self.warning_budget_increment)
+                * self.warning_budget_increment
+            )
+            next_threshold = current_threshold + self.warning_budget_increment
+
+            # If we've just crossed a threshold (within 0.01 of the next threshold)
+            if (
+                current_cost >= next_threshold - 0.01
+                and current_cost < next_threshold + self.warning_budget_increment - 0.01
+            ):
+                stop_step = await self._handle_traffic_control(
+                    'warning_budget', current_cost, next_threshold
+                )
+
         if self.max_budget_per_task is not None:
             current_cost = self.state.metrics.accumulated_cost
             if current_cost > self.max_budget_per_task:
@@ -848,7 +879,7 @@ class AgentController:
             self.state.traffic_control_state = TrafficControlState.NORMAL
         else:
             self.state.traffic_control_state = TrafficControlState.THROTTLING
-            # Format values as integers for iterations, keep decimals for budget
+            # Format values as integers for iterations, keep decimals for budget and cost
             if limit_type == 'iteration':
                 current_str = str(int(current_value))
                 max_str = str(int(max_value))
@@ -856,7 +887,22 @@ class AgentController:
                 current_str = f'{current_value:.2f}'
                 max_str = f'{max_value:.2f}'
 
-            if self.headless_mode:
+            if limit_type == 'warning_budget':
+                # Special handling for warning budget increment
+                await self.set_agent_state_to(AgentState.PAUSED)
+                if self.status_callback is not None:
+                    next_threshold = (
+                        max_value + self.warning_budget_increment
+                        if self.warning_budget_increment
+                        else 0
+                    )
+                    self.status_callback(
+                        'warning',
+                        'STATUS$COST_THRESHOLD_REACHED',
+                        f'Cost threshold of ${max_str} USD reached. Current cost: ${current_str} USD. '
+                        + f'Next warning at ${next_threshold:.2f} USD. Please approve to continue.',
+                    )
+            elif self.headless_mode:
                 e = RuntimeError(
                     f'Agent reached maximum {limit_type} in headless mode. '
                     f'Current {limit_type}: {current_str}, max {limit_type}: {max_str}'
