@@ -1,17 +1,26 @@
 import asyncio
 import logging
 import sys
+import time
+from pathlib import Path
+from typing import List, Optional
 from uuid import uuid4
 
+import toml
 from prompt_toolkit import PromptSession, print_formatted_text
+from prompt_toolkit.application import Application
 from prompt_toolkit.completion import Completer, Completion
 from prompt_toolkit.formatted_text import HTML, FormattedText
 from prompt_toolkit.key_binding import KeyBindings
-from prompt_toolkit.shortcuts import print_container
+from prompt_toolkit.layout.containers import HSplit, Window
+from prompt_toolkit.layout.controls import FormattedTextControl
+from prompt_toolkit.layout.layout import Layout
+from prompt_toolkit.shortcuts import clear, print_container
 from prompt_toolkit.styles import Style
 from prompt_toolkit.widgets import Frame, TextArea
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
+from openhands import __version__
 from openhands.core.config import (
     AppConfig,
     parse_arguments,
@@ -214,8 +223,8 @@ def display_event(event: Event, config: AppConfig):
 
 
 def display_help(style=DEFAULT_STYLE):
-    version = '0.1.0'  # TODO: link the actual version
-    print_formatted_text(HTML(f'\n<grey>OpenHands CLI v{version}</grey>'), style=style)
+    print_formatted_text(HTML('<grey>OpenHands CLI</grey>'))
+    print_formatted_text(HTML(f'<grey>OpenHands version: {__version__}</grey>'))
 
     print('\nSample tasks:')
     print('- Create a simple todo list application')
@@ -230,6 +239,55 @@ def display_help(style=DEFAULT_STYLE):
             style=style,
         )
     print('')
+
+
+def display_banner(session_id: str, is_loaded: asyncio.Event):
+    print_formatted_text(
+        HTML(r"""<gold>
+     ___                    _   _                 _
+    /  _ \ _ __   ___ _ __ | | | | __ _ _ __   __| |___
+    | | | | '_ \ / _ \ '_ \| |_| |/ _` | '_ \ / _` / __|
+    | |_| | |_) |  __/ | | |  _  | (_| | | | | (_| \__ \
+    \___ /| .__/ \___|_| |_|_| |_|\__,_|_| |_|\__,_|___/
+          |_|
+    </gold>"""),
+        style=DEFAULT_STYLE,
+    )
+
+    print_formatted_text(HTML('<grey>OpenHands CLI</grey>'))
+    print_formatted_text(HTML(f'<grey>OpenHands version: {__version__}</grey>'))
+
+    banner_text = (
+        'Initialized session' if is_loaded.is_set() else 'Initializing session'
+    )
+    print_formatted_text(HTML(f'\n<grey>{banner_text} {session_id}</grey>\n'))
+
+
+def display_welcome_message():
+    print_formatted_text(
+        HTML("<gold>Let's start building!</gold>\n"), style=DEFAULT_STYLE
+    )
+    print_formatted_text(
+        HTML('What do you want to build? <grey>Type /help for help</grey>\n'),
+        style=DEFAULT_STYLE,
+    )
+
+
+def display_initialization_animation(text, is_loaded: asyncio.Event):
+    ANIMATION_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
+
+    i = 0
+    while not is_loaded.is_set():
+        sys.stdout.write('\n')
+        sys.stdout.write(
+            f'\033[s\033[J\033[38;2;255;215;0m[{ANIMATION_FRAMES[i % len(ANIMATION_FRAMES)]}] {text}\033[0m\033[u\033[1A'
+        )
+        sys.stdout.flush()
+        time.sleep(0.1)
+        i += 1
+
+    sys.stdout.write('\r' + ' ' * (len(text) + 10) + '\r')
+    sys.stdout.flush()
 
 
 async def read_prompt_input(multiline=False):
@@ -265,6 +323,60 @@ async def read_confirmation_input():
         return confirmation.lower() == 'y'
     except (KeyboardInterrupt, EOFError):
         return False
+
+
+def cli_confirm(question: str = 'Are you sure?', choices: Optional[List[str]] = None):
+    if choices is None:
+        choices = ['Yes', 'No']
+    selected = [0]  # Using list to allow modification in closure
+
+    def get_choice_text():
+        return [
+            ('class:question', f'{question}\n\n'),
+        ] + [
+            (
+                'class:selected' if i == selected[0] else 'class:unselected',
+                f"{'> ' if i == selected[0] else '  '}{choice}\n",
+            )
+            for i, choice in enumerate(choices)
+        ]
+
+    kb = KeyBindings()
+
+    @kb.add('up')
+    def _(event):
+        selected[0] = (selected[0] - 1) % len(choices)
+
+    @kb.add('down')
+    def _(event):
+        selected[0] = (selected[0] + 1) % len(choices)
+
+    @kb.add('enter')
+    def _(event):
+        event.app.exit(result=selected[0] == 0)
+
+    style = Style.from_dict({'selected': COLOR_GOLD, 'unselected': ''})
+
+    layout = Layout(
+        HSplit(
+            [
+                Window(
+                    FormattedTextControl(get_choice_text),
+                    always_hide_cursor=True,
+                )
+            ]
+        )
+    )
+
+    app = Application(
+        layout=layout,
+        key_bindings=kb,
+        style=style,
+        mouse_support=True,
+        full_screen=False,
+    )
+
+    return app.run(in_thread=True)
 
 
 def update_usage_metrics(event: Event, usage_metrics: UsageMetrics):
@@ -345,6 +457,67 @@ def shutdown(usage_metrics: UsageMetrics, session_id: str):
     print_formatted_text(HTML(f'\n<grey>Closed session {session_id}</grey>\n'))
 
 
+def manage_openhands_file(folder_path=None, add_to_trusted=False):
+    openhands_file = Path.home() / '.openhands.toml'
+    default_content: dict = {'trusted_dirs': []}
+
+    if not openhands_file.exists():
+        with open(openhands_file, 'w') as f:
+            toml.dump(default_content, f)
+
+    if folder_path:
+        with open(openhands_file, 'r') as f:
+            try:
+                config = toml.load(f)
+            except Exception:
+                config = default_content
+
+        if 'trusted_dirs' not in config:
+            config['trusted_dirs'] = []
+
+        if folder_path in config['trusted_dirs']:
+            return True
+
+        if add_to_trusted:
+            config['trusted_dirs'].append(folder_path)
+            with open(openhands_file, 'w') as f:
+                toml.dump(config, f)
+
+        return False
+
+    return False
+
+
+def check_folder_security_agreement(current_dir):
+    is_trusted = manage_openhands_file(current_dir)
+
+    if not is_trusted:
+        security_frame = Frame(
+            TextArea(
+                text=(
+                    f'Do you trust the files in this folder?\n\n'
+                    f'{current_dir}\n\n'
+                    'OpenHands may read and execute files in this folder with your permission.'
+                ),
+                style='#ffffff',
+                read_only=True,
+                wrap_lines=True,
+            )
+        )
+
+        clear()
+        print_container(security_frame)
+
+        confirm = cli_confirm('Do you wish to continue?', ['Yes, proceed', 'No, exit'])
+
+        if confirm:
+            manage_openhands_file(current_dir, add_to_trusted=True)
+
+        return confirm
+
+    return True
+
+
 async def main(loop: asyncio.AbstractEventLoop):
     """Runs the agent in CLI mode."""
 
@@ -362,7 +535,15 @@ async def main(loop: asyncio.AbstractEventLoop):
     initial_user_action = MessageAction(content=task_str) if task_str else None
 
     sid = str(uuid4())
-    display_message(f'Session ID: {sid}')
+    is_loaded = asyncio.Event()
+
+    # Show OpenHands banner and session ID
+    display_banner(session_id=sid, is_loaded=is_loaded)
+
+    # Show Initialization loader
+    loop.run_in_executor(
+        None, display_initialization_animation, 'Initializing...', is_loaded
+    )
 
     agent = create_agent(config)
 
@@ -443,6 +624,28 @@ async def main(loop: asyncio.AbstractEventLoop):
         selected_repository=config.sandbox.selected_repo,
         repo_directory=repo_directory,
     )
+
+    # Clear loading animation
+    is_loaded.set()
+
+    # TODO: Set working directory from config or use current working directory?
+    current_dir = config.workspace_base
+
+    if not check_folder_security_agreement(current_dir):
+        # User rejected, exit application
+        event_stream.add_event(
+            ChangeAgentStateAction(AgentState.STOPPED), EventSource.ENVIRONMENT
+        )
+        return
+
+    # Clear the terminal
+    clear()
+
+    # Show OpenHands banner and session ID
+    display_banner(session_id=sid, is_loaded=is_loaded)
+
+    # Show OpenHands welcome
+    display_welcome_message()
 
     if initial_user_action:
         # If there's an initial user action, enqueue it and do not prompt again
