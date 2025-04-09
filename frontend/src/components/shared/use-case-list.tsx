@@ -2,9 +2,13 @@ import { useCasesMocks } from "#/mocks/use-cases.mock";
 import { useTranslation } from "react-i18next";
 import StarIcon from "#/icons/star-icons.svg?react";
 import { Link } from "react-router";
+import { useUseCases } from "#/hooks/query/use-use-cases";
 
 export function UseCaseList() {
   const { t } = useTranslation();
+  const { data: useCases } = useUseCases();
+
+  console.log("useCases", useCases);
 
   return (
     <div className="grid mt-6 md:grid-cols-2 sm:grid-cols-2 grid-cols-1 gap-2 w-full">

@@ -1,28 +1,28 @@
-from datetime import datetime, timezone
 import warnings
+from datetime import datetime, timezone
 from typing import Any
 
 import requests
 from fastapi import APIRouter, HTTPException
 
 from openhands.security.options import SecurityAnalyzers
+from openhands.server.data_models.conversation_info_result_set import (
+    ConversationInfoResultSet,
+)
 from openhands.server.routes.manage_conversations import _get_conversation_info
 from openhands.server.shared import (
     conversation_manager,
-)
-from openhands.server.data_models.conversation_info_result_set import (
-    ConversationInfoResultSet,
 )
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
-from openhands.utils.async_utils import wait_all
 from openhands.controller.agent import Agent
 from openhands.core.config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.llm import bedrock
 from openhands.server.shared import ConversationStoreImpl, config, server_config
+from openhands.utils.async_utils import wait_all
 
 app = APIRouter(prefix='/api/options')
 
@@ -119,10 +119,12 @@ async def get_config() -> dict[str, Any]:
     """
     return server_config.get_config()
 
-@app.get('/usecases', response_model=ConversationInfoResultSet)
+
+@app.get('/use-cases', response_model=ConversationInfoResultSet)
 async def get_conversations(
-    user_address: str = "0x9b60c97c53e3e8c55c7d32f55c1b518b6ea417f7",
-    limit: int = 10
+    # user_address: str = "0x9b60c97c53e3e8c55c7d32f55c1b518b6ea417f7",
+    user_address: str = '0xE27d3094C4231150d421c3600DEd0d130cf74216',
+    limit: int = 10,
 ) -> ConversationInfoResultSet:
     """Get list of conversations for a user.
 
@@ -132,7 +134,7 @@ async def get_conversations(
 
     Returns:
         ConversationInfoResultSet: List of conversations and pagination info
-    
+
     Raises:
         HTTPException: If there's an error fetching conversations
     """
@@ -142,7 +144,7 @@ async def get_conversations(
         )
 
         conversation_metadata_result_set = await conversation_store.search(None, limit)
-        
+
         # Filter conversations by age
         now = datetime.now(timezone.utc)
         max_age = config.conversation_max_age_seconds
@@ -150,7 +152,9 @@ async def get_conversations(
             conversation
             for conversation in conversation_metadata_result_set.results
             if hasattr(conversation, 'created_at')
-            and (now - conversation.created_at.replace(tzinfo=timezone.utc)).total_seconds()
+            and (
+                now - conversation.created_at.replace(tzinfo=timezone.utc)
+            ).total_seconds()
             <= max_age
         ]
 
@@ -178,6 +182,5 @@ async def get_conversations(
 
     except Exception as e:
         raise HTTPException(
-            status_code=500,
-            detail=f"Error fetching conversations: {str(e)}"
+            status_code=500, detail=f'Error fetching conversations: {str(e)}'
         )
