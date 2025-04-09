@@ -167,6 +167,8 @@ def test_file_edit_action_aci_serialization_deserialization():
             'end': -1,
             'thought': 'Replacing text',
             'impl_source': 'oh_aci',
+            'search_block': None,
+            'replace_block': None,
         },
     }
     serialization_deserialization(original_action_dict, FileEditAction)
@@ -187,6 +189,8 @@ def test_file_edit_action_llm_serialization_deserialization():
             'end': 10,
             'thought': 'Updating file content',
             'impl_source': 'llm_based_edit',
+            'search_block': None,
+            'replace_block': None,
         },
     }
     serialization_deserialization(original_action_dict, FileEditAction)
