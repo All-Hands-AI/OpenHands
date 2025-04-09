@@ -167,8 +167,9 @@ class Session:
         """
         Initialize LLM, extracted for testing.
         """
+        agent_name = agent_cls if agent_cls is not None else 'agent'
         return LLM(
-            config=self.config.get_llm_config_from_agent(agent_cls),
+            config=self.config.get_llm_config_from_agent(agent_name),
             retry_listener=self._notify_on_llm_retry,
         )
 

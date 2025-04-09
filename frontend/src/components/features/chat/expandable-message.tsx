@@ -189,7 +189,7 @@ export function ExpandableMessage({
           )}
         </div>
         {showDetails && (
-          <div className="text-sm overflow-auto">
+          <div className="text-sm">
             <Markdown
               components={{
                 code,

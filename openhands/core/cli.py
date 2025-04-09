@@ -203,7 +203,7 @@ def display_file_edit(event: FileEditAction | FileEditObservation):
     print_formatted_text('')
 
 
-def display_event(event: Event, config: AppConfig):
+def display_event(event: Event, config: AppConfig) -> None:
     if isinstance(event, Action):
         if hasattr(event, 'thought'):
             display_message(event.thought)
@@ -715,7 +715,7 @@ async def main(loop: asyncio.AbstractEventLoop):
             event_stream.add_event(action, EventSource.USER)
             return
 
-    async def on_event_async(event: Event):
+    async def on_event_async(event: Event) -> None:
         display_event(event, config)
         update_usage_metrics(event, usage_metrics)
         if isinstance(event, AgentStateChangedObservation):
