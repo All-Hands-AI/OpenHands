@@ -226,6 +226,7 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
             '/api/options/models',
             '/api/options/agents',
             '/api/options/security-analyzers',
+            '/api/options/usecases',
         ]
 
     async def dispatch(self, request: Request, call_next):

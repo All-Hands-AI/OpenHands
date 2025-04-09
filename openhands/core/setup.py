@@ -186,6 +186,7 @@ async def create_agent(config: AppConfig) -> Agent:
         llm=LLM(config=llm_config),
         config=agent_config,
         mcp_tools=mcp_tools,
+        workspace_mount_path_in_sandbox_store_in_session=config.workspace_mount_path_in_sandbox_store_in_session
     )
 
     # We only need to get the tools from the MCP agents, so we can safely close them after that

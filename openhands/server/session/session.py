@@ -137,7 +137,7 @@ class Session:
             self.logger.info(f'Enabling default condenser: {default_condenser_config}')
             agent_config.condenser = default_condenser_config
 
-        agent = Agent.get_cls(agent_cls)(llm, agent_config)
+        agent = Agent.get_cls(agent_cls)(llm, agent_config, None, self.config.workspace_mount_path_in_sandbox_store_in_session)
 
         git_provider_tokens = None
         selected_repository = None

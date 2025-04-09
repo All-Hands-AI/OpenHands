@@ -52,7 +52,7 @@ class CodeActAgent(Agent):
     ]
 
     def __init__(
-        self, llm: LLM, config: AgentConfig, mcp_tools: list[dict] | None = None
+        self, llm: LLM, config: AgentConfig, mcp_tools: list[dict] | None = None, workspace_mount_path_in_sandbox_store_in_session: bool = True
     ) -> None:
         """Initializes a new instance of the CodeActAgent class.
 
@@ -60,8 +60,9 @@ class CodeActAgent(Agent):
         - llm (LLM): The llm to be used by this agent
         - config (AgentConfig): The configuration for this agent
         - mcp_tools (list[dict] | None, optional): List of MCP tools to be used by this agent. Defaults to None.
+        - workspace_mount_path_in_sandbox_store_in_session (bool, optional): Whether to store the workspace mount path in session. Defaults to True.
         """
-        super().__init__(llm, config, mcp_tools)
+        super().__init__(llm, config, mcp_tools, workspace_mount_path_in_sandbox_store_in_session)
         self.pending_actions: deque[Action] = deque()
         self.reset()
 
@@ -127,7 +128,7 @@ class CodeActAgent(Agent):
         response = self.llm.completion(**params)
         logger.debug(f'Response from LLM: {response}')
         actions = codeact_function_calling.response_to_actions(
-            response, state.session_id
+            response, state.session_id, self.workspace_mount_path_in_sandbox_store_in_session
         )
         logger.debug(f'Actions after response_to_actions: {actions}')
         for action in actions:
