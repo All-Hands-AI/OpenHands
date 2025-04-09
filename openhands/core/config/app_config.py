@@ -35,6 +35,7 @@ class AppConfig(BaseModel):
         workspace_base: Base path for the workspace. Defaults to `./workspace` as absolute path.
         workspace_mount_path: Path to mount the workspace. Defaults to `workspace_base`.
         workspace_mount_path_in_sandbox: Path to mount the workspace in sandbox. Defaults to `/workspace`.
+        workspace_mount_path_in_sandbox_store_in_session: Whether to store the workspace mount path in session. Defaults to `False`.
         workspace_mount_rewrite: Path to rewrite the workspace mount path.
         cache_dir: Path to cache directory. Defaults to `/tmp/cache`.
         run_as_openhands: Whether to run as openhands.
@@ -66,6 +67,7 @@ class AppConfig(BaseModel):
     workspace_base: str | None = Field(default=None)
     workspace_mount_path: str | None = Field(default=None)
     workspace_mount_path_in_sandbox: str = Field(default='/workspace')
+    workspace_mount_path_in_sandbox_store_in_session: bool = Field(default=False)
     workspace_mount_rewrite: str | None = Field(default=None)
     cache_dir: str = Field(default='/tmp/cache')
     run_as_openhands: bool = Field(default=True)
