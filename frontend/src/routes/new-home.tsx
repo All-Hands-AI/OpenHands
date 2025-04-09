@@ -1,4 +1,4 @@
-import { TaskSuggestions } from "#/components/features/home/task-suggestions";
+import { TaskSuggestions } from "#/components/features/home/tasks/task-suggestions";
 import { BrandButton } from "#/components/features/settings/brand-button";
 
 function RepoConnector() {
