@@ -115,6 +115,8 @@ export function ChatInterface() {
     curAgentState === AgentState.AWAITING_USER_INPUT ||
     curAgentState === AgentState.FINISHED;
 
+  console.log("messages", messages);
+
   return (
     <div className="h-full flex flex-col justify-between">
       {messages.length === 0 && (

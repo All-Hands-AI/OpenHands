@@ -11,7 +11,9 @@ import CheckCircle from "#/icons/check-circle-solid.svg?react";
 import XCircle from "#/icons/x-circle-solid.svg?react";
 import { cn } from "#/utils/utils";
 import { useConfig } from "#/hooks/query/use-config";
-
+import MessageActionDisplay from "./message-action-display";
+import { HANDLED_ACTIONS } from "#/state/chat-slice";
+import { OpenHandsEventType } from "#/types/core/base";
 interface ExpandableMessageProps {
   id?: string;
   message: string;
@@ -37,11 +39,11 @@ export function ExpandableMessage({
     if (id && i18n.exists(id)) {
       setHeadline(t(id) + ` (${messageActionID})`);
       setDetails(message);
-      setShowDetails(false);
+      setShowDetails(true);
     }
   }, [id, message, i18n.language]);
 
-  const statusIconClasses = "h-4 w-4 ml-2 inline";
+  const statusIconClasses = "h-4 w-4 mr-2 inline";
 
   if (
     config?.FEATURE_FLAGS.ENABLE_BILLING &&
@@ -71,12 +73,32 @@ export function ExpandableMessage({
   return (
     <div
       className={cn(
-        "flex gap-2 items-center justify-start border-l-2 pl-2 my-2 py-2",
+        "flex gap-2 items-center justify-start my-2 py-2",
         type === "error" ? "border-danger" : "border-neutral-300",
       )}
     >
       <div className="text-sm w-full">
-        <div className="flex flex-row justify-between items-center w-full">
+        <div className="flex flex-row items-center w-full">
+          {/* {type === "action" && success === undefined && (
+            <span className="flex-shrink-0">
+              <div className="w-4 h-4 mr-2 rounded-full bg-neutral-100"></div>
+            </span>
+          )} */}
+          {type === "action" && success !== undefined && (
+            <span className="flex-shrink-0">
+              {success ? (
+                <CheckCircle
+                  data-testid="status-icon"
+                  className={cn(statusIconClasses, "fill-[#0F0F0F90]")}
+                />
+              ) : (
+                <XCircle
+                  data-testid="status-icon"
+                  className={cn(statusIconClasses, "fill-[#0F0F0F90]")}
+                />
+              )}
+            </span>
+          )}
           <span
             className={cn(
               headline ? "font-bold" : "",
@@ -110,34 +132,34 @@ export function ExpandableMessage({
               </>
             )}
           </span>
-          {type === "action" && success !== undefined && (
-            <span className="flex-shrink-0">
-              {success ? (
-                <CheckCircle
-                  data-testid="status-icon"
-                  className={cn(statusIconClasses, "fill-success")}
-                />
-              ) : (
-                <XCircle
-                  data-testid="status-icon"
-                  className={cn(statusIconClasses, "fill-danger")}
-                />
-              )}
-            </span>
-          )}
         </div>
         {(!headline || showDetails) && (
-          <div className="text-sm overflow-auto">
-            <Markdown
-              components={{
-                code,
-                ul,
-                ol,
-              }}
-              remarkPlugins={[remarkGfm]}
-            >
-              {details}
-            </Markdown>
+          <div className="text-sm flex">
+            <div className="w-6 relative shrink-0">
+              {/* <div className="border-l border-dashed border-neutral-300 absolute start-[7px] top-0 bottom-2"></div> */}
+            </div>
+            <div className="flex-1 overflow-auto">
+              {type === "action" &&
+              HANDLED_ACTIONS.includes(
+                messageActionID as OpenHandsEventType,
+              ) ? (
+                <MessageActionDisplay
+                  messageActionID={messageActionID}
+                  content={details}
+                />
+              ) : (
+                <Markdown
+                  components={{
+                    code,
+                    ul,
+                    ol,
+                  }}
+                  remarkPlugins={[remarkGfm]}
+                >
+                  {details}
+                </Markdown>
+              )}
+            </div>
           </div>
         )}
       </div>
