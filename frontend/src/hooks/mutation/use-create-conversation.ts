@@ -47,7 +47,7 @@ export const useCreateConversation = () => {
       await queryClient.invalidateQueries({
         queryKey: ["user", "conversations"],
       });
-      data.conversation_id &&
+      data?.conversation_id &&
         navigate(`/conversations/${data.conversation_id}`);
     },
   });
