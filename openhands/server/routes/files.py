@@ -66,7 +66,7 @@ async def list_files(request: Request, conversation_id: str, path: str | None = 
 
     runtime: Runtime = request.state.conversation.runtime
     try:
-        file_list = await call_sync_from_async(runtime.list_files, path)
+        file_list = await call_sync_from_async(runtime.list_files, conversation_id)
     except AgentRuntimeUnavailableError as e:
         logger.error(f'Error listing files: {e}')
         return JSONResponse(
@@ -126,7 +126,7 @@ async def select_file(file: str, request: Request):
     """
     runtime: Runtime = request.state.conversation.runtime
 
-    file = os.path.join(runtime.config.workspace_mount_path_in_sandbox, file)
+    file = os.path.join(runtime.config.workspace_mount_path_in_sandbox + "/" + runtime.sid, file)
     read_action = FileReadAction(file)
     try:
         observation = await call_sync_from_async(runtime.run_action, read_action)
