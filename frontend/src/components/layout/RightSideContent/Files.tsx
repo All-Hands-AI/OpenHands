@@ -8,8 +8,9 @@ const Files = () => {
   return (
     <FilesProvider>
       {paths &&
-        Array.isArray(paths) &&
-        paths.map((path: string) => <TestFileViewer currentPath={path} />)}
+        Array.isArray(paths) && <TestFileViewer currentPath={paths?.[paths?.length -1]} />
+      }
+        {/* // paths.map((path: string) => <TestFileViewer currentPath={path} />)} */}
     </FilesProvider>
   );
 };

@@ -15,7 +15,7 @@ const EditorContent = ({ computerItem }: EditorContentProps) => {
     : `\`\`\`\n${textContent}\n\`\`\``;
 
   return (
-    <div className="text-sm overflow-auto">
+    <div className="text-sm overflow-auto !w-[100%] !h-full">
       <Markdown
         components={{
           code,

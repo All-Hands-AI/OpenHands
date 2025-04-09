@@ -8,9 +8,9 @@ import { useEffect, useRef, useState } from "react";
 import { LuSquareChartGantt, LuStepBack, LuStepForward } from "react-icons/lu";
 import Markdown, { Components } from "react-markdown";
 import { useSelector } from "react-redux";
+import CodeView from "./CodeView";
 import EditorContent from "./EditorContent";
 import TaskProgress from "./TaskProgress";
-import CodeView from "./CodeView";
 
 const EditorNotification = () => {
   return (
@@ -156,7 +156,7 @@ const ThesisComputer = () => {
   };
 
   return (
-    <div className=" flex w-full h-full flex-col overflow-y-auto  border bg-white p-4 rounded-xl">
+    <div className=" flex w-full h-full flex-col overflow-y-auto border border-neutral-1000 bg-white p-4 rounded-xl">
       <div className="flex items-center justify-between">
         <h4 className="text-neutral-1 text-18 font-semibold">Thesis</h4>
         {/* <Tooltip>
@@ -176,7 +176,7 @@ const ThesisComputer = () => {
       </div>
       <EditorNotification />
 
-      <div className="bg-mercury-30 border-neutral-2 mb-3 flex h-[82%] w-full flex-1 flex-col rounded-2xl border">
+      <div className="bg-mercury-30 border-neutral-1000 mb-3 flex h-[82%] w-full flex-1 flex-col rounded-2xl border">
         <div className="flex-1 overflow-y-auto px-4 py-2 w-full h-full">
           {computerList.length > 0 &&
             computerList.map((computerItem, index) => {
@@ -207,7 +207,7 @@ const ThesisComputer = () => {
           <div ref={scrollRef} />
         </div>
 
-        <div className="border-t-neutral-2 flex h-11 w-full items-center gap-2 rounded-b-2xl border-t bg-white px-4">
+        <div className="border-t-neutral-1000 flex h-11 w-full items-center gap-2 rounded-b-2xl border-t bg-white px-4">
           <div className="flex items-center gap-2">
             <div
               className={`cursor-pointer ${currentStep === 0 ? "opacity-50" : ""}`}

@@ -54,7 +54,7 @@ const TaskProgress = () => {
   };
 
   return (
-    <div className="border-mercury-100 z-50 flex min-h-[30px] w-full items-center rounded-[12px] border px-4 py-2">
+    <div className=" z-50 flex min-h-[30px] w-full items-center rounded-[12px] px-4 py-2 bg-[#F3F3F1]">
       {isFinalizeCollapsed ? (
         <div className="flex w-full items-start justify-between">
           <div className="animate-slide-up flex gap-2 transition-all duration-300">
