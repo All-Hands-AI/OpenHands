@@ -11,6 +11,7 @@ import {
 import Markdown, { Components } from "react-markdown";
 import Files from "./Files";
 import TaskProgress from "./TaskProgress";
+import TerminalPage from "#/routes/_oh.app.terminal";
 
 const EditorNotification = () => {
   return (
@@ -226,6 +227,8 @@ const ThesisComputer = () => {
             return <div />;
           })}
           <div ref={scrollRef} />
+
+          {/* TODO: check render section later */}
           {/* <TerminalPage /> */}
           <Files />
         </div>

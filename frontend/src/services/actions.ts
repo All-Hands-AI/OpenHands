@@ -183,6 +183,4 @@ export function handleAssistantMessage(message: Record<string, unknown>) {
       }),
     );
   }
-
-  console.log("listMsg", listMsg);
 }
