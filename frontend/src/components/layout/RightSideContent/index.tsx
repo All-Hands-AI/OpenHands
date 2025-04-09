@@ -9,10 +9,10 @@ import {
   LuStepBack,
   LuStepForward,
 } from "react-icons/lu";
-import Markdown, { Components } from "react-markdown";
 import { useSelector } from "react-redux";
 import EditorContent from "./EditorContent";
 import TaskProgress from "./TaskProgress";
+import Markdown, { Components } from "react-markdown";
 
 const EditorNotification = () => {
   return (
@@ -37,7 +37,6 @@ const EditorNotification = () => {
 
 const ThesisComputer = () => {
   const isViewDrawer = true;
-  const distilledComputers = [];
   const { computerList } = useSelector((state: RootState) => state.computer);
   console.log("🚀 ~ ThesisComputer ~ computerList:", computerList);
 
@@ -45,7 +44,7 @@ const ThesisComputer = () => {
   const { data: settings } = useSettings();
 
   const [currentStep, setCurrentStep] = useState(0);
-  const totalSteps = distilledComputers.length;
+  const totalSteps = computerList.length;
   const [sliderValue, setSliderValue] = useState(0);
 
   const {
@@ -74,21 +73,21 @@ const ThesisComputer = () => {
 
   // Add useEffect to handle auto progression
   useEffect(() => {
-    if (distilledComputers.length > currentStep) {
-      const newStep = distilledComputers.length - 1;
+    if (computerList.length > currentStep) {
+      const newStep = computerList.length - 1;
       setCurrentStep(newStep);
       // Calculate and set slider value based on new step
       const newSliderValue =
         totalSteps > 1 ? (newStep / (totalSteps - 1)) * 100 : 0;
       setSliderValue(newSliderValue);
     }
-  }, [distilledComputers, totalSteps]);
+  }, [computerList, totalSteps]);
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [distilledComputers]);
+  }, [computerList]);
 
   if (!isViewDrawer) {
     return <div />;
@@ -198,18 +197,6 @@ const ThesisComputer = () => {
       <EditorNotification />
 
       <div className="bg-mercury-30 border-neutral-2 mb-3 flex h-[82%] w-full flex-1 flex-col rounded-2xl border">
-        {/* {computerList.length > 0 &&
-            computerList.map((computerItem: any) => {
-              if (
-                computerItem.observation === ObservationType.EDIT ||
-                computerItem.observation === ObservationType.READ
-              ) {
-                return <EditorContent computerItem={computerItem} />;
-              }
-
-              return <div></div>;
-            })} */}
-
         <div className="flex-1 overflow-y-auto px-4 py-2 w-full h-full">
           {computerList.length > 0 &&
             computerList.map((computerItem, index) => {
