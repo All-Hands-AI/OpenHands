@@ -39,9 +39,9 @@ from openhands.events.observation import (
     FileEditObservation,
 )
 from openhands.io import read_task
+from openhands.mcp import fetch_mcp_tools_from_config
 
 prompt_session = PromptSession()
-from openhands.mcp import fetch_mcp_tools_from_config
 
 
 def display_message(message: str) -> None:
