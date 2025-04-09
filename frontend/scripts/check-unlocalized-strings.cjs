@@ -47,6 +47,7 @@ const SCAN_EXTENSIONS = [".ts", ".tsx", ".js", ".jsx"];
 // Attributes that typically don't contain user-facing text
 const NON_TEXT_ATTRIBUTES = [
   "className",
+  "i18nKey",
   "testId",
   "id",
   "name",
@@ -685,20 +686,20 @@ function scanDirectoryForUnlocalizedStrings(dirPath) {
 try {
   const srcPath = path.resolve(__dirname, '../src');
   console.log('Checking for unlocalized strings in frontend code...');
-  
+
   // Get unlocalized strings using the AST scanner
   const results = scanDirectoryForUnlocalizedStrings(srcPath);
-  
+
   // If we found any unlocalized strings, format them for output and exit with error
   if (results.size > 0) {
     const formattedResults = Array.from(results.entries())
       .map(([file, strings]) => `\n${file}:\n  ${strings.join('\n  ')}`)
       .join('\n');
-    
+
     console.error(`Error: Found unlocalized strings in the following files:${formattedResults}`);
     process.exit(1);
   }
-  
+
   console.log('✅ No unlocalized strings found in frontend code.');
   process.exit(0);
 } catch (error) {
