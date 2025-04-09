@@ -244,7 +244,6 @@ class DockerRuntime(ActionExecutionClient):
         environment.update(self.config.sandbox.runtime_startup_env_vars)
 
         # if the workspace mount path is stored in session, we need to add another layer of directory to the workspace mount path for conversation id for privacy
-        print(f'workspace_mount_path_in_sandbox_store_in_session: {self.config.workspace_mount_path_in_sandbox_store_in_session}')
         if self.config.workspace_mount_path_in_sandbox_store_in_session:
             self.config.workspace_mount_path_in_sandbox = f"{self.config.workspace_mount_path_in_sandbox}/{self.sid}"
         

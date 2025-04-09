@@ -100,7 +100,6 @@ async def run_mcp() -> None:
     args = parse_args()
 
     config: AppConfig = setup_config_from_args(args)
-    print(f'config: {config.workspace_mount_path_in_sandbox_store_in_session}')
     runner = MCPRunner(config)
 
     try:
