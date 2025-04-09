@@ -8,6 +8,14 @@
  * console.log(parsed) // ["All-Hands-AI", "OpenHands"]
  */
 export const parseGithubUrl = (url: string) => {
-  const parts = url.replace("https://github.com/", "").split("/");
-  return parts.length === 2 ? parts : [];
+  // Get the GitHub web URL (default or enterprise)
+  const githubWebUrl = window.GITHUB_WEB_URL || "https://github.com";
+
+  // Remove the base URL and extract owner/repo
+  const repoPath = url
+    .replace(`${githubWebUrl}/`, "")
+    .replace(/^https?:\/\/[^/]+\//, "");
+  const parts = repoPath.split("/");
+
+  return parts.length >= 2 ? [parts[0], parts[1]] : [];
 };

@@ -7,6 +7,19 @@
  */
 export const generateGitHubAuthUrl = (clientId: string, requestUrl: URL) => {
   const redirectUri = `${requestUrl.origin}/oauth/keycloak/callback`;
+
+  // Check if GitHub Enterprise Server URL is configured
+  const githubEnterpriseUrl = window.GITHUB_ENTERPRISE_URL || "";
+
+  // Define GitHub scopes as separate constants to avoid hardcoding
+  const GITHUB_SCOPE_REPO = "repo";
+  const GITHUB_SCOPE_USER = "user";
+
+  if (githubEnterpriseUrl) {
+    // GitHub Enterprise Server OAuth flow
+    return `${githubEnterpriseUrl}/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${GITHUB_SCOPE_REPO},${GITHUB_SCOPE_USER}`;
+  }
+  // Default Keycloak OAuth flow
   const authUrl = requestUrl.hostname
     .replace(/(^|\.)staging\.all-hands\.dev$/, "$1auth.staging.all-hands.dev")
     .replace(/(^|\.)app\.all-hands\.dev$/, "auth.app.all-hands.dev")

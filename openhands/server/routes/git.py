@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 from pydantic import SecretStr
-from openhands.server.shared import server_config
+
+from openhands.config.github_config import get_github_api_url
 from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
@@ -16,7 +17,7 @@ from openhands.integrations.service_types import (
     User,
 )
 from openhands.server.auth import get_access_token, get_provider_tokens
-from openhands.server.types import AppMode
+from openhands.server.shared import server_config
 
 app = APIRouter(prefix='/api/user')
 
@@ -33,7 +34,9 @@ async def get_user_repositories(
         )
 
         try:
-            repos: list[Repository] = await client.get_repositories(sort, server_config.app_mode)
+            repos: list[Repository] = await client.get_repositories(
+                sort, server_config.app_mode
+            )
             return repos
 
         except AuthenticationError as e:
@@ -93,9 +96,14 @@ async def get_github_installation_ids(
 ):
     if provider_tokens and ProviderType.GITHUB in provider_tokens:
         token = provider_tokens[ProviderType.GITHUB]
+        # Use the host_url from the token if available, otherwise use the default API URL
+        github_api_url = token.host_url or get_github_api_url()
 
         client = GithubServiceImpl(
-            user_id=token.user_id, external_auth_token=access_token, token=token.token
+            user_id=token.user_id,
+            external_auth_token=access_token,
+            token=token.token,
+            base_url=github_api_url,
         )
         try:
             installations_ids: list[int] = await client.get_installation_ids()
@@ -170,9 +178,14 @@ async def get_suggested_tasks(
 
     if provider_tokens and ProviderType.GITHUB in provider_tokens:
         token = provider_tokens[ProviderType.GITHUB]
+        # Use the host_url from the token if available, otherwise use the default API URL
+        github_api_url = token.host_url or get_github_api_url()
 
         client = GithubServiceImpl(
-            user_id=token.user_id, external_auth_token=access_token, token=token.token
+            user_id=token.user_id,
+            external_auth_token=access_token,
+            token=token.token,
+            base_url=github_api_url,
         )
         try:
             tasks: list[SuggestedTask] = await client.get_suggested_tasks()

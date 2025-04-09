@@ -181,7 +181,9 @@ async def test_settings_api_set_github_token(
         'llm_model': 'test-model',
         'llm_api_key': 'test-key',
         'llm_base_url': 'https://test.com',
-        'provider_tokens': {'github': 'test-token'},
+        'provider_tokens': {
+            'github': {'token': 'test-token', 'host_url': 'https://github.example.com'}
+        },
     }
 
     # Make the POST request to store settings
