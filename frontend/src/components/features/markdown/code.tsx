@@ -1,6 +1,7 @@
 import React from "react";
 import { ExtraProps } from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+// import oneLight from "react-syntax-highlighter/dist/cjs/styles/prism/one-light";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 // See https://github.com/remarkjs/react-markdown?tab=readme-ov-file#use-custom-components-syntax-highlight
