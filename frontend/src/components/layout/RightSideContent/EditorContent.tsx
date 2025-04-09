@@ -8,8 +8,11 @@ interface EditorContentProps {
 }
 
 const EditorContent = ({ computerItem }: EditorContentProps) => {
+  const observation = computerItem?.observation;
   const textContent = computerItem?.extras?.diff || computerItem?.content;
-  const detailContent = `\`\`\`\n${textContent}\n\`\`\``;
+  const detailContent = observation
+    ? `\`\`\`diff\n${textContent}\n\`\`\``
+    : `\`\`\`\n${textContent}\n\`\`\``;
 
   return (
     <div className="text-sm overflow-auto">
