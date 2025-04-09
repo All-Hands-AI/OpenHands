@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import OpenHands from "#/api/open-hands";
 
-export const useUserConversation = (cid: string | null) =>
+export const useUserConversation = (cid: string | null, isAuth?: boolean | null) =>
   useQuery({
     queryKey: ["user", "conversation", cid],
-    queryFn: () => OpenHands.getConversation(cid!),
+    queryFn: () => OpenHands.getConversation(cid!, isAuth),
     enabled: !!cid,
     retry: false,
     staleTime: 1000 * 60 * 5, // 5 minutes

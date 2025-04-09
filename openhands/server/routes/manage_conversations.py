@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Body, Request, status
+from fastapi import APIRouter, Body, Request, status, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
@@ -60,6 +60,17 @@ async def _create_new_conversation(
         'Creating conversation',
         extra={'signal': 'create_conversation', 'user_id': user_id},
     )
+    
+    # Check if user already has a running conversation
+    if user_id:
+        running_conversations = await conversation_manager.get_running_agent_loops(user_id)
+        if running_conversations:
+            existing_id = next(iter(running_conversations))  # Get the first running conversation ID
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"User already has a running conversation (ID: {existing_id}). Please stop the existing conversation before creating a new one."
+            )
+
     logger.info('Loading settings')
     settings = await get_user_setting(user_id)
 

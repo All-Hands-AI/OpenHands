@@ -6,6 +6,7 @@ import requests
 from fastapi import APIRouter, HTTPException
 
 from openhands.security.options import SecurityAnalyzers
+from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.data_models.conversation_info_result_set import (
     ConversationInfoResultSet,
 )
@@ -122,8 +123,8 @@ async def get_config() -> dict[str, Any]:
 
 @app.get('/use-cases', response_model=ConversationInfoResultSet)
 async def get_conversations(
-    # user_address: str = "0x9b60c97c53e3e8c55c7d32f55c1b518b6ea417f7",
-    user_address: str = '0xe27d3094c4231150d421c3600ded0d130cf74216',
+    user_address: str = "0x9b60c97c53e3e8c55c7d32f55c1b518b6ea417f7",
+    # user_address: str = '0xe27d3094c4231150d421c3600ded0d130cf74216',
     limit: int = 8,
 ) -> ConversationInfoResultSet:
     """Get list of conversations for a user.
@@ -183,3 +184,20 @@ async def get_conversations(
         raise HTTPException(
             status_code=500, detail=f'Error fetching conversations: {str(e)}'
         )
+
+
+@app.get('/use-cases/conversations/{conversation_id}')
+async def get_conversation(
+    conversation_id: str | None = None
+) -> ConversationInfo | None:
+    whitelisted_user_id = "0x9b60c97c53e3e8c55c7d32f55c1b518b6ea417f7"
+    conversation_store = await ConversationStoreImpl.get_instance(
+        config, whitelisted_user_id, None
+    )
+    try:
+        metadata = await conversation_store.get_metadata(conversation_id)
+        is_running = await conversation_manager.is_agent_loop_running(conversation_id)
+        conversation_info = await _get_conversation_info(metadata, is_running)
+        return conversation_info
+    except FileNotFoundError:
+        return None
