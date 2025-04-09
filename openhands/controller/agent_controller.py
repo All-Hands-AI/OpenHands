@@ -370,7 +370,7 @@ class AgentController:
         if hasattr(event, 'hidden') and event.hidden:
             return
 
-        # Give others a little chance
+        # Give others a little chance. This is probably causing a race-condition somewhere.
         await asyncio.sleep(0.01)
 
         # if the event is not filtered out, add it to the history
