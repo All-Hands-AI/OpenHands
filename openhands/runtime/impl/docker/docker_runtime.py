@@ -91,19 +91,6 @@ class DockerRuntime(ActionExecutionClient):
         self.log_streamer: LogStreamer | None = None
         self.sid = sid
 
-        # if the workspace mount path is stored in session, we need to add another layer of directory to the workspace mount path for conversation id for privacy
-        if self.config.workspace_mount_path_in_sandbox_store_in_session:
-            config.workspace_mount_path_in_sandbox = (
-                f'{self.config.workspace_mount_path_in_sandbox}/{self.sid}'
-            )
-
-        if self.config.workspace_mount_path is not None:
-            if self.config.workspace_mount_path_in_sandbox_store_in_session:
-                # add another layer of directory to the workspace mount path for conversation id
-                config.workspace_mount_path = (
-                    f'{self.config.workspace_mount_path}/{self.sid}'
-                )
-
         super().__init__(
             config,
             event_stream,
@@ -256,7 +243,17 @@ class DockerRuntime(ActionExecutionClient):
         # also update with runtime_startup_env_vars
         environment.update(self.config.sandbox.runtime_startup_env_vars)
 
-        if self.config.workspace_mount_path is not None:
+        # if the workspace mount path is stored in session, we need to add another layer of directory to the workspace mount path for conversation id for privacy
+        if self.config.workspace_mount_path_in_sandbox_store_in_session:
+            self.config.workspace_mount_path_in_sandbox = f"{self.config.workspace_mount_path_in_sandbox}/{self.sid}"
+        
+        if (
+            self.config.workspace_mount_path is not None
+        ):
+            if self.config.workspace_mount_path_in_sandbox_store_in_session:
+                # add another layer of directory to the workspace mount path for conversation id
+                self.config.workspace_mount_path = f"{self.config.workspace_mount_path}/{self.sid}"
+                
             # e.g. result would be: {"/home/user/openhands/workspace": {'bind': "/workspace", 'mode': 'rw'}}
             volumes = {
                 self.config.workspace_mount_path: {

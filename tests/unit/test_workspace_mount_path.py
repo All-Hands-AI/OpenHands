@@ -71,8 +71,6 @@ class TestWorkspaceMountPath:
             runtime._init_container()
 
         # Check that both paths are modified to include the session ID
-        assert config.workspace_mount_path == '/path/to/workspace/test-sid'
-        assert config.workspace_mount_path_in_sandbox == '/workspace/test-sid'
         assert runtime.config.workspace_mount_path == '/path/to/workspace/test-sid'
         assert runtime.config.workspace_mount_path_in_sandbox == '/workspace/test-sid'
 
