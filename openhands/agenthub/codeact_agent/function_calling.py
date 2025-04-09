@@ -314,19 +314,19 @@ def get_tools(
 
     # Determine which editor tool(s) and utility tools to add based on config
     if codeact_enable_fenced_diff:
-        # Use Fenced editor + separate utils
+        # Use Fenced editor + separate utils (including Undo, as Fenced edit is now server-side)
         tools.append(FencedDiffEditTool)
         tools.append(ViewFileTool)
         tools.append(ListDirectoryTool)
-        # tools.append(UndoEditTool) # this won't work until we move the edit to aci
+        tools.append(UndoEditTool)  # Now enabled for Fenced mode
     elif codeact_enable_llm_editor:
-        # Use LLM-based editor + separate utils
+        # Use LLM-based editor + separate utils (NO Undo, as LLM edit is client-side)
         tools.append(LLMBasedFileEditTool)
         tools.append(ViewFileTool)
         tools.append(ListDirectoryTool)
-        # tools.append(UndoEditTool)
+        # No UndoEditTool here
     else:
-        # Fallback to the original, comprehensive str_replace_editor
+        # Fallback to the original, comprehensive str_replace_editor (includes undo)
         tools.append(
             create_str_replace_editor_tool(
                 use_simplified_description=use_simplified_tool_desc
