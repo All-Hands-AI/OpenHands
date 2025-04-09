@@ -52,7 +52,7 @@ class CodeActAgent(Agent):
     ]
 
     def __init__(
-        self, llm: LLM, config: AgentConfig, mcp_tools: list[dict] | None = None, workspace_mount_path_in_sandbox_store_in_session: bool = False
+        self, llm: LLM, config: AgentConfig, mcp_tools: list[dict] | None = None, workspace_mount_path_in_sandbox_store_in_session: bool = True
     ) -> None:
         """Initializes a new instance of the CodeActAgent class.
 
@@ -60,7 +60,7 @@ class CodeActAgent(Agent):
         - llm (LLM): The llm to be used by this agent
         - config (AgentConfig): The configuration for this agent
         - mcp_tools (list[dict] | None, optional): List of MCP tools to be used by this agent. Defaults to None.
-        - workspace_mount_path_in_sandbox_store_in_session (bool, optional): Whether to store the workspace mount path in session. Defaults to False.
+        - workspace_mount_path_in_sandbox_store_in_session (bool, optional): Whether to store the workspace mount path in session. Defaults to True.
         """
         super().__init__(llm, config, mcp_tools, workspace_mount_path_in_sandbox_store_in_session)
         self.pending_actions: deque[Action] = deque()
