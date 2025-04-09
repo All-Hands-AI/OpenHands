@@ -15,8 +15,11 @@ from openhands.agenthub.codeact_agent.tools import (
     FencedDiffEditTool,
     FinishTool,
     IPythonTool,
+    ListDirectoryTool,
     LLMBasedFileEditTool,
     ThinkTool,
+    UndoEditTool,
+    ViewFileTool,
     WebReadTool,
     create_cmd_run_tool,
     create_str_replace_editor_tool,
@@ -190,6 +193,39 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                     impl_source=FileEditSource.FENCED_DIFF,
                 )
             # ================================================
+            # New Utility Tools (Routing to OH_ACI)
+            # ================================================
+            elif tool_call.function.name == ViewFileTool['function']['name']:
+                if 'path' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "path" in tool call {tool_call.function.name}'
+                    )
+                action = FileReadAction(
+                    path=arguments['path'],
+                    impl_source=FileReadSource.OH_ACI,
+                    view_range=arguments.get('view_range', None),
+                )
+            elif tool_call.function.name == ListDirectoryTool['function']['name']:
+                if 'path' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "path" in tool call {tool_call.function.name}'
+                    )
+                action = FileReadAction(
+                    path=arguments['path'],
+                    impl_source=FileReadSource.OH_ACI,
+                    # view_range is not applicable for directories
+                )
+            elif tool_call.function.name == UndoEditTool['function']['name']:
+                if 'path' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "path" in tool call {tool_call.function.name}'
+                    )
+                action = FileEditAction(
+                    path=arguments['path'],
+                    command='undo_edit',
+                    impl_source=FileEditSource.OH_ACI,
+                )
+            # ================================================
             # AgentThinkAction
             # ================================================
             elif tool_call.function.name == ThinkTool['function']['name']:
@@ -276,17 +312,21 @@ def get_tools(
     if codeact_enable_jupyter:
         tools.append(IPythonTool)
 
-    # Determine which editor tool(s) to add
-    added_editor = False
+    # Determine which editor tool(s) and utility tools to add based on config
     if codeact_enable_fenced_diff:
+        # Use Fenced editor + separate utils
         tools.append(FencedDiffEditTool)
-        added_editor = True
-    if codeact_enable_llm_editor:
+        tools.append(ViewFileTool)
+        tools.append(ListDirectoryTool)
+        # tools.append(UndoEditTool) # this won't work until we move the edit to aci
+    elif codeact_enable_llm_editor:
+        # Use LLM-based editor + separate utils
         tools.append(LLMBasedFileEditTool)
-        added_editor = True
-
-    # Fallback to str_replace_editor if no other editor is enabled
-    if not added_editor:
+        tools.append(ViewFileTool)
+        tools.append(ListDirectoryTool)
+        # tools.append(UndoEditTool)
+    else:
+        # Fallback to the original, comprehensive str_replace_editor
         tools.append(
             create_str_replace_editor_tool(
                 use_simplified_description=use_simplified_tool_desc
