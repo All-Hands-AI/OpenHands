@@ -245,15 +245,17 @@ class DockerRuntime(ActionExecutionClient):
 
         # if the workspace mount path is stored in session, we need to add another layer of directory to the workspace mount path for conversation id for privacy
         if self.config.workspace_mount_path_in_sandbox_store_in_session:
-            self.config.workspace_mount_path_in_sandbox = f"{self.config.workspace_mount_path_in_sandbox}/{self.sid}"
-        
-        if (
-            self.config.workspace_mount_path is not None
-        ):
+            self.config.workspace_mount_path_in_sandbox = (
+                f'{self.config.workspace_mount_path_in_sandbox}/{self.sid}'
+            )
+
+        if self.config.workspace_mount_path is not None:
             if self.config.workspace_mount_path_in_sandbox_store_in_session:
                 # add another layer of directory to the workspace mount path for conversation id
-                self.config.workspace_mount_path = f"{self.config.workspace_mount_path}/{self.sid}"
-                
+                self.config.workspace_mount_path = (
+                    f'{self.config.workspace_mount_path}/{self.sid}'
+                )
+
             # e.g. result would be: {"/home/user/openhands/workspace": {'bind': "/workspace", 'mode': 'rw'}}
             volumes = {
                 self.config.workspace_mount_path: {

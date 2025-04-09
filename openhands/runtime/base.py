@@ -395,7 +395,11 @@ class Runtime(FileEditRuntimeMixin):
         """
 
         loaded_microagents: list[BaseMicroAgent] = []
-        workspace_root = Path(f"{self.config.workspace_mount_path_in_sandbox}/{self.sid}" if self.config.workspace_mount_path_in_sandbox_store_in_session else self.config.workspace_mount_path_in_sandbox)
+        workspace_root = Path(
+            f'{self.config.workspace_mount_path_in_sandbox}/{self.sid}'
+            if self.config.workspace_mount_path_in_sandbox_store_in_session
+            else self.config.workspace_mount_path_in_sandbox
+        )
         microagents_dir = workspace_root / '.openhands' / 'microagents'
         repo_root = None
         if selected_repository:
