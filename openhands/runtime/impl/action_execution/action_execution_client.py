@@ -39,12 +39,13 @@ from openhands.events.observation import (
 from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
-from openhands.mcp import call_tool_mcp as call_tool_mcp_handler
+from openhands.mcp import call_tool_mcp as call_tool_mcp_handler, create_mcp_clients, MCPClient
 from openhands.runtime.base import Runtime
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.request import send_request
 from openhands.utils.http_session import HttpSession
 from openhands.utils.tenacity_stop import stop_if_should_exit
+from openhands.utils.async_utils import call_async_from_sync
 
 
 def _is_retryable_error(exception):
@@ -78,6 +79,7 @@ class ActionExecutionClient(Runtime):
         self._runtime_initialized: bool = False
         self._runtime_closed: bool = False
         self._vscode_token: str | None = None  # initial dummy value
+        self.mcp_clients: list[MCPClient] | None = None
         super().__init__(
             config,
             event_stream,
@@ -322,9 +324,17 @@ class ActionExecutionClient(Runtime):
         return self.send_action_for_execution(action)
 
     async def call_tool_mcp(self, action: McpAction) -> Observation:
-        return await call_tool_mcp_handler(
-            action, self.config.mcp.sse.mcp_servers or []
-        )
+        if self.mcp_clients is None:
+            self.log('debug', f'Creating MCP clients with servers: {self.config.mcp.sse.mcp_servers}')
+            self.mcp_clients = await create_mcp_clients(
+                self.config.mcp.sse.mcp_servers
+            )
+        return await call_tool_mcp_handler(self.mcp_clients, action)
+
+    async def aclose(self) -> None:
+        if self.mcp_clients:
+            for client in self.mcp_clients:
+                await client.disconnect()
 
     def close(self) -> None:
         # Make sure we don't close the session multiple times
@@ -333,3 +343,4 @@ class ActionExecutionClient(Runtime):
             return
         self._runtime_closed = True
         self.session.close()
+        call_async_from_sync(self.aclose)

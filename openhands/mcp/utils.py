@@ -101,7 +101,7 @@ async def fetch_mcp_tools_from_config(mcp_config: MCPConfig) -> list[dict]:
     return mcp_tools
 
 
-async def call_tool_mcp(action: McpAction, sse_mcp_servers: list[str]) -> Observation:
+async def call_tool_mcp(mcp_clients: list[MCPClient], action: McpAction) -> Observation:
     """
     Call a tool on an MCP server and return the observation.
 
@@ -112,19 +112,16 @@ async def call_tool_mcp(action: McpAction, sse_mcp_servers: list[str]) -> Observ
     Returns:
         The observation from the MCP server
     """
-    if not sse_mcp_servers:
-        raise ValueError('No MCP servers found')
+    if not mcp_clients:
+        raise ValueError('No MCP clients found')
 
-    logger.debug(f'SSE MCP servers: {sse_mcp_servers}')
-    mcp_clients = await create_mcp_clients(
-        sse_mcp_servers,
-    )
     logger.debug(f'MCP action received: {action}')
     # Find the MCP agent that has the matching tool name
     matching_client = None
     logger.debug(f'MCP clients: {mcp_clients}')
     logger.debug(f'MCP action name: {action.name}')
     for client in mcp_clients:
+        logger.debug(f'MCP client tools: {client.tools}')
         if action.name in [tool.name for tool in client.tools]:
             matching_client = client
             break
@@ -134,9 +131,5 @@ async def call_tool_mcp(action: McpAction, sse_mcp_servers: list[str]) -> Observ
     args_dict = json.loads(action.arguments) if action.arguments else {}
     response = await matching_client.call_tool(action.name, args_dict)
     logger.debug(f'MCP response: {response}')
-
-    # Close all client connections
-    for client in mcp_clients:
-        await client.disconnect()
 
     return MCPObservation(content=f'MCP result:{response.model_dump(mode="json")}')
