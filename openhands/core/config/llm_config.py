@@ -44,6 +44,11 @@ class LLMConfig(BaseModel):
         native_tool_calling: Whether to use native tool calling if supported by the model. Can be True, False, or not set.
         reasoning_effort: The effort to put into reasoning. This is a string that can be one of 'low', 'medium', 'high', or 'none'. Exclusive for o1 models.
         seed: The seed to use for the LLM.
+        use_critic: Whether to use a critic model to select the best response from multiple candidates.
+        critic_model: The model to use for the critic. If not provided, the same model as the main LLM will be used.
+        critic_api_key: The API key to use for the critic. If not provided, the same API key as the main LLM will be used.
+        critic_base_url: The base URL for the critic API. If not provided, the same base URL as the main LLM will be used.
+        critic_num_candidates: The number of candidate responses to generate for the critic to evaluate. Default is 8.
     """
 
     model: str = Field(default='claude-3-7-sonnet-20250219')
@@ -84,6 +89,11 @@ class LLMConfig(BaseModel):
     native_tool_calling: bool | None = Field(default=None)
     reasoning_effort: str | None = Field(default='high')
     seed: int | None = Field(default=None)
+    use_critic: bool = Field(default=False)
+    critic_model: str | None = Field(default=None)
+    critic_api_key: SecretStr | None = Field(default=None)
+    critic_base_url: str | None = Field(default=None)
+    critic_num_candidates: int = Field(default=8)
 
     model_config = {'extra': 'forbid'}
 

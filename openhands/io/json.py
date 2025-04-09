@@ -8,6 +8,7 @@ from openhands.core.exceptions import LLMResponseError
 from openhands.events.event import Event
 from openhands.events.observation import CmdOutputMetadata
 from openhands.events.serialization import event_to_dict
+from openhands.llm.critic import LLMCriticOutput
 from openhands.llm.metrics import Metrics
 
 
@@ -24,6 +25,8 @@ class OpenHandsJSONEncoder(json.JSONEncoder):
         if isinstance(obj, ModelResponse):
             return obj.model_dump()
         if isinstance(obj, CmdOutputMetadata):
+            return obj.model_dump()
+        if isinstance(obj, LLMCriticOutput):
             return obj.model_dump()
         return super().default(obj)
 
