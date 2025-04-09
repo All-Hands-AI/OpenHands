@@ -1,4 +1,3 @@
-import { ChatInterfaceShares } from "#/components/features/chat/chat-interface-shares";
 import { Controls } from "#/components/features/controls/controls";
 import { TerminalStatusLabel } from "#/components/features/terminal/terminal-status-label";
 import { Container } from "#/components/layout/container";
@@ -12,9 +11,12 @@ import {
   useConversation,
 } from "#/context/conversation-context";
 import { FilesProvider } from "#/context/files";
+import { WsClientProvider } from "#/context/ws-client-provider";
 import { useConversationConfig } from "#/hooks/query/use-conversation-config";
 import { useSettings } from "#/hooks/query/use-settings";
+import { useUserConversation } from "#/hooks/query/use-user-conversation";
 import { useEffectOnce } from "#/hooks/use-effect-once";
+import { useEndSession } from "#/hooks/use-end-session";
 import { I18nKey } from "#/i18n/declaration";
 import CodeIcon from "#/icons/code.svg?react";
 import GlobeIcon from "#/icons/globe.svg?react";
@@ -24,26 +26,28 @@ import { clearTerminal } from "#/state/command-slice";
 import { clearFiles, clearInitialPrompt } from "#/state/initial-query-slice";
 import { clearJupyter } from "#/state/jupyter-slice";
 import { RootState } from "#/store";
+import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { useDisclosure } from "@heroui/react";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { Outlet } from "react-router";
-import { ShareEventHandler } from "./event-handler";
+import { ChatInterface } from "../../components/features/chat/chat-interface";
+import { EventHandler } from "../_oh.app/event-handler";
 
 function AppContent() {
   useConversationConfig();
   const { t } = useTranslation();
   const { data: settings } = useSettings();
   const { conversationId } = useConversation();
-  // const { data: conversation, isFetched } = useUserConversation(
-  //   conversationId || null,
-  // );
+  const { data: conversation, isFetched } = useUserConversation(
+    conversationId || null,
+  );
   const { initialPrompt, files } = useSelector(
     (state: RootState) => state.initialQuery,
   );
   const dispatch = useDispatch();
-  // const endSession = useEndSession();
+  const endSession = useEndSession();
 
   const [width, setWidth] = React.useState(window.innerWidth);
 
@@ -52,14 +56,14 @@ function AppContent() {
   //   [],
   // );
 
-  // React.useEffect(() => {
-  //   if (isFetched && !conversation) {
-  //     displayErrorToast(
-  //       "This conversation does not exist, or you do not have permission to access it.",
-  //     );
-  //     endSession();
-  //   }
-  // }, [conversation, isFetched]);
+  React.useEffect(() => {
+    if (isFetched && !conversation) {
+      displayErrorToast(
+        "This conversation does not exist, or you do not have permission to access it.",
+      );
+      endSession();
+    }
+  }, [conversation, isFetched]);
 
   React.useEffect(() => {
     dispatch(clearMessages());
@@ -106,7 +110,7 @@ function AppContent() {
     if (width <= 640) {
       return (
         <div className="rounded-xl overflow-hidden border border-neutral-600 w-full">
-          <ChatInterfaceShares />
+          <ChatInterface />
         </div>
       );
     }
@@ -117,7 +121,7 @@ function AppContent() {
         initialSize={550}
         firstClassName="rounded-xl overflow-hidden "
         secondClassName="flex flex-col overflow-hidden"
-        firstChild={<ChatInterfaceShares />}
+        firstChild={<ChatInterface />}
         secondChild={
           <Container
             className="h-full mt-4 rounded-xl !mb-4"
@@ -127,6 +131,12 @@ function AppContent() {
                 to: "",
                 icon: <CodeIcon />,
               },
+              // { label: "Jupyter", to: "jupyter", icon: <ListIcon /> },
+              // {
+              //   label: <ServedAppLabel />,
+              //   to: "served",
+              //   icon: <FaServer />,
+              // },
               {
                 label: <TerminalStatusLabel />,
                 to: "terminal",
@@ -160,19 +170,25 @@ function AppContent() {
   }
 
   return (
-    <ShareEventHandler conversationId={conversationId}>
-      <div data-testid="app-route" className="flex flex-col h-full gap-3">
-        <div className="flex h-full overflow-auto">{renderMain()}</div>
+    <WsClientProvider conversationId={conversationId}>
+      <EventHandler>
+        <div data-testid="app-route" className="flex flex-col h-full gap-3">
+          <div className="flex h-full overflow-auto">{renderMain()}</div>
 
-        {settings && (
-          <Security
-            isOpen={securityModalIsOpen}
-            onOpenChange={onSecurityModalOpenChange}
-            securityAnalyzer={settings.SECURITY_ANALYZER}
-          />
-        )}
-      </div>
-    </ShareEventHandler>
+          {/* <Controls
+            setSecurityOpen={onSecurityModalOpen}
+            showSecurityLock={!!settings?.SECURITY_ANALYZER}
+          /> */}
+          {settings && (
+            <Security
+              isOpen={securityModalIsOpen}
+              onOpenChange={onSecurityModalOpenChange}
+              securityAnalyzer={settings.SECURITY_ANALYZER}
+            />
+          )}
+        </div>
+      </EventHandler>
+    </WsClientProvider>
   );
 }
 

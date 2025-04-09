@@ -61,7 +61,7 @@ function Home() {
             </div>
           )}
         </div>
-        <div className="text-tertiary font-semibold text-[16px] mt-8 md:mt-10 text-left w-full">
+        <div className="text-tertiary-light font-semibold text-[16px] mt-8 md:mt-10 text-left w-full">
           Try our use case
         </div>
         <UseCaseList />
