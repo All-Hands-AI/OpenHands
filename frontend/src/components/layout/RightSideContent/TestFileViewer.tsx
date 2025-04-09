@@ -70,7 +70,11 @@ function FileViewer({ currentPath }: { currentPath: string }) {
   console.log("🚀 ~ FileViewer ~ currentPath:", currentPath);
 
   const [fileExplorerIsOpen, setFileExplorerIsOpen] = React.useState(true);
-  const { data: fileContent } = useListFile({ path: currentPath });
+
+  const { data: fileContent } = useListFile({
+    path: currentPath,
+    enabled: true,
+  });
   console.log("🚀 ~ 6666666 ~ fileContent:", fileContent);
 
   const toggleFileExplorer = () => {
@@ -94,7 +98,7 @@ function FileViewer({ currentPath }: { currentPath: string }) {
               borderRadius: 0,
             }}
           >
-            {currentPath}:{fileContent}
+            {fileContent}
           </SyntaxHighlighter>
         </div>
       </div>
