@@ -1,6 +1,6 @@
 /** @type {import('tailwindcss').Config} */
-import { heroui } from "@heroui/react";
-import typography from "@tailwindcss/typography";
+import { heroui } from "@heroui/react"
+import typography from "@tailwindcss/typography"
 export default {
   content: [
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -8,6 +8,9 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        inter: ["Inter", "sans-serif"],
+      },
       colors: {
         primary: "#FF6100", // nice yellow
         logo: "#E4775D", // color for logos and icons
@@ -71,4 +74,4 @@ export default {
     }),
     typography,
   ],
-};
+}
