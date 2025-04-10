@@ -102,10 +102,10 @@ const DepositModal = ({ isOpen, onClose }: DepositModalProps) => {
         onClick={onClose}
       />
 
-      <div className="relative w-full max-w-md overflow-hidden rounded-xl bg-gray-300 border border-gray-500/30 shadow-2xl">
+      <div className="relative w-full max-w-lg overflow-hidden rounded-xl bg-white dark:bg-gray-300 border border-neutral-1000 dark:border-gray-500/30 shadow-2xl">
         {/* Header */}
-        <div className="bg-gray-300 px-6 py-4 flex items-center justify-between border-b border-gray-500/20">
-          <h2 className="text-xl font-semibold text-content flex items-center">
+        <div className="bg-white dark:bg-gray-300 px-6 py-4 flex items-center justify-between border-b border-b-neutral-1000 dark:border-gray-500/20">
+          <h2 className="text-xl font-semibold text-neutral-100 dark:text-content flex items-center">
             <span className="mr-2 text-primary">
               <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z" />
@@ -120,7 +120,7 @@ const DepositModal = ({ isOpen, onClose }: DepositModalProps) => {
           </h2>
           <button
             onClick={onClose}
-            className="rounded-lg p-2 text-tertiary-light hover:bg-tertiary/10 hover:text-primary transition-colors"
+            className="rounded-lg p-2 text-neutral-800 dark:text-tertiary-light hover:bg-neutral-1000 hover:text-neutral-100 transition-colors"
           >
             <svg
               className="h-5 w-5"
@@ -141,19 +141,19 @@ const DepositModal = ({ isOpen, onClose }: DepositModalProps) => {
         <div className="p-6">
           {/* Network Selection Tabs */}
           <div className="mb-6">
-            <div className="flex space-x-2 rounded-xl bg-gray-100/50 p-1.5 shadow-inner">
+            <div className="flex space-x-2 rounded-xl bg-neutral-1100 dark:bg-gray-100/50 p-1.5">
               {NETWORKS.map((network) => (
                 <button
                   key={network.chainId}
                   onClick={() => setSelectedNetwork(network)}
-                  className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2.5 transition-all ${
+                  className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2.5 transition-all font-medium ${
                     selectedNetwork?.chainId === network.chainId
-                      ? "bg-primary text-base-secondary shadow-lg font-semibold"
-                      : "text-tertiary-light hover:bg-gray-400/50"
+                      ? "bg-primary text-neutral-100 shadow-lg font-semibold"
+                      : "text-neutral-700 hover:bg-neutral-1000 hover:text-neutral-100 dark:text-tertiary-light dark:hover:bg-gray-400/50"
                   }`}
                 >
                   {/* Network icon would go here if enabled */}
-                  <span className="font-medium">{network.name}</span>
+                  <span>{network.name}</span>
                 </button>
               ))}
             </div>
@@ -161,17 +161,15 @@ const DepositModal = ({ isOpen, onClose }: DepositModalProps) => {
 
           {/* QR Code and Address Section */}
           {selectedNetwork && (
-            <div className="rounded-xl bg-gray-300 p-6 shadow-inner">
+            <div className="rounded-xl bg-neutral-1100 dark:bg-gray-300 py-6 px-4">
               {/* QR Code */}
               <div className="mb-6 flex justify-center">
                 {qrUrl ? (
-                  <div className="p-3 bg-content-2 rounded-lg shadow-md">
-                    <img
-                      src={qrUrl}
-                      alt="QR Code"
-                      className="h-48 w-48 rounded-md"
-                    />
-                  </div>
+                  <img
+                    src={qrUrl}
+                    alt="QR Code"
+                    className="h-48 w-48 rounded-lg border border-neutral-1000"
+                  />
                 ) : (
                   <div className="h-48 w-48 rounded-lg bg-gray-400 animate-pulse"></div>
                 )}
@@ -199,11 +197,13 @@ const DepositModal = ({ isOpen, onClose }: DepositModalProps) => {
                       d="M16 10h4v4h-4v-4z"
                     />
                   </svg>
-                  <span className="font-medium">Deposit Address</span>
+                  <span className="text-neutral-700 dark:text-white font-medium">
+                    Deposit Address
+                  </span>
                 </div>
                 <div className="group relative">
-                  <div className="flex items-center justify-between rounded-lg bg-base p-3.5 text-sm border border-gray-500/20">
-                    <span className="text-content-2 font-mono">
+                  <div className="flex items-center justify-between rounded-lg bg-white dark:bg-base p-3.5 text-sm border border-neutral-1000 dark:border-gray-500/20">
+                    <span className="text-neutral-100 font-semibold dark:text-content-2 font-mono">
                       {reduceString(
                         listAddresses[selectedNetwork.chainId],
                         8,
@@ -214,7 +214,7 @@ const DepositModal = ({ isOpen, onClose }: DepositModalProps) => {
                       onClick={() =>
                         handleCopy(listAddresses[selectedNetwork.chainId])
                       }
-                      className="text-tertiary-light hover:text-primary transition-colors"
+                      className="text-neutral-800 dark:ext-tertiary-light hover:text-primary transition-colors"
                     >
                       <svg
                         className="h-5 w-5"
@@ -239,7 +239,7 @@ const DepositModal = ({ isOpen, onClose }: DepositModalProps) => {
                 </div>
               </div>
 
-              <div className="mt-6 text-xs text-tertiary-light text-center">
+              <div className="mt-4 text-xs text-neutral-700 dark:text-tertiary-light text-center">
                 Only send {selectedNetwork.name} assets to this address. Other
                 assets may be lost.
               </div>

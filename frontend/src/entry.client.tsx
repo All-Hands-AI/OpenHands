@@ -16,6 +16,7 @@ import store from "./store";
 import { useConfig } from "./hooks/query/use-config";
 import { AuthProvider } from "./context/auth-context";
 import { queryClientConfig } from "./query-client-config";
+import { ThemeProvider } from "./components/layout/theme-provider";
 
 function PosthogInit() {
   const { data: config } = useConfig();
@@ -52,14 +53,16 @@ prepareApp().then(() =>
     hydrateRoot(
       document,
       <StrictMode>
-        <Provider store={store}>
-          <AuthProvider>
-            <QueryClientProvider client={queryClient}>
-              <HydratedRouter />
-              <PosthogInit />
-            </QueryClientProvider>
-          </AuthProvider>
-        </Provider>
+        <ThemeProvider defaultTheme="light" storageKey="thesis-ui-theme">
+          <Provider store={store}>
+            <AuthProvider>
+              <QueryClientProvider client={queryClient}>
+                <HydratedRouter />
+                <PosthogInit />
+              </QueryClientProvider>
+            </AuthProvider>
+          </Provider>
+        </ThemeProvider>
       </StrictMode>,
     );
   }),

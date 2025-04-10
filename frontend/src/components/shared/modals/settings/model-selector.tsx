@@ -87,13 +87,14 @@ export function ModelSelector({
           selectedKey={selectedProvider}
           classNames={{
             popoverContent:
-              "bg-[#1E1E1F] rounded-xl border border-[#232521] text-[14px] font-medium text-[#EFEFEF]",
+              "bg-white dark:bg-[#1E1E1F] rounded-xl border border-neutral-1000 dark:border-[#232521] text-[14px] font-medium text-neutral-100 dark:text-[#EFEFEF]",
           }}
           inputProps={{
             classNames: {
               inputWrapper:
-                "bg-[#1E1E1F] border border-[#232521] h-11 w-full rounded-lg p-2 placeholder:italic",
-              input: "text-[14px] font-medium text-[#EFEFEF]",
+                "bg-white dark:bg-[#1E1E1F] border border-neutral-1000 dark:border-[#232521] h-11 w-full rounded-lg p-2 placeholder:italic",
+              input:
+                "text-[14px] font-medium text-neutral-100 dark:text-[#EFEFEF]",
             },
           }}
         >
@@ -141,13 +142,14 @@ export function ModelSelector({
           defaultSelectedKey={selectedModel ?? undefined}
           classNames={{
             popoverContent:
-              "bg-[#1E1E1F] rounded-xl border border-[#232521] text-[14px] font-medium text-[#EFEFEF]",
+              "bg-white dark:bg-[#1E1E1F] rounded-xl border border-neutral-1000 dark:border-[#232521] text-[14px] font-medium text-neutral-100 dark:text-[#EFEFEF]",
           }}
           inputProps={{
             classNames: {
               inputWrapper:
-                "bg-[#1E1E1F] border border-[#232521] h-11 w-full rounded-lg p-2 placeholder:italic",
-              input: "text-[14px] font-medium text-[#EFEFEF]",
+                "bg-white dark:bg-[#1E1E1F] border border-neutral-1000 dark:border-[#232521] h-11 w-full rounded-lg p-2 placeholder:italic",
+              input:
+                "text-[14px] font-medium text-neutral-100 dark:text-[#EFEFEF]",
             },
           }}
         >

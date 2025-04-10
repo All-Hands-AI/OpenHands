@@ -60,10 +60,10 @@ export function InteractiveChatBox({
 
       <div
         className={cn(
-          "flex items-center gap-1",
+          "flex items-center gap-2",
           "rounded-xl px-2",
-          "transition-colors duration-200 bg-gray-500",
-          "hover:border-neutral-500 focus-within:border-neutral-500",
+          "transition-colors duration-200 bg-white dark:bg-gray-500",
+          "hover:border-neutral-1000 focus-within:border-neutral-1000",
         )}
       >
         <UploadImageInput onUpload={handleUpload} />
@@ -75,8 +75,8 @@ export function InteractiveChatBox({
           onStop={onStop}
           value={value}
           onImagePaste={handleUpload}
-          className="py-[10px]"
-          buttonClassName="py-[10px]"
+          className="py-3 text-neutral-100 placeholder:text-[#979995]"
+          buttonClassName="pb-[8px]"
         />
       </div>
     </div>

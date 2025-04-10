@@ -48,7 +48,8 @@ async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
             llm_api_key_set=settings.llm_api_key is not None,
             provider_tokens_set=provider_tokens_set,
         )
-        settings_with_token_data.llm_api_key = None
+        # TODO: un comment if dont want to use api key from config
+        # settings_with_token_data.llm_api_key = None
         return settings_with_token_data
     except Exception as e:
         traceback.print_exc()

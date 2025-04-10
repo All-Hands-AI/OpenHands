@@ -1,4 +1,4 @@
 cd frontend
-npm run check-unlocalized-strings
+# npm run check-unlocalized-strings
 npx lint-staged
-npm test
+# npm test

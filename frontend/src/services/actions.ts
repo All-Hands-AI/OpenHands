@@ -19,6 +19,9 @@ import {
 } from "#/types/message";
 import { handleObservationMessage } from "./observations";
 import { appendInput } from "#/state/command-slice";
+import { setComputerList } from "#/state/computer-slice";
+import { list } from "postcss";
+import ObservationType from "#/types/observation-type";
 
 const messageActions = {
   [ActionType.BROWSE]: (message: ActionMessage) => {
@@ -152,15 +155,23 @@ export function handleStatusMessage(message: StatusMessage) {
   }
 }
 
+const listMsg: Record<string, unknown>[] = [];
+
 export function handleAssistantMessage(message: Record<string, unknown>) {
+  if (
+    // TODO: check type browse_interactive of observation
+    message.source === "agent" &&
+    message.observation &&
+    ![ObservationType.AGENT_STATE_CHANGED, ObservationType.ERROR].includes(message.observation as ObservationType)
+  ) {
+    store.dispatch(setComputerList(message));
+  }
+
   if (message.action) {
-    console.log("message-handleAssistantMessage", message);
     handleActionMessage(message as unknown as ActionMessage);
   } else if (message.observation) {
-    console.log("message-handleObservationMessage", message);
     handleObservationMessage(message as unknown as ObservationMessage);
   } else if (message.status_update) {
-    console.log("message-handleStatusMessage", message);
     handleStatusMessage(message as unknown as StatusMessage);
   } else {
     const errorMsg = "Unknown message type received";

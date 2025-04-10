@@ -1,10 +1,14 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createSlice, PayloadAction } from "@reduxjs/toolkit"
 
-type SliceState = { changed: Record<string, boolean> }; // Map<path, changed>
+type SliceState = {
+  changed: Record<string, boolean>
+  currentPathViewed?: string
+} // Map<path, changed>
 
 const initialState: SliceState = {
   changed: {},
-};
+  currentPathViewed: "",
+}
 
 export const fileStateSlice = createSlice({
   name: "fileState",
@@ -14,11 +18,14 @@ export const fileStateSlice = createSlice({
       state,
       action: PayloadAction<{ path: string; changed: boolean }>,
     ) {
-      const { path, changed } = action.payload;
-      state.changed[path] = changed;
+      const { path, changed } = action.payload
+      state.changed[path] = changed
+    },
+    setCurrentPathViewed(state, action: PayloadAction<string>) {
+      state.currentPathViewed = action.payload
     },
   },
-});
+})
 
-export const { setChanged } = fileStateSlice.actions;
-export default fileStateSlice.reducer;
+export const { setChanged, setCurrentPathViewed } = fileStateSlice.actions
+export default fileStateSlice.reducer
