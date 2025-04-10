@@ -12,7 +12,7 @@ interface TestTerminalComponentProps {
 function TestTerminalComponent({
   commands,
 }: TestTerminalComponentProps) {
-  const ref = useTerminal({ commands, disabled: false });
+  const ref = useTerminal({ commands });
   return <div ref={ref} />;
 }
 
