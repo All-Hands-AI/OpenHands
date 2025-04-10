@@ -24,8 +24,8 @@ const ViewFile = ({ currentPathViewed }: { currentPathViewed: string }) => {
           </div>
         </div>
       </div>
-      <div className="mt-3 w-full overflow-auto rounded-lg border border-neutral-1000 p-1">
-        <div className="w-full max-w-full overflow-hidden">
+      <div className="relative mt-3 h-full w-full overflow-auto rounded-lg border border-neutral-1000 p-1">
+        <div className="absolute h-full w-full max-w-full overflow-hidden">
           <FilesProvider>
             <TestFileViewer currentPath={currentPathViewed} />
           </FilesProvider>
