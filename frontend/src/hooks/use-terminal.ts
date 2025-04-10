@@ -12,12 +12,10 @@ import { parseTerminalOutput } from "#/utils/parse-terminal-output";
 
 interface UseTerminalConfig {
   commands: Command[];
-  disabled: boolean;
 }
 
 const DEFAULT_TERMINAL_CONFIG: UseTerminalConfig = {
   commands: [],
-  disabled: false,
 };
 
 // Create a persistent reference that survives component unmounts
@@ -26,7 +24,6 @@ const persistentLastCommandIndex = { current: 0 };
 
 export const useTerminal = ({
   commands,
-  disabled,
 }: UseTerminalConfig = DEFAULT_TERMINAL_CONFIG) => {
   const terminal = React.useRef<Terminal | null>(null);
   const fitAddon = React.useRef<FitAddon | null>(null);
