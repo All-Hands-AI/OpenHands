@@ -1,51 +1,51 @@
-import React from "react";
-import { NavLink, useParams } from "react-router";
-import PlusIcon from "#/icons/plus.svg?react";
-import { useTranslation } from "react-i18next";
-import { I18nKey } from "#/i18n/declaration";
-import { ConversationCard } from "./conversation-card";
-import { useUserConversations } from "#/hooks/query/use-user-conversations";
-import { useDeleteConversation } from "#/hooks/mutation/use-delete-conversation";
-import { ConfirmDeleteModal } from "./confirm-delete-modal";
-import { LoadingSpinner } from "#/components/shared/loading-spinner";
-import { useUpdateConversation } from "#/hooks/mutation/use-update-conversation";
-import { useEndSession } from "#/hooks/use-end-session";
-import { ExitConversationModal } from "./exit-conversation-modal";
-import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
-import { groupConversationsByDate } from "#/utils/group-conversations-by-date";
-import { setCurrentAgentState } from "#/state/agent-slice";
-import { AgentState } from "#/types/agent-state";
-import { useDispatch } from "react-redux";
+import React from "react"
+import { NavLink, useParams } from "react-router"
+import PlusIcon from "#/icons/plus.svg?react"
+import { useTranslation } from "react-i18next"
+import { I18nKey } from "#/i18n/declaration"
+import { ConversationCard } from "./conversation-card"
+import { useUserConversations } from "#/hooks/query/use-user-conversations"
+import { useDeleteConversation } from "#/hooks/mutation/use-delete-conversation"
+import { ConfirmDeleteModal } from "./confirm-delete-modal"
+import { LoadingSpinner } from "#/components/shared/loading-spinner"
+import { useUpdateConversation } from "#/hooks/mutation/use-update-conversation"
+import { useEndSession } from "#/hooks/use-end-session"
+import { ExitConversationModal } from "./exit-conversation-modal"
+import { useClickOutsideElement } from "#/hooks/use-click-outside-element"
+import { groupConversationsByDate } from "#/utils/group-conversations-by-date"
+import { setCurrentAgentState } from "#/state/agent-slice"
+import { AgentState } from "#/types/agent-state"
+import { useDispatch } from "react-redux"
 
 interface ConversationPanelProps {
-  onClose: () => void;
+  onClose: () => void
 }
 
 export function ConversationPanel({ onClose }: ConversationPanelProps) {
-  const { t } = useTranslation();
-  const { conversationId: cid } = useParams();
-  const endSession = useEndSession();
-  const ref = useClickOutsideElement<HTMLDivElement>(onClose);
-  const dispatch = useDispatch();
+  const { t } = useTranslation()
+  const { conversationId: cid } = useParams()
+  const endSession = useEndSession()
+  const ref = useClickOutsideElement<HTMLDivElement>(onClose)
+  const dispatch = useDispatch()
   const [confirmDeleteModalVisible, setConfirmDeleteModalVisible] =
-    React.useState(false);
+    React.useState(false)
   const [
     confirmExitConversationModalVisible,
     setConfirmExitConversationModalVisible,
-  ] = React.useState(false);
+  ] = React.useState(false)
   const [selectedConversationId, setSelectedConversationId] = React.useState<
     string | null
-  >(null);
+  >(null)
 
-  const { data: conversations, isFetching, error } = useUserConversations();
+  const { data: conversations, isFetching, error } = useUserConversations()
 
-  const { mutate: deleteConversation } = useDeleteConversation();
-  const { mutate: updateConversation } = useUpdateConversation();
+  const { mutate: deleteConversation } = useDeleteConversation()
+  const { mutate: updateConversation } = useUpdateConversation()
 
   const handleDeleteProject = (conversationId: string) => {
-    setConfirmDeleteModalVisible(true);
-    setSelectedConversationId(conversationId);
-  };
+    setConfirmDeleteModalVisible(true)
+    setSelectedConversationId(conversationId)
+  }
 
   const handleConfirmDelete = () => {
     if (selectedConversationId) {
@@ -54,13 +54,13 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
         {
           onSuccess: () => {
             if (cid === selectedConversationId) {
-              endSession();
+              endSession()
             }
           },
         },
-      );
+      )
     }
-  };
+  }
 
   const handleChangeTitle = (
     conversationId: string,
@@ -71,38 +71,38 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
       updateConversation({
         id: conversationId,
         conversation: { title: newTitle },
-      });
-  };
+      })
+  }
 
   const handleEndSession = () => {
-    dispatch(setCurrentAgentState(AgentState.LOADING));
-    endSession();
-    onClose();
-  };
+    dispatch(setCurrentAgentState(AgentState.LOADING))
+    endSession()
+    onClose()
+  }
 
   const groupedConversations = React.useMemo(() => {
-    if (!conversations) return null;
-    return groupConversationsByDate(conversations);
-  }, [conversations]);
+    if (!conversations) return null
+    return groupConversationsByDate(conversations)
+  }, [conversations])
 
   return (
     <div
       ref={ref}
       data-testid="conversation-panel"
-      className="w-[240px] pt-2 px-2 min-h-[150px] max-h-[calc(100dvh-125px)] bg-white dark:bg-[#0F0F0F] rounded-2xl overflow-y-auto top-[125px] left-3 max-md:top-[0px] absolute"
+      className="absolute left-3 top-[125px] max-h-[calc(100dvh-125px)] min-h-[150px] w-[240px] overflow-y-auto rounded-2xl bg-white px-2 pt-2 dark:bg-[#0F0F0F] max-md:top-[0px]"
     >
       {isFetching && (
-        <div className="w-full h-full absolute flex justify-center items-center">
+        <div className="absolute flex h-full w-full items-center justify-center">
           <LoadingSpinner size="small" />
         </div>
       )}
       {error && (
-        <div className="flex flex-col items-center justify-center h-full">
+        <div className="flex h-full flex-col items-center justify-center">
           <p className="text-danger">{error.message}</p>
         </div>
       )}
       {conversations?.length === 0 && (
-        <div className="flex flex-col items-center justify-center h-full min-h-[80px]">
+        <div className="flex h-full min-h-[80px] flex-col items-center justify-center">
           <p className="text-neutral-400">
             {t(I18nKey.CONVERSATION$NO_CONVERSATIONS)}
           </p>
@@ -114,12 +114,12 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
           {groupedConversations.today.length > 0 && (
             <div className="mb-2 flex flex-col gap-[2px]">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-medium text-neutral-800 dark:text-neutral-400 px-4 py-2">
+                <h3 className="px-4 text-sm font-medium text-neutral-800 dark:text-neutral-400">
                   Today
                 </h3>
                 <div
                   onClick={handleEndSession}
-                  className="cursor-pointer mr-1 hover:bg-neutral-1000 dark:hover:bg-[#262525] rounded-full p-1"
+                  className="mr-1 cursor-pointer rounded-full p-1 hover:bg-neutral-1000 dark:hover:bg-[#262525]"
                 >
                   <PlusIcon width={20} height={20} />
                 </div>
@@ -159,7 +159,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
 
           {groupedConversations.yesterday.length > 0 && (
             <div className="mb-2 flex flex-col gap-[2px]">
-              <h3 className="text-sm font-medium text-neutral-800 dark:text-neutral-400 px-4 py-2">
+              <h3 className="px-4 text-sm font-medium text-neutral-800 dark:text-neutral-400">
                 Yesterday
               </h3>
               {groupedConversations.yesterday.map((project) => (
@@ -196,7 +196,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
 
           {groupedConversations.thisWeek.length > 0 && (
             <div className="mb-2 flex flex-col gap-[2px]">
-              <h3 className="text-sm font-medium text-neutral-800 dark:text-neutral-400 px-4 py-2">
+              <h3 className="px-4 text-sm font-medium text-neutral-800 dark:text-neutral-400">
                 This Week
               </h3>
               {groupedConversations.thisWeek.map((project) => (
@@ -233,7 +233,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
 
           {groupedConversations.thisMonth.length > 0 && (
             <div className="mb-2 flex flex-col gap-[2px]">
-              <h3 className="text-sm font-medium text-neutral-800 dark:text-neutral-400 px-4 py-2">
+              <h3 className="px-4 text-sm font-medium text-neutral-800 dark:text-neutral-400">
                 This Month
               </h3>
               {groupedConversations.thisMonth.map((project) => (
@@ -270,7 +270,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
 
           {groupedConversations.older.length > 0 && (
             <div className="mb-2 flex flex-col gap-[2px]">
-              <h3 className="text-sm font-medium text-neutral-800 dark:text-neutral-400 px-4 py-2">
+              <h3 className="px-4 text-sm font-medium text-neutral-800 dark:text-neutral-400">
                 Older
               </h3>
               {groupedConversations.older.map((project) => (
@@ -310,8 +310,8 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
       {confirmDeleteModalVisible && (
         <ConfirmDeleteModal
           onConfirm={() => {
-            handleConfirmDelete();
-            setConfirmDeleteModalVisible(false);
+            handleConfirmDelete()
+            setConfirmDeleteModalVisible(false)
           }}
           onCancel={() => setConfirmDeleteModalVisible(false)}
         />
@@ -320,12 +320,12 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
       {confirmExitConversationModalVisible && (
         <ExitConversationModal
           onConfirm={() => {
-            endSession();
-            onClose();
+            endSession()
+            onClose()
           }}
           onClose={() => setConfirmExitConversationModalVisible(false)}
         />
       )}
     </div>
-  );
+  )
 }

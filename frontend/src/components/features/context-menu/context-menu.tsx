@@ -1,11 +1,11 @@
-import React from "react";
-import { cn } from "#/utils/utils";
+import React from "react"
+import { cn } from "#/utils/utils"
 
 interface ContextMenuProps {
-  ref?: React.RefObject<HTMLUListElement | null>;
-  testId?: string;
-  children: React.ReactNode;
-  className?: React.HTMLAttributes<HTMLUListElement>["className"];
+  ref?: React.RefObject<HTMLUListElement | null>
+  testId?: string
+  children: React.ReactNode
+  className?: React.HTMLAttributes<HTMLUListElement>["className"]
 }
 
 export function ContextMenu({
@@ -18,9 +18,12 @@ export function ContextMenu({
     <ul
       data-testid={testId}
       ref={ref}
-      className={cn("bg-tertiary rounded-md", className)}
+      className={cn(
+        "rounded-md border border-neutral-1000 bg-white dark:bg-tertiary",
+        className,
+      )}
     >
       {children}
     </ul>
-  );
+  )
 }

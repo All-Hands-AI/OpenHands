@@ -1,50 +1,50 @@
-import { BrandButton } from "#/components/features/settings/brand-button";
-import { HeroHeading } from "#/components/shared/hero-heading";
-import { TaskForm } from "#/components/shared/task-form";
-import { UseCaseList } from "#/components/shared/use-case-list";
+import { BrandButton } from "#/components/features/settings/brand-button"
+import { HeroHeading } from "#/components/shared/hero-heading"
+import { TaskForm } from "#/components/shared/task-form"
+import { UseCaseList } from "#/components/shared/use-case-list"
 // import { useConfig } from "#/hooks/query/use-config";
 // import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
-import { useSettings } from "#/hooks/query/use-settings";
-import { I18nKey } from "#/i18n/declaration";
-import { useGetJwt } from "#/zutand-stores/persist-config/selector";
-import { useConnectModal } from "@rainbow-me/rainbowkit";
-import React from "react";
-import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router";
-import { useAccount } from "wagmi";
+import { useSettings } from "#/hooks/query/use-settings"
+import { I18nKey } from "#/i18n/declaration"
+import { useGetJwt } from "#/zutand-stores/persist-config/selector"
+import { useConnectModal } from "@rainbow-me/rainbowkit"
+import React from "react"
+import { useTranslation } from "react-i18next"
+import { useNavigate } from "react-router"
+import { useAccount } from "wagmi"
 
 function Home() {
-  const navigate = useNavigate();
-  const { t } = useTranslation();
-  const { data: settings } = useSettings();
-  const { isConnected } = useAccount();
-  const jwt = useGetJwt();
-  const formRef = React.useRef<HTMLFormElement>(null);
+  const navigate = useNavigate()
+  const { t } = useTranslation()
+  const { data: settings } = useSettings()
+  const { isConnected } = useAccount()
+  const jwt = useGetJwt()
+  const formRef = React.useRef<HTMLFormElement>(null)
 
   // const { data: config } = useConfig();
   // const { data: user } = useGitHubUser();
-  const { openConnectModal } = useConnectModal();
+  const { openConnectModal } = useConnectModal()
 
   // const gitHubAuthUrl = useGitHubAuthUrl({
   //   appMode: config?.APP_MODE || null,
   //   gitHubClientId: config?.GITHUB_CLIENT_ID || null,
   // });
 
-  const isUserLoggedIn = !!jwt && !!isConnected;
+  const isUserLoggedIn = !!jwt && !!isConnected
 
   return (
     <div
       data-testid="home-screen"
-      className="bg-neutral-1100 dark:bg-neutral-200 h-full flex flex-col items-center justify-center relative overflow-y-auto px-2 pb-40"
+      className="relative flex h-full flex-col items-center justify-center overflow-y-auto bg-neutral-1100 px-2 pb-40 dark:bg-neutral-200"
     >
       <HeroHeading />
-      <div className="flex flex-col gap-1 w-full mt-8 md:w-[600px] items-center">
-        <div className="flex flex-col gap-2 w-full">
+      <div className="mt-8 flex w-full flex-col items-center gap-1 md:w-[600px]">
+        <div className="flex w-full flex-col gap-2">
           {isUserLoggedIn ? (
             <TaskForm ref={formRef} />
           ) : (
-            <div className="flex flex-col gap-2 w-full">
-              <div className="text-tertiary-light text-center">
+            <div className="flex w-full flex-col gap-2">
+              <div className="text-center text-neutral-700 dark:text-tertiary-light">
                 Welcome to Thesis! We're currently in private beta.
                 <br /> To get started, Please enter connect your wallet.
               </div>
@@ -53,7 +53,7 @@ function Home() {
                 testId="connect-your-wallet"
                 type="button"
                 variant="secondary"
-                className="w-full text-tertiary font-bold hover:brightness-100 brightness-110 bg-neutral-900 border-content mt-2 uppercase rounded-lg"
+                className="mt-2 w-full rounded-xl border-content bg-primary font-bold uppercase text-neutral-100 hover:brightness-110"
                 onClick={openConnectModal}
               >
                 {t(I18nKey.BUTTON$CONNECT_WALLET)}
@@ -61,7 +61,7 @@ function Home() {
             </div>
           )}
         </div>
-        <div className="text-tertiary-light font-semibold text-[16px] mt-8 md:mt-10 text-left w-full">
+        <div className="mt-8 w-full text-left text-[16px] font-semibold text-neutral-700 dark:text-tertiary-light">
           Try our use case
         </div>
         <UseCaseList />
@@ -92,7 +92,7 @@ function Home() {
         </div> */}
       </div>
     </div>
-  );
+  )
 }
 
-export default Home;
+export default Home
