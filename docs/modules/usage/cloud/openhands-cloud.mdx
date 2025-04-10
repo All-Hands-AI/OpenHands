@@ -21,7 +21,10 @@ After visiting OpenHands Cloud, you will be asked to connect with your GitHub ac
 You can grant OpenHands specific repository access:
 1. Click the `Select a GitHub project` dropdown, select `Add more repositories...`.
 2. Select the organization, then choose the specific repositories to grant OpenHands access to.
-   - Openhands requests short-lived tokens (8-hour expiry) with these permissions:
+   <details>
+     <summary>Permission Details for Repository Access</summary>
+
+     Openhands requests short-lived tokens (8-hour expiry) with these permissions:
      - Actions: Read and write
      - Administration: Read-only
      - Commit statuses: Read and write
@@ -31,9 +34,12 @@ You can grant OpenHands specific repository access:
      - Pull requests: Read and write
      - Webhooks: Read and write
      - Workflows: Read and write
-   - Repository access for a user is granted based on:
+
+     Repository access for a user is granted based on:
      - Granted permission for the repository.
      - User's GitHub permissions (owner/collaborator).
+   </details>
+
 3. Click on `Install & Authorize`.
 
 ### Modifying Repository Access
@@ -41,3 +47,9 @@ You can grant OpenHands specific repository access:
 You can modify repository access at any time by:
 * Using the same `Select a GitHub project > Add more repositories` workflow, or
 * Visiting the Settings page and selecting `Configure GitHub Repositories` under the `GitHub Settings` section.
+
+## Conversation Persistence
+
+- Conversations List – Displays only the 10 most recent conversations initiated within the past 10 days.
+- Workspaces – Conversation workspaces are retained for 14 days.
+- Runtimes – Runtimes remain active ("warm") for 30 minutes. After this period, resuming a conversation may take 1–2 minutes.
