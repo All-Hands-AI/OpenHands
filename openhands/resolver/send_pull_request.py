@@ -235,6 +235,7 @@ def send_pull_request(
     target_branch: str | None = None,
     reviewer: str | None = None,
     pr_title: str | None = None,
+    base_domain: str = "github.com",
 ) -> str:
     """Send a pull request to a GitHub or Gitlab repository.
 
@@ -257,7 +258,7 @@ def send_pull_request(
     handler = None
     if platform == Platform.GITHUB:
         handler = ServiceContextIssue(
-            GithubIssueHandler(issue.owner, issue.repo, token, username), None
+            GithubIssueHandler(issue.owner, issue.repo, token, username, base_domain), None
         )
     else:  # platform == Platform.GITLAB
         handler = ServiceContextIssue(
@@ -357,6 +358,7 @@ def update_existing_pull_request(
     llm_config: LLMConfig,
     comment_message: str | None = None,
     additional_message: str | None = None,
+    base_domain: str = "github.com",
 ) -> str:
     """Update an existing pull request with the new patches.
 
@@ -375,7 +377,7 @@ def update_existing_pull_request(
     handler = None
     if platform == Platform.GITHUB:
         handler = ServiceContextIssue(
-            GithubIssueHandler(issue.owner, issue.repo, token, username), llm_config
+            GithubIssueHandler(issue.owner, issue.repo, token, username, base_domain), llm_config
         )
     else:  # platform == Platform.GITLAB
         handler = ServiceContextIssue(
@@ -462,6 +464,7 @@ def process_single_issue(
     target_branch: str | None = None,
     reviewer: str | None = None,
     pr_title: str | None = None,
+    base_domain: str = "github.com",
 ) -> None:
     if not resolver_output.success and not send_on_failure:
         logger.info(
@@ -501,6 +504,7 @@ def process_single_issue(
             patch_dir=patched_repo_dir,
             additional_message=resolver_output.result_explanation,
             llm_config=llm_config,
+            base_domain=base_domain,
         )
     else:
         send_pull_request(
@@ -515,6 +519,7 @@ def process_single_issue(
             target_branch=target_branch,
             reviewer=reviewer,
             pr_title=pr_title,
+            base_domain=base_domain,
         )
 
 
@@ -526,6 +531,7 @@ def process_all_successful_issues(
     pr_type: str,
     llm_config: LLMConfig,
     fork_owner: str | None,
+    base_domain: str = "github.com",
 ) -> None:
     output_path = os.path.join(output_dir, 'output.jsonl')
     for resolver_output in load_all_resolver_outputs(output_path):
@@ -542,6 +548,9 @@ def process_all_successful_issues(
                 fork_owner,
                 False,
                 None,
+                None,
+                None,
+                base_domain,
             )
 
 
@@ -627,6 +636,12 @@ def main() -> None:
         help='Custom title for the pull request',
         default=None,
     )
+    parser.add_argument(
+        '--base-domain',
+        type=str,
+        default="github.com",
+        help='Base domain for GitHub Enterprise (default: github.com)',
+    )
     my_args = parser.parse_args()
 
     token = my_args.token or os.getenv('GITHUB_TOKEN') or os.getenv('GITLAB_TOKEN')
@@ -636,7 +651,7 @@ def main() -> None:
         )
     username = my_args.username if my_args.username else os.getenv('GIT_USERNAME')
 
-    platform = identify_token(token)
+    platform = identify_token(token, None, my_args.base_domain)
     if platform == Platform.INVALID:
         raise ValueError('Token is invalid.')
 
@@ -661,6 +676,7 @@ def main() -> None:
             my_args.pr_type,
             llm_config,
             my_args.fork_owner,
+            my_args.base_domain,
         )
     else:
         if not my_args.issue_number.isdigit():
@@ -683,6 +699,7 @@ def main() -> None:
             my_args.target_branch,
             my_args.reviewer,
             my_args.pr_title,
+            my_args.base_domain,
         )
 
 
