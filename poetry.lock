@@ -4558,14 +4558,14 @@ files = [
 
 [[package]]
 name = "json-repair"
-version = "0.40.0"
+version = "0.41.0"
 description = "A package to repair broken json strings"
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "json_repair-0.40.0-py3-none-any.whl", hash = "sha256:46955bfd22338ba60cc5239c0b01462ba419871b19fcd68d8881aca4fa3b0d2f"},
-    {file = "json_repair-0.40.0.tar.gz", hash = "sha256:ce3cdef63f033d072295ca892cba51487292cd937da42dc20a8d629ecf5eb82d"},
+    {file = "json_repair-0.41.0-py3-none-any.whl", hash = "sha256:e3be820988fa210fe046e54c8475eafa9e069f1b85d67725f842eb00d1b61f21"},
+    {file = "json_repair-0.41.0.tar.gz", hash = "sha256:c9ee227d949d5da463024942b715e0e331f9f96cb7377e2f85a661b21596c50b"},
 ]
 
 [[package]]
@@ -5668,14 +5668,14 @@ files = [
 
 [[package]]
 name = "mcp"
-version = "1.4.1"
+version = "1.6.0"
 description = "Model Context Protocol SDK"
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "mcp-1.4.1-py3-none-any.whl", hash = "sha256:a7716b1ec1c054e76f49806f7d96113b99fc1166fc9244c2c6f19867cb75b593"},
-    {file = "mcp-1.4.1.tar.gz", hash = "sha256:b9655d2de6313f9d55a7d1df62b3c3fe27a530100cc85bf23729145b0dba4c7a"},
+    {file = "mcp-1.6.0-py3-none-any.whl", hash = "sha256:7bd24c6ea042dbec44c754f100984d186620d8b841ec30f1b19eda9b93a634d0"},
+    {file = "mcp-1.6.0.tar.gz", hash = "sha256:d9324876de2c5637369f43161cd71eebfd803df5a95e46225cab8d280e366723"},
 ]
 
 [package.dependencies]
@@ -5765,14 +5765,14 @@ files = [
 
 [[package]]
 name = "modal"
-version = "0.73.157"
+version = "0.73.158"
 description = "Python client library for Modal"
 optional = false
 python-versions = ">=3.9"
 groups = ["main", "evaluation"]
 files = [
-    {file = "modal-0.73.157-py3-none-any.whl", hash = "sha256:27b8236ec3e6851289034fab2474b25f46f0ac71cd7406bc246309da10cbe414"},
-    {file = "modal-0.73.157.tar.gz", hash = "sha256:1f7d40d7e673d20b59cec2ce3d7ac89b7001d9cf99c3ceafeb2e9194dc6474b9"},
+    {file = "modal-0.73.158-py3-none-any.whl", hash = "sha256:7b8c5d28fe916a118882eb052e952007b00d7612e64bb12cc71f769e9ca81b45"},
+    {file = "modal-0.73.158.tar.gz", hash = "sha256:d627b8da3b735fbfed217641ed8681b7c60f31d7363172facdc166e38077d669"},
 ]
 
 [package.dependencies]
@@ -10424,14 +10424,14 @@ typing-extensions = ">=3.7.4.3"
 
 [[package]]
 name = "types-awscrt"
-version = "0.25.7"
+version = "0.26.1"
 description = "Type annotations and code completion for awscrt"
 optional = false
 python-versions = ">=3.8"
 groups = ["evaluation"]
 files = [
-    {file = "types_awscrt-0.25.7-py3-none-any.whl", hash = "sha256:7bcd649aedca3c41007ca5757096d3b3bdb454b73ca66970ddae6c2c2f541c8c"},
-    {file = "types_awscrt-0.25.7.tar.gz", hash = "sha256:e11298750c99647f7f3b98d6d6d648790096cd32d445fd0d49a6041a63336c9a"},
+    {file = "types_awscrt-0.26.1-py3-none-any.whl", hash = "sha256:176d320a26990efc057d4bf71396e05be027c142252ac48cc0d87aaea0704280"},
+    {file = "types_awscrt-0.26.1.tar.gz", hash = "sha256:aca96f889b3745c0e74f42f08f277fed3bf6e9baa2cf9b06a36f78d77720e504"},
 ]
 
 [[package]]
@@ -11520,4 +11520,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "4f0f1cc84b1bfda81783d2acb2b246a85a0ebe6ee917c4cd11fa4bf3055c9f85"
+content-hash = "d67970c375588dd70c0e3e40aaf976a9553332256254c7f7e511fe51b9428d47"

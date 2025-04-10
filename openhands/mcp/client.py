@@ -49,7 +49,7 @@ class MCPClient(BaseModel):
             'sid': sid,
             'timeout': timeout,
         }
-        
+
         # Store mnemonic separately for reconnection
         if mnemonic:
             self._original_mnemonic = mnemonic
@@ -132,22 +132,16 @@ class MCPClient(BaseModel):
             return False
 
         # First ensure we're fully disconnected to clean up any lingering connections
-        await self.disconnect()
-        
         for attempt in range(max_retries):
             try:
+                await self.disconnect()
                 logger.info(f'Reconnection attempt {attempt + 1}/{max_retries}')
                 # Get params from stored connection parameters
                 params = self._connection_params.copy()
-                await self.connect_sse(**params)
-                    
-                # if await self.is_connected():
-                #     logger.info('Successfully reconnected to MCP server')
-                #     return True
-                return False
+                await self.connect_sse(**params)  # type: ignore
+                return True
             except Exception as e:
                 logger.error(f'Reconnection attempt {attempt + 1} failed: {str(e)}')
-            
             # Wait before trying again
             backoff_time = min(2**attempt, 30)
             logger.info(f'Waiting {backoff_time}s before next reconnection attempt')
@@ -173,30 +167,21 @@ class MCPClient(BaseModel):
         """
         if tool_name not in self.tool_map:
             raise ValueError(f'Tool {tool_name} not found.')
-
+        tool_result = None
         for attempt in range(max_retries + 1):
             try:
-                return await self.tool_map[tool_name].execute(**args)
+                tool_result = await self.tool_map[tool_name].execute(**args)
+                if tool_result.isError:
+                    await self.reconnect(max_retries=2)
+                    continue
+                return tool_result
             except Exception as e:
-                error_msg = str(e).lower()
-                is_connection_error = any(err in error_msg for err in [
-                    'peer closed connection',
-                    'connection reset',
-                    'incomplete chunked read',
-                    'socket closed',
-                    'transport closed',
-                    'connection was closed',
-                ])
-                logger.debug(f'is_connection_error: {e}')
-                if attempt < max_retries:
-                    if not await self.reconnect(max_retries=2):
-                        raise RuntimeError('Failed to reconnect to MCP server')
-                    await asyncio.sleep(min(2**attempt, 10))  # Exponential backoff
-                else:
-                    # Last attempt failed
-                    logger.error(f'Tool call to {tool_name} failed after {max_retries} retries: {str(e)}')
-                    raise e
-                
+                logger.error(f'Tool call to {tool_name} failed: {str(e)}')
+                raise RuntimeError(
+                    f'Tool call to {tool_name} in {attempt} retries: {str(e)}'
+                )
+        return tool_result
+
     async def disconnect(self) -> None:
         """Disconnect from the MCP server and clean up resources."""
         if self.session:
@@ -212,4 +197,3 @@ class MCPClient(BaseModel):
                 self.session = None
                 self.tools = []
                 logger.info('Disconnected from MCP server')
-
