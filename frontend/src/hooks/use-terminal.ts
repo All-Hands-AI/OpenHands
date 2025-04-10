@@ -21,6 +21,10 @@ const DEFAULT_TERMINAL_CONFIG: UseTerminalConfig = {
   disabled: false,
 };
 
+// Create a persistent reference that survives component unmounts
+// This ensures terminal history is preserved when navigating away and back
+const persistentLastCommandIndex = { current: 0 };
+
 export const useTerminal = ({
   commands,
   disabled,
@@ -29,7 +33,7 @@ export const useTerminal = ({
   const terminal = React.useRef<Terminal | null>(null);
   const fitAddon = React.useRef<FitAddon | null>(null);
   const ref = React.useRef<HTMLDivElement>(null);
-  const lastCommandIndex = React.useRef(0);
+  const lastCommandIndex = persistentLastCommandIndex; // Use the persistent reference
   const keyEventDisposable = React.useRef<{ dispose: () => void } | null>(null);
 
   const createTerminal = () =>
@@ -101,6 +105,22 @@ export const useTerminal = ({
     if (ref.current) {
       /* Initialize the terminal in the DOM */
       initializeTerminal();
+      
+      // Initialize with existing commands if any
+      if (commands.length > 0) {
+        for (let i = 0; i < commands.length; i++) {
+          const { content, type } = commands[i];
+          terminal.current?.writeln(
+            parseTerminalOutput(content.replaceAll("\n", "\r\n").trim())
+          );
+          
+          if (type === "output") {
+            terminal.current.write(`\n`);
+          }
+        }
+        lastCommandIndex.current = commands.length; // Update the position of the last command
+      }
+      
       terminal.current.write("$ ");
 
       /* Listen for resize events */
@@ -114,11 +134,11 @@ export const useTerminal = ({
       terminal.current?.dispose();
       resizeObserver?.disconnect();
     };
-  }, []);
+  }, [commands]);
 
   React.useEffect(() => {
     /* Write commands to the terminal */
-    if (terminal.current && commands.length > 0) {
+    if (terminal.current && commands.length > 0 && lastCommandIndex.current < commands.length) {
       // Start writing commands from the last command index
       for (let i = lastCommandIndex.current; i < commands.length; i += 1) {
         // eslint-disable-next-line prefer-const
