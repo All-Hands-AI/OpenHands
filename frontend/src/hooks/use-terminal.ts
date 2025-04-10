@@ -104,7 +104,11 @@ export const useTerminal = ({
     resizeObserver = new ResizeObserver(() => {
       fitAddon.current?.fit();
     });
-    resizeObserver.observe(ref.current);
+
+    if (ref.current) {
+      resizeObserver.observe(ref.current);
+    }
+
     return () => {
       resizeObserver?.disconnect();
     };
