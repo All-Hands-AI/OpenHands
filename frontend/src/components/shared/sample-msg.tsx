@@ -34,7 +34,6 @@ export function SampleMsg() {
             className="cursor-pointer rounded-[12px] border border-gray-200 bg-transparent p-6 transition-all duration-150 ease-in hover:scale-105 hover:shadow-md"
             key={key}
             onClick={() => {
-              console.log("first", titleQuestion.message)
               handleSetInitMsg(titleQuestion.message)
               handleSetAgent(key ? "DummyAgent" : "CodeActAgent")
               saveSettings(
