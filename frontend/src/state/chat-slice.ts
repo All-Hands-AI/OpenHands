@@ -25,7 +25,7 @@ const HANDLED_ACTIONS: OpenHandsEventType[] = [
   "edit",
   "mcp",
   "call_tool_mcp",
-  "playwright_mcp_browser_screenshot",
+  "browser_mcp",
   "recall",
 ];
 
@@ -293,9 +293,9 @@ export const chatSlice = createSlice({
         }\n\nOutput:\n\`\`\`\n${content.trim() || "[MCP finished execution with no output]"}\n\`\`\``;
         causeMessage.content = content;
 
-        
         causeMessage.success =
-          content.length > 0 && !content.toLowerCase().includes("'isError': True");
+          content.length > 0 &&
+          !content.toLowerCase().includes("'isError': True");
       }
     },
 

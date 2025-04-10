@@ -135,7 +135,7 @@ class Session:
             agent_config.condenser = default_condenser_config
 
         mcp_tools = await fetch_mcp_tools_from_config(
-            self.config.mcp, sid=self.sid, mnemonic=mnemonic
+            self.config.dict_mcp_config, sid=self.sid, mnemonic=mnemonic
         )
         agent = Agent.get_cls(agent_cls)(llm, agent_config)
         agent.set_mcp_tools(mcp_tools)

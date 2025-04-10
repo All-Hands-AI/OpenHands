@@ -110,8 +110,8 @@ export interface AgentThinkObservation
   };
 }
 
-export interface PlaywrightMcpBrowserScreenshotObservation
-  extends OpenHandsObservationEvent<ObservationType.PLAYWRIGHT_MCP_BROWSER_SCREENSHOT> {
+export interface BrowserMCPObservation
+  extends OpenHandsObservationEvent<ObservationType.BROWSER_MCP> {
   source: "agent";
   extras: {
     url: string;
@@ -120,8 +120,7 @@ export interface PlaywrightMcpBrowserScreenshotObservation
   };
 }
 
-export interface MCPObservation
-  extends OpenHandsObservationEvent<"mcp"> {
+export interface MCPObservation extends OpenHandsObservationEvent<"mcp"> {
   source: "agent";
   extras: {
     content: string;
@@ -159,6 +158,6 @@ export type OpenHandsObservation =
   | ReadObservation
   | EditObservation
   | ErrorObservation
-  | PlaywrightMcpBrowserScreenshotObservation
+  | BrowserMCPObservation
   | MCPObservation
   | RecallObservation;

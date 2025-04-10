@@ -92,7 +92,8 @@ class AppConfig(BaseModel):
     max_concurrent_conversations: int = Field(
         default=3
     )  # Maximum number of concurrent agent loops allowed per user
-    mcp: MCPConfig = Field(default_factory=MCPConfig)
+    # mcp: MCPConfig = Field(default_factory=MCPConfig)
+    dict_mcp_config: dict[str, MCPConfig] = Field(default_factory=dict)
 
     defaults_dict: ClassVar[dict] = {}
 

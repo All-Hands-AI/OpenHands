@@ -13,7 +13,7 @@ export type OpenHandsEventType =
   | "think"
   | "finish"
   | "error"
-  | "playwright_mcp_browser_screenshot"
+  | "browser_mcp"
   | "mcp"
   | "call_tool_mcp"
   | "recall";

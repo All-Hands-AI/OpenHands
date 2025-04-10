@@ -391,6 +391,5 @@ type = "noop"
 # Configuration for MCP (Model Context Protocol) settings
 ##############################################################################
 [mcp]
-# List of MCP server URLs, separated by quotes
-# Example: mcp_servers = ["http://server1:8080/sse", "http://server2:8080/sse"]
-#mcp_servers = []
+[mcp.oraichain]
+url = "http://localhost:4000/sse"

@@ -40,7 +40,7 @@ enum ActionType {
   CHANGE_AGENT_STATE = "change_agent_state",
 
   // Take a screenshot of the browser
-  PLAYWRIGHT_MCP_BROWSER_SCREENSHOT = "playwright_mcp_browser_screenshot",
+  BROWSER_MCP = "browser_mcp",
 }
 
 export default ActionType;
