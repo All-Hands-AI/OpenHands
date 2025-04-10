@@ -144,7 +144,7 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: McpAction) -> Obse
     logger.debug(f'Matching client: {matching_client}')
     args_dict = json.loads(action.arguments) if action.arguments else {}
     response = await matching_client.call_tool(action.name, args_dict)
-    logger.debug(f'MCP response: {response}')
+    # logger.debug(f'MCP response: {response}')
 
     # special case for browser screenshot of playwright_mcp
     if (
@@ -184,8 +184,8 @@ def process_browser_mcp_response(
     if len(browser_content) > 1:
         image_content = browser_content[1]
 
-    logger.debug(f'image_content: {image_content}')
-    logger.debug(f'text_content: {text_content}')
+    # logger.debug(f'image_content: {image_content}')
+    # logger.debug(f'text_content: {text_content}')
     url = extract_page_url(text_content.text) if text_content else ''
 
     # logger.debug(f'Screenshot content: {screenshot_content}')
