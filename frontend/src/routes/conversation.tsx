@@ -15,7 +15,7 @@ import { clearTerminal } from "#/state/command-slice";
 import { useEffectOnce } from "#/hooks/use-effect-once";
 import CodeIcon from "#/icons/code.svg?react";
 import GlobeIcon from "#/icons/globe.svg?react";
-import PythonIcon from "#/icons/python.svg?react";
+import JupyterIcon from "#/icons/jupyter.svg?react";
 import TerminalIcon from "#/icons/terminal.svg?react";
 import ListIcon from "#/icons/list-type-number.svg?react";
 import { clearJupyter } from "#/state/jupyter-slice";
@@ -146,7 +146,7 @@ function AppContent() {
                 to: "terminal",
                 icon: <TerminalIcon />,
               },
-              { label: "Jupyter", to: "jupyter", icon: <PythonIcon /> },
+              { label: "Jupyter", to: "jupyter", icon: <JupyterIcon /> },
               {
                 label: <ServedAppLabel />,
                 to: "served",
