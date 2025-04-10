@@ -3,7 +3,6 @@ import React from "react";
 import { Outlet } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
 import { FaServer } from "react-icons/fa";
-import { VscTerminalCmd } from "react-icons/vsc";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import {
@@ -16,6 +15,7 @@ import { clearTerminal } from "#/state/command-slice";
 import { useEffectOnce } from "#/hooks/use-effect-once";
 import CodeIcon from "#/icons/code.svg?react";
 import GlobeIcon from "#/icons/globe.svg?react";
+import TerminalIcon from "#/icons/terminal.svg?react";
 import ListIcon from "#/icons/list-type-number.svg?react";
 import { clearJupyter } from "#/state/jupyter-slice";
 import { FilesProvider } from "#/context/files";
@@ -143,7 +143,7 @@ function AppContent() {
               {
                 label: <TerminalStatusLabel />,
                 to: "terminal",
-                icon: <VscTerminalCmd />,
+                icon: <TerminalIcon />,
               },
               { label: "Jupyter", to: "jupyter", icon: <ListIcon /> },
               {
