@@ -369,7 +369,7 @@ if __name__ == "__main__":
     obs = ContextReorganizationObservation(
         content=file_content,
         summary='Important information from the conversation',
-        files=['file1.py', 'file2.py'],
+        files=[{'path': 'file1.py'}, {'path': 'file2.py'}],
     )
 
     initial_messages = [
@@ -422,7 +422,7 @@ class Calculator:
     obs = ContextReorganizationObservation(
         content=file_content,
         summary='Context reorganized with calculator class',
-        files=['calculator.py'],
+        files=[{'path': 'calculator.py'}],
     )
 
     # Call _process_observation directly
