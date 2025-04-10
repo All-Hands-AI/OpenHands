@@ -5,6 +5,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.events.async_event_store_wrapper import AsyncEventStoreWrapper
 from openhands.events.serialization import event_to_trajectory
 from openhands.memory.trajectory_summarizer.summarizer import TrajectorySummarizer
+from openhands.server.shared import conversation_manager
 
 app = APIRouter(prefix='/api/conversations/{conversation_id}')
 
@@ -56,8 +57,20 @@ async def get_trajectory_summary(request: Request) -> JSONResponse:
         JSONResponse: A JSON response containing the summary with overall summary and segments.
     """
     try:
-        # Get the LLM from the conversation's agent
-        llm = request.state.conversation.agent.llm
+        # Get the session ID from the conversation
+        sid = request.state.conversation.sid
+        
+        # Get the agent session from the conversation manager
+        session = conversation_manager._local_agent_loops_by_sid.get(sid)
+        if not session:
+            raise ValueError(f"No active session found for conversation {sid}")
+            
+        agent_session = session.agent_session
+        if not agent_session or not agent_session.controller:
+            raise ValueError(f"No agent controller found for conversation {sid}")
+        
+        # Get the LLM from the agent controller
+        llm = agent_session.controller.agent.llm
 
         # Create a summarizer using the same LLM
         summarizer = TrajectorySummarizer(llm=llm)

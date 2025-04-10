@@ -82,9 +82,19 @@ export function ChatInterface() {
       userMessageCount !== lastSummarizedCount &&
       curAgentState !== AgentState.RUNNING;
 
+    console.log("Summarization check:", {
+      userMessageCount,
+      lastSummarizedCount,
+      curAgentState,
+      shouldSummarize
+    });
+
     if (shouldSummarize && params.conversationId) {
-      getTrajectorySummary(params.conversationId, {
+      const conversationId = params.conversationId;
+      console.log("Attempting to summarize conversation:", conversationId);
+      getTrajectorySummary(conversationId, {
         onSuccess: (data) => {
+          console.log("Summary received:", data);
           setOverallSummary(data.overall_summary);
           setSummarySegments(data.segments);
           setShowSummary(true);
@@ -235,6 +245,46 @@ export function ChatInterface() {
                   />
                 </svg>
                 {showSummary ? "Original View" : "Summary View"}
+              </button>
+            )}
+            
+            {/* Manual Summarize Button - always show for debugging */}
+            {params.conversationId && (
+              <button
+                onClick={() => {
+                  const conversationId = params.conversationId;
+                  if (!conversationId) return;
+                  
+                  console.log("Manual summarize clicked for:", conversationId);
+                  getTrajectorySummary(conversationId, {
+                    onSuccess: (data) => {
+                      console.log("Manual summary received:", data);
+                      setOverallSummary(data.overall_summary);
+                      setSummarySegments(data.segments);
+                      setShowSummary(true);
+                      setLastSummarizedCount(userMessageCount);
+                    },
+                    onError: (error) => {
+                      console.error("Error fetching manual summary:", error);
+                    }
+                  });
+                }}
+                className="flex items-center gap-1 text-xs px-2 py-1 rounded bg-blue-100 dark:bg-blue-800 hover:bg-blue-200 dark:hover:bg-blue-700 transition-colors"
+                title="Manually trigger summarization"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M4 5a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zm0 6a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zm0 6a1 1 0 011-1h6a1 1 0 110 2H5a1 1 0 01-1-1z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                Summarize
               </button>
             )}
           </div>
