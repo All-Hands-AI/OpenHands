@@ -133,20 +133,29 @@ install-python-dependencies:
 		export HNSWLIB_NO_NATIVE=1; \
 		poetry run pip install chroma-hnswlib; \
 	fi
-	@poetry install
-	@if [ -f "/etc/manjaro-release" ]; then \
-		echo "$(BLUE)Detected Manjaro Linux. Installing Playwright dependencies...$(RESET)"; \
-		poetry run pip install playwright; \
-		poetry run playwright install chromium; \
+	@if [ -n "${POETRY_GROUP}" ]; then \
+		echo "Installing only POETRY_GROUP=${POETRY_GROUP}"; \
+		poetry install --only $${POETRY_GROUP}; \
 	else \
-		if [ ! -f cache/playwright_chromium_is_installed.txt ]; then \
-			echo "Running playwright install --with-deps chromium..."; \
-			poetry run playwright install --with-deps chromium; \
-			mkdir -p cache; \
-			touch cache/playwright_chromium_is_installed.txt; \
+		poetry install; \
+	fi
+	@if [ "${INSTALL_PLAYWRIGHT}" != "false" ] && [ "${INSTALL_PLAYWRIGHT}" != "0" ]; then \
+		if [ -f "/etc/manjaro-release" ]; then \
+			echo "$(BLUE)Detected Manjaro Linux. Installing Playwright dependencies...$(RESET)"; \
+			poetry run pip install playwright; \
+			poetry run playwright install chromium; \
 		else \
-			echo "Setup already done. Skipping playwright installation."; \
+			if [ ! -f cache/playwright_chromium_is_installed.txt ]; then \
+				echo "Running playwright install --with-deps chromium..."; \
+				poetry run playwright install --with-deps chromium; \
+				mkdir -p cache; \
+				touch cache/playwright_chromium_is_installed.txt; \
+			else \
+				echo "Setup already done. Skipping playwright installation."; \
+			fi \
 		fi \
+	else \
+		echo "Skipping Playwright installation (INSTALL_PLAYWRIGHT=${INSTALL_PLAYWRIGHT})."; \
 	fi
 	@echo "$(GREEN)Python dependencies installed successfully.$(RESET)"
 
