@@ -25,7 +25,7 @@ class StuckDetector:
     def __init__(self, state: State):
         self.state = state
 
-    def is_stuck(self, headless_mode: bool = True):
+    def is_stuck(self, headless_mode: bool = True) -> bool:
         """Checks if the agent is stuck in a loop.
 
         Args:
@@ -109,7 +109,9 @@ class StuckDetector:
 
         return False
 
-    def _is_stuck_repeating_action_observation(self, last_actions, last_observations):
+    def _is_stuck_repeating_action_observation(
+        self, last_actions: list[Event], last_observations: list[Event]
+    ) -> bool:
         # scenario 1: same action, same observation
         # it takes 4 actions and 4 observations to detect a loop
         # assert len(last_actions) == 4 and len(last_observations) == 4
@@ -130,7 +132,9 @@ class StuckDetector:
 
         return False
 
-    def _is_stuck_repeating_action_error(self, last_actions, last_observations):
+    def _is_stuck_repeating_action_error(
+        self, last_actions: list[Event], last_observations: list[Event]
+    ) -> bool:
         # scenario 2: same action, errors
         # it takes 3 actions and 3 observations to detect a loop
         # check if the last three actions are the same and result in errors
@@ -155,7 +159,12 @@ class StuckDetector:
                         'SyntaxError: unterminated string literal (detected at line'
                     ):
                         if self._check_for_consistent_line_error(
-                            last_observations[:3], error_message
+                            [
+                                obs
+                                for obs in last_observations[:3]
+                                if isinstance(obs, IPythonRunCellObservation)
+                            ],
+                            error_message,
                         ):
                             logger.warning(warning)
                             return True
@@ -163,13 +172,20 @@ class StuckDetector:
                         'SyntaxError: invalid syntax. Perhaps you forgot a comma?',
                         'SyntaxError: incomplete input',
                     ) and self._check_for_consistent_invalid_syntax(
-                        last_observations[:3], error_message
+                        [
+                            obs
+                            for obs in last_observations[:3]
+                            if isinstance(obs, IPythonRunCellObservation)
+                        ],
+                        error_message,
                     ):
                         logger.warning(warning)
                         return True
         return False
 
-    def _check_for_consistent_invalid_syntax(self, observations, error_message):
+    def _check_for_consistent_invalid_syntax(
+        self, observations: list[IPythonRunCellObservation], error_message: str
+    ) -> bool:
         first_lines = []
         valid_observations = []
 
@@ -210,7 +226,9 @@ class StuckDetector:
             == 1
         )
 
-    def _check_for_consistent_line_error(self, observations, error_message):
+    def _check_for_consistent_line_error(
+        self, observations: list[IPythonRunCellObservation], error_message: str
+    ) -> bool:
         error_lines = []
 
         for obs in observations:
@@ -237,7 +255,7 @@ class StuckDetector:
         # and the 3rd-to-last line is identical across all occurrences
         return len(error_lines) == 3 and len(set(error_lines)) == 1
 
-    def _is_stuck_monologue(self, filtered_history):
+    def _is_stuck_monologue(self, filtered_history: list[Event]) -> bool:
         # scenario 3: monologue
         # check for repeated MessageActions with source=AGENT
         # see if the agent is engaged in a good old monologue, telling itself the same thing over and over
@@ -271,7 +289,9 @@ class StuckDetector:
                     return True
         return False
 
-    def _is_stuck_action_observation_pattern(self, filtered_history):
+    def _is_stuck_action_observation_pattern(
+        self, filtered_history: list[Event]
+    ) -> bool:
         # scenario 4: action, observation pattern on the last six steps
         # check if the agent repeats the same (Action, Observation)
         # every other step in the last six steps
@@ -313,7 +333,7 @@ class StuckDetector:
                 return True
         return False
 
-    def _is_stuck_context_window_error(self, filtered_history):
+    def _is_stuck_context_window_error(self, filtered_history: list[Event]) -> bool:
         """Detects if we're stuck in a loop of context window errors.
 
         This happens when we repeatedly get context window errors and try to trim,
@@ -361,7 +381,7 @@ class StuckDetector:
 
         return False
 
-    def _eq_no_pid(self, obj1, obj2):
+    def _eq_no_pid(self, obj1: Event, obj2: Event) -> bool:
         if isinstance(obj1, IPythonRunCellAction) and isinstance(
             obj2, IPythonRunCellAction
         ):

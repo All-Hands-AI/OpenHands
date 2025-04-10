@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from openhands.core.exceptions import (
     LLMMalformedActionError,
     TaskInvalidStateError,
@@ -21,7 +23,7 @@ STATES = [
 class Task:
     id: str
     goal: str
-    parent: 'Task | None'
+    parent: 'Task' | None
     subtasks: list['Task']
 
     def __init__(
@@ -29,8 +31,8 @@ class Task:
         parent: 'Task',
         goal: str,
         state: str = OPEN_STATE,
-        subtasks=None,  # noqa: B006
-    ):
+        subtasks: list[dict | 'Task'] | None = None,  # noqa: B006
+    ) -> None:
         """Initializes a new instance of the Task class.
 
         Args:
@@ -53,15 +55,15 @@ class Task:
             if isinstance(subtask, Task):
                 self.subtasks.append(subtask)
             else:
-                goal = subtask.get('goal')
-                state = subtask.get('state')
+                goal = str(subtask.get('goal', ''))
+                state = str(subtask.get('state', OPEN_STATE))
                 subtasks = subtask.get('subtasks')
                 logger.debug(f'Reading: {goal}, {state}, {subtasks}')
                 self.subtasks.append(Task(self, goal, state, subtasks))
 
         self.state = OPEN_STATE
 
-    def to_string(self, indent=''):
+    def to_string(self, indent: str = '') -> str:
         """Returns a string representation of the task and its subtasks.
 
         Args:
@@ -86,7 +88,7 @@ class Task:
             result += subtask.to_string(indent + '    ')
         return result
 
-    def to_dict(self):
+    def to_dict(self) -> dict:
         """Returns a dictionary representation of the task.
 
         Returns:
@@ -99,10 +101,11 @@ class Task:
             'subtasks': [t.to_dict() for t in self.subtasks],
         }
 
-    def set_state(self, state):
+    def set_state(self, state: str) -> None:
         """Sets the state of the task and its subtasks.
 
-        Args:            state: The new state of the task.
+        Args:
+            state: The new state of the task.
 
         Raises:
             TaskInvalidStateError: If the provided state is invalid.
@@ -123,7 +126,7 @@ class Task:
             if self.parent is not None:
                 self.parent.set_state(state)
 
-    def get_current_task(self) -> 'Task | None':
+    def get_current_task(self) -> 'Task' | None:
         """Retrieves the current task in progress.
 
         Returns:
@@ -155,11 +158,11 @@ class RootTask(Task):
     goal: str = ''
     parent: None = None
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.subtasks = []
         self.state = OPEN_STATE
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Returns a string representation of the root_task.
 
         Returns:
@@ -194,7 +197,12 @@ class RootTask(Task):
             task = task.subtasks[part]
         return task
 
-    def add_subtask(self, parent_id: str, goal: str, subtasks: list | None = None):
+    def add_subtask(
+        self,
+        parent_id: str,
+        goal: str,
+        subtasks: list[dict | Task] | None = None,
+    ) -> None:
         """Adds a subtask to a parent task.
 
         Args:
@@ -207,7 +215,7 @@ class RootTask(Task):
         child = Task(parent=parent, goal=goal, subtasks=subtasks)
         parent.subtasks.append(child)
 
-    def set_subtask_state(self, id: str, state: str):
+    def set_subtask_state(self, id: str, state: str) -> None:
         """Sets the state of a subtask.
 
         Args:
