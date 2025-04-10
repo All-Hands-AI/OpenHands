@@ -1,25 +1,26 @@
-import { useConfig } from "#/hooks/query/use-config";
-import ArrowDown from "#/icons/angle-down-solid.svg?react";
-import ArrowUp from "#/icons/angle-up-solid.svg?react";
-import CheckCircle from "#/icons/check-circle-solid.svg?react";
-import XCircle from "#/icons/x-circle-solid.svg?react";
-import { HANDLED_ACTIONS } from "#/state/chat-slice";
-import { OpenHandsEventType } from "#/types/core/base";
-import { cn } from "#/utils/utils";
-import { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
-import Markdown from "react-markdown";
-import { Link } from "react-router";
-import remarkGfm from "remark-gfm";
-import { code } from "../markdown/code";
-import { ol, ul } from "../markdown/list";
-import MessageActionDisplay from "./message-action-display";
+import { useConfig } from "#/hooks/query/use-config"
+import ArrowDown from "#/icons/angle-down-solid.svg?react"
+import ArrowUp from "#/icons/angle-up-solid.svg?react"
+import CheckCircle from "#/icons/check-circle-solid.svg?react"
+import XCircle from "#/icons/x-circle-solid.svg?react"
+import { HANDLED_ACTIONS } from "#/state/chat-slice"
+import { OpenHandsEventType } from "#/types/core/base"
+import { cn } from "#/utils/utils"
+import { useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
+import Markdown from "react-markdown"
+import { Link } from "react-router"
+import remarkGfm from "remark-gfm"
+import { code } from "../markdown/code"
+import { ol, ul } from "../markdown/list"
+import MessageActionDisplay from "./message-action-display"
 interface ExpandableMessageProps {
-  id?: string;
-  message: string;
-  type: string;
-  success?: boolean;
-  messageActionID?: string;
+  id?: string
+  message: string
+  type: string
+  success?: boolean
+  messageActionID?: string
+  eventID?: number
 }
 
 export function ExpandableMessage({
@@ -28,22 +29,23 @@ export function ExpandableMessage({
   type,
   success,
   messageActionID,
+  eventID,
 }: ExpandableMessageProps) {
-  const { data: config } = useConfig();
-  const { t, i18n } = useTranslation();
-  const [showDetails, setShowDetails] = useState(true);
-  const [headline, setHeadline] = useState("");
-  const [details, setDetails] = useState(message);
+  const { data: config } = useConfig()
+  const { t, i18n } = useTranslation()
+  const [showDetails, setShowDetails] = useState(true)
+  const [headline, setHeadline] = useState("")
+  const [details, setDetails] = useState(message)
 
   useEffect(() => {
     if (id && i18n.exists(id)) {
-      setHeadline(t(id) + ` (${messageActionID})`);
-      setDetails(message);
-      setShowDetails(true);
+      setHeadline(t(id) + ` (${messageActionID})`)
+      setDetails(message)
+      setShowDetails(true)
     }
-  }, [id, message, i18n.language]);
+  }, [id, message, i18n.language])
 
-  const statusIconClasses = "h-4 w-4 mr-2 inline";
+  const statusIconClasses = "h-4 w-4 mr-2 inline"
 
   if (
     config?.FEATURE_FLAGS.ENABLE_BILLING &&
@@ -67,7 +69,7 @@ export function ExpandableMessage({
           </Link>
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -148,6 +150,7 @@ export function ExpandableMessage({
                 <MessageActionDisplay
                   messageActionID={messageActionID}
                   content={details}
+                  eventID={eventID}
                 />
               ) : (
                 <Markdown
@@ -166,5 +169,5 @@ export function ExpandableMessage({
         )}
       </div>
     </div>
-  );
+  )
 }
