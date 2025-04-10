@@ -13,19 +13,16 @@ import { useWsClient } from "#/context/ws-client-provider";
 
 interface UseTerminalConfig {
   commands: Command[];
-  secrets: string[];
   disabled: boolean;
 }
 
 const DEFAULT_TERMINAL_CONFIG: UseTerminalConfig = {
   commands: [],
-  secrets: [],
   disabled: false,
 };
 
 export const useTerminal = ({
   commands,
-  secrets,
   disabled,
 }: UseTerminalConfig = DEFAULT_TERMINAL_CONFIG) => {
   const { send } = useWsClient();
@@ -126,10 +123,6 @@ export const useTerminal = ({
       for (let i = lastCommandIndex.current; i < commands.length; i += 1) {
         // eslint-disable-next-line prefer-const
         let { content, type } = commands[i];
-
-        secrets.forEach((secret) => {
-          content = content.replaceAll(secret, "*".repeat(10));
-        });
 
         terminal.current?.writeln(
           parseTerminalOutput(content.replaceAll("\n", "\r\n").trim()),
