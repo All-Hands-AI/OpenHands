@@ -331,8 +331,6 @@ def test_background_process_initial_output_timeout(windows_bash_session):
     This test specifically targets the behavior observed where initial output
     might be missed due to the output capturing mechanism on Windows.
     """
-    # Match the message from the python http.server
-    initial_message = "Serving HTTP on 0.0.0.0 port 8081"
     # sleep_duration is not needed as the server runs until stopped/killed
     timeout_duration = 2 # Seconds, short enough to trigger before much happens
 

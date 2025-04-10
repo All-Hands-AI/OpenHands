@@ -3,16 +3,19 @@ import subprocess
 import tempfile
 import uuid
 import re
+import traceback
 from pathlib import Path
 import time
 import base64
 
+from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import CmdRunAction
 from openhands.events.observation import ErrorObservation
 from openhands.events.observation.commands import (
     CmdOutputMetadata,
     CmdOutputObservation,
 )
+from openhands.utils.shutdown_listener import should_continue
 
 class WindowsBashSession:
     """A direct PowerShell executor for Windows that doesn't maintain a session."""
@@ -21,13 +24,16 @@ class WindowsBashSession:
         self.work_dir = os.path.abspath(work_dir)
         self.username = username
         self._cwd = self.work_dir
-        self.no_change_timeout_seconds = no_change_timeout_seconds
+        self.NO_CHANGE_TIMEOUT_SECONDS = no_change_timeout_seconds
         self.max_memory_mb = max_memory_mb
+        self.prev_status = None
+        self.prev_output = ""
+        self._closed = False
         try:
             self._temp_dir = Path(tempfile.mkdtemp())
-            print(f"[DEBUG] Created temp directory: {self._temp_dir}")
+            logger.debug(f"Created temp directory: {self._temp_dir}")
         except Exception as e:
-            print(f"[ERROR] Failed to create temp directory: {e}")
+            logger.error(f"Failed to create temp directory: {e}")
             raise
         self._initialized = True  # Always initialized since we don't maintain a session
     
@@ -38,34 +44,42 @@ class WindowsBashSession:
     
     def initialize(self):
         """No initialization needed since we run each command in a new process."""
-        print(f"WindowsBashSession ready (work_dir: {self.work_dir})")
+        logger.debug(f"WindowsBashSession ready (work_dir: {self.work_dir})")
         return True
     
     def execute(self, action: CmdRunAction) -> CmdOutputObservation | ErrorObservation:
         """Execute a command using a dedicated PowerShell process."""
         command = action.command.strip()
+        is_input = action.is_input
         timeout = action.timeout or 30.0
         
-        print(f"[DEBUG] Executing command: {command} with timeout {timeout}s")
+        logger.debug(f"Executing command: {command} with timeout {timeout}s")
         
         # Recreate temp directory if it was deleted
         if not hasattr(self, '_temp_dir') or not self._temp_dir.exists():
             try:
                 self._temp_dir = Path(tempfile.mkdtemp())
-                print(f"[DEBUG] Recreated temp directory: {self._temp_dir}")
+                logger.debug(f"Recreated temp directory: {self._temp_dir}")
             except Exception as e:
-                print(f"[ERROR] Failed to recreate temp directory: {e}")
+                logger.error(f"Failed to recreate temp directory: {e}")
                 return ErrorObservation(content=f"Failed to recreate temp directory: {e}")
         
         # Handle special cases
         if command.startswith("C-"):
-            print("[DEBUG] Detected special key command, not supported.")
+            logger.debug(f"Detected special key command: {command}")
             return ErrorObservation(
-                content=f"Special keys like {command} are not supported in direct execution mode"
+                content=f"Special keys like {command} are not supported in Windows direct execution mode. Please use a different approach."
             )
         
         if command == "":
-            print("[DEBUG] Detected empty command.")
+            logger.debug("Detected empty command.")
+            # If no previous command is running, return a message similar to Linux version
+            if not self.prev_status:
+                return CmdOutputObservation(
+                    content="ERROR: No previous running command to retrieve logs from.",
+                    command="",
+                    metadata=CmdOutputMetadata(),
+                )
             return CmdOutputObservation(
                 content="",
                 command="",
@@ -79,7 +93,7 @@ class WindowsBashSession:
                 'alias git="git --no-pager"',
                 'Set-Item -Path Alias:git -Value { git.exe --no-pager $args }'
             )
-            print(f"[DEBUG] Modified git command for PowerShell: {command}")
+            logger.debug(f"Modified git command for PowerShell: {command}")
         
         # For normal commands, use file-based approach with a new process
         script_file = None
@@ -95,124 +109,96 @@ class WindowsBashSession:
             error_file = self._temp_dir / f"error_{run_uuid}.txt"
             status_file = self._temp_dir / f"status_{run_uuid}.txt"
             script_file = self._temp_dir / f"script_{run_uuid}.ps1"
-            print(f"[DEBUG] Temp files: script={script_file}, out={output_file}, err={error_file}, status={status_file}")
+            logger.debug(f"Temp files: script={script_file}, out={output_file}, err={error_file}, status={status_file}")
 
             # Encode the command using Base64 to avoid PowerShell parsing issues
-            print(f"[DEBUG] Encoding command using Base64: {command[:50]}...")
+            logger.debug(f"Encoding command using Base64: {command[:50]}...")
             encoded_command_bytes = command.encode('utf-8')
             base64_encoded_command = base64.b64encode(encoded_command_bytes).decode('utf-8')
-            print(f"[DEBUG] Base64 encoded command: {base64_encoded_command[:50]}...")
+            logger.debug(f"Base64 encoded command: {base64_encoded_command[:50]}...")
 
             # Create PowerShell script to execute the command and write results to files
             script_content = f"""
-Write-Host "[PS_SCRIPT] Starting script execution"
 # Create empty files first
-Write-Host "[PS_SCRIPT] Creating temp files..."
-$outputFilePath = '{output_file}'
-$errorFilePath = '{error_file}'
-$statusFilePath = '{status_file}'
+$outputFilePath = \'{output_file}\'
+$errorFilePath = \'{error_file}\'
+$statusFilePath = \'{status_file}\'
 $null > $outputFilePath
 $null > $errorFilePath
 $null > $statusFilePath
-Write-Host "[PS_SCRIPT] Temp files created: out=$outputFilePath, err=$errorFilePath, status=$statusFilePath"
 
 # Save current directory
 $originalDir = Get-Location
 $originalDirPath = $originalDir.Path
-Write-Host "[PS_SCRIPT] Original directory: $originalDirPath"
 
 # Change to working directory
-$targetWorkDir = '{self._cwd}'
-Write-Host "[PS_SCRIPT] Changing to working directory: $targetWorkDir"
+$targetWorkDir = \'{self._cwd}\'
 try {{
     Set-Location $targetWorkDir
-    Write-Host "[PS_SCRIPT] Changed directory successfully."
 }} catch {{
-    Write-Host "[PS_SCRIPT] ERROR changing to working directory '$targetWorkDir': $($_.Exception.Message)"
     # Write error to error file and status file, then exit
     $errorDetails = "Failed to change working directory: $($_.Exception.Message)"
     $errorDetails | Out-File -FilePath $errorFilePath -Encoding utf8 -Append
-    "EXIT_CODE=1`nWORKING_DIR=$originalDirPath" | Out-File -FilePath $statusFilePath -Encoding utf8
+    "EXIT_CODE=1`nWORKING_DIR=$originalDirPath\" | Out-File -FilePath $statusFilePath -Encoding utf8
     exit 1 # Exit the script early
 }}
 
-
 try {{
-    # Log original command for clarity
-    Write-Host '[PS_SCRIPT] Executing command (Base64 Encoded): {base64_encoded_command[:100]}...'
-
-    $base64Command = '{base64_encoded_command}'
-    Write-Host "[PS_SCRIPT] Decoding Base64 command..."
+    $base64Command = \'{base64_encoded_command}\'
     try {{
         $decodedBytes = [System.Convert]::FromBase64String($base64Command)
         $decodedCommand = [System.Text.Encoding]::UTF8.GetString($decodedBytes)
-        Write-Host "[PS_SCRIPT] Decoded command successfully (first 50 chars): $($decodedCommand.Substring(0, [System.Math]::Min(50, $decodedCommand.Length)))..."
     }} catch {{
-        Write-Host "[PS_SCRIPT] ERROR decoding Base64 command: $($_.Exception.Message)"
+        # Write decoding error to error file before throwing
+        $errorDetails = "Failed to decode Base64 command: $($_.Exception.Message)"
+        $errorDetails | Out-File -FilePath $errorFilePath -Encoding utf8 -Append
         throw "Failed to decode Base64 command." # Propagate error to main catch block
     }}
 
-    # Execute the script block, redirecting ALL output streams (stdout, stderr, verbose, warning, etc.)
+    # Execute the script block, redirecting ALL output streams (*)
     # and APPENDING (>>) them to the output file AS THEY ARE GENERATED.
-    Write-Host "[PS_SCRIPT] Executing script block and redirecting all output streams (*) appending (>>) to $outputFilePath..."
     & {{
-        # $ErrorActionPreference = 'Continue' # Keep default or as inherited
         Invoke-Command -ScriptBlock ([ScriptBlock]::Create($decodedCommand))
-    }} *>> $outputFilePath # Key change: Redirect all streams, append to file
+    }} *>> $outputFilePath # Redirect all streams, append to file
 
     # Get exit code AFTER execution attempt
-    # Note: $LASTEXITCODE might not be reliable if the command was purely PowerShell (e.g., Write-Output)
-    # or if Invoke-Command itself had issues. Check $? as well.
     $successStatus = $? # True if the last command succeeded, False otherwise
     $exitCode = $LASTEXITCODE
     if ($successStatus -and ($null -eq $exitCode -or $exitCode -eq 0)) {{
-        $exitCode = 0 # Consider successful if $? is true and exit code is null or 0
-        Write-Host "[PS_SCRIPT] Command completed successfully ($? is True, LASTEXITCODE is $exitCode)."
+        $exitCode = 0
     }} elseif (-not $successStatus) {{
          if ($null -eq $exitCode -or $exitCode -eq 0) {{ $exitCode = 1 }} # If $? is False but exit code is 0/null, force to 1
-         Write-Host "[PS_SCRIPT] Command failed ($? is False). Setting exit code to $exitCode."
     }} else {{
          # $? is True, but $LASTEXITCODE is non-zero. Use $LASTEXITCODE.
-         Write-Host "[PS_SCRIPT] Command completed ($? is True) but with non-zero exit code: $exitCode."
+         # No action needed, $exitCode already holds the value
+         : # PowerShell requires something in the block, ':' is a no-op
     }}
 
-    Write-Host "[PS_SCRIPT] Final exit code determined: $exitCode"
-
-    # Output/Error streams were redirected directly, no need to write them here.
+    # Output/Error streams were redirected directly.
 
     # Get current directory (may have changed)
     $newDir = Get-Location
     $newDirPath = $newDir.Path
-    Write-Host "[PS_SCRIPT] New directory: $newDirPath"
 
     # Write status information (exit code and current directory)
-    Write-Host "[PS_SCRIPT] Writing status to $statusFilePath"
-    "EXIT_CODE=$exitCode`nWORKING_DIR=$newDirPath" | Out-File -FilePath $statusFilePath -Encoding utf8
-    Write-Host "[PS_SCRIPT] Status written."
+    \"EXIT_CODE=$exitCode`nWORKING_DIR=$newDirPath\" | Out-File -FilePath $statusFilePath -Encoding utf8
 
 }} catch {{
-    Write-Host "[PS_SCRIPT] Caught exception during command execution or setup."
     # Write error details to error file
-    Write-Host "[PS_SCRIPT] Writing error details to $errorFilePath"
     $errorDetails = $_.ToString()
-    if ($_.Exception) {{ $errorDetails += "`nException Message: $($_.Exception.Message)" }}
-    if ($_.InvocationInfo) {{ $errorDetails += "`nScript Line Number: $($_.InvocationInfo.ScriptLineNumber)" }}
+    if ($_.Exception) {{ $errorDetails += \"`nException Message: $($_.Exception.Message)\" }}
+    if ($_.InvocationInfo) {{ $errorDetails += \"`nScript Line Number: $($_.InvocationInfo.ScriptLineNumber)\" }}
     # Append error details to the error file
     $errorDetails | Out-File -FilePath $errorFilePath -Encoding utf8 -Append
-    Write-Host "[PS_SCRIPT] Error details written."
 
     # Write failure status (always exit code 1 in catch block)
-    Write-Host "[PS_SCRIPT] Writing failure status to $statusFilePath"
-    "EXIT_CODE=1`nWORKING_DIR=$originalDirPath" | Out-File -FilePath $statusFilePath -Encoding utf8
-    Write-Host "[PS_SCRIPT] Failure status written."
+    \"EXIT_CODE=1`nWORKING_DIR=$originalDirPath\" | Out-File -FilePath $statusFilePath -Encoding utf8
 }} finally {{
-    # Ensure Set-Location back to original directory? Not strictly necessary as process exits.
-    # Set-Location $originalDirPath
-    Write-Host "[PS_SCRIPT] Script execution finished."
+    # Script execution finishes here
 }}
 """
             # Write script to file
-            print(f"[DEBUG] Writing PowerShell script to {script_file}")
+            logger.debug(f"Writing PowerShell script to {script_file}")
             script_file.write_text(script_content, encoding='utf-8')
             
             powershell_executable = "powershell.exe"
@@ -220,17 +206,19 @@ try {{
             try:
                 subprocess.run(["pwsh", "-Command", "exit"], check=True, capture_output=True)
                 powershell_executable = "pwsh.exe"
-                print("[DEBUG] Using pwsh.exe")
+                logger.debug("Using pwsh.exe")
             except FileNotFoundError:
-                print("[DEBUG] pwsh.exe not found, using powershell.exe")
+                logger.debug("pwsh.exe not found, using powershell.exe")
             except Exception as e:
-                 print(f"[DEBUG] Error checking for pwsh: {e}, using powershell.exe")
+                logger.debug(f"Error checking for pwsh: {e}, using powershell.exe")
             
             # Execute PowerShell script with timeout
-            print(f"[DEBUG] Executing script via {powershell_executable}...")
+            logger.debug(f"Executing script via {powershell_executable}...")
             process = None
             try:
                 start_time = time.monotonic()
+                last_change_time = start_time
+                last_output_size = 0
                 process = subprocess.Popen(
                     [powershell_executable, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(script_file)],
                     stdout=subprocess.PIPE, 
@@ -241,60 +229,139 @@ try {{
                     cwd=self._cwd
                 )
                 
-                # Wait for process to complete with timeout
-                stdout_data, stderr_data = process.communicate(timeout=timeout)
+                # For long-running processes, we need to implement a no-change timeout
+                # similar to bash.py's approach
+                if action.blocking:
+                    # Simple wait for completion if blocking
+                    stdout_data, stderr_data = process.communicate(timeout=timeout)
+                else:
+                    # Poll for output with no-change detection
+                    stdout_chunks = []
+                    stderr_chunks = []
+                    
+                    while should_continue() and process.poll() is None:
+                        # Check if output file has changed
+                        current_output_size = 0
+                        if output_file.exists():
+                            try:
+                                current_output_size = output_file.stat().st_size
+                            except Exception:
+                                pass  # Ignore file access errors during polling
+                                
+                        if current_output_size != last_output_size:
+                            last_change_time = time.monotonic()
+                            last_output_size = current_output_size
+                            
+                        # Check for no-change timeout
+                        time_since_last_change = time.monotonic() - last_change_time
+                        if time_since_last_change >= self.NO_CHANGE_TIMEOUT_SECONDS:
+                            # Read current output
+                            file_output = ""
+                            if output_file.exists():
+                                try:
+                                    file_output = output_file.read_text(encoding='utf-8', errors='replace')
+                                except Exception as e:
+                                    logger.warning(f"Failed to read output file on no-change timeout: {e}")
+                                    file_output = f"[Error reading output file during no-change timeout: {e}]"
+                                    
+                            # Read error file
+                            error_output = ""
+                            if error_file.exists() and error_file.stat().st_size > 0:
+                                try:
+                                    error_output = error_file.read_text(encoding='utf-8', errors='replace')
+                                    if error_output.strip():
+                                        file_output += f"\n[ERROR_STREAM] {error_output}"
+                                except Exception as e:
+                                    logger.warning(f"Failed to read error file on no-change timeout: {e}")
+                                    
+                            # Create metadata with suffix similar to bash.py
+                            metadata = CmdOutputMetadata(working_dir=self._cwd)
+                            metadata.suffix = (
+                                f"\n[The command has no new output after {self.NO_CHANGE_TIMEOUT_SECONDS} seconds. "
+                                "Note: On Windows, commands run in isolated processes. "
+                                f"You can wait longer to see additional output by sending empty command '', "
+                                "or terminate the current process using a new command."
+                            )
+                            
+                            # Set status for tracking
+                            self.prev_status = "NO_CHANGE_TIMEOUT"
+                            self.prev_output = file_output
+                            
+                            # Return the observation before completely terminating
+                            return CmdOutputObservation(
+                                content=file_output,
+                                command=command,
+                                metadata=metadata
+                            )
+                            
+                        # Check for hard timeout
+                        if timeout and time.monotonic() - start_time >= timeout:
+                            raise subprocess.TimeoutExpired(process.args, timeout)
+                            
+                        # Short sleep to prevent CPU spinning
+                        time.sleep(0.5)
+                        
+                    # Process completed or we're breaking out of the loop
+                    try:
+                        stdout_data, stderr_data = process.communicate(timeout=1)
+                    except subprocess.TimeoutExpired:
+                        # Last attempt timed out, but we already have partial output
+                        process.kill()
+                        stdout_data = "".join(stdout_chunks)
+                        stderr_data = "".join(stderr_chunks)
+                
                 end_time = time.monotonic()
-                print(f"[DEBUG] Script process finished in {end_time - start_time:.2f} seconds.")
-                print(f"[DEBUG] Script STDOUT:\n{stdout_data}")
-                print(f"[DEBUG] Script STDERR:\n{stderr_data}")
+                logger.debug(f"Script process finished in {end_time - start_time:.2f} seconds.")
+                logger.debug(f"Script STDOUT:\n{stdout_data}")
+                logger.debug(f"Script STDERR:\n{stderr_data}")
                 process_exit_code = process.returncode
-                print(f"[DEBUG] Script process exit code: {process_exit_code}")
+                logger.debug(f"Script process exit code: {process_exit_code}")
 
             except subprocess.TimeoutExpired:
-                print(f"[ERROR] Script execution timed out after {timeout} seconds.")
+                logger.error(f"Script execution timed out after {timeout} seconds.")
                 stdout_after_kill = ""
                 stderr_after_kill = ""
                 if process:
-                    print(f"[DEBUG] Killing process {process.pid}")
+                    logger.debug(f"Killing process {process.pid}")
                     # Try to kill the process tree using taskkill first
                     try:
                         kill_result = subprocess.run(['taskkill', '/F', '/T', '/PID', str(process.pid)], check=False, capture_output=True, timeout=5)
-                        print(f"[DEBUG] Attempted taskkill /T on PID {process.pid}. Result: {kill_result.returncode}, Output: {kill_result.stdout.decode(errors='replace')}, Error: {kill_result.stderr.decode(errors='replace')}")
+                        logger.debug(f"Attempted taskkill /T on PID {process.pid}. Result: {kill_result.returncode}, Output: {kill_result.stdout.decode(errors='replace')}, Error: {kill_result.stderr.decode(errors='replace')}")
                         if kill_result.returncode != 0:
-                             print(f"[WARN] taskkill failed or process {process.pid} not found, falling back to process.kill()")
+                             logger.warning(f"taskkill failed or process {process.pid} not found, falling back to process.kill()")
                              process.kill() # Fallback if taskkill fails
                     except FileNotFoundError:
-                         print("[WARN] taskkill command not found. Falling back to process.kill()")
+                         logger.warning("taskkill command not found. Falling back to process.kill()")
                          process.kill() # Fallback if taskkill command doesn't exist
                     except Exception as kill_err:
-                        print(f"[WARN] Error during taskkill for {process.pid}: {kill_err}. Falling back to process.kill()")
+                        logger.warning(f"Error during taskkill for {process.pid}: {kill_err}. Falling back to process.kill()")
                         process.kill() # Fallback on other errors
 
-                    print(f"[DEBUG] Process killed/terminated, attempting final communication...")
+                    logger.debug(f"Process killed/terminated, attempting final communication...")
                     try:
                         # Explicitly wait for the process to ensure it's terminated after kill signal
-                        print(f"[DEBUG] Waiting briefly for process {process.pid} to terminate...")
+                        logger.debug(f"Waiting briefly for process {process.pid} to terminate...")
                         process.wait(timeout=2) # Wait up to 2 seconds
-                        print(f"[DEBUG] Process {process.pid} terminated.")
+                        logger.debug(f"Process {process.pid} terminated.")
                     except subprocess.TimeoutExpired:
-                        print(f"[WARN] Process {process.pid} did not terminate quickly after kill signal.")
+                        logger.warning(f"Process {process.pid} did not terminate quickly after kill signal.")
                     except Exception as wait_err:
-                        print(f"[WARN] Error waiting for process {process.pid} termination: {wait_err}")
+                        logger.warning(f"Error waiting for process {process.pid} termination: {wait_err}")
 
                     try:
                         # Try short communicate to get remaining output/errors
                         stdout_after_kill, stderr_after_kill = process.communicate(timeout=1) # Short timeout
-                        print(f"[DEBUG] Post-kill STDOUT:\n{stdout_after_kill}")
-                        print(f"[DEBUG] Post-kill STDERR:\n{stderr_after_kill}")
+                        logger.debug(f"Post-kill STDOUT:\n{stdout_after_kill}")
+                        logger.debug(f"Post-kill STDERR:\n{stderr_after_kill}")
                     except subprocess.TimeoutExpired:
-                        print("[WARN] Timed out waiting for output after killing process. Output might be incomplete.")
+                        logger.warning("Timed out waiting for output after killing process. Output might be incomplete.")
                         # Ensure the process is really dead if communicate times out again
                         try:
                             process.kill()
                         except OSError:
                             pass # Process already dead
                     except Exception as comm_err:
-                        print(f"[WARN] Error during post-kill communicate: {comm_err}")
+                        logger.warning(f"Error during post-kill communicate: {comm_err}")
 
                 # Combine any potentially captured output
                 # Priority to stdout captured post-kill, fallback to empty
@@ -307,23 +374,23 @@ try {{
                 if output_file and output_file.exists():
                     try:
                         file_output = output_file.read_text(encoding='utf-8', errors='replace')
-                        print(f"[DEBUG] Read {len(file_output)} chars from output file ({output_file}) on timeout.")
+                        logger.debug(f"Read {len(file_output)} chars from output file ({output_file}) on timeout.")
                     except Exception as e:
-                        print(f"[WARN] Failed to read output file {output_file} on timeout: {e}")
+                        logger.warning(f"Failed to read output file {output_file} on timeout: {e}")
                         file_output = f"[Error reading output file: {e}]"
                 else:
-                    print(f"[DEBUG] Output file {output_file} not found on timeout.")
+                    logger.debug(f"Output file {output_file} not found on timeout.")
 
                 if error_file and error_file.exists():
                     try:
                         if error_file.stat().st_size > 0:
                             error_text = error_file.read_text(encoding='utf-8', errors='replace')
-                            print(f"[DEBUG] Read {len(error_text)} chars from error file ({error_file}) on timeout.")
+                            logger.debug(f"Read {len(error_text)} chars from error file ({error_file}) on timeout.")
                             # Append error file content to file_output
                             if error_text.strip():
                                 file_output += f"\n[ERROR_FILE_CONTENT] {error_text}"
                     except Exception as e:
-                        print(f"[WARN] Failed to read error file {error_file} on timeout: {e}")
+                        logger.warning(f"Failed to read error file {error_file} on timeout: {e}")
                         file_output += f"\n[Error reading error file: {e}]"
 
                 # Prepend file content (which has the direct stream) to the final output
@@ -331,23 +398,34 @@ try {{
                 # If final_output (from communicate) is empty, this uses just file_output
                 final_output = file_output + final_output
 
-                # Handle timeout
+                # Set status for tracking subsequent commands
+                self.prev_status = "HARD_TIMEOUT"
+                self.prev_output = final_output
+
+                # Handle timeout - use message format similar to bash.py
+                metadata = CmdOutputMetadata(
+                    exit_code=-1,
+                    working_dir=self._cwd,
+                    suffix=(
+                        f"\n[The command timed out after {timeout} seconds and was terminated. "
+                        "Note: On Windows, unlike Linux, timed-out processes are forcibly terminated. "
+                        "The output shown may be incomplete."
+                    )
+                )
+                
                 # Return timeout observation with combined captured output
                 return CmdOutputObservation(
                     content=final_output, # Use combined file and communicate output
                     command=command,
-                    metadata=CmdOutputMetadata(
-                        exit_code=-1,
-                        working_dir=self._cwd,
-                        suffix=f"\n[Command timed out after {timeout} seconds]"
-                    )
+                    metadata=metadata
                 )
             except Exception as run_err:
-                 print(f"[ERROR] Failed to run script: {run_err}")
+                 logger.error(f"Failed to run script: {run_err}")
+                 logger.error(traceback.format_exc())
                  return ErrorObservation(content=f"Failed to execute PowerShell script: {run_err}")
 
             # Process completed, read results from files
-            print("[DEBUG] Reading results from files...")
+            logger.debug("Reading results from files...")
             command_output = ""
             exit_code = 1 # Default to error
             working_dir = self._cwd
@@ -356,38 +434,38 @@ try {{
             if output_file.exists():
                 try:
                     command_output = output_file.read_text(encoding='utf-8')
-                    print(f"[DEBUG] Read {len(command_output)} chars from output file.")
+                    logger.debug(f"Read {len(command_output)} chars from output file.")
                 except Exception as e:
-                    print(f"[ERROR] Failed to read output file {output_file}: {e}")
+                    logger.error(f"Failed to read output file {output_file}: {e}")
                     command_output = f"[Error reading output file: {str(e)}]"
             else:
-                 print(f"[WARN] Output file {output_file} not found.")
+                 logger.warning(f"Output file {output_file} not found.")
             
             # Read error file and append to output if it exists
             if error_file.exists():
                 try:
                     if error_file.stat().st_size > 0:
                         error_text = error_file.read_text(encoding='utf-8')
-                        print(f"[DEBUG] Read {len(error_text)} chars from error file.")
+                        logger.debug(f"Read {len(error_text)} chars from error file.")
                         if error_text.strip():
                             command_output += f"\n[ERROR_STREAM] {error_text}" # Indicate it came from error stream
                 except Exception as e:
-                     print(f"[ERROR] Failed to read error file {error_file}: {e}")
+                     logger.error(f"Failed to read error file {error_file}: {e}")
                      pass
             else:
-                 print(f"[WARN] Error file {error_file} not found.")
+                 logger.warning(f"Error file {error_file} not found.")
             
             # Read status file
             if status_file.exists():
                 try:
                     status_text = status_file.read_text(encoding='utf-8')
-                    print(f"[DEBUG] Read status file ({status_file}): {status_text.strip()}")
+                    logger.debug(f"Read status file ({status_file}): {status_text.strip()}")
                     
                     # Extract exit code
                     exit_code_match = re.search(r'EXIT_CODE=(\d+)', status_text)
                     if exit_code_match:
                         exit_code = int(exit_code_match.group(1))
-                        print(f"[DEBUG] Parsed exit code: {exit_code}")
+                        logger.debug(f"Parsed exit code: {exit_code}")
                     
                     # Extract working directory
                     dir_match = re.search(r'WORKING_DIR=(.*)', status_text)
@@ -396,30 +474,34 @@ try {{
                         if new_dir and os.path.isdir(new_dir): # Check if dir exists and is not empty
                             working_dir = new_dir
                             self._cwd = working_dir  # Update current working directory for next command
-                            print(f"[DEBUG] Updated working directory to: {self._cwd}")
+                            logger.debug(f"Updated working directory to: {self._cwd}")
                         else:
-                            print(f"[WARN] Parsed working directory '{new_dir}' is invalid or empty, keeping old: {self._cwd}")
+                            logger.warning(f"Parsed working directory '{new_dir}' is invalid or empty, keeping old: {self._cwd}")
                 except Exception as e:
-                     print(f"[ERROR] Failed to read or parse status file {status_file}: {e}")
+                     logger.error(f"Failed to read or parse status file {status_file}: {e}")
                      pass
             else:
-                 print(f"[WARN] Status file {status_file} not found.")
+                 logger.warning(f"Status file {status_file} not found.")
 
             # If PowerShell script itself failed (e.g., syntax error), reflect that
             if process_exit_code != 0 and exit_code == 0:
-                 print(f"[WARN] Script process exited with {process_exit_code} but command exit code was 0. Overriding to 1.")
+                 logger.warning(f"Script process exited with {process_exit_code} but command exit code was 0. Overriding to 1.")
                  exit_code = 1 # Indicate failure
                  if stderr_data:
                       command_output += f"\n[POWERSHELL_ERROR] {stderr_data}" # Add PS error
 
-            # Return result
+            # Reset tracking variables for completed commands
+            self.prev_status = "COMPLETED"
+            self.prev_output = ""
+                  
+            # Return result with metadata suffix format matching bash.py
             metadata = CmdOutputMetadata(
                 exit_code=exit_code,
                 working_dir=working_dir,
-                suffix=f"\n[Command completed with exit code {exit_code}]"
+                suffix=f"\n[The command completed with exit code {exit_code}.]"
             )
             
-            print(f"[DEBUG] Returning observation. ExitCode={exit_code}, CWD={working_dir}")
+            logger.debug(f"Returning observation. ExitCode={exit_code}, CWD={working_dir}")
             return CmdOutputObservation(
                 content=command_output,
                 command=command,
@@ -427,37 +509,40 @@ try {{
             )
                 
         except Exception as e:
-            print(f"[ERROR] Unexpected error during command execution: {e}")
-            import traceback
-            traceback.print_exc()
+            logger.error(f"Unexpected error during command execution: {e}")
+            logger.error(traceback.format_exc())
             return ErrorObservation(
                 content=f"ERROR executing command: {str(e)}"
             )
         finally:
             # Clean up files
-            print("[DEBUG] Cleaning up temp files...")
+            logger.debug("Cleaning up temp files...")
             for file in [output_file, error_file, status_file, script_file]:
                 if file and file.exists():
                     try:
                         file.unlink()
-                        print(f"[DEBUG] Deleted {file}")
+                        logger.debug(f"Deleted {file}")
                     except Exception as e:
-                        print(f"[WARN] Failed to delete temp file {file}: {e}")
+                        logger.warning(f"Failed to delete temp file {file}: {e}")
     
     def close(self):
         """Clean up resources."""
-        print("[DEBUG] Closing WindowsBashSession.")
+        if self._closed:
+            return
+            
+        logger.debug("Closing WindowsBashSession.")
         # No process to clean up, just remove temp directory
         if hasattr(self, '_temp_dir') and self._temp_dir and self._temp_dir.exists():
-            print(f"[DEBUG] Removing temp directory: {self._temp_dir}")
+            logger.debug(f"Removing temp directory: {self._temp_dir}")
             try:
                 import shutil
                 shutil.rmtree(self._temp_dir)
-                print(f"[DEBUG] Removed temp directory {self._temp_dir}")
+                logger.debug(f"Removed temp directory {self._temp_dir}")
             except Exception as e:
-                print(f"[ERROR] Failed to remove temp directory {self._temp_dir}: {e}")
+                logger.error(f"Failed to remove temp directory {self._temp_dir}: {e}")
         
         self._initialized = False
+        self._closed = True
     
     def __del__(self):
         """Ensure resources are cleaned up."""
