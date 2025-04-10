@@ -4,7 +4,6 @@ import React from "react";
 import { Command } from "#/state/command-slice";
 import { getTerminalCommand } from "#/services/terminal-service";
 import { parseTerminalOutput } from "#/utils/parse-terminal-output";
-import { useWsClient } from "#/context/ws-client-provider";
 
 /*
   NOTE: Tests for this hook are indirectly covered by the tests for the XTermTerminal component.
@@ -29,12 +28,10 @@ export const useTerminal = ({
   commands,
   disabled,
 }: UseTerminalConfig = DEFAULT_TERMINAL_CONFIG) => {
-  const { send } = useWsClient();
   const terminal = React.useRef<Terminal | null>(null);
   const fitAddon = React.useRef<FitAddon | null>(null);
   const ref = React.useRef<HTMLDivElement>(null);
   const lastCommandIndex = persistentLastCommandIndex; // Use the persistent reference
-  const keyEventDisposable = React.useRef<{ dispose: () => void } | null>(null);
 
   const createTerminal = () =>
     new Terminal({
@@ -58,41 +55,6 @@ export const useTerminal = ({
     });
 
     navigator.clipboard.write([clipboardItem]);
-  };
-
-  const pasteSelection = (callback: (text: string) => void) => {
-    navigator.clipboard.readText().then(callback);
-  };
-
-  const pasteHandler = (event: KeyboardEvent, cb: (text: string) => void) => {
-    const isControlOrMetaPressed =
-      event.type === "keydown" && (event.ctrlKey || event.metaKey);
-
-    if (isControlOrMetaPressed) {
-      if (event.code === "KeyV") {
-        pasteSelection((text: string) => {
-          terminal.current?.write(text);
-          cb(text);
-        });
-      }
-
-      if (event.code === "KeyC") {
-        const selection = terminal.current?.getSelection();
-        if (selection) copySelection(selection);
-      }
-    }
-
-    return true;
-  };
-
-  const handleEnter = (command: string) => {
-    terminal.current?.write("\r\n");
-    send(getTerminalCommand(command));
-  };
-
-  const handleBackspace = (command: string) => {
-    terminal.current?.write("\b \b");
-    return command.slice(0, -1);
   };
 
   React.useEffect(() => {
@@ -160,61 +122,6 @@ export const useTerminal = ({
       lastCommandIndex.current = commands.length; // Update the position of the last command
     }
   }, [commands]);
-
-  React.useEffect(() => {
-    if (terminal.current) {
-      // Dispose of existing listeners if they exist
-      if (keyEventDisposable.current) {
-        keyEventDisposable.current.dispose();
-        keyEventDisposable.current = null;
-      }
-
-      let commandBuffer = "";
-
-      if (!disabled) {
-        // Add new key event listener and store the disposable
-        keyEventDisposable.current = terminal.current.onKey(
-          ({ key, domEvent }) => {
-            if (domEvent.key === "Enter") {
-              handleEnter(commandBuffer);
-              commandBuffer = "";
-            } else if (domEvent.key === "Backspace") {
-              if (commandBuffer.length > 0) {
-                commandBuffer = handleBackspace(commandBuffer);
-              }
-            } else {
-              // Ignore paste event
-              if (key.charCodeAt(0) === 22) {
-                return;
-              }
-              commandBuffer += key;
-              terminal.current?.write(key);
-            }
-          },
-        );
-
-        // Add custom key handler and store the disposable
-        terminal.current.attachCustomKeyEventHandler((event) =>
-          pasteHandler(event, (text) => {
-            commandBuffer += text;
-          }),
-        );
-      } else {
-        // Add a noop handler when disabled
-        keyEventDisposable.current = terminal.current.onKey((e) => {
-          e.domEvent.preventDefault();
-          e.domEvent.stopPropagation();
-        });
-      }
-    }
-
-    return () => {
-      if (keyEventDisposable.current) {
-        keyEventDisposable.current.dispose();
-        keyEventDisposable.current = null;
-      }
-    };
-  }, [disabled]);
 
   return ref;
 };
