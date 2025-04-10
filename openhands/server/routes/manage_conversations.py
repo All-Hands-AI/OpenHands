@@ -65,18 +65,15 @@ async def _create_new_conversation(
         extra={'signal': 'create_conversation', 'user_id': user_id},
     )
 
-    # Check if user already has a running conversation
+    # Check if user already has any conversation
     if user_id:
-        running_conversations = await conversation_manager.get_running_agent_loops(
-            user_id
-        )
-        if running_conversations:
-            existing_id = next(
-                iter(running_conversations)
-            )  # Get the first running conversation ID
+        conversation_store = await ConversationStoreImpl.get_instance(config, user_id, None)
+        conversation_metadata_result_set = await conversation_store.search(limit=1)
+        if conversation_metadata_result_set.results:
+            existing_conversation = conversation_metadata_result_set.results[0]
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f'User already has a running conversation (ID: {existing_id}). Please stop the existing conversation before creating a new one.',
+                detail=f'User already has a conversation (ID: {existing_conversation.conversation_id}).',
             )
 
     logger.info('Loading settings')
