@@ -1,4 +1,7 @@
-import { useWsClient } from "#/context/ws-client-provider";
+import {
+  useWsClient,
+  WsClientProviderStatus,
+} from "#/context/ws-client-provider";
 import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom";
 import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
 import { useTranslation } from "react-i18next";
@@ -19,7 +22,6 @@ import { ChatSuggestions } from "./chat-suggestions";
 import { InteractiveChatBox } from "./interactive-chat-box";
 import { Messages } from "./messages";
 import { TypingIndicator } from "./typing-indicator";
-
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { useGetTrajectory } from "#/hooks/mutation/use-get-trajectory";
@@ -36,7 +38,7 @@ function getEntryPoint(
 }
 
 export function ChatInterface() {
-  const { send, isLoadingMessages } = useWsClient();
+  const { send, isLoadingMessages, disconnect, status } = useWsClient();
   const dispatch = useDispatch();
   const { t } = useTranslation();
   const scrollRef = React.useRef<HTMLDivElement>(null);
@@ -86,6 +88,11 @@ export function ChatInterface() {
   const handleStop = () => {
     posthog.capture("stop_button_clicked");
     send(generateAgentStateChangeEvent(AgentState.STOPPED));
+  };
+
+  const handleDisconnect = () => {
+    posthog.capture("websocket_disconnect_clicked");
+    disconnect();
   };
 
   const onClickShareFeedbackActionButton = async (
@@ -170,17 +177,28 @@ export function ChatInterface() {
           {!hitBottom && <ScrollToBottomButton onClick={scrollDomToBottom} />}
         </div>
 
-        <InteractiveChatBox
-          onSubmit={handleSendMessage}
-          onStop={handleStop}
-          isDisabled={
-            curAgentState === AgentState.LOADING ||
-            curAgentState === AgentState.AWAITING_USER_CONFIRMATION
-          }
-          mode={curAgentState === AgentState.RUNNING ? "stop" : "submit"}
-          value={messageToSend ?? undefined}
-          onChange={setMessageToSend}
-        />
+        <div className="flex items-center gap-2">
+          <InteractiveChatBox
+            onSubmit={handleSendMessage}
+            onStop={handleStop}
+            isDisabled={
+              curAgentState === AgentState.LOADING ||
+              curAgentState === AgentState.AWAITING_USER_CONFIRMATION ||
+              status === WsClientProviderStatus.DISCONNECTED
+            }
+            mode={curAgentState === AgentState.RUNNING ? "stop" : "submit"}
+            value={messageToSend ?? undefined}
+            onChange={setMessageToSend}
+            className="flex-grow w-full pr-1" // Ensure chat box takes full width minus space for the button
+          />
+          <DisconnectButton
+            handleDisconnect={handleDisconnect}
+            isDisabled={
+              !isWaitingForUserInput &&
+              status !== WsClientProviderStatus.DISCONNECTED
+            }
+          />
+        </div>
       </div>
 
       <FeedbackModal
@@ -189,5 +207,31 @@ export function ChatInterface() {
         polarity={feedbackPolarity}
       />
     </div>
+  );
+}
+
+interface DisconnectButtonProps {
+  handleDisconnect: () => void;
+  isDisabled: boolean;
+}
+
+export function DisconnectButton({
+  handleDisconnect,
+  isDisabled,
+}: DisconnectButtonProps) {
+  const { t } = useTranslation();
+
+  return (
+    <button
+      onClick={handleDisconnect}
+      disabled={isDisabled}
+      className={`px-3 py-2 rounded-lg font-medium transition-colors ${
+        isDisabled
+          ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+          : "bg-red-500 text-white hover:bg-red-600"
+      }`}
+    >
+      {t(isDisabled ? "Connect" : "Disconnect")}
+    </button>
   );
 }

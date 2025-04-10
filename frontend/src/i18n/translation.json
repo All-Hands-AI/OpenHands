@@ -5125,6 +5125,20 @@
         "fr": "Connecté",
         "tr": "Bağlandı"
     },
+    "STATUS$DISCONNECTED": {
+        "en": "Disconnected",
+        "ja": "切断済み",
+        "zh-CN": "已断开",
+        "zh-TW": "已斷開",
+        "ko-KR": "연결 해제됨",
+        "no": "Fraktur",
+        "it": "Disconnesso",
+        "pt": "Desconectado",
+        "es": "Desconectado",
+        "ar": "متصل",
+        "fr": "Connecté",
+        "tr": "Bağlandı"
+    },
     "BROWSER$NO_PAGE_LOADED": {
         "en": "No page loaded.",
         "ja": "ブラウザは空です",

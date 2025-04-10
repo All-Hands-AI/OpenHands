@@ -12,7 +12,6 @@ import {
 } from "#/state/chat-slice";
 
 export function handleObservationMessage(message: ObservationMessage) {
-  console.log("message extras", message.extras?.screenshot);
   switch (message.observation) {
     case ObservationType.RUN: {
       if (message.extras.hidden) break;
