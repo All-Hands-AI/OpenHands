@@ -45,4 +45,4 @@ enum ObservationType {
   ERROR = "error",
 }
 
-export default ObservationType;
+export default ObservationType
