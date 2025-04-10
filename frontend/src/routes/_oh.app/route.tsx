@@ -4,6 +4,7 @@ import {
   ResizablePanel,
 } from "#/components/layout/resizable-panel"
 import ThesisComputer from "#/components/layout/RightSideContent"
+import ViewFile from "#/components/layout/view-file"
 import {
   ConversationProvider,
   useConversation,
@@ -16,6 +17,7 @@ import { useEffectOnce } from "#/hooks/use-effect-once"
 import { useEndSession } from "#/hooks/use-end-session"
 import { addUserMessage, clearMessages } from "#/state/chat-slice"
 import { clearTerminal } from "#/state/command-slice"
+import { clearComputerList } from "#/state/computer-slice"
 import { clearFiles, clearInitialPrompt } from "#/state/initial-query-slice"
 import { clearJupyter } from "#/state/jupyter-slice"
 import { RootState } from "#/store"
@@ -23,10 +25,9 @@ import { displayErrorToast } from "#/utils/custom-toast-handlers"
 import React from "react"
 import { useTranslation } from "react-i18next"
 import { useDispatch, useSelector } from "react-redux"
+import { useAccount } from "wagmi"
 import { ChatInterface } from "../../components/features/chat/chat-interface"
 import { EventHandler } from "./event-handler"
-import { useAccount } from "wagmi"
-import ViewFile from "#/components/layout/view-file"
 
 function AppContent() {
   useConversationConfig()
@@ -68,6 +69,7 @@ function AppContent() {
     dispatch(clearMessages())
     dispatch(clearTerminal())
     dispatch(clearJupyter())
+    dispatch(clearComputerList())
     if (conversationId && (initialPrompt || files.length > 0)) {
       dispatch(
         addUserMessage({
