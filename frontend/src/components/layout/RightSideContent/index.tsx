@@ -71,6 +71,7 @@ const ThesisComputer = () => {
       const matchingIndex = computerList.findIndex(
         (item) => item.cause === eventID,
       )
+
       if (matchingIndex !== -1 && matchingIndex !== currentStep) {
         setCurrentStep(matchingIndex)
         const newSliderValue =
@@ -169,7 +170,7 @@ const ThesisComputer = () => {
   // }
 
   return (
-    <div className="flex h-full w-full flex-col overflow-y-auto rounded-xl border border-neutral-1000 bg-white p-4">
+    <div className="flex h-full w-full flex-col overflow-y-auto rounded-xl rounded-br-none rounded-tr-none border border-neutral-1000 bg-white p-4">
       <div className="flex items-center justify-between">
         <h4 className="text-neutral-1 text-18 font-semibold">Thesis</h4>
         {/* <Tooltip>

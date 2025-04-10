@@ -38,7 +38,7 @@ function Home() {
   return (
     <div
       data-testid="home-screen"
-      className="relative flex h-full flex-col items-center justify-center overflow-y-auto bg-neutral-1100 px-2 pb-40 dark:bg-neutral-200"
+      className="relative flex h-full flex-col items-center justify-center overflow-y-auto bg-neutral-1100 px-2 dark:bg-neutral-200"
     >
       <HeroHeading />
       <div className="mt-8 flex w-full flex-col items-center gap-1 md:w-[600px]">

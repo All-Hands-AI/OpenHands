@@ -1,62 +1,62 @@
-import { BrandButton } from "#/components/features/settings/brand-button";
-import { HelpLink } from "#/components/features/settings/help-link";
-import { KeyStatusIcon } from "#/components/features/settings/key-status-icon";
-import { SettingsDropdownInput } from "#/components/features/settings/settings-dropdown-input";
-import { SettingsInput } from "#/components/features/settings/settings-input";
-import { SettingsSwitch } from "#/components/features/settings/settings-switch";
-import { LoadingSpinner } from "#/components/shared/loading-spinner";
-import { ModelSelector } from "#/components/shared/modals/settings/model-selector";
-import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
-import { useAIConfigOptions } from "#/hooks/query/use-ai-config-options";
-import { useConfig } from "#/hooks/query/use-config";
-import { useSettings } from "#/hooks/query/use-settings";
-import { AvailableLanguages } from "#/i18n";
-import { DEFAULT_SETTINGS } from "#/services/settings";
+import { BrandButton } from "#/components/features/settings/brand-button"
+import { HelpLink } from "#/components/features/settings/help-link"
+import { KeyStatusIcon } from "#/components/features/settings/key-status-icon"
+import { SettingsDropdownInput } from "#/components/features/settings/settings-dropdown-input"
+import { SettingsInput } from "#/components/features/settings/settings-input"
+import { SettingsSwitch } from "#/components/features/settings/settings-switch"
+import { LoadingSpinner } from "#/components/shared/loading-spinner"
+import { ModelSelector } from "#/components/shared/modals/settings/model-selector"
+import { useSaveSettings } from "#/hooks/mutation/use-save-settings"
+import { useAIConfigOptions } from "#/hooks/query/use-ai-config-options"
+import { useConfig } from "#/hooks/query/use-config"
+import { useSettings } from "#/hooks/query/use-settings"
+import { AvailableLanguages } from "#/i18n"
+import { DEFAULT_SETTINGS } from "#/services/settings"
 import {
   displayErrorToast,
   displaySuccessToast,
-} from "#/utils/custom-toast-handlers";
-import { handleCaptureConsent } from "#/utils/handle-capture-consent";
-import { hasAdvancedSettingsSet } from "#/utils/has-advanced-settings-set";
-import { isCustomModel } from "#/utils/is-custom-model";
-import { organizeModelsAndProviders } from "#/utils/organize-models-and-providers";
-import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
-import { Modal, ModalBody, ModalContent, Tab, Tabs } from "@heroui/react";
-import React from "react";
-import { useNavigate } from "react-router";
+} from "#/utils/custom-toast-handlers"
+import { handleCaptureConsent } from "#/utils/handle-capture-consent"
+import { hasAdvancedSettingsSet } from "#/utils/has-advanced-settings-set"
+import { isCustomModel } from "#/utils/is-custom-model"
+import { organizeModelsAndProviders } from "#/utils/organize-models-and-providers"
+import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message"
+import { Modal, ModalBody, ModalContent, Tab, Tabs } from "@heroui/react"
+import React from "react"
+import { useNavigate } from "react-router"
 
 const REMOTE_RUNTIME_OPTIONS = [
   { key: 1, label: "1x (2 core, 8G)" },
   { key: 2, label: "2x (4 core, 16G)" },
-];
+]
 
 const AccountSettings = () => {
-  const navigate = useNavigate();
+  const navigate = useNavigate()
   const {
     data: settings,
     isFetching: isFetchingSettings,
     isFetched,
     isSuccess: isSuccessfulSettings,
-  } = useSettings();
+  } = useSettings()
 
-  const { data: config } = useConfig();
+  const { data: config } = useConfig()
   const {
     data: resources,
     isFetching: isFetchingResources,
     isSuccess: isSuccessfulResources,
-  } = useAIConfigOptions();
-  const { mutate: saveSettings } = useSaveSettings();
+  } = useAIConfigOptions()
+  const { mutate: saveSettings } = useSaveSettings()
 
-  const isFetching = isFetchingSettings || isFetchingResources;
-  console.log("isFetching", isFetching);
-  const isSuccess = isSuccessfulSettings && isSuccessfulResources;
-  const isSaas = config?.APP_MODE === "saas";
+  const isFetching = isFetchingSettings || isFetchingResources
+  console.log("isFetching", isFetching)
+  const isSuccess = isSuccessfulSettings && isSuccessfulResources
+  const isSaas = config?.APP_MODE === "saas"
   const shouldHandleSpecialSaasCase =
-    config?.FEATURE_FLAGS.HIDE_LLM_SETTINGS && isSaas;
+    config?.FEATURE_FLAGS.HIDE_LLM_SETTINGS && isSaas
 
   const determineWhetherToToggleAdvancedSettings = () => {
     return true
-    if (shouldHandleSpecialSaasCase) return true;
+    if (shouldHandleSpecialSaasCase) return true
     if (isSuccess) {
       return (
         isCustomModel(resources.models, settings?.LLM_MODEL || "") ||
@@ -67,69 +67,65 @@ const AccountSettings = () => {
             gitlab: "",
           },
         } as any)
-      );
+      )
     }
-    return false;
-  };
+    return false
+  }
 
-  const isLLMKeySet = settings?.LLM_API_KEY === "**********";
-  const isAnalyticsEnabled = settings?.USER_CONSENTS_TO_ANALYTICS;
-  const isAdvancedSettingsSet = determineWhetherToToggleAdvancedSettings();
+  const isLLMKeySet = settings?.LLM_API_KEY === "**********"
+  const isAnalyticsEnabled = settings?.USER_CONSENTS_TO_ANALYTICS
+  const isAdvancedSettingsSet = determineWhetherToToggleAdvancedSettings()
 
-  const modelsAndProviders = organizeModelsAndProviders(
-    resources?.models || [],
-  );
+  const modelsAndProviders = organizeModelsAndProviders(resources?.models || [])
 
   const [llmConfigMode, setLlmConfigMode] = React.useState(
     // TODO: uncomment this when the advanced settings are ready
     // isAdvancedSettingsSet ? "advanced" : "basic",
-    'basic',
-  );
+    "basic",
+  )
   const [confirmationModeIsEnabled, setConfirmationModeIsEnabled] =
-    React.useState(!!settings?.SECURITY_ANALYZER);
+    React.useState(!!settings?.SECURITY_ANALYZER)
   const [resetSettingsModalIsOpen, setResetSettingsModalIsOpen] =
-    React.useState(false);
+    React.useState(false)
 
-  const formRef = React.useRef<HTMLFormElement>(null);
+  const formRef = React.useRef<HTMLFormElement>(null)
 
   const onSubmit = async (formData: FormData) => {
-    const languageLabel = formData.get("language-input")?.toString();
+    const languageLabel = formData.get("language-input")?.toString()
     const languageValue = AvailableLanguages.find(
       ({ label }) => label === languageLabel,
-    )?.value;
+    )?.value
 
-    const llmProvider = formData.get("llm-provider-input")?.toString();
-    const llmModel = formData.get("llm-model-input")?.toString();
-    const fullLlmModel = `${llmProvider}/${llmModel}`.toLowerCase();
-    const customLlmModel = formData.get("llm-custom-model-input")?.toString();
+    const llmProvider = formData.get("llm-provider-input")?.toString()
+    const llmModel = formData.get("llm-model-input")?.toString()
+    const fullLlmModel = `${llmProvider}/${llmModel}`.toLowerCase()
+    const customLlmModel = formData.get("llm-custom-model-input")?.toString()
 
     const rawRemoteRuntimeResourceFactor = formData
       .get("runtime-settings-input")
-      ?.toString();
+      ?.toString()
     const remoteRuntimeResourceFactor = REMOTE_RUNTIME_OPTIONS.find(
       ({ label }) => label === rawRemoteRuntimeResourceFactor,
-    )?.key;
+    )?.key
 
     const userConsentsToAnalytics =
-      formData.get("enable-analytics-switch")?.toString() === "on";
+      formData.get("enable-analytics-switch")?.toString() === "on"
     const enableMemoryCondenser =
-      formData.get("enable-memory-condenser-switch")?.toString() === "on";
+      formData.get("enable-memory-condenser-switch")?.toString() === "on"
     const enableSoundNotifications =
-      formData.get("enable-sound-notifications-switch")?.toString() === "on";
-    const llmBaseUrl = formData.get("base-url-input")?.toString() || "";
+      formData.get("enable-sound-notifications-switch")?.toString() === "on"
+    const llmBaseUrl = formData.get("base-url-input")?.toString() || ""
     const llmApiKey =
       formData.get("llm-api-key-input")?.toString() ||
-      (isLLMKeySet ? undefined : "");
+      (isLLMKeySet ? undefined : "")
 
     const finalLlmModel = shouldHandleSpecialSaasCase
       ? undefined
-      : customLlmModel || fullLlmModel;
-    const finalLlmBaseUrl = shouldHandleSpecialSaasCase
-      ? undefined
-      : llmBaseUrl;
-    const finalLlmApiKey = shouldHandleSpecialSaasCase ? undefined : llmApiKey;
+      : customLlmModel || fullLlmModel
+    const finalLlmBaseUrl = shouldHandleSpecialSaasCase ? undefined : llmBaseUrl
+    const finalLlmApiKey = shouldHandleSpecialSaasCase ? undefined : llmApiKey
 
-    const githubToken = formData.get("github-token-input")?.toString();
+    const githubToken = formData.get("github-token-input")?.toString()
     const newSettings = {
       github_token: githubToken,
       provider_tokens: githubToken
@@ -149,49 +145,49 @@ const AccountSettings = () => {
         remoteRuntimeResourceFactor ||
         DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
       CONFIRMATION_MODE: confirmationModeIsEnabled,
-    };
+    }
 
     saveSettings(newSettings, {
       onSuccess: () => {
-        handleCaptureConsent(userConsentsToAnalytics);
-        displaySuccessToast("Settings saved");
-        setLlmConfigMode(isAdvancedSettingsSet ? "advanced" : "basic");
+        handleCaptureConsent(userConsentsToAnalytics)
+        displaySuccessToast("Settings saved")
+        setLlmConfigMode(isAdvancedSettingsSet ? "advanced" : "basic")
       },
       onError: (error) => {
-        const errorMessage = retrieveAxiosErrorMessage(error);
-        displayErrorToast(errorMessage);
+        const errorMessage = retrieveAxiosErrorMessage(error)
+        displayErrorToast(errorMessage)
       },
-    });
-  };
+    })
+  }
 
   const handleReset = () => {
     saveSettings(null, {
       onSuccess: () => {
-        displaySuccessToast("Settings reset");
-        setResetSettingsModalIsOpen(false);
-        setLlmConfigMode("basic");
+        displaySuccessToast("Settings reset")
+        setResetSettingsModalIsOpen(false)
+        setLlmConfigMode("basic")
       },
-    });
-  };
+    })
+  }
 
   React.useEffect(() => {
-    setLlmConfigMode(isAdvancedSettingsSet ? "advanced" : "basic");
-  }, [isAdvancedSettingsSet]);
+    setLlmConfigMode(isAdvancedSettingsSet ? "advanced" : "basic")
+  }, [isAdvancedSettingsSet])
 
   if (isFetched && !settings) {
     return (
       <div className="text-white">
         Failed to fetch settings. Please try reloading.
       </div>
-    );
+    )
   }
 
   if (isFetching || !settings) {
     return (
-      <div className="flex items-center justify-center grow p-4">
+      <div className="flex grow items-center justify-center p-4">
         <LoadingSpinner size="large" />
       </div>
-    );
+    )
   }
 
   return (
@@ -199,14 +195,14 @@ const AccountSettings = () => {
       <form
         ref={formRef}
         action={onSubmit}
-        className="flex flex-col grow overflow-auto p-3 md:p-6"
+        className="flex grow flex-col overflow-auto p-3 md:p-6"
       >
         <div className="max-w-[680px]">
           {!shouldHandleSpecialSaasCase && (
             <section className="flex flex-col gap-6">
-            <h3 className="text-[18px] font-semibold text-neutral-100 dark:text-[#EFEFEF]">
+              <h3 className="text-[18px] font-semibold text-neutral-100 dark:text-[#EFEFEF]">
                 LLM Settings
-            </h3>
+              </h3>
               {/* <Tabs
                 selectedKey={llmConfigMode}
                 onSelectionChange={(key: any) => setLlmConfigMode(key)}
@@ -347,7 +343,7 @@ const AccountSettings = () => {
               </div> */}
             </section>
           )}
-          <div className="my-7 h-[1px] w-full bg-[#1B1C1A]" />
+          <div className="my-7 h-[1px] w-full bg-neutral-1000 dark:bg-[#1B1C1A]" />
           <section className="flex flex-col gap-6">
             <h3 className="text-[18px] font-semibold text-neutral-100 dark:text-[#EFEFEF]">
               Additional Settings
@@ -363,7 +359,7 @@ const AccountSettings = () => {
               defaultSelectedKey={settings?.LANGUAGE}
               isClearable={false}
             />
-            <div className="flex flex-col md:flex-row md:items-center gap-8">
+            <div className="flex flex-col gap-8 md:flex-row md:items-center">
               {/* <SettingsSwitch
                 testId="enable-analytics-switch"
                 name="enable-analytics-switch"
@@ -382,12 +378,12 @@ const AccountSettings = () => {
           </section>
         </div>
       </form>
-      <footer className="flex justify-end gap-4 w-full px-3 py-2 md:p-6 md:py-4 border-t border-t-neutral-1000 dark:border-t-[#232521] bg-neutral-1100 dark:bg-[#080808] rounded-b-xl">
+      <footer className="flex w-full justify-end gap-4 rounded-b-xl border-t border-t-neutral-1000 bg-neutral-1100 px-3 py-2 dark:border-t-[#232521] dark:bg-[#080808] md:p-6 md:py-4">
         <BrandButton
           type="button"
           variant="secondary"
           onClick={() => setResetSettingsModalIsOpen(true)}
-          className="bg-[#1E1E1F] text-[14px] font-semibold text-[#EFEFEF] px-4 py-[10px] rounded-lg border-[0px]"
+          className="rounded-lg border-[0px] bg-[#1E1E1F] px-4 py-[10px] text-[14px] font-semibold text-[#EFEFEF]"
         >
           Reset to defaults
         </BrandButton>
@@ -395,7 +391,7 @@ const AccountSettings = () => {
           type="button"
           variant="primary"
           onClick={() => formRef.current?.requestSubmit()}
-          className="bg-primary text-[14px] font-semibold text-[#080808] px-4 py-[10px] rounded-lg border-[0px]"
+          className="rounded-lg border-[0px] bg-primary px-4 py-[10px] text-[14px] font-semibold text-[#080808]"
         >
           Save Changes
         </BrandButton>
@@ -411,7 +407,7 @@ const AccountSettings = () => {
         >
           <ModalContent>
             <ModalBody className="p-6">
-              <p className="text-neutral-100 dark:text-content mb-4 text-[16px] font-semibold">
+              <p className="mb-4 text-[16px] font-semibold text-neutral-100 dark:text-content">
                 Are you sure you want to reset all settings?
               </p>
               <div className="flex gap-2">
@@ -419,7 +415,7 @@ const AccountSettings = () => {
                   type="button"
                   variant="primary"
                   onClick={handleReset}
-                  className="bg-primary text-[14px] font-semibold text-[#080808] px-4 py-[10px] rounded-lg flex-1 border-[0px]"
+                  className="flex-1 rounded-lg border-[0px] bg-primary px-4 py-[10px] text-[14px] font-semibold text-[#080808]"
                 >
                   Reset
                 </BrandButton>
@@ -427,7 +423,7 @@ const AccountSettings = () => {
                   type="button"
                   variant="secondary"
                   onClick={() => setResetSettingsModalIsOpen(false)}
-                  className="bg-[#1E1E1F] text-[14px] font-semibold text-[#EFEFEF] px-4 py-[10px] rounded-lg flex-1 border-[0px]"
+                  className="flex-1 rounded-lg border-[0px] bg-[#1E1E1F] px-4 py-[10px] text-[14px] font-semibold text-[#EFEFEF]"
                 >
                   Cancel
                 </BrandButton>
@@ -437,7 +433,7 @@ const AccountSettings = () => {
         </Modal>
       )}
     </>
-  );
-};
+  )
+}
 
-export default AccountSettings;
+export default AccountSettings
