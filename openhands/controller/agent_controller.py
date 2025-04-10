@@ -1114,13 +1114,21 @@ class AgentController:
 
         To avoid performance issues with long conversations, we only keep:
         - accumulated_cost: The current total cost
-        - latest token_usage: Token statistics from the most recent API call
+        - accumulated_token_usage: Accumulated token statistics across all API calls
 
         Args:
             action: The action to attach metrics to
         """
         metrics = Metrics(model_name=self.agent.llm.metrics.model_name)
         metrics.accumulated_cost = self.agent.llm.metrics.accumulated_cost
+
+        # Use the accumulated token usage instead of just the latest usage
+        # This ensures the frontend displays the total tokens used across all calls
+        metrics._accumulated_token_usage = (
+            self.agent.llm.metrics.accumulated_token_usage
+        )
+
+        # Also add the latest usage for logging purposes
         if self.agent.llm.metrics.token_usages:
             latest_usage = self.agent.llm.metrics.token_usages[-1]
             metrics.add_token_usage(
@@ -1136,14 +1144,18 @@ class AgentController:
         log_usage: TokenUsage | None = (
             metrics.token_usages[-1] if metrics.token_usages else None
         )
+        accumulated_usage = metrics.accumulated_token_usage
         self.log(
             'debug',
             f'Action metrics - accumulated_cost: {metrics.accumulated_cost}, '
-            f'tokens (prompt/completion/cache_read/cache_write): '
+            f'latest tokens (prompt/completion/cache_read/cache_write): '
             f'{log_usage.prompt_tokens if log_usage else 0}/'
             f'{log_usage.completion_tokens if log_usage else 0}/'
             f'{log_usage.cache_read_tokens if log_usage else 0}/'
-            f'{log_usage.cache_write_tokens if log_usage else 0}',
+            f'{log_usage.cache_write_tokens if log_usage else 0}, '
+            f'accumulated tokens (prompt/completion): '
+            f'{accumulated_usage.prompt_tokens}/'
+            f'{accumulated_usage.completion_tokens}',
             extra={'msg_type': 'METRICS'},
         )
 
