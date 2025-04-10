@@ -1,146 +1,149 @@
-import { useWsClient } from "#/context/ws-client-provider"
-import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom"
-import { generateAgentStateChangeEvent } from "#/services/agent-state-service"
-import { createChatMessage } from "#/services/chat-service"
-import { addUserMessage } from "#/state/chat-slice"
-import { RootState } from "#/store"
-import { AgentState } from "#/types/agent-state"
-import { convertImageToBase64 } from "#/utils/convert-image-to-base-64"
-import posthog from "posthog-js"
-import React, { useEffect } from "react"
-import { useDispatch, useSelector } from "react-redux"
-import { useParams } from "react-router"
-import { FeedbackModal } from "../feedback/feedback-modal"
-import { TrajectoryActions } from "../trajectory/trajectory-actions"
-import { ActionSuggestions } from "./action-suggestions"
-import { ChatSuggestions } from "./chat-suggestions"
-import { InteractiveChatBox } from "./interactive-chat-box"
-import { Messages } from "./messages"
-import { TypingIndicator } from "./typing-indicator"
-import { FaPowerOff } from "react-icons/fa6"
-import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button"
-import { LoadingSpinner } from "#/components/shared/loading-spinner"
-import Security from "#/components/shared/modals/security/security"
-import { WsClientProviderStatus } from "#/context/ws-client-provider"
-import { useGetTrajectory } from "#/hooks/mutation/use-get-trajectory"
-import { useListFiles } from "#/hooks/query/use-list-files"
-import { useSettings } from "#/hooks/query/use-settings"
-import { I18nKey } from "#/i18n/declaration"
-import { setCurrentPathViewed } from "#/state/file-state-slice"
-import { displayErrorToast } from "#/utils/custom-toast-handlers"
-import { downloadTrajectory } from "#/utils/download-trajectory"
-import { useDisclosure } from "@heroui/react"
-import { useTranslation } from "react-i18next"
-import { FaFileInvoice } from "react-icons/fa"
-import { Controls } from "../controls/controls"
+import { useWsClient } from "#/context/ws-client-provider";
+import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom";
+import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
+import { createChatMessage } from "#/services/chat-service";
+import { addUserMessage } from "#/state/chat-slice";
+import { RootState } from "#/store";
+import { AgentState } from "#/types/agent-state";
+import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
+import posthog from "posthog-js";
+import React, { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useParams } from "react-router";
+import { FeedbackModal } from "../feedback/feedback-modal";
+import { TrajectoryActions } from "../trajectory/trajectory-actions";
+import { ActionSuggestions } from "./action-suggestions";
+import { ChatSuggestions } from "./chat-suggestions";
+import { InteractiveChatBox } from "./interactive-chat-box";
+import { Messages } from "./messages";
+import { TypingIndicator } from "./typing-indicator";
+import { FaPowerOff } from "react-icons/fa6";
+import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
+import { LoadingSpinner } from "#/components/shared/loading-spinner";
+import Security from "#/components/shared/modals/security/security";
+import { WsClientProviderStatus } from "#/context/ws-client-provider";
+import { useGetTrajectory } from "#/hooks/mutation/use-get-trajectory";
+import { useListFiles } from "#/hooks/query/use-list-files";
+import { useSettings } from "#/hooks/query/use-settings";
+import { I18nKey } from "#/i18n/declaration";
+import { setCurrentPathViewed } from "#/state/file-state-slice";
+import { displayErrorToast } from "#/utils/custom-toast-handlers";
+import { downloadTrajectory } from "#/utils/download-trajectory";
+import { useDisclosure } from "@heroui/react";
+import { useTranslation } from "react-i18next";
+import { FaFileInvoice } from "react-icons/fa";
+import { Controls } from "../controls/controls";
 
 function getEntryPoint(
   hasRepository: boolean | null,
-  hasReplayJson: boolean | null,
+  hasReplayJson: boolean | null
 ): string {
-  if (hasRepository) return "github"
-  if (hasReplayJson) return "replay"
-  return "direct"
+  if (hasRepository) return "github";
+  if (hasReplayJson) return "replay";
+  return "direct";
 }
 
 export function ChatInterface() {
-  const { data: settings } = useSettings()
+  const { data: settings } = useSettings();
   const {
     isOpen: securityModalIsOpen,
     onOpen: onSecurityModalOpen,
     onOpenChange: onSecurityModalOpenChange,
-  } = useDisclosure()
-  const dispatch = useDispatch()
-  const scrollRef = React.useRef<HTMLDivElement>(null)
-  const { send, isLoadingMessages, disconnect, status } = useWsClient()
-  const { t } = useTranslation()
+  } = useDisclosure();
+  const dispatch = useDispatch();
+  const scrollRef = React.useRef<HTMLDivElement>(null);
+  const { send, isLoadingMessages, disconnect, status } = useWsClient();
+  const { t } = useTranslation();
   const { scrollDomToBottom, onChatBodyScroll, hitBottom } =
-    useScrollToBottom(scrollRef)
+    useScrollToBottom(scrollRef);
 
-  const { messages } = useSelector((state: RootState) => state.chat)
-  const { curAgentState } = useSelector((state: RootState) => state.agent)
-  const { data: files, refetch: refetchFiles } = useListFiles()
+  const { messages } = useSelector((state: RootState) => state.chat);
+  const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const { data: files, refetch: refetchFiles } = useListFiles({
+    isCached: false,
+    enabled: true,
+  });
 
   useEffect(() => {
-    if (curAgentState === AgentState.AWAITING_USER_INPUT) refetchFiles()
-  }, [curAgentState])
+    if (curAgentState === AgentState.AWAITING_USER_INPUT) refetchFiles();
+  }, [curAgentState]);
 
   const [feedbackPolarity, setFeedbackPolarity] = React.useState<
     "positive" | "negative"
-  >("positive")
-  const [feedbackModalIsOpen, setFeedbackModalIsOpen] = React.useState(false)
-  const [messageToSend, setMessageToSend] = React.useState<string | null>(null)
+  >("positive");
+  const [feedbackModalIsOpen, setFeedbackModalIsOpen] = React.useState(false);
+  const [messageToSend, setMessageToSend] = React.useState<string | null>(null);
   const { selectedRepository, replayJson } = useSelector(
-    (state: RootState) => state.initialQuery,
-  )
-  const params = useParams()
-  const { mutate: getTrajectory } = useGetTrajectory()
+    (state: RootState) => state.initialQuery
+  );
+  const params = useParams();
+  const { mutate: getTrajectory } = useGetTrajectory();
 
   const handleSendMessage = async (content: string, files: File[]) => {
     if (messages.length === 0) {
       posthog.capture("initial_query_submitted", {
         entry_point: getEntryPoint(
           selectedRepository !== null,
-          replayJson !== null,
+          replayJson !== null
         ),
         query_character_length: content.length,
         replay_json_size: replayJson?.length,
-      })
+      });
     } else {
       posthog.capture("user_message_sent", {
         session_message_count: messages.length,
         current_message_length: content.length,
-      })
+      });
     }
-    const promises = files.map((file) => convertImageToBase64(file))
-    const imageUrls = await Promise.all(promises)
+    const promises = files.map((file) => convertImageToBase64(file));
+    const imageUrls = await Promise.all(promises);
 
-    const timestamp = new Date().toISOString()
-    const pending = true
-    dispatch(addUserMessage({ content, imageUrls, timestamp, pending }))
-    send(createChatMessage(content, imageUrls, timestamp))
-    setMessageToSend(null)
-  }
+    const timestamp = new Date().toISOString();
+    const pending = true;
+    dispatch(addUserMessage({ content, imageUrls, timestamp, pending }));
+    send(createChatMessage(content, imageUrls, timestamp));
+    setMessageToSend(null);
+  };
 
   const handleStop = () => {
-    posthog.capture("stop_button_clicked")
-    send(generateAgentStateChangeEvent(AgentState.STOPPED))
-  }
+    posthog.capture("stop_button_clicked");
+    send(generateAgentStateChangeEvent(AgentState.STOPPED));
+  };
 
   const handleDisconnect = () => {
-    posthog.capture("websocket_disconnect_clicked")
-    disconnect()
-  }
+    posthog.capture("websocket_disconnect_clicked");
+    disconnect();
+  };
 
   const onClickShareFeedbackActionButton = async (
-    polarity: "positive" | "negative",
+    polarity: "positive" | "negative"
   ) => {
-    setFeedbackModalIsOpen(true)
-    setFeedbackPolarity(polarity)
-  }
+    setFeedbackModalIsOpen(true);
+    setFeedbackPolarity(polarity);
+  };
 
   const onClickExportTrajectoryButton = () => {
     if (!params.conversationId) {
-      displayErrorToast(t(I18nKey.CONVERSATION$DOWNLOAD_ERROR))
-      return
+      displayErrorToast(t(I18nKey.CONVERSATION$DOWNLOAD_ERROR));
+      return;
     }
 
     getTrajectory(params.conversationId, {
       onSuccess: async (data) => {
         await downloadTrajectory(
           params.conversationId ?? t(I18nKey.CONVERSATION$UNKNOWN),
-          data.trajectory,
-        )
+          data.trajectory
+        );
       },
       onError: () => {
-        displayErrorToast(t(I18nKey.CONVERSATION$DOWNLOAD_ERROR))
+        displayErrorToast(t(I18nKey.CONVERSATION$DOWNLOAD_ERROR));
       },
-    })
-  }
+    });
+  };
 
   const isWaitingForUserInput =
     curAgentState === AgentState.AWAITING_USER_INPUT ||
-    curAgentState === AgentState.FINISHED
+    curAgentState === AgentState.FINISHED;
 
   return (
     <div className="mx-auto flex h-full max-w-[800px] flex-col justify-between">
@@ -252,22 +255,22 @@ export function ChatInterface() {
         polarity={feedbackPolarity}
       />
     </div>
-  )
+  );
 }
 
 interface DisconnectButtonProps {
-  handleDisconnect: () => void
-  isDisabled: boolean
+  handleDisconnect: () => void;
+  isDisabled: boolean;
 }
 
 export function DisconnectButton({
   handleDisconnect,
   isDisabled,
 }: DisconnectButtonProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation();
 
   if (isDisabled) {
-    return null
+    return null;
   }
 
   return (
@@ -284,5 +287,5 @@ export function DisconnectButton({
       <FaPowerOff />
       {/* {t(isDisabled ? "Connect" : "Disconnect")} */}
     </button>
-  )
+  );
 }
