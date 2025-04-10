@@ -39,6 +39,7 @@ def get_mock_sio(get_message: GetMessageMock | None = None):
 async def test_init_new_local_session():
     session_instance = AsyncMock()
     session_instance.agent_session = MagicMock()
+    session_instance.agent_session.event_stream.cur_id = 1
     mock_session = MagicMock()
     mock_session.return_value = session_instance
     sio = get_mock_sio()
@@ -85,6 +86,7 @@ async def test_join_local_session():
     session_instance.agent_session = MagicMock()
     mock_session = MagicMock()
     mock_session.return_value = session_instance
+    session_instance.agent_session.event_stream.cur_id = 1
     sio = get_mock_sio()
     get_running_agent_loops_mock = AsyncMock()
     get_running_agent_loops_mock.return_value = set()
@@ -136,6 +138,7 @@ async def test_add_to_local_event_stream():
     session_instance.agent_session = MagicMock()
     mock_session = MagicMock()
     mock_session.return_value = session_instance
+    session_instance.agent_session.event_stream.cur_id = 1
     sio = get_mock_sio()
     get_running_agent_loops_mock = AsyncMock()
     get_running_agent_loops_mock.return_value = set()

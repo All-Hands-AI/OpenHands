@@ -10,6 +10,7 @@ import {
   UserMessageAction,
 } from "#/types/core/actions";
 import { useGetJwt } from "#/zutand-stores/persist-config/selector";
+// import { useAuth } from "./auth-context";
 
 const isOpenHandsEvent = (event: unknown): event is OpenHandsParsedEvent =>
   typeof event === "object" &&
@@ -112,6 +113,8 @@ export function WsClientProvider({
   const [events, setEvents] = React.useState<Record<string, unknown>[]>([]);
   const lastEventRef = React.useRef<Record<string, unknown> | null>(null);
   const jwt = useGetJwt();
+  // const { providerTokensSet } = useAuth();
+
   const messageRateHandler = useRate({ threshold: 250 });
 
   function send(event: Record<string, unknown>) {
@@ -170,6 +173,7 @@ export function WsClientProvider({
       latest_event_id: lastEvent?.id ?? -1,
       conversation_id: conversationId,
       auth: jwt,
+      // providers_set: providerTokensSet,
     };
 
     const baseUrl =

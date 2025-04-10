@@ -239,6 +239,7 @@ each of which has a corresponding port:
     # Create repository and runtime information
     repo_info = RepositoryInfo(repo_name='owner/repo', repo_directory='/workspace/repo')
     runtime_info = RuntimeInfo(
+        date='02/12/1232',
         available_hosts={'example.com': 8080},
         additional_agent_instructions='You know everything about this runtime.',
     )
@@ -260,6 +261,7 @@ each of which has a corresponding port:
     assert '<RUNTIME_INFORMATION>' in result
     assert 'example.com (port 8080)' in result
     assert 'You know everything about this runtime.' in result
+    assert "Today's date is 02/12/1232 (UTC)."
 
     # Clean up
     os.remove(os.path.join(prompt_dir, 'additional_info.j2'))

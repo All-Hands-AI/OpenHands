@@ -31,40 +31,14 @@ class MCPSSEConfig(BaseModel):
                 raise ValueError(f'Invalid URL {url}: {str(e)}')
 
 
-class MCPStdioConfig(BaseModel):
-    """Configuration for MCP stdio settings.
-
-    Attributes:
-        commands: List of commands to run.
-        args: List of arguments for each command.
-    """
-
-    commands: List[str] = Field(default_factory=list)
-    args: List[List[str]] = Field(default_factory=list)
-
-    model_config = {'extra': 'forbid'}
-
-    def validate_stdio(self) -> None:
-        """Validate that commands and args are properly configured."""
-
-        # Check if number of commands matches number of args lists
-        if len(self.commands) != len(self.args):
-            raise ValueError(
-                f'Number of commands ({len(self.commands)}) does not match '
-                f'number of args lists ({len(self.args)})'
-            )
-
-
 class MCPConfig(BaseModel):
     """Configuration for MCP (Message Control Protocol) settings.
 
     Attributes:
         sse: SSE-specific configuration.
-        stdio: stdio-specific configuration.
     """
 
     sse: MCPSSEConfig = Field(default_factory=MCPSSEConfig)
-    stdio: MCPStdioConfig = Field(default_factory=MCPStdioConfig)
 
     model_config = {'extra': 'forbid'}
 
@@ -83,15 +57,11 @@ class MCPConfig(BaseModel):
 
         try:
             # Create SSE config if present
-            sse_config = MCPSSEConfig(**data.get('mcp-sse', {}))
+            sse_config = MCPSSEConfig.model_validate(data)
             sse_config.validate_servers()
 
-            # Create stdio config if present
-            stdio_config = MCPStdioConfig(**data.get('mcp-stdio', {}))
-            stdio_config.validate_stdio()
-
             # Create the main MCP config
-            mcp_mapping['mcp'] = cls(sse=sse_config, stdio=stdio_config)
+            mcp_mapping['mcp'] = cls(sse=sse_config)
         except ValidationError as e:
             raise ValueError(f'Invalid MCP configuration: {e}')
 

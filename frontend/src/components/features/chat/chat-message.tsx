@@ -57,7 +57,7 @@ export function ChatMessage({
         onClick={handleCopyToClipboard}
         mode={isCopy ? "copied" : "copy"}
       />
-      <div className="text-sm overflow-auto break-words">
+      <div className="text-sm break-words">
         <Markdown
           components={{
             code,
