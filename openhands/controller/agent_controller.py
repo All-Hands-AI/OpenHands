@@ -360,7 +360,7 @@ class AgentController:
                 return
             else:
                 # delegate is done or errored, so end it
-                self.end_delegate()
+                asyncio.get_event_loop().run_until_complete(self.end_delegate())
                 return
 
         # continue parent processing only if there's no active delegate
@@ -493,7 +493,7 @@ class AgentController:
             recall_action = RecallAction(query=action.content, recall_type=recall_type)
             self._pending_action = recall_action
             # this is source=USER because the user message is the trigger for the microagent retrieval
-            self.event_stream.add_event(recall_action, EventSource.USER)
+            await self.event_stream.add_event(recall_action, EventSource.USER)
 
             if self.get_agent_state() != AgentState.RUNNING:
                 await self.set_agent_state_to(AgentState.RUNNING)
@@ -503,35 +503,15 @@ class AgentController:
             if action.wait_for_response:
                 await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
 
-    def _reset(self) -> None:
-        """Resets the agent controller."""
-        # Runnable actions need an Observation
-        # make sure there is an Observation with the tool call metadata to be recognized by the agent
-        # otherwise the pending action is found in history, but it's incomplete without an obs with tool result
-        if self._pending_action and hasattr(self._pending_action, 'tool_call_metadata'):
-            # find out if there already is an observation with the same tool call metadata
-            found_observation = False
-            for event in self.state.history:
-                if (
-                    isinstance(event, Observation)
-                    and event.tool_call_metadata
-                    == self._pending_action.tool_call_metadata
-                ):
-                    found_observation = True
-                    break
-
-            # make a new ErrorObservation with the tool call metadata
-            if not found_observation:
-                obs = ErrorObservation(content='The action has not been executed.')
-                obs.tool_call_metadata = self._pending_action.tool_call_metadata
-                obs._cause = self._pending_action.id  # type: ignore[attr-defined]
-                self.event_stream.add_event(obs, EventSource.AGENT)
-
-        # NOTE: RecallActions don't need an ErrorObservation upon reset, as long as they have no tool calls
-
-        # reset the pending action, this will be called when the agent is STOPPED or ERROR
-        self._pending_action = None
+    async def _reset(self):
+        """Resets the agent controller state."""
+        self.log('info', 'Resetting agent controller.')
         self.agent.reset()
+        self._stuck_detector.reset()
+        self._pending_action = None
+        await self.event_stream.add_event(
+            ErrorObservation('Agent Controller Reset'), event_source=EventSource.AGENT
+        )
 
     async def set_agent_state_to(self, new_state: AgentState) -> None:
         """Updates the agent's state and handles side effects. Can emit events to the event stream.
@@ -551,7 +531,7 @@ class AgentController:
             # sync existing metrics BEFORE resetting the agent
             await self.update_state_after_step()
             self.state.metrics.merge(self.state.local_metrics)
-            self._reset()
+            await self._reset()
         elif (
             new_state == AgentState.RUNNING
             and self.state.agent_state == AgentState.PAUSED
@@ -588,7 +568,7 @@ class AgentController:
                 confirmation_state = ActionConfirmationStatus.REJECTED
             self._pending_action.confirmation_state = confirmation_state  # type: ignore[attr-defined]
             self._pending_action._id = None  # type: ignore[attr-defined]
-            self.event_stream.add_event(self._pending_action, EventSource.AGENT)
+            await self.event_stream.add_event(self._pending_action, EventSource.AGENT)
 
         self.state.agent_state = new_state
 
@@ -597,7 +577,7 @@ class AgentController:
         if new_state == AgentState.ERROR:
             reason = self.state.last_error
 
-        self.event_stream.add_event(
+        await self.event_stream.add_event(
             AgentStateChangedObservation('', self.state.agent_state, reason),
             EventSource.ENVIRONMENT,
         )
@@ -662,7 +642,7 @@ class AgentController:
             headless_mode=self.headless_mode,
         )
 
-    def end_delegate(self) -> None:
+    async def end_delegate(self) -> None:
         """Ends the currently active delegate (e.g., if it is finished or errored).
 
         so that this controller can resume normal operation.
@@ -695,7 +675,7 @@ class AgentController:
 
             # emit the delegate result observation
             obs = AgentDelegateObservation(outputs=delegate_outputs, content=content)
-            self.event_stream.add_event(obs, EventSource.AGENT)
+            await self.event_stream.add_event(obs, EventSource.AGENT)
         else:
             # delegate state is ERROR
             # emit AgentDelegateObservation with error content
@@ -708,7 +688,7 @@ class AgentController:
 
             # emit the delegate result observation
             obs = AgentDelegateObservation(outputs=delegate_outputs, content=content)
-            self.event_stream.add_event(obs, EventSource.AGENT)
+            await self.event_stream.add_event(obs, EventSource.AGENT)
 
         # unset delegate so parent can resume normal handling
         self.delegate = None
@@ -769,7 +749,7 @@ class AgentController:
                 FunctionCallValidationError,
                 FunctionCallNotExistsError,
             ) as e:
-                self.event_stream.add_event(
+                await self.event_stream.add_event(
                     ErrorObservation(
                         content=str(e),
                     ),
@@ -789,7 +769,7 @@ class AgentController:
                     or isinstance(e, ContextWindowExceededError)
                 ):
                     if self.agent.config.enable_history_truncation:
-                        self._handle_long_context_error()
+                        await self._handle_long_context_error()
                         return
                     else:
                         raise LLMContextWindowExceedError()
@@ -816,7 +796,7 @@ class AgentController:
             # Create and log metrics for frontend display
             self._prepare_metrics_for_frontend(action)
 
-            self.event_stream.add_event(action, action._source)  # type: ignore [attr-defined]
+            await self.event_stream.add_event(action, action._source)  # type: ignore [attr-defined]
 
         await self.update_state_after_step()
 
@@ -1030,7 +1010,7 @@ class AgentController:
         # make sure history is in sync
         self.state.start_id = start_id
 
-    def _handle_long_context_error(self) -> None:
+    async def _handle_long_context_error(self) -> None:
         # When context window is exceeded, keep roughly half of agent interactions
         kept_event_ids = {
             e.id for e in self._apply_conversation_window(self.state.history)
@@ -1042,7 +1022,7 @@ class AgentController:
             self.state.start_id = self.state.history[0].id
 
         # Add an error event to trigger another step by the agent
-        self.event_stream.add_event(
+        await self.event_stream.add_event(
             CondensationAction(
                 forgotten_events_start_id=min(forgotten_event_ids),
                 forgotten_events_end_id=max(forgotten_event_ids),

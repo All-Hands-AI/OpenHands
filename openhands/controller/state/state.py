@@ -18,6 +18,7 @@ from openhands.llm.metrics import Metrics
 from openhands.memory.view import View
 from openhands.storage.files import FileStore
 from openhands.storage.locations import get_conversation_agent_state_filename
+from openhands.events.stream import EventStream
 
 
 class TrafficControlState(str, Enum):
@@ -133,12 +134,15 @@ class State:
         """
 
         state: State
+        last_event_id = -1  # Default if not found in state
         try:
             encoded = file_store.read(
                 get_conversation_agent_state_filename(sid, user_id)
             )
             pickled = base64.b64decode(encoded)
             state = pickle.loads(pickled)
+            # Attempt to get the last event ID from the loaded state
+            last_event_id = state.__dict__.get('_last_event_id', -1)
         except FileNotFoundError:
             # if user_id is provided, we are in a saas/remote use case
             # and we need to check if the state is in the old directory.
@@ -147,6 +151,8 @@ class State:
                 encoded = file_store.read(filename)
                 pickled = base64.b64decode(encoded)
                 state = pickle.loads(pickled)
+                # Attempt to get the last event ID from the loaded state (old location)
+                last_event_id = state.__dict__.get('_last_event_id', -1)
             else:
                 raise FileNotFoundError(
                     f'Could not restore state from session file for sid: {sid}'
@@ -154,6 +160,10 @@ class State:
         except Exception as e:
             logger.debug(f'Could not restore state from session: {e}')
             raise e
+
+        # Re-initialize history (EventStream) with the restored ID
+        # Assuming self.history is initialized later or needs re-init here
+        state.history = EventStream(sid, file_store, user_id, cur_id=last_event_id)
 
         # update state
         if state.agent_state in RESUMABLE_STATES:
@@ -169,6 +179,9 @@ class State:
         # don't pickle history, it will be restored from the event stream
         state = self.__dict__.copy()
         state['history'] = []
+        # Store the current event ID from the history object
+        if hasattr(self, 'history') and hasattr(self.history, 'cur_id'):
+             state['_last_event_id'] = self.history.cur_id
 
         # Remove any view caching attributes. They'll be rebuilt frmo the
         # history after that gets reloaded.
@@ -178,11 +191,11 @@ class State:
         return state
 
     def __setstate__(self, state):
+        # Restore the state, history will be re-initialized in restore_from_session
         self.__dict__.update(state)
-
-        # make sure we always have the attribute history
-        if not hasattr(self, 'history'):
-            self.history = []
+        # Ensure history attribute exists, even if empty initially
+        if 'history' not in self.__dict__:
+            self.history = [] # Or None, depending on how it's used before restore
 
     def get_current_user_intent(self) -> tuple[str | None, list[str] | None]:
         """Returns the latest user message and image(if provided) that appears after a FinishAction, or the first (the task) if nothing was finished yet."""

@@ -13,6 +13,7 @@ from openhands.core.config import AgentConfig, AppConfig, LLMConfig
 from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import OpenHandsLoggerAdapter
 from openhands.core.schema.agent import AgentState
+from openhands.server.settings import Settings
 from openhands.events.action import ChangeAgentStateAction, MessageAction
 from openhands.events.event import Event, EventSource
 from openhands.events.stream import EventStream
@@ -159,13 +160,17 @@ class AgentSession:
 
             if not self._closed:
                 if initial_message:
-                    self.event_stream.add_event(initial_message, EventSource.USER)
-                    self.event_stream.add_event(
+                    await self.event_stream.add_event(initial_message, EventSource.USER)
+                    await self.event_stream.add_event(
                         ChangeAgentStateAction(AgentState.RUNNING),
                         EventSource.ENVIRONMENT,
                     )
+                    await self.event_stream.add_event(
+                        ChangeAgentStateAction(AgentState.AWAITING_USER_INPUT),
+                        EventSource.ENVIRONMENT,
+                    )
                 else:
-                    self.event_stream.add_event(
+                    await self.event_stream.add_event(
                         ChangeAgentStateAction(AgentState.AWAITING_USER_INPUT),
                         EventSource.ENVIRONMENT,
                     )
@@ -450,3 +455,53 @@ class AgentSession:
 
     def is_closed(self) -> bool:
         return self._closed
+
+    async def initialize_agent(
+        self,
+        settings: Settings,
+        initial_message: MessageAction | None = None,
+        replay_json: str | None = None,
+    ) -> None:
+        """Initializes the agent session, potentially replaying events."""
+        logger.info(
+            f'Initializing agent session {self.sid}', extra={'session_id': self.sid}
+        )
+        # create agent instance
+        # TODO: Need to pass user_id here from conversation?
+        self.agent_session = AgentSessionImpl(
+            sid=self.sid, settings=settings, user_id=self.user_id
+        )
+
+        # replay events if necessary
+        if replay_json:
+            logger.info(f'Replaying events for {self.sid}', extra={'session_id': self.sid})
+            try:
+                events = json.loads(replay_json)
+                for event_dict in events:
+                    if 'action' in event_dict:
+                        action = action_from_dict(event_dict)
+                        await self.agent_session.dispatch(action)
+                    elif 'observation' in event_dict:
+                        obs = observation_from_dict(event_dict)
+                        await self.agent_session.dispatch(obs)
+            except json.JSONDecodeError as e:
+                logger.error(
+                    f'Error decoding replay JSON: {e}', extra={'session_id': self.sid}
+                )
+            except Exception as e:
+                logger.error(
+                    f'Error replaying events: {e}', extra={'session_id': self.sid}
+                )
+        else:
+            # Normal initialization: set initial state and add first message if present
+            if not self._closed:
+                if initial_message:
+                    await self.event_stream.add_event(initial_message, EventSource.USER)
+                # Agent starts in INIT state, dispatch action to change it to RUNNING or AWAITING
+                initial_state_action = (
+                    ChangeAgentStateAction(AgentState.RUNNING) if initial_message
+                    else ChangeAgentStateAction(AgentState.AWAITING_USER_INPUT)
+                )
+                await self.agent_session.dispatch(initial_state_action)
+
+        logger.info(f'Agent session {self.sid} initialized', extra={'session_id': self.sid})
