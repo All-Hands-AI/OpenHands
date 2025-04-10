@@ -1,90 +1,90 @@
-import { BrowserPanel } from "#/components/features/browser/browser"
-import { useSettings } from "#/hooks/query/use-settings"
-import { RootState } from "#/store"
-import ObservationType from "#/types/observation-type"
-import { Slider, useDisclosure } from "@heroui/react"
-import { useEffect, useRef, useState } from "react"
-import { LuStepBack, LuStepForward } from "react-icons/lu"
-import { Components } from "react-markdown"
-import { useSelector } from "react-redux"
-import CodeView from "./CodeView"
-import EditorContent from "./EditorContent"
-import TaskProgress from "./TaskProgress"
-import TerminalPage from "#/routes/terminal-tab"
+import { BrowserPanel } from "#/components/features/browser/browser";
+import { useSettings } from "#/hooks/query/use-settings";
+import { RootState } from "#/store";
+import ObservationType from "#/types/observation-type";
+import { Slider, useDisclosure } from "@heroui/react";
+import { useEffect, useRef, useState } from "react";
+import { LuStepBack, LuStepForward } from "react-icons/lu";
+import { Components } from "react-markdown";
+import { useSelector } from "react-redux";
+import CodeView from "./CodeView";
+import EditorContent from "./EditorContent";
+import TaskProgress from "./TaskProgress";
+import TerminalPage from "#/routes/terminal-tab";
 
 const ThesisComputer = () => {
-  const isViewDrawer = true
+  const isViewDrawer = true;
   const { computerList, eventID } = useSelector(
-    (state: RootState) => state.computer,
-  )
-  const { curAgentState } = useSelector((state: RootState) => state.agent)
+    (state: RootState) => state.computer
+  );
+  const { curAgentState } = useSelector((state: RootState) => state.agent);
 
-  const scrollRef = useRef<HTMLDivElement>(null)
-  const { data: settings } = useSettings()
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const { data: settings } = useSettings();
 
-  const [currentStep, setCurrentStep] = useState(0)
-  const totalSteps = computerList.length
-  const [sliderValue, setSliderValue] = useState(0)
+  const [currentStep, setCurrentStep] = useState(0);
+  const totalSteps = computerList.length;
+  const [sliderValue, setSliderValue] = useState(0);
 
   const {
     isOpen: securityModalIsOpen,
     onOpen: onSecurityModalOpen,
     onOpenChange: onSecurityModalOpenChange,
-  } = useDisclosure()
+  } = useDisclosure();
 
   const handleNextStep = () => {
     if (currentStep < totalSteps - 1) {
-      setCurrentStep(currentStep + 1)
+      setCurrentStep(currentStep + 1);
     }
-  }
+  };
 
   const handlePrevStep = () => {
     if (currentStep > 0) {
-      setCurrentStep(currentStep - 1)
+      setCurrentStep(currentStep - 1);
     }
-  }
+  };
 
   const handleSliderChange = (value: number) => {
-    setSliderValue(value)
-    const step = Math.floor((value / 100) * (totalSteps - 1))
-    setCurrentStep(step)
-  }
+    setSliderValue(value);
+    const step = Math.floor((value / 100) * (totalSteps - 1));
+    setCurrentStep(step);
+  };
 
   useEffect(() => {
     if (eventID && computerList.length > 0) {
       const matchingIndex = computerList.findIndex(
-        (item) => item.cause === eventID,
-      )
+        (item) => item.cause === eventID
+      );
 
       if (matchingIndex !== -1 && matchingIndex !== currentStep) {
-        setCurrentStep(matchingIndex)
+        setCurrentStep(matchingIndex);
         const newSliderValue =
-          totalSteps > 1 ? (matchingIndex / (totalSteps - 1)) * 100 : 0
-        setSliderValue(newSliderValue)
+          totalSteps > 1 ? (matchingIndex / (totalSteps - 1)) * 100 : 0;
+        setSliderValue(newSliderValue);
       }
     }
-  }, [eventID, computerList, totalSteps])
+  }, [eventID, computerList, totalSteps, currentStep]);
 
   // Add useEffect to handle auto progression
   useEffect(() => {
     if (computerList.length > currentStep) {
-      const newStep = computerList.length - 1
-      setCurrentStep(newStep)
+      const newStep = computerList.length - 1;
+      setCurrentStep(newStep);
       // Calculate and set slider value based on new step
       const newSliderValue =
-        totalSteps > 1 ? (newStep / (totalSteps - 1)) * 100 : 0
-      setSliderValue(newSliderValue)
+        totalSteps > 1 ? (newStep / (totalSteps - 1)) * 100 : 0;
+      setSliderValue(newSliderValue);
     }
-  }, [computerList, totalSteps])
+  }, [computerList, totalSteps]);
 
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollIntoView({ behavior: "smooth" })
+      scrollRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [computerList])
+  }, [computerList]);
 
   if (!isViewDrawer) {
-    return <div />
+    return <div />;
   }
 
   const components: Partial<Components> = {
@@ -94,7 +94,7 @@ const ThesisComputer = () => {
       </ol>
     ),
     li: ({ children }) => {
-      return <li className="text-[14px]">{children}</li>
+      return <li className="text-[14px]">{children}</li>;
     },
     a: ({ href, children }) => (
       <a href={href} target="_blank" rel="noopener noreferrer">
@@ -108,14 +108,14 @@ const ThesisComputer = () => {
     h4: ({ children }) => <h4 className="text-[14px]">{children}</h4>,
     h5: ({ children }) => <h5 className="text-[14px]">{children}</h5>,
     h6: ({ children }) => <h6 className="text-[14px]">{children}</h6>,
-  }
+  };
 
   const toPascalCase = (str: string) => {
     return str
       .split("_")
       .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ")
-  }
+      .join(" ");
+  };
 
   // const renderToolCalls = (toolCalls: any) => {
   //   const nameValue = toolCalls?.function?.name
@@ -175,13 +175,13 @@ const ThesisComputer = () => {
 
       {computerList.length > 0 &&
         computerList.map((computerItem, index) => {
-          const observation = computerItem?.observation
+          const observation = computerItem?.observation;
           const mapObservationTypeToText = {
             [ObservationType.READ]: "editor",
             [ObservationType.EDIT]: "editor",
-          }
+          };
 
-          if (index !== currentStep) return null
+          if (index !== currentStep) return null;
           return (
             <div className="mb-3 flex max-w-md items-center rounded-lg">
               <p className="font-medium text-[#666]">
@@ -191,36 +191,36 @@ const ThesisComputer = () => {
                 </span>
               </p>
             </div>
-          )
+          );
         })}
 
       <div className="bg-mercury-30 mb-3 flex h-[82%] w-full flex-1 flex-col rounded-2xl border border-neutral-1000">
         <div className="relative h-full w-full flex-1 overflow-y-auto px-4 py-2">
           {computerList.length > 0 &&
             computerList.map((computerItem, index) => {
-              if (index !== currentStep) return null
+              if (index !== currentStep) return null;
 
               if (
                 computerItem.observation === ObservationType.EDIT ||
                 computerItem.observation === ObservationType.READ
               ) {
-                return <EditorContent computerItem={computerItem} />
+                return <EditorContent computerItem={computerItem} />;
               }
 
               // TODO: check type browse_interactive of observation
               if (computerItem.observation === ObservationType.BROWSE) {
-                return <BrowserPanel computerItem={computerItem} />
+                return <BrowserPanel computerItem={computerItem} />;
               }
 
               if ([ObservationType.RUN].includes(computerItem.observation)) {
-                return <TerminalPage />
+                return <TerminalPage />;
               }
 
               if (computerItem.observation === ObservationType.RUN_IPYTHON) {
-                return <CodeView fileContent={computerItem.extras.code} />
+                return <CodeView fileContent={computerItem.extras.code} />;
               }
 
-              return <div />
+              return <div />;
             })}
           <div ref={scrollRef} />
         </div>
@@ -250,7 +250,7 @@ const ThesisComputer = () => {
       </div>
       <TaskProgress />
     </div>
-  )
-}
+  );
+};
 
-export default ThesisComputer
+export default ThesisComputer;
