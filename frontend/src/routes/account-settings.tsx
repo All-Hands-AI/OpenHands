@@ -310,6 +310,7 @@ function AccountSettings() {
                       label: agent,
                     })) || []
                   }
+                  wrapperClassName="w-[680px]"
                   defaultSelectedKey={settings.AGENT}
                   isClearable={false}
                 />
@@ -502,6 +503,7 @@ function AccountSettings() {
                 label: language.label,
               }))}
               defaultSelectedKey={settings.LANGUAGE}
+              wrapperClassName="w-[680px]"
               isClearable={false}
             />
 
