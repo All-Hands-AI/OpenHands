@@ -2,7 +2,6 @@ import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 import React from "react";
 import { Command } from "#/state/command-slice";
-import { getTerminalCommand } from "#/services/terminal-service";
 import { parseTerminalOutput } from "#/utils/parse-terminal-output";
 
 /*
@@ -44,14 +43,6 @@ export const useTerminal = ({
       if (fitAddon.current) terminal.current.loadAddon(fitAddon.current);
       if (ref.current) terminal.current.open(ref.current);
     }
-  };
-
-  const copySelection = (selection: string) => {
-    const clipboardItem = new ClipboardItem({
-      "text/plain": new Blob([selection], { type: "text/plain" }),
-    });
-
-    navigator.clipboard.write([clipboardItem]);
   };
 
   React.useEffect(() => {
