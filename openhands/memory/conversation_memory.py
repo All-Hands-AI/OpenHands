@@ -1,4 +1,4 @@
-from typing import Generator
+from typing import Generator, List, Union
 
 from litellm import ModelResponse
 
@@ -410,12 +410,21 @@ class ConversationMemory:
                 files_section = 'Files included in context:\n'
                 for file_info in obs.files:
                     file_path = file_info.get('path', 'unknown_path')
-
                     # Check if we have a view_range specified
                     view_range_info = ''
-                    if 'view_range' in file_info and file_info['view_range']:
+                    if (
+                        isinstance(file_info, dict)
+                        and 'view_range' in file_info
+                        and file_info['view_range']
+                    ):
                         view_range = file_info['view_range']
-                        view_range_info = f' (lines {view_range[0]}-{view_range[1]})'
+                        if (
+                            isinstance(view_range, (list, tuple))
+                            and len(view_range) >= 2
+                        ):
+                            view_range_info = (
+                                f' (lines {view_range[0]}-{view_range[1]})'
+                            )
 
                     files_section += f'File: {file_path}{view_range_info}\n'
 
@@ -509,7 +518,11 @@ class ConversationMemory:
 
                 # Return the combined message if we have any content
                 if message_content:
-                    message = Message(role='user', content=message_content)
+                    # Create a new list with the correct type annotation
+                    typed_content: List[Union[TextContent, ImageContent]] = []
+                    for content in message_content:
+                        typed_content.append(content)
+                    message = Message(role='user', content=typed_content)
                 else:
                     return []
             elif obs.recall_type == RecallType.KNOWLEDGE:

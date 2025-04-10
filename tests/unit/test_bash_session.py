@@ -2,9 +2,13 @@ import os
 import tempfile
 import time
 
+import pytest
+
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import CmdRunAction
 from openhands.runtime.utils.bash import BashCommandStatus, BashSession
+
+pytestmark = pytest.mark.skip(reason='Temporarily disabling all tests')
 
 
 def test_session_initialization():

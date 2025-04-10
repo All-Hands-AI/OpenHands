@@ -71,6 +71,7 @@ class Event:
 
     @property
     def cause(self) -> int | None:
+        """The id of the event(typically an action) that caused this event(typically an observation) to be created."""
         if hasattr(self, '_cause'):
             cause_val = getattr(self, '_cause')
             return int(cause_val) if cause_val is not None else None
