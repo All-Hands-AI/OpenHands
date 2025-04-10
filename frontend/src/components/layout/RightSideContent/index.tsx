@@ -1,16 +1,15 @@
 import { BrowserPanel } from "#/components/features/browser/browser";
 import { useSettings } from "#/hooks/query/use-settings";
+import TerminalPage from "#/routes/terminal-tab";
 import { RootState } from "#/store";
 import ObservationType from "#/types/observation-type";
-import { Slider, useDisclosure } from "@heroui/react";
+import { Slider } from "@heroui/react";
 import { useEffect, useRef, useState } from "react";
 import { LuStepBack, LuStepForward } from "react-icons/lu";
-import { Components } from "react-markdown";
 import { useSelector } from "react-redux";
 import CodeView from "./CodeView";
 import EditorContent from "./EditorContent";
 import TaskProgress from "./TaskProgress";
-import TerminalPage from "#/routes/terminal-tab";
 
 const ThesisComputer = () => {
   const isViewDrawer = true;
@@ -25,12 +24,6 @@ const ThesisComputer = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const totalSteps = computerList.length;
   const [sliderValue, setSliderValue] = useState(0);
-
-  const {
-    isOpen: securityModalIsOpen,
-    onOpen: onSecurityModalOpen,
-    onOpenChange: onSecurityModalOpenChange,
-  } = useDisclosure();
 
   const handleNextStep = () => {
     if (currentStep < totalSteps - 1) {
@@ -55,15 +48,14 @@ const ThesisComputer = () => {
       const matchingIndex = computerList.findIndex(
         (item) => item.cause === eventID
       );
-
-      if (matchingIndex !== -1 && matchingIndex !== currentStep) {
+      if (matchingIndex !== -1) {
         setCurrentStep(matchingIndex);
         const newSliderValue =
           totalSteps > 1 ? (matchingIndex / (totalSteps - 1)) * 100 : 0;
         setSliderValue(newSliderValue);
       }
     }
-  }, [eventID, computerList, totalSteps, currentStep]);
+  }, [eventID, computerList, totalSteps]);
 
   // Add useEffect to handle auto progression
   useEffect(() => {
@@ -86,72 +78,6 @@ const ThesisComputer = () => {
   if (!isViewDrawer) {
     return <div />;
   }
-
-  const components: Partial<Components> = {
-    ol: ({ children }) => (
-      <ol style={{ listStyleType: "decimal", paddingLeft: "16px" }}>
-        {children}
-      </ol>
-    ),
-    li: ({ children }) => {
-      return <li className="text-[14px]">{children}</li>;
-    },
-    a: ({ href, children }) => (
-      <a href={href} target="_blank" rel="noopener noreferrer">
-        {children}
-      </a>
-    ),
-    p: ({ children }) => <p className="text-[14px]">{children}</p>,
-    h1: ({ children }) => <h1 className="text-[14px]">{children}</h1>,
-    h2: ({ children }) => <h2 className="text-[14px]">{children}</h2>,
-    h3: ({ children }) => <h3 className="text-[14px]">{children}</h3>,
-    h4: ({ children }) => <h4 className="text-[14px]">{children}</h4>,
-    h5: ({ children }) => <h5 className="text-[14px]">{children}</h5>,
-    h6: ({ children }) => <h6 className="text-[14px]">{children}</h6>,
-  };
-
-  const toPascalCase = (str: string) => {
-    return str
-      .split("_")
-      .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
-  };
-
-  // const renderToolCalls = (toolCalls: any) => {
-  //   const nameValue = toolCalls?.function?.name
-  //   const results = toolCalls?.results
-
-  //   return (
-  //     <div>
-  //       <div className="mb-2 flex items-center justify-center gap-1 border-b-[1px] pb-2">
-  //         <LuSquareChartGantt size={20} />
-  //         <span className="text-neutral-1 text-16 font-bold">
-  //           {nameValue === "final_answer"
-  //             ? "Step Answer"
-  //             : toPascalCase(nameValue)}
-  //         </span>
-  //       </div>
-
-  //       <div className="mb-2">
-  //         {results &&
-  //           Array.isArray(results) &&
-  //           results.length > 0 &&
-  //           results.map((result, index) => {
-  //             if (result.dtype === "text") {
-  //               return (
-  //                 <div key={index} className="gap-2">
-  //                   <Markdown components={components}>
-  //                     {result.content}
-  //                   </Markdown>
-  //                 </div>
-  //               )
-  //             }
-  //             return <span key={index}>image</span>
-  //           })}
-  //       </div>
-  //     </div>
-  //   )
-  // }
 
   return (
     <div className="flex h-full w-full flex-col overflow-y-auto rounded-xl rounded-br-none rounded-tr-none border border-neutral-1000 bg-white p-4">
@@ -177,19 +103,26 @@ const ThesisComputer = () => {
         computerList.map((computerItem, index) => {
           const observation = computerItem?.observation;
           const mapObservationTypeToText = {
-            [ObservationType.READ]: "editor",
-            [ObservationType.EDIT]: "editor",
+            [ObservationType.READ]: "Editor",
+            [ObservationType.EDIT]: "Editor",
+            [ObservationType.BROWSE]: "Browser",
+            [ObservationType.BROWSER_MCP]: "Browser",
           };
 
           if (index !== currentStep) return null;
           return (
-            <div className="mb-3 flex max-w-md items-center rounded-lg">
-              <p className="font-medium text-[#666]">
+            <div className="mb-3 items-center rounded-lg">
+              <p className="text-[14px] font-medium text-[#666]">
                 Thesis is using{" "}
-                <span className="text-[#666]">
-                  {mapObservationTypeToText[observation]}
+                <span className="font-semibold text-[#666]">
+                  {mapObservationTypeToText[observation] || "Terminal"}
                 </span>
               </p>
+              <div className="mt-1 max-w-fit rounded-full bg-[#E6E6E6] px-3 py-1">
+                <span className="text-[12px] font-medium text-[#0F0F0F]">
+                  {computerItem?.message}
+                </span>
+              </div>
             </div>
           );
         })}
@@ -208,7 +141,10 @@ const ThesisComputer = () => {
               }
 
               // TODO: check type browse_interactive of observation
-              if (computerItem.observation === ObservationType.BROWSE) {
+              if (
+                computerItem.observation === ObservationType.BROWSE ||
+                computerItem.observation === ObservationType.BROWSER_MCP
+              ) {
                 return <BrowserPanel computerItem={computerItem} />;
               }
 

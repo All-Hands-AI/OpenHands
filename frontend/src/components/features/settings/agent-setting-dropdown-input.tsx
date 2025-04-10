@@ -102,7 +102,7 @@ export function AgentSettingsDropdownInput({
             inputWrapper:
               "bg-white dark:bg-[#1E1E1F] border border-neutral-1000 dark:border-[#232521] w-full rounded-lg px-2 py-1 placeholder:italic",
             input:
-              "font-x w-fit max-w-[110px] text-[14px] font-medium text-neutral-100 dark:text-[#EFEFEF]",
+              "font-x text-[14px] font-medium text-neutral-100 dark:text-[#EFEFEF]",
           },
         }}
         listboxProps={{

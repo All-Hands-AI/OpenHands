@@ -49,12 +49,14 @@ class PromptManager:
             raise ValueError('Prompt directory is not set')
         template_path = os.path.join(self.prompt_dir, f'{template_name}.j2')
         if not os.path.exists(template_path):
-            raise FileNotFoundError(f'Prompt file {template_path} not found')
+            # raise FileNotFoundError(f'Prompt file {template_path} not found')
+            return Template('')
         with open(template_path, 'r') as file:
             return Template(file.read())
 
-    def get_system_message(self) -> str:
-        return self.system_template.render().strip()
+    def get_system_message(self, **kwargs) -> str:
+        # **kwargs is used to pass additional context to the system prompt, such as current date, ...
+        return self.system_template.render(**kwargs).strip()
 
     def get_example_user_message(self) -> str:
         """This is the initial user message provided to the agent
