@@ -26,6 +26,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { ChatInterface } from "../../components/features/chat/chat-interface";
 import { EventHandler } from "./event-handler";
 import { useAccount } from "wagmi";
+import { useLocation } from "react-router";
 
 function AppContent() {
   useConversationConfig();
@@ -35,8 +36,8 @@ function AppContent() {
   const account = useAccount();
   const { data: conversation, isFetched } = useUserConversation(
     conversationId || null,
-    !!account?.address
   );
+
   const { initialPrompt, files } = useSelector(
     (state: RootState) => state.initialQuery,
   );

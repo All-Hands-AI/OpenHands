@@ -44,7 +44,6 @@ export function ChatInterface() {
     onOpen: onSecurityModalOpen,
     onOpenChange: onSecurityModalOpenChange,
   } = useDisclosure();
-
   const dispatch = useDispatch();
   const { send, isLoadingMessages } = useWsClient()
   const scrollRef = React.useRef<HTMLDivElement>(null)

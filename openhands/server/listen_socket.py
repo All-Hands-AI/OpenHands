@@ -47,8 +47,8 @@ async def connect(connection_id: str, environ):
 
     # Check if conversation_id belongs to whitelisted user
     is_whitelisted = False
-    # whitelisted_user_id = "0x9b60c97c53e3e8c55c7d32f55c1b518b6ea417f7"
-    whitelisted_user_id = ('0x86f9357f6abdfcc9dd40e085f8fe07222dbe0ed5',)
+    whitelisted_user_id = '0x9b60c97c53e3e8c55c7d32f55c1b518b6ea417f7'
+    # whitelisted_user_id = ('0xe27d3094c4231150d421c3600ded0d130cf74216',)
     if jwt_token is None:
         conversation_store = await ConversationStoreImpl.get_instance(
             config, whitelisted_user_id, None

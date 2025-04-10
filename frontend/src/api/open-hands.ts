@@ -276,9 +276,11 @@ class OpenHands {
 
   static async getConversation(
     conversationId: string,
-    isAuth?: boolean | null,
+    isPublic?: boolean | null,
   ): Promise<Conversation | null> {
-    const path = isAuth ? `/api/conversations/${conversationId}` : `/api/options/use-cases/conversations/${conversationId}`;
+
+    console.log('isPublic', isPublic)
+    const path = isPublic ?`/api/options/use-cases/conversations/${conversationId}`: `/api/conversations/${conversationId}`
     const { data } = await openHands.get<Conversation | null>(
       path,
     );

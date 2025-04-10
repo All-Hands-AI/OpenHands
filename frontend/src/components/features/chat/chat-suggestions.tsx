@@ -20,7 +20,7 @@ export function ChatSuggestions({ onSuggestionsClick }: ChatSuggestionsProps) {
         </span>
       </div>
       <Suggestions
-        suggestions={Object.entries(SUGGESTIONS.repo)
+        suggestions={Object.entries(SUGGESTIONS["non-repo"])
           .slice(0, 4)
           .map(([label, value]) => ({
             label,

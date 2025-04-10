@@ -53,7 +53,7 @@ function Home() {
                 testId="connect-your-wallet"
                 type="button"
                 variant="secondary"
-                className="w-full text-tertiary font-bold hover:brightness-110 bg-tertiary-light border-content mt-2 uppercase"
+                className="w-full text-tertiary font-bold hover:brightness-100 brightness-110 bg-neutral-900 border-content mt-2 uppercase rounded-lg"
                 onClick={openConnectModal}
               >
                 {t(I18nKey.BUTTON$CONNECT_WALLET)}
