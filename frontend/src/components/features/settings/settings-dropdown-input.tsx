@@ -1,22 +1,26 @@
 import { Autocomplete, AutocompleteItem } from "@heroui/react";
 import { ReactNode } from "react";
 import { OptionalTag } from "./optional-tag";
+import { cn } from "#/utils/utils";
 
 interface SettingsDropdownInputProps {
   testId: string;
   name: string;
   items: { key: React.Key; label: string }[];
   label?: ReactNode;
+  wrapperClassName?: string;
   placeholder?: string;
   showOptionalTag?: boolean;
   isDisabled?: boolean;
   defaultSelectedKey?: string;
   isClearable?: boolean;
+  onSelectionChange?: (key: React.Key | null) => void;
 }
 
 export function SettingsDropdownInput({
   testId,
   label,
+  wrapperClassName,
   name,
   items,
   placeholder,
@@ -24,9 +28,10 @@ export function SettingsDropdownInput({
   isDisabled,
   defaultSelectedKey,
   isClearable,
+  onSelectionChange,
 }: SettingsDropdownInputProps) {
   return (
-    <label className="flex flex-col gap-2.5 w-[680px]">
+    <label className={cn("flex flex-col gap-2.5", wrapperClassName)}>
       {label && (
         <div className="flex items-center gap-1">
           <span className="text-sm">{label}</span>
@@ -39,6 +44,7 @@ export function SettingsDropdownInput({
         name={name}
         defaultItems={items}
         defaultSelectedKey={defaultSelectedKey}
+        onSelectionChange={onSelectionChange}
         isClearable={isClearable}
         isDisabled={isDisabled}
         placeholder={placeholder}

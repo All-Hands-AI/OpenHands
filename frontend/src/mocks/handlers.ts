@@ -8,7 +8,7 @@ import { DEFAULT_SETTINGS } from "#/services/settings";
 import { STRIPE_BILLING_HANDLERS } from "./billing-handlers";
 import { ApiSettings, PostApiSettings } from "#/types/settings";
 import { FILE_SERVICE_HANDLERS } from "./file-service-handlers";
-import { GitUser } from "#/types/git";
+import { GitRepository, GitUser } from "#/types/git";
 import { TASK_SUGGESTIONS_HANDLERS } from "./task-suggestions-handlers";
 
 export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
@@ -108,12 +108,14 @@ export const handlers = [
   ...FILE_SERVICE_HANDLERS,
   ...TASK_SUGGESTIONS_HANDLERS,
   ...openHandsHandlers,
-  http.get("/api/user/repositories", () =>
-    HttpResponse.json([
-      { id: 1, full_name: "octocat/hello-world" },
-      { id: 2, full_name: "octocat/earth" },
-    ]),
-  ),
+  http.get("/api/user/repositories", () => {
+    const data: GitRepository[] = [
+      { id: 1, full_name: "octocat/hello-world", git_provider: "github" },
+      { id: 2, full_name: "octocat/earth", git_provider: "github" },
+    ];
+
+    return HttpResponse.json(data);
+  }),
   http.get("/api/user/info", () => {
     const user: GitUser = {
       id: 1,

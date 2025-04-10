@@ -72,9 +72,8 @@ const TASKS_3: TaskItem[] = [
 ];
 
 export const MOCK_TASKS: RepositoryTaskGroup[] = [
-  { title: "All-Hands-AI/OpenHands", tasks: TASKS_1 },
-  { title: "rbren/rss-parser", tasks: TASKS_2 },
-  { title: "fairwindsops/polaris", tasks: TASKS_3 },
+  { title: "octocat/hello-world", tasks: TASKS_1 },
+  { title: "octocat/earth", tasks: TASKS_2 },
 ];
 
 export const TASK_SUGGESTIONS_HANDLERS = [
