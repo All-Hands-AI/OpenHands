@@ -50,7 +50,9 @@ export function AgentSettingsDropdownInput({
 
   console.log("agentValue", agentValue)
   return (
-    <label className={twMerge("flex w-fit cursor-pointer gap-2", className)}>
+    <label
+      className={twMerge("mt-2 flex w-fit cursor-pointer gap-2", className)}
+    >
       <div className="flex items-center gap-1">
         <span className="text-[14px] font-medium text-neutral-700 dark:text-[#595B57]">
           {label}:
@@ -97,7 +99,8 @@ export function AgentSettingsDropdownInput({
         }}
         inputProps={{
           classNames: {
-            inputWrapper: "rounded-lg placeholder:italic min-h-[24px] h-7",
+            inputWrapper:
+              "bg-white dark:bg-[#1E1E1F] border border-neutral-1000 dark:border-[#232521] w-full rounded-lg px-2 py-1 placeholder:italic",
             input:
               "font-x w-fit max-w-[110px] text-[14px] font-medium text-neutral-100 dark:text-[#EFEFEF]",
           },

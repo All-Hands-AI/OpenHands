@@ -19,6 +19,7 @@ import { useEffectOnce } from "#/hooks/use-effect-once"
 import { useEndSession } from "#/hooks/use-end-session"
 import { addUserMessage, clearMessages } from "#/state/chat-slice"
 import { clearTerminal } from "#/state/command-slice"
+import { clearComputerList } from "#/state/computer-slice"
 import { clearFiles, clearInitialPrompt } from "#/state/initial-query-slice"
 import { clearJupyter } from "#/state/jupyter-slice"
 import { RootState } from "#/store"
@@ -71,6 +72,7 @@ function AppContent() {
     dispatch(clearMessages())
     dispatch(clearTerminal())
     dispatch(clearJupyter())
+    dispatch(clearComputerList())
     if (conversationId && (initialPrompt || files.length > 0)) {
       dispatch(
         addUserMessage({
@@ -114,7 +116,7 @@ function AppContent() {
       <ResizablePanel
         orientation={Orientation.HORIZONTAL}
         className="h-full min-h-0 min-w-0 grow"
-        initialSize={550}
+        initialSize={700}
         firstClassName="rounded-xl overflow-hidden "
         secondClassName="flex flex-col overflow-hidden"
         firstChild={<ChatInterface />}

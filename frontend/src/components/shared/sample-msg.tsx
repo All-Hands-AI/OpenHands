@@ -25,13 +25,13 @@ export function SampleMsg() {
   }
 
   return (
-    <div className="mt-6 grid w-full grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-2">
+    <div className="mt-3 grid w-full grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-2">
       {Object.entries(useCasesMocks).map(([k, itemValue], key) => {
         const titleQuestion = itemValue.find((x: any) => x.source === "user")
 
         return (
           <button
-            className="cursor-pointer rounded-[12px] border border-gray-200 bg-transparent p-6 transition-all duration-150 ease-in hover:scale-105 hover:shadow-md"
+            className="cursor-pointer rounded-[12px] border border-neutral-1000 bg-transparent bg-white p-5 transition-all duration-150 ease-in hover:scale-105 hover:shadow-md"
             key={key}
             onClick={() => {
               handleSetInitMsg(titleQuestion.message)
@@ -53,13 +53,13 @@ export function SampleMsg() {
               )
             }}
           >
-            <StarIcon className="mb-6" />
-            <div className="mb-4 flex gap-2">
+            <StarIcon className="mb-5" />
+            <span className="mb-2 flex gap-2 text-[16px] font-medium text-neutral-100">
               {titleQuestion.message.slice(0, 10).toUpperCase()}
-            </div>
-            <div className="text-left text-[16px] font-semibold text-tertiary">
+            </span>
+            <p className="line-clamp-3 text-left text-[16px] text-neutral-700">
               {titleQuestion.message}
-            </div>
+            </p>
           </button>
         )
       })}
