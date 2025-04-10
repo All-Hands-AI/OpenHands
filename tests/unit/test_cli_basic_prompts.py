@@ -10,10 +10,8 @@ from prompt_toolkit.output import create_output
 
 from openhands.core.cli import main
 from openhands.core.config import AppConfig
-from openhands.core.schema import AgentState
 from openhands.events.action import MessageAction
 from openhands.events.event import EventSource
-from openhands.events.observation import AgentStateChangedObservation
 
 
 class MockEventStream:
@@ -88,6 +86,7 @@ def mock_config():
             mock_config.security.confirmation_mode = False
             mock_config.sandbox = Mock()
             mock_config.sandbox.selected_repo = None
+            mock_config.workspace_base = '/test'
             mock_setup_config.return_value = mock_config
             yield mock_config
 
@@ -126,44 +125,32 @@ def mock_runtime():
 
 
 @pytest.mark.asyncio
-async def test_cli_greeting(
+async def test_cli_basic_prompt(
     mock_runtime, mock_controller, mock_config, mock_agent, mock_memory, mock_read_task
 ):
     buffer = StringIO()
 
-    with create_app_session(
-        input=create_pipe_input(), output=create_output(stdout=buffer)
-    ):
-        mock_controller.status_callback = None
+    with patch('openhands.core.cli.manage_openhands_file', return_value=True):
+        with patch('openhands.core.cli.cli_confirm', return_value=True):
+            with create_app_session(
+                input=create_pipe_input(), output=create_output(stdout=buffer)
+            ):
+                mock_controller.status_callback = None
 
-        main_task = asyncio.create_task(main(asyncio.get_event_loop()))
+                main_task = asyncio.create_task(main(asyncio.get_event_loop()))
 
-        await asyncio.sleep(0.1)
+                await asyncio.sleep(0.1)
 
-        hello_response = MessageAction(content='Ping')
-        hello_response._source = EventSource.AGENT
-        mock_runtime.event_stream.add_event(hello_response, EventSource.AGENT)
+                hello_response = MessageAction(content='Ping')
+                hello_response._source = EventSource.AGENT
+                mock_runtime.event_stream.add_event(hello_response, EventSource.AGENT)
 
-        state_change = AgentStateChangedObservation(
-            content='Awaiting user input', agent_state=AgentState.AWAITING_USER_INPUT
-        )
-        state_change._source = EventSource.AGENT
-        mock_runtime.event_stream.add_event(state_change, EventSource.AGENT)
+                try:
+                    await asyncio.wait_for(main_task, timeout=1.0)
+                except asyncio.TimeoutError:
+                    main_task.cancel()
 
-        stop_event = AgentStateChangedObservation(
-            content='Stop', agent_state=AgentState.STOPPED
-        )
-        stop_event._source = EventSource.AGENT
-        mock_runtime.event_stream.add_event(stop_event, EventSource.AGENT)
+                buffer.seek(0)
+                output = buffer.read()
 
-        mock_controller.state.agent_state = AgentState.STOPPED
-
-        try:
-            await asyncio.wait_for(main_task, timeout=1.0)
-        except asyncio.TimeoutError:
-            main_task.cancel()
-
-        buffer.seek(0)
-        output = buffer.read()
-
-        assert 'Ping' in output
+                assert 'Ping' in output
