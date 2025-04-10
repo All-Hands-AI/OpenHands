@@ -8,7 +8,7 @@ export function HeroHeading() {
   return (
     <div className="flex w-full max-w-[560px] flex-col items-center gap-4 text-center">
       <RocketImage />
-      <h1 className="text-[38px] font-medium leading-[32px] -tracking-[0.02em] text-neutral-100 dark:text-white">
+      <h1 className="text-[38px] font-semibold leading-[32px] -tracking-[0.02em] text-neutral-100 dark:text-white">
         From curiosity to clarity!
       </h1>
       {/* <p className="mx-4 text-sm flex flex-col gap-2">

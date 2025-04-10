@@ -20,6 +20,7 @@ import { code } from "../markdown/code"
 import { ol, ul } from "../markdown/list"
 import store from "#/store"
 import { setEventID } from "#/state/computer-slice"
+import { setCurrentPathViewed } from "#/state/file-state-slice"
 
 const actionWrapClassName =
   "inline-flex max-w-full items-center gap-2 rounded-[15px] border border-neutral-1000 bg-[#37352f10] px-[10px] py-[3px] text-neutral-600 hover:opacity-70 dark:border-neutral-300 cursor-pointer"
@@ -31,6 +32,7 @@ const MessageActionDisplay: React.FC<{
 }> = ({ messageActionID, content, eventID }) => {
   const openComputertByEventID = (eventID) => {
     if (typeof eventID === "number") {
+      store.dispatch(setCurrentPathViewed(""))
       store.dispatch(setEventID(eventID))
     }
   }
