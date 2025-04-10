@@ -53,6 +53,7 @@ from openhands.events.observation import (
 )
 from openhands.io import read_task
 from openhands.llm.metrics import Metrics
+from openhands.microagent.microagent import BaseMicroAgent
 
 # Color and styling constants
 COLOR_GOLD = '#FFD700'
@@ -70,6 +71,15 @@ COMMANDS = {
     '/help': 'Display available commands',
     '/init': 'Initialize a new repository',
 }
+
+REPO_MD_CREATE_PROMPT = """
+Please explore this repository. Create the file .openhands/microagents/repo.md with:
+- A description of the project
+- An overview of the file structure
+- Any information on how to run tests or other relevant commands
+- Any other information that would be helpful to a brand new developer
+Keep it short--just a few paragraphs will do.
+"""
 
 
 class CommandCompleter(Completer):
@@ -360,14 +370,18 @@ async def read_confirmation_input():
         return False
 
 
-async def init_repository(current_dir: str):
+async def init_repository(current_dir: str) -> bool:
     repo_file_path = Path(current_dir) / '.openhands' / 'microagents' / 'repo.md'
+    init_repo = False
 
-    # Check if the file already exists
     if repo_file_path.exists():
         try:
             content = await asyncio.get_event_loop().run_in_executor(
                 None, read_file, repo_file_path
+            )
+
+            print_formatted_text(
+                'Repository instructions file (repo.md) already exists.\n'
             )
 
             container = Frame(
@@ -377,62 +391,33 @@ async def init_repository(current_dir: str):
                     style=COLOR_GREY,
                     wrap_lines=True,
                 ),
-                title='Repository File (repo.md)',
+                title='Repository Instructions (repo.md)',
                 style=f'fg:{COLOR_GREY}',
             )
             print_container(container)
             print_formatted_text('')  # Add a newline after the frame
-        except Exception as e:
-            print_formatted_text(
-                FormattedText(
-                    [
-                        ('ansired', f'Error reading repository instructions: {e}'),
-                        ('', '\n'),
-                    ]
-                )
+
+            init_repo = cli_confirm(
+                'Do you want to re-initialize?',
+                ['Yes, re-initialize', 'No, dismiss'],
             )
+
+            if init_repo:
+                write_to_file(repo_file_path, '')
+        except Exception:
+            print_formatted_text('Error reading repository instructions file (repo.md)')
+            init_repo = False
     else:
-        print_formatted_text('\nRepository instructions file not found.')
-        confirm = cli_confirm(
-            'Do you want to create the repository instructions file?',
+        print_formatted_text(
+            '\nRepository instructions file will be created by exploring the repository.\n'
+        )
+
+        init_repo = cli_confirm(
+            'Do you want to proceed?',
             ['Yes, create', 'No, dismiss'],
         )
 
-        if not confirm:
-            return
-
-        kb = KeyBindings()
-
-        @kb.add('c-d')
-        def _(event):
-            event.current_buffer.validate_and_handle()
-
-        content = await prompt_session.prompt_async(
-            '\nEnter content for the repository instructions file. Press Ctrl+D when finished:\n\n',
-            multiline=True,
-            key_bindings=kb,
-        )
-
-        prompt_session.multiline = False
-
-        # Use run_in_executor for directory creation
-        await asyncio.get_event_loop().run_in_executor(
-            None, lambda: repo_file_path.parent.mkdir(parents=True, exist_ok=True)
-        )
-
-        try:
-            # Use run_in_executor for file writing
-            await asyncio.get_event_loop().run_in_executor(
-                None, write_to_file, repo_file_path, content
-            )
-
-            print_formatted_text(
-                f'\nRepository instructions file created: {repo_file_path}\n'
-            )
-        except Exception as e:
-            print_formatted_text(
-                f'\nError creating repository instructions file: {e}\n'
-            )
+    return init_repo
 
 
 def read_file(file_path):
@@ -641,6 +626,8 @@ def check_folder_security_agreement(current_dir):
 async def main(loop: asyncio.AbstractEventLoop):
     """Runs the agent in CLI mode."""
 
+    reload_microagents = False
+
     args = parse_arguments()
 
     logger.setLevel(logging.WARNING)
@@ -687,6 +674,7 @@ async def main(loop: asyncio.AbstractEventLoop):
     usage_metrics = UsageMetrics()
 
     async def prompt_for_next_task():
+        nonlocal reload_microagents
         while True:
             next_message = await read_prompt_input(config.cli_multiline_input)
 
@@ -704,7 +692,14 @@ async def main(loop: asyncio.AbstractEventLoop):
                 continue
             elif next_message == '/init':
                 if config.runtime == 'local':
-                    await init_repository(current_dir)
+                    init_repo = await init_repository(current_dir)
+                    if init_repo:
+                        event_stream.add_event(
+                            MessageAction(content=REPO_MD_CREATE_PROMPT),
+                            EventSource.USER,
+                        )
+                        reload_microagents = True
+                        return
                 else:
                     print_formatted_text(
                         '\nRepository initialization through the CLI is only supported for local runtime.\n'
@@ -716,14 +711,24 @@ async def main(loop: asyncio.AbstractEventLoop):
             return
 
     async def on_event_async(event: Event) -> None:
+        nonlocal reload_microagents
         display_event(event, config)
         update_usage_metrics(event, usage_metrics)
+
         if isinstance(event, AgentStateChangedObservation):
             if event.agent_state in [
                 AgentState.AWAITING_USER_INPUT,
                 AgentState.FINISHED,
             ]:
+                # Reload microagents after initialization of repo.md
+                if reload_microagents:
+                    microagents: list[BaseMicroAgent] = (
+                        runtime.get_microagents_from_selected_repo(None)
+                    )
+                    memory.load_user_workspace_microagents(microagents)
+                    reload_microagents = False
                 await prompt_for_next_task()
+
             if event.agent_state == AgentState.AWAITING_USER_CONFIRMATION:
                 user_confirmed = await read_confirmation_input()
                 if user_confirmed:
