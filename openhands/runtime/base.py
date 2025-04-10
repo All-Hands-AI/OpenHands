@@ -13,8 +13,8 @@ from types import MappingProxyType
 from typing import Callable, cast
 from zipfile import ZipFile
 
+import httpx
 from pydantic import SecretStr
-from requests.exceptions import ConnectionError
 
 from openhands.core.config import AppConfig, SandboxConfig
 from openhands.core.exceptions import AgentRuntimeDisconnectedError
@@ -48,6 +48,7 @@ from openhands.integrations.provider import (
     ProviderHandler,
     ProviderType,
 )
+from openhands.integrations.service_types import Repository
 from openhands.microagent import (
     BaseMicroAgent,
     load_microagents_from_dir,
@@ -154,6 +155,7 @@ class Runtime(FileEditRuntimeMixin):
         )
 
         self.user_id = user_id
+        self.git_provider_tokens = git_provider_tokens
 
         # TODO: remove once done debugging expired github token
         self.prev_token: SecretStr | None = None
@@ -297,12 +299,14 @@ class Runtime(FileEditRuntimeMixin):
         assert event.timeout is not None
         try:
             await self._export_latest_git_provider_tokens(event)
-            observation: Observation = await call_sync_from_async(
-                self.run_action, event
-            )
+            if isinstance(event, McpAction):
+                # we don't call call_tool_mcp impl directly because there can be other action ActionExecutionClient
+                observation: Observation = await getattr(self, McpAction.action)(event)
+            else:
+                observation = await call_sync_from_async(self.run_action, event)
         except Exception as e:
             err_id = ''
-            if isinstance(e, ConnectionError) or isinstance(
+            if isinstance(e, httpx.NetworkError) or isinstance(
                 e, AgentRuntimeDisconnectedError
             ):
                 err_id = 'STATUS$ERROR_RUNTIME_DISCONNECTED'
@@ -322,29 +326,51 @@ class Runtime(FileEditRuntimeMixin):
             return
         self.event_stream.add_event(observation, source)  # type: ignore[arg-type]
 
-    def clone_repo(
+    async def clone_repo(
         self,
         git_provider_tokens: PROVIDER_TOKEN_TYPE,
-        selected_repository: str,
+        selected_repository: str | Repository,
         selected_branch: str | None,
+        repository_provider: ProviderType = ProviderType.GITHUB,
     ) -> str:
-        if (
-            ProviderType.GITHUB not in git_provider_tokens
-            or not git_provider_tokens[ProviderType.GITHUB].token
-            or not selected_repository
-        ):
-            raise ValueError(
-                'github_token and selected_repository must be provided to clone a repository'
+        provider_domains = {
+            ProviderType.GITHUB: 'github.com',
+            ProviderType.GITLAB: 'gitlab.com',
+        }
+
+        chosen_provider = (
+            repository_provider
+            if isinstance(selected_repository, str)
+            else selected_repository.git_provider
+        )
+
+        git_token = git_provider_tokens[chosen_provider].token
+        if not git_token:
+            raise RuntimeError('Require valid git token to clone repo')
+
+        domain = provider_domains[chosen_provider]
+        repository = (
+            selected_repository
+            if isinstance(selected_repository, str)
+            else selected_repository.full_name
+        )
+
+        if chosen_provider == ProviderType.GITLAB:
+            remote_repo_url = f'https://oauth2:{git_token.get_secret_value()}@{domain}/{repository}.git'
+        else:
+            remote_repo_url = (
+                f'https://{git_token.get_secret_value()}@{domain}/{repository}.git'
             )
+
+        if not remote_repo_url:
+            raise ValueError('Missing either Git token or valid repository')
 
         if self.status_callback:
             self.status_callback(
                 'info', 'STATUS$SETTING_UP_WORKSPACE', 'Setting up workspace...'
             )
 
-        github_token: SecretStr = git_provider_tokens[ProviderType.GITHUB].token
-        url = f'https://{github_token.get_secret_value()}@github.com/{selected_repository}.git'
-        dir_name = selected_repository.split('/')[-1]
+        dir_name = repository.split('/')[-1]
 
         # Generate a random branch name to avoid conflicts
         random_str = ''.join(
@@ -353,7 +379,7 @@ class Runtime(FileEditRuntimeMixin):
         openhands_workspace_branch = f'openhands-workspace-{random_str}'
 
         # Clone repository command
-        clone_command = f'git clone {url} {dir_name}'
+        clone_command = f'git clone {remote_repo_url} {dir_name}'
 
         # Checkout to appropriate branch
         checkout_command = (
@@ -544,7 +570,7 @@ class Runtime(FileEditRuntimeMixin):
         pass
 
     @abstractmethod
-    def call_tool_mcp(self, action: McpAction) -> Observation:
+    async def call_tool_mcp(self, action: McpAction) -> Observation:
         pass
 
     # ====================================================================

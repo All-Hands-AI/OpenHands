@@ -1,5 +1,3 @@
-from unittest.mock import Mock
-
 import pytest
 from litellm import ModelResponse
 
@@ -74,16 +72,14 @@ def test_get_messages(codeact_agent: CodeActAgent):
     history.append(message_action_5)
 
     codeact_agent.reset()
-    messages = codeact_agent._get_messages(
-        Mock(history=history, max_iterations=5, iteration=0, extra_data={})
-    )
+    messages = codeact_agent._get_messages(history)
 
     assert (
         len(messages) == 6
     )  # System, initial user + user message, agent message, last user message
     assert messages[0].content[0].cache_prompt  # system message
     assert messages[1].role == 'user'
-    assert messages[1].content[0].text.endswith('Initial user message')
+    assert messages[1].content[0].text.endswith('</PROBLEM_SOLVING_WORKFLOW>')
     # we add cache breakpoint to only the last user message
     assert not messages[1].content[0].cache_prompt
 
@@ -110,9 +106,7 @@ def test_get_messages_prompt_caching(codeact_agent: CodeActAgent):
         history.append(message_action_agent)
 
     codeact_agent.reset()
-    messages = codeact_agent._get_messages(
-        Mock(history=history, max_iterations=10, iteration=5, extra_data={})
-    )
+    messages = codeact_agent._get_messages(history)
 
     # Check that only the last two user messages have cache_prompt=True
     cached_user_messages = [
@@ -125,5 +119,5 @@ def test_get_messages_prompt_caching(codeact_agent: CodeActAgent):
     )  # Including the initial system+user + last user message
 
     # Verify that these are indeed the last user message (from start)
-    assert cached_user_messages[0].content[0].text.startswith('You are OpenHands agent')
+    assert cached_user_messages[0].content[0].text.startswith('You are Thesis Capsule agent')
     assert cached_user_messages[1].content[0].text.startswith('User message 14')

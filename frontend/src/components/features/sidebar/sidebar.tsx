@@ -1,4 +1,7 @@
 import DepositModal from "#/components/features/modalDeposit/DepositModal";
+import { FaListUl } from "react-icons/fa";
+import { useTranslation } from "react-i18next";
+import { useGitUser } from "#/hooks/query/use-git-user";
 import { AllHandsLogoButton } from "#/components/shared/buttons/all-hands-logo-button";
 import { ExitProjectButton } from "#/components/shared/buttons/exit-project-button";
 import { SettingsButton } from "#/components/shared/buttons/settings-button";
@@ -22,12 +25,15 @@ import { useAccount } from "wagmi";
 import { ConversationPanel } from "../conversation-panel/conversation-panel";
 import { ConversationPanelWrapper } from "../conversation-panel/conversation-panel-wrapper";
 import { UserActions } from "./user-actions";
+import { I18nKey } from "#/i18n/declaration";
 
 export function Sidebar() {
+  const { t } = useTranslation();
   const location = useLocation();
   const dispatch = useDispatch();
   const endSession = useEndSession();
   // const user = useGitHubUser();
+  // const user = useGitUser();
   const { data: config } = useConfig();
   const {
     data: settings,

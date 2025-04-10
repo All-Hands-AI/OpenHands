@@ -32,6 +32,7 @@ from openhands.events.observation.commands import (
 )
 from openhands.events.tool import ToolCallMetadata
 from openhands.llm.llm import LLM
+from litellm import ModelResponse
 
 
 @pytest.fixture
@@ -214,15 +215,25 @@ def test_browser_tool():
 
 def test_response_to_actions_invalid_tool():
     # Test response with invalid tool call
-    mock_response = Mock()
-    mock_response.choices = [Mock()]
-    mock_response.choices[0].message = Mock()
-    mock_response.choices[0].message.content = 'Invalid tool'
-    mock_response.choices[0].message.tool_calls = [Mock()]
-    mock_response.choices[0].message.tool_calls[0].id = 'tool_call_10'
-    mock_response.choices[0].message.tool_calls[0].function = Mock()
-    mock_response.choices[0].message.tool_calls[0].function.name = 'invalid_tool'
-    mock_response.choices[0].message.tool_calls[0].function.arguments = '{}'
+    mock_response = ModelResponse(
+        id='mock-id',
+        choices=[
+            {
+                'message': {
+                    'content': 'Invalid tool',
+                    'tool_calls': [
+                        {
+                            'id': 'tool_call_10',
+                            'function': {
+                                'name': 'invalid_tool',
+                                'arguments': '{}'
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    )
 
     with pytest.raises(FunctionCallNotExistsError):
         response_to_actions(mock_response)
@@ -324,21 +335,21 @@ def test_mismatched_tool_call_events(mock_state: State):
     # 2. The action message, and
     # 3. The observation message
     mock_state.history = [action, observation]
-    messages = agent._get_messages(mock_state)
+    messages = agent._get_messages(mock_state.history)
     assert len(messages) == 3
 
     # The same should hold if the events are presented out-of-order
     mock_state.history = [observation, action]
-    messages = agent._get_messages(mock_state)
+    messages = agent._get_messages(mock_state.history)
     assert len(messages) == 3
 
     # If only one of the two events is present, then we should just get the system message
     mock_state.history = [action]
-    messages = agent._get_messages(mock_state)
+    messages = agent._get_messages(mock_state.history)
     assert len(messages) == 1
 
     mock_state.history = [observation]
-    messages = agent._get_messages(mock_state)
+    messages = agent._get_messages(mock_state.history)
     assert len(messages) == 1
 
 

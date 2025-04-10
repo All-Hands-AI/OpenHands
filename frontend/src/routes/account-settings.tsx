@@ -1,3 +1,6 @@
+import { Link } from "react-router";
+import { useTranslation } from "react-i18next";
+import { I18nKey } from "#/i18n/declaration";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { SettingsDropdownInput } from "#/components/features/settings/settings-dropdown-input";
 import { SettingsSwitch } from "#/components/features/settings/settings-switch";
@@ -20,14 +23,20 @@ import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message"
 import { Modal, ModalBody, ModalContent } from "@heroui/react";
 import React from "react";
 import { useNavigate } from "react-router";
+import { ProviderOptions } from "#/types/settings";
+import { useAuth } from "#/context/auth-context";
+import { useAppLogout } from "#/hooks/use-app-logout";
 
+// Define REMOTE_RUNTIME_OPTIONS for testing
 const REMOTE_RUNTIME_OPTIONS = [
-  { key: 1, label: "1x (2 core, 8G)" },
-  { key: 2, label: "2x (4 core, 16G)" },
+  { key: "1", label: "Standard" },
+  { key: "2", label: "Enhanced" },
+  { key: "4", label: "Premium" },
 ];
 
-const AccountSettings = () => {
+function AccountSettings() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const {
     data: settings,
     isFetching: isFetchingSettings,
@@ -42,6 +51,8 @@ const AccountSettings = () => {
     isSuccess: isSuccessfulResources,
   } = useAIConfigOptions();
   const { mutate: saveSettings } = useSaveSettings();
+  const { handleLogout } = useAppLogout();
+  const { providerTokensSet, providersAreSet } = useAuth();
 
   const isFetching = isFetchingSettings || isFetchingResources;
   console.log("isFetching", isFetching);
@@ -67,7 +78,14 @@ const AccountSettings = () => {
     return false;
   };
 
-  const isLLMKeySet = settings?.LLM_API_KEY === "**********";
+  // TODO FIXME: unclear whether this is a good conflict
+  // const isLLMKeySet = settings?.LLM_API_KEY === "**********";
+  const hasAppSlug = !!config?.APP_SLUG;
+  const isGitHubTokenSet =
+    providerTokensSet.includes(ProviderOptions.github) || false;
+  const isGitLabTokenSet =
+    providerTokensSet.includes(ProviderOptions.gitlab) || false;
+  const isLLMKeySet = settings?.LLM_API_KEY_SET;
   const isAnalyticsEnabled = settings?.USER_CONSENTS_TO_ANALYTICS;
   const isAdvancedSettingsSet = determineWhetherToToggleAdvancedSettings();
 
@@ -110,10 +128,18 @@ const AccountSettings = () => {
     const enableSoundNotifications =
       formData.get("enable-sound-notifications-switch")?.toString() === "on";
     const llmBaseUrl = formData.get("base-url-input")?.toString() || "";
+    const inputApiKey = formData.get("llm-api-key-input")?.toString() || "";
     const llmApiKey =
       formData.get("llm-api-key-input")?.toString() ||
       (isLLMKeySet ? undefined : "");
 
+      inputApiKey === "" && isLLMKeySet
+        ? undefined // don't update if it's already set and input is empty
+        : inputApiKey; // otherwise use the input value
+
+    const githubToken = formData.get("github-token-input")?.toString();
+    const gitlabToken = formData.get("gitlab-token-input")?.toString();
+    // we don't want the user to be able to modify these settings in SaaS
     const finalLlmModel = shouldHandleSpecialSaasCase
       ? undefined
       : customLlmModel || fullLlmModel;
@@ -122,37 +148,40 @@ const AccountSettings = () => {
       : llmBaseUrl;
     const finalLlmApiKey = shouldHandleSpecialSaasCase ? undefined : llmApiKey;
 
-    const githubToken = formData.get("github-token-input")?.toString();
     const newSettings = {
-      github_token: githubToken,
-      provider_tokens: githubToken
-        ? { github: githubToken, gitlab: "" }
-        : undefined,
+      provider_tokens:
+        githubToken || gitlabToken
+          ? {
+              github: githubToken || "",
+              gitlab: gitlabToken || "",
+            }
+          : undefined,
       LANGUAGE: languageValue,
       user_consents_to_analytics: userConsentsToAnalytics,
       ENABLE_DEFAULT_CONDENSER: enableMemoryCondenser,
       ENABLE_SOUND_NOTIFICATIONS: enableSoundNotifications,
       LLM_MODEL: finalLlmModel,
       LLM_BASE_URL: finalLlmBaseUrl,
-      LLM_API_KEY: finalLlmApiKey,
+      llm_api_key: finalLlmApiKey,
       AGENT: formData.get("agent-input")?.toString(),
       SECURITY_ANALYZER:
         formData.get("security-analyzer-input")?.toString() || "",
       REMOTE_RUNTIME_RESOURCE_FACTOR:
-        remoteRuntimeResourceFactor ||
-        DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
+        remoteRuntimeResourceFactor !== null
+          ? Number(remoteRuntimeResourceFactor)
+          : DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
       CONFIRMATION_MODE: confirmationModeIsEnabled,
     };
 
     saveSettings(newSettings, {
       onSuccess: () => {
         handleCaptureConsent(userConsentsToAnalytics);
-        displaySuccessToast("Settings saved");
+        displaySuccessToast(t(I18nKey.SETTINGS$SAVED));
         setLlmConfigMode(isAdvancedSettingsSet ? "advanced" : "basic");
       },
       onError: (error) => {
         const errorMessage = retrieveAxiosErrorMessage(error);
-        displayErrorToast(errorMessage);
+        displayErrorToast(errorMessage || t(I18nKey.ERROR$GENERIC));
       },
     });
   };
@@ -160,7 +189,7 @@ const AccountSettings = () => {
   const handleReset = () => {
     saveSettings(null, {
       onSuccess: () => {
-        displaySuccessToast("Settings reset");
+        displaySuccessToast(t(I18nKey.SETTINGS$RESET));
         setResetSettingsModalIsOpen(false);
         setLlmConfigMode("basic");
       },
@@ -315,7 +344,7 @@ const AccountSettings = () => {
                 <SettingsInput
                   testId="llm-api-key-input"
                   name="llm-api-key-input"
-                  label="API Key"
+                  label={t(I18nKey.SETTINGS_FORM$API_KEY)}
                   type="password"
                   className="w-full"
                   startContent={
@@ -346,7 +375,7 @@ const AccountSettings = () => {
             <SettingsDropdownInput
               testId="language-input"
               name="language-input"
-              label="Language"
+              label={t(I18nKey.SETTINGS$LANGUAGE)}
               items={AvailableLanguages.map((language) => ({
                 key: language.value,
                 label: language.label,
@@ -380,7 +409,7 @@ const AccountSettings = () => {
           onClick={() => setResetSettingsModalIsOpen(true)}
           className="bg-[#1E1E1F] text-[14px] font-semibold text-[#EFEFEF] px-4 py-[10px] rounded-lg border-[0px]"
         >
-          Reset to defaults
+          {t(I18nKey.BUTTON$RESET_TO_DEFAULTS)}
         </BrandButton>
         <BrandButton
           type="button"
@@ -388,7 +417,7 @@ const AccountSettings = () => {
           onClick={() => formRef.current?.requestSubmit()}
           className="bg-primary text-[14px] font-semibold text-[#080808] px-4 py-[10px] rounded-lg border-[0px]"
         >
-          Save Changes
+          {t(I18nKey.BUTTON$SAVE)}
         </BrandButton>
       </footer>
       {resetSettingsModalIsOpen && (

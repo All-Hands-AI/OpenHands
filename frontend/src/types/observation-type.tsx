@@ -35,6 +35,9 @@ enum ObservationType {
   // A response to the agent's thought (usually a static message)
   THINK = "think",
 
+  // An observation that shows agent's context extension
+  RECALL = "recall",
+
   // A no-op observation
   NULL = "null",
 }

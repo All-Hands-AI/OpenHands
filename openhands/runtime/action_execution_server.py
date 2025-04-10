@@ -8,7 +8,6 @@ NOTE: this will be executed inside the docker sandbox.
 import argparse
 import asyncio
 import base64
-import json
 import mimetypes
 import os
 import shutil
@@ -17,14 +16,12 @@ import time
 import traceback
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import List, Optional
 from zipfile import ZipFile
 
 from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.security import APIKeyHeader
-from mcp.types import ImageContent
 from openhands_aci.editor.editor import OHEditor
 from openhands_aci.editor.exceptions import ToolError
 from openhands_aci.editor.results import ToolResult
@@ -36,7 +33,6 @@ from uvicorn import run
 
 from openhands.core.exceptions import BrowserUnavailableException
 from openhands.core.logger import openhands_logger as logger
-from openhands.core.setup import create_mcp_agents
 from openhands.events.action import (
     Action,
     BrowseInteractiveAction,
@@ -47,7 +43,6 @@ from openhands.events.action import (
     FileWriteAction,
     IPythonRunCellAction,
 )
-from openhands.events.action.mcp import McpAction
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.observation import (
     CmdOutputObservation,
@@ -58,18 +53,12 @@ from openhands.events.observation import (
     IPythonRunCellObservation,
     Observation,
 )
-from openhands.events.observation.mcp import MCPObservation
-from openhands.events.observation.playwright_mcp import (
-    PlaywrightMcpBrowserScreenshotObservation,
-)
 from openhands.events.serialization import event_from_dict, event_to_dict
-from openhands.mcp.mcp_agent import MCPAgent
-from openhands.mcp.mcp_base import ExtendedImageContent
-from openhands.mcp.mcp_base import ToolResult as MCPToolResult
 from openhands.runtime.browser import browse
 from openhands.runtime.browser.browser_env import BrowserEnv
 from openhands.runtime.plugins import ALL_PLUGINS, JupyterPlugin, Plugin, VSCodePlugin
 from openhands.runtime.utils.bash import BashSession
+from openhands.runtime.utils.file_viewer import generate_file_viewer_html
 from openhands.runtime.utils.files import insert_lines, read_lines
 from openhands.runtime.utils.memory_monitor import MemoryMonitor
 from openhands.runtime.utils.runtime_init import init_user_and_working_directory
@@ -79,8 +68,6 @@ from openhands.utils.async_utils import call_sync_from_async, wait_all
 
 class ActionRequest(BaseModel):
     action: dict
-    sse_mcp_config: Optional[list[str]] = None
-    stdio_mcp_config: Optional[tuple[list[str], list[list[str]]]] = None
 
 
 ROOT_GID = 0
@@ -180,7 +167,6 @@ class ActionExecutor:
         self.start_time = time.time()
         self.last_execution_time = self.start_time
         self._initialized = False
-        self.mcp_agents: List[MCPAgent] | None = None
 
         self.max_memory_gb: int | None = None
         if _override_max_memory_gb := os.environ.get('RUNTIME_MAX_MEMORY_GB', None):
@@ -196,19 +182,10 @@ class ActionExecutor:
             in ['true', '1', 'yes']
         )
         self.memory_monitor.start_monitoring()
-        self.sse_mcp_servers: Optional[list[str]] = None
-        self.stdio_mcp_config: Optional[tuple[list[str], list[list[str]]]] = None
 
     @property
     def initial_cwd(self):
         return self._initial_cwd
-
-    def process_request(self, action_request: ActionRequest):
-        # update the sse_mcp_servers and stdio_mcp_config to prepare for MCP action if needed
-        if action_request.sse_mcp_config:
-            self.sse_mcp_servers = action_request.sse_mcp_config
-        if action_request.stdio_mcp_config:
-            self.stdio_mcp_config = action_request.stdio_mcp_config
 
     async def _init_browser_async(self):
         """Initialize the browser asynchronously."""
@@ -398,7 +375,7 @@ class ActionExecutor:
         filepath = self._resolve_path(action.path, working_dir)
         try:
             if filepath.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif')):
-                with open(filepath, 'rb') as file:
+                with open(filepath, 'rb') as file:  # noqa: ASYNC101
                     image_data = file.read()
                     encoded_image = base64.b64encode(image_data).decode('utf-8')
                     mime_type, _ = mimetypes.guess_type(filepath)
@@ -408,13 +385,13 @@ class ActionExecutor:
 
                 return FileReadObservation(path=filepath, content=encoded_image)
             elif filepath.lower().endswith('.pdf'):
-                with open(filepath, 'rb') as file:
+                with open(filepath, 'rb') as file:  # noqa: ASYNC101
                     pdf_data = file.read()
                     encoded_pdf = base64.b64encode(pdf_data).decode('utf-8')
                     encoded_pdf = f'data:application/pdf;base64,{encoded_pdf}'
                 return FileReadObservation(path=filepath, content=encoded_pdf)
             elif filepath.lower().endswith(('.mp4', '.webm', '.ogg')):
-                with open(filepath, 'rb') as file:
+                with open(filepath, 'rb') as file:  # noqa: ASYNC101
                     video_data = file.read()
                     encoded_video = base64.b64encode(video_data).decode('utf-8')
                     mime_type, _ = mimetypes.guess_type(filepath)
@@ -424,7 +401,7 @@ class ActionExecutor:
 
                 return FileReadObservation(path=filepath, content=encoded_video)
 
-            with open(filepath, 'r', encoding='utf-8') as file:
+            with open(filepath, 'r', encoding='utf-8') as file:  # noqa: ASYNC101
                 lines = read_lines(file.readlines(), action.start, action.end)
         except FileNotFoundError:
             return ErrorObservation(
@@ -457,7 +434,7 @@ class ActionExecutor:
 
         mode = 'w' if not file_exists else 'r+'
         try:
-            with open(filepath, mode, encoding='utf-8') as file:
+            with open(filepath, mode, encoding='utf-8') as file:  # noqa: ASYNC101
                 if mode != 'w':
                     all_lines = file.readlines()
                     new_file = insert_lines(insert, all_lines, action.start, action.end)
@@ -528,75 +505,6 @@ class ActionExecutor:
         await self._ensure_browser_ready()
         return await browse(action, self.browser)
 
-    async def call_tool_mcp(self, action: McpAction) -> Observation:
-        mcp_server_urls = self.sse_mcp_servers or []
-        commands: list[str] = []
-        args: list[list[str]] = []
-        if self.stdio_mcp_config:
-            commands = self.stdio_mcp_config[0]
-            if len(self.stdio_mcp_config) > 1:
-                args = self.stdio_mcp_config[1]
-        if not mcp_server_urls and not commands:
-            raise ValueError('No MCP servers or stdio MCP config found')
-
-        logger.debug(f'SSE MCP servers: {mcp_server_urls}')
-        if self.mcp_agents is None:
-            self.mcp_agents = await create_mcp_agents(
-                mcp_server_urls, commands, args, sid=action.sid
-            )
-        mcp_agents = self.mcp_agents
-        logger.debug(f'MCP action received: {action}')
-        # Find the MCP agent that has the matching tool name
-        matching_agent = None
-        logger.debug(f'MCP agents: {mcp_agents}')
-        logger.debug(f'MCP action name: {action.name}')
-        for agent in mcp_agents:
-            agent.mcp_clients.tools
-            if action.name in [tool.name for tool in agent.mcp_clients.tools]:
-                logger.debug(f'agent.mcp_clients.tools: {agent.mcp_clients.tools}')
-                matching_agent = agent
-                break
-        if matching_agent is None:
-            raise ValueError(
-                f'No matching MCP agent found for tool name: {action.name}'
-            )
-        logger.debug(f'Matching agent: {matching_agent}')
-        args_dict = json.loads(action.arguments)
-        response = await matching_agent.run_tool(action.name, args_dict)
-        logger.debug(f'MCP response: {response}')
-        # # close agent connections
-        # for agent in mcp_agents:
-        #     await agent.cleanup()
-        # special case for browser screenshot of playwright_mcp
-        if action.name == 'browser_screenshot' and isinstance(
-            response.output, (ImageContent, ExtendedImageContent)
-        ):
-            return self.playwright_mcp_browser_screenshot(action, response)
-
-        return MCPObservation(content=f'MCP result:{response}')
-
-    def playwright_mcp_browser_screenshot(
-        self, action: McpAction, response: MCPToolResult
-    ) -> Observation:
-        # example response:
-        """
-        {
-            "type": "image",
-            "data": "image/jpeg;base64,/9j/4AA...",
-            "mimeType": "image/jpeg",
-            "url": "https://www.google.com"
-        }
-        """
-        screenshot_content: ImageContent = response.output
-        logger.debug(f'Screenshot content: {screenshot_content}')
-        return PlaywrightMcpBrowserScreenshotObservation(
-            content=f'{response}',
-            # url=screenshot_content.url if screenshot_content.url is not None else '',
-            url='',
-            trigger_by_action=action.name,
-            screenshot=f'data:image/png;base64,{screenshot_content.data}',
-        )
-
     def close(self):
         self.memory_monitor.stop_monitoring()
         if self.bash_session is not None:
@@ -621,12 +529,15 @@ if __name__ == '__main__':
         help='BrowserGym environment used for browser evaluation',
         default=None,
     )
-    parser.add_argument(
-        '--runtime-mode', type=str, help='docker | others', default='others'
-    )
 
     # example: python client.py 8000 --working-dir /workspace --plugins JupyterRequirement
     args = parser.parse_args()
+
+    port_path = '/tmp/oh-server-url'
+    os.makedirs(os.path.dirname(port_path), exist_ok=True)
+    with open(port_path, 'w') as f:
+        f.write(f'http://127.0.0.1:{args.port}')
+
     plugins_to_load: list[Plugin] = []
     if args.plugins:
         for plugin in args.plugins:
@@ -675,7 +586,10 @@ if __name__ == '__main__':
         logger.error(f'Validation error occurred: {exc}')
         return JSONResponse(
             status_code=422,
-            content={'detail': 'Invalid request parameters', 'errors': exc.errors()},
+            content={
+                'detail': 'Invalid request parameters',
+                'errors': str(exc.errors()),
+            },
         )
 
     @app.middleware('http')
@@ -714,7 +628,6 @@ if __name__ == '__main__':
                 raise HTTPException(status_code=400, detail='Invalid action type')
             client.last_execution_time = time.time()
 
-            client.process_request(action_request)
             observation = await client.run_action(action)
             return event_to_dict(observation)
         except Exception as e:
@@ -749,7 +662,7 @@ if __name__ == '__main__':
                     )
 
                 zip_path = os.path.join(full_dest_path, file.filename)
-                with open(zip_path, 'wb') as buffer:
+                with open(zip_path, 'wb') as buffer:  # noqa: ASYNC101
                     shutil.copyfileobj(file.file, buffer)
 
                 # Extract the zip file
@@ -762,7 +675,7 @@ if __name__ == '__main__':
             else:
                 # For single file uploads
                 file_path = os.path.join(full_dest_path, file.filename)
-                with open(file_path, 'wb') as buffer:
+                with open(file_path, 'wb') as buffer:  # noqa: ASYNC101
                     shutil.copyfileobj(file.file, buffer)
                 logger.debug(f'Uploaded file {file.filename} to {destination}')
 
@@ -908,6 +821,54 @@ if __name__ == '__main__':
         except Exception as e:
             logger.error(f'Error listing files: {e}')
             return []
+
+    @app.get('/view')
+    async def view_file(path: str, request: Request):
+        """View a file using an embedded viewer.
+
+        Args:
+            path (str): The absolute path of the file to view.
+            request (Request): The FastAPI request object.
+
+        Returns:
+            HTMLResponse: An HTML page with an appropriate viewer for the file.
+        """
+        # Security check: Only allow requests from localhost
+        client_host = request.client.host if request.client else None
+        if client_host not in ['127.0.0.1', 'localhost', '::1']:
+            logger.warning(f'Unauthorized file view attempt from {client_host}')
+            return HTMLResponse(
+                content='<h1>Access Denied</h1><p>This endpoint is only accessible from localhost</p>',
+                status_code=403,
+            )
+
+        if not os.path.isabs(path):
+            return HTMLResponse(
+                content=f'<h1>Error: Path must be absolute</h1><p>{path}</p>',
+                status_code=400,
+            )
+
+        if not os.path.exists(path):
+            return HTMLResponse(
+                content=f'<h1>Error: File not found</h1><p>{path}</p>', status_code=404
+            )
+
+        if os.path.isdir(path):
+            return HTMLResponse(
+                content=f'<h1>Error: Path is a directory</h1><p>{path}</p>',
+                status_code=400,
+            )
+
+        try:
+            html_content = generate_file_viewer_html(path)
+            return HTMLResponse(content=html_content)
+
+        except Exception as e:
+            logger.error(f'Error serving file viewer: {str(e)}')
+            return HTMLResponse(
+                content=f'<h1>Error viewing file</h1><p>{path}</p><p>{str(e)}</p>',
+                status_code=500,
+            )
 
     logger.debug(f'Starting action execution API on port {args.port}')
     run(app, host='0.0.0.0', port=args.port)

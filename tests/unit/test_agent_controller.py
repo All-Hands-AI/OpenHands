@@ -3,7 +3,7 @@ from unittest.mock import ANY, AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import pytest
-from litellm import ContextWindowExceededError
+from litellm import ContentPolicyViolationError, ContextWindowExceededError
 
 from openhands.controller.agent import Agent
 from openhands.controller.agent_controller import AgentController
@@ -14,12 +14,14 @@ from openhands.core.main import run_controller
 from openhands.core.schema import AgentState
 from openhands.events import Event, EventSource, EventStream, EventStreamSubscriber
 from openhands.events.action import ChangeAgentStateAction, CmdRunAction, MessageAction
-from openhands.events.action.agent import RecallAction
+from openhands.events.action.agent import CondensationAction, RecallAction
 from openhands.events.event import RecallType
 from openhands.events.observation import (
+    AgentStateChangedObservation,
     ErrorObservation,
 )
 from openhands.events.observation.agent import RecallObservation
+from openhands.events.observation.commands import CmdOutputObservation
 from openhands.events.observation.empty import NullObservation
 from openhands.events.serialization import event_to_dict
 from openhands.llm import LLM
@@ -165,6 +167,45 @@ async def test_react_to_exception(mock_agent, mock_event_stream, mock_status_cal
 
 
 @pytest.mark.asyncio
+async def test_react_to_content_policy_violation(
+    mock_agent, mock_event_stream, mock_status_callback
+):
+    """Test that the controller properly handles content policy violations from the LLM."""
+    controller = AgentController(
+        agent=mock_agent,
+        event_stream=mock_event_stream,
+        status_callback=mock_status_callback,
+        max_iterations=10,
+        sid='test',
+        confirmation_mode=False,
+        headless_mode=True,
+    )
+
+    controller.state.agent_state = AgentState.RUNNING
+
+    # Create and handle the content policy violation error
+    error = ContentPolicyViolationError(
+        message='Output blocked by content filtering policy',
+        model='gpt-4',
+        llm_provider='openai',
+    )
+    await controller._react_to_exception(error)
+
+    # Verify the status callback was called with correct parameters
+    mock_status_callback.assert_called_once_with(
+        'error',
+        'STATUS$ERROR_LLM_CONTENT_POLICY_VIOLATION',
+        'STATUS$ERROR_LLM_CONTENT_POLICY_VIOLATION',
+    )
+
+    # Verify the state was updated correctly
+    assert controller.state.last_error == 'STATUS$ERROR_LLM_CONTENT_POLICY_VIOLATION'
+    assert controller.state.agent_state == AgentState.ERROR
+
+    await controller.close()
+
+
+@pytest.mark.asyncio
 async def test_run_controller_with_fatal_error(test_event_stream, mock_memory):
     config = AppConfig()
 
@@ -216,9 +257,17 @@ async def test_run_controller_with_fatal_error(test_event_stream, mock_memory):
     print(f'state: {state}')
     events = list(test_event_stream.get_events())
     print(f'event_stream: {events}')
+    error_observations = test_event_stream.get_matching_events(
+        reverse=True, limit=1, event_types=(AgentStateChangedObservation)
+    )
+    assert len(error_observations) == 1
+    error_observation = error_observations[0]
     assert state.iteration == 3
     assert state.agent_state == AgentState.ERROR
     assert state.last_error == 'AgentStuckInLoopError: Agent got stuck in a loop'
+    assert (
+        error_observation.reason == 'AgentStuckInLoopError: Agent got stuck in a loop'
+    )
     assert len(events) == 11
 
 
@@ -621,6 +670,17 @@ async def test_run_controller_max_iterations_has_metrics(
         state.last_error
         == 'RuntimeError: Agent reached maximum iteration in headless mode. Current iteration: 3, max iteration: 3'
     )
+    error_observations = test_event_stream.get_matching_events(
+        reverse=True, limit=1, event_types=(AgentStateChangedObservation)
+    )
+    assert len(error_observations) == 1
+    error_observation = error_observations[0]
+
+    assert (
+        error_observation.reason
+        == 'RuntimeError: Agent reached maximum iteration in headless mode. Current iteration: 3, max iteration: 3'
+    )
+
     assert (
         state.metrics.accumulated_cost == 10.0 * 3
     ), f'Expected accumulated cost to be 30.0, but got {state.metrics.accumulated_cost}'
@@ -643,19 +703,27 @@ async def test_notify_on_llm_retry(mock_agent, mock_event_stream, mock_status_ca
 
 
 @pytest.mark.asyncio
-async def test_context_window_exceeded_error_handling(mock_agent, mock_event_stream):
-    """Test that context window exceeded errors are handled correctly by truncating history."""
+async def test_context_window_exceeded_error_handling(
+    mock_agent, mock_runtime, test_event_stream
+):
+    """Test that context window exceeded errors are handled correctly by the controller, providing a smaller view but keeping the history intact."""
+    max_iterations = 5
+    error_after = 2
 
     class StepState:
         def __init__(self):
             self.has_errored = False
+            self.index = 0
+            self.views = []
 
         def step(self, state: State):
-            # Append a few messages to the history -- these will be truncated when we throw the error
-            state.history = [
-                MessageAction(content='Test message 0'),
-                MessageAction(content='Test message 1'),
-            ]
+            self.views.append(state.view)
+
+            # Wait until the right step to throw the error, and make sure we
+            # only throw it once.
+            if self.index < error_after or self.has_errored:
+                self.index += 1
+                return MessageAction(content=f'Test message {self.index}')
 
             error = ContextWindowExceededError(
                 message='prompt is too long: 233885 tokens > 200000 maximum',
@@ -665,28 +733,120 @@ async def test_context_window_exceeded_error_handling(mock_agent, mock_event_str
             self.has_errored = True
             raise error
 
-    state = StepState()
-    mock_agent.step = state.step
+    step_state = StepState()
+    mock_agent.step = step_state.step
     mock_agent.config = AgentConfig()
 
-    controller = AgentController(
-        agent=mock_agent,
-        event_stream=mock_event_stream,
-        max_iterations=10,
-        sid='test',
-        confirmation_mode=False,
-        headless_mode=True,
+    # Because we're sending message actions, we need to respond to the recall
+    # actions that get generated as a response.
+
+    # We do that by playing the role of the recall module -- subscribe to the
+    # event stream and respond to recall actions by inserting fake recall
+    # obesrvations.
+    def on_event_memory(event: Event):
+        if isinstance(event, RecallAction):
+            microagent_obs = RecallObservation(
+                content='Test microagent content',
+                recall_type=RecallType.KNOWLEDGE,
+            )
+            microagent_obs._cause = event.id
+            test_event_stream.add_event(microagent_obs, EventSource.ENVIRONMENT)
+
+    test_event_stream.subscribe(
+        EventStreamSubscriber.MEMORY, on_event_memory, str(uuid4())
+    )
+    mock_runtime.event_stream = test_event_stream
+
+    # Now we can run the controller for a fixed number of steps. Since the step
+    # state is set to error out before then, if this terminates and we have a
+    # record of the error being thrown we can be confident that the controller
+    # handles the truncation correctly.
+    final_state = await asyncio.wait_for(
+        run_controller(
+            config=AppConfig(max_iterations=max_iterations),
+            initial_user_action=MessageAction(content='INITIAL'),
+            runtime=mock_runtime,
+            sid='test',
+            agent=mock_agent,
+            fake_user_response_fn=lambda _: 'repeat',
+            memory=mock_memory,
+        ),
+        timeout=10,
     )
 
-    # Set the agent running and take a step in the controller -- this is similar
-    # to taking a single step using `run_controller`, but much easier to control
-    # termination for testing purposes
-    controller.state.agent_state = AgentState.RUNNING
-    await controller._step()
+    # Check that the context window exception was thrown and the controller
+    # called the agent's `step` function the right number of times.
+    assert step_state.has_errored
+    assert len(step_state.views) == max_iterations
+    print('step_state.views: ', step_state.views)
 
-    # Check that the error was thrown and the history has been truncated
-    assert state.has_errored
-    assert controller.state.history == [MessageAction(content='Test message 1')]
+    # Look at pre/post-step views. Normally, these should always increase in
+    # size (because we return a message action, which triggers a recall, which
+    # triggers a recall response). But if the pre/post-views are on the turn
+    # when we throw the context window exceeded error, we should see the
+    # post-step view compressed.
+    for index, (first_view, second_view) in enumerate(
+        zip(step_state.views[:-1], step_state.views[1:])
+    ):
+        if index == error_after:
+            assert len(first_view) > len(second_view)
+        else:
+            assert len(first_view) < len(second_view)
+
+    # The final state's history should contain:
+    # - max_iterations number of message actions,
+    # - 1 recall actions,
+    # - 1 recall observations,
+    # - 1 condensation action.
+    assert (
+        len(
+            [event for event in final_state.history if isinstance(event, MessageAction)]
+        )
+        == max_iterations
+    )
+    assert (
+        len(
+            [
+                event
+                for event in final_state.history
+                if isinstance(event, MessageAction)
+                and event.source == EventSource.AGENT
+            ]
+        )
+        == max_iterations - 1
+    )
+    assert (
+        len([event for event in final_state.history if isinstance(event, RecallAction)])
+        == 1
+    )
+    assert (
+        len(
+            [
+                event
+                for event in final_state.history
+                if isinstance(event, RecallObservation)
+            ]
+        )
+        == 1
+    )
+    assert (
+        len(
+            [
+                event
+                for event in final_state.history
+                if isinstance(event, CondensationAction)
+            ]
+        )
+        == 1
+    )
+    assert (
+        len(final_state.history) == max_iterations + 3
+    )  # 1 condensation action, 1 recall action, 1 recall observation
+
+    assert len(final_state.view) == len(step_state.views[-1]) + 1
+
+    # And these two representations of the state are _not_ the same.
+    assert len(final_state.history) != len(final_state.view)
 
 
 @pytest.mark.asyncio
@@ -702,7 +862,7 @@ async def test_run_controller_with_context_window_exceeded_with_truncation(
         def step(self, state: State):
             # If the state has more than one message and we haven't errored yet,
             # throw the context window exceeded error
-            if len(state.history) > 1 and not self.has_errored:
+            if len(state.history) > 3 and not self.has_errored:
                 error = ContextWindowExceededError(
                     message='prompt is too long: 233885 tokens > 200000 maximum',
                     model='',
@@ -734,7 +894,7 @@ async def test_run_controller_with_context_window_exceeded_with_truncation(
     try:
         state = await asyncio.wait_for(
             run_controller(
-                config=AppConfig(max_iterations=3),
+                config=AppConfig(max_iterations=5),
                 initial_user_action=MessageAction(content='INITIAL'),
                 runtime=mock_runtime,
                 sid='test',
@@ -754,11 +914,11 @@ async def test_run_controller_with_context_window_exceeded_with_truncation(
 
     # Hitting the iteration limit indicates the controller is failing for the
     # expected reason
-    assert state.iteration == 3
+    assert state.iteration == 5
     assert state.agent_state == AgentState.ERROR
     assert (
         state.last_error
-        == 'RuntimeError: Agent reached maximum iteration in headless mode. Current iteration: 3, max iteration: 3'
+        == 'RuntimeError: Agent reached maximum iteration in headless mode. Current iteration: 5, max iteration: 5'
     )
 
     # Check that the context window exceeded error was raised during the run
@@ -834,6 +994,16 @@ async def test_run_controller_with_context_window_exceeded_without_truncation(
     assert state.agent_state == AgentState.ERROR
     assert (
         state.last_error
+        == 'LLMContextWindowExceedError: Conversation history longer than LLM context window limit. Consider turning on enable_history_truncation config to avoid this error'
+    )
+
+    error_observations = test_event_stream.get_matching_events(
+        reverse=True, limit=1, event_types=(AgentStateChangedObservation)
+    )
+    assert len(error_observations) == 1
+    error_observation = error_observations[0]
+    assert (
+        error_observation.reason
         == 'LLMContextWindowExceedError: Conversation history longer than LLM context window limit. Consider turning on enable_history_truncation config to avoid this error'
     )
 
@@ -1168,3 +1338,123 @@ def test_agent_controller_should_step_with_null_observation_cause_zero():
     assert (
         result is False
     ), 'should_step should return False for NullObservation with cause = 0'
+
+
+def test_apply_conversation_window_basic(mock_event_stream, mock_agent):
+    """Test that the _apply_conversation_window method correctly prunes a list of events."""
+    controller = AgentController(
+        agent=mock_agent,
+        event_stream=mock_event_stream,
+        max_iterations=10,
+        sid='test_apply_conversation_window_basic',
+        confirmation_mode=False,
+        headless_mode=True,
+    )
+
+    # Create a sequence of events with IDs
+    first_msg = MessageAction(content='Hello, start task', wait_for_response=False)
+    first_msg._source = EventSource.USER
+    first_msg._id = 1
+
+    # Add agent question
+    agent_msg = MessageAction(
+        content='What task would you like me to perform?', wait_for_response=True
+    )
+    agent_msg._source = EventSource.AGENT
+    agent_msg._id = 2
+
+    # Add user response
+    user_response = MessageAction(
+        content='Please list all files and show me current directory',
+        wait_for_response=False,
+    )
+    user_response._source = EventSource.USER
+    user_response._id = 3
+
+    cmd1 = CmdRunAction(command='ls')
+    cmd1._id = 4
+    obs1 = CmdOutputObservation(command='ls', content='file1.txt', command_id=4)
+    obs1._id = 5
+    obs1._cause = 4
+
+    cmd2 = CmdRunAction(command='pwd')
+    cmd2._id = 6
+    obs2 = CmdOutputObservation(command='pwd', content='/home', command_id=6)
+    obs2._id = 7
+    obs2._cause = 6
+
+    events = [first_msg, agent_msg, user_response, cmd1, obs1, cmd2, obs2]
+
+    # Apply truncation
+    truncated = controller._apply_conversation_window(events)
+
+    # Verify truncation occured
+    # Should keep first user message and roughly half of other events
+    assert (
+        3 <= len(truncated) < len(events)
+    )  # First message + at least one action-observation pair
+    assert truncated[0] == first_msg  # First message always preserved
+    assert controller.state.start_id == first_msg._id
+
+    # Verify pairs aren't split
+    for i, event in enumerate(truncated[1:]):
+        if isinstance(event, CmdOutputObservation):
+            assert any(e._id == event._cause for e in truncated[: i + 1])
+
+
+def test_history_restoration_after_truncation(mock_event_stream, mock_agent):
+    controller = AgentController(
+        agent=mock_agent,
+        event_stream=mock_event_stream,
+        max_iterations=10,
+        sid='test_truncation',
+        confirmation_mode=False,
+        headless_mode=True,
+    )
+
+    # Create events with IDs
+    first_msg = MessageAction(content='Start task', wait_for_response=False)
+    first_msg._source = EventSource.USER
+    first_msg._id = 1
+
+    events = [first_msg]
+    for i in range(5):
+        cmd = CmdRunAction(command=f'cmd{i}')
+        cmd._id = i + 2
+        obs = CmdOutputObservation(
+            command=f'cmd{i}', content=f'output{i}', command_id=cmd._id
+        )
+        obs._cause = cmd._id
+        events.extend([cmd, obs])
+
+    # Set up initial history
+    controller.state.history = events.copy()
+
+    # Force truncation
+    controller.state.history = controller._apply_conversation_window(
+        controller.state.history
+    )
+
+    # Save state
+    saved_start_id = controller.state.start_id
+    saved_history_len = len(controller.state.history)
+
+    # Set up mock event stream for new controller
+    mock_event_stream.get_events.return_value = controller.state.history
+
+    # Create new controller with saved state
+    new_controller = AgentController(
+        agent=mock_agent,
+        event_stream=mock_event_stream,
+        max_iterations=10,
+        sid='test_truncation',
+        confirmation_mode=False,
+        headless_mode=True,
+    )
+    new_controller.state.start_id = saved_start_id
+    new_controller.state.history = mock_event_stream.get_events()
+
+    # Verify restoration
+    assert len(new_controller.state.history) == saved_history_len
+    assert new_controller.state.history[0] == first_msg
+    assert new_controller.state.start_id == saved_start_id

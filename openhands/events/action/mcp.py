@@ -8,7 +8,7 @@ from openhands.events.action.action import Action, ActionSecurityRisk
 @dataclass
 class McpAction(Action):
     name: str
-    arguments: str
+    arguments: str | None = None
     thought: str = ''
     sid: str | None = None
     action: str = ActionType.MCP

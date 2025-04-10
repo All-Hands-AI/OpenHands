@@ -10,6 +10,10 @@ import toml
 from datasets import load_dataset
 
 import openhands.agenthub
+from evaluation.benchmarks.swe_bench.binary_patch_utils import (
+    remove_binary_diffs,
+    remove_binary_files_from_git,
+)
 from evaluation.benchmarks.swe_bench.resource.mapping import (
     get_instance_resource_factor,
 )
@@ -38,8 +42,12 @@ from openhands.core.config import (
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.critic import AgentFinishedCritic
-from openhands.events.action import CmdRunAction, MessageAction
-from openhands.events.observation import CmdOutputObservation, ErrorObservation
+from openhands.events.action import CmdRunAction, FileReadAction, MessageAction
+from openhands.events.observation import (
+    CmdOutputObservation,
+    ErrorObservation,
+    FileReadObservation,
+)
 from openhands.events.serialization.event import event_from_dict, event_to_dict
 from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
@@ -58,7 +66,7 @@ def _get_swebench_workspace_dir_name(instance: pd.Series) -> str:
     return f'{instance.repo}__{instance.version}'.replace('/', '__')
 
 
-def get_instruction(instance: pd.Series, metadata: EvalMetadata):
+def get_instruction(instance: pd.Series, metadata: EvalMetadata) -> MessageAction:
     workspace_dir_name = _get_swebench_workspace_dir_name(instance)
     instruction = f"""
 <uploaded_files>
@@ -114,12 +122,20 @@ Be thorough in your exploration, testing, and reasoning. It's fine if your think
 """
 
     if RUN_WITH_BROWSING:
-        instruction += """
-<IMPORTANT!>
-You SHOULD NEVER attempt to browse the web.
-</IMPORTANT!>
-"""
-    return instruction
+        instruction += (
+            '<IMPORTANT!>\n'
+            'You SHOULD NEVER attempt to browse the web. '
+            '</IMPORTANT!>\n'
+        )
+
+    if 'image_assets' in instance:
+        assets = json.loads(instance['image_assets'])
+        assert (
+            'problem_statement' in assets
+        ), 'problem_statement is required in image_assets'
+        image_urls = assets['problem_statement']
+        return MessageAction(content=instruction, image_urls=image_urls)
+    return MessageAction(content=instruction)
 
 
 # TODO: migrate all swe-bench docker to ghcr.io/openhands
@@ -129,14 +145,18 @@ DEFAULT_DOCKER_IMAGE_PREFIX = os.environ.get(
 logger.info(f'Default docker image prefix: {DEFAULT_DOCKER_IMAGE_PREFIX}')
 
 
-def get_instance_docker_image(instance_id: str, official_image: bool = False) -> str:
-    if official_image:
+def get_instance_docker_image(
+    instance_id: str,
+    swebench_official_image: bool = False,
+) -> str:
+    if swebench_official_image:
         # Official SWE-Bench image
         # swebench/sweb.eval.x86_64.django_1776_django-11333:v1
         docker_image_prefix = 'docker.io/swebench/'
         repo, name = instance_id.split('__')
-        image_name = f'sweb.eval.x86_64.{repo}_1776_{name}:latest'
-        logger.warning(f'Using official SWE-Bench image: {image_name}')
+        image_name = f'swebench/sweb.eval.x86_64.{repo}_1776_{name}:latest'.lower()
+        logger.debug(f'Using official SWE-Bench image: {image_name}')
+        return image_name
     else:
         # OpenHands version of the image
         docker_image_prefix = DEFAULT_DOCKER_IMAGE_PREFIX
@@ -144,7 +164,7 @@ def get_instance_docker_image(instance_id: str, official_image: bool = False) ->
         image_name = image_name.replace(
             '__', '_s_'
         )  # to comply with docker image naming convention
-    return (docker_image_prefix.rstrip('/') + '/' + image_name).lower()
+        return (docker_image_prefix.rstrip('/') + '/' + image_name).lower()
 
 
 def get_config(
@@ -152,12 +172,10 @@ def get_config(
     metadata: EvalMetadata,
 ) -> AppConfig:
     # We use a different instance image for the each instance of swe-bench eval
-    use_official_image = bool(
-        ('verified' in metadata.dataset.lower() or 'lite' in metadata.dataset.lower())
-        and 'swe-gym' not in metadata.dataset.lower()
-    )
+    use_swebench_official_image = 'swe-gym' not in metadata.dataset.lower()
     base_container_image = get_instance_docker_image(
-        instance['instance_id'], use_official_image
+        instance['instance_id'],
+        swebench_official_image=use_swebench_official_image,
     )
     logger.info(
         f'Using instance container image: {base_container_image}. '
@@ -216,16 +234,17 @@ def initialize_runtime(
     workspace_dir_name = _get_swebench_workspace_dir_name(instance)
     obs: CmdOutputObservation
 
-    # Set instance id
+    # Set instance id and git configuration
     action = CmdRunAction(
-        command=f"""echo 'export SWE_INSTANCE_ID={instance['instance_id']}' >> ~/.bashrc && echo 'export PIP_CACHE_DIR=~/.cache/pip' >> ~/.bashrc && echo "alias git='git --no-pager'" >> ~/.bashrc"""
+        command=f"""echo 'export SWE_INSTANCE_ID={instance['instance_id']}' >> ~/.bashrc && echo 'export PIP_CACHE_DIR=~/.cache/pip' >> ~/.bashrc && echo "alias git='git --no-pager'" >> ~/.bashrc && git config --global core.pager "" && git config --global diff.binary false"""
     )
     action.set_hard_timeout(600)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert_and_raise(
-        obs.exit_code == 0, f'Failed to export SWE_INSTANCE_ID: {str(obs)}'
+        obs.exit_code == 0,
+        f'Failed to export SWE_INSTANCE_ID and configure git: {str(obs)}',
     )
 
     action = CmdRunAction(command="""export USER=$(whoami); echo USER=${USER} """)
@@ -321,15 +340,18 @@ def initialize_runtime(
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert_and_raise(obs.exit_code == 0, f'Failed to remove git remotes: {str(obs)}')
 
-    action = CmdRunAction(command='which python')
-    action.set_hard_timeout(600)
-    logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = runtime.run_action(action)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert_and_raise(
-        obs.exit_code == 0 and 'testbed' in obs.content,
-        f'Expected to find python interpreter from testbed, but got: {str(obs)}',
-    )
+    if 'multimodal' not in metadata.dataset.lower():
+        # Only for non-multimodal datasets, we need to activate the testbed environment for Python
+        # SWE-Bench multimodal datasets are not using the testbed environment
+        action = CmdRunAction(command='which python')
+        action.set_hard_timeout(600)
+        logger.info(action, extra={'msg_type': 'ACTION'})
+        obs = runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert_and_raise(
+            obs.exit_code == 0 and 'testbed' in obs.content,
+            f'Expected to find python interpreter from testbed, but got: {str(obs)}',
+        )
 
     logger.info('-' * 30)
     logger.info('END Runtime Initialization Fn')
@@ -363,6 +385,21 @@ def complete_runtime(
         # We need to kill previous command
         logger.info('The previous command is still running, trying to kill it...')
         action = CmdRunAction(command='C-c')
+        obs = runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+
+        # Then run the command again
+        action = CmdRunAction(command=f'cd /workspace/{workspace_dir_name}')
+        action.set_hard_timeout(600)
+        logger.info(action, extra={'msg_type': 'ACTION'})
+        obs = runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+
+    if obs.exit_code == -1:
+        # The previous command is still running
+        # We need to kill previous command
+        logger.info('The previous command is still running, trying to ctrl+z it...')
+        action = CmdRunAction(command='C-z')
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
@@ -424,11 +461,22 @@ def complete_runtime(
         f'Failed to git add -A: {str(obs)}',
     )
 
+    # Remove binary files from git staging
+    action = CmdRunAction(command=remove_binary_files_from_git())
+    action.set_hard_timeout(600)
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert_and_raise(
+        isinstance(obs, CmdOutputObservation) and obs.exit_code == 0,
+        f'Failed to remove binary files: {str(obs)}',
+    )
+
     n_retries = 0
     git_patch = None
     while n_retries < 5:
         action = CmdRunAction(
-            command=f'git diff --no-color --cached {instance["base_commit"]}'
+            command=f'git diff --no-color --cached {instance["base_commit"]} > patch.diff'
         )
         action.set_hard_timeout(max(300 + 100 * n_retries, 600))
         logger.info(action, extra={'msg_type': 'ACTION'})
@@ -437,8 +485,28 @@ def complete_runtime(
         n_retries += 1
         if isinstance(obs, CmdOutputObservation):
             if obs.exit_code == 0:
-                git_patch = obs.content.strip()
-                break
+                # Read the patch file
+                action = FileReadAction(path='patch.diff')
+                action.set_hard_timeout(max(300 + 100 * n_retries, 600))
+                logger.info(action, extra={'msg_type': 'ACTION'})
+                obs = runtime.run_action(action)
+                logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+                if isinstance(obs, FileReadObservation):
+                    git_patch = obs.content
+                    break
+                elif isinstance(obs, ErrorObservation):
+                    # Fall back to cat "patch.diff" to get the patch
+                    assert 'File could not be decoded as utf-8' in obs.content
+                    action = CmdRunAction(command='cat patch.diff')
+                    action.set_hard_timeout(max(300 + 100 * n_retries, 600))
+                    logger.info(action, extra={'msg_type': 'ACTION'})
+                    obs = runtime.run_action(action)
+                    assert isinstance(obs, CmdOutputObservation) and obs.exit_code == 0
+                    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+                    git_patch = obs.content
+                    break
+                else:
+                    assert_and_raise(False, f'Unexpected observation type: {str(obs)}')
             else:
                 logger.info('Failed to get git diff, retrying...')
                 sleep_if_should_continue(10)
@@ -449,6 +517,9 @@ def complete_runtime(
             assert_and_raise(False, f'Unexpected observation type: {str(obs)}')
 
     assert_and_raise(git_patch is not None, 'Failed to get git diff (None)')
+
+    # Remove binary diffs from the patch
+    git_patch = remove_binary_diffs(git_patch)
 
     logger.info('-' * 30)
     logger.info('END Runtime Completion Fn')
@@ -493,13 +564,13 @@ def process_instance(
     try:
         initialize_runtime(runtime, instance)
 
-        instruction = get_instruction(instance, metadata)
+        message_action = get_instruction(instance, metadata)
 
         # Here's how you can run the agent (similar to the `main` function) and get the final task state
         state: State | None = asyncio.run(
             run_controller(
                 config=config,
-                initial_user_action=MessageAction(content=instruction),
+                initial_user_action=message_action,
                 runtime=runtime,
                 fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
                     metadata.agent_class
@@ -539,6 +610,11 @@ def process_instance(
     metrics = get_metrics(state)
 
     # Save the output
+    instruction = message_action.content
+    if message_action.image_urls:
+        instruction += (
+            '\n\n<image_urls>' + '\n'.join(message_action.image_urls) + '</image_urls>'
+        )
     output = EvalOutput(
         instance_id=instance.instance_id,
         instruction=instruction,
@@ -728,9 +804,19 @@ if __name__ == '__main__':
             with open(cur_output_file, 'r') as f:
                 for line in f:
                     instance = json.loads(line)
-                    history = [event_from_dict(event) for event in instance['history']]
-                    critic_result = critic.evaluate(history)
-                    if not critic_result.success:
+                    try:
+                        history = [
+                            event_from_dict(event) for event in instance['history']
+                        ]
+                        critic_result = critic.evaluate(
+                            history, instance['test_result'].get('git_patch', '')
+                        )
+                        if not critic_result.success:
+                            instances_failed.append(instance['instance_id'])
+                    except Exception as e:
+                        logger.error(
+                            f'Error loading history for instance {instance["instance_id"]}: {e}'
+                        )
                         instances_failed.append(instance['instance_id'])
             logger.info(
                 f'{len(instances_failed)} instances failed the current attempt {attempt}: {instances_failed}'
@@ -759,7 +845,11 @@ if __name__ == '__main__':
             with open(cur_output_file, 'r') as f:
                 for line in f:
                     instance = json.loads(line)
-                    if instance['instance_id'] not in added_instance_ids:
+                    # Also make sure git_patch is not empty - otherwise we fall back to previous attempt (empty patch is worse than anything else)
+                    if (
+                        instance['instance_id'] not in added_instance_ids
+                        and instance['test_result']['git_patch'].strip()
+                    ):
                         fout.write(line)
                         added_instance_ids.add(instance['instance_id'])
             logger.info(
