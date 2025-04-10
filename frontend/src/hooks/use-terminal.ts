@@ -105,22 +105,22 @@ export const useTerminal = ({
     if (ref.current) {
       /* Initialize the terminal in the DOM */
       initializeTerminal();
-      
+
       // Initialize with existing commands if any
       if (commands.length > 0) {
-        for (let i = 0; i < commands.length; i++) {
+        for (let i = 0; i < commands.length; i += 1) {
           const { content, type } = commands[i];
           terminal.current?.writeln(
-            parseTerminalOutput(content.replaceAll("\n", "\r\n").trim())
+            parseTerminalOutput(content.replaceAll("\n", "\r\n").trim()),
           );
-          
+
           if (type === "output") {
             terminal.current.write(`\n`);
           }
         }
         lastCommandIndex.current = commands.length; // Update the position of the last command
       }
-      
+
       terminal.current.write("$ ");
 
       /* Listen for resize events */
@@ -138,7 +138,11 @@ export const useTerminal = ({
 
   React.useEffect(() => {
     /* Write commands to the terminal */
-    if (terminal.current && commands.length > 0 && lastCommandIndex.current < commands.length) {
+    if (
+      terminal.current &&
+      commands.length > 0 &&
+      lastCommandIndex.current < commands.length
+    ) {
       // Start writing commands from the last command index
       for (let i = lastCommandIndex.current; i < commands.length; i += 1) {
         // eslint-disable-next-line prefer-const
