@@ -149,8 +149,8 @@ export function ConversationCard({
         data-testid="conversation-card"
         onClick={onClick}
         className={cn(
-          "w-full px-3 pr-[10px] py-2 cursor-pointer hover:bg-[#1F1F1F] rounded-lg",
-          isActive && "bg-[#1F1F1F]",
+          "w-full px-3 pr-[10px] py-2 cursor-pointer hover:bg-neutral-1000 dark:hover:bg-[#1F1F1F] rounded-lg",
+          isActive && "bg-neutral-1000 dark:bg-[#1F1F1F]",
           variant === "compact" && "h-auto w-fit border border-[#525252]",
         )}
       >
@@ -174,7 +174,7 @@ export function ConversationCard({
             {titleMode === "view" && (
               <p
                 data-testid="conversation-card-title"
-                className="text-sm text-[#E0E0E0] leading-6 font-medium bg-transparent truncate overflow-hidden"
+                className="text-sm text-neutral-100 dark:text-[#E0E0E0] leading-6 font-medium bg-transparent truncate overflow-hidden"
                 title={title}
               >
                 {title}

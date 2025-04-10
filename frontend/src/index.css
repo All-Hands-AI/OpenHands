@@ -58,6 +58,30 @@ code {
   padding: 0.1rem 1rem;
 }
 
+.xterm-viewport {
+  border-radius: 12px;
+}
+
+.terminal.xterm {
+  padding: 12px;
+}
+
+.message-fade-in {
+  opacity: 0;
+  animation: fadeInStream 0.5s ease-in forwards;
+}
+
+@keyframes fadeInStream {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Fast smooth scrolling for chat interface */
 .fast-smooth-scroll {
   scroll-behavior: smooth;

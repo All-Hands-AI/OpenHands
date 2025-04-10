@@ -8,6 +8,7 @@ import {
   Conversation,
   ResultSet,
   GetTrajectoryResponse,
+  GetUseCasesItemResponse,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
 import { ApiSettings, PostApiSettings } from "#/types/settings";
@@ -60,6 +61,13 @@ class OpenHands {
   static async getConfig(): Promise<GetConfigResponse> {
     const { data } = await openHands.get<GetConfigResponse>(
       "/api/options/config",
+    );
+    return data;
+  }
+
+  static async getUseCases(): Promise<GetUseCasesItemResponse> {
+    const { data } = await openHands.get<GetUseCasesItemResponse>(
+      "/api/options/use-cases",
     );
     return data;
   }
@@ -192,9 +200,13 @@ class OpenHands {
 
   static async getConversation(
     conversationId: string,
+    isPublic?: boolean | null,
   ): Promise<Conversation | null> {
+
+    console.log('isPublic', isPublic)
+    const path = isPublic ?`/api/options/use-cases/conversations/${conversationId}`: `/api/conversations/${conversationId}`
     const { data } = await openHands.get<Conversation | null>(
-      `/api/conversations/${conversationId}`,
+      path,
     );
 
     return data;

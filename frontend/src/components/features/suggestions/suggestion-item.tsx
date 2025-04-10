@@ -11,12 +11,12 @@ interface SuggestionItemProps {
 export function SuggestionItem({ suggestion, onClick }: SuggestionItemProps) {
   const { t } = useTranslation();
   return (
-    <li className="list-none border border-neutral-600 rounded-xl hover:bg-tertiary flex-1">
+    <li className="list-none border border-neutral-900 dark:border-neutral-600 rounded-xl hover:bg-neutral-1000 flex-1">
       <button
         type="button"
         data-testid="suggestion"
         onClick={() => onClick(suggestion.value)}
-        className="text-[16px] leading-6 -tracking-[0.01em] text-center w-full p-3 font-semibold"
+        className="text-[16px] text-neutral-100 dark:text-white leading-6 -tracking-[0.01em] text-center w-full p-3 font-semibold"
       >
         {t(suggestion.label)}
       </button>

@@ -10,9 +10,10 @@ import {
   UserMessageAction,
 } from "#/types/core/actions";
 import { useGetJwt } from "#/zutand-stores/persist-config/selector";
-// import { useAuth } from "./auth-context";
 
-const isOpenHandsEvent = (event: unknown): event is OpenHandsParsedEvent =>
+export const isOpenHandsEvent = (
+  event: unknown,
+): event is OpenHandsParsedEvent =>
   typeof event === "object" &&
   event !== null &&
   "id" in event &&
@@ -20,7 +21,7 @@ const isOpenHandsEvent = (event: unknown): event is OpenHandsParsedEvent =>
   "message" in event &&
   "timestamp" in event;
 
-const isUserMessage = (
+export const isUserMessage = (
   event: OpenHandsParsedEvent,
 ): event is UserMessageAction =>
   "source" in event &&
@@ -28,7 +29,7 @@ const isUserMessage = (
   event.source === "user" &&
   event.type === "message";
 
-const isAssistantMessage = (
+export const isAssistantMessage = (
   event: OpenHandsParsedEvent,
 ): event is AssistantMessageAction =>
   "source" in event &&
@@ -36,7 +37,7 @@ const isAssistantMessage = (
   event.source === "agent" &&
   event.type === "message";
 
-const isMessageAction = (
+export const isMessageAction = (
   event: OpenHandsParsedEvent,
 ): event is UserMessageAction | AssistantMessageAction =>
   isUserMessage(event) || isAssistantMessage(event);
@@ -51,6 +52,7 @@ interface UseWsClient {
   isLoadingMessages: boolean;
   events: Record<string, unknown>[];
   send: (event: Record<string, unknown>) => void;
+  disconnect: () => void; // Add disconnect function to the interface
 }
 
 const WsClientContext = React.createContext<UseWsClient>({
@@ -60,18 +62,21 @@ const WsClientContext = React.createContext<UseWsClient>({
   send: () => {
     throw new Error("not connected");
   },
+  disconnect: () => {
+    throw new Error("not connected");
+  },
 });
 
-interface WsClientProviderProps {
+export interface WsClientProviderProps {
   conversationId: string;
 }
 
-interface ErrorArg {
+export interface ErrorArg {
   message?: string;
   data?: ErrorArgData | unknown;
 }
 
-interface ErrorArgData {
+export interface ErrorArgData {
   msg_id: string;
 }
 
@@ -113,7 +118,6 @@ export function WsClientProvider({
   const [events, setEvents] = React.useState<Record<string, unknown>[]>([]);
   const lastEventRef = React.useRef<Record<string, unknown> | null>(null);
   const jwt = useGetJwt();
-  // const { providerTokensSet } = useAuth();
 
   const messageRateHandler = useRate({ threshold: 250 });
 
@@ -123,6 +127,20 @@ export function WsClientProvider({
       return;
     }
     sioRef.current.emit("oh_user_action", event);
+  }
+
+  function disconnect() {
+    const sio = sioRef.current;
+    if (sio) {
+      sio.off("connect", handleConnect);
+      sio.off("oh_event", handleMessage);
+      sio.off("connect_error", handleError);
+      sio.off("connect_failed", handleError);
+      sio.off("disconnect", handleDisconnect);
+      sio.disconnect();
+      sioRef.current = null; // Clear the ref after disconnecting
+      setStatus(WsClientProviderStatus.DISCONNECTED);
+    }
   }
 
   function handleConnect() {
@@ -166,50 +184,33 @@ export function WsClientProvider({
       throw new Error("No conversation ID provided");
     }
 
-    let sio = sioRef.current;
+    // Only connect if not already connected
+    if (!sioRef.current) {
+      const lastEvent = lastEventRef.current;
+      const query = {
+        latest_event_id: lastEvent?.id ?? -1,
+        conversation_id: conversationId,
+        auth: jwt,
+      };
 
-    const lastEvent = lastEventRef.current;
-    const query = {
-      latest_event_id: lastEvent?.id ?? -1,
-      conversation_id: conversationId,
-      auth: jwt,
-      // providers_set: providerTokensSet,
-    };
+      const baseUrl =
+        import.meta.env.VITE_BACKEND_BASE_URL || window?.location.host;
 
-    const baseUrl =
-      import.meta.env.VITE_BACKEND_BASE_URL || window?.location.host;
+      const sio = io(baseUrl, {
+        transports: ["websocket"],
+        query,
+      });
+      sio.on("connect", handleConnect);
+      sio.on("oh_event", handleMessage);
+      sio.on("connect_error", handleError);
+      sio.on("connect_failed", handleError);
+      sio.on("disconnect", handleDisconnect);
 
-    sio = io(baseUrl, {
-      transports: ["websocket"],
-      query,
-    });
-    sio.on("connect", handleConnect);
-    sio.on("oh_event", handleMessage);
-    sio.on("connect_error", handleError);
-    sio.on("connect_failed", handleError);
-    sio.on("disconnect", handleDisconnect);
+      sioRef.current = sio;
+    }
 
-    sioRef.current = sio;
-
-    return () => {
-      sio.off("connect", handleConnect);
-      sio.off("oh_event", handleMessage);
-      sio.off("connect_error", handleError);
-      sio.off("connect_failed", handleError);
-      sio.off("disconnect", handleDisconnect);
-    };
+    // No cleanup function to disconnect automatically
   }, [conversationId]);
-
-  React.useEffect(
-    () => () => {
-      const sio = sioRef.current;
-      if (sio) {
-        sio.off("disconnect", handleDisconnect);
-        sio.disconnect();
-      }
-    },
-    [],
-  );
 
   const value = React.useMemo<UseWsClient>(
     () => ({
@@ -217,11 +218,12 @@ export function WsClientProvider({
       isLoadingMessages: messageRateHandler.isUnderThreshold,
       events,
       send,
+      disconnect, // Provide the disconnect function
     }),
     [status, messageRateHandler.isUnderThreshold, events],
   );
 
-  return <WsClientContext value={value}>{children}</WsClientContext>;
+  return <WsClientContext.Provider value={value}>{children}</WsClientContext.Provider>;
 }
 
 export function useWsClient() {

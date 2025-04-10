@@ -1,20 +1,30 @@
+import os
 import warnings
+from datetime import datetime, timezone
 from typing import Any
 
-import httpx
-from fastapi import APIRouter
+import requests
+from fastapi import APIRouter, HTTPException
 
 from openhands.security.options import SecurityAnalyzers
+from openhands.server.data_models.conversation_info import ConversationInfo
+from openhands.server.data_models.conversation_info_result_set import (
+    ConversationInfoResultSet,
+)
+from openhands.server.routes.manage_conversations import _get_conversation_info
+from openhands.server.shared import (
+    conversation_manager,
+)
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
-
 from openhands.controller.agent import Agent
 from openhands.core.config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.llm import bedrock
-from openhands.server.shared import config, server_config
+from openhands.server.shared import ConversationStoreImpl, config, server_config
+from openhands.utils.async_utils import wait_all
 
 app = APIRouter(prefix='/api/options')
 
@@ -108,3 +118,84 @@ async def get_config() -> dict[str, Any]:
         dict[str, Any]: The current server configuration.
     """
     return server_config.get_config()
+
+
+@app.get('/use-cases', response_model=ConversationInfoResultSet)
+async def get_conversations(
+    user_address: str = os.getenv('USER_USE_CASE_SAMPLE'),
+    limit: int = 8,
+) -> ConversationInfoResultSet:
+    """Get list of conversations for a user.
+
+    Args:
+        user_address (str): The user's wallet address
+        limit (int, optional): Maximum number of conversations to return. Defaults to 10.
+
+    Returns:
+        ConversationInfoResultSet: List of conversations and pagination info
+
+    Raises:
+        HTTPException: If there's an error fetching conversations
+    """
+    try:
+        conversation_store = await ConversationStoreImpl.get_instance(
+            config, user_address, None
+        )
+
+        conversation_metadata_result_set = await conversation_store.search(None, limit)
+        # Filter conversations by age
+        now = datetime.now(timezone.utc)
+        max_age = config.conversation_max_age_seconds
+        filtered_results = [
+            conversation
+            for conversation in conversation_metadata_result_set.results
+            if hasattr(conversation, 'created_at')
+            and (
+                now - conversation.created_at.replace(tzinfo=timezone.utc)
+            ).total_seconds()
+            <= max_age
+        ]
+
+        # Get running conversation IDs
+        conversation_ids = set(
+            conversation.conversation_id for conversation in filtered_results
+        )
+        running_conversations = await conversation_manager.get_running_agent_loops(
+            user_address, conversation_ids
+        )
+
+        # Build final result
+        result = ConversationInfoResultSet(
+            results=await wait_all(
+                _get_conversation_info(
+                    conversation=conversation,
+                    is_running=conversation.conversation_id in running_conversations,
+                )
+                for conversation in filtered_results
+            ),
+            next_page_id=conversation_metadata_result_set.next_page_id,
+        )
+
+        return result
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f'Error fetching conversations: {str(e)}'
+        )
+
+
+@app.get('/use-cases/conversations/{conversation_id}')
+async def get_conversation(
+    conversation_id: str | None = None,
+) -> ConversationInfo | None:
+    whitelisted_user_id = os.getenv('USER_USE_CASE_SAMPLE')
+    conversation_store = await ConversationStoreImpl.get_instance(
+        config, whitelisted_user_id, None
+    )
+    try:
+        metadata = await conversation_store.get_metadata(conversation_id)
+        is_running = await conversation_manager.is_agent_loop_running(conversation_id)
+        conversation_info = await _get_conversation_info(metadata, is_running)
+        return conversation_info
+    except FileNotFoundError:
+        return None

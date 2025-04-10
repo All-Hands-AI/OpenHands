@@ -1,4 +1,3 @@
-import VSCodeIcon from "#/assets/vscode-alt.svg?react";
 import { ExplorerTree } from "#/components/features/file-explorer/explorer-tree";
 import { useListFiles } from "#/hooks/query/use-list-files";
 import { useVSCodeUrl } from "#/hooks/query/use-vscode-url";
@@ -10,7 +9,6 @@ import { cn } from "#/utils/utils";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { BrandButton } from "../settings/brand-button";
 import { FileExplorerHeader } from "./file-explorer-header";
 
 interface FileExplorerProps {
@@ -77,7 +75,7 @@ export function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
               <p className="text-neutral-300 text-sm">{error.message}</p>
             </div>
           )}
-          {isOpen && (
+          {/* {isOpen && (
             <BrandButton
               testId="open-vscode-button"
               type="button"
@@ -89,7 +87,7 @@ export function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
             >
               {t(I18nKey.VSCODE$OPEN)}
             </BrandButton>
-          )}
+          )} */}
         </div>
       </div>
     </div>

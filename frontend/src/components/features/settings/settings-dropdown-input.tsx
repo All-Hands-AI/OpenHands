@@ -1,16 +1,18 @@
-import { Autocomplete, AutocompleteItem } from "@heroui/react";
-import { ReactNode } from "react";
-import { OptionalTag } from "./optional-tag";
+import { Autocomplete, AutocompleteItem } from "@heroui/react"
+import { ReactNode } from "react"
+import { OptionalTag } from "./optional-tag"
+import { twMerge } from "tailwind-merge"
 
 interface SettingsDropdownInputProps {
-  testId: string;
-  label: ReactNode;
-  name: string;
-  items: { key: React.Key; label: string }[];
-  showOptionalTag?: boolean;
-  isDisabled?: boolean;
-  defaultSelectedKey?: string;
-  isClearable?: boolean;
+  testId: string
+  label: ReactNode
+  name: string
+  items: { key: React.Key; label: string }[]
+  showOptionalTag?: boolean
+  isDisabled?: boolean
+  defaultSelectedKey?: string
+  isClearable?: boolean
+  className?: string
 }
 
 export function SettingsDropdownInput({
@@ -22,11 +24,14 @@ export function SettingsDropdownInput({
   isDisabled,
   defaultSelectedKey,
   isClearable,
+  className = "",
 }: SettingsDropdownInputProps) {
   return (
-    <label className="flex flex-col gap-2 w-full">
+    <label className={twMerge("flex w-full flex-col gap-2", className)}>
       <div className="flex items-center gap-1">
-        <span className="text-[14px] font-medium text-[#595B57]">{label}</span>
+        <span className="text-[14px] font-medium text-neutral-700 dark:text-[#595B57]">
+          {label}
+        </span>
         {showOptionalTag && <OptionalTag />}
       </div>
       <Autocomplete
@@ -40,13 +45,22 @@ export function SettingsDropdownInput({
         className="w-full"
         classNames={{
           popoverContent:
-            "bg-[#1E1E1F] rounded-xl border border-[#232521] text-[14px] font-medium text-[#EFEFEF]",
+            "bg-white dark:bg-[#1E1E1F] rounded-xl border border-neutral-1000 dark:border-[#232521] text-[14px] font-medium text-neutral-100 dark:text-[#EFEFEF]",
         }}
         inputProps={{
           classNames: {
             inputWrapper:
-              "bg-[#1E1E1F] border border-[#232521] h-11 w-full rounded-lg p-2 placeholder:italic",
-            input: "text-[14px] font-medium text-[#EFEFEF]",
+              "bg-white dark:bg-[#1E1E1F] border border-neutral-1000 dark:border-[#232521] h-11 w-full rounded-lg p-2 placeholder:italic",
+            input:
+              "text-[14px] font-medium text-neutral-100 dark:text-[#EFEFEF]",
+          },
+        }}
+        listboxProps={{
+          itemClasses: {
+            base: [
+              "data-[hover=true]:bg-neutral-1000",
+              "data-[selectable=true]:focus:bg-neutral-1000",
+            ],
           },
         }}
       >
@@ -55,5 +69,5 @@ export function SettingsDropdownInput({
         )}
       </Autocomplete>
     </label>
-  );
+  )
 }

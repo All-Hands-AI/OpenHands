@@ -1,17 +1,17 @@
-import clsx from "clsx";
-import React from "react";
-import { NavTab } from "./nav-tab";
+import clsx from "clsx"
+import React from "react"
+import { NavTab } from "./nav-tab"
 
 interface ContainerProps {
-  label?: React.ReactNode;
+  label?: React.ReactNode
   labels?: {
-    label: string | React.ReactNode;
-    to: string;
-    icon?: React.ReactNode;
-    isBeta?: boolean;
-  }[];
-  children: React.ReactNode;
-  className?: React.HTMLAttributes<HTMLDivElement>["className"];
+    label: string | React.ReactNode
+    to: string
+    icon?: React.ReactNode
+    isBeta?: boolean
+  }[]
+  children: React.ReactNode
+  className?: React.HTMLAttributes<HTMLDivElement>["className"]
 }
 
 export function Container({
@@ -23,23 +23,23 @@ export function Container({
   return (
     <div
       className={clsx(
-        "bg-gray-300 border border-gray-200 rounded-xl flex flex-col",
+        "flex flex-col rounded-xl border border-gray-200 bg-gray-300",
         className,
       )}
     >
       {labels && (
-        <div className="flex text-xs h-12">
+        <div className="flex h-12 text-xs">
           {labels.map(({ label: l, to, icon, isBeta }) => (
             <NavTab key={to} to={to} label={l} icon={icon} isBeta={isBeta} />
           ))}
         </div>
       )}
       {!labels && label && (
-        <div className="px-2 h-12 border-b border-gray-200 text-xs flex items-center">
+        <div className="flex h-12 items-center border-b border-gray-200 px-2 text-xs">
           {label}
         </div>
       )}
-      <div className="overflow-hidden h-full rounded-b-xl">{children}</div>
+      <div className="h-full overflow-hidden">{children}</div>
     </div>
-  );
+  )
 }

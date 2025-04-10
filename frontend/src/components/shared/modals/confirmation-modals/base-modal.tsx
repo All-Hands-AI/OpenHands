@@ -14,7 +14,7 @@ interface BaseModalTitleProps {
 
 export function BaseModalTitle({ title }: BaseModalTitleProps) {
   return (
-    <span className="text-xl leading-6 -tracking-[0.01em] font-semibold">
+    <span className="text-xl text-neutral-100 leading-6 -tracking-[0.01em] font-semibold">
       {title}
     </span>
   );
@@ -30,7 +30,9 @@ export function BaseModalDescription({
   children,
 }: BaseModalDescriptionProps) {
   return (
-    <span className="text-xs text-[#A3A3A3]">{children || description}</span>
+    <span className="text-xs text-neutral-700 dark:text-[#A3A3A3]">
+      {children || description}
+    </span>
   );
 }
 

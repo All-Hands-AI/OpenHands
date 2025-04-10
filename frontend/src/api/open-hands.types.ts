@@ -55,6 +55,18 @@ export interface GetConfigResponse {
   };
 }
 
+export type GetUseCasesItemResponse = {
+  results: {
+    conversation_id: string;
+    title: string;
+    last_updated_at: string;
+    status: string;
+    selected_repository: string | null;
+    created_at: string;
+  }[];
+  next_page_id: string | null;
+};
+
 export interface GetVSCodeUrlResponse {
   vscode_url: string | null;
   error?: string;

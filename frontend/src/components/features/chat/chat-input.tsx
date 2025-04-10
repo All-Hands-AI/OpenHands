@@ -1,26 +1,27 @@
-import React from "react";
-import TextareaAutosize from "react-textarea-autosize";
-import { useTranslation } from "react-i18next";
-import { I18nKey } from "#/i18n/declaration";
-import { cn } from "#/utils/utils";
-import { SubmitButton } from "#/components/shared/buttons/submit-button";
-import { StopButton } from "#/components/shared/buttons/stop-button";
+import React, { useEffect } from "react"
+import TextareaAutosize from "react-textarea-autosize"
+import { useTranslation } from "react-i18next"
+import { I18nKey } from "#/i18n/declaration"
+import { cn } from "#/utils/utils"
+import { SubmitButton } from "#/components/shared/buttons/submit-button"
+import { StopButton } from "#/components/shared/buttons/stop-button"
+import { useGetConversationState } from "#/zutand-stores/coin/selector"
 
 interface ChatInputProps {
-  name?: string;
-  button?: "submit" | "stop";
-  disabled?: boolean;
-  showButton?: boolean;
-  value?: string;
-  maxRows?: number;
-  onSubmit: (message: string) => void;
-  onStop?: () => void;
-  onChange?: (message: string) => void;
-  onFocus?: () => void;
-  onBlur?: () => void;
-  onImagePaste?: (files: File[]) => void;
-  className?: React.HTMLAttributes<HTMLDivElement>["className"];
-  buttonClassName?: React.HTMLAttributes<HTMLButtonElement>["className"];
+  name?: string
+  button?: "submit" | "stop"
+  disabled?: boolean
+  showButton?: boolean
+  value?: string
+  maxRows?: number
+  onSubmit: (message: string) => void
+  onStop?: () => void
+  onChange?: (message: string) => void
+  onFocus?: () => void
+  onBlur?: () => void
+  onImagePaste?: (files: File[]) => void
+  className?: React.HTMLAttributes<HTMLDivElement>["className"]
+  buttonClassName?: React.HTMLAttributes<HTMLButtonElement>["className"]
 }
 
 export function ChatInput({
@@ -39,60 +40,68 @@ export function ChatInput({
   className,
   buttonClassName,
 }: ChatInputProps) {
-  const { t } = useTranslation();
-  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
-  const [isDraggingOver, setIsDraggingOver] = React.useState(false);
+  const { t } = useTranslation()
+  const textareaRef = React.useRef<HTMLTextAreaElement>(null)
+  const [isDraggingOver, setIsDraggingOver] = React.useState(false)
+
+  const initMsg = useGetConversationState("initMsg")
+
+  useEffect(() => {
+    if (initMsg) {
+      onChange(initMsg)
+    }
+  }, [initMsg])
 
   const handlePaste = (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
     // Only handle paste if we have an image paste handler and there are files
     if (onImagePaste && event.clipboardData.files.length > 0) {
       const files = Array.from(event.clipboardData.files).filter((file) =>
         file.type.startsWith("image/"),
-      );
+      )
       // Only prevent default if we found image files to handle
       if (files.length > 0) {
-        event.preventDefault();
-        onImagePaste(files);
+        event.preventDefault()
+        onImagePaste(files)
       }
     }
     // For text paste, let the default behavior handle it
-  };
+  }
 
   const handleDragOver = (event: React.DragEvent<HTMLTextAreaElement>) => {
-    event.preventDefault();
+    event.preventDefault()
     if (event.dataTransfer.types.includes("Files")) {
-      setIsDraggingOver(true);
+      setIsDraggingOver(true)
     }
-  };
+  }
 
   const handleDragLeave = (event: React.DragEvent<HTMLTextAreaElement>) => {
-    event.preventDefault();
-    setIsDraggingOver(false);
-  };
+    event.preventDefault()
+    setIsDraggingOver(false)
+  }
 
   const handleDrop = (event: React.DragEvent<HTMLTextAreaElement>) => {
-    event.preventDefault();
-    setIsDraggingOver(false);
+    event.preventDefault()
+    setIsDraggingOver(false)
     if (onImagePaste && event.dataTransfer.files.length > 0) {
       const files = Array.from(event.dataTransfer.files).filter((file) =>
         file.type.startsWith("image/"),
-      );
+      )
       if (files.length > 0) {
-        onImagePaste(files);
+        onImagePaste(files)
       }
     }
-  };
+  }
 
   const handleSubmitMessage = () => {
-    const message = value || textareaRef.current?.value || "";
+    const message = value || textareaRef.current?.value || ""
     if (message.trim()) {
-      onSubmit(message);
-      onChange?.("");
+      onSubmit(message)
+      onChange?.("")
       if (textareaRef.current) {
-        textareaRef.current.value = "";
+        textareaRef.current.value = ""
       }
     }
-  };
+  }
 
   const handleKeyPress = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (
@@ -101,21 +110,22 @@ export function ChatInput({
       !disabled &&
       !event.nativeEvent.isComposing
     ) {
-      event.preventDefault();
-      handleSubmitMessage();
+      event.preventDefault()
+      handleSubmitMessage()
     }
-  };
+  }
 
   const handleChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    onChange?.(event.target.value);
-  };
+    onChange?.(event.target.value)
+  }
 
   return (
     <div
       data-testid="chat-input"
-      className="flex items-end justify-end grow gap-1 min-h-6 w-full"
+      className="flex min-h-14 w-full grow items-end justify-end gap-1"
     >
       <TextareaAutosize
+        disabled={disabled}
         ref={textareaRef}
         name={name}
         placeholder={t(I18nKey.SUGGESTIONS$WHAT_TO_BUILD)}
@@ -132,10 +142,10 @@ export function ChatInput({
         maxRows={maxRows}
         data-dragging-over={isDraggingOver}
         className={cn(
-          "grow text-sm self-center placeholder:text-neutral-400 text-white resize-none outline-none ring-0",
+          "grow resize-none self-center rounded-xl text-sm text-white outline-none ring-0 placeholder:text-neutral-400",
           "transition-all duration-200 ease-in-out",
           isDraggingOver
-            ? "bg-neutral-600/50 rounded-lg px-2"
+            ? "rounded-xl bg-neutral-600/50 px-2"
             : "bg-transparent",
           className,
         )}
@@ -151,5 +161,5 @@ export function ChatInput({
         </div>
       )}
     </div>
-  );
+  )
 }

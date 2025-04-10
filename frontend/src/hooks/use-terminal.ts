@@ -63,7 +63,12 @@ export const useTerminal = ({
       fontFamily: "Menlo, Monaco, 'Courier New', monospace",
       fontSize: 14,
       theme: {
-        background: "#0F0F0F",
+        // TODO: check light mode and dark mode
+        // background: "#0F0F0F",
+        background: "#F5F5F5",
+        foreground: "#292929",
+        selectionBackground: "#A7C6ED",
+        selectionForeground: "#292929",
       },
     });
 

@@ -25,12 +25,12 @@ export function ExitProjectButton({
       onClick={onClick}
       testId="new-project-button"
       className={cn(
-        "rounded-lg p-2 transition-colors w-10 h-10",
-        "hover:bg-[#262525]",
-        isActive && "bg-[#262525]",
+        "rounded-lg p-2 transition-colors w-10 h-10 group/item",
+        "hover:bg-neutral-1000 dark:hover:bg-[#262525]",
+        isActive && "bg-neutral-1000 dark:bg-[#262525]",
       )}
     >
-      <Icon className="transition-colors" />
+      <Icon className="transition-colors text-neutral-800 dark:text-neutral-700 group-hover/item:text-neutral-100 dark:group-hover/item:text-white" />
     </TooltipButton>
   );
 }

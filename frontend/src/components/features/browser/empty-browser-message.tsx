@@ -8,7 +8,7 @@ export function EmptyBrowserMessage() {
 
   return (
     <div className="flex flex-col items-center h-full justify-center">
-      <Image src={NoPageLoaded} alt="arrow" width={100} height={100} />
+      <Image src={NoPageLoaded} alt="arrow" width={100} height={100} className={'invert'} />
       {t(I18nKey.BROWSER$NO_PAGE_LOADED)}
     </div>
   );
