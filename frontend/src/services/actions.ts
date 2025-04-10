@@ -156,14 +156,15 @@ export function handleStatusMessage(message: StatusMessage) {
 const listMsg: Record<string, unknown>[] = []
 
 export function handleAssistantMessage(message: Record<string, unknown>) {
-  console.log("🚀 ~ handleAssistantMessage ~ message:", message)
   if (
     // TODO: check type browse_interactive of observation
     message.source === "agent" &&
     message.observation &&
-    ![ObservationType.AGENT_STATE_CHANGED, ObservationType.ERROR].includes(
-      message.observation as ObservationType,
-    )
+    ![
+      ObservationType.AGENT_STATE_CHANGED,
+      ObservationType.MCP,
+      ObservationType.ERROR,
+    ].includes(message.observation as ObservationType)
   ) {
     store.dispatch(setComputerList(message))
   }
