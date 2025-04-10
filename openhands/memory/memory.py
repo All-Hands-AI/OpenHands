@@ -15,9 +15,9 @@ from openhands.events.observation.agent import (
 from openhands.events.observation.empty import NullObservation
 from openhands.events.stream import EventStream, EventStreamSubscriber
 from openhands.microagent import (
-    BaseMicroAgent,
-    KnowledgeMicroAgent,
-    RepoMicroAgent,
+    BaseMicroagent,
+    KnowledgeMicroagent,
+    RepoMicroagent,
     load_microagents_from_dir,
 )
 from openhands.runtime.base import Runtime
@@ -58,8 +58,8 @@ class Memory:
         )
 
         # Additional placeholders to store user workspace microagents
-        self.repo_microagents: dict[str, RepoMicroAgent] = {}
-        self.knowledge_microagents: dict[str, KnowledgeMicroAgent] = {}
+        self.repo_microagents: dict[str, RepoMicroagent] = {}
+        self.knowledge_microagents: dict[str, KnowledgeMicroagent] = {}
 
         # Store repository / runtime info to send them to the templating later
         self.repository_info: RepositoryInfo | None = None
@@ -229,7 +229,7 @@ class Memory:
         return recalled_content
 
     def load_user_workspace_microagents(
-        self, user_microagents: list[BaseMicroAgent]
+        self, user_microagents: list[BaseMicroagent]
     ) -> None:
         """
         This method loads microagents from a user's cloned repo or workspace directory.
@@ -240,9 +240,9 @@ class Memory:
             'Loading user workspace microagents: %s', [m.name for m in user_microagents]
         )
         for user_microagent in user_microagents:
-            if isinstance(user_microagent, KnowledgeMicroAgent):
+            if isinstance(user_microagent, KnowledgeMicroagent):
                 self.knowledge_microagents[user_microagent.name] = user_microagent
-            elif isinstance(user_microagent, RepoMicroAgent):
+            elif isinstance(user_microagent, RepoMicroagent):
                 self.repo_microagents[user_microagent.name] = user_microagent
 
     def _load_global_microagents(self) -> None:
@@ -253,10 +253,10 @@ class Memory:
             GLOBAL_MICROAGENTS_DIR
         )
         for name, agent in knowledge_agents.items():
-            if isinstance(agent, KnowledgeMicroAgent):
+            if isinstance(agent, KnowledgeMicroagent):
                 self.knowledge_microagents[name] = agent
         for name, agent in repo_agents.items():
-            if isinstance(agent, RepoMicroAgent):
+            if isinstance(agent, RepoMicroagent):
                 self.repo_microagents[name] = agent
 
     def set_repository_info(self, repo_name: str, repo_directory: str) -> None:
