@@ -33,7 +33,6 @@ import Security from "#/components/shared/modals/security/security";
 import { useEndSession } from "#/hooks/use-end-session";
 import { useUserConversation } from "#/hooks/query/use-user-conversation";
 import { ServedAppLabel } from "#/components/layout/served-app-label";
-import { TerminalStatusLabel } from "#/components/features/terminal/terminal-status-label";
 import { useSettings } from "#/hooks/query/use-settings";
 import { clearFiles, clearInitialPrompt } from "#/state/initial-query-slice";
 import { RootState } from "#/store";
@@ -142,7 +141,7 @@ function AppContent() {
                 icon: <CodeIcon />,
               },
               {
-                label: <TerminalStatusLabel />,
+                label: t(I18nKey.WORKSPACE$TERMINAL_TAB_LABEL),
                 to: "terminal",
                 icon: <TerminalIcon />,
               },
