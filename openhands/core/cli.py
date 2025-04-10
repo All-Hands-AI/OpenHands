@@ -15,6 +15,7 @@ from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.layout.containers import HSplit, Window
 from prompt_toolkit.layout.controls import FormattedTextControl
 from prompt_toolkit.layout.layout import Layout
+from prompt_toolkit.patch_stdout import patch_stdout
 from prompt_toolkit.shortcuts import clear, print_container
 from prompt_toolkit.styles import Style
 from prompt_toolkit.widgets import Frame, TextArea
@@ -125,15 +126,7 @@ def display_message(message: str):
     message = message.strip()
 
     if message:
-        print_formatted_text(
-            FormattedText(
-                [
-                    ('', '\n'),
-                    (COLOR_GOLD, message),
-                    ('', '\n'),
-                ]
-            )
-        )
+        print_formatted_text(f'\n{message}\n')
 
 
 def display_command(command: str):
@@ -344,15 +337,17 @@ async def read_prompt_input(multiline=False):
             def _(event):
                 event.current_buffer.validate_and_handle()
 
-            message = await prompt_session.prompt_async(
-                'Enter your message and press Ctrl+D to finish:\n',
-                multiline=True,
-                key_bindings=kb,
-            )
+            with patch_stdout():
+                message = await prompt_session.prompt_async(
+                    'Enter your message and press Ctrl+D to finish:\n',
+                    multiline=True,
+                    key_bindings=kb,
+                )
         else:
-            message = await prompt_session.prompt_async(
-                '> ',
-            )
+            with patch_stdout():
+                message = await prompt_session.prompt_async(
+                    '> ',
+                )
         return message
     except KeyboardInterrupt:
         return '/exit'
