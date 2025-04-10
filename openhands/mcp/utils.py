@@ -2,7 +2,7 @@ import json
 import re
 from typing import Any, Optional
 
-from mcp.types import TextContent, ImageContent,CallToolResult
+from mcp.types import CallToolResult, ImageContent, TextContent
 
 from openhands.core.config.mcp_config import MCPConfig
 from openhands.core.logger import openhands_logger as logger
@@ -154,7 +154,10 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: McpAction) -> Obse
     ):
         return process_browser_mcp_response(action, response)
 
-    return MCPObservation(content=f'MCP {action.name} result: {response.model_dump(mode="json")}')
+    return MCPObservation(
+        content=f'MCP {action.name} result: {response.model_dump(mode="json")}'
+    )
+
 
 def extract_page_url(browser_content: str) -> str | Any:
     # Regex to find the line starting with "- Page URL:" and capture the URL
@@ -171,33 +174,26 @@ def extract_page_url(browser_content: str) -> str | Any:
         page_url = match.group(1)  # group(1) is the captured URL
     return page_url
 
+
 def process_browser_mcp_response(
-    action: McpAction, browser_content: CallToolResult
+    action: McpAction, browser_response: CallToolResult
 ) -> Observation:
-    # example response:
-    """
-    {
-        "type": "image",
-        "data": "image/jpeg;base64,/9j/4AA...",
-        "mimeType": "image/jpeg",
-    }
-    """
-    
-    image_content: ImageContent = browser_content[0]
-    text_content: TextContent | None = None
+    browser_content = browser_response.content
+    text_content: TextContent = browser_content[0]
+    image_content: ImageContent | None = None
     if len(browser_content) > 1:
-        text_content = browser_content[1]
+        image_content = browser_content[1]
 
     logger.debug(f'image_content: {image_content}')
     logger.debug(f'text_content: {text_content}')
     url = extract_page_url(text_content.text) if text_content else ''
-    
+
     # logger.debug(f'Screenshot content: {screenshot_content}')
     return BrowserMCPObservation(
-        content=json.dumps(
-            {'type': image_content.type, 'mimeType': image_content.mimeType}
-        ),
+        content=f'{text_content.text}',
         url=url,
         trigger_by_action=action.name,
-        screenshot=f'data:image/png;base64,{image_content.data}',
+        screenshot=f'data:image/png;base64,{image_content.data}'
+        if image_content is not None
+        else '',
     )

@@ -10,9 +10,7 @@ from openhands.mcp.tool import BaseTool, MCPClientTool
 
 
 class MCPClient(BaseModel):
-    """
-    A collection of tools that connects to an MCP server and manages available tools through the Model Context Protocol.
-    """
+    """A collection of tools that connects to an MCP server and manages available tools through the Model Context Protocol."""
 
     session: Optional[ClientSession] = None
     exit_stack: AsyncExitStack = AsyncExitStack()
@@ -20,6 +18,7 @@ class MCPClient(BaseModel):
     tools: List[BaseTool] = Field(default_factory=list)
     tool_map: Dict[str, BaseTool] = Field(default_factory=dict)
     name: str = Field(default='')
+
     class Config:
         arbitrary_types_allowed = True
 
@@ -35,6 +34,8 @@ class MCPClient(BaseModel):
         Args:
             server_url: The URL of the SSE server to connect to.
             timeout: Connection timeout in seconds. Default is 30 seconds.
+            sid: The session id.
+            mnemonic: The mnemonic for the session.
         """
         if not server_url:
             raise ValueError('Server URL is required.')

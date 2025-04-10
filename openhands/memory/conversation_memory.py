@@ -1,4 +1,3 @@
-import json
 from typing import Generator
 
 from litellm import ModelResponse
@@ -340,14 +339,7 @@ class ConversationMemory:
             text = truncate_content(obs.content, max_message_chars)
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, BrowserMCPObservation):
-            text = 'Image: Current webpage screenshot\n'
-            screenshot_content = json.loads(obs.content)
-            # logger.debug(
-            #     f'screenshot_content in conversation_memory: {screenshot_content}'
-            # )
-            if 'url' in screenshot_content:
-                text += f'URL: {screenshot_content["url"]}\n'
-
+            text = truncate_content(obs.content, max_message_chars)
             # We don't actually need to screenshot fed into the LLM. We can use snapshots. Meanwhile, the screenshot will be streamed to the user.
             message = Message(
                 role='assistant',
