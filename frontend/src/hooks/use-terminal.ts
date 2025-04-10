@@ -46,17 +46,12 @@ export const useTerminal = ({
   };
 
   React.useEffect(() => {
-    /* Create a new terminal instance */
     terminal.current = createTerminal();
     fitAddon.current = new FitAddon();
 
-    let resizeObserver: ResizeObserver | null = null;
-
     if (ref.current) {
-      /* Initialize the terminal in the DOM */
       initializeTerminal();
 
-      // Initialize with existing commands if any
       if (commands.length > 0) {
         for (let i = 0; i < commands.length; i += 1) {
           const { content, type } = commands[i];
@@ -68,21 +63,15 @@ export const useTerminal = ({
             terminal.current.write(`\n`);
           }
         }
-        lastCommandIndex.current = commands.length; // Update the position of the last command
+        lastCommandIndex.current = commands.length;
       }
 
       terminal.current.write("$ ");
 
-      /* Listen for resize events */
-      resizeObserver = new ResizeObserver(() => {
-        fitAddon.current?.fit();
-      });
-      resizeObserver.observe(ref.current);
     }
 
     return () => {
       terminal.current?.dispose();
-      resizeObserver?.disconnect();
     };
   }, [commands]);
 
@@ -93,7 +82,6 @@ export const useTerminal = ({
       commands.length > 0 &&
       lastCommandIndex.current < commands.length
     ) {
-      // Start writing commands from the last command index
       for (let i = lastCommandIndex.current; i < commands.length; i += 1) {
         // eslint-disable-next-line prefer-const
         let { content, type } = commands[i];
@@ -110,6 +98,18 @@ export const useTerminal = ({
       lastCommandIndex.current = commands.length; // Update the position of the last command
     }
   }, [commands]);
+
+  React.useEffect(() => {
+      let resizeObserver: ResizeObserver | null = null;
+
+      resizeObserver = new ResizeObserver(() => {
+        fitAddon.current?.fit();
+      });
+      resizeObserver.observe(ref.current);
+      return () => {
+        resizeObserver?.disconnect();
+      };
+  }, []);
 
   return ref;
 };
