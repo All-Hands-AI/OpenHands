@@ -3,15 +3,19 @@ import React from "react";
 import { BrandButton } from "../settings/brand-button";
 import { SettingsDropdownInput } from "../settings/settings-dropdown-input";
 import { useConfig } from "#/hooks/query/use-config";
+import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
+import { GitRepository } from "#/types/git";
 
 interface RepoConnectorProps {
   onRepoSelection?: (repoTitle: string) => void;
 }
 
 export function RepoConnector({ onRepoSelection }: RepoConnectorProps) {
-  const [repoIsSelected, setRepoIsSelected] = React.useState(false);
+  const [selectedRepository, setSelectedRepository] =
+    React.useState<GitRepository | null>(null);
   const { data: config } = useConfig();
   const { data: repositories } = useUserRepositories();
+  const { mutate: createConversation } = useCreateConversation();
 
   const isOSS = config?.APP_MODE === "oss";
   const repositoriesList = repositories?.pages.flatMap((page) => page.data);
@@ -21,14 +25,12 @@ export function RepoConnector({ onRepoSelection }: RepoConnectorProps) {
   }));
 
   const handleRepoSelection = (key: React.Key | null) => {
-    setRepoIsSelected(!!key);
-    console.log("Selected repo key:", key);
-
     const selectedRepo = repositoriesList?.find(
       (repo) => repo.id.toString() === key,
     );
-    console.log("Selected repo:", selectedRepo);
+
     if (selectedRepo) onRepoSelection?.(selectedRepo.full_name);
+    setSelectedRepository(selectedRepo || null);
   };
 
   return (
@@ -51,7 +53,8 @@ export function RepoConnector({ onRepoSelection }: RepoConnectorProps) {
         testId="launch-button"
         variant="primary"
         type="button"
-        isDisabled={!repoIsSelected}
+        isDisabled={!selectedRepository}
+        onClick={() => createConversation({ selectedRepository })}
       >
         Launch
       </BrandButton>

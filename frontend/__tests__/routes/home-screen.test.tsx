@@ -6,17 +6,35 @@ import { AuthProvider } from "#/context/auth-context";
 import userEvent from "@testing-library/user-event";
 import * as GitService from "#/api/git";
 import { GitRepository } from "#/types/git";
+import OpenHands from "#/api/open-hands";
+import { createRoutesStub } from "react-router";
+import { Provider } from "react-redux";
+import { setupStore } from "test-utils";
 
-const renderHomeScreen = () =>
-  render(<HomeScreen />, {
+const renderHomeScreen = () => {
+  const RouterStub = createRoutesStub([
+    {
+      Component: HomeScreen,
+      path: "/",
+    },
+    {
+      Component: () => <div data-testid="conversation-screen" />,
+      path: "/conversations/:conversationId",
+    },
+  ]);
+
+  return render(<RouterStub />, {
     wrapper: ({ children }) => (
-      <AuthProvider initialProvidersAreSet>
-        <QueryClientProvider client={new QueryClient()}>
-          {children}
-        </QueryClientProvider>
-      </AuthProvider>
+      <Provider store={setupStore()}>
+        <AuthProvider initialProvidersAreSet>
+          <QueryClientProvider client={new QueryClient()}>
+            {children}
+          </QueryClientProvider>
+        </AuthProvider>
+      </Provider>
     ),
   });
+};
 
 const MOCK_RESPOSITORIES: GitRepository[] = [
   { id: 1, full_name: "octocat/hello-world", git_provider: "github" },
@@ -73,4 +91,29 @@ describe("HomeScreen", () => {
       ).not.toBeInTheDocument();
     });
   });
+
+  it("should create an empty conversation and redirect when pressing the launch from scratch button in the home header", async () => {
+    const createConversationSpy = vi.spyOn(OpenHands, "createConversation");
+
+    renderHomeScreen();
+
+    const launchButton = screen.getByRole("button", {
+      name: /launch from scratch/i,
+    });
+    await userEvent.click(launchButton);
+
+    expect(createConversationSpy).toHaveBeenCalledExactlyOnceWith(
+      undefined,
+      undefined,
+      [],
+      undefined,
+    );
+
+    // expect to be redirected to /conversations/:conversationId
+    await screen.findByTestId("conversation-screen");
+  });
+
+  it.todo(
+    "should create a conversation and redirect with the selected task when pressing the launch button in the task suggestions",
+  );
 });

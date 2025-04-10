@@ -1,5 +1,5 @@
 import { RepoConnector } from "#/components/features/home/repo-connector";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import * as GitService from "#/api/git";
 import { GitRepository } from "#/types/git";
@@ -7,18 +7,36 @@ import userEvent from "@testing-library/user-event";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import { AuthProvider } from "#/context/auth-context";
 import OpenHands from "#/api/open-hands";
+import { setupStore } from "test-utils";
+import { Provider } from "react-redux";
+import { createRoutesStub } from "react-router";
 
-const renderRepoConnector = () =>
-  render(<RepoConnector />, {
+const renderRepoConnector = () => {
+  const RouterStub = createRoutesStub([
+    {
+      Component: RepoConnector,
+      path: "/",
+    },
+    {
+      Component: () => <div data-testid="conversation-screen" />,
+      path: "/conversations/:conversationId",
+    },
+  ]);
+
+  return render(<RouterStub />, {
     wrapper: ({ children }) => (
-      // `initialProvidersAreSet` is required in order for the query hook to trigger
-      <AuthProvider initialProvidersAreSet>
-        <QueryClientProvider client={new QueryClient()}>
-          {children}
-        </QueryClientProvider>
-      </AuthProvider>
+      <Provider store={setupStore()}>
+        // `initialProvidersAreSet` is required in order for the query hook to
+        trigger
+        <AuthProvider initialProvidersAreSet>
+          <QueryClientProvider client={new QueryClient()}>
+            {children}
+          </QueryClientProvider>
+        </AuthProvider>
+      </Provider>
     ),
   });
+};
 
 const MOCK_RESPOSITORIES: GitRepository[] = [
   { id: 1, full_name: "rbren/polaris", git_provider: "github" },
@@ -98,5 +116,35 @@ describe("RepoConnector", () => {
 
     expect(screen.queryByText("Add GitHub repos")).not.toBeInTheDocument();
     expect(screen.queryByText("Add GitLab repos")).not.toBeInTheDocument();
+  });
+
+  it("should create a conversation and redirect with the selected repo when pressing the launch button in the repo connector", async () => {
+    const createConversationSpy = vi.spyOn(OpenHands, "createConversation");
+
+    renderRepoConnector();
+
+    const repoConnector = screen.getByTestId("repo-connector");
+    const launchButton = within(repoConnector).getByRole("button", {
+      name: /launch/i,
+    });
+    await userEvent.click(launchButton);
+
+    // repo not selected yet
+    expect(createConversationSpy).not.toHaveBeenCalled();
+
+    // select a repository from the dropdown
+    const dropdown = within(repoConnector).getByTestId("repo-dropdown");
+    await userEvent.click(dropdown);
+
+    const repoOption = screen.getByText("rbren/polaris");
+    await userEvent.click(repoOption);
+    await userEvent.click(launchButton);
+
+    expect(createConversationSpy).toHaveBeenCalledExactlyOnceWith(
+      { full_name: "rbren/polaris", git_provider: "github", id: 1 },
+      undefined,
+      [],
+      undefined,
+    );
   });
 });

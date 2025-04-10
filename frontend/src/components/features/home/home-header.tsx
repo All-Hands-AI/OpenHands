@@ -1,6 +1,9 @@
+import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { BrandButton } from "../settings/brand-button";
 
 export function HomeHeader() {
+  const { mutate: createConversation } = useCreateConversation();
+
   return (
     <header className="flex justify-between items-end">
       <section className="flex flex-col gap-5">
@@ -16,7 +19,12 @@ export function HomeHeader() {
       </section>
 
       <section className="flex flex-col gap-4">
-        <BrandButton variant="primary" type="button" className="w-full">
+        <BrandButton
+          variant="primary"
+          type="button"
+          className="w-full"
+          onClick={() => createConversation({})}
+        >
           Launch from Scratch
         </BrandButton>
         <p className="text-sm">
