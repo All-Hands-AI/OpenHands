@@ -1,85 +1,85 @@
-import { useListFile } from "#/hooks/query/use-list-file";
-import React from "react";
-import { useRouteError } from "react-router";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import oneLight from "react-syntax-highlighter/dist/cjs/styles/prism/one-light";
+import { useListFile } from "#/hooks/query/use-list-file"
+import React from "react"
+import { useRouteError } from "react-router"
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter"
+import oneLight from "react-syntax-highlighter/dist/cjs/styles/prism/one-light"
 
 export function ErrorBoundary() {
-  const error = useRouteError();
+  const error = useRouteError()
 
   return (
-    <div className="w-full h-full border border-danger rounded-b-xl flex flex-col items-center justify-center gap-2 bg-red-500/5">
+    <div className="flex h-full w-full flex-col items-center justify-center gap-2 rounded-b-xl border border-danger bg-red-500/5">
       <h1 className="text-3xl font-bold">Oops! An error occurred!</h1>
       {error instanceof Error && <pre>{error.message}</pre>}
     </div>
-  );
+  )
 }
 
 function getLanguageFromPath(path: string): string {
-  const extension = path.split(".").pop()?.toLowerCase();
+  const extension = path.split(".").pop()?.toLowerCase()
   switch (extension) {
     case "js":
     case "jsx":
-      return "javascript";
+      return "javascript"
     case "ts":
     case "tsx":
-      return "typescript";
+      return "typescript"
     case "py":
-      return "python";
+      return "python"
     case "html":
-      return "html";
+      return "html"
     case "css":
-      return "css";
+      return "css"
     case "json":
-      return "json";
+      return "json"
     case "md":
-      return "markdown";
+      return "markdown"
     case "yml":
     case "yaml":
-      return "yaml";
+      return "yaml"
     case "sh":
     case "bash":
-      return "bash";
+      return "bash"
     case "dockerfile":
-      return "dockerfile";
+      return "dockerfile"
     case "rs":
-      return "rust";
+      return "rust"
     case "go":
-      return "go";
+      return "go"
     case "java":
-      return "java";
+      return "java"
     case "cpp":
     case "cc":
     case "cxx":
-      return "cpp";
+      return "cpp"
     case "c":
-      return "c";
+      return "c"
     case "rb":
-      return "ruby";
+      return "ruby"
     case "php":
-      return "php";
+      return "php"
     case "sql":
-      return "sql";
+      return "sql"
     default:
-      return "text";
+      return "text"
   }
 }
 
 function FileViewer({ currentPath }: { currentPath: string }) {
-  const [fileExplorerIsOpen, setFileExplorerIsOpen] = React.useState(true);
+  const [fileExplorerIsOpen, setFileExplorerIsOpen] = React.useState(true)
   const { data: fileContent } = useListFile({
     path: currentPath,
     enabled: !!currentPath,
-  });
+  })
 
   const toggleFileExplorer = () => {
-    setFileExplorerIsOpen((prev) => !prev);
-  };
+    setFileExplorerIsOpen((prev) => !prev)
+  }
 
   return (
-    <div className="flex h-full bg-white relative">
+    <div className="relative flex h-full bg-white">
       {/* <FileExplorer isOpen={fileExplorerIsOpen} onToggle={toggleFileExplorer} /> */}
-      <div className="w-full h-full flex flex-col bg-white">
+      <div className="flex h-full w-full flex-col bg-white">
         <div className="h-full w-full overflow-auto">
           <SyntaxHighlighter
             language={getLanguageFromPath(currentPath)}
@@ -91,6 +91,10 @@ function FileViewer({ currentPath }: { currentPath: string }) {
               background: "#FFFF",
               fontSize: "0.875rem",
               borderRadius: 0,
+              maxWidth: "100%",
+              overflowX: "auto",
+              wordWrap: "break-word",
+              whiteSpace: "pre-wrap",
             }}
           >
             {fileContent}
@@ -98,7 +102,7 @@ function FileViewer({ currentPath }: { currentPath: string }) {
         </div>
       </div>
     </div>
-  );
+  )
 }
 
-export default FileViewer;
+export default FileViewer

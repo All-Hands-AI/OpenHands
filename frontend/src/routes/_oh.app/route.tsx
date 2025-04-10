@@ -1,50 +1,54 @@
-import { Container } from "#/components/layout/container";
+import { Container } from "#/components/layout/container"
 import {
   Orientation,
   ResizablePanel,
-} from "#/components/layout/resizable-panel";
-import ThesisComputer from "#/components/layout/RightSideContent";
+} from "#/components/layout/resizable-panel"
+import ThesisComputer from "#/components/layout/RightSideContent"
 import {
   ConversationProvider,
   useConversation,
-} from "#/context/conversation-context";
-import { WsClientProvider } from "#/context/ws-client-provider";
-import { useConversationConfig } from "#/hooks/query/use-conversation-config";
-import { useSettings } from "#/hooks/query/use-settings";
-import { useUserConversation } from "#/hooks/query/use-user-conversation";
-import { useEffectOnce } from "#/hooks/use-effect-once";
-import { useEndSession } from "#/hooks/use-end-session";
-import { addUserMessage, clearMessages } from "#/state/chat-slice";
-import { clearTerminal } from "#/state/command-slice";
-import { clearFiles, clearInitialPrompt } from "#/state/initial-query-slice";
-import { clearJupyter } from "#/state/jupyter-slice";
-import { RootState } from "#/store";
-import { displayErrorToast } from "#/utils/custom-toast-handlers";
-import React from "react";
-import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
-import { ChatInterface } from "../../components/features/chat/chat-interface";
-import { EventHandler } from "./event-handler";
-import { useAccount } from "wagmi";
-import { useLocation } from "react-router";
+} from "#/context/conversation-context"
+import { WsClientProvider } from "#/context/ws-client-provider"
+import { useConversationConfig } from "#/hooks/query/use-conversation-config"
+import { useSettings } from "#/hooks/query/use-settings"
+import { useUserConversation } from "#/hooks/query/use-user-conversation"
+import { useEffectOnce } from "#/hooks/use-effect-once"
+import { useEndSession } from "#/hooks/use-end-session"
+import { addUserMessage, clearMessages } from "#/state/chat-slice"
+import { clearTerminal } from "#/state/command-slice"
+import { clearFiles, clearInitialPrompt } from "#/state/initial-query-slice"
+import { clearJupyter } from "#/state/jupyter-slice"
+import { RootState } from "#/store"
+import { displayErrorToast } from "#/utils/custom-toast-handlers"
+import React from "react"
+import { useTranslation } from "react-i18next"
+import { useDispatch, useSelector } from "react-redux"
+import { ChatInterface } from "../../components/features/chat/chat-interface"
+import { EventHandler } from "./event-handler"
+import { useAccount } from "wagmi"
+import ViewFile from "#/components/layout/view-file"
 
 function AppContent() {
-  useConversationConfig();
-  const { t } = useTranslation();
-  const { data: settings } = useSettings();
-  const { conversationId } = useConversation();
-  const account = useAccount();
+  useConversationConfig()
+  const { t } = useTranslation()
+  const { data: settings } = useSettings()
+  const { conversationId } = useConversation()
+  const account = useAccount()
   const { data: conversation, isFetched } = useUserConversation(
     conversationId || null,
-  );
+  )
 
   const { initialPrompt, files } = useSelector(
     (state: RootState) => state.initialQuery,
-  );
-  const dispatch = useDispatch();
-  const endSession = useEndSession();
+  )
+  const { currentPathViewed } = useSelector(
+    (state: RootState) => state.fileState,
+  )
 
-  const [width, setWidth] = React.useState(window.innerWidth);
+  const dispatch = useDispatch()
+  const endSession = useEndSession()
+
+  const [width, setWidth] = React.useState(window.innerWidth)
 
   // const Terminal = React.useMemo(
   //   () => React.lazy(() => import("#/components/features/terminal/terminal")),
@@ -55,15 +59,15 @@ function AppContent() {
     if (isFetched && !conversation) {
       displayErrorToast(
         "This conversation does not exist, or you do not have permission to access it.",
-      );
-      endSession();
+      )
+      endSession()
     }
-  }, [conversation, isFetched]);
+  }, [conversation, isFetched])
 
   React.useEffect(() => {
-    dispatch(clearMessages());
-    dispatch(clearTerminal());
-    dispatch(clearJupyter());
+    dispatch(clearMessages())
+    dispatch(clearTerminal())
+    dispatch(clearJupyter())
     if (conversationId && (initialPrompt || files.length > 0)) {
       dispatch(
         addUserMessage({
@@ -72,52 +76,56 @@ function AppContent() {
           timestamp: new Date().toISOString(),
           pending: true,
         }),
-      );
-      dispatch(clearInitialPrompt());
-      dispatch(clearFiles());
+      )
+      dispatch(clearInitialPrompt())
+      dispatch(clearFiles())
     }
-  }, [conversationId]);
+  }, [conversationId])
 
   useEffectOnce(() => {
-    dispatch(clearMessages());
-    dispatch(clearTerminal());
-    dispatch(clearJupyter());
-  });
+    dispatch(clearMessages())
+    dispatch(clearTerminal())
+    dispatch(clearJupyter())
+  })
 
   function handleResize() {
-    setWidth(window.innerWidth);
+    setWidth(window.innerWidth)
   }
 
   React.useEffect(() => {
-    window.addEventListener("resize", handleResize);
+    window.addEventListener("resize", handleResize)
     return () => {
-      window.removeEventListener("resize", handleResize);
-    };
-  }, []);
+      window.removeEventListener("resize", handleResize)
+    }
+  }, [])
 
   function renderMain() {
     if (width <= 640) {
       return (
-        <div className="rounded-xl overflow-hidden border border-neutral-600 w-full">
+        <div className="w-full overflow-hidden rounded-xl border border-neutral-600">
           <ChatInterface />
         </div>
-      );
+      )
     }
     return (
       <ResizablePanel
         orientation={Orientation.HORIZONTAL}
-        className="grow h-full min-h-0 min-w-0"
+        className="h-full min-h-0 min-w-0 grow"
         initialSize={550}
         firstClassName="rounded-xl overflow-hidden "
         secondClassName="flex flex-col overflow-hidden"
         firstChild={<ChatInterface />}
         secondChild={
-          <Container className="h-full mt-4 rounded-xl !mb-4 bg-white border-none">
-            <ThesisComputer />
+          <Container className="!mb-4 mt-4 h-full rounded-xl border-none bg-white">
+            {currentPathViewed ? (
+              <ViewFile currentPathViewed={currentPathViewed} />
+            ) : (
+              <ThesisComputer />
+            )}
           </Container>
         }
       />
-    );
+    )
   }
 
   {
@@ -167,7 +175,7 @@ function AppContent() {
   return (
     <WsClientProvider conversationId={conversationId}>
       <EventHandler>
-        <div data-testid="app-route" className="flex flex-col h-full gap-3">
+        <div data-testid="app-route" className="flex h-full flex-col gap-3">
           <div className="flex h-full overflow-auto">{renderMain()}</div>
 
           {/*
@@ -185,7 +193,7 @@ function AppContent() {
         </div>
       </EventHandler>
     </WsClientProvider>
-  );
+  )
 }
 
 function App() {
@@ -193,7 +201,7 @@ function App() {
     <ConversationProvider>
       <AppContent />
     </ConversationProvider>
-  );
+  )
 }
 
-export default App;
+export default App
