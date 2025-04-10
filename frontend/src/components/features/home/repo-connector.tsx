@@ -44,7 +44,7 @@ export function RepoConnector() {
       </BrandButton>
 
       {isOSS && (
-        <div className="flex flex-col text-sm underline underline-offset-2 text-content-2 gap-4">
+        <div className="flex flex-col text-sm underline underline-offset-2 text-content-2 gap-4 w-fit">
           <a href="http://" target="_blank" rel="noopener noreferrer">
             Add GitHub repos
           </a>
