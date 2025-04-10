@@ -47,7 +47,11 @@ export function AgentStatusBar() {
       });
       return;
     }
-    if (curAgentState === AgentState.LOADING && message.trim()) {
+    if (
+      (curAgentState === AgentState.LOADING ||
+        curAgentState === AgentState.STOPPED) &&
+      message.trim()
+    ) {
       setStatusMessage(message);
     } else {
       setStatusMessage(AGENT_STATUS_MAP[curAgentState].message);
@@ -56,7 +60,7 @@ export function AgentStatusBar() {
 
   React.useEffect(() => {
     updateStatusMessage();
-  }, [curStatusMessage.id]);
+  }, [curStatusMessage, curAgentState]);
 
   // Handle window focus/blur
   React.useEffect(() => {
@@ -82,7 +86,8 @@ export function AgentStatusBar() {
       setStatusMessage(t(I18nKey.STATUS$CONNECTED)); // Using STATUS$CONNECTED instead of STATUS$CONNECTING
       setIndicatorColor(IndicatorColor.RED);
     } else {
-      setStatusMessage(AGENT_STATUS_MAP[curAgentState].message);
+      // Update the status message based on the current agent state
+      updateStatusMessage();
       setIndicatorColor(AGENT_STATUS_MAP[curAgentState].indicator);
       if (notificationStates.includes(curAgentState)) {
         const message = t(AGENT_STATUS_MAP[curAgentState].message);
@@ -97,7 +102,7 @@ export function AgentStatusBar() {
         }
       }
     }
-  }, [curAgentState, status, notify, t]);
+  }, [curAgentState, status, notify, t, curStatusMessage]);
 
   return (
     <div className="flex flex-col items-center">
