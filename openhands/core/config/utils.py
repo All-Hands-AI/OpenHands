@@ -23,6 +23,7 @@ from openhands.core.config.config_utils import (
 )
 from openhands.core.config.extended_config import ExtendedConfig
 from openhands.core.config.llm_config import LLMConfig
+from openhands.core.config.mcp_config import MCPConfig
 from openhands.core.config.sandbox_config import SandboxConfig
 from openhands.core.config.security_config import SecurityConfig
 from openhands.storage import get_file_store
@@ -58,7 +59,7 @@ def load_from_env(
         return None
 
     # helper function to set attributes based on env vars
-    def set_attr_from_env(sub_config: BaseModel, prefix='') -> None:
+    def set_attr_from_env(sub_config: BaseModel, prefix: str = '') -> None:
         """Set attributes of a config model based on environment variables."""
         for field_name, field_info in sub_config.model_fields.items():
             field_value = getattr(sub_config, field_name)
@@ -202,6 +203,21 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
             # Re-raise ValueError from SandboxConfig.from_toml_section
             raise ValueError('Error in [sandbox] section in config.toml')
 
+    # Process MCP sections if present
+    if 'mcp' in toml_config:
+        try:
+            mcp_mapping = MCPConfig.from_toml_section(toml_config['mcp'])
+            # We only use the base mcp config for now
+            if 'mcp' in mcp_mapping:
+                cfg.mcp = mcp_mapping['mcp']
+        except (TypeError, KeyError, ValidationError) as e:
+            logger.openhands_logger.warning(
+                f'Cannot parse MCP config from toml, values have not been applied.\nError: {e}'
+            )
+        except ValueError:
+            # Re-raise ValueError from MCPConfig.from_toml_section
+            raise ValueError('Error in MCP sections in config.toml')
+
     # Process condenser section if present
     if 'condenser' in toml_config:
         try:
@@ -259,6 +275,7 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
         'security',
         'sandbox',
         'condenser',
+        'mcp',
     }
     for key in toml_config:
         if key.lower() not in known_sections:
@@ -275,7 +292,7 @@ def get_or_create_jwt_secret(file_store: FileStore) -> str:
         return new_secret
 
 
-def finalize_config(cfg: AppConfig):
+def finalize_config(cfg: AppConfig) -> None:
     """More tweaks to the config after it's been loaded."""
     if cfg.workspace_base is not None:
         cfg.workspace_base = os.path.abspath(cfg.workspace_base)
