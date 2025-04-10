@@ -7,7 +7,7 @@ import { RootState } from "#/store"
 import { AgentState } from "#/types/agent-state"
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64"
 import posthog from "posthog-js"
-import React from "react"
+import React, { useEffect } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { useParams } from "react-router"
 import { FeedbackModal } from "../feedback/feedback-modal"
@@ -27,6 +27,9 @@ import { displayErrorToast } from "#/utils/custom-toast-handlers"
 import { downloadTrajectory } from "#/utils/download-trajectory"
 import { useDisclosure } from "@heroui/react"
 import { Controls } from "../controls/controls"
+import { useListFiles } from "#/hooks/query/use-list-files"
+import { FaFileInvoice } from "react-icons/fa"
+import { setCurrentPathViewed } from "#/state/file-state-slice"
 
 function getEntryPoint(
   hasRepository: boolean | null,
@@ -52,6 +55,11 @@ export function ChatInterface() {
 
   const { messages } = useSelector((state: RootState) => state.chat)
   const { curAgentState } = useSelector((state: RootState) => state.agent)
+  const { data: files, refetch: refetchFiles } = useListFiles()
+
+  useEffect(() => {
+    if (curAgentState === AgentState.AWAITING_USER_INPUT) refetchFiles()
+  }, [curAgentState])
 
   const [feedbackPolarity, setFeedbackPolarity] = React.useState<
     "positive" | "negative"
@@ -155,6 +163,21 @@ export function ChatInterface() {
           <ActionSuggestions
             onSuggestionsClick={(value) => handleSendMessage(value, [])}
           />
+        )}
+
+        {files && files.length > 0 && (
+          <div className="my-3 grid grid-cols-2 gap-2">
+            {files.map((file) => (
+              <div
+                key={file}
+                className="flex cursor-pointer items-center gap-2 rounded-md bg-neutral-1000 p-2 hover:opacity-70"
+                onClick={() => dispatch(setCurrentPathViewed(file))}
+              >
+                <FaFileInvoice className="h-4 w-4 fill-blue-500" />
+                <div className="line-clamp-1 text-sm">{file}</div>
+              </div>
+            ))}
+          </div>
         )}
       </div>
 
