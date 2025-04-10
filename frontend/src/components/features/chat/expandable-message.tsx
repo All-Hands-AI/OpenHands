@@ -1,4 +1,5 @@
 import { useConfig } from "#/hooks/query/use-config"
+import { I18nKey } from "#/i18n/declaration"
 import ArrowDown from "#/icons/angle-down-solid.svg?react"
 import ArrowUp from "#/icons/angle-up-solid.svg?react"
 import CheckCircle from "#/icons/check-circle-solid.svg?react"
@@ -14,6 +15,16 @@ import remarkGfm from "remark-gfm"
 import { code } from "../markdown/code"
 import { ol, ul } from "../markdown/list"
 import MessageActionDisplay from "./message-action-display"
+import { PayloadAction } from "@reduxjs/toolkit"
+import { OpenHandsObservation } from "#/types/core/observations"
+import { OpenHandsAction } from "#/types/core/actions"
+
+
+const trimText = (text: string, maxLength: number): string => {
+  if (!text) return "";
+  return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
+};
+
 interface ExpandableMessageProps {
   id?: string
   message: string
@@ -21,6 +32,8 @@ interface ExpandableMessageProps {
   success?: boolean
   messageActionID?: string
   eventID?: number
+  observation?: PayloadAction<OpenHandsObservation>
+  action?: PayloadAction<OpenHandsAction>
 }
 
 export function ExpandableMessage({
@@ -30,15 +43,60 @@ export function ExpandableMessage({
   success,
   messageActionID,
   eventID,
+  observation,
+  action,
 }: ExpandableMessageProps) {
   const { data: config } = useConfig()
   const { t, i18n } = useTranslation()
   const [showDetails, setShowDetails] = useState(true)
   const [headline, setHeadline] = useState("")
   const [details, setDetails] = useState(message)
+  const [translationId, setTranslationId] = useState<string | undefined>(id);
+  const [translationParams, setTranslationParams] = useState<
+    Record<string, unknown>
+  >({
+    observation,
+    action,
+  });
 
   useEffect(() => {
     if (id && i18n.exists(id)) {
+      let processedObservation = observation;
+      let processedAction = action;
+
+      if (action && action.payload.action === "run") {
+        const trimmedCommand = trimText(action.payload.args.command, 80);
+        processedAction = {
+          ...action,
+          payload: {
+            ...action.payload,
+            args: {
+              ...action.payload.args,
+              command: trimmedCommand,
+            },
+          },
+        };
+      }
+
+      if (observation && observation.payload.observation === "run") {
+        const trimmedCommand = trimText(observation.payload.extras.command, 80);
+        processedObservation = {
+          ...observation,
+          payload: {
+            ...observation.payload,
+            extras: {
+              ...observation.payload.extras,
+              command: trimmedCommand,
+            },
+          },
+        };
+      }
+
+      setTranslationId(id);
+      setTranslationParams({
+        observation: processedObservation,
+        action: processedAction,
+      });
       setHeadline(t(id) + ` (${messageActionID})`)
       setDetails(message)
       setShowDetails(true)
@@ -50,7 +108,7 @@ export function ExpandableMessage({
   if (
     config?.FEATURE_FLAGS.ENABLE_BILLING &&
     config?.APP_MODE === "saas" &&
-    id === "STATUS$ERROR_LLM_OUT_OF_CREDITS"
+    id === I18nKey.STATUS$ERROR_LLM_OUT_OF_CREDITS
   ) {
     return (
       <div
@@ -59,13 +117,13 @@ export function ExpandableMessage({
       >
         <div className="w-full text-sm">
           <div className="font-bold text-danger">
-            {t("STATUS$ERROR_LLM_OUT_OF_CREDITS")}
+            {t(I18nKey.STATUS$ERROR_LLM_OUT_OF_CREDITS)}
           </div>
           <Link
             className="mb-2 mt-2 flex h-10 w-full items-center justify-center gap-2 rounded bg-primary text-[#0D0F11]"
             to="/settings/billing"
           >
-            {t("BILLING$CLICK_TO_TOP_UP")}
+            {t(I18nKey.BILLING$CLICK_TO_TOP_UP)}
           </Link>
         </div>
       </div>
@@ -112,6 +170,19 @@ export function ExpandableMessage({
             {headline && (
               <>
                 {headline}
+                {/* {translationId && i18n.exists(translationId) ? (
+                  <Trans
+                    i18nKey={translationId + ` (${messageActionID})`}
+                    values={translationParams}
+                    components={{
+                      bold: <strong />,
+                      path: <PathComponent />,
+                      cmd: <MonoComponent />,
+                    }}
+                  />
+                ) : (
+                  `${id} (${messageActionID})`
+                )} */}
                 <button
                   type="button"
                   onClick={() => setShowDetails(!showDetails)}

@@ -21,15 +21,18 @@ import { TypingIndicator } from "./typing-indicator"
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button"
 import { LoadingSpinner } from "#/components/shared/loading-spinner"
 import Security from "#/components/shared/modals/security/security"
+import { WsClientProviderStatus } from "#/context/ws-client-provider"
 import { useGetTrajectory } from "#/hooks/mutation/use-get-trajectory"
+import { useListFiles } from "#/hooks/query/use-list-files"
 import { useSettings } from "#/hooks/query/use-settings"
+import { I18nKey } from "#/i18n/declaration"
+import { setCurrentPathViewed } from "#/state/file-state-slice"
 import { displayErrorToast } from "#/utils/custom-toast-handlers"
 import { downloadTrajectory } from "#/utils/download-trajectory"
 import { useDisclosure } from "@heroui/react"
-import { Controls } from "../controls/controls"
-import { useListFiles } from "#/hooks/query/use-list-files"
+import { useTranslation } from "react-i18next"
 import { FaFileInvoice } from "react-icons/fa"
-import { setCurrentPathViewed } from "#/state/file-state-slice"
+import { Controls } from "../controls/controls"
 
 function getEntryPoint(
   hasRepository: boolean | null,
@@ -48,8 +51,9 @@ export function ChatInterface() {
     onOpenChange: onSecurityModalOpenChange,
   } = useDisclosure()
   const dispatch = useDispatch()
-  const { send, isLoadingMessages } = useWsClient()
   const scrollRef = React.useRef<HTMLDivElement>(null)
+  const { send, isLoadingMessages, disconnect, status } = useWsClient()
+  const { t } = useTranslation()
   const { scrollDomToBottom, onChatBodyScroll, hitBottom } =
     useScrollToBottom(scrollRef)
 
@@ -103,6 +107,11 @@ export function ChatInterface() {
     send(generateAgentStateChangeEvent(AgentState.STOPPED))
   }
 
+  const handleDisconnect = () => {
+    posthog.capture("websocket_disconnect_clicked")
+    disconnect()
+  }
+
   const onClickShareFeedbackActionButton = async (
     polarity: "positive" | "negative",
   ) => {
@@ -112,19 +121,19 @@ export function ChatInterface() {
 
   const onClickExportTrajectoryButton = () => {
     if (!params.conversationId) {
-      displayErrorToast("ConversationId unknown, cannot download trajectory")
+      displayErrorToast(t(I18nKey.CONVERSATION$DOWNLOAD_ERROR))
       return
     }
 
     getTrajectory(params.conversationId, {
       onSuccess: async (data) => {
         await downloadTrajectory(
-          params.conversationId ?? "unknown",
+          params.conversationId ?? t(I18nKey.CONVERSATION$UNKNOWN),
           data.trajectory,
         )
       },
-      onError: (error) => {
-        displayErrorToast(error.message)
+      onError: () => {
+        displayErrorToast(t(I18nKey.CONVERSATION$DOWNLOAD_ERROR))
       },
     })
   }
@@ -142,7 +151,7 @@ export function ChatInterface() {
       <div
         ref={scrollRef}
         onScroll={(e) => onChatBodyScroll(e.currentTarget)}
-        className="flex grow flex-col gap-2 overflow-y-auto overflow-x-hidden px-4 pt-4"
+        className="fast-smooth-scroll flex grow flex-col gap-2 overflow-y-auto overflow-x-hidden px-4 pt-4"
       >
         {isLoadingMessages && (
           <div className="flex justify-center">
@@ -200,28 +209,39 @@ export function ChatInterface() {
           {!hitBottom && <ScrollToBottomButton onClick={scrollDomToBottom} />}
         </div>
 
-        <InteractiveChatBox
-          onSubmit={handleSendMessage}
-          onStop={handleStop}
-          isDisabled={
-            curAgentState === AgentState.LOADING ||
-            curAgentState === AgentState.AWAITING_USER_CONFIRMATION
-          }
-          mode={curAgentState === AgentState.RUNNING ? "stop" : "submit"}
-          value={messageToSend ?? undefined}
-          onChange={setMessageToSend}
-        />
-        <Controls
-          setSecurityOpen={onSecurityModalOpen}
-          showSecurityLock={!!settings?.SECURITY_ANALYZER}
-        />
-        {settings && (
-          <Security
-            isOpen={securityModalIsOpen}
-            onOpenChange={onSecurityModalOpenChange}
-            securityAnalyzer={settings.SECURITY_ANALYZER}
+        <div className="flex items-center gap-2">
+          <InteractiveChatBox
+            onSubmit={handleSendMessage}
+            onStop={handleStop}
+            isDisabled={
+              curAgentState === AgentState.LOADING ||
+              curAgentState === AgentState.AWAITING_USER_CONFIRMATION ||
+              status === WsClientProviderStatus.DISCONNECTED
+            }
+            mode={curAgentState === AgentState.RUNNING ? "stop" : "submit"}
+            value={messageToSend ?? undefined}
+            onChange={setMessageToSend}
+            className="w-full flex-grow pr-1" // Ensure chat box takes full width minus space for the button
           />
-        )}
+          <DisconnectButton
+            handleDisconnect={handleDisconnect}
+            isDisabled={
+              !isWaitingForUserInput &&
+              status !== WsClientProviderStatus.DISCONNECTED
+            }
+          />
+          <Controls
+            setSecurityOpen={onSecurityModalOpen}
+            showSecurityLock={!!settings?.SECURITY_ANALYZER}
+          />
+          {settings && (
+            <Security
+              isOpen={securityModalIsOpen}
+              onOpenChange={onSecurityModalOpenChange}
+              securityAnalyzer={settings.SECURITY_ANALYZER}
+            />
+          )}
+        </div>
       </div>
 
       <FeedbackModal
@@ -230,5 +250,31 @@ export function ChatInterface() {
         polarity={feedbackPolarity}
       />
     </div>
+  )
+}
+
+interface DisconnectButtonProps {
+  handleDisconnect: () => void
+  isDisabled: boolean
+}
+
+export function DisconnectButton({
+  handleDisconnect,
+  isDisabled,
+}: DisconnectButtonProps) {
+  const { t } = useTranslation()
+
+  return (
+    <button
+      onClick={handleDisconnect}
+      disabled={isDisabled}
+      className={`rounded-lg px-3 py-2 font-medium transition-colors ${
+        isDisabled
+          ? "cursor-not-allowed bg-gray-300 text-gray-500"
+          : "bg-red-500 text-white hover:bg-red-600"
+      }`}
+    >
+      {t(isDisabled ? "Connect" : "Disconnect")}
+    </button>
   )
 }

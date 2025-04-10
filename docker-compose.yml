@@ -6,6 +6,9 @@ services:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB}
+      - SANDBOX_RUNTIME_CONTAINER_IMAGE=${SANDBOX_RUNTIME_CONTAINER_IMAGE:-docker.all-hands.dev/all-hands-ai/runtime:0.31-nikolaik}
+      #- SANDBOX_USER_ID=${SANDBOX_USER_ID:-1234} # enable this only if you want a specific non-root sandbox user but you will have to manually adjust permissions of openhands-state for this user
+      - WORKSPACE_MOUNT_PATH=${WORKSPACE_BASE:-$PWD/workspace}
     ports:
       - "${POSTGRES_PORT}:5432"
     volumes:

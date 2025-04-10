@@ -1,3 +1,7 @@
+import { PayloadAction } from "@reduxjs/toolkit";
+import { OpenHandsObservation } from "./types/core/observations";
+import { OpenHandsAction } from "./types/core/actions";
+
 export type Message = {
   sender: "user" | "assistant";
   content: string;
@@ -9,4 +13,6 @@ export type Message = {
   translationID?: string;
   eventID?: number;
   messageActionID?: string;
+  observation?: PayloadAction<OpenHandsObservation>;
+  action?: PayloadAction<OpenHandsAction>;
 };

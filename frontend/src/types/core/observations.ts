@@ -110,8 +110,8 @@ export interface AgentThinkObservation
   };
 }
 
-export interface PlaywrightMcpBrowserScreenshotObservation
-  extends OpenHandsObservationEvent<ObservationType.PLAYWRIGHT_MCP_BROWSER_SCREENSHOT> {
+export interface BrowserMCPObservation
+  extends OpenHandsObservationEvent<ObservationType.BROWSER_MCP> {
   source: "agent";
   extras: {
     url: string;
@@ -120,13 +120,32 @@ export interface PlaywrightMcpBrowserScreenshotObservation
   };
 }
 
-export interface MCPObservation
-  extends OpenHandsObservationEvent<"mcp"> {
+export interface MCPObservation extends OpenHandsObservationEvent<"mcp"> {
   source: "agent";
   extras: {
     content: string;
   };
 }
+export interface MicroagentKnowledge {
+  name: string;
+  trigger: string;
+  content: string;
+}
+
+export interface RecallObservation extends OpenHandsObservationEvent<"recall"> {
+  source: "agent";
+  extras: {
+    recall_type?: "workspace_context" | "knowledge";
+    repo_name?: string;
+    repo_directory?: string;
+    repo_instructions?: string;
+    runtime_hosts?: Record<string, number>;
+    additional_agent_instructions?: string;
+    date?: string;
+    microagent_knowledge?: MicroagentKnowledge[];
+  };
+}
+
 export type OpenHandsObservation =
   | AgentStateChangeObservation
   | AgentThinkObservation
@@ -139,5 +158,6 @@ export type OpenHandsObservation =
   | ReadObservation
   | EditObservation
   | ErrorObservation
-  | PlaywrightMcpBrowserScreenshotObservation
-  | MCPObservation;
+  | BrowserMCPObservation
+  | MCPObservation
+  | RecallObservation;

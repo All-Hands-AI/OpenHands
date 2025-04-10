@@ -12,7 +12,7 @@ enum ObservationType {
   BROWSE_INTERACTIVE = "browse_interactive",
 
   // The screenshot of a Playwright MCP Browser
-  PLAYWRIGHT_MCP_BROWSER_SCREENSHOT = "playwright_mcp_browser_screenshot",
+  BROWSER_MCP = "browser_mcp",
 
   // The result of a MCP Server operation
   MCP = "mcp",
@@ -34,6 +34,9 @@ enum ObservationType {
 
   // A response to the agent's thought (usually a static message)
   THINK = "think",
+
+  // An observation that shows agent's context extension
+  RECALL = "recall",
 
   // A no-op observation
   NULL = "null",

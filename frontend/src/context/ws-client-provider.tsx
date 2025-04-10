@@ -52,6 +52,7 @@ interface UseWsClient {
   isLoadingMessages: boolean;
   events: Record<string, unknown>[];
   send: (event: Record<string, unknown>) => void;
+  disconnect: () => void; // Add disconnect function to the interface
 }
 
 const WsClientContext = React.createContext<UseWsClient>({
@@ -59,6 +60,9 @@ const WsClientContext = React.createContext<UseWsClient>({
   isLoadingMessages: true,
   events: [],
   send: () => {
+    throw new Error("not connected");
+  },
+  disconnect: () => {
     throw new Error("not connected");
   },
 });
@@ -114,6 +118,7 @@ export function WsClientProvider({
   const [events, setEvents] = React.useState<Record<string, unknown>[]>([]);
   const lastEventRef = React.useRef<Record<string, unknown> | null>(null);
   const jwt = useGetJwt();
+
   const messageRateHandler = useRate({ threshold: 250 });
 
   function send(event: Record<string, unknown>) {
@@ -122,6 +127,20 @@ export function WsClientProvider({
       return;
     }
     sioRef.current.emit("oh_user_action", event);
+  }
+
+  function disconnect() {
+    const sio = sioRef.current;
+    if (sio) {
+      sio.off("connect", handleConnect);
+      sio.off("oh_event", handleMessage);
+      sio.off("connect_error", handleError);
+      sio.off("connect_failed", handleError);
+      sio.off("disconnect", handleDisconnect);
+      sio.disconnect();
+      sioRef.current = null; // Clear the ref after disconnecting
+      setStatus(WsClientProviderStatus.DISCONNECTED);
+    }
   }
 
   function handleConnect() {
@@ -165,49 +184,33 @@ export function WsClientProvider({
       throw new Error("No conversation ID provided");
     }
 
-    let sio = sioRef.current;
+    // Only connect if not already connected
+    if (!sioRef.current) {
+      const lastEvent = lastEventRef.current;
+      const query = {
+        latest_event_id: lastEvent?.id ?? -1,
+        conversation_id: conversationId,
+        auth: jwt,
+      };
 
-    const lastEvent = lastEventRef.current;
-    const query = {
-      latest_event_id: lastEvent?.id ?? -1,
-      conversation_id: conversationId,
-      auth: jwt,
-    };
+      const baseUrl =
+        import.meta.env.VITE_BACKEND_BASE_URL || window?.location.host;
 
-    const baseUrl =
-      import.meta.env.VITE_BACKEND_BASE_URL || window?.location.host;
+      const sio = io(baseUrl, {
+        transports: ["websocket"],
+        query,
+      });
+      sio.on("connect", handleConnect);
+      sio.on("oh_event", handleMessage);
+      sio.on("connect_error", handleError);
+      sio.on("connect_failed", handleError);
+      sio.on("disconnect", handleDisconnect);
 
-    sio = io(baseUrl, {
-      transports: ["websocket"],
-      query,
-    });
-    sio.on("connect", handleConnect);
-    sio.on("oh_event", handleMessage);
-    sio.on("connect_error", handleError);
-    sio.on("connect_failed", handleError);
-    sio.on("disconnect", handleDisconnect);
+      sioRef.current = sio;
+    }
 
-    sioRef.current = sio;
-
-    return () => {
-      sio.off("connect", handleConnect);
-      sio.off("oh_event", handleMessage);
-      sio.off("connect_error", handleError);
-      sio.off("connect_failed", handleError);
-      sio.off("disconnect", handleDisconnect);
-    };
+    // No cleanup function to disconnect automatically
   }, [conversationId]);
-
-  React.useEffect(
-    () => () => {
-      const sio = sioRef.current;
-      if (sio) {
-        sio.off("disconnect", handleDisconnect);
-        sio.disconnect();
-      }
-    },
-    [],
-  );
 
   const value = React.useMemo<UseWsClient>(
     () => ({
@@ -215,11 +218,12 @@ export function WsClientProvider({
       isLoadingMessages: messageRateHandler.isUnderThreshold,
       events,
       send,
+      disconnect, // Provide the disconnect function
     }),
     [status, messageRateHandler.isUnderThreshold, events],
   );
 
-  return <WsClientContext value={value}>{children}</WsClientContext>;
+  return <WsClientContext.Provider value={value}>{children}</WsClientContext.Provider>;
 }
 
 export function useWsClient() {

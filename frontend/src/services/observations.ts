@@ -33,7 +33,7 @@ export function handleObservationMessage(message: ObservationMessage) {
       break;
     case ObservationType.BROWSE:
     case ObservationType.BROWSE_INTERACTIVE:
-    case ObservationType.PLAYWRIGHT_MCP_BROWSER_SCREENSHOT:
+    case ObservationType.BROWSER_MCP:
       if (message.extras?.screenshot) {
         store.dispatch(setScreenshotSrc(message.extras?.screenshot));
       }
@@ -55,6 +55,7 @@ export function handleObservationMessage(message: ObservationMessage) {
     case ObservationType.THINK:
     case ObservationType.NULL:
     case ObservationType.MCP:
+    case ObservationType.RECALL:
       break; // We don't display the default message for these observations
     default:
       store.dispatch(addAssistantMessage(message.message));
@@ -76,6 +77,21 @@ export function handleObservationMessage(message: ObservationMessage) {
             observation: "agent_state_changed" as const,
             extras: {
               agent_state: (message.extras.agent_state as AgentState) || "idle",
+            },
+          }),
+        );
+        break;
+      case "recall":
+        store.dispatch(
+          addAssistantObservation({
+            ...baseObservation,
+            observation: "recall" as const,
+            extras: {
+              ...(message.extras || {}),
+              recall_type:
+                (message.extras?.recall_type as
+                  | "workspace_context"
+                  | "knowledge") || "knowledge",
             },
           }),
         );
@@ -223,11 +239,11 @@ export function handleObservationMessage(message: ObservationMessage) {
           }),
         );
         break;
-      case ObservationType.PLAYWRIGHT_MCP_BROWSER_SCREENSHOT:
+      case ObservationType.BROWSER_MCP:
         store.dispatch(
           addAssistantObservation({
             ...baseObservation,
-            observation: ObservationType.PLAYWRIGHT_MCP_BROWSER_SCREENSHOT,
+            observation: ObservationType.BROWSER_MCP,
             extras: {
               url: String(message.extras.url || ""),
               screenshot: String(message.extras.screenshot || ""),

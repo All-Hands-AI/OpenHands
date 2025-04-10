@@ -1,29 +1,31 @@
-import { RootState } from "#/store";
-import { useSelector } from "react-redux";
-import { BrowserSnapshot } from "./browser-snapshot";
-import { EmptyBrowserMessage } from "./empty-browser-message";
+import { RootState } from "#/store"
+import { useSelector } from "react-redux"
+import { BrowserSnapshot } from "./browser-snapshot"
+import { EmptyBrowserMessage } from "./empty-browser-message"
 
 export function BrowserPanel({ computerItem }: { computerItem?: any }) {
   const { url, screenshotSrc } = useSelector(
     (state: RootState) => state.browser,
-  );
+  )
 
   const { url: browserUrl, screenshot } = computerItem?.extras || {
     url,
     screenshot: screenshotSrc,
-  };
+  }
 
   const imgSrc =
-    screenshot && screenshot.startsWith("data:image/png;base64,")
+    screenshot &&
+    (screenshot.startsWith("data:image/png;base64,") ||
+      screenshot.startsWith("data:image/jpeg;base64,"))
       ? screenshot
-      : `data:image/png;base64,${screenshot || ""}`;
+      : `data:image/png;base64,${screenshot || ""}`
 
   return (
-    <div className="h-full w-full flex flex-col text-neutral-400 rounded">
-      <div className="w-full p-3 bg-neutral-800 truncate border-b border-gray-200 rounded-t-lg">
+    <div className="flex h-full w-full flex-col rounded text-neutral-400">
+      <div className="w-full truncate rounded-t-lg border-b border-gray-200 bg-neutral-800 p-3">
         {browserUrl}
       </div>
-      <div className="overflow-y-auto grow scrollbar-hide rounded-xl">
+      <div className="grow overflow-y-auto rounded-xl scrollbar-hide">
         {screenshot ? (
           <BrowserSnapshot src={imgSrc} />
         ) : (
@@ -31,5 +33,5 @@ export function BrowserPanel({ computerItem }: { computerItem?: any }) {
         )}
       </div>
     </div>
-  );
+  )
 }

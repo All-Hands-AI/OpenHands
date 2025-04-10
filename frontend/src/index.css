@@ -81,3 +81,9 @@ code {
     transform: translateY(0);
   }
 }
+
+/* Fast smooth scrolling for chat interface */
+.fast-smooth-scroll {
+  scroll-behavior: smooth;
+  scroll-timeline: 100ms;
+}

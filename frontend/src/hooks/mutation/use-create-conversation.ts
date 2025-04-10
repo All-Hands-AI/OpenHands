@@ -17,15 +17,6 @@ export const useCreateConversation = () => {
 
   return useMutation({
     mutationFn: async (variables: { q?: string }) => {
-      if (
-        !variables.q?.trim() &&
-        !selectedRepository &&
-        files.length === 0 &&
-        !replayJson
-      ) {
-        throw new Error("No query provided");
-      }
-
       if (variables.q) dispatch(setInitialPrompt(variables.q));
 
       return OpenHands.createConversation(
@@ -35,7 +26,8 @@ export const useCreateConversation = () => {
         replayJson || undefined,
       );
     },
-    onSuccess: async ({ conversation_id: conversationId }, { q }) => {
+    onSuccess: async (data, { q }) => {
+      if (!data) return;
       posthog.capture("initial_query_submitted", {
         entry_point: "task_form",
         query_character_length: q?.length,
@@ -46,7 +38,8 @@ export const useCreateConversation = () => {
       await queryClient.invalidateQueries({
         queryKey: ["user", "conversations"],
       });
-      navigate(`/conversations/${conversationId}`);
+      data?.conversation_id &&
+        navigate(`/conversations/${data.conversation_id}`);
     },
   });
 };

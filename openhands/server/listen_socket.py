@@ -1,4 +1,5 @@
 import os
+from types import MappingProxyType
 from urllib.parse import parse_qs
 
 import jwt
@@ -10,15 +11,16 @@ from openhands.events.action import (
     NullAction,
 )
 from openhands.events.action.agent import RecallAction
+from openhands.events.async_event_store_wrapper import AsyncEventStoreWrapper
 from openhands.events.observation import (
     NullObservation,
 )
 from openhands.events.observation.agent import (
     AgentStateChangedObservation,
-    RecallObservation,
 )
 from openhands.events.serialization import event_to_dict
-from openhands.events.stream import AsyncEventStreamWrapper
+from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderToken
+from openhands.integrations.service_types import ProviderType
 from openhands.server.db import database
 from openhands.server.models import User
 from openhands.server.routes.auth import JWT_ALGORITHM, JWT_SECRET
@@ -31,12 +33,26 @@ from openhands.server.shared import (
 from openhands.utils.get_user_setting import get_user_setting
 
 
+def create_provider_tokens_object(
+    providers_set: list[ProviderType],
+) -> PROVIDER_TOKEN_TYPE:
+    provider_information = {}
+
+    for provider in providers_set:
+        provider_information[provider] = ProviderToken(token=None, user_id=None)
+
+    return MappingProxyType(provider_information)
+
+
 @sio.event
 async def connect(connection_id: str, environ):
     logger.info(f'sio:connect: {connection_id}')
     query_params = parse_qs(environ.get('QUERY_STRING', ''))
     latest_event_id = int(query_params.get('latest_event_id', [-1])[0])
     conversation_id = query_params.get('conversation_id', [None])[0]
+    providers_raw: list[str] = query_params.get('providers_set', [])
+    providers_set: list[ProviderType] = [ProviderType(p) for p in providers_raw]
+
     if not conversation_id:
         logger.error('No conversation_id in query params')
         raise ConnectionRefusedError('No conversation_id in query params')
@@ -93,12 +109,29 @@ async def connect(connection_id: str, environ):
             logger.error(f'Error processing JWT token: {str(e)}')
             raise ConnectionRefusedError('Authentication failed')
 
+    # TODO FIXME: Logic from upstream. Temporarily comment out. Need to check if they are useful
+    # cookies_str = environ.get('HTTP_COOKIE', '')
+    # conversation_validator = create_conversation_validator()
+    # user_id, github_user_id = await conversation_validator.validate(
+    #     conversation_id, cookies_str
+    # )
+
     settings = await get_user_setting(user_id)
 
     if not settings:
         raise ConnectionRefusedError(
             'Settings not found', {'msg_id': 'CONFIGURATION$SETTINGS_NOT_FOUND'}
         )
+
+    # TODO FIXME: code from upstream. Should consider checking if do we need to use this.
+    # session_init_args: dict = {}
+    # if settings:
+    #     session_init_args = {**settings.__dict__, **session_init_args}
+
+    # session_init_args['git_provider_tokens'] = create_provider_tokens_object(
+    #     providers_set
+    # )
+    # conversation_init_data = ConversationInitData(**session_init_args)
 
     github_user_id = ''
     event_stream = await conversation_manager.join_conversation(
@@ -110,12 +143,12 @@ async def connect(connection_id: str, environ):
     agent_state_changed = None
     if event_stream is None:
         raise ConnectionRefusedError('Failed to join conversation')
-    async_stream = AsyncEventStreamWrapper(event_stream, latest_event_id + 1)
-    async for event in async_stream:
+    async_store = AsyncEventStoreWrapper(event_stream, latest_event_id + 1)
+    async for event in async_store:
         logger.debug(f'oh_event: {event.__class__.__name__}')
         if isinstance(
             event,
-            (NullAction, NullObservation, RecallAction, RecallObservation),
+            (NullAction, NullObservation, RecallAction),
         ):
             continue
         elif isinstance(event, AgentStateChangedObservation):

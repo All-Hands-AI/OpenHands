@@ -1,9 +1,12 @@
 import { NavLink, Outlet } from "react-router";
+import { useTranslation } from "react-i18next";
 import SettingsIcon from "#/icons/settings.svg?react";
 import { cn } from "#/utils/utils";
 import { useConfig } from "#/hooks/query/use-config";
+import { I18nKey } from "#/i18n/declaration";
 
 function SettingsScreen() {
+  const { t } = useTranslation();
   const { data: config } = useConfig();
   const isSaas = config?.APP_MODE === "saas";
   const billingIsEnabled = config?.FEATURE_FLAGS.ENABLE_BILLING;

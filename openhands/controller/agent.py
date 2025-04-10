@@ -32,14 +32,13 @@ class Agent(ABC):
         self,
         llm: LLM,
         config: 'AgentConfig',
-        mcp_tools: list[dict] | None = None,
         workspace_mount_path_in_sandbox_store_in_session: bool = True,
     ):
         self.llm = llm
         self.config = config
         self._complete = False
         self.prompt_manager: 'PromptManager' | None = None
-        self.mcp_tools = mcp_tools
+        self.mcp_tools: list[dict] = []
         self.workspace_mount_path_in_sandbox_store_in_session = (
             workspace_mount_path_in_sandbox_store_in_session
         )
@@ -117,3 +116,11 @@ class Agent(ABC):
         if not bool(cls._registry):
             raise AgentNotRegisteredError()
         return list(cls._registry.keys())
+
+    def set_mcp_tools(self, mcp_tools: list[dict]) -> None:
+        """Sets the list of MCP tools for the agent.
+
+        Args:
+        - mcp_tools (list[dict]): The list of MCP tools.
+        """
+        self.mcp_tools = mcp_tools

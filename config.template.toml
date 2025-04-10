@@ -24,7 +24,7 @@
 #daytona_target = ""
 
 # Base path for the workspace
-workspace_base = "./workspace"
+#workspace_base = "./workspace"
 
 # Cache directory path
 #cache_dir = "/tmp/cache"
@@ -64,7 +64,7 @@ workspace_base = "./workspace"
 #max_budget_per_task = 0.0
 
 # Maximum number of iterations
-#max_iterations = 100
+#max_iterations = 250
 
 # Path to mount the workspace in the sandbox
 #workspace_mount_path_in_sandbox = "/workspace"
@@ -390,16 +390,6 @@ type = "noop"
 #################################### MCP ####################################
 # Configuration for MCP (Model Context Protocol) settings
 ##############################################################################
-[mcp-sse]
-# List of MCP server URLs, separated by quotes
-# Example: mcp_servers = ["http://server1:8080/sse", "http://server2:8080/sse"]
-#mcp_servers = []
-
-#################################### MCP ####################################
-# Configuration for MCP (Model Context Protocol) settings
-##############################################################################
-[mcp-stdio]
-# List of MCP server URLs, separated by quotes
-# Example: commands = [""]
-#commands = []
-#args = []
+[mcp]
+[mcp.oraichain]
+url = "http://localhost:4000/sse"

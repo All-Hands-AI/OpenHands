@@ -44,6 +44,7 @@ def mock_parent_agent():
     agent.llm.metrics = Metrics()
     agent.llm.config = LLMConfig()
     agent.config = AgentConfig()
+    agent.workspace_mount_path_in_sandbox_store_in_session = True
     return agent
 
 
@@ -66,7 +67,7 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
     is set, and once the child finishes, the parent is cleaned up properly.
     """
     # Mock the agent class resolution so that AgentController can instantiate mock_child_agent
-    Agent.get_cls = Mock(return_value=lambda llm, config: mock_child_agent)
+    Agent.get_cls = Mock(return_value=lambda llm, config, workspace_mount_path_in_sandbox_store_in_session=None: mock_child_agent)
 
     # Create parent controller
     parent_state = State(max_iterations=10)

@@ -10,6 +10,7 @@ import { showErrorToast } from "#/utils/error-handler";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
+import { I18nKey } from "#/i18n/declaration";
 import {
   AGENT_STATUS_MAP,
   IndicatorColor,
@@ -78,7 +79,7 @@ export function AgentStatusBar() {
 
   React.useEffect(() => {
     if (status === WsClientProviderStatus.DISCONNECTED) {
-      setStatusMessage("Connecting...");
+      setStatusMessage(t(I18nKey.STATUS$DISCONNECTED)); // Using STATUS$CONNECTED instead of STATUS$CONNECTING
       setIndicatorColor(IndicatorColor.RED);
     } else {
       setStatusMessage(AGENT_STATUS_MAP[curAgentState].message);

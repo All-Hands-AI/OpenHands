@@ -5,7 +5,7 @@ from openhands.events.observation.observation import Observation
 
 
 @dataclass
-class PlaywrightMcpBrowserScreenshotObservation(Observation):
+class BrowserMCPObservation(Observation):
     """This data class represents the result of a Playwright MCP Browser Screenshot operation.
 
     The response is a dict {"data": "base64 encoded string of the screenshot, which should be streamed to the client using the correct format matching
@@ -14,7 +14,7 @@ class PlaywrightMcpBrowserScreenshotObservation(Observation):
 
     url: str
     trigger_by_action: str
-    observation: str = ObservationType.PLAYWRIGHT_MCP_BROWSER_SCREENSHOT
+    observation: str = ObservationType.BROWSER_MCP
     screenshot: str = field(repr=False, default='')  # don't show in repr
 
     @property

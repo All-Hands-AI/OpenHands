@@ -1,6 +1,5 @@
 import { BrowserPanel } from "#/components/features/browser/browser"
 import { useSettings } from "#/hooks/query/use-settings"
-import TerminalPage from "#/routes/_oh.app.terminal"
 import { RootState } from "#/store"
 import ObservationType from "#/types/observation-type"
 import { Slider, useDisclosure } from "@heroui/react"
@@ -11,6 +10,7 @@ import { useSelector } from "react-redux"
 import CodeView from "./CodeView"
 import EditorContent from "./EditorContent"
 import TaskProgress from "./TaskProgress"
+import TerminalPage from "#/routes/terminal-tab"
 
 const EditorNotification = () => {
   return (

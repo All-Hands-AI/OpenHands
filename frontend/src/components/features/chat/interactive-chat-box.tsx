@@ -11,6 +11,7 @@ interface InteractiveChatBoxProps {
   onStop: () => void;
   value?: string;
   onChange?: (message: string) => void;
+  className?: string; // Add className to the interface
 }
 
 export function InteractiveChatBox({
@@ -20,6 +21,7 @@ export function InteractiveChatBox({
   onStop,
   value,
   onChange,
+  className, // Destructure className
 }: InteractiveChatBoxProps) {
   const [images, setImages] = React.useState<File[]>([]);
 
@@ -46,7 +48,7 @@ export function InteractiveChatBox({
   return (
     <div
       data-testid="interactive-chat-box"
-      className="flex flex-col gap-[10px]"
+      className={cn("flex flex-col gap-[10px]", className)} // Apply className using cn utility
     >
       {images.length > 0 && (
         <ImageCarousel

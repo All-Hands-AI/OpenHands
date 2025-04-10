@@ -1,4 +1,3 @@
-import json
 import logging
 import multiprocessing as mp
 import os
@@ -6,8 +5,7 @@ import re
 from enum import Enum
 from typing import Callable
 
-import pandas as pd
-import requests
+import httpx
 
 from openhands.controller.state.state import State
 from openhands.core.logger import get_console_handler
@@ -44,12 +42,12 @@ def identify_token(token: str, selected_repo: str | None = None) -> Platform:
         }
 
         try:
-            github_repo_response = requests.get(
+            github_repo_response = httpx.get(
                 github_repo_url, headers=github_bearer_headers, timeout=5
             )
             if github_repo_response.status_code == 200:
                 return Platform.GITHUB
-        except requests.RequestException as e:
+        except httpx.HTTPError as e:
             logger.error(f'Error connecting to GitHub API (selected_repo check): {e}')
 
     # Try GitHub PAT format (token)
@@ -57,10 +55,10 @@ def identify_token(token: str, selected_repo: str | None = None) -> Platform:
     github_headers = {'Authorization': f'token {token}'}
 
     try:
-        github_response = requests.get(github_url, headers=github_headers, timeout=5)
+        github_response = httpx.get(github_url, headers=github_headers, timeout=5)
         if github_response.status_code == 200:
             return Platform.GITHUB
-    except requests.RequestException as e:
+    except httpx.HTTPError as e:
         logger.error(f'Error connecting to GitHub API: {e}')
 
     # Try GitLab token
@@ -68,12 +66,11 @@ def identify_token(token: str, selected_repo: str | None = None) -> Platform:
     gitlab_headers = {'Authorization': f'Bearer {token}'}
 
     try:
-        gitlab_response = requests.get(gitlab_url, headers=gitlab_headers, timeout=5)
+        gitlab_response = httpx.get(gitlab_url, headers=gitlab_headers, timeout=5)
         if gitlab_response.status_code == 200:
             return Platform.GITLAB
-    except requests.RequestException as e:
+    except httpx.HTTPError as e:
         logger.error(f'Error connecting to GitLab API: {e}')
-
     return Platform.INVALID
 
 
@@ -133,43 +130,6 @@ def cleanup() -> None:
         logger.info(f'Terminating child process: {process.name}')
         process.terminate()
         process.join()
-
-
-def prepare_dataset(
-    dataset: pd.DataFrame, output_file: str, eval_n_limit: int
-) -> pd.DataFrame:
-    assert 'instance_id' in dataset.columns, (
-        "Expected 'instance_id' column in the dataset. You should define your own "
-        "unique identifier for each instance and use it as the 'instance_id' column."
-    )
-    id_column = 'instance_id'
-    logger.info(f'Writing evaluation output to {output_file}')
-    finished_ids = set()
-    if os.path.exists(output_file):
-        with open(output_file, 'r') as f:
-            for line in f:
-                data = json.loads(line)
-                finished_ids.add(data[id_column])
-        logger.warning(
-            f'Output file {output_file} already exists. Loaded '
-            f'{len(finished_ids)} finished instances.'
-        )
-
-    if eval_n_limit:
-        dataset = dataset.head(eval_n_limit)
-        logger.info(f'Limiting evaluation to first {eval_n_limit} instances.')
-
-    new_dataset = [
-        instance
-        for _, instance in dataset.iterrows()
-        if instance[id_column] not in finished_ids
-    ]
-    logger.info(
-        f'Finished instances: {len(finished_ids)}, '
-        f'Remaining instances: {len(new_dataset)}'
-    )
-
-    return pd.DataFrame(new_dataset)
 
 
 def reset_logger_for_multiprocessing(

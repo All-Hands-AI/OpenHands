@@ -36,7 +36,7 @@ export function SettingsModal({ onClose, settings }: SettingsModalProps) {
             to="/settings"
             className="underline underline-offset-2 text-primary"
           >
-            see advanced settings
+            {t(I18nKey.SETTINGS$SEE_ADVANCED_SETTINGS)}
           </Link>
         </p>
         {aiConfigOptions.isLoading && (

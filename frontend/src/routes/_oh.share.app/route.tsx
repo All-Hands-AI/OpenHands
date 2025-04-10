@@ -1,3 +1,3 @@
-import AppContent from "../_oh.app/route";
+import AppContent from "../conversation"
 
-export default AppContent;
+export default AppContent

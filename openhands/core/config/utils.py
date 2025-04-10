@@ -59,7 +59,7 @@ def load_from_env(
         return None
 
     # helper function to set attributes based on env vars
-    def set_attr_from_env(sub_config: BaseModel, prefix='') -> None:
+    def set_attr_from_env(sub_config: BaseModel, prefix: str = '') -> None:
         """Set attributes of a config model based on environment variables."""
         for field_name, field_info in sub_config.model_fields.items():
             field_value = getattr(sub_config, field_name)
@@ -204,18 +204,10 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
             raise ValueError('Error in [sandbox] section in config.toml')
 
     # Process MCP sections if present
-    mcp_sections = {}
-    if 'mcp-sse' in toml_config:
-        mcp_sections['mcp-sse'] = toml_config['mcp-sse']
-    if 'mcp-stdio' in toml_config:
-        mcp_sections['mcp-stdio'] = toml_config['mcp-stdio']
-
-    if mcp_sections:
+    if 'mcp' in toml_config:
         try:
-            mcp_mapping = MCPConfig.from_toml_section(mcp_sections)
+            cfg.dict_mcp_config = MCPConfig.from_toml_section(toml_config['mcp'])
             # We only use the base mcp config for now
-            if 'mcp' in mcp_mapping:
-                cfg.mcp = mcp_mapping['mcp']
         except (TypeError, KeyError, ValidationError) as e:
             logger.openhands_logger.warning(
                 f'Cannot parse MCP config from toml, values have not been applied.\nError: {e}'
@@ -281,8 +273,7 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
         'security',
         'sandbox',
         'condenser',
-        'mcp-sse',
-        'mcp-stdio',
+        'mcp',
     }
     for key in toml_config:
         if key.lower() not in known_sections:
@@ -299,7 +290,7 @@ def get_or_create_jwt_secret(file_store: FileStore) -> str:
         return new_secret
 
 
-def finalize_config(cfg: AppConfig):
+def finalize_config(cfg: AppConfig) -> None:
     """More tweaks to the config after it's been loaded."""
     if cfg.workspace_base is not None:
         cfg.workspace_base = os.path.abspath(cfg.workspace_base)

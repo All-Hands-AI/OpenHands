@@ -13,12 +13,11 @@ from openhands.core.config import AgentConfig, AppConfig, LLMConfig
 from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import OpenHandsLoggerAdapter
 from openhands.core.schema.agent import AgentState
-from openhands.core.setup import create_mcp_agents
 from openhands.events.action import ChangeAgentStateAction, MessageAction
 from openhands.events.event import Event, EventSource
 from openhands.events.stream import EventStream
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderHandler
-from openhands.mcp.mcp_agent import convert_mcp_agents_to_tools
+from openhands.integrations.service_types import Repository
 from openhands.memory.memory import Memory
 from openhands.microagent.microagent import BaseMicroAgent
 from openhands.runtime import get_runtime_cls
@@ -26,7 +25,7 @@ from openhands.runtime.base import Runtime
 from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
 from openhands.security import SecurityAnalyzer, options
 from openhands.storage.files import FileStore
-from openhands.utils.async_utils import call_sync_from_async
+from openhands.utils.async_utils import EXECUTOR, call_sync_from_async
 from openhands.utils.shutdown_listener import should_continue
 
 WAIT_TIME_BEFORE_CLOSE = 90
@@ -52,7 +51,6 @@ class AgentSession:
     _closed: bool = False
     loop: asyncio.AbstractEventLoop | None = None
     logger: LoggerAdapter
-    mnemonic: str | None
 
     def __init__(
         self,
@@ -60,7 +58,6 @@ class AgentSession:
         file_store: FileStore,
         status_callback: Callable | None = None,
         user_id: str | None = None,
-        mnemonic: str | None = None,
     ):
         """Initializes a new instance of the Session class
 
@@ -74,7 +71,6 @@ class AgentSession:
         self.file_store = file_store
         self._status_callback = status_callback
         self.user_id = user_id
-        self.mnemonic = mnemonic
         self.logger = OpenHandsLoggerAdapter(
             extra={'session_id': sid, 'user_id': user_id}
         )
@@ -89,7 +85,7 @@ class AgentSession:
         max_budget_per_task: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
-        selected_repository: str | None = None,
+        selected_repository: Repository | None = None,
         selected_branch: str | None = None,
         initial_message: MessageAction | None = None,
         replay_json: str | None = None,
@@ -118,72 +114,6 @@ class AgentSession:
         finished = False  # For monitoring
         runtime_connected = False
         try:
-            # Initialize MCP agents first before creating runtime and controller
-            try:
-                # Log MCP configuration to help with debugging
-                self.logger.info(f'MCP SSE servers: {config.mcp.sse.mcp_servers}')
-                self.logger.info(f'MCP stdio commands: {config.mcp.stdio.commands}')
-                self.logger.info(f'MCP stdio args: {config.mcp.stdio.args}')
-
-                # Check if MCP servers are available
-                if not config.mcp.sse.mcp_servers and not config.mcp.stdio.commands:
-                    self.logger.warning(
-                        'No MCP servers or commands configured. MCP integration will not work.'
-                    )
-                else:
-                    self.logger.info('Initializing MCP agents for server mode...')
-                    mcp_agents = await create_mcp_agents(
-                        config.mcp.sse.mcp_servers,
-                        config.mcp.stdio.commands,
-                        config.mcp.stdio.args,
-                        sid=self.sid,
-                        user_id=self.user_id,
-                        mnemonic=self.mnemonic,
-                    )
-
-                    # Give some time for MCP connections to stabilize
-                    await asyncio.sleep(1)
-
-                    # For CodeActAgent and similar agents that use the tools attribute
-                    if hasattr(agent, 'tools'):
-                        try:
-                            # Convert MCP agents to tools format for CodeActAgent
-                            mcp_tools = convert_mcp_agents_to_tools(mcp_agents)
-                            self.logger.info(
-                                f"MCP tools created: {[tool.get('function', {}).get('name', '<unnamed>') for tool in mcp_tools]}"
-                            )
-
-                            # If agent already has tools, extend them; otherwise create a new list
-                            if isinstance(agent.tools, list):
-                                agent.tools.extend(mcp_tools)
-                            else:
-                                agent.tools = mcp_tools
-
-                            self.logger.info(
-                                f'Agent now has {len(agent.tools)} tools including MCP tools'
-                            )
-                        except Exception as e:
-                            self.logger.error(
-                                f'Error converting MCP agents to tools: {str(e)}',
-                                exc_info=True,
-                            )
-
-                    # Log MCP agents status
-                    for idx, mcp_agent in enumerate(mcp_agents):
-                        self.logger.info(
-                            f'MCP Agent {idx} connection type: {mcp_agent.connection_type}'
-                        )
-                        self.logger.info(
-                            f"MCP Agent {idx} available tools: {list(mcp_agent.mcp_clients.tool_map.keys()) if hasattr(mcp_agent, 'mcp_clients') and hasattr(mcp_agent.mcp_clients, 'tool_map') else 'No tools available'}"
-                        )
-                        await mcp_agent.cleanup()
-
-                    self.logger.info(
-                        f'Successfully initialized {len(mcp_agents)} MCP agents'
-                    )
-            except Exception as e:
-                self.logger.error(f'Error initializing MCP agents: {e}', exc_info=True)
-
             self._create_security_analyzer(config.security.security_analyzer)
             runtime_connected = await self._create_runtime(
                 runtime_name=runtime_name,
@@ -217,7 +147,7 @@ class AgentSession:
 
             repo_directory = None
             if self.runtime and runtime_connected and selected_repository:
-                repo_directory = selected_repository.split('/')[-1]
+                repo_directory = selected_repository.full_name.split('/')[-1]
             self.memory = await self._create_memory(
                 selected_repository=selected_repository,
                 repo_directory=repo_directory,
@@ -274,7 +204,7 @@ class AgentSession:
             end_state.save_to_session(self.sid, self.file_store, self.user_id)
             await self.controller.close()
         if self.runtime is not None:
-            self.runtime.close()
+            EXECUTOR.submit(self.runtime.close)
         if self.security_analyzer is not None:
             await self.security_analyzer.close()
 
@@ -329,7 +259,7 @@ class AgentSession:
         config: AppConfig,
         agent: Agent,
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
-        selected_repository: str | None = None,
+        selected_repository: Repository | None = None,
         selected_branch: str | None = None,
     ) -> bool:
         """Creates a runtime instance
@@ -395,11 +325,8 @@ class AgentSession:
             return False
 
         if selected_repository and git_provider_tokens:
-            await call_sync_from_async(
-                self.runtime.clone_repo,
-                git_provider_tokens,
-                selected_repository,
-                selected_branch,
+            await self.runtime.clone_repo(
+                git_provider_tokens, selected_repository, selected_branch
             )
             await call_sync_from_async(self.runtime.maybe_run_setup_script)
 
@@ -468,7 +395,7 @@ class AgentSession:
         return controller
 
     async def _create_memory(
-        self, selected_repository: str | None, repo_directory: str | None
+        self, selected_repository: Repository | None, repo_directory: str | None
     ) -> Memory:
         memory = Memory(
             event_stream=self.event_stream,
@@ -482,12 +409,15 @@ class AgentSession:
 
             # loads microagents from repo/.openhands/microagents
             microagents: list[BaseMicroAgent] = await call_sync_from_async(
-                self.runtime.get_microagents_from_selected_repo, selected_repository
+                self.runtime.get_microagents_from_selected_repo,
+                selected_repository.full_name if selected_repository else None,
             )
             memory.load_user_workspace_microagents(microagents)
 
             if selected_repository and repo_directory:
-                memory.set_repository_info(selected_repository, repo_directory)
+                memory.set_repository_info(
+                    selected_repository.full_name, repo_directory
+                )
         return memory
 
     def _maybe_restore_state(self) -> State | None:

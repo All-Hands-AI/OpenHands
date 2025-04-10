@@ -18,7 +18,7 @@ from openhands.server.routes.auth import app as auth_router
 from openhands.server.routes.conversation import app as conversation_api_router
 from openhands.server.routes.feedback import app as feedback_api_router
 from openhands.server.routes.files import app as files_api_router
-from openhands.server.routes.github import app as github_api_router
+from openhands.server.routes.git import app as git_api_router
 from openhands.server.routes.manage_conversations import (
     app as manage_conversation_api_router,
 )
@@ -72,6 +72,6 @@ app.include_router(feedback_api_router)
 app.include_router(conversation_api_router)
 app.include_router(manage_conversation_api_router)
 app.include_router(settings_router)
-app.include_router(github_api_router)
+app.include_router(git_api_router)
 app.include_router(trajectory_router)
 app.include_router(auth_router)

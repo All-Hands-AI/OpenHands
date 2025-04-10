@@ -1,7 +1,7 @@
 import hashlib
 import os
 import uuid
-from typing import Callable, List, Optional, Tuple, Type
+from typing import Callable, Tuple, Type
 
 from pydantic import SecretStr
 
@@ -17,13 +17,13 @@ from openhands.events import EventStream
 from openhands.events.event import Event
 from openhands.integrations.provider import ProviderToken, ProviderType, SecretStore
 from openhands.llm.llm import LLM
-from openhands.mcp.mcp_agent import MCPAgent, convert_mcp_agents_to_tools
 from openhands.memory.memory import Memory
 from openhands.microagent.microagent import BaseMicroAgent
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
 from openhands.security import SecurityAnalyzer, options
 from openhands.storage import get_file_store
+from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync
 
 
 def create_runtime(
@@ -118,7 +118,9 @@ def initialize_repository_for_runtime(
     repo_directory = None
     if selected_repository and provider_tokens:
         logger.debug(f'Selected repository {selected_repository}.')
-        repo_directory = runtime.clone_repo(
+        repo_directory = call_async_from_sync(
+            runtime.clone_repo,
+            GENERAL_TIMEOUT,
             provider_tokens,
             selected_repository,
             None,
@@ -169,83 +171,17 @@ def create_memory(
     return memory
 
 
-async def create_agent(config: AppConfig) -> Agent:
+def create_agent(config: AppConfig) -> Agent:
     agent_cls: Type[Agent] = Agent.get_cls(config.default_agent)
     agent_config = config.get_agent_config(config.default_agent)
     llm_config = config.get_llm_config_from_agent(config.default_agent)
-    # tmp create mcp agents for get list of tools
-    mcp_agents = await create_mcp_agents(
-        config.mcp.sse.mcp_servers,
-        config.mcp.stdio.commands,
-        config.mcp.stdio.args,
-        'tmp-sid',
-        'tmp-user-id',
-    )
-    mcp_tools = convert_mcp_agents_to_tools(mcp_agents)
     agent = agent_cls(
         llm=LLM(config=llm_config),
         config=agent_config,
-        mcp_tools=mcp_tools,
         workspace_mount_path_in_sandbox_store_in_session=config.workspace_mount_path_in_sandbox_store_in_session,
     )
 
-    # We only need to get the tools from the MCP agents, so we can safely close them after that
-    # the actual calls will be done in a sandbox environment, not here
-    for mcp_agent in mcp_agents:
-        await mcp_agent.cleanup()
-
     return agent
-
-
-async def create_mcp_agents(
-    sse_mcp_server: List[str],
-    commands: List[str],
-    args: List[List[str]],
-    sid: Optional[str] = None,
-    user_id: Optional[str] = None,
-    mnemonic: Optional[str] = None,
-) -> List[MCPAgent]:
-    mcp_agents: List[MCPAgent] = []
-    # Initialize SSE connections
-    if sse_mcp_server:
-        for server_url in sse_mcp_server:
-            logger.info(
-                f'Initializing MCP agent for {server_url} with SSE connection...'
-            )
-            agent = MCPAgent()
-            try:
-                await agent.initialize(
-                    connection_type='sse',
-                    server_url=server_url,
-                    sid=sid,
-                    user_id=user_id,
-                    mnemonic=mnemonic,
-                )
-                mcp_agents.append(agent)
-                logger.info(f'Connected to MCP server {server_url} via SSE')
-            except Exception as e:
-                logger.error(f'Failed to connect to {server_url}: {str(e)}')
-                raise
-
-    # Initialize stdio connections
-    if commands:
-        for command, command_args in zip(commands, args):
-            logger.info(
-                f'Initializing MCP agent for {command} with stdio connection...'
-            )
-
-            agent = MCPAgent()
-            try:
-                await agent.initialize(
-                    connection_type='stdio', command=command, args=command_args
-                )
-                mcp_agents.append(agent)
-                logger.info(f'Connected to MCP server via stdio with command {command}')
-            except Exception as e:
-                logger.error(f'Failed to connect with command {command}: {str(e)}')
-                raise
-
-    return mcp_agents
 
 
 def create_controller(
