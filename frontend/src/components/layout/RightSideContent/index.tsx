@@ -1,16 +1,15 @@
-import { BrowserPanel } from "#/components/features/browser/browser";
-import { useSettings } from "#/hooks/query/use-settings";
-import { RootState } from "#/store";
-import ObservationType from "#/types/observation-type";
-import { Slider, useDisclosure } from "@heroui/react";
-import { useEffect, useRef, useState } from "react";
-import { LuStepBack, LuStepForward } from "react-icons/lu";
-import { Components } from "react-markdown";
-import { useSelector } from "react-redux";
-import CodeView from "./CodeView";
-import EditorContent from "./EditorContent";
-import TaskProgress from "./TaskProgress";
-import TerminalPage from "#/routes/terminal-tab";
+import { BrowserPanel } from "#/components/features/browser/browser"
+import { useSettings } from "#/hooks/query/use-settings"
+import TerminalPage from "#/routes/terminal-tab"
+import { RootState } from "#/store"
+import ObservationType from "#/types/observation-type"
+import { Slider, useDisclosure } from "@heroui/react"
+import { useEffect, useRef, useState } from "react"
+import { LuStepBack, LuStepForward } from "react-icons/lu"
+import { useSelector } from "react-redux"
+import CodeView from "./CodeView"
+import EditorContent from "./EditorContent"
+import TaskProgress from "./TaskProgress"
 
 const ThesisComputer = () => {
   const isViewDrawer = true;
@@ -87,72 +86,6 @@ const ThesisComputer = () => {
     return <div />;
   }
 
-  const components: Partial<Components> = {
-    ol: ({ children }) => (
-      <ol style={{ listStyleType: "decimal", paddingLeft: "16px" }}>
-        {children}
-      </ol>
-    ),
-    li: ({ children }) => {
-      return <li className="text-[14px]">{children}</li>;
-    },
-    a: ({ href, children }) => (
-      <a href={href} target="_blank" rel="noopener noreferrer">
-        {children}
-      </a>
-    ),
-    p: ({ children }) => <p className="text-[14px]">{children}</p>,
-    h1: ({ children }) => <h1 className="text-[14px]">{children}</h1>,
-    h2: ({ children }) => <h2 className="text-[14px]">{children}</h2>,
-    h3: ({ children }) => <h3 className="text-[14px]">{children}</h3>,
-    h4: ({ children }) => <h4 className="text-[14px]">{children}</h4>,
-    h5: ({ children }) => <h5 className="text-[14px]">{children}</h5>,
-    h6: ({ children }) => <h6 className="text-[14px]">{children}</h6>,
-  };
-
-  const toPascalCase = (str: string) => {
-    return str
-      .split("_")
-      .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
-  };
-
-  // const renderToolCalls = (toolCalls: any) => {
-  //   const nameValue = toolCalls?.function?.name
-  //   const results = toolCalls?.results
-
-  //   return (
-  //     <div>
-  //       <div className="mb-2 flex items-center justify-center gap-1 border-b-[1px] pb-2">
-  //         <LuSquareChartGantt size={20} />
-  //         <span className="text-neutral-1 text-16 font-bold">
-  //           {nameValue === "final_answer"
-  //             ? "Step Answer"
-  //             : toPascalCase(nameValue)}
-  //         </span>
-  //       </div>
-
-  //       <div className="mb-2">
-  //         {results &&
-  //           Array.isArray(results) &&
-  //           results.length > 0 &&
-  //           results.map((result, index) => {
-  //             if (result.dtype === "text") {
-  //               return (
-  //                 <div key={index} className="gap-2">
-  //                   <Markdown components={components}>
-  //                     {result.content}
-  //                   </Markdown>
-  //                 </div>
-  //               )
-  //             }
-  //             return <span key={index}>image</span>
-  //           })}
-  //       </div>
-  //     </div>
-  //   )
-  // }
-
   return (
     <div className="flex h-full w-full flex-col overflow-y-auto rounded-xl rounded-br-none rounded-tr-none border border-neutral-1000 bg-white p-4">
       <div className="flex items-center justify-between">
@@ -177,19 +110,26 @@ const ThesisComputer = () => {
         computerList.map((computerItem, index) => {
           const observation = computerItem?.observation;
           const mapObservationTypeToText = {
-            [ObservationType.READ]: "editor",
-            [ObservationType.EDIT]: "editor",
-          };
+            [ObservationType.READ]: "Editor",
+            [ObservationType.EDIT]: "Editor",
+            [ObservationType.BROWSE]: "Browser",
+            [ObservationType.BROWSER_MCP]: "Browser",
+          }
 
           if (index !== currentStep) return null;
           return (
-            <div className="mb-3 flex max-w-md items-center rounded-lg">
-              <p className="font-medium text-[#666]">
+            <div className="mb-3 items-center rounded-lg">
+              <p className="font-medium text-[#666] text-[14px]">
                 Thesis is using{" "}
-                <span className="text-[#666]">
-                  {mapObservationTypeToText[observation]}
+                <span className="text-[#666] font-semibold">
+                  {mapObservationTypeToText[observation] || "Terminal"}
                 </span>
               </p>
+              <div className="bg-[#E6E6E6] max-w-fit px-3 rounded-full py-1 mt-1">
+                <span className=" text-[#0F0F0F] font-medium text-[12px]">
+                  {computerItem?.message}
+                </span>
+              </div>
             </div>
           );
         })}
@@ -208,8 +148,11 @@ const ThesisComputer = () => {
               }
 
               // TODO: check type browse_interactive of observation
-              if (computerItem.observation === ObservationType.BROWSE) {
-                return <BrowserPanel computerItem={computerItem} />;
+              if (
+                computerItem.observation === ObservationType.BROWSE ||
+                computerItem.observation === ObservationType.BROWSER_MCP
+              ) {
+                return <BrowserPanel computerItem={computerItem} />
               }
 
               if ([ObservationType.RUN].includes(computerItem.observation)) {
