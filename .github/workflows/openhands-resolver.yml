@@ -16,6 +16,11 @@ on:
         type: string
         default: "main"
         description: "Target branch to pull and create PR against"
+      pr_type:
+        required: false
+        type: string
+        default: "draft"
+        description: "The PR type that is going to be created (draft, ready)"
       LLM_MODEL:
         required: false
         type: string
@@ -280,9 +285,9 @@ jobs:
             cd /tmp && python -m openhands.resolver.send_pull_request \
               --issue-number ${{ env.ISSUE_NUMBER }} \
               --target-branch ${{ env.TARGET_BRANCH }} \
-              --pr-type draft \
+              --pr-type ${{ inputs.pr_type || 'draft' }} \
               --reviewer ${{ github.actor }} | tee pr_result.txt && \
-              grep "draft created" pr_result.txt | sed 's/.*\///g' > pr_number.txt
+              grep "PR created" pr_result.txt | sed 's/.*\///g' > pr_number.txt
           else
             cd /tmp && python -m openhands.resolver.send_pull_request \
               --issue-number ${{ env.ISSUE_NUMBER }} \
