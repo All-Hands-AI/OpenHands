@@ -1,7 +1,11 @@
 import { BrandButton } from "#/components/features/settings/brand-button";
+import { HelpLink } from "#/components/features/settings/help-link";
+import { KeyStatusIcon } from "#/components/features/settings/key-status-icon";
 import { SettingsDropdownInput } from "#/components/features/settings/settings-dropdown-input";
+import { SettingsInput } from "#/components/features/settings/settings-input";
 import { SettingsSwitch } from "#/components/features/settings/settings-switch";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
+import { ModelSelector } from "#/components/shared/modals/settings/model-selector";
 import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 import { useAIConfigOptions } from "#/hooks/query/use-ai-config-options";
 import { useConfig } from "#/hooks/query/use-config";
@@ -17,7 +21,7 @@ import { hasAdvancedSettingsSet } from "#/utils/has-advanced-settings-set";
 import { isCustomModel } from "#/utils/is-custom-model";
 import { organizeModelsAndProviders } from "#/utils/organize-models-and-providers";
 import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
-import { Modal, ModalBody, ModalContent } from "@heroui/react";
+import { Modal, ModalBody, ModalContent, Tab, Tabs } from "@heroui/react";
 import React from "react";
 import { useNavigate } from "react-router";
 
@@ -51,6 +55,7 @@ const AccountSettings = () => {
     config?.FEATURE_FLAGS.HIDE_LLM_SETTINGS && isSaas;
 
   const determineWhetherToToggleAdvancedSettings = () => {
+    return true
     if (shouldHandleSpecialSaasCase) return true;
     if (isSuccess) {
       return (
@@ -76,7 +81,9 @@ const AccountSettings = () => {
   );
 
   const [llmConfigMode, setLlmConfigMode] = React.useState(
-    isAdvancedSettingsSet ? "advanced" : "basic",
+    // TODO: uncomment this when the advanced settings are ready
+    // isAdvancedSettingsSet ? "advanced" : "basic",
+    'basic',
   );
   const [confirmationModeIsEnabled, setConfirmationModeIsEnabled] =
     React.useState(!!settings?.SECURITY_ANALYZER);
@@ -195,12 +202,12 @@ const AccountSettings = () => {
         className="flex flex-col grow overflow-auto p-3 md:p-6"
       >
         <div className="max-w-[680px]">
-          {/* {!shouldHandleSpecialSaasCase && (
+          {!shouldHandleSpecialSaasCase && (
             <section className="flex flex-col gap-6">
-              <h3 className="text-[18px] font-semibold text-[#EFEFEF]">
+            <h3 className="text-[18px] font-semibold text-neutral-100 dark:text-[#EFEFEF]">
                 LLM Settings
-              </h3>
-              <Tabs
+            </h3>
+              {/* <Tabs
                 selectedKey={llmConfigMode}
                 onSelectionChange={(key: any) => setLlmConfigMode(key)}
                 classNames={{
@@ -213,7 +220,7 @@ const AccountSettings = () => {
               >
                 <Tab key="basic" title="Basic" />
                 <Tab key="advanced" title="Advanced" />
-              </Tabs>
+              </Tabs> */}
               {llmConfigMode === "basic" && (
                 <ModelSelector
                   models={modelsAndProviders}
@@ -222,7 +229,7 @@ const AccountSettings = () => {
               )}
               {llmConfigMode === "advanced" && (
                 <>
-                  <SettingsInput
+                  {/* <SettingsInput
                     testId="llm-custom-model-input"
                     name="llm-custom-model-input"
                     label="Custom Model"
@@ -239,7 +246,7 @@ const AccountSettings = () => {
                     placeholder="https://api.openai.com"
                     type="text"
                     className="w-full"
-                  />
+                  /> */}
                   <SettingsDropdownInput
                     testId="agent-input"
                     name="agent-input"
@@ -275,7 +282,8 @@ const AccountSettings = () => {
                       isClearable={false}
                     />
                   )}
-                  <div className="flex flex-col md:flex-row md:items-center gap-8">
+                  {/* TODO: enable later when allow custom setting */}
+                  {/* <div className="flex flex-col md:flex-row md:items-center gap-8">
                     <SettingsSwitch
                       testId="enable-confirmation-mode-switch"
                       onToggle={setConfirmationModeIsEnabled}
@@ -291,7 +299,7 @@ const AccountSettings = () => {
                     >
                       Enable memory condensation
                     </SettingsSwitch>
-                  </div>
+                  </div> */}
                   {confirmationModeIsEnabled && (
                     <SettingsDropdownInput
                       testId="security-analyzer-input"
@@ -311,7 +319,8 @@ const AccountSettings = () => {
                 </>
               )}
 
-              <div className="relative ">
+              {/* TODO: enable later when allow custom setting */}
+              {/* <div className="relative ">
                 <SettingsInput
                   testId="llm-api-key-input"
                   name="llm-api-key-input"
@@ -335,10 +344,10 @@ const AccountSettings = () => {
                     }}
                   />
                 </div>
-              </div>
+              </div> */}
             </section>
           )}
-          <div className="my-7 h-[1px] w-full bg-[#1B1C1A]" /> */}
+          <div className="my-7 h-[1px] w-full bg-[#1B1C1A]" />
           <section className="flex flex-col gap-6">
             <h3 className="text-[18px] font-semibold text-neutral-100 dark:text-[#EFEFEF]">
               Additional Settings
@@ -355,13 +364,13 @@ const AccountSettings = () => {
               isClearable={false}
             />
             <div className="flex flex-col md:flex-row md:items-center gap-8">
-              <SettingsSwitch
+              {/* <SettingsSwitch
                 testId="enable-analytics-switch"
                 name="enable-analytics-switch"
                 defaultIsToggled={!!isAnalyticsEnabled}
               >
                 Enable analytics
-              </SettingsSwitch>
+              </SettingsSwitch> */}
               <SettingsSwitch
                 testId="enable-sound-notifications-switch"
                 name="enable-sound-notifications-switch"
@@ -397,12 +406,12 @@ const AccountSettings = () => {
           onClose={() => setResetSettingsModalIsOpen(false)}
           classNames={{
             backdrop: "bg-black/40 backdrop-blur-[12px]",
-            base: "bg-[#0F0F0F] max-w-[559px] rounded-2xl w-full",
+            base: "bg-white dark:bg-[#0F0F0F] max-w-[559px] rounded-2xl w-full",
           }}
         >
           <ModalContent>
             <ModalBody className="p-6">
-              <p className="text-[#EFEFEF] mb-4 text-[16px] font-semibold">
+              <p className="text-neutral-100 dark:text-content mb-4 text-[16px] font-semibold">
                 Are you sure you want to reset all settings?
               </p>
               <div className="flex gap-2">
