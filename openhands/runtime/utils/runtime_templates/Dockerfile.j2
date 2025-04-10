@@ -62,7 +62,8 @@ ARG RELEASE_ORG="gitpod-io"
 # ARG USER_UID=1000
 # ARG USER_GID=1000
 
-RUN if [ -z "${RELEASE_TAG}" ]; then \
+RUN --mount=type=cache,target=/var/cache/wget \
+    if [ -z "${RELEASE_TAG}" ]; then \
         echo "The RELEASE_TAG build arg must be set." >&2 && \
         exit 1; \
     fi && \
@@ -74,12 +75,15 @@ RUN if [ -z "${RELEASE_TAG}" ]; then \
     elif [ "${arch}" = "armv7l" ]; then \
         arch="armhf"; \
     fi && \
-    wget https://github.com/${RELEASE_ORG}/openvscode-server/releases/download/${RELEASE_TAG}/${RELEASE_TAG}-linux-${arch}.tar.gz && \
-    tar -xzf ${RELEASE_TAG}-linux-${arch}.tar.gz && \
+    cd /var/cache/wget && \
+    if [ ! -f "${RELEASE_TAG}-linux-${arch}.tar.gz" ]; then \
+        wget https://github.com/${RELEASE_ORG}/openvscode-server/releases/download/${RELEASE_TAG}/${RELEASE_TAG}-linux-${arch}.tar.gz ; \
+    fi && \
+    cd - && \
+    tar -xzf /var/cache/wget/${RELEASE_TAG}-linux-${arch}.tar.gz && \
     if [ -d "${OPENVSCODE_SERVER_ROOT}" ]; then rm -rf "${OPENVSCODE_SERVER_ROOT}"; fi && \
     mv ${RELEASE_TAG}-linux-${arch} ${OPENVSCODE_SERVER_ROOT} && \
-    cp ${OPENVSCODE_SERVER_ROOT}/bin/remote-cli/openvscode-server ${OPENVSCODE_SERVER_ROOT}/bin/remote-cli/code && \
-    rm -f ${RELEASE_TAG}-linux-${arch}.tar.gz
+    cp ${OPENVSCODE_SERVER_ROOT}/bin/remote-cli/openvscode-server ${OPENVSCODE_SERVER_ROOT}/bin/remote-cli/code
 
 
 
