@@ -15,11 +15,8 @@ from openhands.integrations.service_types import (
     UnknownException,
     User,
 )
-from openhands.server.auth import (
-    get_access_token,
-    get_gitlab_base_url,
-    get_provider_tokens,
-)
+
+from openhands.server.auth import get_access_token, get_provider_tokens, get_gitlab_base_url
 from openhands.server.shared import server_config
 
 app = APIRouter(prefix='/api/user')

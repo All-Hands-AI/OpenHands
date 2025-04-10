@@ -29,7 +29,7 @@ env:
 
 jobs:
   define-matrix:
-    runs-on: blacksmith-4vcpu-ubuntu-2204
+    runs-on: blacksmith
     outputs:
       base_image: ${{ steps.define-base-images.outputs.base_image }}
     steps:
@@ -151,14 +151,33 @@ jobs:
       - name: Lowercase Repository Owner
         run: |
           echo REPO_OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
+      - name: Short SHA
+        run: |
+          echo SHORT_SHA=$(git rev-parse --short "$RELEVANT_SHA") >> $GITHUB_ENV
+      - name: Determine docker build params
+        if: github.event.pull_request.head.repo.fork != true
+        shell: bash
+        run: |
+          ./containers/build.sh -i runtime -o ${{ env.REPO_OWNER }} -t ${{ matrix.base_image.tag }} --dry
+
+          DOCKER_BUILD_JSON=$(jq -c . < docker-build-dry.json)
+          echo "DOCKER_TAGS=$(echo "$DOCKER_BUILD_JSON" | jq -r '.tags | join(",")')" >> $GITHUB_ENV
+          echo "DOCKER_PLATFORM=$(echo "$DOCKER_BUILD_JSON" | jq -r '.platform')" >> $GITHUB_ENV
+          echo "DOCKER_BUILD_ARGS=$(echo "$DOCKER_BUILD_JSON" | jq -r '.build_args | join(",")')" >> $GITHUB_ENV
       - name: Build and push runtime image ${{ matrix.base_image.image }}
         if: github.event.pull_request.head.repo.fork != true
-        run: |
-          ./containers/build.sh -i runtime -o ${{ env.REPO_OWNER }} --push -t ${{ matrix.base_image.tag }}
+        uses: useblacksmith/build-push-action@v1
+        with:
+          push: true
+          tags: ${{ env.DOCKER_TAGS }}
+          platforms: ${{ env.DOCKER_PLATFORM }}
+          build-args: ${{ env.DOCKER_BUILD_ARGS }}
+          context: containers/runtime
+          provenance: false
       # Forked repos can't push to GHCR, so we need to upload the image as an artifact
       - name: Build runtime image ${{ matrix.base_image.image }} for fork
         if: github.event.pull_request.head.repo.fork
-        uses: docker/build-push-action@v6
+        uses: useblacksmith/build-push-action@v1
         with:
           tags: ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
           outputs: type=docker,dest=/tmp/runtime-${{ matrix.base_image.tag }}.tar

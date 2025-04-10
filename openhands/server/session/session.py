@@ -21,6 +21,7 @@ from openhands.events.observation.error import ErrorObservation
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm import LLM
+from openhands.mcp import fetch_mcp_tools_from_config
 from openhands.server.session.agent_session import AgentSession
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.settings import Settings
@@ -132,7 +133,9 @@ class Session:
             self.logger.info(f'Enabling default condenser: {default_condenser_config}')
             agent_config.condenser = default_condenser_config
 
+        mcp_tools = await fetch_mcp_tools_from_config(self.config.mcp)
         agent = Agent.get_cls(agent_cls)(llm, agent_config)
+        agent.set_mcp_tools(mcp_tools)
 
         git_provider_tokens = None
         selected_repository = None
