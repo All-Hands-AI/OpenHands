@@ -1,5 +1,5 @@
 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <path d="M20 4H4C2.89543 4 2 4.89543 2 6V18C2 19.1046 2.89543 20 4 20H20C21.1046 20 22 19.1046 22 18V6C22 4.89543 21.1046 4 20 4Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M6 10L10 14L6 18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M12 18H18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M4 4C2.89543 4 2 4.89543 2 6V18C2 19.1046 2.89543 20 4 20H20C21.1046 20 22 19.1046 22 18V6C22 4.89543 21.1046 4 20 4H4ZM4 5.5H20C20.2761 5.5 20.5 5.72386 20.5 6V18C20.5 18.2761 20.2761 18.5 20 18.5H4C3.72386 18.5 3.5 18.2761 3.5 18V6C3.5 5.72386 3.72386 5.5 4 5.5Z" fill="currentColor"/>
+  <path d="M7.14645 9.64645C6.95118 9.84171 6.95118 10.1583 7.14645 10.3536L9.79289 13L7.14645 15.6464C6.95118 15.8417 6.95118 16.1583 7.14645 16.3536C7.34171 16.5488 7.65829 16.5488 7.85355 16.3536L10.8536 13.3536C11.0488 13.1583 11.0488 12.8417 10.8536 12.6464L7.85355 9.64645C7.65829 9.45118 7.34171 9.45118 7.14645 9.64645Z" fill="currentColor"/>
+  <path d="M12 17C11.7239 17 11.5 17.2239 11.5 17.5C11.5 17.7761 11.7239 18 12 18H17C17.2761 18 17.5 17.7761 17.5 17.5C17.5 17.2239 17.2761 17 17 17H12Z" fill="currentColor"/>
 </svg>
