@@ -145,7 +145,7 @@ jobs:
       - name: Install poetry via pipx
         run: pipx install poetry
       - name: Install Python dependencies using Poetry
-        run: poetry install
+        run: poetry install --only main
       - name: Create source distribution and Dockerfile
         run: poetry run python3 openhands/runtime/utils/runtime_build.py --base_image ${{ matrix.base_image.image }} --build_folder containers/runtime --force_rebuild
       - name: Lowercase Repository Owner
@@ -220,7 +220,7 @@ jobs:
       - name: Install poetry via pipx
         run: pipx install poetry
       - name: Install Python dependencies using Poetry
-        run: poetry install
+        run: poetry install --only main
       - name: Get hash in App Image
         run: |
           echo "Hash from app image: ${{ needs.ghcr_build_app.outputs.hash_from_app_image }}"
