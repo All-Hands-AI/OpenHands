@@ -47,6 +47,7 @@ const SCAN_EXTENSIONS = [".ts", ".tsx", ".js", ".jsx"];
 // Attributes that typically don't contain user-facing text
 const NON_TEXT_ATTRIBUTES = [
   "className",
+  "i18nKey",
   "testId",
   "id",
   "name",
