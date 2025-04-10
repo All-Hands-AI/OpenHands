@@ -30,7 +30,7 @@ export function SetupPaymentModal() {
           </h1>
           <p>
             <Trans
-              i18nKey={t(I18nKey.BILLING$CLAIM_YOUR_50)}
+              i18nKey="BILLING$CLAIM_YOUR_50"
               components={{ b: <strong /> }}
             />
           </p>
