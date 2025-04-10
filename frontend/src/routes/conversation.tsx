@@ -58,12 +58,6 @@ function AppContent() {
 
   const [width, setWidth] = React.useState(window.innerWidth);
 
-  // No longer needed as terminal is now a tab
-  // const secrets = React.useMemo(
-  //   // secrets to filter go here
-  //   () => [].filter((secret) => secret !== null),
-  //   [],
-  // );
 
   React.useEffect(() => {
     if (isFetched && !conversation) {
