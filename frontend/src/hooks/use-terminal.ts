@@ -67,7 +67,6 @@ export const useTerminal = ({
       }
 
       terminal.current.write("$ ");
-
     }
 
     return () => {
@@ -100,15 +99,15 @@ export const useTerminal = ({
   }, [commands]);
 
   React.useEffect(() => {
-      let resizeObserver: ResizeObserver | null = null;
+    let resizeObserver: ResizeObserver | null = null;
 
-      resizeObserver = new ResizeObserver(() => {
-        fitAddon.current?.fit();
-      });
-      resizeObserver.observe(ref.current);
-      return () => {
-        resizeObserver?.disconnect();
-      };
+    resizeObserver = new ResizeObserver(() => {
+      fitAddon.current?.fit();
+    });
+    resizeObserver.observe(ref.current);
+    return () => {
+      resizeObserver?.disconnect();
+    };
   }, []);
 
   return ref;
