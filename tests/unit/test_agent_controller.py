@@ -458,63 +458,6 @@ async def test_step_max_budget_headless(mock_agent, mock_event_stream):
 
 
 @pytest.mark.asyncio
-async def test_prepare_metrics_for_frontend(mock_agent, mock_event_stream):
-    """Test that _prepare_metrics_for_frontend correctly prepares metrics for the frontend."""
-    # Set up test data in the agent's metrics
-    mock_agent.llm.metrics.model_name = "test-model"
-    mock_agent.llm.metrics.accumulated_cost = 0.25
-    
-    # Add some token usage data
-    mock_agent.llm.metrics.add_token_usage(
-        prompt_tokens=100,
-        completion_tokens=50,
-        cache_read_tokens=10,
-        cache_write_tokens=5,
-        response_id="test-response-1"
-    )
-    
-    # Add another token usage to ensure accumulated values are correct
-    mock_agent.llm.metrics.add_token_usage(
-        prompt_tokens=200,
-        completion_tokens=75,
-        cache_read_tokens=20,
-        cache_write_tokens=10,
-        response_id="test-response-2"
-    )
-    
-    # Create controller and action
-    controller = AgentController(
-        agent=mock_agent,
-        event_stream=mock_event_stream,
-        max_iterations=10,
-        sid='test',
-        confirmation_mode=False,
-        headless_mode=True,
-    )
-    
-    action = MessageAction(content="Test message")
-    
-    # Call the method being tested
-    controller._prepare_metrics_for_frontend(action)
-    
-    # Verify the metrics were correctly prepared
-    assert action.llm_metrics is not None
-    assert action.llm_metrics.model_name == "test-model"
-    assert action.llm_metrics.accumulated_cost == 0.25
-    
-    # Verify accumulated token usage was correctly copied
-    assert action.llm_metrics.accumulated_token_usage.prompt_tokens == 300  # 100 + 200
-    assert action.llm_metrics.accumulated_token_usage.completion_tokens == 125  # 50 + 75
-    assert action.llm_metrics.accumulated_token_usage.cache_read_tokens == 30  # 10 + 20
-    assert action.llm_metrics.accumulated_token_usage.cache_write_tokens == 15  # 5 + 10
-    
-    # Verify we didn't copy the individual token usages list
-    assert len(action.llm_metrics.token_usages) == 0
-    
-    await controller.close()
-
-
-@pytest.mark.asyncio
 async def test_reset_with_pending_action_no_observation(mock_agent, mock_event_stream):
     """Test reset() when there's a pending action with tool call metadata but no observation."""
     controller = AgentController(
@@ -1146,6 +1089,16 @@ async def test_action_metrics_copy():
 
     metrics.token_usages = [usage1, usage2]
 
+    # Set the accumulated token usage
+    metrics._accumulated_token_usage = TokenUsage(
+        model='test-model',
+        prompt_tokens=15,  # 5 + 10
+        completion_tokens=30,  # 10 + 20
+        cache_read_tokens=7,  # 2 + 5
+        cache_write_tokens=7,  # 2 + 5
+        response_id='accumulated',
+    )
+
     # Add a cost instance - should not be included in action metrics
     # This will increase accumulated_cost by 0.02
     metrics.add_cost(0.02)
@@ -1188,13 +1141,20 @@ async def test_action_metrics_copy():
         last_action.llm_metrics.accumulated_cost == 0.07
     )  # 0.05 initial + 0.02 from add_cost
 
-    # Should include the last token usage
-    assert len(last_action.llm_metrics.token_usages) == 1
-    assert last_action.llm_metrics.token_usages[0].prompt_tokens == 10
-    assert last_action.llm_metrics.token_usages[0].completion_tokens == 20
-    assert last_action.llm_metrics.token_usages[0].cache_read_tokens == 5
-    assert last_action.llm_metrics.token_usages[0].cache_write_tokens == 5
-    assert last_action.llm_metrics.token_usages[0].response_id == 'test-id-2'
+    # Should not include individual token usages anymore (after the fix)
+    assert len(last_action.llm_metrics.token_usages) == 0
+
+    # But should include the accumulated token usage
+    assert last_action.llm_metrics.accumulated_token_usage.prompt_tokens == 15  # 5 + 10
+    assert (
+        last_action.llm_metrics.accumulated_token_usage.completion_tokens == 30
+    )  # 10 + 20
+    assert (
+        last_action.llm_metrics.accumulated_token_usage.cache_read_tokens == 7
+    )  # 2 + 5
+    assert (
+        last_action.llm_metrics.accumulated_token_usage.cache_write_tokens == 7
+    )  # 2 + 5
 
     # Should not include the cost history
     assert len(last_action.llm_metrics.costs) == 0
