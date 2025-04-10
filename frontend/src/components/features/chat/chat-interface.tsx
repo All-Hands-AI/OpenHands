@@ -17,7 +17,7 @@ import { ChatSuggestions } from "./chat-suggestions"
 import { InteractiveChatBox } from "./interactive-chat-box"
 import { Messages } from "./messages"
 import { TypingIndicator } from "./typing-indicator"
-
+import { FaPowerOff } from "react-icons/fa6"
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button"
 import { LoadingSpinner } from "#/components/shared/loading-spinner"
 import Security from "#/components/shared/modals/security/security"
@@ -221,7 +221,20 @@ export function ChatInterface() {
             mode={curAgentState === AgentState.RUNNING ? "stop" : "submit"}
             value={messageToSend ?? undefined}
             onChange={setMessageToSend}
-            className="w-full flex-grow pr-1" // Ensure chat box takes full width minus space for the button
+            className="w-full flex-grow" // Ensure chat box takes full width minus space for the button
+          />
+        </div>
+        <div className="flex w-full items-center justify-between gap-2">
+          {/* {settings && (
+            <Security
+              isOpen={securityModalIsOpen}
+              onOpenChange={onSecurityModalOpenChange}
+              securityAnalyzer={settings.SECURITY_ANALYZER}
+            />
+          )} */}
+          <Controls
+            setSecurityOpen={onSecurityModalOpen}
+            showSecurityLock={!!settings?.SECURITY_ANALYZER}
           />
           <DisconnectButton
             handleDisconnect={handleDisconnect}
@@ -230,17 +243,6 @@ export function ChatInterface() {
               status !== WsClientProviderStatus.DISCONNECTED
             }
           />
-          <Controls
-            setSecurityOpen={onSecurityModalOpen}
-            showSecurityLock={!!settings?.SECURITY_ANALYZER}
-          />
-          {settings && (
-            <Security
-              isOpen={securityModalIsOpen}
-              onOpenChange={onSecurityModalOpenChange}
-              securityAnalyzer={settings.SECURITY_ANALYZER}
-            />
-          )}
         </div>
       </div>
 
@@ -264,17 +266,23 @@ export function DisconnectButton({
 }: DisconnectButtonProps) {
   const { t } = useTranslation()
 
+  if (isDisabled) {
+    return null
+  }
+
   return (
     <button
+      title="Disconnect"
       onClick={handleDisconnect}
       disabled={isDisabled}
       className={`rounded-lg px-3 py-2 font-medium transition-colors ${
         isDisabled
-          ? "cursor-not-allowed bg-gray-300 text-gray-500"
-          : "bg-red-500 text-white hover:bg-red-600"
+          ? "cursor-not-allowed bg-red-200"
+          : "bg-red-100 text-red-500 hover:bg-red-50"
       }`}
     >
-      {t(isDisabled ? "Connect" : "Disconnect")}
+      <FaPowerOff />
+      {/* {t(isDisabled ? "Connect" : "Disconnect")} */}
     </button>
   )
 }
