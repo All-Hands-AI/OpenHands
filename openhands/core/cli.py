@@ -51,6 +51,7 @@ from openhands.events.observation import (
     AgentStateChangedObservation,
     CmdOutputObservation,
     FileEditObservation,
+    FileReadObservation,
 )
 from openhands.io import read_task
 from openhands.llm.metrics import Metrics
@@ -206,6 +207,21 @@ def display_file_edit(event: FileEditAction | FileEditObservation):
     print_formatted_text('')
 
 
+def display_file_read(event: FileReadObservation):
+    container = Frame(
+        TextArea(
+            text=f'{event}',
+            read_only=True,
+            style=COLOR_GREY,
+            wrap_lines=True,
+        ),
+        title='File Read',
+        style=f'fg:{COLOR_GREY}',
+    )
+    print_container(container)
+    print_formatted_text('')
+
+
 def display_event(event: Event, config: AppConfig) -> None:
     if isinstance(event, Action):
         if hasattr(event, 'thought'):
@@ -221,6 +237,8 @@ def display_event(event: Event, config: AppConfig) -> None:
         display_file_edit(event)
     if isinstance(event, FileEditObservation):
         display_file_edit(event)
+    if isinstance(event, FileReadObservation):
+        display_file_read(event)
     if hasattr(event, 'confirmation_state') and config.security.confirmation_mode:
         display_confirmation(event.confirmation_state)
 
