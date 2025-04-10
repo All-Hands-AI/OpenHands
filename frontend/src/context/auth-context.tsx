@@ -10,6 +10,7 @@ interface AuthContextType {
 
 interface AuthContextProps extends React.PropsWithChildren {
   initialProviderTokens?: Provider[];
+  initialProvidersAreSet?: boolean;
 }
 
 const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
@@ -17,12 +18,15 @@ const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 function AuthProvider({
   children,
   initialProviderTokens = [],
+  initialProvidersAreSet = false,
 }: AuthContextProps) {
   const [providerTokensSet, setProviderTokensSet] = React.useState<Provider[]>(
     initialProviderTokens,
   );
 
-  const [providersAreSet, setProvidersAreSet] = React.useState<boolean>(false);
+  const [providersAreSet, setProvidersAreSet] = React.useState<boolean>(
+    initialProvidersAreSet,
+  );
 
   const value = React.useMemo(
     () => ({
