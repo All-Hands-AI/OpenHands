@@ -147,6 +147,11 @@ function AppContent() {
                     to: "",
                     icon: <CodeIcon />,
                   },
+                  {
+                    label: <TerminalStatusLabel />,
+                    to: "terminal",
+                    icon: <VscTerminalCmd />,
+                  },
                   { label: "Jupyter", to: "jupyter", icon: <ListIcon /> },
                   {
                     label: <ServedAppLabel />,
@@ -161,11 +166,6 @@ function AppContent() {
                     ),
                     to: "browser",
                     icon: <GlobeIcon />,
-                  },
-                  {
-                    label: <TerminalStatusLabel />,
-                    to: "terminal",
-                    icon: <VscTerminalCmd />,
                   },
                 ]}
               >
