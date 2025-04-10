@@ -17,7 +17,6 @@ import CodeIcon from "#/icons/code.svg?react";
 import GlobeIcon from "#/icons/globe.svg?react";
 import JupyterIcon from "#/icons/jupyter.svg?react";
 import TerminalIcon from "#/icons/terminal.svg?react";
-import ListIcon from "#/icons/list-type-number.svg?react";
 import { clearJupyter } from "#/state/jupyter-slice";
 import { FilesProvider } from "#/context/files";
 import { ChatInterface } from "../components/features/chat/chat-interface";
