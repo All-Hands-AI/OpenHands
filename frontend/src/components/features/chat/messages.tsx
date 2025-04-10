@@ -43,6 +43,7 @@ export const Messages: React.FC<MessagesProps> = React.memo(
               message={message.content}
               success={message.success}
               messageActionID={message.messageActionID}
+              eventID={message.eventID}
             />
             {shouldShowConfirmationButtons && <ConfirmationButtons />}
           </div>

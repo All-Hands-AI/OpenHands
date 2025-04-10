@@ -38,13 +38,13 @@ function getEntryPoint(
 }
 
 export function ChatInterface() {
-  const { data: settings } = useSettings();
+  const { data: settings } = useSettings()
   const {
     isOpen: securityModalIsOpen,
     onOpen: onSecurityModalOpen,
     onOpenChange: onSecurityModalOpenChange,
-  } = useDisclosure();
-  const dispatch = useDispatch();
+  } = useDisclosure()
+  const dispatch = useDispatch()
   const { send, isLoadingMessages } = useWsClient()
   const scrollRef = React.useRef<HTMLDivElement>(null)
   const { scrollDomToBottom, onChatBodyScroll, hitBottom } =

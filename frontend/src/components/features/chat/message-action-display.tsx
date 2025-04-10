@@ -1,11 +1,11 @@
-import { OpenHandsEventType } from "#/types/core/base";
-import React from "react";
+import { OpenHandsEventType } from "#/types/core/base"
+import React from "react"
 import {
   getDiffPath,
   getCommand,
   getCatFilePath,
   getUrlBrowser,
-} from "./helpers";
+} from "./helpers"
 import {
   FaEdit,
   FaTerminal,
@@ -13,21 +13,36 @@ import {
   FaGlobe,
   FaPencilAlt,
   // FaTools,
-} from "react-icons/fa";
-import Markdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import { code } from "../markdown/code";
-import { ol, ul } from "../markdown/list";
+} from "react-icons/fa"
+import Markdown from "react-markdown"
+import remarkGfm from "remark-gfm"
+import { code } from "../markdown/code"
+import { ol, ul } from "../markdown/list"
+import store from "#/store"
+import { setEventID } from "#/state/computer-slice"
+
+const actionWrapClassName =
+  "inline-flex max-w-full items-center gap-2 rounded-[15px] border border-neutral-1000 bg-[#37352f10] px-[10px] py-[3px] text-neutral-600 hover:opacity-70 dark:border-neutral-300 cursor-pointer"
 
 const MessageActionDisplay: React.FC<{
-  messageActionID: string | undefined;
-  content: string;
-}> = ({ messageActionID, content }) => {
+  messageActionID: string | undefined
+  content: string
+  eventID?: number
+}> = ({ messageActionID, content, eventID }) => {
+  const openComputertByEventID = (eventID) => {
+    if (typeof eventID === "number") {
+      store.dispatch(setEventID(eventID))
+    }
+  }
+
   const renderContent = () => {
     switch (messageActionID as OpenHandsEventType) {
       case "edit":
         return (
-          <div className="inline-flex max-w-full items-center gap-2 rounded-[15px] border border-neutral-1000 bg-[#37352f10] px-[10px] py-[3px] text-neutral-600 hover:opacity-70 dark:border-neutral-300">
+          <div
+            className={actionWrapClassName}
+            onClick={() => openComputertByEventID(eventID)}
+          >
             <div className="shrink-0 text-neutral-600">
               <FaEdit />
             </div>
@@ -35,12 +50,15 @@ const MessageActionDisplay: React.FC<{
               Editing file: {getDiffPath(content)}
             </div>
           </div>
-        );
+        )
 
       case "run":
       case "run_ipython":
         return (
-          <div className="inline-flex max-w-full items-center gap-2 rounded-[15px] border border-neutral-1000 bg-[#37352f10] px-[10px] py-[3px] text-neutral-600 hover:opacity-70 dark:border-neutral-300">
+          <div
+            className={actionWrapClassName}
+            onClick={() => openComputertByEventID(eventID)}
+          >
             <div className="text-neutral-600">
               <FaTerminal />
             </div>
@@ -48,11 +66,14 @@ const MessageActionDisplay: React.FC<{
               Executing command: {getCommand(content)}
             </div>
           </div>
-        );
+        )
 
       case "read":
         return (
-          <div className="inline-flex max-w-full items-center gap-2 rounded-[15px] border border-neutral-1000 bg-[#37352f10] px-[10px] py-[3px] text-neutral-600 hover:opacity-70 dark:border-neutral-300">
+          <div
+            className={actionWrapClassName}
+            onClick={() => openComputertByEventID(eventID)}
+          >
             <div className="text-neutral-600">
               <FaRegFileAlt />
             </div>
@@ -60,12 +81,15 @@ const MessageActionDisplay: React.FC<{
               Reading file: {getCatFilePath(content)}
             </div>
           </div>
-        );
+        )
 
       case "browse":
       case "browse_interactive":
         return (
-          <div className="inline-flex max-w-full items-center gap-2 rounded-[15px] border border-neutral-1000 bg-[#37352f10] px-[10px] py-[3px] text-neutral-600 hover:opacity-70 dark:border-neutral-300">
+          <div
+            className={actionWrapClassName}
+            onClick={() => openComputertByEventID(eventID)}
+          >
             <div className="text-neutral-600">
               <FaGlobe />
             </div>
@@ -73,11 +97,14 @@ const MessageActionDisplay: React.FC<{
               Browsing: {getUrlBrowser(content)}
             </div>
           </div>
-        );
+        )
 
       case "write":
         return (
-          <div className="inline-flex max-w-full items-center gap-2 rounded-[15px] border border-neutral-1000 bg-[#37352f10] px-[10px] py-[3px] text-neutral-600 hover:opacity-70 dark:border-neutral-300">
+          <div
+            className={actionWrapClassName}
+            onClick={() => openComputertByEventID(eventID)}
+          >
             <div className="text-neutral-600">
               <FaPencilAlt />
             </div>
@@ -85,7 +112,7 @@ const MessageActionDisplay: React.FC<{
               Writing file: {getDiffPath(content)}
             </div>
           </div>
-        );
+        )
 
       // case "mcp":
       // case "call_tool_mcp":
@@ -113,11 +140,11 @@ const MessageActionDisplay: React.FC<{
           >
             {content}
           </Markdown>
-        );
+        )
     }
-  };
+  }
 
-  return <div className="mt-2 max-w-[500px]">{renderContent()}</div>;
-};
+  return <div className="mt-2 max-w-[500px]">{renderContent()}</div>
+}
 
-export default MessageActionDisplay;
+export default MessageActionDisplay
