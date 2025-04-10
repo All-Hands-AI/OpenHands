@@ -4,29 +4,13 @@ import { RootState } from "#/store"
 import ObservationType from "#/types/observation-type"
 import { Slider, useDisclosure } from "@heroui/react"
 import { useEffect, useRef, useState } from "react"
-import { LuSquareChartGantt, LuStepBack, LuStepForward } from "react-icons/lu"
-import Markdown, { Components } from "react-markdown"
+import { LuStepBack, LuStepForward } from "react-icons/lu"
+import { Components } from "react-markdown"
 import { useSelector } from "react-redux"
 import CodeView from "./CodeView"
 import EditorContent from "./EditorContent"
 import TaskProgress from "./TaskProgress"
 import TerminalPage from "#/routes/terminal-tab"
-
-const EditorNotification = () => {
-  return (
-    <div className="mb-3 flex max-w-md items-center rounded-lg">
-      <p className="font-medium text-[#666]">
-        Thesis is using <span className="text-mercury-900">Browsing</span>
-      </p>
-      {/* <p className="bg-mercury-70 border-mercury-100 mt-1 rounded-full border px-2 py-1 text-gray-950">
-          Distill is using{" "}
-          <p className="mt-1 inline-block rounded-md px-2 py-1 text-gray-300">
-            Browsing
-          </p>
-        </p> */}
-    </div>
-  )
-}
 
 const ThesisComputer = () => {
   const isViewDrawer = true
@@ -188,7 +172,27 @@ const ThesisComputer = () => {
           </TooltipContent>
         </Tooltip> */}
       </div>
-      <EditorNotification />
+
+      {computerList.length > 0 &&
+        computerList.map((computerItem, index) => {
+          const observation = computerItem?.observation
+          const mapObservationTypeToText = {
+            [ObservationType.READ]: "editor",
+            [ObservationType.EDIT]: "editor",
+          }
+
+          if (index !== currentStep) return null
+          return (
+            <div className="mb-3 flex max-w-md items-center rounded-lg">
+              <p className="font-medium text-[#666]">
+                Thesis is using{" "}
+                <span className="text-[#666]">
+                  {mapObservationTypeToText[observation]}
+                </span>
+              </p>
+            </div>
+          )
+        })}
 
       <div className="bg-mercury-30 mb-3 flex h-[82%] w-full flex-1 flex-col rounded-2xl border border-neutral-1000">
         <div className="relative h-full w-full flex-1 overflow-y-auto px-4 py-2">
