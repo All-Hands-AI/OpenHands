@@ -1,4 +1,4 @@
-import React from "react"
+import React, { use, useEffect } from "react"
 import { useNavigation } from "react-router"
 import { useDispatch, useSelector } from "react-redux"
 import { RootState } from "#/store"
@@ -11,6 +11,7 @@ import { ImageCarousel } from "../features/images/image-carousel"
 import { UploadImageInput } from "../features/images/upload-image-input"
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation"
 import { LoadingSpinner } from "./loading-spinner"
+import { useGetConversationState } from "#/zutand-stores/coin/selector"
 
 interface TaskFormProps {
   ref: React.RefObject<HTMLFormElement | null>
@@ -19,6 +20,7 @@ interface TaskFormProps {
 export function TaskForm({ ref }: TaskFormProps) {
   const dispatch = useDispatch()
   const navigation = useNavigation()
+  const initMsg = useGetConversationState("initMsg")
 
   const { files } = useSelector((state: RootState) => state.initialQuery)
 
@@ -33,6 +35,12 @@ export function TaskForm({ ref }: TaskFormProps) {
     const q = formData.get("q")?.toString()
     createConversation({ q })
   }
+
+  useEffect(() => {
+    if (initMsg) {
+      setText(initMsg)
+    }
+  }, [initMsg])
 
   return (
     <div className="flex w-full flex-col gap-1">

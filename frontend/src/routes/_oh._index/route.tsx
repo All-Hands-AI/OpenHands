@@ -1,7 +1,10 @@
+import { AgentSettingsDropdownInput } from "#/components/features/settings/agent-setting-dropdown-input"
 import { BrandButton } from "#/components/features/settings/brand-button"
 import { HeroHeading } from "#/components/shared/hero-heading"
+import { SampleMsg } from "#/components/shared/sample-msg"
 import { TaskForm } from "#/components/shared/task-form"
 import { UseCaseList } from "#/components/shared/use-case-list"
+import { useAIConfigOptions } from "#/hooks/query/use-ai-config-options"
 // import { useConfig } from "#/hooks/query/use-config";
 // import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useSettings } from "#/hooks/query/use-settings"
@@ -20,17 +23,17 @@ function Home() {
   const { isConnected } = useAccount()
   const jwt = useGetJwt()
   const formRef = React.useRef<HTMLFormElement>(null)
+  const {
+    data: resources,
+    isFetching: isFetchingResources,
+    isSuccess: isSuccessfulResources,
+  } = useAIConfigOptions()
 
-  // const { data: config } = useConfig();
-  // const { data: user } = useGitHubUser();
   const { openConnectModal } = useConnectModal()
 
-  // const gitHubAuthUrl = useGitHubAuthUrl({
-  //   appMode: config?.APP_MODE || null,
-  //   gitHubClientId: config?.GITHUB_CLIENT_ID || null,
-  // });
-
   const isUserLoggedIn = !!jwt && !!isConnected
+
+  console.log("settings", settings)
 
   return (
     <div
@@ -61,11 +64,30 @@ function Home() {
             </div>
           )}
         </div>
+        <div className="w-full">
+          {settings && (
+            <AgentSettingsDropdownInput
+              testId="agent-input-show"
+              name="agent-input"
+              label="Agent"
+              items={
+                resources?.agents.map((agent) => ({
+                  key: agent,
+                  label: agent,
+                })) || []
+              }
+              defaultSelectedKey={settings?.AGENT}
+              isClearable={false}
+              showOptionalTag={false}
+              className="flex-row"
+            />
+          )}
+        </div>
         <div className="mt-8 w-full text-left text-[16px] font-semibold text-neutral-700 dark:text-tertiary-light">
           Try our use case
         </div>
-        <UseCaseList />
-
+        <SampleMsg />
+        {/* <UseCaseList /> */}
         {/* <div className="flex gap-4 w-full flex-col md:flex-row mt-8">
           <GitHubRepositoriesSuggestionBox
             handleSubmit={() => formRef.current?.requestSubmit()}

@@ -1,16 +1,18 @@
-import { Autocomplete, AutocompleteItem } from "@heroui/react";
-import { ReactNode } from "react";
-import { OptionalTag } from "./optional-tag";
+import { Autocomplete, AutocompleteItem } from "@heroui/react"
+import { ReactNode } from "react"
+import { OptionalTag } from "./optional-tag"
+import { twMerge } from "tailwind-merge"
 
 interface SettingsDropdownInputProps {
-  testId: string;
-  label: ReactNode;
-  name: string;
-  items: { key: React.Key; label: string }[];
-  showOptionalTag?: boolean;
-  isDisabled?: boolean;
-  defaultSelectedKey?: string;
-  isClearable?: boolean;
+  testId: string
+  label: ReactNode
+  name: string
+  items: { key: React.Key; label: string }[]
+  showOptionalTag?: boolean
+  isDisabled?: boolean
+  defaultSelectedKey?: string
+  isClearable?: boolean
+  className?: string
 }
 
 export function SettingsDropdownInput({
@@ -22,9 +24,10 @@ export function SettingsDropdownInput({
   isDisabled,
   defaultSelectedKey,
   isClearable,
+  className = "",
 }: SettingsDropdownInputProps) {
   return (
-    <label className="flex flex-col gap-2 w-full">
+    <label className={twMerge("flex w-full flex-col gap-2", className)}>
       <div className="flex items-center gap-1">
         <span className="text-[14px] font-medium text-neutral-700 dark:text-[#595B57]">
           {label}
@@ -66,5 +69,5 @@ export function SettingsDropdownInput({
         )}
       </Autocomplete>
     </label>
-  );
+  )
 }
