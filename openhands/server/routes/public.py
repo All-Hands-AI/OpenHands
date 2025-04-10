@@ -1,8 +1,9 @@
 import os
 import warnings
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Optional
 
+import httpx
 import requests
 from fastapi import APIRouter, HTTPException
 
@@ -122,7 +123,7 @@ async def get_config() -> dict[str, Any]:
 
 @app.get('/use-cases', response_model=ConversationInfoResultSet)
 async def get_conversations(
-    user_address: str = os.getenv('USER_USE_CASE_SAMPLE'),
+    user_address: Optional[str] = os.getenv('USER_USE_CASE_SAMPLE'),
     limit: int = 8,
 ) -> ConversationInfoResultSet:
     """Get list of conversations for a user.

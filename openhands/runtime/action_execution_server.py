@@ -8,6 +8,7 @@ NOTE: this will be executed inside the docker sandbox.
 import argparse
 import asyncio
 import base64
+import json
 import mimetypes
 import os
 import shutil
@@ -53,6 +54,7 @@ from openhands.events.observation import (
     IPythonRunCellObservation,
     Observation,
 )
+from openhands.events.observation.planner_mcp import PlanObservation
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.runtime.browser import browse
 from openhands.runtime.browser.browser_env import BrowserEnv
@@ -504,6 +506,26 @@ class ActionExecutor:
     async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
         await self._ensure_browser_ready()
         return await browse(action, self.browser)
+
+    def planner_mcp_plan(self, action, response) -> Observation:
+        logger.info(f'Planner MCP response: {response.output}')
+        resonpse_dict = json.loads(response.output)
+        observation = PlanObservation(
+            plan_id=resonpse_dict['plan_id'],
+            tasks=[
+                {
+                    'content': task['content'],
+                    'status': task['status'],
+                    'result': task['result'],
+                }
+                for task in resonpse_dict['tasks']
+            ],
+            title=resonpse_dict['title'],
+            content=resonpse_dict['title'],
+        )
+
+        logger.info(f'Planner MCP observation: {observation}')
+        return observation
 
     def close(self):
         self.memory_monitor.stop_monitoring()

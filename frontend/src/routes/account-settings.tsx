@@ -53,7 +53,6 @@ function AccountSettings() {
   const { providerTokensSet, providersAreSet } = useAuth()
 
   const isFetching = isFetchingSettings || isFetchingResources
-  console.log("isFetching", isFetching)
   const isSuccess = isSuccessfulSettings && isSuccessfulResources
   const isSaas = config?.APP_MODE === "saas"
   const shouldHandleSpecialSaasCase =

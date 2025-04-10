@@ -27,6 +27,9 @@ from openhands.events.observation.files import (
 )
 from openhands.events.observation.mcp import MCPObservation
 from openhands.events.observation.observation import Observation
+from openhands.events.observation.planner_mcp import (
+    PlanObservation,
+)
 from openhands.events.observation.playwright_mcp import (
     BrowserMCPObservation,
 )
@@ -51,6 +54,7 @@ observations = (
     RecallObservation,
     MCPObservation,
     BrowserMCPObservation,
+    PlanObservation,
 )
 
 OBSERVATION_TYPE_TO_CLASS = {
