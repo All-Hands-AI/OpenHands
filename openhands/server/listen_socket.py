@@ -1,3 +1,4 @@
+import os
 from urllib.parse import parse_qs
 
 import jwt
@@ -47,8 +48,7 @@ async def connect(connection_id: str, environ):
 
     # Check if conversation_id belongs to whitelisted user
     is_whitelisted = False
-    whitelisted_user_id = '0x9b60c97c53e3e8c55c7d32f55c1b518b6ea417f7'
-    # whitelisted_user_id = ('0xe27d3094c4231150d421c3600ded0d130cf74216',)
+    whitelisted_user_id = os.getenv('USER_USE_CASE_SAMPLE')
     if jwt_token is None:
         conversation_store = await ConversationStoreImpl.get_instance(
             config, whitelisted_user_id, None
