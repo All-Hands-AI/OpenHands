@@ -139,9 +139,9 @@ export function ExpandableMessage({
               type === "error" ? "text-danger" : "text-neutral-300",
             )}
           >
-            {translationId && i18n.exists(translationId) ? (
+            {/* {translationId && i18n.exists(translationId) ? (
               <Trans
-                i18nKey={translationId}
+                i18nKey={translationId + ` (${messageActionID})`}
                 values={translationParams}
                 components={{
                   bold: <strong />,
@@ -151,7 +151,8 @@ export function ExpandableMessage({
               />
             ) : (
               `${id} (${messageActionID})`
-            )}
+            )} */}
+            {`${t(translationId as any)} (${messageActionID})`}
             <button
               type="button"
               onClick={() => setShowDetails(!showDetails)}

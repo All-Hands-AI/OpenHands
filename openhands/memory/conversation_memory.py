@@ -41,7 +41,7 @@ from openhands.events.observation.error import ErrorObservation
 from openhands.events.observation.mcp import MCPObservation
 from openhands.events.observation.observation import Observation
 from openhands.events.observation.playwright_mcp import (
-    PlaywrightMcpBrowserScreenshotObservation,
+    BrowserMCPObservation,
 )
 from openhands.events.serialization.event import truncate_content
 from openhands.utils.prompt import PromptManager, RepositoryInfo, RuntimeInfo
@@ -339,7 +339,7 @@ class ConversationMemory:
             # message = Message(role='user', content=[TextContent(text=obs.content)])
             text = truncate_content(obs.content, max_message_chars)
             message = Message(role='user', content=[TextContent(text=text)])
-        elif isinstance(obs, PlaywrightMcpBrowserScreenshotObservation):
+        elif isinstance(obs, BrowserMCPObservation):
             text = 'Image: Current webpage screenshot\n'
             screenshot_content = json.loads(obs.content)
             # logger.debug(

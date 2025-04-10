@@ -328,10 +328,10 @@ class ActionExecutionClient(Runtime):
         if self.mcp_clients is None:
             self.log(
                 'debug',
-                f'Creating MCP clients with servers: {self.config.mcp.sse.mcp_servers}',
+                f'Creating MCP clients with servers: {self.config.dict_mcp_config}',
             )
             self.mcp_clients = await create_mcp_clients(
-                self.config.mcp.sse.mcp_servers,
+                self.config.dict_mcp_config,
                 sid=self.sid,
             )
         return await call_tool_mcp_handler(self.mcp_clients, action)

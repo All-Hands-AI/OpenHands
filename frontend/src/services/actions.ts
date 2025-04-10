@@ -31,7 +31,7 @@ const messageActions = {
       store.dispatch(addAssistantMessage(message.message));
     }
   },
-  [ActionType.PLAYWRIGHT_MCP_BROWSER_SCREENSHOT]: (message: ActionMessage) => {
+  [ActionType.BROWSER_MCP]: (message: ActionMessage) => {
     if (!message.args.thought && message.message) {
       store.dispatch(addAssistantMessage(message.message));
     }

@@ -19,7 +19,7 @@ class MCPClient(BaseModel):
     description: str = 'MCP client tools for server interaction'
     tools: List[BaseTool] = Field(default_factory=list)
     tool_map: Dict[str, BaseTool] = Field(default_factory=dict)
-
+    name: str = Field(default='')
     class Config:
         arbitrary_types_allowed = True
 

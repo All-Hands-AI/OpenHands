@@ -96,7 +96,7 @@ async def run_controller(
 
     if agent is None:
         agent = create_agent(config)
-        mcp_tools = await fetch_mcp_tools_from_config(config.mcp, sid=sid)
+        mcp_tools = await fetch_mcp_tools_from_config(config.dict_mcp_config, sid=sid)
         agent.set_mcp_tools(mcp_tools)
 
     # when the runtime is created, it will be connected and clone the selected repository

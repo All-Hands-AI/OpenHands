@@ -78,7 +78,7 @@ def response_to_actions(
         # Process each tool call to OpenHands action
         for i, tool_call in enumerate(assistant_msg.tool_calls):
             action: Action
-            logger.debug(f'Tool call in function_calling.py: {tool_call}')
+            logger.info(f'Tool call in function_calling.py: {tool_call.function.name}')
             try:
                 arguments = json.loads(tool_call.function.arguments)
             except json.decoder.JSONDecodeError as e:
@@ -219,8 +219,10 @@ def response_to_actions(
             # McpAction (MCP)
             # ================================================
             elif tool_call.function.name.endswith(MCPClientTool.postfix()):
+                original_action_name = tool_call.function.name.replace(MCPClientTool.postfix(), "")
+                logger.info(f'Original action name: {original_action_name}')
                 action = McpAction(
-                    name=tool_call.function.name.rstrip(MCPClientTool.postfix()),
+                    name=original_action_name,
                     arguments=tool_call.function.arguments,
                 )
             else:

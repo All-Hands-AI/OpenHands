@@ -195,7 +195,7 @@ async def main(loop: asyncio.AbstractEventLoop) -> None:
     display_message(f'Session ID: {sid}')
 
     agent = create_agent(config)
-    mcp_tools = await fetch_mcp_tools_from_config(config.mcp, sid=sid)
+    mcp_tools = await fetch_mcp_tools_from_config(config.dict_mcp_config, sid=sid)
     agent.set_mcp_tools(mcp_tools)
     runtime = create_runtime(
         config,

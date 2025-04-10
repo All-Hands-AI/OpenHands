@@ -9,7 +9,9 @@ export function BrowserPanel() {
   );
 
   const imgSrc =
-    screenshotSrc && screenshotSrc.startsWith("data:image/png;base64,")
+    screenshotSrc &&
+    (screenshotSrc.startsWith("data:image/png;base64,") ||
+      screenshotSrc.startsWith("data:image/jpeg;base64,"))
       ? screenshotSrc
       : `data:image/png;base64,${screenshotSrc || ""}`;
 

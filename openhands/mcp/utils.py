@@ -1,15 +1,17 @@
 import json
-from typing import Optional
+import re
+from typing import Any, Optional
 
-from mcp.types import ImageContent
+from mcp.types import TextContent, ImageContent,CallToolResult
 
 from openhands.core.config.mcp_config import MCPConfig
 from openhands.core.logger import openhands_logger as logger
+from openhands.core.schema.observation import ObservationType
 from openhands.events.action.mcp import McpAction
 from openhands.events.observation.mcp import MCPObservation
 from openhands.events.observation.observation import Observation
 from openhands.events.observation.playwright_mcp import (
-    PlaywrightMcpBrowserScreenshotObservation,
+    BrowserMCPObservation,
 )
 from openhands.mcp.client import MCPClient
 
@@ -44,38 +46,36 @@ def convert_mcp_clients_to_tools(mcp_clients: list[MCPClient] | None) -> list[di
 
 
 async def create_mcp_clients(
-    sse_mcp_server: list[str],
+    dict_mcp_config: dict[str, MCPConfig],
     sid: Optional[str] = None,
     mnemonic: Optional[str] = None,
 ) -> list[MCPClient]:
     mcp_clients: list[MCPClient] = []
     # Initialize SSE connections
-    if sse_mcp_server:
-        for server_url in sse_mcp_server:
-            logger.info(
-                f'Initializing MCP agent for {server_url} with SSE connection...'
-            )
-
-            client = MCPClient()
+    for name, mcp_config in dict_mcp_config.items():
+        logger.info(
+            f'Initializing MCP {name} agent for {mcp_config.url} with {mcp_config.mode} connection...'
+        )
+        client = MCPClient(name=name)
+        try:
+            await client.connect_sse(mcp_config.url, sid, mnemonic)
+            # Only add the client to the list after a successful connection
+            mcp_clients.append(client)
+            logger.info(f'Connected to MCP server {mcp_config.url} via SSE')
+        except Exception as e:
+            logger.error(f'Failed to connect to {mcp_config.url}: {str(e)}')
             try:
-                await client.connect_sse(server_url, sid, mnemonic)
-                # Only add the client to the list after a successful connection
-                mcp_clients.append(client)
-                logger.info(f'Connected to MCP server {server_url} via SSE')
-            except Exception as e:
-                logger.error(f'Failed to connect to {server_url}: {str(e)}')
-                try:
-                    await client.disconnect()
-                except Exception as disconnect_error:
-                    logger.error(
-                        f'Error during disconnect after failed connection: {str(disconnect_error)}'
-                    )
+                await client.disconnect()
+            except Exception as disconnect_error:
+                logger.error(
+                    f'Error during disconnect after failed connection: {str(disconnect_error)}'
+                )
 
     return mcp_clients
 
 
 async def fetch_mcp_tools_from_config(
-    mcp_config: MCPConfig,
+    dict_mcp_config: dict[str, MCPConfig],
     sid: Optional[str] = None,
     mnemonic: Optional[str] = None,
 ) -> list[dict]:
@@ -88,9 +88,9 @@ async def fetch_mcp_tools_from_config(
     mcp_clients = []
     mcp_tools = []
     try:
-        logger.debug(f'Creating MCP clients with config: {mcp_config}')
+        logger.debug(f'Creating MCP clients with config: {dict_mcp_config}')
         mcp_clients = await create_mcp_clients(
-            mcp_config.sse.mcp_servers,
+            dict_mcp_config,
             sid=sid,
             mnemonic=mnemonic,
         )
@@ -120,8 +120,8 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: McpAction) -> Obse
     Call a tool on an MCP server and return the observation.
 
     Args:
+        mcp_clients: List of MCPClient instances
         action: The MCP action to execute
-        sse_mcp_servers: List of SSE MCP server URLs
 
     Returns:
         The observation from the MCP server
@@ -148,18 +148,31 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: McpAction) -> Obse
 
     # special case for browser screenshot of playwright_mcp
     if (
-        action.name == 'browser_screenshot'
+        matching_client.name == ObservationType.BROWSER_MCP
         and response.content
         and len(response.content) > 0
-        and isinstance(response.content[0], (ImageContent))
     ):
-        return playwright_mcp_browser_screenshot(action, response.content[0])
+        return process_browser_mcp_response(action, response)
 
-    return MCPObservation(content=f'MCP result: {response.model_dump(mode="json")}')
+    return MCPObservation(content=f'MCP {action.name} result: {response.model_dump(mode="json")}')
 
+def extract_page_url(browser_content: str) -> str | Any:
+    # Regex to find the line starting with "- Page URL:" and capture the URL
+    # Explanation:
+    # ^                - Matches the start of a line (due to re.MULTILINE)
+    # \s*              - Matches optional leading whitespace
+    # - Page URL:      - Matches the literal string
+    # \s+              - Matches one or more whitespace characters after the colon
+    # (https?://[^\s]+) - Captures the URL (starts with http/https, followed by non-whitespace chars)
+    pattern = re.compile(r'^\s*- Page URL:\s+(https?://[^\s]+)', re.MULTILINE)
+    match = pattern.search(browser_content)
+    page_url = ''
+    if match:
+        page_url = match.group(1)  # group(1) is the captured URL
+    return page_url
 
-def playwright_mcp_browser_screenshot(
-    action: McpAction, screenshot_content: ImageContent
+def process_browser_mcp_response(
+    action: McpAction, browser_content: CallToolResult
 ) -> Observation:
     # example response:
     """
@@ -169,13 +182,22 @@ def playwright_mcp_browser_screenshot(
         "mimeType": "image/jpeg",
     }
     """
+    
+    image_content: ImageContent = browser_content[0]
+    text_content: TextContent | None = None
+    if len(browser_content) > 1:
+        text_content = browser_content[1]
+
+    logger.debug(f'image_content: {image_content}')
+    logger.debug(f'text_content: {text_content}')
+    url = extract_page_url(text_content.text) if text_content else ''
+    
     # logger.debug(f'Screenshot content: {screenshot_content}')
-    return PlaywrightMcpBrowserScreenshotObservation(
+    return BrowserMCPObservation(
         content=json.dumps(
-            {'type': screenshot_content.type, 'mimeType': screenshot_content.mimeType}
+            {'type': image_content.type, 'mimeType': image_content.mimeType}
         ),
-        # url=screenshot_content.url if screenshot_content.url is not None else '',
-        url='',
+        url=url,
         trigger_by_action=action.name,
-        screenshot=f'data:image/png;base64,{screenshot_content.data}',
+        screenshot=f'data:image/png;base64,{image_content.data}',
     )

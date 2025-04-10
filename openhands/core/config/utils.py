@@ -206,10 +206,8 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
     # Process MCP sections if present
     if 'mcp' in toml_config:
         try:
-            mcp_mapping = MCPConfig.from_toml_section(toml_config['mcp'])
+            cfg.dict_mcp_config = MCPConfig.from_toml_section(toml_config['mcp'])
             # We only use the base mcp config for now
-            if 'mcp' in mcp_mapping:
-                cfg.mcp = mcp_mapping['mcp']
         except (TypeError, KeyError, ValidationError) as e:
             logger.openhands_logger.warning(
                 f'Cannot parse MCP config from toml, values have not been applied.\nError: {e}'
