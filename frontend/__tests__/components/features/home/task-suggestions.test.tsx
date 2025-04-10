@@ -20,6 +20,11 @@ describe("TaskSuggestions", () => {
     "getSuggestedTasks",
   );
 
+  it("should render the task suggestions section", () => {
+    renderTaskSuggestions();
+    screen.getByTestId("task-suggestions");
+  });
+
   it("should render an empty message if there are no tasks", async () => {
     getSuggestedTasksSpy.mockResolvedValue([]);
     renderTaskSuggestions();

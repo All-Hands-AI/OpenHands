@@ -1,13 +1,16 @@
-import { render, screen } from "@testing-library/react";
-import { describe, it } from "vitest";
+import { render, screen, waitFor, within } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 import HomeScreen from "#/routes/new-home";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import { AuthProvider } from "#/context/auth-context";
+import userEvent from "@testing-library/user-event";
+import * as GitService from "#/api/git";
+import { GitRepository } from "#/types/git";
 
 const renderHomeScreen = () =>
   render(<HomeScreen />, {
     wrapper: ({ children }) => (
-      <AuthProvider>
+      <AuthProvider initialProvidersAreSet>
         <QueryClientProvider client={new QueryClient()}>
           {children}
         </QueryClientProvider>
@@ -15,15 +18,59 @@ const renderHomeScreen = () =>
     ),
   });
 
+const MOCK_RESPOSITORIES: GitRepository[] = [
+  { id: 1, full_name: "octocat/hello-world", git_provider: "github" },
+  { id: 2, full_name: "octocat/earth", git_provider: "github" },
+];
+
 describe("HomeScreen", () => {
   it("should render", () => {
     renderHomeScreen();
     screen.getByTestId("home-screen");
   });
 
-  it.todo(
-    "should render the repository connector and suggested tasks sections",
-  );
+  it("should render the repository connector and suggested tasks sections", async () => {
+    renderHomeScreen();
 
-  it.todo("should filter the suggested tasks based on the selected repository");
+    screen.getByTestId("repo-connector");
+    screen.getByTestId("task-suggestions");
+  });
+
+  it("should filter the suggested tasks based on the selected repository", async () => {
+    const retrieveUserGitRepositoriesSpy = vi.spyOn(
+      GitService,
+      "retrieveUserGitRepositories",
+    );
+    retrieveUserGitRepositoriesSpy.mockResolvedValue({
+      data: MOCK_RESPOSITORIES,
+      nextPage: null,
+    });
+
+    renderHomeScreen();
+
+    const taskSuggestions = screen.getByTestId("task-suggestions");
+
+    // Initially, all tasks should be visible
+    await waitFor(() => {
+      within(taskSuggestions).findByText("octocat/hello-world");
+      within(taskSuggestions).findByText("octocat/earth");
+    });
+
+    // Select a repository from the dropdown
+    const repoConnector = screen.getByTestId("repo-connector");
+
+    const dropdown = within(repoConnector).getByTestId("repo-dropdown");
+    await userEvent.click(dropdown);
+
+    const repoOption = screen.getAllByText("octocat/hello-world")[1];
+    await userEvent.click(repoOption);
+
+    // After selecting a repository, only tasks related to that repository should be visible
+    await waitFor(() => {
+      within(taskSuggestions).findByText("octocat/hello-world");
+      expect(
+        within(taskSuggestions).queryByText("octocat/earth"),
+      ).not.toBeInTheDocument();
+    });
+  });
 });

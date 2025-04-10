@@ -4,7 +4,11 @@ import { BrandButton } from "../settings/brand-button";
 import { SettingsDropdownInput } from "../settings/settings-dropdown-input";
 import { useConfig } from "#/hooks/query/use-config";
 
-export function RepoConnector() {
+interface RepoConnectorProps {
+  onRepoSelection?: (repoTitle: string) => void;
+}
+
+export function RepoConnector({ onRepoSelection }: RepoConnectorProps) {
   const [repoIsSelected, setRepoIsSelected] = React.useState(false);
   const { data: config } = useConfig();
   const { data: repositories } = useUserRepositories();
@@ -15,6 +19,17 @@ export function RepoConnector() {
     key: repo.id,
     label: repo.full_name,
   }));
+
+  const handleRepoSelection = (key: React.Key | null) => {
+    setRepoIsSelected(!!key);
+    console.log("Selected repo key:", key);
+
+    const selectedRepo = repositoriesList?.find(
+      (repo) => repo.id.toString() === key,
+    );
+    console.log("Selected repo:", selectedRepo);
+    if (selectedRepo) onRepoSelection?.(selectedRepo.full_name);
+  };
 
   return (
     <section
@@ -29,9 +44,7 @@ export function RepoConnector() {
         placeholder="Select a repo"
         items={repositoriesItems || []}
         wrapperClassName="max-w-[500px]"
-        onSelectionChange={(key) => {
-          setRepoIsSelected(!!key);
-        }}
+        onSelectionChange={handleRepoSelection}
       />
 
       <BrandButton
