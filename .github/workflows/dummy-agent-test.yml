@@ -40,14 +40,9 @@ jobs:
       - name: Build Environment
         run: make build
       - name: Run tests
-        uses: nick-fields/retry@v3
-        with:
-          timeout_minutes: 10
-          max_attempts: 3
-          retry_on: error
-          command: |
-            set -e
-            SANDBOX_FORCE_REBUILD_RUNTIME=True poetry run python3 openhands/core/main.py -t "do a flip" -d ./workspace/ -c DummyAgent
+        run: |
+          set -e
+          SANDBOX_FORCE_REBUILD_RUNTIME=True poetry run python3 openhands/core/main.py -t "do a flip" -d ./workspace/ -c DummyAgent
       - name: Check exit code
         run: |
           if [ $? -ne 0 ]; then
