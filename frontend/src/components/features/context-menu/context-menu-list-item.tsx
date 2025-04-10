@@ -1,9 +1,9 @@
-import { cn } from "#/utils/utils";
+import { cn } from "#/utils/utils"
 
 interface ContextMenuListItemProps {
-  testId?: string;
-  onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
-  isDisabled?: boolean;
+  testId?: string
+  onClick: (event: React.MouseEvent<HTMLButtonElement>) => void
+  isDisabled?: boolean
 }
 
 export function ContextMenuListItem({
@@ -19,11 +19,11 @@ export function ContextMenuListItem({
       onClick={onClick}
       disabled={isDisabled}
       className={cn(
-        "text-sm px-4 py-2 w-full text-start hover:bg-white/10 first-of-type:rounded-t-md last-of-type:rounded-b-md",
-        "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent text-nowrap",
+        "w-full px-4 py-2 text-start text-sm font-medium first-of-type:rounded-t-md last-of-type:rounded-b-md hover:bg-neutral-1000",
+        "text-nowrap disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent",
       )}
     >
       {children}
     </button>
-  );
+  )
 }
