@@ -29,6 +29,7 @@ class EventStreamSubscriber(str, Enum):
     MEMORY = 'memory'
     MAIN = 'main'
     TEST = 'test'
+    PLANNING_CONTROLLER = 'planning_controller'
 
 
 async def session_exists(

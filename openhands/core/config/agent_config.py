@@ -34,6 +34,18 @@ class AgentConfig(BaseModel):
         default_factory=lambda: NoOpCondenserConfig(type='noop')
     )
 
+    # planning config
+    planning_enable_browsing: bool = Field(default=True)
+    planning_enable_llm_editor: bool = Field(default=False)
+    planning_enable_jupyter: bool = Field(default=True)
+    planning_enable_mcp_tools: bool = Field(default=False)
+
+    # task solving config
+    task_solving_enable_browsing: bool = Field(default=True)
+    task_solving_enable_llm_editor: bool = Field(default=False)
+    task_solving_enable_jupyter: bool = Field(default=True)
+    task_solving_enable_mcp_tools: bool = Field(default=True)
+
     model_config = {'extra': 'forbid'}
 
     @classmethod

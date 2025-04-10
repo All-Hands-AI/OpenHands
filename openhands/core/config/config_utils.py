@@ -5,6 +5,8 @@ from pydantic import BaseModel
 from pydantic.fields import FieldInfo
 
 OH_DEFAULT_AGENT = 'CodeActAgent'
+OH_DEFAULT_PLANNING_AGENT = 'PlanningAgent'
+OH_DEFAULT_TASK_SOLVING_AGENT = 'TaskSolvingAgent'
 OH_MAX_ITERATIONS = 250
 
 

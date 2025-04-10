@@ -2,6 +2,7 @@ import asyncio
 import time
 from copy import deepcopy
 from logging import LoggerAdapter
+from typing import Type, Union
 
 import socketio
 
@@ -23,19 +24,20 @@ from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm import LLM
 from openhands.mcp import fetch_mcp_tools_from_config
 from openhands.server.session.agent_session import AgentSession
+from openhands.server.session.planning_session import PlanningSession
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.settings import Settings
 from openhands.storage.files import FileStore
 
 ROOM_KEY = 'room:{sid}'
-
+AgentSessionType = Union[AgentSession, PlanningSession]
 
 class Session:
     sid: str
     sio: socketio.AsyncServer | None
     last_active_ts: int = 0
     is_alive: bool = True
-    agent_session: AgentSession
+    agent_session: AgentSession | PlanningSession
     loop: asyncio.AbstractEventLoop
     config: AppConfig
     file_store: FileStore
@@ -55,12 +57,20 @@ class Session:
         self.last_active_ts = int(time.time())
         self.file_store = file_store
         self.logger = OpenHandsLoggerAdapter(extra={'session_id': sid})
-        self.agent_session = AgentSession(
+
+        agent_session_cls: Type[AgentSessionType] = (
+            PlanningSession if config.enable_planning else AgentSession
+        )
+
+        self.agent_session = agent_session_cls(
             sid,
             file_store,
             status_callback=self.queue_status_message,
             user_id=user_id,
         )
+
+        self.is_planning = isinstance(self.agent_session, PlanningSession)
+
         self.agent_session.event_stream.subscribe(
             EventStreamSubscriber.SERVER, self.on_event, self.sid
         )
@@ -91,7 +101,14 @@ class Session:
             AgentStateChangedObservation('', AgentState.LOADING),
             EventSource.ENVIRONMENT,
         )
-        agent_cls = settings.agent or self.config.default_agent
+
+        if not self.is_planning:
+            agent_cls = settings.agent or self.config.default_agent
+        else:
+            agent_cls = settings.task_solving_agent or self.config.default_task_solving_agent
+            planning_agent_cls = settings.planning_agent or self.config.default_planning_agent
+
+
         self.config.security.confirmation_mode = (
             self.config.security.confirmation_mode
             if settings.confirmation_mode is None
@@ -137,6 +154,13 @@ class Session:
         agent = Agent.get_cls(agent_cls)(llm, agent_config)
         agent.set_mcp_tools(mcp_tools)
 
+        # Set planning agent config if planning agent is used
+        if self.is_planning:
+            planning_agent_config = self.config.get_agent_config(planning_agent_cls)
+            planning_agent = Agent.get_cls(planning_agent_cls)(llm, planning_agent_config)
+            planning_agent.set_mcp_tools(mcp_tools)
+
+
         git_provider_tokens = None
         selected_repository = None
         selected_branch = None
@@ -146,20 +170,38 @@ class Session:
             selected_branch = settings.selected_branch
 
         try:
-            await self.agent_session.start(
-                runtime_name=self.config.runtime,
-                config=self.config,
-                agent=agent,
-                max_iterations=max_iterations,
-                max_budget_per_task=self.config.max_budget_per_task,
-                agent_to_llm_config=self.config.get_agent_to_llm_config_map(),
-                agent_configs=self.config.get_agent_configs(),
-                git_provider_tokens=git_provider_tokens,
-                selected_repository=selected_repository,
-                selected_branch=selected_branch,
-                initial_message=initial_message,
-                replay_json=replay_json,
-            )
+            if not self.is_planning:
+                await self.agent_session.start(
+                    runtime_name=self.config.runtime,
+                    config=self.config,
+                    agent=agent,
+                    max_iterations=max_iterations,
+                    max_budget_per_task=self.config.max_budget_per_task,
+                    agent_to_llm_config=self.config.get_agent_to_llm_config_map(),
+                    agent_configs=self.config.get_agent_configs(),
+                    git_provider_tokens=git_provider_tokens,
+                    selected_repository=selected_repository,
+                    selected_branch=selected_branch,
+                    initial_message=initial_message,
+                    replay_json=replay_json,
+                )
+            else:
+                await self.agent_session.start(
+                    runtime_name=self.config.runtime,
+                    config=self.config,
+                    agent=agent,
+                    max_iterations=max_iterations,
+                    git_provider_tokens=git_provider_tokens,
+                    max_budget_per_task=self.config.max_budget_per_task,
+                    agent_to_llm_config=self.config.get_agent_to_llm_config_map(),
+                    agent_configs=self.config.get_agent_configs(),
+                    selected_repository=selected_repository,
+                    selected_branch=selected_branch,
+                    initial_message=initial_message,
+                    replay_json=replay_json,
+                    planning_agent=planning_agent,  # Additional parameter for PlanningSession
+                )
+            
         except Exception as e:
             self.logger.exception(f'Error creating agent_session: {e}')
             err_class = e.__class__.__name__
