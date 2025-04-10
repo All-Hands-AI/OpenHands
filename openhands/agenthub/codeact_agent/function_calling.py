@@ -219,8 +219,10 @@ def response_to_actions(
             # McpAction (MCP)
             # ================================================
             elif tool_call.function.name.endswith(MCPClientTool.postfix()):
+                original_action_name = tool_call.function.name.replace(MCPClientTool.postfix(), "")
+                logger.info(f'Original action name: {original_action_name}')
                 action = McpAction(
-                    name=tool_call.function.name.rstrip(MCPClientTool.postfix()),
+                    name=original_action_name,
                     arguments=tool_call.function.arguments,
                 )
             else:
