@@ -3,6 +3,7 @@ import React from "react";
 import { Outlet } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
 import { FaServer } from "react-icons/fa";
+import { VscTerminalCmd } from "react-icons/vsc";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import {
@@ -57,16 +58,12 @@ function AppContent() {
 
   const [width, setWidth] = React.useState(window.innerWidth);
 
-  const secrets = React.useMemo(
-    // secrets to filter go here
-    () => [].filter((secret) => secret !== null),
-    [],
-  );
-
-  const Terminal = React.useMemo(
-    () => React.lazy(() => import("#/components/features/terminal/terminal")),
-    [],
-  );
+  // No longer needed as terminal is now a tab
+  // const secrets = React.useMemo(
+  //   // secrets to filter go here
+  //   () => [].filter((secret) => secret !== null),
+  //   [],
+  // );
 
   React.useEffect(() => {
     if (isFetched && !conversation) {
@@ -165,6 +162,11 @@ function AppContent() {
                     to: "browser",
                     icon: <GlobeIcon />,
                   },
+                  {
+                    label: <TerminalStatusLabel />,
+                    to: "terminal",
+                    icon: <VscTerminalCmd />,
+                  },
                 ]}
               >
                 <FilesProvider>
@@ -172,18 +174,7 @@ function AppContent() {
                 </FilesProvider>
               </Container>
             }
-            secondChild={
-              <Container
-                className="h-full overflow-scroll"
-                label={<TerminalStatusLabel />}
-              >
-                {/* Terminal uses some API that is not compatible in a server-environment. For this reason, we lazy load it to ensure
-                 * that it loads only in the client-side. */}
-                <React.Suspense fallback={<div className="h-full" />}>
-                  <Terminal secrets={secrets} />
-                </React.Suspense>
-              </Container>
-            }
+            secondChild={<div />}
           />
         }
       />
