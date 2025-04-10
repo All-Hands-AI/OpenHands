@@ -132,50 +132,40 @@ function AppContent() {
         secondClassName="flex flex-col overflow-hidden"
         firstChild={<ChatInterface />}
         secondChild={
-          <ResizablePanel
-            orientation={Orientation.VERTICAL}
-            className="grow h-full min-h-0 min-w-0"
-            initialSize={500}
-            firstClassName="rounded-xl overflow-hidden border border-neutral-600"
-            secondClassName="flex flex-col overflow-hidden"
-            firstChild={
-              <Container
-                className="h-full"
-                labels={[
-                  {
-                    label: t(I18nKey.WORKSPACE$TITLE),
-                    to: "",
-                    icon: <CodeIcon />,
-                  },
-                  {
-                    label: <TerminalStatusLabel />,
-                    to: "terminal",
-                    icon: <VscTerminalCmd />,
-                  },
-                  { label: "Jupyter", to: "jupyter", icon: <ListIcon /> },
-                  {
-                    label: <ServedAppLabel />,
-                    to: "served",
-                    icon: <FaServer />,
-                  },
-                  {
-                    label: (
-                      <div className="flex items-center gap-1">
-                        {t(I18nKey.BROWSER$TITLE)}
-                      </div>
-                    ),
-                    to: "browser",
-                    icon: <GlobeIcon />,
-                  },
-                ]}
-              >
-                <FilesProvider>
-                  <Outlet />
-                </FilesProvider>
-              </Container>
-            }
-            secondChild={<div />}
-          />
+          <Container
+            className="h-full w-full"
+            labels={[
+              {
+                label: t(I18nKey.WORKSPACE$TITLE),
+                to: "",
+                icon: <CodeIcon />,
+              },
+              {
+                label: <TerminalStatusLabel />,
+                to: "terminal",
+                icon: <VscTerminalCmd />,
+              },
+              { label: "Jupyter", to: "jupyter", icon: <ListIcon /> },
+              {
+                label: <ServedAppLabel />,
+                to: "served",
+                icon: <FaServer />,
+              },
+              {
+                label: (
+                  <div className="flex items-center gap-1">
+                    {t(I18nKey.BROWSER$TITLE)}
+                  </div>
+                ),
+                to: "browser",
+                icon: <GlobeIcon />,
+              },
+            ]}
+          >
+            <FilesProvider>
+              <Outlet />
+            </FilesProvider>
+          </Container>
         }
       />
     );
