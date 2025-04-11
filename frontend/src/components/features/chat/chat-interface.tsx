@@ -82,26 +82,21 @@ export function ChatInterface() {
       userMessageCount !== lastSummarizedCount &&
       curAgentState !== AgentState.RUNNING;
 
-    console.log("Summarization check:", {
-      userMessageCount,
-      lastSummarizedCount,
-      curAgentState,
-      shouldSummarize
-    });
+    // Check if summarization should be triggered
 
     if (shouldSummarize && params.conversationId) {
       const conversationId = params.conversationId;
-      console.log("Attempting to summarize conversation:", conversationId);
+      // Attempt to summarize conversation
       getTrajectorySummary(conversationId, {
         onSuccess: (data) => {
-          console.log("Summary received:", data);
+          // Summary received
           setOverallSummary(data.overall_summary);
           setSummarySegments(data.segments);
           setShowSummary(true);
           setLastSummarizedCount(userMessageCount);
         },
         onError: (error) => {
-          console.error("Error fetching summary:", error);
+          // Handle error fetching summary
         }
       });
     }
@@ -228,8 +223,9 @@ export function ChatInterface() {
             {/* Summary Toggle Button - only show if summary is available */}
             {summarySegments.length > 0 && (
               <button
+                type="button"
                 onClick={() => setShowSummary(!showSummary)}
-                className="flex items-center gap-1 text-xs px-2 py-1 rounded bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                className="flex items-center gap-1 text-xs px-2 py-1 rounded bg-tertiary hover:bg-base-secondary transition-colors text-content"
                 title={showSummary ? "Show original messages" : "Show conversation summary"}
               >
                 <svg
@@ -251,25 +247,26 @@ export function ChatInterface() {
             {/* Manual Summarize Button - always show for debugging */}
             {params.conversationId && (
               <button
+                type="button"
                 onClick={() => {
                   const conversationId = params.conversationId;
                   if (!conversationId) return;
                   
-                  console.log("Manual summarize clicked for:", conversationId);
+                  // Manual summarize clicked
                   getTrajectorySummary(conversationId, {
                     onSuccess: (data) => {
-                      console.log("Manual summary received:", data);
+                      // Summary received
                       setOverallSummary(data.overall_summary);
                       setSummarySegments(data.segments);
                       setShowSummary(true);
                       setLastSummarizedCount(userMessageCount);
                     },
                     onError: (error) => {
-                      console.error("Error fetching manual summary:", error);
+                      // Handle error
                     }
                   });
                 }}
-                className="flex items-center gap-1 text-xs px-2 py-1 rounded bg-blue-100 dark:bg-blue-800 hover:bg-blue-200 dark:hover:bg-blue-700 transition-colors"
+                className="flex items-center gap-1 text-xs px-2 py-1 rounded bg-tertiary hover:bg-base-secondary transition-colors text-content border border-tertiary"
                 title="Manually trigger summarization"
               >
                 <svg

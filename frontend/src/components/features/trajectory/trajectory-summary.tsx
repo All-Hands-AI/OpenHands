@@ -13,12 +13,12 @@ interface TrajectorySummaryProps {
   isAwaitingUserConfirmation: boolean;
 }
 
-export const TrajectorySummary: React.FC<TrajectorySummaryProps> = ({
+export function TrajectorySummary({
   overallSummary,
   segments,
   messages,
   isAwaitingUserConfirmation,
-}) => {
+}: TrajectorySummaryProps) {
   const [expandedSegments, setExpandedSegments] = React.useState<Record<string, boolean>>({});
 
   // Initialize all segments as expanded
@@ -48,29 +48,29 @@ export const TrajectorySummary: React.FC<TrajectorySummaryProps> = ({
   return (
     <div className="flex flex-col gap-4 w-full">
       {/* Overall Summary */}
-      <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-        <h2 className="text-lg font-semibold mb-2">Conversation Summary</h2>
-        <p className="text-gray-700 dark:text-gray-300">{overallSummary}</p>
+      <div className="bg-base-secondary p-4 rounded-lg border border-tertiary">
+        <h2 className="text-lg font-semibold mb-2 text-content">Conversation Summary</h2>
+        <p className="text-content">{overallSummary}</p>
       </div>
 
       {/* Segments */}
       {segments.map((segment, index) => (
         <div
           key={index}
-          className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden"
+          className="border border-tertiary rounded-lg overflow-hidden"
         >
           {/* Segment Header */}
           <div
-            className="bg-gray-100 dark:bg-gray-800 p-3 flex justify-between items-center cursor-pointer"
+            className="bg-base-secondary p-3 flex justify-between items-center cursor-pointer hover:bg-tertiary transition-colors"
             onClick={() => toggleSegment(index.toString())}
           >
             <div>
-              <h3 className="font-medium">{segment.title}</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <h3 className="font-medium text-content">{segment.title}</h3>
+              <p className="text-sm text-tertiary-light">
                 {segment.timestamp_range}
               </p>
             </div>
-            <div className="text-gray-500 dark:text-gray-400">
+            <div className="text-tertiary-light">
               {expandedSegments[index.toString()] ? (
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -103,9 +103,9 @@ export const TrajectorySummary: React.FC<TrajectorySummaryProps> = ({
 
           {/* Segment Content */}
           {expandedSegments[index.toString()] && (
-            <div className="p-3">
+            <div className="p-3 bg-base">
               <div className="mb-3">
-                <p className="text-gray-700 dark:text-gray-300">{segment.summary}</p>
+                <p className="text-content">{segment.summary}</p>
               </div>
 
               {/* Messages in this segment */}
@@ -118,7 +118,7 @@ export const TrajectorySummary: React.FC<TrajectorySummaryProps> = ({
 
                   if (message.type === "error" || message.type === "action") {
                     return (
-                      <div key={msgIndex}>
+                      <div key={msgIndex} className="text-content">
                         <ExpandableMessage
                           type={message.type}
                           id={message.translationID}
@@ -150,4 +150,4 @@ export const TrajectorySummary: React.FC<TrajectorySummaryProps> = ({
       ))}
     </div>
   );
-};
+}
