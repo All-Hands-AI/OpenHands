@@ -273,10 +273,6 @@ jobs:
         with:
           tags: ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
           context: containers/runtime
-      - name: Load runtime image for fork
-        if: github.event.pull_request.head.repo.fork
-        run: |
-          docker load --input /tmp/runtime-${{ matrix.base_image.tag }}.tar
       - name: Cache Poetry dependencies
         uses: useblacksmith/cache@v5
         with:
