@@ -59,11 +59,21 @@ export function ChatInterface() {
 
   const { messages } = useSelector((state: RootState) => state.chat)
   const { curAgentState } = useSelector((state: RootState) => state.agent)
-  const { data: files, refetch: refetchFiles } = useListFiles()
+  const { data: files, refetch: refetchFiles } = useListFiles({
+    isCached: false,
+    enabled: true,
+  })
 
   useEffect(() => {
     if (curAgentState === AgentState.AWAITING_USER_INPUT) refetchFiles()
   }, [curAgentState])
+
+  // Scroll to bottom when files are loaded
+  useEffect(() => {
+    if (files && files.length > 0) {
+      scrollDomToBottom()
+    }
+  }, [files])
 
   const [feedbackPolarity, setFeedbackPolarity] = React.useState<
     "positive" | "negative"
@@ -175,14 +185,14 @@ export function ChatInterface() {
         )}
 
         {files && files.length > 0 && (
-          <div className="my-3 grid grid-cols-2 gap-2">
+          <div className="my-3 flex flex-wrap gap-2">
             {files.map((file) => (
               <div
                 key={file}
-                className="flex cursor-pointer items-center gap-2 rounded-md bg-neutral-1000 p-2 hover:opacity-70"
+                className="flex w-fit max-w-full cursor-pointer items-center gap-2 rounded-md bg-neutral-1000 p-2 hover:opacity-70"
                 onClick={() => dispatch(setCurrentPathViewed(file))}
               >
-                <FaFileInvoice className="h-4 w-4 fill-blue-500" />
+                <FaFileInvoice className="h-4 w-4 shrink-0 fill-blue-500" />
                 <div className="line-clamp-1 text-sm">{file}</div>
               </div>
             ))}

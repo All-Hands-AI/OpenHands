@@ -30,6 +30,7 @@ from openhands.events.observation import (
     FileEditObservation,
     FileReadObservation,
     IPythonRunCellObservation,
+    PlanObservation,
     UserRejectObservation,
 )
 from openhands.events.observation.agent import (
@@ -339,8 +340,15 @@ class ConversationMemory:
             text = truncate_content(obs.content, max_message_chars)
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, BrowserMCPObservation):
-            text = truncate_content(obs.content, max_message_chars)
-            # We don't actually need to screenshot fed into the LLM. We can use snapshots. Meanwhile, the screenshot will be streamed to the user.
+            text = obs.content
+            # logger.warning(f'MCPObservation: {obs}')
+            message = Message(role='user', content=[TextContent(text=obs.content)])
+
+        elif isinstance(obs, PlanObservation):
+            text = 'Plan: ' + obs.title
+            logger.info(f'Plan: {obs}')
+            for i in obs.tasks:
+                text += f'\n\n- Content: {i.get('content')} \n   - Status: {i['status']}\n   - Result: {i['result']}'
             message = Message(
                 role='assistant',
                 content=[
@@ -351,9 +359,9 @@ class ConversationMemory:
             text = obs.content
             # replace base64 images with a placeholder
             splitted = text.split('\n')
-            for i, line in enumerate(splitted):
+            for index, line in enumerate(splitted):
                 if '![image](data:image/png;base64,' in line:
-                    splitted[i] = (
+                    splitted[index] = (
                         '![image](data:image/png;base64, ...) already displayed to user'
                     )
             text = '\n'.join(splitted)

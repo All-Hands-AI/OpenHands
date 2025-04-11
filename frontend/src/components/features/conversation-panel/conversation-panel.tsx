@@ -1,51 +1,56 @@
-import React from "react"
-import { NavLink, useParams } from "react-router"
-import PlusIcon from "#/icons/plus.svg?react"
-import { useTranslation } from "react-i18next"
-import { I18nKey } from "#/i18n/declaration"
-import { ConversationCard } from "./conversation-card"
-import { useUserConversations } from "#/hooks/query/use-user-conversations"
-import { useDeleteConversation } from "#/hooks/mutation/use-delete-conversation"
-import { ConfirmDeleteModal } from "./confirm-delete-modal"
-import { LoadingSpinner } from "#/components/shared/loading-spinner"
-import { useUpdateConversation } from "#/hooks/mutation/use-update-conversation"
-import { useEndSession } from "#/hooks/use-end-session"
-import { ExitConversationModal } from "./exit-conversation-modal"
-import { useClickOutsideElement } from "#/hooks/use-click-outside-element"
-import { groupConversationsByDate } from "#/utils/group-conversations-by-date"
-import { setCurrentAgentState } from "#/state/agent-slice"
-import { AgentState } from "#/types/agent-state"
-import { useDispatch } from "react-redux"
-
+import React from "react";
+import { NavLink, useParams } from "react-router";
+import PlusIcon from "#/icons/plus.svg?react";
+import { useTranslation } from "react-i18next";
+import { I18nKey } from "#/i18n/declaration";
+import { ConversationCard } from "./conversation-card";
+import { useUserConversations } from "#/hooks/query/use-user-conversations";
+import { useDeleteConversation } from "#/hooks/mutation/use-delete-conversation";
+import { ConfirmDeleteModal } from "./confirm-delete-modal";
+import { LoadingSpinner } from "#/components/shared/loading-spinner";
+import { useUpdateConversation } from "#/hooks/mutation/use-update-conversation";
+import { useEndSession } from "#/hooks/use-end-session";
+import { ExitConversationModal } from "./exit-conversation-modal";
+import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
+import { groupConversationsByDate } from "#/utils/group-conversations-by-date";
+import { setCurrentAgentState } from "#/state/agent-slice";
+import { AgentState } from "#/types/agent-state";
+import { useDispatch } from "react-redux";
+import { setCurrentPathViewed } from "#/state/file-state-slice";
 interface ConversationPanelProps {
-  onClose: () => void
+  onClose: () => void;
 }
 
 export function ConversationPanel({ onClose }: ConversationPanelProps) {
-  const { t } = useTranslation()
-  const { conversationId: cid } = useParams()
-  const endSession = useEndSession()
-  const ref = useClickOutsideElement<HTMLDivElement>(onClose)
-  const dispatch = useDispatch()
+  const { t } = useTranslation();
+  const { conversationId: cid } = useParams();
+  const endSession = useEndSession();
+  const ref = useClickOutsideElement<HTMLDivElement>(onClose);
+  const dispatch = useDispatch();
   const [confirmDeleteModalVisible, setConfirmDeleteModalVisible] =
-    React.useState(false)
+    React.useState(false);
   const [
     confirmExitConversationModalVisible,
     setConfirmExitConversationModalVisible,
-  ] = React.useState(false)
+  ] = React.useState(false);
   const [selectedConversationId, setSelectedConversationId] = React.useState<
     string | null
-  >(null)
+  >(null);
 
-  const { data: conversations, isFetching, error } = useUserConversations()
+  const { data: conversations, isFetching, error } = useUserConversations();
 
-  const { mutate: deleteConversation } = useDeleteConversation()
-  const { mutate: updateConversation } = useUpdateConversation()
+  const { mutate: deleteConversation } = useDeleteConversation();
+  const { mutate: updateConversation } = useUpdateConversation();
+
+  const closeConversationPanel = () => {
+    dispatch(setCurrentPathViewed(""));
+    onClose();
+  };
 
   const handleDeleteProject = (conversationId: string) => {
-    setConfirmDeleteModalVisible(true)
-    setSelectedConversationId(conversationId)
-  }
+    setConfirmDeleteModalVisible(true);
+    setSelectedConversationId(conversationId);
+  };
 
   const handleConfirmDelete = () => {
     if (selectedConversationId) {
@@ -54,36 +59,37 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
         {
           onSuccess: () => {
             if (cid === selectedConversationId) {
-              endSession()
+              endSession();
             }
           },
-        },
-      )
+        }
+      );
     }
-  }
+  };
 
   const handleChangeTitle = (
     conversationId: string,
     oldTitle: string,
-    newTitle: string,
+    newTitle: string
   ) => {
     if (oldTitle !== newTitle)
       updateConversation({
         id: conversationId,
         conversation: { title: newTitle },
-      })
-  }
+      });
+  };
 
   const handleEndSession = () => {
-    dispatch(setCurrentAgentState(AgentState.LOADING))
-    endSession()
-    onClose()
-  }
+    dispatch(setCurrentPathViewed(""));
+    dispatch(setCurrentAgentState(AgentState.LOADING));
+    endSession();
+    onClose();
+  };
 
   const groupedConversations = React.useMemo(() => {
-    if (!conversations) return null
-    return groupConversationsByDate(conversations)
-  }, [conversations])
+    if (!conversations) return null;
+    return groupConversationsByDate(conversations);
+  }, [conversations]);
 
   return (
     <div
@@ -128,7 +134,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
                 <NavLink
                   key={project.conversation_id}
                   to={`/conversations/${project.conversation_id}`}
-                  onClick={onClose}
+                  onClick={closeConversationPanel}
                   className="my-1 block"
                 >
                   {({ isActive }) => (
@@ -141,7 +147,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
                         handleChangeTitle(
                           project.conversation_id,
                           project.title,
-                          title,
+                          title
                         )
                       }
                       title={project.title}
@@ -166,7 +172,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
                 <NavLink
                   key={project.conversation_id}
                   to={`/conversations/${project.conversation_id}`}
-                  onClick={onClose}
+                  onClick={closeConversationPanel}
                 >
                   {({ isActive }) => (
                     <ConversationCard
@@ -178,7 +184,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
                         handleChangeTitle(
                           project.conversation_id,
                           project.title,
-                          title,
+                          title
                         )
                       }
                       title={project.title}
@@ -203,7 +209,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
                 <NavLink
                   key={project.conversation_id}
                   to={`/conversations/${project.conversation_id}`}
-                  onClick={onClose}
+                  onClick={closeConversationPanel}
                 >
                   {({ isActive }) => (
                     <ConversationCard
@@ -215,7 +221,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
                         handleChangeTitle(
                           project.conversation_id,
                           project.title,
-                          title,
+                          title
                         )
                       }
                       title={project.title}
@@ -240,7 +246,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
                 <NavLink
                   key={project.conversation_id}
                   to={`/conversations/${project.conversation_id}`}
-                  onClick={onClose}
+                  onClick={closeConversationPanel}
                 >
                   {({ isActive }) => (
                     <ConversationCard
@@ -252,7 +258,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
                         handleChangeTitle(
                           project.conversation_id,
                           project.title,
-                          title,
+                          title
                         )
                       }
                       title={project.title}
@@ -277,7 +283,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
                 <NavLink
                   key={project.conversation_id}
                   to={`/conversations/${project.conversation_id}`}
-                  onClick={onClose}
+                  onClick={closeConversationPanel}
                 >
                   {({ isActive }) => (
                     <ConversationCard
@@ -289,7 +295,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
                         handleChangeTitle(
                           project.conversation_id,
                           project.title,
-                          title,
+                          title
                         )
                       }
                       title={project.title}
@@ -310,8 +316,8 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
       {confirmDeleteModalVisible && (
         <ConfirmDeleteModal
           onConfirm={() => {
-            handleConfirmDelete()
-            setConfirmDeleteModalVisible(false)
+            handleConfirmDelete();
+            setConfirmDeleteModalVisible(false);
           }}
           onCancel={() => setConfirmDeleteModalVisible(false)}
         />
@@ -320,12 +326,12 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
       {confirmExitConversationModalVisible && (
         <ExitConversationModal
           onConfirm={() => {
-            endSession()
-            onClose()
+            endSession();
+            onClose();
           }}
           onClose={() => setConfirmExitConversationModalVisible(false)}
         />
       )}
     </div>
-  )
+  );
 }

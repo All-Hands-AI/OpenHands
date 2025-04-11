@@ -22,9 +22,6 @@ export function BrowserPanel({ computerItem }: { computerItem?: any }) {
 
   return (
     <div className="flex h-full w-full flex-col rounded text-neutral-400">
-      <div className="w-full truncate rounded-t-lg border-b border-gray-200 bg-neutral-800 p-3">
-        {browserUrl}
-      </div>
       <div className="grow overflow-y-auto rounded-xl scrollbar-hide">
         {screenshot ? (
           <BrowserSnapshot src={imgSrc} />
