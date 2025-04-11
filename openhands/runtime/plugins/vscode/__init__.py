@@ -1,12 +1,15 @@
 import os
 import subprocess
-import time
 import uuid
 from dataclasses import dataclass
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.plugins.requirement import Plugin, PluginRequirement
 from openhands.runtime.utils.system import check_port_available
+from openhands.utils.async_utils import (
+    async_sleep,
+    async_subprocess_popen,
+)
 from openhands.utils.shutdown_listener import should_continue
 
 
@@ -41,7 +44,7 @@ class VSCodePlugin(Plugin):
             'EOF'
         )
 
-        self.gateway_process = subprocess.Popen(
+        self.gateway_process = await async_subprocess_popen(
             cmd,
             stderr=subprocess.STDOUT,
             shell=True,
@@ -54,7 +57,7 @@ class VSCodePlugin(Plugin):
             output += line
             if 'at' in line:
                 break
-            time.sleep(1)
+            await async_sleep(1)
             logger.debug('Waiting for VSCode server to start...')
 
         logger.debug(

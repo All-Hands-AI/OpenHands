@@ -14,7 +14,6 @@ from typing import Callable, cast
 from zipfile import ZipFile
 
 import httpx
-from pydantic import SecretStr
 
 from openhands.core.config import AppConfig, SandboxConfig
 from openhands.core.exceptions import AgentRuntimeDisconnectedError

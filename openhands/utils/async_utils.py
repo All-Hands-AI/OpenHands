@@ -95,3 +95,79 @@ class AsyncException(Exception):
 
     def __str__(self):
         return '\n'.join(str(e) for e in self.exceptions)
+
+
+async def async_subprocess_run(*args, **kwargs):
+    """Run a subprocess command asynchronously."""
+
+    def _run_subprocess():
+        import subprocess
+
+        return subprocess.run(*args, **kwargs)
+
+    return await call_sync_from_async(_run_subprocess)
+
+
+async def async_subprocess_check_output(*args, **kwargs):
+    """Run a subprocess command and get output asynchronously."""
+
+    def _check_output():
+        import subprocess
+
+        return subprocess.check_output(*args, **kwargs)
+
+    return await call_sync_from_async(_check_output)
+
+
+async def async_subprocess_popen(*args, **kwargs):
+    """Create a subprocess asynchronously."""
+
+    def _popen():
+        import subprocess
+
+        return subprocess.Popen(*args, **kwargs)
+
+    return await call_sync_from_async(_popen)
+
+
+async def async_open_file(path, mode='r', **kwargs):
+    """Open a file asynchronously and return its content."""
+
+    def _open_file():
+        with open(path, mode, **kwargs) as f:
+            if 'r' in mode:
+                return f.read()
+            return None
+
+    return await call_sync_from_async(_open_file)
+
+
+async def async_read_file_lines(path, **kwargs):
+    """Read file lines asynchronously."""
+
+    def _read_lines():
+        with open(path, 'r', **kwargs) as f:
+            return f.readlines()
+
+    return await call_sync_from_async(_read_lines)
+
+
+async def async_write_file(path, content, mode='w', **kwargs):
+    """Write to a file asynchronously."""
+
+    def _write_file():
+        with open(path, mode, **kwargs) as f:
+            f.write(content)
+
+    return await call_sync_from_async(_write_file)
+
+
+async def async_sleep(seconds):
+    """Sleep asynchronously."""
+
+    def _sleep():
+        import time
+
+        time.sleep(seconds)
+
+    return await call_sync_from_async(_sleep)
