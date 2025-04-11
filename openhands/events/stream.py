@@ -160,6 +160,8 @@ class EventStream(EventStore):
             raise ValueError(
                 f'Event already has an ID:{event.id}. It was probably added back to the EventStream from inside a handler, triggering a loop.'
             )
+        event._timestamp = datetime.now().isoformat()
+        event._source = source  # type: ignore [attr-defined]
         with self._lock:
             event._id = self.cur_id  # type: ignore [attr-defined]
             self.cur_id += 1
@@ -167,27 +169,16 @@ class EventStream(EventStore):
             # Take a copy of the current write page
             current_write_page = self._write_page_cache
 
-            # Calculate the index of the current event in the write page
-            write_page_index = len(current_write_page)
-
-            # Temporary add none - the actual event replaces this later
-            current_write_page.append(None)  # type: ignore
+            data = event_to_dict(event)
+            data = self._replace_secrets(data)
+            event = event_from_dict(data)
+            current_write_page.append(data)
 
             # If the page is full, create a new page for future events / other threads to use
             if len(current_write_page) == self.cache_size:
                 self._write_page_cache = []
 
-        # Outside the lock update the event as required
-        event._timestamp = datetime.now().isoformat()
-        event._source = source  # type: ignore [attr-defined]
-        data = event_to_dict(event)
-        data = self._replace_secrets(data)
-        event = event_from_dict(data)
-
         if event.id is not None:
-            # Set the event in the current write page - doing this before writes means that written pages will always include the event at its correct index
-            current_write_page[write_page_index] = data
-
             # Write the event to the store - this can take some time
             self.file_store.write(
                 self._get_filename_for_id(event.id, self.user_id), json.dumps(data)
