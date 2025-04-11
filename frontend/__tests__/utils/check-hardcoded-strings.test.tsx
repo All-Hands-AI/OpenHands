@@ -1,7 +1,9 @@
 import { render, screen } from "@testing-library/react";
 import { test, expect, describe, vi } from "vitest";
+import * as path from "path";
 import { InteractiveChatBox } from "#/components/features/chat/interactive-chat-box";
 import { ChatInput } from "#/components/features/chat/chat-input";
+import { scanDirectoryForUnlocalizedStrings } from "#/utils/scan-unlocalized-strings-ast";
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
@@ -42,7 +44,10 @@ describe("Check for hardcoded English strings", () => {
     // If we found any unlocalized strings, format them for output
     if (results.size > 0) {
       const formattedResults = Array.from(results.entries())
-        .map(([file, strings]) => `\n${file}:\n  ${strings.join('\n  ')}`)
+        .map((entry) => {
+          const [file, strings] = entry;
+          return `\n${file}:\n  ${strings.join('\n  ')}`;
+        })
         .join('\n');
 
       throw new Error(
