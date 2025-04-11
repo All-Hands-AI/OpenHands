@@ -206,9 +206,9 @@ function AccountSettings() {
         <div className="max-w-[680px]">
           {!shouldHandleSpecialSaasCase && (
             <section className="flex flex-col gap-6">
-              <h3 className="text-[18px] font-semibold text-neutral-100 dark:text-[#EFEFEF]">
+              {/* <h3 className="text-[18px] font-semibold text-neutral-100 dark:text-[#EFEFEF]">
                 LLM Settings
-              </h3>
+              </h3> */}
               {/* <Tabs
                 selectedKey={llmConfigMode}
                 onSelectionChange={(key: any) => setLlmConfigMode(key)}
@@ -249,7 +249,7 @@ function AccountSettings() {
                     type="text"
                     className="w-full"
                   /> */}
-                  <SettingsDropdownInput
+                  {/* <SettingsDropdownInput
                     testId="agent-input"
                     name="agent-input"
                     label="Agent"
@@ -261,7 +261,7 @@ function AccountSettings() {
                     }
                     defaultSelectedKey={settings.AGENT}
                     isClearable={false}
-                  />
+                  /> */}
                   {isSaas && (
                     <SettingsDropdownInput
                       testId="runtime-settings-input"
