@@ -163,18 +163,16 @@ class EventStream(EventStore):
         with self._lock:
             event._id = self.cur_id  # type: ignore [attr-defined]
             self.cur_id += 1
-        logger.debug(f'Adding {type(event).__name__} id={event.id} from {source.name}')
         event._timestamp = datetime.now().isoformat()
         event._source = source  # type: ignore [attr-defined]
-        logger.debug(f'Event to add: {event}')
         data = event_to_dict(event)
         data = self._replace_secrets(data)
         event = event_from_dict(data)
         if event.id is not None:
+            self._write_page_cache.append(data)
             self.file_store.write(
                 self._get_filename_for_id(event.id, self.user_id), json.dumps(data)
             )
-            self._write_page_cache.append(data)
             self._store_cache_page()
         self._queue.put(event)
 
