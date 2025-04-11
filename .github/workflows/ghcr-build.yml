@@ -263,6 +263,9 @@ jobs:
         with:
           name: runtime-src-${{ matrix.base_image.tag }}
           path: containers/runtime
+      - name: Lowercase Repository Owner
+        run: |
+          echo REPO_OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
       # Forked repos can't push to GHCR, so we need to rebuild using cache
       - name: Build runtime image ${{ matrix.base_image.image }} for fork
         if: github.event.pull_request.head.repo.fork
@@ -292,9 +295,6 @@ jobs:
         run: pipx install poetry
       - name: Install Python dependencies using Poetry
         run: make install-python-dependencies POETRY_GROUP=main,test,runtime INSTALL_PLAYWRIGHT=0
-      - name: Lowercase Repository Owner
-        run: |
-          echo REPO_OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
       - name: Run docker runtime tests
         run: |
           # We install pytest-xdist in order to run tests across CPUs
@@ -338,6 +338,9 @@ jobs:
         with:
           name: runtime-src-${{ matrix.base_image.tag }}
           path: containers/runtime
+      - name: Lowercase Repository Owner
+        run: |
+          echo REPO_OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
       # Forked repos can't push to GHCR, so we need to rebuild using cache
       - name: Build runtime image ${{ matrix.base_image.image }} for fork
         if: github.event.pull_request.head.repo.fork
@@ -363,9 +366,6 @@ jobs:
         run: pipx install poetry
       - name: Install Python dependencies using Poetry
         run: make install-python-dependencies POETRY_GROUP=main,test,runtime INSTALL_PLAYWRIGHT=0
-      - name: Lowercase Repository Owner
-        run: |
-          echo REPO_OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
       - name: Run runtime tests
         run: |
           # We install pytest-xdist in order to run tests across CPUs
