@@ -14,7 +14,6 @@ from datasets import load_dataset
 
 from openhands.core.config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
-from openhands.core.message import Message, TextContent
 from openhands.events.async_event_store_wrapper import AsyncEventStoreWrapper
 from openhands.events.serialization.event import event_to_trajectory
 from openhands.events.stream import EventStream
@@ -288,7 +287,7 @@ class TrajectorySummarizer:
             current_llm = LLM(self.llm_config)
 
         # Create a message for the LLM
-        message = Message(role="user", content=[TextContent(text=prompt)])
+        message = {'role': 'user', 'content': prompt}
 
         # Call the LLM
         response = current_llm.completion(
