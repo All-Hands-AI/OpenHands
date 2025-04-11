@@ -32,11 +32,11 @@ export function ConversationCardContextMenu({
         position === "bottom" && "top-full",
       )}
     >
-      {/* {onDelete && (
+      {onDelete && (
         <ContextMenuListItem testId="delete-button" onClick={onDelete}>
           Delete
         </ContextMenuListItem>
-      )} */}
+      )}
       {onEdit && (
         <ContextMenuListItem testId="edit-button" onClick={onEdit}>
           Edit Title

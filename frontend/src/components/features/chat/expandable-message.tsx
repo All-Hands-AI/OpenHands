@@ -21,11 +21,12 @@ import MessageActionDisplay from "./message-action-display";
 import { MonoComponent } from "./mono-component";
 import { PathComponent } from "./path-component";
 
+import ObservationType from "#/types/observation-type";
 
 const trimText = (text: string, maxLength: number): string => {
-  if (!text) return "";
-  return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
-};
+  if (!text) return ""
+  return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text
+}
 
 interface ExpandableMessageProps {
   id?: string;
@@ -59,15 +60,15 @@ export function ExpandableMessage({
   >({
     observation,
     action,
-  });
+  })
 
   useEffect(() => {
     if (id && i18n.exists(id)) {
-      let processedObservation = observation;
-      let processedAction = action;
+      let processedObservation = observation
+      let processedAction = action
 
       if (action && action.payload.action === "run") {
-        const trimmedCommand = trimText(action.payload.args.command, 80);
+        const trimmedCommand = trimText(action.payload.args.command, 80)
         processedAction = {
           ...action,
           payload: {
@@ -77,11 +78,11 @@ export function ExpandableMessage({
               command: trimmedCommand,
             },
           },
-        };
+        }
       }
 
       if (observation && observation.payload.observation === "run") {
-        const trimmedCommand = trimText(observation.payload.extras.command, 80);
+        const trimmedCommand = trimText(observation.payload.extras.command, 80)
         processedObservation = {
           ...observation,
           payload: {
@@ -91,10 +92,10 @@ export function ExpandableMessage({
               command: trimmedCommand,
             },
           },
-        };
+        }
       }
 
-      setTranslationId(id);
+      setTranslationId(id)
       setTranslationParams({
         observation: processedObservation,
         action: processedAction,
@@ -111,6 +112,14 @@ export function ExpandableMessage({
     return null;
   }
 
+  console.log("observation", observation?.payload?.observation)
+
+  if (
+    [ObservationType.MCP, ObservationType.BROWSER_MCP].includes(
+      observation?.payload?.observation as any,
+    )
+  )
+    return null
   if (
     config?.FEATURE_FLAGS.ENABLE_BILLING &&
     config?.APP_MODE === "saas" &&
