@@ -19,7 +19,7 @@ jobs:
   # Run python unit tests on Linux
   test-on-linux:
     name: Python Unit Tests on Linux
-    runs-on: blacksmith-4vcpu-ubuntu-2204
+    runs-on: ubuntu-latest
     env:
       INSTALL_DOCKER: '0' # Set to '0' to skip Docker installation
     strategy:
@@ -33,13 +33,13 @@ jobs:
       - name: Install tmux
         run: sudo apt-get update && sudo apt-get install -y tmux
       - name: Setup Node.js
-        uses: useblacksmith/setup-node@v5
+        uses: actions/setup-node@v4
         with:
           node-version: '22.x'
       - name: Install poetry via pipx
         run: pipx install poetry
       - name: Set up Python
-        uses: useblacksmith/setup-python@v6
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'poetry'
