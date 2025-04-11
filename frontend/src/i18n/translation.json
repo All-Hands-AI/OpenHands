@@ -5664,7 +5664,10 @@
         "no": "Tilgjengelige agentverktøy",
         "it": "Strumenti dell'agente disponibili",
         "pt": "Ferramentas de agente disponíveis",
-        "es": "Herramientas de agente disponibles"
+        "es": "Herramientas de agente disponibles",
+        "ar": "أدوات الوكيل المتاحة",
+        "fr": "Outils d'agent disponibles",
+        "tr": "Kullanılabilir Ajan Araçları"
     },
     "CONVERSATION$TOOLS_PARAMETERS": {
         "en": "Parameters",
@@ -5676,7 +5679,10 @@
         "no": "Parametere",
         "it": "Parametri",
         "pt": "Parâmetros",
-        "es": "Parámetros"
+        "es": "Parámetros",
+        "ar": "المعلمات",
+        "fr": "Paramètres",
+        "tr": "Parametreler"
     },
     "CONVERSATION$NO_TOOLS_AVAILABLE": {
         "en": "No tools available or tools have not been loaded yet",
@@ -5688,7 +5694,10 @@
         "no": "Ingen verktøy tilgjengelige eller verktøy er ikke lastet ennå",
         "it": "Nessuno strumento disponibile o gli strumenti non sono ancora stati caricati",
         "pt": "Nenhuma ferramenta disponível ou as ferramentas ainda não foram carregadas",
-        "es": "No hay herramientas disponibles o las herramientas aún no se han cargado"
+        "es": "No hay herramientas disponibles o las herramientas aún no se han cargado",
+        "ar": "لا توجد أدوات متاحة أو لم يتم تحميل الأدوات بعد",
+        "fr": "Aucun outil disponible ou les outils n'ont pas encore été chargés",
+        "tr": "Kullanılabilir araç yok veya araçlar henüz yüklenmedi"
     },
     "CONVERSATION$TOOLS_FETCH_ERROR": {
         "en": "Failed to fetch tools. Please try again later",
@@ -6007,18 +6016,6 @@
     },
     "CONVERSATION$AVAILABLE_TOOLS": {
         "en": "Available Agent Tools"
-    },
-    "CONVERSATION$NO_TOOLS_AVAILABLE": {
-        "en": "No tools available or tools have not been loaded yet."
-    },
-    "CONVERSATION$FAILED_TO_FETCH_TOOLS": {
-        "en": "Failed to fetch tools:"
-    },
-    "CONVERSATION$TOOLS_PARAMETERS": {
-        "en": "Parameters:"
-    },
-    "CONVERSATION$TOOLS_FETCH_ERROR": {
-        "en": "Failed to fetch tools. Please try again later."
     },
     "FEEDBACK$TITLE": {
         "en": "Feedback",
