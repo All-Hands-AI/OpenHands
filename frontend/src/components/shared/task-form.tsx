@@ -28,12 +28,7 @@ export function TaskForm({ ref }: TaskFormProps) {
 
   const [text, setText] = React.useState("")
   const [inputIsFocused, setInputIsFocused] = React.useState(false)
-  const {
-    mutate: createConversation,
-    isPending,
-    error,
-  } = useCreateConversation()
-  const errorDetail = (error as any)?.response?.data?.detail
+  const { mutate: createConversation, isPending } = useCreateConversation()
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -48,31 +43,6 @@ export function TaskForm({ ref }: TaskFormProps) {
       setText(initMsg)
     }
   }, [initMsg])
-
-  useEffect(() => {
-    if (!errorDetail) return
-
-    console.log({ errorDetail: errorDetail.match(/ID: (\w+)/) })
-    const conversationId = errorDetail.match(/ID: (\w+)/)?.[1]
-    const errorMessage = conversationId
-      ? `User already has a conversation:\n`
-      : "Error create new conversation"
-
-    toast.error(
-      <div>
-        {errorMessage}
-        {conversationId && (
-          <Link
-            to={`/conversations/${conversationId}`}
-            className="font-medium underline"
-          >
-            Click here to view it!
-          </Link>
-        )}
-      </div>,
-      TOAST_OPTIONS,
-    )
-  }, [errorDetail])
 
   return (
     <div className="flex w-full flex-col gap-1">
