@@ -63,16 +63,19 @@ export function ConversationCard({
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   // Create a metrics object from the conversation data
-  const metrics = React.useMemo(() => ({
-    cost: accumulated_cost,
-    usage: {
-      prompt_tokens,
-      completion_tokens,
-      total_tokens,
-      cache_read_tokens: 0,  // These are not available from conversation metadata
-      cache_write_tokens: 0, // These are not available from conversation metadata
-    }
-  }), [accumulated_cost, prompt_tokens, completion_tokens, total_tokens]);
+  const metrics = React.useMemo(
+    () => ({
+      cost: accumulated_cost,
+      usage: {
+        prompt_tokens,
+        completion_tokens,
+        total_tokens,
+        cache_read_tokens: 0, // These are not available from conversation metadata
+        cache_write_tokens: 0, // These are not available from conversation metadata
+      },
+    }),
+    [accumulated_cost, prompt_tokens, completion_tokens, total_tokens],
+  );
 
   const handleBlur = () => {
     if (inputRef.current?.value) {

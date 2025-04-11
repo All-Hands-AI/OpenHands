@@ -150,10 +150,16 @@ ignore = [ "E501" ]
 skip-string-normalization = true
 
 [tool.ruff]
-lint.select = [ "D" ]
+target-version = "py312"
+line-length = 120
+
+[tool.ruff.lint]
+select = [ "D" ]
 # ignore warnings for missing docstrings
-lint.ignore = [ "D1" ]
-lint.pydocstyle.convention = "google"
+ignore = [ "D1" ]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
 [tool.coverage.run]
 concurrency = [ "gevent" ]
