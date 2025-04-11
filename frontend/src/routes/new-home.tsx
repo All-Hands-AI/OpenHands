@@ -1,7 +1,7 @@
+import React from "react";
 import { HomeHeader } from "#/components/features/home/home-header";
 import { RepoConnector } from "#/components/features/home/repo-connector";
 import { TaskSuggestions } from "#/components/features/home/tasks/task-suggestions";
-import React from "react";
 
 function HomeScreen() {
   const [selectedRepoTitle, setSelectedRepoTitle] = React.useState<

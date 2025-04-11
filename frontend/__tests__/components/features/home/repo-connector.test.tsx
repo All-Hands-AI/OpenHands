@@ -1,15 +1,15 @@
-import { RepoConnector } from "#/components/features/home/repo-connector";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import * as GitService from "#/api/git";
-import { GitRepository } from "#/types/git";
 import userEvent from "@testing-library/user-event";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
-import { AuthProvider } from "#/context/auth-context";
-import OpenHands from "#/api/open-hands";
 import { setupStore } from "test-utils";
 import { Provider } from "react-redux";
 import { createRoutesStub } from "react-router";
+import OpenHands from "#/api/open-hands";
+import { AuthProvider } from "#/context/auth-context";
+import { GitRepository } from "#/types/git";
+import * as GitService from "#/api/git";
+import { RepoConnector } from "#/components/features/home/repo-connector";
 
 const renderRepoConnector = () => {
   const RouterStub = createRoutesStub([
@@ -26,8 +26,6 @@ const renderRepoConnector = () => {
   return render(<RouterStub />, {
     wrapper: ({ children }) => (
       <Provider store={setupStore()}>
-        // `initialProvidersAreSet` is required in order for the query hook to
-        trigger
         <AuthProvider initialProvidersAreSet>
           <QueryClientProvider client={new QueryClient()}>
             {children}

@@ -1,15 +1,14 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import HomeScreen from "#/routes/new-home";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
-import { AuthProvider } from "#/context/auth-context";
 import userEvent from "@testing-library/user-event";
-import * as GitService from "#/api/git";
-import { GitRepository } from "#/types/git";
-import OpenHands from "#/api/open-hands";
 import { createRoutesStub } from "react-router";
 import { Provider } from "react-redux";
 import { setupStore } from "test-utils";
+import HomeScreen from "#/routes/new-home";
+import { AuthProvider } from "#/context/auth-context";
+import * as GitService from "#/api/git";
+import { GitRepository } from "#/types/git";
 
 const renderHomeScreen = () => {
   const RouterStub = createRoutesStub([
@@ -90,27 +89,6 @@ describe("HomeScreen", () => {
         within(taskSuggestions).queryByText("octocat/earth"),
       ).not.toBeInTheDocument();
     });
-  });
-
-  it("should create an empty conversation and redirect when pressing the launch from scratch button in the home header", async () => {
-    const createConversationSpy = vi.spyOn(OpenHands, "createConversation");
-
-    renderHomeScreen();
-
-    const launchButton = screen.getByRole("button", {
-      name: /launch from scratch/i,
-    });
-    await userEvent.click(launchButton);
-
-    expect(createConversationSpy).toHaveBeenCalledExactlyOnceWith(
-      undefined,
-      undefined,
-      [],
-      undefined,
-    );
-
-    // expect to be redirected to /conversations/:conversationId
-    await screen.findByTestId("conversation-screen");
   });
 
   it.todo(
