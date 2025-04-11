@@ -1,38 +1,40 @@
-import { useEffect, useState } from "react"
-import { useTranslation } from "react-i18next"
-import Markdown from "react-markdown"
-import { Link } from "react-router"
-import remarkGfm from "remark-gfm"
-import { PayloadAction } from "@reduxjs/toolkit"
-import { useConfig } from "#/hooks/query/use-config"
-import { I18nKey } from "#/i18n/declaration"
-import ArrowDown from "#/icons/angle-down-solid.svg?react"
-import ArrowUp from "#/icons/angle-up-solid.svg?react"
-import CheckCircle from "#/icons/check-circle-solid.svg?react"
-import XCircle from "#/icons/x-circle-solid.svg?react"
-import { HANDLED_ACTIONS } from "#/state/chat-slice"
-import { OpenHandsEventType } from "#/types/core/base"
-import { cn } from "#/utils/utils"
-import { code } from "../markdown/code"
-import { ol, ul } from "../markdown/list"
-import MessageActionDisplay from "./message-action-display"
-import { OpenHandsObservation } from "#/types/core/observations"
-import { OpenHandsAction } from "#/types/core/actions"
+import { useEffect, useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
+import Markdown from "react-markdown";
+import { Link } from "react-router";
+import remarkGfm from "remark-gfm";
+import { PayloadAction } from "@reduxjs/toolkit";
+import { useConfig } from "#/hooks/query/use-config";
+import { I18nKey } from "#/i18n/declaration";
+import ArrowDown from "#/icons/angle-down-solid.svg?react";
+import ArrowUp from "#/icons/angle-up-solid.svg?react";
+import CheckCircle from "#/icons/check-circle-solid.svg?react";
+import XCircle from "#/icons/x-circle-solid.svg?react";
+import { HANDLED_ACTIONS } from "#/state/chat-slice";
+import { OpenHandsEventType } from "#/types/core/base";
+import { cn } from "#/utils/utils";
+import { code } from "../markdown/code";
+import { ol, ul } from "../markdown/list";
+import MessageActionDisplay from "./message-action-display";
+import { OpenHandsObservation } from "#/types/core/observations";
+import { OpenHandsAction } from "#/types/core/actions";
+import { PathComponent } from "./path-component";
+import { MonoComponent } from "./mono-component";
 
 const trimText = (text: string, maxLength: number): string => {
-  if (!text) return ""
-  return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text
-}
+  if (!text) return "";
+  return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
+};
 
 interface ExpandableMessageProps {
-  id?: string
-  message: string
-  type: string
-  success?: boolean
-  messageActionID?: string
-  eventID?: number
-  observation?: PayloadAction<OpenHandsObservation>
-  action?: PayloadAction<OpenHandsAction>
+  id?: string;
+  message: string;
+  type: string;
+  success?: boolean;
+  messageActionID?: string;
+  eventID?: number;
+  observation?: PayloadAction<OpenHandsObservation>;
+  action?: PayloadAction<OpenHandsAction>;
 }
 
 export function ExpandableMessage({
@@ -45,27 +47,26 @@ export function ExpandableMessage({
   observation,
   action,
 }: ExpandableMessageProps) {
-  const { data: config } = useConfig()
-  const { t, i18n } = useTranslation()
-  const [showDetails, setShowDetails] = useState(true)
-  const [headline, setHeadline] = useState("")
-  const [details, setDetails] = useState(message)
-  const [translationId, setTranslationId] = useState<string | undefined>(id)
+  const { data: config } = useConfig();
+  const { t, i18n } = useTranslation();
+  const [showDetails, setShowDetails] = useState(true);
+  // const [headline, setHeadline] = useState("");
+  const [details, setDetails] = useState(message);
+  const [translationId, setTranslationId] = useState<string | undefined>(id);
   const [translationParams, setTranslationParams] = useState<
     Record<string, unknown>
   >({
     observation,
     action,
-  })
-  console.log(translationId, translationParams)
+  });
 
   useEffect(() => {
     if (id && i18n.exists(id)) {
-      let processedObservation = observation
-      let processedAction = action
+      let processedObservation = observation;
+      let processedAction = action;
 
       if (action && action.payload.action === "run") {
-        const trimmedCommand = trimText(action.payload.args.command, 80)
+        const trimmedCommand = trimText(action.payload.args.command, 80);
         processedAction = {
           ...action,
           payload: {
@@ -75,11 +76,11 @@ export function ExpandableMessage({
               command: trimmedCommand,
             },
           },
-        }
+        };
       }
 
       if (observation && observation.payload.observation === "run") {
-        const trimmedCommand = trimText(observation.payload.extras.command, 80)
+        const trimmedCommand = trimText(observation.payload.extras.command, 80);
         processedObservation = {
           ...observation,
           payload: {
@@ -89,21 +90,25 @@ export function ExpandableMessage({
               command: trimmedCommand,
             },
           },
-        }
+        };
       }
 
-      setTranslationId(id)
+      setTranslationId(id);
       setTranslationParams({
         observation: processedObservation,
         action: processedAction,
-      })
-      setHeadline(`${t(id)} (${messageActionID})`)
-      setDetails(message)
-      setShowDetails(true)
+      });
+      // setHeadline(`${t(id)} (${messageActionID})`);
+      setDetails(message);
+      setShowDetails(true);
     }
-  }, [id, message, i18n.language])
+  }, [id, message, i18n.language]);
 
-  const statusIconClasses = "h-4 w-4 mr-2 inline"
+  const statusIconClasses = "h-4 w-4 mr-2 inline";
+
+  if (messageActionID === undefined) {
+    return null;
+  }
 
   if (
     config?.FEATURE_FLAGS.ENABLE_BILLING &&
@@ -127,7 +132,7 @@ export function ExpandableMessage({
           </Link>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -161,18 +166,18 @@ export function ExpandableMessage({
           )}
           <span
             className={cn(
-              headline ? "font-bold" : "",
+              translationId ? "font-bold" : "",
               type === "error"
                 ? "text-danger"
                 : "text-neutral-600 dark:text-white",
             )}
           >
-            {headline && (
+            {translationId && (
               <>
-                {headline}
-                {/* {translationId && i18n.exists(translationId) ? (
+                {/* {headline} */}
+                {translationId && i18n.exists(translationId) ? (
                   <Trans
-                    i18nKey={translationId + ` (${messageActionID})`}
+                    i18nKey={`${t(translationId)} (${messageActionID})`}
                     values={translationParams}
                     components={{
                       bold: <strong />,
@@ -181,8 +186,8 @@ export function ExpandableMessage({
                     }}
                   />
                 ) : (
-                  `${id} (${messageActionID})`
-                )} */}
+                  `${t(id)} (${messageActionID})`
+                )}
                 <button
                   type="button"
                   onClick={() => setShowDetails(!showDetails)}
@@ -208,7 +213,7 @@ export function ExpandableMessage({
             )}
           </span>
         </div>
-        {(!headline || showDetails) && (
+        {(!translationId || showDetails) && (
           <div className="flex text-sm">
             <div className="relative w-6 shrink-0">
               {/* <div className="border-l border-dashed border-neutral-300 absolute start-[7px] top-0 bottom-2"></div> */}
@@ -240,5 +245,5 @@ export function ExpandableMessage({
         )}
       </div>
     </div>
-  )
+  );
 }
