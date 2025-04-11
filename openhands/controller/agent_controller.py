@@ -1110,24 +1110,16 @@ class AgentController:
         return self._stuck_detector.is_stuck(self.headless_mode)
 
     def _prepare_metrics_for_frontend(self, action: Action) -> None:
-        """Create a minimal metrics object for frontend display and log it.
+        """Log metrics information for debugging.
 
-        To avoid performance issues with long conversations, we only keep:
-        - accumulated_cost: The current total cost
-        - accumulated_token_usage: Accumulated token statistics across all API calls
+        This method no longer attaches metrics to the action since metrics are now
+        handled at the conversation level via conversation metadata. The metrics
+        are updated in the conversation metadata when an event is processed by
+        the conversation manager.
 
         Args:
-            action: The action to attach metrics to
+            action: The action (metrics are no longer attached)
         """
-        # Create a minimal metrics object with just what the frontend needs
-        metrics = Metrics(model_name=self.agent.llm.metrics.model_name)
-        metrics.accumulated_cost = self.agent.llm.metrics.accumulated_cost
-        metrics._accumulated_token_usage = (
-            self.agent.llm.metrics.accumulated_token_usage
-        )
-
-        action.llm_metrics = metrics
-
         # Log the metrics information for debugging
         # Get the latest usage directly from the agent's metrics
         latest_usage = None
@@ -1137,7 +1129,7 @@ class AgentController:
         accumulated_usage = self.agent.llm.metrics.accumulated_token_usage
         self.log(
             'debug',
-            f'Action metrics - accumulated_cost: {metrics.accumulated_cost}, '
+            f'Action metrics - accumulated_cost: {self.agent.llm.metrics.accumulated_cost}, '
             f'latest tokens (prompt/completion/cache_read/cache_write): '
             f'{latest_usage.prompt_tokens if latest_usage else 0}/'
             f'{latest_usage.completion_tokens if latest_usage else 0}/'
