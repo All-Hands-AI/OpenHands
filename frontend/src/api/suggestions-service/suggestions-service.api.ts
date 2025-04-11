@@ -1,9 +1,9 @@
-import { RepositoryTaskGroup } from "#/components/features/home/tasks/task.types";
+import { SuggestedTask } from "#/components/features/home/tasks/task.types";
 import { openHands } from "../open-hands-axios";
 
 export class SuggestionsService {
-  static async getSuggestedTasks(): Promise<RepositoryTaskGroup[]> {
-    const { data } = await openHands.get<RepositoryTaskGroup[]>("/api/tasks");
+  static async getSuggestedTasks(): Promise<SuggestedTask[]> {
+    const { data } = await openHands.get("/api/tasks");
     return data;
   }
 }

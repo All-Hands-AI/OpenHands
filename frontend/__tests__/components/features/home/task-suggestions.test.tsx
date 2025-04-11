@@ -47,11 +47,8 @@ describe("TaskSuggestions", () => {
     renderTaskSuggestions();
 
     await waitFor(() => {
-      MOCK_TASKS.forEach((taskGroup) => {
-        taskGroup.tasks.forEach((task) => {
-          screen.getByText(task.title);
-          screen.getByText(task.description);
-        });
+      MOCK_TASKS.forEach((task) => {
+        screen.getByText(task.title);
       });
     });
   });

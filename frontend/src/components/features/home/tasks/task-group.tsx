@@ -1,10 +1,10 @@
 import { TaskCard } from "./task-card";
 import { TaskItemTitle } from "./task-item-title";
-import { TaskItem } from "./task.types";
+import { SuggestedTask } from "./task.types";
 
 interface TaskGroupProps {
   title: string;
-  tasks: TaskItem[];
+  tasks: SuggestedTask[];
 }
 
 export function TaskGroup({ title, tasks }: TaskGroupProps) {
@@ -14,7 +14,7 @@ export function TaskGroup({ title, tasks }: TaskGroupProps) {
 
       <ul className="text-sm">
         {tasks.map((task) => (
-          <TaskCard key={task.taskId} task={task} />
+          <TaskCard key={task.id} task={task} />
         ))}
       </ul>
     </div>
