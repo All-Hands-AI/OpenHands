@@ -1,0 +1,17 @@
+.style-reset *,
+.style-reset ::after,
+.style-reset ::before {
+  margin: revert;
+  padding: revert;
+}
+
+.style-reset h1,
+.style-reset h2,
+.style-reset h3,
+.style-reset h4,
+.style-reset h5,
+.style-reset h6,
+.style-reset p {
+  font-size: revert;
+  font-weight: revert;
+}

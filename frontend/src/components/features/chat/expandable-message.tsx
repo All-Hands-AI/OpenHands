@@ -1,3 +1,9 @@
+import { useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
+import Markdown from "react-markdown"
+import { Link } from "react-router"
+import remarkGfm from "remark-gfm"
+import { PayloadAction } from "@reduxjs/toolkit"
 import { useConfig } from "#/hooks/query/use-config"
 import { I18nKey } from "#/i18n/declaration"
 import ArrowDown from "#/icons/angle-down-solid.svg?react"
@@ -7,23 +13,16 @@ import XCircle from "#/icons/x-circle-solid.svg?react"
 import { HANDLED_ACTIONS } from "#/state/chat-slice"
 import { OpenHandsEventType } from "#/types/core/base"
 import { cn } from "#/utils/utils"
-import { useEffect, useState } from "react"
-import { useTranslation } from "react-i18next"
-import Markdown from "react-markdown"
-import { Link } from "react-router"
-import remarkGfm from "remark-gfm"
 import { code } from "../markdown/code"
 import { ol, ul } from "../markdown/list"
 import MessageActionDisplay from "./message-action-display"
-import { PayloadAction } from "@reduxjs/toolkit"
 import { OpenHandsObservation } from "#/types/core/observations"
 import { OpenHandsAction } from "#/types/core/actions"
 
-
 const trimText = (text: string, maxLength: number): string => {
-  if (!text) return "";
-  return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
-};
+  if (!text) return ""
+  return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text
+}
 
 interface ExpandableMessageProps {
   id?: string
@@ -51,21 +50,22 @@ export function ExpandableMessage({
   const [showDetails, setShowDetails] = useState(true)
   const [headline, setHeadline] = useState("")
   const [details, setDetails] = useState(message)
-  const [translationId, setTranslationId] = useState<string | undefined>(id);
+  const [translationId, setTranslationId] = useState<string | undefined>(id)
   const [translationParams, setTranslationParams] = useState<
     Record<string, unknown>
   >({
     observation,
     action,
-  });
+  })
+  console.log(translationId, translationParams)
 
   useEffect(() => {
     if (id && i18n.exists(id)) {
-      let processedObservation = observation;
-      let processedAction = action;
+      let processedObservation = observation
+      let processedAction = action
 
       if (action && action.payload.action === "run") {
-        const trimmedCommand = trimText(action.payload.args.command, 80);
+        const trimmedCommand = trimText(action.payload.args.command, 80)
         processedAction = {
           ...action,
           payload: {
@@ -75,11 +75,11 @@ export function ExpandableMessage({
               command: trimmedCommand,
             },
           },
-        };
+        }
       }
 
       if (observation && observation.payload.observation === "run") {
-        const trimmedCommand = trimText(observation.payload.extras.command, 80);
+        const trimmedCommand = trimText(observation.payload.extras.command, 80)
         processedObservation = {
           ...observation,
           payload: {
@@ -89,15 +89,15 @@ export function ExpandableMessage({
               command: trimmedCommand,
             },
           },
-        };
+        }
       }
 
-      setTranslationId(id);
+      setTranslationId(id)
       setTranslationParams({
         observation: processedObservation,
         action: processedAction,
-      });
-      setHeadline(t(id) + ` (${messageActionID})`)
+      })
+      setHeadline(`${t(id)} (${messageActionID})`)
       setDetails(message)
       setShowDetails(true)
     }
@@ -113,7 +113,7 @@ export function ExpandableMessage({
     return (
       <div
         data-testid="out-of-credits"
-        className="my-2 flex items-center justify-start gap-2 border-l-2 border-danger py-2 pl-2"
+        className="flex items-center justify-start gap-2 border-l-2 border-danger py-2 pl-2"
       >
         <div className="w-full text-sm">
           <div className="font-bold text-danger">
@@ -133,7 +133,7 @@ export function ExpandableMessage({
   return (
     <div
       className={cn(
-        "flex items-center justify-start gap-2 py-2",
+        "flex items-center justify-start gap-2 py-1",
         type === "error" ? "border-danger" : "border-neutral-300",
       )}
     >
