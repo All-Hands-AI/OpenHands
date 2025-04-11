@@ -21,6 +21,15 @@ class _CachePage:
     end: int
 
     def covers(self, global_index: int) -> bool:
+        """
+        Check if this cache page covers the given global index.
+        
+        Args:
+            global_index: The index to check
+            
+        Returns:
+            True if this page covers the index, False otherwise
+        """
         if global_index < self.start:
             return False
         if global_index >= self.end:
@@ -28,10 +37,26 @@ class _CachePage:
         return True
 
     def get_event(self, global_index: int) -> Event | None:
+        """
+        Get an event from this cache page by its global index.
+        
+        Args:
+            global_index: The global index of the event to retrieve
+            
+        Returns:
+            The event if found, None otherwise
+        """
         # If there was not actually a cached page, return None
         if not self.events:
             return None
+        
+        # Calculate the local index within this cache page
         local_index = global_index - self.start
+        
+        # Ensure the local index is valid
+        if local_index < 0 or local_index >= len(self.events):
+            return None
+            
         return event_from_dict(self.events[local_index])
 
 
@@ -126,14 +151,22 @@ class EventStore:
         for index in range(start_id, end_id, step):
             if not should_continue():
                 return
+            
             if not cache_page.covers(index):
-                cache_page = self._load_cache_page_for_index(index)
+                # Load the appropriate cache page for this index
+                # Pass the reverse flag to handle reverse order retrieval correctly
+                cache_page = self._load_cache_page_for_index(index, reverse=reverse)
+            
+            # Try to get the event from the cache first
             event = cache_page.get_event(index)
             if event is None:
+                # If not in cache, try to load it directly
                 try:
                     event = self.get_event(index)
                 except FileNotFoundError:
                     event = None
+            
+            # Yield the event if it passes the filter
             if event and not should_filter(event):
                 yield event
 
@@ -273,10 +306,23 @@ class EventStore:
         page = _CachePage(events, start, end)
         return page
 
-    def _load_cache_page_for_index(self, index: int) -> _CachePage:
+    def _load_cache_page_for_index(self, index: int, reverse: bool = False) -> _CachePage:
+        """
+        Load a cache page that contains the given index.
+        
+        Args:
+            index: The index to find a cache page for
+            reverse: Whether we're retrieving events in reverse order
+            
+        Returns:
+            A cache page that covers the given index
+        """
+        # Calculate the cache page boundaries based on the index
+        # We need to align with how pages were stored (in forward order)
         offset = index % self.cache_size
-        index -= offset
-        return self._load_cache_page(index, index + self.cache_size)
+        page_start = index - offset
+        page_end = page_start + self.cache_size
+        return self._load_cache_page(page_start, page_end)
 
     @staticmethod
     def _get_id_from_filename(filename: str) -> int:
