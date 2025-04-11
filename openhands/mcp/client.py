@@ -66,7 +66,7 @@ class MCPClient(BaseModel):
                 url=server_url,
                 headers=headers,
                 timeout=timeout,
-                read_timeout=read_timeout,
+                sse_read_timeout=read_timeout,
             )
             streams = await self.exit_stack.enter_async_context(streams_context)
             self.session = await self.exit_stack.enter_async_context(
