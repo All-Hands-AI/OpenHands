@@ -187,18 +187,21 @@ class ConversationMemory:
         # Handle LLM_DIFF FileEditAction specifically FIRST: create an assistant message
         # containing the thought (if any) and the formatted diff block.
         # This bypasses the tool_metadata check for this action type.
-        if isinstance(action, FileEditAction) and action.impl_source == FileEditSource.LLM_DIFF:
+        if (
+            isinstance(action, FileEditAction)
+            and action.impl_source == FileEditSource.LLM_DIFF
+        ):
             # TODO: Determine language hint from path extension if possible
-            lang_hint = "diff"
+            lang_hint = 'diff'
             # Ensure newline separation, handle None for search/replace
             search_block = action.search or ''
             replace_block = action.replace or ''
             block = (
-                f"\n```{lang_hint}\n"
-                f"{action.path}\n"
-                f"<<<<<<< SEARCH\n{search_block}\n"
-                f"=======\n{replace_block}\n"
-                f">>>>>>> REPLACE\n```"
+                f'\n```{lang_hint}\n'
+                f'{action.path}\n'
+                f'<<<<<<< SEARCH\n{search_block}\n'
+                f'=======\n{replace_block}\n'
+                f'>>>>>>> REPLACE\n```'
             )
             # Combine thought and block
             content_str = (action.thought + block) if action.thought else block.lstrip()
@@ -547,16 +550,21 @@ class ConversationMemory:
             raise ValueError(f'Unknown observation type: {type(obs)}')
 
         # Handle observations following LLM_DIFF edits: format as user message, not tool response
-        if events and current_index > 0 and isinstance(events[current_index - 1], FileEditAction) and events[current_index - 1].impl_source == FileEditSource.LLM_DIFF:
+        if (
+            events
+            and current_index > 0
+            and isinstance(events[current_index - 1], FileEditAction)
+            and events[current_index - 1].impl_source == FileEditSource.LLM_DIFF
+        ):
             if isinstance(obs, FileEditObservation):
                 # Use str(obs) which calls visualize_diff internally
                 obs_text = truncate_content(str(obs), max_message_chars)
                 return [Message(role='user', content=[TextContent(text=obs_text)])]
             elif isinstance(obs, ErrorObservation):
-                 # Also format errors following LLM_DIFF as user messages
-                 error_text = truncate_content(obs.content, max_message_chars)
-                 error_text += '\n[Error occurred during LLM_DIFF edit application]'
-                 return [Message(role='user', content=[TextContent(text=error_text)])]
+                # Also format errors following LLM_DIFF as user messages
+                error_text = truncate_content(obs.content, max_message_chars)
+                error_text += '\n[Error occurred during LLM_DIFF edit application]'
+                return [Message(role='user', content=[TextContent(text=error_text)])]
             # Else: Fall through if it's some other observation type unexpectedly following LLM_DIFF
 
         # Update the message as tool response properly (for non-LLM_DIFF observations with metadata)

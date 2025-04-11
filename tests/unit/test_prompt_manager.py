@@ -1,9 +1,6 @@
 import os
 import shutil
 
-import os
-import shutil
-
 import pytest
 
 from openhands.controller.state.state import State
@@ -274,7 +271,7 @@ each of which has a corresponding port:
 def test_prompt_manager_initialization_error():
     """Test that PromptManager raises an error if the prompt directory is not set."""
     with pytest.raises(ValueError, match='Prompt directory is not set'):
-        PromptManager(None, AgentConfig()) # Need config even for this error check
+        PromptManager(None, AgentConfig())  # Need config even for this error check
 
 
 def test_prompt_manager_system_prompt_selection(prompt_dir):
@@ -284,7 +281,7 @@ def test_prompt_manager_system_prompt_selection(prompt_dir):
     assert os.path.exists(os.path.join(prompt_dir, 'system_prompt_llm_diff.j2'))
 
     # Case 1: llm_diff is False (default)
-    config_default = AgentConfig() # Defaults to codeact_enable_llm_diff=False
+    config_default = AgentConfig()  # Defaults to codeact_enable_llm_diff=False
     manager_default = PromptManager(prompt_dir=prompt_dir, config=config_default)
     # Check the loaded template's origin filename
     assert 'system_prompt.j2' in manager_default.system_template.filename

@@ -1,7 +1,6 @@
 """Test function calling module."""
 
 import json
-from unittest.mock import MagicMock # Added
 
 import pytest
 from litellm import ModelResponse
@@ -27,14 +26,12 @@ from openhands.agenthub.codeact_agent.tools import (
 from openhands.core.config import AgentConfig
 from openhands.core.exceptions import FunctionCallValidationError
 from openhands.events.action import (
-    AgentFinishAction,
     AgentThinkAction,
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
     FileEditAction,
     FileReadAction,
-    IPythonRunCellAction,
     IPythonRunCellAction,
     MessageAction,
 )
@@ -83,8 +80,8 @@ def create_mock_response(function_name: str, arguments: dict) -> ModelResponse:
                 'finish_reason': 'tool_calls',
             }
         ],
-         # Add dummy usage if needed by downstream processing
-        usage={'prompt_tokens': 10, 'completion_tokens': 10, 'total_tokens': 20}
+        # Add dummy usage if needed by downstream processing
+        usage={'prompt_tokens': 10, 'completion_tokens': 10, 'total_tokens': 20},
     )
 
 
@@ -129,7 +126,7 @@ def test_edit_file_valid():
     """Test edit_file with valid arguments (LLMBasedFileEditTool)."""
     # This tests the LLMBasedFileEditTool specifically
     response = create_mock_response(
-        LLMBasedFileEditTool['function']['name'], # Use tool name
+        LLMBasedFileEditTool['function']['name'],  # Use tool name
         {'path': '/path/to/file', 'content': 'file content', 'start': 1, 'end': 10},
     )
     actions = response_to_actions(response)
@@ -139,13 +136,17 @@ def test_edit_file_valid():
     assert actions[0].content == 'file content'
     assert actions[0].start == 1
     assert actions[0].end == 10
-    assert actions[0].impl_source == FileEditSource.LLM_BASED_EDIT # Default when tool called
+    assert (
+        actions[0].impl_source == FileEditSource.LLM_BASED_EDIT
+    )  # Default when tool called
 
 
 def test_edit_file_missing_required():
     """Test edit_file with missing required arguments (LLMBasedFileEditTool)."""
     # Missing path
-    response = create_mock_response(LLMBasedFileEditTool['function']['name'], {'content': 'content'})
+    response = create_mock_response(
+        LLMBasedFileEditTool['function']['name'], {'content': 'content'}
+    )
     with pytest.raises(FunctionCallValidationError) as exc_info:
         response_to_actions(response)
     assert 'Missing required argument "path"' in str(exc_info.value)
@@ -203,7 +204,9 @@ def test_str_replace_editor_missing_required():
 
 def test_browser_valid():
     """Test browser with valid arguments."""
-    response = create_mock_response(BrowserTool['function']['name'], {'code': "click('button-1')"})
+    response = create_mock_response(
+        BrowserTool['function']['name'], {'code': "click('button-1')"}
+    )
     actions = response_to_actions(response)
     assert len(actions) == 1
     assert isinstance(actions[0], BrowseInteractiveAction)
@@ -220,7 +223,9 @@ def test_browser_missing_code():
 
 def test_web_read_valid():
     """Test web_read with valid arguments."""
-    response = create_mock_response(WebReadTool['function']['name'], {'url': 'https://example.com'})
+    response = create_mock_response(
+        WebReadTool['function']['name'], {'url': 'https://example.com'}
+    )
     actions = response_to_actions(response)
     assert len(actions) == 1
     assert isinstance(actions[0], BrowseURLAction)
@@ -259,7 +264,7 @@ def test_invalid_json_arguments():
                 'finish_reason': 'tool_calls',
             }
         ],
-         usage={'prompt_tokens': 10, 'completion_tokens': 10, 'total_tokens': 20}
+        usage={'prompt_tokens': 10, 'completion_tokens': 10, 'total_tokens': 20},
     )
     with pytest.raises(RuntimeError) as exc_info:
         response_to_actions(response)
@@ -270,6 +275,7 @@ def test_invalid_json_arguments():
 # Tests for get_tools based on AgentConfig
 # =============================================
 
+
 def test_get_tools_default():
     """Test default tools when no specific editor is enabled."""
     config = create_test_config()
@@ -278,13 +284,20 @@ def test_get_tools_default():
     assert create_str_replace_editor_tool()['function']['name'] in tool_names
     assert FencedDiffEditTool['function']['name'] not in tool_names
     assert LLMBasedFileEditTool['function']['name'] not in tool_names
-    assert ViewFileTool['function']['name'] not in tool_names # Included in str_replace
-    assert ListDirectoryTool['function']['name'] not in tool_names # Included in str_replace
-    assert UndoEditTool['function']['name'] not in tool_names # Included in str_replace
+    assert ViewFileTool['function']['name'] not in tool_names  # Included in str_replace
+    assert (
+        ListDirectoryTool['function']['name'] not in tool_names
+    )  # Included in str_replace
+    assert UndoEditTool['function']['name'] not in tool_names  # Included in str_replace
+
 
 def test_get_tools_llm_diff_enabled():
     """Test tools when LLM Diff mode is enabled."""
-    config = create_test_config(codeact_enable_llm_diff=True, codeact_enable_browsing=True, codeact_enable_jupyter=True)
+    config = create_test_config(
+        codeact_enable_llm_diff=True,
+        codeact_enable_browsing=True,
+        codeact_enable_jupyter=True,
+    )
     tools = get_tools(config)
     tool_names = {t['function']['name'] for t in tools}
 
@@ -304,6 +317,7 @@ def test_get_tools_llm_diff_enabled():
     assert LLMBasedFileEditTool['function']['name'] not in tool_names
     assert UndoEditTool['function']['name'] not in tool_names
 
+
 def test_get_tools_llm_editor_enabled():
     """Test tools when LLM Editor tool is enabled."""
     config = create_test_config(codeact_enable_llm_editor=True)
@@ -312,7 +326,7 @@ def test_get_tools_llm_editor_enabled():
     assert LLMBasedFileEditTool['function']['name'] in tool_names
     assert ViewFileTool['function']['name'] in tool_names
     assert ListDirectoryTool['function']['name'] in tool_names
-    assert UndoEditTool['function']['name'] not in tool_names # Undo not compatible
+    assert UndoEditTool['function']['name'] not in tool_names  # Undo not compatible
     assert create_str_replace_editor_tool()['function']['name'] not in tool_names
     assert FencedDiffEditTool['function']['name'] not in tool_names
 
@@ -320,6 +334,7 @@ def test_get_tools_llm_editor_enabled():
 # =============================================
 # Tests for response_to_actions with LLM_DIFF
 # =============================================
+
 
 # Mock ModelResponse without tool calls, but with content
 def create_mock_response_no_tools(content: str) -> ModelResponse:
@@ -329,17 +344,18 @@ def create_mock_response_no_tools(content: str) -> ModelResponse:
         choices=[
             {
                 'message': {
-                    'tool_calls': None, # Explicitly None
+                    'tool_calls': None,  # Explicitly None
                     'content': content,
                     'role': 'assistant',
                 },
                 'index': 0,
-                'finish_reason': 'stop', # Or other non-tool reason
+                'finish_reason': 'stop',  # Or other non-tool reason
             }
         ],
         # Add dummy usage if needed by downstream processing
-        usage={'prompt_tokens': 10, 'completion_tokens': 10, 'total_tokens': 20}
+        usage={'prompt_tokens': 10, 'completion_tokens': 10, 'total_tokens': 20},
     )
+
 
 def test_response_to_actions_llm_diff_mode_with_blocks():
     """Test parsing diff blocks when llm_diff is enabled and no tool calls."""
@@ -364,33 +380,35 @@ second new
 ```
 """
     response = create_mock_response_no_tools(content)
-    actions = response_to_actions(response, is_llm_diff_enabled=True) # Enable flag
+    actions = response_to_actions(response, is_llm_diff_enabled=True)  # Enable flag
 
-    assert len(actions) == 3 # Think + 2 Edits
+    assert len(actions) == 3  # Think + 2 Edits
     assert isinstance(actions[0], AgentThinkAction)
-    assert actions[0].thought == "Thinking about the changes..."
+    assert actions[0].thought == 'Thinking about the changes...'
 
     assert isinstance(actions[1], FileEditAction)
-    assert actions[1].path == "file.py"
-    assert actions[1].search == "old line\n"
-    assert actions[1].replace == "new line\n"
+    assert actions[1].path == 'file.py'
+    assert actions[1].search == 'old line\n'
+    assert actions[1].replace == 'new line\n'
     assert actions[1].impl_source == FileEditSource.LLM_DIFF
 
     assert isinstance(actions[2], FileEditAction)
-    assert actions[2].path == "file.py"
-    assert actions[2].search == "second old\n"
-    assert actions[2].replace == "second new\n"
+    assert actions[2].path == 'file.py'
+    assert actions[2].search == 'second old\n'
+    assert actions[2].replace == 'second new\n'
     assert actions[2].impl_source == FileEditSource.LLM_DIFF
+
 
 def test_response_to_actions_llm_diff_mode_no_blocks():
     """Test llm_diff mode when response content has no blocks."""
-    content = "Just a simple message."
+    content = 'Just a simple message.'
     response = create_mock_response_no_tools(content)
-    actions = response_to_actions(response, is_llm_diff_enabled=True) # Enable flag
+    actions = response_to_actions(response, is_llm_diff_enabled=True)  # Enable flag
 
     assert len(actions) == 1
     assert isinstance(actions[0], MessageAction)
     assert actions[0].content == content
+
 
 def test_response_to_actions_llm_diff_mode_parse_error(mocker):
     """Test llm_diff mode when parsing fails."""
@@ -408,14 +426,15 @@ new
     # Mock the parser to raise ValueError
     mocker.patch(
         'openhands.agenthub.codeact_agent.function_calling.parse_llm_response_for_diffs',
-        side_effect=ValueError("Test parse error")
+        side_effect=ValueError('Test parse error'),
     )
 
-    actions = response_to_actions(response, is_llm_diff_enabled=True) # Enable flag
+    actions = response_to_actions(response, is_llm_diff_enabled=True)  # Enable flag
 
     assert len(actions) == 1
     assert isinstance(actions[0], MessageAction)
-    assert "Error parsing diff blocks: Test parse error" in actions[0].content
+    assert 'Error parsing diff blocks: Test parse error' in actions[0].content
+
 
 def test_response_to_actions_llm_diff_mode_with_tool_calls():
     """Test llm_diff mode is ignored if tool calls are present."""
@@ -433,7 +452,7 @@ ignored new
 ```
 """
 
-    actions = response_to_actions(response, is_llm_diff_enabled=True) # Enable flag
+    actions = response_to_actions(response, is_llm_diff_enabled=True)  # Enable flag
 
     # Should process the tool call, not the diff block
     assert len(actions) == 1
@@ -441,6 +460,7 @@ ignored new
     assert actions[0].command == 'echo hello'
     # Check that the thought includes the content that was ignored for parsing
     assert 'ignored old' in actions[0].thought
+
 
 def test_response_to_actions_llm_diff_disabled_no_tools():
     """Test response parsing when llm_diff is disabled and no tool calls."""
@@ -456,7 +476,9 @@ new line
 ```
 """
     response = create_mock_response_no_tools(content)
-    actions = response_to_actions(response, is_llm_diff_enabled=False) # Explicitly disable
+    actions = response_to_actions(
+        response, is_llm_diff_enabled=False
+    )  # Explicitly disable
 
     # Should just be a MessageAction, no parsing attempted
     assert len(actions) == 1
