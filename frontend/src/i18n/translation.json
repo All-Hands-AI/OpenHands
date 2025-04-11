@@ -3535,7 +3535,7 @@
     "ja": "メッセージ"
   },
   "CHAT_INTERFACE$CHAT_CONVERSATION": {
-    "en": "Chat Conversation",
+    "en": "Research",
     "zh-CN": "聊天对话",
     "de": "Chat-Konversation",
     "ko-KR": "채팅 대화",
@@ -3865,7 +3865,7 @@
     "ja": "非公開"
   },
   "SIDEBAR$CONVERSATIONS": {
-    "en": "Conversations",
+    "en": "Research",
     "ja": "会話",
     "zh-CN": "对话",
     "zh-TW": "對話",

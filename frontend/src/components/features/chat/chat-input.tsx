@@ -1,14 +1,14 @@
-import React, { useEffect } from "react"
-import TextareaAutosize from "react-textarea-autosize"
-import { useTranslation } from "react-i18next"
+import { StopButton } from "#/components/shared/buttons/stop-button"
+import { SubmitButton } from "#/components/shared/buttons/submit-button"
 import { I18nKey } from "#/i18n/declaration"
 import { cn } from "#/utils/utils"
-import { SubmitButton } from "#/components/shared/buttons/submit-button"
-import { StopButton } from "#/components/shared/buttons/stop-button"
 import {
   useConversationActions,
   useGetConversationState,
 } from "#/zutand-stores/coin/selector"
+import React, { useEffect } from "react"
+import { useTranslation } from "react-i18next"
+import TextareaAutosize from "react-textarea-autosize"
 
 interface ChatInputProps {
   name?: string

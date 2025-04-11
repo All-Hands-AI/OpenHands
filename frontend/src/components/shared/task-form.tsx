@@ -1,17 +1,19 @@
-import React, { use, useEffect } from "react"
-import { useNavigation } from "react-router"
-import { useDispatch, useSelector } from "react-redux"
-import { RootState } from "#/store"
-import { addFile, removeFile } from "#/state/initial-query-slice"
-import { convertImageToBase64 } from "#/utils/convert-image-to-base-64"
 import { ChatInput } from "#/components/features/chat/chat-input"
+import { useCreateConversation } from "#/hooks/mutation/use-create-conversation"
+import { addFile, removeFile } from "#/state/initial-query-slice"
+import { RootState } from "#/store"
+import { convertImageToBase64 } from "#/utils/convert-image-to-base-64"
+import { TOAST_OPTIONS } from "#/utils/custom-toast-handlers"
 import { cn } from "#/utils/utils"
+import { useGetConversationState } from "#/zutand-stores/coin/selector"
+import React, { useEffect } from "react"
+import toast from "react-hot-toast"
+import { useDispatch, useSelector } from "react-redux"
+import { Link, useNavigation } from "react-router"
 import AttachImageLabel from "../../icons/attach-icon.svg?react"
 import { ImageCarousel } from "../features/images/image-carousel"
 import { UploadImageInput } from "../features/images/upload-image-input"
-import { useCreateConversation } from "#/hooks/mutation/use-create-conversation"
 import { LoadingSpinner } from "./loading-spinner"
-import { useGetConversationState } from "#/zutand-stores/coin/selector"
 
 interface TaskFormProps {
   ref: React.RefObject<HTMLFormElement | null>
@@ -26,7 +28,12 @@ export function TaskForm({ ref }: TaskFormProps) {
 
   const [text, setText] = React.useState("")
   const [inputIsFocused, setInputIsFocused] = React.useState(false)
-  const { mutate: createConversation, isPending } = useCreateConversation()
+  const {
+    mutate: createConversation,
+    isPending,
+    error,
+  } = useCreateConversation()
+  const errorDetail = (error as any)?.response?.data?.detail
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -41,6 +48,31 @@ export function TaskForm({ ref }: TaskFormProps) {
       setText(initMsg)
     }
   }, [initMsg])
+
+  useEffect(() => {
+    if (!errorDetail) return
+
+    console.log({ errorDetail: errorDetail.match(/ID: (\w+)/) })
+    const conversationId = errorDetail.match(/ID: (\w+)/)?.[1]
+    const errorMessage = conversationId
+      ? `User already has a conversation:\n`
+      : "Error create new conversation"
+
+    toast.error(
+      <div>
+        {errorMessage}
+        {conversationId && (
+          <Link
+            to={`/conversations/${conversationId}`}
+            className="font-medium underline"
+          >
+            Click here to view it!
+          </Link>
+        )}
+      </div>,
+      TOAST_OPTIONS,
+    )
+  }, [errorDetail])
 
   return (
     <div className="flex w-full flex-col gap-1">

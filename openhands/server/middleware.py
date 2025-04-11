@@ -237,6 +237,18 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         if request.url.path in self.public_paths:
             return await call_next(request)
+        
+        for pattern in self.public_path_patterns:
+            if request.url.path.startswith(pattern):
+                remaining = request.url.path[len(pattern):]
+                if remaining and '/' not in remaining: 
+                    return await call_next(request)
+
+        for pattern in self.public_path_patterns:
+            if request.url.path.startswith(pattern):
+                remaining = request.url.path[len(pattern) :]
+                if remaining and '/' not in remaining:
+                    return await call_next(request)
 
         for pattern in self.public_path_patterns:
             if request.url.path.startswith(pattern):
