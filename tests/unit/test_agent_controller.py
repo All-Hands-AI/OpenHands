@@ -681,9 +681,9 @@ async def test_run_controller_max_iterations_has_metrics(
         == 'RuntimeError: Agent reached maximum iteration in headless mode. Current iteration: 3, max iteration: 3'
     )
 
-    assert (
-        state.metrics.accumulated_cost == 10.0 * 3
-    ), f'Expected accumulated cost to be 30.0, but got {state.metrics.accumulated_cost}'
+    assert state.metrics.accumulated_cost == 10.0 * 3, (
+        f'Expected accumulated cost to be 30.0, but got {state.metrics.accumulated_cost}'
+    )
 
 
 @pytest.mark.asyncio
@@ -1135,42 +1135,27 @@ async def test_action_metrics_copy():
     assert len(events) > 0
     last_action = events[-1]
 
-    # Verify metrics were copied correctly
-    assert last_action.llm_metrics is not None
+    # Verify metrics are no longer attached to actions
+    # This test has been updated to reflect the new implementation where metrics
+    # are no longer attached to individual actions but are stored in conversation metadata
+    assert last_action.llm_metrics is None
+
+    # Verify that the controller's state still has the correct metrics
     assert (
-        last_action.llm_metrics.accumulated_cost == 0.07
+        controller.agent.llm.metrics.accumulated_cost == 0.07
     )  # 0.05 initial + 0.02 from add_cost
-
-    # Should not include individual token usages anymore (after the fix)
-    assert len(last_action.llm_metrics.token_usages) == 0
-
-    # But should include the accumulated token usage
-    assert last_action.llm_metrics.accumulated_token_usage.prompt_tokens == 15  # 5 + 10
     assert (
-        last_action.llm_metrics.accumulated_token_usage.completion_tokens == 30
+        controller.agent.llm.metrics.accumulated_token_usage.prompt_tokens == 15
+    )  # 5 + 10
+    assert (
+        controller.agent.llm.metrics.accumulated_token_usage.completion_tokens == 30
     )  # 10 + 20
     assert (
-        last_action.llm_metrics.accumulated_token_usage.cache_read_tokens == 7
+        controller.agent.llm.metrics.accumulated_token_usage.cache_read_tokens == 7
     )  # 2 + 5
     assert (
-        last_action.llm_metrics.accumulated_token_usage.cache_write_tokens == 7
+        controller.agent.llm.metrics.accumulated_token_usage.cache_write_tokens == 7
     )  # 2 + 5
-
-    # Should not include the cost history
-    assert len(last_action.llm_metrics.costs) == 0
-
-    # Should not include the response latency history
-    assert len(last_action.llm_metrics.response_latencies) == 0
-
-    # Verify that there's no latency information in the action's metrics
-    # Either directly or as a calculated property
-    assert not hasattr(last_action.llm_metrics, 'latency')
-    assert not hasattr(last_action.llm_metrics, 'total_latency')
-    assert not hasattr(last_action.llm_metrics, 'average_latency')
-
-    # Verify it's a deep copy by modifying the original
-    agent.llm.metrics.accumulated_cost = 0.1
-    assert last_action.llm_metrics.accumulated_cost == 0.07
 
     await controller.close()
 
@@ -1302,14 +1287,14 @@ async def test_agent_controller_processes_null_observation_with_cause():
 
         # Verify the NullObservation has a cause that points to the RecallAction
         assert null_observation.cause is not None, 'NullObservation cause is None'
-        assert (
-            null_observation.cause == recall_action.id
-        ), f'Expected cause={recall_action.id}, got cause={null_observation.cause}'
+        assert null_observation.cause == recall_action.id, (
+            f'Expected cause={recall_action.id}, got cause={null_observation.cause}'
+        )
 
         # Verify the controller's should_step method returns True for this observation
-        assert controller.should_step(
-            null_observation
-        ), 'should_step should return True for this NullObservation'
+        assert controller.should_step(null_observation), (
+            'should_step should return True for this NullObservation'
+        )
 
         # Verify the controller's step method was called
         # This means the controller processed the NullObservation
@@ -1321,9 +1306,9 @@ async def test_agent_controller_processes_null_observation_with_cause():
         null_observation_zero._cause = 0  # type: ignore[attr-defined]
 
         # Verify the controller's should_step method would return False for this observation
-        assert not controller.should_step(
-            null_observation_zero
-        ), 'should_step should return False for NullObservation with cause=0'
+        assert not controller.should_step(null_observation_zero), (
+            'should_step should return False for NullObservation with cause=0'
+        )
 
 
 def test_agent_controller_should_step_with_null_observation_cause_zero():
@@ -1352,9 +1337,9 @@ def test_agent_controller_should_step_with_null_observation_cause_zero():
     result = controller.should_step(null_observation)
 
     # It should return False since we only want to step on NullObservation with cause > 0
-    assert (
-        result is False
-    ), 'should_step should return False for NullObservation with cause = 0'
+    assert result is False, (
+        'should_step should return False for NullObservation with cause = 0'
+    )
 
 
 def test_apply_conversation_window_basic(mock_event_stream, mock_agent):
