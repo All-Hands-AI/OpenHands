@@ -27,6 +27,27 @@ async def get_tools(request: Request) -> JSONResponse:
         agent_session = request.state.conversation
         logger.debug(f"Agent session type: {type(agent_session)}")
         
+        # Log detailed information about the agent_session structure
+        logger.debug(f"Agent session attributes: {dir(agent_session)}")
+        
+        # Check for controller and event_stream
+        has_controller = hasattr(agent_session, 'controller')
+        has_event_stream = hasattr(agent_session, 'event_stream')
+        logger.debug(f"Has controller: {has_controller}, Has event_stream: {has_event_stream}")
+        
+        # If controller exists, log its attributes
+        if has_controller and agent_session.controller is not None:
+            logger.debug(f"Controller attributes: {dir(agent_session.controller)}")
+            
+            # Check if controller has agent
+            has_agent = hasattr(agent_session.controller, 'agent')
+            logger.debug(f"Controller has agent: {has_agent}")
+            
+            if has_agent and agent_session.controller.agent is not None:
+                logger.debug(f"Agent attributes: {dir(agent_session.controller.agent)}")
+                logger.debug(f"Agent has mcp_tools: {hasattr(agent_session.controller.agent, 'mcp_tools')}")
+                logger.debug(f"Agent has get_tools: {hasattr(agent_session.controller.agent, 'get_tools')}")
+        
         # First approach: Try to get tools from the agent directly
         tools = await get_tools_from_agent(agent_session)
         
