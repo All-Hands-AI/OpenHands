@@ -6,6 +6,7 @@ from jinja2 import Template
 
 from openhands.controller.state.state import State
 from openhands.core.message import Message, TextContent
+from openhands.core.config import AgentConfig
 from openhands.events.observation.agent import MicroagentKnowledge
 
 
@@ -34,12 +35,25 @@ class PromptManager:
         prompt_dir: Directory containing prompt templates.
     """
 
-    def __init__(
-        self,
-        prompt_dir: str,
-    ):
+    def __init__(self, prompt_dir: str, config: AgentConfig):
+        """
+        Initializes the PromptManager.
+
+        Args:
+            prompt_dir: Directory containing prompt templates.
+            config: The agent configuration object.
+        """
         self.prompt_dir: str = prompt_dir
-        self.system_template: Template = self._load_template('system_prompt')
+        self.config: AgentConfig = config
+
+        # Load the correct system prompt based on the config
+        if self.config.codeact_enable_llm_diff:
+            system_template_name = 'system_prompt_llm_diff'
+        else:
+            system_template_name = 'system_prompt'
+        self.system_template: Template = self._load_template(system_template_name)
+
+        # Load other templates
         self.user_template: Template = self._load_template('user_prompt')
         self.additional_info_template: Template = self._load_template('additional_info')
         self.microagent_info_template: Template = self._load_template('microagent_info')

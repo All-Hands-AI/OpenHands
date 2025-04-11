@@ -67,19 +67,18 @@ class CodeActAgent(Agent):
         self.pending_actions: deque[Action] = deque()
         self.reset()
 
-        # Retrieve the enabled tools
+        # Retrieve the enabled tools based on the agent config
         self.tools = codeact_function_calling.get_tools(
-            codeact_enable_browsing=self.config.codeact_enable_browsing,
-            codeact_enable_jupyter=self.config.codeact_enable_jupyter,
-            codeact_enable_llm_editor=self.config.codeact_enable_llm_editor,
-            codeact_enable_fenced_diff=self.config.codeact_enable_fenced_diff,
+            config=self.config,
             llm=self.llm,
         )
         logger.debug(
             f"TOOLS loaded for CodeActAgent: {', '.join([tool.get('function').get('name') for tool in self.tools])}"
         )
+
         self.prompt_manager = PromptManager(
             prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
+            config=self.config,
         )
 
         # Create a ConversationMemory instance
@@ -141,7 +140,8 @@ class CodeActAgent(Agent):
         # log to litellm proxy if possible
         params['extra_body'] = {'metadata': state.to_llm_metadata(agent_name=self.name)}
         response = self.llm.completion(**params)
-        actions = codeact_function_calling.response_to_actions(response)
+        # Pass whether we should parse the message.content
+        actions = codeact_function_calling.response_to_actions(response, is_llm_diff_enabled=self.config.codeact_enable_llm_diff)
         for action in actions:
             self.pending_actions.append(action)
         return self.pending_actions.popleft()

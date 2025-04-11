@@ -16,6 +16,7 @@ class FileEditSource(str, Enum):
     LLM_BASED_EDIT = 'llm_based_edit'
     OH_ACI = 'oh_aci'  # openhands-aci
     FENCED_DIFF = 'fenced_diff'  # Aider-style SEARCH/REPLACE blocks
+    LLM_DIFF = 'llm_diff'  # Fenced diffs parsed directly from LLM message content
 
 
 class FileReadSource(str, Enum):

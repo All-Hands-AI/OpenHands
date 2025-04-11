@@ -41,6 +41,11 @@ from openhands.events.action import (
     IPythonRunCellAction,
     MessageAction,
 )
+from openhands.agenthub.codeact_agent.llm_diff_parser import (
+    parse_llm_response_for_diffs,
+)
+from openhands.core.config import AgentConfig
+from openhands.core.logger import openhands_logger as logger
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.tool import ToolCallMetadata
 from openhands.llm import LLM
@@ -56,7 +61,18 @@ def combine_thought(action: Action, thought: str) -> Action:
     return action
 
 
-def response_to_actions(response: ModelResponse) -> list[Action]:
+def response_to_actions(response: ModelResponse, is_llm_diff_enabled: bool = False) -> list[Action]:
+    """
+    Parses the LLM response and converts it into a list of OpenHands Actions.
+
+    Args:
+        response: The ModelResponse from the LLM.
+        is_llm_diff_enabled: If True, will attempt to parse diff blocks from message
+                             content if no tool calls exist. Defaults to False.
+
+    Returns:
+        A list of Action objects.
+    """
     actions: list[Action] = []
     assert len(response.choices) == 1, 'Only one choice is supported for now'
     choice = response.choices[0]
@@ -267,12 +283,78 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
             )
             actions.append(action)
     else:
-        actions.append(
-            MessageAction(
-                content=str(assistant_msg.content) if assistant_msg.content else '',
-                wait_for_response=True,
-            )
-        )
+        # No tool calls
+        message_content = str(assistant_msg.content) if assistant_msg.content else ''
+        parsed_llm_diff_actions = []
+
+        # Check for LLM Diff mode ONLY if the flag is set
+        if is_llm_diff_enabled:
+            logger.debug('LLM Diff mode enabled, attempting to parse response content.')
+            try:
+                # TODO: Pass valid_fnames if available from context/summary?
+                # The parser now returns the blocks and the start/end indices
+                parsed_blocks, first_block_start_idx, last_block_end_idx = parse_llm_response_for_diffs(message_content)
+
+                if parsed_blocks:
+                    logger.info(f'Parsed {len(parsed_blocks)} diff blocks from LLM response.')
+
+                    # Extract thought based on the start index found by the parser
+                    if first_block_start_idx != -1:
+                        thought = message_content[:first_block_start_idx].strip()
+                    else:
+                        # Fallback: If parser couldn't find the start fence,
+                        # use the whole content as thought.
+                        # This might happen if the response starts *immediately* with a block
+                        # or if formatting is unexpected.
+                        logger.warning("Could not determine start index of the first diff block. Using full message content as thought.")
+                        thought = message_content.strip()
+
+                    for i, (filename, search, replace) in enumerate(parsed_blocks):
+                        action = FileEditAction(
+                            path=filename,
+                            search=search,
+                            replace=replace,
+                            impl_source=FileEditSource.LLM_DIFF,
+                        )
+                        # Only add original thought to the *first* action derived from this response
+                        if i == 0 and not parsed_llm_diff_actions: # If no AgentThinkAction was added
+                             action = combine_thought(action, thought)
+
+                        parsed_llm_diff_actions.append(action)
+
+            except ValueError as e:
+                logger.error(f'Error parsing LLM diff blocks: {e}')
+                # If parsing fails, clear any partially parsed actions and fall back to MessageAction
+                parsed_llm_diff_actions = [
+                    MessageAction(
+                        content=message_content + f'\n\n[Error parsing diff blocks: {e}]',
+                        wait_for_response=True,
+                    )
+                ]
+            except Exception as e:
+                 logger.error(f'Unexpected error during LLM diff parsing: {e}', exc_info=True)
+                 parsed_llm_diff_actions = [
+                    MessageAction(
+                        content=message_content + f'\n\n[Unexpected error parsing diff blocks: {e}]',
+                        wait_for_response=True,
+                    )
+                 ]
+
+
+        # If LLM Diff parsing resulted in actions, use them
+        if parsed_llm_diff_actions:
+            actions.extend(parsed_llm_diff_actions)
+        else:
+             # Otherwise (LLM Diff disabled, or enabled but no blocks found/error occurred without fallback),
+             # treat as a regular message action.
+            if not any(isinstance(a, MessageAction) for a in parsed_llm_diff_actions): # Avoid double message on error
+                actions.append(
+                    MessageAction(
+                        content=message_content,
+                        wait_for_response=True,
+                    )
+                )
+
 
     # Add response id to actions
     # This will ensure we can match both actions without tool calls (e.g. MessageAction)
@@ -285,13 +367,19 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
     return actions
 
 
+from openhands.core.config import AgentConfig
+
 def get_tools(
-    codeact_enable_browsing: bool = False,
-    codeact_enable_llm_editor: bool = False,
-    codeact_enable_fenced_diff: bool = False,
-    codeact_enable_jupyter: bool = False,
+    config: AgentConfig,
     llm: LLM | None = None,
 ) -> list[ChatCompletionToolParam]:
+    # Extract flags from config
+    codeact_enable_browsing = config.codeact_enable_browsing
+    codeact_enable_llm_editor = config.codeact_enable_llm_editor
+    codeact_enable_fenced_diff = config.codeact_enable_fenced_diff
+    codeact_enable_llm_diff = config.codeact_enable_llm_diff
+    codeact_enable_jupyter = config.codeact_enable_jupyter
+
     SIMPLIFIED_TOOL_DESCRIPTION_LLM_SUBSTRS = ['gpt-', 'o3', 'o1']
 
     use_simplified_tool_desc = False
@@ -313,20 +401,28 @@ def get_tools(
         tools.append(IPythonTool)
 
     # Determine which editor tool(s) and utility tools to add based on config
-    if codeact_enable_fenced_diff:
-        # Use Fenced editor + separate utils (including Undo, as Fenced edit is now server-side)
+    if codeact_enable_llm_diff:
+        # Use LLM Diff mode:
+        #  - LLM generates diffs in text, only non-edit tools available
+        #  - No UndoEditTool
+        tools.append(ViewFileTool)
+        tools.append(ListDirectoryTool)
+        # NO EDITING TOOLS (FencedDiffEditTool, LLMBasedFileEditTool, str_replace_editor)
+        # NO UndoEditTool
+    elif codeact_enable_fenced_diff:
+        # Use Fenced editor tool + separate utils (including Undo)
         tools.append(FencedDiffEditTool)
         tools.append(ViewFileTool)
         tools.append(ListDirectoryTool)
-        tools.append(UndoEditTool)  # Now enabled for Fenced mode
+        tools.append(UndoEditTool)
     elif codeact_enable_llm_editor:
-        # Use LLM-based editor + separate utils (NO Undo, as LLM edit is client-side)
+        # Use LLM-based editor tool + separate utils (NO Undo)
         tools.append(LLMBasedFileEditTool)
         tools.append(ViewFileTool)
         tools.append(ListDirectoryTool)
         # No UndoEditTool here
     else:
-        # Fallback to the original, comprehensive str_replace_editor (includes undo)
+        # Fallback to the complete str_replace_editor (includes view, list, undo)
         tools.append(
             create_str_replace_editor_tool(
                 use_simplified_description=use_simplified_tool_desc

@@ -309,8 +309,11 @@ class ActionExecutionClient(Runtime):
         if action.impl_source == FileEditSource.LLM_BASED_EDIT:
             # LLM-based edits are handled client-side (requires LLM)
             return self.llm_based_edit(action)
+        elif action.impl_source == FileEditSource.LLM_DIFF:
+            # LLM Diff edits (parsed from message) are handled client-side
+            return self.llm_diff_edit(action)
         else:
-            # OH_ACI and FENCED_DIFF edits are handled server-side
+            # OH_ACI and FENCED_DIFF edits (from tool calls) are handled server-side
             return self.send_action_for_execution(action)
 
     def browse(self, action: BrowseURLAction) -> Observation:

@@ -16,7 +16,6 @@ ViewFileTool = ChatCompletionToolParam(
                     'description': 'Optional line range [start, end] (1-based, inclusive). Shows full file if omitted. `[start, -1]` shows from start to end.',
                     'items': {'type': 'integer'},
                     'type': 'array',
-                    'default': None,  # Explicitly setting default as None might help clarity
                 },
             },
             'required': ['path'],

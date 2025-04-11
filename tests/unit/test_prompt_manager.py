@@ -1,9 +1,13 @@
 import os
 import shutil
 
+import os
+import shutil
+
 import pytest
 
 from openhands.controller.state.state import State
+from openhands.core.config import AgentConfig
 from openhands.core.message import Message, TextContent
 from openhands.events.observation.agent import MicroagentKnowledge
 from openhands.microagent import BaseMicroAgent
@@ -270,4 +274,25 @@ each of which has a corresponding port:
 def test_prompt_manager_initialization_error():
     """Test that PromptManager raises an error if the prompt directory is not set."""
     with pytest.raises(ValueError, match='Prompt directory is not set'):
-        PromptManager(None)
+        PromptManager(None, AgentConfig()) # Need config even for this error check
+
+
+def test_prompt_manager_system_prompt_selection(prompt_dir):
+    """Test that PromptManager loads the correct system prompt based on config."""
+    # Ensure both prompt files exist in the temp directory (copied by fixture)
+    assert os.path.exists(os.path.join(prompt_dir, 'system_prompt.j2'))
+    assert os.path.exists(os.path.join(prompt_dir, 'system_prompt_llm_diff.j2'))
+
+    # Case 1: llm_diff is False (default)
+    config_default = AgentConfig() # Defaults to codeact_enable_llm_diff=False
+    manager_default = PromptManager(prompt_dir=prompt_dir, config=config_default)
+    # Check the loaded template's origin filename
+    assert 'system_prompt.j2' in manager_default.system_template.filename
+    assert 'system_prompt_llm_diff.j2' not in manager_default.system_template.filename
+
+    # Case 2: llm_diff is True
+    config_llm_diff = AgentConfig(codeact_enable_llm_diff=True)
+    manager_llm_diff = PromptManager(prompt_dir=prompt_dir, config=config_llm_diff)
+    # Check the loaded template's origin filename
+    assert 'system_prompt_llm_diff.j2' in manager_llm_diff.system_template.filename
+    assert 'system_prompt.j2' not in manager_llm_diff.system_template.filename
