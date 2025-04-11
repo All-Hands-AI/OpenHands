@@ -1,5 +1,9 @@
 import { describe, it, expect, afterEach, vi } from "vitest";
 
+import { screen } from "@testing-library/react";
+import { renderWithProviders } from "../../test-utils";
+import { BrowserPanel } from "#/components/features/browser/browser";
+
 // Mock useParams before importing components
 vi.mock("react-router", async () => {
   const actual = await vi.importActual("react-router");
@@ -22,10 +26,6 @@ vi.mock("react-i18next", async () => {
     }),
   };
 });
-
-import { screen } from "@testing-library/react";
-import { renderWithProviders } from "../../test-utils";
-import { BrowserPanel } from "#/components/features/browser/browser";
 
 describe("Browser", () => {
   afterEach(() => {

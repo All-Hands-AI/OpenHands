@@ -1,9 +1,9 @@
 import { render, screen } from "@testing-library/react";
 import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
+import { describe, it, expect } from "vitest";
 import { JupyterEditor } from "#/components/features/jupyter/jupyter";
 import { jupyterReducer } from "#/state/jupyter-slice";
-import { vi, describe, it, expect } from "vitest";
 
 describe("JupyterEditor", () => {
   const mockStore = configureStore({
@@ -36,7 +36,7 @@ describe("JupyterEditor", () => {
         <div style={{ height: "100vh" }}>
           <JupyterEditor maxWidth={800} />
         </div>
-      </Provider>
+      </Provider>,
     );
 
     const container = screen.getByTestId("jupyter-container");

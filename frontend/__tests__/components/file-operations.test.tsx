@@ -1,8 +1,8 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
+import { renderWithProviders } from "test-utils";
 import { Messages } from "#/components/features/chat/messages";
 import type { Message } from "#/message";
-import { renderWithProviders } from "test-utils";
 
 describe("File Operations Messages", () => {
   it("should show success indicator for successful file read operation", () => {
@@ -17,7 +17,9 @@ describe("File Operations Messages", () => {
       },
     ];
 
-    renderWithProviders(<Messages messages={messages} isAwaitingUserConfirmation={false} />);
+    renderWithProviders(
+      <Messages messages={messages} isAwaitingUserConfirmation={false} />,
+    );
 
     const statusIcon = screen.getByTestId("status-icon");
     expect(statusIcon).toBeInTheDocument();
@@ -36,7 +38,9 @@ describe("File Operations Messages", () => {
       },
     ];
 
-    renderWithProviders(<Messages messages={messages} isAwaitingUserConfirmation={false} />);
+    renderWithProviders(
+      <Messages messages={messages} isAwaitingUserConfirmation={false} />,
+    );
 
     const statusIcon = screen.getByTestId("status-icon");
     expect(statusIcon).toBeInTheDocument();
@@ -55,7 +59,9 @@ describe("File Operations Messages", () => {
       },
     ];
 
-    renderWithProviders(<Messages messages={messages} isAwaitingUserConfirmation={false} />);
+    renderWithProviders(
+      <Messages messages={messages} isAwaitingUserConfirmation={false} />,
+    );
 
     const statusIcon = screen.getByTestId("status-icon");
     expect(statusIcon).toBeInTheDocument();
@@ -74,7 +80,9 @@ describe("File Operations Messages", () => {
       },
     ];
 
-    renderWithProviders(<Messages messages={messages} isAwaitingUserConfirmation={false} />);
+    renderWithProviders(
+      <Messages messages={messages} isAwaitingUserConfirmation={false} />,
+    );
 
     const statusIcon = screen.getByTestId("status-icon");
     expect(statusIcon).toBeInTheDocument();

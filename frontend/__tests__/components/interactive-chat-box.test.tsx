@@ -1,4 +1,4 @@
-import { render, screen, within, fireEvent } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { InteractiveChatBox } from "#/components/features/chat/interactive-chat-box";
@@ -144,7 +144,7 @@ describe("InteractiveChatBox", () => {
         onStop={onStop}
         onChange={onChange}
         value="test message"
-      />
+      />,
     );
 
     // Upload an image via the upload button - this should NOT clear the text input
@@ -173,7 +173,7 @@ describe("InteractiveChatBox", () => {
         onStop={onStop}
         onChange={onChange}
         value=""
-      />
+      />,
     );
 
     // Verify the text input was cleared

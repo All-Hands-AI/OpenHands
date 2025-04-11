@@ -5,7 +5,13 @@ import translations from "../../src/i18n/translation.json";
 import { UserAvatar } from "../../src/components/features/sidebar/user-avatar";
 
 vi.mock("@heroui/react", () => ({
-  Tooltip: ({ content, children }: { content: string; children: React.ReactNode }) => (
+  Tooltip: ({
+    content,
+    children,
+  }: {
+    content: string;
+    children: React.ReactNode;
+  }) => (
     <div>
       {children}
       <div>{content}</div>
@@ -13,15 +19,33 @@ vi.mock("@heroui/react", () => ({
   ),
 }));
 
-const supportedLanguages = ['en', 'ja', 'zh-CN', 'zh-TW', 'ko-KR', 'de', 'no', 'it', 'pt', 'es', 'ar', 'fr', 'tr'];
+const supportedLanguages = [
+  "en",
+  "ja",
+  "zh-CN",
+  "zh-TW",
+  "ko-KR",
+  "de",
+  "no",
+  "it",
+  "pt",
+  "es",
+  "ar",
+  "fr",
+  "tr",
+];
 
 // Helper function to check if a translation exists for all supported languages
 function checkTranslationExists(key: string) {
   const missingTranslations: string[] = [];
 
-  const translationEntry = (translations as Record<string, Record<string, string>>)[key];
+  const translationEntry = (
+    translations as Record<string, Record<string, string>>
+  )[key];
   if (!translationEntry) {
-    throw new Error(`Translation key "${key}" does not exist in translation.json`);
+    throw new Error(
+      `Translation key "${key}" does not exist in translation.json`,
+    );
   }
 
   for (const lang of supportedLanguages) {
@@ -53,7 +77,9 @@ function findDuplicateKeys(obj: Record<string, any>) {
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
     t: (key: string) => {
-      const translationEntry = (translations as Record<string, Record<string, string>>)[key];
+      const translationEntry = (
+        translations as Record<string, Record<string, string>>
+      )[key];
       return translationEntry?.ja || key;
     },
   }),
@@ -62,7 +88,7 @@ vi.mock("react-i18next", () => ({
 describe("Landing page translations", () => {
   test("should render Japanese translations correctly", () => {
     // Mock a simple component that uses the translations
-    const TestComponent = () => {
+    function TestComponent() {
       const { t } = useTranslation();
       return (
         <div>
@@ -95,14 +121,16 @@ describe("Landing page translations", () => {
           </div>
         </div>
       );
-    };
+    }
 
     render(<TestComponent />);
 
     // Check main content translations
     expect(screen.getByText("開発を始めましょう！")).toBeInTheDocument();
     expect(screen.getByText("VS Codeで開く")).toBeInTheDocument();
-    expect(screen.getByText("テストカバレッジを向上させる")).toBeInTheDocument();
+    expect(
+      screen.getByText("テストカバレッジを向上させる"),
+    ).toBeInTheDocument();
     expect(screen.getByText("Dependabot PRを自動マージ")).toBeInTheDocument();
     expect(screen.getByText("READMEを改善")).toBeInTheDocument();
     expect(screen.getByText("依存関係を整理")).toBeInTheDocument();
@@ -120,8 +148,12 @@ describe("Landing page translations", () => {
     expect(tabs).toHaveTextContent("コードエディタ");
 
     // Check workspace label and new project button
-    expect(screen.getByTestId("workspace-label")).toHaveTextContent("ワークスペース");
-    expect(screen.getByTestId("new-project")).toHaveTextContent("新規プロジェクト");
+    expect(screen.getByTestId("workspace-label")).toHaveTextContent(
+      "ワークスペース",
+    );
+    expect(screen.getByTestId("new-project")).toHaveTextContent(
+      "新規プロジェクト",
+    );
 
     // Check status messages
     const status = screen.getByTestId("status");
@@ -159,12 +191,12 @@ describe("Landing page translations", () => {
       "STATUS$CONNECTED_TO_SERVER",
       "TIME$MINUTES_AGO",
       "TIME$HOURS_AGO",
-      "TIME$DAYS_AGO"
+      "TIME$DAYS_AGO",
     ];
 
     // Check all keys and collect missing translations
     const missingTranslationsMap = new Map<string, string[]>();
-    translationKeys.forEach(key => {
+    translationKeys.forEach((key) => {
       const missing = checkTranslationExists(key);
       if (missing.length > 0) {
         missingTranslationsMap.set(key, missing);
@@ -174,8 +206,11 @@ describe("Landing page translations", () => {
     // If any translations are missing, throw an error with all missing translations
     if (missingTranslationsMap.size > 0) {
       const errorMessage = Array.from(missingTranslationsMap.entries())
-        .map(([key, langs]) => `\n- "${key}" is missing translations for: ${langs.join(', ')}`)
-        .join('');
+        .map(
+          ([key, langs]) =>
+            `\n- "${key}" is missing translations for: ${langs.join(", ")}`,
+        )
+        .join("");
       throw new Error(`Missing translations:${errorMessage}`);
     }
   });
@@ -184,7 +219,9 @@ describe("Landing page translations", () => {
     const duplicates = findDuplicateKeys(translations);
 
     if (duplicates.length > 0) {
-      throw new Error(`Found duplicate translation keys: ${duplicates.join(', ')}`);
+      throw new Error(
+        `Found duplicate translation keys: ${duplicates.join(", ")}`,
+      );
     }
   });
 });

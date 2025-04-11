@@ -24,7 +24,9 @@ describe("AuthModal", () => {
     const user = userEvent.setup();
     render(<AuthModal githubAuthUrl={null} />);
     const checkbox = screen.getByRole("checkbox");
-    const button = screen.getByRole("button", { name: "GITHUB$CONNECT_TO_GITHUB" });
+    const button = screen.getByRole("button", {
+      name: "GITHUB$CONNECT_TO_GITHUB",
+    });
 
     expect(button).toBeDisabled();
 
@@ -45,7 +47,9 @@ describe("AuthModal", () => {
     const checkbox = screen.getByRole("checkbox");
     await user.click(checkbox);
 
-    const button = screen.getByRole("button", { name: "GITHUB$CONNECT_TO_GITHUB" });
+    const button = screen.getByRole("button", {
+      name: "GITHUB$CONNECT_TO_GITHUB",
+    });
     await user.click(button);
 
     expect(handleCaptureConsentSpy).toHaveBeenCalledWith(true);

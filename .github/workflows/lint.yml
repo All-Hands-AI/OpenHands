@@ -7,7 +7,7 @@ name: Lint
 on:
   push:
     branches:
-    - main
+      - main
   pull_request:
 
 # If triggered by a PR, it will be in the same group. However, each commit on main will be in its own unique group
@@ -33,8 +33,22 @@ jobs:
       - name: Lint and TypeScript compilation
         run: |
           cd frontend
-          npm run lint
+          npm run lint:fix
           npm run make-i18n && tsc
+
+      # Commit and push changes if any as a result of lint:fix
+      - name: Check for changes
+        id: git-check
+        run: |
+          git diff --quiet || echo "changes=true" >> $GITHUB_OUTPUT
+      - name: Commit and push if there are changes
+        if: steps.git-check.outputs.changes == 'true'
+        run: |
+          git config --local user.email "openhands@all-hands.dev"
+          git config --local user.name "OpenHands Bot"
+          git add -A
+          git commit -m "🤖 Auto-fix frontend linting issues"
+          git push
 
   # Run lint on the python code
   lint-python:

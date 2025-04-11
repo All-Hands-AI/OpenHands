@@ -1,8 +1,8 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
+import { useSelector } from "react-redux";
 import { ActionSuggestions } from "#/components/features/chat/action-suggestions";
 import { useAuth } from "#/context/auth-context";
-import { useSelector } from "react-redux";
 
 // Mock dependencies
 vi.mock("posthog-js", () => ({
@@ -24,9 +24,9 @@ vi.mock("react-i18next", () => ({
   useTranslation: () => ({
     t: (key: string) => {
       const translations: Record<string, string> = {
-        "ACTION$PUSH_TO_BRANCH": "Push to Branch",
-        "ACTION$PUSH_CREATE_PR": "Push & Create PR",
-        "ACTION$PUSH_CHANGES_TO_PR": "Push Changes to PR"
+        ACTION$PUSH_TO_BRANCH: "Push to Branch",
+        ACTION$PUSH_CREATE_PR: "Push & Create PR",
+        ACTION$PUSH_CHANGES_TO_PR: "Push Changes to PR",
       };
       return translations[key] || key;
     },

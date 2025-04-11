@@ -52,7 +52,7 @@ export default defineConfig(({ mode }) => {
         },
       },
       watch: {
-        ignored: ['**/node_modules/**', '**/.git/**'],
+        ignored: ["**/node_modules/**", "**/.git/**"],
       },
     },
     ssr: {
