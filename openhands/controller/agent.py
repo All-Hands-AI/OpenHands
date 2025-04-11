@@ -41,27 +41,32 @@ class Agent(ABC):
         self.prompt_manager: 'PromptManager' | None = None
         self.mcp_tools: list[dict] = []
         self.tools: list = []
-        
+
     def get_initial_message(self) -> 'SystemMessageAction':
         """
         Returns a SystemMessageAction containing the system message and tools.
         This will be added to the event stream as the first message.
-        
+
         Returns:
             SystemMessageAction: The system message action with content and tools
         """
+        # Import here to avoid circular imports
         from openhands.events.action.message import SystemMessageAction
-        
-        if self.prompt_manager is None:
-            raise ValueError("Agent's prompt_manager is not initialized")
-            
+
+        if not self.prompt_manager:
+            raise ValueError(
+                'Prompt manager must be initialized before getting initial message'
+            )
+
         system_message = self.prompt_manager.get_system_message()
-        system_message_action = SystemMessageAction(
-            content=system_message,
-            tools=self.tools
-        )
-        system_message_action._source = EventSource.AGENT
-        
+
+        # Get tools if available
+        tools = getattr(self, 'tools', None)
+
+        system_message_action = SystemMessageAction(content=system_message, tools=tools)
+        # Set the source attribute
+        system_message_action._source = EventSource.AGENT  # type: ignore
+
         return system_message_action
 
     @property
@@ -145,31 +150,3 @@ class Agent(ABC):
         - mcp_tools (list[dict]): The list of MCP tools.
         """
         self.mcp_tools = mcp_tools
-
-    def get_initial_message(self) -> 'SystemMessageAction':
-        """Returns the initial system message for the agent.
-
-        This message includes the system prompt and available tools.
-        It should be the first message in the event stream.
-
-        Returns:
-            SystemMessageAction: The system message action with prompt and tools
-        """
-        # Import here to avoid circular imports
-        from openhands.events.action.message import SystemMessageAction
-
-        if not self.prompt_manager:
-            raise ValueError(
-                'Prompt manager must be initialized before getting initial message'
-            )
-
-        system_message = self.prompt_manager.get_system_message()
-
-        # Get tools if available
-        tools = getattr(self, 'tools', None)
-
-        system_message_action = SystemMessageAction(content=system_message, tools=tools)
-        # Set the source attribute
-        system_message_action._source = EventSource.AGENT  # type: ignore
-
-        return system_message_action
