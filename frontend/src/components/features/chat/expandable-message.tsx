@@ -5,8 +5,12 @@ import ArrowUp from "#/icons/angle-up-solid.svg?react"
 import CheckCircle from "#/icons/check-circle-solid.svg?react"
 import XCircle from "#/icons/x-circle-solid.svg?react"
 import { HANDLED_ACTIONS } from "#/state/chat-slice"
+import { OpenHandsAction } from "#/types/core/actions"
 import { OpenHandsEventType } from "#/types/core/base"
+import { OpenHandsObservation } from "#/types/core/observations"
+import ObservationType from "#/types/observation-type"
 import { cn } from "#/utils/utils"
+import { PayloadAction } from "@reduxjs/toolkit"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import Markdown from "react-markdown"
@@ -15,15 +19,11 @@ import remarkGfm from "remark-gfm"
 import { code } from "../markdown/code"
 import { ol, ul } from "../markdown/list"
 import MessageActionDisplay from "./message-action-display"
-import { PayloadAction } from "@reduxjs/toolkit"
-import { OpenHandsObservation } from "#/types/core/observations"
-import { OpenHandsAction } from "#/types/core/actions"
-
 
 const trimText = (text: string, maxLength: number): string => {
-  if (!text) return "";
-  return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
-};
+  if (!text) return ""
+  return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text
+}
 
 interface ExpandableMessageProps {
   id?: string
@@ -51,21 +51,22 @@ export function ExpandableMessage({
   const [showDetails, setShowDetails] = useState(true)
   const [headline, setHeadline] = useState("")
   const [details, setDetails] = useState(message)
-  const [translationId, setTranslationId] = useState<string | undefined>(id);
+  // console.log("ExpandableMessage", message)
+  const [translationId, setTranslationId] = useState<string | undefined>(id)
   const [translationParams, setTranslationParams] = useState<
     Record<string, unknown>
   >({
     observation,
     action,
-  });
+  })
 
   useEffect(() => {
     if (id && i18n.exists(id)) {
-      let processedObservation = observation;
-      let processedAction = action;
+      let processedObservation = observation
+      let processedAction = action
 
       if (action && action.payload.action === "run") {
-        const trimmedCommand = trimText(action.payload.args.command, 80);
+        const trimmedCommand = trimText(action.payload.args.command, 80)
         processedAction = {
           ...action,
           payload: {
@@ -75,11 +76,11 @@ export function ExpandableMessage({
               command: trimmedCommand,
             },
           },
-        };
+        }
       }
 
       if (observation && observation.payload.observation === "run") {
-        const trimmedCommand = trimText(observation.payload.extras.command, 80);
+        const trimmedCommand = trimText(observation.payload.extras.command, 80)
         processedObservation = {
           ...observation,
           payload: {
@@ -89,14 +90,14 @@ export function ExpandableMessage({
               command: trimmedCommand,
             },
           },
-        };
+        }
       }
 
-      setTranslationId(id);
+      setTranslationId(id)
       setTranslationParams({
         observation: processedObservation,
         action: processedAction,
-      });
+      })
       setHeadline(t(id) + ` (${messageActionID})`)
       setDetails(message)
       setShowDetails(true)
@@ -105,6 +106,14 @@ export function ExpandableMessage({
 
   const statusIconClasses = "h-4 w-4 mr-2 inline"
 
+  console.log("observation", observation?.payload?.observation)
+
+  if (
+    [ObservationType.MCP, ObservationType.BROWSER_MCP].includes(
+      observation?.payload?.observation as any,
+    )
+  )
+    return null
   if (
     config?.FEATURE_FLAGS.ENABLE_BILLING &&
     config?.APP_MODE === "saas" &&
