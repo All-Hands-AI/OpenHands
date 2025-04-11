@@ -4,7 +4,6 @@ This is similar to the functionality of `CodeActResponseParser`.
 """
 
 import json
-from typing import Optional
 
 from litellm import (
     ChatCompletionToolParam,
@@ -161,7 +160,7 @@ def response_to_actions(
                     raise FunctionCallValidationError(
                         f'Missing required argument "path" in tool call {tool_call.function.name}'
                     )
-                path: str = arguments['path']
+                path = arguments['path']
                 if (
                     sid is not None
                     and sid not in path
@@ -219,7 +218,9 @@ def response_to_actions(
             # McpAction (MCP)
             # ================================================
             elif tool_call.function.name.endswith(MCPClientTool.postfix()):
-                original_action_name = tool_call.function.name.replace(MCPClientTool.postfix(), "")
+                original_action_name = tool_call.function.name.replace(
+                    MCPClientTool.postfix(), ''
+                )
                 logger.info(f'Original action name: {original_action_name}')
                 action = McpAction(
                     name=original_action_name,

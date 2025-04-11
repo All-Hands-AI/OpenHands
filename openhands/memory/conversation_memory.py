@@ -359,9 +359,9 @@ class ConversationMemory:
             text = obs.content
             # replace base64 images with a placeholder
             splitted = text.split('\n')
-            for i, line in enumerate(splitted):
+            for index, line in enumerate(splitted):
                 if '![image](data:image/png;base64,' in line:
-                    splitted[i] = (
+                    splitted[index] = (
                         '![image](data:image/png;base64, ...) already displayed to user'
                     )
             text = '\n'.join(splitted)

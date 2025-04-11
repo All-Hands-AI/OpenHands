@@ -67,7 +67,7 @@ async def test_iterate_single_page():
                 ),
             }
         ),
-        user_id='123'
+        user_id='123',
     )
 
     results = []
@@ -98,7 +98,7 @@ async def test_iterate_multiple_pages():
                 for i in range(1, 6)
             }
         ),
-        user_id='123'
+        user_id='123',
     )
 
     results = []
@@ -131,10 +131,12 @@ async def test_iterate_with_invalid_conversation():
                         'created_at': '2025-01-16T19:51:04Z',
                     }
                 ),
-                get_conversation_metadata_filename('conv2', '123'): 'invalid json',  # Invalid conversation
+                get_conversation_metadata_filename(
+                    'conv2', '123'
+                ): 'invalid json',  # Invalid conversation
             }
         ),
-        user_id='123'
+        user_id='123',
     )
 
     results = []

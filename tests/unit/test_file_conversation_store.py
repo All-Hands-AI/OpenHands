@@ -28,7 +28,9 @@ async def test_load_int_user_id():
     store = FileConversationStore(
         InMemoryFileStore(
             {
-                get_conversation_metadata_filename('some-conversation-id', '67890'): json.dumps(
+                get_conversation_metadata_filename(
+                    'some-conversation-id', '67890'
+                ): json.dumps(
                     {
                         'conversation_id': 'some-conversation-id',
                         'github_user_id': 12345,
@@ -40,7 +42,7 @@ async def test_load_int_user_id():
                 )
             }
         ),
-        user_id='67890'
+        user_id='67890',
     )
     found = await store.get_metadata('some-conversation-id')
     assert found.github_user_id == '12345'
@@ -93,7 +95,7 @@ async def test_search_basic():
                 ),
             }
         ),
-        user_id='123'
+        user_id='123',
     )
 
     result = await store.search()
@@ -124,7 +126,7 @@ async def test_search_pagination():
                 for i in range(1, 6)
             }
         ),
-        user_id='123'
+        user_id='123',
     )
 
     # Test with limit of 2
@@ -164,10 +166,12 @@ async def test_search_with_invalid_conversation():
                         'created_at': '2025-01-16T19:51:04Z',
                     }
                 ),
-                get_conversation_metadata_filename('conv2', '123'): 'invalid json',  # Invalid conversation
+                get_conversation_metadata_filename(
+                    'conv2', '123'
+                ): 'invalid json',  # Invalid conversation
             }
         ),
-        user_id='123'
+        user_id='123',
     )
 
     result = await store.search()
@@ -204,7 +208,7 @@ async def test_get_all_metadata():
                 ),
             }
         ),
-        user_id='123'
+        user_id='123',
     )
 
     results = await store.get_all_metadata(['conv1', 'conv2'])

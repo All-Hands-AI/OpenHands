@@ -26,7 +26,7 @@ async def test_sse_connection_timeout():
         # Create a dictionary of MCP configs to test
         mcp_configs = {
             'server1': MCPConfig(name='server1', url='http://server1:8080'),
-            'server2': MCPConfig(name='server2', url='http://server2:8080')
+            'server2': MCPConfig(name='server2', url='http://server2:8080'),
         }
 
         # Call create_mcp_clients with the configs
@@ -46,9 +46,7 @@ async def test_sse_connection_timeout():
 async def test_fetch_mcp_tools_with_timeout():
     """Test that fetch_mcp_tools_from_config handles timeouts gracefully."""
     # Create a dictionary of MCP configs
-    mcp_configs = {
-        'server1': MCPConfig(name='server1', url='http://server1:8080')
-    }
+    mcp_configs = {'server1': MCPConfig(name='server1', url='http://server1:8080')}
 
     # Mock create_mcp_clients to return an empty list (simulating all connections failing)
     with mock.patch('openhands.mcp.utils.create_mcp_clients', return_value=[]):
@@ -65,7 +63,7 @@ async def test_mixed_connection_results():
     # Create a dictionary of MCP configs
     mcp_configs = {
         'server1': MCPConfig(name='server1', url='http://server1:8080'),
-        'server2': MCPConfig(name='server2', url='http://server2:8080')
+        'server2': MCPConfig(name='server2', url='http://server2:8080'),
     }
 
     # Create a successful client

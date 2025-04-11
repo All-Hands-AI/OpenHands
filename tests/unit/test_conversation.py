@@ -99,7 +99,8 @@ async def test_search_conversations():
 async def test_get_conversation():
     with _patch_store():
         conversation = await get_conversation(
-            'some_conversation_id', MagicMock(state=MagicMock(github_token='', user_id='12345'))
+            'some_conversation_id',
+            MagicMock(state=MagicMock(github_token='', user_id='12345')),
         )
         expected = ConversationInfo(
             conversation_id='some_conversation_id',
@@ -117,7 +118,8 @@ async def test_get_missing_conversation():
     with _patch_store():
         assert (
             await get_conversation(
-                'no_such_conversation', MagicMock(state=MagicMock(github_token='', user_id='12345'))
+                'no_such_conversation',
+                MagicMock(state=MagicMock(github_token='', user_id='12345')),
             )
             is None
         )
@@ -132,7 +134,8 @@ async def test_update_conversation():
             'New Title',
         )
         conversation = await get_conversation(
-            'some_conversation_id', MagicMock(state=MagicMock(github_token='', user_id='12345'))
+            'some_conversation_id',
+            MagicMock(state=MagicMock(github_token='', user_id='12345')),
         )
         expected = ConversationInfo(
             conversation_id='some_conversation_id',

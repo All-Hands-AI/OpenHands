@@ -67,7 +67,9 @@ async def _create_new_conversation(
 
     # Check if user already has any conversation
     if user_id:
-        conversation_store = await ConversationStoreImpl.get_instance(config, user_id, None)
+        conversation_store = await ConversationStoreImpl.get_instance(
+            config, user_id, None
+        )
         conversation_metadata_result_set = await conversation_store.search(limit=1)
         if conversation_metadata_result_set.results:
             existing_conversation = conversation_metadata_result_set.results[0]
