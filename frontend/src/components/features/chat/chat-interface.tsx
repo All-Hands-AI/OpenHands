@@ -64,13 +64,15 @@ export function ChatInterface() {
   // State for trajectory summary
   const [showSummary, setShowSummary] = React.useState(false);
   const [overallSummary, setOverallSummary] = React.useState("");
-  const [summarySegments, setSummarySegments] = React.useState<TrajectorySummarySegment[]>([]);
+  const [summarySegments, setSummarySegments] = React.useState<
+    TrajectorySummarySegment[]
+  >([]);
   const [userMessageCount, setUserMessageCount] = React.useState(0);
   const [lastSummarizedCount, setLastSummarizedCount] = React.useState(0);
 
   // Count user messages
   React.useEffect(() => {
-    const userMessages = messages.filter(msg => msg.sender === "user");
+    const userMessages = messages.filter((msg) => msg.sender === "user");
     setUserMessageCount(userMessages.length);
   }, [messages]);
 
@@ -85,7 +87,7 @@ export function ChatInterface() {
     // Check if summarization should be triggered
 
     if (shouldSummarize && params.conversationId) {
-      const conversationId = params.conversationId;
+      const { conversationId } = params;
       // Attempt to summarize conversation
       getTrajectorySummary(conversationId, {
         onSuccess: (data) => {
@@ -95,12 +97,18 @@ export function ChatInterface() {
           setShowSummary(true);
           setLastSummarizedCount(userMessageCount);
         },
-        onError: (error) => {
+        onError: () => {
           // Handle error fetching summary
-        }
+        },
       });
     }
-  }, [userMessageCount, lastSummarizedCount, curAgentState, params.conversationId, getTrajectorySummary]);
+  }, [
+    userMessageCount,
+    lastSummarizedCount,
+    curAgentState,
+    params.conversationId,
+    getTrajectorySummary,
+  ]);
 
   const handleSendMessage = async (content: string, files: File[]) => {
     if (messages.length === 0) {
@@ -226,7 +234,11 @@ export function ChatInterface() {
                 type="button"
                 onClick={() => setShowSummary(!showSummary)}
                 className="flex items-center gap-1 text-xs px-2 py-1 rounded bg-tertiary hover:bg-base-secondary transition-colors text-content"
-                title={showSummary ? "Show original messages" : "Show conversation summary"}
+                title={
+                  showSummary
+                    ? "Show original messages"
+                    : "Show conversation summary"
+                }
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -243,16 +255,16 @@ export function ChatInterface() {
                 {showSummary ? "Original View" : "Summary View"}
               </button>
             )}
-            
-            {/* Manual Summarize Button - always show for debugging */}
-            {params.conversationId && (
+
+            {/* Manual Summarize Button - only show in summary view */}
+            {params.conversationId && showSummary && (
               <button
                 type="button"
                 onClick={() => {
-                  const conversationId = params.conversationId;
+                  const { conversationId } = params;
                   if (!conversationId) return;
-                  
-                  // Manual summarize clicked
+
+                  // Manual summarize clicked - will include all messages up to this point
                   getTrajectorySummary(conversationId, {
                     onSuccess: (data) => {
                       // Summary received
@@ -261,13 +273,13 @@ export function ChatInterface() {
                       setShowSummary(true);
                       setLastSummarizedCount(userMessageCount);
                     },
-                    onError: (error) => {
+                    onError: () => {
                       // Handle error
-                    }
+                    },
                   });
                 }}
                 className="flex items-center gap-1 text-xs px-2 py-1 rounded bg-tertiary hover:bg-base-secondary transition-colors text-content border border-tertiary"
-                title="Manually trigger summarization"
+                title="Resummarize conversation up to this point"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -281,7 +293,7 @@ export function ChatInterface() {
                     clipRule="evenodd"
                   />
                 </svg>
-                Summarize
+                Resummarize
               </button>
             )}
           </div>
