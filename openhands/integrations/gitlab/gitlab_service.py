@@ -28,9 +28,13 @@ class GitLabService(GitService):
         external_auth_token: SecretStr | None = None,
         token: SecretStr | None = None,
         external_token_manager: bool = False,
+        gitlab_base_url: str | None = None,
     ):
         self.user_id = user_id
         self.external_token_manager = external_token_manager
+
+        if gitlab_base_url:
+            self.BASE_URL = gitlab_base_url + '/api/v4'
 
         if token:
             self.token = token

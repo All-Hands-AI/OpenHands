@@ -5,7 +5,9 @@ from openhands.integrations.gitlab.gitlab_service import GitLabService
 from openhands.integrations.provider import ProviderType
 
 
-async def validate_provider_token(token: SecretStr) -> ProviderType | None:
+async def validate_provider_token(
+    token: SecretStr, gitlab_base_url: str | None = None
+) -> ProviderType | None:
     """
     Determine whether a token is for GitHub or GitLab by attempting to get user info
     from both services.
@@ -28,7 +30,7 @@ async def validate_provider_token(token: SecretStr) -> ProviderType | None:
 
     # Try GitLab next
     try:
-        gitlab_service = GitLabService(token=token)
+        gitlab_service = GitLabService(token=token, gitlab_base_url=gitlab_base_url)
         await gitlab_service.get_user()
         return ProviderType.GITLAB
     except Exception:

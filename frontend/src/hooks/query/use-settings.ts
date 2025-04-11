@@ -18,6 +18,7 @@ const getSettingsQueryFn = async () => {
     LLM_API_KEY_SET: apiSettings.llm_api_key_set,
     REMOTE_RUNTIME_RESOURCE_FACTOR: apiSettings.remote_runtime_resource_factor,
     PROVIDER_TOKENS_SET: apiSettings.provider_tokens_set,
+    GITLAB_BASE_URL: apiSettings.gitlab_base_url,
     ENABLE_DEFAULT_CONDENSER: apiSettings.enable_default_condenser,
     ENABLE_SOUND_NOTIFICATIONS: apiSettings.enable_sound_notifications,
     USER_CONSENTS_TO_ANALYTICS: apiSettings.user_consents_to_analytics,

@@ -20,6 +20,7 @@ export type Settings = {
   USER_CONSENTS_TO_ANALYTICS: boolean | null;
   PROVIDER_TOKENS: Record<Provider, string>;
   IS_NEW_USER?: boolean;
+  GITLAB_BASE_URL: string;
 };
 
 export type ApiSettings = {
@@ -36,6 +37,7 @@ export type ApiSettings = {
   enable_sound_notifications: boolean;
   user_consents_to_analytics: boolean | null;
   provider_tokens: Record<Provider, string>;
+  gitlab_base_url: string;
   provider_tokens_set: Record<Provider, boolean>;
 };
 

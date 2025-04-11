@@ -151,7 +151,7 @@ async def store_settings(
         for token_type, token_value in settings.provider_tokens.items():
             if token_value:
                 confirmed_token_type = await validate_provider_token(
-                    SecretStr(token_value)
+                    SecretStr(token_value), gitlab_base_url=settings.gitlab_base_url
                 )
                 if not confirmed_token_type or confirmed_token_type.value != token_type:
                     return JSONResponse(

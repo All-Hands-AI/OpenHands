@@ -133,6 +133,8 @@ function AccountSettings() {
 
     const githubToken = formData.get("github-token-input")?.toString();
     const gitlabToken = formData.get("gitlab-token-input")?.toString();
+    const gitlabBaseUrl = formData.get("gitlab-base-url-input")?.toString();
+
     // we don't want the user to be able to modify these settings in SaaS
     const finalLlmModel = shouldHandleSpecialSaasCase
       ? undefined
@@ -150,6 +152,7 @@ function AccountSettings() {
               gitlab: gitlabToken || "",
             }
           : undefined,
+      GITLAB_BASE_URL: gitlabBaseUrl || "",
       LANGUAGE: languageValue,
       user_consents_to_analytics: userConsentsToAnalytics,
       ENABLE_DEFAULT_CONDENSER: enableMemoryCondenser,
@@ -455,7 +458,7 @@ function AccountSettings() {
                   <b>
                     {" "}
                     <a
-                      href="https://gitlab.com/-/user_settings/personal_access_tokens?name=openhands-app&scopes=api,read_user,read_repository,write_repository"
+                      href={`${settings.GITLAB_BASE_URL}/-/user_settings/personal_access_tokens?name=openhands-app&scopes=api,read_user,read_repository,write_repository`}
                       target="_blank"
                       className="underline underline-offset-2"
                       rel="noopener noreferrer"
@@ -476,6 +479,17 @@ function AccountSettings() {
                   </b>
                   .
                 </p>
+
+                <SettingsInput
+                  testId="gitlab-base-url-input"
+                  name="gitlab-base-url-input"
+                  label={t(I18nKey.GITLAB$BASE_URL)}
+                  defaultValue={settings.GITLAB_BASE_URL}
+                  placeholder="https://gitlab.com"
+                  type="text"
+                  className="w-[680px]"
+                />
+
                 <BrandButton
                   type="button"
                   variant="secondary"
