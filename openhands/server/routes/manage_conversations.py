@@ -78,19 +78,6 @@ async def _create_new_conversation(
                 detail=f'You have reached the maximum limit of 5 conversations. Please delete some existing conversations before creating a new one.',
             )
 
-        # Also check for running conversations
-        running_conversations = await conversation_manager.get_running_agent_loops(
-            user_id
-        )
-        if running_conversations:
-            existing_id = next(
-                iter(running_conversations)
-            )  # Get the first running conversation ID
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f'User already has a running conversation (ID: {existing_id}). Please stop the existing conversation before creating a new one.',
-            )
-        
     logger.info('Loading settings')
     settings = await get_user_setting(user_id)
 
