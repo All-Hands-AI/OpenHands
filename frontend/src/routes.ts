@@ -17,6 +17,7 @@ export default [
       route("browser", "routes/browser-tab.tsx"),
       route("jupyter", "routes/jupyter-tab.tsx"),
       route("served", "routes/served-tab.tsx"),
+      route("terminal", "routes/terminal-tab.tsx"),
     ]),
   ]),
 ] satisfies RouteConfig;

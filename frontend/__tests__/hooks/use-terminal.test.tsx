@@ -7,14 +7,12 @@ import { Command } from "#/state/command-slice";
 
 interface TestTerminalComponentProps {
   commands: Command[];
-  secrets: string[];
 }
 
 function TestTerminalComponent({
   commands,
-  secrets,
 }: TestTerminalComponentProps) {
-  const ref = useTerminal({ commands, secrets, disabled: false });
+  const ref = useTerminal({ commands });
   return <div ref={ref} />;
 }
 
@@ -57,7 +55,7 @@ describe("useTerminal", () => {
   });
 
   it("should render", () => {
-    render(<TestTerminalComponent commands={[]} secrets={[]} />, {
+    render(<TestTerminalComponent commands={[]} />, {
       wrapper: Wrapper,
     });
   });
@@ -68,7 +66,7 @@ describe("useTerminal", () => {
       { content: "hello", type: "output" },
     ];
 
-    render(<TestTerminalComponent commands={commands} secrets={[]} />, {
+    render(<TestTerminalComponent commands={commands} />, {
       wrapper: Wrapper,
     });
 
@@ -76,7 +74,8 @@ describe("useTerminal", () => {
     expect(mockTerminal.writeln).toHaveBeenNthCalledWith(2, "hello");
   });
 
-  it("should hide secrets in the terminal", () => {
+  // This test is no longer relevant as secrets filtering has been removed
+  it.skip("should hide secrets in the terminal", () => {
     const secret = "super_secret_github_token";
     const anotherSecret = "super_secret_another_token";
     const commands: Command[] = [
@@ -90,20 +89,12 @@ describe("useTerminal", () => {
     render(
       <TestTerminalComponent
         commands={commands}
-        secrets={[secret, anotherSecret]}
       />,
       {
         wrapper: Wrapper,
       },
     );
 
-    // BUG: `vi.clearAllMocks()` does not clear the number of calls
-    // therefore, we need to assume the order of the calls based
-    // on the test order
-    expect(mockTerminal.writeln).toHaveBeenNthCalledWith(
-      3,
-      `export GITHUB_TOKEN=${"*".repeat(10)},${"*".repeat(10)},${"*".repeat(10)}`,
-    );
-    expect(mockTerminal.writeln).toHaveBeenNthCalledWith(4, "*".repeat(10));
+    // This test is no longer relevant as secrets filtering has been removed
   });
 });

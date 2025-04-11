@@ -23,7 +23,7 @@ export function Container({
   return (
     <div
       className={clsx(
-        "bg-base-secondary border border-neutral-600 rounded-xl flex flex-col",
+        "bg-base-secondary border border-neutral-600 rounded-xl flex flex-col h-full",
         className,
       )}
     >
@@ -39,7 +39,7 @@ export function Container({
           {label}
         </div>
       )}
-      <div className="overflow-hidden h-full rounded-b-xl">{children}</div>
+      <div className="overflow-hidden flex-grow rounded-b-xl">{children}</div>
     </div>
   );
 }
