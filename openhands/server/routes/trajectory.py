@@ -73,12 +73,22 @@ async def summarize_conversation(request: Request) -> JSONResponse:
         view = View.from_events(events)
 
         # Get the LLM configuration from the agent
-        controller = request.state.conversation.controller
-        if controller and controller.agent and controller.agent.llm:
-            llm_config = controller.agent.llm.config
-        else:
-            # Use default LLM config if agent is not available
-            llm_config = request.state.conversation.config.get_llm_config()
+        try:
+            controller = getattr(request.state.conversation, 'controller', None)
+            if controller and hasattr(controller, 'agent') and controller.agent and hasattr(controller.agent, 'llm') and controller.agent.llm:
+                llm_config = controller.agent.llm.config
+            else:
+                # Use default LLM config if agent is not available
+                if hasattr(request.state.conversation, 'config') and hasattr(request.state.conversation.config, 'get_llm_config'):
+                    llm_config = request.state.conversation.config.get_llm_config()
+                else:
+                    # If config is not available, use a default configuration
+                    from openhands.config.llm import LLMConfig
+                    llm_config = LLMConfig()
+        except AttributeError:
+            # Fallback to default LLM config if any attribute is missing
+            from openhands.config.llm import LLMConfig
+            llm_config = LLMConfig()
 
         # Create the condenser
         llm = LLM(config=llm_config)
