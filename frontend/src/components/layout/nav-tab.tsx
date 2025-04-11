@@ -1,6 +1,7 @@
 import { NavLink } from "react-router";
 import { cn } from "#/utils/utils";
 import { BetaBadge } from "./beta-badge";
+import { CopyToClipboardButton } from "#/components/shared/buttons/copy-to-clipboard-button";
 
 interface NavTabProps {
   to: string;
