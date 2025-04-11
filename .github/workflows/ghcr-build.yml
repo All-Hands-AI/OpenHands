@@ -271,6 +271,7 @@ jobs:
         if: github.event.pull_request.head.repo.fork
         uses: useblacksmith/build-push-action@v1
         with:
+          load: true
           tags: ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
           context: containers/runtime
       - name: Cache Poetry dependencies
@@ -342,6 +343,7 @@ jobs:
         if: github.event.pull_request.head.repo.fork
         uses: useblacksmith/build-push-action@v1
         with:
+          load: true
           tags: ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
           context: containers/runtime
       - name: Cache Poetry dependencies
