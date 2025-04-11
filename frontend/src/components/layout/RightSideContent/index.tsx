@@ -101,8 +101,6 @@ const ThesisComputer = () => {
 
       {computerList.length > 0 &&
         computerList.map((computerItem, index) => {
-          console.log("🚀 ~ computerList.map ~ computerItem:", computerItem)
-
           const observation = computerItem?.observation
           const mapObservationTypeToText = {
             [ObservationType.READ]: "Editor",
