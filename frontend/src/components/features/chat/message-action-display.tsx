@@ -1,4 +1,3 @@
-import { OpenHandsEventType } from "#/types/core/base"
 import React from "react"
 import {
   getDiffPath,
@@ -12,6 +11,7 @@ import {
   FaRegFileAlt,
   FaGlobe,
   FaPencilAlt,
+  FaTools,
   // FaTools,
 } from "react-icons/fa"
 import Markdown from "react-markdown"
@@ -26,10 +26,11 @@ const actionWrapClassName =
   "inline-flex max-w-full items-center gap-2 rounded-[15px] border border-neutral-1000 bg-[#37352f10] px-[10px] py-[3px] text-neutral-600 hover:opacity-70 dark:border-neutral-300 cursor-pointer"
 
 const MessageActionDisplay: React.FC<{
-  messageActionID: string | undefined
+  eventType: string | undefined
   content: string
   eventID?: number
-}> = ({ messageActionID, content, eventID }) => {
+  messageActionID?: string
+}> = ({ eventType, content, eventID, messageActionID }) => {
   const openComputertByEventID = (eventID) => {
     if (typeof eventID === "number") {
       store.dispatch(setCurrentPathViewed(""))
@@ -38,7 +39,7 @@ const MessageActionDisplay: React.FC<{
   }
 
   const renderContent = () => {
-    switch (messageActionID as OpenHandsEventType) {
+    switch (eventType) {
       case "edit":
         return (
           <div
@@ -116,19 +117,24 @@ const MessageActionDisplay: React.FC<{
           </div>
         )
 
-      // case "mcp":
-      // case "call_tool_mcp":
-      // case "playwright_mcp_browser_screenshot":
-      //   return (
-      //     <div className="items-center hover:opacity-70 gap-2 rounded-[15px] px-[10px] py-[3px] border border-neutral-1000 dark:border-neutral-300 inline-flex max-w-full bg-[#37352f10]">
-      //       <div className="text-neutral-600">
-      //         <FaTools />
-      //       </div>
-      //       <div className="flex-1 max-w-[100%] text-ellipsis overflow-hidden whitespace-nowrap text-[13px]">
-      //         Using tool: {content.split("\n")[0] || ""}
-      //       </div>
-      //     </div>
-      //   );
+      case "mcp":
+      case "call_tool_mcp":
+      case "playwright_mcp_browser_screenshot":
+        return (
+          <div
+            className={actionWrapClassName}
+            onClick={() => openComputertByEventID(eventID)}
+          >
+            <div className="text-neutral-600">
+              <FaTools />
+            </div>
+            <div className="max-w-[100%] flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-[13px]">
+              {messageActionID
+                ? `Using tool: ${messageActionID}`
+                : `Using tool`}
+            </div>
+          </div>
+        )
 
       default:
         return (

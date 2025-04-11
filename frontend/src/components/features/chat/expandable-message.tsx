@@ -1,27 +1,25 @@
-import { useConfig } from "#/hooks/query/use-config";
-import { I18nKey } from "#/i18n/declaration";
-import ArrowDown from "#/icons/angle-down-solid.svg?react";
-import ArrowUp from "#/icons/angle-up-solid.svg?react";
-import CheckCircle from "#/icons/check-circle-solid.svg?react";
-import XCircle from "#/icons/x-circle-solid.svg?react";
-import { HANDLED_ACTIONS } from "#/state/chat-slice";
-import { OpenHandsAction } from "#/types/core/actions";
-import { OpenHandsEventType } from "#/types/core/base";
-import { OpenHandsObservation } from "#/types/core/observations";
-import { cn } from "#/utils/utils";
-import { PayloadAction } from "@reduxjs/toolkit";
-import { useEffect, useState } from "react";
-import { Trans, useTranslation } from "react-i18next";
-import Markdown from "react-markdown";
-import { Link } from "react-router";
-import remarkGfm from "remark-gfm";
-import { code } from "../markdown/code";
-import { ol, ul } from "../markdown/list";
-import MessageActionDisplay from "./message-action-display";
-import { MonoComponent } from "./mono-component";
-import { PathComponent } from "./path-component";
-
-import ObservationType from "#/types/observation-type";
+import { useConfig } from "#/hooks/query/use-config"
+import { I18nKey } from "#/i18n/declaration"
+import ArrowDown from "#/icons/angle-down-solid.svg?react"
+import ArrowUp from "#/icons/angle-up-solid.svg?react"
+import CheckCircle from "#/icons/check-circle-solid.svg?react"
+import XCircle from "#/icons/x-circle-solid.svg?react"
+import { HANDLED_ACTIONS } from "#/state/chat-slice"
+import { OpenHandsAction } from "#/types/core/actions"
+import { OpenHandsEventType } from "#/types/core/base"
+import { OpenHandsObservation } from "#/types/core/observations"
+import { cn } from "#/utils/utils"
+import { PayloadAction } from "@reduxjs/toolkit"
+import { useEffect, useState } from "react"
+import { Trans, useTranslation } from "react-i18next"
+import Markdown from "react-markdown"
+import { Link } from "react-router"
+import remarkGfm from "remark-gfm"
+import { code } from "../markdown/code"
+import { ol, ul } from "../markdown/list"
+import MessageActionDisplay from "./message-action-display"
+import { MonoComponent } from "./mono-component"
+import { PathComponent } from "./path-component"
 
 const trimText = (text: string, maxLength: number): string => {
   if (!text) return ""
@@ -29,14 +27,14 @@ const trimText = (text: string, maxLength: number): string => {
 }
 
 interface ExpandableMessageProps {
-  id?: string;
-  message: string;
-  type: string;
-  success?: boolean;
-  messageActionID?: string;
-  eventID?: number;
-  observation?: PayloadAction<OpenHandsObservation>;
-  action?: PayloadAction<OpenHandsAction>;
+  id?: string
+  message: string
+  type: string
+  success?: boolean
+  messageActionID?: string
+  eventID?: number
+  observation?: PayloadAction<OpenHandsObservation>
+  action?: PayloadAction<OpenHandsAction>
 }
 
 export function ExpandableMessage({
@@ -49,15 +47,25 @@ export function ExpandableMessage({
   observation,
   action,
 }: ExpandableMessageProps) {
-  const { data: config } = useConfig();
-  const { t, i18n } = useTranslation();
-  const [showDetails, setShowDetails] = useState(true);
+  const { data: config } = useConfig()
+  const { t, i18n } = useTranslation()
+  const [showDetails, setShowDetails] = useState(true)
   // const [headline, setHeadline] = useState("");
-  const [details, setDetails] = useState(message);
-  const [translationId, setTranslationId] = useState<string | undefined>(id);
+  const [details, setDetails] = useState(message)
+  const [translationId, setTranslationId] = useState<string | undefined>(id)
   const [translationParams, setTranslationParams] = useState<
     Record<string, unknown>
   >({
+    observation,
+    action,
+  })
+
+  console.log("KAKAK", {
+    type,
+    messageActionID,
+    id,
+    message,
+    success,
     observation,
     action,
   })
@@ -99,27 +107,20 @@ export function ExpandableMessage({
       setTranslationParams({
         observation: processedObservation,
         action: processedAction,
-      });
+      })
       // setHeadline(`${t(id)} (${messageActionID})`);
-      setDetails(message);
-      setShowDetails(true);
+      setDetails(message)
+      setShowDetails(true)
     }
-  }, [id, message, i18n.language]);
+  }, [id, message, i18n.language])
 
-  const statusIconClasses = "h-4 w-4 mr-2 inline";
+  const statusIconClasses = "h-4 w-4 mr-2 inline"
+  const eventType = action?.payload?.action || messageActionID
 
   if (messageActionID === undefined) {
-    return null;
+    return null
   }
 
-  console.log("observation", observation?.payload?.observation)
-
-  if (
-    [ObservationType.MCP, ObservationType.BROWSER_MCP].includes(
-      observation?.payload?.observation as any,
-    )
-  )
-    return null
   if (
     config?.FEATURE_FLAGS.ENABLE_BILLING &&
     config?.APP_MODE === "saas" &&
@@ -230,13 +231,12 @@ export function ExpandableMessage({
             </div>
             <div className="flex-1 overflow-auto">
               {type === "action" &&
-              HANDLED_ACTIONS.includes(
-                messageActionID as OpenHandsEventType,
-              ) ? (
+              HANDLED_ACTIONS.includes(eventType as OpenHandsEventType) ? (
                 <MessageActionDisplay
-                  messageActionID={messageActionID}
+                  eventType={eventType}
                   content={details}
                   eventID={eventID}
+                  messageActionID={messageActionID}
                 />
               ) : (
                 <Markdown
