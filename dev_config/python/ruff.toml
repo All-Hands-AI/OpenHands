@@ -1,6 +1,3 @@
-target-version = "py312"
-line-length = 120
-
 [lint]
 select = [
     "E",
@@ -20,8 +17,6 @@ ignore = [
     "B010",
     "B904",
     "B018",
-    "ASYNC100",
-    "ASYNC101",
 ]
 
 [lint.flake8-quotes]
