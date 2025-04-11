@@ -1,26 +1,35 @@
-import { createSlice } from "@reduxjs/toolkit"
+import { createSlice } from "@reduxjs/toolkit";
 
 export const initialState = {
   computerList: [],
   eventID: null,
-}
+  tasksProgress: [],
+};
 
 export const computerSlice = createSlice({
   name: "computer",
   initialState,
   reducers: {
     setComputerList: (state, action) => {
-      state.computerList.push(action.payload)
+      state.computerList.push(action.payload);
+    },
+    setTasksProgress: (state, action) => {
+      state.tasksProgress.push(action.payload);
     },
     setEventID: (state, action) => {
-      state.eventID = action.payload
+      state.eventID = action.payload;
     },
     clearComputerList: (state) => {
-      state.computerList = []
+      state.computerList = [];
     },
   },
-})
+});
 
-export const { setComputerList, setEventID, clearComputerList } = computerSlice.actions
+export const {
+  setComputerList,
+  setEventID,
+  clearComputerList,
+  setTasksProgress,
+} = computerSlice.actions;
 
-export default computerSlice.reducer
+export default computerSlice.reducer;

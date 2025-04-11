@@ -43,6 +43,8 @@ enum ObservationType {
 
   // error message
   ERROR = "error",
+
+  MCP_PLAN = "mcp_plan",
 }
 
 export default ObservationType

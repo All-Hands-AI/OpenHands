@@ -65,17 +65,17 @@ async def _create_new_conversation(
         extra={'signal': 'create_conversation', 'user_id': user_id},
     )
 
-    # Check if user already has any conversation
+    # Check if user already has a running conversation and total conversation limit
     if user_id:
-        conversation_store = await ConversationStoreImpl.get_instance(
-            config, user_id, None
-        )
-        conversation_metadata_result_set = await conversation_store.search(limit=1)
-        if conversation_metadata_result_set.results:
-            existing_conversation = conversation_metadata_result_set.results[0]
+        # Get all conversations for the user
+        conversation_store = await ConversationStoreImpl.get_instance(config, user_id, None)
+        conversation_metadata_result_set = await conversation_store.search(None, limit=10)  # Get more than 5 to check limit
+        user_conversations = conversation_metadata_result_set.results
+        
+        if len(user_conversations) >= 5:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f'User already has a conversation (ID: {existing_conversation.conversation_id}).',
+                detail=f'You have reached the maximum limit of 5 conversations. Please delete some existing conversations before creating a new one.',
             )
 
     logger.info('Loading settings')
