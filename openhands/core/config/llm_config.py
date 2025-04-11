@@ -151,7 +151,7 @@ class LLMConfig(BaseModel):
 
         return llm_mapping
 
-    def model_post_init(self, __context: Any):
+    def model_post_init(self, __context: Any) -> None:
         """Post-initialization hook to assign OpenRouter-related variables to environment variables.
 
         This ensures that these values are accessible to litellm at runtime.

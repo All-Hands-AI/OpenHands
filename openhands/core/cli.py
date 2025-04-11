@@ -39,11 +39,12 @@ from openhands.events.observation import (
     FileEditObservation,
 )
 from openhands.io import read_task
+from openhands.mcp import fetch_mcp_tools_from_config
 
 prompt_session = PromptSession()
 
 
-def display_message(message: str):
+def display_message(message: str) -> None:
     print_formatted_text(
         FormattedText(
             [
@@ -55,7 +56,7 @@ def display_message(message: str):
     )
 
 
-def display_command(command: str):
+def display_command(command: str) -> None:
     print_formatted_text(
         FormattedText(
             [
@@ -67,7 +68,7 @@ def display_command(command: str):
     )
 
 
-def display_confirmation(confirmation_state: ActionConfirmationStatus):
+def display_confirmation(confirmation_state: ActionConfirmationStatus) -> None:
     if confirmation_state == ActionConfirmationStatus.CONFIRMED:
         print_formatted_text(
             FormattedText(
@@ -100,7 +101,7 @@ def display_confirmation(confirmation_state: ActionConfirmationStatus):
         )
 
 
-def display_command_output(output: str):
+def display_command_output(output: str) -> None:
     lines = output.split('\n')
     for line in lines:
         if line.startswith('[Python Interpreter') or line.startswith('openhands@'):
@@ -110,7 +111,7 @@ def display_command_output(output: str):
     print_formatted_text('')
 
 
-def display_file_edit(event: FileEditAction | FileEditObservation):
+def display_file_edit(event: FileEditAction | FileEditObservation) -> None:
     print_formatted_text(
         FormattedText(
             [
@@ -121,7 +122,7 @@ def display_file_edit(event: FileEditAction | FileEditObservation):
     )
 
 
-def display_event(event: Event, config: AppConfig):
+def display_event(event: Event, config: AppConfig) -> None:
     if isinstance(event, Action):
         if hasattr(event, 'thought'):
             display_message(event.thought)
@@ -175,7 +176,7 @@ async def read_confirmation_input():
         return False
 
 
-async def main(loop: asyncio.AbstractEventLoop):
+async def main(loop: asyncio.AbstractEventLoop) -> None:
     """Runs the agent in CLI mode."""
 
     args = parse_arguments()
@@ -195,7 +196,8 @@ async def main(loop: asyncio.AbstractEventLoop):
     display_message(f'Session ID: {sid}')
 
     agent = create_agent(config)
-
+    mcp_tools = await fetch_mcp_tools_from_config(config.mcp)
+    agent.set_mcp_tools(mcp_tools)
     runtime = create_runtime(
         config,
         sid=sid,
@@ -207,7 +209,7 @@ async def main(loop: asyncio.AbstractEventLoop):
 
     event_stream = runtime.event_stream
 
-    async def prompt_for_next_task():
+    async def prompt_for_next_task() -> None:
         next_message = await read_prompt_input(config.cli_multiline_input)
         if not next_message.strip():
             await prompt_for_next_task()
@@ -219,7 +221,7 @@ async def main(loop: asyncio.AbstractEventLoop):
         action = MessageAction(content=next_message)
         event_stream.add_event(action, EventSource.USER)
 
-    async def on_event_async(event: Event):
+    async def on_event_async(event: Event) -> None:
         display_event(event, config)
         if isinstance(event, AgentStateChangedObservation):
             if event.agent_state in [
