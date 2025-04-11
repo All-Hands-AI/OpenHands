@@ -8,34 +8,8 @@ from openhands.events.serialization.event import event_from_dict, event_to_dict
 from openhands.storage.files import FileStore
 from openhands.storage.locations import (
     get_conversation_dir,
-    get_conversation_event_filename,
-    get_conversation_events_dir,
 )
 from openhands.utils.shutdown_listener import should_continue
-
-
-@dataclass(frozen=True)
-class _CachePage:
-    events: list[dict] | None
-    start: int
-    end: int
-
-    def covers(self, global_index: int) -> bool:
-        if global_index < self.start:
-            return False
-        if global_index >= self.end:
-            return False
-        return True
-
-    def get_event(self, global_index: int) -> Event | None:
-        # If there was not actually a cached page, return None
-        if not self.events:
-            return None
-        local_index = global_index - self.start
-        return event_from_dict(self.events[local_index])
-
-
-_DUMMY_PAGE = _CachePage(None, 1, -1)
 
 
 @dataclass
@@ -48,36 +22,14 @@ class EventStore:
     file_store: FileStore
     user_id: str | None
     cur_id: int = -1  # We fix this in post init if it is not specified
-    cache_size: int = 25
 
     def __post_init__(self) -> None:
-        if self.cur_id >= 0:
-            return
-        events = []
-        try:
-            events_dir = get_conversation_events_dir(self.sid, self.user_id)
-            events = self.file_store.list(events_dir)
-        except FileNotFoundError:
-            logger.debug(f'No events found for session {self.sid} at {events_dir}')
-
-        if self.user_id:
-            # During transition to new location, try old location if user_id is set
-            # TODO: remove this code after 5/1/2025
-            try:
-                events_dir = get_conversation_events_dir(self.sid)
-                events += self.file_store.list(events_dir)
-            except FileNotFoundError:
-                logger.debug(f'No events found for session {self.sid} at {events_dir}')
-
-        if not events:
+        if self.cur_id < 0:
             self.cur_id = 0
-            return
 
-        # if we have events, we need to find the highest id to prepare for new events
-        for event_str in events:
-            id = self._get_id_from_filename(event_str)
-            if id >= self.cur_id:
-                self.cur_id = id + 1
+    def _get_events_log_filename(self) -> str:
+        """Gets the path for the events log file."""
+        return f'{get_conversation_dir(self.sid, self.user_id)}events.jsonl'
 
     def get_events(
         self,
@@ -88,18 +40,8 @@ class EventStore:
         filter_hidden: bool = False,
     ) -> Iterable[Event]:
         """
-        Retrieve events from the event stream, optionally filtering out events of a given type
-        and events marked as hidden.
-
-        Args:
-            start_id: The ID of the first event to retrieve. Defaults to 0.
-            end_id: The ID of the last event to retrieve. Defaults to the last event in the stream.
-            reverse: Whether to retrieve events in reverse order. Defaults to False.
-            filter_out_type: A tuple of event types to filter out. Typically used to filter out backend events from the agent.
-            filter_hidden: If True, filters out events with the 'hidden' attribute set to True.
-
-        Yields:
-            Events from the stream that match the criteria.
+        Retrieve events from the event stream log file.
+        NOTE: Efficient reverse iteration is not yet implemented.
         """
 
         def should_filter(event: Event) -> bool:
@@ -109,49 +51,77 @@ class EventStore:
                 return True
             return False
 
-        if end_id is None:
-            end_id = self.cur_id
-        else:
-            end_id += 1  # From inclusive to exclusive
-
         if reverse:
-            step = -1
-            start_id, end_id = end_id, start_id
-            start_id -= 1
-            end_id -= 1
-        else:
-            step = 1
+            logger.warning('Reverse event reading is currently inefficient for large histories.')
+            all_events = list(self.get_events(start_id, end_id, False, filter_out_type, filter_hidden))
+            yield from reversed(all_events)
+            return
 
-        cache_page = _DUMMY_PAGE
-        for index in range(start_id, end_id, step):
-            if not should_continue():
-                return
-            if not cache_page.covers(index):
-                cache_page = self._load_cache_page_for_index(index)
-            event = cache_page.get_event(index)
-            if event is None:
+        # Determine the exclusive end ID. If None, read all.
+        read_to_end = end_id is None
+        effective_end_id = float('inf') if read_to_end else end_id + 1
+
+        try:
+            log_filename = self._get_events_log_filename()
+            full_content = self.file_store.read(log_filename)
+            lines = full_content.splitlines()
+
+            current_line_number = 0
+            for line in lines:
+                if not line.strip():
+                    current_line_number += 1 # Still count empty lines for reference
+                    continue
+
+                if not should_continue():
+                    return
+
                 try:
-                    event = self.get_event(index)
-                except FileNotFoundError:
-                    event = None
-            if event and not should_filter(event):
-                yield event
+                    data = json.loads(line)
+                    event = event_from_dict(data)
+                    actual_event_id = event.id
+
+                    # Check if the ACTUAL event ID is within the desired range
+                    if start_id <= actual_event_id < effective_end_id:
+                        if not should_filter(event):
+                             yield event
+                    # OPTIONAL: Add a check to break early if we know IDs are monotonic increasing
+                    # and we have passed the effective_end_id, but this assumes
+                    # IDs are always in order, which might be broken by resets.
+                    # For now, read all lines to handle potential out-of-order IDs due to resets.
+                    # if not read_to_end and actual_event_id >= effective_end_id:
+                    #    pass # Potentially break if we can guarantee order
+
+                except json.JSONDecodeError:
+                    logger.warning(f'Failed to decode JSON in {log_filename} at line {current_line_number+1}')
+                except AttributeError:
+                     logger.warning(f'Parsed data in {log_filename} at line {current_line_number+1} is not a valid event (missing id?).')
+                except Exception as e:
+                    logger.error(f'Error processing event in {log_filename} at line {current_line_number+1}: {e}')
+
+                current_line_number += 1
+
+        except FileNotFoundError:
+            logger.debug(f'Events log file not found: {log_filename}')
+            pass
+        except Exception as e:
+            logger.error(f'Error reading events log file {log_filename}: {e}')
+            pass
 
     def get_event(self, id: int) -> Event:
-        filename = self._get_filename_for_id(id, self.user_id)
+        """Gets a single event by its ID."""
+        # This will read the stream until the event is found.
+        # Potentially inefficient if called frequently for random IDs.
         try:
-            content = self.file_store.read(filename)
-            data = json.loads(content)
-            return event_from_dict(data)
-        except FileNotFoundError:
-            logger.debug(f'File {filename} not found')
-            # TODO remove this block after 5/1/2025
-            if self.user_id:
-                filename = self._get_filename_for_id(id, None)
-                content = self.file_store.read(filename)
-                data = json.loads(content)
-                return event_from_dict(data)
-            raise
+            # Get an iterator for the single event ID range
+            event_iterator = self.get_events(start_id=id, end_id=id)
+            # Return the first (and only) event found
+            return next(event_iterator)
+        except StopIteration:
+            raise FileNotFoundError(f'Event with ID {id} not found in log.')
+        except Exception as e:
+             # Catch other potential errors from get_events
+             logger.error(f'Error retrieving event ID {id}: {e}')
+             raise
 
     def get_latest_event(self) -> Event:
         return self.get_event(self.cur_id - 1)
@@ -255,33 +225,3 @@ class EventStore:
                 break
 
         return matching_events
-
-    def _get_filename_for_id(self, id: int, user_id: str | None) -> str:
-        return get_conversation_event_filename(self.sid, id, user_id)
-
-    def _get_filename_for_cache(self, start: int, end: int) -> str:
-        return f'{get_conversation_dir(self.sid, self.user_id)}event_cache/{start}-{end}.json'
-
-    def _load_cache_page(self, start: int, end: int) -> _CachePage:
-        """Read a page from the cache. Reading individual events is slow when there are a lot of them, so we use pages."""
-        cache_filename = self._get_filename_for_cache(start, end)
-        try:
-            content = self.file_store.read(cache_filename)
-            events = json.loads(content)
-        except FileNotFoundError:
-            events = None
-        page = _CachePage(events, start, end)
-        return page
-
-    def _load_cache_page_for_index(self, index: int) -> _CachePage:
-        offset = index % self.cache_size
-        index -= offset
-        return self._load_cache_page(index, index + self.cache_size)
-
-    @staticmethod
-    def _get_id_from_filename(filename: str) -> int:
-        try:
-            return int(filename.split('/')[-1].split('.')[0])
-        except ValueError:
-            logger.warning(f'get id from filename ({filename}) failed.')
-            return -1

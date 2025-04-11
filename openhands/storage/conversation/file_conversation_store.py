@@ -70,26 +70,39 @@ class FileConversationStore(ConversationStore):
         conversations: list[ConversationMetadata] = []
         metadata_dir = self.get_conversation_metadata_dir()
         try:
+            # Get paths relative to base_path (e.g., sessions/sid1, sessions/sid2)
+            listed_paths = self.file_store.list(metadata_dir)
+            # Extract the directory name (sid) as the conversation ID
             conversation_ids = [
-                path.split('/')[-2]
-                for path in self.file_store.list(metadata_dir)
-                if not path.startswith(f'{metadata_dir}/.')
+                Path(path).name # Use Path().name to get the last component
+                for path in listed_paths
+                # Ensure it's likely a session directory (simple check)
+                if '/' in path and not path.startswith(f'{metadata_dir}/.')
             ]
         except FileNotFoundError:
             return ConversationMetadataResultSet([])
+        # Remove duplicates just in case list returns unexpected variations
+        conversation_ids = sorted(list(set(conversation_ids)))
         num_conversations = len(conversation_ids)
         start = page_id_to_offset(page_id)
         end = min(limit + start, num_conversations)
         conversations = []
-        for conversation_id in conversation_ids:
+        # Iterate through the calculated slice of potential IDs
+        for conversation_id in conversation_ids[start:end]:
             try:
-                conversations.append(await self.get_metadata(conversation_id))
-            except Exception:
+                # Check if metadata file exists before trying to load
+                if await self.exists(conversation_id):
+                    # Only append if metadata exists and loads correctly
+                    conversations.append(await self.get_metadata(conversation_id))
+                else:
+                    # Log if the directory was listed but metadata is missing
+                    logger.warning(f'Metadata file missing for listed conversation ID: {conversation_id}')
+            except Exception as e:
                 logger.warning(
-                    f'Could not load conversation metadata: {conversation_id}'
+                    f'Could not load conversation metadata for ID: {conversation_id}, Error: {e}'
                 )
+        # Sort the successfully loaded conversations
         conversations.sort(key=_sort_key, reverse=True)
-        conversations = conversations[start:end]
         next_page_id = offset_to_page_id(end, end < num_conversations)
         return ConversationMetadataResultSet(conversations, next_page_id)
 
@@ -107,8 +120,12 @@ class FileConversationStore(ConversationStore):
         return FileConversationStore(file_store)
 
 
-def _sort_key(conversation: ConversationMetadata) -> str:
-    created_at = conversation.created_at
-    if created_at:
-        return created_at.isoformat()  # YYYY-MM-DDTHH:MM:SS for sorting
-    return ''
+def _sort_key(metadata: ConversationMetadata) -> float:
+    """Sort by last_updated_at timestamp, handling potential None values."""
+    if metadata.last_updated_at:
+        # Assuming last_updated_at is datetime object
+        return metadata.last_updated_at.timestamp()
+    elif metadata.created_at:
+         # Fallback to created_at if last_updated_at is missing
+         return metadata.created_at.timestamp()
+    return 0 # Fallback if both are missing

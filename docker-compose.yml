@@ -1,23 +1,33 @@
-
 services:
   openhands:
     build:
       context: ./
       dockerfile: ./containers/app/Dockerfile
     image: openhands:latest
-    container_name: openhands-app-${DATE:-}
+    container_name: openhands-app-${DATE:-dev}
     environment:
       - SANDBOX_RUNTIME_CONTAINER_IMAGE=${SANDBOX_RUNTIME_CONTAINER_IMAGE:-docker.all-hands.dev/all-hands-ai/runtime:0.31-nikolaik}
       #- SANDBOX_USER_ID=${SANDBOX_USER_ID:-1234} # enable this only if you want a specific non-root sandbox user but you will have to manually adjust permissions of openhands-state for this user
       - WORKSPACE_MOUNT_PATH=${WORKSPACE_BASE:-$PWD/workspace}
+      - OPENHANDS_RUNNING_IN_DOCKER=true # Add env var to signal docker context if needed
+      - LOG_LEVEL=${LOG_LEVEL:-WARNING} # Set log level for development
+      - POETRY_VIRTUALENVS_CREATE=false # Optional: Prevent poetry from creating venvs inside container if source is mounted
     ports:
       - "3000:3000"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
+      # Mount specific source code directories for live reloading
+      # Ensure paths inside the container match where the code runs (likely under /app)
+      - ./openhands:/app/openhands:rw
+      - ./microagents:/app/microagents:rw # Add if developing microagents
+      # Keep existing necessary volumes
       - /var/run/docker.sock:/var/run/docker.sock
       - ~/.openhands-state:/.openhands-state
       - ${WORKSPACE_BASE:-$PWD/workspace}:/opt/workspace_base
     pull_policy: build
+    # Override the default command to run uvicorn with reload
+    # Adjust the path 'openhands.server.listen:app' if necessary
+    command: ["uvicorn", "openhands.server.listen:app", "--host", "0.0.0.0", "--port", "3000", "--reload"]
     stdin_open: true
     tty: true

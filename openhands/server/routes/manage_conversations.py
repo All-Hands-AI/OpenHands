@@ -37,6 +37,8 @@ from openhands.storage.data_models.conversation_metadata import ConversationMeta
 from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.utils.async_utils import wait_all
 from openhands.utils.conversation_summary import generate_conversation_title
+from openhands.controller.state.state import State
+from openhands.storage.files import FileStore
 
 app = APIRouter(prefix='/api')
 
@@ -117,6 +119,14 @@ async def _create_new_conversation(
         )
     )
 
+    try:
+        logger.info(f'Saving initial empty state for conversation {conversation_id}')
+        initial_state = State(session_id=conversation_id)
+        initial_state.save_to_session(conversation_id, file_store, user_id)
+    except Exception as e:
+        logger.error(f'Failed to save initial state for {conversation_id}: {e}',
+                     extra={'session_id': conversation_id})
+
     logger.info(
         f'Starting agent loop for conversation {conversation_id}',
         extra={'user_id': user_id, 'session_id': conversation_id},
@@ -138,6 +148,7 @@ async def _create_new_conversation(
         user_id,
         initial_user_msg=initial_message_action,
         replay_json=replay_json,
+        github_user_id=None
     )
     logger.info(f'Finished initializing conversation {conversation_id}')
 

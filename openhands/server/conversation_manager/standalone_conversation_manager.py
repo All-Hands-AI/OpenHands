@@ -403,40 +403,60 @@ class StandaloneConversationManager(ConversationManager):
         self, user_id: str | None, github_user_id: str | None, conversation_id: str
     ) -> Callable:
         def callback(event, *args, **kwargs):
-            call_async_from_sync(
-                self._update_conversation_for_event,
-                GENERAL_TIMEOUT,
-                user_id,
-                github_user_id,
-                conversation_id,
-                event,
-            )
+            try:
+                # Run the async update function in the background
+                call_async_from_sync(
+                    self._update_conversation_for_event,
+                    GENERAL_TIMEOUT,
+                    user_id,
+                    github_user_id,
+                    conversation_id,
+                    event,
+                )
+            except Exception as e:
+                # Log any error occurring during the scheduling/invocation itself
+                logger.error(f'Error invoking background metadata update for {conversation_id}: {e}',
+                             extra={'session_id': conversation_id})
 
         return callback
 
     async def _update_conversation_for_event(
         self, user_id: str, github_user_id: str, conversation_id: str, event=None
     ):
-        conversation_store = await self._get_conversation_store(user_id, github_user_id)
-        conversation = await conversation_store.get_metadata(conversation_id)
-        conversation.last_updated_at = datetime.now(timezone.utc)
-        
-        # Update cost/token metrics if event has llm_metrics
-        if event and hasattr(event, 'llm_metrics') and event.llm_metrics:
-            metrics = event.llm_metrics
+        try:
+            conversation_store = await self._get_conversation_store(user_id, github_user_id)
+
+            # Check if metadata file exists before trying to read it
+            if not await conversation_store.exists(conversation_id):
+                logger.warning(f'Metadata file not found for conversation {conversation_id} during update callback check. Skipping update.',
+                              extra={'session_id': conversation_id})
+                return # Exit early if file doesn't exist
+
+            # If it exists, proceed to get and update metadata
+            conversation = await conversation_store.get_metadata(conversation_id)
+            conversation.last_updated_at = datetime.now(timezone.utc)
             
-            # Update accumulated cost
-            if hasattr(metrics, 'accumulated_cost'):
-                conversation.accumulated_cost = metrics.accumulated_cost
+            # Update cost/token metrics if event has llm_metrics
+            if event and hasattr(event, 'llm_metrics') and event.llm_metrics:
+                metrics = event.llm_metrics
+                
+                # Update accumulated cost
+                if hasattr(metrics, 'accumulated_cost'):
+                    conversation.accumulated_cost = metrics.accumulated_cost
+                
+                # Update token usage
+                if hasattr(metrics, 'accumulated_token_usage'):
+                    token_usage = metrics.accumulated_token_usage
+                    conversation.prompt_tokens = token_usage.prompt_tokens
+                    conversation.completion_tokens = token_usage.completion_tokens
+                    conversation.total_tokens = token_usage.prompt_tokens + token_usage.completion_tokens
             
-            # Update token usage
-            if hasattr(metrics, 'accumulated_token_usage'):
-                token_usage = metrics.accumulated_token_usage
-                conversation.prompt_tokens = token_usage.prompt_tokens
-                conversation.completion_tokens = token_usage.completion_tokens
-                conversation.total_tokens = token_usage.prompt_tokens + token_usage.completion_tokens
-        
-        await conversation_store.save_metadata(conversation)
+            await conversation_store.save_metadata(conversation)
+
+        # Keep the general exception handler for other potential errors
+        except Exception as e:
+            logger.error(f'Error during conversation metadata update for {conversation_id}: {e}',
+                         extra={'session_id': conversation_id})
 
 
 def _last_updated_at_key(conversation: ConversationMetadata) -> float:
