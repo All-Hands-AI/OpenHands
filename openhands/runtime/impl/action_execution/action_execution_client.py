@@ -313,7 +313,7 @@ class ActionExecutionClient(Runtime):
             # LLM Diff edits (parsed from message) are handled client-side
             return self.llm_diff_edit(action)
         else:
-            # OH_ACI and FENCED_DIFF edits (from tool calls) are handled server-side
+            # OH_ACI edits (from tool calls) are handled server-side
             return self.send_action_for_execution(action)
 
     def browse(self, action: BrowseURLAction) -> Observation:

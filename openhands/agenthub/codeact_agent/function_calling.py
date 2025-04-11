@@ -12,7 +12,6 @@ from litellm import (
 
 from openhands.agenthub.codeact_agent.tools import (
     BrowserTool,
-    FencedDiffEditTool,
     FinishTool,
     IPythonTool,
     ListDirectoryTool,
@@ -184,29 +183,7 @@ def response_to_actions(response: ModelResponse, is_llm_diff_enabled: bool = Fal
                         path=path,
                         command=command,
                         impl_source=FileEditSource.OH_ACI,
-                        **other_kwargs,
-                    )
-            # ================================================
-            # FencedDiffEditTool (Aider-style SEARCH/REPLACE)
-            # ================================================
-            elif tool_call.function.name == FencedDiffEditTool['function']['name']:
-                if 'path' not in arguments:
-                    raise FunctionCallValidationError(
-                        f'Missing required argument "path" in tool call {tool_call.function.name}'
-                    )
-                if 'search' not in arguments:
-                    raise FunctionCallValidationError(
-                        f'Missing required argument "search" in tool call {tool_call.function.name}'
-                    )
-                if 'replace' not in arguments:
-                    raise FunctionCallValidationError(
-                        f'Missing required argument "replace" in tool call {tool_call.function.name}'
-                    )
-                action = FileEditAction(
-                    path=arguments['path'],
-                    search=arguments['search'],
-                    replace=arguments['replace'],
-                    impl_source=FileEditSource.FENCED_DIFF,
+                    **other_kwargs,
                 )
             # ================================================
             # New Utility Tools (Routing to OH_ACI)
@@ -407,14 +384,8 @@ def get_tools(
         #  - No UndoEditTool
         tools.append(ViewFileTool)
         tools.append(ListDirectoryTool)
-        # NO EDITING TOOLS (FencedDiffEditTool, LLMBasedFileEditTool, str_replace_editor)
+        # NO EDITING TOOLS (LLMBasedFileEditTool, str_replace_editor)
         # NO UndoEditTool
-    elif codeact_enable_fenced_diff:
-        # Use Fenced editor tool + separate utils (including Undo)
-        tools.append(FencedDiffEditTool)
-        tools.append(ViewFileTool)
-        tools.append(ListDirectoryTool)
-        tools.append(UndoEditTool)
     elif codeact_enable_llm_editor:
         # Use LLM-based editor tool + separate utils (NO Undo)
         tools.append(LLMBasedFileEditTool)

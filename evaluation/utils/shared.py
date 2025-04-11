@@ -12,7 +12,6 @@ from inspect import signature
 from typing import Any, Awaitable, Callable, TextIO
 
 import pandas as pd
-from litellm.exceptions import RateLimitError
 from pydantic import BaseModel
 from tqdm import tqdm
 
@@ -542,7 +541,6 @@ def is_fatal_evaluation_error(error: str | None) -> bool:
         AgentRuntimeNotFoundError,
         ConnectionError,
         RequestHTTPError,
-        RateLimitError,
     ]
 
     if any(exception.__name__ in error for exception in FATAL_EXCEPTIONS):
