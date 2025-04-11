@@ -76,6 +76,39 @@ SESSION_API_KEY = os.environ.get('SESSION_API_KEY')
 api_key_header = APIKeyHeader(name='X-Session-API-Key', auto_error=False)
 
 
+def is_binary_file(file_path):
+    """
+    Check if a file is binary.
+    
+    Args:
+        file_path (str): Path to the file to check.
+        
+    Returns:
+        bool: True if the file is binary, False otherwise.
+    """
+    # Number of bytes to check at the beginning of the file
+    sample_size = 8192
+    
+    try:
+        # Open the file in binary mode
+        with open(file_path, 'rb') as f:
+            sample = f.read(sample_size)
+            
+        # Check for NULL bytes (common in binary files)
+        if b'\x00' in sample:
+            return True
+            
+        try:
+            sample.decode('utf-8')
+            return False
+        except UnicodeDecodeError:
+            # If decoding fails, it's likely binary
+            return True
+            
+    except IOError:
+        return None
+
+
 def verify_api_key(api_key: str = Depends(api_key_header)):
     if SESSION_API_KEY and api_key != SESSION_API_KEY:
         raise HTTPException(status_code=403, detail='Invalid API Key')
@@ -355,6 +388,13 @@ class ActionExecutor:
 
     async def read(self, action: FileReadAction) -> Observation:
         assert self.bash_session is not None
+        
+        # Cannot read binary files
+        if is_binary_file(action.path):
+            return ErrorObservation(
+                'ERROR_BINARY_FILE'
+            )
+
         if action.impl_source == FileReadSource.OH_ACI:
             result_str, _ = _execute_file_editor(
                 self.file_editor,
