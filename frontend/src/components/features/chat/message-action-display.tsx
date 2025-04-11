@@ -1,10 +1,3 @@
-import React from "react"
-import {
-  getDiffPath,
-  getCommand,
-  getCatFilePath,
-  getUrlBrowser,
-} from "./helpers"
 import {
   FaEdit,
   FaTerminal,
@@ -16,6 +9,12 @@ import {
 } from "react-icons/fa"
 import Markdown from "react-markdown"
 import remarkGfm from "remark-gfm"
+import {
+  getDiffPath,
+  getCommand,
+  getCatFilePath,
+  getUrlBrowser,
+} from "./helpers"
 import { code } from "../markdown/code"
 import { ol, ul } from "../markdown/list"
 import store from "#/store"
@@ -25,16 +24,23 @@ import { setCurrentPathViewed } from "#/state/file-state-slice"
 const actionWrapClassName =
   "inline-flex max-w-full items-center gap-2 rounded-[15px] border border-neutral-1000 bg-[#37352f10] px-[10px] py-[3px] text-neutral-600 hover:opacity-70 dark:border-neutral-300 cursor-pointer"
 
-const MessageActionDisplay: React.FC<{
+interface MessageActionDisplayProps {
   eventType: string | undefined
   content: string
   eventID?: number
   messageActionID?: string
-}> = ({ eventType, content, eventID, messageActionID }) => {
-  const openComputertByEventID = (eventID) => {
-    if (typeof eventID === "number") {
+}
+
+function MessageActionDisplay({
+  eventType,
+  content,
+  eventID,
+  messageActionID,
+}: MessageActionDisplayProps) {
+  function openComputertByEventID(id: number | undefined): void {
+    if (typeof id === "number") {
       store.dispatch(setCurrentPathViewed(""))
-      store.dispatch(setEventID(eventID))
+      store.dispatch(setEventID(id))
     }
   }
 
