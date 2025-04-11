@@ -18,9 +18,9 @@ import GlobeIcon from "#/icons/globe.svg?react";
 import ListIcon from "#/icons/list-type-number.svg?react";
 import { clearJupyter } from "#/state/jupyter-slice";
 import { FilesProvider } from "#/context/files";
-import { ChatInterface } from "../../components/features/chat/chat-interface";
+import { ChatInterface } from "../components/features/chat/chat-interface";
 import { WsClientProvider } from "#/context/ws-client-provider";
-import { EventHandler } from "./event-handler";
+import { EventHandler } from "../wrapper/event-handler";
 import { useConversationConfig } from "#/hooks/query/use-conversation-config";
 import { Container } from "#/components/layout/container";
 import {
@@ -121,7 +121,7 @@ function AppContent() {
   function renderMain() {
     if (width <= 640) {
       return (
-        <div className="rounded-xl overflow-hidden border border-neutral-600 w-full">
+        <div className="rounded-xl overflow-hidden border border-neutral-600 w-full bg-base-secondary">
           <ChatInterface />
         </div>
       );

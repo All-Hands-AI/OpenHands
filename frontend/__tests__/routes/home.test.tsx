@@ -4,9 +4,9 @@ import { renderWithProviders } from "test-utils";
 import userEvent from "@testing-library/user-event";
 import { screen } from "@testing-library/react";
 import { AxiosError } from "axios";
-import MainApp from "#/routes/_oh/route";
+import MainApp from "#/routes/root-layout";
 import SettingsScreen from "#/routes/settings";
-import Home from "#/routes/_oh._index/route";
+import Home from "#/routes/home";
 import OpenHands from "#/api/open-hands";
 
 const createAxiosNotFoundErrorObject = () =>
