@@ -139,7 +139,7 @@ async def select_file(file: str, request: Request):
         if 'ERROR_BINARY_FILE' in observation.message:
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                content={'error': f'Unable to open binary files: {file}'},
+                content={'error': f'Unable to open binary file: {file}'},
             )
 
         return JSONResponse(
