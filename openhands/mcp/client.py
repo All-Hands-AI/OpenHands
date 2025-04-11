@@ -113,7 +113,7 @@ class MCPClient(BaseModel):
 
         try:
             # Try a lightweight operation to check connection
-            await self.session.ping()
+            await self.session.send_ping()
             return True
         except Exception:
             return False
