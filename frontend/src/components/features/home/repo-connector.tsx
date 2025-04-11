@@ -17,7 +17,7 @@ export function RepoConnector({ onRepoSelection }: RepoConnectorProps) {
   const { data: repositories } = useUserRepositories();
   const { mutate: createConversation } = useCreateConversation();
 
-  const isOSS = config?.APP_MODE === "oss";
+  const isSaaS = config?.APP_MODE === "saas";
   const repositoriesList = repositories?.pages.flatMap((page) => page.data);
   const repositoriesItems = repositoriesList?.map((repo) => ({
     key: repo.id,
@@ -59,7 +59,7 @@ export function RepoConnector({ onRepoSelection }: RepoConnectorProps) {
         Launch
       </BrandButton>
 
-      {isOSS && (
+      {isSaaS && (
         <div className="flex flex-col text-sm underline underline-offset-2 text-content-2 gap-4 w-fit">
           <a href="http://" target="_blank" rel="noopener noreferrer">
             Add GitHub repos

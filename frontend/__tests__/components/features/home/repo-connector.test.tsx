@@ -90,11 +90,11 @@ describe("RepoConnector", () => {
     expect(launchButton).toBeEnabled();
   });
 
-  it("should render the 'add git(hub|lab) repos' links if oss mode", async () => {
+  it("should render the 'add git(hub|lab) repos' links if saas mode", async () => {
     const getConfiSpy = vi.spyOn(OpenHands, "getConfig");
     // @ts-expect-error - only return the APP_MODE
     getConfiSpy.mockResolvedValue({
-      APP_MODE: "oss",
+      APP_MODE: "saas",
     });
 
     renderRepoConnector();
@@ -103,11 +103,11 @@ describe("RepoConnector", () => {
     await screen.findByText("Add GitLab repos");
   });
 
-  it("should not render the 'add git(hub|lab) repos' links if saas mode", async () => {
+  it("should not render the 'add git(hub|lab) repos' links if oss mode", async () => {
     const getConfiSpy = vi.spyOn(OpenHands, "getConfig");
     // @ts-expect-error - only return the APP_MODE
     getConfiSpy.mockResolvedValue({
-      APP_MODE: "saas",
+      APP_MODE: "oss",
     });
 
     renderRepoConnector();
