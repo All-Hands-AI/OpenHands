@@ -1,10 +1,8 @@
 # Configuration Options
 
-This guide details all configuration options available for OpenHands, helping you customize its behavior and integrate it with other services.
-
 :::note
-If you are running in [GUI Mode](https://docs.all-hands.dev/modules/usage/how-to/gui-mode), the settings available in the Settings UI will always
-take precedence.
+This page outlines all available configuration options for OpenHands, allowing you to customize its behavior and
+integrate it with other services. In GUI Mode, any settings applied through the Settings UI will take precedence.
 :::
 
 ## Core Configuration
