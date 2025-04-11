@@ -16,8 +16,6 @@ import { ConversationCard } from "#/components/features/conversation-panel/conve
 import { clickOnEditButton } from "./utils";
 
 // We'll use the actual i18next implementation but override the translation function
-import { I18nextProvider } from "react-i18next";
-import i18n from "i18next";
 
 // Mock the t function to return our custom translations
 vi.mock("react-i18next", async () => {
@@ -27,9 +25,9 @@ vi.mock("react-i18next", async () => {
     useTranslation: () => ({
       t: (key: string) => {
         const translations: Record<string, string> = {
-          "CONVERSATION$CREATED": "Created",
-          "CONVERSATION$AGO": "ago",
-          "CONVERSATION$UPDATED": "Updated"
+          CONVERSATION$CREATED: "Created",
+          CONVERSATION$AGO: "ago",
+          CONVERSATION$UPDATED: "Updated",
         };
         return translations[key] || key;
       },
@@ -82,7 +80,9 @@ describe("ConversationCard", () => {
     expect(card).toHaveTextContent("ago");
 
     // Use a regex to match the time part since it might have whitespace
-    const timeRegex = new RegExp(formatTimeDelta(new Date("2021-10-01T12:00:00Z")));
+    const timeRegex = new RegExp(
+      formatTimeDelta(new Date("2021-10-01T12:00:00Z")),
+    );
     expect(card).toHaveTextContent(timeRegex);
   });
 

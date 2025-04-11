@@ -65,7 +65,9 @@ describe("Settings Screen", () => {
 
     await waitFor(() => {
       // Use queryAllByText to handle multiple elements with the same text
-      expect(screen.queryAllByText("SETTINGS$LLM_SETTINGS")).not.toHaveLength(0);
+      expect(screen.queryAllByText("SETTINGS$LLM_SETTINGS")).not.toHaveLength(
+        0,
+      );
       screen.getByText("ACCOUNT_SETTINGS$ADDITIONAL_SETTINGS");
       screen.getByText("BUTTON$RESET_TO_DEFAULTS");
       screen.getByText("BUTTON$SAVE");
