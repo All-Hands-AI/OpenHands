@@ -171,6 +171,7 @@ class LLM(RetryMixin, DebugMixin):
             custom_llm_provider=self.config.custom_llm_provider,
             timeout=self.config.timeout,
             top_p=self.config.top_p,
+            top_k=self.config.top_k,
             drop_params=self.config.drop_params,
             seed=self.config.seed,
             **kwargs,
@@ -704,7 +705,7 @@ class LLM(RetryMixin, DebugMixin):
                         completion_response=response, **extra_kwargs
                     )
                 except Exception as e:
-                    logger.error(f'Error getting cost from litellm: {e}')
+                    logger.warning(f'Error getting cost from litellm: {e}')
 
             if cost is None:
                 _model_name = '/'.join(self.config.model.split('/')[1:])
