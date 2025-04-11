@@ -135,17 +135,24 @@ export function ConversationCard({
 
   const handleDisplayTools = async (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
+    console.log("Display tools clicked, conversation ID:", conversationId);
+    console.log("Current tools state:", tools);
 
-    // Fetch the tools from the API if we don't have them yet
-    if (conversationId && !tools?.tools) {
+    // Always fetch the tools to ensure we have the latest
+    if (conversationId) {
       try {
+        console.log("Fetching tools from API...");
         const response = await fetch(
           `/api/conversations/${conversationId}/tools`
         );
         const data = await response.json();
+        console.log("API response:", data);
 
         if (data.tools) {
+          console.log("Dispatching tools to Redux store:", data.tools);
           dispatch({ type: 'tools/setTools', payload: { tools: data.tools } });
+        } else {
+          console.warn("No tools found in API response");
         }
       } catch (error) {
         console.error('Failed to fetch tools:', error);
