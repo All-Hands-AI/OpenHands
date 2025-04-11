@@ -1,15 +1,15 @@
-import { Autocomplete, AutocompleteItem } from "@heroui/react"
-import { ReactNode, useEffect, useState } from "react"
-import { OptionalTag } from "./optional-tag"
-import { twMerge } from "tailwind-merge"
-import { useSettings } from "#/hooks/query/use-settings"
 import { useSaveSettings } from "#/hooks/mutation/use-save-settings"
+import { useSettings } from "#/hooks/query/use-settings"
 import {
   displayErrorToast,
   displaySuccessToast,
 } from "#/utils/custom-toast-handlers"
 import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message"
 import { useGetConversationState } from "#/zutand-stores/coin/selector"
+import { Autocomplete, AutocompleteItem } from "@heroui/react"
+import { ReactNode, useEffect, useState } from "react"
+import { twMerge } from "tailwind-merge"
+import { OptionalTag } from "./optional-tag"
 
 interface AgentSettingsDropdownInputProps {
   testId: string

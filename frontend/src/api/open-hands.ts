@@ -1,18 +1,18 @@
+import { GitRepository, GitUser } from "#/types/git";
+import { ApiSettings, PostApiSettings } from "#/types/settings";
+import { openHands } from "./open-hands-axios";
 import {
-  Feedback,
-  FeedbackResponse,
-  GitHubAccessTokenResponse,
-  GetConfigResponse,
-  GetVSCodeUrlResponse,
   AuthenticateResponse,
   Conversation,
-  ResultSet,
+  Feedback,
+  FeedbackResponse,
+  GetConfigResponse,
   GetTrajectoryResponse,
   GetUseCasesItemResponse,
-} from "./open-hands.types"
-import { openHands } from "./open-hands-axios"
-import { ApiSettings, PostApiSettings } from "#/types/settings"
-import { displayErrorToast } from "#/utils/custom-toast-handlers"
+  GetVSCodeUrlResponse,
+  GitHubAccessTokenResponse,
+  ResultSet,
+} from "./open-hands.types";
 
 interface VerifySignatureResponse {
   user: {
@@ -26,7 +26,6 @@ interface VerifySignatureRequest {
   signature: string
   message: string
 }
-import { GitUser, GitRepository } from "#/types/git"
 
 class OpenHands {
   /**
@@ -55,23 +54,23 @@ class OpenHands {
    */
   static async getSecurityAnalyzers(): Promise<string[]> {
     const { data } = await openHands.get<string[]>(
-      "/api/options/security-analyzers",
-    )
-    return data
+      "/api/options/security-analyzers"
+    );
+    return data;
   }
 
   static async getConfig(): Promise<GetConfigResponse> {
     const { data } = await openHands.get<GetConfigResponse>(
-      "/api/options/config",
-    )
-    return data
+      "/api/options/config"
+    );
+    return data;
   }
 
   static async getUseCases(): Promise<GetUseCasesItemResponse> {
     const { data } = await openHands.get<GetUseCasesItemResponse>(
-      "/api/options/use-cases",
-    )
-    return data
+      "/api/options/use-cases"
+    );
+    return data;
   }
 
   /**
@@ -81,7 +80,7 @@ class OpenHands {
    */
   static async submitFeedback(
     conversationId: string,
-    feedback: Feedback,
+    feedback: Feedback
   ): Promise<FeedbackResponse> {
     const url = `/api/conversations/${conversationId}/submit-feedback`
     const { data } = await openHands.post<FeedbackResponse>(url, feedback)
@@ -93,7 +92,7 @@ class OpenHands {
    * @returns Response with authentication status and user info if successful
    */
   static async authenticate(
-    appMode: GetConfigResponse["APP_MODE"],
+    appMode: GetConfigResponse["APP_MODE"]
   ): Promise<boolean> {
     if (appMode === "oss") return true
 
@@ -119,15 +118,15 @@ class OpenHands {
    * @returns GitHub access token
    */
   static async getGitHubAccessToken(
-    code: string,
+    code: string
   ): Promise<GitHubAccessTokenResponse> {
     const { data } = await openHands.post<GitHubAccessTokenResponse>(
       "/api/keycloak/callback",
       {
         code,
-      },
-    )
-    return data
+      }
+    );
+    return data;
   }
 
   /**
@@ -135,28 +134,28 @@ class OpenHands {
    * @returns VSCode URL
    */
   static async getVSCodeUrl(
-    conversationId: string,
+    conversationId: string
   ): Promise<GetVSCodeUrlResponse> {
     const { data } = await openHands.get<GetVSCodeUrlResponse>(
-      `/api/conversations/${conversationId}/vscode-url`,
-    )
-    return data
+      `/api/conversations/${conversationId}/vscode-url`
+    );
+    return data;
   }
 
   static async getRuntimeId(
-    conversationId: string,
+    conversationId: string
   ): Promise<{ runtime_id: string }> {
     const { data } = await openHands.get<{ runtime_id: string }>(
-      `/api/conversations/${conversationId}/config`,
-    )
-    return data
+      `/api/conversations/${conversationId}/config`
+    );
+    return data;
   }
 
   static async getUserConversations(): Promise<Conversation[]> {
     const { data } = await openHands.get<ResultSet<Conversation>>(
-      "/api/conversations?limit=9",
-    )
-    return data.results
+      "/api/conversations?limit=9"
+    );
+    return data.results;
   }
 
   static async deleteUserConversation(conversationId: string): Promise<void> {
@@ -165,7 +164,7 @@ class OpenHands {
 
   static async updateUserConversation(
     conversationId: string,
-    conversation: Partial<Omit<Conversation, "conversation_id">>,
+    conversation: Partial<Omit<Conversation, "conversation_id">>
   ): Promise<void> {
     await openHands.patch(`/api/conversations/${conversationId}`, conversation)
   }
@@ -174,41 +173,55 @@ class OpenHands {
     selectedRepository?: GitRepository,
     initialUserMsg?: string,
     imageUrls?: string[],
-    replayJson?: string,
+    replayJson?: string
   ): Promise<Conversation | undefined> {
-    try {
-      const body = {
-        selected_repository: selectedRepository,
-        selected_branch: undefined,
-        initial_user_msg: initialUserMsg,
-        image_urls: imageUrls,
-        replay_json: replayJson,
-      }
+    const body = {
+      selected_repository: selectedRepository,
+      selected_branch: undefined,
+      initial_user_msg: initialUserMsg,
+      image_urls: imageUrls,
+      replay_json: replayJson,
+    };
 
-      const { data } = await openHands.post<Conversation>(
-        "/api/conversations",
-        body,
-      )
+    const { data } = await openHands.post<Conversation>(
+      "/api/conversations",
+      body
+    );
 
-      return data
-    } catch (error: any) {
-      displayErrorToast(
-        "response" in error
-          ? (error.response?.data?.detail ?? "Error create new conversation")
-          : "Error create new conversation",
-      )
-    }
+    return data;
+    // try {
+    //   const body = {
+    //     selected_repository: selectedRepository,
+    //     selected_branch: undefined,
+    //     initial_user_msg: initialUserMsg,
+    //     image_urls: imageUrls,
+    //     replay_json: replayJson,
+    //   };
+
+    //   const { data } = await openHands.post<Conversation>(
+    //     "/api/conversations",
+    //     body,
+    //   );
+
+    //   return data;
+    // } catch (error: any) {
+    //   displayErrorToast(
+    //     "response" in error
+    //       ? (error.response?.data?.detail ?? "Error create new conversation")
+    //       : "Error create new conversation",
+    //   );
+    // }
   }
 
   static async getConversation(
     conversationId: string,
-    isPublic?: boolean | null,
+    isPublic?: boolean | null
   ): Promise<Conversation | null> {
-    console.log("isPublic", isPublic)
+    console.log("isPublic", isPublic);
     const path = isPublic
       ? `/api/options/use-cases/conversations/${conversationId}`
-      : `/api/conversations/${conversationId}`
-    const { data } = await openHands.get<Conversation | null>(path)
+      : `/api/conversations/${conversationId}`;
+    const { data } = await openHands.get<Conversation | null>(path);
 
     return data
   }
@@ -226,7 +239,7 @@ class OpenHands {
    * @param settings - the settings to save
    */
   static async saveSettings(
-    settings: Partial<PostApiSettings>,
+    settings: Partial<PostApiSettings>
   ): Promise<boolean> {
     const data = await openHands.post("/api/settings", settings)
     return data.status === 200
@@ -245,23 +258,23 @@ class OpenHands {
       "/api/billing/create-checkout-session",
       {
         amount,
-      },
-    )
-    return data.redirect_url
+      }
+    );
+    return data.redirect_url;
   }
 
   static async createBillingSessionResponse(): Promise<string> {
     const { data } = await openHands.post(
-      "/api/billing/create-customer-setup-session",
-    )
-    return data.redirect_url
+      "/api/billing/create-customer-setup-session"
+    );
+    return data.redirect_url;
   }
 
   static async getBalance(): Promise<string> {
     const { data } = await openHands.get<{ credits: string }>(
-      "/api/billing/credits",
-    )
-    return data.credits
+      "/api/billing/credits"
+    );
+    return data.credits;
   }
 
   static async getGitUser(): Promise<GitUser> {
@@ -283,7 +296,7 @@ class OpenHands {
 
   static async searchGitRepositories(
     query: string,
-    per_page = 5,
+    per_page = 5
   ): Promise<GitRepository[]> {
     const response = await openHands.get<GitRepository[]>(
       "/api/user/search/repositories",
@@ -292,19 +305,19 @@ class OpenHands {
           query,
           per_page,
         },
-      },
-    )
+      }
+    );
 
     return response.data
   }
 
   static async getTrajectory(
-    conversationId: string,
+    conversationId: string
   ): Promise<GetTrajectoryResponse> {
     const { data } = await openHands.get<GetTrajectoryResponse>(
-      `/api/conversations/${conversationId}/trajectory`,
-    )
-    return data
+      `/api/conversations/${conversationId}/trajectory`
+    );
+    return data;
   }
 
   static async logout(appMode: GetConfigResponse["APP_MODE"]): Promise<void> {
@@ -321,16 +334,16 @@ class OpenHands {
    */
   static async verifySignature(
     signature: string,
-    publicAddress: string,
+    publicAddress: string
   ): Promise<VerifySignatureResponse> {
     const { data } = await openHands.post<VerifySignatureResponse>(
       "/api/auth/signup",
       {
         signature,
         publicAddress,
-      },
-    )
-    return data
+      }
+    );
+    return data;
   }
 
   /**
@@ -341,9 +354,9 @@ class OpenHands {
   static async getAddressByNetwork(network: string | number): Promise<string> {
     try {
       const { data } = await openHands.get<string>(
-        `/api/auth/address-by-network/${network}`,
-      )
-      return data
+        `/api/auth/address-by-network/${network}`
+      );
+      return data;
     } catch (error) {
       console.error("getAddressByNetwork", error)
       return ""

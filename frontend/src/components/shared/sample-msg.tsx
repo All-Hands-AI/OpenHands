@@ -2,8 +2,6 @@ import { useSaveSettings } from "#/hooks/mutation/use-save-settings"
 import { useSettings } from "#/hooks/query/use-settings"
 import StarIcon from "#/icons/star-icons.svg?react"
 import { useCasesMocks } from "#/mocks/use-cases.mock"
-import { displayErrorToast } from "#/utils/custom-toast-handlers"
-import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message"
 import {
   useConversationActions,
   useGetConversationState,

@@ -107,7 +107,9 @@ const ThesisComputer = () => {
             [ObservationType.EDIT]: "Editor",
             [ObservationType.BROWSE]: "Browser",
             [ObservationType.BROWSER_MCP]: "Browser",
+            [ObservationType.MCP]: "MCP",
           }
+          const function_name = computerItem?.tool_call_metadata?.function_name
 
           if (index !== currentStep) return null
           return (
@@ -120,7 +122,9 @@ const ThesisComputer = () => {
               </p>
               <div className="mt-1 max-w-fit rounded-full bg-[#E6E6E6] px-3 py-1 truncate mr-[100px]">
                 <span className="text-[12px] font-medium text-[#0F0F0F]">
-                  {computerItem?.message}
+                  {observation === ObservationType.MCP
+                    ? `MCP call ${function_name}`
+                    : computerItem?.message}
                 </span>
               </div>
             </div>
@@ -154,6 +158,10 @@ const ThesisComputer = () => {
 
               if (computerItem.observation === ObservationType.RUN_IPYTHON) {
                 return <CodeView fileContent={computerItem.extras.code} />
+              }
+
+              if (computerItem.observation === ObservationType.MCP) {
+                return <span className="text-sm">{computerItem?.message}</span>
               }
 
               return <div />
