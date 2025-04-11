@@ -78,6 +78,6 @@ Start OpenHands using `make run`.
 Once OpenHands is running, you'll need to set the following in the OpenHands UI through the Settings:
 1. Enable `Advanced` options.
 2. Set the following:
-- `Custom Model` to `hosted_vllm/<served-model-name>` (e.g. `hosted_vllm/openhands-lm-32b-v0.1`)
+- `Custom Model` to `openai/<served-model-name>` (e.g. `openai/openhands-lm-32b-v0.1`)
 - `Base URL` to `http://host.docker.internal:8000/v1/`
 - `API key` to the same string you set when serving the model (e.g. `mykey`)
