@@ -896,3 +896,22 @@ def test_completion_with_log_completions(mock_litellm_completion, default_config
         files = list(Path(temp_dir).iterdir())
         # Expect a log to be generated
         assert len(files) == 1
+
+
+@patch('httpx.get')
+def test_llm_base_url_auto_protocol_patch(mock_get):
+    """Test that LLM base_url without protocol is automatically fixed with 'http://'."""
+    config = LLMConfig(
+        model='litellm_proxy/test-model',
+        api_key='fake-key',
+        base_url='  api.example.com  ',
+    )
+
+    mock_get.return_value.status_code = 200
+    mock_get.return_value.json.return_value = {'model': 'fake'}
+
+    llm = LLM(config=config)
+    llm.init_model_info()
+
+    called_url = mock_get.call_args[0][0]
+    assert called_url.startswith('http://') or called_url.startswith('https://')
