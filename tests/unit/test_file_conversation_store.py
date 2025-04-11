@@ -28,7 +28,9 @@ async def test_load_int_user_id():
     store = FileConversationStore(
         InMemoryFileStore(
             {
-                get_conversation_metadata_filename('some-conversation-id'): json.dumps(
+                get_conversation_metadata_filename(
+                    'some-conversation-id', '67890'
+                ): json.dumps(
                     {
                         'conversation_id': 'some-conversation-id',
                         'github_user_id': 12345,
@@ -39,7 +41,8 @@ async def test_load_int_user_id():
                     }
                 )
             }
-        )
+        ),
+        user_id='67890',
     )
     found = await store.get_metadata('some-conversation-id')
     assert found.github_user_id == '12345'
@@ -60,7 +63,7 @@ async def test_search_basic():
     store = FileConversationStore(
         InMemoryFileStore(
             {
-                get_conversation_metadata_filename('conv1'): json.dumps(
+                get_conversation_metadata_filename('conv1', '123'): json.dumps(
                     {
                         'conversation_id': 'conv1',
                         'github_user_id': '123',
@@ -70,7 +73,7 @@ async def test_search_basic():
                         'created_at': '2025-01-16T19:51:04Z',
                     }
                 ),
-                get_conversation_metadata_filename('conv2'): json.dumps(
+                get_conversation_metadata_filename('conv2', '123'): json.dumps(
                     {
                         'conversation_id': 'conv2',
                         'github_user_id': '123',
@@ -80,7 +83,7 @@ async def test_search_basic():
                         'created_at': '2025-01-17T19:51:04Z',
                     }
                 ),
-                get_conversation_metadata_filename('conv3'): json.dumps(
+                get_conversation_metadata_filename('conv3', '123'): json.dumps(
                     {
                         'conversation_id': 'conv3',
                         'github_user_id': '123',
@@ -91,7 +94,8 @@ async def test_search_basic():
                     }
                 ),
             }
-        )
+        ),
+        user_id='123',
     )
 
     result = await store.search()
@@ -109,7 +113,7 @@ async def test_search_pagination():
     store = FileConversationStore(
         InMemoryFileStore(
             {
-                get_conversation_metadata_filename(f'conv{i}'): json.dumps(
+                get_conversation_metadata_filename(f'conv{i}', '123'): json.dumps(
                     {
                         'conversation_id': f'conv{i}',
                         'github_user_id': '123',
@@ -121,7 +125,8 @@ async def test_search_pagination():
                 )
                 for i in range(1, 6)
             }
-        )
+        ),
+        user_id='123',
     )
 
     # Test with limit of 2
@@ -151,7 +156,7 @@ async def test_search_with_invalid_conversation():
     store = FileConversationStore(
         InMemoryFileStore(
             {
-                get_conversation_metadata_filename('conv1'): json.dumps(
+                get_conversation_metadata_filename('conv1', '123'): json.dumps(
                     {
                         'conversation_id': 'conv1',
                         'github_user_id': '123',
@@ -162,10 +167,11 @@ async def test_search_with_invalid_conversation():
                     }
                 ),
                 get_conversation_metadata_filename(
-                    'conv2'
+                    'conv2', '123'
                 ): 'invalid json',  # Invalid conversation
             }
-        )
+        ),
+        user_id='123',
     )
 
     result = await store.search()
@@ -180,7 +186,7 @@ async def test_get_all_metadata():
     store = FileConversationStore(
         InMemoryFileStore(
             {
-                get_conversation_metadata_filename('conv1'): json.dumps(
+                get_conversation_metadata_filename('conv1', '123'): json.dumps(
                     {
                         'conversation_id': 'conv1',
                         'github_user_id': '123',
@@ -190,7 +196,7 @@ async def test_get_all_metadata():
                         'created_at': '2025-01-16T19:51:04Z',
                     }
                 ),
-                get_conversation_metadata_filename('conv2'): json.dumps(
+                get_conversation_metadata_filename('conv2', '123'): json.dumps(
                     {
                         'conversation_id': 'conv2',
                         'github_user_id': '123',
@@ -201,7 +207,8 @@ async def test_get_all_metadata():
                     }
                 ),
             }
-        )
+        ),
+        user_id='123',
     )
 
     results = await store.get_all_metadata(['conv1', 'conv2'])

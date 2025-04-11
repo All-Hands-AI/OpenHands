@@ -1,48 +1,48 @@
-import posthog from "posthog-js";
-import React, { useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { useParams } from "react-router";
-import { FaPowerOff } from "react-icons/fa6";
-import { useDisclosure } from "@heroui/react";
-import { useTranslation } from "react-i18next";
-import { FaFileInvoice } from "react-icons/fa";
+import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
+import Security from "#/components/shared/modals/security/security";
 import {
   useWsClient,
   WsClientProviderStatus,
 } from "#/context/ws-client-provider";
+import { useGetTrajectory } from "#/hooks/mutation/use-get-trajectory";
+import { useListFiles } from "#/hooks/query/use-list-files";
+import { useSettings } from "#/hooks/query/use-settings";
 import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom";
+import { I18nKey } from "#/i18n/declaration";
 import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
 import { createChatMessage } from "#/services/chat-service";
 import { addUserMessage } from "#/state/chat-slice";
+import { setCurrentPathViewed } from "#/state/file-state-slice";
 import { RootState } from "#/store";
 import { AgentState } from "#/types/agent-state";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
+import { displayErrorToast } from "#/utils/custom-toast-handlers";
+import { downloadTrajectory } from "#/utils/download-trajectory";
+import { useDisclosure } from "@heroui/react";
+import posthog from "posthog-js";
+import React, { useEffect } from "react";
+import { useTranslation } from "react-i18next";
+import { FaFileInvoice } from "react-icons/fa";
+import { FaPowerOff } from "react-icons/fa6";
+import { useDispatch, useSelector } from "react-redux";
+import { useParams } from "react-router";
+import { Controls } from "../controls/controls";
 import { FeedbackModal } from "../feedback/feedback-modal";
 import { TrajectoryActions } from "../trajectory/trajectory-actions";
 import { ActionSuggestions } from "./action-suggestions";
 import { ChatSuggestions } from "./chat-suggestions";
 import { InteractiveChatBox } from "./interactive-chat-box";
 import { Messages } from "./messages";
-import { TypingIndicator } from "./typing-indicator";
-import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
-import { useGetTrajectory } from "#/hooks/mutation/use-get-trajectory";
-import { useListFiles } from "#/hooks/query/use-list-files";
-import { useSettings } from "#/hooks/query/use-settings";
-import { I18nKey } from "#/i18n/declaration";
-import { setCurrentPathViewed } from "#/state/file-state-slice";
-import { displayErrorToast } from "#/utils/custom-toast-handlers";
-import { downloadTrajectory } from "#/utils/download-trajectory";
-import { Controls } from "../controls/controls";
 import { SkeletonMessage } from "./skeleton-message";
-import Security from "#/components/shared/modals/security/security";
+import { TypingIndicator } from "./typing-indicator";
 
 function getEntryPoint(
   hasRepository: boolean | null,
   hasReplayJson: boolean | null,
 ): string {
-  if (hasRepository) return "github";
-  if (hasReplayJson) return "replay";
-  return "direct";
+  if (hasRepository) return "github"
+  if (hasReplayJson) return "replay"
+  return "direct"
 }
 
 interface DisconnectButtonProps {
@@ -88,7 +88,7 @@ export function ChatInterface() {
   const { send, isLoadingMessages, disconnect, status } = useWsClient();
   const { t } = useTranslation();
   const { scrollDomToBottom, onChatBodyScroll, hitBottom } =
-    useScrollToBottom(scrollRef);
+    useScrollToBottom(scrollRef)
 
   const { messages } = useSelector((state: RootState) => state.chat);
   const { curAgentState } = useSelector((state: RootState) => state.agent);
@@ -110,14 +110,14 @@ export function ChatInterface() {
 
   const [feedbackPolarity, setFeedbackPolarity] = React.useState<
     "positive" | "negative"
-  >("positive");
-  const [feedbackModalIsOpen, setFeedbackModalIsOpen] = React.useState(false);
-  const [messageToSend, setMessageToSend] = React.useState<string | null>(null);
+  >("positive")
+  const [feedbackModalIsOpen, setFeedbackModalIsOpen] = React.useState(false)
+  const [messageToSend, setMessageToSend] = React.useState<string | null>(null)
   const { selectedRepository, replayJson } = useSelector(
     (state: RootState) => state.initialQuery,
-  );
-  const params = useParams();
-  const { mutate: getTrajectory } = useGetTrajectory();
+  )
+  const params = useParams()
+  const { mutate: getTrajectory } = useGetTrajectory()
 
   const handleSendMessage = async (content: string, msgFiles: File[]) => {
     if (messages.length === 0) {
@@ -128,44 +128,44 @@ export function ChatInterface() {
         ),
         query_character_length: content.length,
         replay_json_size: replayJson?.length,
-      });
+      })
     } else {
       posthog.capture("user_message_sent", {
         session_message_count: messages.length,
         current_message_length: content.length,
-      });
+      })
     }
     const promises = msgFiles.map((file) => convertImageToBase64(file));
     const imageUrls = await Promise.all(promises);
 
-    const timestamp = new Date().toISOString();
-    const pending = true;
-    dispatch(addUserMessage({ content, imageUrls, timestamp, pending }));
-    send(createChatMessage(content, imageUrls, timestamp));
-    setMessageToSend(null);
-  };
+    const timestamp = new Date().toISOString()
+    const pending = true
+    dispatch(addUserMessage({ content, imageUrls, timestamp, pending }))
+    send(createChatMessage(content, imageUrls, timestamp))
+    setMessageToSend(null)
+  }
 
   const handleStop = () => {
-    posthog.capture("stop_button_clicked");
-    send(generateAgentStateChangeEvent(AgentState.STOPPED));
-  };
+    posthog.capture("stop_button_clicked")
+    send(generateAgentStateChangeEvent(AgentState.STOPPED))
+  }
 
   const handleDisconnect = () => {
-    posthog.capture("websocket_disconnect_clicked");
-    disconnect();
-  };
+    posthog.capture("websocket_disconnect_clicked")
+    disconnect()
+  }
 
   const onClickShareFeedbackActionButton = async (
     polarity: "positive" | "negative",
   ) => {
-    setFeedbackModalIsOpen(true);
-    setFeedbackPolarity(polarity);
-  };
+    setFeedbackModalIsOpen(true)
+    setFeedbackPolarity(polarity)
+  }
 
   const onClickExportTrajectoryButton = () => {
     if (!params.conversationId) {
-      displayErrorToast(t(I18nKey.CONVERSATION$DOWNLOAD_ERROR));
-      return;
+      displayErrorToast(t(I18nKey.CONVERSATION$DOWNLOAD_ERROR))
+      return
     }
 
     getTrajectory(params.conversationId, {
@@ -173,17 +173,17 @@ export function ChatInterface() {
         await downloadTrajectory(
           params.conversationId ?? t(I18nKey.CONVERSATION$UNKNOWN),
           data.trajectory,
-        );
+        )
       },
       onError: () => {
-        displayErrorToast(t(I18nKey.CONVERSATION$DOWNLOAD_ERROR));
+        displayErrorToast(t(I18nKey.CONVERSATION$DOWNLOAD_ERROR))
       },
-    });
-  };
+    })
+  }
 
   const isWaitingForUserInput =
     curAgentState === AgentState.AWAITING_USER_INPUT ||
-    curAgentState === AgentState.FINISHED;
+    curAgentState === AgentState.FINISHED
 
   return (
     <div className="mx-auto flex h-full max-w-[800px] flex-col justify-between">
@@ -297,5 +297,5 @@ export function ChatInterface() {
         polarity={feedbackPolarity}
       />
     </div>
-  );
+  )
 }

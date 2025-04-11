@@ -1,7 +1,7 @@
 import os
 from collections import deque
 
-import openhands.agenthub.task_solving_agent.function_calling as task_solving_function_calling
+import openhands.agenthub.future_trading_agent.function_calling as task_solving_function_calling
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
@@ -22,7 +22,7 @@ from openhands.runtime.plugins import (
 from openhands.utils.prompt import PromptManager
 
 
-class TaskSolvingAgent(Agent):
+class FutureTradingAgent(Agent):
     VERSION = '2.2'
 
     sandbox_plugins: list[PluginRequirement] = [

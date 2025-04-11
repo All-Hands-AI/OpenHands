@@ -1,15 +1,15 @@
-import { Autocomplete, AutocompleteItem } from "@heroui/react"
-import { ReactNode, useEffect, useState } from "react"
-import { OptionalTag } from "./optional-tag"
-import { twMerge } from "tailwind-merge"
-import { useSettings } from "#/hooks/query/use-settings"
 import { useSaveSettings } from "#/hooks/mutation/use-save-settings"
+import { useSettings } from "#/hooks/query/use-settings"
 import {
   displayErrorToast,
   displaySuccessToast,
 } from "#/utils/custom-toast-handlers"
 import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message"
 import { useGetConversationState } from "#/zutand-stores/coin/selector"
+import { Autocomplete, AutocompleteItem } from "@heroui/react"
+import { ReactNode, useEffect, useState } from "react"
+import { twMerge } from "tailwind-merge"
+import { OptionalTag } from "./optional-tag"
 
 interface AgentSettingsDropdownInputProps {
   testId: string
@@ -102,7 +102,7 @@ export function AgentSettingsDropdownInput({
             inputWrapper:
               "bg-white dark:bg-[#1E1E1F] border border-neutral-1000 dark:border-[#232521] w-full rounded-lg px-2 py-1 placeholder:italic",
             input:
-              "font-x w-fit max-w-[110px] text-[14px] font-medium text-neutral-100 dark:text-[#EFEFEF]",
+              "font-x text-[14px] font-medium text-neutral-100 dark:text-[#EFEFEF]",
           },
         }}
         listboxProps={{

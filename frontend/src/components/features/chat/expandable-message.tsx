@@ -1,9 +1,3 @@
-import { useEffect, useState } from "react";
-import { Trans, useTranslation } from "react-i18next";
-import Markdown from "react-markdown";
-import { Link } from "react-router";
-import remarkGfm from "remark-gfm";
-import { PayloadAction } from "@reduxjs/toolkit";
 import { useConfig } from "#/hooks/query/use-config";
 import { I18nKey } from "#/i18n/declaration";
 import ArrowDown from "#/icons/angle-down-solid.svg?react";
@@ -11,15 +5,22 @@ import ArrowUp from "#/icons/angle-up-solid.svg?react";
 import CheckCircle from "#/icons/check-circle-solid.svg?react";
 import XCircle from "#/icons/x-circle-solid.svg?react";
 import { HANDLED_ACTIONS } from "#/state/chat-slice";
+import { OpenHandsAction } from "#/types/core/actions";
 import { OpenHandsEventType } from "#/types/core/base";
+import { OpenHandsObservation } from "#/types/core/observations";
 import { cn } from "#/utils/utils";
+import { PayloadAction } from "@reduxjs/toolkit";
+import { useEffect, useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
+import Markdown from "react-markdown";
+import { Link } from "react-router";
+import remarkGfm from "remark-gfm";
 import { code } from "../markdown/code";
 import { ol, ul } from "../markdown/list";
 import MessageActionDisplay from "./message-action-display";
-import { OpenHandsObservation } from "#/types/core/observations";
-import { OpenHandsAction } from "#/types/core/actions";
-import { PathComponent } from "./path-component";
 import { MonoComponent } from "./mono-component";
+import { PathComponent } from "./path-component";
+
 
 const trimText = (text: string, maxLength: number): string => {
   if (!text) return "";
@@ -132,7 +133,7 @@ export function ExpandableMessage({
           </Link>
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -245,5 +246,5 @@ export function ExpandableMessage({
         )}
       </div>
     </div>
-  );
+  )
 }

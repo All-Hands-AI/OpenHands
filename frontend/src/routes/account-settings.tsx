@@ -18,8 +18,6 @@ import {
   displaySuccessToast,
 } from "#/utils/custom-toast-handlers"
 import { handleCaptureConsent } from "#/utils/handle-capture-consent"
-import { hasAdvancedSettingsSet } from "#/utils/has-advanced-settings-set"
-import { isCustomModel } from "#/utils/is-custom-model"
 import { organizeModelsAndProviders } from "#/utils/organize-models-and-providers"
 import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message"
 import { Modal, ModalBody, ModalContent } from "@heroui/react"
@@ -60,20 +58,6 @@ function AccountSettings() {
 
   const determineWhetherToToggleAdvancedSettings = () => {
     return true
-    if (shouldHandleSpecialSaasCase) return true
-    if (isSuccess) {
-      return (
-        isCustomModel(resources.models, settings?.LLM_MODEL || "") ||
-        hasAdvancedSettingsSet({
-          ...settings,
-          PROVIDER_TOKENS: settings?.PROVIDER_TOKENS || {
-            github: "",
-            gitlab: "",
-          },
-        } as any)
-      )
-    }
-    return false
   }
 
   // TODO FIXME: unclear whether this is a good conflict
@@ -365,11 +349,11 @@ function AccountSettings() {
               </div> */}
             </section>
           )}
-          <div className="my-7 h-[1px] w-full bg-neutral-1000 dark:bg-[#1B1C1A]" />
+          {/* <div className="my-7 h-[1px] w-full bg-neutral-1000 dark:bg-[#1B1C1A]" /> */}
           <section className="flex flex-col gap-6">
-            <h3 className="text-[18px] font-semibold text-neutral-100 dark:text-[#EFEFEF]">
+            {/* <h3 className="text-[18px] font-semibold text-neutral-100 dark:text-[#EFEFEF]">
               Additional Settings
-            </h3>
+            </h3> */}
             <SettingsDropdownInput
               testId="language-input"
               name="language-input"

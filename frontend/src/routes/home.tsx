@@ -1,4 +1,3 @@
-import { AgentSettingsDropdownInput } from "#/components/features/settings/agent-setting-dropdown-input"
 import { BrandButton } from "#/components/features/settings/brand-button"
 import { HeroHeading } from "#/components/shared/hero-heading"
 import { SampleMsg } from "#/components/shared/sample-msg"
@@ -62,7 +61,7 @@ function Home() {
           )}
         </div>
         <div className="w-full">
-          {settings && (
+          {/* {settings && (
             <AgentSettingsDropdownInput
               testId="agent-input-show"
               name="agent-input"
@@ -78,7 +77,7 @@ function Home() {
               showOptionalTag={false}
               className="flex-row"
             />
-          )}
+          )} */}
         </div>
         <div className="mt-8 w-full text-left text-[16px] font-semibold text-neutral-700 dark:text-tertiary-light">
           Try our use case

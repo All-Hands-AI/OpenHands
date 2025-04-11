@@ -1,32 +1,31 @@
+import { GitRepository, GitUser } from "#/types/git";
+import { ApiSettings, PostApiSettings } from "#/types/settings";
+import { openHands } from "./open-hands-axios";
 import {
-  Feedback,
-  FeedbackResponse,
-  GitHubAccessTokenResponse,
-  GetConfigResponse,
-  GetVSCodeUrlResponse,
   AuthenticateResponse,
   Conversation,
-  ResultSet,
+  Feedback,
+  FeedbackResponse,
+  GetConfigResponse,
   GetTrajectoryResponse,
   GetUseCasesItemResponse,
+  GetVSCodeUrlResponse,
+  GitHubAccessTokenResponse,
+  ResultSet,
 } from "./open-hands.types";
-import { openHands } from "./open-hands-axios";
-import { ApiSettings, PostApiSettings } from "#/types/settings";
-import { displayErrorToast } from "#/utils/custom-toast-handlers";
 
 interface VerifySignatureResponse {
   user: {
-    id: string;
-    publicAddress: string;
-  };
-  token: string;
+    id: string
+    publicAddress: string
+  }
+  token: string
 }
 
 interface VerifySignatureRequest {
-  signature: string;
-  message: string;
+  signature: string
+  message: string
 }
-import { GitUser, GitRepository } from "#/types/git";
 
 class OpenHands {
   /**
@@ -34,8 +33,8 @@ class OpenHands {
    * @returns List of models available
    */
   static async getModels(): Promise<string[]> {
-    const { data } = await openHands.get<string[]>("/api/options/models");
-    return data;
+    const { data } = await openHands.get<string[]>("/api/options/models")
+    return data
   }
 
   /**
@@ -43,8 +42,10 @@ class OpenHands {
    * @returns List of agents available
    */
   static async getAgents(): Promise<string[]> {
-    const { data } = await openHands.get<string[]>("/api/options/agents");
-    return data;
+    const { data } = await openHands.get<string[]>("/api/options/agents")
+    const BLACK_LIST = ["BrowsingAgent", "DummyAgent", "VisualBrowsingAgent"]
+
+    return (data || []).filter((x) => !BLACK_LIST.includes(x))
   }
 
   /**
@@ -81,9 +82,9 @@ class OpenHands {
     conversationId: string,
     feedback: Feedback
   ): Promise<FeedbackResponse> {
-    const url = `/api/conversations/${conversationId}/submit-feedback`;
-    const { data } = await openHands.post<FeedbackResponse>(url, feedback);
-    return data;
+    const url = `/api/conversations/${conversationId}/submit-feedback`
+    const { data } = await openHands.post<FeedbackResponse>(url, feedback)
+    return data
   }
 
   /**
@@ -93,11 +94,11 @@ class OpenHands {
   static async authenticate(
     appMode: GetConfigResponse["APP_MODE"]
   ): Promise<boolean> {
-    if (appMode === "oss") return true;
+    if (appMode === "oss") return true
 
     const response =
-      await openHands.post<AuthenticateResponse>("/api/authenticate");
-    return response.status === 200;
+      await openHands.post<AuthenticateResponse>("/api/authenticate")
+    return response.status === 200
   }
 
   /**
@@ -105,11 +106,11 @@ class OpenHands {
    * @returns Blob of the workspace zip
    */
   static async getWorkspaceZip(conversationId: string): Promise<Blob> {
-    const url = `/api/conversations/${conversationId}/zip-directory`;
+    const url = `/api/conversations/${conversationId}/zip-directory`
     const response = await openHands.get(url, {
       responseType: "blob",
-    });
-    return response.data;
+    })
+    return response.data
   }
 
   /**
@@ -158,14 +159,14 @@ class OpenHands {
   }
 
   static async deleteUserConversation(conversationId: string): Promise<void> {
-    await openHands.delete(`/api/conversations/${conversationId}`);
+    await openHands.delete(`/api/conversations/${conversationId}`)
   }
 
   static async updateUserConversation(
     conversationId: string,
     conversation: Partial<Omit<Conversation, "conversation_id">>
   ): Promise<void> {
-    await openHands.patch(`/api/conversations/${conversationId}`, conversation);
+    await openHands.patch(`/api/conversations/${conversationId}`, conversation)
   }
 
   static async createConversation(
@@ -222,15 +223,15 @@ class OpenHands {
       : `/api/conversations/${conversationId}`;
     const { data } = await openHands.get<Conversation | null>(path);
 
-    return data;
+    return data
   }
 
   /**
    * Get the settings from the server or use the default settings if not found
    */
   static async getSettings(): Promise<ApiSettings> {
-    const { data } = await openHands.get<ApiSettings>("/api/settings");
-    return data;
+    const { data } = await openHands.get<ApiSettings>("/api/settings")
+    return data
   }
 
   /**
@@ -240,16 +241,16 @@ class OpenHands {
   static async saveSettings(
     settings: Partial<PostApiSettings>
   ): Promise<boolean> {
-    const data = await openHands.post("/api/settings", settings);
-    return data.status === 200;
+    const data = await openHands.post("/api/settings", settings)
+    return data.status === 200
   }
 
   /**
    * Reset user settings in server
    */
   static async resetSettings(): Promise<boolean> {
-    const response = await openHands.post("/api/reset-settings");
-    return response.status === 200;
+    const response = await openHands.post("/api/reset-settings")
+    return response.status === 200
   }
 
   static async createCheckoutSession(amount: number): Promise<string> {
@@ -277,9 +278,9 @@ class OpenHands {
   }
 
   static async getGitUser(): Promise<GitUser> {
-    const response = await openHands.get<GitUser>("/api/user/info");
+    const response = await openHands.get<GitUser>("/api/user/info")
 
-    const { data } = response;
+    const { data } = response
 
     const user: GitUser = {
       id: data.id,
@@ -288,9 +289,9 @@ class OpenHands {
       company: data.company,
       name: data.name,
       email: data.email,
-    };
+    }
 
-    return user;
+    return user
   }
 
   static async searchGitRepositories(
@@ -307,7 +308,7 @@ class OpenHands {
       }
     );
 
-    return response.data;
+    return response.data
   }
 
   static async getTrajectory(
@@ -321,8 +322,8 @@ class OpenHands {
 
   static async logout(appMode: GetConfigResponse["APP_MODE"]): Promise<void> {
     const endpoint =
-      appMode === "saas" ? "/api/logout" : "/api/unset-settings-tokens";
-    await openHands.post(endpoint);
+      appMode === "saas" ? "/api/logout" : "/api/unset-settings-tokens"
+    await openHands.post(endpoint)
   }
 
   /**
@@ -357,10 +358,10 @@ class OpenHands {
       );
       return data;
     } catch (error) {
-      console.error("getAddressByNetwork", error);
-      return "";
+      console.error("getAddressByNetwork", error)
+      return ""
     }
   }
 }
 
-export default OpenHands;
+export default OpenHands

@@ -250,6 +250,18 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
                 if remaining and '/' not in remaining:
                     return await call_next(request)
 
+        for pattern in self.public_path_patterns:
+            if request.url.path.startswith(pattern):
+                remaining = request.url.path[len(pattern) :]
+                if remaining and '/' not in remaining:
+                    return await call_next(request)
+
+        for pattern in self.public_path_patterns:
+            if request.url.path.startswith(pattern):
+                remaining = request.url.path[len(pattern) :]
+                if remaining and '/' not in remaining:
+                    return await call_next(request)
+
         auth_header = request.headers.get('Authorization')
         if not auth_header or not auth_header.startswith('Bearer '):
             return JSONResponse(

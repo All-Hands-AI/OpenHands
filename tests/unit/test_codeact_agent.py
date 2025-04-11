@@ -1,7 +1,7 @@
 from unittest.mock import Mock
 
 import pytest
-from litellm import ChatCompletionMessageToolCall
+from litellm import ChatCompletionMessageToolCall, ModelResponse
 
 from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
 from openhands.agenthub.codeact_agent.function_calling import (
@@ -32,7 +32,6 @@ from openhands.events.observation.commands import (
 )
 from openhands.events.tool import ToolCallMetadata
 from openhands.llm.llm import LLM
-from litellm import ModelResponse
 
 
 @pytest.fixture
@@ -224,15 +223,12 @@ def test_response_to_actions_invalid_tool():
                     'tool_calls': [
                         {
                             'id': 'tool_call_10',
-                            'function': {
-                                'name': 'invalid_tool',
-                                'arguments': '{}'
-                            }
+                            'function': {'name': 'invalid_tool', 'arguments': '{}'},
                         }
-                    ]
+                    ],
                 }
             }
-        ]
+        ],
     )
 
     with pytest.raises(FunctionCallNotExistsError):

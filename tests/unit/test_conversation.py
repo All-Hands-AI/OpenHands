@@ -24,15 +24,16 @@ from openhands.storage.memory import InMemoryFileStore
 @contextmanager
 def _patch_store():
     file_store = InMemoryFileStore()
+    user_id = '12345'
     file_store.write(
-        get_conversation_metadata_filename('some_conversation_id'),
+        get_conversation_metadata_filename('some_conversation_id', user_id),
         json.dumps(
             {
                 'title': 'Some Conversation',
                 'selected_repository': 'foobar',
                 'conversation_id': 'some_conversation_id',
                 'github_user_id': '12345',
-                'user_id': '12345',
+                'user_id': user_id,
                 'created_at': '2025-01-01T00:00:00+00:00',
                 'last_updated_at': '2025-01-01T00:01:00+00:00',
             }
@@ -73,7 +74,7 @@ async def test_search_conversations():
                     mock_datetime.fromisoformat = datetime.fromisoformat
                     mock_datetime.timezone = timezone
                     result_set = await search_conversations(
-                        MagicMock(state=MagicMock(github_token=''))
+                        MagicMock(state=MagicMock(github_token='', user_id='12345'))
                     )
                     expected = ConversationInfoResultSet(
                         results=[
@@ -98,7 +99,8 @@ async def test_search_conversations():
 async def test_get_conversation():
     with _patch_store():
         conversation = await get_conversation(
-            'some_conversation_id', MagicMock(state=MagicMock(github_token=''))
+            'some_conversation_id',
+            MagicMock(state=MagicMock(github_token='', user_id='12345')),
         )
         expected = ConversationInfo(
             conversation_id='some_conversation_id',
@@ -116,7 +118,8 @@ async def test_get_missing_conversation():
     with _patch_store():
         assert (
             await get_conversation(
-                'no_such_conversation', MagicMock(state=MagicMock(github_token=''))
+                'no_such_conversation',
+                MagicMock(state=MagicMock(github_token='', user_id='12345')),
             )
             is None
         )
@@ -126,12 +129,13 @@ async def test_get_missing_conversation():
 async def test_update_conversation():
     with _patch_store():
         await update_conversation(
-            MagicMock(state=MagicMock(github_token='')),
+            MagicMock(state=MagicMock(github_token='', user_id='12345')),
             'some_conversation_id',
             'New Title',
         )
         conversation = await get_conversation(
-            'some_conversation_id', MagicMock(state=MagicMock(github_token=''))
+            'some_conversation_id',
+            MagicMock(state=MagicMock(github_token='', user_id='12345')),
         )
         expected = ConversationInfo(
             conversation_id='some_conversation_id',

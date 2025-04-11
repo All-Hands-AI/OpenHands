@@ -4,13 +4,14 @@ This is similar to the functionality of `CodeActResponseParser`.
 """
 
 import json
+from typing import Optional
 
 from litellm import (
     ChatCompletionToolParam,
     ModelResponse,
 )
 
-from openhands.agenthub.codeact_agent.tools import (
+from openhands.agenthub.future_trading_agent.tools import (
     BrowserTool,
     FinishTool,
     IPythonTool,
@@ -21,7 +22,6 @@ from openhands.agenthub.codeact_agent.tools import (
     create_str_replace_editor_tool,
 )
 from openhands.core.exceptions import (
-    FunctionCallNotExistsError,
     FunctionCallValidationError,
 )
 from openhands.core.logger import openhands_logger as logger
@@ -42,7 +42,6 @@ from openhands.events.action.mcp import McpAction
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.tool import ToolCallMetadata
 from openhands.llm import LLM
-from openhands.mcp import MCPClientTool
 
 
 def combine_thought(action: Action, thought: str) -> Action:
@@ -57,7 +56,7 @@ def combine_thought(action: Action, thought: str) -> Action:
 
 def response_to_actions(
     response: ModelResponse,
-    sid: str | None = None,
+    sid: Optional[str],
     workspace_mount_path_in_sandbox_store_in_session: bool = True,
 ) -> list[Action]:
     actions: list[Action] = []
@@ -77,7 +76,7 @@ def response_to_actions(
         # Process each tool call to OpenHands action
         for i, tool_call in enumerate(assistant_msg.tool_calls):
             action: Action
-            logger.info(f'Tool call in function_calling.py: {tool_call.function.name}')
+            logger.warning(f'Tool call in function_calling.py: {tool_call}')
             try:
                 arguments = json.loads(tool_call.function.arguments)
             except json.decoder.JSONDecodeError as e:
@@ -160,7 +159,7 @@ def response_to_actions(
                     raise FunctionCallValidationError(
                         f'Missing required argument "path" in tool call {tool_call.function.name}'
                     )
-                path: str = arguments['path']
+                path = arguments['path']
                 if (
                     sid is not None
                     and sid not in path
@@ -215,21 +214,20 @@ def response_to_actions(
                 action = BrowseURLAction(url=arguments['url'])
 
             # ================================================
-            # McpAction (MCP)
+            # Other cases -> McpTool (MCP)
             # ================================================
-            elif tool_call.function.name.endswith(MCPClientTool.postfix()):
-                original_action_name = tool_call.function.name.replace(
-                    MCPClientTool.postfix(), ''
-                )
-                logger.info(f'Original action name: {original_action_name}')
-                action = McpAction(
-                    name=original_action_name,
-                    arguments=tool_call.function.arguments,
-                )
             else:
-                raise FunctionCallNotExistsError(
-                    f'Tool {tool_call.function.name} is not registered. (arguments: {arguments}). Please check the tool name and retry with an existing tool.'
+                # if 'mcp_actions' not in arguments:
+                #     raise FunctionCallNotExistsError(
+                #     f'Tool {tool_call.function.name} is not registered. (arguments: {arguments}). Please check the tool name and retry with an existing tool.'
+                # )
+                action = McpAction(
+                    name=tool_call.function.name,
+                    arguments=tool_call.function.arguments,
+                    sid=sid,
                 )
+                action.set_hard_timeout(120)
+                logger.warning(f'MCP action in function_calling.py: {action}')
 
             # We only add thought to the first action
             if i == 0:
@@ -249,13 +247,6 @@ def response_to_actions(
                 wait_for_response=True,
             )
         )
-
-    # Add response id to actions
-    # This will ensure we can match both actions without tool calls (e.g. MessageAction)
-    # and actions with tool calls (e.g. CmdRunAction, IPythonRunCellAction, etc.)
-    # with the token usage data
-    for action in actions:
-        action.response_id = response.id
 
     assert len(actions) >= 1
     return actions
