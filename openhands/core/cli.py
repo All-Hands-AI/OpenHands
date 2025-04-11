@@ -247,16 +247,20 @@ def display_event(event: Event, config: AppConfig) -> None:
 def display_help():
     # Version header and introduction
     print_formatted_text(
-        HTML(f'\n<grey>OpenHands CLI v{__version__}</grey>\n'
-             '<gold>OpenHands CLI lets you interact with the OpenHands agent from the command line.</gold>\n')
+        HTML(
+            f'\n<grey>OpenHands CLI v{__version__}</grey>\n'
+            '<gold>OpenHands CLI lets you interact with the OpenHands agent from the command line.</gold>\n'
+        )
     )
 
     # Usage examples
     print_formatted_text('Things that you can try:')
     print_formatted_text(
-        HTML('• Ask questions about the codebase <grey>> How does main.py work?</grey>\n'
-             '• Edit files or add new features <grey>> Add a new function to ...</grey>\n'
-             '• Find and fix issues <grey>> Fix the type error in ...</grey>\n')
+        HTML(
+            '• Ask questions about the codebase <grey>> How does main.py work?</grey>\n'
+            '• Edit files or add new features <grey>> Add a new function to ...</grey>\n'
+            '• Find and fix issues <grey>> Fix the type error in ...</grey>\n'
+        )
     )
 
     # Tips section
@@ -275,10 +279,12 @@ def display_help():
     for command, description in COMMANDS.items():
         commands_html += f'<gold><b>{command}</b></gold> - <grey>{description}</grey>\n'
     print_formatted_text(HTML(commands_html))
-    
+
     # Footer
     print_formatted_text(
-        HTML('<grey>Learn more at: https://docs.all-hands.dev/modules/usage/getting-started</grey>\n')
+        HTML(
+            '<grey>Learn more at: https://docs.all-hands.dev/modules/usage/getting-started</grey>\n'
+        )
     )
 
 
@@ -328,6 +334,55 @@ def display_initialization_animation(text, is_loaded: asyncio.Event):
 
     sys.stdout.write('\r' + ' ' * (len(text) + 10) + '\r')
     sys.stdout.flush()
+
+
+def display_usage_metrics(usage_metrics: UsageMetrics):
+    cost_str = f'${usage_metrics.total_cost:.6f}'
+    input_tokens_str = f'{usage_metrics.total_input_tokens:,}'
+    cache_read_str = f'{usage_metrics.total_cache_read:,}'
+    cache_write_str = f'{usage_metrics.total_cache_write:,}'
+    output_tokens_str = f'{usage_metrics.total_output_tokens:,}'
+    total_tokens_str = (
+        f'{usage_metrics.total_input_tokens + usage_metrics.total_output_tokens:,}'
+    )
+
+    labels_and_values = [
+        ('   Total Cost (USD):', cost_str),
+        ('   Total Input Tokens:', input_tokens_str),
+        ('      Cache Hits:', cache_read_str),
+        ('      Cache Writes:', cache_write_str),
+        ('   Total Output Tokens:', output_tokens_str),
+        ('   Total Tokens:', total_tokens_str),
+    ]
+
+    # Calculate max widths for alignment
+    max_label_width = max(len(label) for label, _ in labels_and_values)
+    max_value_width = max(len(value) for _, value in labels_and_values)
+
+    # Construct the summary text with aligned columns
+    summary_lines = [
+        f'{label:<{max_label_width}} {value:>{max_value_width}}'
+        for label, value in labels_and_values
+    ]
+    summary_text = '\n'.join(summary_lines)
+
+    container = Frame(
+        TextArea(
+            text=summary_text,
+            read_only=True,
+            style=COLOR_GREY,
+            wrap_lines=True,
+        ),
+        title='Session Summary',
+        style=f'fg:{COLOR_GREY}',
+    )
+    print_container(container)
+    print_formatted_text('')  # Add a newline after the frame
+
+
+def display_shutdown_message(usage_metrics: UsageMetrics, session_id: str):
+    display_usage_metrics(usage_metrics)
+    print_formatted_text(HTML(f'<grey>Closed session {session_id}</grey>\n'))
 
 
 async def read_prompt_input(multiline=False):
@@ -482,81 +537,35 @@ def cli_confirm(question: str = 'Are you sure?', choices: Optional[List[str]] = 
 
 
 def update_usage_metrics(event: Event, usage_metrics: UsageMetrics):
-    """Updates the UsageMetrics object with data from an event's llm_metrics."""
-    if hasattr(event, 'llm_metrics'):
-        llm_metrics: Metrics | None = getattr(event, 'llm_metrics', None)
-        if llm_metrics:
-            # Safely get accumulated_cost
-            cost = getattr(llm_metrics, 'accumulated_cost', 0)
-            # Ensure cost is a number before adding
-            usage_metrics.total_cost += cost if isinstance(cost, float) else 0
+    if not hasattr(event, 'llm_metrics'):
+        return
 
-            # Safely get token usage details object/dict
-            token_usage = getattr(llm_metrics, 'accumulated_token_usage', None)
-            if token_usage:
-                # Assume object access using getattr, providing defaults
-                prompt_tokens = getattr(token_usage, 'prompt_tokens', 0)
-                completion_tokens = getattr(token_usage, 'completion_tokens', 0)
-                cache_read = getattr(token_usage, 'cache_read_tokens', 0)
-                cache_write = getattr(token_usage, 'cache_write_tokens', 0)
+    llm_metrics: Metrics | None = getattr(event, 'llm_metrics', None)
+    if not llm_metrics:
+        return
 
-                # Ensure tokens are numbers before adding
-                usage_metrics.total_input_tokens += (
-                    prompt_tokens if isinstance(prompt_tokens, int) else 0
-                )
-                usage_metrics.total_output_tokens += (
-                    completion_tokens if isinstance(completion_tokens, int) else 0
-                )
-                usage_metrics.total_cache_read += (
-                    cache_read if isinstance(cache_read, int) else 0
-                )
-                usage_metrics.total_cache_write += (
-                    cache_write if isinstance(cache_write, int) else 0
-                )
+    cost = getattr(llm_metrics, 'accumulated_cost', 0)
+    usage_metrics.total_cost += cost if isinstance(cost, float) else 0
 
+    token_usage = getattr(llm_metrics, 'accumulated_token_usage', None)
+    if not token_usage:
+        return
 
-def shutdown(usage_metrics: UsageMetrics, session_id: str):
-    cost_str = f'${usage_metrics.total_cost:.6f}'
-    input_tokens_str = f'{usage_metrics.total_input_tokens:,}'
-    cache_read_str = f'{usage_metrics.total_cache_read:,}'
-    cache_write_str = f'{usage_metrics.total_cache_write:,}'
-    output_tokens_str = f'{usage_metrics.total_output_tokens:,}'
-    total_tokens_str = (
-        f'{usage_metrics.total_input_tokens + usage_metrics.total_output_tokens:,}'
+    prompt_tokens = getattr(token_usage, 'prompt_tokens', 0)
+    completion_tokens = getattr(token_usage, 'completion_tokens', 0)
+    cache_read = getattr(token_usage, 'cache_read_tokens', 0)
+    cache_write = getattr(token_usage, 'cache_write_tokens', 0)
+
+    usage_metrics.total_input_tokens += (
+        prompt_tokens if isinstance(prompt_tokens, int) else 0
     )
-
-    labels_and_values = [
-        ('   Total Cost (USD):', cost_str),
-        ('   Total Input Tokens:', input_tokens_str),
-        ('      Cache Hits:', cache_read_str),
-        ('      Cache Writes:', cache_write_str),
-        ('   Total Output Tokens:', output_tokens_str),
-        ('   Total Tokens:', total_tokens_str),
-    ]
-
-    # Calculate max widths for alignment
-    max_label_width = max(len(label) for label, _ in labels_and_values)
-    max_value_width = max(len(value) for _, value in labels_and_values)
-
-    # Construct the summary text with aligned columns
-    summary_lines = [
-        f'{label:<{max_label_width}} {value:>{max_value_width}}'
-        for label, value in labels_and_values
-    ]
-    summary_text = '\n'.join(summary_lines)
-
-    container = Frame(
-        TextArea(
-            text=summary_text,
-            read_only=True,
-            style=COLOR_GREY,
-            wrap_lines=True,
-        ),
-        title='Session Summary',
-        style=f'fg:{COLOR_GREY}',
+    usage_metrics.total_output_tokens += (
+        completion_tokens if isinstance(completion_tokens, int) else 0
     )
-    print_container(container)
-    print_formatted_text(HTML(f'\n<grey>Closed session {session_id}</grey>\n'))
+    usage_metrics.total_cache_read += cache_read if isinstance(cache_read, int) else 0
+    usage_metrics.total_cache_write += (
+        cache_write if isinstance(cache_write, int) else 0
+    )
 
 
 def manage_openhands_file(folder_path=None, add_to_trusted=False):
@@ -684,7 +693,7 @@ async def main(loop: asyncio.AbstractEventLoop):
                 event_stream.add_event(
                     ChangeAgentStateAction(AgentState.STOPPED), EventSource.ENVIRONMENT
                 )
-                shutdown(usage_metrics, sid)
+                display_shutdown_message(usage_metrics, sid)
                 return
             elif next_message == '/help':
                 display_help()
