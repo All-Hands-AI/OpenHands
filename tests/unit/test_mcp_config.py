@@ -1,63 +1,51 @@
 import pytest
 
-from openhands.core.config.mcp_config import MCPConfig, MCPSSEConfig
+from openhands.core.config.mcp_config import MCPConfig
 
 
-def test_valid_sse_config():
-    """Test a valid SSE configuration."""
-    config = MCPSSEConfig(mcp_servers=['http://server1:8080', 'http://server2:8080'])
-    config.validate_servers()  # Should not raise any exception
-
-
-def test_empty_sse_config():
-    """Test SSE configuration with empty servers list."""
-    config = MCPSSEConfig(mcp_servers=[])
-    config.validate_servers()
-
-
-def test_invalid_sse_url():
-    """Test SSE configuration with invalid URL format."""
-    config = MCPSSEConfig(mcp_servers=['not_a_url'])
-    with pytest.raises(ValueError) as exc_info:
-        config.validate_servers()
-    assert 'Invalid URL' in str(exc_info.value)
-
-
-def test_duplicate_sse_urls():
-    """Test SSE configuration with duplicate server URLs."""
-    config = MCPSSEConfig(mcp_servers=['http://server1:8080', 'http://server1:8080'])
-    with pytest.raises(ValueError) as exc_info:
-        config.validate_servers()
-    assert 'Duplicate MCP server URLs are not allowed' in str(exc_info.value)
-
-
-def test_from_toml_section_valid():
-    """Test creating config from valid TOML section."""
+def test_valid_mcp_config():
+    """Test a valid MCP configuration."""
     data = {
-        'mcp_servers': ['http://server1:8080'],
+        'oraichain': {
+            'url': 'http://server1:8080'
+        }
     }
     result = MCPConfig.from_toml_section(data)
-    assert 'mcp' in result
-    assert result['mcp'].sse.mcp_servers == ['http://server1:8080']
+    assert 'oraichain' in result
+    assert result['oraichain'].url == 'http://server1:8080'
+    assert result['oraichain'].name == 'oraichain'
 
 
-def test_from_toml_section_invalid_sse():
-    """Test creating config from TOML section with invalid SSE URL."""
+def test_empty_mcp_config():
+    """Test MCP configuration with no servers."""
+    data = {}
+    result = MCPConfig.from_toml_section(data)
+    assert len(result) == 0
+
+
+def test_invalid_mcp_config():
+    """Test MCP configuration with missing required fields."""
     data = {
-        'mcp_servers': ['not_a_url'],
+        'oraichain': {
+            # No URL or commands provided
+        }
     }
     with pytest.raises(ValueError) as exc_info:
         MCPConfig.from_toml_section(data)
-    assert 'Invalid URL' in str(exc_info.value)
+    assert 'MCP oraichain is configured as stdio but no commands are provided' in str(exc_info.value)
 
 
-def test_complex_urls():
-    """Test SSE configuration with complex URLs."""
-    config = MCPSSEConfig(
-        mcp_servers=[
-            'https://user:pass@server1:8080/path?query=1',
-            'wss://server2:8443/ws',
-            'http://subdomain.example.com:9090',
-        ]
-    )
-    config.validate_servers()  # Should not raise any exception
+def test_multiple_mcp_configs():
+    """Test multiple MCP configurations."""
+    data = {
+        'oraichain': {
+            'url': 'http://server1:8080'
+        },
+        'anthropic': {
+            'url': 'http://server2:8080'
+        }
+    }
+    result = MCPConfig.from_toml_section(data)
+    assert len(result) == 2
+    assert result['oraichain'].url == 'http://server1:8080'
+    assert result['anthropic'].url == 'http://server2:8080'
