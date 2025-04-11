@@ -1089,6 +1089,16 @@ async def test_action_metrics_copy():
 
     metrics.token_usages = [usage1, usage2]
 
+    # Set the accumulated token usage
+    metrics._accumulated_token_usage = TokenUsage(
+        model='test-model',
+        prompt_tokens=15,  # 5 + 10
+        completion_tokens=30,  # 10 + 20
+        cache_read_tokens=7,  # 2 + 5
+        cache_write_tokens=7,  # 2 + 5
+        response_id='accumulated',
+    )
+
     # Add a cost instance - should not be included in action metrics
     # This will increase accumulated_cost by 0.02
     metrics.add_cost(0.02)
@@ -1131,13 +1141,20 @@ async def test_action_metrics_copy():
         last_action.llm_metrics.accumulated_cost == 0.07
     )  # 0.05 initial + 0.02 from add_cost
 
-    # Should include the last token usage
-    assert len(last_action.llm_metrics.token_usages) == 1
-    assert last_action.llm_metrics.token_usages[0].prompt_tokens == 10
-    assert last_action.llm_metrics.token_usages[0].completion_tokens == 20
-    assert last_action.llm_metrics.token_usages[0].cache_read_tokens == 5
-    assert last_action.llm_metrics.token_usages[0].cache_write_tokens == 5
-    assert last_action.llm_metrics.token_usages[0].response_id == 'test-id-2'
+    # Should not include individual token usages anymore (after the fix)
+    assert len(last_action.llm_metrics.token_usages) == 0
+
+    # But should include the accumulated token usage
+    assert last_action.llm_metrics.accumulated_token_usage.prompt_tokens == 15  # 5 + 10
+    assert (
+        last_action.llm_metrics.accumulated_token_usage.completion_tokens == 30
+    )  # 10 + 20
+    assert (
+        last_action.llm_metrics.accumulated_token_usage.cache_read_tokens == 7
+    )  # 2 + 5
+    assert (
+        last_action.llm_metrics.accumulated_token_usage.cache_write_tokens == 7
+    )  # 2 + 5
 
     # Should not include the cost history
     assert len(last_action.llm_metrics.costs) == 0
