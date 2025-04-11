@@ -66,7 +66,6 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization.event import event_to_trajectory, truncate_content
 from openhands.llm.llm import LLM
-from openhands.llm.metrics import Metrics
 
 # note: RESUME is only available on web GUI
 TRAFFIC_CONTROL_REMINDER = (
@@ -1126,8 +1125,6 @@ class AgentController:
             return True
 
         return self._stuck_detector.is_stuck(self.headless_mode)
-
-
 
     def __repr__(self):
         return (
