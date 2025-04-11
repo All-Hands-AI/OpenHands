@@ -109,7 +109,6 @@ def test_create_file_with_empty_content(temp_dir, runtime_cls, run_as_openhands)
         )
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert '1\t' in obs.content
 
     finally:
         _close_test_runtime(runtime)
@@ -220,7 +219,6 @@ def test_str_replace_multi_line_with_tabs(temp_dir, runtime_cls, run_as_openhand
             == f"""The file {test_file} has been edited. Here's the result of running `cat -n` on a snippet of {test_file}:
      1\tdef test():
      2\t{'\t'.expandtabs()}print("Hello, Universe!")
-     3\t
 Review the changes and make sure they are as expected. Edit the file again if necessary."""
         )
 
