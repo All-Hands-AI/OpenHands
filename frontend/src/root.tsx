@@ -1,7 +1,7 @@
-import "@rainbow-me/rainbowkit/styles.css";
+import "@rainbow-me/rainbowkit/styles.css"
 
-import React from "react";
-import { Toaster } from "react-hot-toast";
+import React from "react"
+import { Toaster } from "react-hot-toast"
 import {
   Links,
   Meta,
@@ -9,19 +9,19 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
-} from "react-router";
-import "./index.css";
-import "./tailwind.css";
+} from "react-router"
+import "./index.css"
+import "./tailwind.css"
 
 import {
   darkTheme,
   lightTheme,
   RainbowKitProvider,
-} from "@rainbow-me/rainbowkit";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { WagmiProvider } from "wagmi";
-import { queryClient, wagmiConfig } from "./config/config";
-import { useTheme } from "./components/layout/theme-provider";
+} from "@rainbow-me/rainbowkit"
+import { QueryClientProvider } from "@tanstack/react-query"
+import { WagmiProvider } from "wagmi"
+import { queryClient, wagmiConfig } from "./config/config"
+import { useTheme } from "./components/layout/theme-provider"
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -39,16 +39,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Toaster />
       </body>
     </html>
-  );
+  )
 }
 
 export const meta: MetaFunction = () => [
-  { title: "Thesis Capsule" },
+  { title: "Thesis" },
   { name: "description", content: "From curiosity to clarity!" },
-];
+]
 
 export default function App() {
-  const { theme } = useTheme();
+  const { theme } = useTheme()
 
   return (
     <WagmiProvider config={wagmiConfig}>
@@ -57,7 +57,7 @@ export default function App() {
         locale="en-US"
         modalSize="compact"
         appInfo={{
-          appName: "Thesis Capsule",
+          appName: "Thesis",
           learnMoreUrl: "https://thesis.io",
         }}
       >
@@ -66,5 +66,5 @@ export default function App() {
         </QueryClientProvider>
       </RainbowKitProvider>
     </WagmiProvider>
-  );
+  )
 }

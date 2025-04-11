@@ -25,7 +25,7 @@ app = APIRouter(prefix='/api/auth')
 
 # TODO: implement get nonce for signing message later
 # Message that users will sign with their wallet
-AUTH_MESSAGE = 'Sign to confirm account access to Thesis Capsule'
+AUTH_MESSAGE = 'Sign to confirm account access to Thesis'
 
 # JWT settings
 JWT_SECRET = os.getenv('JWT_SECRET')

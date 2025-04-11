@@ -12,8 +12,10 @@ export default {
         inter: ["Inter", "sans-serif"],
       },
       colors: {
-        primary: "#FF6100", // nice yellow
-        logo: "#E4775D", // color for logos and icons
+        // primary: "#FF6100", // nice yellow
+        // logo: "#E4775D", // color for logos and icons
+        primary: "#0070ff", // nice yellow
+        logo: "#0070ff88", // color for logos and icons
         base: "#13141D", // dark background also used for tooltips
         "base-secondary": "#1A1C28", // lighter background
         danger: "#E76A5E",
