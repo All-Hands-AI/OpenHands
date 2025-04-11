@@ -374,6 +374,77 @@ describe("ConversationCard", () => {
     // Verify if metrics modal is displayed by checking for the modal content
     expect(screen.getByTestId("metrics-modal")).toBeInTheDocument();
   });
+  
+  it("should show display tools button only when showOptions is true", async () => {
+    const user = userEvent.setup();
+    const { rerender } = renderWithProviders(
+      <ConversationCard
+        onDelete={onDelete}
+        onChangeTitle={onChangeTitle}
+        isActive
+        title="Conversation 1"
+        selectedRepository={null}
+        lastUpdatedAt="2021-10-01T12:00:00Z"
+      />,
+    );
+
+    const ellipsisButton = screen.getByTestId("ellipsis-button");
+    await user.click(ellipsisButton);
+
+    // Wait for context menu to appear
+    const menu = await screen.findByTestId("context-menu");
+    expect(
+      within(menu).queryByTestId("display-tools-button"),
+    ).not.toBeInTheDocument();
+
+    // Close menu
+    await user.click(ellipsisButton);
+
+    rerender(
+      <ConversationCard
+        onDelete={onDelete}
+        onChangeTitle={onChangeTitle}
+        showOptions
+        isActive
+        title="Conversation 1"
+        selectedRepository={null}
+        lastUpdatedAt="2021-10-01T12:00:00Z"
+      />,
+    );
+
+    // Open menu again
+    await user.click(ellipsisButton);
+
+    // Wait for context menu to appear and check for display tools button
+    const newMenu = await screen.findByTestId("context-menu");
+    within(newMenu).getByTestId("display-tools-button");
+  });
+
+  it("should show tools modal when clicking the display tools button", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <ConversationCard
+        onDelete={onDelete}
+        isActive
+        onChangeTitle={onChangeTitle}
+        title="Conversation 1"
+        selectedRepository={null}
+        lastUpdatedAt="2021-10-01T12:00:00Z"
+        showOptions
+      />,
+    );
+
+    const ellipsisButton = screen.getByTestId("ellipsis-button");
+    await user.click(ellipsisButton);
+
+    const menu = screen.getByTestId("context-menu");
+    const displayToolsButton = within(menu).getByTestId("display-tools-button");
+
+    await user.click(displayToolsButton);
+
+    // Verify if tools modal is displayed by checking for the modal content
+    expect(screen.getByTestId("tools-modal")).toBeInTheDocument();
+  });
 
   it("should not display the edit or delete options if the handler is not provided", async () => {
     const user = userEvent.setup();

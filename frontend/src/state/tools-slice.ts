@@ -1,7 +1,24 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
+export interface ToolParameter {
+  type: string;
+  description?: string;
+  required?: boolean;
+  enum?: string[];
+  items?: {
+    type: string;
+  };
+  properties?: Record<string, ToolParameter>;
+}
+
+export interface Tool {
+  name: string;
+  description?: string;
+  parameters?: Record<string, ToolParameter>;
+}
+
 interface ToolsState {
-  tools: any[] | null;
+  tools: Tool[] | null;
 }
 
 const initialState: ToolsState = {
