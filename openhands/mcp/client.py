@@ -48,11 +48,13 @@ class MCPClient(BaseModel):
                     ClientSession(*streams)
                 )
                 await self._initialize_and_list_tools()
-            
+
             # Apply timeout to the entire connection process
             await asyncio.wait_for(connect_with_timeout(), timeout=timeout)
         except asyncio.TimeoutError:
-            logger.error(f'Connection to {server_url} timed out after {timeout} seconds')
+            logger.error(
+                f'Connection to {server_url} timed out after {timeout} seconds'
+            )
             await self.disconnect()  # Clean up resources
             raise  # Re-raise the TimeoutError
         except Exception as e:

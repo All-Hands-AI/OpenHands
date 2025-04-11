@@ -3,12 +3,14 @@ from urllib.parse import urlparse
 
 from pydantic import BaseModel, Field, ValidationError
 
+
 class MCPConfig(BaseModel):
     """Configuration for MCP (Message Control Protocol) settings.
 
     Attributes:
         mcp_servers: List of MCP SSE (Server-Sent Events) server URLs.
     """
+
     mcp_servers: List[str] = Field(default_factory=list)
 
     model_config = {'extra': 'forbid'}
@@ -27,7 +29,6 @@ class MCPConfig(BaseModel):
                     raise ValueError(f'Invalid URL format: {url}')
             except Exception as e:
                 raise ValueError(f'Invalid URL {url}: {str(e)}')
-
 
     @classmethod
     def from_toml_section(cls, data: dict) -> dict[str, 'MCPConfig']:
