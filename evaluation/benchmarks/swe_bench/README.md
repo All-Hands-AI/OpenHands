@@ -2,7 +2,9 @@
 
 This folder contains the evaluation harness that we built on top of the original [SWE-Bench benchmark](https://www.swebench.com/) ([paper](https://arxiv.org/abs/2310.06770)).
 
-**UPDATE (2/18/2025): We now support running SWE-Gym using the same evaluation harness here. For more details, checkout [this README](./SWE-Gym.md).
+**UPDATE (03/27/2025): We now support SWE-Bench multimodal evaluation! Simply use "princeton-nlp/SWE-bench_Multimodal" as the dataset name in the `run_infer.sh` script to evaluate on multimodal instances.**
+
+**UPDATE (2/18/2025): We now support running SWE-Gym using the same evaluation harness here. For more details, checkout [this README](./SWE-Gym.md).**
 
 **UPDATE (7/1/2024): We now support the official SWE-Bench dockerized evaluation as announced [here](https://github.com/princeton-nlp/SWE-bench/blob/main/docs/20240627_docker/README.md).**
 
@@ -17,6 +19,20 @@ The evaluation consists of three steps:
 Please follow instruction [here](../../README.md#setup) to setup your local development environment and LLM.
 
 ## Run Inference (Rollout) on SWE-Bench Instances: Generate Patch from Problem Statement
+
+> [!NOTE]
+> **Iterative Evaluation Protocol**
+>
+> We have an iterative approach for more stable and reproducible results:
+> - For each instance, we attempt to generate a solution up to 3 times
+> - Each attempt continues until either:
+>   1. The agent successfully produces a patch with `AgentFinishAction`, or
+>   2. The attempt reaches the maximum iteration limit
+> - If an attempt fails, we retry with a fresh attempt (up to the 3-attempt maximum)
+> - If your LLM config has temperature=0, we will automatically use temperature=0.1 for the 2nd and 3rd attempts
+>
+> To enable this iterative protocol, set `export ITERATIVE_EVAL_MODE=true`
+
 
 ### Running Locally with Docker
 
@@ -45,10 +61,10 @@ to `CodeActAgent`.
 default, the script evaluates the entire SWE-bench_Lite test set (300 issues). Note:
 in order to use `eval_limit`, you must also set `agent`.
 - `max_iter`, e.g. `20`, is the maximum number of iterations for the agent to run. By
-default, it is set to 30.
+default, it is set to 60.
 - `num_workers`, e.g. `3`, is the number of parallel workers to run the evaluation. By
 default, it is set to 1.
-- `dataset`, a huggingface dataset name. e.g. `princeton-nlp/SWE-bench`, `princeton-nlp/SWE-bench_Lite`, or `princeton-nlp/SWE-bench_Verified`, specifies which dataset to evaluate on.
+- `dataset`, a huggingface dataset name. e.g. `princeton-nlp/SWE-bench`, `princeton-nlp/SWE-bench_Lite`, `princeton-nlp/SWE-bench_Verified`, or `princeton-nlp/SWE-bench_Multimodal`, specifies which dataset to evaluate on.
 - `dataset_split`, split for the huggingface dataset. e.g., `test`, `dev`. Default to `test`.
 
 > [!CAUTION]
@@ -66,6 +82,13 @@ then your command would be:
 
 ```bash
 ./evaluation/benchmarks/swe_bench/scripts/run_infer.sh llm.eval_gpt4_1106_preview HEAD CodeActAgent 10
+```
+
+For multimodal evaluation, you can use:
+
+```bash
+# Example for running multimodal SWE-Bench evaluation
+./evaluation/benchmarks/swe_bench/scripts/run_infer.sh llm.eval_gpt4_vision HEAD CodeActAgent 10 100 1 princeton-nlp/SWE-bench_Multimodal test
 ```
 
 ### Running in parallel with RemoteRuntime
@@ -133,7 +156,7 @@ For example, to evaluate a specific instance with a custom dataset and split:
 ./evaluation/benchmarks/swe_bench/scripts/eval_infer.sh $YOUR_OUTPUT_JSONL instance_123 princeton-nlp/SWE-bench test
 ```
 
-> You can also pass in a JSONL with [SWE-Bench format](https://github.com/princeton-nlp/SWE-bench/blob/main/tutorials/evaluation.md#-creating-predictions) to `./evaluation/benchmarks/swe_bench/scripts/eval_infer.sh`, where each line is a JSON of `{"model_patch": "XXX", "model_name_or_path": "YYY", "instance_id": "ZZZ"}`.
+> You can also pass in a JSONL with [SWE-Bench format](https://github.com/SWE-bench/SWE-bench/blob/main/assets/evaluation.md#-creating-predictions) to `./evaluation/benchmarks/swe_bench/scripts/eval_infer.sh`, where each line is a JSON of `{"model_patch": "XXX", "model_name_or_path": "YYY", "instance_id": "ZZZ"}`.
 
 The final results will be saved to `evaluation/evaluation_outputs/outputs/swe_bench/CodeActAgent/gpt-4-1106-preview_maxiter_50_N_v1.0/` with the following files/directory:
 

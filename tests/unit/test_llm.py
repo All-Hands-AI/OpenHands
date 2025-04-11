@@ -10,10 +10,10 @@ from litellm.exceptions import (
 )
 
 from openhands.core.config import LLMConfig
-from openhands.core.exceptions import OperationCancelled
+from openhands.core.exceptions import LLMNoResponseError, OperationCancelled
 from openhands.core.message import Message, TextContent
 from openhands.llm.llm import LLM
-from openhands.llm.metrics import Metrics
+from openhands.llm.metrics import Metrics, TokenUsage
 
 
 @pytest.fixture(autouse=True)
@@ -43,6 +43,84 @@ def test_llm_init_with_default_config(default_config):
     assert llm.config.api_key.get_secret_value() == 'test_key'
     assert isinstance(llm.metrics, Metrics)
     assert llm.metrics.model_name == 'gpt-4o'
+
+
+def test_token_usage_add():
+    """Test that TokenUsage instances can be added together."""
+    # Create two TokenUsage instances
+    usage1 = TokenUsage(
+        model='model1',
+        prompt_tokens=10,
+        completion_tokens=5,
+        cache_read_tokens=3,
+        cache_write_tokens=2,
+        response_id='response-1',
+    )
+
+    usage2 = TokenUsage(
+        model='model2',
+        prompt_tokens=8,
+        completion_tokens=6,
+        cache_read_tokens=2,
+        cache_write_tokens=4,
+        response_id='response-2',
+    )
+
+    # Add them together
+    combined = usage1 + usage2
+
+    # Verify the result
+    assert combined.model == 'model1'  # Should keep the model from the first instance
+    assert combined.prompt_tokens == 18  # 10 + 8
+    assert combined.completion_tokens == 11  # 5 + 6
+    assert combined.cache_read_tokens == 5  # 3 + 2
+    assert combined.cache_write_tokens == 6  # 2 + 4
+    assert (
+        combined.response_id == 'response-1'
+    )  # Should keep the response_id from the first instance
+
+
+def test_metrics_merge_accumulated_token_usage():
+    """Test that accumulated token usage is properly merged between two Metrics instances."""
+    # Create two Metrics instances
+    metrics1 = Metrics(model_name='model1')
+    metrics2 = Metrics(model_name='model2')
+
+    # Add token usage to each
+    metrics1.add_token_usage(10, 5, 3, 2, 'response-1')
+    metrics2.add_token_usage(8, 6, 2, 4, 'response-2')
+
+    # Verify initial accumulated token usage
+    metrics1_data = metrics1.get()
+    accumulated1 = metrics1_data['accumulated_token_usage']
+    assert accumulated1['prompt_tokens'] == 10
+    assert accumulated1['completion_tokens'] == 5
+    assert accumulated1['cache_read_tokens'] == 3
+    assert accumulated1['cache_write_tokens'] == 2
+
+    metrics2_data = metrics2.get()
+    accumulated2 = metrics2_data['accumulated_token_usage']
+    assert accumulated2['prompt_tokens'] == 8
+    assert accumulated2['completion_tokens'] == 6
+    assert accumulated2['cache_read_tokens'] == 2
+    assert accumulated2['cache_write_tokens'] == 4
+
+    # Merge metrics2 into metrics1
+    metrics1.merge(metrics2)
+
+    # Verify merged accumulated token usage
+    merged_data = metrics1.get()
+    merged_accumulated = merged_data['accumulated_token_usage']
+    assert merged_accumulated['prompt_tokens'] == 18  # 10 + 8
+    assert merged_accumulated['completion_tokens'] == 11  # 5 + 6
+    assert merged_accumulated['cache_read_tokens'] == 5  # 3 + 2
+    assert merged_accumulated['cache_write_tokens'] == 6  # 2 + 4
+
+    # Verify individual token usage records are maintained
+    token_usages = merged_data['token_usages']
+    assert len(token_usages) == 2
+    assert token_usages[0]['response_id'] == 'response-1'
+    assert token_usages[1]['response_id'] == 'response-2'
 
 
 @patch('openhands.llm.llm.litellm.get_model_info')
@@ -140,11 +218,21 @@ def test_llm_reset():
     initial_metrics = copy.deepcopy(llm.metrics)
     initial_metrics.add_cost(1.0)
     initial_metrics.add_response_latency(0.5, 'test-id')
+    initial_metrics.add_token_usage(10, 5, 3, 2, 'test-id')
     llm.reset()
     assert llm.metrics.accumulated_cost != initial_metrics.accumulated_cost
     assert llm.metrics.costs != initial_metrics.costs
     assert llm.metrics.response_latencies != initial_metrics.response_latencies
+    assert llm.metrics.token_usages != initial_metrics.token_usages
     assert isinstance(llm.metrics, Metrics)
+
+    # Check that accumulated token usage is reset
+    metrics_data = llm.metrics.get()
+    accumulated_usage = metrics_data['accumulated_token_usage']
+    assert accumulated_usage['prompt_tokens'] == 0
+    assert accumulated_usage['completion_tokens'] == 0
+    assert accumulated_usage['cache_read_tokens'] == 0
+    assert accumulated_usage['cache_write_tokens'] == 0
 
 
 @patch('openhands.llm.llm.litellm.get_model_info')
@@ -295,6 +383,223 @@ def test_completion_keyboard_interrupt_handler(mock_litellm_completion, default_
     assert _should_exit
 
     _should_exit = False
+
+
+@patch('openhands.llm.llm.litellm_completion')
+def test_completion_retry_with_llm_no_response_error_zero_temp(
+    mock_litellm_completion, default_config
+):
+    """
+    Test that the retry decorator properly handles LLMNoResponseError by:
+    1. First call to llm_completion uses temperature=0 and throws LLMNoResponseError
+    2. Second call should have temperature=0.2 and return a successful response
+    """
+
+    # Define a side effect function that checks the temperature parameter
+    # and returns different responses based on it
+    def side_effect(*args, **kwargs):
+        temperature = kwargs.get('temperature', 0)
+
+        # First call with temperature=0 should raise LLMNoResponseError
+        if temperature == 0:
+            raise LLMNoResponseError('LLM did not return a response')
+
+        else:
+            return {
+                'choices': [
+                    {'message': {'content': f'Response with temperature={temperature}'}}
+                ]
+            }
+
+    mock_litellm_completion.side_effect = side_effect
+
+    # Create LLM instance and make a completion call
+    llm = LLM(config=default_config)
+    response = llm.completion(
+        messages=[{'role': 'user', 'content': 'Hello!'}],
+        stream=False,
+        temperature=0,  # Initial temperature is 0
+    )
+
+    # Verify the response after retry
+    assert (
+        response['choices'][0]['message']['content'] == 'Response with temperature=1.0'
+    )
+
+    # Verify that litellm_completion was called twice
+    assert mock_litellm_completion.call_count == 2
+
+    # Check the temperature in the first call (should be 0)
+    first_call_kwargs = mock_litellm_completion.call_args_list[0][1]
+    assert first_call_kwargs.get('temperature') == 0
+
+    # Check the temperature in the second call (should be 1.0)
+    second_call_kwargs = mock_litellm_completion.call_args_list[1][1]
+    assert second_call_kwargs.get('temperature') == 1.0
+
+
+@patch('openhands.llm.llm.litellm_completion')
+def test_completion_retry_with_llm_no_response_error_nonzero_temp(
+    mock_litellm_completion, default_config
+):
+    """
+    Test that the retry decorator works for LLMNoResponseError when initial temperature is non-zero,
+    and keeps the original temperature on retry.
+
+    This test verifies that when LLMNoResponseError is raised with a non-zero temperature:
+    1. The retry mechanism is triggered
+    2. The temperature remains unchanged (not set to 0.2)
+    3. After all retries are exhausted, the exception is propagated
+    """
+    # Define a side effect function that always raises LLMNoResponseError
+    mock_litellm_completion.side_effect = LLMNoResponseError(
+        'LLM did not return a response'
+    )
+
+    # Create LLM instance and make a completion call with non-zero temperature
+    llm = LLM(config=default_config)
+
+    # We expect this to raise an exception after all retries are exhausted
+    with pytest.raises(LLMNoResponseError):
+        llm.completion(
+            messages=[{'role': 'user', 'content': 'Hello!'}],
+            stream=False,
+            temperature=0.7,  # Initial temperature is non-zero
+        )
+
+    # Verify that litellm_completion was called multiple times (retries happened)
+    # The default_config has num_retries=2, so it should be called 2 times
+    assert mock_litellm_completion.call_count == 2
+
+    # Check the temperature in the first call (should be 0.7)
+    first_call_kwargs = mock_litellm_completion.call_args_list[0][1]
+    assert first_call_kwargs.get('temperature') == 0.7
+
+    # Check the temperature in the second call (should remain 0.7, not changed to 0.2)
+    second_call_kwargs = mock_litellm_completion.call_args_list[1][1]
+    assert second_call_kwargs.get('temperature') == 0.7
+
+
+@patch('openhands.llm.llm.litellm_completion')
+def test_completion_retry_with_llm_no_response_error_nonzero_temp_successful_retry(
+    mock_litellm_completion, default_config
+):
+    """
+    Test that the retry decorator works for LLMNoResponseError with non-zero temperature
+    and successfully retries while preserving the original temperature.
+
+    This test verifies that:
+    1. First call to llm_completion with temperature=0.7 throws LLMNoResponseError
+    2. Second call with the same temperature=0.7 returns a successful response
+    """
+
+    # Define a side effect function that raises LLMNoResponseError on first call
+    # and returns a successful response on second call
+    def side_effect(*args, **kwargs):
+        temperature = kwargs.get('temperature', 0)
+
+        if mock_litellm_completion.call_count == 1:
+            # First call should raise LLMNoResponseError
+            raise LLMNoResponseError('LLM did not return a response')
+        else:
+            # Second call should return a successful response
+            return {
+                'choices': [
+                    {
+                        'message': {
+                            'content': f'Successful response with temperature={temperature}'
+                        }
+                    }
+                ]
+            }
+
+    mock_litellm_completion.side_effect = side_effect
+
+    # Create LLM instance and make a completion call with non-zero temperature
+    llm = LLM(config=default_config)
+    response = llm.completion(
+        messages=[{'role': 'user', 'content': 'Hello!'}],
+        stream=False,
+        temperature=0.7,  # Non-zero temperature
+    )
+
+    # Verify the response after retry
+    assert (
+        response['choices'][0]['message']['content']
+        == 'Successful response with temperature=0.7'
+    )
+
+    # Verify that litellm_completion was called twice
+    assert mock_litellm_completion.call_count == 2
+
+    # Check the temperature in the first call (should be 0.7)
+    first_call_kwargs = mock_litellm_completion.call_args_list[0][1]
+    assert first_call_kwargs.get('temperature') == 0.7
+
+    # Check the temperature in the second call (should still be 0.7)
+    second_call_kwargs = mock_litellm_completion.call_args_list[1][1]
+    assert second_call_kwargs.get('temperature') == 0.7
+
+
+@patch('openhands.llm.llm.litellm_completion')
+def test_completion_retry_with_llm_no_response_error_successful_retry(
+    mock_litellm_completion, default_config
+):
+    """
+    Test that the retry decorator works for LLMNoResponseError with zero temperature
+    and successfully retries with temperature=0.2.
+
+    This test verifies that:
+    1. First call to llm_completion with temperature=0 throws LLMNoResponseError
+    2. Second call with temperature=0.2 returns a successful response
+    """
+
+    # Define a side effect function that raises LLMNoResponseError on first call
+    # and returns a successful response on second call
+    def side_effect(*args, **kwargs):
+        temperature = kwargs.get('temperature', 0)
+
+        if mock_litellm_completion.call_count == 1:
+            # First call should raise LLMNoResponseError
+            raise LLMNoResponseError('LLM did not return a response')
+        else:
+            # Second call should return a successful response
+            return {
+                'choices': [
+                    {
+                        'message': {
+                            'content': f'Successful response with temperature={temperature}'
+                        }
+                    }
+                ]
+            }
+
+    mock_litellm_completion.side_effect = side_effect
+
+    # Create LLM instance and make a completion call with explicit temperature=0
+    llm = LLM(config=default_config)
+    response = llm.completion(
+        messages=[{'role': 'user', 'content': 'Hello!'}],
+        stream=False,
+        temperature=0,  # Explicitly set temperature to 0
+    )
+
+    # Verify the response after retry
+    assert (
+        response['choices'][0]['message']['content']
+        == 'Successful response with temperature=1.0'
+    )
+
+    # Verify that litellm_completion was called twice
+    assert mock_litellm_completion.call_count == 2
+
+    # Check the temperature in the first call (should be 0)
+    first_call_kwargs = mock_litellm_completion.call_args_list[0][1]
+    assert first_call_kwargs.get('temperature') == 0
+
+    # Check the temperature in the second call (should be 1.0)
+    second_call_kwargs = mock_litellm_completion.call_args_list[1][1]
+    assert second_call_kwargs.get('temperature') == 1.0
 
 
 @patch('openhands.llm.llm.litellm_completion')
@@ -494,6 +799,82 @@ def test_llm_token_usage(mock_litellm_completion, default_config):
 
 
 @patch('openhands.llm.llm.litellm_completion')
+def test_accumulated_token_usage(mock_litellm_completion, default_config):
+    """Test that token usage is properly accumulated across multiple LLM calls."""
+    # Mock responses with token usage information
+    mock_response_1 = {
+        'id': 'test-response-1',
+        'choices': [{'message': {'content': 'First response'}}],
+        'usage': {
+            'prompt_tokens': 10,
+            'completion_tokens': 5,
+            'prompt_tokens_details': PromptTokensDetails(cached_tokens=3),
+            'model_extra': {'cache_creation_input_tokens': 4},
+        },
+    }
+
+    mock_response_2 = {
+        'id': 'test-response-2',
+        'choices': [{'message': {'content': 'Second response'}}],
+        'usage': {
+            'prompt_tokens': 8,
+            'completion_tokens': 6,
+            'prompt_tokens_details': PromptTokensDetails(cached_tokens=2),
+            'model_extra': {'cache_creation_input_tokens': 3},
+        },
+    }
+
+    # Set up the mock to return these responses in sequence
+    mock_litellm_completion.side_effect = [mock_response_1, mock_response_2]
+
+    # Create LLM instance
+    llm = LLM(config=default_config)
+
+    # First call
+    llm.completion(messages=[{'role': 'user', 'content': 'First message'}])
+
+    # Check accumulated token usage after first call
+    metrics_data = llm.metrics.get()
+    accumulated_usage = metrics_data['accumulated_token_usage']
+
+    assert accumulated_usage['prompt_tokens'] == 10
+    assert accumulated_usage['completion_tokens'] == 5
+    assert accumulated_usage['cache_read_tokens'] == 3
+    assert accumulated_usage['cache_write_tokens'] == 4
+
+    # Second call
+    llm.completion(messages=[{'role': 'user', 'content': 'Second message'}])
+
+    # Check accumulated token usage after second call
+    metrics_data = llm.metrics.get()
+    accumulated_usage = metrics_data['accumulated_token_usage']
+
+    # Values should be the sum of both calls
+    assert accumulated_usage['prompt_tokens'] == 18  # 10 + 8
+    assert accumulated_usage['completion_tokens'] == 11  # 5 + 6
+    assert accumulated_usage['cache_read_tokens'] == 5  # 3 + 2
+    assert accumulated_usage['cache_write_tokens'] == 7  # 4 + 3
+
+    # Verify individual token usage records are still maintained
+    token_usages = metrics_data['token_usages']
+    assert len(token_usages) == 2
+
+    # First record
+    assert token_usages[0]['prompt_tokens'] == 10
+    assert token_usages[0]['completion_tokens'] == 5
+    assert token_usages[0]['cache_read_tokens'] == 3
+    assert token_usages[0]['cache_write_tokens'] == 4
+    assert token_usages[0]['response_id'] == 'test-response-1'
+
+    # Second record
+    assert token_usages[1]['prompt_tokens'] == 8
+    assert token_usages[1]['completion_tokens'] == 6
+    assert token_usages[1]['cache_read_tokens'] == 2
+    assert token_usages[1]['cache_write_tokens'] == 3
+    assert token_usages[1]['response_id'] == 'test-response-2'
+
+
+@patch('openhands.llm.llm.litellm_completion')
 def test_completion_with_log_completions(mock_litellm_completion, default_config):
     with tempfile.TemporaryDirectory() as temp_dir:
         default_config.log_completions = True
@@ -515,3 +896,22 @@ def test_completion_with_log_completions(mock_litellm_completion, default_config
         files = list(Path(temp_dir).iterdir())
         # Expect a log to be generated
         assert len(files) == 1
+
+
+@patch('httpx.get')
+def test_llm_base_url_auto_protocol_patch(mock_get):
+    """Test that LLM base_url without protocol is automatically fixed with 'http://'."""
+    config = LLMConfig(
+        model='litellm_proxy/test-model',
+        api_key='fake-key',
+        base_url='  api.example.com  ',
+    )
+
+    mock_get.return_value.status_code = 200
+    mock_get.return_value.json.return_value = {'model': 'fake'}
+
+    llm = LLM(config=config)
+    llm.init_model_info()
+
+    called_url = mock_get.call_args[0][0]
+    assert called_url.startswith('http://') or called_url.startswith('https://')

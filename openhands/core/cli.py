@@ -3,7 +3,9 @@ import logging
 import sys
 from uuid import uuid4
 
-from termcolor import colored
+from prompt_toolkit import PromptSession, print_formatted_text
+from prompt_toolkit.formatted_text import FormattedText
+from prompt_toolkit.key_binding import KeyBindings
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands.core.config import (
@@ -17,6 +19,7 @@ from openhands.core.schema import AgentState
 from openhands.core.setup import (
     create_agent,
     create_controller,
+    create_memory,
     create_runtime,
     initialize_repository_for_runtime,
 )
@@ -35,41 +38,91 @@ from openhands.events.observation import (
     CmdOutputObservation,
     FileEditObservation,
 )
-from openhands.io import read_input, read_task
+from openhands.io import read_task
+from openhands.mcp import fetch_mcp_tools_from_config
+
+prompt_session = PromptSession()
 
 
-def display_message(message: str):
-    print(colored('🤖 ' + message + '\n', 'yellow'))
+def display_message(message: str) -> None:
+    print_formatted_text(
+        FormattedText(
+            [
+                ('ansiyellow', '🤖 '),
+                ('ansiyellow', message),
+                ('', '\n'),
+            ]
+        )
+    )
 
 
-def display_command(command: str):
-    print('❯ ' + colored(command + '\n', 'green'))
+def display_command(command: str) -> None:
+    print_formatted_text(
+        FormattedText(
+            [
+                ('', '❯ '),
+                ('ansigreen', command),
+                ('', '\n'),
+            ]
+        )
+    )
 
 
-def display_confirmation(confirmation_state: ActionConfirmationStatus):
+def display_confirmation(confirmation_state: ActionConfirmationStatus) -> None:
     if confirmation_state == ActionConfirmationStatus.CONFIRMED:
-        print(colored('✅ ' + confirmation_state + '\n', 'green'))
+        print_formatted_text(
+            FormattedText(
+                [
+                    ('ansigreen', '✅ '),
+                    ('ansigreen', str(confirmation_state)),
+                    ('', '\n'),
+                ]
+            )
+        )
     elif confirmation_state == ActionConfirmationStatus.REJECTED:
-        print(colored('❌ ' + confirmation_state + '\n', 'red'))
+        print_formatted_text(
+            FormattedText(
+                [
+                    ('ansired', '❌ '),
+                    ('ansired', str(confirmation_state)),
+                    ('', '\n'),
+                ]
+            )
+        )
     else:
-        print(colored('⏳ ' + confirmation_state + '\n', 'yellow'))
+        print_formatted_text(
+            FormattedText(
+                [
+                    ('ansiyellow', '⏳ '),
+                    ('ansiyellow', str(confirmation_state)),
+                    ('', '\n'),
+                ]
+            )
+        )
 
 
-def display_command_output(output: str):
+def display_command_output(output: str) -> None:
     lines = output.split('\n')
     for line in lines:
         if line.startswith('[Python Interpreter') or line.startswith('openhands@'):
             # TODO: clean this up once we clean up terminal output
             continue
-        print(colored(line, 'blue'))
-    print('\n')
+        print_formatted_text(FormattedText([('ansiblue', line)]))
+    print_formatted_text('')
 
 
-def display_file_edit(event: FileEditAction | FileEditObservation):
-    print(colored(str(event), 'green'))
+def display_file_edit(event: FileEditAction | FileEditObservation) -> None:
+    print_formatted_text(
+        FormattedText(
+            [
+                ('ansigreen', str(event)),
+                ('', '\n'),
+            ]
+        )
+    )
 
 
-def display_event(event: Event, config: AppConfig):
+def display_event(event: Event, config: AppConfig) -> None:
     if isinstance(event, Action):
         if hasattr(event, 'thought'):
             display_message(event.thought)
@@ -88,7 +141,42 @@ def display_event(event: Event, config: AppConfig):
         display_confirmation(event.confirmation_state)
 
 
-async def main(loop: asyncio.AbstractEventLoop):
+async def read_prompt_input(multiline=False):
+    try:
+        if multiline:
+            kb = KeyBindings()
+
+            @kb.add('c-d')
+            def _(event):
+                event.current_buffer.validate_and_handle()
+
+            message = await prompt_session.prompt_async(
+                'Enter your message and press Ctrl+D to finish:\n',
+                multiline=True,
+                key_bindings=kb,
+            )
+        else:
+            message = await prompt_session.prompt_async(
+                '>> ',
+            )
+        return message
+    except KeyboardInterrupt:
+        return 'exit'
+    except EOFError:
+        return 'exit'
+
+
+async def read_confirmation_input():
+    try:
+        confirmation = await prompt_session.prompt_async(
+            'Confirm action (possible security risk)? (y/n) >> ',
+        )
+        return confirmation.lower() == 'y'
+    except (KeyboardInterrupt, EOFError):
+        return False
+
+
+async def main(loop: asyncio.AbstractEventLoop) -> None:
     """Runs the agent in CLI mode."""
 
     args = parse_arguments()
@@ -108,7 +196,8 @@ async def main(loop: asyncio.AbstractEventLoop):
     display_message(f'Session ID: {sid}')
 
     agent = create_agent(config)
-
+    mcp_tools = await fetch_mcp_tools_from_config(config.mcp)
+    agent.set_mcp_tools(mcp_tools)
     runtime = create_runtime(
         config,
         sid=sid,
@@ -120,11 +209,8 @@ async def main(loop: asyncio.AbstractEventLoop):
 
     event_stream = runtime.event_stream
 
-    async def prompt_for_next_task():
-        # Run input() in a thread pool to avoid blocking the event loop
-        next_message = await loop.run_in_executor(
-            None, read_input, config.cli_multiline_input
-        )
+    async def prompt_for_next_task() -> None:
+        next_message = await read_prompt_input(config.cli_multiline_input)
         if not next_message.strip():
             await prompt_for_next_task()
         if next_message == 'exit':
@@ -135,13 +221,7 @@ async def main(loop: asyncio.AbstractEventLoop):
         action = MessageAction(content=next_message)
         event_stream.add_event(action, EventSource.USER)
 
-    async def prompt_for_user_confirmation():
-        user_confirmation = await loop.run_in_executor(
-            None, lambda: input('Confirm action (possible security risk)? (y/n) >> ')
-        )
-        return user_confirmation.lower() == 'y'
-
-    async def on_event_async(event: Event):
+    async def on_event_async(event: Event) -> None:
         display_event(event, config)
         if isinstance(event, AgentStateChangedObservation):
             if event.agent_state in [
@@ -150,7 +230,7 @@ async def main(loop: asyncio.AbstractEventLoop):
             ]:
                 await prompt_for_next_task()
             if event.agent_state == AgentState.AWAITING_USER_CONFIRMATION:
-                user_confirmed = await prompt_for_user_confirmation()
+                user_confirmed = await read_confirmation_input()
                 if user_confirmed:
                     event_stream.add_event(
                         ChangeAgentStateAction(AgentState.USER_CONFIRMED),
@@ -170,12 +250,21 @@ async def main(loop: asyncio.AbstractEventLoop):
     await runtime.connect()
 
     # Initialize repository if needed
+    repo_directory = None
     if config.sandbox.selected_repo:
-        initialize_repository_for_runtime(
+        repo_directory = initialize_repository_for_runtime(
             runtime,
-            agent=agent,
             selected_repository=config.sandbox.selected_repo,
         )
+
+    # when memory is created, it will load the microagents from the selected repository
+    memory = create_memory(
+        runtime=runtime,
+        event_stream=event_stream,
+        sid=sid,
+        selected_repository=config.sandbox.selected_repo,
+        repo_directory=repo_directory,
+    )
 
     if initial_user_action:
         # If there's an initial user action, enqueue it and do not prompt again
@@ -185,7 +274,7 @@ async def main(loop: asyncio.AbstractEventLoop):
         asyncio.create_task(prompt_for_next_task())
 
     await run_agent_until_done(
-        controller, runtime, [AgentState.STOPPED, AgentState.ERROR]
+        controller, runtime, memory, [AgentState.STOPPED, AgentState.ERROR]
     )
 
 

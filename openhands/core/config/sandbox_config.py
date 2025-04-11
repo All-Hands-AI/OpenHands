@@ -15,6 +15,7 @@ class SandboxConfig(BaseModel):
         timeout: The timeout for the default sandbox action execution.
         remote_runtime_init_timeout: The timeout for the remote runtime to start.
         remote_runtime_api_timeout: The timeout for the remote runtime API requests.
+        remote_runtime_enable_retries: Whether to enable retries (on recoverable errors like requests.ConnectionError) for the remote runtime API requests.
         enable_auto_lint: Whether to enable auto-lint.
         use_host_network: Whether to use the host network.
         runtime_binding_address: The binding address for the runtime ports.  It specifies which network interface on the host machine Docker should bind the runtime ports to.
@@ -53,7 +54,7 @@ class SandboxConfig(BaseModel):
     timeout: int = Field(default=120)
     remote_runtime_init_timeout: int = Field(default=180)
     remote_runtime_api_timeout: int = Field(default=10)
-    remote_runtime_enable_retries: bool = Field(default=False)
+    remote_runtime_enable_retries: bool = Field(default=True)
     remote_runtime_class: str | None = Field(
         default=None
     )  # can be "None" (default to gvisor) or "sysbox" (support docker inside runtime + more stable)

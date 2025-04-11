@@ -19,11 +19,11 @@ jobs:
   # Run lint on the frontend code
   lint-frontend:
     name: Lint frontend
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2204
     steps:
       - uses: actions/checkout@v4
       - name: Install Node.js 20
-        uses: actions/setup-node@v4
+        uses: useblacksmith/setup-node@v5
         with:
           node-version: 20
       - name: Install dependencies
@@ -39,13 +39,13 @@ jobs:
   # Run lint on the python code
   lint-python:
     name: Lint python
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2204
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Set up python
-        uses: actions/setup-python@v5
+        uses: useblacksmith/setup-python@v6
         with:
           python-version: 3.12
           cache: 'pip'
@@ -57,11 +57,11 @@ jobs:
   # Check version consistency across documentation
   check-version-consistency:
     name: Check version consistency
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2204
     steps:
       - uses: actions/checkout@v4
       - name: Set up python
-        uses: actions/setup-python@v5
+        uses: useblacksmith/setup-python@v6
         with:
           python-version: 3.12
       - name: Run version consistency check
