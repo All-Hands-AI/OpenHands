@@ -155,6 +155,7 @@ class Agent(ABC):
         Returns:
             SystemMessageAction: The system message action with prompt and tools
         """
+        # Import here to avoid circular imports
         from openhands.events.action.message import SystemMessageAction
 
         if not self.prompt_manager:
