@@ -1,5 +1,3 @@
-import traceback
-
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 from pydantic import SecretStr
@@ -73,14 +71,12 @@ async def get_user(
             return user
 
         except AuthenticationError as e:
-            traceback.print_exc()
             return JSONResponse(
                 content=str(e),
                 status_code=status.HTTP_401_UNAUTHORIZED,
             )
 
         except UnknownException as e:
-            traceback.print_exc()
             return JSONResponse(
                 content=str(e),
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

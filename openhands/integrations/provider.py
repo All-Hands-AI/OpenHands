@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import traceback
 from types import MappingProxyType
 from typing import Annotated, Any, Coroutine, Literal, overload
 
@@ -179,7 +178,6 @@ class ProviderHandler:
                 service = self._get_service(provider)
                 return await service.get_user()
             except Exception:
-                traceback.print_exc()
                 continue
         raise AuthenticationError('Need valid provider token')
 
