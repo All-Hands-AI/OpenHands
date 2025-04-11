@@ -162,7 +162,7 @@ const ThesisComputer = () => {
               }
 
               if (computerItem.observation === ObservationType.MCP) {
-                return <span>{computerItem?.message}</span>
+                return <span className="text-sm">{computerItem?.message}</span>
               }
 
               return <div />
