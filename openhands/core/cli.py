@@ -244,59 +244,42 @@ def display_event(event: Event, config: AppConfig) -> None:
         display_confirmation(event.confirmation_state)
 
 
-def display_help(style=DEFAULT_STYLE):
+def display_help():
+    # Version header and introduction
     print_formatted_text(
-        HTML(f'\n<grey>OpenHands CLI v{__version__}</grey>\n'), style=style
+        HTML(f'\n<grey>OpenHands CLI v{__version__}</grey>\n'
+             '<gold>OpenHands CLI lets you interact with the OpenHands agent from the command line.</gold>\n')
     )
 
-    print_formatted_text(
-        HTML(
-            '<gold>OpenHands CLI lets you interact with the OpenHands agent from the command line.</gold>'
-        )
-    )
-    print_formatted_text('')
-
+    # Usage examples
     print_formatted_text('Things that you can try:')
     print_formatted_text(
-        HTML('• Ask questions about the codebase <grey>> How does main.py work?</grey>')
+        HTML('• Ask questions about the codebase <grey>> How does main.py work?</grey>\n'
+             '• Edit files or add new features <grey>> Add a new function to ...</grey>\n'
+             '• Find and fix issues <grey>> Fix the type error in ...</grey>\n')
     )
-    print_formatted_text(
-        HTML(
-            '• Edit files or add new features <grey>> Add a new function to ...</grey>'
-        )
-    )
-    print_formatted_text(
-        HTML('• Find and fix issues <grey>> Fix the type error in ...</grey>')
-    )
-    print_formatted_text('')
 
-    print_formatted_text('Some tips to get the most out of OpenHands:')
+    # Tips section
     print_formatted_text(
-        '• Be as specific as possible about the desired outcome or the problem to be solved.'
+        'Some tips to get the most out of OpenHands:\n'
+        '• Be as specific as possible about the desired outcome or the problem to be solved.\n'
+        '• Provide context, including relevant file paths and line numbers if available.\n'
+        '• Break large tasks into smaller, manageable prompts.\n'
+        '• Include relevant error messages or logs.\n'
+        '• Specify the programming language or framework, if not obvious.\n'
     )
-    print_formatted_text(
-        '• Provide context, including relevant file paths and line numbers if available.'
-    )
-    print_formatted_text('• Break large tasks into smaller, manageable prompts.')
-    print_formatted_text('• Include relevant error messages or logs.')
-    print_formatted_text(
-        '• Specify the programming language or framework, if not obvious.'
-    )
-    print_formatted_text('')
 
-    print_formatted_text(HTML('Interactive commands:'), style=style)
+    # Commands section
+    print_formatted_text(HTML('Interactive commands:'))
+    commands_html = ''
     for command, description in COMMANDS.items():
-        print_formatted_text(
-            HTML(f'<gold><b>{command}</b></gold> - <grey>{description}</grey>'),
-            style=style,
-        )
-    print_formatted_text('')
+        commands_html += f'<gold><b>{command}</b></gold> - <grey>{description}</grey>\n'
+    print_formatted_text(HTML(commands_html))
+    
+    # Footer
     print_formatted_text(
-        HTML(
-            '<grey>Learn more at: https://docs.all-hands.dev/modules/usage/getting-started</grey>'
-        )
+        HTML('<grey>Learn more at: https://docs.all-hands.dev/modules/usage/getting-started</grey>\n')
     )
-    print_formatted_text('')
 
 
 def display_banner(session_id: str, is_loaded: asyncio.Event):
