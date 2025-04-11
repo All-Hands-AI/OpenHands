@@ -359,7 +359,7 @@ export function ConversationCard({
       <BaseModal
         isOpen={toolsModalVisible}
         onOpenChange={setToolsModalVisible}
-        title={t(I18nKey.CONVERSATION$AVAILABLE_TOOLS)}
+        title={t(I18nKey.CONVERSATION$TOOLS_MODAL_TITLE)}
         testID="tools-modal"
       >
         <div className="space-y-4">
