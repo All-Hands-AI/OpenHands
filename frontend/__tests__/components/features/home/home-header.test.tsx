@@ -35,7 +35,7 @@ const renderHomeHeader = () => {
 };
 
 describe("HomeHeader", () => {
-  it("should create an empty conversation and redirect when pressing the launch from scratch button in the home header", async () => {
+  it("should create an empty conversation and redirect when pressing the launch from scratch button", async () => {
     const createConversationSpy = vi.spyOn(OpenHands, "createConversation");
 
     renderHomeHeader();

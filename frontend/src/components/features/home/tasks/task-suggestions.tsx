@@ -1,20 +1,13 @@
-import { useQuery } from "@tanstack/react-query";
 import { TaskGroup } from "./task-group";
-import { SuggestionsService } from "#/api/suggestions-service/suggestions-service.api";
 import { NoSuggestedTasksMessage } from "./no-suggested-tasks-message";
-import { groupSuggestedTasks } from "#/utils/group-suggested-tasks";
+import { useSuggestedTasks } from "#/hooks/query/use-suggested-tasks";
 
 interface TaskSuggestionsProps {
   filterFor?: string | null;
 }
 
 export function TaskSuggestions({ filterFor }: TaskSuggestionsProps) {
-  const { data: tasks } = useQuery({
-    queryKey: ["tasks"],
-    queryFn: SuggestionsService.getSuggestedTasks,
-    select: groupSuggestedTasks,
-  });
-
+  const { data: tasks } = useSuggestedTasks();
   const suggestedTasks = filterFor
     ? tasks?.filter((task) => task.title === filterFor)
     : tasks;

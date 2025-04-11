@@ -92,6 +92,6 @@ describe("HomeScreen", () => {
   });
 
   it.todo(
-    "should create a conversation and redirect with the selected task when pressing the launch button in the task suggestions",
+    "should reset the filtered tasks when the selected repository is cleared",
   );
 });

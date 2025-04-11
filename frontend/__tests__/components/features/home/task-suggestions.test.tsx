@@ -52,4 +52,14 @@ describe("TaskSuggestions", () => {
       });
     });
   });
+
+  it.todo("should render skeletons when loading");
+
+  it.todo(
+    "should display a message if the user needs to authenticate with their git provider",
+  );
+
+  it.todo(
+    "should create a conversation and redirect with the selected task when pressing the launch button",
+  );
 });

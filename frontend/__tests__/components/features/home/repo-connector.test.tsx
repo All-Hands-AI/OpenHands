@@ -116,7 +116,7 @@ describe("RepoConnector", () => {
     expect(screen.queryByText("Add GitLab repos")).not.toBeInTheDocument();
   });
 
-  it("should create a conversation and redirect with the selected repo when pressing the launch button in the repo connector", async () => {
+  it("should create a conversation and redirect with the selected repo when pressing the launch button", async () => {
     const createConversationSpy = vi.spyOn(OpenHands, "createConversation");
 
     renderRepoConnector();
