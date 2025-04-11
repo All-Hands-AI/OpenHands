@@ -3,72 +3,74 @@ import { SuggestedTask } from "#/components/features/home/tasks/task.types";
 
 const TASKS_1: SuggestedTask[] = [
   {
-    id: 6968,
+    issue_number: 6968,
     title: "Fix merge conflicts",
     repo: "octocat/hello-world",
-    type: "MERGE_CONFLICTS",
+    task_type: "MERGE_CONFLICTS",
   },
 ];
 
 const TASKS_2: SuggestedTask[] = [
   {
-    id: 268,
+    issue_number: 268,
     title: "Fix broken CI checks",
     repo: "octocat/earth",
-    type: "FAILING_CHECKS",
+    task_type: "FAILING_CHECKS",
   },
   {
-    id: 281,
+    issue_number: 281,
     title: "Fix issue",
     repo: "octocat/earth",
-    type: "UNRESOLVED_COMMENTS",
+    task_type: "UNRESOLVED_COMMENTS",
   },
   {
-    id: 293,
+    issue_number: 293,
     title: "Update documentation",
     repo: "octocat/earth",
-    type: "OPEN_ISSUE",
+    task_type: "OPEN_ISSUE",
   },
   {
-    id: 305,
+    issue_number: 305,
     title: "Refactor user service",
     repo: "octocat/earth",
-    type: "OPEN_PR",
+    task_type: "OPEN_PR",
   },
   {
-    id: 312,
+    issue_number: 312,
     title: "Fix styling bug",
     repo: "octocat/earth",
-    type: "OPEN_PR",
+    task_type: "OPEN_PR",
   },
   {
-    id: 327,
+    issue_number: 327,
     title: "Add unit tests",
     repo: "octocat/earth",
-    type: "OPEN_PR",
+    task_type: "OPEN_PR",
   },
   {
-    id: 331,
+    issue_number: 331,
     title: "Implement dark mode",
     repo: "octocat/earth",
-    type: "OPEN_PR",
+    task_type: "OPEN_PR",
   },
   {
-    id: 345,
+    issue_number: 345,
     title: "Optimize build process",
     repo: "octocat/earth",
-    type: "OPEN_PR",
+    task_type: "OPEN_PR",
   },
   {
-    id: 352,
+    issue_number: 352,
     title: "Update dependencies",
     repo: "octocat/earth",
-    type: "OPEN_PR",
+    task_type: "OPEN_PR",
   },
 ];
 
 export const MOCK_TASKS = [...TASKS_1, ...TASKS_2];
 
 export const TASK_SUGGESTIONS_HANDLERS = [
-  http.get("/api/tasks", async () => HttpResponse.json(MOCK_TASKS)),
+  http.get("/api/user/suggested-tasks", async () =>
+    HttpResponse.json(MOCK_TASKS),
+  ),
 ];

@@ -5,10 +5,10 @@ import { SuggestedTask } from "#/components/features/home/tasks/task.types";
 
 describe("TaskCard", () => {
   const MOCK_TASK: SuggestedTask = {
-    id: 123,
+    issue_number: 123,
     repo: "repo1",
     title: "Task 1",
-    type: "MERGE_CONFLICTS",
+    task_type: "MERGE_CONFLICTS",
   };
 
   it("format the issue id", async () => {

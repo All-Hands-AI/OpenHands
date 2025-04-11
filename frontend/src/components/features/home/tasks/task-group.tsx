@@ -14,7 +14,7 @@ export function TaskGroup({ title, tasks }: TaskGroupProps) {
 
       <ul className="text-sm">
         {tasks.map((task) => (
-          <TaskCard key={task.id} task={task} />
+          <TaskCard key={task.issue_number} task={task} />
         ))}
       </ul>
     </div>

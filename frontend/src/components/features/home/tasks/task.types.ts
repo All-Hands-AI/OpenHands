@@ -6,10 +6,10 @@ type SuggestedTaskType =
   | "OPEN_PR";
 
 export interface SuggestedTask {
-  id: number;
+  issue_number: number;
   repo: string;
   title: string;
-  type: SuggestedTaskType;
+  task_type: SuggestedTaskType;
 }
 
 export interface SuggestedTaskGroup {

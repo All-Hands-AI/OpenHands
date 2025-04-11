@@ -7,34 +7,34 @@ import { groupSuggestedTasks } from "#/utils/group-suggested-tasks";
 
 const rawTasks: SuggestedTask[] = [
   {
-    id: 1,
+    issue_number: 1,
     repo: "repo1",
     title: "Task 1",
-    type: "MERGE_CONFLICTS",
+    task_type: "MERGE_CONFLICTS",
   },
   {
-    id: 2,
+    issue_number: 2,
     repo: "repo1",
     title: "Task 2",
-    type: "FAILING_CHECKS",
+    task_type: "FAILING_CHECKS",
   },
   {
-    id: 3,
+    issue_number: 3,
     repo: "repo2",
     title: "Task 3",
-    type: "UNRESOLVED_COMMENTS",
+    task_type: "UNRESOLVED_COMMENTS",
   },
   {
-    id: 4,
+    issue_number: 4,
     repo: "repo2",
     title: "Task 4",
-    type: "OPEN_ISSUE",
+    task_type: "OPEN_ISSUE",
   },
   {
-    id: 5,
+    issue_number: 5,
     repo: "repo3",
     title: "Task 5",
-    type: "OPEN_PR",
+    task_type: "OPEN_PR",
   },
 ];
 
@@ -43,16 +43,16 @@ const groupedTasks: SuggestedTaskGroup[] = [
     title: "repo1",
     tasks: [
       {
-        id: 1,
+        issue_number: 1,
         repo: "repo1",
         title: "Task 1",
-        type: "MERGE_CONFLICTS",
+        task_type: "MERGE_CONFLICTS",
       },
       {
-        id: 2,
+        issue_number: 2,
         repo: "repo1",
         title: "Task 2",
-        type: "FAILING_CHECKS",
+        task_type: "FAILING_CHECKS",
       },
     ],
   },
@@ -60,16 +60,16 @@ const groupedTasks: SuggestedTaskGroup[] = [
     title: "repo2",
     tasks: [
       {
-        id: 3,
+        issue_number: 3,
         repo: "repo2",
         title: "Task 3",
-        type: "UNRESOLVED_COMMENTS",
+        task_type: "UNRESOLVED_COMMENTS",
       },
       {
-        id: 4,
+        issue_number: 4,
         repo: "repo2",
         title: "Task 4",
-        type: "OPEN_ISSUE",
+        task_type: "OPEN_ISSUE",
       },
     ],
   },
@@ -77,10 +77,10 @@ const groupedTasks: SuggestedTaskGroup[] = [
     title: "repo3",
     tasks: [
       {
-        id: 5,
+        issue_number: 5,
         repo: "repo3",
         title: "Task 5",
-        type: "OPEN_PR",
+        task_type: "OPEN_PR",
       },
     ],
   },
