@@ -174,20 +174,19 @@ jobs:
           build-args: ${{ env.DOCKER_BUILD_ARGS }}
           context: containers/runtime
           provenance: false
-      # Forked repos can't push to GHCR, so we need to upload the image as an artifact
+      # Forked repos can't push to GHCR, so we just build in order to populate the cache for rebuilding
       - name: Build runtime image ${{ matrix.base_image.image }} for fork
         if: github.event.pull_request.head.repo.fork
         uses: useblacksmith/build-push-action@v1
         with:
           tags: ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
-          outputs: type=docker,dest=/tmp/runtime-${{ matrix.base_image.tag }}.tar
           context: containers/runtime
-      - name: Upload runtime image for fork
+      - name: Upload runtime source for fork
         if: github.event.pull_request.head.repo.fork
         uses: actions/upload-artifact@v4
         with:
-          name: runtime-${{ matrix.base_image.tag }}
-          path: /tmp/runtime-${{ matrix.base_image.tag }}.tar
+          name: runtime-src-${{ matrix.base_image.tag }}
+          path: containers/runtime
 
   verify_hash_equivalence_in_runtime_and_app:
     name: Verify Hash Equivalence in Runtime and Docker images
@@ -258,17 +257,23 @@ jobs:
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
-      # Forked repos can't push to GHCR, so we need to download the image as an artifact
-      - name: Download runtime image for fork
+      - name: Download runtime source for fork
         if: github.event.pull_request.head.repo.fork
         uses: actions/download-artifact@v4
         with:
-          name: runtime-${{ matrix.base_image.tag }}
-          path: /tmp
-      - name: Load runtime image for fork
-        if: github.event.pull_request.head.repo.fork
+          name: runtime-src-${{ matrix.base_image.tag }}
+          path: containers/runtime
+      - name: Lowercase Repository Owner
         run: |
-          docker load --input /tmp/runtime-${{ matrix.base_image.tag }}.tar
+          echo REPO_OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
+      # Forked repos can't push to GHCR, so we need to rebuild using cache
+      - name: Build runtime image ${{ matrix.base_image.image }} for fork
+        if: github.event.pull_request.head.repo.fork
+        uses: useblacksmith/build-push-action@v1
+        with:
+          load: true
+          tags: ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
+          context: containers/runtime
       - name: Cache Poetry dependencies
         uses: useblacksmith/cache@v5
         with:
@@ -287,9 +292,6 @@ jobs:
         run: pipx install poetry
       - name: Install Python dependencies using Poetry
         run: make install-python-dependencies POETRY_GROUP=main,test,runtime INSTALL_PLAYWRIGHT=0
-      - name: Lowercase Repository Owner
-        run: |
-          echo REPO_OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
       - name: Run docker runtime tests
         run: |
           # We install pytest-xdist in order to run tests across CPUs
@@ -327,17 +329,23 @@ jobs:
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
-      # Forked repos can't push to GHCR, so we need to download the image as an artifact
-      - name: Download runtime image for fork
+      - name: Download runtime source for fork
         if: github.event.pull_request.head.repo.fork
         uses: actions/download-artifact@v4
         with:
-          name: runtime-${{ matrix.base_image.tag }}
-          path: /tmp
-      - name: Load runtime image for fork
-        if: github.event.pull_request.head.repo.fork
+          name: runtime-src-${{ matrix.base_image.tag }}
+          path: containers/runtime
+      - name: Lowercase Repository Owner
         run: |
-          docker load --input /tmp/runtime-${{ matrix.base_image.tag }}.tar
+          echo REPO_OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
+      # Forked repos can't push to GHCR, so we need to rebuild using cache
+      - name: Build runtime image ${{ matrix.base_image.image }} for fork
+        if: github.event.pull_request.head.repo.fork
+        uses: useblacksmith/build-push-action@v1
+        with:
+          load: true
+          tags: ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
+          context: containers/runtime
       - name: Cache Poetry dependencies
         uses: useblacksmith/cache@v5
         with:
@@ -356,9 +364,6 @@ jobs:
         run: pipx install poetry
       - name: Install Python dependencies using Poetry
         run: make install-python-dependencies POETRY_GROUP=main,test,runtime INSTALL_PLAYWRIGHT=0
-      - name: Lowercase Repository Owner
-        run: |
-          echo REPO_OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
       - name: Run runtime tests
         run: |
           # We install pytest-xdist in order to run tests across CPUs
