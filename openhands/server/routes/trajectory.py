@@ -72,26 +72,22 @@ async def summarize_conversation(request: Request) -> JSONResponse:
         # Create a view from the events
         view = View.from_events(events)
 
-        # Get the LLM configuration from the agent
-        try:
-            controller = getattr(request.state.conversation, 'controller', None)
-            if controller and hasattr(controller, 'agent') and controller.agent and hasattr(controller.agent, 'llm') and controller.agent.llm:
-                llm_config = controller.agent.llm.config
-            else:
-                # Use default LLM config if agent is not available
-                if hasattr(request.state.conversation, 'config') and hasattr(request.state.conversation.config, 'get_llm_config'):
-                    llm_config = request.state.conversation.config.get_llm_config()
-                else:
-                    # If config is not available, use a default configuration
-                    from openhands.config.llm import LLMConfig
-                    llm_config = LLMConfig()
-        except AttributeError:
-            # Fallback to default LLM config if any attribute is missing
+        # Get the LLM from the agent controller
+        from openhands.server.agent_controller import get_agent_controller
+        
+        # Get the agent controller
+        agent_controller = get_agent_controller()
+        
+        # Use the agent controller's LLM directly
+        if agent_controller and agent_controller.agent and agent_controller.agent.llm:
+            llm = agent_controller.agent.llm
+        else:
+            # Fallback to creating a new LLM with default config if agent controller's LLM is not available
             from openhands.config.llm import LLMConfig
             llm_config = LLMConfig()
-
-        # Create the condenser
-        llm = LLM(config=llm_config)
+            llm = LLM(config=llm_config)
+            
+        # Create the condenser with the LLM
         condenser = LLMSummarizingCondenser(llm=llm, max_size=40, keep_first=3)
 
         # Force summarization by setting a large max_size
