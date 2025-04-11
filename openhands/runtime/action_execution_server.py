@@ -474,32 +474,29 @@ class ActionExecutor:
 
     async def edit(self, action: FileEditAction) -> Observation:
         assert action.impl_source == FileEditSource.OH_ACI
-        if action.impl_source == FileEditSource.OH_ACI:
-            result_str, (old_content, new_content) = _execute_file_editor(
-                self.file_editor,
-                command=action.command,
-                path=action.path,
-                file_text=action.file_text,
-                old_str=action.old_str,
-                new_str=action.new_str,
-                insert_line=action.insert_line,
-                enable_linting=False,
-            )
+        result_str, (old_content, new_content) = _execute_file_editor(
+            self.file_editor,
+            command=action.command,
+            path=action.path,
+            file_text=action.file_text,
+            old_str=action.old_str,
+            new_str=action.new_str,
+            insert_line=action.insert_line,
+            enable_linting=False,
+        )
 
-            return FileEditObservation(
-                content=result_str,
-                path=action.path,
-                old_content=action.old_str,
-                new_content=action.new_str,
-                impl_source=FileEditSource.OH_ACI,
-                diff=get_diff(
-                    old_contents=old_content or '',
-                    new_contents=new_content or '',
-                    filepath=action.path,
-                ),
-            )
-        else:
-            raise ValueError('Server-side edit must be OH_ACI')
+        return FileEditObservation(
+            content=result_str,
+            path=action.path,
+            old_content=action.old_str,
+            new_content=action.new_str,
+            impl_source=FileEditSource.OH_ACI,
+            diff=get_diff(
+                old_contents=old_content or '',
+                new_contents=new_content or '',
+                filepath=action.path,
+            ),
+        )
 
     async def browse(self, action: BrowseURLAction) -> Observation:
         await self._ensure_browser_ready()
