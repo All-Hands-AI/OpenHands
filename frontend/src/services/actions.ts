@@ -86,14 +86,8 @@ export function handleActionMessage(message: ActionMessage) {
     return;
   }
 
-  // Update metrics if available
-  if (message.llm_metrics) {
-    const metrics = {
-      cost: message.llm_metrics?.accumulated_cost ?? null,
-      usage: message.llm_metrics?.accumulated_token_usage ?? null,
-    };
-    store.dispatch(setMetrics(metrics));
-  }
+  // Metrics are now handled at the conversation level via conversation metadata
+  // No need to update metrics from individual action events
 
   if (message.action === ActionType.RUN) {
     store.dispatch(appendInput(message.args.command));
