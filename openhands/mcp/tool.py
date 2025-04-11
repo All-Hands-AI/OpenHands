@@ -41,7 +41,6 @@ class MCPClientTool(BaseTool):
                 content=[TextContent(text='Not connected to MCP server', type='text')],
                 isError=True,
             )
-
         try:
             result = await self.session.call_tool(self.name, kwargs)
             return result

@@ -8,6 +8,7 @@ from openhands.core.config.mcp_config import MCPConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.observation import ObservationType
 from openhands.events.action.mcp import McpAction
+from openhands.events.observation.error import ErrorObservation
 from openhands.events.observation.mcp import MCPObservation
 from openhands.events.observation.observation import Observation
 from openhands.events.observation.playwright_mcp import (
@@ -129,23 +130,21 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: McpAction) -> Obse
     """
     if not mcp_clients:
         raise ValueError('No MCP clients found')
-
-    logger.debug(f'MCP action received: {action}')
+    logger.info(f'MCP action received: {action}')
     # Find the MCP agent that has the matching tool name
     matching_client = None
-    logger.debug(f'MCP clients: {mcp_clients}')
-    logger.debug(f'MCP action name: {action.name}')
+    logger.info(f'MCP action name: {action.name}')
     for client in mcp_clients:
-        logger.debug(f'MCP client tools: {client.tools}')
         if action.name in [tool.name for tool in client.tools]:
             matching_client = client
             break
     if matching_client is None:
         raise ValueError(f'No matching MCP agent found for tool name: {action.name}')
-    logger.debug(f'Matching client: {matching_client}')
     args_dict = json.loads(action.arguments) if action.arguments else {}
     response = await matching_client.call_tool(action.name, args_dict)
-    logger.debug(f'MCP response: {response}')
+    if response.isError:
+        return ErrorObservation(f'MCP {action.name} failed: {response.content}')
+    logger.info(f'MCP response: {response}')
 
     # special case for browser screenshot of playwright_mcp
     if (
@@ -193,8 +192,8 @@ def process_browser_mcp_response(
     if len(browser_content) > 1:
         image_content = browser_content[1]
 
-    logger.debug(f'image_content: {image_content}')
-    logger.debug(f'text_content: {text_content}')
+    # logger.debug(f'image_content: {image_content}')
+    # logger.debug(f'text_content: {text_content}')
     url = extract_page_url(text_content.text) if text_content else ''
 
     # logger.debug(f'Screenshot content: {screenshot_content}')
