@@ -496,18 +496,18 @@ files = [
 
 [[package]]
 name = "boto3"
-version = "1.37.29"
+version = "1.37.31"
 description = "The AWS SDK for Python"
 optional = false
 python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "boto3-1.37.29-py3-none-any.whl", hash = "sha256:869979050e2cf6f5461503e0f1c8f226e47ec02802e88a2210f085ec22485945"},
-    {file = "boto3-1.37.29.tar.gz", hash = "sha256:5702e38356b93c56ed2a27e17f7664d791f1fe2eafd58ae6ab3853b2804cadd2"},
+    {file = "boto3-1.37.31-py3-none-any.whl", hash = "sha256:cf8997be0742a5cab9d33a138ef56e423a8ebd8881f6f73e95076b26656b36dc"},
+    {file = "boto3-1.37.31.tar.gz", hash = "sha256:dfee02b2f8f632a239a2f4ba6a2d568e2edd7f7464e9afd8a487fdb3fa9a0ad3"},
 ]
 
 [package.dependencies]
-botocore = ">=1.37.29,<1.38.0"
+botocore = ">=1.37.31,<1.38.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.11.0,<0.12.0"
 
@@ -516,14 +516,14 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "boto3-stubs"
-version = "1.37.29"
-description = "Type annotations for boto3 1.37.29 generated with mypy-boto3-builder 8.10.1"
+version = "1.37.31"
+description = "Type annotations for boto3 1.37.31 generated with mypy-boto3-builder 8.10.1"
 optional = false
 python-versions = ">=3.8"
 groups = ["evaluation"]
 files = [
-    {file = "boto3_stubs-1.37.29-py3-none-any.whl", hash = "sha256:a3471040c098c4e82a87fafeb38deb66eb4966950a771c62eba0bf36834f69d6"},
-    {file = "boto3_stubs-1.37.29.tar.gz", hash = "sha256:36444606a7c1c10c9700dde590f7afb134546065553f761f36207c1feb847e0b"},
+    {file = "boto3_stubs-1.37.31-py3-none-any.whl", hash = "sha256:356d5af1e3d8aba5d8068492f11426ee9f41d0a799c099ec548be13462337632"},
+    {file = "boto3_stubs-1.37.31.tar.gz", hash = "sha256:ab2e8f7877fddb97f50f4712f3e6ffafa0b20fbc6a1ac7019400d3b2261936cb"},
 ]
 
 [package.dependencies]
@@ -579,7 +579,7 @@ bedrock-data-automation-runtime = ["mypy-boto3-bedrock-data-automation-runtime (
 bedrock-runtime = ["mypy-boto3-bedrock-runtime (>=1.37.0,<1.38.0)"]
 billing = ["mypy-boto3-billing (>=1.37.0,<1.38.0)"]
 billingconductor = ["mypy-boto3-billingconductor (>=1.37.0,<1.38.0)"]
-boto3 = ["boto3 (==1.37.29)"]
+boto3 = ["boto3 (==1.37.31)"]
 braket = ["mypy-boto3-braket (>=1.37.0,<1.38.0)"]
 budgets = ["mypy-boto3-budgets (>=1.37.0,<1.38.0)"]
 ce = ["mypy-boto3-ce (>=1.37.0,<1.38.0)"]
@@ -943,14 +943,14 @@ xray = ["mypy-boto3-xray (>=1.37.0,<1.38.0)"]
 
 [[package]]
 name = "botocore"
-version = "1.37.29"
+version = "1.37.31"
 description = "Low-level, data-driven core of boto 3."
 optional = false
 python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "botocore-1.37.29-py3-none-any.whl", hash = "sha256:092c41e346df37a8d7cf60a799791f8225ad3a5ba7cda749047eb31d1440b9c5"},
-    {file = "botocore-1.37.29.tar.gz", hash = "sha256:728c1ef3b66a0f79bc08008a59f6fd6bef2a0a0195e5b3b9e9bef255df519890"},
+    {file = "botocore-1.37.31-py3-none-any.whl", hash = "sha256:598a33a7a0e5a014bd1416c999a0b9c634fbbba3d1363e2368e6a92da4544df4"},
+    {file = "botocore-1.37.31.tar.gz", hash = "sha256:eb3dfa44a87187bd82c3b493d568d8436270d4d000f237b49b669a01fcd8a21c"},
 ]
 
 [package.dependencies]
@@ -1191,7 +1191,7 @@ version = "1.17.1"
 description = "Foreign Function Interface for Python calling C code."
 optional = false
 python-versions = ">=3.8"
-groups = ["main", "runtime"]
+groups = ["main", "runtime", "test"]
 files = [
     {file = "cffi-1.17.1-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:df8b1c11f177bc2313ec4b2d46baec87a5f3e71fc8b45dab2ee7cae86d9aba14"},
     {file = "cffi-1.17.1-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:8f2cdc858323644ab277e9bb925ad72ae0e67f69e804f4898c070998d50b1a67"},
@@ -1261,6 +1261,7 @@ files = [
     {file = "cffi-1.17.1-cp39-cp39-win_amd64.whl", hash = "sha256:d016c76bdd850f3c626af19b0542c9677ba156e4ee4fccfdd7848803533ef662"},
     {file = "cffi-1.17.1.tar.gz", hash = "sha256:1c39c6016c32bc48dd54561950ebd6836e1670f2ae46128f67cf49e789c52824"},
 ]
+markers = {test = "platform_python_implementation == \"CPython\" and sys_platform == \"win32\""}
 
 [package.dependencies]
 pycparser = "*"
@@ -1483,7 +1484,7 @@ version = "1.3.1"
 description = "Python library for calculating contours of 2D quadrilateral grids"
 optional = false
 python-versions = ">=3.10"
-groups = ["main", "evaluation"]
+groups = ["evaluation"]
 files = [
     {file = "contourpy-1.3.1-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:a045f341a77b77e1c5de31e74e966537bba9f3c4099b35bf4c2e3939dd54cdab"},
     {file = "contourpy-1.3.1-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:500360b77259914f7805af7462e41f9cb7ca92ad38e9f94d6c8641b089338124"},
@@ -1691,7 +1692,7 @@ version = "0.12.1"
 description = "Composable style cycles"
 optional = false
 python-versions = ">=3.8"
-groups = ["main", "evaluation"]
+groups = ["evaluation"]
 files = [
     {file = "cycler-0.12.1-py3-none-any.whl", hash = "sha256:85cef7cff222d8644161529808465972e51340599459b8ac3ccbac5a854e0d30"},
     {file = "cycler-0.12.1.tar.gz", hash = "sha256:88bb128f02ba341da8ef447245a9e138fae777f6a23943da4540077d3601eb1c"},
@@ -1723,7 +1724,7 @@ version = "3.0.1"
 description = "HuggingFace community-driven open-source library of datasets"
 optional = false
 python-versions = ">=3.8.0"
-groups = ["main", "evaluation"]
+groups = ["evaluation"]
 files = [
     {file = "datasets-3.0.1-py3-none-any.whl", hash = "sha256:db080aab41c8cc68645117a0f172e5c6789cbc672f066de0aa5a08fc3eebc686"},
     {file = "datasets-3.0.1.tar.gz", hash = "sha256:40d63b09e76a3066c32e746d6fdc36fd3f29ed2acd49bf5b1a2100da32936511"},
@@ -1887,7 +1888,7 @@ version = "0.3.8"
 description = "serialize all of Python"
 optional = false
 python-versions = ">=3.8"
-groups = ["main", "evaluation"]
+groups = ["evaluation"]
 files = [
     {file = "dill-0.3.8-py3-none-any.whl", hash = "sha256:c36ca9ffb54365bdd2f8eb3eff7d2a21237f8452b57ace88b1ac615b7e815bd7"},
     {file = "dill-0.3.8.tar.gz", hash = "sha256:3ebe3c479ad625c4553aca177444d89b486b1d84982eeacded644afc0cf797ca"},
@@ -2235,7 +2236,7 @@ version = "4.56.0"
 description = "Tools to manipulate font files"
 optional = false
 python-versions = ">=3.8"
-groups = ["main", "evaluation"]
+groups = ["evaluation"]
 files = [
     {file = "fonttools-4.56.0-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:331954d002dbf5e704c7f3756028e21db07097c19722569983ba4d74df014000"},
     {file = "fonttools-4.56.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:8d1613abd5af2f93c05867b3a3759a56e8bf97eb79b1da76b2bc10892f96ff16"},
@@ -2513,7 +2514,7 @@ version = "24.11.1"
 description = "Coroutine-based network library"
 optional = false
 python-versions = ">=3.9"
-groups = ["main"]
+groups = ["test"]
 files = [
     {file = "gevent-24.11.1-cp310-cp310-macosx_11_0_universal2.whl", hash = "sha256:92fe5dfee4e671c74ffaa431fd7ffd0ebb4b339363d24d0d944de532409b935e"},
     {file = "gevent-24.11.1-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:b7bfcfe08d038e1fa6de458891bca65c1ada6d145474274285822896a858c870"},
@@ -2753,14 +2754,14 @@ tool = ["click (>=6.0.0)"]
 
 [[package]]
 name = "google-cloud-aiplatform"
-version = "1.87.0"
+version = "1.88.0"
 description = "Vertex AI API client library"
 optional = false
 python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "google_cloud_aiplatform-1.87.0-py2.py3-none-any.whl", hash = "sha256:23421cb288550e1b35c5a81f471618e0c34c32dfc73db895498ac01c9a5fa46c"},
-    {file = "google_cloud_aiplatform-1.87.0.tar.gz", hash = "sha256:3628c573d677d72c7ad62e9c898ff7073c915241e86fd563ff2ee581d281e494"},
+    {file = "google_cloud_aiplatform-1.88.0-py2.py3-none-any.whl", hash = "sha256:7d632577b758021a1306e2c6d3e837e41da635b651776041d4a54cdbbf63f6f1"},
+    {file = "google_cloud_aiplatform-1.88.0.tar.gz", hash = "sha256:07a06549f97a98e4d67d193ec225c581415f142b6a1d3aa4270187d429045d52"},
 ]
 
 [package.dependencies]
@@ -2778,6 +2779,7 @@ shapely = "<3.0.0"
 typing-extensions = "*"
 
 [package.extras]
+adk = ["google-adk (>=0.0.2)"]
 ag2 = ["ag2[gemini]", "openinference-instrumentation-autogen (>=0.1.6,<0.2)"]
 ag2-testing = ["absl-py", "ag2[gemini]", "cloudpickle (>=3.0,<4.0)", "google-cloud-trace (<2)", "openinference-instrumentation-autogen (>=0.1.6,<0.2)", "opentelemetry-exporter-gcp-trace (<2)", "opentelemetry-sdk (<2)", "pydantic (>=2.6.3,<3)", "pytest-xdist", "typing-extensions"]
 agent-engines = ["cloudpickle (>=3.0,<4.0)", "google-cloud-logging (<4)", "google-cloud-trace (<2)", "opentelemetry-exporter-gcp-trace (<2)", "opentelemetry-sdk (<2)", "packaging (>=24.0)", "pydantic (>=2.10,<3)", "typing-extensions"]
@@ -2785,8 +2787,8 @@ autologging = ["mlflow (>=1.27.0,<=2.16.0)"]
 cloud-profiler = ["tensorboard-plugin-profile (>=2.4.0,<2.18.0)", "tensorflow (>=2.4.0,<3.0.0)", "werkzeug (>=2.0.0,<2.1.0)"]
 datasets = ["pyarrow (>=10.0.1) ; python_version == \"3.11\"", "pyarrow (>=14.0.0) ; python_version >= \"3.12\"", "pyarrow (>=3.0.0,<8.0.0) ; python_version < \"3.11\""]
 endpoint = ["requests (>=2.28.1)", "requests-toolbelt (<=1.0.0)"]
-evaluation = ["pandas (>=1.0.0)", "scikit-learn (<1.6.0) ; python_version <= \"3.10\"", "scikit-learn ; python_version > \"3.10\"", "tqdm (>=4.23.0)"]
-full = ["docker (>=5.0.3)", "explainable-ai-sdk (>=1.0.0)", "fastapi (>=0.71.0,<=0.114.0)", "google-cloud-bigquery", "google-cloud-bigquery-storage", "google-vizier (>=0.1.6)", "httpx (>=0.23.0,<0.25.0)", "immutabledict", "lit-nlp (==0.4.0)", "mlflow (>=1.27.0,<=2.16.0)", "numpy (>=1.15.0)", "pandas (>=1.0.0)", "pyarrow (>=10.0.1) ; python_version == \"3.11\"", "pyarrow (>=14.0.0) ; python_version >= \"3.12\"", "pyarrow (>=3.0.0,<8.0.0) ; python_version < \"3.11\"", "pyarrow (>=6.0.1)", "pyyaml (>=5.3.1,<7)", "ray[default] (>=2.4,<2.5.dev0 || >2.9.0,!=2.9.1,!=2.9.2,<2.10.dev0 || ==2.33.* || >=2.42.dev0,<=2.42.0) ; python_version < \"3.11\"", "ray[default] (>=2.5,<=2.42.0) ; python_version == \"3.11\"", "requests (>=2.28.1)", "requests-toolbelt (<=1.0.0)", "scikit-learn (<1.6.0) ; python_version <= \"3.10\"", "scikit-learn ; python_version > \"3.10\"", "setuptools (<70.0.0)", "starlette (>=0.17.1)", "tensorboard-plugin-profile (>=2.4.0,<2.18.0)", "tensorflow (>=2.3.0,<3.0.0)", "tensorflow (>=2.3.0,<3.0.0) ; python_version <= \"3.11\"", "tensorflow (>=2.4.0,<3.0.0)", "tqdm (>=4.23.0)", "urllib3 (>=1.21.1,<1.27)", "uvicorn[standard] (>=0.16.0)", "werkzeug (>=2.0.0,<2.1.0)"]
+evaluation = ["jsonschema", "pandas (>=1.0.0)", "ruamel.yaml", "scikit-learn (<1.6.0) ; python_version <= \"3.10\"", "scikit-learn ; python_version > \"3.10\"", "tqdm (>=4.23.0)"]
+full = ["docker (>=5.0.3)", "explainable-ai-sdk (>=1.0.0)", "fastapi (>=0.71.0,<=0.114.0)", "google-cloud-bigquery", "google-cloud-bigquery-storage", "google-vizier (>=0.1.6)", "httpx (>=0.23.0,<0.25.0)", "immutabledict", "jsonschema", "lit-nlp (==0.4.0)", "mlflow (>=1.27.0,<=2.16.0)", "numpy (>=1.15.0)", "pandas (>=1.0.0)", "pyarrow (>=10.0.1) ; python_version == \"3.11\"", "pyarrow (>=14.0.0) ; python_version >= \"3.12\"", "pyarrow (>=3.0.0,<8.0.0) ; python_version < \"3.11\"", "pyarrow (>=6.0.1)", "pyyaml (>=5.3.1,<7)", "ray[default] (>=2.4,<2.5.dev0 || >2.9.0,!=2.9.1,!=2.9.2,<2.10.dev0 || ==2.33.* || >=2.42.dev0,<=2.42.0) ; python_version < \"3.11\"", "ray[default] (>=2.5,<=2.42.0) ; python_version == \"3.11\"", "requests (>=2.28.1)", "requests-toolbelt (<=1.0.0)", "ruamel.yaml", "scikit-learn (<1.6.0) ; python_version <= \"3.10\"", "scikit-learn ; python_version > \"3.10\"", "setuptools (<70.0.0)", "starlette (>=0.17.1)", "tensorboard-plugin-profile (>=2.4.0,<2.18.0)", "tensorflow (>=2.3.0,<3.0.0)", "tensorflow (>=2.3.0,<3.0.0) ; python_version <= \"3.11\"", "tensorflow (>=2.4.0,<3.0.0)", "tqdm (>=4.23.0)", "urllib3 (>=1.21.1,<1.27)", "uvicorn[standard] (>=0.16.0)", "werkzeug (>=2.0.0,<2.1.0)"]
 langchain = ["langchain (>=0.3,<0.4)", "langchain-core (>=0.3,<0.4)", "langchain-google-vertexai (>=2,<3)", "langgraph (>=0.2.45,<0.3)", "openinference-instrumentation-langchain (>=0.1.19,<0.2)"]
 langchain-testing = ["absl-py", "cloudpickle (>=3.0,<4.0)", "google-cloud-trace (<2)", "langchain (>=0.3,<0.4)", "langchain-core (>=0.3,<0.4)", "langchain-google-vertexai (>=2,<3)", "langgraph (>=0.2.45,<0.3)", "openinference-instrumentation-langchain (>=0.1.19,<0.2)", "opentelemetry-exporter-gcp-trace (<2)", "opentelemetry-sdk (<2)", "pydantic (>=2.6.3,<3)", "pytest-xdist", "typing-extensions"]
 lit = ["explainable-ai-sdk (>=1.0.0)", "lit-nlp (==0.4.0)", "pandas (>=1.0.0)", "tensorflow (>=2.3.0,<3.0.0)"]
@@ -2800,7 +2802,7 @@ ray = ["google-cloud-bigquery", "google-cloud-bigquery-storage", "immutabledict"
 ray-testing = ["google-cloud-bigquery", "google-cloud-bigquery-storage", "immutabledict", "pandas (>=1.0.0)", "pyarrow (>=6.0.1)", "pytest-xdist", "ray[default] (>=2.4,<2.5.dev0 || >2.9.0,!=2.9.1,!=2.9.2,<2.10.dev0 || ==2.33.* || >=2.42.dev0,<=2.42.0) ; python_version < \"3.11\"", "ray[default] (>=2.5,<=2.42.0) ; python_version == \"3.11\"", "ray[train]", "scikit-learn (<1.6.0)", "setuptools (<70.0.0)", "tensorflow", "torch (>=2.0.0,<2.1.0)", "xgboost", "xgboost-ray"]
 reasoningengine = ["cloudpickle (>=3.0,<4.0)", "google-cloud-trace (<2)", "opentelemetry-exporter-gcp-trace (<2)", "opentelemetry-sdk (<2)", "pydantic (>=2.6.3,<3)", "typing-extensions"]
 tensorboard = ["tensorboard-plugin-profile (>=2.4.0,<2.18.0)", "tensorflow (>=2.3.0,<3.0.0) ; python_version <= \"3.11\"", "tensorflow (>=2.4.0,<3.0.0)", "werkzeug (>=2.0.0,<2.1.0)"]
-testing = ["aiohttp", "bigframes ; python_version >= \"3.10\"", "docker (>=5.0.3)", "explainable-ai-sdk (>=1.0.0)", "fastapi (>=0.71.0,<=0.114.0)", "google-api-core (>=2.11,<3.0.0)", "google-cloud-bigquery", "google-cloud-bigquery-storage", "google-vizier (>=0.1.6)", "grpcio-testing", "httpx (>=0.23.0,<0.25.0)", "immutabledict", "ipython", "kfp (>=2.6.0,<3.0.0)", "lit-nlp (==0.4.0)", "mlflow (>=1.27.0,<=2.16.0)", "nltk", "numpy (>=1.15.0)", "pandas (>=1.0.0)", "pyarrow (>=10.0.1) ; python_version == \"3.11\"", "pyarrow (>=14.0.0) ; python_version >= \"3.12\"", "pyarrow (>=3.0.0,<8.0.0) ; python_version < \"3.11\"", "pyarrow (>=6.0.1)", "pytest-asyncio", "pytest-xdist", "pyyaml (>=5.3.1,<7)", "ray[default] (>=2.4,<2.5.dev0 || >2.9.0,!=2.9.1,!=2.9.2,<2.10.dev0 || ==2.33.* || >=2.42.dev0,<=2.42.0) ; python_version < \"3.11\"", "ray[default] (>=2.5,<=2.42.0) ; python_version == \"3.11\"", "requests (>=2.28.1)", "requests-toolbelt (<=1.0.0)", "scikit-learn (<1.6.0) ; python_version <= \"3.10\"", "scikit-learn ; python_version > \"3.10\"", "sentencepiece (>=0.2.0)", "setuptools (<70.0.0)", "starlette (>=0.17.1)", "tensorboard-plugin-profile (>=2.4.0,<2.18.0)", "tensorflow (==2.13.0) ; python_version <= \"3.11\"", "tensorflow (==2.16.1) ; python_version > \"3.11\"", "tensorflow (>=2.3.0,<3.0.0)", "tensorflow (>=2.3.0,<3.0.0) ; python_version <= \"3.11\"", "tensorflow (>=2.4.0,<3.0.0)", "torch (>=2.0.0,<2.1.0) ; python_version <= \"3.11\"", "torch (>=2.2.0) ; python_version > \"3.11\"", "tqdm (>=4.23.0)", "urllib3 (>=1.21.1,<1.27)", "uvicorn[standard] (>=0.16.0)", "werkzeug (>=2.0.0,<2.1.0)", "xgboost"]
+testing = ["aiohttp", "bigframes ; python_version >= \"3.10\"", "docker (>=5.0.3)", "explainable-ai-sdk (>=1.0.0)", "fastapi (>=0.71.0,<=0.114.0)", "google-api-core (>=2.11,<3.0.0)", "google-cloud-bigquery", "google-cloud-bigquery-storage", "google-vizier (>=0.1.6)", "grpcio-testing", "httpx (>=0.23.0,<0.25.0)", "immutabledict", "ipython", "jsonschema", "kfp (>=2.6.0,<3.0.0)", "lit-nlp (==0.4.0)", "mlflow (>=1.27.0,<=2.16.0)", "nltk", "numpy (>=1.15.0)", "pandas (>=1.0.0)", "pyarrow (>=10.0.1) ; python_version == \"3.11\"", "pyarrow (>=14.0.0) ; python_version >= \"3.12\"", "pyarrow (>=3.0.0,<8.0.0) ; python_version < \"3.11\"", "pyarrow (>=6.0.1)", "pytest-asyncio", "pytest-xdist", "pyyaml (>=5.3.1,<7)", "ray[default] (>=2.4,<2.5.dev0 || >2.9.0,!=2.9.1,!=2.9.2,<2.10.dev0 || ==2.33.* || >=2.42.dev0,<=2.42.0) ; python_version < \"3.11\"", "ray[default] (>=2.5,<=2.42.0) ; python_version == \"3.11\"", "requests (>=2.28.1)", "requests-toolbelt (<=1.0.0)", "ruamel.yaml", "scikit-learn (<1.6.0) ; python_version <= \"3.10\"", "scikit-learn ; python_version > \"3.10\"", "sentencepiece (>=0.2.0)", "setuptools (<70.0.0)", "starlette (>=0.17.1)", "tensorboard-plugin-profile (>=2.4.0,<2.18.0)", "tensorflow (==2.13.0) ; python_version <= \"3.11\"", "tensorflow (==2.16.1) ; python_version > \"3.11\"", "tensorflow (>=2.3.0,<3.0.0)", "tensorflow (>=2.3.0,<3.0.0) ; python_version <= \"3.11\"", "tensorflow (>=2.4.0,<3.0.0)", "torch (>=2.0.0,<2.1.0) ; python_version <= \"3.11\"", "torch (>=2.2.0) ; python_version > \"3.11\"", "tqdm (>=4.23.0)", "urllib3 (>=1.21.1,<1.27)", "uvicorn[standard] (>=0.16.0)", "werkzeug (>=2.0.0,<2.1.0)", "xgboost"]
 tokenization = ["sentencepiece (>=0.2.0)"]
 vizier = ["google-vizier (>=0.1.6)"]
 xai = ["tensorflow (>=2.3.0,<3.0.0)"]
@@ -3010,7 +3012,7 @@ version = "3.1.1"
 description = "Lightweight in-process concurrent programming"
 optional = false
 python-versions = ">=3.7"
-groups = ["main", "evaluation"]
+groups = ["main", "evaluation", "test"]
 files = [
     {file = "greenlet-3.1.1-cp310-cp310-macosx_11_0_universal2.whl", hash = "sha256:0bbae94a29c9e5c7e4a2b7f0aae5c17e8e90acbfd3bf6270eeba60c39fce3563"},
     {file = "greenlet-3.1.1-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:0fde093fb93f35ca72a556cf72c92ea3ebfda3d79fc35bb19fbe685853869a83"},
@@ -3086,6 +3088,7 @@ files = [
     {file = "greenlet-3.1.1-cp39-cp39-win_amd64.whl", hash = "sha256:3319aa75e0e0639bc15ff54ca327e8dc7a6fe404003496e3c6925cd3142e0e22"},
     {file = "greenlet-3.1.1.tar.gz", hash = "sha256:4ce3ac6cdb6adf7946475d7ef31777c26d94bccc377e070a7986bd2d5c515467"},
 ]
+markers = {test = "platform_python_implementation == \"CPython\""}
 
 [package.extras]
 docs = ["Sphinx", "furo"]
@@ -3372,6 +3375,18 @@ socks = ["socksio (==1.*)"]
 zstd = ["zstandard (>=0.18.0)"]
 
 [[package]]
+name = "httpx-sse"
+version = "0.4.0"
+description = "Consume Server-Sent Event (SSE) messages with HTTPX."
+optional = false
+python-versions = ">=3.8"
+groups = ["main"]
+files = [
+    {file = "httpx-sse-0.4.0.tar.gz", hash = "sha256:1e81a3a3070ce322add1d3529ed42eb5f70817f45ed6ec915ab753f961139721"},
+    {file = "httpx_sse-0.4.0-py3-none-any.whl", hash = "sha256:f329af6eae57eaa2bdfd962b42524764af68075ea87370a2de920af5341e318f"},
+]
+
+[[package]]
 name = "huggingface-hub"
 version = "0.29.2"
 description = "Client library to download and publish models, datasets and other repos on the huggingface.co hub"
@@ -3597,22 +3612,22 @@ pygments = "*"
 
 [[package]]
 name = "ipywidgets"
-version = "8.1.5"
+version = "8.1.6"
 description = "Jupyter interactive widgets"
 optional = false
 python-versions = ">=3.7"
 groups = ["main"]
 files = [
-    {file = "ipywidgets-8.1.5-py3-none-any.whl", hash = "sha256:3290f526f87ae6e77655555baba4f36681c555b8bdbbff430b70e52c34c86245"},
-    {file = "ipywidgets-8.1.5.tar.gz", hash = "sha256:870e43b1a35656a80c18c9503bbf2d16802db1cb487eec6fab27d683381dde17"},
+    {file = "ipywidgets-8.1.6-py3-none-any.whl", hash = "sha256:446e7630a1d025bdc7635e1169fcc06f2ce33b5bd41c2003edeb4a47c8d4bbb1"},
+    {file = "ipywidgets-8.1.6.tar.gz", hash = "sha256:d8ace49c66f14419fc66071371b99d01bed230bbc15d8a60233b18bfbd782851"},
 ]
 
 [package.dependencies]
 comm = ">=0.1.3"
 ipython = ">=6.1.0"
-jupyterlab-widgets = ">=3.0.12,<3.1.0"
+jupyterlab_widgets = ">=3.0.14,<3.1.0"
 traitlets = ">=4.3.1"
-widgetsnbextension = ">=4.0.12,<4.1.0"
+widgetsnbextension = ">=4.0.14,<4.1.0"
 
 [package.extras]
 test = ["ipykernel", "jsonschema", "pytest (>=3.6.0)", "pytest-cov", "pytz"]
@@ -3794,14 +3809,14 @@ files = [
 
 [[package]]
 name = "json-repair"
-version = "0.40.0"
+version = "0.41.0"
 description = "A package to repair broken json strings"
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "json_repair-0.40.0-py3-none-any.whl", hash = "sha256:46955bfd22338ba60cc5239c0b01462ba419871b19fcd68d8881aca4fa3b0d2f"},
-    {file = "json_repair-0.40.0.tar.gz", hash = "sha256:ce3cdef63f033d072295ca892cba51487292cd937da42dc20a8d629ecf5eb82d"},
+    {file = "json_repair-0.41.0-py3-none-any.whl", hash = "sha256:e3be820988fa210fe046e54c8475eafa9e069f1b85d67725f842eb00d1b61f21"},
+    {file = "json_repair-0.41.0.tar.gz", hash = "sha256:c9ee227d949d5da463024942b715e0e331f9f96cb7377e2f85a661b21596c50b"},
 ]
 
 [[package]]
@@ -4117,14 +4132,14 @@ test = ["hatch", "ipykernel", "openapi-core (>=0.18.0,<0.19.0)", "openapi-spec-v
 
 [[package]]
 name = "jupyterlab-widgets"
-version = "3.0.13"
+version = "3.0.14"
 description = "Jupyter interactive widgets for JupyterLab"
 optional = false
 python-versions = ">=3.7"
 groups = ["main"]
 files = [
-    {file = "jupyterlab_widgets-3.0.13-py3-none-any.whl", hash = "sha256:e3cda2c233ce144192f1e29914ad522b2f4c40e77214b0cc97377ca3d323db54"},
-    {file = "jupyterlab_widgets-3.0.13.tar.gz", hash = "sha256:a2966d385328c1942b683a8cd96b89b8dd82c8b8f81dda902bb2bc06d46f5bed"},
+    {file = "jupyterlab_widgets-3.0.14-py3-none-any.whl", hash = "sha256:54c33e3306b7fca139d165d6190dc6c0627aafa5d14adfc974a4e9a3d26cb703"},
+    {file = "jupyterlab_widgets-3.0.14.tar.gz", hash = "sha256:bad03e59546869f026e537e0d170e454259e6dc7048e14041707ca31e523c8a1"},
 ]
 
 [[package]]
@@ -4133,7 +4148,7 @@ version = "1.4.8"
 description = "A fast implementation of the Cassowary constraint solver"
 optional = false
 python-versions = ">=3.10"
-groups = ["main", "evaluation"]
+groups = ["evaluation"]
 files = [
     {file = "kiwisolver-1.4.8-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:88c6f252f6816a73b1f8c904f7bbe02fd67c09a69f7cb8a0eecdbf5ce78e63db"},
     {file = "kiwisolver-1.4.8-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:c72941acb7b67138f35b879bbe85be0f6c6a70cab78fe3ef6db9c024d9223e5b"},
@@ -4413,14 +4428,14 @@ types-tqdm = "*"
 
 [[package]]
 name = "litellm"
-version = "1.65.4"
+version = "1.65.5"
 description = "Library to easily interface with LLM API providers"
 optional = false
 python-versions = "!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*,>=3.8"
 groups = ["main"]
 files = [
-    {file = "litellm-1.65.4-py3-none-any.whl", hash = "sha256:23a0a5888178a403829906a1bc7eb51928ae405b1f752a87b18d0f965108d74a"},
-    {file = "litellm-1.65.4.tar.gz", hash = "sha256:bde14fa580336da3a96007fc155cbf7b2d8a7defaa37937841b0947e028d4264"},
+    {file = "litellm-1.65.5-py3-none-any.whl", hash = "sha256:ed954ec575cc1c468418e705fe922c827591dc01c1204abd4caf9c7572c73b5c"},
+    {file = "litellm-1.65.5.tar.gz", hash = "sha256:f8b1e0800ad66a2029c21a3e37456dedf4d1391da2ef5860f0e22268f1557c7c"},
 ]
 
 [package.dependencies]
@@ -4438,7 +4453,7 @@ tokenizers = "*"
 
 [package.extras]
 extra-proxy = ["azure-identity (>=1.15.0,<2.0.0)", "azure-keyvault-secrets (>=4.8.0,<5.0.0)", "google-cloud-kms (>=2.21.3,<3.0.0)", "prisma (==0.11.0)", "redisvl (>=0.4.1,<0.5.0) ; python_version >= \"3.9\" and python_version < \"3.14\"", "resend (>=0.8.0,<0.9.0)"]
-proxy = ["PyJWT (>=2.8.0,<3.0.0)", "apscheduler (>=3.10.4,<4.0.0)", "backoff", "boto3 (==1.34.34)", "cryptography (>=43.0.1,<44.0.0)", "fastapi (>=0.115.5,<0.116.0)", "fastapi-sso (>=0.16.0,<0.17.0)", "gunicorn (>=23.0.0,<24.0.0)", "litellm-proxy-extras (==0.1.2)", "mcp (==1.5.0) ; python_version >= \"3.10\"", "orjson (>=3.9.7,<4.0.0)", "pynacl (>=1.5.0,<2.0.0)", "python-multipart (>=0.0.18,<0.0.19)", "pyyaml (>=6.0.1,<7.0.0)", "rq", "uvicorn (>=0.29.0,<0.30.0)", "uvloop (>=0.21.0,<0.22.0)", "websockets (>=13.1.0,<14.0.0)"]
+proxy = ["PyJWT (>=2.8.0,<3.0.0)", "apscheduler (>=3.10.4,<4.0.0)", "backoff", "boto3 (==1.34.34)", "cryptography (>=43.0.1,<44.0.0)", "fastapi (>=0.115.5,<0.116.0)", "fastapi-sso (>=0.16.0,<0.17.0)", "gunicorn (>=23.0.0,<24.0.0)", "litellm-proxy-extras (==0.1.3)", "mcp (==1.5.0) ; python_version >= \"3.10\"", "orjson (>=3.9.7,<4.0.0)", "pynacl (>=1.5.0,<2.0.0)", "python-multipart (>=0.0.18,<0.0.19)", "pyyaml (>=6.0.1,<7.0.0)", "rq", "uvicorn (>=0.29.0,<0.30.0)", "uvloop (>=0.21.0,<0.22.0)", "websockets (>=13.1.0,<14.0.0)"]
 
 [[package]]
 name = "lxml"
@@ -4717,7 +4732,7 @@ version = "3.10.1"
 description = "Python plotting package"
 optional = false
 python-versions = ">=3.10"
-groups = ["main", "evaluation"]
+groups = ["evaluation"]
 files = [
     {file = "matplotlib-3.10.1-cp310-cp310-macosx_10_12_x86_64.whl", hash = "sha256:ff2ae14910be903f4a24afdbb6d7d3a6c44da210fc7d42790b87aeac92238a16"},
     {file = "matplotlib-3.10.1-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:0721a3fd3d5756ed593220a8b86808a36c5031fce489adb5b31ee6dbb47dd5b2"},
@@ -4797,6 +4812,33 @@ files = [
 ]
 
 [[package]]
+name = "mcp"
+version = "1.6.0"
+description = "Model Context Protocol SDK"
+optional = false
+python-versions = ">=3.10"
+groups = ["main"]
+files = [
+    {file = "mcp-1.6.0-py3-none-any.whl", hash = "sha256:7bd24c6ea042dbec44c754f100984d186620d8b841ec30f1b19eda9b93a634d0"},
+    {file = "mcp-1.6.0.tar.gz", hash = "sha256:d9324876de2c5637369f43161cd71eebfd803df5a95e46225cab8d280e366723"},
+]
+
+[package.dependencies]
+anyio = ">=4.5"
+httpx = ">=0.27"
+httpx-sse = ">=0.4"
+pydantic = ">=2.7.2,<3.0.0"
+pydantic-settings = ">=2.5.2"
+sse-starlette = ">=1.6.1"
+starlette = ">=0.27"
+uvicorn = ">=0.23.1"
+
+[package.extras]
+cli = ["python-dotenv (>=1.0.0)", "typer (>=0.12.4)"]
+rich = ["rich (>=13.9.4)"]
+ws = ["websockets (>=15.0.1)"]
+
+[[package]]
 name = "mdurl"
 version = "0.1.2"
 description = "Markdown URL utilities"
@@ -4856,14 +4898,14 @@ files = [
 
 [[package]]
 name = "modal"
-version = "0.73.151"
+version = "0.73.159"
 description = "Python client library for Modal"
 optional = false
 python-versions = ">=3.9"
 groups = ["main", "evaluation"]
 files = [
-    {file = "modal-0.73.151-py3-none-any.whl", hash = "sha256:cafce0fc52fab0029edf8e54eb898f99208c4d0b658cc6cccc85876cd103f9c8"},
-    {file = "modal-0.73.151.tar.gz", hash = "sha256:9f72d9a104cbfa92bb9749e16e6d937d52e10566c7603ed6c3e6ea5c667bc83d"},
+    {file = "modal-0.73.159-py3-none-any.whl", hash = "sha256:2363729caaaa4475eba6e0dce90b759fa8a37c82845de5333e9e18eabc52c5c7"},
+    {file = "modal-0.73.159.tar.gz", hash = "sha256:4c9a5f7d37a343420334d4b8436034c75ee47d0976f6677fe52f7c68ea9d32b6"},
 ]
 
 [package.dependencies]
@@ -5008,7 +5050,7 @@ version = "0.70.16"
 description = "better multiprocessing and multithreading in Python"
 optional = false
 python-versions = ">=3.8"
-groups = ["main", "evaluation"]
+groups = ["evaluation"]
 files = [
     {file = "multiprocess-0.70.16-pp310-pypy310_pp73-macosx_10_13_x86_64.whl", hash = "sha256:476887be10e2f59ff183c006af746cb6f1fd0eadcfd4ef49e605cbe2659920ee"},
     {file = "multiprocess-0.70.16-pp310-pypy310_pp73-manylinux_2_28_x86_64.whl", hash = "sha256:d951bed82c8f73929ac82c61f01a7b5ce8f3e5ef40f5b52553b4f547ce2b08ec"},
@@ -5580,14 +5622,14 @@ signedtoken = ["cryptography (>=3.0.0)", "pyjwt (>=2.0.0,<3)"]
 
 [[package]]
 name = "openai"
-version = "1.71.0"
+version = "1.72.0"
 description = "The official Python library for the openai API"
 optional = false
 python-versions = ">=3.8"
 groups = ["main", "evaluation", "test"]
 files = [
-    {file = "openai-1.71.0-py3-none-any.whl", hash = "sha256:e1c643738f1fff1af52bce6ef06a7716c95d089281e7011777179614f32937aa"},
-    {file = "openai-1.71.0.tar.gz", hash = "sha256:52b20bb990a1780f9b0b8ccebac93416343ebd3e4e714e3eff730336833ca207"},
+    {file = "openai-1.72.0-py3-none-any.whl", hash = "sha256:34f5496ba5c8cb06c592831d69e847e2d164526a2fb92afdc3b5cf2891c328c3"},
+    {file = "openai-1.72.0.tar.gz", hash = "sha256:f51de971448905cc90ed5175a5b19e92fd94e31f68cde4025762f9f5257150db"},
 ]
 
 [package.dependencies]
@@ -6325,7 +6367,7 @@ version = "19.0.1"
 description = "Python library for Apache Arrow"
 optional = false
 python-versions = ">=3.9"
-groups = ["main", "evaluation"]
+groups = ["evaluation"]
 files = [
     {file = "pyarrow-19.0.1-cp310-cp310-macosx_12_0_arm64.whl", hash = "sha256:fc28912a2dc924dddc2087679cc8b7263accc71b9ff025a1362b004711661a69"},
     {file = "pyarrow-19.0.1-cp310-cp310-macosx_12_0_x86_64.whl", hash = "sha256:fca15aabbe9b8355800d923cc2e82c8ef514af321e18b437c3d782aa884eaeec"},
@@ -6434,11 +6476,12 @@ version = "2.22"
 description = "C parser in Python"
 optional = false
 python-versions = ">=3.8"
-groups = ["main", "runtime"]
+groups = ["main", "runtime", "test"]
 files = [
     {file = "pycparser-2.22-py3-none-any.whl", hash = "sha256:c3702b6d3dd8c7abc1afa565d7e63d53a1d0bd86cdc24edd75470f4de499cfcc"},
     {file = "pycparser-2.22.tar.gz", hash = "sha256:491c8be9c040f5390f5bf44a5b07752bd07f56edf992381b05c701439eec10f6"},
 ]
+markers = {test = "platform_python_implementation == \"CPython\" and sys_platform == \"win32\""}
 
 [[package]]
 name = "pycryptodome"
@@ -6615,6 +6658,27 @@ files = [
 
 [package.dependencies]
 typing-extensions = ">=4.6.0,<4.7.0 || >4.7.0"
+
+[[package]]
+name = "pydantic-settings"
+version = "2.8.1"
+description = "Settings management using Pydantic"
+optional = false
+python-versions = ">=3.8"
+groups = ["main"]
+files = [
+    {file = "pydantic_settings-2.8.1-py3-none-any.whl", hash = "sha256:81942d5ac3d905f7f3ee1a70df5dfb62d5569c12f51a5a647defc1c3d9ee2e9c"},
+    {file = "pydantic_settings-2.8.1.tar.gz", hash = "sha256:d5c663dfbe9db9d5e1c646b2e161da12f0d734d422ee56f567d0ea2cee4e8585"},
+]
+
+[package.dependencies]
+pydantic = ">=2.7.0"
+python-dotenv = ">=0.21.0"
+
+[package.extras]
+azure-key-vault = ["azure-identity (>=1.16.0)", "azure-keyvault-secrets (>=4.8.0)"]
+toml = ["tomli (>=2.0.1)"]
+yaml = ["pyyaml (>=6.0.1)"]
 
 [[package]]
 name = "pydeck"
@@ -8166,7 +8230,7 @@ version = "0.13.2"
 description = "Statistical data visualization"
 optional = false
 python-versions = ">=3.8"
-groups = ["main", "evaluation"]
+groups = ["evaluation"]
 files = [
     {file = "seaborn-0.13.2-py3-none-any.whl", hash = "sha256:636f8336facf092165e27924f223d3c62ca560b1f2bb5dff7ab7fad265361987"},
     {file = "seaborn-0.13.2.tar.gz", hash = "sha256:93e60a40988f4d65e9f4885df477e2fdaff6b73a9ded434c1ab356dd57eefff7"},
@@ -8205,7 +8269,7 @@ version = "75.8.2"
 description = "Easily download, build, install, upgrade, and uninstall Python packages"
 optional = false
 python-versions = ">=3.9"
-groups = ["main", "evaluation", "runtime"]
+groups = ["main", "evaluation", "runtime", "test"]
 files = [
     {file = "setuptools-75.8.2-py3-none-any.whl", hash = "sha256:558e47c15f1811c1fa7adbd0096669bf76c1d3f433f58324df69f3f5ecac4e8f"},
     {file = "setuptools-75.8.2.tar.gz", hash = "sha256:4880473a969e5f23f2a2be3646b2dfd84af9028716d398e46192f84bc36900d2"},
@@ -8505,14 +8569,14 @@ typing-extensions = {version = ">=4.5.0", markers = "python_version >= \"3.7\""}
 
 [[package]]
 name = "swebench"
-version = "3.0.15"
+version = "3.0.16"
 description = "The official SWE-bench package - a benchmark for evaluating LMs on software engineering"
 optional = false
 python-versions = ">=3.8"
 groups = ["evaluation"]
 files = [
-    {file = "swebench-3.0.15-py3-none-any.whl", hash = "sha256:dd694356f9c155a55d3d2e113fe58446f7385eea0574230af5e2504426f8b85b"},
-    {file = "swebench-3.0.15.tar.gz", hash = "sha256:24e734fbcce34082665a25719075e6899382b7135103dd8c6cc09a6e23789101"},
+    {file = "swebench-3.0.16-py3-none-any.whl", hash = "sha256:cfc330e7849a4f62b031aab1272f24781d7284d520108cd543c926e1ce24bf0a"},
+    {file = "swebench-3.0.16.tar.gz", hash = "sha256:a81c715d9e4eb4e847d9d6bfe87148a833d2cd2a5ae2b141d5920bbe950a7a10"},
 ]
 
 [package.dependencies]
@@ -8532,7 +8596,8 @@ tqdm = "*"
 unidiff = "*"
 
 [package.extras]
-inference = ["anthropic", "flash_attn", "jedi", "openai", "peft", "protobuf", "sentencepiece", "tiktoken", "torch", "transformers", "triton"]
+datasets = ["anthropic", "jedi", "openai", "protobuf", "sentencepiece", "tiktoken", "transformers"]
+inference = ["anthropic", "flash_attn", "jedi", "openai", "peft", "protobuf", "requests", "sentencepiece", "tiktoken", "torch", "transformers", "triton"]
 test = ["pytest", "pytest-cov"]
 
 [[package]]
@@ -9740,14 +9805,14 @@ files = [
 
 [[package]]
 name = "widgetsnbextension"
-version = "4.0.13"
+version = "4.0.14"
 description = "Jupyter interactive widgets for Jupyter Notebook"
 optional = false
 python-versions = ">=3.7"
 groups = ["main"]
 files = [
-    {file = "widgetsnbextension-4.0.13-py3-none-any.whl", hash = "sha256:74b2692e8500525cc38c2b877236ba51d34541e6385eeed5aec15a70f88a6c71"},
-    {file = "widgetsnbextension-4.0.13.tar.gz", hash = "sha256:ffcb67bc9febd10234a362795f643927f4e0c05d9342c727b65d2384f8feacb6"},
+    {file = "widgetsnbextension-4.0.14-py3-none-any.whl", hash = "sha256:4875a9eaf72fbf5079dc372a51a9f268fc38d46f767cbf85c43a36da5cb9b575"},
+    {file = "widgetsnbextension-4.0.14.tar.gz", hash = "sha256:a3629b04e3edb893212df862038c7232f62973373869db5084aed739b437b5af"},
 ]
 
 [[package]]
@@ -9872,7 +9937,7 @@ version = "3.5.0"
 description = "Python binding for xxHash"
 optional = false
 python-versions = ">=3.7"
-groups = ["main", "evaluation"]
+groups = ["evaluation"]
 files = [
     {file = "xxhash-3.5.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:ece616532c499ee9afbb83078b1b952beffef121d989841f7f4b3dc5ac0fd212"},
     {file = "xxhash-3.5.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:3171f693dbc2cef6477054a665dc255d996646b4023fe56cb4db80e26f4cc520"},
@@ -10122,7 +10187,7 @@ version = "5.0"
 description = "Very basic event publishing system"
 optional = false
 python-versions = ">=3.7"
-groups = ["main"]
+groups = ["test"]
 files = [
     {file = "zope.event-5.0-py3-none-any.whl", hash = "sha256:2832e95014f4db26c47a13fdaef84cef2f4df37e66b59d8f1f4a8f319a632c26"},
     {file = "zope.event-5.0.tar.gz", hash = "sha256:bac440d8d9891b4068e2b5a2c5e2c9765a9df762944bda6955f96bb9b91e67cd"},
@@ -10141,7 +10206,7 @@ version = "7.2"
 description = "Interfaces for Python"
 optional = false
 python-versions = ">=3.8"
-groups = ["main"]
+groups = ["main", "test"]
 files = [
     {file = "zope.interface-7.2-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:ce290e62229964715f1011c3dbeab7a4a1e4971fd6f31324c4519464473ef9f2"},
     {file = "zope.interface-7.2-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:05b910a5afe03256b58ab2ba6288960a2892dfeef01336dc4be6f1b9ed02ab0a"},
@@ -10193,4 +10258,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "bd1e164559f6395718bc76482493aa71327e7aee9ebe6131facba65661d9abec"
+content-hash = "535e002070d94b63adb76e6faad5c1966d177b8b482ea82212555514b95c623c"

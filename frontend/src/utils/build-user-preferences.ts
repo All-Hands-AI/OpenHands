@@ -45,7 +45,7 @@ export const buildUserPreferences = (
     formData.get("enable-memory-condenser-switch")?.toString() === "on";
   const enableSoundNotifications =
     formData.get("enable-sound-notifications-switch")?.toString() === "on";
-  const llmBaseUrl = formData.get("base-url-input")?.toString() || "";
+  const llmBaseUrl = formData.get("base-url-input")?.toString().trim() || "";
   const inputApiKey = formData.get("llm-api-key-input")?.toString() || "";
   const llmApiKey =
     inputApiKey === "" && isLLMKeySet
