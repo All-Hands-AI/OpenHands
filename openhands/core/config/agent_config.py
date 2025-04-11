@@ -13,7 +13,6 @@ class AgentConfig(BaseModel):
         function_calling: Whether function calling is enabled. Default is True.
         codeact_enable_browsing: Whether browsing delegate is enabled in the action space. Default is False. Only works with function calling.
         codeact_enable_llm_editor: Whether LLM editor is enabled in the action space. Default is False. Only works with function calling.
-        codeact_enable_fenced_diff: Whether Aider-style fenced diff editor is enabled in the action space. Default is False. Only works with function calling.
         codeact_enable_llm_diff: Whether fenced diff editor is enabled. Works WITHOUT function calling, directly parsing the message.
         codeact_enable_jupyter: Whether Jupyter is enabled in the action space. Default is False.
         llm_config: The name of the llm config to use. If specified, this will override global llm config.
@@ -27,7 +26,6 @@ class AgentConfig(BaseModel):
     llm_config: str | None = Field(default=None)
     codeact_enable_browsing: bool = Field(default=True)
     codeact_enable_llm_editor: bool = Field(default=False)
-    codeact_enable_fenced_diff: bool = Field(default=False)
     codeact_enable_llm_diff: bool = Field(default=False)
     codeact_enable_jupyter: bool = Field(default=True)
     enable_prompt_extensions: bool = Field(default=True)

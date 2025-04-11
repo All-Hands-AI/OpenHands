@@ -353,7 +353,6 @@ def get_tools(
     # Extract flags from config
     codeact_enable_browsing = config.codeact_enable_browsing
     codeact_enable_llm_editor = config.codeact_enable_llm_editor
-    codeact_enable_fenced_diff = config.codeact_enable_fenced_diff
     codeact_enable_llm_diff = config.codeact_enable_llm_diff
     codeact_enable_jupyter = config.codeact_enable_jupyter
 

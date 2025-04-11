@@ -46,7 +46,6 @@ def create_test_config(**kwargs) -> AgentConfig:
     defaults = {
         'codeact_enable_browsing': False,
         'codeact_enable_llm_editor': False,
-        'codeact_enable_fenced_diff': False,
         'codeact_enable_llm_diff': False,
         'codeact_enable_jupyter': False,
         # Add other AgentConfig defaults if necessary for validation
@@ -304,18 +303,6 @@ def test_get_tools_llm_diff_enabled():
     assert FencedDiffEditTool['function']['name'] not in tool_names
     assert LLMBasedFileEditTool['function']['name'] not in tool_names
     assert UndoEditTool['function']['name'] not in tool_names
-
-def test_get_tools_fenced_diff_enabled():
-    """Test tools when Fenced Diff tool is enabled."""
-    config = create_test_config(codeact_enable_fenced_diff=True)
-    tools = get_tools(config)
-    tool_names = {t['function']['name'] for t in tools}
-    assert FencedDiffEditTool['function']['name'] in tool_names
-    assert ViewFileTool['function']['name'] in tool_names
-    assert ListDirectoryTool['function']['name'] in tool_names
-    assert UndoEditTool['function']['name'] in tool_names
-    assert create_str_replace_editor_tool()['function']['name'] not in tool_names
-    assert LLMBasedFileEditTool['function']['name'] not in tool_names
 
 def test_get_tools_llm_editor_enabled():
     """Test tools when LLM Editor tool is enabled."""

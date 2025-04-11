@@ -1,6 +1,5 @@
 from .bash import create_cmd_run_tool
 from .browser import BrowserTool
-from .fenced_diff_edit import FencedDiffEditTool
 from .finish import FinishTool
 from .ipython import IPythonTool
 from .list_directory import ListDirectoryTool
@@ -15,7 +14,6 @@ __all__ = [
     'BrowserTool',
     'create_cmd_run_tool',
     'ListDirectoryTool',
-    'FencedDiffEditTool',
     'FinishTool',
     'IPythonTool',
     'LLMBasedFileEditTool',
