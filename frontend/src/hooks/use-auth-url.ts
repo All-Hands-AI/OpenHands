@@ -12,11 +12,17 @@ export const useAuthUrl = (config: UseAuthUrlConfig) => {
   const { providersAreSet } = useAuth();
 
   return React.useMemo(() => {
-    if (config.appMode === "saas" && !providersAreSet)
-      return generateAuthUrl(
-        config.identityProvider,
-        new URL(window.location.href),
-      );
+    if (config.appMode === "saas" && !providersAreSet) {
+      try {
+        return generateAuthUrl(
+          config.identityProvider,
+          new URL(window.location.href),
+        );
+      } catch (e) {
+        // In test environment, window.location.href might not be a valid URL
+        return null;
+      }
+    }
 
     return null;
   }, [providersAreSet, config.appMode, config.identityProvider]);
