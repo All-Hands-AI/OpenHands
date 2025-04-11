@@ -11,6 +11,7 @@ from typing import Any, Awaitable, TextIO
 from pydantic import SecretStr
 from tqdm import tqdm
 
+import openhands
 from openhands.core.config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.resolver.interfaces.issue import Issue
@@ -337,6 +338,11 @@ def main() -> None:
     base_container_image = my_args.base_container_image
 
     runtime_container_image = my_args.runtime_container_image
+
+    if runtime_container_image is None:
+        runtime_container_image = (
+            f'ghcr.io/all-hands-ai/runtime:{openhands.__version__}-nikolaik'
+        )
 
     owner, repo = my_args.selected_repo.split('/')
     token = my_args.token or os.getenv('GITHUB_TOKEN') or os.getenv('GITLAB_TOKEN')
