@@ -124,6 +124,7 @@ class TaskSolvingAgent(Agent):
         }
         params['tools'] = self.tools
 
+        
         if self.mcp_tools:
             # Only add tools with unique names
             existing_names = {tool['function']['name'] for tool in params['tools']}
