@@ -7,7 +7,7 @@ name: Lint
 on:
   push:
     branches:
-    - main
+      - main
   pull_request:
 
 # If triggered by a PR, it will be in the same group. However, each commit on main will be in its own unique group
@@ -33,7 +33,7 @@ jobs:
       - name: Lint and TypeScript compilation
         run: |
           cd frontend
-          npm run lint
+          npx lint-staged
           npm run make-i18n && tsc
 
   # Run lint on the python code
