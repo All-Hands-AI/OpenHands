@@ -136,7 +136,7 @@ async def select_file(file: str, request: Request):
     elif isinstance(observation, ErrorObservation):
         logger.error(f'Error opening file {file}: {observation}')
 
-        if ('ERROR_BINARY_FILE' in observation.message):
+        if 'ERROR_BINARY_FILE' in observation.message:
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 content={'error': f'Unable to open binary files: {file}'},

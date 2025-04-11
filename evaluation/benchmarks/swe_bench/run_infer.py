@@ -96,7 +96,7 @@ Phase 1. READING: read the problem and reword it in clearer terms
 Phase 2. RUNNING: install and run the tests on the repository
    2.1 Follow the readme
    2.2 Install the environment and anything needed
-   2.2 Iterate and figure out how to run the tests 
+   2.2 Iterate and figure out how to run the tests
 
 Phase 3. EXPLORATION: find the files that are related to the problem and possible solutions
    3.1 Use `grep` to search for relevant methods, classes, keywords and error messages.
@@ -238,7 +238,7 @@ def get_config(
 def initialize_runtime(
     runtime: Runtime,
     instance: pd.Series,  # this argument is not required
-    metadata: EvalMetadata
+    metadata: EvalMetadata,
 ):
     """Initialize the runtime for the agent.
 
