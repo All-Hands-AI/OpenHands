@@ -27,6 +27,7 @@ from openhands.core.exceptions import (
     FunctionCallNotExistsError,
     FunctionCallValidationError,
 )
+from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     Action,
     AgentDelegateAction,
@@ -45,9 +46,11 @@ from openhands.agenthub.codeact_agent.llm_diff_parser import (
 )
 from openhands.core.config import AgentConfig
 from openhands.core.logger import openhands_logger as logger
+from openhands.events.action.mcp import McpAction
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.tool import ToolCallMetadata
 from openhands.llm import LLM
+from openhands.mcp import MCPClientTool
 
 
 def combine_thought(action: Action, thought: str) -> Action:
@@ -89,6 +92,7 @@ def response_to_actions(response: ModelResponse, is_llm_diff_enabled: bool = Fal
         # Process each tool call to OpenHands action
         for i, tool_call in enumerate(assistant_msg.tool_calls):
             action: Action
+            logger.debug(f'Tool call in function_calling.py: {tool_call}')
             try:
                 arguments = json.loads(tool_call.function.arguments)
             except json.decoder.JSONDecodeError as e:
@@ -243,6 +247,15 @@ def response_to_actions(response: ModelResponse, is_llm_diff_enabled: bool = Fal
                         f'Missing required argument "url" in tool call {tool_call.function.name}'
                     )
                 action = BrowseURLAction(url=arguments['url'])
+
+            # ================================================
+            # McpAction (MCP)
+            # ================================================
+            elif tool_call.function.name.endswith(MCPClientTool.postfix()):
+                action = McpAction(
+                    name=tool_call.function.name.rstrip(MCPClientTool.postfix()),
+                    arguments=tool_call.function.arguments,
+                )
             else:
                 raise FunctionCallNotExistsError(
                     f'Tool {tool_call.function.name} is not registered. (arguments: {arguments}). Please check the tool name and retry with an existing tool.'

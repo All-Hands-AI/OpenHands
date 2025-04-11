@@ -10,7 +10,7 @@ from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
 from openhands.core.message import Message, TextContent
 from openhands.events.observation.agent import MicroagentKnowledge
-from openhands.microagent import BaseMicroAgent
+from openhands.microagent import BaseMicroagent
 from openhands.utils.prompt import PromptManager, RepositoryInfo, RuntimeInfo
 
 
@@ -76,7 +76,7 @@ def test_prompt_manager_file_not_found(prompt_dir):
     """Test PromptManager behavior when a template file is not found."""
     # Test with a non-existent template
     with pytest.raises(FileNotFoundError):
-        BaseMicroAgent.load(
+        BaseMicroagent.load(
             os.path.join(prompt_dir, 'micro', 'non_existent_microagent.md')
         )
 
