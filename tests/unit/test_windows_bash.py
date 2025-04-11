@@ -8,7 +8,37 @@ import time
 import subprocess
 import shutil # Added for cleanup verification if needed
 
-from openhands.runtime.utils.windows_bash import WindowsBashSession
+# Import System namespace, required for accessing .NET types like RunspaceState
+# This assumes pythonnet initialization and System loading succeeded in windows_bash.py
+try:
+    import System
+except ImportError as e:
+    # This should ideally not happen if WindowsPowershellSession imported correctly,
+    # but provides a fallback if running tests in isolation or if loading failed unexpectedly.
+    print(f"Test Setup WARNING: Could not import System namespace: {e}. Tests accessing .NET types may fail.")
+    System = None # Define as None so hasattr checks fail gracefully
+
+# The main module (windows_bash.py) handles SDK loading and potential errors.
+# Tests should not attempt to load the SDK themselves.
+# If loading fails in the main module, the session class will raise an error on init.
+# We only need to import the session class itself.
+
+# Attempt to load PowerShell SDK for tests, mirroring main logic -> REMOVED
+# Mock the clr and System imports if pythonnet is not available or for isolation -> REMOVED
+# We need Path from pathlib for this -> REMOVED
+# from pathlib import Path -> Already imported above
+
+# Define mock objects initially -> REMOVED
+# clr = None -> REMOVED
+# PowerShell = None -> REMOVED
+# RunspaceInvoke = None -> REMOVED
+# RunspaceFactory = None -> REMOVED
+# PSInvocationState = None # Assuming this might be needed by tests later -> REMOVED
+
+# REMOVED try...except block for loading SDK in tests (lines ~18-77)
+
+# Import the class under test AFTER the main module has attempted loading
+from openhands.runtime.utils.windows_bash import WindowsPowershellSession
 from openhands.events.action import CmdRunAction
 from openhands.events.observation.commands import CmdOutputObservation, CmdOutputMetadata
 from openhands.events.observation import ErrorObservation
@@ -28,12 +58,11 @@ def temp_work_dir():
 def windows_bash_session(temp_work_dir):
     """Create a WindowsBashSession instance for testing."""
     # Instantiate the class. Initialization happens in __init__.
-    session = WindowsBashSession(
+    session = WindowsPowershellSession(
         work_dir=temp_work_dir,
         username=None,
     )
     assert session._initialized # Should be true after __init__
-    assert hasattr(session, '_temp_dir') and session._temp_dir.is_dir()
     yield session
     # Ensure cleanup happens even if test fails
     session.close()
@@ -44,8 +73,6 @@ def test_initialization(windows_bash_session, temp_work_dir):
     # Most initialization moved to the fixture setup
     assert windows_bash_session._initialized
     assert windows_bash_session.work_dir == os.path.abspath(temp_work_dir)
-    assert hasattr(windows_bash_session, '_temp_dir')
-    assert windows_bash_session._temp_dir.is_dir()
     # initialize() method is now trivial, just confirms readiness
     assert windows_bash_session.initialize() is True
 
@@ -211,20 +238,18 @@ def test_working_directory(windows_bash_session, temp_work_dir):
 
 
 def test_cleanup(windows_bash_session):
-    """Test proper cleanup of resources (temp directory)."""
-    # windows_bash_session.initialize() # Not needed, done in fixture
-
-    # Temp dir should exist before close
-    temp_dir_path = windows_bash_session._temp_dir
-    assert temp_dir_path.is_dir()
+    """Test proper cleanup of resources (runspace)."""
+    # Session should be initialized before close
+    assert windows_bash_session._initialized
+    assert windows_bash_session.runspace is not None
 
     # Close the session
     windows_bash_session.close()
 
     # Verify cleanup
     assert not windows_bash_session._initialized
-    # Check temp dir is removed
-    assert not temp_dir_path.exists()
+    # Check runspace is None after close
+    assert windows_bash_session.runspace is None
 
 
 def test_syntax_error_handling(windows_bash_session):
@@ -265,17 +290,19 @@ def test_session_reuse(windows_bash_session):
     result1 = windows_bash_session.execute(action1)
     assert isinstance(result1, CmdOutputObservation)
     assert "First Use" in result1.content
-    temp_dir1 = windows_bash_session._temp_dir
+    # Store the first runspace instance (or check its state)
+    runspace1_state = windows_bash_session.runspace.RunspaceStateInfo.State
+    assert runspace1_state == System.Management.Automation.Runspaces.RunspaceState.Opened
 
     windows_bash_session.close()
     assert not windows_bash_session._initialized
-    assert not temp_dir1.exists() # Ensure first temp dir was cleaned
+    # The runspace object itself might still exist but should be closed/disposed
+    # Check that the runspace attribute on the session is None after close()
+    assert windows_bash_session.runspace is None
 
-    # Calling initialize() again is okay, but not strictly necessary as execute works fine
-    # on a closed-then-reused object (it handles its own setup).
-    # The main point is the object itself can be reused.
-    # windows_bash_session.initialize()
-    # assert windows_bash_session._initialized
+    # Re-initializing implicitly happens in execute() if needed, but
+    # the current design reuses the object but execute() re-creates the runspace.
+    # Let's test execute on the closed object.
 
     action2 = CmdRunAction(command="Write-Output 'Reused Session Object'")
     result2 = windows_bash_session.execute(action2)
@@ -283,10 +310,13 @@ def test_session_reuse(windows_bash_session):
     assert isinstance(result2, CmdOutputObservation)
     assert result2.content.strip().lstrip('\ufeff') == "Reused Session Object"
     assert result2.metadata.exit_code == 0
-    # Should have created a new temp dir for the second execution
-    assert hasattr(windows_bash_session, '_temp_dir')
-    assert windows_bash_session._temp_dir.is_dir()
-    assert windows_bash_session._temp_dir != temp_dir1
+    # Should have created a new runspace for the second execution
+    assert hasattr(windows_bash_session, 'runspace')
+    assert windows_bash_session.runspace is not None
+    assert windows_bash_session.runspace.RunspaceStateInfo.State == System.Management.Automation.Runspaces.RunspaceState.Opened
+    # Ensure the runspace is different from the first one (or check handle/ID if possible)
+    # We cannot directly compare runspace objects easily after one is disposed.
+    # But we can confirm the state is Opened again.
 
 
 def test_command_output_handling(windows_bash_session):
@@ -312,7 +342,7 @@ def test_execute_popen_failure(temp_work_dir):
         mock_popen.side_effect = OSError(error_message)
 
         # Need to create session inside the patch context
-        session = WindowsBashSession(work_dir=temp_work_dir)
+        session = WindowsPowershellSession(work_dir=temp_work_dir)
         # session.initialize() # Not needed
 
         action = CmdRunAction(command="echo 'test'")

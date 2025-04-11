@@ -1,14 +1,115 @@
+'''
+This module provides a Windows-specific implementation for running commands
+in a PowerShell session using the pythonnet library to interact with the .NET
+PowerShell SDK directly. This aims to provide a more robust and integrated
+way to manage PowerShell processes compared to using temporary script files.
+'''
+
 import os
-import subprocess
-import tempfile
-import uuid
-import re
+import time
 import traceback
 from pathlib import Path
-import time
-import base64
 
+# Import logger early so it's available in the initialization blocks
 from openhands.core.logger import openhands_logger as logger
+
+# Explicitly initialize pythonnet to use CoreCLR
+# This should happen before any 'clr' or 'System' usage if possible.
+try:
+    import pythonnet
+    # Attempt to load using the CoreCLR runtime
+    # If this fails, pythonnet might already be initialized (e.g., by another module)
+    # or CoreCLR might not be properly discoverable despite being installed.
+    pythonnet.load("coreclr")
+    print("Successfully called pythonnet.load('coreclr')")
+    logger.info("Successfully called pythonnet.load('coreclr')")
+except Exception as py_net_ex:
+    print(f"WARNING: Could not explicitly load pythonnet with 'coreclr'. Error: {py_net_ex}. Proceeding with default initialization...")
+    logger.warning(f"Could not explicitly load pythonnet with 'coreclr'. Error: {py_net_ex}. Proceeding with default initialization...")
+
+# Now that pythonnet is initialized, import clr and System
+try:
+    import clr
+    print(f"Imported clr module from: {clr.__file__}")
+    # Load System assembly *after* pythonnet is initialized
+    clr.AddReference("System")
+    import System
+    print("Successfully imported System namespace")
+    clr_system_load_success = True
+except Exception as clr_sys_ex:
+    print(f"FATAL: Failed to import clr or System. Error: {clr_sys_ex}")
+    logger.critical(f"FATAL: Failed to import clr or System. Error: {clr_sys_ex}")
+    logger.critical(traceback.format_exc())
+    # Set flags/dummies to prevent downstream errors
+    clr_system_load_success = False
+    clr = None
+    System = None
+    PowerShell = None # Ensure dependent types are also None
+    # ... (add other dependent types here if needed)
+
+# Attempt to load the PowerShell SDK assembly only if clr and System loaded
+ps_sdk_path = None
+sdk_load_success = False
+if clr_system_load_success:
+    try:
+        # Prioritize PowerShell 7+ if available (adjust path if necessary)
+        pwsh7_path = Path(os.environ.get("ProgramFiles", "C:\\Program Files")) / "PowerShell" / "7" / "System.Management.Automation.dll"
+        if pwsh7_path.exists():
+            ps_sdk_path = str(pwsh7_path)
+            clr.AddReference(ps_sdk_path)
+            print(f"Loaded PowerShell SDK (Core): {ps_sdk_path}") # Use print for immediate feedback during module load
+        else:
+            # Fallback to Windows PowerShell 5.1 bundled with Windows
+            winps_path = Path(os.environ.get("SystemRoot", "C:\\Windows")) / "System32" / "WindowsPowerShell" / "v1.0" / "System.Management.Automation.dll"
+            if winps_path.exists():
+                ps_sdk_path = str(winps_path)
+                clr.AddReference(ps_sdk_path)
+                print(f"Loaded PowerShell SDK (Desktop): {ps_sdk_path}")
+            else:
+                # Last resort: try loading by assembly name (might work if in GAC or path)
+                clr.AddReference("System.Management.Automation")
+                print("Attempted to load PowerShell SDK by name (System.Management.Automation)")
+
+        # Import necessary .NET types after adding the reference
+        # Let's try importing only PowerShell first to isolate the issue
+        from System.Management.Automation import PowerShell
+        print("Successfully imported PowerShell type from System.Management.Automation")
+
+        # Now try importing the others that were causing issues
+        from System.Management.Automation import PSInvocationState # Needed for state checking
+        print("Successfully imported PSInvocationState type from System.Management.Automation")
+        # RunspaceInvoke might be deprecated or unnecessary if using RunspaceFactory/PowerShell.Create()
+        # from System.Management.Automation import RunspaceInvoke
+
+        from System.Management.Automation.Runspaces import RunspaceFactory # Needed for runspace creation
+        print("Successfully imported RunspaceFactory type from System.Management.Automation.Runspaces")
+
+        from System import TimeSpan, Uri # Uri might be needed for some operations
+        from System.Collections.ObjectModel import Collection
+        from System.Text import Encoding # Though maybe not directly needed here
+        sdk_load_success = True
+
+    except Exception as e:
+        sdk_load_success = False
+        # Log the error and make it clear that the session class will be unusable.
+        detailed_error = f"FATAL: Failed to load PowerShell SDK components. Error: {e}. Check pythonnet installation and .NET Runtime compatibility. Path searched: {ps_sdk_path}"
+        print(detailed_error) # Use print for immediate visibility
+        logger.critical(detailed_error) # Also log as critical
+        logger.critical(traceback.format_exc())
+
+        # Define dummy types so the rest of the file parses, but __init__ will fail.
+        PowerShell = None
+        PSInvocationState = None
+        RunspaceFactory = None
+        TimeSpan = None
+        Collection = None
+        # Optionally, raise an ImportError or RuntimeError here to prevent the module from being used further?
+        # raise ImportError(detailed_error) # Consider uncommenting if you want immediate failure at import time
+
+# If loading failed at any stage, ensure PowerShell is None for the check in __init__
+if not clr_system_load_success or not sdk_load_success:
+    PowerShell = None # Explicitly ensure it's None if any exception occurred above
+
 from openhands.events.action import CmdRunAction
 from openhands.events.observation import ErrorObservation
 from openhands.events.observation.commands import (
@@ -17,533 +118,367 @@ from openhands.events.observation.commands import (
 )
 from openhands.utils.shutdown_listener import should_continue
 
-class WindowsBashSession:
-    """A direct PowerShell executor for Windows that doesn't maintain a session."""
-    
+
+class WindowsPowershellSession:
+    """
+    Manages a persistent PowerShell session using the .NET SDK via pythonnet.
+
+    Allows executing commands within a single runspace, preserving state
+    (variables, current directory) between calls.
+    Handles basic timeout and captures output/error streams.
+    """
+
     def __init__(self, work_dir: str, username: str | None = None, no_change_timeout_seconds: int = 30, max_memory_mb: int | None = None):
-        self.work_dir = os.path.abspath(work_dir)
-        self.username = username
-        self._cwd = self.work_dir
-        self.NO_CHANGE_TIMEOUT_SECONDS = no_change_timeout_seconds
-        self.max_memory_mb = max_memory_mb
-        self.prev_status = None
-        self.prev_output = ""
+        """
+        Initializes the PowerShell session.
+
+        Args:
+            work_dir: The starting working directory for the session.
+            username: (Currently ignored) Username for execution. PowerShell SDK typically runs as the current user.
+            no_change_timeout_seconds: Timeout in seconds if no output change is detected (currently NOT fully implemented).
+            max_memory_mb: (Currently ignored) Maximum memory limit for the process.
+        """
+        # Initialize state flags early to prevent AttributeError in __del__ if init fails
         self._closed = False
+        self._initialized = False
+        self.runspace = None # Initialize runspace to None
+
+        if PowerShell is None: # Check if SDK loading failed during module import
+            # Logged critical error during import, just raise here to prevent instantiation
+            raise RuntimeError("PowerShell SDK (System.Management.Automation.dll) could not be loaded. Cannot initialize WindowsPowershellSession.")
+
+        self.work_dir = os.path.abspath(work_dir)
+        self.username = username # Note: Impersonation is complex with direct SDK usage.
+        self._cwd = self.work_dir
+        self.NO_CHANGE_TIMEOUT_SECONDS = no_change_timeout_seconds # Stored, but not fully used yet
+        self.max_memory_mb = max_memory_mb # Stored, but not used.
+
+        # Create and open the persistent runspace
         try:
-            self._temp_dir = Path(tempfile.mkdtemp())
-            logger.debug(f"Created temp directory: {self._temp_dir}")
+            # Consider InitialSessionState for more control (e.g., execution policy)
+            # iss = InitialSessionState.CreateDefault()
+            # iss.ExecutionPolicy = Microsoft.PowerShell.ExecutionPolicy.Unrestricted # Requires importing Microsoft.PowerShell namespace
+            # self.runspace = RunspaceFactory.CreateRunspace(iss)
+            self.runspace = RunspaceFactory.CreateRunspace()
+            self.runspace.Open()
+            # Set initial working directory within the runspace
+            self._set_initial_cwd()
+            self._initialized = True # Set to True only on successful initialization
+            logger.info(f"PowerShell runspace created. Initial CWD set to: {self._cwd}")
         except Exception as e:
-            logger.error(f"Failed to create temp directory: {e}")
-            raise
-        self._initialized = True  # Always initialized since we don't maintain a session
-    
+            logger.error(f"Failed to create or open PowerShell runspace: {e}")
+            logger.error(traceback.format_exc())
+            self.close() # Ensure cleanup if init fails partially
+            raise RuntimeError(f"Failed to initialize PowerShell runspace: {e}")
+
+    def _set_initial_cwd(self):
+        """Sets the initial working directory in the runspace."""
+        ps = None
+        try:
+            ps = PowerShell.Create()
+            ps.Runspace = self.runspace
+            ps.AddScript(f'Set-Location -Path "{self._cwd}"').Invoke()
+            if ps.Streams.Error:
+                 errors = "\n".join([str(err) for err in ps.Streams.Error])
+                 logger.warning(f"Error setting initial CWD to '{self._cwd}': {errors}")
+                 # Confirm actual CWD if setting failed
+                 self._confirm_cwd()
+            else:
+                logger.debug(f"Successfully set initial runspace CWD to {self._cwd}")
+                # Optional: Confirm CWD even on success for robustness
+                # self._confirm_cwd()
+        except Exception as e:
+            logger.error(f"Exception setting initial CWD: {e}")
+            logger.error(traceback.format_exc())
+            # Attempt to confirm CWD even if setting threw an exception
+            self._confirm_cwd()
+        finally:
+            if ps:
+                ps.Dispose()
+
+    def _confirm_cwd(self):
+        """Confirms the actual CWD in the runspace and updates self._cwd."""
+        ps_confirm = None
+        try:
+            ps_confirm = PowerShell.Create()
+            ps_confirm.Runspace = self.runspace
+            ps_confirm.AddScript("Get-Location")
+            results = ps_confirm.Invoke()
+            if results and results.Count > 0 and hasattr(results[0], 'Path'):
+                actual_cwd = str(results[0].Path)
+                if os.path.isdir(actual_cwd):
+                    if actual_cwd != self._cwd:
+                        logger.warning(f"Runspace CWD ({actual_cwd}) differs from expected ({self._cwd}). Updating session CWD.")
+                        self._cwd = actual_cwd
+                    else:
+                        logger.debug(f"Confirmed runspace CWD is {self._cwd}")
+                else:
+                     logger.error(f"Get-Location returned an invalid path: {actual_cwd}. Session CWD may be inaccurate.")
+            elif ps_confirm.Streams.Error:
+                 errors = "\n".join([str(err) for err in ps_confirm.Streams.Error])
+                 logger.error(f"Error confirming runspace CWD: {errors}")
+            else:
+                  logger.error("Could not confirm runspace CWD (No result or error).")
+        except Exception as e:
+            logger.error(f"Exception confirming CWD: {e}")
+        finally:
+             if ps_confirm:
+                  ps_confirm.Dispose()
+
     @property
     def cwd(self) -> str:
-        """Get the current working directory."""
+        """Gets the last known working directory of the session."""
         return self._cwd
-    
+
     def initialize(self):
-        """No initialization needed since we run each command in a new process."""
-        logger.debug(f"WindowsBashSession ready (work_dir: {self.work_dir})")
-        return True
-    
+        """Initialization logic is handled in __init__."""
+        # This method might be redundant now but kept for potential API compatibility.
+        return self._initialized
+
     def execute(self, action: CmdRunAction) -> CmdOutputObservation | ErrorObservation:
-        """Execute a command using a dedicated PowerShell process."""
+        """
+        Executes a command in the persistent PowerShell runspace.
+
+        Args:
+            action: The command execution action containing the command string and timeout.
+
+        Returns:
+            CmdOutputObservation with results or ErrorObservation on failure.
+        """
+        if not self._initialized or self._closed:
+            return ErrorObservation(content="PowerShell session is not initialized or has been closed.")
+
         command = action.command.strip()
-        is_input = action.is_input
-        timeout = action.timeout or 30.0
-        
-        logger.debug(f"Executing command: {command} with timeout {timeout}s")
-        
-        # Recreate temp directory if it was deleted
-        if not hasattr(self, '_temp_dir') or not self._temp_dir.exists():
-            try:
-                self._temp_dir = Path(tempfile.mkdtemp())
-                logger.debug(f"Recreated temp directory: {self._temp_dir}")
-            except Exception as e:
-                logger.error(f"Failed to recreate temp directory: {e}")
-                return ErrorObservation(content=f"Failed to recreate temp directory: {e}")
-        
-        # Handle special cases
-        if command.startswith("C-"):
-            logger.debug(f"Detected special key command: {command}")
-            return ErrorObservation(
-                content=f"Special keys like {command} are not supported in Windows direct execution mode. Please use a different approach."
-            )
-        
+        # Use provided timeout, default to a reasonable value (e.g., 60 seconds)
+        # The original default was NO_CHANGE_TIMEOUT_SECONDS, which is complex here.
+        # Let's use a simpler overall timeout for now.
+        timeout_seconds = action.timeout or 60 # Default to 60 seconds hard timeout
+        timeout_ms = int(timeout_seconds * 1000)
+
+        logger.info(f"Executing command (timeout={timeout_seconds}s): {command}")
+
+        # Handle specific cases similar to the original bash implementation if needed
         if command == "":
-            logger.debug("Detected empty command.")
-            # If no previous command is running, return a message similar to Linux version
-            if not self.prev_status:
-                return CmdOutputObservation(
-                    content="ERROR: No previous running command to retrieve logs from.",
-                    command="",
-                    metadata=CmdOutputMetadata(),
-                )
-            return CmdOutputObservation(
-                content="",
-                command="",
-                metadata=CmdOutputMetadata(exit_code=0, working_dir=self._cwd)
-            )
+             logger.warning("Received empty command string.")
+             # Return empty success, mirroring bash.py behavior for empty command
+             return CmdOutputObservation(content="", command="", metadata=CmdOutputMetadata(exit_code=0, working_dir=self._cwd))
 
-        # Handle git configuration command specially
-        if "git config" in command and "alias" in command:
-            # Convert bash-style git alias to PowerShell function
-            command = command.replace(
-                'alias git="git --no-pager"',
-                'Set-Item -Path Alias:git -Value { git.exe --no-pager $args }'
-            )
-            logger.debug(f"Modified git command for PowerShell: {command}")
-        
-        # For normal commands, use file-based approach with a new process
-        script_file = None
-        output_file = None
-        error_file = None
-        status_file = None
-        stdout_data = ''
-        stderr_data = ''
+        if command.startswith("C-"): # e.g., C-c, C-d
+            logger.warning(f"Received control character command: {command}. Not directly supported.")
+            return ErrorObservation(content=f"Control commands like {command} are not supported in PowerShell SDK mode.")
+
+        ps = None
+        output_builder = []
+        exit_code = 1 # Default to error exit code
+        final_cwd = self._cwd # Start with the current known CWD
+        error_message = None
+        timed_out = False
+
         try:
-            # Create unique files for this command
-            run_uuid = uuid.uuid4()
-            output_file = self._temp_dir / f"output_{run_uuid}.txt"
-            error_file = self._temp_dir / f"error_{run_uuid}.txt"
-            status_file = self._temp_dir / f"status_{run_uuid}.txt"
-            script_file = self._temp_dir / f"script_{run_uuid}.ps1"
-            logger.debug(f"Temp files: script={script_file}, out={output_file}, err={error_file}, status={status_file}")
+            ps = PowerShell.Create()
+            ps.Runspace = self.runspace
 
-            # Encode the command using Base64 to avoid PowerShell parsing issues
-            logger.debug(f"Encoding command using Base64: {command[:50]}...")
-            encoded_command_bytes = command.encode('utf-8')
-            base64_encoded_command = base64.b64encode(encoded_command_bytes).decode('utf-8')
-            logger.debug(f"Base64 encoded command: {base64_encoded_command[:50]}...")
+            # Add the user's command script
+            ps.AddScript(command)
+            # IMPORTANT: Add commands to get exit code and CWD *after* the user command
+            ps.AddScript("$LASTEXITCODE")
+            ps.AddScript("Get-Location")
 
-            # Create PowerShell script to execute the command and write results to files
-            script_content = f"""
-# Create empty files first
-$outputFilePath = \'{output_file}\'
-$errorFilePath = \'{error_file}\'
-$statusFilePath = \'{status_file}\'
-$null > $outputFilePath
-$null > $errorFilePath
-$null > $statusFilePath
+            # Prepare for asynchronous invocation
+            output_collection = Collection[System.Management.Automation.PSObject]()
+            async_result = ps.BeginInvoke[Collection[System.Management.Automation.PSObject], Collection[System.Management.Automation.PSDataStream[System.Management.Automation.ErrorRecord]]](None, output_collection)
 
-# Save current directory
-$originalDir = Get-Location
-$originalDirPath = $originalDir.Path
+            start_time = time.monotonic()
 
-# Change to working directory
-$targetWorkDir = \'{self._cwd}\'
-try {{
-    Set-Location $targetWorkDir
-}} catch {{
-    # Write error to error file and status file, then exit
-    $errorDetails = "Failed to change working directory: $($_.Exception.Message)"
-    $errorDetails | Out-File -FilePath $errorFilePath -Encoding utf8 -Append
-    "EXIT_CODE=1`nWORKING_DIR=$originalDirPath\" | Out-File -FilePath $statusFilePath -Encoding utf8
-    exit 1 # Exit the script early
-}}
+            # Wait loop with timeout and shutdown check
+            while not async_result.IsCompleted:
+                if not should_continue():
+                     logger.warning("Shutdown signal received, attempting to stop PowerShell command.")
+                     ps.Stop()
+                     # Wait briefly for stop to potentially take effect
+                     async_result.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(2))
+                     error_message = "[Command execution cancelled due to shutdown signal]"
+                     # Even if stopped, we need EndInvoke to clean up, so don't break loop here?
+                     # Let the loop condition (IsCompleted) handle it after stop.
+                     # Break might prevent EndInvoke and proper stream reading.
 
-try {{
-    $base64Command = \'{base64_encoded_command}\'
-    try {{
-        $decodedBytes = [System.Convert]::FromBase64String($base64Command)
-        $decodedCommand = [System.Text.Encoding]::UTF8.GetString($decodedBytes)
-    }} catch {{
-        # Write decoding error to error file before throwing
-        $errorDetails = "Failed to decode Base64 command: $($_.Exception.Message)"
-        $errorDetails | Out-File -FilePath $errorFilePath -Encoding utf8 -Append
-        throw "Failed to decode Base64 command." # Propagate error to main catch block
-    }}
+                # Check hard timeout
+                elapsed_seconds = time.monotonic() - start_time
+                if elapsed_seconds > timeout_seconds:
+                    logger.warning(f"Command execution exceeded timeout ({timeout_seconds}s). Stopping.")
+                    ps.Stop()
+                    timed_out = True
+                    # Wait briefly after stopping before checking completion again or calling EndInvoke
+                    async_result.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(2))
+                    error_message = f"[Command timed out after {timeout_seconds:.1f} seconds and was stopped]"
+                    # EndInvoke must still be called even after Stop()
+                    # So don't break, let IsCompleted become true.
 
-    # Execute the script block, redirecting ALL output streams (*)
-    # and APPENDING (>>) them to the output file AS THEY ARE GENERATED.
-    & {{
-        Invoke-Command -ScriptBlock ([ScriptBlock]::Create($decodedCommand))
-    }} *>> $outputFilePath # Redirect all streams, append to file
+                # Wait briefly before checking again (e.g., 100ms)
+                # WaitOne returns true if the handle is signaled (completed), false if timeout expires
+                wait_completed = async_result.AsyncWaitHandle.WaitOne(TimeSpan.FromMilliseconds(100))
+                # if wait_completed: break # Exit loop if completed
 
-    # Get exit code AFTER execution attempt
-    $successStatus = $? # True if the last command succeeded, False otherwise
-    $exitCode = $LASTEXITCODE
-    if ($successStatus -and ($null -eq $exitCode -or $exitCode -eq 0)) {{
-        $exitCode = 0
-    }} elseif (-not $successStatus) {{
-         if ($null -eq $exitCode -or $exitCode -eq 0) {{ $exitCode = 1 }} # If $? is False but exit code is 0/null, force to 1
-    }} else {{
-         # $? is True, but $LASTEXITCODE is non-zero. Use $LASTEXITCODE.
-         # No action needed, $exitCode already holds the value
-         : # PowerShell requires something in the block, ':' is a no-op
-    }}
+            # --- Execution Finished (Normally, Timed Out, or Stopped) --- 
+            logger.debug(f"Async invocation completed. State: {ps.InvocationStateInfo.State}")
 
-    # Output/Error streams were redirected directly.
-
-    # Get current directory (may have changed)
-    $newDir = Get-Location
-    $newDirPath = $newDir.Path
-
-    # Write status information (exit code and current directory)
-    \"EXIT_CODE=$exitCode`nWORKING_DIR=$newDirPath\" | Out-File -FilePath $statusFilePath -Encoding utf8
-
-}} catch {{
-    # Write error details to error file
-    $errorDetails = $_.ToString()
-    if ($_.Exception) {{ $errorDetails += \"`nException Message: $($_.Exception.Message)\" }}
-    if ($_.InvocationInfo) {{ $errorDetails += \"`nScript Line Number: $($_.InvocationInfo.ScriptLineNumber)\" }}
-    # Append error details to the error file
-    $errorDetails | Out-File -FilePath $errorFilePath -Encoding utf8 -Append
-
-    # Write failure status (always exit code 1 in catch block)
-    \"EXIT_CODE=1`nWORKING_DIR=$originalDirPath\" | Out-File -FilePath $statusFilePath -Encoding utf8
-}} finally {{
-    # Script execution finishes here
-}}
-"""
-            # Write script to file
-            logger.debug(f"Writing PowerShell script to {script_file}")
-            script_file.write_text(script_content, encoding='utf-8')
-            
-            powershell_executable = "powershell.exe"
-            # Check if pwsh (PowerShell 7+) exists
+            # Always call EndInvoke to get results and clean up async operation
+            # This might block briefly if the command is still somehow running after stop
+            # It can also throw exceptions if the command itself had a terminating error.
+            results = None
             try:
-                subprocess.run(["pwsh", "-Command", "exit"], check=True, capture_output=True)
-                powershell_executable = "pwsh.exe"
-                logger.debug("Using pwsh.exe")
-            except FileNotFoundError:
-                logger.debug("pwsh.exe not found, using powershell.exe")
-            except Exception as e:
-                logger.debug(f"Error checking for pwsh: {e}, using powershell.exe")
-            
-            # Execute PowerShell script with timeout
-            logger.debug(f"Executing script via {powershell_executable}...")
-            process = None
-            try:
-                start_time = time.monotonic()
-                last_change_time = start_time
-                last_output_size = 0
-                process = subprocess.Popen(
-                    [powershell_executable, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(script_file)],
-                    stdout=subprocess.PIPE, 
-                    stderr=subprocess.PIPE,
-                    text=True, 
-                    encoding='utf-8',
-                    errors='replace',
-                    cwd=self._cwd
-                )
-                
-                # For long-running processes, we need to implement a no-change timeout
-                # similar to bash.py's approach
-                if action.blocking:
-                    # Simple wait for completion if blocking
-                    stdout_data, stderr_data = process.communicate(timeout=timeout)
+                 logger.debug("Calling EndInvoke...")
+                 results = ps.EndInvoke(async_result)
+                 logger.debug("EndInvoke completed.")
+            except Exception as end_invoke_ex:
+                 # This often indicates a script error or that Stop() was forceful
+                 logger.error(f"Error during EndInvoke: {end_invoke_ex}")
+                 if not error_message: # Prioritize timeout/cancellation messages
+                      error_message = f"[Error during command finalization: {end_invoke_ex}]"
+                 # Still try to read streams below
+
+            # Process output streams regardless of EndInvoke success
+
+            # 1. Output Stream (Results from EndInvoke)
+            if results is not None and results.Count > 0:
+                # Expecting N results + $LASTEXITCODE + Get-Location
+                num_actual_results = results.Count - 2
+                if num_actual_results < 0: num_actual_results = 0 # Handle case where only exit code/cwd ran
+
+                for i in range(num_actual_results):
+                    if results[i] is not None:
+                        output_builder.append(str(results[i]))
+
+                # Extract $LASTEXITCODE (second to last result)
+                if results.Count >= 2 and results[-2] is not None:
+                    try:
+                        exit_code = int(str(results[-2]))
+                    except (ValueError, TypeError):
+                        logger.warning(f"Could not parse $LASTEXITCODE as int: {results[-2]}. Assuming error.")
+                        exit_code = 1 # Assume error if parsing fails
                 else:
-                    # Poll for output with no-change detection
-                    stdout_chunks = []
-                    stderr_chunks = []
-                    
-                    while should_continue() and process.poll() is None:
-                        # Check if output file has changed
-                        current_output_size = 0
-                        if output_file.exists():
-                            try:
-                                current_output_size = output_file.stat().st_size
-                            except Exception:
-                                pass  # Ignore file access errors during polling
-                                
-                        if current_output_size != last_output_size:
-                            last_change_time = time.monotonic()
-                            last_output_size = current_output_size
-                            
-                        # Check for no-change timeout
-                        time_since_last_change = time.monotonic() - last_change_time
-                        if time_since_last_change >= self.NO_CHANGE_TIMEOUT_SECONDS:
-                            # Read current output
-                            file_output = ""
-                            if output_file.exists():
-                                try:
-                                    file_output = output_file.read_text(encoding='utf-8', errors='replace')
-                                except Exception as e:
-                                    logger.warning(f"Failed to read output file on no-change timeout: {e}")
-                                    file_output = f"[Error reading output file during no-change timeout: {e}]"
-                                    
-                            # Read error file
-                            error_output = ""
-                            if error_file.exists() and error_file.stat().st_size > 0:
-                                try:
-                                    error_output = error_file.read_text(encoding='utf-8', errors='replace')
-                                    if error_output.strip():
-                                        file_output += f"\n[ERROR_STREAM] {error_output}"
-                                except Exception as e:
-                                    logger.warning(f"Failed to read error file on no-change timeout: {e}")
-                                    
-                            # Create metadata with suffix similar to bash.py
-                            metadata = CmdOutputMetadata(working_dir=self._cwd)
-                            metadata.suffix = (
-                                f"\n[The command has no new output after {self.NO_CHANGE_TIMEOUT_SECONDS} seconds. "
-                                "Note: On Windows, commands run in isolated processes. "
-                                f"You can wait longer to see additional output by sending empty command '', "
-                                "or terminate the current process using a new command."
-                            )
-                            
-                            # Set status for tracking
-                            self.prev_status = "NO_CHANGE_TIMEOUT"
-                            self.prev_output = file_output
-                            
-                            # Return the observation before completely terminating
-                            return CmdOutputObservation(
-                                content=file_output,
-                                command=command,
-                                metadata=metadata
-                            )
-                            
-                        # Check for hard timeout
-                        if timeout and time.monotonic() - start_time >= timeout:
-                            raise subprocess.TimeoutExpired(process.args, timeout)
-                            
-                        # Short sleep to prevent CPU spinning
-                        time.sleep(0.5)
-                        
-                    # Process completed or we're breaking out of the loop
-                    try:
-                        stdout_data, stderr_data = process.communicate(timeout=1)
-                    except subprocess.TimeoutExpired:
-                        # Last attempt timed out, but we already have partial output
-                        process.kill()
-                        stdout_data = "".join(stdout_chunks)
-                        stderr_data = "".join(stderr_chunks)
-                
-                end_time = time.monotonic()
-                logger.debug(f"Script process finished in {end_time - start_time:.2f} seconds.")
-                logger.debug(f"Script STDOUT:\n{stdout_data}")
-                logger.debug(f"Script STDERR:\n{stderr_data}")
-                process_exit_code = process.returncode
-                logger.debug(f"Script process exit code: {process_exit_code}")
+                     logger.warning("$LASTEXITCODE was not found in results. Checking streams/state.")
+                     # If exit code is missing, assume error if errors occurred or state is Failed
+                     if ps.Streams.Error.Count > 0 or ps.InvocationStateInfo.State == PSInvocationState.Failed:
+                         exit_code = 1
+                     elif timed_out or error_message: # If timed out or cancelled, assume error code
+                         exit_code = 1 # Or maybe a specific code for timeout?
+                     else:
+                         # If no errors, no timeout, command completed, but no $LASTEXITCODE... assume 0? Risky.
+                         logger.warning("No $LASTEXITCODE, no errors, no timeout. Assuming exit code 0, but this might be incorrect.")
+                         exit_code = 0
 
-            except subprocess.TimeoutExpired:
-                logger.error(f"Script execution timed out after {timeout} seconds.")
-                stdout_after_kill = ""
-                stderr_after_kill = ""
-                if process:
-                    logger.debug(f"Killing process {process.pid}")
-                    # Try to kill the process tree using taskkill first
-                    try:
-                        kill_result = subprocess.run(['taskkill', '/F', '/T', '/PID', str(process.pid)], check=False, capture_output=True, timeout=5)
-                        logger.debug(f"Attempted taskkill /T on PID {process.pid}. Result: {kill_result.returncode}, Output: {kill_result.stdout.decode(errors='replace')}, Error: {kill_result.stderr.decode(errors='replace')}")
-                        if kill_result.returncode != 0:
-                             logger.warning(f"taskkill failed or process {process.pid} not found, falling back to process.kill()")
-                             process.kill() # Fallback if taskkill fails
-                    except FileNotFoundError:
-                         logger.warning("taskkill command not found. Falling back to process.kill()")
-                         process.kill() # Fallback if taskkill command doesn't exist
-                    except Exception as kill_err:
-                        logger.warning(f"Error during taskkill for {process.pid}: {kill_err}. Falling back to process.kill()")
-                        process.kill() # Fallback on other errors
+                # Extract CWD (last result)
+                if results.Count >= 1 and results[-1] is not None:
+                     try:
+                          # Result is often a PathInfo object, get the Path property
+                          if hasattr(results[-1], 'Path'):
+                               final_cwd = str(results[-1].Path)
+                          else: # Or maybe just a string?
+                               final_cwd = str(results[-1])
 
-                    logger.debug(f"Process killed/terminated, attempting final communication...")
-                    try:
-                        # Explicitly wait for the process to ensure it's terminated after kill signal
-                        logger.debug(f"Waiting briefly for process {process.pid} to terminate...")
-                        process.wait(timeout=2) # Wait up to 2 seconds
-                        logger.debug(f"Process {process.pid} terminated.")
-                    except subprocess.TimeoutExpired:
-                        logger.warning(f"Process {process.pid} did not terminate quickly after kill signal.")
-                    except Exception as wait_err:
-                        logger.warning(f"Error waiting for process {process.pid} termination: {wait_err}")
-
-                    try:
-                        # Try short communicate to get remaining output/errors
-                        stdout_after_kill, stderr_after_kill = process.communicate(timeout=1) # Short timeout
-                        logger.debug(f"Post-kill STDOUT:\n{stdout_after_kill}")
-                        logger.debug(f"Post-kill STDERR:\n{stderr_after_kill}")
-                    except subprocess.TimeoutExpired:
-                        logger.warning("Timed out waiting for output after killing process. Output might be incomplete.")
-                        # Ensure the process is really dead if communicate times out again
-                        try:
-                            process.kill()
-                        except OSError:
-                            pass # Process already dead
-                    except Exception as comm_err:
-                        logger.warning(f"Error during post-kill communicate: {comm_err}")
-
-                # Combine any potentially captured output
-                # Priority to stdout captured post-kill, fallback to empty
-                final_output = stdout_after_kill or ""
-                if stderr_after_kill: # Append any stderr captured post-kill
-                     final_output += f"\n[POST_KILL_STDERR] {stderr_after_kill}"
-
-                # Also read from output and error files, as they contain the direct stream
-                file_output = ""
-                if output_file and output_file.exists():
-                    try:
-                        file_output = output_file.read_text(encoding='utf-8', errors='replace')
-                        logger.debug(f"Read {len(file_output)} chars from output file ({output_file}) on timeout.")
-                    except Exception as e:
-                        logger.warning(f"Failed to read output file {output_file} on timeout: {e}")
-                        file_output = f"[Error reading output file: {e}]"
+                          # Validate CWD path
+                          if os.path.isdir(final_cwd):
+                              if final_cwd != self._cwd:
+                                  logger.info(f"Working directory changed to: {final_cwd}")
+                                  self._cwd = final_cwd # Update session CWD
+                              else:
+                                  logger.debug(f"Working directory remains: {self._cwd}")
+                          else:
+                              logger.warning(f"Command returned invalid CWD '{final_cwd}', keeping old CWD: {self._cwd}")
+                              final_cwd = self._cwd # Use old CWD for metadata reporting
+                     except Exception as cwd_ex:
+                          logger.warning(f"Could not parse Get-Location result: {results[-1]}, Error: {cwd_ex}. Keeping old CWD.")
+                          final_cwd = self._cwd # Use old CWD for metadata reporting
                 else:
-                    logger.debug(f"Output file {output_file} not found on timeout.")
+                     logger.warning("Get-Location result was not found. Keeping old CWD.")
+                     final_cwd = self._cwd # Use old CWD if Get-Location failed
 
-                if error_file and error_file.exists():
-                    try:
-                        if error_file.stat().st_size > 0:
-                            error_text = error_file.read_text(encoding='utf-8', errors='replace')
-                            logger.debug(f"Read {len(error_text)} chars from error file ({error_file}) on timeout.")
-                            # Append error file content to file_output
-                            if error_text.strip():
-                                file_output += f"\n[ERROR_FILE_CONTENT] {error_text}"
-                    except Exception as e:
-                        logger.warning(f"Failed to read error file {error_file} on timeout: {e}")
-                        file_output += f"\n[Error reading error file: {e}]"
+            # 2. Error Stream
+            if ps.Streams.Error and ps.Streams.Error.Count > 0:
+                if output_builder: output_builder.append("\n") # Separator
+                output_builder.append("[ERROR STREAM]")
+                for err_record in ps.Streams.Error:
+                    output_builder.append(str(err_record))
+                    # Also log errors prominently
+                    logger.error(f"PowerShell Error Record: {err_record}")
+                # If errors occurred, ensure exit code is non-zero
+                if exit_code == 0:
+                    logger.warning("Errors detected in stream, but $LASTEXITCODE was 0. Forcing exit code to 1.")
+                    exit_code = 1
 
-                # Prepend file content (which has the direct stream) to the final output
-                # If file_output is empty, this does nothing
-                # If final_output (from communicate) is empty, this uses just file_output
-                final_output = file_output + final_output
+            # 3. Other Streams (Optional, add if needed for debugging)
+            # Example: Verbose Stream
+            # if ps.Streams.Verbose and ps.Streams.Verbose.Count > 0:
+            #     if output_builder: output_builder.append("\n")
+            #     output_builder.append("[VERBOSE STREAM]")
+            #     for record in ps.Streams.Verbose: output_builder.append(str(record))
 
-                # Set status for tracking subsequent commands
-                self.prev_status = "HARD_TIMEOUT"
-                self.prev_output = final_output
+            # Check final invocation state
+            if ps.InvocationStateInfo.State == PSInvocationState.Failed:
+                logger.error(f"PowerShell final invocation state is FAILED. Reason: {ps.InvocationStateInfo.Reason}")
+                if exit_code == 0: exit_code = 1 # Ensure failure is reported
+                if not error_message and ps.InvocationStateInfo.Reason:
+                     # Add failure reason if no other message (like timeout) exists
+                     error_message = f"[PowerShell invocation failed: {ps.InvocationStateInfo.Reason}]"
 
-                # Handle timeout - use message format similar to bash.py
-                metadata = CmdOutputMetadata(
-                    exit_code=-1,
-                    working_dir=self._cwd,
-                    suffix=(
-                        f"\n[The command timed out after {timeout} seconds and was terminated. "
-                        "Note: On Windows, unlike Linux, timed-out processes are forcibly terminated. "
-                        "The output shown may be incomplete."
-                    )
-                )
-                
-                # Return timeout observation with combined captured output
-                return CmdOutputObservation(
-                    content=final_output, # Use combined file and communicate output
-                    command=command,
-                    metadata=metadata
-                )
-            except Exception as run_err:
-                 logger.error(f"Failed to run script: {run_err}")
-                 logger.error(traceback.format_exc())
-                 return ErrorObservation(content=f"Failed to execute PowerShell script: {run_err}")
+            # Combine output and add any timeout/error messages
+            final_output = "\n".join(output_builder).strip()
+            if error_message:
+                 final_output += f"\n{error_message}"
 
-            # Process completed, read results from files
-            logger.debug("Reading results from files...")
-            command_output = ""
-            exit_code = 1 # Default to error
-            working_dir = self._cwd
-            
-            # Read output file
-            if output_file.exists():
-                try:
-                    command_output = output_file.read_text(encoding='utf-8')
-                    logger.debug(f"Read {len(command_output)} chars from output file.")
-                except Exception as e:
-                    logger.error(f"Failed to read output file {output_file}: {e}")
-                    command_output = f"[Error reading output file: {str(e)}]"
-            else:
-                 logger.warning(f"Output file {output_file} not found.")
-            
-            # Read error file and append to output if it exists
-            if error_file.exists():
-                try:
-                    if error_file.stat().st_size > 0:
-                        error_text = error_file.read_text(encoding='utf-8')
-                        logger.debug(f"Read {len(error_text)} chars from error file.")
-                        if error_text.strip():
-                            command_output += f"\n[ERROR_STREAM] {error_text}" # Indicate it came from error stream
-                except Exception as e:
-                     logger.error(f"Failed to read error file {error_file}: {e}")
-                     pass
-            else:
-                 logger.warning(f"Error file {error_file} not found.")
-            
-            # Read status file
-            if status_file.exists():
-                try:
-                    status_text = status_file.read_text(encoding='utf-8')
-                    logger.debug(f"Read status file ({status_file}): {status_text.strip()}")
-                    
-                    # Extract exit code
-                    exit_code_match = re.search(r'EXIT_CODE=(\d+)', status_text)
-                    if exit_code_match:
-                        exit_code = int(exit_code_match.group(1))
-                        logger.debug(f"Parsed exit code: {exit_code}")
-                    
-                    # Extract working directory
-                    dir_match = re.search(r'WORKING_DIR=(.*)', status_text)
-                    if dir_match:
-                        new_dir = dir_match.group(1).strip()
-                        if new_dir and os.path.isdir(new_dir): # Check if dir exists and is not empty
-                            working_dir = new_dir
-                            self._cwd = working_dir  # Update current working directory for next command
-                            logger.debug(f"Updated working directory to: {self._cwd}")
-                        else:
-                            logger.warning(f"Parsed working directory '{new_dir}' is invalid or empty, keeping old: {self._cwd}")
-                except Exception as e:
-                     logger.error(f"Failed to read or parse status file {status_file}: {e}")
-                     pass
-            else:
-                 logger.warning(f"Status file {status_file} not found.")
+            # Create metadata
+            metadata = CmdOutputMetadata(exit_code=exit_code, working_dir=self._cwd)
+            suffix = f"\n[Command completed with exit code {exit_code} in CWD: {self._cwd}]"
+            if timed_out:
+                suffix = f"\n[Command timed out after {timeout_seconds:.1f} seconds and was stopped. Exit code: {exit_code}, CWD: {self._cwd}]"
+            elif error_message and "[Command execution cancelled due to shutdown signal]" in error_message:
+                 suffix = f"\n[Command execution cancelled due to shutdown signal. Exit code: {exit_code}, CWD: {self._cwd}]"
+            metadata.suffix = suffix
 
-            # If PowerShell script itself failed (e.g., syntax error), reflect that
-            if process_exit_code != 0 and exit_code == 0:
-                 logger.warning(f"Script process exited with {process_exit_code} but command exit code was 0. Overriding to 1.")
-                 exit_code = 1 # Indicate failure
-                 if stderr_data:
-                      command_output += f"\n[POWERSHELL_ERROR] {stderr_data}" # Add PS error
-
-            # Reset tracking variables for completed commands
-            self.prev_status = "COMPLETED"
-            self.prev_output = ""
-                  
-            # Return result with metadata suffix format matching bash.py
-            metadata = CmdOutputMetadata(
-                exit_code=exit_code,
-                working_dir=working_dir,
-                suffix=f"\n[The command completed with exit code {exit_code}.]"
-            )
-            
-            logger.debug(f"Returning observation. ExitCode={exit_code}, CWD={working_dir}")
+            logger.info(f"Command finished. ExitCode={exit_code}, CWD={self._cwd}")
             return CmdOutputObservation(
-                content=command_output,
+                content=final_output,
                 command=command,
                 metadata=metadata
             )
-                
+
         except Exception as e:
-            logger.error(f"Unexpected error during command execution: {e}")
+            logger.error(f"Unhandled exception during PowerShell command execution: {e}")
             logger.error(traceback.format_exc())
-            return ErrorObservation(
-                content=f"ERROR executing command: {str(e)}"
-            )
+            # Try to include partial output if available
+            partial_output = "\n".join(output_builder).strip()
+            err_content = f"FATAL ERROR executing PowerShell command: {e}\nPartial Output (if any):\n{partial_output}"
+            # Return an ErrorObservation, using current CWD state
+            return ErrorObservation(content=err_content, error_type="sdk_execution_error")
         finally:
-            # Clean up files
-            logger.debug("Cleaning up temp files...")
-            for file in [output_file, error_file, status_file, script_file]:
-                if file and file.exists():
-                    try:
-                        file.unlink()
-                        logger.debug(f"Deleted {file}")
-                    except Exception as e:
-                        logger.warning(f"Failed to delete temp file {file}: {e}")
-    
+            # Ensure the PowerShell object is disposed to release resources
+            if ps:
+                try:
+                    ps.Dispose()
+                except Exception as dispose_ex:
+                     logger.error(f"Exception disposing PowerShell object: {dispose_ex}")
+
     def close(self):
-        """Clean up resources."""
+        """Closes the PowerShell runspace and releases resources."""
         if self._closed:
             return
-            
-        logger.debug("Closing WindowsBashSession.")
-        # No process to clean up, just remove temp directory
-        if hasattr(self, '_temp_dir') and self._temp_dir and self._temp_dir.exists():
-            logger.debug(f"Removing temp directory: {self._temp_dir}")
+
+        logger.info("Closing PowerShell session runspace.")
+        if hasattr(self, 'runspace') and self.runspace:
             try:
-                import shutil
-                shutil.rmtree(self._temp_dir)
-                logger.debug(f"Removed temp directory {self._temp_dir}")
+                if self.runspace.RunspaceStateInfo.State == System.Management.Automation.Runspaces.RunspaceState.Opened:
+                    self.runspace.Close()
+                self.runspace.Dispose()
+                logger.info("PowerShell runspace closed and disposed.")
             except Exception as e:
-                logger.error(f"Failed to remove temp directory {self._temp_dir}: {e}")
-        
+                logger.error(f"Error closing/disposing PowerShell runspace: {e}")
+                logger.error(traceback.format_exc())
+
+        self.runspace = None
         self._initialized = False
         self._closed = True
-    
+
     def __del__(self):
-        """Ensure resources are cleaned up."""
-        self.close() 
+        """Destructor ensures the runspace is closed."""
+        self.close()
