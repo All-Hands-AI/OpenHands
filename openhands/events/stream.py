@@ -163,25 +163,44 @@ class EventStream(EventStore):
         with self._lock:
             event._id = self.cur_id  # type: ignore [attr-defined]
             self.cur_id += 1
+
+            # Take a copy of the current write page
+            current_write_page = self._write_page_cache
+
+            # Calculate the index of the current event in the write page
+            write_page_index = len(current_write_page)
+
+            # Temporary add none - the actual event replaces this later
+            current_write_page.append(None)  # type: ignore
+
+            # If the page is full, create a new page for future events / other threads to use
+            if len(current_write_page) == self.cache_size:
+                self._write_page_cache = []
+
+        # Outside the lock update the event as required
         event._timestamp = datetime.now().isoformat()
         event._source = source  # type: ignore [attr-defined]
         data = event_to_dict(event)
         data = self._replace_secrets(data)
         event = event_from_dict(data)
+
         if event.id is not None:
-            self._write_page_cache.append(data)
+            # Set the event in the current write page - doing this before writes means that written pages will always include the event at its correct index
+            current_write_page[write_page_index] = data
+
+            # Write the event to the store - this can take some time
             self.file_store.write(
                 self._get_filename_for_id(event.id, self.user_id), json.dumps(data)
             )
-            self._store_cache_page()
+
+            # Store the cache page last - if it is not present during reads then it will simply be bypassed.
+            self._store_cache_page(current_write_page)
         self._queue.put(event)
 
-    def _store_cache_page(self):
+    def _store_cache_page(self, current_write_page: list[dict]):
         """Store a page in the cache. Reading individual events is slow when there are a lot of them, so we use pages."""
-        current_write_page = self._write_page_cache
         if len(current_write_page) < self.cache_size:
             return
-        self._write_page_cache = []
         start = current_write_page[0]['id']
         end = start + self.cache_size
         contents = json.dumps(current_write_page)
