@@ -563,7 +563,7 @@ def main() -> None:
     parser.add_argument(
         '--base-container-image',
         type=str,
-        default=None,
+        default='',
         help='base container image to use.',
     )
     parser.add_argument(
