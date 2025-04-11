@@ -813,8 +813,26 @@ class AgentController:
             ):
                 await self.set_agent_state_to(AgentState.AWAITING_USER_CONFIRMATION)
 
-            # Create and log metrics for frontend display
-            self._prepare_metrics_for_frontend(action)
+            # Log metrics information for debugging
+            if self.agent.llm.metrics.token_usages:
+                latest_usage = self.agent.llm.metrics.token_usages[-1]
+            else:
+                latest_usage = None
+
+            accumulated_usage = self.agent.llm.metrics.accumulated_token_usage
+            self.log(
+                'debug',
+                f'Action metrics - accumulated_cost: {self.agent.llm.metrics.accumulated_cost}, '
+                f'latest tokens (prompt/completion/cache_read/cache_write): '
+                f'{latest_usage.prompt_tokens if latest_usage else 0}/'
+                f'{latest_usage.completion_tokens if latest_usage else 0}/'
+                f'{latest_usage.cache_read_tokens if latest_usage else 0}/'
+                f'{latest_usage.cache_write_tokens if latest_usage else 0}, '
+                f'accumulated tokens (prompt/completion): '
+                f'{accumulated_usage.prompt_tokens}/'
+                f'{accumulated_usage.completion_tokens}',
+                extra={'msg_type': 'METRICS'},
+            )
 
             self.event_stream.add_event(action, action._source)  # type: ignore [attr-defined]
 
@@ -1109,37 +1127,7 @@ class AgentController:
 
         return self._stuck_detector.is_stuck(self.headless_mode)
 
-    def _prepare_metrics_for_frontend(self, action: Action) -> None:
-        """Log metrics information for debugging.
 
-        This method no longer attaches metrics to the action since metrics are now
-        handled at the conversation level via conversation metadata. The metrics
-        are updated in the conversation metadata when an event is processed by
-        the conversation manager.
-
-        Args:
-            action: The action (metrics are no longer attached)
-        """
-        # Log the metrics information for debugging
-        # Get the latest usage directly from the agent's metrics
-        latest_usage = None
-        if self.agent.llm.metrics.token_usages:
-            latest_usage = self.agent.llm.metrics.token_usages[-1]
-
-        accumulated_usage = self.agent.llm.metrics.accumulated_token_usage
-        self.log(
-            'debug',
-            f'Action metrics - accumulated_cost: {self.agent.llm.metrics.accumulated_cost}, '
-            f'latest tokens (prompt/completion/cache_read/cache_write): '
-            f'{latest_usage.prompt_tokens if latest_usage else 0}/'
-            f'{latest_usage.completion_tokens if latest_usage else 0}/'
-            f'{latest_usage.cache_read_tokens if latest_usage else 0}/'
-            f'{latest_usage.cache_write_tokens if latest_usage else 0}, '
-            f'accumulated tokens (prompt/completion): '
-            f'{accumulated_usage.prompt_tokens}/'
-            f'{accumulated_usage.completion_tokens}',
-            extra={'msg_type': 'METRICS'},
-        )
 
     def __repr__(self):
         return (

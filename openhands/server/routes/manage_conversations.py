@@ -396,6 +396,11 @@ async def _get_conversation_info(
             status=(
                 ConversationStatus.RUNNING if is_running else ConversationStatus.STOPPED
             ),
+            # Include metrics data
+            accumulated_cost=conversation.accumulated_cost,
+            prompt_tokens=conversation.prompt_tokens,
+            completion_tokens=conversation.completion_tokens,
+            total_tokens=conversation.total_tokens,
         )
     except Exception as e:
         logger.error(

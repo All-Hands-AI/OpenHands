@@ -9,5 +9,7 @@ export const useUserConversations = () => {
     queryKey: ["user", "conversations"],
     queryFn: OpenHands.getUserConversations,
     enabled: !!userIsAuthenticated,
+    staleTime: 1000 * 10, // 10 seconds - poll more frequently for metrics updates
+    refetchInterval: 1000 * 10, // Poll every 10 seconds for metrics updates
   });
 };

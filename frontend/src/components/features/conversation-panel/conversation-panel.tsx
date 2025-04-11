@@ -111,6 +111,11 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
               createdAt={project.created_at}
               status={project.status}
               conversationId={project.conversation_id}
+              // Pass metrics data
+              accumulated_cost={project.accumulated_cost}
+              prompt_tokens={project.prompt_tokens}
+              completion_tokens={project.completion_tokens}
+              total_tokens={project.total_tokens}
             />
           )}
         </NavLink>
