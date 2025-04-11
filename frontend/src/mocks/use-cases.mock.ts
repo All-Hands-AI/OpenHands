@@ -2,7 +2,7 @@ export const useCasesMocks: Record<number | string, any> = [
   {
     agent: "TaskSolvingAgent",
     title: "General Questions",
-    prompt: `You are Thesis Capsule, an efficient AI assistant designed to solve tasks, provide insights, and optimize workflows.
+    prompt: `You are Thesis, an efficient AI assistant designed to solve tasks, provide insights, and optimize workflows.
     Create a plan to solve tasks and break them down into smaller steps.
     After creating a plan, you must do each step sequentially and update the plan using the tool with the status and result when finish each step.
     Save steps results if .md if the information is insightful.
