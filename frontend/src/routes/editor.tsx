@@ -1,6 +1,8 @@
+import { useTranslation } from "react-i18next";
 import { FileDiffViewer } from "#/components/features/diff-viewer/file-diff-viewer";
 import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
 import { useGetGitChanges } from "#/hooks/query/use-get-git-changes";
+import { I18nKey } from "#/i18n/declaration";
 
 function StatusMessage({ children }: React.PropsWithChildren) {
   return (
@@ -11,6 +13,7 @@ function StatusMessage({ children }: React.PropsWithChildren) {
 }
 
 function EditorScreen() {
+  const { t } = useTranslation();
   const { data: gitChanges, isSuccess, isError, error } = useGetGitChanges();
 
   const isNotGitRepoError =
@@ -23,16 +26,14 @@ function EditorScreen() {
       )}
       {isNotGitRepoError && (
         <StatusMessage>
-          Your current workspace is not a git repository.
+          {t(I18nKey.DIFF_VIEWER$NOT_A_GIT_REPO)}
           <br />
-          Ask OpenHands to initialize a git repo to activate this UI.
+          {t(I18nKey.DIFF_VIEWER$ASK_OH)}
         </StatusMessage>
       )}
 
       {!isError && gitChanges?.length === 0 && (
-        <StatusMessage>
-          OpenHands hasn&apos;t made any changes yet...
-        </StatusMessage>
+        <StatusMessage>{t(I18nKey.DIFF_VIEWER$NO_CHANGES)}</StatusMessage>
       )}
       {isSuccess &&
         gitChanges.map((change) => (

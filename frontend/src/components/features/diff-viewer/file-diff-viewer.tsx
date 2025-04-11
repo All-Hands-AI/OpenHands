@@ -1,11 +1,13 @@
 import { DiffEditor } from "@monaco-editor/react";
 import React from "react";
 import { editor as editor_t } from "monaco-editor";
+import { useTranslation } from "react-i18next";
 import { GitChangeStatus } from "#/api/open-hands.types";
 import { getLanguageFromPath } from "#/utils/get-language-from-path";
 import { cn } from "#/utils/utils";
 import ChevronUp from "#/icons/chveron-up.svg?react";
 import { useGitDiff } from "#/hooks/query/use-get-diff";
+import { I18nKey } from "#/i18n/declaration";
 
 const STATUS_MAP: Record<GitChangeStatus, string> = {
   A: "Added",
@@ -21,6 +23,7 @@ export interface FileDiffViewerProps {
 }
 
 export function FileDiffViewer({ path, type }: FileDiffViewerProps) {
+  const { t } = useTranslation();
   const [isCollapsed, setIsCollapsed] = React.useState(true);
   const [editorHeight, setEditorHeight] = React.useState(400);
   const diffEditorRef = React.useRef<editor_t.IStandaloneDiffEditor>(null);
@@ -92,11 +95,13 @@ export function FileDiffViewer({ path, type }: FileDiffViewerProps) {
           {filePath}{" "}
           {isRefetching && (
             <span className="text-tertiary-light">
-              | Getting latest changes...
+              | {t(I18nKey.DIFF_VIEWER$GETTING_LATEST_CHANGES)}
             </span>
           )}
           {isLoading && (
-            <span className="text-tertiary-light">| Loading...</span>
+            <span className="text-tertiary-light">
+              | {t(I18nKey.DIFF_VIEWER$LOADING)}
+            </span>
           )}
         </p>
         <button
@@ -137,6 +142,10 @@ export function FileDiffViewer({ path, type }: FileDiffViewerProps) {
                 enabled: true,
               },
               automaticLayout: true,
+              scrollbar: {
+                // Make scrollbar less intrusive
+                alwaysConsumeMouseWheel: false,
+              },
             }}
           />
         </div>
