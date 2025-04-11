@@ -33,7 +33,7 @@ def test_bidirectional_conversion():
 
 @pytest.mark.asyncio
 async def test_iterate_empty():
-    store = FileConversationStore(InMemoryFileStore({}))
+    store = FileConversationStore(InMemoryFileStore({}), user_id='123')
     results = []
     async for result in iterate(store.search):
         results.append(result)
@@ -45,7 +45,7 @@ async def test_iterate_single_page():
     store = FileConversationStore(
         InMemoryFileStore(
             {
-                get_conversation_metadata_filename('conv1'): json.dumps(
+                get_conversation_metadata_filename('conv1', '123'): json.dumps(
                     {
                         'conversation_id': 'conv1',
                         'github_user_id': '123',
@@ -55,7 +55,7 @@ async def test_iterate_single_page():
                         'created_at': '2025-01-16T19:51:04Z',
                     }
                 ),
-                get_conversation_metadata_filename('conv2'): json.dumps(
+                get_conversation_metadata_filename('conv2', '123'): json.dumps(
                     {
                         'conversation_id': 'conv2',
                         'github_user_id': '123',
@@ -66,7 +66,8 @@ async def test_iterate_single_page():
                     }
                 ),
             }
-        )
+        ),
+        user_id='123'
     )
 
     results = []
@@ -84,7 +85,7 @@ async def test_iterate_multiple_pages():
     store = FileConversationStore(
         InMemoryFileStore(
             {
-                get_conversation_metadata_filename(f'conv{i}'): json.dumps(
+                get_conversation_metadata_filename(f'conv{i}', '123'): json.dumps(
                     {
                         'conversation_id': f'conv{i}',
                         'github_user_id': '123',
@@ -96,7 +97,8 @@ async def test_iterate_multiple_pages():
                 )
                 for i in range(1, 6)
             }
-        )
+        ),
+        user_id='123'
     )
 
     results = []
@@ -119,7 +121,7 @@ async def test_iterate_with_invalid_conversation():
     store = FileConversationStore(
         InMemoryFileStore(
             {
-                get_conversation_metadata_filename('conv1'): json.dumps(
+                get_conversation_metadata_filename('conv1', '123'): json.dumps(
                     {
                         'conversation_id': 'conv1',
                         'github_user_id': '123',
@@ -129,11 +131,10 @@ async def test_iterate_with_invalid_conversation():
                         'created_at': '2025-01-16T19:51:04Z',
                     }
                 ),
-                get_conversation_metadata_filename(
-                    'conv2'
-                ): 'invalid json',  # Invalid conversation
+                get_conversation_metadata_filename('conv2', '123'): 'invalid json',  # Invalid conversation
             }
-        )
+        ),
+        user_id='123'
     )
 
     results = []
