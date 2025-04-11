@@ -8,6 +8,7 @@ from openhands.core.config.mcp_config import MCPConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.observation import ObservationType
 from openhands.events.action.mcp import McpAction
+from openhands.events.observation.error import ErrorObservation
 from openhands.events.observation.mcp import MCPObservation
 from openhands.events.observation.observation import Observation
 from openhands.events.observation.playwright_mcp import (
@@ -140,6 +141,8 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: McpAction) -> Obse
         raise ValueError(f'No matching MCP agent found for tool name: {action.name}')
     args_dict = json.loads(action.arguments) if action.arguments else {}
     response = await matching_client.call_tool(action.name, args_dict)
+    if response.isError:
+        return ErrorObservation(f'MCP {action.name} failed: {response.content}')
     logger.info(f'MCP response: {response}')
 
     # special case for browser screenshot of playwright_mcp

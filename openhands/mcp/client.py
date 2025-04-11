@@ -160,13 +160,13 @@ class MCPClient(BaseModel):
             await self.session.initialize()
             tool_result = await self.tool_map[tool_name].execute(**args)
             if tool_result.isError:
-                raise RuntimeError(f'Tool call to {tool_name} failed: {tool_result.error}')
+                logger.error(f'Tool call to {tool_name} failed: {tool_result.content}')
             return tool_result
         except Exception as e:
             logger.error(f'Tool call to {tool_name} failed: {str(e)}')
-            raise RuntimeError(
-                f'Tool call to {tool_name} failed: {str(e)}'
-            )
+            # raise RuntimeError(
+            #     f'Tool call to {tool_name} failed: {str(e)}'
+            # )
 
     async def disconnect(self) -> None:
         """Disconnect from the MCP server and clean up resources."""
