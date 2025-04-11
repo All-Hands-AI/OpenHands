@@ -4961,19 +4961,19 @@
         "tr": "Gezinme tamamlandı"
     },
     "OBSERVATION_MESSAGE$RECALL": {
-        "en": "MicroAgent Activated",
+        "en": "Microagent Activated",
         "ja": "マイクロエージェントが有効化されました",
         "zh-CN": "微代理已激活",
         "zh-TW": "微代理已啟動",
         "ko-KR": "마이크로에이전트 활성화됨",
         "no": "MikroAgent aktivert",
-        "it": "MicroAgent attivato",
-        "pt": "MicroAgent ativado",
-        "es": "MicroAgent activado",
+        "it": "Microagent attivato",
+        "pt": "Microagent ativado",
+        "es": "Microagent activado",
         "ar": "تم تنشيط الوكيل المصغر",
-        "fr": "MicroAgent activé",
+        "fr": "Microagent activé",
         "tr": "MikroAjan Etkinleştirildi",
-        "de": "MicroAgent aktiviert"
+        "de": "Microagent aktiviert"
     },
     "EXPANDABLE_MESSAGE$SHOW_DETAILS": {
         "en": "Show details",
