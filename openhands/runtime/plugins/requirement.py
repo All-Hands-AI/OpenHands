@@ -14,7 +14,7 @@ class Plugin:
     name: str
 
     @abstractmethod
-    async def initialize(self, username: str):
+    async def initialize(self, username: str) -> None:
         """Initialize the plugin."""
         pass
 
