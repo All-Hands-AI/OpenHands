@@ -7,7 +7,6 @@ from openhands.events.observation import (
     FileWriteObservation,
     Observation,
 )
-from openhands.utils.async_utils import async_read_file_lines, async_write_file
 
 
 def resolve_path(
@@ -87,8 +86,8 @@ async def read_file(
         )
 
     try:
-        all_lines = await async_read_file_lines(whole_path, encoding='utf-8')
-        lines = read_lines(all_lines, start, end)
+        with open(whole_path, 'r', encoding='utf-8') as file:
+            lines = read_lines(file.readlines(), start, end)
     except FileNotFoundError:
         return ErrorObservation(f'File not found: {path}')
     except UnicodeDecodeError:
@@ -128,14 +127,16 @@ async def write_file(
             os.makedirs(os.path.dirname(whole_path))
         mode = 'w' if not os.path.exists(whole_path) else 'r+'
         try:
-            if mode != 'w':
-                all_lines = await async_read_file_lines(whole_path, encoding='utf-8')
-                new_file = insert_lines(insert, all_lines, start, end)
-            else:
-                new_file = [i + '\n' for i in insert]
+            with open(whole_path, mode, encoding='utf-8') as file:
+                if mode != 'w':
+                    all_lines = file.readlines()
+                    new_file = insert_lines(insert, all_lines, start, end)
+                else:
+                    new_file = [i + '\n' for i in insert]
 
-            content = ''.join(new_file)
-            await async_write_file(whole_path, content, mode, encoding='utf-8')
+                file.seek(0)
+                file.writelines(new_file)
+                file.truncate()
         except FileNotFoundError:
             return ErrorObservation(f'File not found: {path}')
         except IsADirectoryError:

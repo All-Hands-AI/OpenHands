@@ -1,5 +1,6 @@
 import os
 import subprocess
+import time
 from dataclasses import dataclass
 
 from openhands.core.logger import openhands_logger as logger
@@ -8,10 +9,6 @@ from openhands.events.observation import IPythonRunCellObservation
 from openhands.runtime.plugins.jupyter.execute_server import JupyterKernel
 from openhands.runtime.plugins.requirement import Plugin, PluginRequirement
 from openhands.runtime.utils import find_available_tcp_port
-from openhands.utils.async_utils import (
-    async_sleep,
-    async_subprocess_popen,
-)
 from openhands.utils.shutdown_listener import should_continue
 
 
@@ -64,7 +61,7 @@ class JupyterPlugin(Plugin):
         )
         logger.debug(f'Jupyter launch command: {jupyter_launch_command}')
 
-        self.gateway_process = await async_subprocess_popen(
+        self.gateway_process = subprocess.Popen(
             jupyter_launch_command,
             stderr=subprocess.STDOUT,
             shell=True,
@@ -76,7 +73,7 @@ class JupyterPlugin(Plugin):
             output += line
             if 'at' in line:
                 break
-            await async_sleep(1)
+            time.sleep(1)
             logger.debug('Waiting for jupyter kernel gateway to start...')
 
         logger.debug(

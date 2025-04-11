@@ -36,11 +36,7 @@ from openhands.runtime.impl.docker.docker_runtime import (
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils import find_available_tcp_port
 from openhands.runtime.utils.command import get_action_execution_server_startup_command
-from openhands.utils.async_utils import (
-    async_subprocess_check_output,
-    async_subprocess_popen,
-    call_sync_from_async,
-)
+from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
 
@@ -211,21 +207,23 @@ class LocalRuntime(ActionExecutionClient):
         env['OPENHANDS_REPO_PATH'] = code_repo_path
         env['LOCAL_RUNTIME_MODE'] = '1'
         # run poetry show -v | head -n 1 | awk '{print $2}'
-        output = await async_subprocess_check_output(
-            ['poetry', 'show', '-v'],
-            env=env,
-            cwd=code_repo_path,
-            text=True,
-            shell=False,
+        poetry_venvs_path = (
+            subprocess.check_output(
+                ['poetry', 'show', '-v'],
+                env=env,
+                cwd=code_repo_path,
+                text=True,
+                shell=False,
+            )
+            .splitlines()[0]
+            .split(':')[1]
+            .strip()
         )
-        poetry_venvs_path = output.splitlines()[0].split(':')[1].strip()
         env['POETRY_VIRTUALENVS_PATH'] = poetry_venvs_path
         logger.debug(f'POETRY_VIRTUALENVS_PATH: {poetry_venvs_path}')
 
-        await call_sync_from_async(
-            lambda: check_dependencies(code_repo_path, poetry_venvs_path)
-        )
-        self.server_process = await async_subprocess_popen(
+        check_dependencies(code_repo_path, poetry_venvs_path)
+        self.server_process = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
