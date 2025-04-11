@@ -6,7 +6,7 @@ import {
 } from "#/state/chat-slice";
 import { setActiveFilepath, setCode } from "#/state/code-slice";
 import { appendInput } from "#/state/command-slice";
-import { setComputerList } from "#/state/computer-slice";
+import { setComputerList, setTasksProgress } from "#/state/computer-slice";
 import { appendJupyterInput } from "#/state/jupyter-slice";
 import { setMetrics } from "#/state/metrics-slice";
 import { appendSecurityAnalyzerInput } from "#/state/security-analyzer-slice";
@@ -164,6 +164,10 @@ export function handleAssistantMessage(message: Record<string, unknown>) {
     )
   ) {
     store.dispatch(setComputerList(message));
+  }
+
+  if (message.observation === ObservationType.MCP_PLAN) {
+    store.dispatch(setTasksProgress(message));
   }
 
   if (message.action) {

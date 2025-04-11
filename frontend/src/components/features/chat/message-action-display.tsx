@@ -1,21 +1,20 @@
-import { OpenHandsEventType } from "#/types/core/base"
-import React from "react"
-import {
-  getDiffPath,
-  getCommand,
-  getCatFilePath,
-  getUrlBrowser,
-} from "./helpers"
 import {
   FaEdit,
   FaTerminal,
   FaRegFileAlt,
   FaGlobe,
   FaPencilAlt,
+  FaTools,
   // FaTools,
 } from "react-icons/fa"
 import Markdown from "react-markdown"
 import remarkGfm from "remark-gfm"
+import {
+  getDiffPath,
+  getCommand,
+  getCatFilePath,
+  getUrlBrowser,
+} from "./helpers"
 import { code } from "../markdown/code"
 import { ol, ul } from "../markdown/list"
 import store from "#/store"
@@ -25,20 +24,28 @@ import { setCurrentPathViewed } from "#/state/file-state-slice"
 const actionWrapClassName =
   "inline-flex max-w-full items-center gap-2 rounded-[15px] border border-neutral-1000 bg-[#37352f10] px-[10px] py-[3px] text-neutral-600 hover:opacity-70 dark:border-neutral-300 cursor-pointer"
 
-const MessageActionDisplay: React.FC<{
-  messageActionID: string | undefined
+interface MessageActionDisplayProps {
+  eventType: string | undefined
   content: string
   eventID?: number
-}> = ({ messageActionID, content, eventID }) => {
-  const openComputertByEventID = (eventID) => {
-    if (typeof eventID === "number") {
+  messageActionID?: string
+}
+
+function MessageActionDisplay({
+  eventType,
+  content,
+  eventID,
+  messageActionID,
+}: MessageActionDisplayProps) {
+  function openComputertByEventID(id: number | undefined): void {
+    if (typeof id === "number") {
       store.dispatch(setCurrentPathViewed(""))
-      store.dispatch(setEventID(eventID))
+      store.dispatch(setEventID(id))
     }
   }
 
   const renderContent = () => {
-    switch (messageActionID as OpenHandsEventType) {
+    switch (eventType) {
       case "edit":
         return (
           <div
@@ -116,19 +123,24 @@ const MessageActionDisplay: React.FC<{
           </div>
         )
 
-      // case "mcp":
-      // case "call_tool_mcp":
-      // case "playwright_mcp_browser_screenshot":
-      //   return (
-      //     <div className="items-center hover:opacity-70 gap-2 rounded-[15px] px-[10px] py-[3px] border border-neutral-1000 dark:border-neutral-300 inline-flex max-w-full bg-[#37352f10]">
-      //       <div className="text-neutral-600">
-      //         <FaTools />
-      //       </div>
-      //       <div className="flex-1 max-w-[100%] text-ellipsis overflow-hidden whitespace-nowrap text-[13px]">
-      //         Using tool: {content.split("\n")[0] || ""}
-      //       </div>
-      //     </div>
-      //   );
+      case "mcp":
+      case "call_tool_mcp":
+      case "playwright_mcp_browser_screenshot":
+        return (
+          <div
+            className={actionWrapClassName}
+            onClick={() => openComputertByEventID(eventID)}
+          >
+            <div className="text-neutral-600">
+              <FaTools />
+            </div>
+            <div className="max-w-[100%] flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-[13px]">
+              {messageActionID
+                ? `Using tool: ${messageActionID}`
+                : `Using tool`}
+            </div>
+          </div>
+        )
 
       default:
         return (
