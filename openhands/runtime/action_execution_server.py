@@ -22,7 +22,7 @@ from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.security import APIKeyHeader
-from openhands_aci.editor import OHDiffEditor, OHEditor
+from openhands_aci.editor import OHEditor
 from openhands_aci.editor.exceptions import ToolError
 from openhands_aci.editor.results import ToolResult
 from openhands_aci.utils.diff import get_diff
@@ -160,7 +160,7 @@ class ActionExecutor:
         self.bash_session: BashSession | None = None
         self.lock = asyncio.Lock()
         self.plugins: dict[str, Plugin] = {}
-        self.file_editor = OHDiffEditor(workspace_root=self._initial_cwd)
+        self.file_editor = OHEditor(workspace_root=self._initial_cwd)
         self.browser: BrowserEnv | None = None
         self.browser_init_task: asyncio.Task | None = None
         self.browsergym_eval_env = browsergym_eval_env
@@ -473,44 +473,8 @@ class ActionExecutor:
         return FileWriteObservation(content='', path=filepath)
 
     async def edit(self, action: FileEditAction) -> Observation:
-        assert action.impl_source in (FileEditSource.OH_ACI, FileEditSource.FENCED_DIFF)
-        if action.impl_source == FileEditSource.FENCED_DIFF:
-            # Handle Fenced Diff Edit using the new method in OHEditor
-            assert action.search is not None, 'Search must be provided for FENCED_DIFF'
-            assert (
-                action.replace is not None
-            ), 'Replace must be provided for FENCED_DIFF'
-            try:
-                result = await call_sync_from_async(
-                    self.file_editor.fenced_replace,
-                    Path(action.path),
-                    action.search,
-                    action.replace,
-                )
-                return FileEditObservation(
-                    content=result.output,
-                    path=result.path,
-                    old_content=result.old_content,
-                    new_content=result.new_content,
-                    impl_source=FileEditSource.FENCED_DIFF,
-                    diff=get_diff(
-                        old_contents=result.old_content or '',
-                        new_contents=result.new_content or '',
-                        filepath=result.path,
-                    ),
-                    prev_exist=result.prev_exist,
-                )
-            except ToolError as e:
-                return ErrorObservation(content=f'Fenced edit failed: {e.message}')
-            except AttributeError:
-                # Fallback if the OHEditor instance doesn't have fenced_replace
-                logger.error(
-                    'OHEditor does not have fenced_replace method. Fenced diff edit cannot be performed server-side.'
-                )
-                return ErrorObservation(
-                    content='Server-side Fenced Diff edit is not supported by the current editor version.'
-                )
-        elif action.impl_source == FileEditSource.OH_ACI:
+        assert action.impl_source == FileEditSource.OH_ACI
+        if action.impl_source == FileEditSource.OH_ACI:
             result_str, (old_content, new_content) = _execute_file_editor(
                 self.file_editor,
                 command=action.command,
@@ -535,7 +499,7 @@ class ActionExecutor:
                 ),
             )
         else:
-            raise ValueError('Server-side edit must be either OH_ACI or FENCED_DIFF')
+            raise ValueError('Server-side edit must be OH_ACI')
 
     async def browse(self, action: BrowseURLAction) -> Observation:
         await self._ensure_browser_ready()
