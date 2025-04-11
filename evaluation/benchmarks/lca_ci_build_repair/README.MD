@@ -26,7 +26,7 @@ To evaluate the predictions:
 ./evaluation/benchmarks/lca_ci_build_repair/scripts/eval_infer.sh predictions_path_containing_output
 ```
 
-## Notice
+## Results
 The benchmark contains 68 instances, we skip instances #126 and #145, and only run 66 instances due to dockerization errors.
 
 Due to running in live GitHub machines, the benchmark is sensitive to the date it is run. Even the golden patches in the dataset might present failures due to updates.
