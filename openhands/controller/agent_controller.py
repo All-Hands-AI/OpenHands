@@ -163,6 +163,16 @@ class AgentController:
         # replay-related
         self._replay_manager = ReplayManager(replay_events)
 
+        # Add the initial system message to the event stream if this is not a delegate
+        if not self.is_delegate:
+            try:
+                system_message = self.agent.get_initial_message()
+                self.event_stream.add_event(system_message, EventSource.AGENT)
+            except Exception as e:
+                logger.warning(
+                    f'Failed to add initial system message to event stream: {e}'
+                )
+
     async def close(self, set_stop_state=True) -> None:
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream.
 

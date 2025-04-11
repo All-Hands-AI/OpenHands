@@ -166,20 +166,18 @@ class CodeActAgent(Agent):
         message flow and function-calling scenarios.
 
         The method performs the following steps:
-        1. Initializes with system prompt and optional initial user message
-        2. Processes events (Actions and Observations) into messages
-        3. Handles tool calls and their responses in function-calling mode
-        4. Manages message role alternation (user/assistant/tool)
-        5. Applies caching for specific LLM providers (e.g., Anthropic)
-        6. Adds environment reminders for non-function-calling mode
+        1. Processes events (Actions and Observations) into messages, including SystemMessageAction
+        2. Handles tool calls and their responses in function-calling mode
+        3. Manages message role alternation (user/assistant/tool)
+        4. Applies caching for specific LLM providers (e.g., Anthropic)
+        5. Adds environment reminders for non-function-calling mode
 
         Args:
             events: The list of events to convert to messages
 
         Returns:
             list[Message]: A list of formatted messages ready for LLM consumption, including:
-                - System message with prompt
-                - Initial user message (if configured)
+                - System message with prompt (from SystemMessageAction)
                 - Action messages (from both user and assistant)
                 - Observation messages (including tool responses)
                 - Environment reminders (in non-function-calling mode)
@@ -193,15 +191,10 @@ class CodeActAgent(Agent):
         if not self.prompt_manager:
             raise Exception('Prompt Manager not instantiated.')
 
-        # Use ConversationMemory to process initial messages
-        messages = self.conversation_memory.process_initial_messages(
-            with_caching=self.llm.is_caching_prompt_active()
-        )
-
-        # Use ConversationMemory to process events
+        # Use ConversationMemory to process events (including SystemMessageAction)
         messages = self.conversation_memory.process_events(
             condensed_history=events,
-            initial_messages=messages,
+            initial_messages=[],  # No initial messages, SystemMessageAction is in events
             max_message_chars=self.llm.config.max_message_chars,
             vision_is_active=self.llm.vision_is_active(),
         )

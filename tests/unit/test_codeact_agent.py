@@ -319,27 +319,28 @@ def test_mismatched_tool_call_events(mock_state: State):
     observation = CmdOutputObservation(content='', command_id=0, command='foo')
     observation.tool_call_metadata = tool_call_metadata
 
-    # When both events are provided, the agent should get three messages:
-    # 1. The system message,
-    # 2. The action message, and
-    # 3. The observation message
+    # When both events are provided, the agent should get two messages:
+    # 1. The action message, and
+    # 2. The observation message
+    # Note: The system message is now expected to be in the event stream as a SystemMessageAction
     mock_state.history = [action, observation]
     messages = agent._get_messages(mock_state.history)
-    assert len(messages) == 3
+    assert len(messages) == 2
 
     # The same should hold if the events are presented out-of-order
     mock_state.history = [observation, action]
     messages = agent._get_messages(mock_state.history)
-    assert len(messages) == 3
+    assert len(messages) == 2
 
-    # If only one of the two events is present, then we should just get the system message
+    # If only one of the two events is present, then we should just get that message
+    # Note: The system message is now expected to be in the event stream as a SystemMessageAction
     mock_state.history = [action]
     messages = agent._get_messages(mock_state.history)
-    assert len(messages) == 1
+    assert len(messages) == 0  # No messages because the action is waiting for its observation
 
     mock_state.history = [observation]
     messages = agent._get_messages(mock_state.history)
-    assert len(messages) == 1
+    assert len(messages) == 0  # No messages because the observation has no matching action
 
 
 def test_enhance_messages_adds_newlines_between_consecutive_user_messages(
