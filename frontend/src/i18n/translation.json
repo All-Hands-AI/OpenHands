@@ -5880,7 +5880,7 @@
         "tr": "Temel URL"
     },
     "GITHUB$CONNECT_TO_GITHUB": {
-        "en": "Connect to GitHub",
+        "en": "Log in with GitHub",
         "ja": "GitHubに接続",
         "zh-CN": "连接到GitHub",
         "zh-TW": "連接到GitHub",
@@ -5895,7 +5895,7 @@
         "tr": "GitHub'a bağlan"
     },
     "GITLAB$CONNECT_TO_GITLAB": {
-        "en": "Connect to GitLab",
+        "en": "Log in with GitLab",
         "ja": "GitLabに接続",
         "zh-CN": "连接到GitLab",
         "zh-TW": "連接到GitLab",
@@ -5910,7 +5910,7 @@
         "tr": "GitLab'a bağlan"
     },
     "AUTH$SIGN_IN_WITH_IDENTITY_PROVIDER": {
-        "en": "Sign in with your Identity Provider",
+        "en": "Log in to OpenHands",
         "ja": "IDプロバイダーでサインイン",
         "zh-CN": "使用您的身份提供商登录",
         "zh-TW": "使用您的身份提供商登入",
