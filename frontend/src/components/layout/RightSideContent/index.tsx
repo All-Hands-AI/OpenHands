@@ -162,6 +162,10 @@ const ThesisComputer = () => {
                 return <CodeView fileContent={computerItem.extras.code} />
               }
 
+              if (computerItem.observation === ObservationType.MCP) {
+                return <span>{computerItem?.message}</span>
+              }
+
               return <div />
             })}
           <div ref={scrollRef} />
