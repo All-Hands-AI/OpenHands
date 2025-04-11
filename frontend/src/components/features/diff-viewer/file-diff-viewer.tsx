@@ -1,5 +1,6 @@
 import { DiffEditor } from "@monaco-editor/react";
 import React from "react";
+import { editor as editor_t } from "monaco-editor";
 import { GitChangeStatus } from "#/api/open-hands.types";
 import { getLanguageFromPath } from "#/utils/get-language-from-path";
 import { cn } from "#/utils/utils";
@@ -21,6 +22,8 @@ export interface FileDiffViewerProps {
 
 export function FileDiffViewer({ path, type }: FileDiffViewerProps) {
   const [isCollapsed, setIsCollapsed] = React.useState(true);
+  const [editorHeight, setEditorHeight] = React.useState(400);
+  const diffEditorRef = React.useRef<editor_t.IStandaloneDiffEditor>(null);
 
   const isAdded = type === "A" || type === "U";
   const isDeleted = type === "D";
@@ -45,11 +48,37 @@ export function FileDiffViewer({ path, type }: FileDiffViewerProps) {
     enabled: !isCollapsed,
   });
 
+  // Function to update editor height based on content
+  const updateEditorHeight = React.useCallback(() => {
+    if (diffEditorRef.current) {
+      const originalEditor = diffEditorRef.current.getOriginalEditor();
+      const modifiedEditor = diffEditorRef.current.getModifiedEditor();
+
+      if (originalEditor && modifiedEditor) {
+        // Get the content height from both editors and use the larger one
+        const originalHeight = originalEditor.getContentHeight();
+        const modifiedHeight = modifiedEditor.getContentHeight();
+        const contentHeight = Math.max(originalHeight, modifiedHeight);
+
+        // Add a small buffer to avoid scrollbar
+        setEditorHeight(contentHeight + 20);
+      }
+    }
+  }, []);
+
+  const handleEditorDidMount = (editor: editor_t.IStandaloneDiffEditor) => {
+    diffEditorRef.current = editor;
+    updateEditorHeight();
+
+    const originalEditor = editor.getOriginalEditor();
+    const modifiedEditor = editor.getModifiedEditor();
+
+    originalEditor.onDidContentSizeChange(updateEditorHeight);
+    modifiedEditor.onDidContentSizeChange(updateEditorHeight);
+  };
+
   return (
-    <div
-      data-testid="file-diff-viewer-outer"
-      className="w-full h-fit flex flex-col"
-    >
+    <div data-testid="file-diff-viewer-outer" className="w-full flex flex-col">
       <div
         className={cn(
           "flex justify-between items-center px-2.5 py-3.5 border border-basic rounded-xl",
@@ -83,18 +112,19 @@ export function FileDiffViewer({ path, type }: FileDiffViewerProps) {
           />
         </button>
       </div>
-      {isSuccess && (
+      {isSuccess && !isCollapsed && (
         <div
-          hidden={isCollapsed}
-          className="w-full h-[700px] border border-basic"
+          className="w-full border border-basic overflow-hidden"
+          style={{ height: `${editorHeight}px` }}
         >
           <DiffEditor
             data-testid="file-diff-viewer"
             className="w-full h-full"
-            language={getLanguageFromPath(path)}
+            language={getLanguageFromPath(filePath)}
             original={isAdded ? "" : diff.original}
             modified={isDeleted ? "" : diff.modified}
             theme="vs-dark"
+            onMount={handleEditorDidMount}
             options={{
               renderValidationDecorations: "off",
               readOnly: true,
@@ -106,6 +136,7 @@ export function FileDiffViewer({ path, type }: FileDiffViewerProps) {
               hideUnchangedRegions: {
                 enabled: true,
               },
+              automaticLayout: true,
             }}
           />
         </div>
