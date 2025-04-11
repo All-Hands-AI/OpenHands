@@ -29,6 +29,7 @@ class MCPClient(BaseModel):
         sid: Optional[str] = None,
         mnemonic: Optional[str] = None,
         timeout: float = 5.0,
+        read_timeout: float = 60.0 * 2, # 2 minutes instead of default 5 minutes
     ) -> None:
         """Connect to an MCP server using SSE transport.
 
@@ -65,6 +66,7 @@ class MCPClient(BaseModel):
                 url=server_url,
                 headers=headers,
                 timeout=timeout,
+                read_timeout=read_timeout,
             )
             streams = await self.exit_stack.enter_async_context(streams_context)
             self.session = await self.exit_stack.enter_async_context(
