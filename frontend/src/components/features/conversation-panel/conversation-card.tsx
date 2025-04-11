@@ -1,5 +1,4 @@
 import React from "react";
-import { useSelector } from "react-redux";
 import posthog from "posthog-js";
 import { useTranslation } from "react-i18next";
 import { formatTimeDelta } from "#/utils/format-time-delta";
@@ -12,7 +11,6 @@ import { EllipsisButton } from "./ellipsis-button";
 import { ConversationCardContextMenu } from "./conversation-card-context-menu";
 import { cn } from "#/utils/utils";
 import { BaseModal } from "../../shared/modals/base-modal/base-modal";
-import { RootState } from "#/store";
 import { I18nKey } from "#/i18n/declaration";
 
 interface ConversationCardProps {
@@ -28,6 +26,11 @@ interface ConversationCardProps {
   status?: ProjectStatus;
   variant?: "compact" | "default";
   conversationId?: string; // Optional conversation ID for VS Code URL
+  // Metrics fields
+  accumulated_cost?: number;
+  prompt_tokens?: number;
+  completion_tokens?: number;
+  total_tokens?: number;
 }
 
 const MAX_TIME_BETWEEN_CREATION_AND_UPDATE = 1000 * 60 * 30; // 30 minutes
@@ -47,6 +50,11 @@ export function ConversationCard({
   status = "STOPPED",
   variant = "default",
   conversationId,
+  // Metrics fields
+  accumulated_cost = 0,
+  prompt_tokens = 0,
+  completion_tokens = 0,
+  total_tokens = 0,
 }: ConversationCardProps) {
   const { t } = useTranslation();
   const [contextMenuVisible, setContextMenuVisible] = React.useState(false);
@@ -54,8 +62,17 @@ export function ConversationCard({
   const [metricsModalVisible, setMetricsModalVisible] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
-  // Subscribe to metrics data from Redux store
-  const metrics = useSelector((state: RootState) => state.metrics);
+  // Create a metrics object from the conversation data
+  const metrics = React.useMemo(() => ({
+    cost: accumulated_cost,
+    usage: {
+      prompt_tokens,
+      completion_tokens,
+      total_tokens,
+      cache_read_tokens: 0,  // These are not available from conversation metadata
+      cache_write_tokens: 0, // These are not available from conversation metadata
+    }
+  }), [accumulated_cost, prompt_tokens, completion_tokens, total_tokens]);
 
   const handleBlur = () => {
     if (inputRef.current?.value) {
