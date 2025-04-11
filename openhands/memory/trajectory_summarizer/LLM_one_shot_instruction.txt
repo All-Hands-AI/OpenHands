@@ -6,9 +6,11 @@ Your task is to segment and summarize an agent-user interaction trajectory into 
 1. Parse the provided agent trajectory data
 2. Identify distinct segments in the interaction based on subtasks or phases
 3. Create a concise, informative summary for each segment. Be as concise as possible
-4. Include both message IDs and timestamps that belong to each segment
-5. For messages with missing IDs (None or null), rely on timestamps for grouping
-6. DO NOT include any additional summaries.
+4. IMPORTANT: Include ALL message IDs that belong to each segment in the "ids" array
+5. Make sure to include IDs for both user and agent messages in each segment
+6. Include timestamps that belong to each segment
+7. For messages with missing IDs (None or null), rely on timestamps for grouping
+8. DO NOT include any additional summaries.
 
 ## Example:
 

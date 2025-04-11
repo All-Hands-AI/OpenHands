@@ -19,7 +19,9 @@ export function TrajectorySummary({
   messages,
   isAwaitingUserConfirmation,
 }: TrajectorySummaryProps) {
-  const [expandedSegments, setExpandedSegments] = React.useState<Record<string, boolean>>({});
+  const [expandedSegments, setExpandedSegments] = React.useState<
+    Record<string, boolean>
+  >({});
 
   // Initialize all segments as expanded
   React.useEffect(() => {
@@ -38,18 +40,138 @@ export function TrajectorySummary({
   };
 
   // Group messages by segment
-  const getMessagesForSegment = (segmentIds: number[]) => {
-    return messages.filter((message) => {
+  const getMessagesForSegment = (
+    segmentIds: number[],
+    segmentIndex: number,
+    totalSegments: number,
+    segment: TrajectorySummarySegment,
+  ) => {
+    // If no segment IDs are provided, try to estimate which messages belong to this segment
+    if (!segmentIds || segmentIds.length === 0) {
+      // If we have no IDs, try to divide messages evenly among segments
+      const messagesPerSegment = Math.ceil(messages.length / totalSegments);
+      const startIdx = segmentIndex * messagesPerSegment;
+      const endIdx = Math.min(startIdx + messagesPerSegment, messages.length);
+
+      return messages.slice(startIdx, endIdx);
+    }
+
+    // First try to match by exact event ID
+    const matchedMessages = messages.filter((message) => {
       const messageId = message.eventID;
       return messageId !== undefined && segmentIds.includes(messageId);
     });
+
+    // If we found messages, return them
+    if (matchedMessages.length > 0) {
+      return matchedMessages;
+    }
+
+    // If no messages were found by exact ID match, try to match by string conversion
+    // This handles cases where IDs might be stored as strings in one place and numbers in another
+    const stringMatchedMessages = messages.filter((message) => {
+      const messageId = message.eventID;
+      if (messageId === undefined) return false;
+
+      // Try to match by converting both to strings
+      return segmentIds.some((id) => String(id) === String(messageId));
+    });
+
+    if (stringMatchedMessages.length > 0) {
+      return stringMatchedMessages;
+    }
+
+    // If we still couldn't find any messages, try to use timestamp ranges if available
+    if (
+      (segment.start_timestamp && segment.end_timestamp) ||
+      segment.timestamp_range
+    ) {
+      const timestampFilteredMessages = messages.filter((message) => {
+        if (!message.timestamp) return false;
+
+        // Try to extract time from timestamp_range if direct timestamps aren't available
+        let startTime;
+        let endTime;
+
+        try {
+          // First try to use the start_timestamp and end_timestamp directly
+          if (segment.start_timestamp && segment.end_timestamp) {
+            startTime = new Date(
+              `2000-01-01 ${segment.start_timestamp}`,
+            ).getTime();
+            endTime = new Date(`2000-01-01 ${segment.end_timestamp}`).getTime();
+          } else if (segment.timestamp_range) {
+            // If that fails, try to extract from timestamp_range
+            const [startStr, endStr] = segment.timestamp_range.split("-");
+            if (startStr && endStr) {
+              startTime = new Date(`2000-01-01 ${startStr.trim()}`).getTime();
+              endTime = new Date(`2000-01-01 ${endStr.trim()}`).getTime();
+            }
+          }
+        } catch (e) {
+          // If parsing fails, we can't match by timestamp
+          return false;
+        }
+
+        if (!startTime || !endTime) return false;
+
+        // Convert message timestamp to comparable format
+        let msgTime;
+        try {
+          msgTime = new Date(message.timestamp).getTime();
+        } catch (e) {
+          // If parsing fails, try to extract just the time part
+          const timeMatch = message.timestamp.match(
+            /(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/,
+          );
+          if (timeMatch) {
+            const [, hours, minutes, seconds = "0"] = timeMatch;
+            msgTime = new Date(
+              `2000-01-01 ${hours}:${minutes}:${seconds}`,
+            ).getTime();
+          } else {
+            return false;
+          }
+        }
+
+        return msgTime >= startTime && msgTime <= endTime;
+      });
+
+      if (timestampFilteredMessages.length > 0) {
+        return timestampFilteredMessages;
+      }
+    }
+
+    // If we have a timestamp range but couldn't match any messages, try to estimate based on the segment index
+    if (segment.timestamp_range) {
+      // Calculate approximate position in the message array based on segment index
+      const segmentPosition =
+        totalSegments > 1 ? segmentIndex / (totalSegments - 1) : 0; // 0 to 1
+      const startIdx = Math.floor(segmentPosition * messages.length * 0.5); // Start at half the proportional position
+      const endIdx = Math.min(
+        startIdx + Math.ceil(messages.length / totalSegments),
+        messages.length,
+      );
+
+      return messages.slice(startIdx, endIdx);
+    }
+
+    // If there's only one segment, return all messages
+    if (totalSegments === 1) {
+      return messages;
+    }
+
+    // If all else fails, return an empty array
+    return [];
   };
 
   return (
     <div className="flex flex-col gap-4 w-full">
       {/* Overall Summary */}
       <div className="bg-base-secondary p-4 rounded-lg border border-tertiary">
-        <h2 className="text-lg font-semibold mb-2 text-content">Conversation Summary</h2>
+        <h2 className="text-lg font-semibold mb-2 text-content">
+          Conversation Summary
+        </h2>
         <p className="text-content">{overallSummary}</p>
       </div>
 
@@ -110,39 +232,64 @@ export function TrajectorySummary({
 
               {/* Messages in this segment */}
               <div className="flex flex-col gap-2 mt-4">
-                {getMessagesForSegment(segment.ids).map((message, msgIndex) => {
-                  const shouldShowConfirmationButtons =
-                    messages.length - 1 === msgIndex &&
-                    message.sender === "assistant" &&
-                    isAwaitingUserConfirmation;
+                {(() => {
+                  const segmentMessages = getMessagesForSegment(
+                    segment.ids,
+                    index,
+                    segments.length,
+                    segment,
+                  );
 
-                  if (message.type === "error" || message.type === "action") {
+                  if (segmentMessages.length === 0) {
                     return (
-                      <div key={msgIndex} className="text-content">
-                        <ExpandableMessage
-                          type={message.type}
-                          id={message.translationID}
-                          message={message.content}
-                          success={message.success}
-                        />
-                        {shouldShowConfirmationButtons && <ConfirmationButtons />}
+                      <div className="text-tertiary-light italic text-sm p-2">
+                        No messages found for this segment. This may be due to
+                        missing message IDs in the summary.
                       </div>
                     );
                   }
 
-                  return (
-                    <ChatMessage
-                      key={msgIndex}
-                      type={message.sender}
-                      message={message.content}
-                    >
-                      {message.imageUrls && message.imageUrls.length > 0 && (
-                        <ImageCarousel size="small" images={message.imageUrls} />
-                      )}
-                      {shouldShowConfirmationButtons && <ConfirmationButtons />}
-                    </ChatMessage>
-                  );
-                })}
+                  return segmentMessages.map((message, msgIndex) => {
+                    const shouldShowConfirmationButtons =
+                      messages.length - 1 === msgIndex &&
+                      message.sender === "assistant" &&
+                      isAwaitingUserConfirmation;
+
+                    if (message.type === "error" || message.type === "action") {
+                      return (
+                        <div key={msgIndex} className="text-content">
+                          <ExpandableMessage
+                            type={message.type}
+                            id={message.translationID}
+                            message={message.content}
+                            success={message.success}
+                          />
+                          {shouldShowConfirmationButtons && (
+                            <ConfirmationButtons />
+                          )}
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <ChatMessage
+                        key={msgIndex}
+                        type={message.sender}
+                        message={message.content}
+                      >
+                        {message.imageUrls && message.imageUrls.length > 0 && (
+                          <ImageCarousel
+                            size="small"
+                            images={message.imageUrls}
+                          />
+                        )}
+                        {shouldShowConfirmationButtons && (
+                          <ConfirmationButtons />
+                        )}
+                      </ChatMessage>
+                    );
+                  });
+                })()}
               </div>
             </div>
           )}
