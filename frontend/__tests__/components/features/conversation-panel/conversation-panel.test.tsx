@@ -54,6 +54,10 @@ describe("ConversationPanel", () => {
       last_updated_at: "2021-10-01T12:00:00Z",
       created_at: "2021-10-01T12:00:00Z",
       status: "STOPPED" as const,
+      accumulated_cost: 0.05,
+      prompt_tokens: 1000,
+      completion_tokens: 500,
+      total_tokens: 1500,
     },
     {
       conversation_id: "2",
@@ -62,6 +66,10 @@ describe("ConversationPanel", () => {
       last_updated_at: "2021-10-02T12:00:00Z",
       created_at: "2021-10-02T12:00:00Z",
       status: "STOPPED" as const,
+      accumulated_cost: 0.12,
+      prompt_tokens: 2500,
+      completion_tokens: 1200,
+      total_tokens: 3700,
     },
     {
       conversation_id: "3",
@@ -70,6 +78,10 @@ describe("ConversationPanel", () => {
       last_updated_at: "2021-10-03T12:00:00Z",
       created_at: "2021-10-03T12:00:00Z",
       status: "STOPPED" as const,
+      accumulated_cost: 0.08,
+      prompt_tokens: 1800,
+      completion_tokens: 900,
+      total_tokens: 2700,
     },
   ];
 
@@ -189,6 +201,10 @@ describe("ConversationPanel", () => {
         last_updated_at: "2021-10-01T12:00:00Z",
         created_at: "2021-10-01T12:00:00Z",
         status: "STOPPED" as const,
+        accumulated_cost: 0.05,
+        prompt_tokens: 1000,
+        completion_tokens: 500,
+        total_tokens: 1500,
       },
       {
         conversation_id: "2",
@@ -197,6 +213,10 @@ describe("ConversationPanel", () => {
         last_updated_at: "2021-10-02T12:00:00Z",
         created_at: "2021-10-02T12:00:00Z",
         status: "STOPPED" as const,
+        accumulated_cost: 0.12,
+        prompt_tokens: 2500,
+        completion_tokens: 1200,
+        total_tokens: 3700,
       },
       {
         conversation_id: "3",
@@ -205,6 +225,10 @@ describe("ConversationPanel", () => {
         last_updated_at: "2021-10-03T12:00:00Z",
         created_at: "2021-10-03T12:00:00Z",
         status: "STOPPED" as const,
+        accumulated_cost: 0.08,
+        prompt_tokens: 1800,
+        completion_tokens: 900,
+        total_tokens: 2700,
       },
     ];
 

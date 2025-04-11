@@ -42,6 +42,10 @@ const conversations: Conversation[] = [
     last_updated_at: new Date().toISOString(),
     created_at: new Date().toISOString(),
     status: "RUNNING",
+    accumulated_cost: 0.05,
+    prompt_tokens: 1000,
+    completion_tokens: 500,
+    total_tokens: 1500,
   },
   {
     conversation_id: "2",
@@ -53,6 +57,10 @@ const conversations: Conversation[] = [
     ).toISOString(),
     created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
     status: "STOPPED",
+    accumulated_cost: 0.12,
+    prompt_tokens: 2500,
+    completion_tokens: 1200,
+    total_tokens: 3700,
   },
   {
     conversation_id: "3",
@@ -64,6 +72,10 @@ const conversations: Conversation[] = [
     ).toISOString(),
     created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
     status: "STOPPED",
+    accumulated_cost: 0.08,
+    prompt_tokens: 1800,
+    completion_tokens: 900,
+    total_tokens: 2700,
   },
 ];
 
@@ -239,6 +251,10 @@ export const handlers = [
       last_updated_at: new Date().toISOString(),
       created_at: new Date().toISOString(),
       status: "RUNNING",
+      accumulated_cost: 0,
+      prompt_tokens: 0,
+      completion_tokens: 0,
+      total_tokens: 0,
     };
 
     CONVERSATIONS.set(conversation.conversation_id, conversation);
