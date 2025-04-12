@@ -137,7 +137,16 @@ class Session:
         mcp_tools = await fetch_mcp_tools_from_config(
             self.config.dict_mcp_config, sid=self.sid, mnemonic=mnemonic
         )
-        agent = Agent.get_cls(agent_cls)(llm, agent_config)
+
+        workspace_mount_path_in_sandbox_store_in_session = (
+            self.config.workspace_mount_path_in_sandbox_store_in_session
+        )
+        if self.config.runtime == 'local':
+            workspace_mount_path_in_sandbox_store_in_session = False
+
+        agent = Agent.get_cls(agent_cls)(
+            llm, agent_config, workspace_mount_path_in_sandbox_store_in_session
+        )
         agent.set_mcp_tools(mcp_tools)
 
         git_provider_tokens = None

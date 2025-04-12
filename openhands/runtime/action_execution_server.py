@@ -19,6 +19,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from zipfile import ZipFile
 
+from binaryornot.check import is_binary
 from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
@@ -357,6 +358,11 @@ class ActionExecutor:
 
     async def read(self, action: FileReadAction) -> Observation:
         assert self.bash_session is not None
+
+        # Cannot read binary files
+        if is_binary(action.path):
+            return ErrorObservation('ERROR_BINARY_FILE')
+
         if action.impl_source == FileReadSource.OH_ACI:
             result_str, _ = _execute_file_editor(
                 self.file_editor,
