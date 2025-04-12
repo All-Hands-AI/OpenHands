@@ -304,12 +304,10 @@ class ActionExecutor:
             logger.debug(f'AgentSkills initialized: {obs}')
 
     async def run_action(self, action) -> Observation:
-        
-        # before running the action, we need to initialize the plugins if needed
-        # this helps us reduce runtime startup time -> lazily initialize plugins
-        await self._init_plugins_if_needed()
-        
         async with self.lock:
+            # before running the action, we need to initialize the plugins if needed
+            # this helps us reduce runtime startup time -> lazily initialize plugins
+            await self._init_plugins_if_needed()
             action_type = action.action
             observation = await getattr(self, action_type)(action)
             return observation
