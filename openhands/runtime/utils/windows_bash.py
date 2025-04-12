@@ -369,13 +369,13 @@ class WindowsPowershellSession:
                          exit_code = 0
 
                 # Extract CWD (last result)
-                if results.Count >= 1 and results[-1] is not None:
+                if results.Count >= 1 and results[results.Count - 1] is not None:
                      try:
                           # Result is often a PathInfo object, get the Path property
-                          if hasattr(results[-1], 'Path'):
-                               final_cwd = str(results[-1].Path)
+                          if hasattr(results[results.Count - 1], 'Path'):
+                               final_cwd = str(results[results.Count - 1].Path)
                           else: # Or maybe just a string?
-                               final_cwd = str(results[-1])
+                               final_cwd = str(results[results.Count - 1])
 
                           # Validate CWD path
                           if os.path.isdir(final_cwd):
@@ -388,7 +388,7 @@ class WindowsPowershellSession:
                               logger.warning(f"Command returned invalid CWD '{final_cwd}', keeping old CWD: {self._cwd}")
                               final_cwd = self._cwd # Use old CWD for metadata reporting
                      except Exception as cwd_ex:
-                          logger.warning(f"Could not parse Get-Location result: {results[-1]}, Error: {cwd_ex}. Keeping old CWD.")
+                          logger.warning(f"Could not parse Get-Location result: {results[results.Count - 1]}, Error: {cwd_ex}. Keeping old CWD.")
                           final_cwd = self._cwd # Use old CWD for metadata reporting
                 else:
                      logger.warning("Get-Location result was not found. Keeping old CWD.")
