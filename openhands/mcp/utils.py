@@ -206,7 +206,7 @@ def process_browser_mcp_response(
         else '',
     )
 
-def planner_mcp_plan(action, response) -> Observation:
+def planner_mcp_plan(_: McpAction, response: CallToolResult | None) -> Observation:
     logger.info(f'Planner MCP response: {response.content}')
     resonpse_dict = json.loads(response.content[0].text)
     observation = PlanObservation(

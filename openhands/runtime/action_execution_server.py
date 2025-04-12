@@ -235,30 +235,13 @@ class ActionExecutor:
         self.bash_session.initialize()
         logger.debug('Bash session initialized')
 
+        # we don't use browsergym, we use browser3-mcp
         # Start browser initialization in the background
-        self.browser_init_task = asyncio.create_task(self._init_browser_async())
-        logger.debug('Browser initialization started in background')
+        # self.browser_init_task = asyncio.create_task(self._init_browser_async())
+        # logger.debug('Browser initialization started in background')
 
-        await wait_all(
-            (self._init_plugin(plugin) for plugin in self.plugins_to_load),
-            timeout=60,
-        )
-        logger.debug('All plugins initialized')
-
-        # This is a temporary workaround
-        # TODO: refactor AgentSkills to be part of JupyterPlugin
-        # AFTER ServerRuntime is deprecated
-        logger.debug('Initializing AgentSkills')
-        if 'agent_skills' in self.plugins and 'jupyter' in self.plugins:
-            obs = await self.run_ipython(
-                IPythonRunCellAction(
-                    code='from openhands.runtime.plugins.agent_skills.agentskills import *\n'
-                )
-            )
-            logger.debug(f'AgentSkills initialized: {obs}')
-
-        logger.debug('Initializing bash commands')
-        await self._init_bash_commands()
+        # logger.debug('Initializing bash commands')
+        # await self._init_bash_commands()
 
         logger.debug('Runtime client initialized.')
         self._initialized = True
@@ -268,17 +251,14 @@ class ActionExecutor:
         return self._initialized
 
     async def _init_plugin(self, plugin: Plugin):
+        # if the plugin is already initialized, skip
+        if self.plugins.get(plugin.name):
+            logger.debug(f'Plugin {plugin.name} already initialized, skipping')
+            return
         assert self.bash_session is not None
         await plugin.initialize(self.username)
         self.plugins[plugin.name] = plugin
         logger.debug(f'Initializing plugin: {plugin.name}')
-
-        if isinstance(plugin, JupyterPlugin):
-            await self.run_ipython(
-                IPythonRunCellAction(
-                    code=f'import os; os.chdir("{self.bash_session.cwd}")'
-                )
-            )
 
     async def _init_bash_commands(self):
         INIT_COMMANDS = [
@@ -298,8 +278,37 @@ class ActionExecutor:
             )
             assert obs.exit_code == 0
         logger.debug('Bash init commands completed')
+        
+    async def _init_plugins_if_needed(self):
+        logger.debug(f'Plugins: {self.plugins}')
+        if len(self.plugins.items()) == len(self.plugins_to_load):
+            logger.debug('All plugins already initialized, skipping')
+            return
+        
+        await wait_all(
+            (self._init_plugin(plugin) for plugin in self.plugins_to_load),
+            timeout=60,
+        )
+        logger.debug('All plugins initialized')
+
+        # This is a temporary workaround
+        # TODO: refactor AgentSkills to be part of JupyterPlugin
+        # AFTER ServerRuntime is deprecated
+        # logger.debug('Initializing AgentSkills')
+        if 'agent_skills' in self.plugins and 'jupyter' in self.plugins:
+            obs = await self.run_ipython(
+                IPythonRunCellAction(
+                    code=f'from openhands.runtime.plugins.agent_skills.agentskills import *\nimport os; os.chdir("{self.bash_session.cwd}")\n'
+                )
+            )
+            logger.debug(f'AgentSkills initialized: {obs}')
 
     async def run_action(self, action) -> Observation:
+        
+        # before running the action, we need to initialize the plugins if needed
+        # this helps us reduce runtime startup time -> lazily initialize plugins
+        await self._init_plugins_if_needed()
+        
         async with self.lock:
             action_type = action.action
             observation = await getattr(self, action_type)(action)
@@ -507,26 +516,6 @@ class ActionExecutor:
         await self._ensure_browser_ready()
         return await browse(action, self.browser)
 
-    def planner_mcp_plan(self, action, response) -> Observation:
-        logger.info(f'Planner MCP response: {response.output}')
-        resonpse_dict = json.loads(response.output)
-        observation = PlanObservation(
-            plan_id=resonpse_dict['plan_id'],
-            tasks=[
-                {
-                    'content': task['content'],
-                    'status': task['status'],
-                    'result': task['result'],
-                }
-                for task in resonpse_dict['tasks']
-            ],
-            title=resonpse_dict['title'],
-            content=resonpse_dict['title'],
-        )
-
-        logger.info(f'Planner MCP observation: {observation}')
-        return observation
-
     def close(self):
         self.memory_monitor.stop_monitoring()
         if self.bash_session is not None:
@@ -572,6 +561,8 @@ if __name__ == '__main__':
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         global client
+        start_time = time.time()
+        
         client = ActionExecutor(
             plugins_to_load,
             work_dir=args.working_dir,
@@ -580,6 +571,9 @@ if __name__ == '__main__':
             browsergym_eval_env=args.browsergym_eval_env,
         )
         await client.ainit()
+        end_time = time.time()
+        total_time = end_time - start_time
+        logger.debug(f"Total lifespan execution time: {total_time:.2f} seconds")
         yield
         # Clean up & release the resources
         client.close()
@@ -753,14 +747,14 @@ if __name__ == '__main__':
     # VSCode-specific operations
     # ================================
 
-    @app.get('/vscode/connection_token')
-    async def get_vscode_connection_token():
-        assert client is not None
-        if 'vscode' in client.plugins:
-            plugin: VSCodePlugin = client.plugins['vscode']  # type: ignore
-            return {'token': plugin.vscode_connection_token}
-        else:
-            return {'token': None}
+    # @app.get('/vscode/connection_token')
+    # async def get_vscode_connection_token():
+    #     assert client is not None
+    #     if 'vscode' in client.plugins:
+    #         plugin: VSCodePlugin = client.plugins['vscode']  # type: ignore
+    #         return {'token': plugin.vscode_connection_token}
+    #     else:
+    #         return {'token': None}
 
     # ================================
     # File-specific operations for UI

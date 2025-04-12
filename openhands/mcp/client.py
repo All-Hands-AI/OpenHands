@@ -54,7 +54,7 @@ class MCPClient(BaseModel):
         without_mnemonic = {k: v for k, v in headers.items() if k != 'mnemonic'}
         self._server_params = {
             'url': server_url,
-            'headers': headers if self.name is 'browser_mcp' else without_mnemonic,
+            'headers': headers if self.name == 'browser_mcp' else without_mnemonic,
             'timeout': timeout,
             'sse_read_timeout': read_timeout,
         }
