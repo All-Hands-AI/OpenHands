@@ -121,7 +121,7 @@ function AppContent() {
   function renderMain() {
     if (width <= 640) {
       return (
-        <div className="rounded-xl overflow-hidden border border-neutral-600 w-full">
+        <div className="rounded-xl overflow-hidden border border-neutral-600 w-full bg-base-secondary">
           <ChatInterface />
         </div>
       );
