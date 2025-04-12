@@ -286,7 +286,7 @@ class WindowsPowershellSession:
 
             # Prepare for asynchronous invocation
             output_collection = Collection[System.Management.Automation.PSObject]()
-            async_result = ps.BeginInvoke[Collection[System.Management.Automation.PSObject], Collection[System.Management.Automation.PSDataStream[System.Management.Automation.ErrorRecord]]](None, output_collection)
+            async_result = ps.BeginInvoke(output_collection)
 
             start_time = time.monotonic()
 
