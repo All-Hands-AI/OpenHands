@@ -25,6 +25,16 @@ class TestGeminiPreview(unittest.TestCase):
         config = LLMConfig(model="gemini-2.5-pro-preview-04-01")
         llm = LLM(config)
         self.assertTrue(llm.is_function_calling_active())
+        
+        # Test with openrouter path format
+        config = LLMConfig(model="openrouter/google/gemini-2.5-pro-preview-03-25")
+        llm = LLM(config)
+        self.assertTrue(llm.is_function_calling_active())
+        
+        # Test with openrouter format
+        config = LLMConfig(model="openrouter/google/gemini-2.5-pro-preview-03-25")
+        llm = LLM(config)
+        self.assertTrue(llm.is_function_calling_active())
 
         # Test with a non-supported model
         config = LLMConfig(model="gemini/gemini-1.0-not-supported")

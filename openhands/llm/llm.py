@@ -464,13 +464,22 @@ class LLM(RetryMixin, DebugMixin):
         # Initialize function calling capability
         # Check if model name is in our supported list
         model_name = self.config.model.split('/')[-1]
+        
+        # Handle Gemini preview versions (e.g., gemini-2.5-pro-preview-03-25)
+        def is_gemini_preview_supported(name):
+            return (name.startswith('gemini-') and 'preview' in name and 
+                    any(m in name.split('-preview')[0] for m in FUNCTION_CALLING_SUPPORTED_MODELS))
+        
+        # Check all parts of the model path for Gemini preview models
+        # This handles cases like "openrouter/google/gemini-2.5-pro-preview-03-25"
+        model_parts = self.config.model.split('/')
+        
         model_name_supported = (
             self.config.model in FUNCTION_CALLING_SUPPORTED_MODELS
             or model_name in FUNCTION_CALLING_SUPPORTED_MODELS
             or any(m in self.config.model for m in FUNCTION_CALLING_SUPPORTED_MODELS)
-            # Handle Gemini preview versions (e.g., gemini-2.5-pro-preview-03-25)
-            or (model_name.startswith('gemini-') and 'preview' in model_name and 
-                any(m in model_name.split('-preview')[0] for m in FUNCTION_CALLING_SUPPORTED_MODELS))
+            or is_gemini_preview_supported(model_name)
+            or any(is_gemini_preview_supported(part) for part in model_parts)
         )
 
         # Handle native_tool_calling user-defined configuration
