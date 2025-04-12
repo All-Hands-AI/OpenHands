@@ -463,10 +463,14 @@ class LLM(RetryMixin, DebugMixin):
 
         # Initialize function calling capability
         # Check if model name is in our supported list
+        model_name = self.config.model.split('/')[-1]
         model_name_supported = (
             self.config.model in FUNCTION_CALLING_SUPPORTED_MODELS
-            or self.config.model.split('/')[-1] in FUNCTION_CALLING_SUPPORTED_MODELS
+            or model_name in FUNCTION_CALLING_SUPPORTED_MODELS
             or any(m in self.config.model for m in FUNCTION_CALLING_SUPPORTED_MODELS)
+            # Handle Gemini preview versions (e.g., gemini-2.5-pro-preview-03-25)
+            or (model_name.startswith('gemini-') and 'preview' in model_name and 
+                any(m in model_name.split('-preview')[0] for m in FUNCTION_CALLING_SUPPORTED_MODELS))
         )
 
         # Handle native_tool_calling user-defined configuration
