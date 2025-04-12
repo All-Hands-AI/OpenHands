@@ -109,6 +109,7 @@ def test_create_file_with_empty_content(temp_dir, runtime_cls, run_as_openhands)
         )
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert '1\t' in obs.content
 
     finally:
         _close_test_runtime(runtime)
@@ -199,9 +200,10 @@ def test_str_replace_multi_line_with_tabs(temp_dir, runtime_cls, run_as_openhand
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         test_file = os.path.join(config.workspace_mount_path_in_sandbox, 'test.txt')
-        action = FileWriteAction(
-            content='def test():\n\tprint("Hello, World!")',
+        action = FileEditAction(
+            command='create',
             path=test_file,
+            file_text='def test():\n\tprint("Hello, World!")',
         )
         runtime.run_action(action)
 
