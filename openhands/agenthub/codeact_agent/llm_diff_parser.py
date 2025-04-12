@@ -3,6 +3,8 @@ import re
 from pathlib import Path
 from typing import List, Tuple
 
+from openhands.core.exceptions import LLMMalformedActionError
+
 # Regex patterns for search / replace
 HEAD = r'^<{5,9} SEARCH\s*$'
 DIVIDER = r'^={5,9}\s*$'
@@ -113,7 +115,7 @@ def parse_llm_response_for_diffs(
         - The end character index of the last block's closing fence (-1 if no blocks).
 
     Raises:
-        ValueError: If malformed blocks are detected.
+        LLMMalformedActionError: If malformed blocks are detected.
     """
     edits: List[Tuple[str, str, str]] = []
     lines = content.splitlines(keepends=True)
@@ -177,7 +179,7 @@ def parse_llm_response_for_diffs(
                     else:
                         # Raise error if no filename found and no fence/context
                         if block_fence_index == -1:
-                             raise ValueError(missing_filename_err)
+                             raise LLMMalformedActionError(missing_filename_err)
                         else:
                              # If we found a fence but no filename, maybe it's a new file?
                              # Let the parser continue, but filename remains None for now.
@@ -189,7 +191,7 @@ def parse_llm_response_for_diffs(
                 # unless it's potentially a new file block (empty search)
                 # We'll validate the empty search later.
                 if filename is None and i + 1 < len(lines) and not divider_pattern.match(lines[i + 1].strip()):
-                     raise ValueError(missing_filename_err + " (or fence not found)")
+                     raise LLMMalformedActionError(missing_filename_err + " (or fence not found)")
 
                 current_filename = filename # Remember for subsequent blocks
 
@@ -203,7 +205,7 @@ def parse_llm_response_for_diffs(
                     i += 1
 
                 if i >= len(lines) or not divider_pattern.match(lines[i].strip()):
-                    raise ValueError(f'Expected `{DIVIDER_ERR}` after SEARCH block for {current_filename or "unknown file"}')
+                    raise LLMMalformedActionError(f'Expected `{DIVIDER_ERR}` after SEARCH block for {current_filename or "unknown file"}')
 
                 divider_line_len = len(lines[i])
                 i += 1 # Move past DIVIDER line
@@ -212,13 +214,13 @@ def parse_llm_response_for_diffs(
                 updated_text_lines = []
                 while i < len(lines) and not updated_pattern.match(lines[i].strip()):
                     if divider_pattern.match(lines[i].strip()): # Error: unexpected divider
-                         raise ValueError(f'Unexpected `{DIVIDER_ERR}` inside REPLACE block for {current_filename or "unknown file"}')
+                         raise LLMMalformedActionError(f'Unexpected `{DIVIDER_ERR}` inside REPLACE block for {current_filename or "unknown file"}')
                     updated_text_lines.append(lines[i])
                     current_char_index += len(lines[i])
                     i += 1
 
                 if i >= len(lines) or not updated_pattern.match(lines[i].strip()):
-                    raise ValueError(f'Expected `{UPDATED_ERR}` after REPLACE block for {current_filename or "unknown file"}')
+                    raise LLMMalformedActionError(f'Expected `{UPDATED_ERR}` after REPLACE block for {current_filename or "unknown file"}')
 
                 replace_marker_line_len = len(lines[i])
                 i += 1 # Move past REPLACE marker line
@@ -243,7 +245,7 @@ def parse_llm_response_for_diffs(
                 # Final check for filename if it was initially None (new file case)
                 if filename is None:
                     if original_text.strip():
-                        raise ValueError("SEARCH block must be empty when creating a new file (filename was missing before block).")
+                        raise LLMMalformedActionError("SEARCH block must be empty when creating a new file (filename was missing before block).")
                     # If search is empty, assume filename was intended to be the one before fence
                     # This requires re-searching, maybe simpler to enforce filename presence?
                     # For now, let's require filename to be present or inferred earlier.
@@ -253,7 +255,7 @@ def parse_llm_response_for_diffs(
                          filename_lines = lines[fence_line_index + 1 : block_start_line_index]
                          filename = find_filename(filename_lines, fence, valid_fnames)
                     if filename is None:
-                         raise ValueError("Could not determine filename for new file block.")
+                         raise LLMMalformedActionError("Could not determine filename for new file block.")
 
 
                 edits.append((filename, original_text, updated_text))
@@ -267,11 +269,15 @@ def parse_llm_response_for_diffs(
                 continue
 
 
-            except ValueError as e:
+            except (ValueError, LLMMalformedActionError) as e:
                 # Add context to the error message
                 processed_marker = len(edits) + 1 # Block number being processed
-                err_context = f"Error parsing block #{processed_marker} near file '{current_filename or 'unknown'}': {e.args[0]}"
-                raise ValueError(err_context) from e
+                # Ensure we get the original message, whether it's ValueError or LLMMalformedActionError
+                original_message = e.args[0] if e.args else str(e)
+                err_context = f"Error parsing block #{processed_marker} for file '{current_filename or 'unknown'}': {original_message}"
+                # Re-raise as LLMMalformedActionError, preserving the original exception type if needed for debugging?
+                # No, the goal is to *always* raise LLMMalformedActionError from this parser.
+                raise LLMMalformedActionError(err_context) from e
 
         # If not a HEAD line, just advance char index and line index
         current_char_index += line_len
