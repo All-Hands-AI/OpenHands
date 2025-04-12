@@ -22,6 +22,9 @@ from litellm.exceptions import (
 )
 from litellm.types.utils import CostPerToken, ModelResponse, Usage
 from litellm.utils import create_pretrained_tokenizer
+from opentelemetry import trace
+from traceloop.sdk import Traceloop
+from traceloop.sdk.decorators import workflow
 
 from openhands.core.exceptions import LLMNoResponseError
 from openhands.core.logger import openhands_logger as logger
@@ -34,15 +37,9 @@ from openhands.llm.fn_call_converter import (
 )
 from openhands.llm.metrics import Metrics
 from openhands.llm.retry_mixin import RetryMixin
-from traceloop.sdk.decorators import workflow
-from opentelemetry import trace
-from traceloop.sdk import Traceloop
-
 
 if os.getenv('TRACELOOP_BASE_URL'):
-    Traceloop.init(
-        disable_batch=True
-    )
+    Traceloop.init(disable_batch=True)
 
 __all__ = ['LLM']
 
@@ -120,10 +117,9 @@ class LLM(RetryMixin, DebugMixin):
             metrics: The metrics to use.
         """
         if session_id and user_id:
-            Traceloop.set_association_properties({
-                'session_id': session_id,
-                'user_id': user_id
-            })
+            Traceloop.set_association_properties(
+                {'session_id': session_id, 'user_id': user_id}
+            )
         self._tried_model_info = False
         self.metrics: Metrics = (
             metrics if metrics is not None else Metrics(model_name=config.model)
@@ -217,9 +213,9 @@ class LLM(RetryMixin, DebugMixin):
             try:
                 span = trace.get_current_span()
                 if self.session_id:
-                    span.set_attribute("session_id", self.session_id)
+                    span.set_attribute('session_id', self.session_id)
                 if self.user_id:
-                    span.set_attribute("user_id", self.user_id)
+                    span.set_attribute('user_id', self.user_id)
             except Exception:
                 pass
 
@@ -348,7 +344,7 @@ class LLM(RetryMixin, DebugMixin):
             if cost and resp.get('usage'):
                 try:
                     resp['usage']['cost'] = cost
-                    span.set_attribute("llm.cost", cost)
+                    span.set_attribute('llm.cost', cost)
                 except Exception:
                     pass
 
@@ -359,8 +355,8 @@ class LLM(RetryMixin, DebugMixin):
                     span = trace.get_current_span()
                     prompt_tokens = usage.get('prompt_tokens', 0)
                     completion_tokens = usage.get('completion_tokens', 0)
-                    span.set_attribute("llm.usage.prompt_tokens", prompt_tokens)
-                    span.set_attribute("llm.usage.completion_tokens", completion_tokens)
+                    span.set_attribute('llm.usage.prompt_tokens', prompt_tokens)
+                    span.set_attribute('llm.usage.completion_tokens', completion_tokens)
                 except Exception:
                     pass
 

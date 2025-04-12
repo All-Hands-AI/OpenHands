@@ -11,10 +11,10 @@ from openhands.events.action.mcp import McpAction
 from openhands.events.observation.error import ErrorObservation
 from openhands.events.observation.mcp import MCPObservation
 from openhands.events.observation.observation import Observation
+from openhands.events.observation.planner_mcp import PlanObservation
 from openhands.events.observation.playwright_mcp import (
     BrowserMCPObservation,
 )
-from openhands.events.observation.planner_mcp import PlanObservation
 from openhands.mcp.client import MCPClient
 
 
@@ -154,13 +154,12 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: McpAction) -> Obse
     ):
         return process_browser_mcp_response(action, response)
     if (
-        action.name == 'create_plan' or 
-        action.name == 'update_plan' or 
-        action.name == 'get_current_plan'
+        action.name == 'create_plan'
+        or action.name == 'update_plan'
+        or action.name == 'get_current_plan'
     ):
         # Handle the case where the response is not empty
         return planner_mcp_plan(action, response)
-    
 
     return MCPObservation(
         content=f'MCP {action.name} result: {response.model_dump(mode="json")}'
@@ -205,6 +204,7 @@ def process_browser_mcp_response(
         if image_content is not None
         else '',
     )
+
 
 def planner_mcp_plan(action, response) -> Observation:
     logger.info(f'Planner MCP response: {response.content}')

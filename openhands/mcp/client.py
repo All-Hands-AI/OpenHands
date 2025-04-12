@@ -1,4 +1,3 @@
-import asyncio
 from contextlib import AsyncExitStack
 from typing import Dict, List, Optional
 
@@ -7,11 +6,12 @@ from mcp.client.sse import sse_client
 from pydantic import BaseModel, Field
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.mcp.tool import BaseTool, MCPClientTool
+from openhands.mcp.tool import MCPClientTool
 
 
 class MCPClient(BaseModel):
     """A collection of tools that connects to an MCP server and manages available tools through the Model Context Protocol."""
+
     session: Optional[ClientSession] = None
     exit_stack: AsyncExitStack = AsyncExitStack()
     description: str = 'MCP client tools for server interaction'
@@ -28,7 +28,7 @@ class MCPClient(BaseModel):
         sid: Optional[str] = None,
         mnemonic: Optional[str] = None,
         timeout: float = 5.0,
-        read_timeout: float = 60.0 * 2, # 2 minutes instead of default 5 minutes
+        read_timeout: float = 60.0 * 2,  # 2 minutes instead of default 5 minutes
     ) -> None:
         """Connect to an MCP server using SSE transport.
 
@@ -54,7 +54,7 @@ class MCPClient(BaseModel):
         without_mnemonic = {k: v for k, v in headers.items() if k != 'mnemonic'}
         self._server_params = {
             'url': server_url,
-            'headers': headers if self.name is 'browser_mcp' else without_mnemonic,
+            'headers': headers if self.name == 'browser_mcp' else without_mnemonic,
             'timeout': timeout,
             'sse_read_timeout': read_timeout,
         }
@@ -69,8 +69,8 @@ class MCPClient(BaseModel):
             raise
 
     async def _connect_sse(
-            self, 
-        ) -> None:
+        self,
+    ) -> None:
         """Connect to an MCP server using SSE transport.
 
         Args:
@@ -81,9 +81,7 @@ class MCPClient(BaseModel):
         """
         if not self._server_params['url']:
             raise ValueError('Server URL is required.')
-        streams_context = sse_client(
-                **self._server_params
-            )
+        streams_context = sse_client(**self._server_params)
         streams = await self.exit_stack.enter_async_context(streams_context)
         self.session = await self.exit_stack.enter_async_context(
             ClientSession(*streams)
@@ -153,10 +151,14 @@ class MCPClient(BaseModel):
         """
         if tool_name not in self.tool_map:
             raise ValueError(f'Tool {tool_name} not found.')
-        
+
         try:
             # Check if we need to reconnect
-            await self._connect_sse()    
+            await self._connect_sse()
+            if not self.session:
+                raise RuntimeError(
+                    'Failed to reconnect to MCP server. Session is None.'
+                )
             await self.session.initialize()
             tool_result = await self.tool_map[tool_name].execute(**args)
             if tool_result.isError:

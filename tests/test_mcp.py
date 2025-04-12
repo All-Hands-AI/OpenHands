@@ -30,9 +30,7 @@ class MCPRunner:
         # Initialize SSE connections
         if mcp_config:
             for name, config in mcp_config.items():
-                logger.info(
-                    f'Initializing MCP agent for {name} with SSE connection...'
-                )
+                logger.info(f'Initializing MCP agent for {name} with SSE connection...')
 
                 client = MCPClient()
                 try:
@@ -45,7 +43,7 @@ class MCPRunner:
 
         mcp_tools = convert_mcp_clients_to_tools(self.mcp_clients)
         logger.info(f'MCP tools: {mcp_tools}')
-        
+
         for client in self.mcp_clients:
             is_connected = await client.is_connected()
             assert is_connected

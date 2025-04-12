@@ -119,9 +119,5 @@ def test_get_messages_prompt_caching(codeact_agent: CodeActAgent):
     )  # Including the initial system+user + last user message
 
     # Verify that these are indeed the last user message (from start)
-    assert (
-        cached_user_messages[0]
-        .content[0]
-        .text.startswith('You are Thesis agent')
-    )
+    assert cached_user_messages[0].content[0].text.startswith('You are Thesis agent')
     assert cached_user_messages[1].content[0].text.startswith('User message 14')

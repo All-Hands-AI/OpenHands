@@ -4,7 +4,6 @@ from datetime import datetime, timezone
 from typing import Any, Optional
 
 import httpx
-import requests
 from fastapi import APIRouter, HTTPException
 
 from openhands.security.options import SecurityAnalyzers
