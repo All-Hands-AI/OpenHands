@@ -77,21 +77,22 @@ I've uploaded a python code repository in {workspace_dir_name}. Your goal is to 
 
 **Key Requirements & Constraints:**
 
-1.  **Minimal Changes:** Implement the fix with the minimum necessary modifications to the code. Focus only on non-test files.
+1.  **Targeted Changes:** Implement the fix. Focus only on non-test files.
 2.  **Environment Ready:** The Python environment is pre-configured with all dependencies. Do not install packages.
 3.  **Mandatory Testing Procedure:**
-    *   **Create Reproduction Script:** *Before* implementing any fix, you MUST create a *new, minimal script* (separate from existing tests) that specifically reproduces the issue. Run this script to confirm reproduction.
+    *   **Create Reproduction Script:** *Before* implementing any fix, you MUST create a *new script* (separate from existing tests) that specifically reproduces the issue. Run this script to confirm reproduction.
     *   **Verify Fix:** After implementing the fix, run your *reproduction script* again to verify the issue is resolved. You can enhance this script with edge cases.
     *   **Run Relevant Existing Tests:** You MUST run *only* the *existing unit tests* that are relevant to your code changes to ensure no regressions. You MUST NOT modify these existing tests.
     *   **Final Check:** Before finishing, ensure these relevant existing tests pass. If any fail, revise your fix.
-4.  **Final Review:** Compare your solution against the original issue and the base commit ({instance["base_commit"]}) to ensure completeness.
+4.  **Robustness:** While aiming for minimal changes, ensure your fix is robust. Consider potential edge cases and different ways the affected code might be called. Analyze the potential impact on other parts of the codebase.
+5.  **Final Review:** Compare your solution against the original issue and the base commit ({instance["base_commit"]}) to ensure completeness.
 
 **General Workflow:**
 
 *   Thoroughly understand the problem and how to reproduce it.
-*   Explore the codebase (e.g., using `grep`) to identify relevant files and logic.
-*   Plan and implement your minimal fix, adhering strictly to the testing procedure above.
-*   Be methodical and ensure your final solution is correct and robust. Quality is key.
+*   Explore the codebase (e.g., using `grep`) to identify relevant files, logic, **and potential calling contexts.**
+*   Plan and implement your fix, adhering strictly to the testing procedure above.
+*   Be methodical and ensure your final solution is correct and robust **across different scenarios**. Quality is key.
 
 **Issue Description:**
 <issue_description>
