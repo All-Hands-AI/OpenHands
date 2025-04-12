@@ -451,7 +451,9 @@ def test_completion_retry_with_llm_no_response_error_nonzero_temp(
     2. The temperature remains unchanged (not set to 0.2)
     3. After all retries are exhausted, the error is raised
     """
-    mock_litellm_completion.side_effect = LLMNoResponseError('LLM did not return a response')
+    mock_litellm_completion.side_effect = LLMNoResponseError(
+        'LLM did not return a response'
+    )
 
     llm = LLM(config=default_config)
     with pytest.raises(LLMNoResponseError):
@@ -491,7 +493,7 @@ def test_gemini_25_pro_function_calling(mock_httpx_get, mock_get_model_info):
                 'model_info': {
                     'max_input_tokens': 8000,
                     'max_output_tokens': 2000,
-                }
+                },
             }
         ]
     }
@@ -522,8 +524,9 @@ def test_gemini_25_pro_function_calling(mock_httpx_get, mock_get_model_info):
         config = LLMConfig(model=model_name, api_key='test_key')
         llm = LLM(config)
 
-        assert llm.is_function_calling_active() == expected_support, \
-            f"Expected function calling support to be {expected_support} for model {model_name}"
+        assert (
+            llm.is_function_calling_active() == expected_support
+        ), f'Expected function calling support to be {expected_support} for model {model_name}'
 
 
 @patch('openhands.llm.llm.litellm_completion')
