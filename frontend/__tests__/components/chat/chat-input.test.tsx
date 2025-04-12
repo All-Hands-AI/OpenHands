@@ -217,6 +217,26 @@ describe("ChatInput", () => {
     expect(onImagePaste).toHaveBeenCalledWith([file]);
   });
 
+  it("should have appropriate default dimensions", () => {
+    render(<ChatInput onSubmit={onSubmitMock} />);
+    const container = screen.getByTestId("chat-input");
+
+    // Check minimum height
+    expect(container.className).toContain("min-h-6");
+
+    // Check the textarea does not have a minimum width by default
+    const textarea = screen.getByRole("textbox");
+    expect(textarea.className).not.toContain("min-w-[300px]");
+  });
+
+  it("should apply minimum width when className contains it", () => {
+    render(<ChatInput onSubmit={onSubmitMock} className="min-w-[300px]" />);
+
+    // Check the textarea has minimum width when provided in className
+    const textarea = screen.getByRole("textbox");
+    expect(textarea.className).toContain("min-w-[300px]");
+  });
+
   it("should not submit when Enter is pressed during IME composition", async () => {
     const user = userEvent.setup();
     render(<ChatInput onSubmit={onSubmitMock} />);

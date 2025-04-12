@@ -73,7 +73,10 @@ export function InteractiveChatBox({
           onStop={onStop}
           value={value}
           onImagePaste={handleUpload}
-          className="py-[10px]"
+          className={cn(
+            "py-[10px]",
+            value && value.length > 0 ? "min-w-[300px]" : "",
+          )}
           buttonClassName="py-[10px]"
         />
       </div>
