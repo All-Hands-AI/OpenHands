@@ -8,7 +8,6 @@ NOTE: this will be executed inside the docker sandbox.
 import argparse
 import asyncio
 import base64
-import json
 import mimetypes
 import os
 import shutil
@@ -54,11 +53,10 @@ from openhands.events.observation import (
     IPythonRunCellObservation,
     Observation,
 )
-from openhands.events.observation.planner_mcp import PlanObservation
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.runtime.browser import browse
 from openhands.runtime.browser.browser_env import BrowserEnv
-from openhands.runtime.plugins import ALL_PLUGINS, JupyterPlugin, Plugin, VSCodePlugin
+from openhands.runtime.plugins import ALL_PLUGINS, JupyterPlugin, Plugin
 from openhands.runtime.utils.bash import BashSession
 from openhands.runtime.utils.file_viewer import generate_file_viewer_html
 from openhands.runtime.utils.files import insert_lines, read_lines
@@ -278,13 +276,13 @@ class ActionExecutor:
             )
             assert obs.exit_code == 0
         logger.debug('Bash init commands completed')
-        
+
     async def _init_plugins_if_needed(self):
         logger.debug(f'Plugins: {self.plugins}')
         if len(self.plugins.items()) == len(self.plugins_to_load):
             logger.debug('All plugins already initialized, skipping')
             return
-        
+
         await wait_all(
             (self._init_plugin(plugin) for plugin in self.plugins_to_load),
             timeout=60,
@@ -296,11 +294,10 @@ class ActionExecutor:
         # AFTER ServerRuntime is deprecated
         # logger.debug('Initializing AgentSkills')
         if 'agent_skills' in self.plugins and 'jupyter' in self.plugins:
-            obs = await self.run_ipython(
-                IPythonRunCellAction(
-                    code=f'from openhands.runtime.plugins.agent_skills.agentskills import *\nimport os; os.chdir("{self.bash_session.cwd}")\n'
-                )
-            )
+            code = 'from openhands.runtime.plugins.agent_skills.agentskills import *\n'
+            if self.bash_session:
+                code += f'import os; os.chdir("{self.bash_session.cwd}")\n'
+            obs = await self.run_ipython(IPythonRunCellAction(code=code))
             logger.debug(f'AgentSkills initialized: {obs}')
 
     async def run_action(self, action) -> Observation:
@@ -560,7 +557,7 @@ if __name__ == '__main__':
     async def lifespan(app: FastAPI):
         global client
         start_time = time.time()
-        
+
         client = ActionExecutor(
             plugins_to_load,
             work_dir=args.working_dir,
@@ -571,7 +568,7 @@ if __name__ == '__main__':
         await client.ainit()
         end_time = time.time()
         total_time = end_time - start_time
-        logger.debug(f"Total lifespan execution time: {total_time:.2f} seconds")
+        logger.debug(f'Total lifespan execution time: {total_time:.2f} seconds')
         yield
         # Clean up & release the resources
         client.close()

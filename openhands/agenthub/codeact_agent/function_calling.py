@@ -160,7 +160,7 @@ def response_to_actions(
                     raise FunctionCallValidationError(
                         f'Missing required argument "path" in tool call {tool_call.function.name}'
                     )
-                path: str = arguments['path']
+                path = arguments['path']
                 if (
                     sid is not None
                     and sid not in path

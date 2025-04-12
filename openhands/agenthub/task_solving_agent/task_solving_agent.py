@@ -27,7 +27,6 @@ from openhands.utils.prompt import PromptManager
 class TaskSolvingAgent(Agent):
     VERSION = '2.2'
 
-
     sandbox_plugins: list[PluginRequirement] = [
         # NOTE: AgentSkillsRequirement need to go before JupyterRequirement, since
         # AgentSkillsRequirement provides a lot of Python functions,

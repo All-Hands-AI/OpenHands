@@ -31,13 +31,11 @@ class MCPRunner:
         # Initialize SSE connections
         if mcp_config:
             for name, config_dict in mcp_config.items():
-                logger.info(
-                    f'Initializing MCP agent for {name} with SSE connection...'
-                )
+                logger.info(f'Initializing MCP agent for {name} with SSE connection...')
 
                 client = MCPClient()
                 try:
-                    await client.connect_sse(server_url=config_dict["url"])
+                    await client.connect_sse(server_url=config_dict['url'])
                     self.mcp_clients.append(client)
                     logger.info(f'Connected to MCP server {config_dict["url"]} via SSE')
                 except Exception as e:
@@ -46,7 +44,7 @@ class MCPRunner:
 
         mcp_tools = convert_mcp_clients_to_tools(self.mcp_clients)
         logger.info(f'MCP tools: {mcp_tools}')
-        
+
         for client in self.mcp_clients:
             is_connected = await client.is_connected()
             assert is_connected
@@ -102,27 +100,27 @@ async def test_mcp_runner():
     """Test MCPRunner with mocked connect_sse and is_connected."""
     # Create a mock config
     config = AppConfig()
-    config.default_agent = "test_agent"
-    config.dict_mcp_config = {
-        "test_mcp": {"url": "http://test-url"}
-    }
-    
+    config.default_agent = 'test_agent'
+    config.dict_mcp_config = {'test_mcp': {'url': 'http://test-url'}}
+
     # Create MCPRunner instance
     runner = MCPRunner(config)
-    
+
     # Mock MCPClient's connect_sse and is_connected methods
-    with patch.object(MCPClient, 'connect_sse', new_callable=AsyncMock) as mock_connect_sse, \
-         patch.object(MCPClient, 'is_connected', new_callable=AsyncMock, return_value=True) as mock_is_connected:
-        
+    with patch.object(
+        MCPClient, 'connect_sse', new_callable=AsyncMock
+    ) as mock_connect_sse, patch.object(
+        MCPClient, 'is_connected', new_callable=AsyncMock, return_value=True
+    ) as mock_is_connected:
         # Run initialization
         await runner.initialize()
-        
+
         # Verify connect_sse was called with the correct URL
-        mock_connect_sse.assert_called_once_with(server_url="http://test-url")
-        
+        mock_connect_sse.assert_called_once_with(server_url='http://test-url')
+
         # Verify is_connected was called
         mock_is_connected.assert_called_once()
-        
+
         # Verify client was added to mcp_clients list
         assert len(runner.mcp_clients) == 1
 

@@ -325,7 +325,7 @@ class ActionExecutionClient(Runtime):
         return self.send_action_for_execution(action)
 
     async def call_tool_mcp(self, action: McpAction) -> Observation:
-        print(f"Ready to call tool MCP with action {action.name} after logger.info")
+        print(f'Ready to call tool MCP with action {action.name} after logger.info')
         if self.mcp_clients is None:
             self.log(
                 'debug',

@@ -54,7 +54,7 @@ class ObservationType(str, Enum):
     """Result of a MCP Server operation"""
 
     BROWSER_MCP = 'browser_mcp'
-    
+
     MCP_PLAN = 'mcp_plan'
     """Result of a MCP Plan operation. The response is a dict with the plan ID and the tasks."""
 

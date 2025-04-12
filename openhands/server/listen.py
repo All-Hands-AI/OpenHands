@@ -13,7 +13,6 @@ from openhands.server.middleware import (
 )
 from openhands.server.static import SPAStaticFiles
 
-
 base_app.mount(
     '/', SPAStaticFiles(directory='./frontend/build', html=True), name='dist'
 )
