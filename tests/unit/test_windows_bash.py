@@ -115,9 +115,9 @@ def test_command_timeout(windows_bash_session):
     duration = time.monotonic() - start_time
 
     assert isinstance(result, CmdOutputObservation)
-    # Check for timeout specific content and metadata
-    assert "timed out" in result.content.lower()
-    assert result.metadata.exit_code == 1  # Timeout should result in error exit code
+    # Check for timeout specific metadata
+    assert "timed out" in result.metadata.suffix.lower() # Check suffix, not content
+    assert result.metadata.exit_code == -1  # Timeout should result in exit code -1
     # Check that it actually timed out near the specified time
     assert abs(duration - test_timeout_sec) < 0.5  # Allow some buffer
 
@@ -377,6 +377,4 @@ def test_stateful_file_operations(windows_bash_session, temp_work_dir):
         command=f"Remove-Item -Path '{sub_dir_name}/test_file.txt' -Force"
     )
     result = windows_bash_session.execute(remove_file_action)
-    assert result.metadata.exit_code == 0
-    
-    # Verify file is gone 
+    assert result.metadata.exit_code == 0 

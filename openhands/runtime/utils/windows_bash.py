@@ -324,22 +324,29 @@ Get-Location
                 wait_completed = async_result.AsyncWaitHandle.WaitOne(TimeSpan.FromMilliseconds(100))
                 # if wait_completed: break # Exit loop if completed
 
-            # --- Execution Finished (Normally, Timed Out, or Stopped) --- 
+            # --- Execution Finished (Normally, Timed Out, or Stopped) ---
             logger.debug(f"Async invocation completed. State: {ps.InvocationStateInfo.State}")
 
             # Always call EndInvoke to get results and clean up async operation
             # This might block briefly if the command is still somehow running after stop
             # It can also throw exceptions if the command itself had a terminating error.
             results = None
+            pipeline_stopped_during_timeout = False
             try:
                  logger.debug("Calling EndInvoke...")
                  results = ps.EndInvoke(async_result)
                  logger.debug("EndInvoke completed.")
             except Exception as end_invoke_ex:
-                 # This often indicates a script error or that Stop() was forceful
-                 logger.error(f"Error during EndInvoke: {end_invoke_ex}")
-                 if not error_message: # Prioritize timeout/cancellation messages
-                      error_message = f"[Error during command finalization: {end_invoke_ex}]"
+                 # Check if this exception is the expected one after a timeout-induced stop
+                 if timed_out and "PipelineStoppedException" in str(type(end_invoke_ex)):
+                      logger.warning(f"EndInvoke failed as expected after stopping due to timeout: {end_invoke_ex}")
+                      pipeline_stopped_during_timeout = True
+                      # Don't set error_message here, let the timed_out logic handle it
+                 else:
+                      # This often indicates a script error or that Stop() was forceful for other reasons
+                      logger.error(f"Error during EndInvoke: {end_invoke_ex}")
+                      if not error_message: # Prioritize timeout/cancellation messages
+                           error_message = f"[Error during command finalization: {end_invoke_ex}]"
                  # Still try to read streams below
                  results = None # Ensure results is None if EndInvoke failed
 
@@ -410,10 +417,14 @@ Get-Location
                         # output_builder.append("") # Optional: Append empty line for None
 
             # Determine Functional Exit Code (based on streams, state, timeout, etc.)
-            exit_code = 0 # Default to success
-            if ps.Streams.Error.Count > 0 or ps.InvocationStateInfo.State == PSInvocationState.Failed or timed_out or error_message:
-                exit_code = 1 # Indicate failure
-            logger.debug(f"Determined functional exit code: {exit_code}")
+            if timed_out:
+                exit_code = -1 # Special code for timeout to indicate process was interrupted
+                logger.debug(f"Command timed out, setting exit code to -1")
+            else:
+                exit_code = 0 # Default to success unless errors found
+                if ps.Streams.Error.Count > 0 or ps.InvocationStateInfo.State == PSInvocationState.Failed or (error_message and not pipeline_stopped_during_timeout):
+                    exit_code = 1 # Indicate failure for non-timeout reasons
+                logger.debug(f"Determined functional exit code: {exit_code}")
 
             # 2. Error Stream
             if ps.Streams.Error and ps.Streams.Error.Count > 0:
@@ -440,23 +451,45 @@ Get-Location
                      # Add failure reason if no other message (like timeout) exists
                      error_message = f"[PowerShell invocation failed: {ps.InvocationStateInfo.Reason}]"
 
-            # Combine output and add any timeout/error messages
-            logger.debug(f"Output builder contents before join: {output_builder}") # Added debug log
-            final_output = "\n".join(output_builder).strip()
-            if error_message:
-                 final_output += f"\n{error_message}"
-            logger.debug(f"Final output string: '{final_output}'") # Added debug log
-
             # Create metadata
             metadata = CmdOutputMetadata(exit_code=exit_code, working_dir=self._cwd)
-            suffix = f"\n[Command completed with exit code {exit_code} in CWD: {self._cwd}]"
             if timed_out:
-                suffix = f"\n[Command timed out after {timeout_seconds:.1f} seconds and was stopped. Exit code: {exit_code}, CWD: {self._cwd}]"
+                # Match the suffix format expected by tests for timeout
+                suffix = (
+                    f"[The command timed out after {timeout_seconds:.1f} seconds. "
+                    f"You may wait longer to see additional output by sending empty command '', "
+                    f"send other commands to interact with the current process, "
+                    f"or send keys to interrupt/kill the command.]"
+                )
+                # Overwrite the simpler error message if timeout occurred
+                error_message = None # Clear specific error message as suffix handles it
             elif error_message and "[Command execution cancelled due to shutdown signal]" in error_message:
                  suffix = f"\n[Command execution cancelled due to shutdown signal. Exit code: {exit_code}, CWD: {self._cwd}]"
+                 error_message = None # Suffix handles it
+            else:
+                 # Standard completion suffix
+                 suffix = f"\n[Command completed with exit code {exit_code} in CWD: {self._cwd}]"
             metadata.suffix = suffix
 
+            # Combine output and add any critical error messages NOT handled by suffix
+            logger.debug(f"Output builder contents before join: {output_builder}")
+            final_output = "\n".join(output_builder).strip()
+
+            # Append specific error messages *not* handled by suffix (like EndInvoke failures NOT due to timeout stop)
+            if error_message:
+                 final_output += f"\n{error_message}"
+            # Add PowerShell failure reason if applicable and not already covered
+            elif ps.InvocationStateInfo.State == PSInvocationState.Failed and not timed_out:
+                reason = ps.InvocationStateInfo.Reason
+                logger.error(f"PowerShell invocation failed: {reason}")
+                final_output += f"\n[PowerShell invocation failed: {reason}]"
+
+            logger.debug(f"Final output string: '{final_output}'")
+
             logger.info(f"Command finished. ExitCode={exit_code}, CWD={self._cwd}")
+            # Use the determined exit code for the observation
+            # Note: Even if timed_out (exit_code = -1), we return CmdOutputObservation
+            # The consumer (e.g., agent) interprets exit_code -1.
             return CmdOutputObservation(
                 content=final_output,
                 command=command,
