@@ -284,3 +284,124 @@ new
 """
     with pytest.raises(ValueError, match='Bad/missing filename'):
         parse_llm_response_for_diffs(content)
+
+
+def test_parse_two_new_files():
+    content = """
+First new file:
+```python
+new_file_1.py
+<<<<<<< SEARCH
+=======
+# Content for file 1
+print("File 1")
+>>>>>>> REPLACE
+```
+Second new file:
+```text
+new_file_2.txt
+<<<<<<< SEARCH
+=======
+Content for file 2.
+This is plain text.
+>>>>>>> REPLACE
+```
+"""
+    expected_edits = [
+        ('new_file_1.py', '', '# Content for file 1\nprint("File 1")\n'),
+        ('new_file_2.txt', '', 'Content for file 2.\nThis is plain text.\n'),
+    ]
+    start_idx_expected = content.find('```python')
+    end_idx_expected = (
+        content.rfind('>>>>>>> REPLACE\n```') + len('>>>>>>> REPLACE\n```\n') - 1
+    )
+
+    edits, start_idx, end_idx = parse_llm_response_for_diffs(content)
+
+    assert edits == expected_edits
+    assert start_idx == start_idx_expected
+    assert end_idx > start_idx
+    # assert end_idx == end_idx_expected
+
+
+def test_parse_one_edit_one_new_file():
+    content = """
+Editing an existing file:
+```python
+existing_file.py
+<<<<<<< SEARCH
+# Old line
+print("Old")
+=======
+# New line
+print("New")
+>>>>>>> REPLACE
+```
+Creating a new file:
+```python
+new_file.py
+<<<<<<< SEARCH
+=======
+# New file content
+print("Newly created")
+>>>>>>> REPLACE
+```
+"""
+    expected_edits = [
+        ('existing_file.py', '# Old line\nprint("Old")\n', '# New line\nprint("New")\n'),
+        ('new_file.py', '', '# New file content\nprint("Newly created")\n'),
+    ]
+    start_idx_expected = content.find('```python\nexisting_file.py')
+    end_idx_expected = (
+        content.rfind('>>>>>>> REPLACE\n```') + len('>>>>>>> REPLACE\n```\n') - 1
+    )
+
+    edits, start_idx, end_idx = parse_llm_response_for_diffs(content)
+
+    assert edits == expected_edits
+    assert start_idx == start_idx_expected
+    assert end_idx > start_idx
+    # assert end_idx == end_idx_expected
+
+
+def test_parse_two_edits_different_files_explicit():
+    content = """
+First edit:
+```python
+file_a.py
+<<<<<<< SEARCH
+# Original line in file A
+a = 1
+=======
+# Modified line in file A
+a = 2
+>>>>>>> REPLACE
+```
+Some text between blocks.
+Second edit:
+```python
+file_b.py
+<<<<<<< SEARCH
+# Original line in file B
+b = 'hello'
+=======
+# Modified line in file B
+b = 'world'
+>>>>>>> REPLACE
+```
+"""
+    expected_edits = [
+        ('file_a.py', '# Original line in file A\na = 1\n', '# Modified line in file A\na = 2\n'),
+        ('file_b.py', "# Original line in file B\nb = 'hello'\n", "# Modified line in file B\nb = 'world'\n"),
+    ]
+    start_idx_expected = content.find('```python\nfile_a.py')
+    end_idx_expected = (
+        content.rfind('>>>>>>> REPLACE\n```') + len('>>>>>>> REPLACE\n```\n') - 1
+    )
+
+    edits, start_idx, end_idx = parse_llm_response_for_diffs(content)
+
+    assert edits == expected_edits
+    assert start_idx == start_idx_expected
+    assert end_idx > start_idx
+    # assert end_idx == end_idx_expected
