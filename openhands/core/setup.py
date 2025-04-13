@@ -18,7 +18,7 @@ from openhands.events.event import Event
 from openhands.integrations.provider import ProviderToken, ProviderType, SecretStore
 from openhands.llm.llm import LLM
 from openhands.memory.memory import Memory
-from openhands.microagent.microagent import BaseMicroAgent
+from openhands.microagent.microagent import BaseMicroagent
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
 from openhands.security import SecurityAnalyzer, options
@@ -160,7 +160,7 @@ def create_memory(
         memory.set_runtime_info(runtime)
 
         # loads microagents from repo/.openhands/microagents
-        microagents: list[BaseMicroAgent] = runtime.get_microagents_from_selected_repo(
+        microagents: list[BaseMicroagent] = runtime.get_microagents_from_selected_repo(
             selected_repository
         )
         memory.load_user_workspace_microagents(microagents)
@@ -175,10 +175,17 @@ def create_agent(config: AppConfig) -> Agent:
     agent_cls: Type[Agent] = Agent.get_cls(config.default_agent)
     agent_config = config.get_agent_config(config.default_agent)
     llm_config = config.get_llm_config_from_agent(config.default_agent)
+
+    workspace_mount_path_in_sandbox_store_in_session = (
+        config.workspace_mount_path_in_sandbox_store_in_session
+    )
+    if config.runtime == 'local':
+        workspace_mount_path_in_sandbox_store_in_session = False
+
     agent = agent_cls(
         llm=LLM(config=llm_config),
         config=agent_config,
-        workspace_mount_path_in_sandbox_store_in_session=config.workspace_mount_path_in_sandbox_store_in_session,
+        workspace_mount_path_in_sandbox_store_in_session=workspace_mount_path_in_sandbox_store_in_session,
     )
 
     return agent

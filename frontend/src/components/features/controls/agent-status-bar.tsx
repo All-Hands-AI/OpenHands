@@ -47,7 +47,7 @@ export function AgentStatusBar() {
       });
       return;
     }
-    if (curAgentState === AgentState.LOADING && message.trim()) {
+    if (message.trim()) {
       setStatusMessage(message);
     } else {
       setStatusMessage(AGENT_STATUS_MAP[curAgentState].message);
