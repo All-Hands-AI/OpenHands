@@ -206,7 +206,7 @@ export function WsClientProvider({
       sioRef.current = sio
     }
 
-    return () => disconnect()
+    // No cleanup function to disconnect automatically
   }, [conversationId])
 
   const value = React.useMemo<UseWsClient>(
