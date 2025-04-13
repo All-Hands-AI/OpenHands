@@ -138,38 +138,44 @@ Be thorough in your exploration, testing, and reasoning. It's fine if your think
 """
     else:
         instruction = f"""
-<uploaded_files>
-/workspace/{workspace_dir_name}
-</uploaded_files>
+# Task: Fix Issue in Python Repository
 
-I've uploaded a python code repository in {workspace_dir_name}. Your goal is to fix the issue described in the `<issue_description>` at the end of these instructions, making focused changes to **non-test files only** so that the relevant tests pass.
+## Uploaded Files Context
+The relevant code repository is located at: `/workspace/{workspace_dir_name}`
+(This path is provided for context; use file system tools to confirm paths before access).
 
-**Key Requirements & Constraints:**
+## Goal
+Your goal is to fix the issue described in the **Issue Description** section below. Implement **focused changes** to **non-test files only** within the repository, ensuring that **all relevant tests pass** after your changes.
+
+## Key Requirements & Constraints
 
 1.  **Targeted Changes:** Implement the fix focusing on non-test files related to the issue. Avoid unrelated refactoring.
 2.  **Environment Ready:** The Python environment is pre-configured with all dependencies. Do not install packages.
 3.  **Mandatory Testing Procedure:**
     *   **Create Reproduction Script:** *Before* implementing any fix, you MUST create a *new script* (separate from existing tests) that specifically reproduces the issue. Take existing tests as example to understand the testing format/structure. Run this script to confirm reproduction.
     *   **Verify Fix:** After implementing the fix, run your *reproduction script* again to verify the issue is resolved. You can enhance this script with edge cases.
-    *   **Identify Relevant Tests:** Before the final check, you MUST thoroughly identify the existing unit tests relevant to your changes. **Search for tests in related files (e.g., `tests/` directories near changed files), tests importing changed code, and any tests mentioned in the issue description or related documentation.** If unsure which specific tests are relevant, identify and plan to run the test suite(s) covering the modified module(s).
-    *   **Run Identified Relevant Tests:** You MUST execute the relevant existing unit tests you identified. Ensure you are running the *correct set* of tests to comprehensively check for regressions related to your changes. You MUST NOT modify these existing tests.
-    *   **Final Check:** Before finishing, ensure **all** identified relevant existing tests pass. **Failing to identify and run the correct set of relevant tests constitutes a failure, even if the subset of tests you executed passed.** If any identified tests fail, revise your fix. Passing all relevant tests is the primary measure of success.
+    *   **Identify ALL Relevant Tests:** Before the final check, you MUST perform a **dedicated search and analysis** to identify **all** existing unit tests potentially affected by your changes. This includes:
+        *   Tests in the same module/directory as the changed files (e.g., `tests/` subdirectories).
+        *   Tests explicitly importing or using the modified code/classes/functions.
+        *   Tests mentioned in the issue description or related documentation.
+        *   Tests covering functionalities that *depend on* the modified code (analyze callers/dependencies if necessary).
+        **If you cannot confidently identify a specific subset, you MUST identify and plan to run the entire test suite for the modified application or module(s). State your identified test scope clearly.**
+    *   **Run Identified Relevant Tests:** You MUST execute the **complete set** of relevant existing unit tests you identified in the previous step. Ensure you are running the *correct and comprehensive set* of tests. You MUST NOT modify these existing tests.
+    *   **Final Check & Verification:** Before finishing, ensure **all** identified relevant existing tests pass. **Explicitly confirm that you have considered potential omissions in your test selection and believe the executed tests comprehensively cover the impact of your changes.** Failing to identify and run the *complete* relevant set constitutes a failure. If any identified tests fail, revise your fix. Passing all relevant tests is the primary measure of success.
 4.  **Robustness & Defensive Programming for Correctness:** Ensure your fix is robust and correct **as verified by the testing procedure**. Actively practice defensive programming: anticipate and handle potential edge cases, unexpected inputs, and different ways the affected code might be called **to ensure the fix works reliably and allows relevant tests to pass.** Analyze the potential impact on other parts of the codebase.
 5.  **Final Review:** Compare your solution against the original issue and the base commit ({instance["base_commit"]}) to ensure completeness and test passage. You can remove your reproduction script before finishing the task.
 
-**General Workflow:**
+## General Workflow Guidance
 
-*   Thoroughly understand the problem and how to reproduce it.
-*   Explore the codebase (e.g., using `grep`) to identify relevant files, logic, potential calling contexts, **and potentially relevant existing test files/suites.**
-*   Plan and implement your fix, adhering strictly to the testing procedure above.
-*   Be methodical. Ensure your final solution is correct, robust across different scenarios **tested**, and defensively handles potential errors or invalid states. **The goal is a focused change that makes the relevant tests pass.** Quality and reliability are key.
+*   Follow the **Problem Solving Workflow** outlined before.
+*   Prioritize understanding the problem, exploring the code, planning your fix, implementing it carefully using the required diff format, and **thoroughly testing** according to the **Mandatory Testing Procedure** above.
+*   The goal is a **robust change that makes the relevant tests pass.** Quality, correctness, and reliability are key.
 
+## Final Note
 Be thorough in your exploration, testing, and reasoning. It's fine if your thinking process is lengthy - quality and completeness are more important than brevity.
 
-**Issue Description:**
-<issue_description>
+## Issue Description
 {instance.problem_statement}
-</issue_description>
 """
 
     if RUN_WITH_BROWSING:
