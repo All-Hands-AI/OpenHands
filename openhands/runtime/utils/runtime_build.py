@@ -1,5 +1,6 @@
 import argparse
 import hashlib
+import logging
 import os
 import shutil
 import string
@@ -371,6 +372,9 @@ def _build_sandbox_image(
 
 
 if __name__ == '__main__':
+    logger.setLevel(
+        logging.DEBUG if os.getenv('LOG_LEVEL') == 'DEBUG'.casefold() else logging.INFO
+    )
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--base_image', type=str, default='nikolaik/python-nodejs:python3.12-nodejs22'

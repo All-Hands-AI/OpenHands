@@ -57,6 +57,7 @@ from openhands.io import read_task
 from openhands.llm.metrics import Metrics
 from openhands.mcp import fetch_mcp_tools_from_config
 from openhands.microagent.microagent import BaseMicroagent
+import os
 
 # Color and styling constants
 COLOR_GOLD = '#FFD700'
@@ -644,7 +645,9 @@ async def main(loop: asyncio.AbstractEventLoop):
 
     args = parse_arguments()
 
-    logger.setLevel(logging.WARNING)
+    logger.setLevel(
+        logging.DEBUG if os.getenv('LOG_LEVEL') == 'DEBUG'.casefold() else logging.INFO
+    )
 
     # Load config from toml and override with command line arguments
     config: AppConfig = setup_config_from_args(args)

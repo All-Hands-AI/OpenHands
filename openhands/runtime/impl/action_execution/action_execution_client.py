@@ -325,17 +325,17 @@ class ActionExecutionClient(Runtime):
         return self.send_action_for_execution(action)
 
     async def call_tool_mcp(self, action: McpAction) -> Observation:
-        print(f'Ready to call tool MCP with action {action.name} after logger.info')
-        if self.mcp_clients is None:
-            self.log(
-                'debug',
-                f'Creating MCP clients with servers: {self.config.dict_mcp_config}',
-            )
-            self.mcp_clients = await create_mcp_clients(
-                self.config.dict_mcp_config,
-                sid=self.sid,
-            )
-        return await call_tool_mcp_handler(self.mcp_clients, action)
+        with self.action_semaphore:
+            if self.mcp_clients is None:
+                self.log(
+                    'debug',
+                    f'Creating MCP clients with servers: {self.config.dict_mcp_config}',
+                )
+                self.mcp_clients = await create_mcp_clients(
+                    self.config.dict_mcp_config,
+                    sid=self.sid,
+                )
+            return await call_tool_mcp_handler(self.mcp_clients, action)
 
     async def aclose(self) -> None:
         if self.mcp_clients:
