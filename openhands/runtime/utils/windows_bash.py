@@ -280,11 +280,14 @@ class WindowsPowershellSession:
             ps = PowerShell.Create()
             ps.Runspace = self.runspace
 
-            # Add the user's command script
-            ps.AddScript(command)
-            # IMPORTANT: Add commands to get exit code and CWD *after* the user command
-            ps.AddScript("$LASTEXITCODE")
-            ps.AddScript("Get-Location")
+            # Combine commands into a single script block
+            script_block = f'''
+{command}
+$LASTEXITCODE
+Get-Location
+'''
+            logger.debug(f"Executing combined script block:\n{script_block}")
+            ps.AddScript(script_block)
 
             # Prepare for asynchronous invocation
             # output_collection = PSDataCollection[System.Management.Automation.PSObject]() # No longer needed here
@@ -338,76 +341,89 @@ class WindowsPowershellSession:
                  if not error_message: # Prioritize timeout/cancellation messages
                       error_message = f"[Error during command finalization: {end_invoke_ex}]"
                  # Still try to read streams below
+                 results = None # Ensure results is None if EndInvoke failed
+
+            # Log raw results for debugging
+            if results is not None:
+                logger.debug(f"Raw results count: {results.Count}")
+                # Limiting logged items to avoid flooding logs if there are many results
+                items_to_log = min(results.Count, 10) 
+                for i in range(items_to_log):
+                    item = results[i]
+                    item_type = type(item) if item is not None else 'None'
+                    item_str = str(item) if item is not None else 'None'
+                    logger.debug(f"  Result[{i}]: Type={item_type}, Value='{item_str}'")
+                if results.Count > items_to_log:
+                     logger.debug(f"  ... (remaining {results.Count - items_to_log} results not logged)")
+            else:
+                logger.debug("Raw results object is None (EndInvoke likely failed)")
 
             # Process output streams regardless of EndInvoke success
 
             # 1. Output Stream (Results from EndInvoke)
             if results is not None and results.Count > 0:
-                # Expecting N results + $LASTEXITCODE + Get-Location
-                num_actual_results = results.Count - 2
-                if num_actual_results < 0: num_actual_results = 0 # Handle case where only exit code/cwd ran
-
-                for i in range(num_actual_results):
-                    if results[i] is not None:
-                        output_builder.append(str(results[i]))
-
-                # Extract $LASTEXITCODE (second to last result)
-                if results.Count >= 2 and results[-2] is not None:
-                    try:
-                        exit_code = int(str(results[-2]))
-                    except (ValueError, TypeError):
-                        logger.warning(f"Could not parse $LASTEXITCODE as int: {results[-2]}. Assuming error.")
-                        exit_code = 1 # Assume error if parsing fails
-                else:
-                     logger.warning("$LASTEXITCODE was not found in results. Checking streams/state.")
-                     # If exit code is missing, assume error if errors occurred or state is Failed
-                     if ps.Streams.Error.Count > 0 or ps.InvocationStateInfo.State == PSInvocationState.Failed:
-                         exit_code = 1
-                     elif timed_out or error_message: # If timed out or cancelled, assume error code
-                         exit_code = 1 # Or maybe a specific code for timeout?
-                     else:
-                         # If no errors, no timeout, command completed, but no $LASTEXITCODE... assume 0? Risky.
-                         logger.warning("No $LASTEXITCODE, no errors, no timeout. Assuming exit code 0, but this might be incorrect.")
-                         exit_code = 0
-
+                logger.debug(f"Processing {results.Count} result items.")
+                # Expected order: [Output1, Output2, ..., ExitCode, CwdInfo]
+                
                 # Extract CWD (last result)
-                if results.Count >= 1 and results[results.Count - 1] is not None:
-                     try:
-                          # Result is often a PathInfo object, get the Path property
-                          if hasattr(results[results.Count - 1], 'Path'):
-                               final_cwd = str(results[results.Count - 1].Path)
-                          else: # Or maybe just a string?
-                               final_cwd = str(results[results.Count - 1])
-
-                          # Validate CWD path
-                          if os.path.isdir(final_cwd):
-                              if final_cwd != self._cwd:
-                                  logger.info(f"Working directory changed to: {final_cwd}")
-                                  self._cwd = final_cwd # Update session CWD
-                              else:
-                                  logger.debug(f"Working directory remains: {self._cwd}")
-                          else:
-                              logger.warning(f"Command returned invalid CWD '{final_cwd}', keeping old CWD: {self._cwd}")
-                              final_cwd = self._cwd # Use old CWD for metadata reporting
-                     except Exception as cwd_ex:
-                          logger.warning(f"Could not parse Get-Location result: {results[results.Count - 1]}, Error: {cwd_ex}. Keeping old CWD.")
-                          final_cwd = self._cwd # Use old CWD for metadata reporting
+                cwd_item = results[results.Count - 1]
+                if cwd_item is not None:
+                    try:
+                        if hasattr(cwd_item, 'Path'):
+                            final_cwd = str(cwd_item.Path)
+                        else:
+                            final_cwd = str(cwd_item)
+                        
+                        if os.path.isdir(final_cwd):
+                            if final_cwd != self._cwd:
+                                logger.info(f"Working directory changed to: {final_cwd}")
+                                self._cwd = final_cwd
+                            else:
+                                logger.debug(f"Working directory remains: {self._cwd}")
+                        else:
+                            logger.warning(f"Command returned invalid CWD '{final_cwd}', keeping old CWD: {self._cwd}")
+                            final_cwd = self._cwd
+                    except Exception as cwd_ex:
+                        logger.warning(f"Could not parse CWD result: {cwd_item}, Error: {cwd_ex}. Keeping old CWD.")
+                        final_cwd = self._cwd
                 else:
-                     logger.warning("Get-Location result was not found. Keeping old CWD.")
-                     final_cwd = self._cwd # Use old CWD if Get-Location failed
+                     logger.warning("CWD result item was null. Keeping old CWD.")
+                     final_cwd = self._cwd
+
+                # Attempt to extract exit code (second to last result, if exists)
+                raw_exit_code_item = None
+                if results.Count >= 2:
+                    raw_exit_code_item = results[results.Count - 2]
+                    logger.debug(f"Raw exit code item: {raw_exit_code_item} (type: {type(raw_exit_code_item)}) ")
+                    # We still determine functional exit_code later based on streams/state
+                
+                # Process actual command output (everything before exit code and CWD)
+                num_output_items = max(0, results.Count - 2)
+                logger.debug(f"Expecting {num_output_items} output item(s).")
+                for i in range(num_output_items):
+                    if results[i] is not None:
+                        logger.debug(f"Processing output item {i}: type={type(results[i])}, value='{str(results[i])}'")
+                        output_builder.append(str(results[i]))
+                    else:
+                        logger.debug(f"Processing output item {i}: None")
+                        # Decide if we should append empty string or skip None outputs
+                        # output_builder.append("") # Optional: Append empty line for None
+
+            # Determine Functional Exit Code (based on streams, state, timeout, etc.)
+            exit_code = 0 # Default to success
+            if ps.Streams.Error.Count > 0 or ps.InvocationStateInfo.State == PSInvocationState.Failed or timed_out or error_message:
+                exit_code = 1 # Indicate failure
+            logger.debug(f"Determined functional exit code: {exit_code}")
 
             # 2. Error Stream
             if ps.Streams.Error and ps.Streams.Error.Count > 0:
+                logger.debug(f"Processing {ps.Streams.Error.Count} error stream record(s).") # Added debug log
                 if output_builder: output_builder.append("\n") # Separator
                 output_builder.append("[ERROR STREAM]")
                 for err_record in ps.Streams.Error:
                     output_builder.append(str(err_record))
                     # Also log errors prominently
                     logger.error(f"PowerShell Error Record: {err_record}")
-                # If errors occurred, ensure exit code is non-zero
-                if exit_code == 0:
-                    logger.warning("Errors detected in stream, but $LASTEXITCODE was 0. Forcing exit code to 1.")
-                    exit_code = 1
 
             # 3. Other Streams (Optional, add if needed for debugging)
             # Example: Verbose Stream
@@ -425,9 +441,11 @@ class WindowsPowershellSession:
                      error_message = f"[PowerShell invocation failed: {ps.InvocationStateInfo.Reason}]"
 
             # Combine output and add any timeout/error messages
+            logger.debug(f"Output builder contents before join: {output_builder}") # Added debug log
             final_output = "\n".join(output_builder).strip()
             if error_message:
                  final_output += f"\n{error_message}"
+            logger.debug(f"Final output string: '{final_output}'") # Added debug log
 
             # Create metadata
             metadata = CmdOutputMetadata(exit_code=exit_code, working_dir=self._cwd)
