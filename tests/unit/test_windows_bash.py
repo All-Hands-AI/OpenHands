@@ -222,7 +222,7 @@ def test_syntax_error_handling(windows_bash_session):
 def test_special_characters_handling(windows_bash_session):
     """Test handling of commands containing special characters."""
     # Test command with special characters
-    special_chars_cmd = '''Write-Output "Special Chars: & | < > ` \' \" ! $ % ^ ( ) - = + [ ] { } ; : , . ? / ~"'''
+    special_chars_cmd = '''Write-Output "Special Chars: `& `| `< `> `` `' `" `! `$ `% `^ `( `) `- `= `+ `[ `] `{ `} `; `: `, `. `? `/ `~"'''
     action = CmdRunAction(command=special_chars_cmd)
     result = windows_bash_session.execute(action)
     assert isinstance(result, CmdOutputObservation)
