@@ -174,12 +174,11 @@ class AgentSession:
             self._starting = False
             success = finished and runtime_connected
             self.logger.info(
-                'Agent session start',
-                extra={
-                    'signal': 'agent_session_start',
-                    'success': success,
-                    'duration': (time.time() - started_at),
-                },
+                f'Agent session start: {json.dumps({
+                    "signal": "agent_session_start",
+                    "success": success,
+                    "duration": time.time() - started_at,
+                })}',
             )
 
     async def close(self):

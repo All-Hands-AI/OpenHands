@@ -21,5 +21,5 @@ __all__ = [
 ALL_PLUGINS = {
     'jupyter': JupyterPlugin,
     'agent_skills': AgentSkillsPlugin,
-    # 'vscode': VSCodePlugin,
+    'vscode': VSCodePlugin,
 }
