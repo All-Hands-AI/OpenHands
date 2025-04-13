@@ -280,7 +280,9 @@ class Runtime(FileEditRuntimeMixin):
             await self._export_latest_git_provider_tokens(event)
             if isinstance(event, McpAction):
                 # we don't call call_tool_mcp impl directly because there can be other action ActionExecutionClient
-                observation: Observation = await getattr(self, McpAction.action)(event)
+                observation: Observation = await call_async_from_sync(
+                    getattr(self, McpAction.action), event
+                )
             else:
                 observation = await call_sync_from_async(self.run_action, event)
         except Exception as e:
