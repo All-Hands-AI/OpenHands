@@ -160,8 +160,11 @@ class Runtime(FileEditRuntimeMixin):
         if self.attach_to_existing:
             return
         logger.debug(f'Adding env vars: {self.initial_env_vars.keys()}')
-        self.add_env_vars(self.initial_env_vars)
+        if self.initial_env_vars:
+            logger.debug(f'Adding env vars: {self.initial_env_vars.keys()}')
+            self.add_env_vars(self.initial_env_vars)
         if self.config.sandbox.runtime_startup_env_vars:
+            logger.debug(f'Adding env vars: {self.config.sandbox.runtime_startup_env_vars.keys()}')
             self.add_env_vars(self.config.sandbox.runtime_startup_env_vars)
 
     def close(self) -> None:
