@@ -64,7 +64,7 @@ from openhands.runtime.utils.memory_monitor import MemoryMonitor
 from openhands.runtime.utils.runtime_init import init_user_and_working_directory
 from openhands.runtime.utils.system_stats import get_system_stats
 from openhands.utils.async_utils import call_sync_from_async, wait_all
-from openhands.runtime.utils.windows_bash import WindowsBashSession
+from openhands.runtime.utils.windows_bash import WindowsPowershellSession
 
 
 class ActionRequest(BaseModel):
@@ -158,7 +158,7 @@ class ActionExecutor:
         if _updated_user_id is not None:
             self.user_id = _updated_user_id
 
-        self.bash_session: Optional[BashSession | WindowsBashSession] = None
+        self.bash_session: Optional[BashSession | WindowsPowershellSession] = None
         self.lock = asyncio.Lock()
         self.plugins: dict[str, Plugin] = {}
         self.file_editor = OHEditor(workspace_root=self._initial_cwd)
@@ -197,7 +197,7 @@ class ActionExecutor:
         # bash needs to be initialized first
         logger.debug('Initializing bash session')
         if platform.system() == 'Windows':
-            self.bash_session = WindowsBashSession(
+            self.bash_session = WindowsPowershellSession(
                 work_dir=self._initial_cwd,
                 username=self.username,
                 no_change_timeout_seconds=int(
