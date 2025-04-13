@@ -122,6 +122,32 @@ def test_command_timeout(windows_bash_session):
     assert abs(duration - test_timeout_sec) < 0.5  # Allow some buffer
 
 
+def test_long_running_command(windows_bash_session):
+    action = CmdRunAction(command='python -u -m http.server 8081')
+    action.set_hard_timeout(1)
+    result = windows_bash_session.execute(action)
+
+    assert isinstance(result, CmdOutputObservation)
+    # Verify the initial output was captured
+    assert 'Serving HTTP on' in result.content
+    # Check for timeout specific metadata
+    assert (
+        "[The command timed out after 1 seconds. You may wait longer to see additional output by sending empty command '', send other commands to interact with the current process, or send keys to interrupt/kill the command.]"
+        in result.metadata.suffix
+    )
+    assert result.metadata.exit_code == -1
+
+    # The action timed out, but the command should be still running
+    # We should now be able to interrupt it
+    action = CmdRunAction(command='C-c', is_input=True)
+    action.set_hard_timeout(30)
+    result = windows_bash_session.execute(action)
+
+    assert isinstance(result, CmdOutputObservation)
+    assert result.exit_code == 0
+    assert 'Keyboard interrupt received, exiting.' in result.content
+
+
 def test_multiple_commands(windows_bash_session):
     """Test executing multiple commands in sequence."""
     # Test multiple independent commands
