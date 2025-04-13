@@ -146,7 +146,7 @@ I've uploaded a python code repository in {workspace_dir_name}. Your goal is to 
 
 **Key Requirements & Constraints:**
 
-1.  **Targeted Changes:** Implement the fix focusing only on non-test files related to the issue. Avoid unrelated refactoring.
+1.  **Targeted Changes:** Implement the fix focusing on non-test files related to the issue. Avoid unrelated refactoring.
 2.  **Environment Ready:** The Python environment is pre-configured with all dependencies. Do not install packages.
 3.  **Mandatory Testing Procedure:**
     *   **Create Reproduction Script:** *Before* implementing any fix, you MUST create a *new script* (separate from existing tests) that specifically reproduces the issue. Take existing tests as example to understand the testing format/structure. Run this script to confirm reproduction.
@@ -155,7 +155,7 @@ I've uploaded a python code repository in {workspace_dir_name}. Your goal is to 
     *   **Run Identified Relevant Tests:** You MUST execute the relevant existing unit tests you identified. Ensure you are running the *correct set* of tests to comprehensively check for regressions related to your changes. You MUST NOT modify these existing tests.
     *   **Final Check:** Before finishing, ensure **all** identified relevant existing tests pass. **Failing to identify and run the correct set of relevant tests constitutes a failure, even if the subset of tests you executed passed.** If any identified tests fail, revise your fix. Passing all relevant tests is the primary measure of success.
 4.  **Robustness & Defensive Programming for Correctness:** Ensure your fix is robust and correct **as verified by the testing procedure**. Actively practice defensive programming: anticipate and handle potential edge cases, unexpected inputs, and different ways the affected code might be called **to ensure the fix works reliably and allows relevant tests to pass.** Analyze the potential impact on other parts of the codebase.
-5.  **Final Review:** Compare your solution against the original issue and the base commit ({instance["base_commit"]}) to ensure completeness and test passage.
+5.  **Final Review:** Compare your solution against the original issue and the base commit ({instance["base_commit"]}) to ensure completeness and test passage. You can remove your reproduction script before finishing the task.
 
 **General Workflow:**
 
