@@ -84,6 +84,8 @@ if clr_system_load_success:
         from System.Management.Automation.Runspaces import RunspaceFactory # Needed for runspace creation
         print("Successfully imported RunspaceFactory type from System.Management.Automation.Runspaces")
 
+        from System.Management.Automation import PSDataCollection # Import PSDataCollection for BeginInvoke
+        
         from System import TimeSpan, Uri # Uri might be needed for some operations
         from System.Collections.ObjectModel import Collection
         from System.Text import Encoding # Though maybe not directly needed here
@@ -285,8 +287,8 @@ class WindowsPowershellSession:
             ps.AddScript("Get-Location")
 
             # Prepare for asynchronous invocation
-            output_collection = Collection[System.Management.Automation.PSObject]()
-            async_result = ps.BeginInvoke(output_collection)
+            # output_collection = PSDataCollection[System.Management.Automation.PSObject]() # No longer needed here
+            async_result = ps.BeginInvoke() # Use overload without output collection argument
 
             start_time = time.monotonic()
 
