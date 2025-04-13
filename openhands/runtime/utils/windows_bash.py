@@ -470,7 +470,7 @@ Get-Location
             partial_output = "\n".join(output_builder).strip()
             err_content = f"FATAL ERROR executing PowerShell command: {e}\nPartial Output (if any):\n{partial_output}"
             # Return an ErrorObservation, using current CWD state
-            return ErrorObservation(content=err_content, error_type="sdk_execution_error")
+            return ErrorObservation(content=err_content)
         finally:
             # Ensure the PowerShell object is disposed to release resources
             if ps:
