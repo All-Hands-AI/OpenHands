@@ -625,7 +625,7 @@ def check_folder_security_agreement(current_dir):
             )
         )
 
-        clear()
+        # clear()
         print_container(security_frame)
 
         confirm = cli_confirm('Do you wish to continue?', ['Yes, proceed', 'No, exit'])
@@ -795,7 +795,7 @@ async def main(loop: asyncio.AbstractEventLoop):
         return
 
     # Clear the terminal
-    clear()
+    # clear()
 
     # Show OpenHands banner and session ID
     display_banner(session_id=sid, is_loaded=is_loaded)
