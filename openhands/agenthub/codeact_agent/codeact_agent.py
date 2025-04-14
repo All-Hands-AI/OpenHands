@@ -194,7 +194,6 @@ class CodeActAgent(Agent):
         # Use ConversationMemory to process events (including SystemMessageAction)
         messages = self.conversation_memory.process_events(
             condensed_history=events,
-            initial_messages=[],  # No initial messages, SystemMessageAction is in events
             max_message_chars=self.llm.config.max_message_chars,
             vision_is_active=self.llm.vision_is_active(),
         )

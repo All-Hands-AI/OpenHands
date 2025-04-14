@@ -54,7 +54,6 @@ class ConversationMemory:
     def process_events(
         self,
         condensed_history: list[Event],
-        initial_messages: list[Message],
         max_message_chars: int | None = None,
         vision_is_active: bool = False,
     ) -> list[Message]:
@@ -64,7 +63,6 @@ class ConversationMemory:
 
         Args:
             condensed_history: The condensed history of events to convert
-            initial_messages: The initial messages to include in the conversation
             max_message_chars: The maximum number of characters in the content of an event included
                 in the prompt to the LLM. Larger observations are truncated.
             vision_is_active: Whether vision is active in the LLM. If True, image URLs will be included.
@@ -75,8 +73,8 @@ class ConversationMemory:
         # log visual browsing status
         logger.debug(f'Visual browsing: {self.agent_config.enable_som_visual_browsing}')
 
-        # Process special events first (system prompts, etc.)
-        messages = initial_messages
+        # Initialize empty messages list
+        messages = []
 
         # Process regular events
         pending_tool_call_action_messages: dict[str, Message] = {}
