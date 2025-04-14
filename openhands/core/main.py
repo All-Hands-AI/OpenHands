@@ -19,6 +19,7 @@ from openhands.core.schema import AgentState
 from openhands.core.setup import (
     create_agent,
     create_controller,
+    create_planning_controller,
     create_memory,
     create_runtime,
     generate_sid,
@@ -94,10 +95,24 @@ async def run_controller(
     """
     sid = sid or generate_sid(config)
 
-    if agent is None:
-        agent = create_agent(config)
-        mcp_tools = await fetch_mcp_tools_from_config(config.mcp)
-        agent.set_mcp_tools(mcp_tools)
+    if agent is not None and config.enable_planning:
+        raise ValueError(
+            'Agent is already provided, cannot create a planning controller.'
+        )
+
+    if agent is None: 
+        if not config.enable_planning:
+            agent = create_agent(config)
+            mcp_tools = await fetch_mcp_tools_from_config(config.mcp)
+            agent.set_mcp_tools(mcp_tools)
+        else:
+            agent = create_agent(config, agent_name=config.default_task_solving_agent)
+            planning_agent = create_agent(config, agent_name=config.default_planning_agent)
+
+            mcp_tools = await fetch_mcp_tools_from_config(config.mcp)
+
+            agent.set_mcp_tools(mcp_tools)
+            planning_agent.set_mcp_tools(mcp_tools)
 
     # when the runtime is created, it will be connected and clone the selected repository
     repo_directory = None
@@ -140,6 +155,8 @@ async def run_controller(
 
     controller, initial_state = create_controller(
         agent, runtime, config, replay_events=replay_events
+    ) if not config.enable_planning else create_planning_controller(
+        agent, planning_agent, runtime, config, replay_events=replay_events
     )
 
     assert isinstance(

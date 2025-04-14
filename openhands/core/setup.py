@@ -6,7 +6,7 @@ from typing import Callable, Tuple, Type
 from pydantic import SecretStr
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
-from openhands.controller import AgentController
+from openhands.controller import AgentController, PlanningController
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import (
@@ -171,10 +171,11 @@ def create_memory(
     return memory
 
 
-def create_agent(config: AppConfig) -> Agent:
-    agent_cls: Type[Agent] = Agent.get_cls(config.default_agent)
-    agent_config = config.get_agent_config(config.default_agent)
-    llm_config = config.get_llm_config_from_agent(config.default_agent)
+def create_agent(config: AppConfig, agent_name: str = None) -> Agent:
+    agent_name = agent_name or config.default_agent
+    agent_cls: Type[Agent] = Agent.get_cls(agent_name)
+    agent_config = config.get_agent_config(agent_name)
+    llm_config = config.get_llm_config_from_agent(agent_name)
 
     agent = agent_cls(
         llm=LLM(config=llm_config),
@@ -215,6 +216,41 @@ def create_controller(
         replay_events=replay_events,
     )
     return (controller, initial_state)
+
+def create_planning_controller(
+    agent: Agent,
+    planning_agent: Agent,
+    runtime: Runtime,
+    config: AppConfig,
+    headless_mode: bool = True,
+    replay_events: list[Event] | None = None,
+) -> Tuple[PlanningController, State | None]:
+    event_stream = runtime.event_stream
+    initial_state = None
+    try:
+        logger.debug(
+            f'Trying to restore agent state from session {event_stream.sid} if available'
+        )
+        initial_state = State.restore_from_session(
+            event_stream.sid, event_stream.file_store
+        )
+    except Exception as e:
+        logger.debug(f'Cannot restore agent state: {e}')
+
+    controller = PlanningController(
+        agent=agent,
+        planning_agent=planning_agent,
+        max_iterations=config.max_iterations,
+        max_budget_per_task=config.max_budget_per_task,
+        agent_to_llm_config=config.get_agent_to_llm_config_map(),
+        event_stream=event_stream,
+        initial_state=initial_state,
+        headless_mode=headless_mode,
+        confirmation_mode=config.security.confirmation_mode,
+        replay_events=replay_events,
+    )
+    return (controller, initial_state)
+
 
 
 def generate_sid(config: AppConfig, session_name: str | None = None) -> str:

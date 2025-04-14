@@ -107,6 +107,7 @@
 ###### planning configuration #######
 enable_planning=true
 default_planning_agent="PlanningAgent"
+# CodeActAgent for coding tasks, TaskSolvingAgent for general tasks
 default_task_solving_agent="TaskSolvingAgent"
 
 

@@ -333,7 +333,7 @@ class PlanningController:
             action = self._replay_manager.step()
         else:
             try:
-                logger.warning('Panner is stepping')
+                logger.warning('Planning Agent is stepping')
                 action = self.planning_agent.step(self.state)
                 if action is None:
                     raise LLMNoActionError('No action was returned')
