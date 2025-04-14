@@ -172,42 +172,51 @@ export function WsClientProvider({
     updateStatusWhenErrorMessagePresent(data)
   }
 
-  React.useEffect(() => {
-    lastEventRef.current = null
-  }, [conversationId])
-
+  // Combined useEffect to handle both cleanup and reconnection
   React.useEffect(() => {
     if (!conversationId) {
       throw new Error("No conversation ID provided")
     }
 
-    // Only connect if not already connected
-    if (!sioRef.current) {
-      const lastEvent = lastEventRef.current
-      const query = {
-        latest_event_id: lastEvent?.id ?? -1,
-        conversation_id: conversationId,
-        auth: jwt,
-      }
-
-      const baseUrl =
-        import.meta.env.VITE_BACKEND_BASE_URL || window?.location.host
-
-      const sio = io(baseUrl, {
-        transports: ["websocket"],
-        query,
-      })
-      sio.on("connect", handleConnect)
-      sio.on("oh_event", handleMessage)
-      sio.on("connect_error", handleError)
-      sio.on("connect_failed", handleError)
-      sio.on("disconnect", handleDisconnect)
-
-      sioRef.current = sio
+    // First cleanup any existing connection
+    if (sioRef.current) {
+      const sio = sioRef.current
+      sio.off("connect", handleConnect)
+      sio.off("oh_event", handleMessage)
+      sio.off("connect_error", handleError)
+      sio.off("connect_failed", handleError)
+      sio.off("disconnect", handleDisconnect)
+      sio.disconnect()
+      sioRef.current = null
     }
 
-    // No cleanup function to disconnect automatically
-  }, [conversationId])
+    // Reset last event reference when conversation changes
+    lastEventRef.current = null
+
+    // Create a new connection with the current conversation ID
+    const query = {
+      latest_event_id: -1,
+      conversation_id: conversationId,
+      auth: jwt,
+    }
+
+    const baseUrl =
+      import.meta.env.VITE_BACKEND_BASE_URL || window?.location.host
+
+    const sio = io(baseUrl, {
+      transports: ["websocket"],
+      query,
+    })
+    sio.on("connect", handleConnect)
+    sio.on("oh_event", handleMessage)
+    sio.on("connect_error", handleError)
+    sio.on("connect_failed", handleError)
+    sio.on("disconnect", handleDisconnect)
+
+    sioRef.current = sio
+
+    // No cleanup function to run in background
+  }, [conversationId, jwt])
 
   const value = React.useMemo<UseWsClient>(
     () => ({
