@@ -112,7 +112,7 @@ export function ChatInterface() {
       const priorityFile = []
 
       files.map((e) => {
-        if (e.includes("html")) {
+        if (e.includes("html") || e.includes("md") || e.includes("txt")) {
           priorityFile.push(e)
         }
       })
