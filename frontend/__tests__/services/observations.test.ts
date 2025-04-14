@@ -32,28 +32,6 @@ describe("handleObservationMessage", () => {
 
     handleObservationMessage(errorMessage);
 
-    // Note: current behavior is as follows.
-    // - `The action has not been executed.` appears only once as an observation
-    expect(store.dispatch).toHaveBeenCalledTimes(1);
-    expect(store.dispatch).toHaveBeenCalledWith({
-      type: "chat/addAssistantObservation",
-      payload: expect.objectContaining({
-        observation: "error",
-        content: "The action has not been executed.",
-        source: "user",
-        extras: {
-          error_id: "",
-        },
-      }),
-    });
-  });
-
-  it("should only show error message once after fix", () => {
-    const errorMessage = createErrorMessage();
-
-    handleObservationMessage(errorMessage);
-
-    // After fix: error message should only appear once as an observation
     expect(store.dispatch).toHaveBeenCalledTimes(1);
     expect(store.dispatch).toHaveBeenCalledWith({
       type: "chat/addAssistantObservation",
