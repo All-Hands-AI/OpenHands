@@ -8,7 +8,6 @@ import httpx
 import tenacity
 from docker.models.containers import Container
 
-import openhands
 from openhands.core.config import AppConfig
 from openhands.core.exceptions import (
     AgentRuntimeDisconnectedError,
