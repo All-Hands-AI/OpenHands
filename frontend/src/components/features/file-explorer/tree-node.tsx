@@ -11,9 +11,10 @@ import { RootState } from "#/store"
 interface TreeNodeProps {
   path: string
   defaultOpen?: boolean
+  onClick?: () => void
 }
 
-function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
+function TreeNode({ path, defaultOpen = false, onClick }: TreeNodeProps) {
   const { setFileContent, setSelectedPath, files, selectedPath } = useFiles()
   const [isOpen, setIsOpen] = React.useState(defaultOpen)
   const { curAgentState } = useSelector((state: RootState) => state.agent)
@@ -52,6 +53,7 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
     if (isDirectory) setIsOpen((prev) => !prev)
     else {
       setSelectedPath(path)
+      onClick && onClick()
       await refetch()
     }
   }

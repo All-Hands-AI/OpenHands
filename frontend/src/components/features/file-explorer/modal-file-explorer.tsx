@@ -85,11 +85,12 @@ const FileExplorerModal = ({
               key={`all-file-in-${filePath}`}
               path={filePath}
               defaultOpen
+              onClick={onClose}
             />
           </div>
         ) : (
           <div className="p-6">
-            {!error && <ExplorerTree files={files || []} />}
+            {!error && <ExplorerTree files={files || []} onClick={onClose} />}
           </div>
         )}
       </div>

@@ -253,7 +253,7 @@ export function ChatInterface() {
 
         {files && files.length > 0 && (
           <div className="my-3 flex flex-wrap gap-2">
-            {files.map((file) => {
+            {files.slice(0, 2).map((file) => {
               const isDirectory = file.endsWith("/")
               return (
                 <div
