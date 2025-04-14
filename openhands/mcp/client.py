@@ -1,3 +1,4 @@
+from mcp.types import CallToolResult
 from contextlib import AsyncExitStack
 from typing import Dict, List, Optional
 
@@ -7,7 +8,8 @@ from mcp.types import CallToolResult
 from pydantic import BaseModel, Field
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.mcp.tool import MCPClientTool
+from openhands.core.message import TextContent
+from openhands.mcp.tool import BaseTool, MCPClientTool
 
 
 class MCPClient(BaseModel):
@@ -167,14 +169,13 @@ class MCPClient(BaseModel):
             return tool_result
         except Exception as e:
             logger.error(f'Tool call to {tool_name} failed: {str(e)}')
-            # raise RuntimeError(
-            #     f'Tool call to {tool_name} failed: {str(e)}'
-            # )
             return CallToolResult(
-                content=[],
+                content=[TextContent(text=f'Tool call to {tool_name} failed: {str(e)}', type='text')],
                 isError=True,
-                error=str(e),
             )
+        finally:
+            await self.disconnect()
+
 
     async def disconnect(self) -> None:
         """Disconnect from the MCP server and clean up resources."""
@@ -187,7 +188,8 @@ class MCPClient(BaseModel):
                 await self.exit_stack.aclose()
             except Exception as e:
                 logger.error(f'Error during disconnect: {str(e)}')
-            finally:
                 self.session = None
-                self.tools = []
-                logger.info('Disconnected from MCP server')
+            # finally:
+            #     self.session = None
+            #     self.tools = []
+            #     logger.info('Disconnected from MCP server')
