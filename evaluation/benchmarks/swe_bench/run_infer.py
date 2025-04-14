@@ -86,6 +86,8 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata) -> MessageActio
             template_name = 'swe_claude.j2'
         elif 'gemini' in llm_model:
             template_name = 'swe_gemini.j2'
+        elif 'gpt-4.1' in llm_model:
+            template_name = 'swe_gpt4.j2'
         else:
             template_name = 'swe_default.j2'  # Default for 'swe' mode (regular swe-bench)
     else:
