@@ -319,32 +319,34 @@ def test_mismatched_tool_call_events(mock_state: State):
     observation = CmdOutputObservation(content='', command_id=0, command='foo')
     observation.tool_call_metadata = tool_call_metadata
 
-    # When both events are provided, the agent should get two messages:
-    # 1. The action message, and
-    # 2. The observation message
-    # Note: The system message is now expected to be in the event stream as a SystemMessageAction
+    # When both events are provided, the agent should get three messages:
+    # 1. The system message (added automatically for backward compatibility)
+    # 2. The action message
+    # 3. The observation message
     mock_state.history = [action, observation]
     messages = agent._get_messages(mock_state.history)
-    assert len(messages) == 2
+    assert len(messages) == 3
+    assert messages[0].role == 'system'  # First message should be the system message
+    assert messages[1].role == 'assistant'  # Second message should be the action
+    assert messages[2].role == 'tool'  # Third message should be the observation
 
     # The same should hold if the events are presented out-of-order
     mock_state.history = [observation, action]
     messages = agent._get_messages(mock_state.history)
-    assert len(messages) == 2
+    assert len(messages) == 3
+    assert messages[0].role == 'system'  # First message should be the system message
 
-    # If only one of the two events is present, then we should just get that message
-    # Note: The system message is now expected to be in the event stream as a SystemMessageAction
+    # If only one of the two events is present, then we should just get the system message
+    # plus any valid message from the event
     mock_state.history = [action]
     messages = agent._get_messages(mock_state.history)
-    assert (
-        len(messages) == 0
-    )  # No messages because the action is waiting for its observation
+    assert len(messages) == 1  # Only system message, action is waiting for its observation
+    assert messages[0].role == 'system'
 
     mock_state.history = [observation]
     messages = agent._get_messages(mock_state.history)
-    assert (
-        len(messages) == 0
-    )  # No messages because the observation has no matching action
+    assert len(messages) == 1  # Only system message, observation has no matching action
+    assert messages[0].role == 'system'
 
 
 def test_enhance_messages_adds_newlines_between_consecutive_user_messages(
