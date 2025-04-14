@@ -42,7 +42,7 @@ which comes with $50 in free credits for new users.
 
 ## 💻 Running OpenHands Locally
 
-OpenHands can also run on your laptop using Docker.
+OpenHands can also run on your local system using Docker.
 See the [Running OpenHands](https://docs.all-hands.dev/modules/usage/installation) guide for
 system requirements and more information.
 
