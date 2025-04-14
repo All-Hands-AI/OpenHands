@@ -27,6 +27,12 @@ from openhands.events.observation import (
 from openhands.events.serialization.event import event_to_dict
 from openhands.llm.llm import LLM
 
+from autogen_agentchat.agents import AssistantAgent
+from autogen_agentchat.teams import MagenticOneGroupChat
+from autogen_ext.models.anthropic import AnthropicChatCompletionClient
+from autogen_ext.tools.mcp import SseServerParams, mcp_server_tools
+from autogen_agentchat.agents import AssistantAgent
+
 """
 FIXME: There are a few problems this surfaced
 * FileWrites seem to add an unintended newline at the end of the file
@@ -45,112 +51,26 @@ class DummyAgent(Agent):
     without making any LLM calls.
     """
 
-    def __init__(self, llm: LLM, config: AgentConfig):
+    def __init__(self, llm: LLM, config: AgentConfig, workspace_mount_path_in_sandbox_store_in_session: bool = True,):
         super().__init__(llm, config)
-        self.steps: list[ActionObs] = [
-            {
-                'action': MessageAction('Time to get started!'),
-                'observations': [],
-            },
-            {
-                'action': CmdRunAction(command='echo "foo"'),
-                'observations': [CmdOutputObservation('foo', command='echo "foo"')],
-            },
-            {
-                'action': FileWriteAction(
-                    content='echo "Hello, World!"', path='hello.sh'
-                ),
-                'observations': [
-                    FileWriteObservation(
-                        content='echo "Hello, World!"', path='hello.sh'
-                    )
-                ],
-            },
-            {
-                'action': FileReadAction(path='hello.sh'),
-                'observations': [
-                    FileReadObservation('echo "Hello, World!"\n', path='hello.sh')
-                ],
-            },
-            {
-                'action': CmdRunAction(command='bash hello.sh'),
-                'observations': [
-                    CmdOutputObservation(
-                        'bash: hello.sh: No such file or directory',
-                        command='bash workspace/hello.sh',
-                        metadata=CmdOutputMetadata(exit_code=127),
-                    )
-                ],
-            },
-            {
-                'action': BrowseURLAction(url='https://google.com'),
-                'observations': [
-                    BrowserOutputObservation(
-                        '<html><body>Simulated Google page</body></html>',
-                        url='https://google.com',
-                        screenshot='',
-                        trigger_by_action='',
-                    ),
-                ],
-            },
-            {
-                'action': BrowseInteractiveAction(
-                    browser_actions='goto("https://google.com")'
-                ),
-                'observations': [
-                    BrowserOutputObservation(
-                        '<html><body>Simulated Google page after interaction</body></html>',
-                        url='https://google.com',
-                        screenshot='',
-                        trigger_by_action='',
-                    ),
-                ],
-            },
-            {
-                'action': AgentRejectAction(),
-                'observations': [AgentStateChangedObservation('', AgentState.REJECTED)],
-            },
-            {
-                'action': AgentFinishAction(
-                    outputs={}, thought='Task completed', action='finish'
-                ),
-                'observations': [AgentStateChangedObservation('', AgentState.FINISHED)],
-            },
-        ]
 
-    def step(self, state: State) -> Action:
-        if state.iteration >= len(self.steps):
+        """Initialize async components of the agent"""
+        tools = []
+        # for tool_url in ["http://15.235.225.246:4010/sse"]:
+        #     for tool in await mcp_server_tools(SseServerParams(url=tool_url)):
+        #         tools.append(tool)
+
+        print(f"tools used: {tools}")
+        self.tools = tools
+
+        self.model_client = AnthropicChatCompletionClient(model=llm.config.model, api_key=llm.config.api_key)
+        mcp = AssistantAgent(name="MCPTools", model_client=self.model_client, tools=self.tools)
+        self.team = MagenticOneGroupChat(participants=[mcp], model_client=self.model_client)
+
+    async def step(self, state: State) -> Action:
+
+        if state.iteration == 2:
             return AgentFinishAction()
 
-        current_step = self.steps[state.iteration]
-        action = current_step['action']
-
-        if state.iteration > 0:
-            prev_step = self.steps[state.iteration - 1]
-
-            if 'observations' in prev_step and prev_step['observations']:
-                expected_observations = prev_step['observations']
-                hist_events = state.view[-len(expected_observations) :]
-
-                if len(hist_events) < len(expected_observations):
-                    print(
-                        f'Warning: Expected {len(expected_observations)} observations, but got {len(hist_events)}'
-                    )
-
-                for i in range(min(len(expected_observations), len(hist_events))):
-                    hist_obs = event_to_dict(hist_events[i])
-                    expected_obs = event_to_dict(expected_observations[i])
-
-                    # Remove dynamic fields for comparison
-                    for obs in [hist_obs, expected_obs]:
-                        obs.pop('id', None)
-                        obs.pop('timestamp', None)
-                        obs.pop('cause', None)
-                        obs.pop('source', None)
-
-                    if hist_obs != expected_obs:
-                        print(
-                            f'Warning: Observation mismatch. Expected {expected_obs}, got {hist_obs}'
-                        )
-
-        return action
+        self.team.run()
+        return MessageAction(content="Hello, world!")

@@ -88,6 +88,11 @@ playwright = "^1.51.0"
 prompt-toolkit = "^3.0.50"
 traceloop-sdk = "0.24.0"
 
+json-schema-to-pydantic = "0.2.3"
+autogen_core = {git = "https://github.com/oraichain/autogen.git", subdirectory = "python/packages/autogen-core"}
+autogen_agentchat = {git = "https://github.com/oraichain/autogen.git", subdirectory = "python/packages/autogen-agentchat"}
+autogen_ext = {git = "https://github.com/oraichain/autogen.git", subdirectory = "python/packages/autogen-ext"}
+
 [tool.poetry.group.dev.dependencies]
 ruff = "0.11.5"
 mypy = "1.15.0"
