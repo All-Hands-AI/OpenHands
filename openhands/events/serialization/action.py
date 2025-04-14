@@ -106,14 +106,6 @@ def action_from_dict(action: dict) -> Action:
 
     args = action.get('args', {})
 
-    # Special handling for message actions to distinguish between MessageAction and SystemMessageAction
-    if action_type == 'message':
-        # If 'tools' is in args, use SystemMessageAction, otherwise use MessageAction
-        if 'tools' in args:
-            action_class = SystemMessageAction
-        else:
-            action_class = MessageAction
-
     # Remove timestamp from args if present
     timestamp = args.pop('timestamp', None)
 

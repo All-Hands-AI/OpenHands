@@ -44,7 +44,7 @@ class SystemMessageAction(Action):
 
     content: str
     tools: List[Any] | None = None
-    action: str = ActionType.MESSAGE
+    action: str = ActionType.SYSTEM
     tool_call_metadata: dict | None = None  # Add this to match MessageAction
 
     @property

@@ -133,27 +133,8 @@ class ConversationMemory:
         messages = list(ConversationMemory._filter_unmatched_tool_calls(messages))
         return messages
 
-    def process_initial_messages(self, with_caching: bool = False) -> list[Message]:
-        """Create the initial messages for the conversation.
-
-        Deprecated: This method is deprecated and will be removed in a future version.
-        The system message should now be added to the event stream as a SystemMessageAction.
-        """
-        logger.warning(
-            'process_initial_messages is deprecated. '
-            'The system message should now be added to the event stream as a SystemMessageAction.'
-        )
-        return [
-            Message(
-                role='system',
-                content=[
-                    TextContent(
-                        text=self.prompt_manager.get_system_message(),
-                        cache_prompt=with_caching,
-                    )
-                ],
-            )
-        ]
+    # process_initial_messages has been removed
+    # The system message should now be added to the event stream as a SystemMessageAction
 
     def _process_action(
         self,

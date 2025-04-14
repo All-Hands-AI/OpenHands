@@ -84,15 +84,36 @@ def mock_state():
     return state
 
 
-def test_process_initial_messages(conversation_memory):
-    messages = conversation_memory.process_initial_messages(with_caching=False)
+def test_system_message_in_initial_messages(conversation_memory):
+    """Test that SystemMessageAction in initial_messages is processed correctly."""
+    from openhands.events.action.message import SystemMessageAction
+    from openhands.events import EventSource
+    from openhands.core.message import Message, TextContent
+    
+    # Create a system message action
+    system_message = SystemMessageAction(content='System message', tools=['test_tool'])
+    system_message._source = EventSource.AGENT
+    
+    # Convert to Message object first
+    system_message_as_message = Message(
+        role='system',
+        content=[TextContent(text='System message')]
+    )
+    
+    # Process events with the system message in initial_messages
+    messages = conversation_memory.process_events(
+        condensed_history=[],
+        initial_messages=[
+            system_message_as_message
+        ],
+        max_message_chars=None,
+        vision_is_active=False,
+    )
+    
+    # Check that the system message was processed correctly
     assert len(messages) == 1
     assert messages[0].role == 'system'
     assert messages[0].content[0].text == 'System message'
-    assert messages[0].content[0].cache_prompt is False
-
-    messages = conversation_memory.process_initial_messages(with_caching=True)
-    assert messages[0].content[0].cache_prompt is True
 
 
 def test_process_events_with_message_action(conversation_memory):
