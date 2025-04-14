@@ -1,40 +1,46 @@
-import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
-import Security from "#/components/shared/modals/security/security";
+import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button"
+import Security from "#/components/shared/modals/security/security"
+import { RiPhoneFindLine } from "react-icons/ri"
+import { IoFolder } from "react-icons/io5"
 import {
   useWsClient,
   WsClientProviderStatus,
-} from "#/context/ws-client-provider";
-import { useGetTrajectory } from "#/hooks/mutation/use-get-trajectory";
-import { useListFiles } from "#/hooks/query/use-list-files";
-import { useSettings } from "#/hooks/query/use-settings";
-import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom";
-import { I18nKey } from "#/i18n/declaration";
-import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
-import { createChatMessage } from "#/services/chat-service";
-import { addUserMessage } from "#/state/chat-slice";
-import { setCurrentPathViewed } from "#/state/file-state-slice";
-import { RootState } from "#/store";
-import { AgentState } from "#/types/agent-state";
-import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
-import { displayErrorToast } from "#/utils/custom-toast-handlers";
-import { downloadTrajectory } from "#/utils/download-trajectory";
-import { useDisclosure } from "@heroui/react";
-import posthog from "posthog-js";
-import React, { useEffect } from "react";
-import { useTranslation } from "react-i18next";
-import { FaFileInvoice } from "react-icons/fa";
-import { FaPowerOff } from "react-icons/fa6";
-import { useDispatch, useSelector } from "react-redux";
-import { useParams } from "react-router";
-import { Controls } from "../controls/controls";
-import { FeedbackModal } from "../feedback/feedback-modal";
-import { TrajectoryActions } from "../trajectory/trajectory-actions";
-import { ActionSuggestions } from "./action-suggestions";
-import { ChatSuggestions } from "./chat-suggestions";
-import { InteractiveChatBox } from "./interactive-chat-box";
-import { Messages } from "./messages";
-import { SkeletonMessage } from "./skeleton-message";
-import { TypingIndicator } from "./typing-indicator";
+} from "#/context/ws-client-provider"
+import { useGetTrajectory } from "#/hooks/mutation/use-get-trajectory"
+import { useListFiles } from "#/hooks/query/use-list-files"
+import { useSettings } from "#/hooks/query/use-settings"
+import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom"
+import { I18nKey } from "#/i18n/declaration"
+import { generateAgentStateChangeEvent } from "#/services/agent-state-service"
+import { createChatMessage } from "#/services/chat-service"
+import { addUserMessage } from "#/state/chat-slice"
+import { setCurrentPathViewed } from "#/state/file-state-slice"
+import { RootState } from "#/store"
+import { AgentState } from "#/types/agent-state"
+import { convertImageToBase64 } from "#/utils/convert-image-to-base-64"
+import { displayErrorToast } from "#/utils/custom-toast-handlers"
+import { downloadTrajectory } from "#/utils/download-trajectory"
+import { useDisclosure } from "@heroui/react"
+import posthog from "posthog-js"
+import React, { useEffect } from "react"
+import { useTranslation } from "react-i18next"
+import { FaFileInvoice } from "react-icons/fa"
+import { FaPowerOff } from "react-icons/fa6"
+import { useDispatch, useSelector } from "react-redux"
+import { useParams } from "react-router"
+import { Controls } from "../controls/controls"
+import { FeedbackModal } from "../feedback/feedback-modal"
+import { TrajectoryActions } from "../trajectory/trajectory-actions"
+import { ActionSuggestions } from "./action-suggestions"
+import { ChatSuggestions } from "./chat-suggestions"
+import { InteractiveChatBox } from "./interactive-chat-box"
+import { Messages } from "./messages"
+import { SkeletonMessage } from "./skeleton-message"
+import { TypingIndicator } from "./typing-indicator"
+import { ExplorerTree } from "../file-explorer/explorer-tree"
+import { FilesProvider } from "#/context/files"
+import FileExplorerModal from "../file-explorer/modal-file-explorer"
+import { twMerge } from "tailwind-merge"
 
 function getEntryPoint(
   hasRepository: boolean | null,
@@ -46,8 +52,8 @@ function getEntryPoint(
 }
 
 interface DisconnectButtonProps {
-  handleDisconnect: () => void;
-  isDisabled: boolean;
+  handleDisconnect: () => void
+  isDisabled: boolean
 }
 
 export function DisconnectButton({
@@ -55,7 +61,7 @@ export function DisconnectButton({
   isDisabled,
 }: DisconnectButtonProps) {
   if (isDisabled) {
-    return null;
+    return null
   }
 
   return (
@@ -73,45 +79,71 @@ export function DisconnectButton({
       <FaPowerOff />
       {/* {t(isDisabled ? "Connect" : "Disconnect")} */}
     </button>
-  );
+  )
 }
 
 export function ChatInterface() {
-  const { data: settings } = useSettings();
+  const { data: settings } = useSettings()
   const {
     isOpen: securityModalIsOpen,
     onOpen: onSecurityModalOpen,
     onOpenChange: onSecurityModalOpenChange,
-  } = useDisclosure();
-  const dispatch = useDispatch();
-  const scrollRef = React.useRef<HTMLDivElement>(null);
-  const { send, isLoadingMessages, disconnect, status } = useWsClient();
-  const { t } = useTranslation();
+  } = useDisclosure()
+  const dispatch = useDispatch()
+  const scrollRef = React.useRef<HTMLDivElement>(null)
+  const { send, isLoadingMessages, disconnect, status } = useWsClient()
+  const { t } = useTranslation()
   const { scrollDomToBottom, onChatBodyScroll, hitBottom } =
     useScrollToBottom(scrollRef)
 
-  const { messages } = useSelector((state: RootState) => state.chat);
-  const { curAgentState } = useSelector((state: RootState) => state.agent);
-  const { data: files, refetch: refetchFiles } = useListFiles({
+  const { messages } = useSelector((state: RootState) => state.chat)
+  const { curAgentState } = useSelector((state: RootState) => state.agent)
+  const {
+    data: files,
+    refetch: refetchFiles,
+    error,
+  } = useListFiles({
     isCached: false,
     enabled: true,
-  });
+  })
 
   useEffect(() => {
-    if (curAgentState === AgentState.AWAITING_USER_INPUT) refetchFiles();
-  }, [curAgentState]);
+    if (files?.length) {
+      const priorityFile = []
+
+      files.map((e) => {
+        if (e.includes("html")) {
+          priorityFile.push(e)
+        }
+      })
+      if (priorityFile?.length) {
+        dispatch(setCurrentPathViewed(priorityFile[0]))
+      }
+    }
+  }, [files])
+
+  useEffect(() => {
+    if (curAgentState === AgentState.AWAITING_USER_INPUT) refetchFiles()
+  }, [curAgentState])
 
   // Scroll to bottom when files are loaded
   useEffect(() => {
     if (files && files.length > 0) {
-      scrollDomToBottom();
+      scrollDomToBottom()
     }
-  }, [files]);
+  }, [files])
 
   const [feedbackPolarity, setFeedbackPolarity] = React.useState<
     "positive" | "negative"
   >("positive")
   const [feedbackModalIsOpen, setFeedbackModalIsOpen] = React.useState(false)
+  const [explorerModal, setExplorerModal] = React.useState(false)
+  const [selectedPath, setSelectedPath] = React.useState(null)
+
+  const { currentPathViewed } = useSelector(
+    (state: RootState) => state.fileState,
+  )
+
   const [messageToSend, setMessageToSend] = React.useState<string | null>(null)
   const { selectedRepository, replayJson } = useSelector(
     (state: RootState) => state.initialQuery,
@@ -135,8 +167,8 @@ export function ChatInterface() {
         current_message_length: content.length,
       })
     }
-    const promises = msgFiles.map((file) => convertImageToBase64(file));
-    const imageUrls = await Promise.all(promises);
+    const promises = msgFiles.map((file) => convertImageToBase64(file))
+    const imageUrls = await Promise.all(promises)
 
     const timestamp = new Date().toISOString()
     const pending = true
@@ -221,18 +253,52 @@ export function ChatInterface() {
 
         {files && files.length > 0 && (
           <div className="my-3 flex flex-wrap gap-2">
-            {files.map((file) => (
+            {files.map((file) => {
+              const isDirectory = file.endsWith("/")
+              return (
+                <div
+                  key={file}
+                  className={twMerge(
+                    "flex w-fit max-w-full cursor-pointer items-center gap-2 rounded-md bg-neutral-1000 p-2 hover:opacity-70",
+                    currentPathViewed.includes(file) &&
+                      "border border-blue-200 bg-blue-50",
+                  )}
+                  onClick={() => {
+                    if (isDirectory) {
+                      setExplorerModal(true)
+                      setSelectedPath(file)
+                    } else {
+                      dispatch(setCurrentPathViewed(file))
+                    }
+                  }}
+                >
+                  {isDirectory ? (
+                    <IoFolder className="h-4 w-4 shrink-0 fill-blue-500" />
+                  ) : (
+                    <FaFileInvoice className="h-4 w-4 shrink-0 fill-blue-500" />
+                  )}
+                  <div className="line-clamp-1 text-sm">{file}</div>
+                </div>
+              )
+            })}
+            {files.length >= 2 && (
               <div
-                key={file}
                 className="flex w-fit max-w-full cursor-pointer items-center gap-2 rounded-md bg-neutral-1000 p-2 hover:opacity-70"
-                onClick={() => dispatch(setCurrentPathViewed(file))}
+                onClick={() => {
+                  setExplorerModal(true)
+                  setSelectedPath(null)
+                }}
               >
-                <FaFileInvoice className="h-4 w-4 shrink-0 fill-blue-500" />
-                <div className="line-clamp-1 text-sm">{file}</div>
+                <RiPhoneFindLine className="h-4 w-4 shrink-0 fill-blue-500" />
+                <div className="line-clamp-1 text-sm">
+                  View all files in this task
+                </div>
               </div>
-            ))}
+            )}
           </div>
         )}
+
+        {/* {!error && <ExplorerTree files={files || []} />} */}
       </div>
 
       <div className="flex flex-col gap-[6px] px-4 pb-4">
@@ -295,6 +361,11 @@ export function ChatInterface() {
         isOpen={feedbackModalIsOpen}
         onClose={() => setFeedbackModalIsOpen(false)}
         polarity={feedbackPolarity}
+      />
+      <FileExplorerModal
+        filePath={selectedPath}
+        isOpen={explorerModal}
+        onClose={() => setExplorerModal(false)}
       />
     </div>
   )

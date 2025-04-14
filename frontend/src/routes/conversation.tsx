@@ -10,6 +10,7 @@ import {
   ConversationProvider,
   useConversation,
 } from "#/context/conversation-context"
+import { FilesProvider } from "#/context/files"
 import { WsClientProvider } from "#/context/ws-client-provider"
 import { useConversationConfig } from "#/hooks/query/use-conversation-config"
 import { useSettings } from "#/hooks/query/use-settings"
@@ -179,24 +180,26 @@ function AppContent() {
 
   return (
     <WsClientProvider conversationId={conversationId}>
-      <EventHandler>
-        <div data-testid="app-route" className="flex h-full flex-col gap-3">
-          <div className="flex h-full overflow-auto">{renderMain()}</div>
+      <FilesProvider>
+        <EventHandler>
+          <div data-testid="app-route" className="flex h-full flex-col gap-3">
+            <div className="flex h-full overflow-auto">{renderMain()}</div>
 
-          {/*
+            {/*
           <Controls
             setSecurityOpen={onSecurityModalOpen}
             showSecurityLock={!!settings?.SECURITY_ANALYZER}
           /> */}
-          {/* {settings && (
+            {/* {settings && (
             <Security
               isOpen={securityModalIsOpen}
               onOpenChange={onSecurityModalOpenChange}
               securityAnalyzer={settings.SECURITY_ANALYZER}
             />
           )} */}
-        </div>
-      </EventHandler>
+          </div>
+        </EventHandler>
+      </FilesProvider>
     </WsClientProvider>
   )
 }
