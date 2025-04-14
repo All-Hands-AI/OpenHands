@@ -1,5 +1,9 @@
 # 🤖 LLM Backends
 
+:::note
+This section is for users who want to connect OpenHands to different LLMs.
+:::
+
 OpenHands can connect to any LLM supported by LiteLLM. However, it requires a powerful model to work.
 
 ## Model Recommendations

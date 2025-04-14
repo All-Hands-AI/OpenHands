@@ -222,14 +222,14 @@ class BrowserUnavailableException(Exception):
 # ============================================
 
 
-class MicroAgentError(Exception):
+class MicroagentError(Exception):
     """Base exception for all microagent errors."""
 
     pass
 
 
-class MicroAgentValidationError(MicroAgentError):
+class MicroagentValidationError(MicroagentError):
     """Raised when there's a validation error in microagent metadata."""
 
-    def __init__(self, message: str = 'Micro agent validation failed') -> None:
+    def __init__(self, message: str = 'Microagent validation failed') -> None:
         super().__init__(message)
