@@ -834,9 +834,7 @@ def test_api_keys_repr_str():
 
     # Test AgentConfig
     # No attrs in AgentConfig have 'key' or 'token' in their name
-    agent_config = AgentConfig(
-        enable_prompt_extensions=True, enable_browsing=False
-    )
+    agent_config = AgentConfig(enable_prompt_extensions=True, enable_browsing=False)
     for attr_name in AgentConfig.model_fields.keys():
         if not attr_name.startswith('__'):
             assert (
