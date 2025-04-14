@@ -118,8 +118,7 @@ async def fetch_mcp_tools_from_config(
 
 
 async def call_tool_mcp(mcp_clients: list[MCPClient], action: McpAction) -> Observation:
-    """
-    Call a tool on an MCP server and return the observation.
+    """Call a tool on an MCP server and return the observation.
 
     Args:
         mcp_clients: List of MCPClient instances
@@ -162,7 +161,7 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: McpAction) -> Obse
         return planner_mcp_plan(action, response)
 
     return MCPObservation(
-        content=f'MCP {action.name} result: {response.model_dump(mode="json")}'
+        content=f'{response.output[0].text}'
     )
 
 
