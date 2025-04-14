@@ -166,11 +166,12 @@ class CodeActAgent(Agent):
         message flow and function-calling scenarios.
 
         The method performs the following steps:
-        1. Processes events (Actions and Observations) into messages, including SystemMessageAction
-        2. Handles tool calls and their responses in function-calling mode
-        3. Manages message role alternation (user/assistant/tool)
-        4. Applies caching for specific LLM providers (e.g., Anthropic)
-        5. Adds environment reminders for non-function-calling mode
+        1. Checks for SystemMessageAction in events, adds one if missing (legacy support)
+        2. Processes events (Actions and Observations) into messages, including SystemMessageAction
+        3. Handles tool calls and their responses in function-calling mode
+        4. Manages message role alternation (user/assistant/tool)
+        5. Applies caching for specific LLM providers (e.g., Anthropic)
+        6. Adds environment reminders for non-function-calling mode
 
         Args:
             events: The list of events to convert to messages
@@ -191,9 +192,33 @@ class CodeActAgent(Agent):
         if not self.prompt_manager:
             raise Exception('Prompt Manager not instantiated.')
 
+        # Check if there's a SystemMessageAction in the events
+        from openhands.events.action.message import SystemMessageAction
+        from openhands.core.logger import openhands_logger as logger
+        from openhands.events.event import EventSource
+
+        # Create a copy of events to avoid modifying the original list
+        processed_events = list(events)
+        
+        # Check if there's a SystemMessageAction in the events
+        has_system_message = any(isinstance(event, SystemMessageAction) for event in processed_events)
+        
+        # If no SystemMessageAction is found, add one (legacy support)
+        if not has_system_message:
+            logger.warning(
+                f"[{self.name}] No SystemMessageAction found in events. "
+                "Adding one for backward compatibility. "
+                "This is deprecated behavior and will be removed in a future version."
+            )
+            system_message = self.get_system_message()
+            if system_message:
+                # Insert at the beginning of the list
+                processed_events.insert(0, system_message)
+                logger.debug(f"[{self.name}] Added SystemMessageAction for backward compatibility")
+
         # Use ConversationMemory to process events (including SystemMessageAction)
         messages = self.conversation_memory.process_events(
-            condensed_history=events,
+            condensed_history=processed_events,
             max_message_chars=self.llm.config.max_message_chars,
             vision_is_active=self.llm.vision_is_active(),
         )
