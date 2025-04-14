@@ -100,7 +100,7 @@ export function FeedbackForm({ onClose, polarity }: FeedbackFormProps) {
           name="email"
           type="email"
           placeholder={t(I18nKey.FEEDBACK$EMAIL_PLACEHOLDER)}
-          className="bg-[#27272A] px-3 py-[10px] rounded"
+          className="bg-transparent border border-neutral-500 outline-none focus:outline-none px-3 py-[10px] rounded"
         />
       </label>
 
