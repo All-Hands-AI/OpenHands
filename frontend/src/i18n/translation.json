@@ -5699,21 +5699,7 @@
         "fr": "Aucun outil disponible ou les outils n'ont pas encore été chargés",
         "tr": "Kullanılabilir araç yok veya araçlar henüz yüklenmedi"
     },
-    "CONVERSATION$TOOLS_FETCH_ERROR": {
-        "en": "Failed to fetch tools. Please try again later",
-        "ja": "ツールの取得に失敗しました。後でもう一度お試しください",
-        "zh-CN": "获取工具失败。请稍后再试",
-        "zh-TW": "獲取工具失敗。請稍後再試",
-        "ko-KR": "도구를 가져오지 못했습니다. 나중에 다시 시도해 주세요",
-        "de": "Fehler beim Abrufen der Tools. Bitte versuchen Sie es später erneut",
-        "no": "Kunne ikke hente verktøy. Prøv igjen senere",
-        "it": "Impossibile recuperare gli strumenti. Riprova più tardi",
-        "pt": "Falha ao buscar ferramentas. Por favor, tente novamente mais tarde",
-        "es": "Error al obtener herramientas. Por favor, inténtelo de nuevo más tarde",
-        "ar": "فشل في جلب الأدوات. يرجى المحاولة مرة أخرى لاحقًا",
-        "fr": "Échec de la récupération des outils. Veuillez réessayer plus tard",
-        "tr": "Araçlar getirilemedi. Lütfen daha sonra tekrar deneyin"
-    },
+
     "CONVERSATION$DOWNLOAD_ERROR": {
         "en": "ConversationId unknown, cannot download trajectory",
         "ja": "会話IDが不明です。軌跡をダウンロードできません",
@@ -6016,6 +6002,21 @@
     },
     "CONVERSATION$AVAILABLE_TOOLS": {
         "en": "Available Agent Tools"
+    },
+    "CONVERSATION$FAILED_TO_FETCH_TOOLS": {
+        "en": "Failed to fetch tools. Please try again later",
+        "ja": "ツールの取得に失敗しました。後でもう一度お試しください",
+        "zh-CN": "获取工具失败。请稍后再试",
+        "zh-TW": "獲取工具失敗。請稍後再試",
+        "ko-KR": "도구를 가져오지 못했습니다. 나중에 다시 시도해 주세요",
+        "de": "Fehler beim Abrufen der Tools. Bitte versuchen Sie es später erneut",
+        "no": "Kunne ikke hente verktøy. Prøv igjen senere",
+        "it": "Impossibile recuperare gli strumenti. Riprova più tardi",
+        "pt": "Falha ao buscar ferramentas. Por favor, tente novamente mais tarde",
+        "es": "Error al obtener herramientas. Por favor, inténtelo de nuevo más tarde",
+        "ar": "فشل في جلب الأدوات. يرجى المحاولة مرة أخرى لاحقًا",
+        "fr": "Échec de la récupération des outils. Veuillez réessayer plus tard",
+        "tr": "Araçlar getirilemedi. Lütfen daha sonra tekrar deneyin"
     },
     "FEEDBACK$TITLE": {
         "en": "Feedback",

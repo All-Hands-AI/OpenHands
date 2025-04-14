@@ -30,7 +30,6 @@ const toolsSlice = createSlice({
   initialState,
   reducers: {
     setTools: (state, action: PayloadAction<ToolsState>) => {
-      // Set tools in state
       state.tools = action.payload.tools;
     },
   },

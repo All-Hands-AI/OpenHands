@@ -158,7 +158,7 @@ export function ConversationCard({
             tools: [
               {
                 name: "Error",
-                description: t(I18nKey.CONVERSATION$TOOLS_FETCH_ERROR),
+                description: t(I18nKey.CONVERSATION$FAILED_TO_FETCH_TOOLS),
               },
             ],
           },
