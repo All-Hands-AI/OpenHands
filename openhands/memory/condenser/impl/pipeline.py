@@ -42,3 +42,5 @@ class CondenserPipeline(Condenser):
     ) -> CondenserPipeline:
         condensers = [Condenser.from_config(c) for c in config.condensers]
         return CondenserPipeline(*condensers)
+    
+CondenserPipeline.register_config(CondenserPipelineConfig)
