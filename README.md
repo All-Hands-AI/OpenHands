@@ -36,11 +36,20 @@ Learn more at [docs.all-hands.dev](https://docs.all-hands.dev), or jump to the [
 
 ![App screenshot](./docs/static/img/screenshot.png)
 
-## ⚡ Quick Start
+## ☁️ OpenHands Cloud
+The easiest way to get started with OpenHands is on [OpenHands Cloud](app.all-hands.dev),
+which comes with $50 in free credits for new users.
 
-The easiest way to run OpenHands is in Docker.
+## 💻 Running OpenHands Locally
+
+OpenHands can also run on your laptop using Docker.
 See the [Running OpenHands](https://docs.all-hands.dev/modules/usage/installation) guide for
 system requirements and more information.
+
+> [!WARNING]
+> On a public network? See our [Hardened Docker Installation](https://docs.all-hands.dev/modules/usage/runtimes/docker#hardened-docker-installation) guide
+> to secure your deployment by restricting network binding and implementing additional security measures.
+
 
 ```bash
 docker pull docker.all-hands.dev/all-hands-ai/runtime:0.32-nikolaik
@@ -56,17 +65,13 @@ docker run -it --rm --pull=always \
     docker.all-hands.dev/all-hands-ai/openhands:0.32
 ```
 
-> [!WARNING]
-> On a public network? See our [Hardened Docker Installation](https://docs.all-hands.dev/modules/usage/runtimes/docker#hardened-docker-installation) guide
-> to secure your deployment by restricting network binding and implementing additional security measures.
-
 You'll find OpenHands running at [http://localhost:3000](http://localhost:3000)!
 
-Finally, you'll need a model provider and API key.
+When you open the application, you'll be asked to choose an LLM provider and add an API key.
 [Anthropic's Claude 3.5 Sonnet](https://www.anthropic.com/api) (`anthropic/claude-3-5-sonnet-20241022`)
 works best, but you have [many options](https://docs.all-hands.dev/modules/usage/llms).
 
----
+## 💡 Other ways to run OpenHands
 
 You can also [connect OpenHands to your local filesystem](https://docs.all-hands.dev/modules/usage/runtimes/docker#connecting-to-your-filesystem),
 run OpenHands in a scriptable [headless mode](https://docs.all-hands.dev/modules/usage/how-to/headless-mode),
