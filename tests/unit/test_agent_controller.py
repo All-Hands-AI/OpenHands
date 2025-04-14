@@ -1376,6 +1376,8 @@ def test_agent_controller_should_step_with_null_observation_cause_zero():
 
     # Create a mock agent
     mock_agent = MagicMock(spec=Agent)
+    # Mock the get_system_message method to return None to avoid adding system message
+    mock_agent.get_system_message.return_value = None
 
     # Create an agent controller
     controller = AgentController(

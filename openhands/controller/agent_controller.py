@@ -165,11 +165,9 @@ class AgentController:
 
         # Add the system message to the event stream
         # This should be done for all agents, including delegates
-        try:
-            system_message = self.agent.get_system_message()
+        system_message = self.agent.get_system_message()
+        if system_message:
             self.event_stream.add_event(system_message, EventSource.AGENT)
-        except Exception as e:
-            logger.warning(f'Failed to add system message to event stream: {e}')
 
     async def close(self, set_stop_state=True) -> None:
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream.
