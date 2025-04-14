@@ -518,22 +518,46 @@ class AgentController:
         # Runnable actions need an Observation
         # make sure there is an Observation with the tool call metadata to be recognized by the agent
         # otherwise the pending action is found in history, but it's incomplete without an obs with tool result
-        if self._pending_action and hasattr(self._pending_action, 'tool_call_metadata'):
+        # Check if the pending action has tool_call_metadata
+        has_metadata = False
+        if self._pending_action:
+            # First check if the property exists
+            if hasattr(self._pending_action, 'tool_call_metadata'):
+                # Then check if it's not None
+                metadata = getattr(self._pending_action, 'tool_call_metadata', None)
+                has_metadata = metadata is not None
+            
+            # Also check for the private attribute, regardless of whether the property exists
+            if hasattr(self._pending_action, '_tool_call_metadata'):
+                has_metadata = has_metadata or self._pending_action._tool_call_metadata is not None
+        
+        if self._pending_action and has_metadata:
             # find out if there already is an observation with the same tool call metadata
             found_observation = False
+            # Get the metadata from the pending action
+            pending_metadata = getattr(self._pending_action, 'tool_call_metadata', None)
+            # Always check the attribute directly if the property returns None
+            if pending_metadata is None and hasattr(self._pending_action, '_tool_call_metadata'):
+                pending_metadata = self._pending_action._tool_call_metadata
+                
             for event in self.state.history:
-                if (
-                    isinstance(event, Observation)
-                    and event.tool_call_metadata
-                    == self._pending_action.tool_call_metadata
-                ):
+                if not isinstance(event, Observation):
+                    continue
+                    
+                # Get the metadata from the observation
+                event_metadata = getattr(event, 'tool_call_metadata', None)
+                if event_metadata is None and hasattr(event, '_tool_call_metadata'):
+                    event_metadata = event._tool_call_metadata
+                    
+                if event_metadata == pending_metadata:
                     found_observation = True
                     break
 
             # make a new ErrorObservation with the tool call metadata
             if not found_observation:
                 obs = ErrorObservation(content='The action has not been executed.')
-                obs.tool_call_metadata = self._pending_action.tool_call_metadata
+                # Set the _tool_call_metadata attribute directly
+                obs._tool_call_metadata = pending_metadata
                 obs._cause = self._pending_action.id  # type: ignore[attr-defined]
                 self.event_stream.add_event(obs, EventSource.AGENT)
 
