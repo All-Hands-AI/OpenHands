@@ -47,6 +47,9 @@ docker run -it \
     python -m openhands.core.main -t "write a bash script that prints hi"
 ```
 
+The `-e SANDBOX_USER_ID=$(id -u)` is passed to the Docker command to ensure the sandbox user matches the host user’s
+permissions. This prevents the agent from creating root-owned files in the mounted workspace.
+
 ## Advanced Headless Configurations
 
 To view all available configuration options for headless mode, run the Python command with the `--help` flag.
