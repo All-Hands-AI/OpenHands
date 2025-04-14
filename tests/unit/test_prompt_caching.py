@@ -58,7 +58,7 @@ def test_get_messages(codeact_agent: CodeActAgent):
     # Add system message action
     system_message_action = codeact_agent.get_initial_message()
     history.append(system_message_action)
-    
+
     message_action_1 = MessageAction('Initial user message')
     message_action_1._source = 'user'
     history.append(message_action_1)
@@ -104,7 +104,7 @@ def test_get_messages_prompt_caching(codeact_agent: CodeActAgent):
     # Add system message action
     system_message_action = codeact_agent.get_initial_message()
     history.append(system_message_action)
-    
+
     # Add multiple user and agent messages
     for i in range(15):
         message_action_user = MessageAction(f'User message {i}')

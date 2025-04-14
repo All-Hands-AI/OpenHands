@@ -103,9 +103,9 @@ def action_from_dict(action: dict) -> Action:
         raise LLMMalformedActionError(
             f"'{action['action']=}' is not defined. Available actions: {ACTION_TYPE_TO_CLASS.keys()}"
         )
-    
+
     args = action.get('args', {})
-    
+
     # Special handling for message actions to distinguish between MessageAction and SystemMessageAction
     if action_type == 'message':
         # If 'tools' is in args, use SystemMessageAction, otherwise use MessageAction
@@ -113,7 +113,7 @@ def action_from_dict(action: dict) -> Action:
             action_class = SystemMessageAction
         else:
             action_class = MessageAction
-    
+
     # Remove timestamp from args if present
     timestamp = args.pop('timestamp', None)
 
