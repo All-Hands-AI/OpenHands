@@ -47,7 +47,7 @@ See the [Running OpenHands](https://docs.all-hands.dev/modules/usage/installatio
 system requirements and more information.
 
 > [!WARNING]
-> On a public network? See our [Hardened Docker Installation](https://docs.all-hands.dev/modules/usage/runtimes/docker#hardened-docker-installation) guide
+> On a public network? See our [Hardened Docker Installation Guide](https://docs.all-hands.dev/modules/usage/runtimes/docker#hardened-docker-installation)
 > to secure your deployment by restricting network binding and implementing additional security measures.
 
 
