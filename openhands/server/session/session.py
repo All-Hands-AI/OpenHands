@@ -87,6 +87,7 @@ class Session:
         replay_json: str | None,
         mnemonic: str | None = None,
     ):
+        start_time = time.time()
         self.agent_session.event_stream.add_event(
             AgentStateChangedObservation('', AgentState.LOADING),
             EventSource.ENVIRONMENT,
@@ -172,6 +173,9 @@ class Session:
                 initial_message=initial_message,
                 replay_json=replay_json,
             )
+            end_time = time.time()
+            total_time = end_time - start_time
+            self.logger.debug(f'Total initialize_agent time: {total_time:.2f} seconds')
         except Exception as e:
             self.logger.exception(f'Error creating agent_session: {e}')
             err_class = e.__class__.__name__

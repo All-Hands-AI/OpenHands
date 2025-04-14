@@ -113,7 +113,7 @@ async def fetch_mcp_tools_from_config(
         logger.error(f'Error fetching MCP tools: {str(e)}')
         return []
 
-    logger.debug(f'MCP tools: {mcp_tools}')
+    # logger.debug(f'MCP tools: {mcp_tools}')
     return mcp_tools
 
 

@@ -69,6 +69,7 @@ class Memory:
         # Load global microagents (Knowledge + Repo)
         # from typically OpenHands/microagents (i.e., the PUBLIC microagents)
         if enable_microagents:
+            logger.debug('Loading global microagents...')
             self._load_global_microagents()
 
     def on_event(self, event: Event):

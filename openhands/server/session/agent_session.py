@@ -118,6 +118,7 @@ class AgentSession:
 
         try:
             self._create_security_analyzer(config.security.security_analyzer)
+            start_time = time.time()
             runtime_connected = await self._create_runtime(
                 runtime_name=runtime_name,
                 config=config,
@@ -126,6 +127,9 @@ class AgentSession:
                 selected_repository=selected_repository,
                 selected_branch=selected_branch,
             )
+            end_time = time.time()
+            total_time = end_time - start_time
+            self.logger.debug(f'Total create_runtime time: {total_time:.2f} seconds')
 
             if replay_json:
                 initial_message = self._run_replay(
@@ -303,6 +307,7 @@ class AgentSession:
             )
             env_vars = await provider_handler.get_env_vars(expose_secrets=True)
 
+            start_time = time.time()
             self.runtime = runtime_cls(
                 config=config,
                 event_stream=self.event_stream,
@@ -313,6 +318,9 @@ class AgentSession:
                 attach_to_existing=False,
                 env_vars=env_vars,
             )
+            end_time = time.time()
+            total_time = end_time - start_time
+            self.logger.debug(f'Total runtime_cls time: {total_time:.2f} seconds')
 
         # FIXME: this sleep is a terrible hack.
         # This is to give the websocket a second to connect, so that
@@ -320,7 +328,11 @@ class AgentSession:
         # We should find a better way to plumb status messages through.
         await asyncio.sleep(1)
         try:
+            start_time = time.time()
             await self.runtime.connect()
+            end_time = time.time()
+            total_time = end_time - start_time
+            self.logger.debug(f'Total runtime.connect() time: {total_time:.2f} seconds')
         except AgentRuntimeUnavailableError as e:
             self.logger.error(f'Runtime initialization failed: {e}')
             if self._status_callback:
