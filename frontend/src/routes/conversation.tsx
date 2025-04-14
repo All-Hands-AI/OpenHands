@@ -5,7 +5,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { FaServer } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 import { DiGit } from "react-icons/di";
-import { useIsFetching } from "@tanstack/react-query";
 import { I18nKey } from "#/i18n/declaration";
 import {
   ConversationProvider,
@@ -54,7 +53,6 @@ function AppContent() {
   const dispatch = useDispatch();
   const endSession = useEndSession();
 
-  const isFetchingGitChanges = useIsFetching({ queryKey: ["file_changes"] });
   // Set the document title to the conversation title when available
   useDocumentTitleFromState();
 
@@ -152,7 +150,6 @@ function AppContent() {
                     label: "Changes",
                     to: "editor",
                     icon: <DiGit className="w-6 h-6" />,
-                    isLoading: isFetchingGitChanges > 0,
                   },
                   {
                     label: t(I18nKey.WORKSPACE$TITLE),
