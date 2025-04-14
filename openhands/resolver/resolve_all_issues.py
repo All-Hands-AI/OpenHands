@@ -339,7 +339,7 @@ def main() -> None:
 
     runtime_container_image = my_args.runtime_container_image
 
-    if runtime_container_image is None:
+    if runtime_container_image is None and base_container_image == '' and not my_args.is_experimental:
         runtime_container_image = (
             f'ghcr.io/all-hands-ai/runtime:{openhands.__version__}-nikolaik'
         )
