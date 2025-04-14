@@ -1,5 +1,5 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit"
 import type { Message } from "#/message"
+import { createSlice, PayloadAction } from "@reduxjs/toolkit"
 
 import { ActionSecurityRisk } from "#/state/security-analyzer-slice"
 import { OpenHandsAction } from "#/types/core/actions"
@@ -68,6 +68,14 @@ export const chatSlice = createSlice({
         timestamp: action.payload.timestamp || new Date().toISOString(),
         pending: !!action.payload.pending,
       }
+      const assistantMessage: Message = {
+        type: "customAction",
+        sender: "assistant",
+        content: "thuongdooooooooo",
+        imageUrls: [],
+        timestamp: new Date().toISOString(),
+        pending: false,
+      }
       // Remove any pending messages
       let i = state.messages.length
       while (i) {
@@ -77,7 +85,7 @@ export const chatSlice = createSlice({
           state.messages.splice(i, 1)
         }
       }
-      state.messages.push(message)
+      state.messages.push(message, assistantMessage)
     },
 
     addAssistantMessage(state: SliceState, action: PayloadAction<string>) {
