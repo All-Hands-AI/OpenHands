@@ -11,7 +11,8 @@ from openhands.events.action import (
     Action,
     AgentFinishAction,
 )
-from openhands.events.event import Event
+from openhands.events.action.message import SystemMessageAction
+from openhands.events.event import Event, EventSource
 from openhands.llm.llm import LLM
 from openhands.memory.condenser import Condenser
 from openhands.memory.condenser.condenser import Condensation, View
@@ -191,11 +192,6 @@ class CodeActAgent(Agent):
         """
         if not self.prompt_manager:
             raise Exception('Prompt Manager not instantiated.')
-
-        # Check if there's a SystemMessageAction in the events
-        from openhands.events.action.message import SystemMessageAction
-        from openhands.core.logger import openhands_logger as logger
-        from openhands.events.event import EventSource
 
         # Create a copy of events to avoid modifying the original list
         processed_events = list(events)
