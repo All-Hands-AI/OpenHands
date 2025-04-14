@@ -69,9 +69,5 @@ class DummyAgent(Agent):
 
     async def step(self, state: State) -> Action:
 
-        if state.iteration == 2:
-            return AgentFinishAction()
-
         result = await self.team.run(task=state.get_last_user_message().content)
-
-        return MessageAction(content=result.messages[0].to_model_text())
+        return AgentFinishAction(final_thought=result.messages[0].to_model_text())
