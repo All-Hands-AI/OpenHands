@@ -1,8 +1,8 @@
-import { cn } from "#/utils/utils";
-import React from "react";
-import { ExtraProps } from "react-markdown";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import oneLight from "react-syntax-highlighter/dist/cjs/styles/prism/one-light";
+import { cn } from "#/utils/utils"
+import React from "react"
+import { ExtraProps } from "react-markdown"
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter"
+import oneLight from "react-syntax-highlighter/dist/cjs/styles/prism/one-light"
 // import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 // See https://github.com/remarkjs/react-markdown?tab=readme-ov-file#use-custom-components-syntax-highlight
@@ -16,16 +16,16 @@ export function code({
 }: React.ClassAttributes<HTMLElement> &
   React.HTMLAttributes<HTMLElement> &
   ExtraProps) {
-  const match = /language-(\w+)/.exec(className || ""); // get the language
+  const match = /language-(\w+)/.exec(className || "") // get the language
 
   if (!match) {
-    const isMultiline = String(children).includes("\n");
+    const isMultiline = String(children).includes("\n")
 
     if (!isMultiline) {
       return (
         <code
           className={cn(
-            "border border-neutral-1000 bg-white text-neutral-100 dark:border-[#30363d] dark:bg-[#2a3038] dark:text-white",
+            "border border-neutral-1000 bg-white font-inter text-neutral-100 dark:border-[#30363d] dark:bg-[#2a3038] dark:text-white",
             className,
           )}
           style={{
@@ -35,23 +35,14 @@ export function code({
         >
           {children}
         </code>
-      );
+      )
     }
 
     return (
-      <pre
-        style={{
-          backgroundColor: "#2a3038",
-          padding: "1em",
-          borderRadius: "4px",
-          color: "#e6edf3",
-          border: "1px solid #30363d",
-          overflow: "auto",
-        }}
-      >
+      <pre className="overflow-auto border border-neutral-1000 bg-white p-4 font-inter text-neutral-100 dark:border-[#30363d] dark:bg-[#2a3038] dark:text-white">
         <code className={className}>{String(children).replace(/\n$/, "")}</code>
       </pre>
-    );
+    )
   }
 
   return (
@@ -63,5 +54,5 @@ export function code({
     >
       {String(children).replace(/\n$/, "")}
     </SyntaxHighlighter>
-  );
+  )
 }

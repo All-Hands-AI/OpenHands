@@ -51,7 +51,7 @@ export function ChatMessage({
         "style-reset relative rounded-[20px]",
         "flex flex-col gap-2",
         type === "user" &&
-          "max-w-[305px] self-end rounded-br-none border border-neutral-1000 bg-white px-4 py-2 dark:bg-gray-100",
+          "max-w-[75%] self-end rounded-br-none border border-neutral-1000 bg-white px-4 py-2 dark:bg-gray-100",
         type === "assistant" && "mt-2 max-w-full bg-transparent",
         className,
       )}
@@ -69,6 +69,11 @@ export function ChatMessage({
             ul,
             ol,
             a: anchor,
+            pre: ({ children }) => (
+              <pre className="[&_pre]:my-0 [&_pre]:whitespace-pre-wrap [&_pre]:border-none [&_pre]:bg-white [&_pre]:p-0 [&_pre]:text-neutral-100 [&_pre_code]:!font-inter">
+                {children}
+              </pre>
+            ),
           }}
           remarkPlugins={[remarkGfm]}
         >
