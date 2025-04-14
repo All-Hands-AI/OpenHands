@@ -61,20 +61,21 @@ class DummyAgent(Agent):
         #         tools.append(tool)
 
         print(f"tools used: {tools}")
-        self.tools = tools
 
-        self.model_client = AnthropicChatCompletionClient(model=llm.config.model, api_key=llm.config.api_key)
-        mcp = AssistantAgent(name="MCPTools", model_client=self.model_client, tools=self.tools)
-        self.team = MagenticOneGroupChat(participants=[mcp], model_client=self.model_client)
+        model_client = AnthropicChatCompletionClient(model=llm.config.model, api_key=llm.config.api_key.get_secret_value())
+        print(f"model_client: {llm.config.api_key.get_secret_value()}")
+        mcp = AssistantAgent(name="MCPTools", model_client=model_client, tools=tools)
+        self.team = MagenticOneGroupChat(participants=[mcp], model_client=model_client)
 
     async def step(self, state: State) -> Action:
         task = state.get_last_user_message().content
         result = None
-        print(f"task: {task}")
         await self.team.reset()
+        print(f"task: {task}")
         async for message in self.team.run_stream(
             task=task
         ):
             print(f"step result: {message}")
             result = message
+
         return AgentFinishAction(final_thought=result.messages[0].to_model_text())
