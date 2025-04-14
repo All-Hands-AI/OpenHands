@@ -42,7 +42,7 @@ class Agent(ABC):
         self.mcp_tools: list[dict] = []
         self.tools: list = []
 
-    def get_initial_message(self) -> 'SystemMessageAction':
+    def get_system_message(self) -> 'SystemMessageAction':
         """
         Returns a SystemMessageAction containing the system message and tools.
         This will be added to the event stream as the first message.
@@ -55,7 +55,7 @@ class Agent(ABC):
 
         if not self.prompt_manager:
             raise ValueError(
-                'Prompt manager must be initialized before getting initial message'
+                'Prompt manager must be initialized before getting system message'
             )
 
         system_message = self.prompt_manager.get_system_message()

@@ -26,8 +26,8 @@ def mock_agent():
     )
     system_message._source = EventSource.AGENT
 
-    # Mock the get_initial_message method
-    agent.get_initial_message.return_value = system_message
+    # Mock the get_system_message method
+    agent.get_system_message.return_value = system_message
 
     return agent
 
@@ -38,8 +38,8 @@ def test_event_stream():
     return event_stream
 
 
-def test_agent_get_initial_message():
-    """Test that the Agent.get_initial_message method returns a SystemMessageAction."""
+def test_agent_get_system_message():
+    """Test that the Agent.get_system_message method returns a SystemMessageAction."""
     # Create a mock agent
     agent = MagicMock(spec=Agent)
     agent.prompt_manager = MagicMock(spec=PromptManager)
@@ -52,11 +52,11 @@ def test_agent_get_initial_message():
     )
     system_message._source = EventSource.AGENT
 
-    # Mock the get_initial_message method to return our system message
-    agent.get_initial_message.return_value = system_message
+    # Mock the get_system_message method to return our system message
+    agent.get_system_message.return_value = system_message
 
     # Call the method
-    result = agent.get_initial_message()
+    result = agent.get_system_message()
 
     # Check that the system message was created correctly
     assert isinstance(result, SystemMessageAction)

@@ -472,8 +472,8 @@ async def test_reset_with_pending_action_no_observation(mock_agent, mock_event_s
     # Set the tool_call_metadata directly
     pending_action._tool_call_metadata = metadata
 
-    # Mock the get_initial_message method to return None to avoid adding system message
-    with patch.object(mock_agent, 'get_initial_message', return_value=None):
+    # Mock the get_system_message method to return None to avoid adding system message
+    with patch.object(mock_agent, 'get_system_message', return_value=None):
         # Create the controller
         controller = AgentController(
             agent=mock_agent,
@@ -484,7 +484,7 @@ async def test_reset_with_pending_action_no_observation(mock_agent, mock_event_s
             headless_mode=True,
         )
 
-        # Reset the mock to clear the call from get_initial_message
+        # Reset the mock to clear the call from get_system_message
         mock_event_stream.add_event.reset_mock()
 
         # Set the pending action
@@ -537,8 +537,8 @@ async def test_reset_with_pending_action_existing_observation(
     # Set the tool_call_metadata directly
     pending_action._tool_call_metadata = metadata
 
-    # Mock the get_initial_message method to return None to avoid adding system message
-    with patch.object(mock_agent, 'get_initial_message', return_value=None):
+    # Mock the get_system_message method to return None to avoid adding system message
+    with patch.object(mock_agent, 'get_system_message', return_value=None):
         # Create the controller
         controller = AgentController(
             agent=mock_agent,
@@ -549,7 +549,7 @@ async def test_reset_with_pending_action_existing_observation(
             headless_mode=True,
         )
 
-        # Reset the mock to clear the call from get_initial_message
+        # Reset the mock to clear the call from get_system_message
         mock_event_stream.add_event.reset_mock()
 
         # Set the pending action
@@ -587,7 +587,7 @@ async def test_reset_without_pending_action(mock_agent, mock_event_stream):
         headless_mode=True,
     )
 
-    # Reset the mock to clear the call from get_initial_message
+    # Reset the mock to clear the call from get_system_message
     mock_event_stream.add_event.reset_mock()
 
     # Call reset
@@ -618,7 +618,7 @@ async def test_reset_with_pending_action_no_metadata(
         headless_mode=True,
     )
 
-    # Reset the mock to clear the call from get_initial_message
+    # Reset the mock to clear the call from get_system_message
     mock_event_stream.add_event.reset_mock()
 
     # Create a pending action without tool call metadata
