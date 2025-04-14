@@ -30,11 +30,7 @@ const toolsSlice = createSlice({
   initialState,
   reducers: {
     setTools: (state, action: PayloadAction<ToolsState>) => {
-      console.log(
-        "Tools slice: received",
-        action.payload.tools ? action.payload.tools.length : 0,
-        "tools",
-      );
+      // Set tools in state
       state.tools = action.payload.tools;
     },
   },
