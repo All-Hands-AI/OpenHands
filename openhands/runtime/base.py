@@ -14,7 +14,6 @@ from typing import Callable, cast
 from zipfile import ZipFile
 
 import httpx
-from pydantic import SecretStr
 
 from openhands.core.config import AppConfig, SandboxConfig
 from openhands.core.exceptions import AgentRuntimeDisconnectedError
@@ -31,6 +30,7 @@ from openhands.events.action import (
     FileWriteAction,
     IPythonRunCellAction,
 )
+from openhands.events.action.mcp import McpAction
 from openhands.events.event import Event
 from openhands.events.observation import (
     AgentThinkObservation,
@@ -49,7 +49,7 @@ from openhands.integrations.provider import (
 )
 from openhands.integrations.service_types import Repository
 from openhands.microagent import (
-    BaseMicroAgent,
+    BaseMicroagent,
     load_microagents_from_dir,
 )
 from openhands.runtime.plugins import (
@@ -156,9 +156,6 @@ class Runtime(FileEditRuntimeMixin):
         self.user_id = user_id
         self.git_provider_tokens = git_provider_tokens
 
-        # TODO: remove once done debugging expired github token
-        self.prev_token: SecretStr | None = None
-
     def setup_initial_env(self) -> None:
         if self.attach_to_existing:
             return
@@ -256,30 +253,13 @@ class Runtime(FileEditRuntimeMixin):
         if not providers_called:
             return
 
-        logger.info(f'Fetching latest github token for runtime: {self.sid}')
+        logger.info(f'Fetching latest provider tokens for runtime: {self.sid}')
         env_vars = await self.provider_handler.get_env_vars(
             providers=providers_called, expose_secrets=False, get_latest=True
         )
 
-        # This statement is to debug expired github tokens, and will be removed later
-        if ProviderType.GITHUB not in env_vars:
-            logger.error(f'Failed to refresh github token for runtime: {self.sid}')
-            return
-
         if len(env_vars) == 0:
             return
-
-        raw_token = env_vars[ProviderType.GITHUB].get_secret_value()
-        if not self.prev_token:
-            logger.info(
-                f'Setting github token in runtime: {self.sid}\nToken value: {raw_token[0:5]}; length: {len(raw_token)}'
-            )
-        elif self.prev_token.get_secret_value() != raw_token:
-            logger.info(
-                f'Setting new github token in runtime {self.sid}\nToken value: {raw_token[0:5]}; length: {len(raw_token)}'
-            )
-
-        self.prev_token = SecretStr(raw_token)
 
         try:
             await self.provider_handler.set_event_stream_secrets(
@@ -298,9 +278,11 @@ class Runtime(FileEditRuntimeMixin):
         assert event.timeout is not None
         try:
             await self._export_latest_git_provider_tokens(event)
-            observation: Observation = await call_sync_from_async(
-                self.run_action, event
-            )
+            if isinstance(event, McpAction):
+                # we don't call call_tool_mcp impl directly because there can be other action ActionExecutionClient
+                observation: Observation = await getattr(self, McpAction.action)(event)
+            else:
+                observation = await call_sync_from_async(self.run_action, event)
         except Exception as e:
             err_id = ''
             if isinstance(e, httpx.NetworkError) or isinstance(
@@ -411,13 +393,13 @@ class Runtime(FileEditRuntimeMixin):
 
     def get_microagents_from_selected_repo(
         self, selected_repository: str | None
-    ) -> list[BaseMicroAgent]:
+    ) -> list[BaseMicroagent]:
         """Load microagents from the selected repository.
         If selected_repository is None, load microagents from the current workspace.
         This is the main entry point for loading microagents.
         """
 
-        loaded_microagents: list[BaseMicroAgent] = []
+        loaded_microagents: list[BaseMicroagent] = []
         workspace_root = Path(self.config.workspace_mount_path_in_sandbox)
         microagents_dir = workspace_root / '.openhands' / 'microagents'
         repo_root = None
@@ -447,7 +429,7 @@ class Runtime(FileEditRuntimeMixin):
         if isinstance(obs, FileReadObservation):
             self.log('info', 'openhands_instructions microagent loaded.')
             loaded_microagents.append(
-                BaseMicroAgent.load(
+                BaseMicroagent.load(
                     path='.openhands_instructions', file_content=obs.content
                 )
             )
@@ -560,6 +542,10 @@ class Runtime(FileEditRuntimeMixin):
 
     @abstractmethod
     def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
+        pass
+
+    @abstractmethod
+    async def call_tool_mcp(self, action: McpAction) -> Observation:
         pass
 
     # ====================================================================
