@@ -834,9 +834,7 @@ def test_api_keys_repr_str():
 
     # Test AgentConfig
     # No attrs in AgentConfig have 'key' or 'token' in their name
-    agent_config = AgentConfig(
-        enable_prompt_extensions=True, codeact_enable_browsing=False
-    )
+    agent_config = AgentConfig(enable_prompt_extensions=True, enable_browsing=False)
     for attr_name in AgentConfig.model_fields.keys():
         if not attr_name.startswith('__'):
             assert (
@@ -941,7 +939,7 @@ max_budget_per_task = 4.0
 enable_prompt_extensions = true
 
 [agent.BrowsingAgent]
-codeact_enable_jupyter = false
+enable_jupyter = false
 """
 
     with open(temp_toml_file, 'w') as f:
@@ -952,7 +950,7 @@ codeact_enable_jupyter = false
     codeact_config = default_config.get_agent_configs().get('CodeActAgent')
     assert codeact_config.enable_prompt_extensions is True
     browsing_config = default_config.get_agent_configs().get('BrowsingAgent')
-    assert browsing_config.codeact_enable_jupyter is False
+    assert browsing_config.enable_jupyter is False
 
 
 def test_get_agent_config_arg(temp_toml_file):
@@ -963,11 +961,11 @@ max_budget_per_task = 4.0
 
 [agent.CodeActAgent]
 enable_prompt_extensions = false
-codeact_enable_browsing = false
+enable_browsing = false
 
 [agent.BrowsingAgent]
 enable_prompt_extensions = true
-codeact_enable_jupyter = false
+enable_jupyter = false
 """
 
     with open(temp_toml_file, 'w') as f:
@@ -975,11 +973,11 @@ codeact_enable_jupyter = false
 
     agent_config = get_agent_config_arg('CodeActAgent', temp_toml_file)
     assert not agent_config.enable_prompt_extensions
-    assert not agent_config.codeact_enable_browsing
+    assert not agent_config.enable_browsing
 
     agent_config2 = get_agent_config_arg('BrowsingAgent', temp_toml_file)
     assert agent_config2.enable_prompt_extensions
-    assert not agent_config2.codeact_enable_jupyter
+    assert not agent_config2.enable_jupyter
 
 
 def test_agent_config_custom_group_name(temp_toml_file):
@@ -1015,8 +1013,8 @@ def test_agent_config_from_toml_section():
     # Test with base config and custom configs
     agent_section = {
         'enable_prompt_extensions': True,
-        'codeact_enable_browsing': True,
-        'CustomAgent1': {'codeact_enable_browsing': False},
+        'enable_browsing': True,
+        'CustomAgent1': {'enable_browsing': False},
         'CustomAgent2': {'enable_prompt_extensions': False},
         'InvalidAgent': {
             'invalid_field': 'some_value'  # This should be skipped but not affect others
@@ -1029,15 +1027,15 @@ def test_agent_config_from_toml_section():
     # Verify the base config was correctly parsed
     assert 'agent' in result
     assert result['agent'].enable_prompt_extensions is True
-    assert result['agent'].codeact_enable_browsing is True
+    assert result['agent'].enable_browsing is True
 
     # Verify custom configs were correctly parsed and inherit from base
     assert 'CustomAgent1' in result
-    assert result['CustomAgent1'].codeact_enable_browsing is False  # Overridden
+    assert result['CustomAgent1'].enable_browsing is False  # Overridden
     assert result['CustomAgent1'].enable_prompt_extensions is True  # Inherited
 
     assert 'CustomAgent2' in result
-    assert result['CustomAgent2'].codeact_enable_browsing is True  # Inherited
+    assert result['CustomAgent2'].enable_browsing is True  # Inherited
     assert result['CustomAgent2'].enable_prompt_extensions is False  # Overridden
 
     # Verify the invalid config was skipped
@@ -1051,10 +1049,10 @@ def test_agent_config_from_toml_section_with_invalid_base():
     # Test with invalid base config but valid custom configs
     agent_section = {
         'invalid_field': 'some_value',  # This should be ignored in base config
-        'codeact_enable_jupyter': 'not_a_bool',  # This should cause validation error
+        'enable_jupyter': 'not_a_bool',  # This should cause validation error
         'CustomAgent': {
-            'codeact_enable_browsing': False,
-            'codeact_enable_jupyter': True,
+            'enable_browsing': False,
+            'enable_jupyter': True,
         },
     }
 
@@ -1063,10 +1061,10 @@ def test_agent_config_from_toml_section_with_invalid_base():
 
     # Verify a default base config was created despite the invalid fields
     assert 'agent' in result
-    assert result['agent'].codeact_enable_browsing is True  # Default value
-    assert result['agent'].codeact_enable_jupyter is True  # Default value
+    assert result['agent'].enable_browsing is True  # Default value
+    assert result['agent'].enable_jupyter is True  # Default value
 
     # Verify custom config was still processed correctly
     assert 'CustomAgent' in result
-    assert result['CustomAgent'].codeact_enable_browsing is False
-    assert result['CustomAgent'].codeact_enable_jupyter is True
+    assert result['CustomAgent'].enable_browsing is False
+    assert result['CustomAgent'].enable_jupyter is True

@@ -79,8 +79,8 @@ def get_config(
     agent_config.enable_prompt_extensions = False
     agent_config = AgentConfig(
         function_calling=False,
-        codeact_enable_jupyter=True,
-        codeact_enable_browsing_delegate=True,
+        enable_jupyter=True,
+        enable_browsing=True,
     )
     config.set_agent_config(agent_config)
     return config
