@@ -1,42 +1,42 @@
-import React from "react";
-import { useSelector } from "react-redux";
-import { IoAlertCircle } from "react-icons/io5";
-import { useTranslation } from "react-i18next";
-import { Editor, Monaco } from "@monaco-editor/react";
-import { editor } from "monaco-editor";
-import { Button, Select, SelectItem } from "@heroui/react";
-import { useMutation } from "@tanstack/react-query";
-import { RootState } from "#/store";
+import React from "react"
+import { useSelector } from "react-redux"
+import { IoAlertCircle } from "react-icons/io5"
+import { useTranslation } from "react-i18next"
+import { Editor, Monaco } from "@monaco-editor/react"
+import { editor } from "monaco-editor"
+import { Button, Select, SelectItem } from "@heroui/react"
+import { useMutation } from "@tanstack/react-query"
+import { RootState } from "#/store"
 import {
   ActionSecurityRisk,
   SecurityAnalyzerLog,
-} from "#/state/security-analyzer-slice";
-import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom";
-import { I18nKey } from "#/i18n/declaration";
-import toast from "#/utils/toast";
-import InvariantLogoIcon from "./assets/logo";
-import { getFormattedDateTime } from "#/utils/gget-formatted-datetime";
-import { downloadJSON } from "#/utils/download-json";
-import InvariantService from "#/api/invariant-service";
-import { useGetPolicy } from "#/hooks/query/use-get-policy";
-import { useGetRiskSeverity } from "#/hooks/query/use-get-risk-severity";
-import { useGetTraces } from "#/hooks/query/use-get-traces";
+} from "#/state/security-analyzer-slice"
+import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom"
+import { I18nKey } from "#/i18n/declaration"
+import toast from "#/utils/toast"
+import InvariantLogoIcon from "./assets/logo"
+import { getFormattedDateTime } from "#/utils/gget-formatted-datetime"
+import { downloadJSON } from "#/utils/download-json"
+import InvariantService from "#/api/invariant-service"
+import { useGetPolicy } from "#/hooks/query/use-get-policy"
+import { useGetRiskSeverity } from "#/hooks/query/use-get-risk-severity"
+import { useGetTraces } from "#/hooks/query/use-get-traces"
 
-type SectionType = "logs" | "policy" | "settings";
+type SectionType = "logs" | "policy" | "settings"
 
 function SecurityInvariant() {
-  const { t } = useTranslation();
-  const { logs } = useSelector((state: RootState) => state.securityAnalyzer);
+  const { t } = useTranslation()
+  const { logs } = useSelector((state: RootState) => state.securityAnalyzer)
 
-  const [activeSection, setActiveSection] = React.useState("logs");
-  const [policy, setPolicy] = React.useState("");
+  const [activeSection, setActiveSection] = React.useState("logs")
+  const [policy, setPolicy] = React.useState("")
   const [selectedRisk, setSelectedRisk] = React.useState(
     ActionSecurityRisk.MEDIUM,
-  );
+  )
 
-  const logsRef = React.useRef<HTMLDivElement>(null);
+  const logsRef = React.useRef<HTMLDivElement>(null)
 
-  useGetPolicy({ onSuccess: setPolicy });
+  useGetPolicy({ onSuccess: setPolicy })
 
   useGetRiskSeverity({
     onSuccess: (riskSeverity) => {
@@ -44,67 +44,67 @@ function SecurityInvariant() {
         riskSeverity === 0
           ? ActionSecurityRisk.LOW
           : riskSeverity || ActionSecurityRisk.MEDIUM,
-      );
+      )
     },
-  });
+  })
 
   const { refetch: exportTraces } = useGetTraces({
     onSuccess: (traces) => {
-      toast.info(t(I18nKey.INVARIANT$TRACE_EXPORTED_MESSAGE));
+      toast.info(t(I18nKey.INVARIANT$TRACE_EXPORTED_MESSAGE))
 
-      const filename = `openhands-trace-${getFormattedDateTime()}.json`;
-      downloadJSON(traces, filename);
+      const filename = `openhands-trace-${getFormattedDateTime()}.json`
+      downloadJSON(traces, filename)
     },
-  });
+  })
 
   const { mutate: updatePolicy } = useMutation({
     mutationFn: (variables: { policy: string }) =>
       InvariantService.updatePolicy(variables.policy),
     onSuccess: () => {
-      toast.info(t(I18nKey.INVARIANT$POLICY_UPDATED_MESSAGE));
+      toast.info(t(I18nKey.INVARIANT$POLICY_UPDATED_MESSAGE))
     },
-  });
+  })
 
   const { mutate: updateRiskSeverity } = useMutation({
     mutationFn: (variables: { riskSeverity: number }) =>
       InvariantService.updateRiskSeverity(variables.riskSeverity),
     onSuccess: () => {
-      toast.info(t(I18nKey.INVARIANT$SETTINGS_UPDATED_MESSAGE));
+      toast.info(t(I18nKey.INVARIANT$SETTINGS_UPDATED_MESSAGE))
     },
-  });
+  })
 
-  useScrollToBottom(logsRef);
+  useScrollToBottom(logsRef)
 
   const getRiskColor = React.useCallback((risk: ActionSecurityRisk) => {
     switch (risk) {
       case ActionSecurityRisk.LOW:
-        return "text-green-500";
+        return "text-green-500"
       case ActionSecurityRisk.MEDIUM:
-        return "text-yellow-500";
+        return "text-yellow-500"
       case ActionSecurityRisk.HIGH:
-        return "text-red-500";
+        return "text-red-500"
       case ActionSecurityRisk.UNKNOWN:
       default:
-        return "text-gray-500";
+        return "text-gray-500"
     }
-  }, []);
+  }, [])
 
   const getRiskText = React.useCallback(
     (risk: ActionSecurityRisk) => {
       switch (risk) {
         case ActionSecurityRisk.LOW:
-          return t(I18nKey.SECURITY_ANALYZER$LOW_RISK);
+          return t(I18nKey.SECURITY_ANALYZER$LOW_RISK)
         case ActionSecurityRisk.MEDIUM:
-          return t(I18nKey.SECURITY_ANALYZER$MEDIUM_RISK);
+          return t(I18nKey.SECURITY_ANALYZER$MEDIUM_RISK)
         case ActionSecurityRisk.HIGH:
-          return t(I18nKey.SECURITY_ANALYZER$HIGH_RISK);
+          return t(I18nKey.SECURITY_ANALYZER$HIGH_RISK)
         case ActionSecurityRisk.UNKNOWN:
         default:
-          return t(I18nKey.SECURITY_ANALYZER$UNKNOWN_RISK);
+          return t(I18nKey.SECURITY_ANALYZER$UNKNOWN_RISK)
       }
     },
     [t],
-  );
+  )
 
   const handleEditorDidMount = React.useCallback(
     (_: editor.IStandaloneCodeEditor, monaco: Monaco): void => {
@@ -115,40 +115,40 @@ function SecurityInvariant() {
         colors: {
           "editor.background": "#171717",
         },
-      });
+      })
 
-      monaco.editor.setTheme("my-theme");
+      monaco.editor.setTheme("my-theme")
     },
     [],
-  );
+  )
 
   const sections: Record<SectionType, React.ReactNode> = {
     logs: (
       <>
-        <div className="flex justify-between items-center border-b border-neutral-600 mb-4 p-4">
+        <div className="mb-4 flex items-center justify-between border-b border-neutral-600 p-4">
           <h2 className="text-2xl">{t(I18nKey.INVARIANT$LOG_LABEL)}</h2>
           <Button onPress={() => exportTraces()} className="bg-tertiary">
             {t(I18nKey.INVARIANT$EXPORT_TRACE_LABEL)}
           </Button>
         </div>
         <div
-          className="flex-1 p-4 max-h-screen overflow-y-auto fast-smooth-scroll"
+          className="fast-smooth-scroll max-h-screen flex-1 overflow-y-auto p-4"
           ref={logsRef}
         >
           {logs.map((log: SecurityAnalyzerLog, index: number) => (
             <div
               key={index}
-              className={`mb-2 p-2 rounded-lg ${log.confirmed_changed && log.confirmation_state === "confirmed" ? "border-green-800" : "border-red-800"}`}
+              className={`mb-2 rounded-lg p-2 ${log.confirmed_changed && log.confirmation_state === "confirmed" ? "border-green-800" : "border-red-800"}`}
               style={{
                 backgroundColor: "rgba(128, 128, 128, 0.2)",
                 borderWidth: log.confirmed_changed ? "2px" : "0",
               }}
             >
-              <p className="text-sm relative break-words">
+              <p className="relative break-words text-sm">
                 {log.content}
                 {(log.confirmation_state === "awaiting_confirmation" ||
                   log.confirmed_changed) && (
-                  <IoAlertCircle className="absolute top-0 right-0" />
+                  <IoAlertCircle className="absolute right-0 top-0" />
                 )}
               </p>
               <p className={`text-xs ${getRiskColor(log.security_risk)}`}>
@@ -161,7 +161,7 @@ function SecurityInvariant() {
     ),
     policy: (
       <>
-        <div className="flex justify-between items-center border-b border-neutral-600 mb-4 p-4">
+        <div className="mb-4 flex items-center justify-between border-b border-neutral-600 p-4">
           <h2 className="text-2xl">{t(I18nKey.INVARIANT$POLICY_LABEL)}</h2>
           <Button
             className="bg-tertiary"
@@ -183,7 +183,7 @@ function SecurityInvariant() {
     ),
     settings: (
       <>
-        <div className="flex justify-between items-center border-b border-neutral-600 mb-4 p-4">
+        <div className="mb-4 flex items-center justify-between border-b border-neutral-600 p-4">
           <h2 className="text-2xl">{t(I18nKey.INVARIANT$SETTINGS_LABEL)}</h2>
           <Button
             className="bg-tertiary"
@@ -193,7 +193,7 @@ function SecurityInvariant() {
           </Button>
         </div>
         <div className="flex grow p-4">
-          <div className="flex flex-col w-full">
+          <div className="flex w-full flex-col">
             <p className="mb-2">
               {t(I18nKey.INVARIANT$ASK_CONFIRMATION_RISK_SEVERITY_LABEL)}
             </p>
@@ -246,12 +246,12 @@ function SecurityInvariant() {
         </div>
       </>
     ),
-  };
+  }
 
   return (
-    <div className="flex flex-1 w-full h-full">
-      <div className="w-60 bg-base-secondary border-r border-r-neutral-600 p-4 flex-shrink-0">
-        <div className="text-center mb-2">
+    <div className="flex h-full w-full flex-1">
+      <div className="w-60 flex-shrink-0 border-r border-r-neutral-600 bg-base-secondary p-4">
+        <div className="mb-2 text-center">
           <InvariantLogoIcon className="mx-auto mb-1" />
           <b>{t(I18nKey.INVARIANT$INVARIANT_ANALYZER_LABEL)}</b>
         </div>
@@ -266,33 +266,33 @@ function SecurityInvariant() {
             {t(I18nKey.INVARIANT$CLICK_TO_LEARN_MORE_LABEL)}
           </a>
         </p>
-        <hr className="border-t border-neutral-600 my-2" />
+        <hr className="my-2 border-t border-neutral-600" />
         <ul className="space-y-2">
           <div
-            className={`cursor-pointer p-2 rounded ${activeSection === "logs" && "bg-neutral-600"}`}
+            className={`cursor-pointer rounded p-2 ${activeSection === "logs" && "bg-neutral-600"}`}
             onClick={() => setActiveSection("logs")}
           >
             {t(I18nKey.INVARIANT$LOG_LABEL)}
           </div>
           <div
-            className={`cursor-pointer p-2 rounded ${activeSection === "policy" && "bg-neutral-600"}`}
+            className={`cursor-pointer rounded p-2 ${activeSection === "policy" && "bg-neutral-600"}`}
             onClick={() => setActiveSection("policy")}
           >
             {t(I18nKey.INVARIANT$POLICY_LABEL)}
           </div>
           <div
-            className={`cursor-pointer p-2 rounded ${activeSection === "settings" && "bg-neutral-600"}`}
+            className={`cursor-pointer rounded p-2 ${activeSection === "settings" && "bg-neutral-600"}`}
             onClick={() => setActiveSection("settings")}
           >
             {t(I18nKey.INVARIANT$SETTINGS_LABEL)}
           </div>
         </ul>
       </div>
-      <div className="flex flex-col min-h-0 w-full overflow-y-auto bg-base">
+      <div className="flex min-h-0 w-full flex-col overflow-y-auto bg-base">
         {sections[activeSection as SectionType]}
       </div>
     </div>
-  );
+  )
 }
 
-export default SecurityInvariant;
+export default SecurityInvariant

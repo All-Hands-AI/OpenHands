@@ -1,7 +1,5 @@
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button"
 import Security from "#/components/shared/modals/security/security"
-import { RiPhoneFindLine } from "react-icons/ri"
-import { IoFolder } from "react-icons/io5"
 import {
   useWsClient,
   WsClientProviderStatus,
@@ -26,21 +24,20 @@ import React, { useEffect } from "react"
 import { useTranslation } from "react-i18next"
 import { FaFileInvoice } from "react-icons/fa"
 import { FaPowerOff } from "react-icons/fa6"
+import { IoFolder } from "react-icons/io5"
+import { RiPhoneFindLine } from "react-icons/ri"
 import { useDispatch, useSelector } from "react-redux"
 import { useParams } from "react-router"
+import { twMerge } from "tailwind-merge"
 import { Controls } from "../controls/controls"
 import { FeedbackModal } from "../feedback/feedback-modal"
+import FileExplorerModal from "../file-explorer/modal-file-explorer"
 import { TrajectoryActions } from "../trajectory/trajectory-actions"
 import { ActionSuggestions } from "./action-suggestions"
-import { ChatSuggestions } from "./chat-suggestions"
 import { InteractiveChatBox } from "./interactive-chat-box"
 import { Messages } from "./messages"
 import { SkeletonMessage } from "./skeleton-message"
 import { TypingIndicator } from "./typing-indicator"
-import { ExplorerTree } from "../file-explorer/explorer-tree"
-import { FilesProvider } from "#/context/files"
-import FileExplorerModal from "../file-explorer/modal-file-explorer"
-import { twMerge } from "tailwind-merge"
 
 function getEntryPoint(
   hasRepository: boolean | null,
@@ -219,22 +216,19 @@ export function ChatInterface() {
 
   return (
     <div className="mx-auto flex h-full max-w-[800px] flex-col justify-between">
-      {messages.length === 0 && !isLoadingMessages && (
-        <ChatSuggestions onSuggestionsClick={setMessageToSend} />
-      )}
-
       <div
         ref={scrollRef}
         onScroll={(e) => onChatBodyScroll(e.currentTarget)}
         className="fast-smooth-scroll flex grow flex-col gap-2 overflow-y-auto overflow-x-hidden px-4 pt-4"
       >
-        {isLoadingMessages && (
-          <div className="space-y-6">
-            <SkeletonMessage type="user" />
-            <SkeletonMessage type="assistant" />
-            <SkeletonMessage type="user" />
-          </div>
-        )}
+        {isLoadingMessages ||
+          (messages.length === 0 && (
+            <div className="space-y-6">
+              <SkeletonMessage type="user" />
+              <SkeletonMessage type="assistant" />
+              <SkeletonMessage type="user" />
+            </div>
+          ))}
 
         {!isLoadingMessages && (
           <Messages

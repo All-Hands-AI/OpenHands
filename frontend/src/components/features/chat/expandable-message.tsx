@@ -60,16 +60,6 @@ export function ExpandableMessage({
     action,
   })
 
-  console.log("KAKAK", {
-    type,
-    messageActionID,
-    id,
-    message,
-    success,
-    observation,
-    action,
-  })
-
   useEffect(() => {
     if (id && i18n.exists(id)) {
       let processedObservation = observation
