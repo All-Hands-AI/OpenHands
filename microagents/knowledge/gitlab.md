@@ -30,6 +30,6 @@ Here are some instructions for pushing, but ONLY do this if the user asks you to
 git remote -v && git branch # to find the current org, repo and branch
 git checkout -b create-widget && git add . && git commit -m "Create widget" && git push -u origin create-widget
 curl -X POST "https://gitlab.com/api/v4/projects/$PROJECT_ID/merge_requests" \
-    -H "PRIVATE-TOKEN: $GITLAB_TOKEN" \
+    -H "Authorization: Bearer $GITLAB_TOKEN" \
     -d '{"source_branch": "create-widget", "target_branch": "openhands-workspace", "title": "Create widget"}'
 ```
