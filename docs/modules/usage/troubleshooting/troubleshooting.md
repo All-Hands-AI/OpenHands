@@ -32,6 +32,6 @@ On initial prompt, an error is seen with `Permission Denied` or `PermissionError
 * Check if the `~/.openhands-state` is owned by `root`. If so, you can:
   * Change the directory's ownership: `sudo chown <user>:<user> ~/.openhands-state`.
   * or update permissions on the directory: `sudo chmod 777 ~/.openhands-state`
-  * or delete it if you don’t need previous data. OpenHands will recreate it. Note: you'll need to re-enter LLM settings.
+  * or delete it if you don’t need previous data. OpenHands will recreate it. You'll need to re-enter LLM settings.
 * If mounting a local directory, ensure your `WORKSPACE_BASE` has the necessary permissions for the user running
   OpenHands.
