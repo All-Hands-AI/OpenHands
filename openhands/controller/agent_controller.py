@@ -516,14 +516,19 @@ class AgentController:
         # Runnable actions need an Observation
         # make sure there is an Observation with the tool call metadata to be recognized by the agent
         # otherwise the pending action is found in history, but it's incomplete without an obs with tool result
-        if self._pending_action and hasattr(self._pending_action, 'tool_call_metadata') and self._pending_action.tool_call_metadata:
+        if (
+            self._pending_action
+            and hasattr(self._pending_action, 'tool_call_metadata')
+            and self._pending_action.tool_call_metadata
+        ):
             # find out if there already is an observation with the same tool call metadata
             found_observation = False
             for event in self.state.history:
                 if (
                     isinstance(event, Observation)
                     and hasattr(event, 'tool_call_metadata')
-                    and event.tool_call_metadata == self._pending_action.tool_call_metadata
+                    and event.tool_call_metadata
+                    == self._pending_action.tool_call_metadata
                 ):
                     found_observation = True
                     break

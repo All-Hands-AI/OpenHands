@@ -5,7 +5,7 @@ class ActionType(str, Enum):
     MESSAGE = 'message'
     """Represents a message.
     """
-    
+
     SYSTEM = 'system'
     """Represents a system message.
     """

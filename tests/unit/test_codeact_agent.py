@@ -336,11 +336,15 @@ def test_mismatched_tool_call_events(mock_state: State):
     # Note: The system message is now expected to be in the event stream as a SystemMessageAction
     mock_state.history = [action]
     messages = agent._get_messages(mock_state.history)
-    assert len(messages) == 0  # No messages because the action is waiting for its observation
+    assert (
+        len(messages) == 0
+    )  # No messages because the action is waiting for its observation
 
     mock_state.history = [observation]
     messages = agent._get_messages(mock_state.history)
-    assert len(messages) == 0  # No messages because the observation has no matching action
+    assert (
+        len(messages) == 0
+    )  # No messages because the observation has no matching action
 
 
 def test_enhance_messages_adds_newlines_between_consecutive_user_messages(
