@@ -6,25 +6,25 @@ import frontmatter
 from pydantic import BaseModel
 
 from openhands.core.exceptions import (
-    MicroAgentValidationError,
+    MicroagentValidationError,
 )
 from openhands.core.logger import openhands_logger as logger
-from openhands.microagent.types import MicroAgentMetadata, MicroAgentType
+from openhands.microagent.types import MicroagentMetadata, MicroagentType
 
 
-class BaseMicroAgent(BaseModel):
+class BaseMicroagent(BaseModel):
     """Base class for all microagents."""
 
     name: str
     content: str
-    metadata: MicroAgentMetadata
+    metadata: MicroagentMetadata
     source: str  # path to the file
-    type: MicroAgentType
+    type: MicroagentType
 
     @classmethod
     def load(
         cls, path: Union[str, Path], file_content: str | None = None
-    ) -> 'BaseMicroAgent':
+    ) -> 'BaseMicroagent':
         """Load a microagent from a markdown file with frontmatter."""
         path = Path(path) if isinstance(path, str) else path
 
@@ -35,27 +35,31 @@ class BaseMicroAgent(BaseModel):
 
         # Legacy repo instructions are stored in .openhands_instructions
         if path.name == '.openhands_instructions':
-            return RepoMicroAgent(
+            return RepoMicroagent(
                 name='repo_legacy',
                 content=file_content,
-                metadata=MicroAgentMetadata(name='repo_legacy'),
+                metadata=MicroagentMetadata(name='repo_legacy'),
                 source=str(path),
-                type=MicroAgentType.REPO_KNOWLEDGE,
+                type=MicroagentType.REPO_KNOWLEDGE,
             )
 
         file_io = io.StringIO(file_content)
         loaded = frontmatter.load(file_io)
         content = loaded.content
+
+        # Handle case where there's no frontmatter or empty frontmatter
+        metadata_dict = loaded.metadata or {}
+
         try:
-            metadata = MicroAgentMetadata(**loaded.metadata)
+            metadata = MicroagentMetadata(**metadata_dict)
         except Exception as e:
-            raise MicroAgentValidationError(f'Error loading metadata: {e}') from e
+            raise MicroagentValidationError(f'Error loading metadata: {e}') from e
 
         # Create appropriate subclass based on type
         subclass_map = {
-            MicroAgentType.KNOWLEDGE: KnowledgeMicroAgent,
-            MicroAgentType.REPO_KNOWLEDGE: RepoMicroAgent,
-            MicroAgentType.TASK: TaskMicroAgent,
+            MicroagentType.KNOWLEDGE: KnowledgeMicroagent,
+            MicroagentType.REPO_KNOWLEDGE: RepoMicroagent,
+            MicroagentType.TASK: TaskMicroagent,
         }
         if metadata.type not in subclass_map:
             raise ValueError(f'Unknown microagent type: {metadata.type}')
@@ -70,7 +74,7 @@ class BaseMicroAgent(BaseModel):
         )
 
 
-class KnowledgeMicroAgent(BaseMicroAgent):
+class KnowledgeMicroagent(BaseMicroagent):
     """Knowledge micro-agents provide specialized expertise that's triggered by keywords in conversations. They help with:
     - Language best practices
     - Framework guidelines
@@ -80,8 +84,8 @@ class KnowledgeMicroAgent(BaseMicroAgent):
 
     def __init__(self, **data):
         super().__init__(**data)
-        if self.type != MicroAgentType.KNOWLEDGE:
-            raise ValueError('KnowledgeMicroAgent must have type KNOWLEDGE')
+        if self.type != MicroagentType.KNOWLEDGE:
+            raise ValueError('KnowledgeMicroagent must have type KNOWLEDGE')
 
     def match_trigger(self, message: str) -> str | None:
         """Match a trigger in the message.
@@ -99,10 +103,10 @@ class KnowledgeMicroAgent(BaseMicroAgent):
         return self.metadata.triggers
 
 
-class RepoMicroAgent(BaseMicroAgent):
-    """MicroAgent specialized for repository-specific knowledge and guidelines.
+class RepoMicroagent(BaseMicroagent):
+    """Microagent specialized for repository-specific knowledge and guidelines.
 
-    RepoMicroAgents are loaded from `.openhands/microagents/repo.md` files within repositories
+    RepoMicroagents are loaded from `.openhands/microagents/repo.md` files within repositories
     and contain private, repository-specific instructions that are automatically loaded when
     working with that repository. They are ideal for:
         - Repository-specific guidelines
@@ -113,23 +117,23 @@ class RepoMicroAgent(BaseMicroAgent):
 
     def __init__(self, **data):
         super().__init__(**data)
-        if self.type != MicroAgentType.REPO_KNOWLEDGE:
-            raise ValueError('RepoMicroAgent must have type REPO_KNOWLEDGE')
+        if self.type != MicroagentType.REPO_KNOWLEDGE:
+            raise ValueError('RepoMicroagent must have type REPO_KNOWLEDGE')
 
 
-class TaskMicroAgent(BaseMicroAgent):
-    """MicroAgent specialized for task-based operations."""
+class TaskMicroagent(BaseMicroagent):
+    """Microagent specialized for task-based operations."""
 
     def __init__(self, **data):
         super().__init__(**data)
-        if self.type != MicroAgentType.TASK:
-            raise ValueError('TaskMicroAgent must have type TASK')
+        if self.type != MicroagentType.TASK:
+            raise ValueError('TaskMicroagent must have type TASK')
 
 
 def load_microagents_from_dir(
     microagent_dir: Union[str, Path],
 ) -> tuple[
-    dict[str, RepoMicroAgent], dict[str, KnowledgeMicroAgent], dict[str, TaskMicroAgent]
+    dict[str, RepoMicroagent], dict[str, KnowledgeMicroagent], dict[str, TaskMicroagent]
 ]:
     """Load all microagents from the given directory.
 
@@ -157,12 +161,12 @@ def load_microagents_from_dir(
             if file.name == 'README.md':
                 continue
             try:
-                agent = BaseMicroAgent.load(file)
-                if isinstance(agent, RepoMicroAgent):
+                agent = BaseMicroagent.load(file)
+                if isinstance(agent, RepoMicroagent):
                     repo_agents[agent.name] = agent
-                elif isinstance(agent, KnowledgeMicroAgent):
+                elif isinstance(agent, KnowledgeMicroagent):
                     knowledge_agents[agent.name] = agent
-                elif isinstance(agent, TaskMicroAgent):
+                elif isinstance(agent, TaskMicroagent):
                     task_agents[agent.name] = agent
                 logger.debug(f'Loaded agent {agent.name} from {file}')
             except Exception as e:

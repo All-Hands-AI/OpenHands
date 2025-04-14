@@ -60,25 +60,7 @@ base_container_image="custom_image"
 
 ## 技術的な説明
 
-カスタムイメージが初めて使用される場合、イメージが見つからないため、ビルドされます (その後の実行では、ビルドされたイメージが見つかり、返されます)。
-
-カスタムイメージは [_build_sandbox_image()](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/docker/image_agnostic_util.py#L29) でビルドされます。これは、カスタムイメージをベースとして使用して docker ファイルを作成し、次のように OpenHands の環境を設定します:
-
-```python
-dockerfile_content = (
-        f'FROM {base_image}\n'
-        'RUN apt update && apt install -y openssh-server wget sudo\n'
-        'RUN mkdir -p -m0755 /var/run/sshd\n'
-        'RUN mkdir -p /openhands && mkdir -p /openhands/logs && chmod 777 /openhands/logs\n'
-        'RUN wget "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"\n'
-        'RUN bash Miniforge3-$(uname)-$(uname -m).sh -b -p /openhands/miniforge3\n'
-        'RUN bash -c ". /openhands/miniforge3/etc/profile.d/conda.sh && conda config --set changeps1 False && conda config --append channels conda-forge"\n'
-        'RUN echo "export PATH=/openhands/miniforge3/bin:$PATH" >> ~/.bashrc\n'
-        'RUN echo "export PATH=/openhands/miniforge3/bin:$PATH" >> /openhands/bash.bashrc\n'
-    ).strip()
-```
-
-> 注: イメージ名は [_get_new_image_name()](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/docker/image_agnostic_util.py#L63) で変更され、この変更された名前が後続の実行時に検索されます。
+詳細な説明については、[実行時ドキュメントのカスタムDockerイメージの章](https://docs.all-hands.dev/ja/modules/usage/architecture/runtime)を参照してください。
 
 ## トラブルシューティング / エラー
 

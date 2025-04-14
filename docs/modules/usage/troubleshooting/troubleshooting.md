@@ -20,25 +20,18 @@ Try these in order:
 * If using Docker Desktop, ensure `Settings > Advanced > Allow the default Docker socket to be used` is enabled.
 * Depending on your configuration you may need `Settings > Resources > Network > Enable host networking` enabled in Docker Desktop.
 * Reinstall Docker Desktop.
----
 
-# Development Workflow Specific
-### Error building runtime docker image
+### Permission Error
 
 **Description**
 
-Attempts to start a new session fail, and errors with terms like the following appear in the logs:
-```
-debian-security bookworm-security
-InRelease At least one invalid signature was encountered.
-```
+On initial prompt, an error is seen with `Permission Denied` or `PermissionError`.
 
-This seems to happen when the hash of an existing external library changes and your local docker instance has
-cached a previous version. To work around this, please try the following:
+**Resolution**
 
-* Stop any containers where the name has the prefix `openhands-runtime-` :
-  `docker ps --filter name=openhands-runtime- --filter status=running -aq | xargs docker stop`
-* Remove any containers where the name has the prefix `openhands-runtime-` :
-  `docker rmi $(docker images --filter name=openhands-runtime- -q --no-trunc)`
-* Stop and Remove any containers / images where the name has the prefix `openhands-runtime-`
-* Prune containers / images : `docker container prune -f && docker image prune -f`
+* Check if the `~/.openhands-state` is owned by `root`. If so, you can:
+  * Change the directory's ownership: `sudo chown <user>:<user> ~/.openhands-state`.
+  * or update permissions on the directory: `sudo chmod 777 ~/.openhands-state`
+  * or delete it if you don’t need previous data. OpenHands will recreate it. You'll need to re-enter LLM settings.
+* If mounting a local directory, ensure your `WORKSPACE_BASE` has the necessary permissions for the user running
+  OpenHands.

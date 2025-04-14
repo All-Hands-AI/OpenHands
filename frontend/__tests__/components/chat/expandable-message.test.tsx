@@ -23,7 +23,7 @@ vi.mock("react-i18next", async () => {
 describe("ExpandableMessage", () => {
   it("should render with neutral border for non-action messages", () => {
     renderWithProviders(<ExpandableMessage message="Hello" type="thought" />);
-    const element = screen.getByText("Hello");
+    const element = screen.getAllByText("Hello")[0];
     const container = element.closest(
       "div.flex.gap-2.items-center.justify-start",
     );
@@ -35,7 +35,7 @@ describe("ExpandableMessage", () => {
     renderWithProviders(
       <ExpandableMessage message="Error occurred" type="error" />,
     );
-    const element = screen.getByText("Error occurred");
+    const element = screen.getAllByText("Error occurred")[0];
     const container = element.closest(
       "div.flex.gap-2.items-center.justify-start",
     );
