@@ -1,10 +1,10 @@
 import asyncio
 import copy
 import os
+import time
 import traceback
 from datetime import datetime
-from typing import Callable, ClassVar, Dict
-import time
+from typing import Callable, ClassVar
 
 import litellm  # noqa
 from litellm.exceptions import (  # noqa
@@ -58,14 +58,14 @@ from openhands.events.action import (
     IPythonRunCellAction,
     MarkTaskAction,
     MessageAction,
-    NullAction
+    NullAction,
 )
-from openhands.events.action.plan import TaskStatus
 from openhands.events.action.agent import RecallAction
+from openhands.events.action.plan import TaskStatus
 from openhands.events.event import Event
 from openhands.events.observation import (
-    AgentDelegateObservation,
     AgentCondensationObservation,
+    AgentDelegateObservation,
     AgentStateChangedObservation,
     ErrorObservation,
     NullObservation,
@@ -80,7 +80,7 @@ TRAFFIC_CONTROL_REMINDER = (
 )
 
 
-class PlanController:
+class PlanningController:
     id: str
     agent: Agent
     planning_agent: Agent
@@ -119,7 +119,7 @@ class PlanController:
         status_callback: Callable | None = None,
         replay_events: list[Event] | None = None,
     ):
-        """Initializes a new instance of the PlanController: class.
+        """Initializes a new instance of the PlanningController: class.
 
         Args:
             agent: The agent instance to control.
@@ -291,7 +291,6 @@ class PlanController:
     async def _step(self) -> None:
         """Executes a single step of the parent or delegate agent. Detects stuck agents and limits on the number of iterations and the task budget."""
 
-
         if self.get_agent_state() != AgentState.RUNNING:
             return
 
@@ -435,7 +434,7 @@ class PlanController:
             if isinstance(event, AgentDelegateObservation):
                 # this is a delegate observation, so we should not step
                 return False
-                
+
             if (
                 isinstance(event, NullObservation)
                 and event.cause is not None
@@ -609,7 +608,6 @@ class PlanController:
                 self.state.current_task_index
             ].result = observation.outputs.get('final_thought', '')
 
-
             # move to the next task if plan is not finished
             if self.state.current_task_index + 1 < len(active_plan_obj.tasks):
                 self.state.current_task_index += 1
@@ -632,7 +630,6 @@ class PlanController:
                     ),
                     EventSource.USER,
                 )
-
 
     async def _handle_message_action(self, action: MessageAction) -> None:
         """Handles message actions from the event stream.
@@ -876,7 +873,7 @@ class PlanController:
 
             self.log(
                 'debug',
-                f'PlanController: {self.id} - created new state. start_id: {self.state.start_id}',
+                f'PlanningController: {self.id} - created new state. start_id: {self.state.start_id}',
             )
         else:
             self.state = state
@@ -886,7 +883,7 @@ class PlanController:
 
             self.log(
                 'debug',
-                f'PlanController: {self.id} initializing history from event {self.state.start_id}',
+                f'PlanningController: {self.id} initializing history from event {self.state.start_id}',
             )
 
         # Always load from the event stream to avoid losing history
@@ -1027,48 +1024,8 @@ class PlanController:
         # cut in half
         mid_point = max(1, len(events) // 2)
         kept_events = events[mid_point:]
-
-        # Handle first event in truncated history
-        if kept_events:
-            i = 0
-            while i < len(kept_events):
-                first_event = kept_events[i]
-                if isinstance(first_event, Observation) and first_event.cause:
-                    # Find its action and include it
-                    matching_action = next(
-                        (
-                            e
-                            for e in reversed(events[:mid_point])
-                            if isinstance(e, Action) and e.id == first_event.cause
-                        ),
-                        None,
-                    )
-                    if matching_action:
-                        kept_events = [matching_action] + kept_events
-                    else:
-                        self.log(
-                            'warning',
-                            f'Found Observation without matching Action at id={first_event.id}',
-                        )
-                        # drop this observation
-                        kept_events = kept_events[1:]
-                    break
-
-                elif isinstance(first_event, MessageAction) or (
-                    isinstance(first_event, Action)
-                    and first_event.source == EventSource.USER
-                ):
-                    # if it's a message action or a user action, keep it and continue to find the next event
-                    i += 1
-                    continue
-
-                else:
-                    # if it's an action with source == EventSource.AGENT, we're good
-                    break
-
-        # Save where to continue from in next reload
-        if kept_events:
-            self.state.truncation_id = kept_events[0].id
+        if len(kept_events) > 0 and isinstance(kept_events[0], Observation):
+            kept_events = kept_events[1:]
 
         # Ensure first user message is included
         if first_user_msg and first_user_msg not in kept_events:
@@ -1132,7 +1089,7 @@ class PlanController:
 
     def __repr__(self):
         return (
-            f'PlanController:(id={getattr(self, "id", "<uninitialized>")}, '
+            f'PlanningController:(id={getattr(self, "id", "<uninitialized>")}, '
             f'agent={getattr(self, "agent", "<uninitialized>")!r}, '
             f'event_stream={getattr(self, "event_stream", "<uninitialized>")!r}, '
             f'state={getattr(self, "state", "<uninitialized>")!r}, '
@@ -1185,14 +1142,12 @@ class PlanController:
         self.state.active_plan_id = action.plan_id
         # self.state.current_task_index = 0
 
-
     async def assign_task_to_the_delegate(self, action: AssignTaskAction) -> None:
         """Assign a task to the delegate.
 
         Args:
             action: The AssignTaskAction to process.
         """
-
 
         # init state
         state = State(
@@ -1247,7 +1202,6 @@ class PlanController:
             EventSource.USER,
         )
 
-
     def end_delegate(self) -> None:
         """Ends the currently active delegate (e.g., if it is finished or errored).
 
@@ -1298,4 +1252,3 @@ class PlanController:
 
         # unset delegate so parent can resume normal handling
         self.delegate = None
-

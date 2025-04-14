@@ -24,13 +24,14 @@ from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm import LLM
 from openhands.mcp import fetch_mcp_tools_from_config
 from openhands.server.session.agent_session import AgentSession
-from openhands.server.session.planning_session import PlanningSession
 from openhands.server.session.conversation_init_data import ConversationInitData
+from openhands.server.session.planning_session import PlanningSession
 from openhands.server.settings import Settings
 from openhands.storage.files import FileStore
 
 ROOM_KEY = 'room:{sid}'
 AgentSessionType = Union[AgentSession, PlanningSession]
+
 
 class Session:
     sid: str
@@ -69,8 +70,6 @@ class Session:
             user_id=user_id,
         )
 
-        self.is_planning = isinstance(self.agent_session, PlanningSession)
-
         self.agent_session.event_stream.subscribe(
             EventStreamSubscriber.SERVER, self.on_event, self.sid
         )
@@ -102,12 +101,15 @@ class Session:
             EventSource.ENVIRONMENT,
         )
 
-        if not self.is_planning:
+        if not self.config.enable_planning:
             agent_cls = settings.agent or self.config.default_agent
         else:
-            agent_cls = settings.task_solving_agent or self.config.default_task_solving_agent
-            planning_agent_cls = settings.planning_agent or self.config.default_planning_agent
-
+            agent_cls = (
+                settings.task_solving_agent or self.config.default_task_solving_agent
+            )
+            planning_agent_cls = (
+                settings.planning_agent or self.config.default_planning_agent
+            )
 
         self.config.security.confirmation_mode = (
             self.config.security.confirmation_mode
@@ -154,12 +156,14 @@ class Session:
         agent = Agent.get_cls(agent_cls)(llm, agent_config)
         agent.set_mcp_tools(mcp_tools)
 
-        # Set planning agent config if planning agent is used
-        if self.is_planning:
+        # Set planning agent if planning mode is enabled
+        planning_agent = None
+        if self.config.enable_planning:
             planning_agent_config = self.config.get_agent_config(planning_agent_cls)
-            planning_agent = Agent.get_cls(planning_agent_cls)(llm, planning_agent_config)
+            planning_agent = Agent.get_cls(planning_agent_cls)(
+                llm, planning_agent_config
+            )
             planning_agent.set_mcp_tools(mcp_tools)
-
 
         git_provider_tokens = None
         selected_repository = None
@@ -170,23 +174,38 @@ class Session:
             selected_branch = settings.selected_branch
 
         try:
-            if not self.is_planning:
-                await self.agent_session.start(
+            if self.config.enable_planning:
+                # For PlanningSession
+                if not planning_agent:
+                    raise ValueError('Planning agent is required for PlanningSession')
+
+                # Type cast to PlanningSession to satisfy the type checker
+                planning_session = self.agent_session
+                if not isinstance(planning_session, PlanningSession):
+                    raise TypeError('Expected PlanningSession but got AgentSession')
+
+                await planning_session.start(
                     runtime_name=self.config.runtime,
                     config=self.config,
                     agent=agent,
+                    planning_agent=planning_agent,
                     max_iterations=max_iterations,
+                    git_provider_tokens=git_provider_tokens,
                     max_budget_per_task=self.config.max_budget_per_task,
                     agent_to_llm_config=self.config.get_agent_to_llm_config_map(),
                     agent_configs=self.config.get_agent_configs(),
-                    git_provider_tokens=git_provider_tokens,
                     selected_repository=selected_repository,
                     selected_branch=selected_branch,
                     initial_message=initial_message,
                     replay_json=replay_json,
                 )
             else:
-                await self.agent_session.start(
+                # For AgentSession (without planning_agent parameter)
+                agent_session = self.agent_session
+                if not isinstance(agent_session, AgentSession):
+                    raise TypeError('Expected AgentSession but got PlanningSession')
+
+                await agent_session.start(
                     runtime_name=self.config.runtime,
                     config=self.config,
                     agent=agent,
@@ -199,9 +218,8 @@ class Session:
                     selected_branch=selected_branch,
                     initial_message=initial_message,
                     replay_json=replay_json,
-                    planning_agent=planning_agent,  # Additional parameter for PlanningSession
                 )
-            
+
         except Exception as e:
             self.logger.exception(f'Error creating agent_session: {e}')
             err_class = e.__class__.__name__

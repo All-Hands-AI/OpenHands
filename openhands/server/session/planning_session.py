@@ -5,8 +5,8 @@ from logging import LoggerAdapter
 from types import MappingProxyType
 from typing import Callable, cast
 
+from openhands.controller import PlanningController
 from openhands.controller.agent import Agent
-from openhands.controller.planning_controller import PlanController
 from openhands.controller.replay import ReplayManager
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig, AppConfig, LLMConfig
@@ -17,14 +17,15 @@ from openhands.events.action import ChangeAgentStateAction, MessageAction
 from openhands.events.event import Event, EventSource
 from openhands.events.stream import EventStream
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderHandler
+from openhands.integrations.service_types import Repository
 from openhands.memory.memory import Memory
-from openhands.microagent.microagent import BaseMicroAgent
+from openhands.microagent.microagent import BaseMicroagent
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
 from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
 from openhands.security import SecurityAnalyzer, options
 from openhands.storage.files import FileStore
-from openhands.utils.async_utils import call_sync_from_async
+from openhands.utils.async_utils import EXECUTOR, call_sync_from_async
 from openhands.utils.shutdown_listener import should_continue
 
 WAIT_TIME_BEFORE_CLOSE = 90
@@ -35,14 +36,14 @@ class PlanningSession:
     """Represents a session with an Agent
 
     Attributes:
-        controller: The PlanController instance for controlling the agent.
+        controller: The PlanningController instance for controlling the agent.
     """
 
     sid: str
     user_id: str | None
     event_stream: EventStream
     file_store: FileStore
-    controller: PlanController | None = None
+    controller: PlanningController | None = None
     runtime: Runtime | None = None
     security_analyzer: SecurityAnalyzer | None = None
     _starting: bool = False
@@ -85,7 +86,7 @@ class PlanningSession:
         max_budget_per_task: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
-        selected_repository: str | None = None,
+        selected_repository: Repository | None = None,
         selected_branch: str | None = None,
         initial_message: MessageAction | None = None,
         replay_json: str | None = None,
@@ -138,10 +139,10 @@ class PlanningSession:
                 )
             else:
                 self.controller = self._create_controller(
-                    agent=agent,
-                    planning_agent=planning_agent,
-                    confirmation_mode=config.security.confirmation_mode,
-                    max_iterations=max_iterations,
+                    agent,
+                    planning_agent,
+                    config.security.confirmation_mode,
+                    max_iterations,
                     max_budget_per_task=max_budget_per_task,
                     agent_to_llm_config=agent_to_llm_config,
                     agent_configs=agent_configs,
@@ -149,7 +150,7 @@ class PlanningSession:
 
             repo_directory = None
             if self.runtime and runtime_connected and selected_repository:
-                repo_directory = selected_repository.split('/')[-1]
+                repo_directory = selected_repository.full_name.split('/')[-1]
             self.memory = await self._create_memory(
                 selected_repository=selected_repository,
                 repo_directory=repo_directory,
@@ -206,7 +207,7 @@ class PlanningSession:
             end_state.save_to_session(self.sid, self.file_store, self.user_id)
             await self.controller.close()
         if self.runtime is not None:
-            self.runtime.close()
+            EXECUTOR.submit(self.runtime.close)
         if self.security_analyzer is not None:
             await self.security_analyzer.close()
 
@@ -231,10 +232,10 @@ class PlanningSession:
         assert initial_message is None
         replay_events = ReplayManager.get_replay_events(json.loads(replay_json))
         self.controller = self._create_controller(
-            agent=agent,
-            planning_agent=planning_agent,
-            confirmation_mode=config.security.confirmation_mode,
-            max_iterations=max_iterations,
+            agent,
+            planning_agent,
+            config.security.confirmation_mode,
+            max_iterations,
             max_budget_per_task=max_budget_per_task,
             agent_to_llm_config=agent_to_llm_config,
             agent_configs=agent_configs,
@@ -262,7 +263,7 @@ class PlanningSession:
         config: AppConfig,
         agent: Agent,
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
-        selected_repository: str | None = None,
+        selected_repository: Repository | None = None,
         selected_branch: str | None = None,
     ) -> bool:
         """Creates a runtime instance
@@ -328,11 +329,8 @@ class PlanningSession:
             return False
 
         if selected_repository and git_provider_tokens:
-            await call_sync_from_async(
-                self.runtime.clone_repo,
-                git_provider_tokens,
-                selected_repository,
-                selected_branch,
+            await self.runtime.clone_repo(
+                git_provider_tokens, selected_repository, selected_branch
             )
             await call_sync_from_async(self.runtime.maybe_run_setup_script)
 
@@ -351,8 +349,8 @@ class PlanningSession:
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
         replay_events: list[Event] | None = None,
-    ) -> PlanController:
-        """Creates an PlanController instance
+    ) -> PlanningController:
+        """Creates an AgentController instance
 
         Parameters:
         - agent:
@@ -384,7 +382,7 @@ class PlanningSession:
         )
         self.logger.debug(msg)
 
-        controller = PlanController(
+        controller = PlanningController(
             sid=self.sid,
             event_stream=self.event_stream,
             agent=agent,
@@ -403,7 +401,7 @@ class PlanningSession:
         return controller
 
     async def _create_memory(
-        self, selected_repository: str | None, repo_directory: str | None
+        self, selected_repository: Repository | None, repo_directory: str | None
     ) -> Memory:
         memory = Memory(
             event_stream=self.event_stream,
@@ -416,13 +414,16 @@ class PlanningSession:
             memory.set_runtime_info(self.runtime)
 
             # loads microagents from repo/.openhands/microagents
-            microagents: list[BaseMicroAgent] = await call_sync_from_async(
-                self.runtime.get_microagents_from_selected_repo, selected_repository
+            microagents: list[BaseMicroagent] = await call_sync_from_async(
+                self.runtime.get_microagents_from_selected_repo,
+                selected_repository.full_name if selected_repository else None,
             )
             memory.load_user_workspace_microagents(microagents)
 
             if selected_repository and repo_directory:
-                memory.set_repository_info(selected_repository, repo_directory)
+                memory.set_repository_info(
+                    selected_repository.full_name, repo_directory
+                )
         return memory
 
     def _maybe_restore_state(self) -> State | None:
