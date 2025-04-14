@@ -72,5 +72,6 @@ class DummyAgent(Agent):
         if state.iteration == 2:
             return AgentFinishAction()
 
-        self.team.run()
-        return MessageAction(content="Hello, world!")
+        result = await self.team.run(state.get_last_user_message().content)
+
+        return MessageAction(content=result.messages[0].to_model_text())
