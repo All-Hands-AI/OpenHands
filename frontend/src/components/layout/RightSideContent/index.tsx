@@ -9,8 +9,8 @@ import { useSelector } from "react-redux"
 import CodeView from "./CodeView"
 import EditorContent from "./EditorContent"
 import McpView from "./McpView"
-import { STEP_STATUSES } from "./TaskProgress"
 import { cn } from "#/utils/utils"
+import { STEP_STATUSES } from "./TaskProgress"
 
 const ThesisComputer = () => {
   const isViewDrawer = true
