@@ -147,7 +147,6 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: McpAction) -> Obse
             return ErrorObservation(f'MCP {action.name} failed: {response.content}')
         logger.info(f'MCP response: {response}')
 
-<<<<<<< HEAD
         # special case for browser screenshot of playwright_mcp
         if (
             matching_client.name == ObservationType.BROWSER_MCP
@@ -169,11 +168,6 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: McpAction) -> Obse
     except Exception as e:
         logger.error(f'Error calling tool {action.name}: {e}')
         return ErrorObservation(f'MCP {action.name} failed: {e}')
-=======
-    return MCPObservation(
-        content=f'{response.output[0].text}'
-    )
->>>>>>> 3ea9be59 (feat: call mcp in separate thread)
 
 
 def extract_page_url(browser_content: str) -> str | Any:
