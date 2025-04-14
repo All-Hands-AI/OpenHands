@@ -19,6 +19,7 @@ from openhands.agenthub.codeact_agent.tools import (
     WebReadTool,
     create_cmd_run_tool,
     create_str_replace_editor_tool,
+    ApplyPatchTool,
 )
 from openhands.core.exceptions import (
     FunctionCallNotExistsError,
@@ -119,7 +120,7 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                 )
 
             # ================================================
-            # LLMBasedFileEditTool (LLM-based file editor, deprecated)
+            # LLMBasedFileEditTool (LLM-based file editor)
             # ================================================
             elif tool_call.function.name == LLMBasedFileEditTool['function']['name']:
                 if 'path' not in arguments:
@@ -136,6 +137,10 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                     start=arguments.get('start', 1),
                     end=arguments.get('end', -1),
                 )
+            
+            # ================================================
+            # str_replace_editor_tool (string replace text editor)
+            # ================================================
             elif (
                 tool_call.function.name
                 == create_str_replace_editor_tool()['function']['name']
@@ -170,6 +175,16 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                         impl_source=FileEditSource.OH_ACI,
                         **other_kwargs,
                     )
+            elif tool_call.function.name == 'apply_patch':
+                if 'input' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "input" in tool call {tool_call.function.name}'
+                    )
+                action = FileEditAction(
+                    path=path,
+                    command=arguments['input'],
+                    impl_source=FileEditSource.OH_ACI,
+                )
             # ================================================
             # AgentThinkAction
             # ================================================
@@ -243,6 +258,7 @@ def get_tools(
     codeact_enable_browsing: bool = False,
     codeact_enable_llm_editor: bool = False,
     codeact_enable_jupyter: bool = False,
+    enable_apply_patch: bool = False,
     llm: LLM | None = None,
 ) -> list[ChatCompletionToolParam]:
     SIMPLIFIED_TOOL_DESCRIPTION_LLM_SUBSTRS = ['gpt-', 'o3', 'o1']
@@ -266,6 +282,8 @@ def get_tools(
         tools.append(IPythonTool)
     if codeact_enable_llm_editor:
         tools.append(LLMBasedFileEditTool)
+    elif enable_apply_patch:
+        tools.append(ApplyPatchTool)
     else:
         tools.append(
             create_str_replace_editor_tool(
