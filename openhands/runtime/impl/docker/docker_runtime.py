@@ -1,5 +1,6 @@
 import os
 from functools import lru_cache
+import time
 from typing import Callable
 from uuid import UUID
 
@@ -134,7 +135,13 @@ class DockerRuntime(ActionExecutionClient):
     async def connect(self):
         self.send_status_message('STATUS$STARTING_RUNTIME')
         try:
+            start_time = time.time()
             await call_sync_from_async(self._attach_to_container)
+            end_time = time.time()
+            total_time = end_time - start_time
+            self.log(
+                'debug', f'Total _attach_to_container() time: {total_time:.2f} seconds'
+            )
         except docker.errors.NotFound as e:
             if self.attach_to_existing:
                 self.log(
@@ -160,7 +167,13 @@ class DockerRuntime(ActionExecutionClient):
             self.log(
                 'info', f'Starting runtime with image: {self.runtime_container_image}'
             )
+            start_time = time.time()
             await call_sync_from_async(self._init_container)
+            end_time = time.time()
+            total_time = end_time - start_time
+            self.log(
+                'debug', f'Total _init_container() time: {total_time:.2f} seconds'
+            )
             self.log(
                 'info',
                 f'Container started: {self.container_name}. VSCode URL: {self.vscode_url}',
@@ -175,13 +188,25 @@ class DockerRuntime(ActionExecutionClient):
             self.log('info', f'Waiting for client to become ready at {self.api_url}...')
             self.send_status_message('STATUS$WAITING_FOR_CLIENT')
 
+        start_time = time.time()
         await call_sync_from_async(self._wait_until_alive)
+        end_time = time.time()
+        total_time = end_time - start_time
+        self.log(
+            'debug', f'Total _wait_until_alive() time: {total_time:.2f} seconds'
+        )
 
         if not self.attach_to_existing:
             self.log('info', 'Runtime is ready.')
 
         if not self.attach_to_existing:
+            start_time = time.time()
             await call_sync_from_async(self.setup_initial_env)
+            end_time = time.time()
+            total_time = end_time - start_time
+            self.log(
+                'debug', f'Total setup_initial_env() time: {total_time:.2f} seconds'
+            )
 
         self.log(
             'debug',
@@ -204,21 +229,39 @@ class DockerRuntime(ActionExecutionClient):
 
     def _init_container(self):
         self.log('debug', 'Preparing to start container...')
+        start_time = time.time()
         self.send_status_message('STATUS$PREPARING_CONTAINER')
+        end_time = time.time()
+        total_time = end_time - start_time
+        self.log(
+            'debug', f'Total time send_status_message() time: {total_time:.2f} seconds'
+        )
+        start_time = time.time()
         self._host_port = self._find_available_port(EXECUTION_SERVER_PORT_RANGE)
         self._container_port = self._host_port
-        self._vscode_port = self._find_available_port(VSCODE_PORT_RANGE)
+        end_time = time.time()
+        total_time = end_time - start_time
+        self.log(
+            'debug', f'Total time _find_available_port() EXECUTION_SERVER_PORT_RANGE time: {total_time:.2f} seconds'
+        )
+        start_time = time.time()
         self._app_ports = [
             self._find_available_port(APP_PORT_RANGE_1),
             self._find_available_port(APP_PORT_RANGE_2),
         ]
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
-
+        end_time = time.time()
+        total_time = end_time - start_time
+        self.log(
+            'debug', f'Total time _find_available_port() APP_PORT_RANGE_1 APP_PORT_RANGE_2 time: {total_time:.2f} seconds'
+        )
+        
         use_host_network = self.config.sandbox.use_host_network
         self.log('debug', f'use_host_network: {use_host_network}')
         network_mode: str | None = 'host' if use_host_network else None
 
         # Initialize port mappings
+        start_time = time.time()
         port_mapping: dict[str, list[dict[str, str]]] | None = None
         if not use_host_network:
             port_mapping = {
@@ -230,13 +273,13 @@ class DockerRuntime(ActionExecutionClient):
                 ],
             }
 
-            if self.vscode_enabled:
-                port_mapping[f'{self._vscode_port}/tcp'] = [
-                    {
-                        'HostPort': str(self._vscode_port),
-                        'HostIp': self.config.sandbox.runtime_binding_address,
-                    }
-                ]
+            # if self.vscode_enabled:
+            #     port_mapping[f'{self._vscode_port}/tcp'] = [
+            #         {
+            #             'HostPort': str(self._vscode_port),
+            #             'HostIp': self.config.sandbox.runtime_binding_address,
+            #         }
+            #     ]
 
             for port in self._app_ports:
                 port_mapping[f'{port}/tcp'] = [
@@ -250,7 +293,13 @@ class DockerRuntime(ActionExecutionClient):
                 'warn',
                 'Using host network mode. If you are using MacOS, please make sure you have the latest version of Docker Desktop and enabled host network feature: https://docs.docker.com/network/drivers/host/#docker-desktop',
             )
+        end_time = time.time()
+        total_time = end_time - start_time
+        self.log(
+            'debug', f'Total time port_mapping time: {total_time:.2f} seconds'
+        )
 
+        start_time = time.time()
         # Combine environment variables
         environment = {
             'port': str(self._container_port),
@@ -293,14 +342,25 @@ class DockerRuntime(ActionExecutionClient):
             'debug',
             f'Sandbox workspace: {self.config.workspace_mount_path_in_sandbox}',
         )
+        end_time = time.time()
+        total_time = end_time - start_time
+        self.log(
+            'debug', f'Total environment.update() time: {total_time:.2f} seconds'
+        )
 
         command = get_action_execution_server_startup_command(
             server_port=self._container_port,
             plugins=self.plugins,
             app_config=self.config,
         )
+        end_time = time.time()
+        total_time = end_time - start_time
+        self.log(
+            'debug', f'Total time before docker_client.containers.run() time: {total_time:.2f} seconds'
+        )
 
         try:
+            start_time = time.time()
             self.container = self.docker_client.containers.run(
                 self.runtime_container_image,
                 command=command,
@@ -319,6 +379,11 @@ class DockerRuntime(ActionExecutionClient):
                     else None
                 ),
                 **(self.config.sandbox.docker_runtime_kwargs or {}),
+            )
+            end_time = time.time()
+            total_time = end_time - start_time
+            self.log(
+                'debug', f'Total docker_client.containers.run() time: {total_time:.2f} seconds'
             )
             self.log('debug', f'Container started. Server url: {self.api_url}')
             self.send_status_message('STATUS$CONTAINER_STARTED')
