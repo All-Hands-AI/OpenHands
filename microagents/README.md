@@ -1,6 +1,6 @@
-# OpenHands MicroAgents
+# OpenHands Microagents
 
-MicroAgents are specialized prompts that enhance OpenHands with domain-specific knowledge and task-specific workflows. They help developers by providing expert guidance, automating common tasks, and ensuring consistent practices across projects. Each microagent is designed to excel in a specific area, from Git operations to code review processes.
+Microagents are specialized prompts that enhance OpenHands with domain-specific knowledge and task-specific workflows. They help developers by providing expert guidance, automating common tasks, and ensuring consistent practices across projects. Each microagent is designed to excel in a specific area, from Git operations to code review processes.
 
 ## Sources of Microagents
 
@@ -49,7 +49,7 @@ When OpenHands works with a repository, it:
 2. Loads relevant knowledge agents based on keywords in conversations
 3. Enable task agent if user select one of them
 
-## Types of MicroAgents
+## Types of Microagents
 
 Most microagents use markdown files with YAML frontmatter. For repository agents (repo.md), the frontmatter is optional - if not provided, the file will be loaded with default settings as a repository agent.
 
