@@ -1,40 +1,39 @@
-import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
-import Security from "#/components/shared/modals/security/security";
+import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button"
+import Security from "#/components/shared/modals/security/security"
 import {
   useWsClient,
   WsClientProviderStatus,
-} from "#/context/ws-client-provider";
-import { useGetTrajectory } from "#/hooks/mutation/use-get-trajectory";
-import { useListFiles } from "#/hooks/query/use-list-files";
-import { useSettings } from "#/hooks/query/use-settings";
-import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom";
-import { I18nKey } from "#/i18n/declaration";
-import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
-import { createChatMessage } from "#/services/chat-service";
-import { addUserMessage } from "#/state/chat-slice";
-import { setCurrentPathViewed } from "#/state/file-state-slice";
-import { RootState } from "#/store";
-import { AgentState } from "#/types/agent-state";
-import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
-import { displayErrorToast } from "#/utils/custom-toast-handlers";
-import { downloadTrajectory } from "#/utils/download-trajectory";
-import { useDisclosure } from "@heroui/react";
-import posthog from "posthog-js";
-import React, { useEffect } from "react";
-import { useTranslation } from "react-i18next";
-import { FaFileInvoice } from "react-icons/fa";
-import { FaPowerOff } from "react-icons/fa6";
-import { useDispatch, useSelector } from "react-redux";
-import { useParams } from "react-router";
-import { Controls } from "../controls/controls";
-import { FeedbackModal } from "../feedback/feedback-modal";
-import { TrajectoryActions } from "../trajectory/trajectory-actions";
-import { ActionSuggestions } from "./action-suggestions";
-import { ChatSuggestions } from "./chat-suggestions";
-import { InteractiveChatBox } from "./interactive-chat-box";
-import { Messages } from "./messages";
-import { SkeletonMessage } from "./skeleton-message";
-import { TypingIndicator } from "./typing-indicator";
+} from "#/context/ws-client-provider"
+import { useGetTrajectory } from "#/hooks/mutation/use-get-trajectory"
+import { useListFiles } from "#/hooks/query/use-list-files"
+import { useSettings } from "#/hooks/query/use-settings"
+import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom"
+import { I18nKey } from "#/i18n/declaration"
+import { generateAgentStateChangeEvent } from "#/services/agent-state-service"
+import { createChatMessage } from "#/services/chat-service"
+import { addUserMessage } from "#/state/chat-slice"
+import { setCurrentPathViewed } from "#/state/file-state-slice"
+import { RootState } from "#/store"
+import { AgentState } from "#/types/agent-state"
+import { convertImageToBase64 } from "#/utils/convert-image-to-base-64"
+import { displayErrorToast } from "#/utils/custom-toast-handlers"
+import { downloadTrajectory } from "#/utils/download-trajectory"
+import { useDisclosure } from "@heroui/react"
+import posthog from "posthog-js"
+import React, { useEffect } from "react"
+import { useTranslation } from "react-i18next"
+import { FaFileInvoice } from "react-icons/fa"
+import { FaPowerOff } from "react-icons/fa6"
+import { useDispatch, useSelector } from "react-redux"
+import { useParams } from "react-router"
+import { Controls } from "../controls/controls"
+import { FeedbackModal } from "../feedback/feedback-modal"
+import { TrajectoryActions } from "../trajectory/trajectory-actions"
+import { ActionSuggestions } from "./action-suggestions"
+import { InteractiveChatBox } from "./interactive-chat-box"
+import { Messages } from "./messages"
+import { SkeletonMessage } from "./skeleton-message"
+import { TypingIndicator } from "./typing-indicator"
 
 function getEntryPoint(
   hasRepository: boolean | null,
@@ -46,8 +45,8 @@ function getEntryPoint(
 }
 
 interface DisconnectButtonProps {
-  handleDisconnect: () => void;
-  isDisabled: boolean;
+  handleDisconnect: () => void
+  isDisabled: boolean
 }
 
 export function DisconnectButton({
@@ -55,7 +54,7 @@ export function DisconnectButton({
   isDisabled,
 }: DisconnectButtonProps) {
   if (isDisabled) {
-    return null;
+    return null
   }
 
   return (
@@ -73,40 +72,40 @@ export function DisconnectButton({
       <FaPowerOff />
       {/* {t(isDisabled ? "Connect" : "Disconnect")} */}
     </button>
-  );
+  )
 }
 
 export function ChatInterface() {
-  const { data: settings } = useSettings();
+  const { data: settings } = useSettings()
   const {
     isOpen: securityModalIsOpen,
     onOpen: onSecurityModalOpen,
     onOpenChange: onSecurityModalOpenChange,
-  } = useDisclosure();
-  const dispatch = useDispatch();
-  const scrollRef = React.useRef<HTMLDivElement>(null);
-  const { send, isLoadingMessages, disconnect, status } = useWsClient();
-  const { t } = useTranslation();
+  } = useDisclosure()
+  const dispatch = useDispatch()
+  const scrollRef = React.useRef<HTMLDivElement>(null)
+  const { send, isLoadingMessages, disconnect, status } = useWsClient()
+  const { t } = useTranslation()
   const { scrollDomToBottom, onChatBodyScroll, hitBottom } =
     useScrollToBottom(scrollRef)
 
-  const { messages } = useSelector((state: RootState) => state.chat);
-  const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const { messages } = useSelector((state: RootState) => state.chat)
+  const { curAgentState } = useSelector((state: RootState) => state.agent)
   const { data: files, refetch: refetchFiles } = useListFiles({
     isCached: false,
     enabled: true,
-  });
+  })
 
   useEffect(() => {
-    if (curAgentState === AgentState.AWAITING_USER_INPUT) refetchFiles();
-  }, [curAgentState]);
+    if (curAgentState === AgentState.AWAITING_USER_INPUT) refetchFiles()
+  }, [curAgentState])
 
   // Scroll to bottom when files are loaded
   useEffect(() => {
     if (files && files.length > 0) {
-      scrollDomToBottom();
+      scrollDomToBottom()
     }
-  }, [files]);
+  }, [files])
 
   const [feedbackPolarity, setFeedbackPolarity] = React.useState<
     "positive" | "negative"
@@ -135,8 +134,8 @@ export function ChatInterface() {
         current_message_length: content.length,
       })
     }
-    const promises = msgFiles.map((file) => convertImageToBase64(file));
-    const imageUrls = await Promise.all(promises);
+    const promises = msgFiles.map((file) => convertImageToBase64(file))
+    const imageUrls = await Promise.all(promises)
 
     const timestamp = new Date().toISOString()
     const pending = true
@@ -187,22 +186,19 @@ export function ChatInterface() {
 
   return (
     <div className="mx-auto flex h-full max-w-[800px] flex-col justify-between">
-      {messages.length === 0 && !isLoadingMessages && (
-        <ChatSuggestions onSuggestionsClick={setMessageToSend} />
-      )}
-
       <div
         ref={scrollRef}
         onScroll={(e) => onChatBodyScroll(e.currentTarget)}
         className="fast-smooth-scroll flex grow flex-col gap-2 overflow-y-auto overflow-x-hidden px-4 pt-4"
       >
-        {isLoadingMessages && (
-          <div className="space-y-6">
-            <SkeletonMessage type="user" />
-            <SkeletonMessage type="assistant" />
-            <SkeletonMessage type="user" />
-          </div>
-        )}
+        {isLoadingMessages ||
+          (messages.length === 0 && (
+            <div className="space-y-6">
+              <SkeletonMessage type="user" />
+              <SkeletonMessage type="assistant" />
+              <SkeletonMessage type="user" />
+            </div>
+          ))}
 
         {!isLoadingMessages && (
           <Messages
