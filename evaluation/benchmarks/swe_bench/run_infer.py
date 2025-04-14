@@ -238,7 +238,7 @@ def get_config(
 def initialize_runtime(
     runtime: Runtime,
     instance: pd.Series,  # this argument is not required
-    metadata: EvalMetadata
+    metadata: EvalMetadata,
 ):
     """Initialize the runtime for the agent.
 
