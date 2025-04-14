@@ -36,7 +36,11 @@ const toolsSlice = createSlice({
       } else if (action.payload.tools.length === 0) {
         console.warn("Tools slice: received empty tools array");
       } else {
-        console.log("Tools slice: received", action.payload.tools.length, "tools");
+        console.log(
+          "Tools slice: received",
+          action.payload.tools.length,
+          "tools",
+        );
       }
       state.tools = action.payload.tools;
     },

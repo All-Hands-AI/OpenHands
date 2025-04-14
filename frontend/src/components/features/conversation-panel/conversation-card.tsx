@@ -136,24 +136,18 @@ export function ConversationCard({
     event: React.MouseEvent<HTMLButtonElement>,
   ) => {
     event.stopPropagation();
-    console.log("Display tools clicked, conversation ID:", conversationId);
-    console.log("Current tools state:", tools);
+    // Remove console.log statements to avoid unlocalized strings
 
     // Always fetch the tools to ensure we have the latest
     if (conversationId) {
       try {
-        console.log("Fetching tools from API...");
         const response = await fetch(
           `/api/conversations/${conversationId}/tools`,
         );
         const data = await response.json();
-        console.log("API response:", data);
 
         if (data.tools) {
-          console.log("Dispatching tools to Redux store:", data.tools);
           dispatch({ type: "tools/setTools", payload: { tools: data.tools } });
-        } else {
-          console.warn("No tools found in API response");
         }
       } catch (error) {
         // Use dispatch to set an error state or handle silently
