@@ -193,11 +193,11 @@ class CodeActAgent(Agent):
         if not self.prompt_manager:
             raise Exception('Prompt Manager not instantiated.')
 
-        # Create a copy of events to avoid modifying the original list
-        processed_events = list(events)
-        
         # Check if there's a SystemMessageAction in the events
-        has_system_message = any(isinstance(event, SystemMessageAction) for event in processed_events)
+        has_system_message = any(isinstance(event, SystemMessageAction) for event in events)
+        
+        # Only create a copy if we need to modify the list
+        processed_events = events
         
         # If no SystemMessageAction is found, add one (legacy support)
         if not has_system_message:
@@ -208,7 +208,8 @@ class CodeActAgent(Agent):
             )
             system_message = self.get_system_message()
             if system_message:
-                # Insert at the beginning of the list
+                # Create a copy and insert at the beginning of the list
+                processed_events = list(events)
                 processed_events.insert(0, system_message)
                 logger.debug(f"[{self.name}] Added SystemMessageAction for backward compatibility")
 
