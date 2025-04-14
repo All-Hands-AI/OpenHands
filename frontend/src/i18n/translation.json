@@ -6106,6 +6106,9 @@
   "OBSERVATION_MESSAGE$MCP": {
     "en": "MCP Server Result"
   },
+  "ACTION_MESSAGE$CALL_TOOL_MCP": {
+    "en": "MCP Server Result"
+  },
   "BUTTON$CONNECT_WALLET": {
     "en": "Connect your wallet",
     "ja": "Walletに接続",
