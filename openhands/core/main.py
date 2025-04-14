@@ -30,6 +30,7 @@ from openhands.events.action.action import Action
 from openhands.events.event import Event
 from openhands.events.observation import AgentStateChangedObservation
 from openhands.io import read_input, read_task
+from openhands.mcp import fetch_mcp_tools_from_config
 from openhands.memory.memory import Memory
 from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
@@ -95,6 +96,8 @@ async def run_controller(
 
     if agent is None:
         agent = create_agent(config)
+        mcp_tools = await fetch_mcp_tools_from_config(config.mcp)
+        agent.set_mcp_tools(mcp_tools)
 
     # when the runtime is created, it will be connected and clone the selected repository
     repo_directory = None
@@ -148,7 +151,7 @@ async def run_controller(
     )
 
     # start event is a MessageAction with the task, either resumed or new
-    if initial_state is not None:
+    if initial_state is not None and initial_state.last_error:
         # we're resuming the previous session
         event_stream.add_event(
             MessageAction(
@@ -163,7 +166,7 @@ async def run_controller(
         # init with the provided actions
         event_stream.add_event(initial_user_action, EventSource.USER)
 
-    def on_event(event: Event):
+    def on_event(event: Event) -> None:
         if isinstance(event, AgentStateChangedObservation):
             if event.agent_state == AgentState.AWAITING_USER_INPUT:
                 if exit_on_message:

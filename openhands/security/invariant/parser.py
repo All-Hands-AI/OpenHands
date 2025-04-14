@@ -1,5 +1,3 @@
-from typing import Union
-
 from pydantic import BaseModel, Field
 
 from openhands.core.logger import openhands_logger as logger
@@ -18,7 +16,7 @@ from openhands.events.observation import (
 from openhands.events.serialization.event import event_to_dict
 from openhands.security.invariant.nodes import Function, Message, ToolCall, ToolOutput
 
-TraceElement = Union[Message, ToolCall, ToolOutput, Function]
+TraceElement = Message | ToolCall | ToolOutput | Function
 
 
 def get_next_id(trace: list[TraceElement]) -> str:
@@ -40,7 +38,7 @@ def get_last_id(
 
 def parse_action(trace: list[TraceElement], action: Action) -> list[TraceElement]:
     next_id = get_next_id(trace)
-    inv_trace = []  # type: list[TraceElement]
+    inv_trace: list[TraceElement] = []
     if type(action) == MessageAction:
         if action.source == EventSource.USER:
             inv_trace.append(Message(role='user', content=action.content))
@@ -82,8 +80,8 @@ def parse_element(
     return parse_observation(trace, element)
 
 
-def parse_trace(trace: list[tuple[Action, Observation]]):
-    inv_trace = []  # type: list[TraceElement]
+def parse_trace(trace: list[tuple[Action, Observation]]) -> list[TraceElement]:
+    inv_trace: list[TraceElement] = []
     for action, obs in trace:
         inv_trace.extend(parse_action(inv_trace, action))
         inv_trace.extend(parse_observation(inv_trace, obs))
@@ -93,11 +91,11 @@ def parse_trace(trace: list[tuple[Action, Observation]]):
 class InvariantState(BaseModel):
     trace: list[TraceElement] = Field(default_factory=list)
 
-    def add_action(self, action: Action):
+    def add_action(self, action: Action) -> None:
         self.trace.extend(parse_action(self.trace, action))
 
-    def add_observation(self, obs: Observation):
+    def add_observation(self, obs: Observation) -> None:
         self.trace.extend(parse_observation(self.trace, obs))
 
-    def concatenate(self, other: 'InvariantState'):
+    def concatenate(self, other: 'InvariantState') -> None:
         self.trace.extend(other.trace)

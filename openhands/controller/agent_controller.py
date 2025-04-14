@@ -10,6 +10,7 @@ from litellm.exceptions import (  # noqa
     APIError,
     AuthenticationError,
     BadRequestError,
+    ContentPolicyViolationError,
     ContextWindowExceededError,
     InternalServerError,
     NotFoundError,
@@ -65,7 +66,7 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization.event import event_to_trajectory, truncate_content
 from openhands.llm.llm import LLM
-from openhands.llm.metrics import Metrics, TokenUsage
+from openhands.llm.metrics import Metrics
 
 # note: RESUME is only available on web GUI
 TRAFFIC_CONTROL_REMINDER = (
@@ -250,7 +251,12 @@ class AgentController:
                 self.state.last_error = err_id
             elif isinstance(e, BadRequestError) and 'ExceededBudget' in str(e):
                 err_id = 'STATUS$ERROR_LLM_OUT_OF_CREDITS'
-                # Set error reason for budget exceeded
+                self.state.last_error = err_id
+            elif isinstance(e, ContentPolicyViolationError) or (
+                isinstance(e, BadRequestError)
+                and 'ContentPolicyViolationError' in str(e)
+            ):
+                err_id = 'STATUS$ERROR_LLM_CONTENT_POLICY_VIOLATION'
                 self.state.last_error = err_id
             elif isinstance(e, RateLimitError):
                 await self.set_agent_state_to(AgentState.RATE_LIMITED)
@@ -283,6 +289,7 @@ class AgentController:
                 or isinstance(e, InternalServerError)
                 or isinstance(e, AuthenticationError)
                 or isinstance(e, RateLimitError)
+                or isinstance(e, ContentPolicyViolationError)
                 or isinstance(e, LLMContextWindowExceedError)
             ):
                 reported = e
@@ -490,15 +497,8 @@ class AgentController:
 
             if self.get_agent_state() != AgentState.RUNNING:
                 await self.set_agent_state_to(AgentState.RUNNING)
-        elif action.source == EventSource.AGENT:
-            # Check if we need to trigger microagents based on agent message content
-            recall_action = RecallAction(
-                query=action.content, recall_type=RecallType.KNOWLEDGE
-            )
-            self._pending_action = recall_action
-            # This is source=AGENT because the agent message is the trigger for the microagent retrieval
-            self.event_stream.add_event(recall_action, EventSource.AGENT)
 
+        elif action.source == EventSource.AGENT:
             # If the agent is waiting for a response, set the appropriate state
             if action.wait_for_response:
                 await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
@@ -1084,44 +1084,8 @@ class AgentController:
         # cut in half
         mid_point = max(1, len(events) // 2)
         kept_events = events[mid_point:]
-
-        # Handle first event in truncated history
-        if kept_events:
-            i = 0
-            while i < len(kept_events):
-                first_event = kept_events[i]
-                if isinstance(first_event, Observation) and first_event.cause:
-                    # Find its action and include it
-                    matching_action = next(
-                        (
-                            e
-                            for e in reversed(events[:mid_point])
-                            if isinstance(e, Action) and e.id == first_event.cause
-                        ),
-                        None,
-                    )
-                    if matching_action:
-                        kept_events = [matching_action] + kept_events
-                    else:
-                        self.log(
-                            'warning',
-                            f'Found Observation without matching Action at id={first_event.id}',
-                        )
-                        # drop this observation
-                        kept_events = kept_events[1:]
-                    break
-
-                elif isinstance(first_event, MessageAction) or (
-                    isinstance(first_event, Action)
-                    and first_event.source == EventSource.USER
-                ):
-                    # if it's a message action or a user action, keep it and continue to find the next event
-                    i += 1
-                    continue
-
-                else:
-                    # if it's an action with source == EventSource.AGENT, we're good
-                    break
+        if len(kept_events) > 0 and isinstance(kept_events[0], Observation):
+            kept_events = kept_events[1:]
 
         # Ensure first user message is included
         if first_user_msg and first_user_msg not in kept_events:
@@ -1150,36 +1114,38 @@ class AgentController:
 
         To avoid performance issues with long conversations, we only keep:
         - accumulated_cost: The current total cost
-        - latest token_usage: Token statistics from the most recent API call
+        - accumulated_token_usage: Accumulated token statistics across all API calls
 
         Args:
             action: The action to attach metrics to
         """
+        # Create a minimal metrics object with just what the frontend needs
         metrics = Metrics(model_name=self.agent.llm.metrics.model_name)
         metrics.accumulated_cost = self.agent.llm.metrics.accumulated_cost
-        if self.agent.llm.metrics.token_usages:
-            latest_usage = self.agent.llm.metrics.token_usages[-1]
-            metrics.add_token_usage(
-                prompt_tokens=latest_usage.prompt_tokens,
-                completion_tokens=latest_usage.completion_tokens,
-                cache_read_tokens=latest_usage.cache_read_tokens,
-                cache_write_tokens=latest_usage.cache_write_tokens,
-                response_id=latest_usage.response_id,
-            )
+        metrics._accumulated_token_usage = (
+            self.agent.llm.metrics.accumulated_token_usage
+        )
+
         action.llm_metrics = metrics
 
-        # Log the metrics information for frontend display
-        log_usage: TokenUsage | None = (
-            metrics.token_usages[-1] if metrics.token_usages else None
-        )
+        # Log the metrics information for debugging
+        # Get the latest usage directly from the agent's metrics
+        latest_usage = None
+        if self.agent.llm.metrics.token_usages:
+            latest_usage = self.agent.llm.metrics.token_usages[-1]
+
+        accumulated_usage = self.agent.llm.metrics.accumulated_token_usage
         self.log(
             'debug',
             f'Action metrics - accumulated_cost: {metrics.accumulated_cost}, '
-            f'tokens (prompt/completion/cache_read/cache_write): '
-            f'{log_usage.prompt_tokens if log_usage else 0}/'
-            f'{log_usage.completion_tokens if log_usage else 0}/'
-            f'{log_usage.cache_read_tokens if log_usage else 0}/'
-            f'{log_usage.cache_write_tokens if log_usage else 0}',
+            f'latest tokens (prompt/completion/cache_read/cache_write): '
+            f'{latest_usage.prompt_tokens if latest_usage else 0}/'
+            f'{latest_usage.completion_tokens if latest_usage else 0}/'
+            f'{latest_usage.cache_read_tokens if latest_usage else 0}/'
+            f'{latest_usage.cache_write_tokens if latest_usage else 0}, '
+            f'accumulated tokens (prompt/completion): '
+            f'{accumulated_usage.prompt_tokens}/'
+            f'{accumulated_usage.completion_tokens}',
             extra={'msg_type': 'METRICS'},
         )
 
