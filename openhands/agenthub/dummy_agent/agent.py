@@ -68,6 +68,13 @@ class DummyAgent(Agent):
         self.team = MagenticOneGroupChat(participants=[mcp], model_client=self.model_client)
 
     async def step(self, state: State) -> Action:
-
-        result = await self.team.run(task=state.get_last_user_message().content)
+        task = state.get_last_user_message().content
+        result = None
+        print(f"task: {task}")
+        await self.team.reset()
+        async for message in self.team.run_stream(
+            task=task
+        ):
+            print(f"step result: {message}")
+            result = message
         return AgentFinishAction(final_thought=result.messages[0].to_model_text())
