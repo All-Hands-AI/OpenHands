@@ -322,7 +322,7 @@ def send_pull_request(
     # For cross repo pull request, we need to send head parameter like fork_owner:branch as per git documentation here : https://docs.github.com/en/rest/pulls/pulls?apiVersion=2022-11-28#create-a-pull-request
     # head parameter usage : The name of the branch where your changes are implemented. For cross-repository pull requests in the same network, namespace head with a user like this: username:branch.
     if fork_owner and platform == Platform.GITHUB:
-        head_branch = f"{fork_owner}:{branch_name}"
+        head_branch = f'{fork_owner}:{branch_name}'
     else:
         head_branch = branch_name
     # If we are not sending a PR, we can finish early and return the
