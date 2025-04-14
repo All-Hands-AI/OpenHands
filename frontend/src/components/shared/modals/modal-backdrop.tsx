@@ -20,7 +20,7 @@ export function ModalBackdrop({ children, onClose }: ModalBackdropProps) {
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-20">
+    <div className="fixed inset-0 flex items-center justify-center z-[51]">
       <div
         onClick={handleClick}
         className="fixed inset-0 bg-black/40  backdrop-blur-[12px]"

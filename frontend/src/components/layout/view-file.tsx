@@ -74,8 +74,19 @@ const FilePreview = ({
     return URL.createObjectURL(blob)
   }
 
+  const getImgSrc = () => {
+    const imgSrc =
+      fileContent &&
+      (fileContent.startsWith("data:image/png;base64,") ||
+        fileContent.startsWith("data:image/jpeg;base64,"))
+        ? fileContent
+        : `data:image/png;base64,${fileContent || ""}`
+
+    return imgSrc
+  }
+
   if (["jpg", "jpeg", "png", "gif", "webp"].includes(extension)) {
-    return <ImagePreview src={createBlobUrl()} />
+    return <ImagePreview src={getImgSrc()} />
   } else if (extension === "pdf") {
     return <PdfPreview src={createBlobUrl()} />
   } else if (["html", "htm"].includes(extension)) {
