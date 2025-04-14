@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import UUID, Boolean, Column, DateTime, Integer, PrimaryKeyConstraint, String, Table
+from sqlalchemy import Boolean, Column, DateTime, Integer, String, Table, Enum, ForeignKey
 from sqlalchemy.sql import func
 
 from .db import metadata
@@ -13,6 +13,18 @@ User = Table(
     Column('mnemonic', String, nullable=False),
     Column('jwt', String, nullable=False),
     Column('created_at', DateTime, server_default=func.now(), nullable=False),
+    Column('status', Enum('activated', 'non_activated', 'banned', name='user_status'), server_default='non_activated', nullable=False),
+)
+
+# Define InvitationCode table
+InvitationCode = Table(
+    'invitation_codes',
+    metadata,
+    Column('code', String, primary_key=True, nullable=False),
+    Column('created_by', String, ForeignKey('users.public_key'), nullable=False),
+    Column('created_at', DateTime, server_default=func.now(), nullable=False),
+    Column('used_by', String, ForeignKey('users.public_key'), nullable=True),
+    Column('used_at', DateTime, nullable=True),
 )
 
 Conversation = Table(
