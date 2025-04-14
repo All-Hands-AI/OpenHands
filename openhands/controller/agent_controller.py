@@ -169,9 +169,7 @@ class AgentController:
             system_message = self.agent.get_initial_message()
             self.event_stream.add_event(system_message, EventSource.AGENT)
         except Exception as e:
-            logger.warning(
-                f'Failed to add initial system message to event stream: {e}'
-            )
+            logger.warning(f'Failed to add initial system message to event stream: {e}')
 
     async def close(self, set_stop_state=True) -> None:
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream.
@@ -526,29 +524,33 @@ class AgentController:
                 # Then check if it's not None
                 metadata = getattr(self._pending_action, 'tool_call_metadata', None)
                 has_metadata = metadata is not None
-            
+
             # Also check for the private attribute, regardless of whether the property exists
             if hasattr(self._pending_action, '_tool_call_metadata'):
-                has_metadata = has_metadata or self._pending_action._tool_call_metadata is not None
-        
+                has_metadata = (
+                    has_metadata or self._pending_action._tool_call_metadata is not None
+                )
+
         if self._pending_action and has_metadata:
             # find out if there already is an observation with the same tool call metadata
             found_observation = False
             # Get the metadata from the pending action
             pending_metadata = getattr(self._pending_action, 'tool_call_metadata', None)
             # Always check the attribute directly if the property returns None
-            if pending_metadata is None and hasattr(self._pending_action, '_tool_call_metadata'):
+            if pending_metadata is None and hasattr(
+                self._pending_action, '_tool_call_metadata'
+            ):
                 pending_metadata = self._pending_action._tool_call_metadata
-                
+
             for event in self.state.history:
                 if not isinstance(event, Observation):
                     continue
-                    
+
                 # Get the metadata from the observation
                 event_metadata = getattr(event, 'tool_call_metadata', None)
                 if event_metadata is None and hasattr(event, '_tool_call_metadata'):
                     event_metadata = event._tool_call_metadata
-                    
+
                 if event_metadata == pending_metadata:
                     found_observation = True
                     break
