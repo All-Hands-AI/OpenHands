@@ -289,7 +289,7 @@ class ConversationMemory:
             return [
                 Message(
                     role='system',
-                    content=[TextContent(text=action.content)],
+                    content=[TextContent(text=action.content, cache_prompt=True)],
                     # Include tools if function calling is enabled
                     tool_calls=None,
                 )
