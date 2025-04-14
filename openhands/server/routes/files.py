@@ -135,6 +135,13 @@ async def select_file(file: str, request: Request):
         return {'code': content}
     elif isinstance(observation, ErrorObservation):
         logger.error(f'Error opening file {file}: {observation}')
+
+        if 'ERROR_BINARY_FILE' in observation.message:
+            return JSONResponse(
+                status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+                content={'error': f'Unable to open binary file: {file}'},
+            )
+
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={'error': f'Error opening file: {observation}'},
