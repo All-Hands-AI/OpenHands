@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 import sys
 import time
 from pathlib import Path
@@ -16,7 +17,7 @@ from prompt_toolkit.layout.containers import HSplit, Window
 from prompt_toolkit.layout.controls import FormattedTextControl
 from prompt_toolkit.layout.layout import Layout
 from prompt_toolkit.patch_stdout import patch_stdout
-from prompt_toolkit.shortcuts import clear, print_container
+from prompt_toolkit.shortcuts import print_container
 from prompt_toolkit.styles import Style
 from prompt_toolkit.widgets import Frame, TextArea
 
@@ -57,7 +58,6 @@ from openhands.io import read_task
 from openhands.llm.metrics import Metrics
 from openhands.mcp import fetch_mcp_tools_from_config
 from openhands.microagent.microagent import BaseMicroagent
-import os
 
 # Color and styling constants
 COLOR_GOLD = '#FFD700'

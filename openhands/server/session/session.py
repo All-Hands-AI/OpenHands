@@ -23,7 +23,6 @@ from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm import LLM
 from openhands.mcp import fetch_mcp_tools_from_config
 from openhands.server.session.agent_session import AgentSession
-from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.settings import Settings
 from openhands.storage.files import FileStore
 
@@ -152,10 +151,11 @@ class Session:
         git_provider_tokens = None
         selected_repository = None
         selected_branch = None
-        if isinstance(settings, ConversationInitData):
-            git_provider_tokens = settings.git_provider_tokens
-            selected_repository = settings.selected_repository
-            selected_branch = settings.selected_branch
+        # TODO FIXME: We don't use git or repositories in the agent session
+        # if isinstance(settings, ConversationInitData):
+        #     git_provider_tokens = settings.git_provider_tokens
+        #     selected_repository = settings.selected_repository
+        #     selected_branch = settings.selected_branch
 
         try:
             await self.agent_session.start(

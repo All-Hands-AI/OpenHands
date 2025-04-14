@@ -51,6 +51,7 @@ class AgentSession:
     _closed: bool = False
     loop: asyncio.AbstractEventLoop | None = None
     logger: LoggerAdapter
+    config: AppConfig
 
     def __init__(
         self,
@@ -113,6 +114,8 @@ class AgentSession:
         self._started_at = started_at
         finished = False  # For monitoring
         runtime_connected = False
+        self.config = config
+
         try:
             self._create_security_analyzer(config.security.security_analyzer)
             runtime_connected = await self._create_runtime(
@@ -154,6 +157,9 @@ class AgentSession:
             )
 
             if git_provider_tokens:
+                self.logger.debug(
+                    f'Setting event stream secrets for {git_provider_tokens}'
+                )
                 provider_handler = ProviderHandler(provider_tokens=git_provider_tokens)
                 await provider_handler.set_event_stream_secrets(self.event_stream)
 
@@ -374,7 +380,7 @@ class AgentSession:
             f'Plugins: {agent.sandbox_plugins}\n'
             '-------------------------------------------------------------------------------------------'
         )
-        self.logger.debug(msg)
+        # self.logger.debug(msg)
 
         controller = AgentController(
             sid=self.sid,
@@ -400,18 +406,23 @@ class AgentSession:
             event_stream=self.event_stream,
             sid=self.sid,
             status_callback=self._status_callback,
+            enable_microagents=self.config.enable_microagents,
         )
 
         if self.runtime:
             # sets available hosts and other runtime info
             memory.set_runtime_info(self.runtime)
 
-            # loads microagents from repo/.openhands/microagents
-            microagents: list[BaseMicroagent] = await call_sync_from_async(
-                self.runtime.get_microagents_from_selected_repo,
-                selected_repository.full_name if selected_repository else None,
-            )
-            memory.load_user_workspace_microagents(microagents)
+            if self.config.enable_microagents:
+                self.logger.debug(
+                    'Preparing to load microagents from repo/.openhands/microagents'
+                )
+                # loads microagents from repo/.openhands/microagents
+                microagents: list[BaseMicroagent] = await call_sync_from_async(
+                    self.runtime.get_microagents_from_selected_repo,
+                    selected_repository.full_name if selected_repository else None,
+                )
+                memory.load_user_workspace_microagents(microagents)
 
             if selected_repository and repo_directory:
                 memory.set_repository_info(
