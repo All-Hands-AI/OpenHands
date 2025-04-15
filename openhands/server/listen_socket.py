@@ -154,7 +154,8 @@ async def connect(connection_id: str, environ):
         elif isinstance(event, AgentStateChangedObservation):
             agent_state_changed = event
         else:
-            await sio.emit('oh_event', event_to_dict(event), to=connection_id)
+            event_dict = event_to_dict(event)
+            await sio.emit('oh_event', {**event_dict, 'initialize_conversation': True}, to=connection_id)
     if agent_state_changed:
         await sio.emit('oh_event', event_to_dict(agent_state_changed), to=connection_id)
     logger.info(f'Finished replaying event stream for conversation {conversation_id}')
