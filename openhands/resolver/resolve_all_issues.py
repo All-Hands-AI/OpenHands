@@ -328,7 +328,7 @@ def main() -> None:
 
     runtime_container_image = my_args.runtime_container_image
     if runtime_container_image is None:
-        runtime_container_image = 'ghcr.io/all-hands-ai/runtime:0.31.0-nikolaik'
+        runtime_container_image = 'ghcr.io/all-hands-ai/runtime:0.32.0-nikolaik'
 
     owner, repo = my_args.selected_repo.split('/')
     token = my_args.token or os.getenv('GITHUB_TOKEN') or os.getenv('GITLAB_TOKEN')
@@ -349,6 +349,7 @@ def main() -> None:
         model=my_args.llm_model or os.environ['LLM_MODEL'],
         api_key=SecretStr(api_key) if api_key else None,
         base_url=my_args.llm_base_url or os.environ.get('LLM_BASE_URL', None),
+        api_version=os.environ.get('LLM_API_VERSION', None),
     )
 
     repo_instruction = None

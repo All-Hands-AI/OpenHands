@@ -28,7 +28,7 @@ from openhands.storage.memory import InMemoryFileStore
 @pytest.fixture
 def file_store():
     """Create a temporary file store for testing."""
-    return InMemoryFileStore()
+    return InMemoryFileStore({})
 
 
 @pytest.fixture
@@ -190,10 +190,9 @@ async def test_memory_with_microagents():
     assert 'magic word' in observation.microagent_knowledge[0].content
 
 
-def test_memory_repository_info(prompt_dir):
+def test_memory_repository_info(prompt_dir, file_store):
     """Test that Memory adds repository info to RecallObservations."""
-    # Create an in-memory file store and real event stream
-    file_store = InMemoryFileStore()
+    # real event stream
     event_stream = EventStream(sid='test-session', file_store=file_store)
 
     # Create a test repo microagent first
@@ -321,10 +320,9 @@ async def test_memory_with_agent_microagents():
     assert 'magic word' in observation.microagent_knowledge[0].content
 
 
-def test_memory_multiple_repo_microagents(prompt_dir):
+def test_memory_multiple_repo_microagents(prompt_dir, file_store):
     """Test that Memory loads and concatenates multiple repo microagents correctly."""
-    # Create an in-memory file store and real event stream
-    file_store = InMemoryFileStore()
+    # Create real event stream
     event_stream = EventStream(sid='test-session', file_store=file_store)
 
     # Create two test repo microagents

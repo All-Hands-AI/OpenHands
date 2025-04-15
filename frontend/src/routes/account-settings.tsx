@@ -126,7 +126,7 @@ function AccountSettings() {
       formData.get("enable-sound-notifications-switch")?.toString() === "on";
     const enableRepositoryMemory =
       formData.get("enable-repository-memory-switch")?.toString() === "on";
-    const llmBaseUrl = formData.get("base-url-input")?.toString() || "";
+    const llmBaseUrl = formData.get("base-url-input")?.toString().trim() || "";
     const inputApiKey = formData.get("llm-api-key-input")?.toString() || "";
     const llmApiKey =
       inputApiKey === "" && isLLMKeySet

@@ -1,10 +1,8 @@
 # Configuration Options
 
-This guide details all configuration options available for OpenHands, helping you customize its behavior and integrate it with other services.
-
 :::note
-If you are running in [GUI Mode](https://docs.all-hands.dev/modules/usage/how-to/gui-mode), the settings available in the Settings UI will always
-take precedence.
+This page outlines all available configuration options for OpenHands, allowing you to customize its behavior and
+integrate it with other services. In GUI Mode, any settings applied through the Settings UI will take precedence.
 :::
 
 ## Core Configuration
@@ -293,17 +291,17 @@ The agent configuration options are defined in the `[agent]` and `[agent.<agent_
   - Default: `true`
   - Description: Whether function calling is enabled
 
-- `codeact_enable_browsing`
+- `enable_browsing`
   - Type: `bool`
   - Default: `false`
   - Description: Whether browsing delegate is enabled in the action space (only works with function calling)
 
-- `codeact_enable_llm_editor`
+- `enable_llm_editor`
   - Type: `bool`
   - Default: `false`
   - Description: Whether LLM editor is enabled in the action space (only works with function calling)
 
-- `codeact_enable_jupyter`
+- `enable_jupyter`
   - Type: `bool`
   - Default: `false`
   - Description: Whether Jupyter is enabled in the action space

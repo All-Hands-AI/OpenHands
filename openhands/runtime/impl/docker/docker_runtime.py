@@ -44,7 +44,13 @@ def _is_retryable_wait_until_alive_error(exception):
         return _is_retryable_wait_until_alive_error(cause)
 
     return isinstance(
-        exception, (ConnectionError, httpx.NetworkError, httpx.RemoteProtocolError)
+        exception,
+        (
+            ConnectionError,
+            httpx.NetworkError,
+            httpx.RemoteProtocolError,
+            httpx.HTTPStatusError,
+        ),
     )
 
 
@@ -252,8 +258,9 @@ class DockerRuntime(ActionExecutionClient):
         # Combine environment variables
         environment = {
             'port': str(self._container_port),
-            'PYTHONUNBUFFERED': 1,
+            'PYTHONUNBUFFERED': '1',
             'VSCODE_PORT': str(self._vscode_port),
+            'PIP_BREAK_SYSTEM_PACKAGES': '1',
         }
         if self.config.debug or DEBUG:
             environment['DEBUG'] = 'true'
@@ -293,6 +300,8 @@ class DockerRuntime(ActionExecutionClient):
             self.container = self.docker_client.containers.run(
                 self.runtime_container_image,
                 command=command,
+                # Override the default 'bash' entrypoint because the command is a binary.
+                entrypoint=[],
                 network_mode=network_mode,
                 ports=port_mapping,
                 working_dir='/openhands/code/',  # do not change this!
