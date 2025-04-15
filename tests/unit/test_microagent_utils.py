@@ -5,14 +5,14 @@ from pathlib import Path
 
 import pytest
 
-from openhands.core.exceptions import MicroAgentValidationError
+from openhands.core.exceptions import MicroagentValidationError
 from openhands.microagent import (
-    BaseMicroAgent,
-    KnowledgeMicroAgent,
-    MicroAgentMetadata,
-    MicroAgentType,
-    RepoMicroAgent,
-    TaskMicroAgent,
+    BaseMicroagent,
+    KnowledgeMicroagent,
+    MicroagentMetadata,
+    MicroagentType,
+    RepoMicroagent,
+    TaskMicroagent,
     load_microagents_from_dir,
 )
 
@@ -26,11 +26,11 @@ def test_legacy_micro_agent_load(tmp_path):
     legacy_file = tmp_path / '.openhands_instructions'
     legacy_file.write_text(CONTENT)
 
-    micro_agent = BaseMicroAgent.load(legacy_file)
-    assert isinstance(micro_agent, RepoMicroAgent)
+    micro_agent = BaseMicroagent.load(legacy_file)
+    assert isinstance(micro_agent, RepoMicroagent)
     assert micro_agent.name == 'repo_legacy'
     assert micro_agent.content == CONTENT
-    assert micro_agent.type == MicroAgentType.REPO_KNOWLEDGE
+    assert micro_agent.type == MicroagentType.REPO_KNOWLEDGE
 
 
 @pytest.fixture
@@ -89,14 +89,14 @@ Test task content
 
 def test_knowledge_agent():
     """Test knowledge agent functionality."""
-    agent = KnowledgeMicroAgent(
+    agent = KnowledgeMicroagent(
         name='test',
         content='Test content',
-        metadata=MicroAgentMetadata(
-            name='test', type=MicroAgentType.KNOWLEDGE, triggers=['test', 'pytest']
+        metadata=MicroagentMetadata(
+            name='test', type=MicroagentType.KNOWLEDGE, triggers=['test', 'pytest']
         ),
         source='test.md',
-        type=MicroAgentType.KNOWLEDGE,
+        type=MicroagentType.KNOWLEDGE,
     )
 
     assert agent.match_trigger('running a test') == 'test'
@@ -114,18 +114,18 @@ def test_load_microagents(temp_microagents_dir):
     # Check knowledge agents
     assert len(knowledge_agents) == 1
     agent = knowledge_agents['test_knowledge_agent']
-    assert isinstance(agent, KnowledgeMicroAgent)
+    assert isinstance(agent, KnowledgeMicroagent)
     assert 'test' in agent.triggers
 
     # Check repo agents
     assert len(repo_agents) == 1
     agent = repo_agents['test_repo_agent']
-    assert isinstance(agent, RepoMicroAgent)
+    assert isinstance(agent, RepoMicroagent)
 
     # Check task agents
     assert len(task_agents) == 1
     agent = task_agents['test_task']
-    assert isinstance(agent, TaskMicroAgent)
+    assert isinstance(agent, TaskMicroagent)
 
 
 def test_invalid_agent_type(temp_microagents_dir):
@@ -141,8 +141,8 @@ Invalid agent content
 """
     (temp_microagents_dir / 'invalid.md').write_text(invalid_agent)
 
-    with pytest.raises(MicroAgentValidationError):
-        BaseMicroAgent.load(temp_microagents_dir / 'invalid.md')
+    with pytest.raises(MicroagentValidationError):
+        BaseMicroagent.load(temp_microagents_dir / 'invalid.md')
 
 
 def test_load_microagents_with_nested_dirs(temp_microagents_dir):
@@ -172,7 +172,7 @@ Testing nested directory loading.
     # Check that we can find the nested agent
     assert len(knowledge_agents) == 2  # Original + nested
     agent = knowledge_agents['nested_knowledge_agent']
-    assert isinstance(agent, KnowledgeMicroAgent)
+    assert isinstance(agent, KnowledgeMicroagent)
     assert 'nested' in agent.triggers
 
 
@@ -203,5 +203,5 @@ Testing loading with trailing slashes.
     # Check that we can find the agent despite trailing slashes
     assert len(knowledge_agents) == 2  # Original + trailing
     agent = knowledge_agents['trailing_knowledge_agent']
-    assert isinstance(agent, KnowledgeMicroAgent)
+    assert isinstance(agent, KnowledgeMicroagent)
     assert 'trailing' in agent.triggers

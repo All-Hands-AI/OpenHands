@@ -32,6 +32,8 @@ For instructions or processes that need to be followed in a specific order, use 
 
 Example:
   1. Step one: Do this.
+    - First this sub step.
+    - Then this sub step.
   2. Step two: Complete this action.
   3. Step three: Verify the result.
 
@@ -46,6 +48,15 @@ docker run -it \
     -e THAT=that
     ...
 ```
+
+### Use of Note and Warning
+
+When adding a note or warning, use the built-in note and warning syntax.
+
+Example:
+:::note
+This section is for advanced users only.
+:::
 
 ### Referring to UI Elements
 

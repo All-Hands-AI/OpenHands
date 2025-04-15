@@ -1,22 +1,18 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import React from "react";
-import { retrieveUserGitRepositories } from "#/api/github";
-import { useConfig } from "./use-config";
+import { retrieveUserGitRepositories } from "#/api/git";
 import { useAuth } from "#/context/auth-context";
 import { Provider } from "#/types/settings";
 
-export const useUserRepositories = (selectedProvider: Provider | null) => {
-  const { providersAreSet } = useAuth();
-  const { data: config } = useConfig();
+export const useUserRepositories = () => {
+  const { providerTokensSet, providersAreSet } = useAuth();
 
   const repos = useInfiniteQuery({
-    queryKey: ["repositories", providersAreSet, selectedProvider],
-    queryFn: async ({ pageParam }) =>
-      retrieveUserGitRepositories(pageParam, 100, selectedProvider),
+    queryKey: ["repositories", providerTokensSet],
+    queryFn: async () => retrieveUserGitRepositories(),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => lastPage.nextPage,
-    enabled:
-      providersAreSet && config?.APP_MODE === "oss" && !!selectedProvider,
+    enabled: providersAreSet,
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 15, // 15 minutes
   });

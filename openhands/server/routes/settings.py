@@ -7,7 +7,8 @@ from openhands.integrations.provider import ProviderToken, ProviderType, SecretS
 from openhands.integrations.utils import validate_provider_token
 from openhands.server.auth import get_provider_tokens, get_user_id
 from openhands.server.settings import GETSettingsModel, POSTSettingsModel, Settings
-from openhands.server.shared import SettingsStoreImpl, config
+from openhands.server.shared import SettingsStoreImpl, config, server_config
+from openhands.server.types import AppMode
 
 
 app = APIRouter(prefix='/api')
@@ -26,10 +27,16 @@ async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
             )
 
         provider_tokens_set = {}
+<<<<<<< HEAD
         
         if bool(user_id):
             provider_tokens_set[ProviderType.GITHUB.value] = True
         
+=======
+
+        if bool(user_id):
+            provider_tokens_set[ProviderType.GITHUB.value] = True
+>>>>>>> main
 
         provider_tokens = get_provider_tokens(request)
         if provider_tokens:
@@ -41,6 +48,7 @@ async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
                 else:
                     provider_tokens_set[provider_type] = False
 
+<<<<<<< HEAD
 
         custom_secrets = {}
         if settings.secrets_store.custom_secrets:
@@ -51,9 +59,14 @@ async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
             **settings.model_dump(exclude='secrets_store'),
             provider_tokens_set=provider_tokens_set,
             custom_secrets=custom_secrets
+=======
+        settings_with_token_data = GETSettingsModel(
+            **settings.model_dump(exclude='secrets_store'),
+            llm_api_key_set=settings.llm_api_key is not None,
+            provider_tokens_set=provider_tokens_set,
+>>>>>>> main
         )
-
-        settings_with_token_data.llm_api_key = settings.llm_api_key
+        settings_with_token_data.llm_api_key = None
         return settings_with_token_data
     except Exception as e:
         logger.warning(f'Invalid token: {e}')
@@ -63,6 +76,7 @@ async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
         )
 
 
+<<<<<<< HEAD
 def update_custom_secrets(incoming_settings: POSTSettingsModel, existing_settings: Settings):
     """
     Update custom secrets in the incoming settings based on existing settings.
@@ -114,6 +128,87 @@ def update_based_on_incoming_provider_tokes(incoming_settings: POSTSettingsModel
             for provider, data in provider_tokens.items()
         }
 
+=======
+@app.post('/unset-settings-tokens', response_model=dict[str, str])
+async def unset_settings_tokens(request: Request) -> JSONResponse:
+    try:
+        settings_store = await SettingsStoreImpl.get_instance(
+            config, get_user_id(request)
+        )
+
+        existing_settings = await settings_store.load()
+        if existing_settings:
+            settings = existing_settings.model_copy(
+                update={'secrets_store': SecretStore()}
+            )
+            await settings_store.store(settings)
+
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={'message': 'Settings stored'},
+        )
+
+    except Exception as e:
+        logger.warning(f'Something went wrong unsetting tokens: {e}')
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={'error': 'Something went wrong unsetting tokens'},
+        )
+
+
+@app.post('/reset-settings', response_model=dict[str, str])
+async def reset_settings(request: Request) -> JSONResponse:
+    """
+    Resets user settings.
+    """
+    try:
+        settings_store = await SettingsStoreImpl.get_instance(
+            config, get_user_id(request)
+        )
+
+        existing_settings = await settings_store.load()
+        settings = Settings(
+            language='en',
+            agent='CodeActAgent',
+            security_analyzer='',
+            confirmation_mode=False,
+            llm_model='anthropic/claude-3-5-sonnet-20241022',
+            llm_api_key='',
+            llm_base_url='',
+            remote_runtime_resource_factor=1,
+            enable_default_condenser=True,
+            enable_sound_notifications=False,
+            user_consents_to_analytics=existing_settings.user_consents_to_analytics
+            if existing_settings
+            else False,
+        )
+
+        server_config_values = server_config.get_config()
+        is_hide_llm_settings_enabled = server_config_values.get(
+            'FEATURE_FLAGS', {}
+        ).get('HIDE_LLM_SETTINGS', False)
+        # We don't want the user to be able to modify these settings in SaaS
+        if server_config.app_mode == AppMode.SAAS and is_hide_llm_settings_enabled:
+            if existing_settings:
+                settings.llm_api_key = existing_settings.llm_api_key
+                settings.llm_base_url = existing_settings.llm_base_url
+                settings.llm_model = existing_settings.llm_model
+
+        await settings_store.store(settings)
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={'message': 'Settings stored'},
+        )
+
+    except Exception as e:
+        logger.warning(f'Something went wrong resetting settings: {e}')
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={'error': 'Something went wrong resetting settings'},
+        )
+
+
+>>>>>>> main
 @app.post('/settings', response_model=dict[str, str])
 async def store_settings(
     request: Request,
@@ -164,6 +259,7 @@ async def store_settings(
                     existing_settings.user_consents_to_analytics
                 )
 
+<<<<<<< HEAD
             # Handle token updates immutably
             if settings.unset_tokens:
                 settings = settings.model_copy(update={"secrets_store": SecretStore(provider_tokens={},
@@ -173,6 +269,37 @@ async def store_settings(
 
 
             update_custom_secrets(settings, existing_settings)
+=======
+            # Only merge if not unsetting tokens
+            if settings.provider_tokens:
+                if existing_settings.secrets_store:
+                    existing_providers = [
+                        provider.value
+                        for provider in existing_settings.secrets_store.provider_tokens
+                    ]
+
+                    # Merge incoming settings store with the existing one
+                    for provider, token_value in settings.provider_tokens.items():
+                        if provider in existing_providers and not token_value:
+                            provider_type = ProviderType(provider)
+                            existing_token = (
+                                existing_settings.secrets_store.provider_tokens.get(
+                                    provider_type
+                                )
+                            )
+                            if existing_token and existing_token.token:
+                                settings.provider_tokens[provider] = (
+                                    existing_token.token.get_secret_value()
+                                )
+            else:  # nothing passed in means keep current settings
+                provider_tokens = existing_settings.secrets_store.provider_tokens
+                settings.provider_tokens = {
+                    provider.value: data.token.get_secret_value()
+                    if data.token
+                    else None
+                    for provider, data in provider_tokens.items()
+                }
+>>>>>>> main
 
         # Update sandbox config with new settings
         if settings.remote_runtime_resource_factor is not None:

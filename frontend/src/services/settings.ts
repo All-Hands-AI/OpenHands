@@ -7,7 +7,7 @@ export const DEFAULT_SETTINGS: Settings = {
   LLM_BASE_URL: "",
   AGENT: "CodeActAgent",
   LANGUAGE: "en",
-  LLM_API_KEY: null,
+  LLM_API_KEY_SET: false,
   CONFIRMATION_MODE: false,
   SECURITY_ANALYZER: "",
   REMOTE_RUNTIME_RESOURCE_FACTOR: 1,

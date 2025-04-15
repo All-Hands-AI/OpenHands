@@ -7,10 +7,9 @@ export function useSearchRepositories(
   selectedProvider: Provider | null,
 ) {
   return useQuery({
-    queryKey: ["repositories", query, selectedProvider],
-    queryFn: () =>
-      OpenHands.searchGitHubRepositories(selectedProvider, query, 3),
-    enabled: !!query && !!selectedProvider,
+    queryKey: ["repositories", query],
+    queryFn: () => OpenHands.searchGitRepositories(query, 3),
+    enabled: !!query,
     select: (data) => data.map((repo) => ({ ...repo, is_public: true })),
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 15, // 15 minutes

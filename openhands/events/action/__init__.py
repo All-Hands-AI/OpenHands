@@ -3,7 +3,6 @@ from openhands.events.action.agent import (
     AgentDelegateAction,
     AgentFinishAction,
     AgentRejectAction,
-    AgentSummarizeAction,
     AgentThinkAction,
     ChangeAgentStateAction,
     RecallAction,
@@ -16,6 +15,7 @@ from openhands.events.action.files import (
     FileReadAction,
     FileWriteAction,
 )
+from openhands.events.action.mcp import McpAction
 from openhands.events.action.message import MessageAction
 
 __all__ = [
@@ -30,11 +30,11 @@ __all__ = [
     'AgentFinishAction',
     'AgentRejectAction',
     'AgentDelegateAction',
-    'AgentSummarizeAction',
     'ChangeAgentStateAction',
     'IPythonRunCellAction',
     'MessageAction',
     'ActionConfirmationStatus',
     'AgentThinkAction',
     'RecallAction',
+    'McpAction',
 ]

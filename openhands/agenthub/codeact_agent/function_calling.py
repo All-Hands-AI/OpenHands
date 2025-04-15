@@ -24,6 +24,7 @@ from openhands.core.exceptions import (
     FunctionCallNotExistsError,
     FunctionCallValidationError,
 )
+from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     Action,
     AgentDelegateAction,
@@ -37,9 +38,11 @@ from openhands.events.action import (
     IPythonRunCellAction,
     MessageAction,
 )
+from openhands.events.action.mcp import McpAction
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.tool import ToolCallMetadata
 from openhands.llm import LLM
+from openhands.mcp import MCPClientTool
 
 
 def combine_thought(action: Action, thought: str) -> Action:
@@ -70,6 +73,7 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
         # Process each tool call to OpenHands action
         for i, tool_call in enumerate(assistant_msg.tool_calls):
             action: Action
+            logger.debug(f'Tool call in function_calling.py: {tool_call}')
             try:
                 arguments = json.loads(tool_call.function.arguments)
             except json.decoder.JSONDecodeError as e:
@@ -191,6 +195,15 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                         f'Missing required argument "url" in tool call {tool_call.function.name}'
                     )
                 action = BrowseURLAction(url=arguments['url'])
+
+            # ================================================
+            # McpAction (MCP)
+            # ================================================
+            elif tool_call.function.name.endswith(MCPClientTool.postfix()):
+                action = McpAction(
+                    name=tool_call.function.name.rstrip(MCPClientTool.postfix()),
+                    arguments=tool_call.function.arguments,
+                )
             else:
                 raise FunctionCallNotExistsError(
                     f'Tool {tool_call.function.name} is not registered. (arguments: {arguments}). Please check the tool name and retry with an existing tool.'
@@ -215,14 +228,21 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
             )
         )
 
+    # Add response id to actions
+    # This will ensure we can match both actions without tool calls (e.g. MessageAction)
+    # and actions with tool calls (e.g. CmdRunAction, IPythonRunCellAction, etc.)
+    # with the token usage data
+    for action in actions:
+        action.response_id = response.id
+
     assert len(actions) >= 1
     return actions
 
 
 def get_tools(
-    codeact_enable_browsing: bool = False,
-    codeact_enable_llm_editor: bool = False,
-    codeact_enable_jupyter: bool = False,
+    enable_browsing: bool = False,
+    enable_llm_editor: bool = False,
+    enable_jupyter: bool = False,
     llm: LLM | None = None,
 ) -> list[ChatCompletionToolParam]:
     SIMPLIFIED_TOOL_DESCRIPTION_LLM_SUBSTRS = ['gpt-', 'o3', 'o1']
@@ -239,12 +259,12 @@ def get_tools(
         ThinkTool,
         FinishTool,
     ]
-    if codeact_enable_browsing:
+    if enable_browsing:
         tools.append(WebReadTool)
         tools.append(BrowserTool)
-    if codeact_enable_jupyter:
+    if enable_jupyter:
         tools.append(IPythonTool)
-    if codeact_enable_llm_editor:
+    if enable_llm_editor:
         tools.append(LLMBasedFileEditTool)
     else:
         tools.append(

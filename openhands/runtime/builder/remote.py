@@ -3,7 +3,7 @@ import io
 import tarfile
 import time
 
-import requests
+import httpx
 
 from openhands.core.exceptions import AgentRuntimeBuildError
 from openhands.core.logger import openhands_logger as logger
@@ -61,7 +61,7 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
                 files=files,
                 timeout=30,
             )
-        except requests.exceptions.HTTPError as e:
+        except httpx.HTTPError as e:
             if e.response.status_code == 429:
                 logger.warning('Build was rate limited. Retrying in 30 seconds.')
                 time.sleep(30)

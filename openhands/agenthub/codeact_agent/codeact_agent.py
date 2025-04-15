@@ -11,8 +11,10 @@ from openhands.events.action import (
     Action,
     AgentFinishAction,
 )
+from openhands.events.event import Event
 from openhands.llm.llm import LLM
 from openhands.memory.condenser import Condenser
+from openhands.memory.condenser.condenser import Condensation, View
 from openhands.memory.conversation_memory import ConversationMemory
 from openhands.runtime.plugins import (
     AgentSkillsRequirement,
@@ -60,21 +62,21 @@ class CodeActAgent(Agent):
 
         Parameters:
         - llm (LLM): The llm to be used by this agent
+        - config (AgentConfig): The configuration for this agent
         """
         super().__init__(llm, config)
         self.pending_actions: deque[Action] = deque()
         self.reset()
 
-        # Retrieve the enabled tools
-        self.tools = codeact_function_calling.get_tools(
-            codeact_enable_browsing=self.config.codeact_enable_browsing,
-            codeact_enable_jupyter=self.config.codeact_enable_jupyter,
-            codeact_enable_llm_editor=self.config.codeact_enable_llm_editor,
+        built_in_tools = codeact_function_calling.get_tools(
+            enable_browsing=self.config.enable_browsing,
+            enable_jupyter=self.config.enable_jupyter,
+            enable_llm_editor=self.config.enable_llm_editor,
             llm=self.llm,
         )
-        logger.debug(
-            f"TOOLS loaded for CodeActAgent: {', '.join([tool.get('function').get('name') for tool in self.tools])}"
-        )
+
+        self.tools = built_in_tools
+
         self.prompt_manager = PromptManager(
             prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
         )
@@ -92,6 +94,7 @@ class CodeActAgent(Agent):
 
     def step(self, state: State) -> Action:
         """Performs one step using the CodeAct Agent.
+
         This includes gathering info on previous steps and prompting the model to make a command to execute.
 
         Parameters:
@@ -113,19 +116,49 @@ class CodeActAgent(Agent):
         if latest_user_message and latest_user_message.content.strip() == '/exit':
             return AgentFinishAction()
 
-        # prepare what we want to send to the LLM
-        messages = self._get_messages(state)
+        # Condense the events from the state. If we get a view we'll pass those
+        # to the conversation manager for processing, but if we get a condensation
+        # event we'll just return that instead of an action. The controller will
+        # immediately ask the agent to step again with the new view.
+        condensed_history: list[Event] = []
+        match self.condenser.condensed_history(state):
+            case View(events=events):
+                condensed_history = events
+
+            case Condensation(action=condensation_action):
+                return condensation_action
+
+        logger.debug(
+            f'Processing {len(condensed_history)} events from a total of {len(state.history)} events'
+        )
+
+        messages = self._get_messages(condensed_history)
         params: dict = {
             'messages': self.llm.format_messages_for_llm(messages),
         }
         params['tools'] = self.tools
+
+        if self.mcp_tools:
+            # Only add tools with unique names
+            existing_names = {tool['function']['name'] for tool in params['tools']}
+            unique_mcp_tools = [
+                tool
+                for tool in self.mcp_tools
+                if tool['function']['name'] not in existing_names
+            ]
+            params['tools'] += unique_mcp_tools
+
+        # log to litellm proxy if possible
+        params['extra_body'] = {'metadata': state.to_llm_metadata(agent_name=self.name)}
         response = self.llm.completion(**params)
+        logger.debug(f'Response from LLM: {response}')
         actions = codeact_function_calling.response_to_actions(response)
+        logger.debug(f'Actions after response_to_actions: {actions}')
         for action in actions:
             self.pending_actions.append(action)
         return self.pending_actions.popleft()
 
-    def _get_messages(self, state: State) -> list[Message]:
+    def _get_messages(self, events: list[Event]) -> list[Message]:
         """Constructs the message history for the LLM conversation.
 
         This method builds a structured conversation history by processing events from the state
@@ -141,7 +174,7 @@ class CodeActAgent(Agent):
         6. Adds environment reminders for non-function-calling mode
 
         Args:
-            state (State): The current state object containing conversation history and other metadata
+            events: The list of events to convert to messages
 
         Returns:
             list[Message]: A list of formatted messages ready for LLM consumption, including:
@@ -163,13 +196,6 @@ class CodeActAgent(Agent):
         # Use ConversationMemory to process initial messages
         messages = self.conversation_memory.process_initial_messages(
             with_caching=self.llm.is_caching_prompt_active()
-        )
-
-        # Condense the events from the state.
-        events = self.condenser.condensed_history(state)
-
-        logger.debug(
-            f'Processing {len(events)} events from a total of {len(state.history)} events'
         )
 
         # Use ConversationMemory to process events
