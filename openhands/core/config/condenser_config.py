@@ -154,9 +154,10 @@ class StructuredSummaryCondenserConfig(BaseModel):
 
     model_config = {'extra': 'forbid'}
 
+
 class CondenserPipelineConfig(BaseModel):
     """Configuration for the CondenserPipeline.
-    
+
     Not currently supported by the TOML or ENV_VAR configuration strategies.
     """
 
@@ -167,6 +168,7 @@ class CondenserPipelineConfig(BaseModel):
     )
 
     model_config = {'extra': 'forbid'}
+
 
 # Type alias for convenience
 CondenserConfig = (

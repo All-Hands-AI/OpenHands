@@ -122,7 +122,7 @@ class RollingCondenserTestHarness:
         for event in events:
             # Set the event's ID -- this is normally done by the event stream,
             # but this harness is intended to act as a testing stand-in.
-            if not hasattr(event, "_id"):
+            if not hasattr(event, '_id'):
                 event._id = len(state.history)
 
             state.history.append(event)
@@ -714,6 +714,7 @@ def test_structured_summary_condenser_keeps_first_and_summary_events(mock_llm):
         if i > max_size:
             assert isinstance(view[keep_first], AgentCondensationObservation)
 
+
 def test_condenser_pipeline_from_config():
     """Test that CondenserPipeline condensers can be created from configuration objects."""
     config = CondenserPipelineConfig(
@@ -734,7 +735,8 @@ def test_condenser_pipeline_from_config():
     assert isinstance(condenser.condensers[0], NoOpCondenser)
     assert isinstance(condenser.condensers[1], BrowserOutputCondenser)
     assert isinstance(condenser.condensers[2], LLMSummarizingCondenser)
-    
+
+
 def test_condenser_pipeline_chains_sub_condensers():
     """Test that the CondenserPipeline chains sub-condensers and combines their behavior."""
     MAX_SIZE = 10

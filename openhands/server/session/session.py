@@ -7,7 +7,11 @@ import socketio
 
 from openhands.controller.agent import Agent
 from openhands.core.config import AppConfig
-from openhands.core.config.condenser_config import BrowserOutputCondenserConfig, CondenserPipelineConfig, LLMSummarizingCondenserConfig
+from openhands.core.config.condenser_config import (
+    BrowserOutputCondenserConfig,
+    CondenserPipelineConfig,
+    LLMSummarizingCondenserConfig,
+)
 from openhands.core.logger import OpenHandsLoggerAdapter
 from openhands.core.schema import AgentState
 from openhands.events.action import MessageAction, NullAction
