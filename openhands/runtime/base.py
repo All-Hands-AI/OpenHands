@@ -285,11 +285,7 @@ class Runtime(FileEditRuntimeMixin):
             if isinstance(event, McpAction):
                 # we don't call call_tool_mcp impl directly because there can be other action ActionExecutionClient
                 logger.debug(f'Calling call_tool_mcp with event: {event}')
-                observation: Observation = call_async_from_sync(
-                    self.call_tool_mcp,
-                    GENERAL_TIMEOUT,
-                    event
-                )
+                observation: Observation = await getattr(self, McpAction.action)(event)
             else:
                 observation = await call_sync_from_async(self.run_action, event)
         except Exception as e:
