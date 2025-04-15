@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, List
+from typing import Any
 
 from openhands.core.schema import ActionType
 from openhands.events.action.action import Action, ActionSecurityRisk
@@ -43,7 +43,7 @@ class SystemMessageAction(Action):
     """
 
     content: str
-    tools: List[Any] | None = None
+    tools: list[Any] | None = None
     action: str = ActionType.SYSTEM
     image_urls: list[str] | None = None  # Add this to match MessageAction
     wait_for_response: bool = False  # Add this to match MessageAction
