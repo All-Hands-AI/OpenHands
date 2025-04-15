@@ -198,10 +198,7 @@ class CodeActAgent(Agent):
             isinstance(event, SystemMessageAction) for event in events
         )
 
-        # Only create a copy if we need to modify the list
-        processed_events = events
-
-        # If no SystemMessageAction is found, add one (legacy support)
+        # Legacy behavior: If no SystemMessageAction is found, add one
         if not has_system_message:
             logger.warning(
                 f'[{self.name}] No SystemMessageAction found in events. '
@@ -216,6 +213,8 @@ class CodeActAgent(Agent):
                 logger.debug(
                     f'[{self.name}] Added SystemMessageAction for backward compatibility'
                 )
+        else:
+            processed_events = events
 
         # Use ConversationMemory to process events (including SystemMessageAction)
         messages = self.conversation_memory.process_events(
