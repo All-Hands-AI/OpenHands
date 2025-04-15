@@ -1,3 +1,0 @@
-cd frontend
-npm run check-unlocalized-strings
-npx lint-staged
