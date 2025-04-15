@@ -19,7 +19,6 @@ const ThesisComputer = () => {
   const scrollRef = useRef<HTMLDivElement>(null)
   const [currentStep, setCurrentStep] = useState(0)
   const totalSteps = computerList.length
-  const [sliderValue, setSliderValue] = useState(0)
 
   const handleNextStep = () => {
     if (currentStep < totalSteps - 1) {
@@ -34,7 +33,6 @@ const ThesisComputer = () => {
   }
 
   const handleSliderChange = (value: number) => {
-    setSliderValue(value)
     const step = Math.floor((value / 100) * (totalSteps - 1))
     setCurrentStep(step)
   }
@@ -46,9 +44,6 @@ const ThesisComputer = () => {
       )
       if (matchingIndex !== -1) {
         setCurrentStep(matchingIndex)
-        const newSliderValue =
-          totalSteps > 1 ? (matchingIndex / (totalSteps - 1)) * 100 : 0
-        setSliderValue(newSliderValue)
       }
     }
   }, [eventID, computerList, totalSteps])
@@ -58,10 +53,6 @@ const ThesisComputer = () => {
     if (computerList.length > currentStep) {
       const newStep = computerList.length - 1
       setCurrentStep(newStep)
-      // Calculate and set slider value based on new step
-      const newSliderValue =
-        totalSteps > 1 ? (newStep / (totalSteps - 1)) * 100 : 0
-      setSliderValue(newSliderValue)
     }
   }, [computerList, totalSteps])
 
@@ -110,7 +101,7 @@ const ThesisComputer = () => {
 
           if (index !== currentStep) return null
           return (
-            <div className="mb-3 items-center rounded-lg">
+            <div className="mb-3 items-center rounded-lg" key={index}>
               <p className="text-[14px] font-medium text-[#666]">
                 Thesis is using{" "}
                 <span className="font-semibold text-[#666]">
@@ -174,9 +165,12 @@ const ThesisComputer = () => {
                     <div>
                       {Array.isArray(tasks) &&
                         tasks.length > 0 &&
-                        tasks.map((task: any) => {
+                        tasks.map((task: any, index) => {
                           return (
-                            <div className="mb-1 flex items-center gap-2">
+                            <div
+                              className="mb-1 flex items-center gap-2"
+                              key={index}
+                            >
                               <span className="text-sm">
                                 {mapStatusToText[task?.status]}
                               </span>
