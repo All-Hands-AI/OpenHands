@@ -400,10 +400,10 @@ def get_tools(
         ThinkTool,
         FinishTool,
     ]
-    if codeact_enable_browsing:
+    if enable_browsing:
         tools.append(WebReadTool)
         tools.append(BrowserTool)
-    if codeact_enable_jupyter:
+    if enable_jupyter:
         tools.append(IPythonTool)
 
     # Determine which editor tool(s) and utility tools to add based on config
