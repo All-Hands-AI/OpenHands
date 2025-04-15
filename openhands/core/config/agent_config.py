@@ -25,6 +25,7 @@ class AgentConfig(BaseModel):
     enable_browsing: bool = Field(default=True)
     enable_llm_editor: bool = Field(default=False)
     enable_jupyter: bool = Field(default=True)
+    enable_mcp_tools: bool = Field(default=True)
     enable_prompt_extensions: bool = Field(default=True)
     disabled_microagents: list[str] = Field(default_factory=list)
     enable_history_truncation: bool = Field(default=True)
@@ -32,18 +33,6 @@ class AgentConfig(BaseModel):
     condenser: CondenserConfig = Field(
         default_factory=lambda: NoOpCondenserConfig(type='noop')
     )
-
-    # planning config
-    planning_enable_browsing: bool = Field(default=True)
-    planning_enable_llm_editor: bool = Field(default=False)
-    planning_enable_jupyter: bool = Field(default=True)
-    planning_enable_mcp_tools: bool = Field(default=False)
-
-    # task solving config
-    task_solving_enable_browsing: bool = Field(default=True)
-    task_solving_enable_llm_editor: bool = Field(default=False)
-    task_solving_enable_jupyter: bool = Field(default=True)
-    task_solving_enable_mcp_tools: bool = Field(default=True)
 
     model_config = {'extra': 'forbid'}
 

@@ -143,6 +143,7 @@ class Session:
 
         llm = self._create_llm(agent_cls)
         agent_config = self.config.get_agent_config(agent_cls)
+        print(f'{agent_cls} agent_config: {agent_config.model_dump_json(indent=2)}')
 
         if settings.enable_default_condenser:
             default_condenser_config = LLMSummarizingCondenserConfig(
@@ -160,6 +161,18 @@ class Session:
         planning_agent = None
         if self.config.enable_planning:
             planning_agent_config = self.config.get_agent_config(planning_agent_cls)
+            print(f'{planning_agent_cls} planning_agent_config: {planning_agent_config.model_dump_json(indent=2)}')
+
+            if settings.enable_default_condenser:
+                default_condenser_config = LLMSummarizingCondenserConfig(
+                    llm_config=llm.config, keep_first=3, max_size=80
+                )
+
+                self.logger.info(
+                    f'Enabling default condenser for planning agent: {default_condenser_config}'
+                )
+                planning_agent_config.condenser = default_condenser_config
+
             planning_agent = Agent.get_cls(planning_agent_cls)(
                 llm, planning_agent_config
             )

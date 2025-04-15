@@ -252,9 +252,9 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
 
 
 def get_tools(
-    planning_enable_browsing: bool = False,
-    planning_enable_llm_editor: bool = False,
-    planning_enable_jupyter: bool = False,
+    enable_browsing: bool = False,
+    enable_llm_editor: bool = False,
+    enable_jupyter: bool = False,
     llm: LLM | None = None,
 ) -> list[ChatCompletionToolParam]:
     SIMPLIFIED_TOOL_DESCRIPTION_LLM_SUBSTRS = ['gpt-', 'o3', 'o1']
@@ -272,12 +272,12 @@ def get_tools(
         ThinkTool,
         FinishTool,
     ]
-    if planning_enable_browsing:
+    if enable_browsing:
         tools.append(WebReadTool)
         tools.append(BrowserTool)
-    if planning_enable_jupyter:
+    if enable_jupyter:
         tools.append(IPythonTool)
-    if planning_enable_llm_editor:
+    if enable_llm_editor:
         tools.append(LLMBasedFileEditTool)
     else:
         tools.append(

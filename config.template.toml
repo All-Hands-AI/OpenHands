@@ -251,16 +251,18 @@ llm_config = 'gpt3'
 
 ###### planning agent configuration #######
 # planning config
-planning_enable_browsing = false
-planning_enable_llm_editor = false
-planning_enable_jupyter = true
-planning_enable_mcp_tools = false
+[agent.PlanningAgent]
+enable_browsing = false
+enable_llm_editor = false
+enable_jupyter = true
+enable_mcp_tools = false
 
 # task solving config
-task_solving_enable_browsing = false
-task_solving_enable_llm_editor = false
-task_solving_enable_jupyter = true
-task_solving_enable_mcp_tools = true
+[agent.TaskSolvingAgent]
+enable_browsing = false
+enable_llm_editor = true
+enable_jupyter = true
+enable_mcp_tools = true
 
 #################################### Sandbox ###################################
 # Configuration for the sandbox

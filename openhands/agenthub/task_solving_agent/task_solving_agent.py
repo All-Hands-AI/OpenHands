@@ -1,83 +1,58 @@
 import os
-from collections import deque
 from datetime import datetime
 
 import openhands.agenthub.task_solving_agent.function_calling as task_solving_function_calling
-from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
 from openhands.core.logger import openhands_logger as logger
-from openhands.core.message import Message, TextContent
+from openhands.core.message import Message
 from openhands.events.action import (
     Action,
     AgentFinishAction,
 )
 from openhands.events.event import Event
 from openhands.llm.llm import LLM
-from openhands.memory.condenser import Condenser
 from openhands.memory.condenser.condenser import Condensation, View
 from openhands.memory.conversation_memory import ConversationMemory
-from openhands.runtime.plugins import (
-    AgentSkillsRequirement,
-    JupyterRequirement,
-    PluginRequirement,
-)
-from openhands.utils.prompt import PromptManager
+from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
 
 
-class TaskSolvingAgent(Agent):
+class TaskSolvingAgent(CodeActAgent):
     VERSION = '1.0'
     """
     This Agent wraps the CodeAct agent with prompt adjustments for general task solving.
-
     """
-
-    sandbox_plugins: list[PluginRequirement] = [
-        # NOTE: AgentSkillsRequirement need to go before JupyterRequirement, since
-        # AgentSkillsRequirement provides a lot of Python functions,
-        # and it needs to be initialized before Jupyter for Jupyter to use those functions.
-        AgentSkillsRequirement(),
-        JupyterRequirement(),
-    ]
 
     def __init__(
         self,
         llm: LLM,
         config: AgentConfig,
     ) -> None:
-        """Initializes a new instance of the CodeActAgent class.
+        """Initializes a new instance of the TaskSolvingAgent class.
 
         Parameters:
         - llm (LLM): The llm to be used by this agent
         - config (AgentConfig): The configuration for this agent
         """
         super().__init__(llm, config)
-        self.pending_actions: deque[Action] = deque()
-        self.reset()
-
+        
+        # Override tools with task-solving-specific tools
         built_in_tools = task_solving_function_calling.get_tools(
-            task_solving_enable_browsing=self.config.task_solving_enable_browsing,
-            task_solving_enable_jupyter=self.config.task_solving_enable_jupyter,
-            task_solving_enable_llm_editor=self.config.task_solving_enable_llm_editor,
+            enable_browsing=self.config.enable_browsing,
+            enable_jupyter=self.config.enable_jupyter,
+            enable_llm_editor=self.config.enable_llm_editor,
             llm=self.llm,
         )
-
         self.tools = built_in_tools
-
-        self.prompt_manager = PromptManager(
+        
+        # Override prompt_manager to use task-solving-specific prompts
+        self.prompt_manager = self.prompt_manager.__class__(
             prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
         )
 
-        # Create a ConversationMemory instance
+        # Override the conversation memory to use task-solving-specific prompts
         self.conversation_memory = ConversationMemory(self.config, self.prompt_manager)
 
-        self.condenser = Condenser.from_config(self.config.condenser)
-        logger.debug(f'Using condenser: {type(self.condenser)}')
-
-    def reset(self) -> None:
-        """Resets the CodeAct Agent."""
-        super().reset()
-        self.pending_actions.clear()
 
     def step(self, state: State) -> Action:
         """Performs one step using the CodeAct Agent.
@@ -125,7 +100,7 @@ class TaskSolvingAgent(Agent):
         }
         params['tools'] = self.tools
 
-        if self.mcp_tools and self.config.task_solving_enable_mcp_tools:
+        if self.mcp_tools and self.config.enable_mcp_tools:
             # Only add tools with unique names
             existing_names = {tool['function']['name'] for tool in params['tools']}
             unique_mcp_tools = [
@@ -135,13 +110,6 @@ class TaskSolvingAgent(Agent):
             ]
             params['tools'] += unique_mcp_tools
 
-        import json
-        logger.debug(
-            f'Available tool names inner TaskSolvingAgent: {", ".join([tool["function"]["name"] for tool in params["tools"]])}'
-        )
-        logger.debug(
-            f'LLM messages inner TaskSolvingAgent:\n{json.dumps(self.llm.format_messages_for_llm(messages), indent=2)}'
-        )
 
         # log to litellm proxy if possible
         params['extra_body'] = {'metadata': state.to_llm_metadata(agent_name=self.name)}
@@ -156,45 +124,22 @@ class TaskSolvingAgent(Agent):
     def _get_messages(self, events: list[Event]) -> list[Message]:
         """Constructs the message history for the LLM conversation.
 
-        This method builds a structured conversation history by processing events from the state
-        and formatting them into messages that the LLM can understand. It handles both regular
-        message flow and function-calling scenarios.
-
-        The method performs the following steps:
-        1. Initializes with system prompt and optional initial user message
-        2. Processes events (Actions and Observations) into messages
-        3. Handles tool calls and their responses in function-calling mode
-        4. Manages message role alternation (user/assistant/tool)
-        5. Applies caching for specific LLM providers (e.g., Anthropic)
-        6. Adds environment reminders for non-function-calling mode
-
         Args:
             events: The list of events to convert to messages
 
         Returns:
-            list[Message]: A list of formatted messages ready for LLM consumption, including:
-                - System message with prompt
-                - Initial user message (if configured)
-                - Action messages (from both user and assistant)
-                - Observation messages (including tool responses)
-                - Environment reminders (in non-function-calling mode)
-
-        Note:
-            - In function-calling mode, tool calls and their responses are carefully tracked
-              to maintain proper conversation flow
-            - Messages from the same role are combined to prevent consecutive same-role messages
-            - For Anthropic models, specific messages are cached according to their documentation
+            list[Message]: A list of formatted messages ready for LLM consumption
         """
         if not self.prompt_manager:
             raise Exception('Prompt Manager not instantiated.')
 
-        # Use ConversationMemory to process initial messages
+        # Use ConversationMemory to process initial messages with datetime
         messages = self.conversation_memory.process_initial_messages(
             with_caching=self.llm.is_caching_prompt_active(),
             current_datetime=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         )
 
-        # Use ConversationMemory to process events
+        # Use the rest of the parent class implementation
         messages = self.conversation_memory.process_events(
             condensed_history=events,
             initial_messages=messages,
@@ -208,39 +153,3 @@ class TaskSolvingAgent(Agent):
             self.conversation_memory.apply_prompt_caching(messages)
 
         return messages
-
-    def _enhance_messages(self, messages: list[Message]) -> list[Message]:
-        """Enhances the user message with additional context based on keywords matched.
-
-        Args:
-            messages (list[Message]): The list of messages to enhance
-
-        Returns:
-            list[Message]: The enhanced list of messages
-        """
-        assert self.prompt_manager, 'Prompt Manager not instantiated.'
-
-        results: list[Message] = []
-        is_first_message_handled = False
-        prev_role = None
-
-        for msg in messages:
-            if msg.role == 'user' and not is_first_message_handled:
-                is_first_message_handled = True
-                # compose the first user message with examples
-                self.prompt_manager.add_examples_to_initial_message(msg)
-
-            elif msg.role == 'user':
-                # Add double newline between consecutive user messages
-                if prev_role == 'user' and len(msg.content) > 0:
-                    # Find the first TextContent in the message to add newlines
-                    for content_item in msg.content:
-                        if isinstance(content_item, TextContent):
-                            # If the previous message was also from a user, prepend two newlines to ensure separation
-                            content_item.text = '\n\n' + content_item.text
-                            break
-
-            results.append(msg)
-            prev_role = msg.role
-
-        return results

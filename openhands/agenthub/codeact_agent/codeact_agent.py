@@ -138,7 +138,7 @@ class CodeActAgent(Agent):
         }
         params['tools'] = self.tools
 
-        if self.mcp_tools:
+        if self.mcp_tools and self.config.enable_mcp_tools:
             # Only add tools with unique names
             existing_names = {tool['function']['name'] for tool in params['tools']}
             unique_mcp_tools = [
