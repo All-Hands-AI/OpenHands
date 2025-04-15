@@ -29,6 +29,7 @@ from openhands.llm.metrics import Metrics, TokenUsage
 from openhands.memory.memory import Memory
 from openhands.runtime.base import Runtime
 from openhands.storage.memory import InMemoryFileStore
+from openhands.events.action.message import SystemMessageAction
 
 
 @pytest.fixture
@@ -51,8 +52,7 @@ def mock_agent():
     agent.llm.config = AppConfig().get_llm_config()
     
     # Add a proper system message mock
-    from openhands.events.action.message import SystemMessageAction
-    system_message = SystemMessageAction(content='Test system message')
+    system_message = SystemMessageAction(content='Test system message', tools=['test_tool'])
     system_message._source = EventSource.AGENT
     system_message._id = -1  # Set invalid ID to avoid the ID check
     agent.get_system_message.return_value = system_message
@@ -1491,3 +1491,21 @@ def test_history_restoration_after_truncation(mock_event_stream, mock_agent):
     assert len(new_controller.state.history) == saved_history_len
     assert new_controller.state.history[0] == first_msg
     assert new_controller.state.start_id == saved_start_id
+
+
+def test_system_message_in_event_stream(mock_agent, test_event_stream):
+    """Test that SystemMessageAction is added to event stream in AgentController."""
+    controller = AgentController(
+        agent=mock_agent,
+        event_stream=test_event_stream,
+        max_iterations=10
+    )
+
+    # Get events from the event stream
+    events = list(test_event_stream.get_events())
+
+    # Verify system message was added to event stream
+    assert len(events) == 1
+    assert isinstance(events[0], SystemMessageAction)
+    assert events[0].content == 'Test system message'
+    assert events[0].tools == ['test_tool']
