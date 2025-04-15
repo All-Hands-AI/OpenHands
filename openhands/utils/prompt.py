@@ -132,5 +132,20 @@ class PromptManager:
             None,
         )
         if latest_user_message:
-            reminder_text = f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>.'
+            reminder_text = ''
+            # Every 10 steps
+            if state.iteration % 10 == 0:
+                reminder_text += """\n\n## WORKFLOW REMINDER: General Workflow Guidance
+*   Follow the **Problem Solving Workflow** outlined before.
+*   Prioritize understanding the problem, exploring the code, planning your fix, implementing it carefully, and **thoroughly testing** according to the **Mandatory Testing Procedure**.
+*   Consider trade-offs between different solutions. The goal is a **robust change that makes the relevant tests pass.** Quality, correctness, and reliability are key.
+*   Actively practice defensive programming: anticipate and handle potential edge cases, unexpected inputs, and different ways the affected code might be called **to ensure the fix works reliably and allows relevant tests to pass.** Analyze the potential impact on other parts of the codebase.
+*   IMPORTANT: Your solution will be tested by additional hidden tests, so do not assume the task is complete just because visible tests pass; refine the solution until you are confident that it is robust and comprehensive. 
+
+## Final Note
+Be thorough in your exploration, testing, and reasoning. It's fine if your thinking process is lengthy - quality and completeness are more important than brevity.
+
+---
+"""
+            reminder_text +=f"ENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>."
             latest_user_message.content.append(TextContent(text=reminder_text))
