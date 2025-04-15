@@ -49,8 +49,6 @@ class MCPClient(BaseModel):
         if mnemonic:
             self._original_mnemonic = mnemonic
 
-        logger.info(f'mnemonic: {mnemonic}')
-
         headers = {
             k: v for k, v in {'sid': sid, 'mnemonic': mnemonic}.items() if v is not None
         }
