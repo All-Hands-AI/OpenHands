@@ -5654,52 +5654,6 @@
         "fr": "Aucune donnée métrique disponible",
         "tr": "Kullanılabilir metrik verisi yok"
     },
-    "CONVERSATION$TOOLS_MODAL_TITLE": {
-        "en": "Available Agent Tools",
-        "ja": "利用可能なエージェントツール",
-        "zh-CN": "可用的代理工具",
-        "zh-TW": "可用的代理工具",
-        "ko-KR": "사용 가능한 에이전트 도구",
-        "de": "Verfügbare Agent-Tools",
-        "no": "Tilgjengelige agentverktøy",
-        "it": "Strumenti dell'agente disponibili",
-        "pt": "Ferramentas de agente disponíveis",
-        "es": "Herramientas de agente disponibles",
-        "ar": "أدوات الوكيل المتاحة",
-        "fr": "Outils d'agent disponibles",
-        "tr": "Kullanılabilir Ajan Araçları"
-    },
-    "CONVERSATION$TOOLS_PARAMETERS": {
-        "en": "Parameters",
-        "ja": "パラメータ",
-        "zh-CN": "参数",
-        "zh-TW": "參數",
-        "ko-KR": "매개변수",
-        "de": "Parameter",
-        "no": "Parametere",
-        "it": "Parametri",
-        "pt": "Parâmetros",
-        "es": "Parámetros",
-        "ar": "المعلمات",
-        "fr": "Paramètres",
-        "tr": "Parametreler"
-    },
-    "CONVERSATION$NO_TOOLS_AVAILABLE": {
-        "en": "No tools available or tools have not been loaded yet",
-        "ja": "ツールが利用できないか、まだ読み込まれていません",
-        "zh-CN": "没有可用的工具或工具尚未加载",
-        "zh-TW": "沒有可用的工具或工具尚未加載",
-        "ko-KR": "사용 가능한 도구가 없거나 도구가 아직 로드되지 않았습니다",
-        "de": "Keine Tools verfügbar oder Tools wurden noch nicht geladen",
-        "no": "Ingen verktøy tilgjengelige eller verktøy er ikke lastet ennå",
-        "it": "Nessuno strumento disponibile o gli strumenti non sono ancora stati caricati",
-        "pt": "Nenhuma ferramenta disponível ou as ferramentas ainda não foram carregadas",
-        "es": "No hay herramientas disponibles o las herramientas aún no se han cargado",
-        "ar": "لا توجد أدوات متاحة أو لم يتم تحميل الأدوات بعد",
-        "fr": "Aucun outil disponible ou les outils n'ont pas encore été chargés",
-        "tr": "Kullanılabilir araç yok veya araçlar henüz yüklenmedi"
-    },
-
     "CONVERSATION$DOWNLOAD_ERROR": {
         "en": "ConversationId unknown, cannot download trajectory",
         "ja": "会話IDが不明です。軌跡をダウンロードできません",
@@ -5999,24 +5953,6 @@
         "fr": "Êtes-vous sûr de vouloir supprimer cette conversation ? Cette action ne peut pas être annulée.",
         "tr": "Bu konuşmayı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.",
         "de": "Sind Sie sicher, dass Sie dieses Gespräch löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden."
-    },
-    "CONVERSATION$AVAILABLE_TOOLS": {
-        "en": "Available Agent Tools"
-    },
-    "CONVERSATION$FAILED_TO_FETCH_TOOLS": {
-        "en": "Failed to fetch tools. Please try again later",
-        "ja": "ツールの取得に失敗しました。後でもう一度お試しください",
-        "zh-CN": "获取工具失败。请稍后再试",
-        "zh-TW": "獲取工具失敗。請稍後再試",
-        "ko-KR": "도구를 가져오지 못했습니다. 나중에 다시 시도해 주세요",
-        "de": "Fehler beim Abrufen der Tools. Bitte versuchen Sie es später erneut",
-        "no": "Kunne ikke hente verktøy. Prøv igjen senere",
-        "it": "Impossibile recuperare gli strumenti. Riprova più tardi",
-        "pt": "Falha ao buscar ferramentas. Por favor, tente novamente mais tarde",
-        "es": "Error al obtener herramientas. Por favor, inténtelo de nuevo más tarde",
-        "ar": "فشل في جلب الأدوات. يرجى المحاولة مرة أخرى لاحقًا",
-        "fr": "Échec de la récupération des outils. Veuillez réessayer plus tard",
-        "tr": "Araçlar getirilemedi. Lütfen daha sonra tekrar deneyin"
     },
     "FEEDBACK$TITLE": {
         "en": "Feedback",

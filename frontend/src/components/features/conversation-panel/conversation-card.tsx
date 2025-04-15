@@ -1,5 +1,5 @@
 import React from "react";
-import { useSelector, useDispatch } from "react-redux";
+import { useSelector } from "react-redux";
 import posthog from "posthog-js";
 import { useTranslation } from "react-i18next";
 import { formatTimeDelta } from "#/utils/format-time-delta";
@@ -52,13 +52,10 @@ export function ConversationCard({
   const [contextMenuVisible, setContextMenuVisible] = React.useState(false);
   const [titleMode, setTitleMode] = React.useState<"view" | "edit">("view");
   const [metricsModalVisible, setMetricsModalVisible] = React.useState(false);
-  const [toolsModalVisible, setToolsModalVisible] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
-  const dispatch = useDispatch();
 
-  // Subscribe to metrics and tools data from Redux store
+  // Subscribe to metrics data from Redux store
   const metrics = useSelector((state: RootState) => state.metrics);
-  const tools = useSelector((state: RootState) => state.tools);
 
   const handleBlur = () => {
     if (inputRef.current?.value) {
@@ -130,43 +127,6 @@ export function ConversationCard({
   const handleDisplayCost = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
     setMetricsModalVisible(true);
-  };
-
-  const handleDisplayTools = async (
-    event: React.MouseEvent<HTMLButtonElement>,
-  ) => {
-    event.stopPropagation();
-    // Remove console.log statements to avoid unlocalized strings
-
-    // Always fetch the tools to ensure we have the latest
-    if (conversationId) {
-      try {
-        const response = await fetch(
-          `/api/conversations/${conversationId}/tools`,
-        );
-        const data = await response.json();
-
-        if (data.tools) {
-          dispatch({ type: "tools/setTools", payload: { tools: data.tools } });
-        }
-      } catch (error) {
-        // Use dispatch to set an error state or handle silently
-        // We could add a tools/setError action if needed
-        dispatch({
-          type: "tools/setTools",
-          payload: {
-            tools: [
-              {
-                name: "Error",
-                description: t(I18nKey.CONVERSATION$FAILED_TO_FETCH_TOOLS),
-              },
-            ],
-          },
-        });
-      }
-    }
-
-    setToolsModalVisible(true);
   };
 
   React.useEffect(() => {
@@ -247,7 +207,6 @@ export function ConversationCard({
                       : undefined
                   }
                   onDisplayCost={showOptions ? handleDisplayCost : undefined}
-                  onDisplayTools={showOptions ? handleDisplayTools : undefined}
                   position={variant === "compact" ? "top" : "bottom"}
                 />
               )}
@@ -351,60 +310,6 @@ export function ConversationCard({
             <div className="rounded-md p-4 text-center">
               <p className="text-neutral-400">
                 {t(I18nKey.CONVERSATION$NO_METRICS)}
-              </p>
-            </div>
-          )}
-        </div>
-      </BaseModal>
-
-      <BaseModal
-        isOpen={toolsModalVisible}
-        onOpenChange={setToolsModalVisible}
-        title={t(I18nKey.CONVERSATION$TOOLS_MODAL_TITLE)}
-        testID="tools-modal"
-      >
-        <div className="space-y-4">
-          {tools?.tools && tools.tools.length > 0 ? (
-            <div className="rounded-md p-3">
-              <div className="grid gap-3">
-                {tools.tools.map((tool, index) => (
-                  <div
-                    key={index}
-                    className="border-b border-neutral-700 pb-3 mb-3 last:border-b-0 last:mb-0 last:pb-0"
-                  >
-                    <div className="flex justify-between items-center">
-                      <span className="text-lg font-semibold">{tool.name}</span>
-                    </div>
-                    {tool.description && (
-                      <div className="mt-1 text-sm text-neutral-300">
-                        {tool.description}
-                      </div>
-                    )}
-                    {tool.parameters && (
-                      <div className="mt-2">
-                        <div className="text-sm font-medium mb-1">
-                          {t(I18nKey.CONVERSATION$TOOLS_PARAMETERS)}
-                        </div>
-                        <div className="pl-2 text-sm">
-                          {Object.entries(tool.parameters).map(
-                            ([key, value]) => (
-                              <div key={key} className="grid grid-cols-2 gap-2">
-                                <span className="text-neutral-400">{key}:</span>
-                                <span>{JSON.stringify(value)}</span>
-                              </div>
-                            ),
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="rounded-md p-4 text-center">
-              <p className="text-neutral-400">
-                {t(I18nKey.CONVERSATION$NO_TOOLS_AVAILABLE)}
               </p>
             </div>
           )}

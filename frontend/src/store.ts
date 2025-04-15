@@ -10,7 +10,6 @@ import { jupyterReducer } from "./state/jupyter-slice";
 import securityAnalyzerReducer from "./state/security-analyzer-slice";
 import statusReducer from "./state/status-slice";
 import metricsReducer from "./state/metrics-slice";
-import toolsReducer from "./state/tools-slice";
 
 export const rootReducer = combineReducers({
   fileState: fileStateReducer,
@@ -24,7 +23,6 @@ export const rootReducer = combineReducers({
   securityAnalyzer: securityAnalyzerReducer,
   status: statusReducer,
   metrics: metricsReducer,
-  tools: toolsReducer,
 });
 
 const store = configureStore({

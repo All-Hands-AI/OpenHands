@@ -8,7 +8,6 @@ interface ConversationCardContextMenuProps {
   onDelete?: (event: React.MouseEvent<HTMLButtonElement>) => void;
   onEdit?: (event: React.MouseEvent<HTMLButtonElement>) => void;
   onDisplayCost?: (event: React.MouseEvent<HTMLButtonElement>) => void;
-  onDisplayTools?: (event: React.MouseEvent<HTMLButtonElement>) => void;
   onDownloadViaVSCode?: (event: React.MouseEvent<HTMLButtonElement>) => void;
   position?: "top" | "bottom";
 }
@@ -18,7 +17,6 @@ export function ConversationCardContextMenu({
   onDelete,
   onEdit,
   onDisplayCost,
-  onDisplayTools,
   onDownloadViaVSCode,
   position = "bottom",
 }: ConversationCardContextMenuProps) {
@@ -58,14 +56,6 @@ export function ConversationCardContextMenu({
           onClick={onDisplayCost}
         >
           Display Cost
-        </ContextMenuListItem>
-      )}
-      {onDisplayTools && (
-        <ContextMenuListItem
-          testId="display-tools-button"
-          onClick={onDisplayTools}
-        >
-          Display Tools
         </ContextMenuListItem>
       )}
     </ContextMenu>
