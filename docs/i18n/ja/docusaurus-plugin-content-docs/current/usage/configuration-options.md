@@ -348,12 +348,12 @@ dockerコマンドで使用する場合は、`-e LLM_<option>`として渡しま
   - デフォルト値: `true`
   - 説明: 関数呼び出しが有効かどうか
 
-- `codeact_enable_browsing`
+- `enable_browsing`
   - 型: `bool`
   - デフォルト値: `false`
   - 説明: アクションスペースでブラウジングデリゲートが有効かどうか（関数呼び出しでのみ機能）
 
-- `codeact_enable_llm_editor`
+- `enable_llm_editor`
   - 型: `bool`
   - デフォルト値: `false`
   - 説明: アクションスペースでLLMエディタが有効かどうか（関数呼び出しでのみ機能）

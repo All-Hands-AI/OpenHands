@@ -24,6 +24,7 @@ const HANDLED_ACTIONS: OpenHandsEventType[] = [
   "browse_interactive",
   "edit",
   "recall",
+  "think",
 ];
 
 function getRiskText(risk: ActionSecurityRisk) {
