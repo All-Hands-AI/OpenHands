@@ -304,12 +304,16 @@ export function WsClientProvider({
 
     messageQueueRef.current = []
     processingQueueRef.current = false
-    setReplayStatus(ReplayStatus.IN_PROGRESS)
 
-    const query = {
+    const query: any = {
       latest_event_id: -1,
       conversation_id: conversationId,
       auth: jwt,
+    }
+
+    if (isShareRoute) {
+      query.mode = "shared"
+      setReplayStatus(ReplayStatus.IN_PROGRESS)
     }
 
     const baseUrl =
@@ -328,7 +332,7 @@ export function WsClientProvider({
     sioRef.current = sio
 
     // No cleanup function to run in background
-  }, [conversationId, jwt])
+  }, [conversationId, jwt, isShareRoute])
 
   const value = React.useMemo<UseWsClient>(
     () => ({

@@ -17,14 +17,17 @@ import { setCurrentPathViewed } from "#/state/file-state-slice"
 import { RootState } from "#/store"
 import { AgentState } from "#/types/agent-state"
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64"
-import { displayErrorToast } from "#/utils/custom-toast-handlers"
+import {
+  displayErrorToast,
+  displaySuccessToast,
+} from "#/utils/custom-toast-handlers"
 import { downloadTrajectory } from "#/utils/download-trajectory"
 import { useDisclosure } from "@heroui/react"
 import posthog from "posthog-js"
 import React, { useEffect } from "react"
 import { useTranslation } from "react-i18next"
-import { FaFileInvoice } from "react-icons/fa"
 import { FaPowerOff, FaCheck } from "react-icons/fa6"
+import { FaFileInvoice, FaLink } from "react-icons/fa"
 import { IoFolder } from "react-icons/io5"
 import { RiPhoneFindLine } from "react-icons/ri"
 import { useDispatch, useSelector } from "react-redux"
@@ -246,6 +249,15 @@ export function ChatInterface() {
     })
   }
 
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href)
+      displaySuccessToast("Share URL copied to clipboard!")
+    } catch (error) {
+      displayErrorToast(t(I18nKey.CHAT_INTERFACE$CHAT_MESSAGE_COPY_FAILED))
+    }
+  }
+
   const isWaitingForUserInput =
     curAgentState === AgentState.AWAITING_USER_INPUT ||
     curAgentState === AgentState.FINISHED
@@ -344,21 +356,30 @@ export function ChatInterface() {
               ? "Task replay completed"
               : "Thesis is replaying the task..."}
           </p>
-          {replayStatus === ReplayStatus.COMPLETED ? (
+          <div className="flex items-center gap-2">
             <button
-              className="rounded-md bg-[rgba(0,0,0,0.8)] px-4 py-2 text-sm text-white hover:bg-[rgba(0,0,0,0.7)]"
-              onClick={handleWatchAgain}
+              className="flex items-center gap-1 rounded-md px-2 py-2 text-sm text-[rgba(0,0,0,0.8)] hover:text-[rgba(0,0,0,0.8)]"
+              onClick={handleCopyLink}
+              title={t("Copy share link")}
             >
-              Watch again
+              <FaLink size={16} />
             </button>
-          ) : (
-            <button
-              className="rounded-md bg-[rgba(0,0,0,0.8)] px-4 py-2 text-sm text-white hover:bg-[rgba(0,0,0,0.7)]"
-              onClick={handleSkipToResults}
-            >
-              Skip to results
-            </button>
-          )}
+            {replayStatus === ReplayStatus.COMPLETED ? (
+              <button
+                className="rounded-md bg-[rgba(0,0,0,0.8)] px-4 py-2 text-sm text-white hover:bg-[rgba(0,0,0,0.7)]"
+                onClick={handleWatchAgain}
+              >
+                Watch again
+              </button>
+            ) : (
+              <button
+                className="rounded-md bg-[rgba(0,0,0,0.8)] px-4 py-2 text-sm text-white hover:bg-[rgba(0,0,0,0.7)]"
+                onClick={handleSkipToResults}
+              >
+                Skip to results
+              </button>
+            )}
+          </div>
         </div>
       ) : (
         <div className="flex flex-col gap-[6px] px-4 pb-4">

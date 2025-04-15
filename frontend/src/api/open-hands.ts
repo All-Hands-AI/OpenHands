@@ -349,6 +349,47 @@ class OpenHands {
       return ""
     }
   }
+
+  /**
+   * Change the visibility of a conversation
+   * @param conversationId The ID of the conversation
+   * @param isPublished Whether the conversation should be publicly visible
+   * @returns Whether the request was successful
+   */
+  static async changeConversationVisibility(
+    conversationId: string,
+    isPublished: boolean,
+  ): Promise<boolean> {
+    try {
+      const response = await openHands.patch(
+        `/api/conversations/${conversationId}/change-visibility`,
+        { is_published: isPublished },
+      )
+      return response.status === 200
+    } catch (error) {
+      console.error("changeConversationVisibility", error)
+      return false
+    }
+  }
+
+  /**
+   * Get the visibility status of a conversation
+   * @param conversationId The ID of the conversation
+   * @returns Whether the conversation is publicly visible
+   */
+  static async getConversationVisibility(
+    conversationId: string,
+  ): Promise<boolean> {
+    try {
+      const { data } = await openHands.get<boolean>(
+        `/api/conversations/${conversationId}/visibility`,
+      )
+      return data
+    } catch (error) {
+      console.error("getConversationVisibility", error)
+      return false
+    }
+  }
 }
 
 export default OpenHands
