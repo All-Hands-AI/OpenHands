@@ -235,7 +235,7 @@ def send_pull_request(
     target_branch: str | None = None,
     reviewer: str | None = None,
     pr_title: str | None = None,
-    base_domain: str = "github.com",
+    base_domain: str = 'github.com',
 ) -> str:
     """Send a pull request to a GitHub or Gitlab repository.
 
@@ -258,7 +258,8 @@ def send_pull_request(
     handler = None
     if platform == Platform.GITHUB:
         handler = ServiceContextIssue(
-            GithubIssueHandler(issue.owner, issue.repo, token, username, base_domain), None
+            GithubIssueHandler(issue.owner, issue.repo, token, username, base_domain),
+            None,
         )
     else:  # platform == Platform.GITLAB
         handler = ServiceContextIssue(
@@ -358,7 +359,7 @@ def update_existing_pull_request(
     llm_config: LLMConfig,
     comment_message: str | None = None,
     additional_message: str | None = None,
-    base_domain: str = "github.com",
+    base_domain: str = 'github.com',
 ) -> str:
     """Update an existing pull request with the new patches.
 
@@ -377,7 +378,8 @@ def update_existing_pull_request(
     handler = None
     if platform == Platform.GITHUB:
         handler = ServiceContextIssue(
-            GithubIssueHandler(issue.owner, issue.repo, token, username, base_domain), llm_config
+            GithubIssueHandler(issue.owner, issue.repo, token, username, base_domain),
+            llm_config,
         )
     else:  # platform == Platform.GITLAB
         handler = ServiceContextIssue(
@@ -464,7 +466,7 @@ def process_single_issue(
     target_branch: str | None = None,
     reviewer: str | None = None,
     pr_title: str | None = None,
-    base_domain: str = "github.com",
+    base_domain: str = 'github.com',
 ) -> None:
     if not resolver_output.success and not send_on_failure:
         logger.info(
@@ -531,7 +533,7 @@ def process_all_successful_issues(
     pr_type: str,
     llm_config: LLMConfig,
     fork_owner: str | None,
-    base_domain: str = "github.com",
+    base_domain: str = 'github.com',
 ) -> None:
     output_path = os.path.join(output_dir, 'output.jsonl')
     for resolver_output in load_all_resolver_outputs(output_path):
@@ -639,7 +641,7 @@ def main() -> None:
     parser.add_argument(
         '--base-domain',
         type=str,
-        default="github.com",
+        default='github.com',
         help='Base domain for GitHub Enterprise (default: github.com)',
     )
     my_args = parser.parse_args()
