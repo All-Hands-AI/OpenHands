@@ -10,6 +10,7 @@ import CodeView from "./CodeView"
 import EditorContent from "./EditorContent"
 import McpView from "./McpView"
 import { STEP_STATUSES } from "./TaskProgress"
+import { cn } from "#/utils/utils"
 
 const ThesisComputer = () => {
   const isViewDrawer = true
@@ -19,6 +20,8 @@ const ThesisComputer = () => {
   const scrollRef = useRef<HTMLDivElement>(null)
   const [currentStep, setCurrentStep] = useState(0)
   const totalSteps = computerList.length
+  const divRef = useRef(null)
+  const [width, setWidth] = useState(0)
 
   const handleNextStep = () => {
     if (currentStep < totalSteps - 1) {
@@ -36,6 +39,31 @@ const ThesisComputer = () => {
     const step = Math.floor((value / 100) * (totalSteps - 1))
     setCurrentStep(step)
   }
+
+  useEffect(() => {
+    const updateWidth = () => {
+      if (divRef.current) {
+        const { width } = divRef.current.getBoundingClientRect()
+        setWidth(width)
+      }
+    }
+
+    const observer = new ResizeObserver(() => {
+      updateWidth()
+    })
+
+    if (divRef.current) {
+      observer.observe(divRef.current)
+    }
+
+    updateWidth()
+
+    return () => {
+      if (divRef.current) {
+        observer.unobserve(divRef.current)
+      }
+    }
+  }, [])
 
   useEffect(() => {
     if (eventID && computerList.length > 0) {
@@ -67,7 +95,10 @@ const ThesisComputer = () => {
   }
 
   return (
-    <div className="flex h-full w-full flex-col overflow-y-auto rounded-xl rounded-br-none rounded-tr-none border border-neutral-1000 bg-white p-4">
+    <div
+      ref={divRef}
+      className="flex h-full w-full flex-col overflow-y-auto rounded-xl rounded-br-none rounded-tr-none border border-neutral-1000 bg-white p-4"
+    >
       <div className="flex items-center justify-between">
         <h4 className="text-neutral-1 text-18 font-semibold">Thesis</h4>
         {/* <Tooltip>
@@ -104,17 +135,24 @@ const ThesisComputer = () => {
             <div className="mb-3 w-auto rounded-lg" key={index}>
               <p className="text-[14px] font-medium text-neutral-700">
                 Thesis is using{" "}
-                <span className="text-[16px] font-semibold text-neutral-100">
+                <span className="font-semibold text-neutral-100">
                   {mapObservationTypeToText[observation] || "Terminal"}
                 </span>
               </p>
-              <div className="mt-1 w-fit rounded-full bg-neutral-1000 px-3 py-1">
-                <p className="text-[12px] font-medium text-neutral-100">
-                  {observation === ObservationType.MCP ||
-                  observation === ObservationType.MCP_PLAN
-                    ? `MCP call ${function_name}`
-                    : computerItem?.message}
-                </p>
+              <div
+                className={cn(
+                  "mt-1 w-fit max-w-[500px] truncate rounded-full bg-neutral-1000 px-3 py-1 text-[12px] font-medium text-neutral-100",
+                  width <= 550 && "max-w-[400px]",
+                  width <= 450 && "max-w-[300px]",
+                  width <= 350 && "max-w-[200px]",
+                  width <= 250 && "max-w-[150px]",
+                  width <= 190 && "max-w-[100px]",
+                )}
+              >
+                {observation === ObservationType.MCP ||
+                observation === ObservationType.MCP_PLAN
+                  ? `MCP call ${function_name}`
+                  : computerItem?.message}
               </div>
             </div>
           )
