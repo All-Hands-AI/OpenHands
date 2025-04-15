@@ -78,7 +78,7 @@ class LLMConfig(BaseModel):
     modify_params: bool = Field(default=True)
     disable_vision: bool | None = Field(default=None)
     caching_prompt: bool = Field(default=True)
-    log_completions: bool = Field(default=False)
+    log_completions: bool = Field(default=True)
     log_completions_folder: str = Field(default=os.path.join(LOG_DIR, 'completions'))
     custom_tokenizer: str | None = Field(default=None)
     native_tool_calling: bool | None = Field(default=None)
@@ -140,6 +140,8 @@ class LLMConfig(BaseModel):
             try:
                 # Merge base config with overrides
                 merged = {**base_config.model_dump(), **overrides}
+                logger.info(f'{name} overrides: {overrides}')
+                logger.info(f'{name} merged: {merged}')
                 custom_config = cls.model_validate(merged)
                 llm_mapping[name] = custom_config
             except ValidationError:

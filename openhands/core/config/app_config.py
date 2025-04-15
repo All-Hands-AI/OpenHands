@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field, SecretStr
 
 from openhands.core import logger
 from openhands.core.config.agent_config import AgentConfig
+from openhands.core.config.condenser_config import CondenserConfig, NoOpCondenserConfig
 from openhands.core.config.config_utils import (
     OH_DEFAULT_AGENT,
     OH_MAX_ITERATIONS,
@@ -49,7 +50,8 @@ class AppConfig(BaseModel):
         file_uploads_allowed_extensions: Allowed file extensions. `['.*']` allows all.
         cli_multiline_input: Whether to enable multiline input in CLI. When disabled,
             input is read line by line. When enabled, input continues until /exit command.
-        mcp: MCP configuration settings.
+        dict_mcp_config: dictionary of MCP configurations.
+        condenser: Condenser configuration settings.
     """
 
     llms: dict[str, LLMConfig] = Field(default_factory=dict)
@@ -94,6 +96,7 @@ class AppConfig(BaseModel):
     )  # Maximum number of concurrent agent loops allowed per user
     # mcp: MCPConfig = Field(default_factory=MCPConfig)
     dict_mcp_config: dict[str, MCPConfig] = Field(default_factory=dict)
+    condenser: CondenserConfig = Field(default_factory=NoOpCondenserConfig)
     enable_microagents: bool = Field(default=True)
 
     defaults_dict: ClassVar[dict] = {}
