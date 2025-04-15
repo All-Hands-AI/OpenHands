@@ -1,16 +1,23 @@
 """Tools for the ReadOnlyAgent.
 
-This module imports the read-only tools from the CodeActAgent's tools module.
+This module defines the read-only tools for the ReadOnlyAgent.
 """
 
-from openhands.agenthub.codeact_agent.tools import (
-    FinishTool,
-    GlobTool,
-    GrepTool,
-    ThinkTool,
-    ViewTool,
-    WebReadTool,
-)
+from .finish import FinishTool
+from .glob import GlobTool
+from .grep import GrepTool
+from .think import ThinkTool
+from .view import ViewTool
+from .web_read import WebReadTool
+
+__all__ = [
+    'FinishTool',
+    'ViewTool',
+    'ThinkTool',
+    'GrepTool',
+    'GlobTool',
+    'WebReadTool',
+]
 
 # Define the list of read-only tools
 READ_ONLY_TOOLS = [
