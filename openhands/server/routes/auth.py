@@ -19,7 +19,6 @@ from web3 import Web3
 
 from openhands.server.auth import get_user_id
 from openhands.server.db import database
-from openhands.server.models import User
 from openhands.server.utils.crypto import generate_mnemonic
 
 app = APIRouter(prefix='/api/auth')

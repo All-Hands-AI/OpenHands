@@ -17,8 +17,8 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.server import shared
 from openhands.server.auth import get_user_id
 from openhands.server.routes.auth import JWT_SECRET
+from openhands.server.thesis_auth import get_user_detail_from_thesis_auth_server
 from openhands.server.types import SessionMiddlewareInterface
-from openhands.server.models import User
 from openhands.server.db import database
 
 
@@ -242,7 +242,6 @@ class CheckUserActivationMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         if request.url.path in self.public_paths:
             return await call_next(request)
-
         for pattern in self.public_path_patterns:
             if request.url.path.startswith(pattern):
                 remaining = request.url.path[len(pattern):]
@@ -258,11 +257,8 @@ class CheckUserActivationMiddleware(BaseHTTPMiddleware):
                 content={'detail': 'User not authenticated'},
             )
 
-        # Check if the user exists and is activated
-        query = select(User).where(User.c.public_key == user_id.lower())
-        user = await database.fetch_one(query)
-
-        if not user:
+        user = get_user_detail_from_thesis_auth_server(request.headers.get('Authorization'))
+        if not user or user['status'] != 1:
             return JSONResponse(
                 status_code=404,
                 content={'detail': 'User not found'},
@@ -274,6 +270,8 @@ class CheckUserActivationMiddleware(BaseHTTPMiddleware):
                 content={'detail': 'User account is not activated'},
             )
 
+        # Only set user in request.state if all checks pass
+        request.state.user = user
         return await call_next(request)
 
 

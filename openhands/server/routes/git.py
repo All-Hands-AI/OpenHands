@@ -19,7 +19,6 @@ from openhands.integrations.service_types import (
 from openhands.server.auth import get_access_token, get_provider_tokens, get_user_id
 from openhands.server.shared import server_config
 from openhands.server.db import database
-from openhands.server.models import User as UserModel
 
 app = APIRouter(prefix='/api/user')
 

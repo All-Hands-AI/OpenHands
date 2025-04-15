@@ -9,7 +9,7 @@ from sqlalchemy import select, update, delete
 
 from openhands.server.auth import get_user_id
 from openhands.server.db import database
-from openhands.server.models import InvitationCode, User
+from openhands.server.models import InvitationCode
 from openhands.core.logger import openhands_logger as logger
 
 app = APIRouter(prefix='/api/invitation')
