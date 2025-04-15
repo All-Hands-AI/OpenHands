@@ -99,6 +99,7 @@ def _convert_pydantic_to_dict(obj: BaseModel | dict) -> dict:
 def event_to_dict(event: 'Event') -> dict:
     # Handle mock objects
     from unittest.mock import Mock
+
     if isinstance(event, Mock):
         # Create a minimal dictionary with required fields for mock objects
         d = {
@@ -114,7 +115,7 @@ def event_to_dict(event: 'Event') -> dict:
             'message': str(getattr(event, 'content', '')),
         }
         return d
-    
+
     # Normal event processing
     props = asdict(event)
     d = {}
@@ -128,16 +129,28 @@ def event_to_dict(event: 'Event') -> dict:
         if key == 'timestamp' and 'timestamp' in d:
             if isinstance(d['timestamp'], datetime):
                 d['timestamp'] = d['timestamp'].isoformat()
-        if key == 'source' and 'source' in d:
+        if key == 'source' and 'source' in d and hasattr(d['source'], 'value'):
             d['source'] = d['source'].value
-        if key == 'recall_type' and 'recall_type' in d:
+        if key == 'recall_type' and 'recall_type' in d and hasattr(d['recall_type'], 'value'):
             d['recall_type'] = d['recall_type'].value
-        if key == 'tool_call_metadata' and 'tool_call_metadata' in d:
+        if key == 'tool_call_metadata' and 'tool_call_metadata' in d and hasattr(d['tool_call_metadata'], 'model_dump'):
             d['tool_call_metadata'] = d['tool_call_metadata'].model_dump()
         if key == 'llm_metrics' and 'llm_metrics' in d:
-            d['llm_metrics'] = d['llm_metrics'].get()
+            # Handle the case where llm_metrics is a dict with a get method
+            if hasattr(d['llm_metrics'], 'get') and callable(d['llm_metrics'].get):
+                # Check if it's a method that requires arguments
+                import inspect
+                if inspect.ismethod(d['llm_metrics'].get) and len(inspect.signature(d['llm_metrics'].get).parameters) == 0:
+                    d['llm_metrics'] = d['llm_metrics'].get()
+                else:
+                    # If it's a dict-like object, convert it to a regular dict
+                    if isinstance(d['llm_metrics'], dict):
+                        d['llm_metrics'] = dict(d['llm_metrics'])
+                    else:
+                        # For non-dict objects, just use the object as is
+                        pass
         props.pop(key, None)
-    
+
     if 'security_risk' in props and props['security_risk'] is None:
         props.pop('security_risk')
     if 'action' in d:
@@ -162,7 +175,7 @@ def event_to_dict(event: 'Event') -> dict:
     # Include success field for CmdOutputObservation
     if hasattr(event, 'success'):
         d['success'] = event.success
-    
+
     return d
 
 
