@@ -61,12 +61,13 @@ describe("TaskCard", () => {
     expect(createConversationSpy).toHaveBeenCalled();
   });
 
-  it("should disable the launch button when creating a conversation", async () => {
+  it("should disable the launch button and update text content when creating a conversation", async () => {
     renderTaskCard();
 
     const launchButton = screen.getByTestId("task-launch-button");
     await userEvent.click(launchButton);
 
+    expect(launchButton).toHaveTextContent(/Loading.../i);
     expect(launchButton).toBeDisabled();
   });
 });

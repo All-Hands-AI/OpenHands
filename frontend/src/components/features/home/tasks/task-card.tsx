@@ -1,13 +1,14 @@
 import { SuggestedTask } from "./task.types";
 import { useIsCreatingConversation } from "#/hooks/use-is-creating-conversation";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
+import { cn } from "#/utils/utils";
 
 interface TaskCardProps {
   task: SuggestedTask;
 }
 
 export function TaskCard({ task }: TaskCardProps) {
-  const { mutate: createConversation } = useCreateConversation();
+  const { mutate: createConversation, isPending } = useCreateConversation();
   const isCreatingConversation = useIsCreatingConversation();
 
   return (
@@ -22,11 +23,15 @@ export function TaskCard({ task }: TaskCardProps) {
       <button
         type="button"
         data-testid="task-launch-button"
-        className="underline underline-offset-2"
+        className={cn(
+          "underline underline-offset-2 disabled:opacity-80",
+          isPending && "no-underline font-bold",
+        )}
         disabled={isCreatingConversation}
         onClick={() => createConversation({})}
       >
-        Launch
+        {!isPending && "Launch"}
+        {isPending && "Loading..."}
       </button>
     </li>
   );
