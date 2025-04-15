@@ -17,11 +17,11 @@ function EditorScreen() {
   const { data: gitChanges, isSuccess, isError, error } = useGetGitChanges();
 
   const isNotGitRepoError =
-    isError && retrieveAxiosErrorMessage(error) === "Not a git repository";
+    error && retrieveAxiosErrorMessage(error) === "Not a git repository";
 
   return (
     <main className="h-full overflow-y-scroll px-4 py-3 gap-3 flex flex-col">
-      {!isNotGitRepoError && isError && (
+      {!isNotGitRepoError && error && (
         <StatusMessage>{retrieveAxiosErrorMessage(error)}</StatusMessage>
       )}
       {isNotGitRepoError && (
