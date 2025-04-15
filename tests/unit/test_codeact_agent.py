@@ -32,7 +32,7 @@ from openhands.events.observation.commands import (
 )
 from openhands.events.tool import ToolCallMetadata
 from openhands.llm.llm import LLM
-
+from openhands.events.action.message import SystemMessageAction
 
 @pytest.fixture
 def agent() -> CodeActAgent:
@@ -409,3 +409,17 @@ def test_enhance_messages_adds_newlines_between_consecutive_user_messages(
     # Fifth message only has ImageContent, no TextContent to modify
     assert len(enhanced_messages[5].content) == 1
     assert isinstance(enhanced_messages[5].content[0], ImageContent)
+
+def test_get_system_message():
+    """Test that the Agent.get_system_message method returns a SystemMessageAction."""
+    # Create a mock agent
+    agent = CodeActAgent(llm=LLM(LLMConfig()), config=AgentConfig())
+
+    result = agent.get_system_message()
+
+    # Check that the system message was created correctly
+    assert isinstance(result, SystemMessageAction)
+    assert "You are OpenHands agent" in result.content
+    assert len(result.tools) > 0
+    assert any(tool['function']['name'] == 'execute_bash' for tool in result.tools)
+    assert result._source == EventSource.AGENT
