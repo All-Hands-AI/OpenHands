@@ -272,7 +272,7 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
         token = auth_header.split(' ')[1]
         try:
             payload = jwt.decode(token, JWT_SECRET, algorithms=['HS256'])
-            request.state.user_id = payload['sub']
+            request.state.user_id = payload['user']['publicAddress']
             return await call_next(request)
         except jwt.ExpiredSignatureError:
             return JSONResponse(
