@@ -68,14 +68,6 @@ export const chatSlice = createSlice({
         timestamp: action.payload.timestamp || new Date().toISOString(),
         pending: !!action.payload.pending,
       }
-      const assistantMessage: Message = {
-        type: "customAction",
-        sender: "assistant",
-        content: "thuongdooooooooo",
-        imageUrls: [],
-        timestamp: new Date().toISOString(),
-        pending: false,
-      }
       // Remove any pending messages
       let i = state.messages.length
       while (i) {
@@ -85,7 +77,7 @@ export const chatSlice = createSlice({
           state.messages.splice(i, 1)
         }
       }
-      state.messages.push(message, assistantMessage)
+      state.messages.push(message)
     },
 
     addAssistantMessage(state: SliceState, action: PayloadAction<string>) {
