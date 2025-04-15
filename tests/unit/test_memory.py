@@ -57,6 +57,7 @@ def prompt_dir(tmp_path):
     # Return the temporary directory path
     return tmp_path
 
+
 @pytest.fixture
 def mock_agent():
     # Create a dummy agent for the controller
@@ -64,14 +65,15 @@ def mock_agent():
     agent.llm = MagicMock(spec=LLM)
     agent.llm.metrics = Metrics()
     agent.llm.config = AppConfig().get_llm_config()
-    
+
     # Add a proper system message mock
     from openhands.events.action.message import SystemMessageAction
+
     system_message = SystemMessageAction(content='Test system message')
     system_message._source = EventSource.AGENT
     system_message._id = -1  # Set invalid ID to avoid the ID check
     agent.get_system_message.return_value = system_message
-    
+
 
 @pytest.mark.asyncio
 async def test_memory_on_event_exception_handling(memory, event_stream, mock_agent):

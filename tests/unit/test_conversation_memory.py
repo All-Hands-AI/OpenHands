@@ -13,6 +13,7 @@ from openhands.events.action import (
     CmdRunAction,
     MessageAction,
 )
+from openhands.events.action.message import SystemMessageAction
 from openhands.events.event import (
     Event,
     EventSource,
@@ -37,7 +38,7 @@ from openhands.events.observation.reject import UserRejectObservation
 from openhands.events.tool import ToolCallMetadata
 from openhands.memory.conversation_memory import ConversationMemory
 from openhands.utils.prompt import PromptManager, RepositoryInfo, RuntimeInfo
-from openhands.events.action.message import SystemMessageAction
+
 
 @pytest.fixture
 def agent_config():
@@ -350,7 +351,7 @@ def test_process_events_with_function_calling_observation(conversation_memory):
     )
 
     # No direct message when using function calling
-    assert len(messages) == 0 # should be no messages
+    assert len(messages) == 0  # should be no messages
 
 
 def test_process_events_with_message_action_with_image(conversation_memory):
@@ -560,7 +561,7 @@ def test_process_events_with_microagent_observation_extensions_disabled(
     )
 
     # When prompt extensions are disabled, the RecallObservation should be ignored
-    assert len(messages) == 0 # should be no messages
+    assert len(messages) == 0  # should be no messages
 
     # Verify the prompt_manager was not called
     conversation_memory.prompt_manager.build_workspace_context.assert_not_called()
@@ -582,7 +583,7 @@ def test_process_events_with_empty_microagent_knowledge(conversation_memory):
     )
 
     # The implementation returns an empty string and it doesn't creates a message
-    assert len(messages) == 0 # should be no messages
+    assert len(messages) == 0  # should be no messages
 
     # When there are no triggered agents, build_microagent_info is not called
     conversation_memory.prompt_manager.build_microagent_info.assert_not_called()
@@ -787,7 +788,6 @@ def test_process_events_with_microagent_observation_deduplication(conversation_m
         content='Third retrieval',
     )
 
-
     messages = conversation_memory.process_events(
         condensed_history=[obs1, obs2, obs3],
         max_message_chars=None,
@@ -868,7 +868,7 @@ def test_process_events_with_microagent_observation_deduplication_empty(
     )
 
     # Verify that empty RecallObservations are handled gracefully
-    assert len(messages) == 0 # an empty microagent is not added to Messages
+    assert len(messages) == 0  # an empty microagent is not added to Messages
 
 
 def test_has_agent_in_earlier_events(conversation_memory):

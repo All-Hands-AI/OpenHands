@@ -15,6 +15,7 @@ from openhands.core.schema import AgentState
 from openhands.events import Event, EventSource, EventStream, EventStreamSubscriber
 from openhands.events.action import ChangeAgentStateAction, CmdRunAction, MessageAction
 from openhands.events.action.agent import CondensationAction, RecallAction
+from openhands.events.action.message import SystemMessageAction
 from openhands.events.event import RecallType
 from openhands.events.observation import (
     AgentStateChangedObservation,
@@ -29,7 +30,6 @@ from openhands.llm.metrics import Metrics, TokenUsage
 from openhands.memory.memory import Memory
 from openhands.runtime.base import Runtime
 from openhands.storage.memory import InMemoryFileStore
-from openhands.events.action.message import SystemMessageAction
 
 
 @pytest.fixture
@@ -50,13 +50,15 @@ def mock_agent():
     agent.llm = MagicMock(spec=LLM)
     agent.llm.metrics = Metrics()
     agent.llm.config = AppConfig().get_llm_config()
-    
+
     # Add a proper system message mock
-    system_message = SystemMessageAction(content='Test system message', tools=['test_tool'])
+    system_message = SystemMessageAction(
+        content='Test system message', tools=['test_tool']
+    )
     system_message._source = EventSource.AGENT
     system_message._id = -1  # Set invalid ID to avoid the ID check
     agent.get_system_message.return_value = system_message
-    
+
     return agent
 
 
@@ -214,7 +216,9 @@ async def test_react_to_content_policy_violation(
 
 
 @pytest.mark.asyncio
-async def test_run_controller_with_fatal_error(test_event_stream, mock_memory, mock_agent):
+async def test_run_controller_with_fatal_error(
+    test_event_stream, mock_memory, mock_agent
+):
     config = AppConfig()
 
     def agent_step_fn(state):
@@ -278,7 +282,9 @@ async def test_run_controller_with_fatal_error(test_event_stream, mock_memory, m
 
 
 @pytest.mark.asyncio
-async def test_run_controller_stop_with_stuck(test_event_stream, mock_memory, mock_agent):
+async def test_run_controller_stop_with_stuck(
+    test_event_stream, mock_memory, mock_agent
+):
     config = AppConfig()
 
     def agent_step_fn(state):
@@ -463,6 +469,7 @@ async def test_step_max_budget_headless(mock_agent, mock_event_stream):
     # In headless mode, throttling results in an error
     assert controller.state.agent_state == AgentState.ERROR
     await controller.close()
+
 
 @pytest.mark.asyncio
 async def test_reset_with_pending_action_no_observation(mock_agent, mock_event_stream):
@@ -1040,7 +1047,7 @@ async def test_run_controller_with_memory_error(test_event_stream, mock_agent):
     mock_agent.llm = MagicMock(spec=LLM)
     mock_agent.llm.metrics = Metrics()
     mock_agent.llm.config = config.get_llm_config()
-    
+
     # Create a real action to return from the mocked step function
     def agent_step_fn(state):
         return MessageAction(content='Agent returned a message')
@@ -1211,7 +1218,6 @@ async def test_first_user_message_with_identical_content():
     mock_agent.llm = MagicMock(spec=LLM)
     mock_agent.llm.metrics = Metrics()
     mock_agent.llm.config = AppConfig().get_llm_config()
-
 
     controller = AgentController(
         agent=mock_agent,
@@ -1496,9 +1502,7 @@ def test_history_restoration_after_truncation(mock_event_stream, mock_agent):
 def test_system_message_in_event_stream(mock_agent, test_event_stream):
     """Test that SystemMessageAction is added to event stream in AgentController."""
     controller = AgentController(
-        agent=mock_agent,
-        event_stream=test_event_stream,
-        max_iterations=10
+        agent=mock_agent, event_stream=test_event_stream, max_iterations=10
     )
 
     # Get events from the event stream

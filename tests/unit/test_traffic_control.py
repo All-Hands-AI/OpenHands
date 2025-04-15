@@ -16,10 +16,11 @@ def agent_controller():
     agent.name = 'test_agent'
     agent.llm = llm
     agent.config = AgentConfig()
-    
+
     # Add a proper system message mock
-    from openhands.events.action.message import SystemMessageAction
     from openhands.events import EventSource
+    from openhands.events.action.message import SystemMessageAction
+
     system_message = SystemMessageAction(content='Test system message')
     system_message._source = EventSource.AGENT
     system_message._id = -1  # Set invalid ID to avoid the ID check
