@@ -354,12 +354,12 @@ Les options de configuration de l'agent sont définies dans les sections `[agent
   - Valeur par défaut : `true`
   - Description : Si l'appel de fonction est activé
 
-- `codeact_enable_browsing`
+- `enable_browsing`
   - Type : `bool`
   - Valeur par défaut : `false`
   - Description : Si le délégué de navigation est activé dans l'espace d'action (fonctionne uniquement avec l'appel de fonction)
 
-- `codeact_enable_llm_editor`
+- `enable_llm_editor`
   - Type : `bool`
   - Valeur par défaut : `false`
   - Description : Si l'éditeur LLM est activé dans l'espace d'action (fonctionne uniquement avec l'appel de fonction)
