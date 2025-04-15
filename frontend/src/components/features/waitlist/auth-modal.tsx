@@ -4,7 +4,6 @@ import { I18nKey } from "#/i18n/declaration";
 import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import { ModalBody } from "#/components/shared/modals/modal-body";
-import { TOSCheckbox } from "./tos-checkbox";
 import { handleCaptureConsent } from "#/utils/handle-capture-consent";
 import { BrandButton } from "../settings/brand-button";
 import GitHubLogo from "#/assets/branding/github-logo.svg?react";
@@ -15,7 +14,6 @@ interface AuthModalProps {
 
 export function AuthModal({ githubAuthUrl }: AuthModalProps) {
   const { t } = useTranslation();
-  const [isTosAccepted, setIsTosAccepted] = React.useState(false);
 
   const handleGitHubAuth = () => {
     if (githubAuthUrl) {
@@ -34,10 +32,19 @@ export function AuthModal({ githubAuthUrl }: AuthModalProps) {
           </h1>
         </div>
 
-        <TOSCheckbox onChange={() => setIsTosAccepted((prev) => !prev)} />
+        <div className="text-sm text-muted-foreground mb-2 text-center">
+          By signing in, you agree to our{" "}
+          <a
+            href="https://www.all-hands.dev/tos"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline underline-offset-2 text-blue-500 hover:text-blue-700"
+          >
+            {t(I18nKey.TOS$TERMS)}
+          </a>
+        </div>
 
         <BrandButton
-          isDisabled={!isTosAccepted}
           type="button"
           variant="primary"
           onClick={handleGitHubAuth}

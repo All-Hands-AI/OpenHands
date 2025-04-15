@@ -20,6 +20,7 @@ export type Settings = {
   USER_CONSENTS_TO_ANALYTICS: boolean | null;
   PROVIDER_TOKENS: Record<Provider, string>;
   IS_NEW_USER?: boolean;
+  ACCEPTED_TOS?: string | null;
 };
 
 export type ApiSettings = {
@@ -37,6 +38,7 @@ export type ApiSettings = {
   user_consents_to_analytics: boolean | null;
   provider_tokens: Record<Provider, string>;
   provider_tokens_set: Record<Provider, boolean>;
+  accepted_tos: string | null;
 };
 
 export type PostSettings = Settings & {

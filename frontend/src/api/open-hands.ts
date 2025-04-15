@@ -8,6 +8,7 @@ import {
   Conversation,
   ResultSet,
   GetTrajectoryResponse,
+  AcceptTosResponse,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
 import { ApiSettings, PostApiSettings } from "#/types/settings";
@@ -276,6 +277,15 @@ class OpenHands {
     const endpoint =
       appMode === "saas" ? "/api/logout" : "/api/unset-settings-tokens";
     await openHands.post(endpoint);
+  }
+
+  /**
+   * Accept the Terms of Service
+   * @returns Promise<boolean> - True if successful
+   */
+  static async acceptTos(): Promise<boolean> {
+    const response = await openHands.post<AcceptTosResponse>("/api/accept_tos");
+    return response.status === 200;
   }
 }
 

@@ -21,6 +21,7 @@ import { useMigrateUserConsent } from "#/hooks/use-migrate-user-consent";
 import { useBalance } from "#/hooks/query/use-balance";
 import { SetupPaymentModal } from "#/components/features/payment/setup-payment-modal";
 import { displaySuccessToast } from "#/utils/custom-toast-handlers";
+import { TOSRedirect } from "#/components/features/tos/tos-redirect";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -120,14 +121,29 @@ export default function MainApp() {
       data-testid="root-layout"
       className="bg-base p-3 h-screen md:min-w-[1024px] overflow-x-hidden flex flex-col md:flex-row gap-3"
     >
-      <Sidebar />
+      {userIsAuthed ? (
+        <TOSRedirect>
+          <Sidebar />
 
-      <div
-        id="root-outlet"
-        className="h-[calc(100%-50px)] md:h-full w-full relative"
-      >
-        <Outlet />
-      </div>
+          <div
+            id="root-outlet"
+            className="h-[calc(100%-50px)] md:h-full w-full relative"
+          >
+            <Outlet />
+          </div>
+        </TOSRedirect>
+      ) : (
+        <>
+          <Sidebar />
+
+          <div
+            id="root-outlet"
+            className="h-[calc(100%-50px)] md:h-full w-full relative"
+          >
+            <Outlet />
+          </div>
+        </>
+      )}
 
       {renderAuthModal && <AuthModal githubAuthUrl={gitHubAuthUrl} />}
       {config.data?.APP_MODE === "oss" && consentFormIsOpen && (

@@ -83,3 +83,8 @@ export interface ResultSet<T> {
   results: T[];
   next_page_id: string | null;
 }
+
+export interface AcceptTosResponse {
+  message: string;
+  accepted_tos: string;
+}
