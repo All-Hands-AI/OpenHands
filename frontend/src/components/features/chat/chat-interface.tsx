@@ -23,7 +23,7 @@ import posthog from "posthog-js"
 import React, { useEffect } from "react"
 import { useTranslation } from "react-i18next"
 import { FaFileInvoice } from "react-icons/fa"
-import { FaPowerOff } from "react-icons/fa6"
+import { FaPowerOff, FaCheck } from "react-icons/fa6"
 import { IoFolder } from "react-icons/io5"
 import { RiPhoneFindLine } from "react-icons/ri"
 import { useDispatch, useSelector } from "react-redux"
@@ -106,15 +106,22 @@ export function ChatInterface() {
 
   useEffect(() => {
     if (files?.length) {
-      const priorityFile = []
+      const htmlFiles = []
+      const txtFiles = []
+      const mdFiles = []
 
       files.map((e) => {
-        if (e.includes("html") || e.includes("md") || e.includes("txt")) {
-          priorityFile.push(e)
+        if (e.includes(".html")) {
+          htmlFiles.push(e)
+        } else if (e.includes(".md")) {
+          mdFiles.push(e)
+        } else if (e.includes(".txt")) {
+          txtFiles.push(e)
         }
       })
-      if (priorityFile?.length) {
-        dispatch(setCurrentPathViewed(priorityFile[0]))
+      const priorityFile = mdFiles[0] || txtFiles[0] || htmlFiles[0]
+      if (priorityFile) {
+        dispatch(setCurrentPathViewed(priorityFile))
       }
     }
   }, [files])
@@ -245,8 +252,15 @@ export function ChatInterface() {
           />
         )}
 
-        {files && files.length > 0 && (
-          <div className="my-3 flex flex-wrap gap-2">
+        {isWaitingForUserInput && (
+          <div className="-mt-3 mb-4 flex w-fit items-center justify-center gap-2 rounded-full bg-success-100 px-3 py-1">
+            <FaCheck />
+            Thesis has completed the current task
+          </div>
+        )}
+
+        {isWaitingForUserInput && files && files.length > 0 && (
+          <div className="my-3 flex flex-wrap gap-2 border-t border-neutral-900 pt-3">
             {files.slice(0, 2).map((file) => {
               const isDirectory = file.endsWith("/")
               return (

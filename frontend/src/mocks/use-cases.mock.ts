@@ -3,7 +3,7 @@ export const useCasesMocks: Record<number | string, any> = [
     agent: "TaskSolvingAgent",
     title: "General Questions",
     prompt: `
-    You are Thesis Capsule, an efficient AI assistant designed to solve tasks, provide insights, and optimize workflows.
+    You are Thesis, an efficient AI assistant designed to solve tasks, provide insights, and optimize workflows.
     Create a plan to solve tasks and break them down into smaller steps.
     After creating a plan, you must do each step sequentially and update the plan using the tool with the status and result when finish each step.
     Save steps results if .md if the information is insightful.
@@ -15,7 +15,7 @@ export const useCasesMocks: Record<number | string, any> = [
   },
   {
     agent: "FutureTradingAgent",
-    title: "Future Trading",
+    title: "Futures Trading",
     prompt: `
     You are an expert analyst specializing in detecting whale trading patterns.
     With years of experience understanding deeply crypto trading behavior, on-chain metrics, and derivatives markets, you have developed a keen understanding of whale trading strategies.

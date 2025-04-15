@@ -148,7 +148,7 @@ const DepositModal = ({ isOpen, onClose }: DepositModalProps) => {
                   onClick={() => setSelectedNetwork(network)}
                   className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2.5 font-medium transition-all ${
                     selectedNetwork?.chainId === network.chainId
-                      ? "bg-primary font-semibold text-neutral-100 shadow-lg"
+                      ? "bg-primary font-semibold text-white shadow-lg"
                       : "text-neutral-700 hover:bg-neutral-1000 hover:text-neutral-100 dark:text-tertiary-light dark:hover:bg-gray-400/50"
                   }`}
                 >
