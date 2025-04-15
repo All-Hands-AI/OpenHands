@@ -16,12 +16,8 @@ from openhands.core.schema.agent import AgentState
 from openhands.events.action import ChangeAgentStateAction, MessageAction
 from openhands.events.event import Event, EventSource
 from openhands.events.stream import EventStream
-<<<<<<< HEAD
-from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderHandler, CUSTOM_SECRETS_TYPE
-=======
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderHandler
 from openhands.integrations.service_types import Repository
->>>>>>> main
 from openhands.memory.memory import Memory
 from openhands.microagent.microagent import BaseMicroagent
 from openhands.runtime import get_runtime_cls
@@ -89,12 +85,7 @@ class AgentSession:
         max_budget_per_task: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
-<<<<<<< HEAD
-        custom_secrets: CUSTOM_SECRETS_TYPE | None = None,
-        selected_repository: str | None = None,
-=======
         selected_repository: Repository | None = None,
->>>>>>> main
         selected_branch: str | None = None,
         initial_message: MessageAction | None = None,
         replay_json: str | None = None,
@@ -128,7 +119,6 @@ class AgentSession:
                 runtime_name=runtime_name,
                 config=config,
                 agent=agent,
-                custom_secrets=custom_secrets,
                 git_provider_tokens=git_provider_tokens,
                 selected_repository=selected_repository,
                 selected_branch=selected_branch,
@@ -167,11 +157,6 @@ class AgentSession:
                 provider_handler = ProviderHandler(provider_tokens=git_provider_tokens)
                 await provider_handler.set_event_stream_secrets(self.event_stream)
 
-            if custom_secrets:
-                secrets = {}
-                for secret, secret_value in custom_secrets.items():
-                    secrets[secret] = secret_value.get_secret_value()
-                self.event_stream.set_secrets(secrets)
 
             if not self._closed:
                 if initial_message:
@@ -273,7 +258,6 @@ class AgentSession:
         runtime_name: str,
         config: AppConfig,
         agent: Agent,
-        custom_secrets: CUSTOM_SECRETS_TYPE | None = None,
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
         selected_repository: Repository | None = None,
         selected_branch: str | None = None,
@@ -294,9 +278,6 @@ class AgentSession:
 
         self.logger.debug(f'Initializing runtime `{runtime_name}` now...')
         env_vars = {}
-        if custom_secrets:
-            for secret_name, secret_value in custom_secrets.items():
-                env_vars[secret_name] = secret_value.get_secret_value()
 
         runtime_cls = get_runtime_cls(runtime_name)
         if runtime_cls == RemoteRuntime:
@@ -313,19 +294,12 @@ class AgentSession:
                 user_id=self.user_id,
             )
         else:
-<<<<<<< HEAD
-            provider_handler = ProviderHandler(provider_tokens=git_provider_tokens or cast(PROVIDER_TOKEN_TYPE, MappingProxyType({})))
-            provider_env_vars = await provider_handler.get_env_vars(expose_secrets=True)
-            env_vars.update(provider_env_vars)
-        
-=======
             provider_handler = ProviderHandler(
                 provider_tokens=git_provider_tokens
                 or cast(PROVIDER_TOKEN_TYPE, MappingProxyType({}))
             )
             env_vars = await provider_handler.get_env_vars(expose_secrets=True)
 
->>>>>>> main
             self.runtime = runtime_cls(
                 config=config,
                 event_stream=self.event_stream,
@@ -353,16 +327,10 @@ class AgentSession:
             return False
 
         if selected_repository and git_provider_tokens:
-<<<<<<< HEAD
-            await self.runtime.clone_repo(git_provider_tokens,
-                                          selected_repository,
-                                          selected_branch)
-=======
             await self.runtime.clone_repo(
                 git_provider_tokens, selected_repository, selected_branch
             )
             await call_sync_from_async(self.runtime.maybe_run_setup_script)
->>>>>>> main
 
         self.logger.debug(
             f'Runtime initialized with plugins: {[plugin.name for plugin in self.runtime.plugins]}'

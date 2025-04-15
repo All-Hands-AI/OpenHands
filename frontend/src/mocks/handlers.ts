@@ -114,11 +114,7 @@ export const handlers = [
     ]),
   ),
   http.get("/api/user/info", () => {
-<<<<<<< HEAD
-    const user: GitHubUser = {
-=======
     const user: GitUser = {
->>>>>>> main
       id: 1,
       login: "octocat",
       avatar_url: "https://avatars.githubusercontent.com/u/583231?v=4",
@@ -170,17 +166,6 @@ export const handlers = [
       let newSettings: Partial<PostApiSettings> = {};
       if (typeof body === "object") {
         newSettings = { ...body };
-<<<<<<< HEAD
-
-        if (newSettings.provider_tokens_set) {
-          newSettings.provider_tokens_set = {
-            github: false,
-            gitlab: false,
-          };
-          delete newSettings.unset_tokens;
-        }
-=======
->>>>>>> main
       }
 
       const fullSettings = {

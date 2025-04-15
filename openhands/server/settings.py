@@ -128,11 +128,7 @@ class POSTSettingsModel(Settings):
     Settings for POST requests
     """
 
-<<<<<<< HEAD
-    unset_tokens: bool | None = None
-=======
     # Override provider_tokens to accept string tokens from frontend
->>>>>>> main
     provider_tokens: dict[str, str] = {}
     custom_secrets: dict[str, str] = {}
 
@@ -143,8 +139,5 @@ class GETSettingsModel(Settings):
     """
 
     provider_tokens_set: dict[str, bool] | None = None
-<<<<<<< HEAD
     custom_secrets: dict[str, str] | None = None
-=======
     llm_api_key_set: bool
->>>>>>> main

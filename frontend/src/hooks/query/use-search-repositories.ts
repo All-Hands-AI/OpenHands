@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import OpenHands from "#/api/open-hands";
-import { Provider } from "#/types/settings";
 
 export function useSearchRepositories(query: string) {
   return useQuery({

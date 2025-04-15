@@ -19,30 +19,14 @@ from openhands.server.auth import get_access_token, get_provider_tokens
 from openhands.server.shared import server_config
 
 app = APIRouter(prefix='/api/user')
-<<<<<<< HEAD:openhands/server/routes/github.py
-
-
-from pydantic import BaseModel
-=======
->>>>>>> main:openhands/server/routes/git.py
 
 
 @app.get('/repositories', response_model=list[Repository])
 async def get_user_repositories(
-<<<<<<< HEAD:openhands/server/routes/github.py
-    selected_provider: str = 'github',
-    page: int = 1,
-    per_page: int = 10,
-=======
->>>>>>> main:openhands/server/routes/git.py
     sort: str = 'pushed',
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     access_token: SecretStr | None = Depends(get_access_token),
 ):
-<<<<<<< HEAD:openhands/server/routes/github.py
-
-=======
->>>>>>> main:openhands/server/routes/git.py
     if provider_tokens:
         client = ProviderHandler(
             provider_tokens=provider_tokens, external_auth_token=access_token
@@ -52,11 +36,7 @@ async def get_user_repositories(
             provider = ProviderType(selected_provider)
 
             repos: list[Repository] = await client.get_repositories(
-<<<<<<< HEAD:openhands/server/routes/github.py
-                provider, page, per_page, sort, installation_id
-=======
                 sort, server_config.app_mode
->>>>>>> main:openhands/server/routes/git.py
             )
             return repos
 
@@ -145,10 +125,6 @@ async def get_github_installation_ids(
 
 @app.get('/search/repositories', response_model=list[Repository])
 async def search_repositories(
-<<<<<<< HEAD:openhands/server/routes/github.py
-    selected_provider: str,
-=======
->>>>>>> main:openhands/server/routes/git.py
     query: str,
     per_page: int = 5,
     sort: str = 'stars',
@@ -156,10 +132,6 @@ async def search_repositories(
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     access_token: SecretStr | None = Depends(get_access_token),
 ):
-<<<<<<< HEAD:openhands/server/routes/github.py
-
-=======
->>>>>>> main:openhands/server/routes/git.py
     if provider_tokens:
         client = ProviderHandler(
             provider_tokens=provider_tokens, external_auth_token=access_token

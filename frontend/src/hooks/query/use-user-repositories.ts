@@ -2,7 +2,6 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import React from "react";
 import { retrieveUserGitRepositories } from "#/api/git";
 import { useAuth } from "#/context/auth-context";
-import { Provider } from "#/types/settings";
 
 export const useUserRepositories = () => {
   const { providerTokensSet, providersAreSet } = useAuth();

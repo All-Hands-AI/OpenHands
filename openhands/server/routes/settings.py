@@ -27,16 +27,9 @@ async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
             )
 
         provider_tokens_set = {}
-<<<<<<< HEAD
-        
-        if bool(user_id):
-            provider_tokens_set[ProviderType.GITHUB.value] = True
-        
-=======
 
         if bool(user_id):
             provider_tokens_set[ProviderType.GITHUB.value] = True
->>>>>>> main
 
         provider_tokens = get_provider_tokens(request)
         if provider_tokens:
@@ -48,7 +41,6 @@ async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
                 else:
                     provider_tokens_set[provider_type] = False
 
-<<<<<<< HEAD
 
         custom_secrets = {}
         if settings.secrets_store.custom_secrets:
@@ -59,12 +51,6 @@ async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
             **settings.model_dump(exclude='secrets_store'),
             provider_tokens_set=provider_tokens_set,
             custom_secrets=custom_secrets
-=======
-        settings_with_token_data = GETSettingsModel(
-            **settings.model_dump(exclude='secrets_store'),
-            llm_api_key_set=settings.llm_api_key is not None,
-            provider_tokens_set=provider_tokens_set,
->>>>>>> main
         )
         settings_with_token_data.llm_api_key = None
         return settings_with_token_data
@@ -76,7 +62,6 @@ async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
         )
 
 
-<<<<<<< HEAD
 def update_custom_secrets(incoming_settings: POSTSettingsModel, existing_settings: Settings):
     """
     Update custom secrets in the incoming settings based on existing settings.
@@ -128,7 +113,6 @@ def update_based_on_incoming_provider_tokes(incoming_settings: POSTSettingsModel
             for provider, data in provider_tokens.items()
         }
 
-=======
 @app.post('/unset-settings-tokens', response_model=dict[str, str])
 async def unset_settings_tokens(request: Request) -> JSONResponse:
     try:
@@ -208,7 +192,6 @@ async def reset_settings(request: Request) -> JSONResponse:
         )
 
 
->>>>>>> main
 @app.post('/settings', response_model=dict[str, str])
 async def store_settings(
     request: Request,
@@ -259,17 +242,6 @@ async def store_settings(
                     existing_settings.user_consents_to_analytics
                 )
 
-<<<<<<< HEAD
-            # Handle token updates immutably
-            if settings.unset_tokens:
-                settings = settings.model_copy(update={"secrets_store": SecretStore(provider_tokens={},
-                                                                                    custom_secrets=existing_settings.secrets_store.custom_secrets)})
-            else:  # Only merge if not unsetting tokens
-                update_based_on_incoming_provider_tokes(settings, existing_settings)
-
-
-            update_custom_secrets(settings, existing_settings)
-=======
             # Only merge if not unsetting tokens
             if settings.provider_tokens:
                 if existing_settings.secrets_store:
@@ -299,7 +271,6 @@ async def store_settings(
                     else None
                     for provider, data in provider_tokens.items()
                 }
->>>>>>> main
 
         # Update sandbox config with new settings
         if settings.remote_runtime_resource_factor is not None:

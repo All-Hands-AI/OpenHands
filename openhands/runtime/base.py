@@ -155,12 +155,6 @@ class Runtime(FileEditRuntimeMixin):
 
         self.user_id = user_id
         self.git_provider_tokens = git_provider_tokens
-<<<<<<< HEAD
-
-        # TODO: remove once done debugging expired github token
-        self.prev_token: SecretStr | None = None
-=======
->>>>>>> main
 
     def setup_initial_env(self) -> None:
         if self.attach_to_existing:
@@ -318,17 +312,6 @@ class Runtime(FileEditRuntimeMixin):
         selected_branch: str | None,
         repository_provider: ProviderType = ProviderType.GITHUB,
     ) -> str:
-<<<<<<< HEAD
-        provider_handler = ProviderHandler(provider_tokens=git_provider_tokens)
-        remote_repo_url = await provider_handler.get_remote_repository_url(
-            selected_repository
-        )
-
-        if not remote_repo_url:
-            raise ValueError('Missing either Git token or valid repository')
-
-        dir_name = selected_repository.split('/')[-1]
-=======
         provider_domains = {
             ProviderType.GITHUB: 'github.com',
             ProviderType.GITLAB: 'gitlab.com',
@@ -367,7 +350,6 @@ class Runtime(FileEditRuntimeMixin):
             )
 
         dir_name = repository.split('/')[-1]
->>>>>>> main
 
         # Generate a random branch name to avoid conflicts
         random_str = ''.join(

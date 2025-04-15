@@ -59,10 +59,6 @@ export default function MainApp() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [searchParams] = useSearchParams();
-<<<<<<< HEAD:frontend/src/routes/_oh/route.tsx
-  const { providersAreSet } = useAuth();
-=======
->>>>>>> main:frontend/src/routes/root-layout.tsx
   const { data: settings } = useSettings();
   const { error, isFetching } = useBalance();
   const { migrateUserConsent } = useMigrateUserConsent();
@@ -133,17 +129,7 @@ export default function MainApp() {
         <Outlet />
       </div>
 
-<<<<<<< HEAD:frontend/src/routes/_oh/route.tsx
-      {renderWaitlistModal && (
-        <WaitlistModal
-          ghTokenIsSet={providersAreSet}
-          githubAuthUrl={gitHubAuthUrl}
-        />
-      )}
-
-=======
       {renderAuthModal && <AuthModal githubAuthUrl={gitHubAuthUrl} />}
->>>>>>> main:frontend/src/routes/root-layout.tsx
       {config.data?.APP_MODE === "oss" && consentFormIsOpen && (
         <AnalyticsConsentFormModal
           onClose={() => {
