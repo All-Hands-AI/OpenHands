@@ -2,12 +2,17 @@
 ReadOnlyAgent - A specialized version of CodeActAgent that only uses read-only tools.
 """
 
+import os
+from collections import deque
+
 from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
-from openhands.agenthub.codeact_agent.function_calling import get_tools
+from openhands.agenthub.readonly_agent import function_calling as readonly_function_calling
+from openhands.core.action import Action
 from openhands.core.config import AgentConfig
 from openhands.core.logger import openhands_logger as logger
-from openhands.core.message import Message, TextContent
+from openhands.core.message import Message, TextContent, ContentType
 from openhands.llm.llm import LLM
+from openhands.prompt.prompt_manager import PromptManager
 
 
 class ReadOnlyAgent(CodeActAgent):
@@ -37,21 +42,60 @@ class ReadOnlyAgent(CodeActAgent):
         - llm (LLM): The llm to be used by this agent
         - config (AgentConfig): The configuration for this agent
         """
+        # Initialize the base class but we'll override some of its behavior
         super().__init__(llm, config)
-
-        # Override the tools with only read-only tools
-        # Force enable_read_only_tools to True to ensure we only get read-only tools
-        self.tools = get_tools(
-            enable_browsing=True,  # Enable web_read
-            enable_jupyter=False,
-            enable_llm_editor=False,
-            enable_read_only_tools=True,  # Force read-only mode
+        
+        # Reset the pending actions queue
+        self.pending_actions = deque()
+        self.reset()
+        
+        # Get the read-only tools from our own function_calling module
+        self.tools = readonly_function_calling.get_tools(
+            enable_browsing=self.config.enable_browsing,
             llm=self.llm,
+        )
+        
+        # Set up our own prompt manager
+        self.prompt_manager = PromptManager(
+            prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
         )
 
         logger.debug(
             f"TOOLS loaded for ReadOnlyAgent: {', '.join([tool.get('function').get('name') for tool in self.tools])}"
         )
+        
+    def process_action(self, action: Action) -> Message:
+        """Process an action and return a message.
+        
+        This method overrides the CodeActAgent's process_action method to ensure
+        that only read-only actions are processed.
+        
+        Parameters:
+        - action: The action to process
+        
+        Returns:
+        - A message containing the result of the action
+        """
+        # Check if the action is a read-only action
+        if action.__class__.__name__ not in [
+            'ThinkAction',
+            'ViewAction',
+            'GrepAction',
+            'GlobAction',
+            'FinishAction',
+            'WebReadAction',
+        ]:
+            # Return an error message if the action is not read-only
+            return Message(
+                role='assistant',
+                content=TextContent(
+                    text=f"Error: ReadOnlyAgent cannot process action of type {action.__class__.__name__}. "
+                    f"Only read-only actions are allowed."
+                ),
+            )
+        
+        # Process the action using the parent class's method
+        return super().process_action(action)
 
     def _enhance_messages(self, messages: list[Message]) -> list[Message]:
         """Enhance the messages with a note about read-only mode.

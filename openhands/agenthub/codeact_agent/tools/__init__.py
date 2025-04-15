@@ -1,4 +1,4 @@
-from .agent import AgentTool
+
 from .bash import create_cmd_run_tool
 from .browser import BrowserTool
 from .finish import FinishTool
@@ -23,7 +23,6 @@ __all__ = [
     'ThinkTool',
     'GrepTool',
     'GlobTool',
-    'AgentTool',
 ]
 
 READ_ONLY_TOOLS = [
