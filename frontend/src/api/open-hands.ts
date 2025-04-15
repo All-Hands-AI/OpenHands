@@ -204,7 +204,6 @@ class OpenHands {
     conversationId: string,
     isPublic?: boolean | null,
   ): Promise<Conversation | null> {
-    console.log("isPublic", isPublic)
     const path = isPublic
       ? `/api/options/use-cases/conversations/${conversationId}`
       : `/api/conversations/${conversationId}`

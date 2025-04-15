@@ -7,11 +7,12 @@ import { useRate } from "#/hooks/use-rate"
 import { OpenHandsParsedEvent } from "#/types/core"
 import { AssistantMessageAction, UserMessageAction } from "#/types/core/actions"
 import { useGetJwt } from "#/zutand-stores/persist-config/selector"
-import { useLocation } from "react-router"
+import { useLocation, useNavigate } from "react-router"
 import { useDispatch } from "react-redux"
 import { clearMessages } from "#/state/chat-slice"
 import { setCurrentPathViewed } from "#/state/file-state-slice"
 import { clearComputerList } from "#/state/computer-slice"
+import { displayErrorToast } from "#/utils/custom-toast-handlers"
 
 export const isOpenHandsEvent = (
   event: unknown,
@@ -139,8 +140,10 @@ export function WsClientProvider({
   const lastEventRef = React.useRef<Record<string, unknown> | null>(null)
   const messageQueueRef = React.useRef<Record<string, unknown>[]>([])
   const processingQueueRef = React.useRef<boolean>(false)
+  const shouldProcessMessagesRef = React.useRef<boolean>(true)
   const jwt = useGetJwt()
   const location = useLocation()
+  const navigate = useNavigate()
   const dispatch = useDispatch()
 
   const messageRateHandler = useRate({ threshold: 250 })
@@ -219,7 +222,11 @@ export function WsClientProvider({
   }
 
   function processMessageQueue() {
-    if (processingQueueRef.current || messageQueueRef.current.length === 0) {
+    if (
+      !shouldProcessMessagesRef.current ||
+      processingQueueRef.current ||
+      messageQueueRef.current.length === 0
+    ) {
       if (messageQueueRef.current.length === 0 && !processingQueueRef.current) {
         setReplayStatus(ReplayStatus.COMPLETED)
       }
@@ -239,6 +246,9 @@ export function WsClientProvider({
 
       setTimeout(() => {
         processingQueueRef.current = false
+        if (!shouldProcessMessagesRef.current) {
+          return
+        }
         if (messageQueueRef.current.length === 0) {
           setReplayStatus(ReplayStatus.COMPLETED)
         }
@@ -281,6 +291,30 @@ export function WsClientProvider({
   function handleError(data: unknown) {
     setStatus(WsClientProviderStatus.DISCONNECTED)
     updateStatusWhenErrorMessagePresent(data)
+
+    const isObject = (val: unknown): val is object =>
+      !!val && typeof val === "object"
+    const isString = (val: unknown): val is string => typeof val === "string"
+
+    if (
+      isObject(data) &&
+      "message" in data &&
+      isString(data.message) &&
+      isShareRoute
+    ) {
+      const errorMessage = data.message
+
+      if (
+        errorMessage === "Conversation not published" ||
+        errorMessage === "Conversation not found"
+      ) {
+        displayErrorToast("Conversation not published")
+        setTimeout(() => {
+          navigate("/")
+        }, 1000)
+        return
+      }
+    }
   }
 
   // Combined useEffect to handle both cleanup and reconnection
@@ -288,6 +322,9 @@ export function WsClientProvider({
     if (!conversationId) {
       throw new Error("No conversation ID provided")
     }
+
+    // Reset the processing flag when conversation changes
+    shouldProcessMessagesRef.current = true
 
     if (sioRef.current) {
       const sio = sioRef.current
@@ -301,7 +338,6 @@ export function WsClientProvider({
     }
 
     lastEventRef.current = null
-
     messageQueueRef.current = []
     processingQueueRef.current = false
 
@@ -330,6 +366,11 @@ export function WsClientProvider({
     sio.on("disconnect", handleDisconnect)
 
     sioRef.current = sio
+
+    // Cleanup function to stop message processing when unmounting or changing routes
+    return () => {
+      shouldProcessMessagesRef.current = false
+    }
 
     // No cleanup function to run in background
   }, [conversationId, jwt, isShareRoute])
