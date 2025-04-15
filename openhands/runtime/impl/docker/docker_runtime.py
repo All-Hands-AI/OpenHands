@@ -1,7 +1,8 @@
 import os
 from functools import lru_cache
+import random
 import time
-from typing import Callable
+from typing import Callable, List, Set
 from uuid import UUID
 
 import docker
@@ -33,7 +34,7 @@ from openhands.utils.tenacity_stop import stop_if_should_exit
 
 CONTAINER_NAME_PREFIX = 'openhands-runtime-'
 
-EXECUTION_SERVER_PORT_RANGE = (30000, 39999)
+EXECUTION_SERVER_PORT_RANGE = (30000, 59999)
 VSCODE_PORT_RANGE = (40000, 49999)
 APP_PORT_RANGE_1 = (50000, 54999)
 APP_PORT_RANGE_2 = (55000, 59999)
@@ -226,191 +227,189 @@ class DockerRuntime(ActionExecutionClient):
                 'Launch docker client failed. Please make sure you have installed docker and started docker desktop/daemon.',
             )
             raise ex
+        
+    # def _next_available_port(self, start: int, end: int, exclude: Set[int]) -> int:
+    #     for port in range(start, end + 1):
+    #         if port not in exclude:
+    #             return port
+    #     raise ValueError("No valid ports available in range")
+    
+    # def _get_used_ports(self, start: int, end: int) -> Set[int]:
+    #     containers: List[Container] = self.docker_client.containers.list(all=True, sparse=True)
+    #     used_ports: Set[int] = set()
+    #     for container in containers:
+    #         ports = container.attrs.get("Ports", {})
+    #         for port in ports:
+    #             host_port = port.get("PublicPort")
+    #             if host_port:
+    #                 port_num = int(host_port)
+    #                 if start <= port_num <= end:
+    #                     used_ports.add(port_num)
+    #     return used_ports
 
     def _init_container(self):
-        self.log('debug', 'Preparing to start container...')
         start_time = time.time()
-        self.send_status_message('STATUS$PREPARING_CONTAINER')
-        end_time = time.time()
-        total_time = end_time - start_time
-        self.log(
-            'debug', f'Total time send_status_message() time: {total_time:.2f} seconds'
-        )
-        start_time = time.time()
-        self._host_port = self._find_available_port(EXECUTION_SERVER_PORT_RANGE)
-        self._container_port = self._host_port
-        end_time = time.time()
-        total_time = end_time - start_time
-        self.log(
-            'debug', f'Total time _find_available_port() EXECUTION_SERVER_PORT_RANGE time: {total_time:.2f} seconds'
-        )
-        start_time = time.time()
-        self._app_ports = [
-            self._find_available_port(APP_PORT_RANGE_1),
-            self._find_available_port(APP_PORT_RANGE_2),
-        ]
-        self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
-        end_time = time.time()
-        total_time = end_time - start_time
-        self.log(
-            'debug', f'Total time _find_available_port() APP_PORT_RANGE_1 APP_PORT_RANGE_2 time: {total_time:.2f} seconds'
-        )
-        
-        use_host_network = self.config.sandbox.use_host_network
-        self.log('debug', f'use_host_network: {use_host_network}')
-        network_mode: str | None = 'host' if use_host_network else None
+        for i in range(EXECUTION_SERVER_PORT_RANGE[0], EXECUTION_SERVER_PORT_RANGE[1]):
+            # we don't need to find available port. Just randomize it and try again if it's already in use.
+            # It's faster and simpler.
+            self.log('debug', 'Preparing to start container...')
+            self.send_status_message('STATUS$PREPARING_CONTAINER')
+            # used_ports = self._get_used_ports(EXECUTION_SERVER_PORT_RANGE[0], EXECUTION_SERVER_PORT_RANGE[1])
+            # self._host_port = self._next_available_port(EXECUTION_SERVER_PORT_RANGE[0], EXECUTION_SERVER_PORT_RANGE[1], used_ports)
+            self._host_port = i
+            self._container_port = self._host_port
+            # TODO FIXME: we don't need app ports. This is used to expose web applications within the sandbox. We don't need it.
+            # self._app_ports = [
+            #     self._find_available_port(APP_PORT_RANGE_1),
+            #     self._find_available_port(APP_PORT_RANGE_2),
+            # ]
+            self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
+            use_host_network = self.config.sandbox.use_host_network
+            self.log('debug', f'use_host_network: {use_host_network}')
+            network_mode: str | None = 'host' if use_host_network else None
 
-        # Initialize port mappings
-        start_time = time.time()
-        port_mapping: dict[str, list[dict[str, str]]] | None = None
-        if not use_host_network:
-            port_mapping = {
-                f'{self._container_port}/tcp': [
-                    {
-                        'HostPort': str(self._host_port),
-                        'HostIp': self.config.sandbox.runtime_binding_address,
-                    }
-                ],
-            }
-
-            # if self.vscode_enabled:
-            #     port_mapping[f'{self._vscode_port}/tcp'] = [
-            #         {
-            #             'HostPort': str(self._vscode_port),
-            #             'HostIp': self.config.sandbox.runtime_binding_address,
-            #         }
-            #     ]
-
-            for port in self._app_ports:
-                port_mapping[f'{port}/tcp'] = [
-                    {
-                        'HostPort': str(port),
-                        'HostIp': self.config.sandbox.runtime_binding_address,
-                    }
-                ]
-        else:
-            self.log(
-                'warn',
-                'Using host network mode. If you are using MacOS, please make sure you have the latest version of Docker Desktop and enabled host network feature: https://docs.docker.com/network/drivers/host/#docker-desktop',
-            )
-        end_time = time.time()
-        total_time = end_time - start_time
-        self.log(
-            'debug', f'Total time port_mapping time: {total_time:.2f} seconds'
-        )
-
-        start_time = time.time()
-        # Combine environment variables
-        environment = {
-            'port': str(self._container_port),
-            'PYTHONUNBUFFERED': '1',
-            'VSCODE_PORT': str(self._vscode_port),
-            'PIP_BREAK_SYSTEM_PACKAGES': '1',
-        }
-        if self.config.debug or DEBUG:
-            environment['DEBUG'] = 'true'
-        # also update with runtime_startup_env_vars
-        environment.update(self.config.sandbox.runtime_startup_env_vars)
-
-        # if the workspace mount path is stored in session, we need to add another layer of directory to the workspace mount path for conversation id for privacy
-        if self.config.workspace_mount_path_in_sandbox_store_in_session:
-            self.config.workspace_mount_path_in_sandbox = (
-                f'{self.config.workspace_mount_path_in_sandbox}/{self.sid}'
-            )
-
-        if self.config.workspace_mount_path is not None:
-            if self.config.workspace_mount_path_in_sandbox_store_in_session:
-                # add another layer of directory to the workspace mount path for conversation id
-                self.config.workspace_mount_path = (
-                    f'{self.config.workspace_mount_path}/{self.sid}'
-                )
-
-            # e.g. result would be: {"/home/user/openhands/workspace": {'bind': "/workspace", 'mode': 'rw'}}
-            volumes = {
-                self.config.workspace_mount_path: {
-                    'bind': self.config.workspace_mount_path_in_sandbox,
-                    'mode': 'rw',
+            # Initialize port mappings
+            port_mapping: dict[str, list[dict[str, str]]] | None = None
+            if not use_host_network:
+                port_mapping = {
+                    f'{self._container_port}/tcp': [
+                        {
+                            'HostPort': str(self._host_port),
+                            'HostIp': self.config.sandbox.runtime_binding_address,
+                        }
+                    ],
                 }
-            }
-            logger.debug(f'Mount dir: {self.config.workspace_mount_path}')
-        else:
-            logger.debug(
-                'Mount dir is not set, will not mount the workspace directory to the container'
-            )
-            volumes = None
-        self.log(
-            'debug',
-            f'Sandbox workspace: {self.config.workspace_mount_path_in_sandbox}',
-        )
-        end_time = time.time()
-        total_time = end_time - start_time
-        self.log(
-            'debug', f'Total environment.update() time: {total_time:.2f} seconds'
-        )
 
-        command = get_action_execution_server_startup_command(
-            server_port=self._container_port,
-            plugins=self.plugins,
-            app_config=self.config,
-        )
-        end_time = time.time()
-        total_time = end_time - start_time
-        self.log(
-            'debug', f'Total time before docker_client.containers.run() time: {total_time:.2f} seconds'
-        )
+                # if self.vscode_enabled:
+                #     port_mapping[f'{self._vscode_port}/tcp'] = [
+                #         {
+                #             'HostPort': str(self._vscode_port),
+                #             'HostIp': self.config.sandbox.runtime_binding_address,
+                #         }
+                #     ]
 
-        try:
-            start_time = time.time()
-            self.container = self.docker_client.containers.run(
-                self.runtime_container_image,
-                command=command,
-                # Override the default 'bash' entrypoint because the command is a binary.
-                entrypoint=[],
-                network_mode=network_mode,
-                ports=port_mapping,
-                working_dir='/openhands/code/',  # do not change this!
-                name=self.container_name,
-                detach=True,
-                environment=environment,
-                volumes=volumes,
-                device_requests=(
-                    [docker.types.DeviceRequest(capabilities=[['gpu']], count=-1)]
-                    if self.config.sandbox.enable_gpu
-                    else None
-                ),
-                **(self.config.sandbox.docker_runtime_kwargs or {}),
-            )
-            end_time = time.time()
-            total_time = end_time - start_time
-            self.log(
-                'debug', f'Total docker_client.containers.run() time: {total_time:.2f} seconds'
-            )
-            self.log('debug', f'Container started. Server url: {self.api_url}')
-            self.send_status_message('STATUS$CONTAINER_STARTED')
-        except docker.errors.APIError as e:
-            if '409' in str(e):
-                self.log(
-                    'warning',
-                    f'Container {self.container_name} already exists. Removing...',
-                )
-                stop_all_containers(self.container_name)
-                return self._init_container()
-
+                # TODO FIXME: we don't need app ports. This is used to expose web applications within the sandbox. We don't need it.
+                # for port in self._app_ports:
+                #     port_mapping[f'{port}/tcp'] = [
+                #         {
+                #             'HostPort': str(port),
+                #             'HostIp': self.config.sandbox.runtime_binding_address,
+                #         }
+                #     ]
             else:
+                self.log(
+                    'warn',
+                    'Using host network mode. If you are using MacOS, please make sure you have the latest version of Docker Desktop and enabled host network feature: https://docs.docker.com/network/drivers/host/#docker-desktop',
+                )
+
+            # Combine environment variables
+            environment = {
+                'port': str(self._container_port),
+                'PYTHONUNBUFFERED': '1',
+                'VSCODE_PORT': str(self._vscode_port),
+                'PIP_BREAK_SYSTEM_PACKAGES': '1',
+            }
+            if self.config.debug or DEBUG:
+                environment['DEBUG'] = 'true'
+            # also update with runtime_startup_env_vars
+            environment.update(self.config.sandbox.runtime_startup_env_vars)
+
+            # if the workspace mount path is stored in session, we need to add another layer of directory to the workspace mount path for conversation id for privacy
+            if self.config.workspace_mount_path_in_sandbox_store_in_session:
+                self.config.workspace_mount_path_in_sandbox = (
+                    f'{self.config.workspace_mount_path_in_sandbox}/{self.sid}'
+                )
+
+            if self.config.workspace_mount_path is not None:
+                if self.config.workspace_mount_path_in_sandbox_store_in_session:
+                    # add another layer of directory to the workspace mount path for conversation id
+                    self.config.workspace_mount_path = (
+                        f'{self.config.workspace_mount_path}/{self.sid}'
+                    )
+
+                # e.g. result would be: {"/home/user/openhands/workspace": {'bind': "/workspace", 'mode': 'rw'}}
+                volumes = {
+                    self.config.workspace_mount_path: {
+                        'bind': self.config.workspace_mount_path_in_sandbox,
+                        'mode': 'rw',
+                    }
+                }
+                logger.debug(f'Mount dir: {self.config.workspace_mount_path}')
+            else:
+                logger.debug(
+                    'Mount dir is not set, will not mount the workspace directory to the container'
+                )
+                volumes = None
+            self.log(
+                'debug',
+                f'Sandbox workspace: {self.config.workspace_mount_path_in_sandbox}',
+            )
+
+            command = get_action_execution_server_startup_command(
+                server_port=self._container_port,
+                plugins=self.plugins,
+                app_config=self.config,
+            )
+            try:
+                self.log('warning', f'self._container_port: {self._container_port}')
+                self.container = self.docker_client.containers.run(
+                    self.runtime_container_image,
+                    command=command,
+                    # Override the default 'bash' entrypoint because the command is a binary.
+                    entrypoint=[],
+                    network_mode=network_mode,
+                    ports=port_mapping,
+                    working_dir='/openhands/code/',  # do not change this!
+                    name=self.container_name,
+                    detach=True,
+                    environment=environment,
+                    volumes=volumes,
+                    device_requests=(
+                        [docker.types.DeviceRequest(capabilities=[['gpu']], count=-1)]
+                        if self.config.sandbox.enable_gpu
+                        else None
+                    ),
+                    **(self.config.sandbox.docker_runtime_kwargs or {}),
+                )
+                self.log('debug', f'Container started. Server url: {self.api_url}')
+                self.send_status_message('STATUS$CONTAINER_STARTED')
+                end_time = time.time()
+                total_time = end_time - start_time
+                self.log(
+                    'debug', f'Total docker_client.containers.run() time: {total_time:.2f} seconds'
+                )
+                return
+            except docker.errors.APIError as e:
+                if '409' in str(e):
+                    # port already allocated, try another port
+                    self.log('warning', f'str(e): {str(e)}')
+                    if "port is already allocated" in str(e) or "bind: address already in use" in str(e):
+                        continue
+                    
+                    # for other cases, we need to remove the container and try again
+                    self.log(
+                        'warning',
+                        f'Container {self.container_name} already exists. Removing...',
+                    )
+                    stop_all_containers(self.container_name)
+                    continue
+                else:
+                    self.log(
+                        'error',
+                        f'Error: Instance {self.container_name} FAILED to start container!\n',
+                    )
+                    self.log('error', str(e))
+                    raise e
+            except Exception as e:
                 self.log(
                     'error',
                     f'Error: Instance {self.container_name} FAILED to start container!\n',
                 )
                 self.log('error', str(e))
+                self.close()
                 raise e
-        except Exception as e:
-            self.log(
-                'error',
-                f'Error: Instance {self.container_name} FAILED to start container!\n',
-            )
-            self.log('error', str(e))
-            self.close()
-            raise e
+            
+        raise Exception('Failed to start container. Could not find an available port.')
 
     def _attach_to_container(self):
         self.container = self.docker_client.containers.get(self.container_name)
@@ -426,15 +425,16 @@ class DockerRuntime(ActionExecutionClient):
                 self._vscode_port = int(env_var.split('VSCODE_PORT=')[1])
 
         self._app_ports = []
-        exposed_ports = config.get('ExposedPorts')
-        if exposed_ports:
-            for exposed_port in exposed_ports.keys():
-                exposed_port = int(exposed_port.split('/tcp')[0])
-                if (
-                    exposed_port != self._host_port
-                    and exposed_port != self._vscode_port
-                ):
-                    self._app_ports.append(exposed_port)
+        # TODO FIXME: we don't need app ports. This is used to expose web applications within the sandbox. We don't need it.
+        # exposed_ports = config.get('ExposedPorts')
+        # if exposed_ports:
+        #     for exposed_port in exposed_ports.keys():
+        #         exposed_port = int(exposed_port.split('/tcp')[0])
+        #         if (
+        #             exposed_port != self._host_port
+        #             and exposed_port != self._vscode_port
+        #         ):
+        #             self._app_ports.append(exposed_port)
 
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
         self.log(
