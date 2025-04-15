@@ -142,7 +142,8 @@ export function Sidebar() {
               </TooltipButton>
             )}
             <UserActions onLogout={handleLogout} isLoading={false} />
-            <NavLink
+            {/* TODO: setting enable later */}
+            {/* <NavLink
               to="/settings"
               className={({ isActive }) =>
                 cn(
@@ -154,7 +155,7 @@ export function Sidebar() {
               }
             >
               <SettingsButton className="h-10 w-10 p-2" />
-            </NavLink>
+            </NavLink> */}
           </div>
         </nav>
 
@@ -167,12 +168,13 @@ export function Sidebar() {
         )}
       </aside>
 
-      {settingsModalIsOpen && (
+      {/* TODO: setting enable later */}
+      {/* {settingsModalIsOpen && (
         <SettingsModal
           settings={settings}
           onClose={() => setSettingsModalIsOpen(false)}
         />
-      )}
+      )} */}
 
       <DepositModal
         isOpen={depositModalIsOpen}
