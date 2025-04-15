@@ -7,7 +7,7 @@ import socketio
 
 from openhands.controller.agent import Agent
 from openhands.core.config import AppConfig
-from openhands.core.config.condenser_config import LLMSummarizingCondenserConfig
+from openhands.core.config.condenser_config import BrowserOutputCondenserConfig, CondenserPipelineConfig, LLMSummarizingCondenserConfig
 from openhands.core.logger import OpenHandsLoggerAdapter
 from openhands.core.schema import AgentState
 from openhands.events.action import MessageAction, NullAction
@@ -126,8 +126,16 @@ class Session:
         agent_config = self.config.get_agent_config(agent_cls)
 
         if settings.enable_default_condenser:
-            default_condenser_config = LLMSummarizingCondenserConfig(
-                llm_config=llm.config, keep_first=3, max_size=80
+            # Default condenser chains a summarizing condenser to keep number of
+            # relevant events down with a browser output condenser to keep the
+            # total size of browser observations limited.
+            default_condenser_config = CondenserPipelineConfig(
+                condensers=[
+                    LLMSummarizingCondenserConfig(
+                        llm_config=llm.config, keep_first=3, max_size=80
+                    ),
+                    BrowserOutputCondenserConfig()
+                ]
             )
 
             self.logger.info(f'Enabling default condenser: {default_condenser_config}')
