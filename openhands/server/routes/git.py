@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Request
 from fastapi.responses import JSONResponse
 from pydantic import SecretStr
+from sqlalchemy import select
 
 from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.provider import (
@@ -15,8 +16,10 @@ from openhands.integrations.service_types import (
     UnknownException,
     User,
 )
-from openhands.server.auth import get_access_token, get_provider_tokens
+from openhands.server.auth import get_access_token, get_provider_tokens, get_user_id
 from openhands.server.shared import server_config
+from openhands.server.db import database
+from openhands.server.models import User as UserModel
 
 app = APIRouter(prefix='/api/user')
 
@@ -196,3 +199,29 @@ async def get_suggested_tasks(
         content='GitHub token required.',
         status_code=status.HTTP_401_UNAUTHORIZED,
     )
+
+
+@app.get('/status', response_model=dict)
+async def get_user_status(request: Request):
+    """Get the current user's status (activated or non_activated)"""
+    user_id = get_user_id(request)
+    if not user_id:
+        return JSONResponse(
+            content={'error': 'User not authenticated'},
+            status_code=status.HTTP_401_UNAUTHORIZED,
+        )
+    
+    # Query the user record to get status
+    query = select(UserModel).where(UserModel.c.public_key == user_id.lower())
+    user = await database.fetch_one(query)
+    
+    if not user:
+        return JSONResponse(
+            content={'error': 'User not found'},
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+    
+    return {
+        'status': user['status'],
+        'activated': user['status'] == 'activated'
+    }

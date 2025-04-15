@@ -120,29 +120,12 @@ async def connect(connection_id: str, environ):
                 logger.error(f'Error processing JWT token: {str(e)}')
                 raise ConnectionRefusedError('Authentication failed')
 
-    # TODO FIXME: Logic from upstream. Temporarily comment out. Need to check if they are useful
-    # cookies_str = environ.get('HTTP_COOKIE', '')
-    # conversation_validator = create_conversation_validator()
-    # user_id, github_user_id = await conversation_validator.validate(
-    #     conversation_id, cookies_str
-    # )
-
     settings = await get_user_setting(user_id)
 
     if not settings:
         raise ConnectionRefusedError(
             'Settings not found', {'msg_id': 'CONFIGURATION$SETTINGS_NOT_FOUND'}
         )
-
-    # TODO FIXME: code from upstream. Should consider checking if do we need to use this.
-    # session_init_args: dict = {}
-    # if settings:
-    #     session_init_args = {**settings.__dict__, **session_init_args}
-
-    # session_init_args['git_provider_tokens'] = create_provider_tokens_object(
-    #     providers_set
-    # )
-    # conversation_init_data = ConversationInitData(**session_init_args)
 
     github_user_id = ''
     event_stream = await conversation_manager.join_conversation(

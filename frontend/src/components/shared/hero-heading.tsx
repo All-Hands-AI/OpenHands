@@ -1,6 +1,5 @@
-import RocketImage from "#/assets/images/rocket-image";
+import RocketImage from "#/assets/images/rocket-image"
 // import { I18nKey } from "#/i18n/declaration"
-import { useTranslation } from "react-i18next";
 
 export function HeroHeading() {
   // const { t } = useTranslation()
@@ -25,5 +24,5 @@ export function HeroHeading() {
         </span>
       </p> */}
     </div>
-  );
+  )
 }
