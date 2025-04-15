@@ -37,7 +37,7 @@ class TestContainerFunctions(unittest.TestCase):
         mock_client.containers.list.return_value = []
         mock_docker.return_value = mock_client
         
-        used_ports = get_used_ports(mock_client, 3000, 3005)
+        used_ports = get_used_ports(mock_client, 3000, 3005, use_host_network=False)
         self.assertEqual(used_ports, set())
 
     @patch('docker.DockerClient')
@@ -51,7 +51,7 @@ class TestContainerFunctions(unittest.TestCase):
         mock_client.containers.list.return_value = [mock_container]
         mock_docker.return_value = mock_client
         
-        used_ports = get_used_ports(mock_client, 30000, 30005)
+        used_ports = get_used_ports(mock_client, 30000, 30005, use_host_network=True)
         self.assertEqual(used_ports, {30000})
 
     @patch('docker.DockerClient')
@@ -65,7 +65,7 @@ class TestContainerFunctions(unittest.TestCase):
         mock_client.containers.list.return_value = [mock_container]
         mock_docker.return_value = mock_client
         
-        used_ports = get_used_ports(mock_client, 30000, 30005)
+        used_ports = get_used_ports(mock_client, 30000, 30005, use_host_network=False)
         self.assertEqual(used_ports, {30001, 30002})
 
     @patch('docker.DockerClient')
@@ -79,8 +79,11 @@ class TestContainerFunctions(unittest.TestCase):
         mock_client.containers.list.return_value = [mock_container]
         mock_docker.return_value = mock_client
         
-        used_ports = get_used_ports(mock_client, 30000, 30005)
-        self.assertEqual(used_ports, {30000, 30001})
+        # Test both modes
+        used_ports_cmd = get_used_ports(mock_client, 30000, 30005, use_host_network=True)
+        self.assertEqual(used_ports_cmd, {30000, 30001})
+        used_ports_pub = get_used_ports(mock_client, 30000, 30005, use_host_network=False)
+        self.assertEqual(used_ports_pub, {30001})
 
     @patch('docker.DockerClient')
     def test_get_used_ports_out_of_range(self, mock_docker):
@@ -93,8 +96,10 @@ class TestContainerFunctions(unittest.TestCase):
         mock_client.containers.list.return_value = [mock_container]
         mock_docker.return_value = mock_client
         
-        used_ports = get_used_ports(mock_client, 30000, 30005)
-        self.assertEqual(used_ports, set())  # Both ports are out of range
+        used_ports_cmd = get_used_ports(mock_client, 30000, 30005, use_host_network=True)
+        self.assertEqual(used_ports_cmd, set())  # Command port out of range
+        used_ports_pub = get_used_ports(mock_client, 30000, 30005, use_host_network=False)
+        self.assertEqual(used_ports_pub, set())  # Public port out of range
 
     @patch('docker.DockerClient')
     def test_get_used_ports_malformed_command(self, mock_docker):
@@ -107,7 +112,7 @@ class TestContainerFunctions(unittest.TestCase):
         mock_client.containers.list.return_value = [mock_container]
         mock_docker.return_value = mock_client
         
-        used_ports = get_used_ports(mock_client, 30000, 30005)
+        used_ports = get_used_ports(mock_client, 30000, 30005, use_host_network=True)
         self.assertEqual(used_ports, set())
 
     @patch('docker.DockerClient')
@@ -121,8 +126,10 @@ class TestContainerFunctions(unittest.TestCase):
         mock_client.containers.list.return_value = [mock_container]
         mock_docker.return_value = mock_client
         
-        used_ports = get_used_ports(mock_client, 30000, 30005)
-        self.assertEqual(used_ports, set())
+        used_ports_cmd = get_used_ports(mock_client, 30000, 30005, use_host_network=True)
+        self.assertEqual(used_ports_cmd, set())
+        used_ports_pub = get_used_ports(mock_client, 30000, 30005, use_host_network=False)
+        self.assertEqual(used_ports_pub, set())
 
     @patch('docker.DockerClient')
     def test_get_used_ports_malformed_port_data(self, mock_docker):
@@ -135,8 +142,38 @@ class TestContainerFunctions(unittest.TestCase):
         mock_client.containers.list.return_value = [mock_container]
         mock_docker.return_value = mock_client
         
-        used_ports = get_used_ports(mock_client, 30000, 30005)
+        used_ports = get_used_ports(mock_client, 30000, 30005, use_host_network=False)
         self.assertEqual(used_ports, set())
+
+    @patch('docker.DockerClient')
+    def test_get_used_ports_use_host_network_true(self, mock_docker):
+        mock_client = Mock()
+        mock_container = Mock()
+        mock_container.attrs = {
+            "Command": "/openhands/micromamba/bin/micromamba run -n openhands poetry run python -u -m openhands.runtime.action_execution_server 30010 --working-dir /workspace/test",
+            "Ports": [{"PublicPort": 30011}]
+        }
+        mock_client.containers.list.return_value = [mock_container]
+        mock_docker.return_value = mock_client
+
+        # Should include both the port from the command (30010) and the public port (30011)
+        used_ports = get_used_ports(mock_client, 30000, 30020, use_host_network=True)
+        self.assertEqual(used_ports, {30010, 30011})
+
+    @patch('docker.DockerClient')
+    def test_get_used_ports_use_host_network_false(self, mock_docker):
+        mock_client = Mock()
+        mock_container = Mock()
+        mock_container.attrs = {
+            "Command": "/openhands/micromamba/bin/micromamba run -n openhands poetry run python -u -m openhands.runtime.action_execution_server 30010 --working-dir /workspace/test",
+            "Ports": [{"PublicPort": 30011}]
+        }
+        mock_client.containers.list.return_value = [mock_container]
+        mock_docker.return_value = mock_client
+
+        # Should only include the public port (30011), not the command port
+        used_ports = get_used_ports(mock_client, 30000, 30020, use_host_network=False)
+        self.assertEqual(used_ports, {30011})
 
 if __name__ == '__main__':
     unittest.main() 
