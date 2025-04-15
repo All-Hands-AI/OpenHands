@@ -97,26 +97,6 @@ def _convert_pydantic_to_dict(obj: BaseModel | dict) -> dict:
 
 
 def event_to_dict(event: 'Event') -> dict:
-    # Handle mock objects
-    from unittest.mock import Mock
-
-    if isinstance(event, Mock):
-        # Create a minimal dictionary with required fields for mock objects
-        d = {
-            'id': getattr(event, '_id', Event.INVALID_ID),
-            'timestamp': datetime.now().isoformat(),
-            'source': 'agent',  # Use the string value directly
-            'action': 'system',  # Assuming this is a system message
-            'args': {
-                'content': str(getattr(event, 'content', '')),
-                'image_urls': None,
-                'wait_for_response': False,
-            },
-            'message': str(getattr(event, 'content', '')),
-        }
-        return d
-
-    # Normal event processing
     props = asdict(event)
     d = {}
     for key in TOP_KEYS:
@@ -129,33 +109,21 @@ def event_to_dict(event: 'Event') -> dict:
         if key == 'timestamp' and 'timestamp' in d:
             if isinstance(d['timestamp'], datetime):
                 d['timestamp'] = d['timestamp'].isoformat()
-        if key == 'source' and 'source' in d and hasattr(d['source'], 'value'):
+        if key == 'source' and 'source' in d:
             d['source'] = d['source'].value
-        if key == 'recall_type' and 'recall_type' in d and hasattr(d['recall_type'], 'value'):
+        if key == 'recall_type' and 'recall_type' in d:
             d['recall_type'] = d['recall_type'].value
-        if key == 'tool_call_metadata' and 'tool_call_metadata' in d and hasattr(d['tool_call_metadata'], 'model_dump'):
+        if key == 'tool_call_metadata' and 'tool_call_metadata' in d:
             d['tool_call_metadata'] = d['tool_call_metadata'].model_dump()
         if key == 'llm_metrics' and 'llm_metrics' in d:
-            # Handle the case where llm_metrics is a dict with a get method
-            if hasattr(d['llm_metrics'], 'get') and callable(d['llm_metrics'].get):
-                # Check if it's a method that requires arguments
-                import inspect
-                if inspect.ismethod(d['llm_metrics'].get) and len(inspect.signature(d['llm_metrics'].get).parameters) == 0:
-                    d['llm_metrics'] = d['llm_metrics'].get()
-                else:
-                    # If it's a dict-like object, convert it to a regular dict
-                    if isinstance(d['llm_metrics'], dict):
-                        d['llm_metrics'] = dict(d['llm_metrics'])
-                    else:
-                        # For non-dict objects, just use the object as is
-                        pass
+            d['llm_metrics'] = d['llm_metrics'].get()
         props.pop(key, None)
 
     if 'security_risk' in props and props['security_risk'] is None:
         props.pop('security_risk')
     if 'action' in d:
         d['args'] = props
-        if hasattr(event, 'timeout') and event.timeout is not None:
+        if event.timeout is not None:
             d['timeout'] = event.timeout
         # Add message field for UI display
         if 'content' in props:
@@ -163,18 +131,20 @@ def event_to_dict(event: 'Event') -> dict:
     elif 'observation' in d:
         d['content'] = props.pop('content', '')
 
-    # props is a dict whose values can include a complex object like an instance of a BaseModel subclass
-    # such as CmdOutputMetadata
-    # we serialize it along with the rest
-    # we also handle the Enum conversion for RecallObservation
-    d['extras'] = {
-        k: (v.value if isinstance(v, Enum) else _convert_pydantic_to_dict(v))
-        for k, v in props.items()
-    }
-    logger.debug(f'extras data in event_to_dict: {d["extras"]}')
-    # Include success field for CmdOutputObservation
-    if hasattr(event, 'success'):
-        d['success'] = event.success
+        # props is a dict whose values can include a complex object like an instance of a BaseModel subclass
+        # such as CmdOutputMetadata
+        # we serialize it along with the rest
+        # we also handle the Enum conversion for RecallObservation
+        d['extras'] = {
+            k: (v.value if isinstance(v, Enum) else _convert_pydantic_to_dict(v))
+            for k, v in props.items()
+        }
+        logger.debug(f'extras data in event_to_dict: {d["extras"]}')
+        # Include success field for CmdOutputObservation
+        if hasattr(event, 'success'):
+            d['success'] = event.success
+    else:
+        raise ValueError(f'Event must be either action or observation. has: {event}')
 
     return d
 

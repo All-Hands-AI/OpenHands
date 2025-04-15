@@ -97,15 +97,12 @@ def action_from_dict(action: dict) -> Action:
         raise LLMMalformedActionError(
             f"'{action['action']=}' is not defined. Available actions: {ACTION_TYPE_TO_CLASS.keys()}"
         )
-    action_type = action['action']
-    action_class = ACTION_TYPE_TO_CLASS.get(action_type)
+    action_class = ACTION_TYPE_TO_CLASS.get(action['action'])
     if action_class is None:
         raise LLMMalformedActionError(
             f"'{action['action']=}' is not defined. Available actions: {ACTION_TYPE_TO_CLASS.keys()}"
         )
-
     args = action.get('args', {})
-
     # Remove timestamp from args if present
     timestamp = args.pop('timestamp', None)
 
@@ -123,11 +120,6 @@ def action_from_dict(action: dict) -> Action:
     args = handle_action_deprecated_args(args)
 
     try:
-        # Special handling for system message action
-        if action_type == 'system' and 'content' in action:
-            # Move content from action to args
-            args['content'] = action['content']
-
         decoded_action = action_class(**args)
         if 'timeout' in action:
             blocking = args.get('blocking', False)
