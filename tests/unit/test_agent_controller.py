@@ -1497,7 +1497,7 @@ def test_history_restoration_after_truncation(mock_event_stream, mock_agent):
 
 def test_system_message_in_event_stream(mock_agent, test_event_stream):
     """Test that SystemMessageAction is added to event stream in AgentController."""
-    controller = AgentController(
+    _ = AgentController(
         agent=mock_agent, event_stream=test_event_stream, max_iterations=10
     )
 
