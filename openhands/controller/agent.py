@@ -53,7 +53,7 @@ class Agent(ABC):
         return self._complete
 
     @abstractmethod
-    async def step(self, state: 'State') -> 'Action':
+    def step(self, state: 'State') -> 'Action':
         """Starts the execution of the assigned instruction. This method should
         be implemented by subclasses to define the specific execution logic.
         """

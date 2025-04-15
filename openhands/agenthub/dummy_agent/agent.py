@@ -1,4 +1,5 @@
-from typing import TypedDict
+import asyncio
+from typing import TypedDict, AsyncGenerator, Any
 
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
@@ -33,6 +34,8 @@ from autogen_ext.models.anthropic import AnthropicChatCompletionClient
 from autogen_ext.tools.mcp import SseServerParams, mcp_server_tools
 from autogen_agentchat.agents import AssistantAgent
 
+from openhands.utils.async_utils import call_async_from_sync
+
 """
 FIXME: There are a few problems this surfaced
 * FileWrites seem to add an unintended newline at the end of the file
@@ -63,27 +66,13 @@ class DummyAgent(Agent):
         mcp = AssistantAgent(name="MCPTools", model_client=model_client, tools=tools)
         self.team = MagenticOneGroupChat(participants=[mcp], model_client=model_client)
 
-        self.steps: list[Action] = [
-            MessageAction('Time to get started!'),
-            CmdRunAction(command='echo "foo"'),
-            FileWriteAction(
-                content='echo "Hello, World!"', path='hello.sh'
-            ),
-            FileReadAction(path='hello.sh'),
-            AgentFinishAction(
-                outputs={}, thought='Task completed', action='finish'
-            ),
-        ]
+    def step(self, state: State) -> Action:
 
-    async def step(self, state: State) -> Action:
+        # Otherwise fall back to the team
         task = state.get_last_user_message().content
-        result = None
-        await self.team.reset()
-        print(f"task: {task}")
-        async for message in self.team.run_stream(
-            task=task
-        ):
-            print(f"step result: {message}")
-            result = message
 
-        return AgentFinishAction(final_thought=result.messages[0].to_model_text())
+        print(f"task: {task}")
+        result = call_async_from_sync(self.team.run, task=task)
+        print(f"result: {result}")
+
+        return AgentFinishAction(final_thought=result.messages[-1].to_model_text())
