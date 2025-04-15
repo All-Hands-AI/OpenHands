@@ -45,29 +45,14 @@ class SystemMessageAction(Action):
     content: str
     tools: list[Any] | None = None
     action: str = ActionType.SYSTEM
-    image_urls: list[str] | None = None  # Add this to match MessageAction
-    wait_for_response: bool = False  # Add this to match MessageAction
-    # We don't need to declare _tool_call_metadata here as it's handled by the Event base class
 
     @property
     def message(self) -> str:
         return self.content
-
-    @property
-    def images_urls(self) -> list[str] | None:
-        # Deprecated alias for backward compatibility
-        return self.image_urls
-
-    @images_urls.setter
-    def images_urls(self, value: list[str] | None) -> None:
-        self.image_urls = value
 
     def __str__(self) -> str:
         ret = f'**SystemMessageAction** (source={self.source})\n'
         ret += f'CONTENT: {self.content}'
         if self.tools:
             ret += f'\nTOOLS: {len(self.tools)} tools available'
-        if self.image_urls:
-            for url in self.image_urls:
-                ret += f'\nIMAGE_URL: {url}'
         return ret
