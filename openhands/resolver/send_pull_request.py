@@ -235,7 +235,7 @@ def send_pull_request(
     target_branch: str | None = None,
     reviewer: str | None = None,
     pr_title: str | None = None,
-    base_domain: str = 'github.com',
+    base_domain: str | None = None,
 ) -> str:
     """Send a pull request to a GitHub or Gitlab repository.
 
@@ -251,9 +251,14 @@ def send_pull_request(
         target_branch: The target branch to create the pull request against (defaults to repository default branch)
         reviewer: The GitHub or Gitlab username of the reviewer to assign
         pr_title: Custom title for the pull request (optional)
+        base_domain: The base domain for the git server (defaults to "github.com" for GitHub and "gitlab.com" for GitLab)
     """
     if pr_type not in ['branch', 'draft', 'ready']:
         raise ValueError(f'Invalid pr_type: {pr_type}')
+
+    # Determine default base_domain based on platform
+    if base_domain is None:
+        base_domain = 'github.com' if platform == Platform.GITHUB else 'gitlab.com'
 
     handler = None
     if platform == Platform.GITHUB:
@@ -263,7 +268,8 @@ def send_pull_request(
         )
     else:  # platform == Platform.GITLAB
         handler = ServiceContextIssue(
-            GitlabIssueHandler(issue.owner, issue.repo, token, username), None
+            GitlabIssueHandler(issue.owner, issue.repo, token, username, base_domain),
+            None,
         )
 
     # Create a new branch with a unique name
@@ -365,7 +371,7 @@ def update_existing_pull_request(
     llm_config: LLMConfig,
     comment_message: str | None = None,
     additional_message: str | None = None,
-    base_domain: str = 'github.com',
+    base_domain: str | None = None,
 ) -> str:
     """Update an existing pull request with the new patches.
 
@@ -378,8 +384,13 @@ def update_existing_pull_request(
         llm_config: The LLM configuration to use for summarizing changes.
         comment_message: The main message to post as a comment on the PR.
         additional_message: The additional messages to post as a comment on the PR in json list format.
+        base_domain: The base domain for the git server (defaults to "github.com" for GitHub and "gitlab.com" for GitLab)
     """
     # Set up headers and base URL for GitHub or GitLab API
+
+    # Determine default base_domain based on platform
+    if base_domain is None:
+        base_domain = 'github.com' if platform == Platform.GITHUB else 'gitlab.com'
 
     handler = None
     if platform == Platform.GITHUB:
@@ -389,7 +400,8 @@ def update_existing_pull_request(
         )
     else:  # platform == Platform.GITLAB
         handler = ServiceContextIssue(
-            GitlabIssueHandler(issue.owner, issue.repo, token, username), llm_config
+            GitlabIssueHandler(issue.owner, issue.repo, token, username, base_domain),
+            llm_config,
         )
 
     branch_name = issue.head_branch
@@ -472,8 +484,11 @@ def process_single_issue(
     target_branch: str | None = None,
     reviewer: str | None = None,
     pr_title: str | None = None,
-    base_domain: str = 'github.com',
+    base_domain: str | None = None,
 ) -> None:
+    # Determine default base_domain based on platform
+    if base_domain is None:
+        base_domain = 'github.com' if platform == Platform.GITHUB else 'gitlab.com'
     if not resolver_output.success and not send_on_failure:
         logger.info(
             f'Issue {resolver_output.issue.number} was not successfully resolved. Skipping PR creation.'
@@ -539,8 +554,11 @@ def process_all_successful_issues(
     pr_type: str,
     llm_config: LLMConfig,
     fork_owner: str | None,
-    base_domain: str = 'github.com',
+    base_domain: str | None = None,
 ) -> None:
+    # Determine default base_domain based on platform
+    if base_domain is None:
+        base_domain = 'github.com' if platform == Platform.GITHUB else 'gitlab.com'
     output_path = os.path.join(output_dir, 'output.jsonl')
     for resolver_output in load_all_resolver_outputs(output_path):
         if resolver_output.success:
@@ -647,8 +665,8 @@ def main() -> None:
     parser.add_argument(
         '--base-domain',
         type=str,
-        default='github.com',
-        help='Base domain for GitHub Enterprise (default: github.com)',
+        default=None,
+        help='Base domain for the git server (defaults to "github.com" for GitHub and "gitlab.com" for GitLab)',
     )
     my_args = parser.parse_args()
 

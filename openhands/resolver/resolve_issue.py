@@ -322,8 +322,11 @@ def issue_handler_factory(
     llm_config: LLMConfig,
     platform: Platform,
     username: str | None = None,
-    base_domain: str = 'github.com',
+    base_domain: str | None = None,
 ) -> ServiceContextIssue | ServiceContextPR:
+    # Determine default base_domain based on platform
+    if base_domain is None:
+        base_domain = 'github.com' if platform == Platform.GITHUB else 'gitlab.com'
     if issue_type == 'issue':
         if platform == Platform.GITHUB:
             return ServiceContextIssue(
@@ -332,7 +335,8 @@ def issue_handler_factory(
             )
         else:  # platform == Platform.GITLAB
             return ServiceContextIssue(
-                GitlabIssueHandler(owner, repo, token, username), llm_config
+                GitlabIssueHandler(owner, repo, token, username, base_domain),
+                llm_config,
             )
     elif issue_type == 'pr':
         if platform == Platform.GITHUB:
@@ -341,7 +345,7 @@ def issue_handler_factory(
             )
         else:  # platform == Platform.GITLAB
             return ServiceContextPR(
-                GitlabPRHandler(owner, repo, token, username), llm_config
+                GitlabPRHandler(owner, repo, token, username, base_domain), llm_config
             )
     else:
         raise ValueError(f'Invalid issue type: {issue_type}')
@@ -363,7 +367,7 @@ async def resolve_issue(
     issue_number: int,
     comment_id: int | None,
     reset_logger: bool = False,
-    base_domain: str = 'github.com',
+    base_domain: str | None = None,
 ) -> None:
     """Resolve a single issue.
 
@@ -382,9 +386,13 @@ async def resolve_issue(
         repo_instruction: Repository instruction to use.
         issue_number: Issue number to resolve.
         comment_id: Optional ID of a specific comment to focus on.
-
         reset_logger: Whether to reset the logger for multiprocessing.
+        base_domain: The base domain for the git server (defaults to "github.com" for GitHub and "gitlab.com" for GitLab)
     """
+    # Determine default base_domain based on platform
+    if base_domain is None:
+        base_domain = 'github.com' if platform == Platform.GITHUB else 'gitlab.com'
+
     issue_handler = issue_handler_factory(
         issue_type, owner, repo, token, llm_config, platform, username, base_domain
     )
@@ -635,8 +643,8 @@ def main() -> None:
     parser.add_argument(
         '--base-domain',
         type=str,
-        default='github.com',
-        help='Base domain for GitHub Enterprise (default: github.com)',
+        default=None,
+        help='Base domain for the git server (defaults to "github.com" for GitHub and "gitlab.com" for GitLab)',
     )
 
     my_args = parser.parse_args()

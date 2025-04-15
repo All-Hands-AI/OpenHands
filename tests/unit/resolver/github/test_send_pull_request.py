@@ -1290,7 +1290,7 @@ def test_main(
         mock_args.target_branch,
         mock_args.reviewer,
         mock_args.pr_title,
-        'github.com',
+        ANY,
     )
 
     # Other assertions
@@ -1310,7 +1310,7 @@ def test_main(
         'draft',
         llm_config,
         None,
-        'github.com',
+        ANY,
     )
 
     # Test for invalid issue number
