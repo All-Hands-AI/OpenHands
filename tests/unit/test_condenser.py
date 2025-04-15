@@ -749,10 +749,10 @@ def test_condenser_pipeline_chains_sub_condensers():
     harness = RollingCondenserTestHarness(condenser)
     events = [
         BrowserOutputObservation(
-            f"Observation {i}", url="", trigger_by_action=ActionType.BROWSE
+            f'Observation {i}', url='', trigger_by_action=ActionType.BROWSE
         )
         if i % 3 == 0
-        else create_test_event(f"Event {i}")
+        else create_test_event(f'Event {i}')
         for i in range(0, MAX_SIZE * NUMBER_OF_CONDENSATIONS)
     ]
 
@@ -770,7 +770,7 @@ def test_condenser_pipeline_chains_sub_condensers():
         ]
 
         for event in browser_outputs[:-ATTENTION_WINDOW]:
-            assert "Content Omitted" in str(event)
+            assert 'Content Omitted' in str(event)
 
         for event in browser_outputs[-ATTENTION_WINDOW:]:
-            assert "Content Omitted" not in str(event)
+            assert 'Content Omitted' not in str(event)
