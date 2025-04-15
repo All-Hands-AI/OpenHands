@@ -1251,13 +1251,7 @@ async def test_first_user_message_with_identical_content():
     mock_agent.llm = MagicMock(spec=LLM)
     mock_agent.llm.metrics = Metrics()
     mock_agent.llm.config = AppConfig().get_llm_config()
-    
-    # Add a proper system message mock
-    from openhands.events.action.message import SystemMessageAction
-    system_message = SystemMessageAction(content='Test system message')
-    system_message._source = EventSource.AGENT
-    system_message._id = Event.INVALID_ID  # Set invalid ID to avoid the ID check
-    mock_agent.get_system_message.return_value = system_message
+
 
     controller = AgentController(
         agent=mock_agent,
