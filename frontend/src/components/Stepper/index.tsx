@@ -53,7 +53,14 @@ const Stepper = () => {
                   step
                 )}
               </div>
-              <span className="mt-2 text-center text-sm">{label}</span>
+
+              {isActive ? (
+                <div className="animate-gradient-smooth mt-2 bg-gradient-to-r from-[#FFFF] via-[#AFAFAF] to-[#0f0f0f] bg-[length:300%_100%] bg-clip-text text-sm font-bold text-transparent">
+                  {label}
+                </div>
+              ) : (
+                <span className="mt-2 text-center text-sm">{label}</span>
+              )}
             </div>
           )
         })}
