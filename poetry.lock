@@ -5649,34 +5649,30 @@ voice-helpers = ["numpy (>=2.0.2)", "sounddevice (>=0.5.1)"]
 
 [[package]]
 name = "openhands-aci"
-version = "0.2.9"
+version = "0.2.10"
 description = "An Agent-Computer Interface (ACI) designed for software development agents OpenHands."
 optional = false
-python-versions = "^3.12"
+python-versions = "<4.0,>=3.12"
 groups = ["main"]
-files = []
-develop = false
+files = [
+    {file = "openhands_aci-0.2.10-py3-none-any.whl", hash = "sha256:0703eb117e24326d80d990b81a0c71e28a364f56999095b95c146c934e40fc55"},
+    {file = "openhands_aci-0.2.10.tar.gz", hash = "sha256:a5e6bf46cbd9a99c5c592548419a9a3b3091c4e82f0227e8aaf470b18a261cc9"},
+]
 
 [package.dependencies]
-binaryornot = "^0.4.4"
-cachetools = "^5.5.2"
-charset-normalizer = "^3.4.1"
+binaryornot = ">=0.4.4,<0.5.0"
+cachetools = ">=5.5.2,<6.0.0"
+charset-normalizer = ">=3.4.1,<4.0.0"
 flake8 = "*"
 gitpython = "*"
 grep-ast = "0.3.3"
-pydantic = "^2.11.3"
-tree-sitter = "^0.24.0"
-tree-sitter-javascript = "^0.23.1"
-tree-sitter-python = "^0.23.6"
-tree-sitter-ruby = "^0.23.1"
-tree-sitter-typescript = "^0.23.2"
-whatthepatch = "^1.0.6"
-
-[package.source]
-type = "git"
-url = "https://github.com/All-Hands-AI/openhands-aci.git"
-reference = "fix-extra-new-line"
-resolved_reference = "c7a7f00fdc6198788007cfd3cbcda255f4e0c731"
+pydantic = ">=2.11.3,<3.0.0"
+tree-sitter = ">=0.24.0,<0.25.0"
+tree-sitter-javascript = ">=0.23.1,<0.24.0"
+tree-sitter-python = ">=0.23.6,<0.24.0"
+tree-sitter-ruby = ">=0.23.1,<0.24.0"
+tree-sitter-typescript = ">=0.23.2,<0.24.0"
+whatthepatch = ">=1.0.6,<2.0.0"
 
 [[package]]
 name = "opentelemetry-api"
@@ -10273,4 +10269,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "732d36cc56016492fe0762610ce2ea243296d158acdcaa4601cafbcc86bdf99c"
+content-hash = "e103d6d899af073c222deec407e7d0f58d445d10b2cfb9b0579243790eefd5be"
