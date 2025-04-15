@@ -134,12 +134,10 @@ async def reset_settings(request: Request) -> JSONResponse:
         )
 
 
-@app.post('/settings', response_model=dict[str, str])
-async def store_settings(
-    request: Request,
-    settings: POSTSettingsModel,
-) -> JSONResponse:
-    # Check provider tokens are valid
+
+async def check_provider_tokens(request: Request,
+                                settings: POSTSettingsModel) -> str:
+    
     if settings.provider_tokens:
         # Remove extraneous token types
         provider_types = [provider.value for provider in ProviderType]
@@ -154,12 +152,25 @@ async def store_settings(
                     SecretStr(token_value)
                 )
                 if not confirmed_token_type or confirmed_token_type.value != token_type:
-                    return JSONResponse(
-                        status_code=status.HTTP_401_UNAUTHORIZED,
-                        content={
-                            'error': f'Invalid token. Please make sure it is a valid {token_type} token.'
-                        },
-                    )
+                    return f"Invalid token. Please make sure it is a valid {token_type} token."
+                    
+
+    return ""
+@app.post('/settings', response_model=dict[str, str])
+async def store_settings(
+    request: Request,
+    settings: POSTSettingsModel,
+) -> JSONResponse:
+    # Check provider tokens are valid
+    provider_err_msg = check_provider_tokens(request, settings)
+    if provider_err_msg:
+        return JSONResponse(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            content={
+                'error': provider_err_msg
+            },
+        )
+    
 
     try:
         settings_store = await SettingsStoreImpl.get_instance(
