@@ -15,7 +15,7 @@ from openhands.core.logger import openhands_logger as logger
 app = APIRouter(prefix='/api/invitation')
 
 # Constants
-ADMIN_INVITATION_CODE = "0xc4dde52e318ccc67596c20a09e4c29ce369d8e51"  # Whitelisted admin address
+ADMIN_INVITATION_CODE = "0xc0a1be25749d2b2b7cb4ce95d29bc64f5f3b601e"  # Whitelisted admin address
 CODE_LENGTH = 10  # Length of generated invitation codes
 MAX_CODES_PER_REQUEST = 100  # Maximum number of codes that can be generated in one request
 
