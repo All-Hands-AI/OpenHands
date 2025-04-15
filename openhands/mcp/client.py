@@ -1,15 +1,15 @@
-from mcp.types import CallToolResult
 from contextlib import AsyncExitStack
 from typing import Dict, List, Optional
 
 from mcp import ClientSession
 from mcp.client.sse import sse_client
-from mcp.types import CallToolResult
+from mcp.types import CallToolResult, TextContent
 from pydantic import BaseModel, Field
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.core.message import TextContent
 from openhands.mcp.tool import BaseTool, MCPClientTool
+
+import asyncio
 
 
 class MCPClient(BaseModel):
@@ -138,7 +138,7 @@ class MCPClient(BaseModel):
         except Exception:
             return False
 
-    async def call_tool(self, tool_name: str, args: Dict):
+    async def call_tool(self, tool_name: str, args: Dict, timeout: float = 20.0):
         """Call a tool on the MCP server with automatic reconnection on failure.
 
         Args:
@@ -163,7 +163,20 @@ class MCPClient(BaseModel):
                     'Failed to reconnect to MCP server. Session is None.'
                 )
             await self.session.initialize()
-            tool_result = await self.tool_map[tool_name].execute(**args)
+            
+            # Add timeout of 20 seconds to tool execution
+            try:
+                tool_result = await asyncio.wait_for(
+                    self.tool_map[tool_name].execute(**args),
+                    timeout=timeout
+                )
+            except asyncio.TimeoutError:
+                logger.error(f'Tool call to {tool_name} timed out after {timeout} seconds')
+                return CallToolResult(
+                    content=[TextContent(text=f'Tool call to {tool_name} timed out after {timeout} seconds', type='text')],
+                    isError=True,
+                )
+                
             if tool_result.isError:
                 logger.error(f'Tool call to {tool_name} failed: {tool_result.content}')
             return tool_result
