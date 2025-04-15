@@ -119,9 +119,10 @@ class Runtime(FileEditRuntimeMixin):
         self.plugins = (
             copy.deepcopy(plugins) if plugins is not None and len(plugins) > 0 else []
         )
+        # TODO FIXME: Disable VSCode plugin since we don't need it
         # add VSCode plugin if not in headless mode
-        if not headless_mode:
-            self.plugins.append(VSCodeRequirement())
+        # if not headless_mode:
+        #     self.plugins.append(VSCodeRequirement())
 
         self.status_callback = status_callback
         self.attach_to_existing = attach_to_existing
@@ -159,10 +160,13 @@ class Runtime(FileEditRuntimeMixin):
     def setup_initial_env(self) -> None:
         if self.attach_to_existing:
             return
-        logger.debug(f'Adding env vars: {self.initial_env_vars.keys()}')
-        self.add_env_vars(self.initial_env_vars)
-        if self.config.sandbox.runtime_startup_env_vars:
-            self.add_env_vars(self.config.sandbox.runtime_startup_env_vars)
+        merged_env_vars = {
+            **self.initial_env_vars,
+            **self.config.sandbox.runtime_startup_env_vars,
+        }
+        if merged_env_vars:
+            logger.debug(f'Adding env vars: {merged_env_vars.keys()}')
+            self.add_env_vars(merged_env_vars)
 
     def close(self) -> None:
         """

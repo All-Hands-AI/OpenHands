@@ -94,6 +94,7 @@ class AppConfig(BaseModel):
     )  # Maximum number of concurrent agent loops allowed per user
     # mcp: MCPConfig = Field(default_factory=MCPConfig)
     dict_mcp_config: dict[str, MCPConfig] = Field(default_factory=dict)
+    enable_microagents: bool = Field(default=True)
 
     defaults_dict: ClassVar[dict] = {}
 

@@ -4,6 +4,7 @@ from typing import Dict, List, Optional
 
 from mcp import ClientSession
 from mcp.client.sse import sse_client
+from mcp.types import CallToolResult
 from pydantic import BaseModel, Field
 
 from openhands.core.logger import openhands_logger as logger
