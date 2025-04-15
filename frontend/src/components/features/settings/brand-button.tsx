@@ -1,13 +1,13 @@
-import { cn } from "#/utils/utils";
+import { cn } from "#/utils/utils"
 
 interface BrandButtonProps {
-  testId?: string;
-  variant: "primary" | "secondary";
-  type: React.ButtonHTMLAttributes<HTMLButtonElement>["type"];
-  isDisabled?: boolean;
-  className?: string;
-  onClick?: () => void;
-  startContent?: React.ReactNode;
+  testId?: string
+  variant: "primary" | "secondary"
+  type: React.ButtonHTMLAttributes<HTMLButtonElement>["type"]
+  isDisabled?: boolean
+  className?: string
+  onClick?: () => void
+  startContent?: React.ReactNode
 }
 
 export function BrandButton({
@@ -29,8 +29,8 @@ export function BrandButton({
       type={type}
       onClick={onClick}
       className={cn(
-        "w-fit p-2 rounded disabled:opacity-30 disabled:cursor-not-allowed",
-        variant === "primary" && "bg-primary text-[#0D0F11]",
+        "w-fit rounded-lg p-2 text-[14px] font-semibold disabled:cursor-not-allowed disabled:opacity-30",
+        variant === "primary" && "bg-primary text-white",
         variant === "secondary" && "border border-primary text-primary",
         startContent && "flex items-center justify-center gap-2",
         className,
@@ -39,5 +39,5 @@ export function BrandButton({
       {startContent}
       {children}
     </button>
-  );
+  )
 }

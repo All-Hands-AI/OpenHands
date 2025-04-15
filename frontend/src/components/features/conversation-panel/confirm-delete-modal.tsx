@@ -1,27 +1,27 @@
-import { useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next"
 import {
   BaseModalDescription,
   BaseModalTitle,
-} from "#/components/shared/modals/confirmation-modals/base-modal";
-import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
-import { ModalBody } from "#/components/shared/modals/modal-body";
-import { BrandButton } from "../settings/brand-button";
-import { I18nKey } from "#/i18n/declaration";
+} from "#/components/shared/modals/confirmation-modals/base-modal"
+import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop"
+import { ModalBody } from "#/components/shared/modals/modal-body"
+import { BrandButton } from "../settings/brand-button"
+import { I18nKey } from "#/i18n/declaration"
 
 interface ConfirmDeleteModalProps {
-  onConfirm: () => void;
-  onCancel: () => void;
+  onConfirm: () => void
+  onCancel: () => void
 }
 
 export function ConfirmDeleteModal({
   onConfirm,
   onCancel,
 }: ConfirmDeleteModalProps) {
-  const { t } = useTranslation();
+  const { t } = useTranslation()
 
   return (
     <ModalBackdrop>
-      <ModalBody className="items-start border border-tertiary">
+      <ModalBody className="items-start border border-neutral-1000">
         <div className="flex flex-col gap-2">
           <BaseModalTitle title={t(I18nKey.CONVERSATION$CONFIRM_DELETE)} />
           <BaseModalDescription
@@ -29,7 +29,7 @@ export function ConfirmDeleteModal({
           />
         </div>
         <div
-          className="flex flex-col gap-2 w-full"
+          className="flex w-full flex-col gap-2"
           onClick={(event) => event.stopPropagation()}
         >
           <BrandButton
@@ -53,5 +53,5 @@ export function ConfirmDeleteModal({
         </div>
       </ModalBody>
     </ModalBackdrop>
-  );
+  )
 }
