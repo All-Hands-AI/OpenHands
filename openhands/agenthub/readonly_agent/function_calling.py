@@ -13,18 +13,17 @@ from litellm import (
 
 from openhands.agenthub.codeact_agent.function_calling import (
     Action,
-    BrowserAction,
-    FinishAction,
-    GlobAction,
-    GrepAction,
-    IPythonAction,
-    LLMBasedFileEditAction,
-    StrReplaceEditorAction,
-    ThinkAction,
-    ViewAction,
-    WebReadAction,
-    build_glob_command,
     response_to_actions,
+)
+from openhands.events.action import (
+    AgentFinishAction,
+    AgentThinkAction,
+    BrowseInteractiveAction,
+    BrowseURLAction,
+    CmdRunAction,
+    FileEditAction,
+    FileReadAction,
+    IPythonRunCellAction,
 )
 from openhands.agenthub.readonly_agent.tools import (
     READ_ONLY_TOOLS,

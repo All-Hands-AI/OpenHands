@@ -7,12 +7,12 @@ from collections import deque
 
 from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
 from openhands.agenthub.readonly_agent import function_calling as readonly_function_calling
-from openhands.core.action import Action
+from openhands.events.action import Action
 from openhands.core.config import AgentConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message, TextContent, ContentType
 from openhands.llm.llm import LLM
-from openhands.prompt.prompt_manager import PromptManager
+from openhands.utils.prompt import PromptManager
 
 
 class ReadOnlyAgent(CodeActAgent):

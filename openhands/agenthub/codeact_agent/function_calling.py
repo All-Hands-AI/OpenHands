@@ -307,6 +307,29 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                     name=tool_call.function.name.rstrip(MCPClientTool.postfix()),
                     arguments=tool_call.function.arguments,
                 )
+            # ================================================
+            # file_editor (for backward compatibility with tests)
+            # ================================================
+            elif tool_call.function.name == 'file_editor' or tool_call.function.name == 'str_replace_editor':
+                if 'command' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "command" in tool call {tool_call.function.name}'
+                    )
+                if 'path' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "path" in tool call {tool_call.function.name}'
+                    )
+                path = arguments['path']
+                command = arguments['command']
+                other_kwargs = {
+                    k: v for k, v in arguments.items() if k not in ['command', 'path']
+                }
+                action = FileEditAction(
+                    path=path,
+                    command=command,
+                    impl_source=FileEditSource.OH_ACI,
+                    **other_kwargs,
+                )
             else:
                 raise FunctionCallNotExistsError(
                     f'Tool {tool_call.function.name} is not registered. (arguments: {arguments}). Please check the tool name and retry with an existing tool.'
