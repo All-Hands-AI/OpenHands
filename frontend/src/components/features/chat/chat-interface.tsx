@@ -23,7 +23,7 @@ import posthog from "posthog-js"
 import React, { useEffect } from "react"
 import { useTranslation } from "react-i18next"
 import { FaFileInvoice } from "react-icons/fa"
-import { FaPowerOff } from "react-icons/fa6"
+import { FaPowerOff, FaCheck } from "react-icons/fa6"
 import { IoFolder } from "react-icons/io5"
 import { RiPhoneFindLine } from "react-icons/ri"
 import { useDispatch, useSelector } from "react-redux"
@@ -250,6 +250,13 @@ export function ChatInterface() {
           <ActionSuggestions
             onSuggestionsClick={(value) => handleSendMessage(value, [])}
           />
+        )}
+
+        {curAgentState === AgentState.AWAITING_USER_INPUT && (
+          <div className="-mt-3 mb-4 flex w-fit items-center justify-center gap-2 rounded-full bg-success-100 px-3 py-1">
+            <FaCheck />
+            Thesis has completed the current task
+          </div>
         )}
 
         {curAgentState === AgentState.AWAITING_USER_INPUT &&
