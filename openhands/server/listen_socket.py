@@ -64,10 +64,12 @@ async def connect(connection_id: str, environ):
     # check if conversation_id is shared
     if mode == 'shared':
         error, info = await conversation_module._get_conversation_visibility_info(conversation_id)
+        print(f'error: {error}, info: {info}')
         if error:
             raise ConnectionRefusedError(error)
-        mnemonic = info['mnemonic']
-        user_id = info['user_id']
+        else:
+            mnemonic = info['mnemonic']
+            user_id = info['user_id']
     else:
         # Get JWT token from query params
         jwt_token = query_params.get('auth', [None])[0]

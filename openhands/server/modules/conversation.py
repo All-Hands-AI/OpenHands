@@ -2,6 +2,7 @@ import select
 from openhands.server.models import Conversation, User
 from openhands.server.db import database
 from openhands.core.logger import openhands_logger as logger
+from sqlalchemy import select
 
 
 class ConversationModule:
@@ -59,7 +60,8 @@ class ConversationModule:
             if not existing_record.published:
                 return 'Conversation not published', None
             user_id = existing_record.user_id
-            user = await database.fetch_one(select(User).where(User.c.public_key == user_id.lower()))
+            user_query = select(User).where(User.c.public_key == user_id.lower())
+            user = await database.fetch_one(user_query)
             if not user:
                 return 'User not found', None
             return None, {'mnemonic': user['mnemonic'], 'user_id': user_id}
