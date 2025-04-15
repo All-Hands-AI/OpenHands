@@ -118,16 +118,12 @@ def event_to_dict(event: 'Event') -> dict:
         if key == 'llm_metrics' and 'llm_metrics' in d:
             d['llm_metrics'] = d['llm_metrics'].get()
         props.pop(key, None)
-
     if 'security_risk' in props and props['security_risk'] is None:
         props.pop('security_risk')
     if 'action' in d:
         d['args'] = props
         if event.timeout is not None:
             d['timeout'] = event.timeout
-        # Add message field for UI display
-        if 'content' in props:
-            d['message'] = props['content']
     elif 'observation' in d:
         d['content'] = props.pop('content', '')
 
@@ -145,7 +141,6 @@ def event_to_dict(event: 'Event') -> dict:
             d['success'] = event.success
     else:
         raise ValueError(f'Event must be either action or observation. has: {event}')
-
     return d
 
 

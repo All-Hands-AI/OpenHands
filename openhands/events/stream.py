@@ -165,6 +165,7 @@ class EventStream(EventStore):
         with self._lock:
             event._id = self.cur_id  # type: ignore [attr-defined]
             self.cur_id += 1
+
             # Take a copy of the current write page
             current_write_page = self._write_page_cache
 

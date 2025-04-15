@@ -34,8 +34,7 @@ def serialization_deserialization(
     serialized_action_dict = event_to_dict(action_instance)
 
     # it has an extra message property, for the UI
-    serialized_action_dict.pop('message', None)
-
+    serialized_action_dict.pop('message')
     assert (
         serialized_action_dict == original_action_dict
     ), 'The serialized action should match the original action dict.'
