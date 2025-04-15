@@ -125,8 +125,8 @@ class Session:
 
         llm = self._create_llm(agent_cls)
         agent_config = self.config.get_agent_config(agent_cls)
-
-        if settings.enable_default_condenser:
+        self.logger.info(f'Enabling default condenser: {agent_config.condenser}')
+        if settings.enable_default_condenser and agent_config.condenser.type == 'noop':
             default_condenser_config = LLMSummarizingCondenserConfig(
                 llm_config=llm.config, keep_first=3, max_size=20
             )
