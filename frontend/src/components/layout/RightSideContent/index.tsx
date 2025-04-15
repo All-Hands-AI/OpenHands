@@ -9,6 +9,7 @@ import { useSelector } from "react-redux"
 import CodeView from "./CodeView"
 import EditorContent from "./EditorContent"
 import McpView from "./McpView"
+import { cn } from "#/utils/utils"
 import { STEP_STATUSES } from "./TaskProgress"
 import { cn } from "#/utils/utils"
 
@@ -83,6 +84,12 @@ const ThesisComputer = () => {
       setCurrentStep(newStep)
     }
   }, [computerList, totalSteps])
+
+  useEffect(() => {
+    if (computerList.length === 0) {
+      setCurrentStep(0)
+    }
+  }, [computerList])
 
   useEffect(() => {
     if (scrollRef.current) {
