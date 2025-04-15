@@ -25,7 +25,6 @@ export function GitRepositoriesSuggestionBox({
 }: GitRepositoriesSuggestionBoxProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { providerTokensSet } = useAuth();
   const [searchQuery, setSearchQuery] = React.useState<string>("");
 
   const debouncedSearchQuery = useDebounce(searchQuery, 300);

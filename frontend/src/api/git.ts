@@ -59,7 +59,6 @@ export const retrieveUserGitRepositories = async () => {
     "/api/user/repositories",
     {
       params: {
-        selected_provider,
         sort: "pushed",
       },
     },

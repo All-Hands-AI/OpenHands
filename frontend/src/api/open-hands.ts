@@ -254,7 +254,6 @@ class OpenHands {
       "/api/user/search/repositories",
       {
         params: {
-          selected_provider,
           query,
           per_page,
         },

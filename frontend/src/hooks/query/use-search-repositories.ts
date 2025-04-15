@@ -2,10 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import OpenHands from "#/api/open-hands";
 import { Provider } from "#/types/settings";
 
-export function useSearchRepositories(
-  query: string,
-  selectedProvider: Provider | null,
-) {
+export function useSearchRepositories(query: string) {
   return useQuery({
     queryKey: ["repositories", query],
     queryFn: () => OpenHands.searchGitRepositories(query, 3),
