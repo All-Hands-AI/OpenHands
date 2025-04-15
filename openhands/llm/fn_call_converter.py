@@ -353,13 +353,15 @@ ASSISTANT:
 Now let me display the numbers in a table format:
 <function=edit_file>
 <parameter=path>/workspace/app.py</parameter>
-<parameter=start>6</parameter>
-<parameter=end>8</parameter>
+<parameter=start>4</parameter>
+<parameter=end>9</parameter>
 <parameter=content>
-    # no changes before
+@app.route('/')
+    // ... existing code ...
     numbers = list(range(1, 11))
     return '<table>' + ''.join([f'<tr><td>{i}</td></tr>' for i in numbers]) + '</table>'
-    # no changes after
+    // ... existing code ...
+if __name__ == '__main__':
 </parameter>
 </function>
 
