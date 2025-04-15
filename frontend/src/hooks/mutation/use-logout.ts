@@ -23,5 +23,10 @@ export const useLogout = () => {
       setProviderTokensSet([]);
       setProvidersAreSet(false);
     },
+    onSuccess: () => {
+      // Home screen suggested tasks
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.removeQueries({ queryKey: ["tasks"] });
+    },
   });
 };

@@ -1,15 +1,16 @@
 import { render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Provider } from "react-redux";
 import { createRoutesStub } from "react-router";
 import { setupStore } from "test-utils";
+import userEvent from "@testing-library/user-event";
 import { TaskSuggestions } from "#/components/features/home/tasks/task-suggestions";
 import { SuggestionsService } from "#/api/suggestions-service/suggestions-service.api";
 import { MOCK_TASKS } from "#/mocks/task-suggestions-handlers";
 import { AuthProvider } from "#/context/auth-context";
 
-const renderTaskSuggestions = () => {
+const renderTaskSuggestions = (initialProvidersAreSet = true) => {
   const RouterStub = createRoutesStub([
     {
       Component: TaskSuggestions,
@@ -19,12 +20,16 @@ const renderTaskSuggestions = () => {
       Component: () => <div data-testid="conversation-screen" />,
       path: "/conversations/:conversationId",
     },
+    {
+      Component: () => <div data-testid="settings-screen" />,
+      path: "/settings",
+    },
   ]);
 
   return render(<RouterStub />, {
     wrapper: ({ children }) => (
       <Provider store={setupStore()}>
-        <AuthProvider initialProvidersAreSet>
+        <AuthProvider initialProvidersAreSet={initialProvidersAreSet}>
           <QueryClientProvider client={new QueryClient()}>
             {children}
           </QueryClientProvider>
@@ -39,6 +44,10 @@ describe("TaskSuggestions", () => {
     SuggestionsService,
     "getSuggestedTasks",
   );
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
 
   it("should render the task suggestions section", () => {
     renderTaskSuggestions();
@@ -89,11 +98,16 @@ describe("TaskSuggestions", () => {
     expect(screen.queryByTestId("task-group-skeleton")).not.toBeInTheDocument();
   });
 
-  it.todo(
-    "should display a message if the user needs to sign in with their git provider",
-  );
+  it("should display a button to settings if the user needs to sign in with their git provider", async () => {
+    renderTaskSuggestions(false);
 
-  it.todo(
-    "should create a conversation and redirect with the selected task when pressing the launch button",
-  );
+    expect(getSuggestedTasksSpy).not.toHaveBeenCalled();
+    const goToSettingsButton = await screen.findByTestId(
+      "navigate-to-settings-button",
+    );
+    expect(goToSettingsButton).toBeInTheDocument();
+
+    await userEvent.click(goToSettingsButton);
+    await screen.findByTestId("settings-screen");
+  });
 });
