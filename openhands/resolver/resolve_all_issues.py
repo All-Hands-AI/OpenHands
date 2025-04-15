@@ -339,7 +339,7 @@ def main() -> None:
 
     runtime_container_image = my_args.runtime_container_image
 
-    if runtime_container_image is not None and base_container_image is not None:
+    if runtime_container_image is not None and base_container_image != '':
         raise ValueError('Cannot provide both runtime and base container images.')
 
 
