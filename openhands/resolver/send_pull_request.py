@@ -235,6 +235,7 @@ def send_pull_request(
     target_branch: str | None = None,
     reviewer: str | None = None,
     pr_title: str | None = None,
+    repository: str | None = None,
 ) -> str:
     """Send a pull request to a GitHub or Gitlab repository.
 
@@ -250,6 +251,7 @@ def send_pull_request(
         target_branch: The target branch to create the pull request against (defaults to repository default branch)
         reviewer: The GitHub or Gitlab username of the reviewer to assign
         pr_title: Custom title for the pull request (optional)
+        repository: Repository in format "owner/repo" for GitHub Actions token validation
     """
     if pr_type not in ['branch', 'draft', 'ready']:
         raise ValueError(f'Invalid pr_type: {pr_type}')
@@ -633,6 +635,12 @@ def main() -> None:
         help='Custom title for the pull request',
         default=None,
     )
+    parser.add_argument(
+        '--repository',
+        type=str,
+        help='Repository in format "owner/repo" for GitHub Actions token validation',
+        default=os.getenv('GITHUB_REPOSITORY'),
+    )
     my_args = parser.parse_args()
 
     token = my_args.token or os.getenv('GITHUB_TOKEN') or os.getenv('GITLAB_TOKEN')
@@ -642,7 +650,7 @@ def main() -> None:
         )
     username = my_args.username if my_args.username else os.getenv('GIT_USERNAME')
 
-    platform = identify_token(token)
+    platform = identify_token(token, my_args.repository)
     if platform == Platform.INVALID:
         raise ValueError('Token is invalid.')
 

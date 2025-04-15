@@ -507,6 +507,62 @@ def test_send_pull_request_with_reviewer(
 @patch('subprocess.run')
 @patch('httpx.post')
 @patch('httpx.get')
+def test_send_pull_request_with_github_actions_token(
+    mock_get, mock_post, mock_run, mock_issue, mock_output_dir
+):
+    """Test that GitHub Actions token works correctly."""
+    repo_path = os.path.join(mock_output_dir, 'repo')
+    token = 'github-actions-token'
+    repository = 'test-owner/test-repo'
+
+    # Mock API responses
+    mock_get.side_effect = [
+        MagicMock(status_code=404),  # Branch doesn't exist
+        MagicMock(status_code=200),  # Repository exists (GitHub Actions token check)
+        MagicMock(json=lambda: {'default_branch': 'main'}),  # Get default branch
+    ]
+
+    mock_post.return_value.json.return_value = {
+        'html_url': 'https://github.com/test-owner/test-repo/pull/1'
+    }
+
+    # Mock subprocess.run calls
+    mock_run.side_effect = [
+        MagicMock(returncode=0),  # git checkout -b
+        MagicMock(returncode=0),  # git push
+    ]
+
+    # Call the function with GitHub Actions token
+    result = send_pull_request(
+        issue=mock_issue,
+        token=token,
+        username='test-user',
+        platform=Platform.GITHUB,
+        patch_dir=repo_path,
+        pr_type='ready',
+        repository=repository,
+    )
+
+    # Assert API calls
+    assert mock_get.call_count == 3
+    assert mock_post.call_count == 1
+
+    # Check GitHub Actions token validation call
+    token_validation_call = mock_get.call_args_list[1]
+    assert token_validation_call[0][0] == 'https://api.github.com/repos/test-owner/test-repo'
+    assert token_validation_call[1]['headers']['Authorization'] == f'Bearer {token}'
+
+    # Check PR creation
+    pr_create_call = mock_post.call_args[1]
+    assert pr_create_call['json']['title'] == 'Fix issue #42: Test Issue'
+
+    # Check the result URL
+    assert result == 'https://github.com/test-owner/test-repo/pull/1'
+
+
+@patch('subprocess.run')
+@patch('httpx.post')
+@patch('httpx.get')
 def test_send_pull_request_target_branch_with_fork(
     mock_get, mock_post, mock_run, mock_issue, mock_output_dir
 ):
