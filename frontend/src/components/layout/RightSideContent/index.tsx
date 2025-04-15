@@ -85,6 +85,12 @@ const ThesisComputer = () => {
   }, [computerList, totalSteps])
 
   useEffect(() => {
+    if (computerList.length === 0) {
+      setCurrentStep(0)
+    }
+  }, [computerList])
+
+  useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollIntoView({ behavior: "smooth" })
     }

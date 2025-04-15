@@ -3,7 +3,7 @@ import {
   layout,
   index,
   route,
-} from "@react-router/dev/routes";
+} from "@react-router/dev/routes"
 
 export default [
   layout("routes/root-layout.tsx", [
@@ -20,6 +20,7 @@ export default [
       route("terminal", "routes/terminal-tab.tsx"),
       route("served", "routes/served-tab.tsx"),
     ]),
+    route("share/:conversationId", "routes/share.tsx"),
     route(
       "shares/conversations/:conversationId",
       "routes/_oh.share.app/route.tsx",
@@ -32,4 +33,4 @@ export default [
       ],
     ),
   ]),
-] satisfies RouteConfig;
+] satisfies RouteConfig

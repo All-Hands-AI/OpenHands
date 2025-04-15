@@ -7,6 +7,11 @@ import { useRate } from "#/hooks/use-rate"
 import { OpenHandsParsedEvent } from "#/types/core"
 import { AssistantMessageAction, UserMessageAction } from "#/types/core/actions"
 import { useGetJwt } from "#/zutand-stores/persist-config/selector"
+import { useLocation } from "react-router"
+import { useDispatch } from "react-redux"
+import { clearMessages } from "#/state/chat-slice"
+import { setCurrentPathViewed } from "#/state/file-state-slice"
+import { clearComputerList } from "#/state/computer-slice"
 
 export const isOpenHandsEvent = (
   event: unknown,
@@ -44,12 +49,20 @@ export enum WsClientProviderStatus {
   DISCONNECTED,
 }
 
+export enum ReplayStatus {
+  IN_PROGRESS,
+  COMPLETED,
+}
+
 interface UseWsClient {
   status: WsClientProviderStatus
   isLoadingMessages: boolean
   events: Record<string, unknown>[]
   send: (event: Record<string, unknown>) => void
-  disconnect: () => void // Add disconnect function to the interface
+  disconnect: () => void
+  skipToResults: () => void
+  replayStatus: ReplayStatus
+  resetReplay: () => void
 }
 
 const WsClientContext = React.createContext<UseWsClient>({
@@ -60,6 +73,13 @@ const WsClientContext = React.createContext<UseWsClient>({
     throw new Error("not connected")
   },
   disconnect: () => {
+    throw new Error("not connected")
+  },
+  skipToResults: () => {
+    throw new Error("not connected")
+  },
+  replayStatus: ReplayStatus.IN_PROGRESS,
+  resetReplay: () => {
     throw new Error("not connected")
   },
 })
@@ -113,10 +133,21 @@ export function WsClientProvider({
     WsClientProviderStatus.DISCONNECTED,
   )
   const [events, setEvents] = React.useState<Record<string, unknown>[]>([])
+  const [replayStatus, setReplayStatus] = React.useState<ReplayStatus>(
+    ReplayStatus.IN_PROGRESS,
+  )
   const lastEventRef = React.useRef<Record<string, unknown> | null>(null)
+  const messageQueueRef = React.useRef<Record<string, unknown>[]>([])
+  const processingQueueRef = React.useRef<boolean>(false)
   const jwt = useGetJwt()
+  const location = useLocation()
+  const dispatch = useDispatch()
 
   const messageRateHandler = useRate({ threshold: 250 })
+
+  const isShareRoute = React.useMemo(() => {
+    return location.pathname.startsWith("/share/")
+  }, [location.pathname])
 
   function send(event: Record<string, unknown>) {
     if (!sioRef.current) {
@@ -144,16 +175,96 @@ export function WsClientProvider({
     setStatus(WsClientProviderStatus.CONNECTED)
   }
 
+  function resetReplay() {
+    setReplayStatus(ReplayStatus.IN_PROGRESS)
+
+    const savedEvents = [...events]
+    setEvents([])
+
+    messageQueueRef.current = savedEvents
+
+    processingQueueRef.current = false
+
+    dispatch(clearMessages())
+    dispatch(setCurrentPathViewed(""))
+    dispatch(clearComputerList())
+
+    processMessageQueue()
+  }
+
+  function skipToResults() {
+    if (messageQueueRef.current.length === 0) {
+      return
+    }
+
+    processingQueueRef.current = true
+    const allEvents = [...messageQueueRef.current]
+    messageQueueRef.current = []
+
+    setEvents((prevEvents) => [...prevEvents, ...allEvents])
+
+    if (allEvents.length > 0) {
+      const lastEvent = allEvents[allEvents.length - 1]
+      if (!Number.isNaN(parseInt(lastEvent.id as string, 10))) {
+        lastEventRef.current = lastEvent
+      }
+    }
+
+    allEvents.forEach((event) => {
+      handleAssistantMessage(event)
+    })
+
+    setReplayStatus(ReplayStatus.COMPLETED)
+    processingQueueRef.current = false
+  }
+
+  function processMessageQueue() {
+    if (processingQueueRef.current || messageQueueRef.current.length === 0) {
+      if (messageQueueRef.current.length === 0 && !processingQueueRef.current) {
+        setReplayStatus(ReplayStatus.COMPLETED)
+      }
+      return
+    }
+
+    processingQueueRef.current = true
+    const event = messageQueueRef.current.shift()
+
+    if (event) {
+      setEvents((prevEvents) => [...prevEvents, event])
+      if (!Number.isNaN(parseInt(event.id as string, 10))) {
+        lastEventRef.current = event
+      }
+
+      handleAssistantMessage(event)
+
+      setTimeout(() => {
+        processingQueueRef.current = false
+        if (messageQueueRef.current.length === 0) {
+          setReplayStatus(ReplayStatus.COMPLETED)
+        }
+        processMessageQueue()
+      }, 1000)
+    } else {
+      processingQueueRef.current = false
+      setReplayStatus(ReplayStatus.COMPLETED)
+    }
+  }
+
   function handleMessage(event: Record<string, unknown>) {
     if (isOpenHandsEvent(event) && isMessageAction(event)) {
       messageRateHandler.record(new Date().getTime())
     }
-    setEvents((prevEvents) => [...prevEvents, event])
-    if (!Number.isNaN(parseInt(event.id as string, 10))) {
-      lastEventRef.current = event
-    }
 
-    handleAssistantMessage(event)
+    if (isShareRoute) {
+      messageQueueRef.current.push(event)
+      processMessageQueue()
+    } else {
+      setEvents((prevEvents) => [...prevEvents, event])
+      if (!Number.isNaN(parseInt(event.id as string, 10))) {
+        lastEventRef.current = event
+      }
+      handleAssistantMessage(event)
+    }
   }
 
   function handleDisconnect(data: unknown) {
@@ -178,7 +289,6 @@ export function WsClientProvider({
       throw new Error("No conversation ID provided")
     }
 
-    // First cleanup any existing connection
     if (sioRef.current) {
       const sio = sioRef.current
       sio.off("connect", handleConnect)
@@ -190,10 +300,12 @@ export function WsClientProvider({
       sioRef.current = null
     }
 
-    // Reset last event reference when conversation changes
     lastEventRef.current = null
 
-    // Create a new connection with the current conversation ID
+    messageQueueRef.current = []
+    processingQueueRef.current = false
+    setReplayStatus(ReplayStatus.IN_PROGRESS)
+
     const query = {
       latest_event_id: -1,
       conversation_id: conversationId,
@@ -224,9 +336,12 @@ export function WsClientProvider({
       isLoadingMessages: messageRateHandler.isUnderThreshold,
       events,
       send,
-      disconnect, // Provide the disconnect function
+      disconnect,
+      skipToResults,
+      replayStatus,
+      resetReplay,
     }),
-    [status, messageRateHandler.isUnderThreshold, events],
+    [status, messageRateHandler.isUnderThreshold, events, replayStatus],
   )
 
   return (
