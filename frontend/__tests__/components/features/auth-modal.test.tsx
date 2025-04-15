@@ -1,10 +1,10 @@
 import { render, screen } from "@testing-library/react";
 import { it, describe, expect, vi, beforeAll, afterAll } from "vitest";
 import userEvent from "@testing-library/user-event";
-import { WaitlistModal } from "#/components/features/waitlist/waitlist-modal";
+import { AuthModal } from "#/components/features/waitlist/auth-modal";
 import * as CaptureConsent from "#/utils/handle-capture-consent";
 
-describe("WaitlistModal", () => {
+describe("AuthModal", () => {
   beforeAll(() => {
     vi.stubGlobal("location", { href: "" });
   });
@@ -14,7 +14,7 @@ describe("WaitlistModal", () => {
   });
 
   it("should render a tos checkbox that is unchecked by default", () => {
-    render(<WaitlistModal ghTokenIsSet={false} githubAuthUrl={null} />);
+    render(<AuthModal githubAuthUrl={null} />);
     const checkbox = screen.getByRole("checkbox");
 
     expect(checkbox).not.toBeChecked();
@@ -22,7 +22,7 @@ describe("WaitlistModal", () => {
 
   it("should only enable the GitHub button if the tos checkbox is checked", async () => {
     const user = userEvent.setup();
-    render(<WaitlistModal ghTokenIsSet={false} githubAuthUrl={null} />);
+    render(<AuthModal githubAuthUrl={null} />);
     const checkbox = screen.getByRole("checkbox");
     const button = screen.getByRole("button", { name: "GITHUB$CONNECT_TO_GITHUB" });
 
@@ -40,7 +40,7 @@ describe("WaitlistModal", () => {
     );
 
     const user = userEvent.setup();
-    render(<WaitlistModal ghTokenIsSet={false} githubAuthUrl="mock-url" />);
+    render(<AuthModal githubAuthUrl="mock-url" />);
 
     const checkbox = screen.getByRole("checkbox");
     await user.click(checkbox);

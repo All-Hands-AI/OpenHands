@@ -7,7 +7,7 @@ from conftest import (
     _load_runtime,
 )
 
-from openhands.microagent import KnowledgeMicroAgent, RepoMicroAgent, TaskMicroAgent
+from openhands.microagent import KnowledgeMicroagent, RepoMicroagent, TaskMicroagent
 
 
 def _create_test_microagents(test_dir: str):
@@ -85,10 +85,10 @@ def test_load_microagents_with_trailing_slashes(
 
         # Verify all agents are loaded
         knowledge_agents = [
-            a for a in loaded_agents if isinstance(a, KnowledgeMicroAgent)
+            a for a in loaded_agents if isinstance(a, KnowledgeMicroagent)
         ]
-        repo_agents = [a for a in loaded_agents if isinstance(a, RepoMicroAgent)]
-        task_agents = [a for a in loaded_agents if isinstance(a, TaskMicroAgent)]
+        repo_agents = [a for a in loaded_agents if isinstance(a, RepoMicroagent)]
+        task_agents = [a for a in loaded_agents if isinstance(a, TaskMicroagent)]
 
         # Check knowledge agents
         assert len(knowledge_agents) == 1
@@ -128,10 +128,10 @@ def test_load_microagents_with_selected_repo(temp_dir, runtime_cls, run_as_openh
 
         # Verify all agents are loaded
         knowledge_agents = [
-            a for a in loaded_agents if isinstance(a, KnowledgeMicroAgent)
+            a for a in loaded_agents if isinstance(a, KnowledgeMicroagent)
         ]
-        repo_agents = [a for a in loaded_agents if isinstance(a, RepoMicroAgent)]
-        task_agents = [a for a in loaded_agents if isinstance(a, TaskMicroAgent)]
+        repo_agents = [a for a in loaded_agents if isinstance(a, RepoMicroagent)]
+        task_agents = [a for a in loaded_agents if isinstance(a, TaskMicroagent)]
 
         # Check knowledge agents
         assert len(knowledge_agents) == 1
@@ -181,10 +181,10 @@ Repository-specific test instructions.
 
         # Verify only repo agent is loaded
         knowledge_agents = [
-            a for a in loaded_agents if isinstance(a, KnowledgeMicroAgent)
+            a for a in loaded_agents if isinstance(a, KnowledgeMicroagent)
         ]
-        repo_agents = [a for a in loaded_agents if isinstance(a, RepoMicroAgent)]
-        task_agents = [a for a in loaded_agents if isinstance(a, TaskMicroAgent)]
+        repo_agents = [a for a in loaded_agents if isinstance(a, RepoMicroagent)]
+        task_agents = [a for a in loaded_agents if isinstance(a, TaskMicroagent)]
 
         assert len(knowledge_agents) == 0
         assert len(repo_agents) == 1
