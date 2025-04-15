@@ -10,10 +10,9 @@ class AgentConfig(BaseModel):
     """Configuration for the agent.
 
     Attributes:
-        function_calling: Whether function calling is enabled. Default is True.
-        codeact_enable_browsing: Whether browsing delegate is enabled in the action space. Default is False. Only works with function calling.
-        codeact_enable_llm_editor: Whether LLM editor is enabled in the action space. Default is False. Only works with function calling.
-        codeact_enable_jupyter: Whether Jupyter is enabled in the action space. Default is False.
+        enable_browsing: Whether browsing delegate is enabled in the action space. Default is False. Only works with function calling.
+        enable_llm_editor: Whether LLM editor is enabled in the action space. Default is False. Only works with function calling.
+        enable_jupyter: Whether Jupyter is enabled in the action space. Default is False.
         llm_config: The name of the llm config to use. If specified, this will override global llm config.
         enable_prompt_extensions: Whether to use prompt extensions (e.g., microagents, inject runtime info). Default is True.
         disabled_microagents: A list of microagents to disable (by name, without .py extension, e.g. ["github", "lint"]). Default is None.
@@ -23,9 +22,9 @@ class AgentConfig(BaseModel):
     """
 
     llm_config: str | None = Field(default=None)
-    codeact_enable_browsing: bool = Field(default=True)
-    codeact_enable_llm_editor: bool = Field(default=False)
-    codeact_enable_jupyter: bool = Field(default=True)
+    enable_browsing: bool = Field(default=True)
+    enable_llm_editor: bool = Field(default=False)
+    enable_jupyter: bool = Field(default=True)
     enable_prompt_extensions: bool = Field(default=True)
     disabled_microagents: list[str] = Field(default_factory=list)
     enable_history_truncation: bool = Field(default=True)

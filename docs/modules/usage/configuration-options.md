@@ -291,17 +291,17 @@ The agent configuration options are defined in the `[agent]` and `[agent.<agent_
   - Default: `true`
   - Description: Whether function calling is enabled
 
-- `codeact_enable_browsing`
+- `enable_browsing`
   - Type: `bool`
   - Default: `false`
   - Description: Whether browsing delegate is enabled in the action space (only works with function calling)
 
-- `codeact_enable_llm_editor`
+- `enable_llm_editor`
   - Type: `bool`
   - Default: `false`
   - Description: Whether LLM editor is enabled in the action space (only works with function calling)
 
-- `codeact_enable_jupyter`
+- `enable_jupyter`
   - Type: `bool`
   - Default: `false`
   - Description: Whether Jupyter is enabled in the action space
