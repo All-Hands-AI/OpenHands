@@ -40,7 +40,7 @@ from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.utils.async_utils import wait_all
 from openhands.utils.conversation_summary import generate_conversation_title
 from openhands.utils.get_user_setting import get_user_setting
-
+from openhands.server.modules import conversation_module
 app = APIRouter(prefix='/api')
 
 
@@ -411,8 +411,7 @@ async def change_visibility(
     metadata = await conversation_store.get_metadata(conversation_id)
     if not metadata:
         return False
-
-    return await _update_conversation_visibility(conversation_id, is_published, user_id)
+    return await conversation_module._update_conversation_visibility(conversation_id, is_published, user_id)
 
 
 @app.get('/conversations/{conversation_id}/visibility')
@@ -421,7 +420,7 @@ async def get_conversation_visibility(
     request: Request,
 ) -> bool:
     user_id = get_user_id(request)
-    return await _get_conversation_visibility(conversation_id, user_id)
+    return await conversation_module._get_conversation_visibility(conversation_id, user_id)
 
 
 async def _get_conversation_info(
@@ -448,47 +447,3 @@ async def _get_conversation_info(
             extra={'session_id': conversation.conversation_id},
         )
         return None
-
-
-async def _update_conversation_visibility(conversation_id: str, is_published: bool, user_id: str):
-    try:
-        query = Conversation.select().where(
-            (Conversation.c.conversation_id == conversation_id) &
-            (Conversation.c.user_id == user_id)
-        )
-        existing_record = await database.fetch_one(query)
-
-        if existing_record:
-            await database.execute(
-                Conversation.update()
-                .where(
-                    (Conversation.c.conversation_id == conversation_id) &
-                    (Conversation.c.user_id == user_id)
-                )
-                .values(published=is_published)
-            )
-        else:
-            await database.execute(
-                Conversation.insert().values(
-                    conversation_id=conversation_id,
-                    user_id=user_id,
-                    published=is_published
-                )
-            )
-        return True
-    except Exception as e:
-        logger.error(f'Error updating conversation visibility: {str(e)}')
-        return False
-
-
-async def _get_conversation_visibility(conversation_id: str, user_id: str):
-    try:
-        query = Conversation.select().where(
-            (Conversation.c.conversation_id == conversation_id) &
-            (Conversation.c.user_id == user_id)
-        )
-        existing_record = await database.fetch_one(query)
-        return existing_record.published if existing_record else False
-    except Exception as e:
-        logger.error(f'Error getting conversation visibility: {str(e)}')
-        return False

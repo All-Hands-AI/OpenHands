@@ -31,6 +31,7 @@ from openhands.server.shared import (
     sio,
 )
 from openhands.utils.get_user_setting import get_user_setting
+from openhands.server.modules import conversation_module
 
 
 def create_provider_tokens_object(
@@ -60,19 +61,13 @@ async def connect(connection_id: str, environ):
         logger.error('No conversation_id in query params')
         raise ConnectionRefusedError('No conversation_id in query params')
     mode = query_params.get('mode', [None])[0]
+    # check if conversation_id is shared
     if mode == 'shared':
-        # check if conversation_id is shared
-        query = Conversation.select().where(Conversation.c.conversation_id == conversation_id)
-        existing_record = await database.fetch_one(query)
-        if not existing_record:
-            raise ConnectionRefusedError('Conversation not found')
-        if not existing_record.published:
-            raise ConnectionRefusedError('Conversation not published')
-        user_id = existing_record.user_id
-        user = await database.fetch_one(select(User).where(User.c.public_key == user_id.lower()))
-        if not user:
-            raise ConnectionRefusedError('User not found')
-        mnemonic = user['mnemonic']
+        error, info = await conversation_module._get_conversation_visibility_info(conversation_id)
+        if error:
+            raise ConnectionRefusedError(error)
+        mnemonic = info['mnemonic']
+        user_id = info['user_id']
     else:
         # Get JWT token from query params
         jwt_token = query_params.get('auth', [None])[0]
