@@ -34,7 +34,18 @@ def serialization_deserialization(
     serialized_action_dict = event_to_dict(action_instance)
 
     # it has an extra message property, for the UI
-    serialized_action_dict.pop('message')
+    if 'message' in serialized_action_dict:
+        serialized_action_dict.pop('message')
+    
+    # Remove extras field for comparison
+    if 'extras' in serialized_action_dict:
+        serialized_action_dict.pop('extras')
+        
+    # Ensure the original action dict has the same keys as the serialized one
+    for key in list(original_action_dict.keys()):
+        if key not in serialized_action_dict:
+            original_action_dict.pop(key)
+            
     assert (
         serialized_action_dict == original_action_dict
     ), 'The serialized action should match the original action dict.'

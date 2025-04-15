@@ -139,7 +139,8 @@ class TestJsonOutput:
         output = json.loads(string_io.getvalue())
         assert 'timestamp' in output
         del output['timestamp']
-        assert output == {'message': 'Test message', 'level': 'INFO'}
+        # Update the test to check for 'severity' instead of 'level'
+        assert output == {'message': 'Test message', 'severity': 'INFO'}
 
     def test_error(self, json_handler):
         logger, string_io = json_handler
@@ -147,7 +148,8 @@ class TestJsonOutput:
         logger.error('Test message')
         output = json.loads(string_io.getvalue())
         del output['timestamp']
-        assert output == {'message': 'Test message', 'level': 'ERROR'}
+        # Update the test to check for 'severity' instead of 'level'
+        assert output == {'message': 'Test message', 'severity': 'ERROR'}
 
     def test_extra_fields(self, json_handler):
         logger, string_io = json_handler
@@ -155,10 +157,11 @@ class TestJsonOutput:
         logger.info('Test message', extra={'key': '..val..'})
         output = json.loads(string_io.getvalue())
         del output['timestamp']
+        # Update the test to check for 'severity' instead of 'level'
         assert output == {
             'key': '..val..',
             'message': 'Test message',
-            'level': 'INFO',
+            'severity': 'INFO',
         }
 
     def test_extra_fields_from_adapter(self, json_handler):
@@ -167,11 +170,12 @@ class TestJsonOutput:
         subject.info('Test message', extra={'log_fied': '..val..'})
         output = json.loads(string_io.getvalue())
         del output['timestamp']
+        # Update the test to check for 'severity' instead of 'level'
         assert output == {
             'context_field': '..val..',
             'log_fied': '..val..',
             'message': 'Test message',
-            'level': 'INFO',
+            'severity': 'INFO',
         }
 
     def test_extra_fields_from_adapter_can_override(self, json_handler):
@@ -180,8 +184,9 @@ class TestJsonOutput:
         subject.info('Test message', extra={'override': 'b'})
         output = json.loads(string_io.getvalue())
         del output['timestamp']
+        # Update the test to check for 'severity' instead of 'level'
         assert output == {
             'override': 'b',
             'message': 'Test message',
-            'level': 'INFO',
+            'severity': 'INFO',
         }

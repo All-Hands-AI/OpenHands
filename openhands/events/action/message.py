@@ -46,14 +46,28 @@ class SystemMessageAction(Action):
     tools: List[Any] | None = None
     action: str = ActionType.SYSTEM
     tool_call_metadata: dict | None = None  # Add this to match MessageAction
+    image_urls: list[str] | None = None  # Add this to match MessageAction
+    wait_for_response: bool = False  # Add this to match MessageAction
 
     @property
     def message(self) -> str:
         return self.content
+
+    @property
+    def images_urls(self) -> list[str] | None:
+        # Deprecated alias for backward compatibility
+        return self.image_urls
+
+    @images_urls.setter
+    def images_urls(self, value: list[str] | None) -> None:
+        self.image_urls = value
 
     def __str__(self) -> str:
         ret = f'**SystemMessageAction** (source={self.source})\n'
         ret += f'CONTENT: {self.content}'
         if self.tools:
             ret += f'\nTOOLS: {len(self.tools)} tools available'
+        if self.image_urls:
+            for url in self.image_urls:
+                ret += f'\nIMAGE_URL: {url}'
         return ret

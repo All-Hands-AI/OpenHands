@@ -106,61 +106,63 @@ def event_to_dict(event: 'Event') -> dict:
             'timestamp': datetime.now().isoformat(),
             'source': 'agent',  # Use the string value directly
             'action': 'system',  # Assuming this is a system message
-            'content': str(getattr(event, 'content', '')),
-            'tools': [],
+            'args': {
+                'content': str(getattr(event, 'content', '')),
+                'image_urls': None,
+                'wait_for_response': False,
+            },
+            'message': str(getattr(event, 'content', '')),
         }
-    else:
-        # Normal event processing
-        props = asdict(event)
-        d = {}
-        for key in TOP_KEYS:
-            if hasattr(event, key) and getattr(event, key) is not None:
-                d[key] = getattr(event, key)
-            elif hasattr(event, f'_{key}') and getattr(event, f'_{key}') is not None:
-                d[key] = getattr(event, f'_{key}')
-            if key == 'id' and d.get('id') == -1:
-                d.pop('id', None)
-            if key == 'timestamp' and 'timestamp' in d:
-                if isinstance(d['timestamp'], datetime):
-                    d['timestamp'] = d['timestamp'].isoformat()
-            if key == 'source' and 'source' in d:
-                d['source'] = d['source'].value
-            if key == 'recall_type' and 'recall_type' in d:
-                d['recall_type'] = d['recall_type'].value
-            if key == 'tool_call_metadata' and 'tool_call_metadata' in d:
-                d['tool_call_metadata'] = d['tool_call_metadata'].model_dump()
-            if key == 'llm_metrics' and 'llm_metrics' in d:
-                d['llm_metrics'] = d['llm_metrics'].get()
-            props.pop(key, None)
+        return d
     
-    if not isinstance(event, Mock):
-        if 'security_risk' in props and props['security_risk'] is None:
-            props.pop('security_risk')
-        if 'action' in d:
-            d['args'] = props
-            if hasattr(event, 'timeout') and event.timeout is not None:
-                d['timeout'] = event.timeout
-        elif 'observation' in d:
-            d['content'] = props.pop('content', '')
+    # Normal event processing
+    props = asdict(event)
+    d = {}
+    for key in TOP_KEYS:
+        if hasattr(event, key) and getattr(event, key) is not None:
+            d[key] = getattr(event, key)
+        elif hasattr(event, f'_{key}') and getattr(event, f'_{key}') is not None:
+            d[key] = getattr(event, f'_{key}')
+        if key == 'id' and d.get('id') == -1:
+            d.pop('id', None)
+        if key == 'timestamp' and 'timestamp' in d:
+            if isinstance(d['timestamp'], datetime):
+                d['timestamp'] = d['timestamp'].isoformat()
+        if key == 'source' and 'source' in d:
+            d['source'] = d['source'].value
+        if key == 'recall_type' and 'recall_type' in d:
+            d['recall_type'] = d['recall_type'].value
+        if key == 'tool_call_metadata' and 'tool_call_metadata' in d:
+            d['tool_call_metadata'] = d['tool_call_metadata'].model_dump()
+        if key == 'llm_metrics' and 'llm_metrics' in d:
+            d['llm_metrics'] = d['llm_metrics'].get()
+        props.pop(key, None)
+    
+    if 'security_risk' in props and props['security_risk'] is None:
+        props.pop('security_risk')
+    if 'action' in d:
+        d['args'] = props
+        if hasattr(event, 'timeout') and event.timeout is not None:
+            d['timeout'] = event.timeout
+        # Add message field for UI display
+        if 'content' in props:
+            d['message'] = props['content']
+    elif 'observation' in d:
+        d['content'] = props.pop('content', '')
 
-    # For non-mock objects, handle complex properties
-    if not isinstance(event, Mock):
-        # props is a dict whose values can include a complex object like an instance of a BaseModel subclass
-        # such as CmdOutputMetadata
-        # we serialize it along with the rest
-        # we also handle the Enum conversion for RecallObservation
-        d['extras'] = {
-            k: (v.value if isinstance(v, Enum) else _convert_pydantic_to_dict(v))
-            for k, v in props.items()
-        }
-        logger.debug(f'extras data in event_to_dict: {d["extras"]}')
-        # Include success field for CmdOutputObservation
-        if hasattr(event, 'success'):
-            d['success'] = event.success
-    # For mock objects, we've already set action to 'system'
-    elif 'action' not in d and 'observation' not in d:
-        # Add a default action for mock objects
-        d['action'] = 'system'
+    # props is a dict whose values can include a complex object like an instance of a BaseModel subclass
+    # such as CmdOutputMetadata
+    # we serialize it along with the rest
+    # we also handle the Enum conversion for RecallObservation
+    d['extras'] = {
+        k: (v.value if isinstance(v, Enum) else _convert_pydantic_to_dict(v))
+        for k, v in props.items()
+    }
+    logger.debug(f'extras data in event_to_dict: {d["extras"]}')
+    # Include success field for CmdOutputObservation
+    if hasattr(event, 'success'):
+        d['success'] = event.success
+    
     return d
 
 
