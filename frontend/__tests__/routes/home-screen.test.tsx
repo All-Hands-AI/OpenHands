@@ -1,5 +1,5 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
 import { createRoutesStub } from "react-router";
@@ -10,19 +10,19 @@ import { AuthProvider } from "#/context/auth-context";
 import * as GitService from "#/api/git";
 import { GitRepository } from "#/types/git";
 
-const renderHomeScreen = () => {
-  const RouterStub = createRoutesStub([
-    {
-      Component: HomeScreen,
-      path: "/",
-    },
-    {
-      Component: () => <div data-testid="conversation-screen" />,
-      path: "/conversations/:conversationId",
-    },
-  ]);
+const RouterStub = createRoutesStub([
+  {
+    Component: HomeScreen,
+    path: "/",
+  },
+  {
+    Component: () => <div data-testid="conversation-screen" />,
+    path: "/conversations/:conversationId",
+  },
+]);
 
-  return render(<RouterStub />, {
+const renderHomeScreen = () =>
+  render(<RouterStub />, {
     wrapper: ({ children }) => (
       <Provider store={setupStore()}>
         <AuthProvider initialProvidersAreSet>
@@ -33,7 +33,6 @@ const renderHomeScreen = () => {
       </Provider>
     ),
   });
-};
 
 const MOCK_RESPOSITORIES: GitRepository[] = [
   { id: 1, full_name: "octocat/hello-world", git_provider: "github" },
@@ -138,5 +137,96 @@ describe("HomeScreen", () => {
     });
   });
 
-  it.todo("should disable the other launch buttons when one is clicked");
+  describe("launch buttons", () => {
+    const setupLaunchButtons = async () => {
+      const headerLaunchButton = screen.getByTestId("header-launch-button");
+      const repoLaunchButton = screen.getByTestId("repo-launch-button");
+      const tasksLaunchButtons =
+        await screen.findAllByTestId("task-launch-button");
+
+      // Select a repository from the dropdown to enable the repo launch button
+      const repoConnector = screen.getByTestId("repo-connector");
+      const dropdown = within(repoConnector).getByTestId("repo-dropdown");
+      await userEvent.click(dropdown);
+      const repoOption = screen.getAllByText("octocat/hello-world")[1];
+      await userEvent.click(repoOption);
+
+      expect(headerLaunchButton).not.toBeDisabled();
+      expect(repoLaunchButton).not.toBeDisabled();
+      tasksLaunchButtons.forEach((button) => {
+        expect(button).not.toBeDisabled();
+      });
+
+      return {
+        headerLaunchButton,
+        repoLaunchButton,
+        tasksLaunchButtons,
+      };
+    };
+
+    beforeEach(() => {
+      const retrieveUserGitRepositoriesSpy = vi.spyOn(
+        GitService,
+        "retrieveUserGitRepositories",
+      );
+      retrieveUserGitRepositoriesSpy.mockResolvedValue({
+        data: MOCK_RESPOSITORIES,
+        nextPage: null,
+      });
+    });
+
+    it("should disable the other launch buttons when the header launch button is clicked", async () => {
+      renderHomeScreen();
+      const { headerLaunchButton, repoLaunchButton } =
+        await setupLaunchButtons();
+
+      // All other buttons should be disabled when the header button is clicked
+      await userEvent.click(headerLaunchButton);
+
+      const tasksLaunchButtonsAfter =
+        await screen.findAllByTestId("task-launch-button");
+
+      expect(headerLaunchButton).toBeDisabled();
+      expect(repoLaunchButton).toBeDisabled();
+      tasksLaunchButtonsAfter.forEach((button) => {
+        expect(button).toBeDisabled();
+      });
+    });
+
+    it("should disable the other launch buttons when the repo launch button is clicked", async () => {
+      renderHomeScreen();
+      const { headerLaunchButton, repoLaunchButton } =
+        await setupLaunchButtons();
+
+      // All other buttons should be disabled when the header button is clicked
+      await userEvent.click(repoLaunchButton);
+
+      const tasksLaunchButtonsAfter =
+        await screen.findAllByTestId("task-launch-button");
+
+      expect(headerLaunchButton).toBeDisabled();
+      expect(repoLaunchButton).toBeDisabled();
+      tasksLaunchButtonsAfter.forEach((button) => {
+        expect(button).toBeDisabled();
+      });
+    });
+
+    it("should disable the other launch buttons when any task launch button is clicked", async () => {
+      renderHomeScreen();
+      const { headerLaunchButton, repoLaunchButton, tasksLaunchButtons } =
+        await setupLaunchButtons();
+
+      // All other buttons should be disabled when the header button is clicked
+      await userEvent.click(tasksLaunchButtons[0]);
+
+      const tasksLaunchButtonsAfter =
+        await screen.findAllByTestId("task-launch-button");
+
+      expect(headerLaunchButton).toBeDisabled();
+      expect(repoLaunchButton).toBeDisabled();
+      tasksLaunchButtonsAfter.forEach((button) => {
+        expect(button).toBeDisabled();
+      });
+    });
+  });
 });

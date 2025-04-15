@@ -1,18 +1,38 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Provider } from "react-redux";
+import { createRoutesStub } from "react-router";
+import { setupStore } from "test-utils";
 import { TaskSuggestions } from "#/components/features/home/tasks/task-suggestions";
 import { SuggestionsService } from "#/api/suggestions-service/suggestions-service.api";
 import { MOCK_TASKS } from "#/mocks/task-suggestions-handlers";
+import { AuthProvider } from "#/context/auth-context";
 
-const renderTaskSuggestions = () =>
-  render(<TaskSuggestions />, {
+const renderTaskSuggestions = () => {
+  const RouterStub = createRoutesStub([
+    {
+      Component: TaskSuggestions,
+      path: "/",
+    },
+    {
+      Component: () => <div data-testid="conversation-screen" />,
+      path: "/conversations/:conversationId",
+    },
+  ]);
+
+  return render(<RouterStub />, {
     wrapper: ({ children }) => (
-      <QueryClientProvider client={new QueryClient()}>
-        {children}
-      </QueryClientProvider>
+      <Provider store={setupStore()}>
+        <AuthProvider initialProvidersAreSet>
+          <QueryClientProvider client={new QueryClient()}>
+            {children}
+          </QueryClientProvider>
+        </AuthProvider>
+      </Provider>
     ),
   });
+};
 
 describe("TaskSuggestions", () => {
   const getSuggestedTasksSpy = vi.spyOn(

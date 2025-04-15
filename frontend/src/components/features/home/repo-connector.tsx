@@ -6,6 +6,7 @@ import { useConfig } from "#/hooks/query/use-config";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { GitRepository } from "#/types/git";
 import { RepoProviderLinks } from "./repo-provider-links";
+import { useIsCreatingConversation } from "#/hooks/use-is-creating-conversation";
 
 interface RepoConnectorProps {
   onRepoSelection?: (repoTitle: string | null) => void;
@@ -21,10 +22,12 @@ export function RepoConnector({ onRepoSelection }: RepoConnectorProps) {
     isPending,
     isSuccess,
   } = useCreateConversation();
+  const isCreatingConversationElsewhere = useIsCreatingConversation();
 
   // We check for isSuccess because the app might require time to render
   // into the new conversation screen after the conversation is created.
-  const isCreatingConversation = isPending || isSuccess;
+  const isCreatingConversation =
+    isPending || isSuccess || isCreatingConversationElsewhere;
 
   const isSaaS = config?.APP_MODE === "saas";
   const repositoriesList = repositories?.pages.flatMap((page) => page.data);
@@ -67,7 +70,7 @@ export function RepoConnector({ onRepoSelection }: RepoConnectorProps) {
       />
 
       <BrandButton
-        testId="launch-button"
+        testId="repo-launch-button"
         variant="primary"
         type="button"
         isDisabled={!selectedRepository || isCreatingConversation}

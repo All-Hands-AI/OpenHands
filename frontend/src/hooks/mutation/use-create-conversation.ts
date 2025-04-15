@@ -17,6 +17,7 @@ export const useCreateConversation = () => {
   );
 
   return useMutation({
+    mutationKey: ["create-conversation"],
     mutationFn: async (variables: {
       q?: string;
       selectedRepository?: GitRepository | null;

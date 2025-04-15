@@ -1,4 +1,5 @@
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
+import { useIsCreatingConversation } from "#/hooks/use-is-creating-conversation";
 import { BrandButton } from "../settings/brand-button";
 
 export function HomeHeader() {
@@ -7,10 +8,12 @@ export function HomeHeader() {
     isPending,
     isSuccess,
   } = useCreateConversation();
+  const isCreatingConversationElsewhere = useIsCreatingConversation();
 
   // We check for isSuccess because the app might require time to render
   // into the new conversation screen after the conversation is created.
-  const isCreatingConversation = isPending || isSuccess;
+  const isCreatingConversation =
+    isPending || isSuccess || isCreatingConversationElsewhere;
 
   return (
     <header className="flex justify-between items-end">
@@ -28,6 +31,7 @@ export function HomeHeader() {
 
       <section className="flex flex-col gap-4">
         <BrandButton
+          testId="header-launch-button"
           variant="primary"
           type="button"
           className="w-full"

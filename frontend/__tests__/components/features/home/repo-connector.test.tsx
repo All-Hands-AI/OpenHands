@@ -80,7 +80,7 @@ describe("RepoConnector", () => {
 
     renderRepoConnector();
 
-    const launchButton = screen.getByTestId("launch-button");
+    const launchButton = screen.getByTestId("repo-launch-button");
     expect(launchButton).toBeDisabled();
 
     const dropdown = screen.getByTestId("repo-dropdown");
@@ -122,9 +122,8 @@ describe("RepoConnector", () => {
     renderRepoConnector();
 
     const repoConnector = screen.getByTestId("repo-connector");
-    const launchButton = within(repoConnector).getByRole("button", {
-      name: /launch/i,
-    });
+    const launchButton =
+      within(repoConnector).getByTestId("repo-launch-button");
     await userEvent.click(launchButton);
 
     // repo not selected yet
@@ -158,7 +157,7 @@ describe("RepoConnector", () => {
 
     renderRepoConnector();
 
-    const launchButton = screen.getByTestId("launch-button");
+    const launchButton = screen.getByTestId("repo-launch-button");
 
     const dropdown = screen.getByTestId("repo-dropdown");
     await userEvent.click(dropdown);
