@@ -53,18 +53,6 @@ export default {
           1200: "#FFF",
         },
       },
-
-      animation: {
-        "gradient-smooth": "gradientSmooth 6s ease-in-out infinite",
-      },
-
-      keyframes: {
-        gradientSmooth: {
-          "0%": { backgroundPosition: "0% 50%" },
-          "50%": { backgroundPosition: "100% 50%" },
-          "100%": { backgroundPosition: "0% 50%" },
-        },
-      },
     },
   },
   darkMode: "class",
