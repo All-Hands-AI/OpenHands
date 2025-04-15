@@ -1,27 +1,21 @@
-import { rocketDarkImg, rocketLightImg } from ".";
-import { useTheme } from "#/components/layout/theme-provider";
-import { cn } from "#/utils/utils";
+import { rocketDarkImg, rocketLightImg } from "."
+import { useTheme } from "#/components/layout/theme-provider"
+import { cn } from "#/utils/utils"
 
 interface RocketImageProps {
-  className?: string;
+  className?: string
 }
 
 const RocketImage = ({ className }: RocketImageProps) => {
-  const { theme } = useTheme();
+  const { theme } = useTheme()
 
-  return theme === "light" ? (
+  return (
     <img
-      src={rocketLightImg}
+      src={theme === "light" ? rocketLightImg : rocketDarkImg}
       alt="rocket"
-      className={cn("w-[156px] h-[156px]", className)}
+      className={cn("h-[156px] w-[156px]", className)}
     />
-  ) : (
-    <img
-      src={rocketDarkImg}
-      alt="rocket"
-      className={cn("w-[156px] h-[156px]", className)}
-    />
-  );
-};
+  )
+}
 
-export default RocketImage;
+export default RocketImage

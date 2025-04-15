@@ -1,19 +1,17 @@
 import { useTranslation } from "react-i18next"
-// import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
-import Logo from "#/assets/branding/logo.jpg"
+import thesisLogo from "#/assets/branding/thesis-logo.png"
 import { TooltipButton } from "./tooltip-button"
 
-interface AllHandsLogoButtonProps {
+interface ThesisLogoButtonProps {
   onClick: () => void
 }
 
-export function AllHandsLogoButton({ onClick }: AllHandsLogoButtonProps) {
+export function ThesisLogoButton({ onClick }: ThesisLogoButtonProps) {
   const { t } = useTranslation()
   return (
     <TooltipButton tooltip="Thesis" ariaLabel="Thesis Logo" onClick={onClick}>
-      {/* <AllHandsLogo /> */}
       <img
-        src={Logo}
+        src={thesisLogo}
         alt="Thesis Logo"
         width={32}
         height={32}
