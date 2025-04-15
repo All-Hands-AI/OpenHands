@@ -117,7 +117,7 @@ function AppContent() {
       <ResizablePanel
         orientation={Orientation.HORIZONTAL}
         className="h-full min-h-0 min-w-0 grow"
-        initialSize={800}
+        initialSize={700}
         firstClassName="rounded-xl overflow-hidden "
         secondClassName="flex flex-col overflow-hidden"
         firstChild={<ChatInterface />}

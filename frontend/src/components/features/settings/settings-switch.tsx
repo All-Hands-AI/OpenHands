@@ -1,12 +1,12 @@
-import React from "react";
-import { StyledSwitchComponent } from "./styled-switch-component";
+import React from "react"
+import { StyledSwitchComponent } from "./styled-switch-component"
 
 interface SettingsSwitchProps {
-  testId?: string;
-  name?: string;
-  onToggle?: (value: boolean) => void;
-  defaultIsToggled?: boolean;
-  isBeta?: boolean;
+  testId?: string
+  name?: string
+  onToggle?: (value: boolean) => void
+  defaultIsToggled?: boolean
+  isBeta?: boolean
 }
 
 export function SettingsSwitch({
@@ -17,15 +17,15 @@ export function SettingsSwitch({
   defaultIsToggled,
   isBeta,
 }: React.PropsWithChildren<SettingsSwitchProps>) {
-  const [isToggled, setIsToggled] = React.useState(defaultIsToggled ?? false);
+  const [isToggled, setIsToggled] = React.useState(defaultIsToggled ?? false)
 
   const handleToggle = (value: boolean) => {
-    setIsToggled(value);
-    onToggle?.(value);
-  };
+    setIsToggled(value)
+    onToggle?.(value)
+  }
 
   return (
-    <label className="flex items-center gap-2 w-fit">
+    <label className="flex w-fit items-center gap-2">
       <input
         hidden
         data-testid={testId}
@@ -42,11 +42,11 @@ export function SettingsSwitch({
           {children}
         </span>
         {isBeta && (
-          <span className="text-[11px] leading-4 text-[#0D0F11] font-[500] tracking-tighter bg-primary px-1 rounded-full">
+          <span className="rounded-full bg-primary px-1 text-[11px] font-[500] leading-4 tracking-tighter text-[#0D0F11]">
             Beta
           </span>
         )}
       </div>
     </label>
-  );
+  )
 }

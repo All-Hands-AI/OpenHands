@@ -1,13 +1,14 @@
-import { useTranslation } from "react-i18next";
-import { I18nKey } from "#/i18n/declaration";
+import PauseIcon from "#/icons/pause.svg?react"
+import { useTranslation } from "react-i18next"
+import { I18nKey } from "#/i18n/declaration"
 
 interface StopButtonProps {
-  isDisabled?: boolean;
-  onClick?: () => void;
+  isDisabled?: boolean
+  onClick?: () => void
 }
 
 export function StopButton({ isDisabled, onClick }: StopButtonProps) {
-  const { t } = useTranslation();
+  const { t } = useTranslation()
   return (
     <button
       data-testid="stop-button"
@@ -15,9 +16,9 @@ export function StopButton({ isDisabled, onClick }: StopButtonProps) {
       disabled={isDisabled}
       onClick={onClick}
       type="button"
-      className="border border-white rounded-lg w-6 h-6 hover:bg-neutral-500 focus:bg-neutral-500 flex items-center justify-center"
+      className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary hover:bg-primary/90 focus:bg-primary/90"
     >
-      <div className="w-[10px] h-[10px] bg-white" />
+      <PauseIcon className="h-5 w-5 text-white" />
     </button>
-  );
+  )
 }

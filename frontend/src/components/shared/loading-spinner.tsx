@@ -11,10 +11,7 @@ export function LoadingSpinner({ size }: LoadingSpinnerProps) {
   return (
     <div data-testid="loading-spinner" className={cn("relative", sizeStyle)}>
       <div
-        className={cn(
-          "absolute rounded-full border-4 border-primary",
-          sizeStyle,
-        )}
+        className={cn("absolute rounded-full border-4 border-white", sizeStyle)}
       />
       <LoadingSpinnerOuter className={cn("absolute animate-spin", sizeStyle)} />
     </div>
