@@ -1,6 +1,7 @@
 import os
 from functools import lru_cache
 import random
+import re
 import time
 from typing import Callable, List, Set
 from uuid import UUID
@@ -22,7 +23,7 @@ from openhands.runtime.builder import DockerRuntimeBuilder
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
-from openhands.runtime.impl.docker.containers import stop_all_containers
+from openhands.runtime.impl.docker.containers import get_used_ports, next_available_port, stop_all_containers
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils import find_available_tcp_port
 from openhands.runtime.utils.command import get_action_execution_server_startup_command
@@ -227,25 +228,6 @@ class DockerRuntime(ActionExecutionClient):
                 'Launch docker client failed. Please make sure you have installed docker and started docker desktop/daemon.',
             )
             raise ex
-        
-    def _next_available_port(self, start: int, end: int, exclude: Set[int]) -> int:
-        for port in range(start, end + 1):
-            if port not in exclude:
-                return port
-        raise ValueError("No valid ports available in range")
-    
-    def _get_used_ports(self, start: int, end: int) -> Set[int]:
-        containers: List[Container] = self.docker_client.containers.list(all=True, sparse=True)
-        used_ports: Set[int] = set()
-        for container in containers:
-            ports = container.attrs.get("Ports", {})
-            for port in ports:
-                host_port = port.get("PublicPort")
-                if host_port:
-                    port_num = int(host_port)
-                    if start <= port_num <= end:
-                        used_ports.add(port_num)
-        return used_ports
 
     def _init_container(self):
         start_time = time.time()
@@ -254,8 +236,8 @@ class DockerRuntime(ActionExecutionClient):
         self.log('debug', 'Preparing to start container...')
         self.send_status_message('STATUS$PREPARING_CONTAINER')
         # self._host_port = self._find_available_port(EXECUTION_SERVER_PORT_RANGE)
-        used_ports = self._get_used_ports(EXECUTION_SERVER_PORT_RANGE[0], EXECUTION_SERVER_PORT_RANGE[1])
-        self._host_port = self._next_available_port(EXECUTION_SERVER_PORT_RANGE[0], EXECUTION_SERVER_PORT_RANGE[1], used_ports)
+        used_ports = get_used_ports(self.docker_client, EXECUTION_SERVER_PORT_RANGE[0], EXECUTION_SERVER_PORT_RANGE[1])
+        self._host_port = next_available_port(EXECUTION_SERVER_PORT_RANGE[0], EXECUTION_SERVER_PORT_RANGE[1], used_ports)
         self._container_port = self._host_port
         # TODO FIXME: we don't need app ports. This is used to expose web applications within the sandbox. We don't need it.
         # self._app_ports = [
