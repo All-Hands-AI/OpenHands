@@ -9,6 +9,7 @@ describe("TrajectoryActions", () => {
   const onPositiveFeedback = vi.fn();
   const onNegativeFeedback = vi.fn();
   const onExportTrajectory = vi.fn();
+  const onSummarizeConversation = vi.fn();
 
   afterEach(() => {
     vi.clearAllMocks();
@@ -20,6 +21,7 @@ describe("TrajectoryActions", () => {
         onPositiveFeedback={onPositiveFeedback}
         onNegativeFeedback={onNegativeFeedback}
         onExportTrajectory={onExportTrajectory}
+        onSummarizeConversation={onSummarizeConversation}
       />,
     );
 
@@ -27,6 +29,7 @@ describe("TrajectoryActions", () => {
     within(actions).getByTestId("positive-feedback");
     within(actions).getByTestId("negative-feedback");
     within(actions).getByTestId("export-trajectory");
+    within(actions).getByTestId("summarize-conversation");
   });
 
   it("should call onPositiveFeedback when positive feedback is clicked", async () => {
@@ -35,6 +38,7 @@ describe("TrajectoryActions", () => {
         onPositiveFeedback={onPositiveFeedback}
         onNegativeFeedback={onNegativeFeedback}
         onExportTrajectory={onExportTrajectory}
+        onSummarizeConversation={onSummarizeConversation}
       />,
     );
 
@@ -50,6 +54,7 @@ describe("TrajectoryActions", () => {
         onPositiveFeedback={onPositiveFeedback}
         onNegativeFeedback={onNegativeFeedback}
         onExportTrajectory={onExportTrajectory}
+        onSummarizeConversation={onSummarizeConversation}
       />,
     );
 
@@ -65,6 +70,7 @@ describe("TrajectoryActions", () => {
         onPositiveFeedback={onPositiveFeedback}
         onNegativeFeedback={onNegativeFeedback}
         onExportTrajectory={onExportTrajectory}
+        onSummarizeConversation={onSummarizeConversation}
       />,
     );
 
@@ -72,5 +78,21 @@ describe("TrajectoryActions", () => {
     await user.click(exportButton);
 
     expect(onExportTrajectory).toHaveBeenCalled();
+  });
+
+  it("should call onSummarizeConversation when summarize button is clicked", async () => {
+    renderWithProviders(
+      <TrajectoryActions
+        onPositiveFeedback={onPositiveFeedback}
+        onNegativeFeedback={onNegativeFeedback}
+        onExportTrajectory={onExportTrajectory}
+        onSummarizeConversation={onSummarizeConversation}
+      />,
+    );
+
+    const summarizeButton = screen.getByTestId("summarize-conversation");
+    await user.click(summarizeButton);
+
+    expect(onSummarizeConversation).toHaveBeenCalled();
   });
 });
