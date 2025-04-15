@@ -128,7 +128,7 @@ class Session:
 
         if settings.enable_default_condenser:
             default_condenser_config = LLMSummarizingCondenserConfig(
-                llm_config=llm.config, keep_first=3, max_size=80
+                llm_config=llm.config, keep_first=3, max_size=20
             )
 
             self.logger.info(f'Enabling default condenser: {default_condenser_config}')

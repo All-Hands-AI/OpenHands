@@ -514,7 +514,7 @@ class ActionExecutor:
         return await browse(action, self.browser)
 
     def planner_mcp_plan(self, action, response) -> Observation:
-        logger.info(f'Planner MCP response: {response.output}')
+        logger.debug(f'Planner MCP response: {response.output}')
         resonpse_dict = json.loads(response.output)
         observation = PlanObservation(
             plan_id=resonpse_dict['plan_id'],

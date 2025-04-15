@@ -145,7 +145,7 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: McpAction) -> Obse
 
         if response.isError:
             return ErrorObservation(f'MCP {action.name} failed: {response.content}')
-        logger.info(f'MCP response: {response}')
+        logger.debug(f'MCP response: {response}')
 
         # special case for browser screenshot of playwright_mcp
         if (
@@ -211,7 +211,7 @@ def process_browser_mcp_response(
 
 
 def planner_mcp_plan(action, response) -> Observation:
-    logger.info(f'Planner MCP response: {response.content}')
+    logger.debug(f'Planner MCP response: {response.content}')
     resonpse_dict = json.loads(response.content[0].text)
     observation = PlanObservation(
         plan_id=resonpse_dict['plan_id'],
