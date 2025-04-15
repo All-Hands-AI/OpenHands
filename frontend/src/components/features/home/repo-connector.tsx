@@ -16,7 +16,15 @@ export function RepoConnector({ onRepoSelection }: RepoConnectorProps) {
     React.useState<GitRepository | null>(null);
   const { data: config } = useConfig();
   const { data: repositories } = useUserRepositories();
-  const { mutate: createConversation } = useCreateConversation();
+  const {
+    mutate: createConversation,
+    isPending,
+    isSuccess,
+  } = useCreateConversation();
+
+  // We check for isSuccess because the app might require time to render
+  // into the new conversation screen after the conversation is created.
+  const isCreatingConversation = isPending || isSuccess;
 
   const isSaaS = config?.APP_MODE === "saas";
   const repositoriesList = repositories?.pages.flatMap((page) => page.data);
@@ -62,10 +70,11 @@ export function RepoConnector({ onRepoSelection }: RepoConnectorProps) {
         testId="launch-button"
         variant="primary"
         type="button"
-        isDisabled={!selectedRepository}
+        isDisabled={!selectedRepository || isCreatingConversation}
         onClick={() => createConversation({ selectedRepository })}
       >
-        Launch
+        {!isCreatingConversation && "Launch"}
+        {isCreatingConversation && "Loading..."}
       </BrandButton>
 
       {isSaaS && <RepoProviderLinks />}

@@ -55,4 +55,16 @@ describe("HomeHeader", () => {
     // expect to be redirected to /conversations/:conversationId
     await screen.findByTestId("conversation-screen");
   });
+
+  it("should change the launch button text to 'Loading...' when creating a conversation", async () => {
+    renderHomeHeader();
+
+    const launchButton = screen.getByRole("button", {
+      name: /launch from scratch/i,
+    });
+    await userEvent.click(launchButton);
+
+    expect(launchButton).toHaveTextContent(/Loading.../i);
+    expect(launchButton).toBeDisabled();
+  });
 });

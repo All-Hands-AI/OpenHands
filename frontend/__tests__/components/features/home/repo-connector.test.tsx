@@ -145,4 +145,27 @@ describe("RepoConnector", () => {
       undefined,
     );
   });
+
+  it("should change the launch button text to 'Loading...' when creating a conversation", async () => {
+    const retrieveUserGitRepositoriesSpy = vi.spyOn(
+      GitService,
+      "retrieveUserGitRepositories",
+    );
+    retrieveUserGitRepositoriesSpy.mockResolvedValue({
+      data: MOCK_RESPOSITORIES,
+      nextPage: null,
+    });
+
+    renderRepoConnector();
+
+    const launchButton = screen.getByTestId("launch-button");
+
+    const dropdown = screen.getByTestId("repo-dropdown");
+    await userEvent.click(dropdown);
+    await userEvent.click(screen.getByText("rbren/polaris"));
+
+    await userEvent.click(launchButton);
+    expect(launchButton).toBeDisabled();
+    expect(launchButton).toHaveTextContent(/Loading.../i);
+  });
 });

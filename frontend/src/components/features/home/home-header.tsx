@@ -2,7 +2,15 @@ import { useCreateConversation } from "#/hooks/mutation/use-create-conversation"
 import { BrandButton } from "../settings/brand-button";
 
 export function HomeHeader() {
-  const { mutate: createConversation } = useCreateConversation();
+  const {
+    mutate: createConversation,
+    isPending,
+    isSuccess,
+  } = useCreateConversation();
+
+  // We check for isSuccess because the app might require time to render
+  // into the new conversation screen after the conversation is created.
+  const isCreatingConversation = isPending || isSuccess;
 
   return (
     <header className="flex justify-between items-end">
@@ -24,8 +32,10 @@ export function HomeHeader() {
           type="button"
           className="w-full"
           onClick={() => createConversation({})}
+          isDisabled={isCreatingConversation}
         >
-          Launch from Scratch
+          {!isCreatingConversation && "Launch from Scratch"}
+          {isCreatingConversation && "Loading..."}
         </BrandButton>
         <p className="text-sm">
           Not sure how to start?{" "}

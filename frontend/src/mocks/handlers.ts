@@ -235,7 +235,9 @@ export const handlers = [
     },
   ),
 
-  http.post("/api/conversations", () => {
+  http.post("/api/conversations", async () => {
+    await delay();
+
     const conversation: Conversation = {
       conversation_id: (Math.random() * 100).toString(),
       title: "New Conversation",
