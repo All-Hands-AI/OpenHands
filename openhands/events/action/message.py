@@ -45,9 +45,9 @@ class SystemMessageAction(Action):
     content: str
     tools: List[Any] | None = None
     action: str = ActionType.SYSTEM
-    tool_call_metadata: dict | None = None  # Add this to match MessageAction
     image_urls: list[str] | None = None  # Add this to match MessageAction
     wait_for_response: bool = False  # Add this to match MessageAction
+    # We don't need to declare _tool_call_metadata here as it's handled by the Event base class
 
     @property
     def message(self) -> str:
