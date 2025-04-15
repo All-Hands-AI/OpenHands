@@ -288,8 +288,11 @@ def test_correct_tool_description_loaded_based_on_model_name(mock_state: State):
     assert any(len(tool['function']['description']) > 1024 for tool in agent.tools)
 
 
-def test_mismatched_tool_call_events(mock_state: State):
-    """Tests that the agent can convert mismatched tool call events (i.e., an observation with no corresponding action) into messages."""
+def test_mismatched_tool_call_events_and_auto_add_system_message(mock_state: State):
+    """Tests that the agent can convert mismatched tool call events (i.e., an observation with no corresponding action) into messages.
+    
+    This also tests that the system message is automatically added to the event stream if SystemMessageAction is not present.
+    """
     agent = CodeActAgent(llm=LLM(LLMConfig()), config=AgentConfig())
 
     tool_call_metadata = Mock(
