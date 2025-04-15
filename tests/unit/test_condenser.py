@@ -8,6 +8,7 @@ from openhands.controller.state.state import State
 from openhands.core.config.condenser_config import (
     AmortizedForgettingCondenserConfig,
     BrowserOutputCondenserConfig,
+    CondenserPipelineConfig,
     LLMAttentionCondenserConfig,
     LLMSummarizingCondenserConfig,
     NoOpCondenserConfig,
@@ -35,6 +36,7 @@ from openhands.memory.condenser.impl import (
     RecentEventsCondenser,
     StructuredSummaryCondenser,
 )
+from openhands.memory.condenser.impl.pipeline import CondenserPipeline
 
 
 def create_test_event(
@@ -705,3 +707,25 @@ def test_structured_summary_condenser_keeps_first_and_summary_events(mock_llm):
         # If we've condensed, ensure that the summary event is present
         if i > max_size:
             assert isinstance(view[keep_first], AgentCondensationObservation)
+
+def test_condenser_pipeline_from_config():
+    """Test that CondenserPipeline condensers can be created from configuration objects."""
+    config = CondenserPipelineConfig(
+        condensers=[
+            NoOpCondenserConfig(),
+            BrowserOutputCondenserConfig(attention_window=2),
+            LLMSummarizingCondenserConfig(
+                max_size=50,
+                keep_first=10,
+                llm_config=LLMConfig(model='gpt-4o', api_key='test_key'),
+            ),
+        ]
+    )
+    condenser = Condenser.from_config(config)
+
+    assert isinstance(condenser, CondenserPipeline)
+    assert len(condenser.condensers) == 3
+    assert isinstance(condenser.condensers[0], NoOpCondenser)
+    assert isinstance(condenser.condensers[1], BrowserOutputCondenser)
+    assert isinstance(condenser.condensers[2], LLMSummarizingCondenser)
+    
