@@ -221,7 +221,7 @@ async def store_settings(
     settings: POSTSettingsModel,
 ) -> JSONResponse:
     # Check provider tokens are valid
-    provider_err_msg = check_provider_tokens(request, settings)
+    provider_err_msg = await check_provider_tokens(request, settings)
     if provider_err_msg:
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
