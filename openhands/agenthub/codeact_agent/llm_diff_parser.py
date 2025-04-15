@@ -3,6 +3,7 @@ import re
 from pathlib import Path
 from typing import List, Tuple
 
+from openhands.core.logger import openhands_logger as logger
 from openhands.core.exceptions import LLMMalformedActionError
 
 # Regex patterns for search / replace
@@ -117,6 +118,8 @@ def parse_llm_response_for_diffs(
     Raises:
         LLMMalformedActionError: If malformed blocks are detected.
     """
+    logger.info(f'Parsing LLM response for diffs:\n{content}')
+
     edits: List[Tuple[str, str, str]] = []
     lines = content.splitlines(keepends=True)
     i = 0

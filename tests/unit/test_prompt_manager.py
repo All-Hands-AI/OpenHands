@@ -281,14 +281,14 @@ def test_prompt_manager_system_prompt_selection(prompt_dir):
     assert os.path.exists(os.path.join(prompt_dir, 'system_prompt_llm_diff.j2'))
 
     # Case 1: llm_diff is False (default)
-    config_default = AgentConfig()  # Defaults to codeact_enable_llm_diff=False
+    config_default = AgentConfig()  # Defaults to enable_llm_diff=False
     manager_default = PromptManager(prompt_dir=prompt_dir, config=config_default)
     # Check the loaded template's origin filename
     assert 'system_prompt.j2' in manager_default.system_template.filename
     assert 'system_prompt_llm_diff.j2' not in manager_default.system_template.filename
 
     # Case 2: llm_diff is True
-    config_llm_diff = AgentConfig(codeact_enable_llm_diff=True)
+    config_llm_diff = AgentConfig(enable_llm_diff=True)
     manager_llm_diff = PromptManager(prompt_dir=prompt_dir, config=config_llm_diff)
     # Check the loaded template's origin filename
     assert 'system_prompt_llm_diff.j2' in manager_llm_diff.system_template.filename

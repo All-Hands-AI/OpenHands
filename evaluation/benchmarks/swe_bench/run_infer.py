@@ -270,7 +270,7 @@ def get_config(
         enable_jupyter=False,
         enable_browsing=RUN_WITH_BROWSING,
         enable_llm_editor=False,
-        codeact_enable_llm_diff=True,
+        enable_llm_diff=True,
         condenser=metadata.condenser_config,
         enable_prompt_extensions=False,
     )

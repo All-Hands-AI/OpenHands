@@ -4,8 +4,8 @@
 
 The OpenHands CodeAct agent offers three primary ways to handle file edits:
 1.  **`str_replace_editor` (Default, OH_ACI):** A comprehensive tool (loaded via `create_str_replace_editor_tool`) with commands for viewing files/dirs, creating, replacing, inserting, and undoing edits. This is the default mode.
-2.  **`LLMBasedFileEditTool` (Optional):** An alternative editor tool enabled by `codeact_enable_llm_editor=True`, using line ranges and LLM refinement.
-3.  **`LLM_DIFF` Mode (Optional):** An alternative mode enabled by `codeact_enable_llm_diff=True`, where the agent parses Aider-style fenced diffs directly from the LLM's text response (not a tool call).
+2.  **`LLMBasedFileEditTool` (Optional):** An alternative editor tool enabled by `enable_llm_editor=True`, using line ranges and LLM refinement.
+3.  **`LLM_DIFF` Mode (Optional):** An alternative mode enabled by `enable_llm_diff=True`, where the agent parses Aider-style fenced diffs directly from the LLM's text response (not a tool call).
 
 When either of the optional modes (`LLMBasedFileEditTool` or `LLM_DIFF`) is enabled, the default `str_replace_editor` tool (and its bundled utilities like view, list, undo) is not loaded. This creates a need to provide viewing/listing capabilities separately in these optional modes, while acknowledging that `undo` is inherently tied to the default mode's server-side implementation.
 
@@ -21,15 +21,15 @@ Important: the original `str_replace_editor` tool must remain available *unchang
 
 The current implementation addresses the goal of providing viewing/listing utilities by conditionally loading tools based on the agent configuration flags in `openhands/agenthub/codeact_agent/function_calling.py: get_tools`:
 
-1.  **Default Mode (`codeact_enable_llm_editor=False`, `codeact_enable_llm_diff=False`):**
+1.  **Default Mode (`enable_llm_editor=False`, `enable_llm_diff=False`):**
     *   Loads the full `create_str_replace_editor_tool()`. This single tool definition provides commands for editing (`replace`, `insert`, etc.), viewing (`view` file/directory), and `undo_edit`. All operations use `impl_source=OH_ACI` and are executed server-side by `OHEditor`.
 
-2.  **LLM-Based Editor Mode (`codeact_enable_llm_editor=True`):**
+2.  **LLM-Based Editor Mode (`enable_llm_editor=True`):**
     *   Loads the `LLMBasedFileEditTool` for editing (client-side execution).
     *   Loads separate `ViewFileTool` and `ListDirectoryTool`. These tools generate `FileReadAction`s with `impl_source=OH_ACI`, ensuring they are still executed server-side by the `OHEditor`'s viewing capabilities.
     *   Does **not** load `UndoEditTool`.
 
-3.  **LLM_DIFF Mode (`codeact_enable_llm_diff=True`):**
+3.  **LLM_DIFF Mode (`enable_llm_diff=True`):**
     *   Loads **no** editing tools (edits are parsed from LLM text response and executed client-side).
     *   Loads separate `ViewFileTool` and `ListDirectoryTool` (same as above, executed server-side via `OH_ACI`).
     *   Does **not** load `UndoEditTool`.

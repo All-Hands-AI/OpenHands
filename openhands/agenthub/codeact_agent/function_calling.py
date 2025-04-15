@@ -381,10 +381,10 @@ def get_tools(
     llm: LLM | None = None,
 ) -> list[ChatCompletionToolParam]:
     # Extract flags from config
-    codeact_enable_browsing = config.codeact_enable_browsing
-    codeact_enable_llm_editor = config.codeact_enable_llm_editor
-    codeact_enable_llm_diff = config.codeact_enable_llm_diff
-    codeact_enable_jupyter = config.codeact_enable_jupyter
+    enable_browsing = config.enable_browsing
+    enable_llm_editor = config.enable_llm_editor
+    enable_llm_diff = config.enable_llm_diff
+    enable_jupyter = config.enable_jupyter
 
     SIMPLIFIED_TOOL_DESCRIPTION_LLM_SUBSTRS = ['gpt-', 'o3', 'o1']
 
@@ -407,7 +407,7 @@ def get_tools(
         tools.append(IPythonTool)
 
     # Determine which editor tool(s) and utility tools to add based on config
-    if codeact_enable_llm_diff:
+    if enable_llm_diff:
         # Use LLM Diff mode:
         #  - LLM generates diffs in text, only non-edit tools available
         #  - No UndoEditTool
@@ -415,7 +415,7 @@ def get_tools(
         tools.append(ListDirectoryTool)
         # NO EDITING TOOLS (LLMBasedFileEditTool, str_replace_editor)
         # NO UndoEditTool
-    elif codeact_enable_llm_editor:
+    elif enable_llm_editor:
         # Use LLM-based editor tool + separate utils (NO Undo)
         tools.append(LLMBasedFileEditTool)
         tools.append(ViewFileTool)

@@ -154,7 +154,7 @@ class CodeActAgent(Agent):
         response = self.llm.completion(**params)
         logger.debug(f'Response from LLM: {response}')
         # Pass whether we should parse the message.content
-        actions = codeact_function_calling.response_to_actions(response, is_llm_diff_enabled=self.config.codeact_enable_llm_diff)
+        actions = codeact_function_calling.response_to_actions(response, is_llm_diff_enabled=self.config.enable_llm_diff)
         logger.debug(f'Actions after response_to_actions: {actions}')
         for action in actions:
             self.pending_actions.append(action)

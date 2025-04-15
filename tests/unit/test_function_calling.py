@@ -41,10 +41,10 @@ from openhands.events.event import FileEditSource, FileReadSource
 # Helper to create AgentConfig with specific flags
 def create_test_config(**kwargs) -> AgentConfig:
     defaults = {
-        'codeact_enable_browsing': False,
-        'codeact_enable_llm_editor': False,
-        'codeact_enable_llm_diff': False,
-        'codeact_enable_jupyter': False,
+        'enable_browsing': False,
+        'enable_llm_editor': False,
+        'enable_llm_diff': False,
+        'enable_jupyter': False,
         # Add other AgentConfig defaults if necessary for validation
         'disabled_microagents': [],
         'enable_prompt_extensions': True,
@@ -294,9 +294,9 @@ def test_get_tools_default():
 def test_get_tools_llm_diff_enabled():
     """Test tools when LLM Diff mode is enabled."""
     config = create_test_config(
-        codeact_enable_llm_diff=True,
-        codeact_enable_browsing=True,
-        codeact_enable_jupyter=True,
+        enable_llm_diff=True,
+        enable_browsing=True,
+        enable_jupyter=True,
     )
     tools = get_tools(config)
     tool_names = {t['function']['name'] for t in tools}
@@ -320,7 +320,7 @@ def test_get_tools_llm_diff_enabled():
 
 def test_get_tools_llm_editor_enabled():
     """Test tools when LLM Editor tool is enabled."""
-    config = create_test_config(codeact_enable_llm_editor=True)
+    config = create_test_config(enable_llm_editor=True)
     tools = get_tools(config)
     tool_names = {t['function']['name'] for t in tools}
     assert LLMBasedFileEditTool['function']['name'] in tool_names

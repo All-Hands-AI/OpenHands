@@ -47,7 +47,7 @@ class PromptManager:
         self.config: AgentConfig = config
 
         # Load the correct system prompt based on the config
-        if self.config.codeact_enable_llm_diff:
+        if self.config.enable_llm_diff:
             system_template_name = 'system_prompt_llm_diff'
         else:
             system_template_name = 'system_prompt'
