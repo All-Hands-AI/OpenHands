@@ -1345,16 +1345,11 @@ async def test_agent_controller_processes_null_observation_with_cause():
         ), 'should_step should return False for NullObservation with cause=0'
 
 
-def test_agent_controller_should_step_with_null_observation_cause_zero():
+def test_agent_controller_should_step_with_null_observation_cause_zero(mock_agent):
     """Test that AgentController's should_step method returns False for NullObservation with cause = 0."""
     # Create a mock event stream
     file_store = InMemoryFileStore()
     event_stream = EventStream(sid='test-session', file_store=file_store)
-
-    # Create a mock agent
-    mock_agent = MagicMock(spec=Agent)
-    # Mock the get_system_message method to return None to avoid adding system message
-    mock_agent.get_system_message.return_value = None
 
     # Create an agent controller
     controller = AgentController(
