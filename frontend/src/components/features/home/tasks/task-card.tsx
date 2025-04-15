@@ -6,7 +6,7 @@ interface TaskCardProps {
 
 export function TaskCard({ task }: TaskCardProps) {
   return (
-    <li className="py-3 border-b-1 border-[#717888] flex items-center pr-6">
+    <li className="py-3 border-b border-[#717888] flex items-center pr-6">
       <span data-testid="task-id">#{task.issue_number}</span>
 
       <div className="w-full pl-8">

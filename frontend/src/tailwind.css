@@ -9,3 +9,7 @@
 .heading {
   @apply text-[28px] leading-8 -tracking-[0.02em] font-bold text-content-2;
 }
+
+.skeleton {
+  @apply bg-gray-400 rounded-md animate-pulse;
+}

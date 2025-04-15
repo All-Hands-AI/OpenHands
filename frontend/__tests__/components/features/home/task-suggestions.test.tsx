@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from "@testing-library/react";
-import { describe, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TaskSuggestions } from "#/components/features/home/tasks/task-suggestions";
 import { SuggestionsService } from "#/api/suggestions-service/suggestions-service.api";
@@ -53,7 +53,21 @@ describe("TaskSuggestions", () => {
     });
   });
 
-  it.todo("should render skeletons when loading");
+  it("should render skeletons when loading", async () => {
+    getSuggestedTasksSpy.mockResolvedValue(MOCK_TASKS);
+    renderTaskSuggestions();
+
+    const skeletons = screen.getAllByTestId("task-group-skeleton");
+    expect(skeletons.length).toBeGreaterThan(0);
+
+    await waitFor(() => {
+      MOCK_TASKS.forEach((taskGroup) => {
+        screen.getByText(taskGroup.title);
+      });
+    });
+
+    expect(screen.queryByTestId("task-group-skeleton")).not.toBeInTheDocument();
+  });
 
   it.todo(
     "should display a message if the user needs to sign in with their git provider",
