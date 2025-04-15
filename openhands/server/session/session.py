@@ -126,15 +126,17 @@ class Session:
         agent_config = self.config.get_agent_config(agent_cls)
 
         if settings.enable_default_condenser:
-            # Default condenser chains a summarizing condenser to keep number of
-            # relevant events down with a browser output condenser to keep the
-            # total size of browser observations limited.
+            # Default condenser chains a condenser that limits browser the total
+            # size of browser observations with a condenser that limits the size
+            # of the view given to the LLM. The order matters: with the browser
+            # output first, the summarizer will only see the most recent browser
+            # output, which should keep the summarization cost down.
             default_condenser_config = CondenserPipelineConfig(
                 condensers=[
+                    BrowserOutputCondenserConfig(),
                     LLMSummarizingCondenserConfig(
                         llm_config=llm.config, keep_first=3, max_size=80
                     ),
-                    BrowserOutputCondenserConfig()
                 ]
             )
 
