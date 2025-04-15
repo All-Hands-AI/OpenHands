@@ -293,59 +293,63 @@ export function ChatInterface() {
           />
         )}
 
-        {isWaitingForUserInput && (
-          <div className="-mt-3 mb-4 flex w-fit items-center justify-center gap-2 rounded-full bg-success-100 px-3 py-1">
-            <FaCheck />
-            Thesis has completed the current task
-          </div>
-        )}
+        {isWaitingForUserInput &&
+          (!isShareRoute || replayStatus === ReplayStatus.COMPLETED) && (
+            <div className="-mt-3 mb-4 flex w-fit items-center justify-center gap-2 rounded-full bg-success-100 px-3 py-1">
+              <FaCheck />
+              Thesis has completed the current task
+            </div>
+          )}
 
-        {isWaitingForUserInput && files && files.length > 0 && (
-          <div className="my-3 flex flex-wrap gap-2 border-t border-neutral-900 pt-3">
-            {files.slice(0, 2).map((file) => {
-              const isDirectory = file.endsWith("/")
-              return (
+        {isWaitingForUserInput &&
+          files &&
+          files.length > 0 &&
+          (!isShareRoute || replayStatus === ReplayStatus.COMPLETED) && (
+            <div className="my-3 flex flex-wrap gap-2 border-t border-neutral-900 pt-3">
+              {files.slice(0, 2).map((file) => {
+                const isDirectory = file.endsWith("/")
+                return (
+                  <div
+                    key={file}
+                    className={twMerge(
+                      "flex w-fit max-w-full cursor-pointer items-center gap-2 rounded-md bg-neutral-1000 p-2 hover:opacity-70",
+                      currentPathViewed.includes(file) &&
+                        "border border-blue-200 bg-blue-50",
+                    )}
+                    onClick={() => {
+                      if (isDirectory) {
+                        setExplorerModal(true)
+                        setSelectedPath(file)
+                      } else {
+                        dispatch(setCurrentPathViewed(file))
+                      }
+                    }}
+                  >
+                    {isDirectory ? (
+                      <IoFolder className="h-4 w-4 shrink-0 fill-blue-500" />
+                    ) : (
+                      <FaFileInvoice className="h-4 w-4 shrink-0 fill-blue-500" />
+                    )}
+                    <div className="line-clamp-1 text-sm">{file}</div>
+                  </div>
+                )
+              })}
+              {files.length >= 2 && (
                 <div
-                  key={file}
-                  className={twMerge(
-                    "flex w-fit max-w-full cursor-pointer items-center gap-2 rounded-md bg-neutral-1000 p-2 hover:opacity-70",
-                    currentPathViewed.includes(file) &&
-                      "border border-blue-200 bg-blue-50",
-                  )}
+                  className="flex w-fit max-w-full cursor-pointer items-center gap-2 rounded-md bg-neutral-1000 p-2 hover:opacity-70"
                   onClick={() => {
-                    if (isDirectory) {
-                      setExplorerModal(true)
-                      setSelectedPath(file)
-                    } else {
-                      dispatch(setCurrentPathViewed(file))
-                    }
+                    setExplorerModal(true)
+                    setSelectedPath(null)
                   }}
                 >
-                  {isDirectory ? (
-                    <IoFolder className="h-4 w-4 shrink-0 fill-blue-500" />
-                  ) : (
-                    <FaFileInvoice className="h-4 w-4 shrink-0 fill-blue-500" />
-                  )}
-                  <div className="line-clamp-1 text-sm">{file}</div>
+                  <RiPhoneFindLine className="h-4 w-4 shrink-0 fill-blue-500" />
+                  <div className="line-clamp-1 text-sm">
+                    View all files in this task
+                  </div>
                 </div>
-              )
-            })}
-            {files.length >= 2 && (
-              <div
-                className="flex w-fit max-w-full cursor-pointer items-center gap-2 rounded-md bg-neutral-1000 p-2 hover:opacity-70"
-                onClick={() => {
-                  setExplorerModal(true)
-                  setSelectedPath(null)
-                }}
-              >
-                <RiPhoneFindLine className="h-4 w-4 shrink-0 fill-blue-500" />
-                <div className="line-clamp-1 text-sm">
-                  View all files in this task
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+              )}
+            </div>
+          )}
 
         {/* {!error && <ExplorerTree files={files || []} />} */}
       </div>

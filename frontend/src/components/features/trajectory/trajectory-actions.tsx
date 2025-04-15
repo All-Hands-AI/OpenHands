@@ -55,7 +55,9 @@ export function TrajectoryActions({
         />
       </div>
 
-      <ShareModal isOpen={shareModalOpen} onOpenChange={setShareModalOpen} />
+      {shareModalOpen && (
+        <ShareModal isOpen={shareModalOpen} onOpenChange={setShareModalOpen} />
+      )}
     </>
   )
 }
