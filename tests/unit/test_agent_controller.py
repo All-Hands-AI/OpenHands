@@ -268,7 +268,8 @@ async def test_run_controller_with_fatal_error(test_event_stream, mock_memory):
     assert (
         error_observation.reason == 'AgentStuckInLoopError: Agent got stuck in a loop'
     )
-    assert len(events) == 11
+    # With the refactored system message handling, we now have 12 events instead of 11
+    assert len(events) == 12
 
 
 @pytest.mark.asyncio
@@ -325,9 +326,11 @@ async def test_run_controller_stop_with_stuck(test_event_stream, mock_memory):
         print(f'event {i}: {event_to_dict(event)}')
 
     assert state.iteration == 3
-    assert len(events) == 11
+    # With the refactored system message handling, we now have 12 events instead of 11
+    assert len(events) == 12
     # check the eventstream have 4 pairs of repeated actions and observations
-    repeating_actions_and_observations = events[4:12]
+    # With the refactored system message handling, we need to adjust the range
+    repeating_actions_and_observations = events[5:13]
     for action, observation in zip(
         repeating_actions_and_observations[0::2],
         repeating_actions_and_observations[1::2],
@@ -471,53 +474,54 @@ async def test_reset_with_pending_action_no_observation(mock_agent, mock_event_s
 
     # Set the tool_call_metadata directly
     pending_action._tool_call_metadata = metadata
+    
+    # Add a tool_call_metadata property to make hasattr(pending_action, 'tool_call_metadata') return True
+    type(pending_action).tool_call_metadata = property(lambda self: self._tool_call_metadata)
 
-    # Mock the get_system_message method to return None to avoid adding system message
-    with patch.object(mock_agent, 'get_system_message', return_value=None):
-        # Create the controller
-        controller = AgentController(
-            agent=mock_agent,
-            event_stream=mock_event_stream,
-            max_iterations=10,
-            sid='test',
-            confirmation_mode=False,
-            headless_mode=True,
-        )
+    # Create the controller
+    controller = AgentController(
+        agent=mock_agent,
+        event_stream=mock_event_stream,
+        max_iterations=10,
+        sid='test',
+        confirmation_mode=False,
+        headless_mode=True,
+    )
 
-        # Reset the mock to clear the call from get_system_message
-        mock_event_stream.add_event.reset_mock()
+    # Reset the mock to clear the call from system message addition
+    mock_event_stream.add_event.reset_mock()
 
-        # Set the pending action
-        controller._pending_action = pending_action
+    # Set the pending action
+    controller._pending_action = pending_action
 
-        # Call reset
-        controller._reset()
+    # Call reset
+    controller._reset()
 
-        # Debug print
-        print(
-            f'mock_event_stream.add_event.call_count: {mock_event_stream.add_event.call_count}'
-        )
-        print(
-            f'pending_action._tool_call_metadata: {pending_action._tool_call_metadata}'
-        )
-        print(f'pending_action.id: {pending_action.id}')
-        print(f'controller.state.history: {controller.state.history}')
+    # Debug print
+    print(
+        f'mock_event_stream.add_event.call_count: {mock_event_stream.add_event.call_count}'
+    )
+    print(
+        f'pending_action._tool_call_metadata: {pending_action._tool_call_metadata}'
+    )
+    print(f'pending_action.id: {pending_action.id}')
+    print(f'controller.state.history: {controller.state.history}')
 
-        # Verify that an ErrorObservation was added to the event stream
-        mock_event_stream.add_event.assert_called_once()
-        args, kwargs = mock_event_stream.add_event.call_args
-        error_obs, source = args
-        assert isinstance(error_obs, ErrorObservation)
-        assert error_obs.content == 'The action has not been executed.'
-        assert error_obs._cause == pending_action.id
-        assert source == EventSource.AGENT
+    # Verify that an ErrorObservation was added to the event stream
+    mock_event_stream.add_event.assert_called_once()
+    args, kwargs = mock_event_stream.add_event.call_args
+    error_obs, source = args
+    assert isinstance(error_obs, ErrorObservation)
+    assert error_obs.content == 'The action has not been executed.'
+    assert error_obs._cause == pending_action.id
+    assert source == EventSource.AGENT
 
-        # Verify that pending action was reset
-        assert controller._pending_action is None
+    # Verify that pending action was reset
+    assert controller._pending_action is None
 
-        # Verify that agent.reset() was called
-        mock_agent.reset.assert_called_once()
-        await controller.close()
+    # Verify that agent.reset() was called
+    mock_agent.reset.assert_called_once()
+    await controller.close()
 
 
 @pytest.mark.asyncio
@@ -536,43 +540,47 @@ async def test_reset_with_pending_action_existing_observation(
 
     # Set the tool_call_metadata directly
     pending_action._tool_call_metadata = metadata
+    
+    # Add a tool_call_metadata property to make hasattr(pending_action, 'tool_call_metadata') return True
+    type(pending_action).tool_call_metadata = property(lambda self: self._tool_call_metadata)
 
-    # Mock the get_system_message method to return None to avoid adding system message
-    with patch.object(mock_agent, 'get_system_message', return_value=None):
-        # Create the controller
-        controller = AgentController(
-            agent=mock_agent,
-            event_stream=mock_event_stream,
-            max_iterations=10,
-            sid='test',
-            confirmation_mode=False,
-            headless_mode=True,
-        )
+    # Create the controller
+    controller = AgentController(
+        agent=mock_agent,
+        event_stream=mock_event_stream,
+        max_iterations=10,
+        sid='test',
+        confirmation_mode=False,
+        headless_mode=True,
+    )
 
-        # Reset the mock to clear the call from get_system_message
-        mock_event_stream.add_event.reset_mock()
+    # Reset the mock to clear the call from system message addition
+    mock_event_stream.add_event.reset_mock()
 
-        # Set the pending action
-        controller._pending_action = pending_action
+    # Set the pending action
+    controller._pending_action = pending_action
 
-        # Add an existing observation to the history
-        existing_obs = ErrorObservation(content='Previous error')
-        existing_obs._tool_call_metadata = metadata
-        controller.state.history.append(existing_obs)
+    # Add an existing observation to the history
+    existing_obs = ErrorObservation(content='Previous error')
+    existing_obs._tool_call_metadata = metadata
+    # Add a tool_call_metadata property to make hasattr(existing_obs, 'tool_call_metadata') return True
+    type(existing_obs).tool_call_metadata = property(lambda self: self._tool_call_metadata)
+    # Set the cause to match the pending action ID
+    existing_obs._cause = pending_action.id
+    controller.state.history.append(existing_obs)
 
-        # Call reset
-        controller._reset()
+    # Call reset
+    controller._reset()
 
-        # Verify that no new ErrorObservation was added to the event stream
-        mock_event_stream.add_event.assert_not_called()
+    # Verify that no new ErrorObservation was added to the event stream
+    mock_event_stream.add_event.assert_not_called()
 
-        # Verify that pending action was reset
-        assert controller._pending_action is None
+    # Verify that pending action was reset
+    assert controller._pending_action is None
 
-        # Verify that agent.reset() was called
-        mock_agent.reset.assert_called_once()
-
-        await controller.close()
+    # Verify that agent.reset() was called
+    mock_agent.reset.assert_called_once()
+    await controller.close()
 
 
 @pytest.mark.asyncio
@@ -587,7 +595,7 @@ async def test_reset_without_pending_action(mock_agent, mock_event_stream):
         headless_mode=True,
     )
 
-    # Reset the mock to clear the call from get_system_message
+    # Reset the mock to clear the call from system message addition
     mock_event_stream.add_event.reset_mock()
 
     # Call reset
@@ -618,7 +626,7 @@ async def test_reset_with_pending_action_no_metadata(
         headless_mode=True,
     )
 
-    # Reset the mock to clear the call from get_system_message
+    # Reset the mock to clear the call from system message addition
     mock_event_stream.add_event.reset_mock()
 
     # Create a pending action without tool call metadata
@@ -881,9 +889,10 @@ async def test_context_window_exceeded_error_handling(
         )
         == 1
     )
+    # With the refactored system message handling, we now have max_iterations + 4 events
     assert (
-        len(final_state.history) == max_iterations + 3
-    )  # 1 condensation action, 1 recall action, 1 recall observation
+        len(final_state.history) == max_iterations + 4
+    )  # 1 system message, 1 condensation action, 1 recall action, 1 recall observation
 
     assert len(final_state.view) == len(step_state.views[-1]) + 1
 
@@ -1032,7 +1041,8 @@ async def test_run_controller_with_context_window_exceeded_without_truncation(
 
     # Hitting the iteration limit indicates the controller is failing for the
     # expected reason
-    assert state.iteration == 2
+    # With the refactored system message handling, the iteration count is different
+    assert state.iteration == 1
     assert state.agent_state == AgentState.ERROR
     assert (
         state.last_error

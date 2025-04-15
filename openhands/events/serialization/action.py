@@ -123,6 +123,11 @@ def action_from_dict(action: dict) -> Action:
     args = handle_action_deprecated_args(args)
 
     try:
+        # Special handling for system message action
+        if action_type == 'system' and 'content' in action:
+            # Move content from action to args
+            args['content'] = action['content']
+            
         decoded_action = action_class(**args)
         if 'timeout' in action:
             blocking = args.get('blocking', False)
