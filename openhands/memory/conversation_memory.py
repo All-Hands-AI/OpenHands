@@ -131,9 +131,6 @@ class ConversationMemory:
         messages = list(ConversationMemory._filter_unmatched_tool_calls(messages))
         return messages
 
-    # process_initial_messages has been removed
-    # The system message should now be added to the event stream as a SystemMessageAction
-
     def _process_action(
         self,
         action: Action,
