@@ -22,7 +22,7 @@ from openhands.events.serialization import event_to_dict
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderToken
 from openhands.integrations.service_types import ProviderType
 from openhands.server.db import database
-from openhands.server.models import User
+from openhands.server.models import Conversation, User
 from openhands.server.routes.auth import JWT_ALGORITHM, JWT_SECRET
 from openhands.server.shared import (
     ConversationStoreImpl,
@@ -53,61 +53,76 @@ async def connect(connection_id: str, environ):
     # providers_raw: list[str] = query_params.get('providers_set', [])
     # providers_set: list[ProviderType] = [ProviderType(p) for p in providers_raw]
 
-    if not conversation_id:
-        logger.error('No conversation_id in query params')
-        raise ConnectionRefusedError('No conversation_id in query params')
-
-    # Get JWT token from query params
-    jwt_token = query_params.get('auth', [None])[0]
     user_id = None
     mnemonic = None
 
-    # Check if conversation_id belongs to whitelisted user
-    is_whitelisted = False
-    whitelisted_user_id = os.getenv('USER_USE_CASE_SAMPLE')
-    if jwt_token is None:
-        conversation_store = await ConversationStoreImpl.get_instance(
-            config, whitelisted_user_id, None
-        )
-        conversation_metadata_result_set = await conversation_store.get_metadata(
-            conversation_id
-        )
-        if conversation_metadata_result_set.user_id == whitelisted_user_id:
-            is_whitelisted = True
-            logger.info(
-                f'Whitelisted access for user {user_id} and conversation {conversation_id}'
+    if not conversation_id:
+        logger.error('No conversation_id in query params')
+        raise ConnectionRefusedError('No conversation_id in query params')
+    mode = query_params.get('mode', [None])[0]
+    if mode == 'shared':
+        # check if conversation_id is shared
+        query = Conversation.select().where(Conversation.c.conversation_id == conversation_id)
+        existing_record = await database.fetch_one(query)
+        if not existing_record:
+            raise ConnectionRefusedError('Conversation not found')
+        if not existing_record.published:
+            raise ConnectionRefusedError('Conversation not published')
+        user_id = existing_record.user_id
+        user = await database.fetch_one(select(User).where(User.c.public_key == user_id.lower()))
+        if not user:
+            raise ConnectionRefusedError('User not found')
+        mnemonic = user['mnemonic']
+    else:
+        # Get JWT token from query params
+        jwt_token = query_params.get('auth', [None])[0]
+
+        # Check if conversation_id belongs to whitelisted user
+        is_whitelisted = False
+        whitelisted_user_id = os.getenv('USER_USE_CASE_SAMPLE')
+        if jwt_token is None:
+            conversation_store = await ConversationStoreImpl.get_instance(
+                config, whitelisted_user_id, None
             )
+            conversation_metadata_result_set = await conversation_store.get_metadata(
+                conversation_id
+            )
+            if conversation_metadata_result_set.user_id == whitelisted_user_id:
+                is_whitelisted = True
+                logger.info(
+                    f'Whitelisted access for user {user_id} and conversation {conversation_id}'
+                )
 
-    if not is_whitelisted:
-        # Normal authentication flow for non-whitelisted users/conversations
-        if not jwt_token:
-            logger.error('No JWT token provided')
-            raise ConnectionRefusedError('Authentication required')
+        if not is_whitelisted:
+            # Normal authentication flow for non-whitelisted users/conversations
+            if not jwt_token:
+                logger.error('No JWT token provided')
+                raise ConnectionRefusedError('Authentication required')
 
-        try:
-            # Verify and decode JWT token
-            payload = jwt.decode(jwt_token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-            user_id = payload['sub']
-            logger.info(f'user_id: {user_id}')
+            try:
+                # Verify and decode JWT token
+                payload = jwt.decode(jwt_token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+                user_id = payload['sub']
+                logger.info(f'user_id: {user_id}')
 
-            # Fetch user record from database
-            query = select(User).where(User.c.public_key == user_id.lower())
-            user = await database.fetch_one(query)
-            if not user:
-                logger.error(f'User not found in database: {user_id}')
-                raise ConnectionRefusedError('User not found')
+                # Fetch user record from database
+                query = select(User).where(User.c.public_key == user_id.lower())
+                user = await database.fetch_one(query)
+                if not user:
+                    logger.error(f'User not found in database: {user_id}')
+                    raise ConnectionRefusedError('User not found')
 
-            logger.info(f'Found user record: {user["public_key"]}')
-            mnemonic = user['mnemonic']
-        except jwt.ExpiredSignatureError:
-            logger.error('JWT token has expired')
-            raise ConnectionRefusedError('Token has expired')
-        except jwt.InvalidTokenError:
-            logger.error('Invalid JWT token')
-            raise ConnectionRefusedError('Invalid token')
-        except Exception as e:
-            logger.error(f'Error processing JWT token: {str(e)}')
-            raise ConnectionRefusedError('Authentication failed')
+                logger.info(f'Found user record: {user["public_key"]}')
+                mnemonic = user['mnemonic']
+            except jwt.ExpiredSignatureError:
+                logger.error('JWT token has expired')
+                raise ConnectionRefusedError('Token has expired')
+            except jwt.InvalidTokenError:
+                logger.error('Invalid JWT token')
+                raise ConnectionRefusedError('Invalid token')
+            except Exception as e:
+                logger.error(f'Error processing JWT token: {str(e)}')
+                raise ConnectionRefusedError('Authentication failed')
 
     # TODO FIXME: Logic from upstream. Temporarily comment out. Need to check if they are useful
     # cookies_str = environ.get('HTTP_COOKIE', '')

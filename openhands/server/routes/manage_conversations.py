@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Body, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+from openhands.server.db import database
 
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
@@ -24,6 +25,7 @@ from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.data_models.conversation_info_result_set import (
     ConversationInfoResultSet,
 )
+from openhands.server.models import Conversation
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.shared import (
     ConversationStoreImpl,
@@ -396,6 +398,32 @@ async def delete_conversation(
     return True
 
 
+@app.patch('/conversations/{conversation_id}/change-visibility')
+async def change_visibility(
+    conversation_id: str,
+    request: Request,
+    is_published: bool = Body(embed=True),
+) -> bool:
+    user_id = get_user_id(request)
+    conversation_store = await ConversationStoreImpl.get_instance(
+        config, user_id, get_github_user_id(request)
+    )
+    metadata = await conversation_store.get_metadata(conversation_id)
+    if not metadata:
+        return False
+
+    return await _update_conversation_visibility(conversation_id, is_published, user_id)
+
+
+@app.get('/conversations/{conversation_id}/visibility')
+async def get_conversation_visibility(
+    conversation_id: str,
+    request: Request,
+) -> bool:
+    user_id = get_user_id(request)
+    return await _get_conversation_visibility(conversation_id, user_id)
+
+
 async def _get_conversation_info(
     conversation: ConversationMetadata,
     is_running: bool,
@@ -420,3 +448,47 @@ async def _get_conversation_info(
             extra={'session_id': conversation.conversation_id},
         )
         return None
+
+
+async def _update_conversation_visibility(conversation_id: str, is_published: bool, user_id: str):
+    try:
+        query = Conversation.select().where(
+            (Conversation.c.conversation_id == conversation_id) &
+            (Conversation.c.user_id == user_id)
+        )
+        existing_record = await database.fetch_one(query)
+
+        if existing_record:
+            await database.execute(
+                Conversation.update()
+                .where(
+                    (Conversation.c.conversation_id == conversation_id) &
+                    (Conversation.c.user_id == user_id)
+                )
+                .values(published=is_published)
+            )
+        else:
+            await database.execute(
+                Conversation.insert().values(
+                    conversation_id=conversation_id,
+                    user_id=user_id,
+                    published=is_published
+                )
+            )
+        return True
+    except Exception as e:
+        logger.error(f'Error updating conversation visibility: {str(e)}')
+        return False
+
+
+async def _get_conversation_visibility(conversation_id: str, user_id: str):
+    try:
+        query = Conversation.select().where(
+            (Conversation.c.conversation_id == conversation_id) &
+            (Conversation.c.user_id == user_id)
+        )
+        existing_record = await database.fetch_one(query)
+        return existing_record.published if existing_record else False
+    except Exception as e:
+        logger.error(f'Error getting conversation visibility: {str(e)}')
+        return False
