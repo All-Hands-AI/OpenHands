@@ -464,28 +464,9 @@ async def test_step_max_budget_headless(mock_agent, mock_event_stream):
     assert controller.state.agent_state == AgentState.ERROR
     await controller.close()
 
-
 @pytest.mark.asyncio
 async def test_reset_with_pending_action_no_observation(mock_agent, mock_event_stream):
     """Test reset() when there's a pending action with tool call metadata but no observation."""
-    # Create a pending action with tool call metadata
-    pending_action = CmdRunAction(command='test')
-
-    # Set a valid ID for the action
-    pending_action._id = 123
-
-    # Create a mock for the tool_call_metadata property
-    metadata = {'function': 'test_function', 'args': {'arg1': 'value1'}}
-
-    # Set the tool_call_metadata directly
-    pending_action._tool_call_metadata = metadata
-
-    # Add a tool_call_metadata property to make hasattr(pending_action, 'tool_call_metadata') return True
-    type(pending_action).tool_call_metadata = property(
-        lambda self: self._tool_call_metadata
-    )
-
-    # Create the controller
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
@@ -495,22 +476,19 @@ async def test_reset_with_pending_action_no_observation(mock_agent, mock_event_s
         headless_mode=True,
     )
 
-    # Reset the mock to clear the call from system message addition
+    mock_event_stream.add_event.assert_called_once()  # add SystemMessageAction
     mock_event_stream.add_event.reset_mock()
 
-    # Set the pending action
+    # Create a pending action with tool call metadata
+    pending_action = CmdRunAction(command='test')
+    pending_action.tool_call_metadata = {
+        'function': 'test_function',
+        'args': {'arg1': 'value1'},
+    }
     controller._pending_action = pending_action
 
     # Call reset
     controller._reset()
-
-    # Debug print
-    print(
-        f'mock_event_stream.add_event.call_count: {mock_event_stream.add_event.call_count}'
-    )
-    print(f'pending_action._tool_call_metadata: {pending_action._tool_call_metadata}')
-    print(f'pending_action.id: {pending_action.id}')
-    print(f'controller.state.history: {controller.state.history}')
 
     # Verify that an ErrorObservation was added to the event stream
     mock_event_stream.add_event.assert_called_once()
@@ -518,6 +496,7 @@ async def test_reset_with_pending_action_no_observation(mock_agent, mock_event_s
     error_obs, source = args
     assert isinstance(error_obs, ErrorObservation)
     assert error_obs.content == 'The action has not been executed.'
+    assert error_obs.tool_call_metadata == pending_action.tool_call_metadata
     assert error_obs._cause == pending_action.id
     assert source == EventSource.AGENT
 

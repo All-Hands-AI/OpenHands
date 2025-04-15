@@ -166,8 +166,10 @@ class AgentController:
         # Add the system message to the event stream
         # This should be done for all agents, including delegates
         system_message = self.agent.get_system_message()
+        logger.debug(f'System message got from agent: {system_message}')
         if system_message:
             self.event_stream.add_event(system_message, EventSource.AGENT)
+            logger.debug(f'System message added to event stream: {system_message}')
 
     async def close(self, set_stop_state=True) -> None:
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream.
@@ -514,17 +516,12 @@ class AgentController:
         # Runnable actions need an Observation
         # make sure there is an Observation with the tool call metadata to be recognized by the agent
         # otherwise the pending action is found in history, but it's incomplete without an obs with tool result
-        if (
-            self._pending_action
-            and hasattr(self._pending_action, 'tool_call_metadata')
-            and self._pending_action.tool_call_metadata
-        ):
+        if self._pending_action and hasattr(self._pending_action, 'tool_call_metadata'):
             # find out if there already is an observation with the same tool call metadata
             found_observation = False
             for event in self.state.history:
                 if (
                     isinstance(event, Observation)
-                    and hasattr(event, 'tool_call_metadata')
                     and event.tool_call_metadata
                     == self._pending_action.tool_call_metadata
                 ):
@@ -534,8 +531,7 @@ class AgentController:
             # make a new ErrorObservation with the tool call metadata
             if not found_observation:
                 obs = ErrorObservation(content='The action has not been executed.')
-                # Set the _tool_call_metadata attribute directly
-                obs._tool_call_metadata = self._pending_action.tool_call_metadata
+                obs.tool_call_metadata = self._pending_action.tool_call_metadata
                 obs._cause = self._pending_action.id  # type: ignore[attr-defined]
                 self.event_stream.add_event(obs, EventSource.AGENT)
 
