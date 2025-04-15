@@ -67,7 +67,27 @@ class ConversationModule:
             return None, {'mnemonic': user['mnemonic'], 'user_id': user_id}
         except Exception as e:
             logger.error(f'Error getting conversation visibility by id: {str(e)}')
-            return None, None
+            return 'Error getting conversation visibility by id', None
+
+    async def _delete_conversation(self, conversation_id: str, user_id: str):
+        try:
+            query = Conversation.select().where(
+                (Conversation.c.conversation_id == conversation_id) &
+                (Conversation.c.user_id == user_id)
+            )
+            existing_record = await database.fetch_one(query)
+            if not existing_record:
+                return 'Conversation not found', None
+            await database.execute(
+                Conversation.delete().where(
+                    (Conversation.c.conversation_id == conversation_id) &
+                    (Conversation.c.user_id == user_id)
+                )
+            )
+            return True
+        except Exception as e:
+            logger.error(f'Error deleting conversation: {str(e)}')
+            return False
 
 
 conversation_module = ConversationModule()

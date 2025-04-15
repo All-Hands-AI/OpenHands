@@ -64,7 +64,6 @@ async def connect(connection_id: str, environ):
     # check if conversation_id is shared
     if mode == 'shared':
         error, info = await conversation_module._get_conversation_visibility_info(conversation_id)
-        print(f'error: {error}, info: {info}')
         if error:
             raise ConnectionRefusedError(error)
         else:

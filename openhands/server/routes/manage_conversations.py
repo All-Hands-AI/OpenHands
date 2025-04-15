@@ -382,8 +382,9 @@ async def delete_conversation(
     conversation_id: str,
     request: Request,
 ) -> bool:
+    user_id = get_user_id(request)
     conversation_store = await ConversationStoreImpl.get_instance(
-        config, get_user_id(request), get_github_user_id(request)
+        config, user_id, get_github_user_id(request)
     )
     try:
         await conversation_store.get_metadata(conversation_id)
@@ -395,6 +396,9 @@ async def delete_conversation(
     runtime_cls = get_runtime_cls(config.runtime)
     await runtime_cls.delete(conversation_id)
     await conversation_store.delete_metadata(conversation_id)
+
+    # delete conversation from database
+    await conversation_module._delete_conversation(conversation_id, user_id)
     return True
 
 
