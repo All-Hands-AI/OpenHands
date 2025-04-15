@@ -66,7 +66,7 @@ async def resolve_issues(
     issue_type: str,
     repo_instruction: str | None,
     issue_numbers: list[int] | None,
-    base_domain: str = "github.com",
+    base_domain: str = 'github.com',
 ) -> None:
     """Resolve multiple github or gitlab issues.
 
@@ -327,7 +327,7 @@ def main() -> None:
     parser.add_argument(
         '--base-domain',
         type=str,
-        default="github.com",
+        default='github.com',
         help='Base domain for GitHub Enterprise (default: github.com)',
     )
 

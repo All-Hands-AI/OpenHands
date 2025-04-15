@@ -322,12 +322,13 @@ def issue_handler_factory(
     llm_config: LLMConfig,
     platform: Platform,
     username: str | None = None,
-    base_domain: str = "github.com",
+    base_domain: str = 'github.com',
 ) -> ServiceContextIssue | ServiceContextPR:
     if issue_type == 'issue':
         if platform == Platform.GITHUB:
             return ServiceContextIssue(
-                GithubIssueHandler(owner, repo, token, username, base_domain), llm_config
+                GithubIssueHandler(owner, repo, token, username, base_domain),
+                llm_config,
             )
         else:  # platform == Platform.GITLAB
             return ServiceContextIssue(
@@ -362,7 +363,7 @@ async def resolve_issue(
     issue_number: int,
     comment_id: int | None,
     reset_logger: bool = False,
-    base_domain: str = "github.com",
+    base_domain: str = 'github.com',
 ) -> None:
     """Resolve a single issue.
 
@@ -634,7 +635,7 @@ def main() -> None:
     parser.add_argument(
         '--base-domain',
         type=str,
-        default="github.com",
+        default='github.com',
         help='Base domain for GitHub Enterprise (default: github.com)',
     )
 
