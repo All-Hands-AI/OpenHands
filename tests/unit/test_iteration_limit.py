@@ -24,10 +24,11 @@ class DummyAgent:
 
     def reset(self):
         pass
-        
+
     def get_system_message(self):
         # Return a mock system message for the refactored system message handling
         from unittest.mock import MagicMock
+
         mock = MagicMock()
         mock.content = 'This is a dummy system message'
         return mock

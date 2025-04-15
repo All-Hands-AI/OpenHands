@@ -474,9 +474,11 @@ async def test_reset_with_pending_action_no_observation(mock_agent, mock_event_s
 
     # Set the tool_call_metadata directly
     pending_action._tool_call_metadata = metadata
-    
+
     # Add a tool_call_metadata property to make hasattr(pending_action, 'tool_call_metadata') return True
-    type(pending_action).tool_call_metadata = property(lambda self: self._tool_call_metadata)
+    type(pending_action).tool_call_metadata = property(
+        lambda self: self._tool_call_metadata
+    )
 
     # Create the controller
     controller = AgentController(
@@ -501,9 +503,7 @@ async def test_reset_with_pending_action_no_observation(mock_agent, mock_event_s
     print(
         f'mock_event_stream.add_event.call_count: {mock_event_stream.add_event.call_count}'
     )
-    print(
-        f'pending_action._tool_call_metadata: {pending_action._tool_call_metadata}'
-    )
+    print(f'pending_action._tool_call_metadata: {pending_action._tool_call_metadata}')
     print(f'pending_action.id: {pending_action.id}')
     print(f'controller.state.history: {controller.state.history}')
 
@@ -540,9 +540,11 @@ async def test_reset_with_pending_action_existing_observation(
 
     # Set the tool_call_metadata directly
     pending_action._tool_call_metadata = metadata
-    
+
     # Add a tool_call_metadata property to make hasattr(pending_action, 'tool_call_metadata') return True
-    type(pending_action).tool_call_metadata = property(lambda self: self._tool_call_metadata)
+    type(pending_action).tool_call_metadata = property(
+        lambda self: self._tool_call_metadata
+    )
 
     # Create the controller
     controller = AgentController(
@@ -564,7 +566,9 @@ async def test_reset_with_pending_action_existing_observation(
     existing_obs = ErrorObservation(content='Previous error')
     existing_obs._tool_call_metadata = metadata
     # Add a tool_call_metadata property to make hasattr(existing_obs, 'tool_call_metadata') return True
-    type(existing_obs).tool_call_metadata = property(lambda self: self._tool_call_metadata)
+    type(existing_obs).tool_call_metadata = property(
+        lambda self: self._tool_call_metadata
+    )
     # Set the cause to match the pending action ID
     existing_obs._cause = pending_action.id
     controller.state.history.append(existing_obs)

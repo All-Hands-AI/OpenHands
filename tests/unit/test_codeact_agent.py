@@ -340,7 +340,9 @@ def test_mismatched_tool_call_events(mock_state: State):
     # plus any valid message from the event
     mock_state.history = [action]
     messages = agent._get_messages(mock_state.history)
-    assert len(messages) == 1  # Only system message, action is waiting for its observation
+    assert (
+        len(messages) == 1
+    )  # Only system message, action is waiting for its observation
     assert messages[0].role == 'system'
 
     mock_state.history = [observation]

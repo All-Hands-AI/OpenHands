@@ -10,11 +10,11 @@ def test_event_serialization_deserialization():
     message._timestamp = datetime(2020, 1, 1, 23, 59, 58)
     serialized = json.dumps(message)
     deserialized = json.loads(serialized)
-    
+
     # Remove extras field for comparison
     if 'extras' in deserialized:
         deserialized.pop('extras')
-        
+
     expected = {
         'id': 42,
         'timestamp': '2020-01-01T23:59:58',
@@ -35,11 +35,11 @@ def test_array_serialization_deserialization():
     message._timestamp = datetime(2020, 1, 1, 0, 0, 0)
     serialized = json.dumps([message])
     deserialized = json.loads(serialized)
-    
+
     # Remove extras field for comparison
     if 'extras' in deserialized[0]:
         deserialized[0].pop('extras')
-        
+
     expected = [
         {
             'id': 42,

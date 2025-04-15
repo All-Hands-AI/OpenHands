@@ -10,10 +10,10 @@ from openhands.core.exceptions import (
     AgentAlreadyRegisteredError,
     AgentNotRegisteredError,
 )
+from openhands.core.logger import openhands_logger as logger
 from openhands.events.event import EventSource
 from openhands.llm.llm import LLM
 from openhands.runtime.plugins import PluginRequirement
-from openhands.core.logger import openhands_logger as logger
 
 if TYPE_CHECKING:
     from openhands.utils.prompt import PromptManager
@@ -67,7 +67,9 @@ class Agent(ABC):
             # Get tools if available
             tools = getattr(self, 'tools', None)
 
-            system_message_action = SystemMessageAction(content=system_message, tools=tools)
+            system_message_action = SystemMessageAction(
+                content=system_message, tools=tools
+            )
             # Set the source attribute
             system_message_action._source = EventSource.AGENT  # type: ignore
 

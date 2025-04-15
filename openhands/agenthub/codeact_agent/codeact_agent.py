@@ -12,7 +12,7 @@ from openhands.events.action import (
     AgentFinishAction,
 )
 from openhands.events.action.message import SystemMessageAction
-from openhands.events.event import Event, EventSource
+from openhands.events.event import Event
 from openhands.llm.llm import LLM
 from openhands.memory.condenser import Condenser
 from openhands.memory.condenser.condenser import Condensation, View
@@ -194,24 +194,28 @@ class CodeActAgent(Agent):
             raise Exception('Prompt Manager not instantiated.')
 
         # Check if there's a SystemMessageAction in the events
-        has_system_message = any(isinstance(event, SystemMessageAction) for event in events)
-        
+        has_system_message = any(
+            isinstance(event, SystemMessageAction) for event in events
+        )
+
         # Only create a copy if we need to modify the list
         processed_events = events
-        
+
         # If no SystemMessageAction is found, add one (legacy support)
         if not has_system_message:
             logger.warning(
-                f"[{self.name}] No SystemMessageAction found in events. "
-                "Adding one for backward compatibility. "
-                "This is deprecated behavior and will be removed in a future version."
+                f'[{self.name}] No SystemMessageAction found in events. '
+                'Adding one for backward compatibility. '
+                'This is deprecated behavior and will be removed in a future version.'
             )
             system_message = self.get_system_message()
             if system_message:
                 # Create a copy and insert at the beginning of the list
                 processed_events = list(events)
                 processed_events.insert(0, system_message)
-                logger.debug(f"[{self.name}] Added SystemMessageAction for backward compatibility")
+                logger.debug(
+                    f'[{self.name}] Added SystemMessageAction for backward compatibility'
+                )
 
         # Use ConversationMemory to process events (including SystemMessageAction)
         messages = self.conversation_memory.process_events(

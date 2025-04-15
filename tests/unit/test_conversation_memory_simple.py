@@ -1,9 +1,9 @@
-import pytest
 from unittest.mock import MagicMock
 
+import pytest
+
 from openhands.core.config.agent_config import AgentConfig
-from openhands.core.message import Message, TextContent
-from openhands.events.action.message import SystemMessageAction, MessageAction
+from openhands.events.action.message import MessageAction, SystemMessageAction
 from openhands.events.event import EventSource
 from openhands.memory.conversation_memory import ConversationMemory
 from openhands.utils.prompt import PromptManager
@@ -32,14 +32,14 @@ def test_system_message_in_events(conversation_memory):
     # Create a system message action
     system_message = SystemMessageAction(content='System message', tools=['test_tool'])
     system_message._source = EventSource.AGENT
-    
+
     # Process events with the system message in condensed_history
     messages = conversation_memory.process_events(
         condensed_history=[system_message],
         max_message_chars=None,
         vision_is_active=False,
     )
-    
+
     # Check that the system message was processed correctly
     assert len(messages) == 1
     assert messages[0].role == 'system'
@@ -51,20 +51,20 @@ def test_process_events_with_message_action(conversation_memory):
     # Create a system message action
     system_message = SystemMessageAction(content='System message')
     system_message._source = EventSource.AGENT
-    
+
     # Create user and assistant messages
     user_message = MessageAction(content='Hello')
     user_message._source = EventSource.USER
     assistant_message = MessageAction(content='Hi there')
     assistant_message._source = EventSource.AGENT
-    
+
     # Process events
     messages = conversation_memory.process_events(
         condensed_history=[system_message, user_message, assistant_message],
         max_message_chars=None,
         vision_is_active=False,
     )
-    
+
     # Check that the messages were processed correctly
     assert len(messages) == 3
     assert messages[0].role == 'system'
