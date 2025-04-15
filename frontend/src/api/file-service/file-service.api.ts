@@ -1,6 +1,6 @@
-import { openHands } from "../open-hands-axios";
-import { GetFilesResponse, GetFileResponse } from "./file-service.types";
-import { getConversationUrl } from "./file-service.utils";
+import { openHands } from "../open-hands-axios"
+import { GetFilesResponse, GetFileResponse } from "./file-service.types"
+import { getConversationUrl } from "./file-service.utils"
 
 export class FileService {
   /**
@@ -13,12 +13,12 @@ export class FileService {
     conversationId: string,
     path?: string,
   ): Promise<GetFilesResponse> {
-    const url = `${getConversationUrl(conversationId)}/list-files`;
+    const url = `${getConversationUrl(conversationId)}/list-files`
     const { data } = await openHands.get<GetFilesResponse>(url, {
       params: { path },
-    });
+    })
 
-    return data;
+    return data
   }
 
   /**
@@ -28,11 +28,12 @@ export class FileService {
    * @returns Code content of the file
    */
   static async getFile(conversationId: string, path: string): Promise<string> {
-    const url = `${getConversationUrl(conversationId)}/select-file`;
+    const url = `${getConversationUrl(conversationId)}/select-file`
+
     const { data } = await openHands.get<GetFileResponse>(url, {
       params: { file: path },
-    });
+    })
 
-    return data.code;
+    return data.code
   }
 }
