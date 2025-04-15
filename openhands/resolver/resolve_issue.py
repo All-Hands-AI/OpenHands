@@ -656,11 +656,20 @@ def main() -> None:
         raise ValueError('Token is invalid.')
 
     api_key = my_args.llm_api_key or os.environ['LLM_API_KEY']
+    model = my_args.llm_model or os.environ['LLM_MODEL']
+    base_url = my_args.llm_base_url or os.environ.get('LLM_BASE_URL', None)
+    api_version = os.environ.get('LLM_API_VERSION', None)
+
+    # Create LLMConfig instance
     llm_config = LLMConfig(
-        model=my_args.llm_model or os.environ['LLM_MODEL'],
+        model=model,
         api_key=SecretStr(api_key) if api_key else None,
-        base_url=my_args.llm_base_url or os.environ.get('LLM_BASE_URL', None),
+        base_url=base_url,
     )
+
+    # Only set api_version if it was explicitly provided, otherwise let LLMConfig handle it
+    if api_version is not None:
+        llm_config.api_version = api_version
 
     repo_instruction = None
     if my_args.repo_instruction_file:

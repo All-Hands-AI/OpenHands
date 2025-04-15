@@ -46,6 +46,7 @@ export function handleObservationMessage(message: ObservationMessage) {
     case ObservationType.EDIT:
     case ObservationType.THINK:
     case ObservationType.NULL:
+    case ObservationType.RECALL:
       break; // We don't display the default message for these observations
     default:
       store.dispatch(addAssistantMessage(message.message));
@@ -67,6 +68,21 @@ export function handleObservationMessage(message: ObservationMessage) {
             observation: "agent_state_changed" as const,
             extras: {
               agent_state: (message.extras.agent_state as AgentState) || "idle",
+            },
+          }),
+        );
+        break;
+      case "recall":
+        store.dispatch(
+          addAssistantObservation({
+            ...baseObservation,
+            observation: "recall" as const,
+            extras: {
+              ...(message.extras || {}),
+              recall_type:
+                (message.extras?.recall_type as
+                  | "workspace_context"
+                  | "knowledge") || "knowledge",
             },
           }),
         );

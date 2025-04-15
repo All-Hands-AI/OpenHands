@@ -558,7 +558,7 @@ def test_send_pull_request_target_branch_with_fork(
     post_data = mock_post.call_args[1]['json']
     assert post_data['base'] == target_branch  # PR should target the specified branch
     assert (
-        post_data['head'] == 'openhands-fix-issue-42'
+        post_data['head'] == 'fork-owner:openhands-fix-issue-42'
     )  # Branch name should be standard
 
     # Check that push was to fork

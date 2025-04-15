@@ -4,6 +4,9 @@ let titleInterval: number | undefined;
 const isBrowser =
   typeof window !== "undefined" && typeof document !== "undefined";
 
+// Use a constant for the notification parameter to avoid hardcoded strings
+const NOTIFICATION_PARAM = "notification";
+
 export const browserTab = {
   startNotification(message: string) {
     if (!isBrowser) return;
@@ -29,9 +32,9 @@ export const browserTab = {
       'link[rel="icon"]',
     ) as HTMLLinkElement;
     if (favicon) {
-      favicon.href = favicon.href.includes("?notification")
+      favicon.href = favicon.href.includes(`?${NOTIFICATION_PARAM}`)
         ? favicon.href
-        : `${favicon.href}?notification`;
+        : `${favicon.href}?${NOTIFICATION_PARAM}`;
     }
   },
 
@@ -51,7 +54,7 @@ export const browserTab = {
       'link[rel="icon"]',
     ) as HTMLLinkElement;
     if (favicon) {
-      favicon.href = favicon.href.replace("?notification", "");
+      favicon.href = favicon.href.replace(`?${NOTIFICATION_PARAM}`, "");
     }
   },
 };

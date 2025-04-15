@@ -62,22 +62,23 @@ class CodeActAgent(Agent):
 
         Parameters:
         - llm (LLM): The llm to be used by this agent
+        - config (AgentConfig): The configuration for this agent
         """
         super().__init__(llm, config)
         self.pending_actions: deque[Action] = deque()
         self.reset()
 
         # Retrieve the enabled tools
-        self.tools = codeact_function_calling.get_tools(
-            codeact_enable_browsing=self.config.codeact_enable_browsing,
-            codeact_enable_jupyter=self.config.codeact_enable_jupyter,
-            codeact_enable_llm_editor=self.config.codeact_enable_llm_editor,
-            codeact_enable_read_only_tools=self.config.codeact_enable_read_only_tools,
+        built_in_tools = codeact_function_calling.get_tools(
+            enable_browsing=self.config.enable_browsing,
+            enable_jupyter=self.config.enable_jupyter,
+            enable_llm_editor=self.config.enable_llm_editor,
+            enable_read_only_tools=self.config.codeact_enable_read_only_tools,
             llm=self.llm,
         )
-        logger.debug(
-            f"TOOLS loaded for CodeActAgent: {', '.join([tool.get('function').get('name') for tool in self.tools])}"
-        )
+
+        self.tools = built_in_tools
+
         self.prompt_manager = PromptManager(
             prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
         )
@@ -138,10 +139,23 @@ class CodeActAgent(Agent):
             'messages': self.llm.format_messages_for_llm(messages),
         }
         params['tools'] = self.tools
+
+        if self.mcp_tools:
+            # Only add tools with unique names
+            existing_names = {tool['function']['name'] for tool in params['tools']}
+            unique_mcp_tools = [
+                tool
+                for tool in self.mcp_tools
+                if tool['function']['name'] not in existing_names
+            ]
+            params['tools'] += unique_mcp_tools
+
         # log to litellm proxy if possible
         params['extra_body'] = {'metadata': state.to_llm_metadata(agent_name=self.name)}
         response = self.llm.completion(**params)
+        logger.debug(f'Response from LLM: {response}')
         actions = codeact_function_calling.response_to_actions(response)
+        logger.debug(f'Actions after response_to_actions: {actions}')
         for action in actions:
             self.pending_actions.append(action)
         return self.pending_actions.popleft()

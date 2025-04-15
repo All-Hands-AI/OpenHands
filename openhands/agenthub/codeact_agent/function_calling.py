@@ -30,6 +30,7 @@ from openhands.core.exceptions import (
     FunctionCallNotExistsError,
     FunctionCallValidationError,
 )
+from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     Action,
     AgentDelegateAction,
@@ -43,9 +44,11 @@ from openhands.events.action import (
     IPythonRunCellAction,
     MessageAction,
 )
+from openhands.events.action.mcp import McpAction
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.tool import ToolCallMetadata
 from openhands.llm import LLM
+from openhands.mcp import MCPClientTool
 
 
 def combine_thought(action: Action, thought: str) -> Action:
@@ -136,6 +139,7 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
         # Process each tool call to OpenHands action
         for i, tool_call in enumerate(assistant_msg.tool_calls):
             action: Action
+            logger.debug(f'Tool call in function_calling.py: {tool_call}')
             try:
                 arguments = json.loads(tool_call.function.arguments)
             except json.decoder.JSONDecodeError as e:
@@ -304,6 +308,14 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                     inputs={'task': arguments['task']},
                     agent_config_override={'codeact_enable_read_only_tools': True},
                 )
+            # ================================================
+            # McpAction (MCP)
+            # ================================================
+            elif tool_call.function.name.endswith(MCPClientTool.postfix()):
+                action = McpAction(
+                    name=tool_call.function.name.rstrip(MCPClientTool.postfix()),
+                    arguments=tool_call.function.arguments,
+                )
             else:
                 raise FunctionCallNotExistsError(
                     f'Tool {tool_call.function.name} is not registered. (arguments: {arguments}). Please check the tool name and retry with an existing tool.'
@@ -340,10 +352,10 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
 
 
 def get_tools(
-    codeact_enable_browsing: bool = False,
-    codeact_enable_llm_editor: bool = False,
-    codeact_enable_jupyter: bool = False,
-    codeact_enable_read_only_tools: bool = False,
+    enable_browsing: bool = False,
+    enable_llm_editor: bool = False,
+    enable_jupyter: bool = False,
+    enable_read_only_tools: bool = False,
     llm: LLM | None = None,
 ) -> list[ChatCompletionToolParam]:
     SIMPLIFIED_TOOL_DESCRIPTION_LLM_SUBSTRS = ['gpt-', 'o3', 'o1']
@@ -371,12 +383,12 @@ def get_tools(
         ViewTool,
         AgentTool,
     ]
-    if codeact_enable_browsing:
+    if enable_browsing:
         tools.append(WebReadTool)
         tools.append(BrowserTool)
-    if codeact_enable_jupyter:
+    if enable_jupyter:
         tools.append(IPythonTool)
-    if codeact_enable_llm_editor:
+    if enable_llm_editor:
         tools.append(LLMBasedFileEditTool)
     else:
         tools.append(
@@ -385,7 +397,7 @@ def get_tools(
             )
         )
 
-    if codeact_enable_read_only_tools:
+    if enable_read_only_tools:
         # filter out tools that are not in READ_ONLY_TOOLS
         tools = [tool for tool in tools if tool in READ_ONLY_TOOLS]
     return tools
