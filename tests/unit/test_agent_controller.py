@@ -1201,7 +1201,7 @@ async def test_action_metrics_copy(mock_agent):
 
 
 @pytest.mark.asyncio
-async def test_first_user_message_with_identical_content():
+async def test_first_user_message_with_identical_content(test_event_stream, mock_agent):
     """
     Test that _first_user_message correctly identifies the first user message
     even when multiple messages have identical content but different IDs.
@@ -1210,18 +1210,14 @@ async def test_first_user_message_with_identical_content():
     The issue we're checking is that the comparison (action == self._first_user_message())
     should correctly differentiate between messages with the same content but different IDs.
     """
-    # Create a real event stream for this test
-    event_stream = EventStream(sid='test', file_store=InMemoryFileStore({}))
-
     # Create an agent controller
-    mock_agent = MagicMock(spec=Agent)
     mock_agent.llm = MagicMock(spec=LLM)
     mock_agent.llm.metrics = Metrics()
     mock_agent.llm.config = AppConfig().get_llm_config()
 
     controller = AgentController(
         agent=mock_agent,
-        event_stream=event_stream,
+        event_stream=test_event_stream,
         max_iterations=10,
         sid='test',
         confirmation_mode=False,
@@ -1231,12 +1227,12 @@ async def test_first_user_message_with_identical_content():
     # Create and add the first user message
     first_message = MessageAction(content='Hello, this is a test message')
     first_message._source = EventSource.USER
-    event_stream.add_event(first_message, EventSource.USER)
+    test_event_stream.add_event(first_message, EventSource.USER)
 
     # Create and add a second user message with identical content
     second_message = MessageAction(content='Hello, this is a test message')
     second_message._source = EventSource.USER
-    event_stream.add_event(second_message, EventSource.USER)
+    test_event_stream.add_event(second_message, EventSource.USER)
 
     # Verify that _first_user_message returns the first message
     first_user_message = controller._first_user_message()
@@ -1260,7 +1256,7 @@ async def test_first_user_message_with_identical_content():
     )  # Cache should store the same object
 
     # Mock get_events to verify it's not called again
-    with patch.object(event_stream, 'get_events') as mock_get_events:
+    with patch.object(test_event_stream, 'get_events') as mock_get_events:
         cached_message = controller._first_user_message()
         assert cached_message is first_user_message  # Should return cached object
         mock_get_events.assert_not_called()  # Should not call get_events again
