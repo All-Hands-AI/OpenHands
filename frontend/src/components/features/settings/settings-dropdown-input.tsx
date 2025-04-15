@@ -15,6 +15,7 @@ interface SettingsDropdownInputProps {
   defaultSelectedKey?: string;
   isClearable?: boolean;
   onSelectionChange?: (key: React.Key | null) => void;
+  onInputChange?: (value: string) => void;
 }
 
 export function SettingsDropdownInput({
@@ -29,6 +30,7 @@ export function SettingsDropdownInput({
   defaultSelectedKey,
   isClearable,
   onSelectionChange,
+  onInputChange,
 }: SettingsDropdownInputProps) {
   return (
     <label className={cn("flex flex-col gap-2.5", wrapperClassName)}>
@@ -45,6 +47,7 @@ export function SettingsDropdownInput({
         defaultItems={items}
         defaultSelectedKey={defaultSelectedKey}
         onSelectionChange={onSelectionChange}
+        onInputChange={onInputChange}
         isClearable={isClearable}
         isDisabled={isDisabled}
         placeholder={placeholder}

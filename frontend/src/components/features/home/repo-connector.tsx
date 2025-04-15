@@ -5,9 +5,10 @@ import { SettingsDropdownInput } from "../settings/settings-dropdown-input";
 import { useConfig } from "#/hooks/query/use-config";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { GitRepository } from "#/types/git";
+import { RepoProviderLinks } from "./repo-provider-links";
 
 interface RepoConnectorProps {
-  onRepoSelection?: (repoTitle: string) => void;
+  onRepoSelection?: (repoTitle: string | null) => void;
 }
 
 export function RepoConnector({ onRepoSelection }: RepoConnectorProps) {
@@ -33,6 +34,13 @@ export function RepoConnector({ onRepoSelection }: RepoConnectorProps) {
     setSelectedRepository(selectedRepo || null);
   };
 
+  const handleInputChange = (value: string) => {
+    if (value === "") {
+      setSelectedRepository(null);
+      onRepoSelection?.(null);
+    }
+  };
+
   return (
     <section
       data-testid="repo-connector"
@@ -47,6 +55,7 @@ export function RepoConnector({ onRepoSelection }: RepoConnectorProps) {
         items={repositoriesItems || []}
         wrapperClassName="max-w-[500px]"
         onSelectionChange={handleRepoSelection}
+        onInputChange={handleInputChange}
       />
 
       <BrandButton
@@ -59,16 +68,7 @@ export function RepoConnector({ onRepoSelection }: RepoConnectorProps) {
         Launch
       </BrandButton>
 
-      {isSaaS && (
-        <div className="flex flex-col text-sm underline underline-offset-2 text-content-2 gap-4 w-fit">
-          <a href="http://" target="_blank" rel="noopener noreferrer">
-            Add GitHub repos
-          </a>
-          <a href="http://" target="_blank" rel="noopener noreferrer">
-            Add GitLab repos
-          </a>
-        </div>
-      )}
+      {isSaaS && <RepoProviderLinks />}
     </section>
   );
 }

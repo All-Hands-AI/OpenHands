@@ -56,7 +56,7 @@ describe("TaskSuggestions", () => {
   it.todo("should render skeletons when loading");
 
   it.todo(
-    "should display a message if the user needs to authenticate with their git provider",
+    "should display a message if the user needs to sign in with their git provider",
   );
 
   it.todo(

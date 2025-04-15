@@ -69,8 +69,8 @@ describe("HomeScreen", () => {
 
     // Initially, all tasks should be visible
     await waitFor(() => {
-      within(taskSuggestions).findByText("octocat/hello-world");
-      within(taskSuggestions).findByText("octocat/earth");
+      within(taskSuggestions).getByText("octocat/hello-world");
+      within(taskSuggestions).getByText("octocat/earth");
     });
 
     // Select a repository from the dropdown
@@ -84,14 +84,57 @@ describe("HomeScreen", () => {
 
     // After selecting a repository, only tasks related to that repository should be visible
     await waitFor(() => {
-      within(taskSuggestions).findByText("octocat/hello-world");
+      within(taskSuggestions).getByText("octocat/hello-world");
       expect(
         within(taskSuggestions).queryByText("octocat/earth"),
       ).not.toBeInTheDocument();
     });
   });
 
-  it.todo(
-    "should reset the filtered tasks when the selected repository is cleared",
-  );
+  it("should reset the filtered tasks when the selected repository is cleared", async () => {
+    const retrieveUserGitRepositoriesSpy = vi.spyOn(
+      GitService,
+      "retrieveUserGitRepositories",
+    );
+    retrieveUserGitRepositoriesSpy.mockResolvedValue({
+      data: MOCK_RESPOSITORIES,
+      nextPage: null,
+    });
+
+    renderHomeScreen();
+
+    const taskSuggestions = screen.getByTestId("task-suggestions");
+
+    // Initially, all tasks should be visible
+    await waitFor(() => {
+      within(taskSuggestions).getByText("octocat/hello-world");
+      within(taskSuggestions).getByText("octocat/earth");
+    });
+
+    // Select a repository from the dropdown
+    const repoConnector = screen.getByTestId("repo-connector");
+
+    const dropdown = within(repoConnector).getByTestId("repo-dropdown");
+    await userEvent.click(dropdown);
+
+    const repoOption = screen.getAllByText("octocat/hello-world")[1];
+    await userEvent.click(repoOption);
+
+    // After selecting a repository, only tasks related to that repository should be visible
+    await waitFor(() => {
+      within(taskSuggestions).getByText("octocat/hello-world");
+      expect(
+        within(taskSuggestions).queryByText("octocat/earth"),
+      ).not.toBeInTheDocument();
+    });
+
+    // Clear the selected repository
+    await userEvent.clear(dropdown);
+
+    // All tasks should be visible again
+    await waitFor(() => {
+      within(taskSuggestions).getByText("octocat/hello-world");
+      within(taskSuggestions).getByText("octocat/earth");
+    });
+  });
 });
