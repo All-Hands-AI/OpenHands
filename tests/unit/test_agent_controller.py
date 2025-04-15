@@ -214,26 +214,17 @@ async def test_react_to_content_policy_violation(
 
 
 @pytest.mark.asyncio
-async def test_run_controller_with_fatal_error(test_event_stream, mock_memory):
+async def test_run_controller_with_fatal_error(test_event_stream, mock_memory, mock_agent):
     config = AppConfig()
-
-    agent = MagicMock(spec=Agent)
 
     def agent_step_fn(state):
         print(f'agent_step_fn received state: {state}')
         return CmdRunAction(command='ls')
 
-    agent.step = agent_step_fn
-    agent.llm = MagicMock(spec=LLM)
-    agent.llm.metrics = Metrics()
-    agent.llm.config = config.get_llm_config()
-    
-    # Add a proper system message mock
-    from openhands.events.action.message import SystemMessageAction
-    system_message = SystemMessageAction(content='Test system message')
-    system_message._source = EventSource.AGENT
-    system_message._id = Event.INVALID_ID  # Set invalid ID to avoid the ID check
-    agent.get_system_message.return_value = system_message
+    mock_agent.step = agent_step_fn
+    mock_agent.llm = MagicMock(spec=LLM)
+    mock_agent.llm.metrics = Metrics()
+    mock_agent.llm.config = config.get_llm_config()
 
     runtime = MagicMock(spec=Runtime)
 
@@ -264,7 +255,7 @@ async def test_run_controller_with_fatal_error(test_event_stream, mock_memory):
         initial_user_action=MessageAction(content='Test message'),
         runtime=runtime,
         sid='test',
-        agent=agent,
+        agent=mock_agent,
         fake_user_response_fn=lambda _: 'repeat',
         memory=mock_memory,
     )
@@ -287,25 +278,18 @@ async def test_run_controller_with_fatal_error(test_event_stream, mock_memory):
 
 
 @pytest.mark.asyncio
-async def test_run_controller_stop_with_stuck(test_event_stream, mock_memory):
+async def test_run_controller_stop_with_stuck(test_event_stream, mock_memory, mock_agent):
     config = AppConfig()
-    agent = MagicMock(spec=Agent)
 
     def agent_step_fn(state):
         print(f'agent_step_fn received state: {state}')
         return CmdRunAction(command='ls')
 
-    agent.step = agent_step_fn
-    agent.llm = MagicMock(spec=LLM)
-    agent.llm.metrics = Metrics()
-    agent.llm.config = config.get_llm_config()
-    
-    # Add a proper system message mock
-    from openhands.events.action.message import SystemMessageAction
-    system_message = SystemMessageAction(content='Test system message')
-    system_message._source = EventSource.AGENT
-    system_message._id = Event.INVALID_ID  # Set invalid ID to avoid the ID check
-    agent.get_system_message.return_value = system_message
+    mock_agent.step = agent_step_fn
+    mock_agent.llm = MagicMock(spec=LLM)
+    mock_agent.llm.metrics = Metrics()
+    mock_agent.llm.config = config.get_llm_config()
+
     runtime = MagicMock(spec=Runtime)
 
     def on_event(event: Event):
@@ -337,7 +321,7 @@ async def test_run_controller_stop_with_stuck(test_event_stream, mock_memory):
         initial_user_action=MessageAction(content='Test message'),
         runtime=runtime,
         sid='test',
-        agent=agent,
+        agent=mock_agent,
         fake_user_response_fn=lambda _: 'repeat',
         memory=mock_memory,
     )
@@ -683,35 +667,27 @@ async def test_reset_with_pending_action_no_metadata(
 
 @pytest.mark.asyncio
 async def test_run_controller_max_iterations_has_metrics(
-    test_event_stream, mock_memory
+    test_event_stream, mock_memory, mock_agent
 ):
     config = AppConfig(
         max_iterations=3,
     )
     event_stream = test_event_stream
 
-    agent = MagicMock(spec=Agent)
-    agent.llm = MagicMock(spec=LLM)
-    agent.llm.metrics = Metrics()
-    agent.llm.config = config.get_llm_config()
-    
-    # Add a proper system message mock
-    from openhands.events.action.message import SystemMessageAction
-    system_message = SystemMessageAction(content='Test system message')
-    system_message._source = EventSource.AGENT
-    system_message._id = Event.INVALID_ID  # Set invalid ID to avoid the ID check
-    agent.get_system_message.return_value = system_message
+    mock_agent.llm = MagicMock(spec=LLM)
+    mock_agent.llm.metrics = Metrics()
+    mock_agent.llm.config = config.get_llm_config()
 
     def agent_step_fn(state):
         print(f'agent_step_fn received state: {state}')
         # Mock the cost of the LLM
-        agent.llm.metrics.add_cost(10.0)
+        mock_agent.llm.metrics.add_cost(10.0)
         print(
-            f'agent.llm.metrics.accumulated_cost: {agent.llm.metrics.accumulated_cost}'
+            f'mock_agent.llm.metrics.accumulated_cost: {mock_agent.llm.metrics.accumulated_cost}'
         )
         return CmdRunAction(command='ls')
 
-    agent.step = agent_step_fn
+    mock_agent.step = agent_step_fn
 
     runtime = MagicMock(spec=Runtime)
 
@@ -742,7 +718,7 @@ async def test_run_controller_max_iterations_has_metrics(
         initial_user_action=MessageAction(content='Test message'),
         runtime=runtime,
         sid='test',
-        agent=agent,
+        agent=mock_agent,
         fake_user_response_fn=lambda _: 'repeat',
         memory=mock_memory,
     )
@@ -1096,28 +1072,20 @@ async def test_run_controller_with_context_window_exceeded_without_truncation(
 
 
 @pytest.mark.asyncio
-async def test_run_controller_with_memory_error(test_event_stream):
+async def test_run_controller_with_memory_error(test_event_stream, mock_agent):
     config = AppConfig()
     event_stream = test_event_stream
 
     # Create a proper agent that returns an action without an ID
-    agent = MagicMock(spec=Agent)
-    agent.llm = MagicMock(spec=LLM)
-    agent.llm.metrics = Metrics()
-    agent.llm.config = config.get_llm_config()
+    mock_agent.llm = MagicMock(spec=LLM)
+    mock_agent.llm.metrics = Metrics()
+    mock_agent.llm.config = config.get_llm_config()
     
-    # Add a proper system message mock
-    from openhands.events.action.message import SystemMessageAction
-    system_message = SystemMessageAction(content='Test system message')
-    system_message._source = EventSource.AGENT
-    system_message._id = Event.INVALID_ID  # Set invalid ID to avoid the ID check
-    agent.get_system_message.return_value = system_message
-
     # Create a real action to return from the mocked step function
     def agent_step_fn(state):
         return MessageAction(content='Agent returned a message')
 
-    agent.step = agent_step_fn
+    mock_agent.step = agent_step_fn
 
     runtime = MagicMock(spec=Runtime)
     runtime.event_stream = event_stream
@@ -1137,7 +1105,7 @@ async def test_run_controller_with_memory_error(test_event_stream):
             initial_user_action=MessageAction(content='Test message'),
             runtime=runtime,
             sid='test',
-            agent=agent,
+            agent=mock_agent,
             fake_user_response_fn=lambda _: 'repeat',
             memory=memory,
         )
@@ -1148,14 +1116,13 @@ async def test_run_controller_with_memory_error(test_event_stream):
 
 
 @pytest.mark.asyncio
-async def test_action_metrics_copy():
+async def test_action_metrics_copy(mock_agent):
     # Setup
     file_store = InMemoryFileStore({})
     event_stream = EventStream(sid='test', file_store=file_store)
 
     # Create agent with metrics
-    agent = MagicMock(spec=Agent)
-    agent.llm = MagicMock(spec=LLM)
+    mock_agent.llm = MagicMock(spec=LLM)
     metrics = Metrics(model_name='test-model')
     metrics.accumulated_cost = 0.05
 
@@ -1197,14 +1164,7 @@ async def test_action_metrics_copy():
     # Add a response latency - should not be included in action metrics
     metrics.add_response_latency(0.5, 'test-id-2')
 
-    agent.llm.metrics = metrics
-
-    # Add a proper system message mock
-    from openhands.events.action.message import SystemMessageAction
-    system_message = SystemMessageAction(content='Test system message')
-    system_message._source = EventSource.AGENT
-    system_message._id = Event.INVALID_ID  # Set invalid ID to avoid the ID check
-    agent.get_system_message.return_value = system_message
+    mock_agent.llm.metrics = metrics
 
     # Mock agent step to return an action
     action = MessageAction(content='Test message')
@@ -1212,11 +1172,11 @@ async def test_action_metrics_copy():
     def agent_step_fn(state):
         return action
 
-    agent.step = agent_step_fn
+    mock_agent.step = agent_step_fn
 
     # Create controller with correct parameters
     controller = AgentController(
-        agent=agent,
+        agent=mock_agent,
         event_stream=event_stream,
         max_iterations=10,
         sid='test',
@@ -1267,7 +1227,7 @@ async def test_action_metrics_copy():
     assert not hasattr(last_action.llm_metrics, 'average_latency')
 
     # Verify it's a deep copy by modifying the original
-    agent.llm.metrics.accumulated_cost = 0.1
+    mock_agent.llm.metrics.accumulated_cost = 0.1
     assert last_action.llm_metrics.accumulated_cost == 0.07
 
     await controller.close()
