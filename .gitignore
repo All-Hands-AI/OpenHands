@@ -181,6 +181,7 @@ evaluation/commit0_bench/repos
 output/
 
 # frontend
+frontend/
 
 # dependencies
 frontend/.pnp
