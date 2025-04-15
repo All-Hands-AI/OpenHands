@@ -409,12 +409,12 @@ async def change_visibility(
     is_published: bool = Body(embed=True),
 ) -> bool:
     user_id = get_user_id(request)
-    conversation_store = await ConversationStoreImpl.get_instance(
-        config, user_id, get_github_user_id(request)
-    )
-    metadata = await conversation_store.get_metadata(conversation_id)
-    if not metadata:
-        return False
+    # conversation_store = await ConversationStoreImpl.get_instance(
+    #     config, user_id, get_github_user_id(request)
+    # )
+    # metadata = await conversation_store.get_metadata(conversation_id)
+    # if not metadata:
+    #     return False
     return await conversation_module._update_conversation_visibility(conversation_id, is_published, user_id)
 
 
