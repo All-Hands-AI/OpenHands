@@ -4870,21 +4870,6 @@
         "es": "Pensando",
         "tr": "Düşünüyor"
     },
-    "ACTION_MESSAGE$DELEGATE": {
-        "en": "Task delegated to another agent",
-        "zh-CN": "已将任务委托给另一个智能体",
-        "zh-TW": "已將任務委託給另一個智能體",
-        "ko-KR": "작업을 다른 에이전트에게 위임",
-        "ja": "タスクを別のエージェントに委任",
-        "no": "Delegér oppgave til en annen agent",
-        "ar": "تعيين المهمة إلى عامل آخر",
-        "de": "Aufgabe an einen anderen Agenten delegieren",
-        "fr": "Tâche déléguée à un autre agent",
-        "it": "Compito delegato a un altro agente",
-        "pt": "Tarefa delegada a outro agente",
-        "es": "Tarea delegada a otro agente",
-        "tr": "Görev başka bir agente atandı"
-    },
     "OBSERVATION_MESSAGE$RUN": {
         "en": "Ran <cmd>{{observation.payload.extras.command}}</cmd>",
         "zh-CN": "运行 <cmd>{{observation.payload.extras.command}}</cmd>",
@@ -4959,21 +4944,6 @@
         "pt": "Escreveu em <path>{{observation.payload.extras.path}}</path>",
         "es": "Escribió en <path>{{observation.payload.extras.path}}</path>",
         "tr": "<path>{{observation.payload.extras.path}}</path> dosyasına yazıldı"
-    },
-    "OBSERVATION_MESSAGE$DELEGATE": {
-        "en": "Delegated task completed",
-        "zh-CN": "委派任务已完成",
-        "zh-TW": "委派任務已完成",
-        "ko-KR": "위임된 작업이 완료되었습니다",
-        "ja": "委任されたタスクが完了しました",
-        "no": "Delegert oppgave fullført",
-        "ar": "اكتملت المهمة المفوضة",
-        "de": "Delegierte Aufgabe abgeschlossen",
-        "fr": "Tâche déléguée terminée",
-        "it": "Compito delegato completato",
-        "pt": "Tarefa delegada concluída",
-        "es": "Tarea delegada completada",
-        "tr": "Devredilen görev tamamlandı"
     },
     "OBSERVATION_MESSAGE$BROWSE": {
         "en": "Browsing completed",

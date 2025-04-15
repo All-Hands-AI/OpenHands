@@ -356,36 +356,6 @@ function AccountSettings() {
                 </SettingsSwitch>
               )}
 
-              {llmConfigMode === "advanced" && (
-                <div className="flex flex-col gap-2">
-                  <h3 className="text-sm font-medium">Agent Mode</h3>
-                  <div className="flex flex-col gap-1">
-                    <SettingsDropdownInput
-                      testId="agent-mode-input"
-                      name="agent"
-                      label="Agent Type"
-                      items={[
-                        {
-                          key: "CodeActAgent",
-                          label: "Execute Mode (Full Access)",
-                        },
-                        {
-                          key: "CodeActReadOnlyAgent",
-                          label: "Research Mode (Read-Only)",
-                        },
-                      ]}
-                      defaultSelectedKey={settings.AGENT}
-                      isClearable={false}
-                    />
-                    <p className="text-xs text-gray-500 ml-2">
-                      Research Mode only uses read-only tools like grep, glob,
-                      view, and web_read. This is useful for exploring a
-                      codebase without making changes.
-                    </p>
-                  </div>
-                </div>
-              )}
-
               {llmConfigMode === "advanced" && confirmationModeIsEnabled && (
                 <div>
                   <SettingsDropdownInput

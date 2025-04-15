@@ -23,7 +23,6 @@ const HANDLED_ACTIONS: OpenHandsEventType[] = [
   "browse",
   "browse_interactive",
   "edit",
-  "delegate",
   "recall",
   "think",
 ];
@@ -116,17 +115,10 @@ export const chatSlice = createSlice({
       } else if (actionID === "browse_interactive") {
         // Include the browser_actions in the content
         text = `**Action:**\n\n\`\`\`python\n${action.payload.args.browser_actions}\n\`\`\``;
-      } else if (actionID === "delegate") {
-        text = `Target agent: ${action.payload.args.agent}`;
-        // if there is a task, add it to the text
-        if (action.payload.args.inputs.task) {
-          text += `\n\n**Task:**\n\n${action.payload.args.inputs.task}\n`;
-        }
       } else if (actionID === "recall") {
         // skip recall actions
         return;
       }
-
       if (actionID === "run" || actionID === "run_ipython") {
         if (
           action.payload.args.confirmation_state === "awaiting_confirmation"
@@ -226,21 +218,6 @@ export const chatSlice = createSlice({
 
       // Normal handling for other observation types
       const translationID = `OBSERVATION_MESSAGE$${observationID.toUpperCase()}`;
-
-      // Special case for delegate: we don't modify the cause message, but we add a new one
-      if (observationID === "delegate") {
-        const message: Message = {
-          type: "action",
-          sender: "assistant",
-          translationID,
-          eventID: observation.payload.id,
-          content: `**Output:**\n${observation.payload.extras.outputs.content}\n`,
-          imageUrls: [],
-          timestamp: new Date().toISOString(),
-        };
-        state.messages.push(message);
-      }
-
       const causeID = observation.payload.cause;
       const causeMessage = state.messages.find(
         (message) => message.eventID === causeID,

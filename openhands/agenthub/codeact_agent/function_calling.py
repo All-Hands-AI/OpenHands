@@ -306,7 +306,7 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                 action = AgentDelegateAction(
                     agent='CodeActAgent',
                     inputs={'task': arguments['task']},
-                    agent_config_override={'codeact_enable_read_only_tools': True},
+                    agent_config_override={'enable_read_only_tools': True},
                 )
             # ================================================
             # McpAction (MCP)

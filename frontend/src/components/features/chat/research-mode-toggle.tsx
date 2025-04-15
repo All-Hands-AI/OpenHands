@@ -20,7 +20,7 @@ export function ResearchModeToggle() {
   React.useEffect(() => {
     if (settings) {
       // Check if we're using the read-only agent
-      setIsResearchMode(settings.AGENT === "CodeActReadOnlyAgent");
+      setIsResearchMode(settings.AGENT === "ReadOnlyAgent");
     }
   }, [settings]);
 
@@ -37,7 +37,7 @@ export function ResearchModeToggle() {
     const newSettings = {
       ...settings,
       // Switch between the two agent types
-      AGENT: isResearchMode ? "CodeActAgent" : "CodeActReadOnlyAgent",
+      AGENT: isResearchMode ? "CodeActAgent" : "ReadOnlyAgent",
     };
 
     saveSettings(newSettings, {

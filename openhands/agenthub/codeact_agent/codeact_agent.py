@@ -73,7 +73,7 @@ class CodeActAgent(Agent):
             enable_browsing=self.config.enable_browsing,
             enable_jupyter=self.config.enable_jupyter,
             enable_llm_editor=self.config.enable_llm_editor,
-            enable_read_only_tools=self.config.codeact_enable_read_only_tools,
+            enable_read_only_tools=self.config.enable_read_only_tools,
             llm=self.llm,
         )
 

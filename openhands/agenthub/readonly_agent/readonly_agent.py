@@ -1,5 +1,5 @@
 """
-CodeActReadOnlyAgent - A specialized version of CodeActAgent that only uses read-only tools.
+ReadOnlyAgent - A specialized version of CodeActAgent that only uses read-only tools.
 """
 
 from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
@@ -10,10 +10,10 @@ from openhands.core.message import Message, TextContent
 from openhands.llm.llm import LLM
 
 
-class CodeActReadOnlyAgent(CodeActAgent):
+class ReadOnlyAgent(CodeActAgent):
     VERSION = '1.0'
     """
-    The CodeActReadOnlyAgent is a specialized version of CodeActAgent that only uses read-only tools.
+    The ReadOnlyAgent is a specialized version of CodeActAgent that only uses read-only tools.
 
     This agent is designed for safely exploring codebases without making any changes.
     It only has access to tools that don't modify the system: grep, glob, view, think, finish, web_read.
@@ -31,7 +31,7 @@ class CodeActReadOnlyAgent(CodeActAgent):
         llm: LLM,
         config: AgentConfig,
     ) -> None:
-        """Initializes a new instance of the CodeActReadOnlyAgent class.
+        """Initializes a new instance of the ReadOnlyAgent class.
 
         Parameters:
         - llm (LLM): The llm to be used by this agent
@@ -40,17 +40,17 @@ class CodeActReadOnlyAgent(CodeActAgent):
         super().__init__(llm, config)
 
         # Override the tools with only read-only tools
-        # Force codeact_enable_read_only_tools to True to ensure we only get read-only tools
+        # Force enable_read_only_tools to True to ensure we only get read-only tools
         self.tools = get_tools(
-            codeact_enable_browsing=True,  # Enable web_read
-            codeact_enable_jupyter=False,
-            codeact_enable_llm_editor=False,
-            codeact_enable_read_only_tools=True,  # Force read-only mode
+            enable_browsing=True,  # Enable web_read
+            enable_jupyter=False,
+            enable_llm_editor=False,
+            enable_read_only_tools=True,  # Force read-only mode
             llm=self.llm,
         )
 
         logger.debug(
-            f"TOOLS loaded for CodeActReadOnlyAgent: {', '.join([tool.get('function').get('name') for tool in self.tools])}"
+            f"TOOLS loaded for ReadOnlyAgent: {', '.join([tool.get('function').get('name') for tool in self.tools])}"
         )
 
     def _enhance_messages(self, messages: list[Message]) -> list[Message]:

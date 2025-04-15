@@ -42,6 +42,11 @@ export function handleObservationMessage(message: ObservationMessage) {
       store.dispatch(setCurrentAgentState(message.extras.agent_state));
       break;
     case ObservationType.DELEGATE:
+      // TODO: better UI for delegation result (#2309)
+      if (message.content) {
+        store.dispatch(addAssistantMessage(message.content));
+      }
+      break;
     case ObservationType.READ:
     case ObservationType.EDIT:
     case ObservationType.THINK:
@@ -142,7 +147,10 @@ export function handleObservationMessage(message: ObservationMessage) {
             ...baseObservation,
             observation: "delegate" as const,
             extras: {
-              outputs: message.extras.outputs as Record<string, unknown>,
+              outputs:
+                typeof message.extras.outputs === "object"
+                  ? (message.extras.outputs as Record<string, unknown>)
+                  : {},
             },
           }),
         );
