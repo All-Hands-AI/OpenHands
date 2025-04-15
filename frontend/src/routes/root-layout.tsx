@@ -22,7 +22,6 @@ import { useBalance } from "#/hooks/query/use-balance"
 import { SetupPaymentModal } from "#/components/features/payment/setup-payment-modal"
 import { displaySuccessToast } from "#/utils/custom-toast-handlers"
 import { useTheme } from "#/components/layout/theme-provider"
-import { InvitationCodeModal } from "#/components/shared/modals/invitation-code"
 import { useInvitationCode } from "#/hooks/use-invitation-code"
 
 export function ErrorBoundary() {
@@ -66,7 +65,7 @@ export default function MainApp() {
   const { error, isFetching } = useBalance()
   const { migrateUserConsent } = useMigrateUserConsent()
   const { t } = useTranslation()
-  const { setIsModalOpen, needsInvitation, refreshStatus } = useInvitationCode()
+  const { needsInvitation, refreshStatus } = useInvitationCode()
 
   const config = useConfig()
   const {
@@ -158,16 +157,7 @@ export default function MainApp() {
         config.data?.APP_MODE === "saas" &&
         settings?.IS_NEW_USER && <SetupPaymentModal />}
 
-      {/* Invitation Code Modal */}
-      {needsInvitation && userIsAuthed && (
-        <InvitationCodeModal
-          isOpen={needsInvitation && userIsAuthed}
-          onOpenChange={setIsModalOpen}
-          onSuccess={() => {
-            refreshStatus()
-          }}
-        />
-      )}
+      {/* Invitation Code functionality now implemented directly on the home page */}
     </div>
   )
 }

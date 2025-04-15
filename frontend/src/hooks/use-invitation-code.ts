@@ -4,17 +4,14 @@ import usePersistStore from "#/zutand-stores/persist-config/usePersistStore"
 
 /**
  * A hook to check if the user needs to enter an invitation code
- * and manage the invitation modal state
  */
 export function useInvitationCode() {
-  const [isModalOpen, setIsModalOpen] = useState(false)
   const [needsInvitation, setNeedsInvitation] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
 
   const { jwt } = usePersistStore()
 
   const checkUserStatus = useCallback(async () => {
-    console.trace("checkUserSttatus")
     if (!jwt) {
       setIsLoading(false)
       setNeedsInvitation(false)
@@ -46,14 +43,10 @@ export function useInvitationCode() {
   }, [checkUserStatus])
 
   useEffect(() => {
-    console.log("checkUserStatus")
-
     checkUserStatus()
   }, [checkUserStatus])
 
   return {
-    isModalOpen,
-    setIsModalOpen,
     needsInvitation,
     isLoading,
     refreshStatus,

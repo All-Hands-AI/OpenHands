@@ -3,6 +3,7 @@ import { BrandButton } from "#/components/features/settings/brand-button"
 import { HeroHeading } from "#/components/shared/hero-heading"
 import { SampleMsg } from "#/components/shared/sample-msg"
 import { TaskForm } from "#/components/shared/task-form"
+import { InvitationCodeComponent } from "#/components/shared/invitation-code/invitation-code-component"
 import { useAIConfigOptions } from "#/hooks/query/use-ai-config-options"
 import { useSettings } from "#/hooks/query/use-settings"
 import { I18nKey } from "#/i18n/declaration"
@@ -11,6 +12,8 @@ import { useConnectModal } from "@rainbow-me/rainbowkit"
 import React from "react"
 import { useTranslation } from "react-i18next"
 import { useAccount } from "wagmi"
+import { useInvitationCode } from "#/hooks/use-invitation-code"
+import { LoadingSpinner } from "#/components/shared/loading-spinner"
 
 function Home() {
   const { t } = useTranslation()
@@ -21,9 +24,36 @@ function Home() {
   const { data: resources } = useAIConfigOptions()
 
   const { openConnectModal } = useConnectModal()
+  const {
+    needsInvitation,
+    refreshStatus,
+    isLoading: isLoadingInvitationStatus,
+  } = useInvitationCode()
 
   const isUserLoggedIn = !!jwt && !!isConnected
 
+  const handleInvitationSuccess = () => {
+    refreshStatus()
+  }
+
+  if (isLoadingInvitationStatus) {
+    return (
+      <div className="flex h-full w-full items-center justify-center">
+        <LoadingSpinner size="large" />
+      </div>
+    )
+  }
+
+  // If user is logged in and needs invitation, show only the invitation component
+  if (isUserLoggedIn && needsInvitation) {
+    return (
+      <div className="flex h-full w-full items-center justify-center">
+        <InvitationCodeComponent onSuccess={handleInvitationSuccess} />
+      </div>
+    )
+  }
+
+  // Otherwise show the regular home page
   return (
     <div
       data-testid="home-screen"
@@ -53,33 +83,34 @@ function Home() {
             </div>
           )}
         </div>
-        {isUserLoggedIn && (
-          <div className="w-full">
-            {!settings ? (
-              <div className="mt-2 h-10 w-full max-w-[260px] animate-pulse rounded-lg bg-white" />
-            ) : (
-              <AgentSettingsDropdownInput
-                testId="agent-input-show"
-                name="agent-input"
-                label="Agent"
-                items={
-                  resources?.agents.map((agent) => ({
-                    key: agent,
-                    label: agent,
-                  })) || []
-                }
-                defaultSelectedKey={settings?.AGENT}
-                isClearable={false}
-                showOptionalTag={false}
-                className="flex-row"
-              />
-            )}
-          </div>
+
+        {(!isUserLoggedIn || (isUserLoggedIn && !needsInvitation)) && (
+          <>
+            <div className="w-full">
+              {/* {settings && (
+                <AgentSettingsDropdownInput
+                  testId="agent-input-show"
+                  name="agent-input"
+                  label="Agent"
+                  items={
+                    resources?.agents.map((agent) => ({
+                      key: agent,
+                      label: agent,
+                    })) || []
+                  }
+                  defaultSelectedKey={settings?.AGENT}
+                  isClearable={false}
+                  showOptionalTag={false}
+                  className="flex-row"
+                />
+              )} */}
+            </div>
+            <div className="mt-8 w-full text-left text-[16px] font-semibold text-neutral-700 dark:text-tertiary-light">
+              Try our use case
+            </div>
+            <SampleMsg />
+          </>
         )}
-        <div className="mt-8 w-full text-left text-[16px] font-semibold text-neutral-700 dark:text-tertiary-light">
-          Try our use case
-        </div>
-        <SampleMsg />
         {/* <UseCaseList /> */}
         {/* <div className="flex gap-4 w-full flex-col md:flex-row mt-8">
           <GitHubRepositoriesSuggestionBox
