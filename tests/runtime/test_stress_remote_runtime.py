@@ -82,9 +82,9 @@ def get_config() -> AppConfig:
         workspace_mount_path=None,
     )
     agent_config = AgentConfig(
-        codeact_enable_jupyter=False,
-        codeact_enable_browsing=False,
-        codeact_enable_llm_editor=False,
+        enable_jupyter=False,
+        enable_browsing=False,
+        enable_llm_editor=False,
     )
     config.set_agent_config(agent_config)
     return config

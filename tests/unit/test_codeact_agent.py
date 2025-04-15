@@ -80,9 +80,9 @@ def test_step_with_pending_actions(agent: CodeActAgent):
 
 def test_get_tools_default():
     tools = get_tools(
-        codeact_enable_jupyter=True,
-        codeact_enable_llm_editor=True,
-        codeact_enable_browsing=True,
+        enable_jupyter=True,
+        enable_llm_editor=True,
+        enable_browsing=True,
     )
     assert len(tools) > 0
 
@@ -97,9 +97,9 @@ def test_get_tools_default():
 def test_get_tools_with_options():
     # Test with all options enabled
     tools = get_tools(
-        codeact_enable_browsing=True,
-        codeact_enable_jupyter=True,
-        codeact_enable_llm_editor=True,
+        enable_browsing=True,
+        enable_jupyter=True,
+        enable_llm_editor=True,
     )
     tool_names = [tool['function']['name'] for tool in tools]
     assert 'browser' in tool_names
@@ -108,9 +108,9 @@ def test_get_tools_with_options():
 
     # Test with all options disabled
     tools = get_tools(
-        codeact_enable_browsing=False,
-        codeact_enable_jupyter=False,
-        codeact_enable_llm_editor=False,
+        enable_browsing=False,
+        enable_jupyter=False,
+        enable_llm_editor=False,
     )
     tool_names = [tool['function']['name'] for tool in tools]
     assert 'browser' not in tool_names
