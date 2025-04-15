@@ -120,11 +120,3 @@ class Agent(ABC):
         - mcp_tools (list[dict]): The list of MCP tools.
         """
         self.mcp_tools = mcp_tools
-
-    def get_tools(self) -> list[dict]:
-        """Gets the list of tools available to the agent.
-
-        Returns:
-        - list[dict]: The list of tools.
-        """
-        return self.mcp_tools
