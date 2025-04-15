@@ -66,6 +66,13 @@ async def test_memory_on_event_exception_handling(memory, event_stream):
     agent.llm = MagicMock(spec=LLM)
     agent.llm.metrics = Metrics()
     agent.llm.config = AppConfig().get_llm_config()
+    
+    # Add a proper system message mock
+    from openhands.events.action.message import SystemMessageAction
+    system_message = SystemMessageAction(content='Test system message')
+    system_message._source = EventSource.AGENT
+    system_message._id = -1  # Set invalid ID to avoid the ID check
+    agent.get_system_message.return_value = system_message
 
     # Create a mock runtime
     runtime = MagicMock(spec=Runtime)
@@ -102,6 +109,13 @@ async def test_memory_on_workspace_context_recall_exception_handling(
     agent.llm = MagicMock(spec=LLM)
     agent.llm.metrics = Metrics()
     agent.llm.config = AppConfig().get_llm_config()
+    
+    # Add a proper system message mock
+    from openhands.events.action.message import SystemMessageAction
+    system_message = SystemMessageAction(content='Test system message')
+    system_message._source = EventSource.AGENT
+    system_message._id = -1  # Set invalid ID to avoid the ID check
+    agent.get_system_message.return_value = system_message
 
     # Create a mock runtime
     runtime = MagicMock(spec=Runtime)

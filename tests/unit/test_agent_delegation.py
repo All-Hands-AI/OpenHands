@@ -44,6 +44,14 @@ def mock_parent_agent():
     agent.llm.metrics = Metrics()
     agent.llm.config = LLMConfig()
     agent.config = AgentConfig()
+    
+    # Add a proper system message mock
+    from openhands.events.action.message import SystemMessageAction
+    system_message = SystemMessageAction(content='Test system message')
+    system_message._source = EventSource.AGENT
+    system_message._id = -1  # Set invalid ID to avoid the ID check
+    agent.get_system_message.return_value = system_message
+    
     return agent
 
 
@@ -56,6 +64,14 @@ def mock_child_agent():
     agent.llm.metrics = Metrics()
     agent.llm.config = LLMConfig()
     agent.config = AgentConfig()
+    
+    # Add a proper system message mock
+    from openhands.events.action.message import SystemMessageAction
+    system_message = SystemMessageAction(content='Test system message')
+    system_message._source = EventSource.AGENT
+    system_message._id = -1  # Set invalid ID to avoid the ID check
+    agent.get_system_message.return_value = system_message
+    
     return agent
 
 
