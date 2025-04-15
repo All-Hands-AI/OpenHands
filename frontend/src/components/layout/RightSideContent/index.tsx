@@ -101,20 +101,20 @@ const ThesisComputer = () => {
 
           if (index !== currentStep) return null
           return (
-            <div className="mb-3 items-center rounded-lg" key={index}>
-              <p className="text-[14px] font-medium text-[#666]">
+            <div className="mb-3 w-auto rounded-lg" key={index}>
+              <p className="text-[14px] font-medium text-neutral-700">
                 Thesis is using{" "}
-                <span className="font-semibold text-[#666]">
+                <span className="text-[16px] font-semibold text-neutral-100">
                   {mapObservationTypeToText[observation] || "Terminal"}
                 </span>
               </p>
-              <div className="mr-[100px] mt-1 max-w-fit truncate rounded-full bg-[#E6E6E6] px-3 py-1">
-                <span className="text-[12px] font-medium text-[#0F0F0F]">
+              <div className="mt-1 w-fit rounded-full bg-neutral-1000 px-3 py-1">
+                <p className="text-[12px] font-medium text-neutral-100">
                   {observation === ObservationType.MCP ||
                   observation === ObservationType.MCP_PLAN
                     ? `MCP call ${function_name}`
                     : computerItem?.message}
-                </span>
+                </p>
               </div>
             </div>
           )
