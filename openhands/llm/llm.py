@@ -38,8 +38,8 @@ from openhands.llm.fn_call_converter import (
 from openhands.llm.metrics import Metrics
 from openhands.llm.retry_mixin import RetryMixin
 
-if os.getenv('TRACELOOP_BASE_URL'):
-    Traceloop.init(disable_batch=True)
+# if os.getenv('TRACELOOP_BASE_URL'):
+#     Traceloop.init(disable_batch=True)
 
 __all__ = ['LLM']
 
@@ -116,10 +116,10 @@ class LLM(RetryMixin, DebugMixin):
             config: The LLM configuration.
             metrics: The metrics to use.
         """
-        if session_id and user_id:
-            Traceloop.set_association_properties(
-                {'session_id': session_id, 'user_id': user_id}
-            )
+        # if os.getenv('TRACELOOP_BASE_URL') and session_id and user_id:
+        #     Traceloop.set_association_properties(
+        #         {'session_id': session_id, 'user_id': user_id}
+        #     )
         self._tried_model_info = False
         self.metrics: Metrics = (
             metrics if metrics is not None else Metrics(model_name=config.model)

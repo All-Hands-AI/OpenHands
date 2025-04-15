@@ -39,10 +39,6 @@ FIXME: There are a few problems this surfaced
 * Browser not working
 """
 
-ActionObs = TypedDict(
-    'ActionObs', {'action': Action, 'observations': list[Observation]}
-)
-
 
 class DummyAgent(Agent):
     VERSION = '1.0'
@@ -66,6 +62,18 @@ class DummyAgent(Agent):
         print(f"model_client: {llm.config.api_key.get_secret_value()}")
         mcp = AssistantAgent(name="MCPTools", model_client=model_client, tools=tools)
         self.team = MagenticOneGroupChat(participants=[mcp], model_client=model_client)
+
+        self.steps: list[Action] = [
+            MessageAction('Time to get started!'),
+            CmdRunAction(command='echo "foo"'),
+            FileWriteAction(
+                content='echo "Hello, World!"', path='hello.sh'
+            ),
+            FileReadAction(path='hello.sh'),
+            AgentFinishAction(
+                outputs={}, thought='Task completed', action='finish'
+            ),
+        ]
 
     async def step(self, state: State) -> Action:
         task = state.get_last_user_message().content
