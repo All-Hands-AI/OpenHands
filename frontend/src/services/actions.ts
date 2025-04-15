@@ -104,12 +104,7 @@ export function handleActionMessage(message: ActionMessage) {
   }
 
   if (message.source === "agent") {
-    // Only add thought as a message if it's not a "think" action
-    if (
-      message.args &&
-      message.args.thought &&
-      message.action !== ActionType.THINK
-    ) {
+    if (message.args && message.args.thought) {
       store.dispatch(addAssistantMessage(message.args.thought));
     }
     // Need to convert ActionMessage to RejectAction
