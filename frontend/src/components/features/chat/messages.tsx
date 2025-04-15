@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react"
-import type { Message } from "#/message"
 import { ChatMessage } from "#/components/features/chat/chat-message"
 import { ConfirmationButtons } from "#/components/shared/buttons/confirmation-buttons"
+import type { Message } from "#/message"
+import React, { useEffect, useState } from "react"
 import { ImageCarousel } from "../images/image-carousel"
 import { ExpandableMessage } from "./expandable-message"
 
@@ -58,6 +58,7 @@ export const Messages: React.FC<MessagesProps> = React.memo(
           type={message.sender}
           message={message.content}
           className={messageClass}
+          messageLength={messages.length}
         >
           {message.imageUrls && message.imageUrls.length > 0 && (
             <ImageCarousel size="small" images={message.imageUrls} />
@@ -68,5 +69,3 @@ export const Messages: React.FC<MessagesProps> = React.memo(
     })
   },
 )
-
-Messages.displayName = "Messages"

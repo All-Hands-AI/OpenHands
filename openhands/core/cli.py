@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 import sys
 import time
 from pathlib import Path
@@ -16,7 +17,7 @@ from prompt_toolkit.layout.containers import HSplit, Window
 from prompt_toolkit.layout.controls import FormattedTextControl
 from prompt_toolkit.layout.layout import Layout
 from prompt_toolkit.patch_stdout import patch_stdout
-from prompt_toolkit.shortcuts import clear, print_container
+from prompt_toolkit.shortcuts import print_container
 from prompt_toolkit.styles import Style
 from prompt_toolkit.widgets import Frame, TextArea
 
@@ -624,7 +625,7 @@ def check_folder_security_agreement(current_dir):
             )
         )
 
-        clear()
+        # clear()
         print_container(security_frame)
 
         confirm = cli_confirm('Do you wish to continue?', ['Yes, proceed', 'No, exit'])
@@ -644,7 +645,9 @@ async def main(loop: asyncio.AbstractEventLoop):
 
     args = parse_arguments()
 
-    logger.setLevel(logging.WARNING)
+    logger.setLevel(
+        logging.DEBUG if os.getenv('LOG_LEVEL') == 'DEBUG'.casefold() else logging.INFO
+    )
 
     # Load config from toml and override with command line arguments
     config: AppConfig = setup_config_from_args(args)
@@ -792,7 +795,7 @@ async def main(loop: asyncio.AbstractEventLoop):
         return
 
     # Clear the terminal
-    clear()
+    # clear()
 
     # Show OpenHands banner and session ID
     display_banner(session_id=sid, is_loaded=is_loaded)

@@ -1,5 +1,5 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit"
 import type { Message } from "#/message"
+import { createSlice, PayloadAction } from "@reduxjs/toolkit"
 
 import { ActionSecurityRisk } from "#/state/security-analyzer-slice"
 import { OpenHandsAction } from "#/types/core/actions"

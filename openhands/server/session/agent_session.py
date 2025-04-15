@@ -51,6 +51,7 @@ class AgentSession:
     _closed: bool = False
     loop: asyncio.AbstractEventLoop | None = None
     logger: LoggerAdapter
+    config: AppConfig
 
     def __init__(
         self,
@@ -113,8 +114,11 @@ class AgentSession:
         self._started_at = started_at
         finished = False  # For monitoring
         runtime_connected = False
+        self.config = config
+
         try:
             self._create_security_analyzer(config.security.security_analyzer)
+            start_time = time.time()
             runtime_connected = await self._create_runtime(
                 runtime_name=runtime_name,
                 config=config,
@@ -123,6 +127,9 @@ class AgentSession:
                 selected_repository=selected_repository,
                 selected_branch=selected_branch,
             )
+            end_time = time.time()
+            total_time = end_time - start_time
+            self.logger.debug(f'Total create_runtime time: {total_time:.2f} seconds')
 
             if replay_json:
                 initial_message = self._run_replay(
@@ -154,6 +161,9 @@ class AgentSession:
             )
 
             if git_provider_tokens:
+                self.logger.debug(
+                    f'Setting event stream secrets for {git_provider_tokens}'
+                )
                 provider_handler = ProviderHandler(provider_tokens=git_provider_tokens)
                 await provider_handler.set_event_stream_secrets(self.event_stream)
 
@@ -174,12 +184,11 @@ class AgentSession:
             self._starting = False
             success = finished and runtime_connected
             self.logger.info(
-                'Agent session start',
-                extra={
-                    'signal': 'agent_session_start',
-                    'success': success,
-                    'duration': (time.time() - started_at),
-                },
+                f'Agent session start: {json.dumps({
+                    "signal": "agent_session_start",
+                    "success": success,
+                    "duration": time.time() - started_at,
+                })}',
             )
 
     async def close(self):
@@ -298,6 +307,7 @@ class AgentSession:
             )
             env_vars = await provider_handler.get_env_vars(expose_secrets=True)
 
+            start_time = time.time()
             self.runtime = runtime_cls(
                 config=config,
                 event_stream=self.event_stream,
@@ -308,6 +318,9 @@ class AgentSession:
                 attach_to_existing=False,
                 env_vars=env_vars,
             )
+            end_time = time.time()
+            total_time = end_time - start_time
+            self.logger.debug(f'Total runtime_cls time: {total_time:.2f} seconds')
 
         # FIXME: this sleep is a terrible hack.
         # This is to give the websocket a second to connect, so that
@@ -315,7 +328,11 @@ class AgentSession:
         # We should find a better way to plumb status messages through.
         await asyncio.sleep(1)
         try:
+            start_time = time.time()
             await self.runtime.connect()
+            end_time = time.time()
+            total_time = end_time - start_time
+            self.logger.debug(f'Total runtime.connect() time: {total_time:.2f} seconds')
         except AgentRuntimeUnavailableError as e:
             self.logger.error(f'Runtime initialization failed: {e}')
             if self._status_callback:
@@ -375,7 +392,7 @@ class AgentSession:
             f'Plugins: {agent.sandbox_plugins}\n'
             '-------------------------------------------------------------------------------------------'
         )
-        self.logger.debug(msg)
+        # self.logger.debug(msg)
 
         controller = AgentController(
             sid=self.sid,
@@ -401,18 +418,23 @@ class AgentSession:
             event_stream=self.event_stream,
             sid=self.sid,
             status_callback=self._status_callback,
+            enable_microagents=self.config.enable_microagents,
         )
 
         if self.runtime:
             # sets available hosts and other runtime info
             memory.set_runtime_info(self.runtime)
 
-            # loads microagents from repo/.openhands/microagents
-            microagents: list[BaseMicroagent] = await call_sync_from_async(
-                self.runtime.get_microagents_from_selected_repo,
-                selected_repository.full_name if selected_repository else None,
-            )
-            memory.load_user_workspace_microagents(microagents)
+            if self.config.enable_microagents:
+                self.logger.debug(
+                    'Preparing to load microagents from repo/.openhands/microagents'
+                )
+                # loads microagents from repo/.openhands/microagents
+                microagents: list[BaseMicroagent] = await call_sync_from_async(
+                    self.runtime.get_microagents_from_selected_repo,
+                    selected_repository.full_name if selected_repository else None,
+                )
+                memory.load_user_workspace_microagents(microagents)
 
             if selected_repository and repo_directory:
                 memory.set_repository_info(

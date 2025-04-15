@@ -1,13 +1,14 @@
-import { FaFolder, FaFolderOpen } from "react-icons/fa";
+import { IoFolder, IoFolderOpen } from "react-icons/io5"
 
 interface FolderIconProps {
-  isOpen: boolean;
+  isOpen: boolean
 }
 
 export function FolderIcon({ isOpen }: FolderIconProps) {
   return isOpen ? (
-    <FaFolderOpen color="D9D3D0" className="icon" />
+    <IoFolderOpen className="icon" />
   ) : (
-    <FaFolder color="D9D3D0" className="icon" />
-  );
+    // fill-primary-500
+    <IoFolder className="icon" />
+  )
 }

@@ -107,6 +107,9 @@
 # Maximum age of conversations in seconds before they are automatically closed
 #conversation_max_age_seconds = 864000  # 10 days
 
+# Whether to enable microagents
+#enable_microagents = true
+
 #################################### LLM #####################################
 # Configuration for LLM models (group name starts with 'llm')
 # use 'llm' for the default LLM config
@@ -304,6 +307,9 @@ llm_config = 'gpt3'
 
 # Additional Docker runtime kwargs
 #docker_runtime_kwargs = {}
+
+# Runtime binding address
+runtime_binding_address = "0.0.0.0"
 
 #################################### Security ###################################
 # Configuration for security features

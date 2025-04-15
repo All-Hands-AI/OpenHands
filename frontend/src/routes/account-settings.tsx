@@ -397,7 +397,7 @@ function AccountSettings() {
           type="button"
           variant="primary"
           onClick={() => formRef.current?.requestSubmit()}
-          className="rounded-lg border-[0px] bg-primary px-4 py-[10px] text-[14px] font-semibold text-[#080808]"
+          className="rounded-lg border-[0px] bg-primary px-4 py-[10px] text-[14px] font-semibold text-white"
         >
           {t(I18nKey.BUTTON$SAVE)}
         </BrandButton>

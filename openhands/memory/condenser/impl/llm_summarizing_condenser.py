@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from openhands.core import logger
 from openhands.core.config.condenser_config import LLMSummarizingCondenserConfig
 from openhands.core.message import Message, TextContent
 from openhands.events.action.agent import CondensationAction
@@ -11,7 +12,6 @@ from openhands.memory.condenser.condenser import (
     RollingCondenser,
     View,
 )
-
 
 class LLMSummarizingCondenser(RollingCondenser):
     """A condenser that summarizes forgotten events.
@@ -135,7 +135,7 @@ CURRENT_STATE: Last flip: Heads, Haiku count: 15/20"""
             messages=self.llm.format_messages_for_llm(messages),
         )
         summary = response.choices[0].message.content
-
+        logger.openhands_logger.info(f'Summary: {summary}')
         self.add_metadata('response', response.model_dump())
         self.add_metadata('metrics', self.llm.metrics.get())
 
