@@ -21,7 +21,7 @@ const McpView = ({ content }: McpViewProps) => {
     <Editor
       height="100%"
       width="100%"
-      language="json"
+      language="markdown"
       value={renderValue()}
       options={{
         readOnly: true,
