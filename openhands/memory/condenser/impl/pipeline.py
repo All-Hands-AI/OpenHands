@@ -3,8 +3,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 from openhands.controller.state.state import State
 from openhands.core.config.condenser_config import CondenserPipelineConfig
-from openhands.events.action.agent import CondensationAction
-from openhands.memory.condenser.condenser import Condenser
+from openhands.memory.condenser.condenser import Condenser, Condensation
 from openhands.memory.view import View
 
 class CondenserPipeline(Condenser):
@@ -28,11 +27,11 @@ class CondenserPipeline(Condenser):
             for condenser in self.condensers:
                 condenser.write_metadata(state)
 
-    def condense(self, view: View) -> View | CondensationAction:
-        result: View | CondensationAction = view
+    def condense(self, view: View) -> View | Condensation:
+        result: View | Condensation = view
         for condenser in self.condensers:
             result = condenser.condense(result)
-            if isinstance(result, CondensationAction):
+            if isinstance(result, Condensation):
                 break
         return result
     
