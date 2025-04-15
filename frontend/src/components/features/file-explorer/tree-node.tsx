@@ -84,7 +84,7 @@ function TreeNode({ path, defaultOpen = false, onClick }: TreeNodeProps) {
       {isOpen && paths && (
         <div className="ml-5">
           {paths.map((child, index) => (
-            <TreeNode key={index} path={child} />
+            <TreeNode key={index} path={child} onClick={onClick} />
           ))}
         </div>
       )}
