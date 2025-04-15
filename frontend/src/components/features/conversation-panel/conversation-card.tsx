@@ -1,36 +1,36 @@
-import React from "react";
-import { useSelector } from "react-redux";
-import posthog from "posthog-js";
-import { useTranslation } from "react-i18next";
-import { formatTimeDelta } from "#/utils/format-time-delta";
-import { ConversationRepoLink } from "./conversation-repo-link";
+import React from "react"
+import { useSelector } from "react-redux"
+import posthog from "posthog-js"
+import { useTranslation } from "react-i18next"
+import { formatTimeDelta } from "#/utils/format-time-delta"
+import { ConversationRepoLink } from "./conversation-repo-link"
 import {
   ProjectStatus,
   ConversationStateIndicator,
-} from "./conversation-state-indicator";
-import { EllipsisButton } from "./ellipsis-button";
-import { ConversationCardContextMenu } from "./conversation-card-context-menu";
-import { cn } from "#/utils/utils";
-import { BaseModal } from "../../shared/modals/base-modal/base-modal";
-import { RootState } from "#/store";
-import { I18nKey } from "#/i18n/declaration";
+} from "./conversation-state-indicator"
+import { EllipsisButton } from "./ellipsis-button"
+import { ConversationCardContextMenu } from "./conversation-card-context-menu"
+import { cn } from "#/utils/utils"
+import { BaseModal } from "../../shared/modals/base-modal/base-modal"
+import { RootState } from "#/store"
+import { I18nKey } from "#/i18n/declaration"
 
 interface ConversationCardProps {
-  onClick?: () => void;
-  onDelete?: () => void;
-  onChangeTitle?: (title: string) => void;
-  showOptions?: boolean;
-  isActive?: boolean;
-  title: string;
-  selectedRepository: string | null;
-  lastUpdatedAt: string; // ISO 8601
-  createdAt?: string; // ISO 8601
-  status?: ProjectStatus;
-  variant?: "compact" | "default";
-  conversationId?: string; // Optional conversation ID for VS Code URL
+  onClick?: () => void
+  onDelete?: () => void
+  onChangeTitle?: (title: string) => void
+  showOptions?: boolean
+  isActive?: boolean
+  title: string
+  selectedRepository: string | null
+  lastUpdatedAt: string // ISO 8601
+  createdAt?: string // ISO 8601
+  status?: ProjectStatus
+  variant?: "compact" | "default"
+  conversationId?: string // Optional conversation ID for VS Code URL
 }
 
-const MAX_TIME_BETWEEN_CREATION_AND_UPDATE = 1000 * 60 * 30; // 30 minutes
+const MAX_TIME_BETWEEN_CREATION_AND_UPDATE = 1000 * 60 * 30 // 30 minutes
 
 export function ConversationCard({
   onClick,
@@ -48,72 +48,72 @@ export function ConversationCard({
   variant = "default",
   conversationId,
 }: ConversationCardProps) {
-  const { t } = useTranslation();
-  const [contextMenuVisible, setContextMenuVisible] = React.useState(false);
-  const [titleMode, setTitleMode] = React.useState<"view" | "edit">("view");
-  const [metricsModalVisible, setMetricsModalVisible] = React.useState(false);
-  const inputRef = React.useRef<HTMLInputElement>(null);
+  const { t } = useTranslation()
+  const [contextMenuVisible, setContextMenuVisible] = React.useState(false)
+  const [titleMode, setTitleMode] = React.useState<"view" | "edit">("view")
+  const [metricsModalVisible, setMetricsModalVisible] = React.useState(false)
+  const inputRef = React.useRef<HTMLInputElement>(null)
 
   // Subscribe to metrics data from Redux store
-  const metrics = useSelector((state: RootState) => state.metrics);
+  const metrics = useSelector((state: RootState) => state.metrics)
 
   const handleBlur = () => {
     if (inputRef.current?.value) {
-      const trimmed = inputRef.current.value.trim();
-      onChangeTitle?.(trimmed);
-      inputRef.current!.value = trimmed;
+      const trimmed = inputRef.current.value.trim()
+      onChangeTitle?.(trimmed)
+      inputRef.current!.value = trimmed
     } else {
       // reset the value if it's empty
-      inputRef.current!.value = title;
+      inputRef.current!.value = title
     }
 
-    setTitleMode("view");
-  };
+    setTitleMode("view")
+  }
 
   const handleKeyUp = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Enter") {
-      event.currentTarget.blur();
+      event.currentTarget.blur()
     }
-  };
+  }
 
   const handleInputClick = (event: React.MouseEvent<HTMLInputElement>) => {
     if (titleMode === "edit") {
-      event.preventDefault();
-      event.stopPropagation();
+      event.preventDefault()
+      event.stopPropagation()
     }
-  };
+  }
 
   const handleDelete = (event: React.MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
-    onDelete?.();
-    setContextMenuVisible(false);
-  };
+    event.preventDefault()
+    event.stopPropagation()
+    onDelete?.()
+    setContextMenuVisible(false)
+  }
 
   const handleEdit = (event: React.MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
-    setTitleMode("edit");
-    setContextMenuVisible(false);
-  };
+    event.preventDefault()
+    event.stopPropagation()
+    setTitleMode("edit")
+    setContextMenuVisible(false)
+  }
 
   const handleDownloadViaVSCode = async (
     event: React.MouseEvent<HTMLButtonElement>,
   ) => {
-    event.preventDefault();
-    event.stopPropagation();
-    posthog.capture("download_via_vscode_button_clicked");
+    event.preventDefault()
+    event.stopPropagation()
+    posthog.capture("download_via_vscode_button_clicked")
 
     // Fetch the VS Code URL from the API
     if (conversationId) {
       try {
         const response = await fetch(
           `/api/conversations/${conversationId}/vscode-url`,
-        );
-        const data = await response.json();
+        )
+        const data = await response.json()
 
         if (data.vscode_url) {
-          window.open(data.vscode_url, "_blank");
+          window.open(data.vscode_url, "_blank")
         }
         // VS Code URL not available
       } catch (error) {
@@ -121,27 +121,27 @@ export function ConversationCard({
       }
     }
 
-    setContextMenuVisible(false);
-  };
+    setContextMenuVisible(false)
+  }
 
   const handleDisplayCost = (event: React.MouseEvent<HTMLButtonElement>) => {
-    event.stopPropagation();
-    setMetricsModalVisible(true);
-  };
+    event.stopPropagation()
+    setMetricsModalVisible(true)
+  }
 
   React.useEffect(() => {
     if (titleMode === "edit") {
-      inputRef.current?.focus();
+      inputRef.current?.focus()
     }
-  }, [titleMode]);
+  }, [titleMode])
 
-  const hasContextMenu = !!(onDelete || onChangeTitle || showOptions);
+  const hasContextMenu = !!(onDelete || onChangeTitle || showOptions)
   const timeBetweenUpdateAndCreation = createdAt
     ? new Date(lastUpdatedAt).getTime() - new Date(createdAt).getTime()
-    : 0;
+    : 0
   const showUpdateTime =
     createdAt &&
-    timeBetweenUpdateAndCreation > MAX_TIME_BETWEEN_CREATION_AND_UPDATE;
+    timeBetweenUpdateAndCreation > MAX_TIME_BETWEEN_CREATION_AND_UPDATE
 
   return (
     <>
@@ -149,13 +149,13 @@ export function ConversationCard({
         data-testid="conversation-card"
         onClick={onClick}
         className={cn(
-          "w-full px-3 pr-[10px] py-2 cursor-pointer hover:bg-neutral-1000 dark:hover:bg-[#1F1F1F] rounded-lg",
+          "w-full cursor-pointer rounded-lg px-3 py-2 pr-[10px] hover:bg-neutral-1000 dark:hover:bg-[#1F1F1F]",
           isActive && "bg-neutral-1000 dark:bg-[#1F1F1F]",
           variant === "compact" && "h-auto w-fit border border-[#525252]",
         )}
       >
-        <div className="flex items-center justify-between w-full">
-          <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden mr-2">
+        <div className="flex w-full items-center justify-between">
+          <div className="mr-2 flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
             {/* {isActive && (
               <span className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0" />
             )} */}
@@ -168,13 +168,13 @@ export function ConversationCard({
                 onKeyUp={handleKeyUp}
                 type="text"
                 defaultValue={title}
-                className="text-sm leading-6 font-semibold bg-transparent w-full"
+                className="w-full bg-transparent text-sm font-semibold leading-6"
               />
             )}
             {titleMode === "view" && (
               <p
                 data-testid="conversation-card-title"
-                className="text-sm text-neutral-100 dark:text-[#E0E0E0] leading-6 font-medium bg-transparent truncate overflow-hidden"
+                className="overflow-hidden truncate bg-transparent text-sm font-medium leading-6 text-neutral-100 dark:text-[#E0E0E0]"
                 title={title}
               >
                 {title}
@@ -185,12 +185,12 @@ export function ConversationCard({
           <div className="flex items-center">
             {/* <ConversationStateIndicator status={status} /> */}
             {hasContextMenu && (
-              <div className="pl-2 flex items-center">
+              <div className="flex items-center pl-2">
                 <EllipsisButton
                   onClick={(event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    setContextMenuVisible((prev) => !prev);
+                    event.preventDefault()
+                    event.stopPropagation()
+                    setContextMenuVisible((prev) => !prev)
                   }}
                 />
               </div>
@@ -207,7 +207,7 @@ export function ConversationCard({
                       : undefined
                   }
                   onDisplayCost={showOptions ? handleDisplayCost : undefined}
-                  position={variant === "compact" ? "top" : "bottom"}
+                  position={"top"}
                 />
               )}
             </div>
@@ -216,7 +216,7 @@ export function ConversationCard({
 
         <div
           className={cn(
-            variant === "compact" && "flex items-center justify-between mt-1",
+            variant === "compact" && "mt-1 flex items-center justify-between",
           )}
         >
           {selectedRepository && (
@@ -252,7 +252,7 @@ export function ConversationCard({
             <div className="rounded-md p-3">
               <div className="grid gap-3">
                 {metrics?.cost !== null && (
-                  <div className="flex justify-between items-center border-b border-neutral-700 pb-2">
+                  <div className="flex items-center justify-between border-b border-neutral-700 pb-2">
                     <span className="text-lg font-semibold">
                       {t(I18nKey.CONVERSATION$TOTAL_COST)}
                     </span>
@@ -264,7 +264,7 @@ export function ConversationCard({
 
                 {metrics?.usage !== null && (
                   <>
-                    <div className="flex justify-between items-center pb-2">
+                    <div className="flex items-center justify-between pb-2">
                       <span>{t(I18nKey.CONVERSATION$INPUT)}:</span>
                       <span className="font-semibold">
                         {metrics.usage.prompt_tokens.toLocaleString()}
@@ -282,14 +282,14 @@ export function ConversationCard({
                       </span>
                     </div>
 
-                    <div className="flex justify-between items-center border-b border-neutral-700 pb-2">
+                    <div className="flex items-center justify-between border-b border-neutral-700 pb-2">
                       <span>{t(I18nKey.CONVERSATION$OUTPUT)}:</span>
                       <span className="font-semibold">
                         {metrics.usage.completion_tokens.toLocaleString()}
                       </span>
                     </div>
 
-                    <div className="flex justify-between items-center pt-1">
+                    <div className="flex items-center justify-between pt-1">
                       <span className="font-semibold">
                         {t(I18nKey.CONVERSATION$TOTAL)}:
                       </span>
@@ -316,5 +316,5 @@ export function ConversationCard({
         </div>
       </BaseModal>
     </>
-  );
+  )
 }

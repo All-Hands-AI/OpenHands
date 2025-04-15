@@ -3,6 +3,7 @@ import Security from "#/components/shared/modals/security/security"
 import {
   useWsClient,
   WsClientProviderStatus,
+  ReplayStatus,
 } from "#/context/ws-client-provider"
 import { useGetTrajectory } from "#/hooks/mutation/use-get-trajectory"
 import { useListFiles } from "#/hooks/query/use-list-files"
@@ -16,19 +17,22 @@ import { setCurrentPathViewed } from "#/state/file-state-slice"
 import { RootState } from "#/store"
 import { AgentState } from "#/types/agent-state"
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64"
-import { displayErrorToast } from "#/utils/custom-toast-handlers"
+import {
+  displayErrorToast,
+  displaySuccessToast,
+} from "#/utils/custom-toast-handlers"
 import { downloadTrajectory } from "#/utils/download-trajectory"
 import { useDisclosure } from "@heroui/react"
 import posthog from "posthog-js"
 import React, { useEffect } from "react"
 import { useTranslation } from "react-i18next"
-import { FaFileInvoice } from "react-icons/fa"
 import { FaPowerOff, FaCheck } from "react-icons/fa6"
+import { FaFileInvoice, FaLink } from "react-icons/fa"
 import { IoFolder } from "react-icons/io5"
 import { RiPhoneFindLine } from "react-icons/ri"
 import { useDispatch, useSelector } from "react-redux"
-import { useParams } from "react-router"
 import { twMerge } from "tailwind-merge"
+import { useLocation, useParams } from "react-router"
 import { Controls } from "../controls/controls"
 import { FeedbackModal } from "../feedback/feedback-modal"
 import FileExplorerModal from "../file-explorer/modal-file-explorer"
@@ -88,10 +92,24 @@ export function ChatInterface() {
   } = useDisclosure()
   const dispatch = useDispatch()
   const scrollRef = React.useRef<HTMLDivElement>(null)
-  const { send, isLoadingMessages, disconnect, status } = useWsClient()
+  const {
+    send,
+    isLoadingMessages,
+    disconnect,
+    status,
+    skipToResults,
+    replayStatus,
+    resetReplay,
+  } = useWsClient()
   const { t } = useTranslation()
   const { scrollDomToBottom, onChatBodyScroll, hitBottom } =
     useScrollToBottom(scrollRef)
+
+  const location = useLocation()
+
+  const isShareRoute = React.useMemo(() => {
+    return location.pathname.startsWith("/share/")
+  }, [location.pathname])
 
   const { messages } = useSelector((state: RootState) => state.chat)
   const { curAgentState } = useSelector((state: RootState) => state.agent)
@@ -130,12 +148,16 @@ export function ChatInterface() {
     if (curAgentState === AgentState.AWAITING_USER_INPUT) refetchFiles()
   }, [curAgentState])
 
-  // Scroll to bottom when files are loaded
   useEffect(() => {
     if (files && files.length > 0) {
       scrollDomToBottom()
     }
   }, [files])
+  useEffect(() => {
+    if (messages && messages.length > 0) {
+      scrollDomToBottom()
+    }
+  }, [messages])
 
   const [feedbackPolarity, setFeedbackPolarity] = React.useState<
     "positive" | "negative"
@@ -191,6 +213,16 @@ export function ChatInterface() {
     disconnect()
   }
 
+  const handleSkipToResults = () => {
+    posthog.capture("skip_to_results_clicked")
+    skipToResults()
+  }
+
+  const handleWatchAgain = () => {
+    posthog.capture("watch_again_clicked")
+    resetReplay()
+  }
+
   const onClickShareFeedbackActionButton = async (
     polarity: "positive" | "negative",
   ) => {
@@ -215,6 +247,15 @@ export function ChatInterface() {
         displayErrorToast(t(I18nKey.CONVERSATION$DOWNLOAD_ERROR))
       },
     })
+  }
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href)
+      displaySuccessToast("Share URL copied to clipboard!")
+    } catch (error) {
+      displayErrorToast(t(I18nKey.CHAT_INTERFACE$CHAT_MESSAGE_COPY_FAILED))
+    }
   }
 
   const isWaitingForUserInput =
@@ -252,16 +293,18 @@ export function ChatInterface() {
           />
         )}
 
-        {curAgentState === AgentState.AWAITING_USER_INPUT && (
-          <div className="-mt-3 mb-4 flex w-fit items-center justify-center gap-2 rounded-full bg-success-100 px-3 py-1">
-            <FaCheck />
-            Thesis has completed the current task
-          </div>
-        )}
+        {isWaitingForUserInput &&
+          (!isShareRoute || replayStatus === ReplayStatus.COMPLETED) && (
+            <div className="-mt-3 mb-4 flex w-fit items-center justify-center gap-2 rounded-full bg-success-100 px-3 py-1">
+              <FaCheck />
+              Thesis has completed the current task
+            </div>
+          )}
 
-        {curAgentState === AgentState.AWAITING_USER_INPUT &&
+        {isWaitingForUserInput &&
           files &&
-          files.length > 0 && (
+          files.length > 0 &&
+          (!isShareRoute || replayStatus === ReplayStatus.COMPLETED) && (
             <div className="my-3 flex flex-wrap gap-2 border-t border-neutral-900 pt-3">
               {files.slice(0, 2).map((file) => {
                 const isDirectory = file.endsWith("/")
@@ -310,62 +353,95 @@ export function ChatInterface() {
 
         {/* {!error && <ExplorerTree files={files || []} />} */}
       </div>
+      {isShareRoute ? (
+        <div className="flex items-center justify-between bg-[rgba(0,0,0,0.05)] px-4 py-2">
+          <p className="text-sm">
+            {replayStatus === ReplayStatus.COMPLETED
+              ? "Task replay completed"
+              : "Thesis is replaying the task..."}
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              className="flex items-center gap-1 rounded-md px-2 py-2 text-sm text-[rgba(0,0,0,0.8)] hover:text-[rgba(0,0,0,0.8)]"
+              onClick={handleCopyLink}
+              title={t("Copy share link")}
+            >
+              <FaLink size={16} />
+            </button>
+            {replayStatus === ReplayStatus.COMPLETED ? (
+              <button
+                className="rounded-md bg-[rgba(0,0,0,0.8)] px-4 py-2 text-sm text-white hover:bg-[rgba(0,0,0,0.7)]"
+                onClick={handleWatchAgain}
+              >
+                Watch again
+              </button>
+            ) : (
+              <button
+                className="rounded-md bg-[rgba(0,0,0,0.8)] px-4 py-2 text-sm text-white hover:bg-[rgba(0,0,0,0.7)]"
+                onClick={handleSkipToResults}
+              >
+                Skip to results
+              </button>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-[6px] px-4 pb-4">
+          <div className="relative flex justify-between">
+            <TrajectoryActions
+              onPositiveFeedback={() =>
+                onClickShareFeedbackActionButton("positive")
+              }
+              onNegativeFeedback={() =>
+                onClickShareFeedbackActionButton("negative")
+              }
+              onExportTrajectory={() => onClickExportTrajectoryButton()}
+            />
 
-      <div className="flex flex-col gap-[6px] px-4 pb-4">
-        <div className="relative flex justify-between">
-          <TrajectoryActions
-            onPositiveFeedback={() =>
-              onClickShareFeedbackActionButton("positive")
-            }
-            onNegativeFeedback={() =>
-              onClickShareFeedbackActionButton("negative")
-            }
-            onExportTrajectory={() => onClickExportTrajectoryButton()}
-          />
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 transform">
+              {curAgentState === AgentState.RUNNING && <TypingIndicator />}
+            </div>
 
-          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 transform">
-            {curAgentState === AgentState.RUNNING && <TypingIndicator />}
+            {!hitBottom && <ScrollToBottomButton onClick={scrollDomToBottom} />}
           </div>
 
-          {!hitBottom && <ScrollToBottomButton onClick={scrollDomToBottom} />}
-        </div>
-
-        <div className="flex items-center gap-2">
-          <InteractiveChatBox
-            onSubmit={handleSendMessage}
-            onStop={handleStop}
-            isDisabled={
-              curAgentState === AgentState.LOADING ||
-              curAgentState === AgentState.AWAITING_USER_CONFIRMATION ||
-              status === WsClientProviderStatus.DISCONNECTED
-            }
-            mode={curAgentState === AgentState.RUNNING ? "stop" : "submit"}
-            value={messageToSend ?? undefined}
-            onChange={setMessageToSend}
-            className="w-full flex-grow" // Ensure chat box takes full width minus space for the button
-          />
-        </div>
-        <div className="flex w-full items-center justify-between gap-2">
-          {settings && (
-            <Security
-              isOpen={securityModalIsOpen}
-              onOpenChange={onSecurityModalOpenChange}
-              securityAnalyzer={settings.SECURITY_ANALYZER}
+          <div className="flex items-center gap-2">
+            <InteractiveChatBox
+              onSubmit={handleSendMessage}
+              onStop={handleStop}
+              isDisabled={
+                curAgentState === AgentState.LOADING ||
+                curAgentState === AgentState.AWAITING_USER_CONFIRMATION ||
+                status === WsClientProviderStatus.DISCONNECTED
+              }
+              mode={curAgentState === AgentState.RUNNING ? "stop" : "submit"}
+              value={messageToSend ?? undefined}
+              onChange={setMessageToSend}
+              className="w-full flex-grow" // Ensure chat box takes full width minus space for the button
             />
-          )}
-          <Controls
-            setSecurityOpen={onSecurityModalOpen}
-            showSecurityLock={!!settings?.SECURITY_ANALYZER}
-          />
-          <DisconnectButton
-            handleDisconnect={handleDisconnect}
-            isDisabled={
-              !isWaitingForUserInput &&
-              status !== WsClientProviderStatus.DISCONNECTED
-            }
-          />
+          </div>
+          <div className="flex w-full items-center justify-between gap-2">
+            {settings && (
+              <Security
+                isOpen={securityModalIsOpen}
+                onOpenChange={onSecurityModalOpenChange}
+                securityAnalyzer={settings.SECURITY_ANALYZER}
+              />
+            )}
+            <Controls
+              setSecurityOpen={onSecurityModalOpen}
+              showSecurityLock={!!settings?.SECURITY_ANALYZER}
+            />
+            <DisconnectButton
+              handleDisconnect={handleDisconnect}
+              isDisabled={
+                !isWaitingForUserInput &&
+                status !== WsClientProviderStatus.DISCONNECTED
+              }
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       <FeedbackModal
         isOpen={feedbackModalIsOpen}

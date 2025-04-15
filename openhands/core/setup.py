@@ -153,6 +153,7 @@ def create_memory(
         event_stream=event_stream,
         sid=sid,
         status_callback=status_callback,
+        enable_microagents=runtime.config.enable_microagents,
     )
 
     if runtime:

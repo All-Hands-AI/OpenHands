@@ -8,10 +8,10 @@ import { LuStepBack, LuStepForward } from "react-icons/lu"
 import { useSelector } from "react-redux"
 import CodeView from "./CodeView"
 import EditorContent from "./EditorContent"
-import TaskProgress, { STEP_STATUSES } from "./TaskProgress"
-import { Editor, Monaco } from "@monaco-editor/react"
-import Markdown from "react-markdown"
-import remarkGfm from "remark-gfm"
+import McpView from "./McpView"
+import { cn } from "#/utils/utils"
+import { STEP_STATUSES } from "./TaskProgress"
+import { cn } from "#/utils/utils"
 
 const ThesisComputer = () => {
   const isViewDrawer = true
@@ -21,7 +21,8 @@ const ThesisComputer = () => {
   const scrollRef = useRef<HTMLDivElement>(null)
   const [currentStep, setCurrentStep] = useState(0)
   const totalSteps = computerList.length
-  const [sliderValue, setSliderValue] = useState(0)
+  const divRef = useRef(null)
+  const [width, setWidth] = useState(0)
 
   const handleNextStep = () => {
     if (currentStep < totalSteps - 1) {
@@ -36,10 +37,34 @@ const ThesisComputer = () => {
   }
 
   const handleSliderChange = (value: number) => {
-    setSliderValue(value)
     const step = Math.floor((value / 100) * (totalSteps - 1))
     setCurrentStep(step)
   }
+
+  useEffect(() => {
+    const updateWidth = () => {
+      if (divRef.current) {
+        const { width } = divRef.current.getBoundingClientRect()
+        setWidth(width)
+      }
+    }
+
+    const observer = new ResizeObserver(() => {
+      updateWidth()
+    })
+
+    if (divRef.current) {
+      observer.observe(divRef.current)
+    }
+
+    updateWidth()
+
+    return () => {
+      if (divRef.current) {
+        observer.unobserve(divRef.current)
+      }
+    }
+  }, [])
 
   useEffect(() => {
     if (eventID && computerList.length > 0) {
@@ -48,9 +73,6 @@ const ThesisComputer = () => {
       )
       if (matchingIndex !== -1) {
         setCurrentStep(matchingIndex)
-        const newSliderValue =
-          totalSteps > 1 ? (matchingIndex / (totalSteps - 1)) * 100 : 0
-        setSliderValue(newSliderValue)
       }
     }
   }, [eventID, computerList, totalSteps])
@@ -60,12 +82,14 @@ const ThesisComputer = () => {
     if (computerList.length > currentStep) {
       const newStep = computerList.length - 1
       setCurrentStep(newStep)
-      // Calculate and set slider value based on new step
-      const newSliderValue =
-        totalSteps > 1 ? (newStep / (totalSteps - 1)) * 100 : 0
-      setSliderValue(newSliderValue)
     }
   }, [computerList, totalSteps])
+
+  useEffect(() => {
+    if (computerList.length === 0) {
+      setCurrentStep(0)
+    }
+  }, [computerList])
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -78,7 +102,10 @@ const ThesisComputer = () => {
   }
 
   return (
-    <div className="flex h-full w-full flex-col overflow-y-auto rounded-xl rounded-br-none rounded-tr-none border border-neutral-1000 bg-white p-4">
+    <div
+      ref={divRef}
+      className="flex h-full w-full flex-col overflow-y-auto rounded-xl rounded-br-none rounded-tr-none border border-neutral-1000 bg-white p-4"
+    >
       <div className="flex items-center justify-between">
         <h4 className="text-neutral-1 text-18 font-semibold">Thesis</h4>
         {/* <Tooltip>
@@ -112,105 +139,98 @@ const ThesisComputer = () => {
 
           if (index !== currentStep) return null
           return (
-            <div className="mb-3 items-center rounded-lg">
-              <p className="text-[14px] font-medium text-[#666]">
+            <div className="mb-3 w-auto rounded-lg" key={index}>
+              <p className="text-[14px] font-medium text-neutral-700">
                 Thesis is using{" "}
-                <span className="font-semibold text-[#666]">
+                <span className="font-semibold text-neutral-100">
                   {mapObservationTypeToText[observation] || "Terminal"}
                 </span>
               </p>
-              <div className="mr-[100px] mt-1 max-w-fit truncate rounded-full bg-[#E6E6E6] px-3 py-1">
-                <span className="text-[12px] font-medium text-[#0F0F0F]">
-                  {observation === ObservationType.MCP ||
-                  observation === ObservationType.MCP_PLAN
-                    ? `MCP call ${function_name}`
-                    : computerItem?.message}
-                </span>
+              <div
+                className={cn(
+                  "mt-1 w-fit max-w-[500px] truncate rounded-full bg-neutral-1000 px-3 py-1 text-[12px] font-medium text-neutral-100",
+                  width <= 550 && "max-w-[400px]",
+                  width <= 450 && "max-w-[300px]",
+                  width <= 350 && "max-w-[200px]",
+                  width <= 250 && "max-w-[150px]",
+                  width <= 190 && "max-w-[100px]",
+                )}
+              >
+                {observation === ObservationType.MCP ||
+                observation === ObservationType.MCP_PLAN
+                  ? `MCP call ${function_name}`
+                  : computerItem?.message}
               </div>
             </div>
           )
         })}
 
       <div className="bg-mercury-30 mb-3 flex h-[82%] w-full flex-1 flex-col rounded-2xl border border-neutral-1000">
-        <div className="relative h-full w-full flex-1 overflow-auto px-4 py-2">
-          {computerList.length > 0 &&
-            computerList.map((computerItem, index) => {
-              if (index !== currentStep) return null
+        <div className="relative h-full w-full">
+          <div className="absolute h-full w-full overflow-auto p-4">
+            {computerList.length > 0 &&
+              computerList.map((computerItem, index) => {
+                if (index !== currentStep) return null
 
-              if (
-                computerItem.observation === ObservationType.EDIT ||
-                computerItem.observation === ObservationType.READ
-              ) {
-                return <EditorContent computerItem={computerItem} />
-              }
-
-              // TODO: check type browse_interactive of observation
-              if (
-                computerItem.observation === ObservationType.BROWSE ||
-                computerItem.observation === ObservationType.BROWSER_MCP
-              ) {
-                return <BrowserPanel computerItem={computerItem} />
-              }
-
-              if ([ObservationType.RUN].includes(computerItem.observation)) {
-                return <TerminalPage />
-              }
-
-              if (computerItem.observation === ObservationType.RUN_IPYTHON) {
-                return <CodeView fileContent={computerItem.extras.code} />
-              }
-
-              if (computerItem.observation === ObservationType.MCP) {
-                return (
-                  <div className="absolute inset-x-4 h-full w-full">
-                    <Editor
-                      height="100%"
-                      language="json"
-                      value={computerItem?.message}
-                      options={{
-                        readOnly: true,
-                        minimap: { enabled: false },
-                        lineNumbers: "off",
-                        scrollBeyondLastLine: false,
-                        fontSize: 14,
-                        wordWrap: "on",
-                        folding: false,
-                        quickSuggestions: false,
-                        contextmenu: false,
-                      }}
-                    />
-                  </div>
-                )
-              }
-
-              if (computerItem.observation === ObservationType.MCP_PLAN) {
-                const tasks = computerItem?.extras?.tasks
-                const mapStatusToText = {
-                  [STEP_STATUSES.COMPLETED]: `[v]`,
-                  [STEP_STATUSES.IN_PROGRESS]: `[x]`,
-                  [STEP_STATUSES.NOT_STARTED]: `[ ]`,
+                if (
+                  computerItem.observation === ObservationType.EDIT ||
+                  computerItem.observation === ObservationType.READ
+                ) {
+                  return <EditorContent computerItem={computerItem} />
                 }
 
-                return (
-                  <div>
-                    {Array.isArray(tasks) &&
-                      tasks.length > 0 &&
-                      tasks.map((task: any) => {
-                        return (
-                          <div className="mb-1 flex items-center gap-2">
-                            <span className="text-sm">
-                              {mapStatusToText[task?.status]}
-                            </span>
-                            <span className="text-sm">{task?.content}</span>
-                          </div>
-                        )
-                      })}
-                  </div>
-                )
-              }
+                if (
+                  computerItem.observation === ObservationType.BROWSE ||
+                  computerItem.observation === ObservationType.BROWSER_MCP
+                ) {
+                  return <BrowserPanel computerItem={computerItem} />
+                }
 
-              return <div />
-            })}
+                if ([ObservationType.RUN].includes(computerItem.observation)) {
+                  return <TerminalPage />
+                }
+
+                if (computerItem.observation === ObservationType.RUN_IPYTHON) {
+                  return <CodeView fileContent={computerItem.extras.code} />
+                }
+
+                if (computerItem.observation === ObservationType.MCP) {
+                  return <McpView content={computerItem?.message} />
+                }
+
+                if (computerItem.observation === ObservationType.MCP_PLAN) {
+                  const tasks = computerItem?.extras?.tasks
+                  const mapStatusToText = {
+                    [STEP_STATUSES.COMPLETED]: `[v]`,
+                    [STEP_STATUSES.IN_PROGRESS]: `[x]`,
+                    [STEP_STATUSES.NOT_STARTED]: `[ ]`,
+                  }
+
+                  return (
+                    <div>
+                      {Array.isArray(tasks) &&
+                        tasks.length > 0 &&
+                        tasks.map((task: any, index) => {
+                          return (
+                            <div
+                              className="mb-1 flex items-center gap-2"
+                              key={index}
+                            >
+                              <span className="text-sm">
+                                {mapStatusToText[task?.status]}
+                              </span>
+                              <span className="text-sm">{task?.content}</span>
+                            </div>
+                          )
+                        })}
+                    </div>
+                  )
+                }
+
+                return null
+              })}
+          </div>
+
           <div ref={scrollRef} />
         </div>
 
@@ -237,7 +257,7 @@ const ThesisComputer = () => {
           />
         </div>
       </div>
-      <TaskProgress />
+      {/* <TaskProgress /> */}
     </div>
   )
 }

@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Body, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+from openhands.server.db import database
 
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
@@ -24,6 +25,7 @@ from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.data_models.conversation_info_result_set import (
     ConversationInfoResultSet,
 )
+from openhands.server.models import Conversation
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.shared import (
     ConversationStoreImpl,
@@ -38,7 +40,7 @@ from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.utils.async_utils import wait_all
 from openhands.utils.conversation_summary import generate_conversation_title
 from openhands.utils.get_user_setting import get_user_setting
-
+from openhands.server.modules import conversation_module
 app = APIRouter(prefix='/api')
 
 
@@ -380,8 +382,9 @@ async def delete_conversation(
     conversation_id: str,
     request: Request,
 ) -> bool:
+    user_id = get_user_id(request)
     conversation_store = await ConversationStoreImpl.get_instance(
-        config, get_user_id(request), get_github_user_id(request)
+        config, user_id, get_github_user_id(request)
     )
     try:
         await conversation_store.get_metadata(conversation_id)
@@ -393,7 +396,35 @@ async def delete_conversation(
     runtime_cls = get_runtime_cls(config.runtime)
     await runtime_cls.delete(conversation_id)
     await conversation_store.delete_metadata(conversation_id)
+
+    # delete conversation from database
+    await conversation_module._delete_conversation(conversation_id, user_id)
     return True
+
+
+@app.patch('/conversations/{conversation_id}/change-visibility')
+async def change_visibility(
+    conversation_id: str,
+    request: Request,
+    is_published: bool = Body(embed=True),
+) -> bool:
+    user_id = get_user_id(request)
+    # conversation_store = await ConversationStoreImpl.get_instance(
+    #     config, user_id, get_github_user_id(request)
+    # )
+    # metadata = await conversation_store.get_metadata(conversation_id)
+    # if not metadata:
+    #     return False
+    return await conversation_module._update_conversation_visibility(conversation_id, is_published, user_id)
+
+
+@app.get('/conversations/{conversation_id}/visibility')
+async def get_conversation_visibility(
+    conversation_id: str,
+    request: Request,
+) -> bool:
+    user_id = get_user_id(request)
+    return await conversation_module._get_conversation_visibility(conversation_id, user_id)
 
 
 async def _get_conversation_info(

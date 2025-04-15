@@ -97,6 +97,7 @@ class AppConfig(BaseModel):
     # mcp: MCPConfig = Field(default_factory=MCPConfig)
     dict_mcp_config: dict[str, MCPConfig] = Field(default_factory=dict)
     condenser: CondenserConfig = Field(default_factory=NoOpCondenserConfig)
+    enable_microagents: bool = Field(default=True)
 
     defaults_dict: ClassVar[dict] = {}
 

@@ -1,5 +1,5 @@
 import DepositModal from "#/components/features/modalDeposit/DepositModal"
-import { AllHandsLogoButton } from "#/components/shared/buttons/all-hands-logo-button"
+import { ThesisLogoButton } from "#/components/shared/buttons/thesis-logo-button"
 import { ExitProjectButton } from "#/components/shared/buttons/exit-project-button"
 import { SettingsButton } from "#/components/shared/buttons/settings-button"
 import { TooltipButton } from "#/components/shared/buttons/tooltip-button"
@@ -9,6 +9,7 @@ import { useConfig } from "#/hooks/query/use-config"
 import { useSettings } from "#/hooks/query/use-settings"
 import { useEndSession } from "#/hooks/use-end-session"
 import ChatIcon from "#/icons/chat-icon.svg?react"
+import WalletIcon from "#/icons/wallet.svg?react"
 import { setCurrentAgentState } from "#/state/agent-slice"
 import { setCurrentPathViewed } from "#/state/file-state-slice"
 import { AgentState } from "#/types/agent-state"
@@ -24,6 +25,7 @@ import { useAccount } from "wagmi"
 import { ConversationPanel } from "../conversation-panel/conversation-panel"
 import { ConversationPanelWrapper } from "../conversation-panel/conversation-panel-wrapper"
 import { UserActions } from "./user-actions"
+
 export function Sidebar() {
   const { t } = useTranslation()
   const location = useLocation()
@@ -94,7 +96,7 @@ export function Sidebar() {
         <nav className="flex h-auto w-full flex-row items-center justify-between md:h-full md:w-auto md:flex-col">
           <div className="flex flex-row items-center gap-8 max-md:gap-4 md:flex-col">
             <div className="flex items-center justify-center">
-              <AllHandsLogoButton onClick={handleEndSession} />
+              <ThesisLogoButton onClick={handleEndSession} />
             </div>
             <div className="flex flex-col gap-4">
               <ExitProjectButton onClick={handleEndSession} />
@@ -135,8 +137,9 @@ export function Sidebar() {
                 onClick={() => setDepositModalIsOpen(true)}
                 className="group/item rounded-lg p-2 transition-colors hover:bg-neutral-1000"
               >
-                <MdAccountBalanceWallet
-                  size={24}
+                <WalletIcon
+                  width={24}
+                  height={24}
                   className="text-neutral-800 group-hover/item:text-neutral-100"
                 />
               </TooltipButton>

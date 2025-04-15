@@ -113,7 +113,7 @@ async def fetch_mcp_tools_from_config(
         logger.error(f'Error fetching MCP tools: {str(e)}')
         return []
 
-    logger.debug(f'MCP tools: {mcp_tools}')
+    # logger.debug(f'MCP tools: {mcp_tools}')
     return mcp_tools
 
 
@@ -210,8 +210,13 @@ def process_browser_mcp_response(
     )
 
 
-def planner_mcp_plan(action, response) -> Observation:
-    logger.debug(f'Planner MCP response: {response.content}')
+def planner_mcp_plan(_: McpAction, response: CallToolResult) -> Observation:
+    logger.info(f'Planner MCP response: {response.content}')
+    if len(response.content) == 0 or not isinstance(response.content[0], TextContent):
+        return ErrorObservation(
+            f'Planner MCP response is empty or not text content: {response.content}'
+        )
+
     resonpse_dict = json.loads(response.content[0].text)
     observation = PlanObservation(
         plan_id=resonpse_dict['plan_id'],
