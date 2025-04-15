@@ -26,10 +26,6 @@ export const Messages: React.FC<MessagesProps> = React.memo(
     }, [messages])
 
     return messages.map((message, index) => {
-      console.log(
-        "🚀 ~ returnmessages.map ~ message:",
-        message.sender == "user" && message,
-      )
       const isLatestMessage = message.timestamp === latestTimestamp
       const messageClass = isLatestMessage ? "message-fade-in" : ""
 

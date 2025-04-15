@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 
-export const DynamicText = ({ items }) => {
+const DynamicText = ({ items }) => {
   const [index, setIndex] = useState(0)
   const [fade, setFade] = useState(true)
 
@@ -27,3 +27,5 @@ export const DynamicText = ({ items }) => {
     </div>
   )
 }
+
+export default DynamicText
