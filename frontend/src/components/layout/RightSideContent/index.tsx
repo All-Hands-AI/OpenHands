@@ -8,8 +8,8 @@ import { LuStepBack, LuStepForward } from "react-icons/lu"
 import { useSelector } from "react-redux"
 import CodeView from "./CodeView"
 import EditorContent from "./EditorContent"
-import TaskProgress, { STEP_STATUSES } from "./TaskProgress"
 import McpView from "./McpView"
+import { STEP_STATUSES } from "./TaskProgress"
 
 const ThesisComputer = () => {
   const isViewDrawer = true
@@ -212,7 +212,7 @@ const ThesisComputer = () => {
           />
         </div>
       </div>
-      <TaskProgress />
+      {/* <TaskProgress /> */}
     </div>
   )
 }

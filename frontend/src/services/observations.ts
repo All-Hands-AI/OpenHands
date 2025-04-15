@@ -1,73 +1,73 @@
 // @ts-nocheck
-import { setCurrentAgentState } from "#/state/agent-slice";
-import { setScreenshotSrc, setUrl } from "#/state/browser-slice";
+import { setCurrentAgentState } from "#/state/agent-slice"
+import { setScreenshotSrc, setUrl } from "#/state/browser-slice"
 import {
   addAssistantMessage,
   addAssistantObservation,
-} from "#/state/chat-slice";
-import { appendOutput } from "#/state/command-slice";
-import { setComputerList } from "#/state/computer-slice";
-import { appendJupyterOutput } from "#/state/jupyter-slice";
-import store from "#/store";
-import { AgentState } from "#/types/agent-state";
-import { ObservationMessage } from "#/types/message";
-import ObservationType from "#/types/observation-type";
+} from "#/state/chat-slice"
+import { appendOutput } from "#/state/command-slice"
+import { appendJupyterOutput } from "#/state/jupyter-slice"
+import store from "#/store"
+import { AgentState } from "#/types/agent-state"
+import { ObservationMessage } from "#/types/message"
+import ObservationType from "#/types/observation-type"
 
 export function handleObservationMessage(message: ObservationMessage) {
   switch (message.observation) {
     case ObservationType.RUN: {
-      if (message.extras.hidden) break;
-      let { content } = message;
+      if (message.extras.hidden) break
+      let { content } = message
 
       if (content.length > 5000) {
-        const head = content.slice(0, 5000);
-        content = `${head}\r\n\n... (truncated ${message.content.length - 5000} characters) ...`;
+        const head = content.slice(0, 5000)
+        content = `${head}\r\n\n... (truncated ${message.content.length - 5000} characters) ...`
       }
 
-      store.dispatch(appendOutput(content));
-      break;
+      store.dispatch(appendOutput(content))
+      break
     }
     case ObservationType.RUN_IPYTHON:
       // FIXME: render this as markdown
-      store.dispatch(appendJupyterOutput(message.content));
-      break;
+      store.dispatch(appendJupyterOutput(message.content))
+      break
     case ObservationType.BROWSE:
     case ObservationType.BROWSE_INTERACTIVE:
     case ObservationType.BROWSER_MCP:
       if (message.extras?.screenshot) {
-        store.dispatch(setScreenshotSrc(message.extras?.screenshot));
+        store.dispatch(setScreenshotSrc(message.extras?.screenshot))
       }
       if (message.extras?.url) {
-        store.dispatch(setUrl(message.extras.url));
+        store.dispatch(setUrl(message.extras.url))
       }
-      break;
-    case ObservationType.AGENT_STATE_CHANGED:
-      store.dispatch(setCurrentAgentState(message.extras.agent_state));
-      break;
+      break
+    case ObservationType.AGENT_STATE_CHANGED: {
+      store.dispatch(setCurrentAgentState(message.extras.agent_state))
+      break
+    }
     case ObservationType.DELEGATE:
       // TODO: better UI for delegation result (#2309)
       if (message.content) {
-        store.dispatch(addAssistantMessage(message.content));
+        store.dispatch(addAssistantMessage(message.content))
       }
-      break;
+      break
     case ObservationType.READ:
     case ObservationType.EDIT:
     case ObservationType.THINK:
     case ObservationType.NULL:
     case ObservationType.MCP:
     case ObservationType.RECALL:
-      break; // We don't display the default message for these observations
+      break // We don't display the default message for these observations
     default:
-      store.dispatch(addAssistantMessage(message.message));
-      break;
+      store.dispatch(addAssistantMessage(message.message))
+      break
   }
   if (!message.extras?.hidden) {
     // Convert the message to the appropriate observation type
-    const { observation } = message;
+    const { observation } = message
     const baseObservation = {
       ...message,
       source: "agent" as const,
-    };
+    }
 
     switch (observation) {
       case "agent_state_changed":
@@ -79,8 +79,8 @@ export function handleObservationMessage(message: ObservationMessage) {
               agent_state: (message.extras.agent_state as AgentState) || "idle",
             },
           }),
-        );
-        break;
+        )
+        break
       case "recall":
         store.dispatch(
           addAssistantObservation({
@@ -94,8 +94,8 @@ export function handleObservationMessage(message: ObservationMessage) {
                   | "knowledge") || "knowledge",
             },
           }),
-        );
-        break;
+        )
+        break
       case "run":
         store.dispatch(
           addAssistantObservation({
@@ -107,8 +107,8 @@ export function handleObservationMessage(message: ObservationMessage) {
               hidden: Boolean(message.extras.hidden),
             },
           }),
-        );
-        break;
+        )
+        break
       case "read":
         store.dispatch(
           addAssistantObservation({
@@ -119,8 +119,8 @@ export function handleObservationMessage(message: ObservationMessage) {
               impl_source: String(message.extras.impl_source || ""),
             },
           }),
-        );
-        break;
+        )
+        break
       case "edit":
         store.dispatch(
           addAssistantObservation({
@@ -132,8 +132,8 @@ export function handleObservationMessage(message: ObservationMessage) {
               impl_source: String(message.extras.impl_source || ""),
             },
           }),
-        );
-        break;
+        )
+        break
       case "run_ipython":
         store.dispatch(
           addAssistantObservation({
@@ -143,8 +143,8 @@ export function handleObservationMessage(message: ObservationMessage) {
               code: String(message.extras.code || ""),
             },
           }),
-        );
-        break;
+        )
+        break
       case "delegate":
         store.dispatch(
           addAssistantObservation({
@@ -157,8 +157,8 @@ export function handleObservationMessage(message: ObservationMessage) {
                   : {},
             },
           }),
-        );
-        break;
+        )
+        break
       case "browse":
         store.dispatch(
           addAssistantObservation({
@@ -197,8 +197,8 @@ export function handleObservationMessage(message: ObservationMessage) {
               ),
             },
           }),
-        );
-        break;
+        )
+        break
       case "browse_interactive":
         store.dispatch(
           addAssistantObservation({
@@ -237,8 +237,8 @@ export function handleObservationMessage(message: ObservationMessage) {
               ),
             },
           }),
-        );
-        break;
+        )
+        break
       case ObservationType.BROWSER_MCP:
         store.dispatch(
           addAssistantObservation({
@@ -250,8 +250,8 @@ export function handleObservationMessage(message: ObservationMessage) {
               trigger_by_action: String(message.extras.trigger_by_action || ""),
             },
           }),
-        );
-        break;
+        )
+        break
       case ObservationType.MCP:
         store.dispatch(
           addAssistantObservation({
@@ -261,8 +261,8 @@ export function handleObservationMessage(message: ObservationMessage) {
               content: String(message.extras.content || ""),
             },
           }),
-        );
-        break;
+        )
+        break
       case "error":
         store.dispatch(
           addAssistantObservation({
@@ -273,11 +273,11 @@ export function handleObservationMessage(message: ObservationMessage) {
               error_id: message.extras.error_id,
             },
           }),
-        );
-        break;
+        )
+        break
       default:
         // For any unhandled observation types, just ignore them
-        break;
+        break
     }
   }
 }

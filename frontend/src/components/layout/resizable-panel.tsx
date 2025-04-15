@@ -1,3 +1,4 @@
+import { RootState } from "#/store"
 import React, { CSSProperties, JSX, useEffect, useRef, useState } from "react"
 import {
   VscChevronDown,
@@ -5,6 +6,7 @@ import {
   VscChevronRight,
   VscChevronUp,
 } from "react-icons/vsc"
+import { useSelector } from "react-redux"
 import { twMerge } from "tailwind-merge"
 import { IconButton } from "../shared/buttons/icon-button"
 
@@ -42,8 +44,23 @@ export function ResizablePanel({
   const [dividerPosition, setDividerPosition] = useState<number | null>(null)
   const firstRef = useRef<HTMLDivElement>(null)
   const secondRef = useRef<HTMLDivElement>(null)
-  const [collapse, setCollapse] = useState<Collapse>(Collapse.SPLIT)
+  const [collapse, setCollapse] = useState<Collapse>(Collapse.FILLED)
   const isHorizontal = orientation === Orientation.HORIZONTAL
+  const { computerList } = useSelector((state: RootState) => state.computer)
+
+  useEffect(() => {
+    const checkComputerList = () => {
+      if (
+        computerList &&
+        Array.isArray(computerList) &&
+        computerList.length > 0
+      ) {
+        return setCollapse(Collapse.SPLIT)
+      }
+    }
+
+    checkComputerList()
+  }, [computerList])
 
   useEffect(() => {
     if (dividerPosition == null || !firstRef.current) {
