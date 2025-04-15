@@ -50,3 +50,6 @@ docker run -it \
 ```
 
 This command will start an interactive session in Docker where you can input tasks and receive responses from OpenHands.
+
+The `-e SANDBOX_USER_ID=$(id -u)` is passed to the Docker command to ensure the sandbox user matches the host user’s
+permissions. This prevents the agent from creating root-owned files in the mounted workspace.
