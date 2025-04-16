@@ -27,7 +27,7 @@ async def test_check_provider_tokens_valid():
     settings = POSTSettingsModel(provider_tokens={'github': 'valid-token'})
 
     # Mock the validate_provider_token function to return GITHUB for valid tokens
-    with patch('openhands.integrations.utils.validate_provider_token') as mock_validate:
+    with patch('openhands.server.routes.settings.validate_provider_token') as mock_validate:
         mock_validate.return_value = ProviderType.GITHUB
 
         result = await check_provider_tokens(mock_request, settings)
@@ -44,7 +44,7 @@ async def test_check_provider_tokens_invalid():
     settings = POSTSettingsModel(provider_tokens={'github': 'invalid-token'})
 
     # Mock the validate_provider_token function to return None for invalid tokens
-    with patch('openhands.integrations.utils.validate_provider_token') as mock_validate:
+    with patch('openhands.server.routes.settings.validate_provider_token') as mock_validate:
         mock_validate.return_value = None
 
         result = await check_provider_tokens(mock_request, settings)
@@ -101,7 +101,11 @@ async def test_store_llm_settings_new_settings():
 
         # Should return settings with the provided values
         assert result.llm_model == 'gpt-4'
-        assert result.llm_api_key == 'test-api-key'
+        # For SecretStr objects, we need to compare the secret value
+        if isinstance(result.llm_api_key, SecretStr):
+            assert result.llm_api_key.get_secret_value() == 'test-api-key'
+        else:
+            assert result.llm_api_key == 'test-api-key'
         assert result.llm_base_url == 'https://api.example.com'
 
 
@@ -135,7 +139,11 @@ async def test_store_llm_settings_update_existing():
 
         # Should return settings with the updated values
         assert result.llm_model == 'gpt-4'
-        assert result.llm_api_key == 'new-api-key'
+        # For SecretStr objects, we need to compare the secret value
+        if isinstance(result.llm_api_key, SecretStr):
+            assert result.llm_api_key.get_secret_value() == 'new-api-key'
+        else:
+            assert result.llm_api_key == 'new-api-key'
         assert result.llm_base_url == 'https://new.example.com'
 
 
