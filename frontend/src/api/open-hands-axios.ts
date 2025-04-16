@@ -5,36 +5,13 @@ export const openHands = axios.create({
   baseURL: `${window.location.protocol}//${import.meta.env.VITE_BACKEND_BASE_URL || window?.location.host}`,
 });
 
-// Add request interceptor to block API calls when on TOS page
-openHands.interceptors.request.use(
-  (config) => {
-    // If we're on the TOS page, block all API calls except for the TOS-specific ones
-    if (window.location.pathname === "/tos") {
-      // Only allow the TOS-specific API calls
-      if (config.url && !config.url.includes("/api/tos")) {
-        // Cancel the request
-        return {
-          ...config,
-          cancelToken: new axios.CancelToken((cancel) =>
-            cancel(`API call blocked on TOS page: ${config.url}`),
-          ),
-        };
-      }
-    }
-    return config;
-  },
-  (error) => Promise.reject(error),
-);
+// We don't need the request interceptor anymore since we're using a separate QueryClient
+// for the TOS page that disables all queries
 
 // Add response interceptor to handle 401 and 403 errors
 openHands.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Don't process if the request was cancelled
-    if (axios.isCancel(error)) {
-      return Promise.reject(error);
-    }
-
     if (error.response?.status === 401) {
       // Save the last page before redirecting
       saveLastPage();
