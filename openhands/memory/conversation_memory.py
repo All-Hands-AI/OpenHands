@@ -543,6 +543,8 @@ class ConversationMemory:
         """
         # NOTE: this is only needed for anthropic
         for message in reversed(messages):
+            if message.role == 'system':
+                message.content[-1].cache_prompt = True
             if message.role in ('user', 'tool'):
                 message.content[
                     -1
