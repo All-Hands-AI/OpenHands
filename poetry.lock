@@ -4899,14 +4899,14 @@ files = [
 
 [[package]]
 name = "modal"
-version = "0.74.0"
+version = "0.74.3"
 description = "Python client library for Modal"
 optional = false
 python-versions = ">=3.9"
 groups = ["main", "evaluation"]
 files = [
-    {file = "modal-0.74.0-py3-none-any.whl", hash = "sha256:a764f62f1c939101bb76cf5f5cb50f9644dde40d081afaa47c405dd480baaca3"},
-    {file = "modal-0.74.0.tar.gz", hash = "sha256:4c3750ad9f7f7bb0fd57a03272e6b6d4f029c25e4e799365497ed8a6ac38ebe0"},
+    {file = "modal-0.74.3-py3-none-any.whl", hash = "sha256:ac3dbb25e2461b6b726c0b9c7ac0b1fb254ecddb3721556acb2a7515e7216136"},
+    {file = "modal-0.74.3.tar.gz", hash = "sha256:047b6feb39151e02b3f34953c685ebc34344e8bb48ffd83e45265aa98245c937"},
 ]
 
 [package.dependencies]
@@ -7992,14 +7992,14 @@ files = [
 
 [[package]]
 name = "runloop-api-client"
-version = "0.29.0"
+version = "0.30.0"
 description = "The official Python library for the runloop API"
 optional = false
 python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "runloop_api_client-0.29.0-py3-none-any.whl", hash = "sha256:c11715c089e62d336c76ac7aacc619e829b211a11104734b699cba6033443396"},
-    {file = "runloop_api_client-0.29.0.tar.gz", hash = "sha256:577fecc1e06c613916587544ca57f30a4ef71b6f801c74c7d7329942a70ccccf"},
+    {file = "runloop_api_client-0.30.0-py3-none-any.whl", hash = "sha256:5e922399bdd0f67c6e19c212d06203640580a50c3fc8760eef0eea6dd5259ee4"},
+    {file = "runloop_api_client-0.30.0.tar.gz", hash = "sha256:9211d9961d9aa2372d7f5ecd36c8197a72bfd1227d145caa9c710b8302e50e66"},
 ]
 
 [package.dependencies]
@@ -10270,4 +10270,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "95d36a97800f1c91a81b02f8c9462031839a929d9b93fde0008f2dbd415a7a82"
+content-hash = "bff5a7f40cc84801f5bac8dc41108b76ccfa9faabd39e1983d2121beeafc9c99"
