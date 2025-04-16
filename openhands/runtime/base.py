@@ -156,7 +156,9 @@ class Runtime(FileEditRuntimeMixin):
 
         self.user_id = user_id
         self.git_provider_tokens = git_provider_tokens
-        logger.info(f"Received additional agent instructions: {additional_agent_instructions}")
+        logger.info(
+            f'Received additional agent instructions: {additional_agent_instructions}'
+        )
         self._additional_agent_instructions = additional_agent_instructions
 
     def setup_initial_env(self) -> None:

@@ -159,6 +159,7 @@ class Session:
                 selected_repository=selected_repository,
                 selected_branch=selected_branch,
                 initial_message=initial_message,
+                additional_agent_instructions=additional_agent_instructions,
                 replay_json=replay_json,
             )
         except Exception as e:
