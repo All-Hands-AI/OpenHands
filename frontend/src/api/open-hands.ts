@@ -44,7 +44,12 @@ class OpenHands {
    */
   static async getAgents(): Promise<string[]> {
     const { data } = await openHands.get<string[]>("/api/options/agents")
-    const BLACK_LIST = ["BrowsingAgent", "DummyAgent", "VisualBrowsingAgent"]
+    const BLACK_LIST = [
+      "BrowsingAgent",
+      "DummyAgent",
+      "VisualBrowsingAgent",
+      "FutureTradingAgent",
+    ]
 
     return (data || []).filter((x) => !BLACK_LIST.includes(x))
   }

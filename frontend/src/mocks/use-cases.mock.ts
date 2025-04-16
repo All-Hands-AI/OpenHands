@@ -14,7 +14,7 @@ export const useCasesMocks: Record<number | string, any> = [
     `,
   },
   {
-    agent: "FutureTradingAgent",
+    agent: "CodeActAgent",
     title: "Futures Trading",
     prompt: `
     You are an expert analyst specializing in detecting whale trading patterns.
