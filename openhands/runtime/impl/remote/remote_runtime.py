@@ -479,5 +479,4 @@ class RemoteRuntime(ActionExecutionClient):
 
     @property
     def additional_agent_instructions(self) -> str:
-        logger.info(f"calling additional info prop: {self._additional_agent_instructions}")
         return self._additional_agent_instructions if self._additional_agent_instructions else ""
