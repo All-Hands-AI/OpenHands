@@ -21,8 +21,6 @@ from openhands.events.observation.agent import (
 from openhands.events.serialization import event_to_dict
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderToken
 from openhands.integrations.service_types import ProviderType
-from openhands.server.db import database
-from openhands.server.models import Conversation, User
 from openhands.server.routes.auth import JWT_ALGORITHM, JWT_SECRET
 from openhands.server.shared import (
     ConversationStoreImpl,
@@ -30,6 +28,7 @@ from openhands.server.shared import (
     conversation_manager,
     sio,
 )
+from openhands.server.thesis_auth import get_user_detail_from_thesis_auth_server, ThesisUser, UserStatus
 from openhands.utils.get_user_setting import get_user_setting
 from openhands.server.modules import conversation_module
 
@@ -95,37 +94,31 @@ async def connect(connection_id: str, environ):
                 logger.error('No JWT token provided')
                 raise ConnectionRefusedError('Authentication required')
 
-            try:
-                # Verify and decode JWT token
-                payload = jwt.decode(jwt_token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-                user_id = payload['sub']
-                logger.info(f'user_id: {user_id}')
+        try:
+            # Verify and decode JWT token
+            payload = jwt.decode(jwt_token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
 
-                # Fetch user record from database
-                query = select(User).where(User.c.public_key == user_id.lower())
-                user = await database.fetch_one(query)
-                if not user:
-                    logger.error(f'User not found in database: {user_id}')
-                    raise ConnectionRefusedError('User not found')
+            user: ThesisUser | None = get_user_detail_from_thesis_auth_server('Bearer ' + jwt_token)
+            user_id = payload['user']['publicAddress']
+            # Fetch user record from database
+            if not user:
+                logger.error(f'User not found in database: {user_id}')
+                raise ConnectionRefusedError('User not found')
 
-                logger.info(f'Found user record: {user["public_key"]}')
-                mnemonic = user['mnemonic']
-            except jwt.ExpiredSignatureError:
-                logger.error('JWT token has expired')
-                raise ConnectionRefusedError('Token has expired')
-            except jwt.InvalidTokenError:
-                logger.error('Invalid JWT token')
-                raise ConnectionRefusedError('Invalid token')
-            except Exception as e:
-                logger.error(f'Error processing JWT token: {str(e)}')
-                raise ConnectionRefusedError('Authentication failed')
+            if user.whitelisted != UserStatus.WHITELISTED:
+                logger.error(f'User not activated: {user_id}')
+                raise ConnectionRefusedError('User not activated')
 
-    # TODO FIXME: Logic from upstream. Temporarily comment out. Need to check if they are useful
-    # cookies_str = environ.get('HTTP_COOKIE', '')
-    # conversation_validator = create_conversation_validator()
-    # user_id, github_user_id = await conversation_validator.validate(
-    #     conversation_id, cookies_str
-    # )
+            mnemonic = user.mnemonic
+        except jwt.ExpiredSignatureError:
+            logger.error('JWT token has expired')
+            raise ConnectionRefusedError('Token has expired')
+        except jwt.InvalidTokenError:
+            logger.error('Invalid JWT token')
+            raise ConnectionRefusedError('Invalid token')
+        except Exception as e:
+            logger.error(f'Error processing JWT token: {str(e)}')
+            raise ConnectionRefusedError('Authentication failed')
 
     settings = await get_user_setting(user_id)
 
@@ -133,16 +126,6 @@ async def connect(connection_id: str, environ):
         raise ConnectionRefusedError(
             'Settings not found', {'msg_id': 'CONFIGURATION$SETTINGS_NOT_FOUND'}
         )
-
-    # TODO FIXME: code from upstream. Should consider checking if do we need to use this.
-    # session_init_args: dict = {}
-    # if settings:
-    #     session_init_args = {**settings.__dict__, **session_init_args}
-
-    # session_init_args['git_provider_tokens'] = create_provider_tokens_object(
-    #     providers_set
-    # )
-    # conversation_init_data = ConversationInitData(**session_init_args)
 
     github_user_id = ''
     event_stream = await conversation_manager.join_conversation(
