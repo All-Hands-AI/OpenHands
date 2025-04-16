@@ -3,6 +3,7 @@ import { DEFAULT_SETTINGS } from "#/services/settings";
 import OpenHands from "#/api/open-hands";
 import { PostSettings, PostApiSettings } from "#/types/settings";
 import { useSettings } from "../query/use-settings";
+import { useDisableApiOnTos } from "../use-disable-api-on-tos";
 
 const saveSettingsMutationFn = async (
   settings: Partial<PostSettings> | null,
@@ -37,9 +38,15 @@ const saveSettingsMutationFn = async (
 export const useSaveSettings = () => {
   const queryClient = useQueryClient();
   const { data: currentSettings } = useSettings();
+  const disableApiCalls = useDisableApiOnTos();
 
   return useMutation({
     mutationFn: async (settings: Partial<PostSettings> | null) => {
+      // Skip API calls on TOS page
+      if (disableApiCalls) {
+        return;
+      }
+
       if (settings === null) {
         await saveSettingsMutationFn(null);
         return;
@@ -49,7 +56,9 @@ export const useSaveSettings = () => {
       await saveSettingsMutationFn(newSettings);
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["settings"] });
+      if (!disableApiCalls) {
+        await queryClient.invalidateQueries({ queryKey: ["settings"] });
+      }
     },
     meta: {
       disableToast: true,

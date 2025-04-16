@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import datetime
+
 from pydantic import (
     BaseModel,
     Field,
@@ -35,6 +37,7 @@ class Settings(BaseModel):
     user_consents_to_analytics: bool | None = None
     sandbox_base_container_image: str | None = None
     sandbox_runtime_container_image: str | None = None
+    accepted_tos: datetime | None = None
 
     model_config = {
         'validate_assignment': True,

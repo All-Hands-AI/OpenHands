@@ -277,6 +277,15 @@ class OpenHands {
       appMode === "saas" ? "/api/logout" : "/api/unset-settings-tokens";
     await openHands.post(endpoint);
   }
+
+  /**
+   * Accept the Terms of Service
+   * @returns true if successful, false otherwise
+   */
+  static async acceptTOS(): Promise<boolean> {
+    const response = await openHands.post("/api/accept_tos");
+    return response.status === 200;
+  }
 }
 
 export default OpenHands;

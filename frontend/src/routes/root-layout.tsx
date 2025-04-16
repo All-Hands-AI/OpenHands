@@ -21,6 +21,8 @@ import { useMigrateUserConsent } from "#/hooks/use-migrate-user-consent";
 import { useBalance } from "#/hooks/query/use-balance";
 import { SetupPaymentModal } from "#/components/features/payment/setup-payment-modal";
 import { displaySuccessToast } from "#/utils/custom-toast-handlers";
+import { usePostLoginRedirect } from "#/hooks/use-post-login-redirect";
+import { saveLastPage } from "#/utils/last-page";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -101,6 +103,11 @@ export default function MainApp() {
   }, []);
 
   React.useEffect(() => {
+    // Skip API-related redirects on the TOS page
+    if (pathname === "/tos") {
+      return;
+    }
+
     // Don't allow users to use the app if it 402s
     if (error?.status === 402 && pathname !== "/") {
       navigate("/");
@@ -111,9 +118,30 @@ export default function MainApp() {
     }
   }, [error?.status, pathname, isFetching]);
 
-  const userIsAuthed = !!isAuthed && !authError;
+  // Check if we're on the TOS page
+  const isOnTosPage = pathname === "/tos";
+
+  // Only consider the user authenticated if we have a valid auth response
+  // or if we're on the TOS page (to prevent auth modal)
+  const userIsAuthed = (!!isAuthed && !authError) || isOnTosPage;
+
+  // Don't show auth modal on TOS page to prevent infinite loop
   const renderAuthModal =
-    !isFetchingAuth && !userIsAuthed && config.data?.APP_MODE === "saas";
+    !isFetchingAuth &&
+    !userIsAuthed &&
+    config.data?.APP_MODE === "saas" &&
+    !isOnTosPage;
+
+  // Handle redirection to last page after login
+  usePostLoginRedirect(userIsAuthed);
+
+  // Track page visits for last page functionality
+  React.useEffect(() => {
+    if (pathname && userIsAuthed) {
+      // Save the current page for future reference
+      saveLastPage();
+    }
+  }, [pathname, userIsAuthed]);
 
   return (
     <div
@@ -129,7 +157,12 @@ export default function MainApp() {
         <Outlet />
       </div>
 
-      {renderAuthModal && <AuthModal githubAuthUrl={gitHubAuthUrl} />}
+      {renderAuthModal && (
+        <AuthModal
+          githubAuthUrl={gitHubAuthUrl}
+          appMode={config.data?.APP_MODE}
+        />
+      )}
       {config.data?.APP_MODE === "oss" && consentFormIsOpen && (
         <AnalyticsConsentFormModal
           onClose={() => {
