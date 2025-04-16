@@ -36,7 +36,6 @@ export const Messages: React.FC<MessagesProps> = React.memo(
               type="action"
               message={message.content}
               customHeader="Cloud Resolver Instructions"
-              initiallyExpanded={false}
             />
             {message.imageUrls && message.imageUrls.length > 0 && (
               <ImageCarousel size="small" images={message.imageUrls} />

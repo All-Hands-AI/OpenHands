@@ -31,7 +31,6 @@ interface ExpandableMessageProps {
   observation?: PayloadAction<OpenHandsObservation>;
   action?: PayloadAction<OpenHandsAction>;
   customHeader?: string;
-  initiallyExpanded?: boolean;
 }
 
 export function ExpandableMessage({
@@ -42,11 +41,10 @@ export function ExpandableMessage({
   observation,
   action,
   customHeader,
-  initiallyExpanded = true,
 }: ExpandableMessageProps) {
   const { data: config } = useConfig();
   const { t, i18n } = useTranslation();
-  const [showDetails, setShowDetails] = useState(initiallyExpanded);
+  const [showDetails, setShowDetails] = useState(true);
   const [details, setDetails] = useState(message);
   const [translationId, setTranslationId] = useState<string | undefined>(id);
   const [translationParams, setTranslationParams] = useState<
@@ -97,7 +95,7 @@ export function ExpandableMessage({
       setDetails(message);
       setShowDetails(false);
     }
-  }, [id, message, observation, action, i18n.language, initiallyExpanded]);
+  }, [id, message, observation, action, i18n.language]);
 
   const statusIconClasses = "h-4 w-4 ml-2 inline";
 
