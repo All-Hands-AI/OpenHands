@@ -344,6 +344,7 @@ function isCommonDevelopmentString(str) {
 
   // Check for specific error messages and UI text
   if (
+    str === "Failed to accept TOS:" ||
     str === "All data associated with this project will be lost." ||
     str === "You will lose any unsaved information." ||
     str ===

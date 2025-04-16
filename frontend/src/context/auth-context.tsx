@@ -1,11 +1,13 @@
 import React from "react";
 import { Provider } from "#/types/settings";
+import { clearLastPage } from "../utils/last-page";
 
 interface AuthContextType {
   providerTokensSet: Provider[];
   setProviderTokensSet: (tokens: Provider[]) => void;
   providersAreSet: boolean;
   setProvidersAreSet: (status: boolean) => void;
+  logout: () => void;
 }
 
 interface AuthContextProps extends React.PropsWithChildren {
@@ -24,14 +26,20 @@ function AuthProvider({
 
   const [providersAreSet, setProvidersAreSet] = React.useState<boolean>(false);
 
+  const logout = React.useCallback(() => {
+    // Clear the last page before logging out
+    clearLastPage();
+  }, []);
+
   const value = React.useMemo(
     () => ({
       providerTokensSet,
       setProviderTokensSet,
       providersAreSet,
       setProvidersAreSet,
+      logout,
     }),
-    [providerTokensSet],
+    [providerTokensSet, logout],
   );
 
   return <AuthContext value={value}>{children}</AuthContext>;
