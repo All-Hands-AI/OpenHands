@@ -27,7 +27,9 @@ async def test_check_provider_tokens_valid():
     settings = POSTSettingsModel(provider_tokens={'github': 'valid-token'})
 
     # Mock the validate_provider_token function to return GITHUB for valid tokens
-    with patch('openhands.server.routes.settings.validate_provider_token') as mock_validate:
+    with patch(
+        'openhands.server.routes.settings.validate_provider_token'
+    ) as mock_validate:
         mock_validate.return_value = ProviderType.GITHUB
 
         result = await check_provider_tokens(mock_request, settings)
@@ -44,7 +46,9 @@ async def test_check_provider_tokens_invalid():
     settings = POSTSettingsModel(provider_tokens={'github': 'invalid-token'})
 
     # Mock the validate_provider_token function to return None for invalid tokens
-    with patch('openhands.server.routes.settings.validate_provider_token') as mock_validate:
+    with patch(
+        'openhands.server.routes.settings.validate_provider_token'
+    ) as mock_validate:
         mock_validate.return_value = None
 
         result = await check_provider_tokens(mock_request, settings)
