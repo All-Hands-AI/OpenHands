@@ -50,7 +50,6 @@ class RemoteRuntime(ActionExecutionClient):
         headless_mode: bool = True,
         user_id: str | None = None,
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
-        additional_agent_instructions: str | None = None
     ):
         super().__init__(
             config,
@@ -89,8 +88,6 @@ class RemoteRuntime(ActionExecutionClient):
             self.session,
         )
         self.available_hosts: dict[str, int] = {}
-
-        self._additional_agent_instructions = additional_agent_instructions
 
     def log(self, level: str, message: str) -> None:
         message = f'[runtime session_id={self.sid} runtime_id={self.runtime_id or "unknown"}] {message}'
@@ -477,8 +474,3 @@ class RemoteRuntime(ActionExecutionClient):
 
     def _stop_if_closed(self, retry_state: tenacity.RetryCallState) -> bool:
         return self._runtime_closed
-
-    @property
-    def additional_agent_instructions(self) -> str:
-        logger.info(f"calling additional info prop: {self._additional_agent_instructions}")
-        return self._additional_agent_instructions if self._additional_agent_instructions else ""

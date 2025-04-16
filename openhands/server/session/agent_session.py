@@ -88,7 +88,6 @@ class AgentSession:
         selected_repository: Repository | None = None,
         selected_branch: str | None = None,
         initial_message: MessageAction | None = None,
-        additional_agent_instructions: str | None = None,
         replay_json: str | None = None,
     ):
         """Starts the Agent session
@@ -122,8 +121,7 @@ class AgentSession:
                 agent=agent,
                 git_provider_tokens=git_provider_tokens,
                 selected_repository=selected_repository,
-                selected_branch=selected_branch,
-                additional_agent_instructions=additional_agent_instructions
+                selected_branch=selected_branch
             )
 
             if replay_json:
@@ -261,8 +259,7 @@ class AgentSession:
         agent: Agent,
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
         selected_repository: Repository | None = None,
-        selected_branch: str | None = None,
-        additional_agent_instructions: str | None = None
+        selected_branch: str | None = None
     ) -> bool:
         """Creates a runtime instance
 
@@ -282,7 +279,7 @@ class AgentSession:
         runtime_cls = get_runtime_cls(runtime_name)
 
         if runtime_cls == RemoteRuntime:
-            self.runtime = RemoteRuntime(
+            self.runtime = runtime_cls(
                 config=config,
                 event_stream=self.event_stream,
                 sid=self.sid,
@@ -292,7 +289,6 @@ class AgentSession:
                 attach_to_existing=False,
                 git_provider_tokens=git_provider_tokens,
                 user_id=self.user_id,
-                additional_agent_instructions=additional_agent_instructions
             )
         else:
             provider_handler = ProviderHandler(

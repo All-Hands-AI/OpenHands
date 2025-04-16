@@ -144,7 +144,6 @@ class Session:
             git_provider_tokens = settings.git_provider_tokens
             selected_repository = settings.selected_repository
             selected_branch = settings.selected_branch
-            additional_agent_instructions = settings.additional_agent_instructions
 
         try:
             await self.agent_session.start(
@@ -159,7 +158,6 @@ class Session:
                 selected_repository=selected_repository,
                 selected_branch=selected_branch,
                 initial_message=initial_message,
-                additional_agent_instructions=additional_agent_instructions,
                 replay_json=replay_json,
             )
         except Exception as e:
