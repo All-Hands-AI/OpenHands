@@ -1,6 +1,6 @@
 import numpy as np
 import sglang as sgl
-from sglang import RuntimeEndpoint, set_default_backend, system, user
+from sglang import RuntimeEndpoint, assistant, set_default_backend, system, user
 from tenacity import retry, stop_after_attempt, wait_random_exponential
 
 from openhands.core.config import ModelRoutingConfig
@@ -13,8 +13,8 @@ from openhands.router.cost_saving.prompt import (
 
 set_default_backend(
     RuntimeEndpoint(
-        base_url='https://x110t3rzw94zl3.r20.modal.host',
-        api_key='sk-***',
+        base_url='https://torcixhjd7j0pg.r21.modal.host',
+        api_key='minhnguyet',
     )
 )
 
@@ -23,17 +23,21 @@ set_default_backend(
 def score_trajectory(s, trajectory, **kwargs):
     s += system(CLASSIFIER_SYSTEM_MESSAGE)
     s += user(CLASSIFIER_USER_MESSAGE.format(conversation=trajectory))
-    s += sgl.gen(
-        'answer',
-        choices=['0', '1'],
-        return_logprob=True,
-        choices_method=sgl.token_length_normalized,
+    s += assistant(
+        sgl.gen(
+            'answer',
+            return_logprob=True,
+            max_tokens=1,
+            temperature=0.0,
+            choices=['0', '1'],
+            choices_method=sgl.token_length_normalized,
+        )
     )
 
 
 class ThresholdBasedCostSavingRouter(BaseRouter):
     WEAK_MODEL_CONFIG = 'weak_model'
-    CPT_THRESHOLD = 0.7772998611746911
+    CPT_THRESHOLD = 0.26894142136999516
 
     def __init__(
         self,
@@ -56,9 +60,11 @@ class ThresholdBasedCostSavingRouter(BaseRouter):
             return self.llm
 
         state = score_trajectory(prompt)
-        logit_0 = np.exp(state.get_meta_info('answer')['input_token_logprobs'][0][0][0])
-        logit_1 = np.exp(state.get_meta_info('answer')['input_token_logprobs'][1][0][0])
-        threshold = logit_1 / (logit_0 + logit_1)
+        prob_0 = np.exp(state.get_meta_info('answer')['input_token_logprobs'][0][0][0])
+        prob_1 = np.exp(state.get_meta_info('answer')['input_token_logprobs'][1][0][0])
+        threshold = prob_1 / (prob_0 + prob_1)
+        # print('CostSavingRouter prob_0:', prob_0)
+        # print('CostSavingRouter prob_1:', prob_1)
         print('CostSavingRouter threshold:', threshold)
 
         if threshold < self.CPT_THRESHOLD:
