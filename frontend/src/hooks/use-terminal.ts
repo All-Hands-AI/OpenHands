@@ -75,7 +75,7 @@ export const useTerminal = ({
       for (let i = lastCommandIndex.current; i < commands.length; i += 1) {
         const { content, type } = commands[i];
 
-        if (type === "command") {
+        if (type === "input") {
           // For commands after the first one, we need to add a $ prompt
           if (i > 0) {
             terminal.current.write("$ ");
