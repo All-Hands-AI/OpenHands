@@ -169,6 +169,14 @@ class AgentController:
 
     def _add_system_message(self):
         for event in self.event_stream.get_events():
+            if isinstance(event, MessageAction) and event.source == EventSource.USER:
+                # FIXME: Remove this after 6/1/2025
+                # Do not try to add a system message if we first run into
+                # a user message -- this means the eventstream exits before
+                # SystemMessageAction is introduced.
+                # We expect *agent* to handle this case gracefully.
+                return
+
             if isinstance(event, SystemMessageAction):
                 # Do not try to add the system message if it already exists
                 return 
