@@ -19,6 +19,8 @@ class ThesisUser(BaseModel):
     whitelisted: int
     publicAddress: str
     mnemonic: str
+    solanaThesisAddress: str | None = None
+    ethThesisAddress: str | None = None
     # Add other fields as needed
 
 
