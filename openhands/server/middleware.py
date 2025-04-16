@@ -257,7 +257,8 @@ class CheckUserActivationMiddleware(BaseHTTPMiddleware):
                 content={'detail': 'User not authenticated'},
             )
 
-        user: ThesisUser | None = get_user_detail_from_thesis_auth_server(request.headers.get('Authorization'))
+        user = request.state.user
+
         if not user:
             return JSONResponse(
                 status_code=404,
@@ -314,8 +315,6 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
             payload = jwt.decode(token, JWT_SECRET, algorithms=['HS256'])
             user_id = payload['user']['publicAddress']
 
-            request.state.user_id = user_id
-
             user: ThesisUser | None = get_user_detail_from_thesis_auth_server(request.headers.get('Authorization'))
             if not user:
                 return JSONResponse(
@@ -323,6 +322,7 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
                     content={'detail': 'User not found'},
                 )
             # Only set user in request.state if all checks pass
+            request.state.user_id = user_id
             request.state.user = user
 
             return await call_next(request)
