@@ -1,14 +1,14 @@
 import asyncio
 import logging
 
-from .db import init_db
+from openhands.server.migrations.run_migration import run_migration
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
 async def init() -> None:
-    await init_db()
+    await run_migration()
 
 
 async def main() -> None:

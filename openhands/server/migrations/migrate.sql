@@ -1,12 +1,12 @@
--- Create table if not exists
+-- Check if table exists, if not create it
 CREATE TABLE IF NOT EXISTS conversations (
     id SERIAL PRIMARY KEY,
     user_id VARCHAR NOT NULL,
     conversation_id VARCHAR NOT NULL,
-    published BOOLEAN NOT NULL,
+    published BOOLEAN NOT NULL
 );
 
--- Alter configs column if exists
+-- Check if configs column exists, if not add it
 DO $$ 
 BEGIN
     IF NOT EXISTS (
