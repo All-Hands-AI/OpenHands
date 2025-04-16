@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Boolean, Column, DateTime, Integer, String, Table, Enum, ForeignKey
+from sqlalchemy import Boolean, Column, DateTime, Integer, String, Table, Enum, ForeignKey, JSON
 from sqlalchemy.sql import func
 
 from .db import metadata
@@ -34,4 +34,5 @@ Conversation = Table(
     Column('user_id', String, nullable=False),
     Column('conversation_id', String, nullable=False),
     Column('published', Boolean, nullable=False),
+    Column('configs', JSON, nullable=False),
 )
