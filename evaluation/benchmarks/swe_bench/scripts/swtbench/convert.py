@@ -70,4 +70,4 @@ if __name__ == '__main__':
     )
     args = parser.parse_args()
 
-    main(args.prediction_file, args.ci_mode)
+    main(args.prediction_file)
