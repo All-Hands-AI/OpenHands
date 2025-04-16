@@ -273,6 +273,7 @@ class Memory:
         date = str(utc_now.date())
 
         if runtime.web_hosts or runtime.additional_agent_instructions:
+            logger.info(f"setting additional info: {runtime.additional_agent_instructions}")
             self.runtime_info = RuntimeInfo(
                 available_hosts=runtime.web_hosts,
                 additional_agent_instructions=runtime.additional_agent_instructions,
