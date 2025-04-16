@@ -20,22 +20,31 @@ class Platform(Enum):
     GITLAB = 2
 
 
-def identify_token(token: str, selected_repo: str | None = None) -> Platform:
+def identify_token(
+    token: str, selected_repo: str | None = None, base_domain: str = 'github.com'
+) -> Platform:
     """
     Identifies whether a token belongs to GitHub or GitLab.
 
     Parameters:
         token (str): The personal access token to check.
         selected_repo (str): Repository in format "owner/repo" for GitHub Actions token validation.
+        base_domain (str): The base domain for GitHub Enterprise (default: "github.com").
 
     Returns:
         Platform: "GitHub" if the token is valid for GitHub,
              "GitLab" if the token is valid for GitLab,
              "Invalid" if the token is not recognized by either.
     """
+    # Determine GitHub API base URL based on domain
+    if base_domain == 'github.com':
+        github_api_base = 'https://api.github.com'
+    else:
+        github_api_base = f'https://{base_domain}/api/v3'
+
     # Try GitHub Actions token format (Bearer) with repo endpoint if repo is provided
     if selected_repo:
-        github_repo_url = f'https://api.github.com/repos/{selected_repo}'
+        github_repo_url = f'{github_api_base}/repos/{selected_repo}'
         github_bearer_headers = {
             'Authorization': f'Bearer {token}',
             'Accept': 'application/vnd.github+json',
@@ -51,7 +60,7 @@ def identify_token(token: str, selected_repo: str | None = None) -> Platform:
             logger.error(f'Error connecting to GitHub API (selected_repo check): {e}')
 
     # Try GitHub PAT format (token)
-    github_url = 'https://api.github.com/user'
+    github_url = f'{github_api_base}/user'
     github_headers = {'Authorization': f'token {token}'}
 
     try:
@@ -61,7 +70,6 @@ def identify_token(token: str, selected_repo: str | None = None) -> Platform:
     except httpx.HTTPError as e:
         logger.error(f'Error connecting to GitHub API: {e}')
 
-    # Try GitLab token
     gitlab_url = 'https://gitlab.com/api/v4/user'
     gitlab_headers = {'Authorization': f'Bearer {token}'}
 

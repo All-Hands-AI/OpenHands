@@ -18,7 +18,11 @@ OpenHands provides a Graphical User Interface (GUI) mode for interacting with th
 3. Enter the corresponding `API Key` for your chosen provider.
 4. Click `Save Changes` to apply the settings.
 
-### GitHub Token Setup
+### Version Control Tokens
+
+OpenHands supports multiple version control providers. You can configure tokens for multiple providers simultaneously.
+
+#### GitHub Token Setup
 
 OpenHands automatically exports a `GITHUB_TOKEN` to the shell environment if it is available. This can happen in two ways:
 
@@ -36,7 +40,7 @@ OpenHands automatically exports a `GITHUB_TOKEN` to the shell environment if it 
      - Minimal Permissions ( Select `Meta Data = Read-only` read for search, `Pull Requests = Read and Write` and `Content = Read and Write` for branch creation)
   2. **Enter Token in OpenHands**:
    - Click the Settings button (gear icon).
-   - Navigate to the `GitHub Settings` section.
+   - Navigate to the `Git Provider Settings` section.
    - Paste your token in the `GitHub Token` field.
    - Click `Save Changes` to apply the changes.
 </details>
@@ -94,6 +98,46 @@ OpenHands automatically exports a `GITHUB_TOKEN` to the shell environment if it 
    - Review the requested permissions.
    - Authorize OpenHands to access your GitHub account.
    - If using an organization, authorize organization access if prompted.
+</details>
+
+#### GitLab Token Setup
+
+OpenHands automatically exports a `GITLAB_TOKEN` to the shell environment, for local installations only, if it is available.
+
+<details>
+  <summary>Setting Up a GitLab Token</summary>
+
+  1. **Generate a Personal Access Token (PAT)**:
+   - On GitLab, go to User Settings > Access Tokens.
+   - Create a new token with the following scopes:
+     - `api` (API access)
+     - `read_user` (Read user information)
+     - `read_repository` (Read repository)
+     - `write_repository` (Write repository)
+   - Set an expiration date or leave it blank for a non-expiring token.
+  2. **Enter Token in OpenHands**:
+   - Click the Settings button (gear icon).
+   - Navigate to the `Git Provider Settings` section.
+   - Paste your token in the `GitLab Token` field.
+   - Enter your GitLab instance URL if using self-hosted GitLab.
+   - Click `Save Changes` to apply the changes.
+</details>
+
+<details>
+  <summary>Troubleshooting</summary>
+
+  Common issues and solutions:
+
+  - **Token Not Recognized**:
+     - Ensure the token is properly saved in settings.
+     - Check that the token hasn't expired.
+     - Verify the token has the required scopes.
+     - For self-hosted instances, verify the correct instance URL.
+
+  - **Access Denied**:
+     - Verify project access permissions.
+     - Check if the token has the necessary scopes.
+     - For group/organization repositories, ensure you have proper access.
 </details>
 
 ### Advanced Settings
