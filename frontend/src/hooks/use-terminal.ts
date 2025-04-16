@@ -17,6 +17,23 @@ const DEFAULT_TERMINAL_CONFIG: UseTerminalConfig = {
   commands: [],
 };
 
+const renderCommand = (command: Command, terminal: Terminal) => {
+  const { content, type } = command;
+
+  if (type === "input") {
+    terminal.write("$ ");
+    terminal.writeln(
+      parseTerminalOutput(content.replaceAll("\n", "\r\n").trim()),
+    );
+  } else {
+    terminal.write(`\n`);
+    terminal.writeln(
+      parseTerminalOutput(content.replaceAll("\n", "\r\n").trim()),
+    );
+    terminal.write(`\n`);
+  }
+};
+
 // Create a persistent reference that survives component unmounts
 // This ensures terminal history is preserved when navigating away and back
 const persistentLastCommandIndex = { current: 0 };
@@ -52,6 +69,14 @@ export const useTerminal = ({
 
     if (ref.current) {
       initializeTerminal();
+      // Render all commands in array
+      // This happens when we just switch to Terminal from other tabs
+      if (commands.length > 0) {
+        for (let i = 0; i < commands.length; i += 1) {
+          renderCommand(commands[i], terminal.current);
+        }
+        lastCommandIndex.current = commands.length;
+      }
     }
 
     return () => {
@@ -59,34 +84,16 @@ export const useTerminal = ({
     };
   }, []);
 
-  // Handle rendering of all commands (both initial and new ones)
   React.useEffect(() => {
-    if (!terminal.current || !ref.current) return;
-
-    // For initial render, reset the terminal and start fresh
-    if (lastCommandIndex.current === 0 && commands.length > 0) {
-      terminal.current.clear();
-    }
-
-    // Only process commands that haven't been rendered yet
-    if (lastCommandIndex.current < commands.length) {
+    // Render new commands when they are added to the commands array
+    if (
+      terminal.current &&
+      commands.length > 0 &&
+      lastCommandIndex.current < commands.length
+    ) {
       for (let i = lastCommandIndex.current; i < commands.length; i += 1) {
-        const { content, type } = commands[i];
-
-        if (type === "input") {
-          terminal.current.write("$ ");
-          terminal.current.writeln(
-            parseTerminalOutput(content.replaceAll("\n", "\r\n").trim()),
-          );
-        } else {
-          terminal.current.write(`\n`);
-          terminal.current.writeln(
-            parseTerminalOutput(content.replaceAll("\n", "\r\n").trim()),
-          );
-          terminal.current.write(`\n`);
-        }
+        renderCommand(commands[i], terminal.current);
       }
-
       lastCommandIndex.current = commands.length;
     }
   }, [commands]);
