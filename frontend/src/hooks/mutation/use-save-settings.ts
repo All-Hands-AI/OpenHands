@@ -27,6 +27,7 @@ const saveSettingsMutationFn = async (
     remote_runtime_resource_factor: settings.REMOTE_RUNTIME_RESOURCE_FACTOR,
     enable_default_condenser: settings.ENABLE_DEFAULT_CONDENSER,
     enable_sound_notifications: settings.ENABLE_SOUND_NOTIFICATIONS,
+    enable_repository_memory: settings.ENABLE_REPOSITORY_MEMORY,
     user_consents_to_analytics: settings.user_consents_to_analytics,
     provider_tokens: settings.provider_tokens,
   };

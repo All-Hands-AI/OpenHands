@@ -124,6 +124,8 @@ function AccountSettings() {
       formData.get("enable-memory-condenser-switch")?.toString() === "on";
     const enableSoundNotifications =
       formData.get("enable-sound-notifications-switch")?.toString() === "on";
+    const enableRepositoryMemory =
+      formData.get("enable-repository-memory-switch")?.toString() === "on";
     const llmBaseUrl = formData.get("base-url-input")?.toString().trim() || "";
     const inputApiKey = formData.get("llm-api-key-input")?.toString() || "";
     const llmApiKey =
@@ -154,6 +156,7 @@ function AccountSettings() {
       user_consents_to_analytics: userConsentsToAnalytics,
       ENABLE_DEFAULT_CONDENSER: enableMemoryCondenser,
       ENABLE_SOUND_NOTIFICATIONS: enableSoundNotifications,
+      ENABLE_REPOSITORY_MEMORY: enableRepositoryMemory,
       LLM_MODEL: finalLlmModel,
       LLM_BASE_URL: finalLlmBaseUrl,
       llm_api_key: finalLlmApiKey,
@@ -355,6 +358,15 @@ function AccountSettings() {
                   {t(I18nKey.SETTINGS$ENABLE_MEMORY_CONDENSATION)}
                 </SettingsSwitch>
               )}
+
+              <SettingsSwitch
+                testId="enable-repository-memory-switch"
+                name="enable-repository-memory-switch"
+                defaultIsToggled={!!settings.ENABLE_REPOSITORY_MEMORY}
+                tooltip={t(I18nKey.SETTINGS$LONGTERM_MEMORY_TOOLTIP)}
+              >
+                {t(I18nKey.SETTINGS$LONGTERM_MEMORY)}
+              </SettingsSwitch>
 
               {llmConfigMode === "advanced" && confirmationModeIsEnabled && (
                 <div>

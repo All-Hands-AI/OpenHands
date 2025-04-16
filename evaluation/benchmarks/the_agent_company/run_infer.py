@@ -13,7 +13,10 @@ from typing import List
 import yaml
 from browsing import pre_login
 
-from evaluation.utils.shared import get_default_sandbox_config_for_eval
+from evaluation.utils.shared import (
+    get_default_sandbox_config_for_eval,
+    update_agent_config_for_eval,
+)
 from openhands.controller.state.state import State
 from openhands.core.config import (
     AppConfig,
@@ -58,12 +61,14 @@ def get_config(
     )
     config.set_llm_config(llm_config)
     if agent_config:
+        agent_config = update_agent_config_for_eval(agent_config)
         config.set_agent_config(agent_config)
     else:
         logger.info('Agent config not provided, using default settings')
         agent_config = AgentConfig(
             enable_prompt_extensions=False,
         )
+        agent_config = update_agent_config_for_eval(agent_config)
         config.set_agent_config(agent_config)
     return config
 

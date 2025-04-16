@@ -147,6 +147,12 @@ class Session:
             self.logger.info(f'Enabling default condenser: {default_condenser_config}')
             agent_config.condenser = default_condenser_config
 
+        # Set repository memory setting
+        agent_config.enable_repository_memory = settings.enable_repository_memory
+        self.logger.info(
+            f'Repository memory enabled: {settings.enable_repository_memory}'
+        )
+
         mcp_tools = await fetch_mcp_tools_from_config(self.config.mcp)
         agent = Agent.get_cls(agent_cls)(llm, agent_config)
         agent.set_mcp_tools(mcp_tools)
@@ -216,7 +222,8 @@ class Session:
             await self.send(event_to_dict(event))
         # NOTE: ipython observations are not sent here currently
         elif event.source == EventSource.ENVIRONMENT and isinstance(
-            event, (CmdOutputObservation, AgentStateChangedObservation)
+            event,
+            (CmdOutputObservation, AgentStateChangedObservation, RecallObservation),
         ):
             # feedback from the environment to agent actions is understood as agent events by the UI
             event_dict = event_to_dict(event)

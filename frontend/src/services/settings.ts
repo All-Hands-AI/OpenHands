@@ -14,6 +14,7 @@ export const DEFAULT_SETTINGS: Settings = {
   PROVIDER_TOKENS_SET: { github: false, gitlab: false },
   ENABLE_DEFAULT_CONDENSER: true,
   ENABLE_SOUND_NOTIFICATIONS: false,
+  ENABLE_REPOSITORY_MEMORY: true,
   USER_CONSENTS_TO_ANALYTICS: false,
   PROVIDER_TOKENS: {
     github: "",
