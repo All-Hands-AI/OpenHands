@@ -77,7 +77,7 @@ function FileViewer() {
   };
 
   return (
-    <div className="flex h-full bg-base-secondary relative mt-0">
+    <div className="flex h-full bg-base-secondary relative">
       <FileExplorer isOpen={fileExplorerIsOpen} onToggle={toggleFileExplorer} />
       <div className="w-full h-full flex flex-col">
         {selectedPath && files[selectedPath] && (

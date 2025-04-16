@@ -22,7 +22,6 @@ export function FileExplorerHeader({
         "sticky top-0 bg-base-secondary",
         "flex items-center",
         !isOpen ? "justify-center" : "justify-between",
-        "mt-0", // Ensure no top margin that could affect parent layout
       )}
     >
       {isOpen && (

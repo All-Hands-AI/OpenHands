@@ -57,7 +57,6 @@ export function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
         className={cn(
           "bg-base-secondary h-full border-r-1 border-r-neutral-600 flex flex-col",
           !isOpen ? "w-12" : "w-60",
-          "mt-0", // Ensure no top margin that could affect parent layout
         )}
       >
         <div className="flex flex-col relative h-full px-3 py-2 overflow-hidden">
