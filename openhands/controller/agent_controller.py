@@ -179,7 +179,7 @@ class AgentController:
 
             if isinstance(event, SystemMessageAction):
                 # Do not try to add the system message if it already exists
-                return 
+                return
 
         # Add the system message to the event stream
         # This should be done for all agents, including delegates

@@ -133,9 +133,7 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
     events = list(mock_event_stream.get_events())
 
     # SystemMessageAction, RecallAction, AgentChangeState, AgentDelegateAction, SystemMessageAction (for child)
-    assert (
-        mock_event_stream.get_latest_event_id() == 5
-    )  
+    assert mock_event_stream.get_latest_event_id() == 5
 
     # a RecallObservation and an AgentDelegateAction should be in the list
     assert any(isinstance(event, RecallObservation) for event in events)
