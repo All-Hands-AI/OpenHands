@@ -156,8 +156,6 @@ export default function MainApp() {
       {config.data?.FEATURE_FLAGS.ENABLE_BILLING &&
         config.data?.APP_MODE === "saas" &&
         settings?.IS_NEW_USER && <SetupPaymentModal />}
-
-      {/* Invitation Code functionality now implemented directly on the home page */}
     </div>
   )
 }
