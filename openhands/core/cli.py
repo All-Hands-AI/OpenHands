@@ -73,6 +73,7 @@ COMMANDS = {
     '/exit': 'Exit the application',
     '/help': 'Display available commands',
     '/init': 'Initialize a new repository',
+    '/status': 'Display session details and usage metrics',
 }
 
 REPO_MD_CREATE_PROMPT = """
@@ -119,6 +120,7 @@ class UsageMetrics:
         self.total_output_tokens: int = 0
         self.total_cache_read: int = 0
         self.total_cache_write: int = 0
+        self.session_init_time: float = time.time()
 
 
 prompt_session = PromptSession(style=DEFAULT_STYLE, completer=CommandCompleter())
@@ -373,7 +375,7 @@ def display_usage_metrics(usage_metrics: UsageMetrics):
             style=COLOR_GREY,
             wrap_lines=True,
         ),
-        title='Session Summary',
+        title='Usage Metrics',
         style=f'fg:{COLOR_GREY}',
     )
     print_container(container)
@@ -383,6 +385,20 @@ def display_usage_metrics(usage_metrics: UsageMetrics):
 def display_shutdown_message(usage_metrics: UsageMetrics, session_id: str):
     display_usage_metrics(usage_metrics)
     print_formatted_text(HTML(f'<grey>Closed session {session_id}</grey>\n'))
+
+
+def display_status(usage_metrics: UsageMetrics, session_id: str):
+    current_time = time.time()
+    session_duration = current_time - usage_metrics.session_init_time
+    hours, remainder = divmod(session_duration, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    duration_str = f'{int(hours)}h {int(minutes)}m {int(seconds)}s'
+
+    print_formatted_text('')  # Add a newline
+    print_formatted_text(HTML(f'<grey>Session ID: {session_id}</grey>'))
+    print_formatted_text(HTML(f'<grey>Session Duration: {duration_str}</grey>'))
+    print_formatted_text('')  # Add a newline
+    display_usage_metrics(usage_metrics)
 
 
 async def read_prompt_input(multiline=False):
@@ -712,6 +728,9 @@ async def main(loop: asyncio.AbstractEventLoop):
                     print_formatted_text(
                         '\nRepository initialization through the CLI is only supported for local runtime.\n'
                     )
+                continue
+            elif next_message == '/status':
+                display_status(usage_metrics, sid)
                 continue
 
             action = MessageAction(content=next_message)
