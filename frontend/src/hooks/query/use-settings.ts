@@ -4,6 +4,7 @@ import posthog from "posthog-js";
 import OpenHands from "#/api/open-hands";
 import { useAuth } from "#/context/auth-context";
 import { DEFAULT_SETTINGS } from "#/services/settings";
+import { useDisableApiOnTos } from "../use-disable-api-on-tos";
 
 const getSettingsQueryFn = async () => {
   const apiSettings = await OpenHands.getSettings();
@@ -29,6 +30,7 @@ const getSettingsQueryFn = async () => {
 export const useSettings = () => {
   const { setProviderTokensSet, providerTokensSet, setProvidersAreSet } =
     useAuth();
+  const disableApiCalls = useDisableApiOnTos();
 
   const query = useQuery({
     queryKey: ["settings", providerTokensSet],
@@ -39,6 +41,7 @@ export const useSettings = () => {
     retry: (_, error) => error.status !== 404,
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 15, // 15 minutes
+    enabled: !disableApiCalls,
     meta: {
       disableToast: true,
     },

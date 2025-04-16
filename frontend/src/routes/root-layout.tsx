@@ -103,6 +103,11 @@ export default function MainApp() {
   }, []);
 
   React.useEffect(() => {
+    // Skip API-related redirects on the TOS page
+    if (pathname === "/tos") {
+      return;
+    }
+
     // Don't allow users to use the app if it 402s
     if (error?.status === 402 && pathname !== "/") {
       navigate("/");
