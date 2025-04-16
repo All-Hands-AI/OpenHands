@@ -17,15 +17,15 @@ from .db import metadata
 # )
 
 # Define InvitationCode table
-InvitationCode = Table(
-    'invitation_codes',
-    metadata,
-    Column('code', String, primary_key=True, nullable=False),
-    Column('created_by', String, ForeignKey('users.public_key'), nullable=False),
-    Column('created_at', DateTime, server_default=func.now(), nullable=False),
-    Column('used_by', String, ForeignKey('users.public_key'), nullable=True),
-    Column('used_at', DateTime, nullable=True),
-)
+# InvitationCode = Table(
+#     'invitation_codes',
+#     metadata,
+#     Column('code', String, primary_key=True, nullable=False),
+#     Column('created_by', String, ForeignKey('users.public_key'), nullable=False),
+#     Column('created_at', DateTime, server_default=func.now(), nullable=False),
+#     Column('used_by', String, ForeignKey('users.public_key'), nullable=True),
+#     Column('used_at', DateTime, nullable=True),
+# )
 
 Conversation = Table(
     'conversations',

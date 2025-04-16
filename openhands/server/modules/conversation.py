@@ -1,8 +1,10 @@
 import select
-from openhands.server.models import Conversation, User
+from openhands.server.models import Conversation
 from openhands.server.db import database
 from openhands.core.logger import openhands_logger as logger
 from sqlalchemy import select
+
+from openhands.server.thesis_auth import get_user_detail_from_thesis_auth_server
 
 
 class ConversationModule:
@@ -60,8 +62,7 @@ class ConversationModule:
             if not existing_record.published:
                 return 'Conversation not published', None
             user_id = existing_record.user_id
-            user_query = select(User).where(User.c.public_key == user_id.lower())
-            user = await database.fetch_one(user_query)
+            user = get_user_detail_from_thesis_auth_server(user_id)
             if not user:
                 return 'User not found', None
             return None, {'mnemonic': user['mnemonic'], 'user_id': user_id}

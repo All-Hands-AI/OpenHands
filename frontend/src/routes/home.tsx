@@ -44,6 +44,8 @@ function Home() {
     )
   }
 
+  console.log({ isUserLoggedIn, needsInvitation })
+
   // If user is logged in and needs invitation, show only the invitation component
   if (isUserLoggedIn && needsInvitation) {
     return (

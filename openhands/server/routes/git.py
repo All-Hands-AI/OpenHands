@@ -201,27 +201,11 @@ async def get_suggested_tasks(
     )
 
 
-# @app.get('/status', response_model=dict)
-# async def get_user_status(request: Request):
-#     """Get the current user's status (activated or non_activated)"""
-#     user_id = get_user_id(request)
-#     if not user_id:
-#         return JSONResponse(
-#             content={'error': 'User not authenticated'},
-#             status_code=status.HTTP_401_UNAUTHORIZED,
-#         )
-
-#     # Query the user record to get status
-#     query = select(UserModel).where(UserModel.c.public_key == user_id.lower())
-#     user = await database.fetch_one(query)
-
-#     if not user:
-#         return JSONResponse(
-#             content={'error': 'User not found'},
-#             status_code=status.HTTP_404_NOT_FOUND,
-#         )
-
-#     return {
-#         'status': "activated" if user.whitelisted == UserStatus.WHITELISTED else "non_activated",
-#         'activated': user.whitelisted == UserStatus.WHITELISTED
-#     }
+@app.get('/status', response_model=dict)
+async def get_user_status(request: Request):
+    """Get the current user's status (activated or non_activated)"""
+    user = request.state.user
+    return {
+        'status': "activated" if user.whitelisted == UserStatus.WHITELISTED else "non_activated",
+        'activated': user.whitelisted == UserStatus.WHITELISTED
+    }
