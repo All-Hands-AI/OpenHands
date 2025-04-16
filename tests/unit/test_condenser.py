@@ -331,10 +331,7 @@ def test_llm_summarizing_condenser_from_config():
     config = LLMSummarizingCondenserConfig(
         max_size=50,
         keep_first=10,
-        llm_config=LLMConfig(
-            model='gpt-4o',
-            api_key='test_key',
-        ),
+        llm_config=LLMConfig(model='gpt-4o', api_key='test_key', caching_prompt=True),
     )
     condenser = Condenser.from_config(config)
 
@@ -343,6 +340,10 @@ def test_llm_summarizing_condenser_from_config():
     assert condenser.llm.config.api_key.get_secret_value() == 'test_key'
     assert condenser.max_size == 50
     assert condenser.keep_first == 10
+
+    # Since this condenser can't take advantage of caching, we intercept the
+    # passed config and manually flip the caching prompt to False.
+    assert not condenser.llm.config.caching_prompt
 
 
 def test_llm_summarizing_condenser_invalid_config():
@@ -474,6 +475,7 @@ def test_llm_attention_condenser_from_config():
         llm_config=LLMConfig(
             model='gpt-4o',
             api_key='test_key',
+            caching_prompt=True,
         ),
     )
     condenser = Condenser.from_config(config)
@@ -483,6 +485,10 @@ def test_llm_attention_condenser_from_config():
     assert condenser.llm.config.api_key.get_secret_value() == 'test_key'
     assert condenser.max_size == 50
     assert condenser.keep_first == 10
+
+    # Since this condenser can't take advantage of caching, we intercept the
+    # passed config and manually flip the caching prompt to False.
+    assert not condenser.llm.config.caching_prompt
 
 
 def test_llm_attention_condenser_invalid_config():
@@ -614,6 +620,7 @@ def test_structured_summary_condenser_from_config():
         llm_config=LLMConfig(
             model='gpt-4o',
             api_key='test_key',
+            caching_prompt=True,
         ),
     )
     condenser = Condenser.from_config(config)
@@ -623,6 +630,10 @@ def test_structured_summary_condenser_from_config():
     assert condenser.llm.config.api_key.get_secret_value() == 'test_key'
     assert condenser.max_size == 50
     assert condenser.keep_first == 10
+
+    # Since this condenser can't take advantage of caching, we intercept the
+    # passed config and manually flip the caching prompt to False.
+    assert not condenser.llm.config.caching_prompt
 
 
 def test_structured_summary_condenser_invalid_config():
