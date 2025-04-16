@@ -1,11 +1,28 @@
 import json
 import os
-from fastapi import Request, HTTPException
+from enum import IntEnum
+from fastapi import HTTPException
 import requests
+from pydantic import BaseModel
 from openhands.core.logger import openhands_logger as logger
 
 
-def get_user_detail_from_thesis_auth_server(bearer_token: str) -> dict | None:
+class UserStatus(IntEnum):
+    INACTIVE = 0
+    ACTIVE = 1
+    WHITELISTED = 1
+    BLACKLISTED = 0
+
+
+class ThesisUser(BaseModel):
+    status: UserStatus
+    whitelisted: int
+    publicAddress: str
+    mnemonic: str
+    # Add other fields as needed
+
+
+def get_user_detail_from_thesis_auth_server(bearer_token: str) -> ThesisUser | None:
     url = f"{os.getenv('THESIS_AUTH_SERVER_URL')}/api/users/detail"
 
     payload = {}
@@ -15,8 +32,10 @@ def get_user_detail_from_thesis_auth_server(bearer_token: str) -> dict | None:
     }
 
     response = requests.request("GET", url, headers=headers, data=payload)
-    user = response.json()['user']
-    return user
+    user_data = response.json()['user']
+    if not user_data:
+        return None
+    return ThesisUser(**user_data)
 
 def add_invite_code_to_user(code: str, bearer_token: str) -> dict | None:
     try:
@@ -34,14 +53,13 @@ def add_invite_code_to_user(code: str, bearer_token: str) -> dict | None:
             logger.error(f"Failed to add invite code: {response.status_code} - {response.text}")
             raise HTTPException(
                 status_code=response.status_code,
-                detail=f"Failed to add invite code: {response.text}"
+                detail=f"{response.json().get('error')}"
             )
             
         return response.json()
-        
     except Exception as e:
         logger.error(f"Unexpected error while adding invite code: {str(e)}")
         raise HTTPException(
             status_code=500,
-            detail=f"Unexpected error while adding invite code: {str(e)}"
+            detail=f"{str(e)}"
         ) 

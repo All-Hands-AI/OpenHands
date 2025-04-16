@@ -16,10 +16,10 @@ from sqlalchemy import select
 from openhands.core.logger import openhands_logger as logger
 from openhands.server import shared
 from openhands.server.auth import get_user_id
+from openhands.server.thesis_auth import get_user_detail_from_thesis_auth_server, ThesisUser, UserStatus
 from openhands.server.routes.auth import JWT_SECRET
 from openhands.server.thesis_auth import get_user_detail_from_thesis_auth_server
 from openhands.server.types import SessionMiddlewareInterface
-from openhands.server.db import database
 
 
 class LocalhostCORSMiddleware(CORSMiddleware):
@@ -257,14 +257,14 @@ class CheckUserActivationMiddleware(BaseHTTPMiddleware):
                 content={'detail': 'User not authenticated'},
             )
 
-        user = get_user_detail_from_thesis_auth_server(request.headers.get('Authorization'))
-        if not user or user['status'] != 1:
+        user: ThesisUser | None = get_user_detail_from_thesis_auth_server(request.headers.get('Authorization'))
+        if not user:
             return JSONResponse(
                 status_code=404,
                 content={'detail': 'User not found'},
             )
 
-        if user['status'] != 'activated':
+        if user.whitelisted != UserStatus.WHITELISTED:
             return JSONResponse(
                 status_code=403,
                 content={'detail': 'User account is not activated'},

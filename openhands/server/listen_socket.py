@@ -21,7 +21,6 @@ from openhands.events.observation.agent import (
 from openhands.events.serialization import event_to_dict
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderToken
 from openhands.integrations.service_types import ProviderType
-from openhands.server.db import database
 from openhands.server.routes.auth import JWT_ALGORITHM, JWT_SECRET
 from openhands.server.shared import (
     ConversationStoreImpl,
@@ -29,7 +28,7 @@ from openhands.server.shared import (
     conversation_manager,
     sio,
 )
-from openhands.server.thesis_auth import get_user_detail_from_thesis_auth_server
+from openhands.server.thesis_auth import get_user_detail_from_thesis_auth_server, ThesisUser, UserStatus
 from openhands.utils.get_user_setting import get_user_setting
 from openhands.server.modules import conversation_module
 
@@ -99,18 +98,18 @@ async def connect(connection_id: str, environ):
             # Verify and decode JWT token
             payload = jwt.decode(jwt_token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
 
-            user = get_user_detail_from_thesis_auth_server('Bearer ' + jwt_token)
+            user: ThesisUser | None = get_user_detail_from_thesis_auth_server('Bearer ' + jwt_token)
             user_id = payload['user']['publicAddress']
             # Fetch user record from database
             if not user:
                 logger.error(f'User not found in database: {user_id}')
                 raise ConnectionRefusedError('User not found')
 
-            if user['status'] != 1:
+            if user.whitelisted != UserStatus.WHITELISTED:
                 logger.error(f'User not activated: {user_id}')
                 raise ConnectionRefusedError('User not activated')
 
-            mnemonic = user['mnemonic']
+            mnemonic = user.mnemonic
         except jwt.ExpiredSignatureError:
             logger.error('JWT token has expired')
             raise ConnectionRefusedError('Token has expired')

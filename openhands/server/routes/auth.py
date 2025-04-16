@@ -1,5 +1,3 @@
-import hashlib
-import hmac
 import json
 import os
 from datetime import datetime
@@ -9,17 +7,9 @@ import requests
 import jwt
 from eth_account.messages import encode_defunct
 from fastapi import APIRouter, HTTPException, Request
-from hdwallet import BIP44HDWallet
-from hdwallet.cryptocurrencies import EthereumMainnet
-from mnemonic import Mnemonic
 from pydantic import BaseModel
-from solders.keypair import Keypair
-from sqlalchemy import select
 from web3 import Web3
-
-from openhands.server.auth import get_user_id
-from openhands.server.db import database
-from openhands.server.utils.crypto import generate_mnemonic
+from openhands.core.logger import openhands_logger as logger
 
 app = APIRouter(prefix='/api/auth')
 
@@ -32,7 +22,6 @@ AUTH_MESSAGE = 'Sign to confirm account access to Thesis'
 JWT_SECRET = os.getenv('JWT_SECRET')
 
 JWT_ALGORITHM = 'HS256'
-JWT_EXPIRES_IN = None  # Token never expires
 
 
 class SignupRequest(BaseModel):
@@ -69,20 +58,23 @@ def verify_ethereum_signature(public_address: str, signature: str) -> bool:
 @app.post('/signup', response_model=SignupResponse)
 async def signup(request: SignupRequest) -> SignupResponse:
     """Sign up with Ethereum wallet."""
-    url = f"{os.getenv('THESIS_AUTH_SERVER_URL')}/api/users/login"
-    payload = json.dumps({
-        "signature": request.signature,
-        "publicAddress": request.publicAddress
-    })
-    headers = {
-        'Content-Type': 'application/json'
-    }
-    response = requests.request("POST", url, headers=headers, data=payload)
-
-    return SignupResponse(
-        token=response.json()['token'],
-        user=response.json()['user']
-    )
+    try:
+        url = f"{os.getenv('THESIS_AUTH_SERVER_URL')}/api/users/login"
+        payload = json.dumps({
+            "signature": request.signature,
+            "publicAddress": request.publicAddress
+        })
+        headers = {
+            'Content-Type': 'application/json'
+        }
+        response = requests.request("POST", url, headers=headers, data=payload)
+        resJson = response.json()
+        return SignupResponse(
+            token=resJson['token'],
+            user={'id': resJson['user']['publicAddress'], 'publicAddress': resJson['user']['publicAddress']},
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Error signing up: {str(e)}')
 
 
 @app.get('/address-by-network/{network_id}')

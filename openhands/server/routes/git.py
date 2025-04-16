@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, status, Request
 from fastapi.responses import JSONResponse
 from pydantic import SecretStr
 from sqlalchemy import select
-
+from openhands.server.thesis_auth import get_user_detail_from_thesis_auth_server, ThesisUser, UserStatus
 from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
@@ -19,6 +19,7 @@ from openhands.integrations.service_types import (
 from openhands.server.auth import get_access_token, get_provider_tokens, get_user_id
 from openhands.server.shared import server_config
 from openhands.server.db import database
+from openhands.server.thesis_auth import ThesisUser, UserStatus
 
 app = APIRouter(prefix='/api/user')
 
@@ -200,27 +201,27 @@ async def get_suggested_tasks(
     )
 
 
-@app.get('/status', response_model=dict)
-async def get_user_status(request: Request):
-    """Get the current user's status (activated or non_activated)"""
-    user_id = get_user_id(request)
-    if not user_id:
-        return JSONResponse(
-            content={'error': 'User not authenticated'},
-            status_code=status.HTTP_401_UNAUTHORIZED,
-        )
-    
-    # Query the user record to get status
-    query = select(UserModel).where(UserModel.c.public_key == user_id.lower())
-    user = await database.fetch_one(query)
-    
-    if not user:
-        return JSONResponse(
-            content={'error': 'User not found'},
-            status_code=status.HTTP_404_NOT_FOUND,
-        )
-    
-    return {
-        'status': user['status'],
-        'activated': user['status'] == 'activated'
-    }
+# @app.get('/status', response_model=dict)
+# async def get_user_status(request: Request):
+#     """Get the current user's status (activated or non_activated)"""
+#     user_id = get_user_id(request)
+#     if not user_id:
+#         return JSONResponse(
+#             content={'error': 'User not authenticated'},
+#             status_code=status.HTTP_401_UNAUTHORIZED,
+#         )
+
+#     # Query the user record to get status
+#     query = select(UserModel).where(UserModel.c.public_key == user_id.lower())
+#     user = await database.fetch_one(query)
+
+#     if not user:
+#         return JSONResponse(
+#             content={'error': 'User not found'},
+#             status_code=status.HTTP_404_NOT_FOUND,
+#         )
+
+#     return {
+#         'status': "activated" if user.whitelisted == UserStatus.WHITELISTED else "non_activated",
+#         'activated': user.whitelisted == UserStatus.WHITELISTED
+#     }
