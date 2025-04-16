@@ -1,19 +1,48 @@
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
-import { useCallback } from "react";
-import OpenHands from "#/api/open-hands";
+import { useCallback, useEffect } from "react";
+import axios from "axios";
+import { useQueryClient } from "@tanstack/react-query";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { I18nKey } from "#/i18n/declaration";
+import { DEFAULT_SETTINGS } from "#/services/settings";
 
 export default function TOSPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
-  // Temporarily disable the auth interceptor when on the TOS page
+  // Set default values for queries to prevent API calls
+  useEffect(() => {
+    // Set default values for config
+    queryClient.setQueryData(["config"], {
+      APP_MODE: "saas",
+      GITHUB_CLIENT_ID: null,
+    });
+
+    // Set default values for settings
+    queryClient.setQueryData(["settings"], DEFAULT_SETTINGS);
+
+    // Set default values for authentication
+    queryClient.setQueryData(["user", "authenticated"], true);
+
+    return () => {
+      // Clear the cache when leaving the TOS page
+      queryClient.invalidateQueries({ queryKey: ["config"] });
+      queryClient.invalidateQueries({ queryKey: ["settings"] });
+      queryClient.invalidateQueries({ queryKey: ["user", "authenticated"] });
+    };
+  }, [queryClient]);
+
+  // Use a direct axios call instead of the OpenHands API client
+  // to avoid triggering the interceptors and other API calls
   const handleAcceptTOS = useCallback(async () => {
     try {
-      const success = await OpenHands.acceptTOS();
-      if (success) {
+      // Create a new axios instance without interceptors
+      const baseURL = `${window.location.protocol}//${window?.location.host}`;
+      const response = await axios.post(`${baseURL}/api/accept_tos`);
+
+      if (response.status === 200) {
         // Get the last page from localStorage or default to root
         const lastPage = localStorage.getItem("openhandsLastPage") || "/";
         navigate(lastPage);
