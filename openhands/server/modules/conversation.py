@@ -62,10 +62,10 @@ class ConversationModule:
             if not existing_record.published:
                 return 'Conversation not published', None
             user_id = existing_record.user_id
-            user = get_user_detail_from_thesis_auth_server(user_id)
-            if not user:
-                return 'User not found', None
-            return None, {'mnemonic': user['mnemonic'], 'user_id': user_id}
+            # user = get_user_detail_from_thesis_auth_server(user_id)
+            # if not user:
+            #     return 'User not found', None
+            return None, {'user_id': user_id}
         except Exception as e:
             logger.error(f'Error getting conversation visibility by id: {str(e)}')
             return 'Error getting conversation visibility by id', None

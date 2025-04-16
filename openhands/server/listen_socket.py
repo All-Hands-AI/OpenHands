@@ -66,8 +66,7 @@ async def connect(connection_id: str, environ):
         if error:
             raise ConnectionRefusedError(error)
         else:
-            mnemonic = info['mnemonic']
-            user_id = info['user_id']
+            user_id = str(info['user_id'])
     else:
         # Get JWT token from query params
         jwt_token = query_params.get('auth', [None])[0]
