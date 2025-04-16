@@ -391,6 +391,7 @@ async def _get_conversation_info(
         if not title:
             title = get_default_conversation_title(conversation.conversation_id)
         return ConversationInfo(
+            trigger=conversation.trigger,
             conversation_id=conversation.conversation_id,
             title=title,
             last_updated_at=conversation.last_updated_at,

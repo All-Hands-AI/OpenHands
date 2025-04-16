@@ -121,7 +121,7 @@ class AgentSession:
                 agent=agent,
                 git_provider_tokens=git_provider_tokens,
                 selected_repository=selected_repository,
-                selected_branch=selected_branch
+                selected_branch=selected_branch,
             )
 
             if replay_json:
@@ -259,7 +259,7 @@ class AgentSession:
         agent: Agent,
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
         selected_repository: Repository | None = None,
-        selected_branch: str | None = None
+        selected_branch: str | None = None,
     ) -> bool:
         """Creates a runtime instance
 

@@ -91,7 +91,7 @@ class ActionExecutionClient(Runtime):
             attach_to_existing,
             headless_mode,
             user_id,
-            git_provider_tokens
+            git_provider_tokens,
         )
 
     @abstractmethod
