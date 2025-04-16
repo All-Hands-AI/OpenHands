@@ -166,25 +166,25 @@ async def store_provider_tokens(request: Request, settings: POSTSettingsModel):
     existing_settings = await settings_store.load()
     if existing_settings:
         if settings.provider_tokens:
-                if existing_settings.secrets_store:
-                    existing_providers = [
-                        provider.value
-                        for provider in existing_settings.secrets_store.provider_tokens
-                    ]
+            if existing_settings.secrets_store:
+                existing_providers = [
+                    provider.value
+                    for provider in existing_settings.secrets_store.provider_tokens
+                ]
 
-                    # Merge incoming settings store with the existing one
-                    for provider, token_value in settings.provider_tokens.items():
-                        if provider in existing_providers and not token_value:
-                            provider_type = ProviderType(provider)
-                            existing_token = (
-                                existing_settings.secrets_store.provider_tokens.get(
-                                    provider_type
-                                )
+                # Merge incoming settings store with the existing one
+                for provider, token_value in list(settings.provider_tokens.items()):
+                    if provider in existing_providers and not token_value:
+                        provider_type = ProviderType(provider)
+                        existing_token = (
+                            existing_settings.secrets_store.provider_tokens.get(
+                                provider_type
                             )
-                            if existing_token and existing_token.token:
-                                settings.provider_tokens[provider] = (
-                                    existing_token.token.get_secret_value()
-                                )
+                        )
+                        if existing_token and existing_token.token:
+                            settings.provider_tokens[provider] = (
+                                existing_token.token.get_secret_value()
+                            )
         else:  # nothing passed in means keep current settings
             provider_tokens = existing_settings.secrets_store.provider_tokens
             settings.provider_tokens = {
