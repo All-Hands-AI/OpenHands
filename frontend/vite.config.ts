@@ -30,7 +30,10 @@ export default defineConfig(({ mode }) => {
       svgr(),
     ],
     server: {
-      port: FE_PORT,
+      port: 12000,
+      host: '0.0.0.0',
+      cors: true,
+      allowedHosts: ['work-1-dsxxcxwbemmogbty.prod-runtime.all-hands.dev', 'work-2-dsxxcxwbemmogbty.prod-runtime.all-hands.dev'],
       proxy: {
         "/api": {
           target: API_URL,

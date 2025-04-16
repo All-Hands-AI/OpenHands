@@ -55,11 +55,16 @@ export const useTerminal = ({
       if (commands.length > 0) {
         for (let i = 0; i < commands.length; i += 1) {
           const { content, type } = commands[i];
-          terminal.current?.writeln(
-            parseTerminalOutput(content.replaceAll("\n", "\r\n").trim()),
-          );
-
-          if (type === "output") {
+          
+          if (type === "command") {
+            terminal.current?.write("$ ");
+            terminal.current?.writeln(
+              `\x1b[90m${parseTerminalOutput(content.replaceAll("\n", "\r\n").trim())}\x1b[0m`,
+            );
+          } else {
+            terminal.current?.writeln(
+              parseTerminalOutput(content.replaceAll("\n", "\r\n").trim()),
+            );
             terminal.current.write(`\n`);
           }
         }
@@ -85,11 +90,15 @@ export const useTerminal = ({
         // eslint-disable-next-line prefer-const
         let { content, type } = commands[i];
 
-        terminal.current?.writeln(
-          parseTerminalOutput(content.replaceAll("\n", "\r\n").trim()),
-        );
-
-        if (type === "output") {
+        if (type === "command") {
+          terminal.current?.write("$ ");
+          terminal.current?.writeln(
+            `\x1b[90m${parseTerminalOutput(content.replaceAll("\n", "\r\n").trim())}\x1b[0m`,
+          );
+        } else {
+          terminal.current?.writeln(
+            parseTerminalOutput(content.replaceAll("\n", "\r\n").trim()),
+          );
           terminal.current.write(`\n$ `);
         }
       }
