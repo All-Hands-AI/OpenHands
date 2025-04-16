@@ -116,3 +116,11 @@ class GETSettingsModel(Settings):
 
     provider_tokens_set: dict[str, bool] | None = None
     llm_api_key_set: bool
+
+
+class GETSettingsCustomSecrets:
+    """
+    Custom secrets names
+    """
+
+    custom_secrets: list[str] | None = None

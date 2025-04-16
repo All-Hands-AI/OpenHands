@@ -6,7 +6,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.provider import ProviderToken, ProviderType, SecretStore
 from openhands.integrations.utils import validate_provider_token
 from openhands.server.auth import get_provider_tokens, get_user_id
-from openhands.server.settings import GETSettingsModel, POSTSettingsModel, Settings
+from openhands.server.settings import GETSettingsCustomSecrets, GETSettingsModel, POSTSettingsModel, Settings
 from openhands.server.shared import SettingsStoreImpl, config, server_config
 from openhands.server.types import AppMode
 
@@ -47,6 +47,34 @@ async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
         )
         settings_with_token_data.llm_api_key = None
         return settings_with_token_data
+    except Exception as e:
+        logger.warning(f'Invalid token: {e}')
+        return JSONResponse(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            content={'error': 'Invalid token'},
+        )
+
+
+@app.get('/settings-custom-secrets', response_model=GETSettingsCustomSecrets)
+async def load_custom_secrets_names(request: Request) -> GETSettingsCustomSecrets | JSONResponse:
+    try:
+        user_id = get_user_id(request)
+        settings_store = await SettingsStoreImpl.get_instance(config, user_id)
+        settings = await settings_store.load()
+        if not settings:
+            return JSONResponse(
+                status_code=status.HTTP_404_NOT_FOUND,
+                content={'error': 'Settings not found'},
+            )
+
+        custom_secrets = []
+        if settings.secrets_store.custom_secrets:
+            for secret_name, _ in settings.secrets_store.custom_secrets.items():
+                custom_secrets.append(secret_name)
+
+        secret_names = GETSettingsCustomSecrets(custom_secrets)
+        return secret_names
+
     except Exception as e:
         logger.warning(f'Invalid token: {e}')
         return JSONResponse(
