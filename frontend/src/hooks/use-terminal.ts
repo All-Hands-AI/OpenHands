@@ -17,6 +17,23 @@ const DEFAULT_TERMINAL_CONFIG: UseTerminalConfig = {
   commands: [],
 };
 
+const renderCommand = (command: Command, terminal: Terminal) => {
+  const { content, type } = command;
+
+  if (type === "input") {
+    terminal.write("$ ");
+    terminal.writeln(
+      parseTerminalOutput(content.replaceAll("\n", "\r\n").trim()),
+    );
+  } else {
+    terminal.write(`\n`);
+    terminal.writeln(
+      parseTerminalOutput(content.replaceAll("\n", "\r\n").trim()),
+    );
+    terminal.write(`\n`);
+  }
+};
+
 // Create a persistent reference that survives component unmounts
 // This ensures terminal history is preserved when navigating away and back
 const persistentLastCommandIndex = { current: 0 };
@@ -45,28 +62,21 @@ export const useTerminal = ({
     }
   };
 
+  // Initialize terminal and handle cleanup
   React.useEffect(() => {
     terminal.current = createTerminal();
     fitAddon.current = new FitAddon();
 
     if (ref.current) {
       initializeTerminal();
-
+      // Render all commands in array
+      // This happens when we just switch to Terminal from other tabs
       if (commands.length > 0) {
         for (let i = 0; i < commands.length; i += 1) {
-          const { content, type } = commands[i];
-          terminal.current?.writeln(
-            parseTerminalOutput(content.replaceAll("\n", "\r\n").trim()),
-          );
-
-          if (type === "output") {
-            terminal.current.write(`\n`);
-          }
+          renderCommand(commands[i], terminal.current);
         }
         lastCommandIndex.current = commands.length;
       }
-
-      terminal.current.write("$ ");
     }
 
     return () => {
@@ -75,26 +85,16 @@ export const useTerminal = ({
   }, [commands]);
 
   React.useEffect(() => {
-    /* Write commands to the terminal */
+    // Render new commands when they are added to the commands array
     if (
       terminal.current &&
       commands.length > 0 &&
       lastCommandIndex.current < commands.length
     ) {
       for (let i = lastCommandIndex.current; i < commands.length; i += 1) {
-        // eslint-disable-next-line prefer-const
-        let { content, type } = commands[i];
-
-        terminal.current?.writeln(
-          parseTerminalOutput(content.replaceAll("\n", "\r\n").trim()),
-        );
-
-        if (type === "output") {
-          terminal.current.write(`\n$ `);
-        }
+        renderCommand(commands[i], terminal.current);
       }
-
-      lastCommandIndex.current = commands.length; // Update the position of the last command
+      lastCommandIndex.current = commands.length;
     }
   }, [commands]);
 
