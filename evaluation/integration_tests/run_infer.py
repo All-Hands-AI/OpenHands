@@ -62,9 +62,9 @@ def get_config(
         )
     )
     agent_config = AgentConfig(
-        codeact_enable_jupyter=True,
-        codeact_enable_browsing=True,
-        codeact_enable_llm_editor=False,
+        enable_jupyter=True,
+        enable_browsing=True,
+        enable_llm_editor=False,
     )
     config.set_agent_config(agent_config)
     return config

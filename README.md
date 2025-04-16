@@ -27,7 +27,7 @@ Welcome to OpenHands (formerly OpenDevin), a platform for software development a
 OpenHands agents can do anything a human developer can: modify code, run commands, browse the web,
 call APIs, and yes—even copy code snippets from StackOverflow.
 
-Learn more at [docs.all-hands.dev](https://docs.all-hands.dev), or [sign up for OpenHands Cloud](app.all-hands.dev) to get started.
+Learn more at [docs.all-hands.dev](https://docs.all-hands.dev), or [sign up for OpenHands Cloud](https://app.all-hands.dev) to get started.
 
 > [!IMPORTANT]
 > Using OpenHands for work? We'd love to chat! Fill out
@@ -37,7 +37,7 @@ Learn more at [docs.all-hands.dev](https://docs.all-hands.dev), or [sign up for 
 ![App screenshot](./docs/static/img/screenshot.png)
 
 ## ☁️ OpenHands Cloud
-The easiest way to get started with OpenHands is on [OpenHands Cloud](app.all-hands.dev),
+The easiest way to get started with OpenHands is on [OpenHands Cloud](https://app.all-hands.dev),
 which comes with $50 in free credits for new users.
 
 ## 💻 Running OpenHands Locally
