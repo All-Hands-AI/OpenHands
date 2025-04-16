@@ -10,6 +10,7 @@ from openhands.server.middleware import (
     LocalhostCORSMiddleware,
     ProviderTokenMiddleware,
     RateLimitMiddleware,
+    CheckUserActivationMiddleware,
 )
 from openhands.server.static import SPAStaticFiles
 
@@ -20,6 +21,7 @@ base_app.mount(
 base_app.middleware('http')(AttachConversationMiddleware(base_app))
 
 # Add middleware to the base app - need to be added before the other middlewares
+base_app.add_middleware(CheckUserActivationMiddleware)
 base_app.add_middleware(JWTAuthMiddleware)
 
 base_app.add_middleware(

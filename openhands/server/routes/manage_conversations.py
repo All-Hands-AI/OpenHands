@@ -398,7 +398,7 @@ async def delete_conversation(
     await conversation_store.delete_metadata(conversation_id)
 
     # delete conversation from database
-    await conversation_module._delete_conversation(conversation_id, user_id)
+    await conversation_module._delete_conversation(conversation_id, str(user_id))
     return True
 
 
@@ -415,7 +415,7 @@ async def change_visibility(
     # metadata = await conversation_store.get_metadata(conversation_id)
     # if not metadata:
     #     return False
-    return await conversation_module._update_conversation_visibility(conversation_id, is_published, user_id)
+    return await conversation_module._update_conversation_visibility(conversation_id, is_published, str(user_id))
 
 
 @app.get('/conversations/{conversation_id}/visibility')
@@ -424,7 +424,7 @@ async def get_conversation_visibility(
     request: Request,
 ) -> bool:
     user_id = get_user_id(request)
-    return await conversation_module._get_conversation_visibility(conversation_id, user_id)
+    return await conversation_module._get_conversation_visibility(conversation_id, str(user_id))
 
 
 async def _get_conversation_info(

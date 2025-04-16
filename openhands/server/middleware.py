@@ -5,17 +5,20 @@ from typing import Callable
 from urllib.parse import urlparse
 
 import jwt
-from fastapi import Request, status
+from fastapi import Request, status, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request as StarletteRequest
 from starlette.types import ASGIApp
+from sqlalchemy import select
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.server import shared
 from openhands.server.auth import get_user_id
+from openhands.server.thesis_auth import get_user_detail_from_thesis_auth_server, ThesisUser, UserStatus
 from openhands.server.routes.auth import JWT_SECRET
+from openhands.server.thesis_auth import get_user_detail_from_thesis_auth_server
 from openhands.server.types import SessionMiddlewareInterface
 
 
@@ -214,10 +217,65 @@ class ProviderTokenMiddleware(SessionMiddlewareInterface):
         return await call_next(request)
 
 
+class CheckUserActivationMiddleware(BaseHTTPMiddleware):
+    def __init__(self, app: ASGIApp):
+        super().__init__(app)
+        self.public_paths = [
+            '/api/auth/signup',
+            '/alive',
+            '/server_info',
+            '/api/options/config',
+            '/api/options/models',
+            '/api/options/agents',
+            '/api/options/security-analyzers',
+            '/api/options/use-cases',
+            '/api/options/use-cases/conversations',
+            '/api/invitation/',
+            '/api/user/status',
+        ]
+
+        self.public_path_patterns = [
+            '/api/options/use-cases/conversations/',
+            '/api/invitation/validate/',
+        ]
+
+    async def dispatch(self, request: Request, call_next):
+        if request.url.path in self.public_paths:
+            return await call_next(request)
+        for pattern in self.public_path_patterns:
+            if request.url.path.startswith(pattern):
+                remaining = request.url.path[len(pattern):]
+                logger.info(f"Remaining path: {remaining}")
+                if remaining and '/' not in remaining:
+                    return await call_next(request)
+
+        user_id = get_user_id(request)
+        logger.info(f"Checking user activation for {user_id}")
+        if not user_id:
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                content={'detail': 'User not authenticated'},
+            )
+
+        user: ThesisUser | None = get_user_detail_from_thesis_auth_server(request.headers.get('Authorization'))
+        if not user:
+            return JSONResponse(
+                status_code=404,
+                content={'detail': 'User not found'},
+            )
+
+        if user.whitelisted != UserStatus.WHITELISTED:
+            return JSONResponse(
+                status_code=403,
+                content={'detail': 'User account is not activated'},
+            )
+
+        return await call_next(request)
+
+
 class JWTAuthMiddleware(BaseHTTPMiddleware):
     def __init__(self, app: ASGIApp):
         super().__init__(app)
-        # TODO: update this to include all public paths "/api/settings",
         self.public_paths = [
             '/api/auth/signup',
             '/alive',
@@ -240,25 +298,7 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
 
         for pattern in self.public_path_patterns:
             if request.url.path.startswith(pattern):
-                remaining = request.url.path[len(pattern) :]
-                if remaining and '/' not in remaining:
-                    return await call_next(request)
-
-        for pattern in self.public_path_patterns:
-            if request.url.path.startswith(pattern):
-                remaining = request.url.path[len(pattern) :]
-                if remaining and '/' not in remaining:
-                    return await call_next(request)
-
-        for pattern in self.public_path_patterns:
-            if request.url.path.startswith(pattern):
-                remaining = request.url.path[len(pattern) :]
-                if remaining and '/' not in remaining:
-                    return await call_next(request)
-
-        for pattern in self.public_path_patterns:
-            if request.url.path.startswith(pattern):
-                remaining = request.url.path[len(pattern) :]
+                remaining = request.url.path[len(pattern):]
                 if remaining and '/' not in remaining:
                     return await call_next(request)
 
@@ -272,8 +312,21 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
         token = auth_header.split(' ')[1]
         try:
             payload = jwt.decode(token, JWT_SECRET, algorithms=['HS256'])
-            request.state.user_id = payload['sub']
+            user_id = payload['user']['publicAddress']
+
+            request.state.user_id = user_id
+
+            user: ThesisUser | None = get_user_detail_from_thesis_auth_server(request.headers.get('Authorization'))
+            if not user:
+                return JSONResponse(
+                    status_code=404,
+                    content={'detail': 'User not found'},
+                )
+            # Only set user in request.state if all checks pass
+            request.state.user = user
+
             return await call_next(request)
+
         except jwt.ExpiredSignatureError:
             return JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED,

@@ -1,8 +1,8 @@
-# Getting Started with the OpenHands Frontend
+# Getting Started with the Thesis Frontend
 
 ## Overview
 
-This is the frontend of the OpenHands project. It is a React application that provides a web interface for the OpenHands project.
+This is the frontend of the Thesis project. It is a React application that provides a web interface for the Thesis project.
 
 ## Tech Stack
 
@@ -27,10 +27,7 @@ This is the frontend of the OpenHands project. It is a React application that pr
 
 ```sh
 # Clone the repository
-git clone https://github.com/All-Hands-AI/OpenHands.git
-
-# Change the directory to the frontend
-cd OpenHands/frontend
+git clone https://github.com/oraichain/thesis-client.git
 
 # Install the dependencies
 npm install
@@ -61,6 +58,7 @@ make build
 # Start the application
 make run
 ```
+
 Or to run backend and frontend seperately.
 
 ```sh
@@ -73,6 +71,7 @@ cd frontend && npm start -- --port 3001
 ```
 
 Start frontend with Mock Service Worker (MSW), see testing for more info.
+
 ```sh
 npm run dev:mock or npm run dev:mock:saas
 ```
@@ -141,6 +140,7 @@ components
 ### Testing Framework and Tools
 
 We use the following testing tools:
+
 - **Test Runner**: Vitest
 - **Rendering**: React Testing Library
 - **User Interactions**: @testing-library/user-event
@@ -150,11 +150,13 @@ We use the following testing tools:
 ### Running Tests
 
 To run all tests:
+
 ```sh
 npm run test
 ```
 
 To run tests with coverage:
+
 ```sh
 npm run test:coverage
 ```
@@ -162,6 +164,7 @@ npm run test:coverage
 ### Testing Best Practices
 
 1. **Component Testing**
+
    - Test components in isolation
    - Use our custom [`renderWithProviders()`](https://github.com/All-Hands-AI/OpenHands/blob/ce26f1c6d3feec3eedf36f823dee732b5a61e517/frontend/test-utils.tsx#L56-L85) that wraps the components we want to test in our providers. It is especially useful for components that use Redux
    - Use `render()` from React Testing Library to render components
@@ -169,22 +172,26 @@ npm run test:coverage
    - Test both rendering and interaction scenarios
 
 2. **User Event Simulation**
+
    - Use `userEvent` for simulating realistic user interactions
    - Test keyboard events, clicks, typing, and other user actions
    - Handle edge cases like disabled states, empty inputs, etc.
 
 3. **Mocking**
+
    - We test components that make network requests by mocking those requests with Mock Service Worker (MSW)
    - Use `vi.fn()` to create mock functions for callbacks and event handlers
    - Mock external dependencies and API calls (more info)[https://mswjs.io/docs/getting-started]
    - Verify mock function calls using `.toHaveBeenCalledWith()`, `.toHaveBeenCalledTimes()`
 
 4. **Accessibility Testing**
+
    - Use `toBeInTheDocument()` to check element presence
    - Test keyboard navigation and screen reader compatibility
    - Verify correct ARIA attributes and roles
 
 5. **State and Prop Testing**
+
    - Test component behavior with different prop combinations
    - Verify state changes and conditional rendering
    - Test error states and loading scenarios
@@ -194,6 +201,7 @@ npm run test:coverage
    - Verify text rendering across different languages
 
 Example Test Structure:
+
 ```typescript
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -224,6 +232,7 @@ For real-world examples of testing, check out these test files:
 
 1. **Chat Input Component Test**:
    [`__tests__/components/chat/chat-input.test.tsx`](https://github.com/All-Hands-AI/OpenHands/blob/main/frontend/__tests__/components/chat/chat-input.test.tsx)
+
    - Demonstrates comprehensive testing of a complex input component
    - Covers various scenarios like submission, disabled states, and user interactions
 
@@ -241,6 +250,7 @@ For real-world examples of testing, check out these test files:
 ### Continuous Integration
 
 Tests are automatically run during:
+
 - Pre-commit hooks
 - Pull request checks
 - CI/CD pipeline
