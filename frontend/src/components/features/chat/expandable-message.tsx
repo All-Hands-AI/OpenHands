@@ -30,7 +30,6 @@ interface ExpandableMessageProps {
   success?: boolean;
   observation?: PayloadAction<OpenHandsObservation>;
   action?: PayloadAction<OpenHandsAction>;
-  customHeader?: string;
 }
 
 export function ExpandableMessage({
@@ -40,7 +39,6 @@ export function ExpandableMessage({
   success,
   observation,
   action,
-  customHeader,
 }: ExpandableMessageProps) {
   const { data: config } = useConfig();
   const { t, i18n } = useTranslation();
@@ -55,12 +53,8 @@ export function ExpandableMessage({
   });
 
   useEffect(() => {
-    // If we have a custom header, initially collapse the message
-    if (customHeader) {
-      setShowDetails(false);
-    }
-    // Otherwise, if we have a translation ID, process it
-    else if (id && i18n.exists(id)) {
+    // If we have a translation ID, process it
+    if (id && i18n.exists(id)) {
       let processedObservation = observation;
       let processedAction = action;
 
@@ -100,7 +94,7 @@ export function ExpandableMessage({
       setDetails(message);
       setShowDetails(false);
     }
-  }, [id, message, observation, action, i18n.language, customHeader]);
+  }, [id, message, observation, action, i18n.language]);
 
   const statusIconClasses = "h-4 w-4 ml-2 inline";
 
@@ -144,8 +138,7 @@ export function ExpandableMessage({
               type === "error" ? "text-danger" : "text-neutral-300",
             )}
           >
-            {customHeader ||
-              (translationId && i18n.exists(translationId) ? (
+            {translationId && i18n.exists(translationId) ? (
                 <Trans
                   i18nKey={translationId}
                   values={translationParams}
@@ -157,7 +150,7 @@ export function ExpandableMessage({
                 />
               ) : (
                 message
-              ))}
+              )}
             <button
               type="button"
               onClick={() => setShowDetails(!showDetails)}
