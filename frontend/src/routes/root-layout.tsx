@@ -114,6 +114,7 @@ export default function MainApp() {
   }, [error?.status, pathname, isFetching]);
 
   const userIsAuthed = !!isAuthed && !authError;
+  // Don't show auth modal on TOS page to prevent infinite loop
   const renderAuthModal =
     !isFetchingAuth &&
     !userIsAuthed &&

@@ -9,6 +9,7 @@ export default function TOSPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
+  // Temporarily disable the auth interceptor when on the TOS page
   const handleAcceptTOS = useCallback(async () => {
     try {
       const success = await OpenHands.acceptTOS();

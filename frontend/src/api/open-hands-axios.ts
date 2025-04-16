@@ -17,8 +17,11 @@ openHands.interceptors.response.use(
       error.response?.data?.tos_not_accepted
     ) {
       // Save the last page before redirecting to TOS
-      saveLastPage();
-      window.location.href = "/tos";
+      // Only redirect if we're not already on the TOS page
+      if (window.location.pathname !== "/tos") {
+        saveLastPage();
+        window.location.href = "/tos";
+      }
     }
     return Promise.reject(error);
   },
