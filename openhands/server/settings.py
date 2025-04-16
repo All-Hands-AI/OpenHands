@@ -108,6 +108,12 @@ class POSTSettingsModel(Settings):
 
     provider_tokens: dict[str, str] = {}
 
+class POSTSettingsCustomSecrets:
+    """
+    Adding new custom secret
+    """
+
+    custom_secrets: dict[str, str] = {}
 
 class GETSettingsModel(Settings):
     """

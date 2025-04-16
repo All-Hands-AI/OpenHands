@@ -6,7 +6,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.provider import ProviderToken, ProviderType, SecretStore
 from openhands.integrations.utils import validate_provider_token
 from openhands.server.auth import get_provider_tokens, get_user_id
-from openhands.server.settings import GETSettingsCustomSecrets, GETSettingsModel, POSTSettingsModel, Settings
+from openhands.server.settings import GETSettingsCustomSecrets, GETSettingsModel, POSTSettingsCustomSecrets, POSTSettingsModel, Settings
 from openhands.server.shared import SettingsStoreImpl, config, server_config
 from openhands.server.types import AppMode
 
@@ -82,6 +82,35 @@ async def load_custom_secrets_names(request: Request) -> GETSettingsCustomSecret
             content={'error': 'Invalid token'},
         )
 
+@app.post('/settings-add-custom-secret', response_model=dict[str,str])
+async def add_custom_secret(request: Request, custom_secrets: POSTSettingsCustomSecrets) -> JSONResponse:
+    try:
+        settings_store = await SettingsStoreImpl.get_instance(
+            config, get_user_id(request)
+        )
+        existing_settings = await settings_store.load()
+        if existing_settings:
+            for secret_name, secret_value in existing_settings.secrets_store.custom_secrets.items():
+                if secret_name not in custom_secrets: # Allow incoming values to override existing ones
+                    custom_secrets[secret_name] = secret_value.get_secret_value()
+            
+            updated_settings = existing_settings.model_copy(
+                update={'secrets_store': SecretStore(custom_secrets=custom_secrets)}
+            )
+
+            updated_settings = convert_to_settings(updated_settings)
+            await settings_store.store(updated_settings)
+
+        return JSONResponse(
+                status_code=status.HTTP_200_OK,
+                content={'message': 'Settings stored'},
+            )
+    except Exception as e:
+        logger.warning(f'Something went wrong storing settings: {e}')
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={'error': 'Something went wrong storing settings'},
+        )
 
 @app.post('/unset-settings-tokens', response_model=dict[str, str])
 async def unset_settings_tokens(request: Request) -> JSONResponse:
