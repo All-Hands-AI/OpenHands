@@ -20,7 +20,7 @@ export function ReadonlyBadge({ showTooltip = false }: ReadonlyBadgeProps) {
   }
 
   return (
-    <Tooltip content={t(I18nKey.TERMINAL$TOOLTIP_READ_ONLY)} closeDelay={100}>
+    <Tooltip content={t(I18nKey.BADGE$TERMINAL_READ_ONLY)} closeDelay={100}>
       {badge}
     </Tooltip>
   );
