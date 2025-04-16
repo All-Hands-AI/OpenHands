@@ -110,7 +110,6 @@ class Runtime(FileEditRuntimeMixin):
         headless_mode: bool = False,
         user_id: str | None = None,
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
-        additional_agent_instructions: str | None = None,
     ):
         self.sid = sid
         self.event_stream = event_stream
@@ -156,10 +155,6 @@ class Runtime(FileEditRuntimeMixin):
 
         self.user_id = user_id
         self.git_provider_tokens = git_provider_tokens
-        logger.info(
-            f'Received additional agent instructions: {additional_agent_instructions}'
-        )
-        self._additional_agent_instructions = additional_agent_instructions
 
     def setup_initial_env(self) -> None:
         if self.attach_to_existing:

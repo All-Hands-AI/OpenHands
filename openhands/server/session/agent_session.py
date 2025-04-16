@@ -282,7 +282,7 @@ class AgentSession:
         runtime_cls = get_runtime_cls(runtime_name)
 
         if runtime_cls == RemoteRuntime:
-            self.runtime = runtime_cls(
+            self.runtime = RemoteRuntime(
                 config=config,
                 event_stream=self.event_stream,
                 sid=self.sid,

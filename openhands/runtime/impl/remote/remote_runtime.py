@@ -63,7 +63,6 @@ class RemoteRuntime(ActionExecutionClient):
             headless_mode,
             user_id,
             git_provider_tokens,
-            additional_agent_instructions,
         )
         if self.config.sandbox.api_key is None:
             raise ValueError(
@@ -90,6 +89,8 @@ class RemoteRuntime(ActionExecutionClient):
             self.session,
         )
         self.available_hosts: dict[str, int] = {}
+
+        self._additional_agent_instructions = additional_agent_instructions
 
     def log(self, level: str, message: str) -> None:
         message = f'[runtime session_id={self.sid} runtime_id={self.runtime_id or "unknown"}] {message}'
