@@ -82,7 +82,7 @@ export const useTerminal = ({
     return () => {
       terminal.current?.dispose();
     };
-  }, []);
+  }, [commands]);
 
   React.useEffect(() => {
     // Render new commands when they are added to the commands array
