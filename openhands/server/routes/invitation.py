@@ -25,4 +25,4 @@ async def validate_invitation_code(code: str, request: Request) -> dict:
         }
     except Exception as e:
         logger.error(f"Error validating invitation code: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=e.detail)

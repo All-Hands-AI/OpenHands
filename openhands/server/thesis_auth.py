@@ -69,5 +69,5 @@ def add_invite_code_to_user(code: str, bearer_token: str) -> dict | None:
         logger.error(f"Unexpected error while adding invite code: {str(e)}")
         raise HTTPException(
             status_code=500,
-            detail=f"{str(e)}"
+            detail=f"{e.detail}"
         ) 
