@@ -20,6 +20,7 @@ AUTH_MESSAGE = 'Sign to confirm account access to Thesis'
 
 # JWT settings
 JWT_SECRET = os.getenv('JWT_SECRET')
+# JWT_SECRET = 'your-secret-key-for-demo-lp-mcp'
 
 JWT_ALGORITHM = 'HS256'
 

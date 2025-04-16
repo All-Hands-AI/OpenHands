@@ -37,8 +37,9 @@ from openhands.events.action import (
     FileReadAction,
     IPythonRunCellAction,
     MessageAction,
+    McpAction
 )
-from openhands.events.action.mcp import McpAction
+from openhands.events.action.a2a_action import A2AListRemoteAgentsAction, A2ASendTaskAction
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.tool import ToolCallMetadata
 from openhands.llm import LLM
@@ -225,6 +226,20 @@ def response_to_actions(
                 action = McpAction(
                     name=original_action_name,
                     arguments=tool_call.function.arguments,
+                )
+            # ================================================
+            # A2A
+            # ================================================
+            elif tool_call.function.name == 'a2a_list_remote_agents':
+                action = A2AListRemoteAgentsAction()
+            elif tool_call.function.name == 'a2a_send_task':
+                if 'agent_name' and 'task_message' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "agent_name" and "task_message" in tool call {tool_call.function.name}'
+                    )
+                action = A2ASendTaskAction(
+                    agent_name=arguments['agent_name'],
+                    task_message=arguments['task_message'],
                 )
             else:
                 raise FunctionCallNotExistsError(

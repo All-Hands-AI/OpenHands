@@ -28,11 +28,11 @@ from openhands.events.observation import (
 from openhands.events.serialization.event import event_to_dict
 from openhands.llm.llm import LLM
 
-from autogen_agentchat.agents import AssistantAgent
-from autogen_agentchat.teams import MagenticOneGroupChat
-from autogen_ext.models.anthropic import AnthropicChatCompletionClient
-from autogen_ext.tools.mcp import SseServerParams, mcp_server_tools
-from autogen_agentchat.agents import AssistantAgent
+# from autogen_agentchat.agents import AssistantAgent
+# from autogen_agentchat.teams import MagenticOneGroupChat
+# from autogen_ext.models.anthropic import AnthropicChatCompletionClient
+# from autogen_ext.tools.mcp import SseServerParams, mcp_server_tools
+# from autogen_agentchat.agents import AssistantAgent
 
 from openhands.utils.async_utils import call_async_from_sync
 
@@ -59,12 +59,12 @@ class DummyAgent(Agent):
         #     for tool in await mcp_server_tools(SseServerParams(url=tool_url)):
         #         tools.append(tool)
 
-        print(f"tools used: {tools}")
+        # print(f"tools used: {tools}")
 
-        model_client = AnthropicChatCompletionClient(model=llm.config.model, api_key=llm.config.api_key.get_secret_value())
-        print(f"model_client: {llm.config.api_key.get_secret_value()}")
-        mcp = AssistantAgent(name="MCPTools", model_client=model_client, tools=tools)
-        self.team = MagenticOneGroupChat(participants=[mcp], model_client=model_client)
+        # model_client = AnthropicChatCompletionClient(model=llm.config.model, api_key=llm.config.api_key.get_secret_value())
+        # print(f"model_client: {llm.config.api_key.get_secret_value()}")
+        # mcp = AssistantAgent(name="MCPTools", model_client=model_client, tools=tools)
+        # self.team = MagenticOneGroupChat(participants=[mcp], model_client=model_client)
 
     def step(self, state: State) -> Action:
 

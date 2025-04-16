@@ -20,6 +20,7 @@ class AgentConfig(BaseModel):
         condenser: Configuration for the memory condenser. Default is NoOpCondenserConfig.
         enable_history_truncation: Whether history should be truncated to continue the session when hitting LLM context length limit.
         enable_som_visual_browsing: Whether to enable SoM (Set of Marks) visual browsing. Default is False.
+        a2a_server_url: A list of URLs for the A2A server. Default is an empty list.
     """
 
     llm_config: str | None = Field(default=None)
@@ -33,6 +34,7 @@ class AgentConfig(BaseModel):
     condenser: CondenserConfig = Field(
         default_factory=lambda: NoOpCondenserConfig(type='noop')
     )
+    a2a_server_urls: list[str] = Field(default_factory=list)
 
     model_config = {'extra': 'forbid'}
 

@@ -1,6 +1,7 @@
 import os
 from collections import deque
 
+from openhands.a2a.tools import ListRemoteAgents, SendTask
 import openhands.agenthub.codeact_agent.function_calling as codeact_function_calling
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
@@ -76,6 +77,10 @@ class CodeActAgent(Agent):
             codeact_enable_llm_editor=self.config.codeact_enable_llm_editor,
             llm=self.llm,
         )
+        # Add A2A tools if A2A server URLs are provided
+        if self.config.a2a_server_urls:
+            built_in_tools.append(ListRemoteAgents)
+            built_in_tools.append(SendTask)
 
         self.tools = built_in_tools
 

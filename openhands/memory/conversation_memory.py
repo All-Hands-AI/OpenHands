@@ -19,6 +19,7 @@ from openhands.events.action import (
     IPythonRunCellAction,
     MessageAction,
 )
+from openhands.events.action.a2a_action import A2AListRemoteAgentsAction, A2ASendTaskAction
 from openhands.events.action.mcp import McpAction
 from openhands.events.event import Event, RecallType
 from openhands.events.observation import (
@@ -33,6 +34,7 @@ from openhands.events.observation import (
     PlanObservation,
     UserRejectObservation,
 )
+from openhands.events.observation.a2a import A2AListRemoteAgentsObservation, A2ASendTaskObservation
 from openhands.events.observation.agent import (
     MicroagentKnowledge,
     RecallObservation,
@@ -200,6 +202,8 @@ class ConversationMemory:
                 BrowseInteractiveAction,
                 BrowseURLAction,
                 McpAction,
+                A2AListRemoteAgentsAction,
+                A2ASendTaskAction,
             ),
         ) or (isinstance(action, CmdRunAction) and action.source == 'agent'):
             tool_metadata = action.tool_call_metadata
@@ -543,6 +547,12 @@ class ConversationMemory:
             # If prompt extensions are disabled, we don't add any additional info
             # TODO: test this
             return []
+        elif isinstance(obs, A2AListRemoteAgentsObservation):
+            text = truncate_content(obs.content, max_message_chars)
+            message = Message(role='user', content=[TextContent(text=text)])
+        elif isinstance(obs, A2ASendTaskObservation):
+            text = truncate_content(obs.content, max_message_chars)
+            message = Message(role='user', content=[TextContent(text=text)])
         else:
             # If an observation message is not returned, it will cause an error
             # when the LLM tries to return the next message

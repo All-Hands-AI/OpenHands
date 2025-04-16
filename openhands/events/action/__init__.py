@@ -17,6 +17,7 @@ from openhands.events.action.files import (
 )
 from openhands.events.action.mcp import McpAction
 from openhands.events.action.message import MessageAction
+from openhands.events.action.a2a_action import A2AListRemoteAgentsAction, A2ASendTaskAction
 
 __all__ = [
     'Action',
@@ -37,4 +38,6 @@ __all__ = [
     'AgentThinkAction',
     'RecallAction',
     'McpAction',
+    'A2AListRemoteAgentsAction',
+    'A2ASendTaskAction',
 ]
