@@ -1,9 +1,18 @@
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from enum import Enum
+from openhands.integrations.service_types import ProviderType
+
+
+class ConversationTrigger(Enum):
+    CLOUD_RESOLVER = 'cloud_resolver'
+    GUI = 'gui'
 
 
 @dataclass
 class ConversationMetadata:
+    trigger: ConversationTrigger
+    providers: list[ProviderType]
     conversation_id: str
     github_user_id: str | None
     selected_repository: str | None

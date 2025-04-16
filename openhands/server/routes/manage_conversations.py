@@ -33,7 +33,7 @@ from openhands.server.shared import (
     file_store,
 )
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
-from openhands.storage.data_models.conversation_metadata import ConversationMetadata
+from openhands.storage.data_models.conversation_metadata import ConversationMetadata, ConversationTrigger
 from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.utils.async_utils import wait_all
 from openhands.utils.conversation_summary import generate_conversation_title
@@ -57,6 +57,7 @@ async def _create_new_conversation(
     initial_user_msg: str | None,
     image_urls: list[str] | None,
     replay_json: str | None,
+    conversation_trigger: ConversationTrigger = ConversationTrigger.GUI,
     attach_convo_id: bool = False,
     additional_agent_instructions: str | None = None
 ):
@@ -110,6 +111,8 @@ async def _create_new_conversation(
     logger.info(f'Saving metadata for conversation {conversation_id}')
     await conversation_store.save_metadata(
         ConversationMetadata(
+            trigger=conversation_trigger,
+            providers=[provider for provider in git_provider_tokens] if git_provider_tokens else [],
             conversation_id=conversation_id,
             title=conversation_title,
             user_id=user_id,
