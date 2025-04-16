@@ -3,6 +3,8 @@ import copy
 import os
 import traceback
 from typing import Callable, ClassVar, Type
+import time
+from datetime import datetime
 
 import litellm  # noqa
 from litellm.exceptions import (  # noqa
@@ -22,6 +24,7 @@ from litellm.exceptions import (  # noqa
 
 from openhands.controller.agent import Agent
 from openhands.controller.replay import ReplayManager
+from openhands.controller.state.plan import Plan
 from openhands.controller.state.state import State, TrafficControlState
 from openhands.controller.stuck import StuckDetector
 from openhands.core.config import AgentConfig, LLMConfig
@@ -54,8 +57,12 @@ from openhands.events.action import (
     IPythonRunCellAction,
     MessageAction,
     NullAction,
+    MarkTaskAction,
+    CreatePlanAction,
+    AssignTaskAction
 )
 from openhands.events.action.agent import CondensationAction, RecallAction
+from openhands.events.action.plan import TaskStatus
 from openhands.events.event import Event
 from openhands.events.observation import (
     AgentDelegateObservation,
@@ -77,6 +84,7 @@ TRAFFIC_CONTROL_REMINDER = (
 class AgentController:
     id: str
     agent: Agent
+    planning_agent: Agent | None = None
     max_iterations: int
     event_stream: EventStream
     state: State
@@ -92,6 +100,7 @@ class AgentController:
         NullObservation,
         ChangeAgentStateAction,
         AgentStateChangedObservation,
+        MarkTaskAction
     )
     _cached_first_user_message: MessageAction | None = None
 
@@ -100,6 +109,7 @@ class AgentController:
         agent: Agent,
         event_stream: EventStream,
         max_iterations: int,
+        planning_agent: Agent | None = None,
         max_budget_per_task: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
@@ -117,6 +127,7 @@ class AgentController:
             agent: The agent instance to control.
             event_stream: The event stream to publish events to.
             max_iterations: The maximum number of iterations the agent can run.
+            planning_agent: The planning agent to use for task planning.
             max_budget_per_task: The maximum budget (in USD) allowed per task, beyond which the agent will stop.
             agent_to_llm_config: A dictionary mapping agent names to LLM configurations in the case that
                 we delegate to a different agent.
@@ -132,6 +143,7 @@ class AgentController:
         """
         self.id = sid or event_stream.sid
         self.agent = agent
+        self.planning_agent = planning_agent
         self.headless_mode = headless_mode
         self.is_delegate = is_delegate
 
@@ -311,6 +323,9 @@ class AgentController:
             return False
 
         if isinstance(event, Action):
+            if isinstance(event, CreatePlanAction) or isinstance(event, MarkTaskAction):
+                return False
+
             if isinstance(event, MessageAction) and event.source == EventSource.USER:
                 return True
             if (
@@ -325,6 +340,10 @@ class AgentController:
                 return True
             return False
         if isinstance(event, Observation):
+            if isinstance(event, AgentDelegateObservation):
+                # this is a delegate observation, so we should not step
+                return False
+            
             if (
                 isinstance(event, NullObservation)
                 and event.cause is not None
@@ -353,12 +372,14 @@ class AgentController:
                 AgentState.ERROR,
                 AgentState.REJECTED,
             ):
+                time.sleep(0.1)
                 # Forward the event to delegate and skip parent processing
                 asyncio.get_event_loop().run_until_complete(
                     self.delegate._on_event(event)
                 )
                 return
             else:
+                time.sleep(0.1)
                 # delegate is done or errored, so end it
                 self.end_delegate()
                 return
@@ -402,6 +423,44 @@ class AgentController:
                 )
                 await self.delegate.set_agent_state_to(AgentState.RUNNING)
             return
+        
+        # --------------------- Planning agent actions ---------------------
+        elif isinstance(action, CreatePlanAction):
+            # Create a plan
+            self._create_plan(action)
+
+            # mark the first task as in progress
+            active_plan: Plan = self.state.plans[self.state.active_plan_id]
+            self.state.current_task_index = 0
+            active_plan.tasks[0].status = TaskStatus.IN_PROGRESS
+            self.event_stream.add_event(
+                MarkTaskAction(
+                    plan_id=self.state.active_plan_id,
+                    task_index=self.state.current_task_index,
+                    task_content=active_plan.tasks[0].content,
+                    task_status=TaskStatus.IN_PROGRESS,
+                ),
+                EventSource.AGENT,
+            )
+
+        elif isinstance(action, MarkTaskAction):
+            if action.task_status == TaskStatus.IN_PROGRESS:
+                self.state.current_task_index = action.task_index
+                plan: Plan = self.state.plans[self.state.active_plan_id]
+                # assign the task to the agent
+                self.event_stream.add_event(
+                    AssignTaskAction(
+                        plan_id=self.state.active_plan_id,
+                        task_index=action.task_index,
+                        task_content=plan.tasks[action.task_index].content,
+                        delegate_id=self.id + f'_{action.task_index}',
+                    ),
+                    EventSource.USER,
+                )
+        elif isinstance(action, AssignTaskAction):
+            await self.assign_task_to_the_delegate(action)
+        
+        # /------------------------- Planning agent actions ---------------------
 
         elif isinstance(action, AgentFinishAction):
             self.state.outputs = action.outputs
@@ -446,6 +505,49 @@ class AgentController:
         elif isinstance(observation, ErrorObservation):
             if self.state.agent_state == AgentState.ERROR:
                 self.state.metrics.merge(self.state.local_metrics)
+        elif isinstance(observation, AgentDelegateObservation):
+            # recieve a delegate observation which means the delegate agent is done
+            # mark the task as completed
+            active_plan_obj: Plan = self.state.plans[self.state.active_plan_id]
+            current_task = active_plan_obj.tasks[self.state.current_task_index]
+            current_task.status = TaskStatus.COMPLETED
+            self.event_stream.add_event(
+                MarkTaskAction(
+                    plan_id=self.state.active_plan_id,
+                    task_index=self.state.current_task_index,
+                    task_content=current_task.content,
+                    task_status=TaskStatus.COMPLETED,
+                ),
+                EventSource.AGENT,
+            )
+
+            # update result to the active plan
+            active_plan_obj.tasks[
+                self.state.current_task_index
+            ].result = observation.outputs.get('final_thought', '')
+
+            # move to the next task if plan is not finished
+            if self.state.current_task_index + 1 < len(active_plan_obj.tasks):
+                self.state.current_task_index += 1
+                current_task = active_plan_obj.tasks[self.state.current_task_index]
+                current_task.status = TaskStatus.IN_PROGRESS
+                self.event_stream.add_event(
+                    MarkTaskAction(
+                        plan_id=self.state.active_plan_id,
+                        task_index=self.state.current_task_index,
+                        task_content=current_task.content,
+                        task_status=TaskStatus.IN_PROGRESS,
+                    ),
+                    EventSource.AGENT,
+                )
+            # if plan is finished, add user message to trigger planning agent finalize the plan
+            else:
+                self.event_stream.add_event(
+                    MessageAction(
+                        content='All tasks are completed. Please accomplish the plan and send it to the user.',
+                    ),
+                    EventSource.USER,
+                )
 
     async def _handle_message_action(self, action: MessageAction) -> None:
         """Handles message actions from the event stream.
@@ -663,6 +765,77 @@ class AgentController:
             headless_mode=self.headless_mode,
         )
 
+    def _create_plan(self, action: CreatePlanAction) -> None:
+        """Creates a plan for the agent.
+
+        Args:
+            action: The CreatePlanAction to process.
+        """
+        self.state.plans[action.plan_id] = Plan.from_create_plan_action(action)
+
+        self.state.active_plan_id = action.plan_id
+
+    async def assign_task_to_the_delegate(self, action: AssignTaskAction) -> None:
+        """Assign a task to the delegate.
+
+        Args:
+            action: The AssignTaskAction to process.
+        """
+
+        # init state
+        state = State(
+            session_id=action.delegate_id,
+            inputs={},
+            local_iteration=0,
+            iteration=self.state.iteration,
+            max_iterations=self.state.max_iterations,
+            delegate_level=self.state.delegate_level + 1,
+            # global metrics should be shared between parent and child
+            metrics=self.state.metrics,
+            # start on top of the stream
+            start_id=self.event_stream.get_latest_event_id() + 1,
+        )
+
+        self.log(
+            'warning',
+            f'start delegate, creating agent {self.agent.name}',
+        )
+
+        # init controller for the task
+        controller = AgentController(
+            sid=action.delegate_id,
+            agent=self.agent,
+            event_stream=self.event_stream,
+            max_iterations=self.state.max_iterations // 2,
+            max_budget_per_task=self.max_budget_per_task,
+            agent_to_llm_config=self.agent_to_llm_config,
+            agent_configs=self.agent_configs,
+            initial_state=state,
+            is_delegate=True,
+            headless_mode=self.headless_mode,
+        )
+
+        self.delegate = controller
+
+        # assign the task to the delegate
+        assign_plan: Plan = self.state.plans[action.plan_id]
+
+        assign_task_prompt = f"""
+        CURRENT PLAN STATUS:
+        {assign_plan._format_plan(w_result=True)}
+
+        YOUR CURRENT TASK:
+        You are now working on task {action.task_index}: "{assign_plan.tasks[action.task_index].content}".
+        Please make it done as less steps as possible. You only need to focus on this task and ignore the rest of the plan.
+        Know that current time is {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}.
+        """.strip().replace('\t\t', '')
+
+        self.event_stream.add_event(
+            MessageAction(content=assign_task_prompt),
+            EventSource.USER,
+        )
+    
+
     def end_delegate(self) -> None:
         """Ends the currently active delegate (e.g., if it is finished or errored).
 
@@ -759,7 +932,7 @@ class AgentController:
             action = self._replay_manager.step()
         else:
             try:
-                action = self.agent.step(self.state)
+                action = self.planning_agent.step(self.state) if self.planning_agent else self.agent.step(self.state)
                 if action is None:
                     raise LLMNoActionError('No action was returned')
                 action._source = EventSource.AGENT  # type: ignore [attr-defined]

@@ -25,12 +25,10 @@ from openhands.llm.llm import LLM
 from openhands.mcp import fetch_mcp_tools_from_config
 from openhands.server.session.agent_session import AgentSession
 from openhands.server.session.conversation_init_data import ConversationInitData
-from openhands.server.session.planning_session import PlanningSession
 from openhands.server.settings import Settings
 from openhands.storage.files import FileStore
 
 ROOM_KEY = 'room:{sid}'
-AgentSessionType = Union[AgentSession, PlanningSession]
 
 
 class Session:
@@ -38,7 +36,7 @@ class Session:
     sio: socketio.AsyncServer | None
     last_active_ts: int = 0
     is_alive: bool = True
-    agent_session: AgentSession | PlanningSession
+    agent_session: AgentSession
     loop: asyncio.AbstractEventLoop
     config: AppConfig
     file_store: FileStore
@@ -59,11 +57,7 @@ class Session:
         self.file_store = file_store
         self.logger = OpenHandsLoggerAdapter(extra={'session_id': sid})
 
-        agent_session_cls: Type[AgentSessionType] = (
-            PlanningSession if config.enable_planning else AgentSession
-        )
-
-        self.agent_session = agent_session_cls(
+        self.agent_session = AgentSession(
             sid,
             file_store,
             status_callback=self.queue_status_message,
@@ -134,16 +128,16 @@ class Session:
         # This is a shallow copy of the default LLM config, so changes here will
         # persist if we retrieve the default LLM config again when constructing
         # the agent
-        # default_llm_config = self.config.get_llm_config()
-        # default_llm_config.model = settings.llm_model or ''
-        # default_llm_config.api_key = settings.llm_api_key
-        # default_llm_config.base_url = settings.llm_base_url
+        default_llm_config = self.config.get_llm_config()
+        default_llm_config.model = settings.llm_model or ''
+        default_llm_config.api_key = settings.llm_api_key
+        default_llm_config.base_url = settings.llm_base_url
 
         # TODO: override other LLM config & agent config groups (#2075)
 
         llm = self._create_llm(agent_cls)
         agent_config = self.config.get_agent_config(agent_cls)
-        print(f'{agent_cls} agent_config: {agent_config.model_dump_json(indent=2)}')
+        # print(f'{agent_cls} agent_config: {agent_config.model_dump_json(indent=2)}')
 
         if settings.enable_default_condenser:
             default_condenser_config = LLMSummarizingCondenserConfig(
@@ -161,7 +155,7 @@ class Session:
         planning_agent = None
         if self.config.enable_planning:
             planning_agent_config = self.config.get_agent_config(planning_agent_cls)
-            print(f'{planning_agent_cls} planning_agent_config: {planning_agent_config.model_dump_json(indent=2)}')
+            # print(f'{planning_agent_cls} planning_agent_config: {planning_agent_config.model_dump_json(indent=2)}')
 
             if settings.enable_default_condenser:
                 default_condenser_config = LLMSummarizingCondenserConfig(
@@ -187,52 +181,21 @@ class Session:
             selected_branch = settings.selected_branch
 
         try:
-            if self.config.enable_planning:
-                # For PlanningSession
-                if not planning_agent:
-                    raise ValueError('Planning agent is required for PlanningSession')
-
-                # Type cast to PlanningSession to satisfy the type checker
-                planning_session = self.agent_session
-                if not isinstance(planning_session, PlanningSession):
-                    raise TypeError('Expected PlanningSession but got AgentSession')
-
-                await planning_session.start(
-                    runtime_name=self.config.runtime,
-                    config=self.config,
-                    agent=agent,
-                    planning_agent=planning_agent,
-                    max_iterations=max_iterations,
-                    git_provider_tokens=git_provider_tokens,
-                    max_budget_per_task=self.config.max_budget_per_task,
-                    agent_to_llm_config=self.config.get_agent_to_llm_config_map(),
-                    agent_configs=self.config.get_agent_configs(),
-                    selected_repository=selected_repository,
-                    selected_branch=selected_branch,
-                    initial_message=initial_message,
-                    replay_json=replay_json,
-                )
-            else:
-                # For AgentSession (without planning_agent parameter)
-                agent_session = self.agent_session
-                if not isinstance(agent_session, AgentSession):
-                    raise TypeError('Expected AgentSession but got PlanningSession')
-
-                await agent_session.start(
-                    runtime_name=self.config.runtime,
-                    config=self.config,
-                    agent=agent,
-                    max_iterations=max_iterations,
-                    git_provider_tokens=git_provider_tokens,
-                    max_budget_per_task=self.config.max_budget_per_task,
-                    agent_to_llm_config=self.config.get_agent_to_llm_config_map(),
-                    agent_configs=self.config.get_agent_configs(),
-                    selected_repository=selected_repository,
-                    selected_branch=selected_branch,
-                    initial_message=initial_message,
-                    replay_json=replay_json,
-                )
-
+            await self.agent_session.start(
+                runtime_name=self.config.runtime,
+                config=self.config,
+                agent=agent,
+                planning_agent=planning_agent,
+                max_iterations=max_iterations,
+                max_budget_per_task=self.config.max_budget_per_task,
+                agent_to_llm_config=self.config.get_agent_to_llm_config_map(),
+                agent_configs=self.config.get_agent_configs(),
+                git_provider_tokens=git_provider_tokens,
+                selected_repository=selected_repository,
+                selected_branch=selected_branch,
+                initial_message=initial_message,
+                replay_json=replay_json,
+            )
         except Exception as e:
             self.logger.exception(f'Error creating agent_session: {e}')
             err_class = e.__class__.__name__
