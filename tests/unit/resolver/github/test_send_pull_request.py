@@ -1,6 +1,6 @@
 import os
 import tempfile
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import ANY, MagicMock, call, patch
 
 import pytest
 
@@ -884,6 +884,7 @@ def test_process_single_pr_update(
         patch_dir=f'{mock_output_dir}/patches/pr_1',
         additional_message='[Test success 1]',
         llm_config=mock_llm_config,
+        base_domain='github.com',
     )
 
 
@@ -965,6 +966,7 @@ def test_process_single_issue(
         target_branch=None,
         reviewer=None,
         pr_title=None,
+        base_domain='github.com',
     )
 
 
@@ -1126,6 +1128,9 @@ def test_process_all_successful_issues(
                 None,
                 False,
                 None,
+                None,
+                None,
+                'github.com',
             ),
             call(
                 'output_dir',
@@ -1138,6 +1143,9 @@ def test_process_all_successful_issues(
                 None,
                 False,
                 None,
+                None,
+                None,
+                'github.com',
             ),
         ]
     )
@@ -1260,7 +1268,7 @@ def test_main(
     # Run main function
     main()
 
-    mock_identify_token.assert_called_with('mock_token')
+    mock_identify_token.assert_called_with('mock_token', None, ANY)
 
     llm_config = LLMConfig(
         model=mock_args.llm_model,
@@ -1282,6 +1290,7 @@ def test_main(
         mock_args.target_branch,
         mock_args.reviewer,
         mock_args.pr_title,
+        ANY,
     )
 
     # Other assertions
@@ -1301,6 +1310,7 @@ def test_main(
         'draft',
         llm_config,
         None,
+        ANY,
     )
 
     # Test for invalid issue number
