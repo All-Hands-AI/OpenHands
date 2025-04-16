@@ -37,7 +37,6 @@ class FutureTradingAgent(Agent):
         self,
         llm: LLM,
         config: AgentConfig,
-        mcp_tools: list[dict] | None = None,
         workspace_mount_path_in_sandbox_store_in_session: bool = True,
     ) -> None:
         """Initializes a new instance of the TaskSolvingAgent class.
@@ -45,7 +44,6 @@ class FutureTradingAgent(Agent):
         Parameters:
         - llm (LLM): The llm to be used by this agent
         - config (AgentConfig): The configuration for this agent
-        - mcp_tools (list[dict] | None, optional): List of MCP tools to be used by this agent. Defaults to None.
         - workspace_mount_path_in_sandbox_store_in_session (bool, optional): Whether to store the workspace mount path in session. Defaults to True.
         """
         super().__init__(llm, config, workspace_mount_path_in_sandbox_store_in_session)
@@ -59,7 +57,7 @@ class FutureTradingAgent(Agent):
             llm=self.llm,
         )
 
-        self.tools = built_in_tools + (mcp_tools if mcp_tools is not None else [])
+        self.tools = built_in_tools
 
         # Retrieve the enabled tools
         logger.info(
@@ -109,6 +107,16 @@ class FutureTradingAgent(Agent):
             'messages': self.llm.format_messages_for_llm(messages),
         }
         params['tools'] = self.tools
+        if self.mcp_tools:
+            # Only add tools with unique names
+            existing_names = {tool['function']['name'] for tool in params['tools']}
+            unique_mcp_tools = [
+                tool
+                for tool in self.mcp_tools
+                if tool['function']['name'] not in existing_names
+            ]
+            params['tools'] += unique_mcp_tools
+            
         # log to litellm proxy if possible
         params['extra_body'] = {'metadata': state.to_llm_metadata(agent_name=self.name)}
         response = self.llm.completion(**params)
