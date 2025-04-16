@@ -28,6 +28,7 @@ import {
   Orientation,
   ResizablePanel,
 } from "#/components/layout/resizable-panel";
+import { ReadonlyBadge } from "#/components/layout/readonly-badge";
 import Security from "#/components/shared/modals/security/security";
 import { useEndSession } from "#/hooks/use-end-session";
 import { useUserConversation } from "#/hooks/query/use-user-conversation";
@@ -133,7 +134,12 @@ function AppContent() {
                 icon: <CodeIcon />,
               },
               {
-                label: t(I18nKey.WORKSPACE$TERMINAL_TAB_LABEL),
+                label: (
+                  <div className="flex items-center gap-1">
+                    {t(I18nKey.WORKSPACE$TERMINAL_TAB_LABEL)}
+                    <ReadonlyBadge showTooltip />
+                  </div>
+                ),
                 to: "terminal",
                 icon: <TerminalIcon />,
               },
