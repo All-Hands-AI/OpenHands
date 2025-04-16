@@ -67,22 +67,14 @@ async def _create_new_conversation(
         extra={'signal': 'create_conversation', 'user_id': user_id},
     )
 
-    # Check if user already has a running conversation and total conversation limit
-    if user_id:
-        # Get all conversations for the user
-        conversation_store = await ConversationStoreImpl.get_instance(
-            config, user_id, None
+    running_conversations = await conversation_manager.get_running_agent_loops(
+            user_id
         )
-        conversation_metadata_result_set = await conversation_store.search(
-            None, limit=10
-        )  # Get more than 5 to check limit
-        user_conversations = conversation_metadata_result_set.results
-
-        if len(user_conversations) >= 5:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail='You have reached the maximum limit of 5 conversations. Please delete some existing conversations before creating a new one.',
-            )
+    if len(running_conversations) >= config.max_concurrent_conversations:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"You have reached the maximum limit of {config.max_concurrent_conversations} concurrent conversations."
+        )
 
     logger.info('Loading settings')
     settings = await get_user_setting(user_id)
@@ -159,6 +151,7 @@ async def _create_new_conversation(
         user_id,
         initial_user_msg=initial_message_action,
         replay_json=replay_json,
+
     )
     logger.info(f'Finished initializing conversation {conversation_id}')
 
@@ -211,6 +204,15 @@ async def new_conversation(request: Request, data: InitSessionRequest):
                 'status': 'error',
                 'message': str(e),
                 'msg_id': 'STATUS$ERROR_LLM_AUTHENTICATION',
+            },
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+    
+    except Exception as e:
+        return JSONResponse(
+            content={
+                'status': 'error',
+                'detail': e.detail,
             },
             status_code=status.HTTP_400_BAD_REQUEST,
         )
