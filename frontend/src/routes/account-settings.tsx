@@ -1,5 +1,7 @@
 import { BrandButton } from "#/components/features/settings/brand-button"
+import { KeyStatusIcon } from "#/components/features/settings/key-status-icon"
 import { SettingsDropdownInput } from "#/components/features/settings/settings-dropdown-input"
+import { SettingsInput } from "#/components/features/settings/settings-input"
 import { SettingsSwitch } from "#/components/features/settings/settings-switch"
 import { LoadingSpinner } from "#/components/shared/loading-spinner"
 import { ModelSelector } from "#/components/shared/modals/settings/model-selector"
@@ -18,9 +20,11 @@ import {
   displaySuccessToast,
 } from "#/utils/custom-toast-handlers"
 import { handleCaptureConsent } from "#/utils/handle-capture-consent"
+import { hasAdvancedSettingsSet } from "#/utils/has-advanced-settings-set"
+import { isCustomModel } from "#/utils/is-custom-model"
 import { organizeModelsAndProviders } from "#/utils/organize-models-and-providers"
 import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message"
-import { Modal, ModalBody, ModalContent } from "@heroui/react"
+import { Modal, ModalBody, ModalContent, Tab, Tabs } from "@heroui/react"
 import React from "react"
 import { useTranslation } from "react-i18next"
 
@@ -57,7 +61,20 @@ function AccountSettings() {
     config?.FEATURE_FLAGS.HIDE_LLM_SETTINGS && isSaas
 
   const determineWhetherToToggleAdvancedSettings = () => {
-    return true
+    if (shouldHandleSpecialSaasCase) return true
+    if (isSuccess) {
+      return (
+        isCustomModel(resources.models, settings?.LLM_MODEL || "") ||
+        hasAdvancedSettingsSet({
+          ...settings,
+          PROVIDER_TOKENS: settings?.PROVIDER_TOKENS || {
+            github: "",
+            gitlab: "",
+          },
+        } as any)
+      )
+    }
+    return false
   }
 
   // TODO FIXME: unclear whether this is a good conflict
@@ -74,9 +91,7 @@ function AccountSettings() {
   const modelsAndProviders = organizeModelsAndProviders(resources?.models || [])
 
   const [llmConfigMode, setLlmConfigMode] = React.useState(
-    // TODO: uncomment this when the advanced settings are ready
-    // isAdvancedSettingsSet ? "advanced" : "basic",
-    "basic",
+    isAdvancedSettingsSet ? "advanced" : "basic",
   )
   const [confirmationModeIsEnabled, setConfirmationModeIsEnabled] =
     React.useState(!!settings?.SECURITY_ANALYZER)
@@ -206,10 +221,10 @@ function AccountSettings() {
         <div className="max-w-[680px]">
           {!shouldHandleSpecialSaasCase && (
             <section className="flex flex-col gap-6">
-              {/* <h3 className="text-[18px] font-semibold text-neutral-100 dark:text-[#EFEFEF]">
+              <h3 className="text-[18px] font-semibold text-neutral-100 dark:text-[#EFEFEF]">
                 LLM Settings
-              </h3> */}
-              {/* <Tabs
+              </h3>
+              <Tabs
                 selectedKey={llmConfigMode}
                 onSelectionChange={(key: any) => setLlmConfigMode(key)}
                 classNames={{
@@ -222,7 +237,7 @@ function AccountSettings() {
               >
                 <Tab key="basic" title="Basic" />
                 <Tab key="advanced" title="Advanced" />
-              </Tabs> */}
+              </Tabs>
               {llmConfigMode === "basic" && (
                 <ModelSelector
                   models={modelsAndProviders}
@@ -231,7 +246,7 @@ function AccountSettings() {
               )}
               {llmConfigMode === "advanced" && (
                 <>
-                  {/* <SettingsInput
+                  <SettingsInput
                     testId="llm-custom-model-input"
                     name="llm-custom-model-input"
                     label="Custom Model"
@@ -248,8 +263,8 @@ function AccountSettings() {
                     placeholder="https://api.openai.com"
                     type="text"
                     className="w-full"
-                  /> */}
-                  {/* <SettingsDropdownInput
+                  />
+                  <SettingsDropdownInput
                     testId="agent-input"
                     name="agent-input"
                     label="Agent"
@@ -261,7 +276,7 @@ function AccountSettings() {
                     }
                     defaultSelectedKey={settings.AGENT}
                     isClearable={false}
-                  /> */}
+                  />
                   {isSaas && (
                     <SettingsDropdownInput
                       testId="runtime-settings-input"
@@ -284,8 +299,7 @@ function AccountSettings() {
                       isClearable={false}
                     />
                   )}
-                  {/* TODO: enable later when allow custom setting */}
-                  {/* <div className="flex flex-col md:flex-row md:items-center gap-8">
+                  {/* <div className="flex flex-col gap-8 md:flex-row md:items-center">
                     <SettingsSwitch
                       testId="enable-confirmation-mode-switch"
                       onToggle={setConfirmationModeIsEnabled}
@@ -321,8 +335,7 @@ function AccountSettings() {
                 </>
               )}
 
-              {/* TODO: enable later when allow custom setting */}
-              {/* <div className="relative ">
+              <div className="relative">
                 <SettingsInput
                   testId="llm-api-key-input"
                   name="llm-api-key-input"
@@ -334,7 +347,7 @@ function AccountSettings() {
                   }
                   placeholder={isLLMKeySet ? "<hidden>" : "Enter"}
                 />
-                <div className="absolute top-0 right-0">
+                {/* <div className="absolute right-0 top-0">
                   <HelpLink
                     testId="llm-api-key-help-anchor"
                     // text="Don't know your API key?"
@@ -345,15 +358,15 @@ function AccountSettings() {
                       linkText: "text-[#FF6100]",
                     }}
                   />
-                </div>
-              </div> */}
+                </div> */}
+              </div>
             </section>
           )}
-          {/* <div className="my-7 h-[1px] w-full bg-neutral-1000 dark:bg-[#1B1C1A]" /> */}
+          <div className="my-7 h-[1px] w-full bg-neutral-1000 dark:bg-[#1B1C1A]" />
           <section className="flex flex-col gap-6">
-            {/* <h3 className="text-[18px] font-semibold text-neutral-100 dark:text-[#EFEFEF]">
+            <h3 className="text-[18px] font-semibold text-neutral-100 dark:text-[#EFEFEF]">
               Additional Settings
-            </h3> */}
+            </h3>
             <SettingsDropdownInput
               testId="language-input"
               name="language-input"

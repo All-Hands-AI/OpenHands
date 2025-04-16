@@ -1,12 +1,14 @@
-import { useQuery } from "@tanstack/react-query";
-import React from "react";
-import posthog from "posthog-js";
-import OpenHands from "#/api/open-hands";
-import { useAuth } from "#/context/auth-context";
-import { DEFAULT_SETTINGS } from "#/services/settings";
+import { useQuery } from "@tanstack/react-query"
+import React from "react"
+import posthog from "posthog-js"
+import { useAccount } from "wagmi"
+import OpenHands from "#/api/open-hands"
+import { useAuth } from "#/context/auth-context"
+import { DEFAULT_SETTINGS } from "#/services/settings"
+import { useGetJwt } from "#/zutand-stores/persist-config/selector"
 
 const getSettingsQueryFn = async () => {
-  const apiSettings = await OpenHands.getSettings();
+  const apiSettings = await OpenHands.getSettings()
 
   return {
     LLM_MODEL: apiSettings.llm_model,
@@ -23,15 +25,17 @@ const getSettingsQueryFn = async () => {
     USER_CONSENTS_TO_ANALYTICS: apiSettings.user_consents_to_analytics,
     PROVIDER_TOKENS: apiSettings.provider_tokens,
     IS_NEW_USER: false,
-  };
-};
+  }
+}
 
 export const useSettings = () => {
   const { setProviderTokensSet, providerTokensSet, setProvidersAreSet } =
-    useAuth();
+    useAuth()
+  const { address } = useAccount()
+  const jwt = useGetJwt()
 
   const query = useQuery({
-    queryKey: ["settings", providerTokensSet],
+    queryKey: ["settings", providerTokensSet, address, jwt],
     queryFn: getSettingsQueryFn,
     // Only retry if the error is not a 404 because we
     // would want to show the modal immediately if the
@@ -42,27 +46,27 @@ export const useSettings = () => {
     meta: {
       disableToast: true,
     },
-  });
+  })
 
   React.useEffect(() => {
     if (query.isFetched && query.data?.LLM_API_KEY_SET) {
-      posthog.capture("user_activated");
+      posthog.capture("user_activated")
     }
-  }, [query.data?.LLM_API_KEY_SET, query.isFetched]);
+  }, [query.data?.LLM_API_KEY_SET, query.isFetched])
 
   React.useEffect(() => {
     if (query.data?.PROVIDER_TOKENS_SET) {
-      const providers = query.data.PROVIDER_TOKENS_SET;
+      const providers = query.data.PROVIDER_TOKENS_SET
       const setProviders = (
         Object.keys(providers) as Array<keyof typeof providers>
-      ).filter((key) => providers[key]);
-      setProviderTokensSet(setProviders);
+      ).filter((key) => providers[key])
+      setProviderTokensSet(setProviders)
       const atLeastOneSet = Object.values(query.data.PROVIDER_TOKENS_SET).some(
         (value) => value,
-      );
-      setProvidersAreSet(atLeastOneSet);
+      )
+      setProvidersAreSet(atLeastOneSet)
     }
-  }, [query.data?.PROVIDER_TOKENS_SET, query.isFetched]);
+  }, [query.data?.PROVIDER_TOKENS_SET, query.isFetched])
 
   // We want to return the defaults if the settings aren't found so the user can still see the
   // options to make their initial save. We don't set the defaults in `initialData` above because
@@ -81,8 +85,8 @@ export const useSettings = () => {
       status: query.status,
       fetchStatus: query.fetchStatus,
       refetch: query.refetch,
-    };
+    }
   }
 
-  return query;
-};
+  return query
+}

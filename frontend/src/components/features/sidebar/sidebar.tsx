@@ -1,7 +1,7 @@
 import DepositModal from "#/components/features/modalDeposit/DepositModal"
-import { ThesisLogoButton } from "#/components/shared/buttons/thesis-logo-button"
 import { ExitProjectButton } from "#/components/shared/buttons/exit-project-button"
 import { SettingsButton } from "#/components/shared/buttons/settings-button"
+import { ThesisLogoButton } from "#/components/shared/buttons/thesis-logo-button"
 import { TooltipButton } from "#/components/shared/buttons/tooltip-button"
 import { SettingsModal } from "#/components/shared/modals/settings/settings-modal"
 import { useLogout } from "#/hooks/mutation/use-logout"
@@ -18,7 +18,6 @@ import { cn } from "#/utils/utils"
 import posthog from "posthog-js"
 import React from "react"
 import { useTranslation } from "react-i18next"
-import { MdAccountBalanceWallet } from "react-icons/md"
 import { useDispatch } from "react-redux"
 import { NavLink, useLocation } from "react-router"
 import { useAccount } from "wagmi"
@@ -145,8 +144,7 @@ export function Sidebar() {
               </TooltipButton>
             )}
             <UserActions onLogout={handleLogout} isLoading={false} />
-            {/* TODO: setting enable later */}
-            {/* <NavLink
+            <NavLink
               to="/settings"
               className={({ isActive }) =>
                 cn(
@@ -158,7 +156,7 @@ export function Sidebar() {
               }
             >
               <SettingsButton className="h-10 w-10 p-2" />
-            </NavLink> */}
+            </NavLink>
           </div>
         </nav>
 
@@ -171,13 +169,12 @@ export function Sidebar() {
         )}
       </aside>
 
-      {/* TODO: setting enable later */}
-      {/* {settingsModalIsOpen && (
+      {settingsModalIsOpen && (
         <SettingsModal
           settings={settings}
           onClose={() => setSettingsModalIsOpen(false)}
         />
-      )} */}
+      )}
 
       <DepositModal
         isOpen={depositModalIsOpen}

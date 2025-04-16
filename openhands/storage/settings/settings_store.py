@@ -10,11 +10,11 @@ class SettingsStore(ABC):
     """Storage for ConversationInitData. May or may not support multiple users depending on the environment."""
 
     @abstractmethod
-    async def load(self) -> Settings | None:
+    async def load(self, user_id: str | None = None) -> Settings | None:
         """Load session init data."""
 
     @abstractmethod
-    async def store(self, settings: Settings) -> None:
+    async def store(self, settings: Settings, user_id: str | None = None) -> None:
         """Store session init data."""
 
     @classmethod

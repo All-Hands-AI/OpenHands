@@ -31,6 +31,7 @@ async def test_load_nonexistent_data(file_settings_store):
 @pytest.mark.asyncio
 async def test_store_and_load_data(file_settings_store):
     # Test data
+    user_id = '0xd8b8e45f7b49f7e894c967f05b51d5acd4b81cc1'
     init_data = Settings(
         language='python',
         agent='test-agent',
@@ -43,19 +44,19 @@ async def test_store_and_load_data(file_settings_store):
     )
 
     # Store data
-    await file_settings_store.store(init_data)
+    await file_settings_store.store(init_data, user_id)
 
     # Verify store called with correct JSON
     expected_json = init_data.model_dump_json(context={'expose_secrets': True})
     file_settings_store.file_store.write.assert_called_once_with(
-        'settings.json', expected_json
+         f'{user_id}/settings.json', expected_json
     )
 
     # Setup mock for load
     file_settings_store.file_store.read.return_value = expected_json
 
     # Load and verify data
-    loaded_data = await file_settings_store.load()
+    loaded_data = await file_settings_store.load(user_id)
     assert loaded_data is not None
     assert loaded_data.language == init_data.language
     assert loaded_data.agent == init_data.agent

@@ -1,31 +1,24 @@
+import { AgentSettingsDropdownInput } from "#/components/features/settings/agent-setting-dropdown-input"
 import { BrandButton } from "#/components/features/settings/brand-button"
 import { HeroHeading } from "#/components/shared/hero-heading"
 import { SampleMsg } from "#/components/shared/sample-msg"
 import { TaskForm } from "#/components/shared/task-form"
 import { useAIConfigOptions } from "#/hooks/query/use-ai-config-options"
-// import { useConfig } from "#/hooks/query/use-config";
-// import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useSettings } from "#/hooks/query/use-settings"
 import { I18nKey } from "#/i18n/declaration"
 import { useGetJwt } from "#/zutand-stores/persist-config/selector"
 import { useConnectModal } from "@rainbow-me/rainbowkit"
 import React from "react"
 import { useTranslation } from "react-i18next"
-import { useNavigate } from "react-router"
 import { useAccount } from "wagmi"
 
 function Home() {
-  const navigate = useNavigate()
   const { t } = useTranslation()
   const { data: settings } = useSettings()
   const { isConnected } = useAccount()
   const jwt = useGetJwt()
   const formRef = React.useRef<HTMLFormElement>(null)
-  const {
-    data: resources,
-    isFetching: isFetchingResources,
-    isSuccess: isSuccessfulResources,
-  } = useAIConfigOptions()
+  const { data: resources } = useAIConfigOptions()
 
   const { openConnectModal } = useConnectModal()
 
@@ -44,7 +37,7 @@ function Home() {
           ) : (
             <div className="flex w-full flex-col gap-2">
               <div className="text-center text-neutral-700 dark:text-tertiary-light">
-                Welcome to Thesis! We're currently in private beta.
+                Welcome to Thesis! We&rsquo;re currently in private beta.
                 <br /> To get started, Please enter connect your wallet.
               </div>
 
@@ -60,25 +53,29 @@ function Home() {
             </div>
           )}
         </div>
-        <div className="w-full">
-          {/* {settings && (
-            <AgentSettingsDropdownInput
-              testId="agent-input-show"
-              name="agent-input"
-              label="Agent"
-              items={
-                resources?.agents.map((agent) => ({
-                  key: agent,
-                  label: agent,
-                })) || []
-              }
-              defaultSelectedKey={settings?.AGENT}
-              isClearable={false}
-              showOptionalTag={false}
-              className="flex-row"
-            />
-          )} */}
-        </div>
+        {isUserLoggedIn && (
+          <div className="w-full">
+            {!settings ? (
+              <div className="mt-2 h-10 w-full max-w-[260px] animate-pulse rounded-lg bg-white" />
+            ) : (
+              <AgentSettingsDropdownInput
+                testId="agent-input-show"
+                name="agent-input"
+                label="Agent"
+                items={
+                  resources?.agents.map((agent) => ({
+                    key: agent,
+                    label: agent,
+                  })) || []
+                }
+                defaultSelectedKey={settings?.AGENT}
+                isClearable={false}
+                showOptionalTag={false}
+                className="flex-row"
+              />
+            )}
+          </div>
+        )}
         <div className="mt-8 w-full text-left text-[16px] font-semibold text-neutral-700 dark:text-tertiary-light">
           Try our use case
         </div>
