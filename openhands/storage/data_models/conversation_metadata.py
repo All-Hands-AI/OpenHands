@@ -10,9 +10,7 @@ class ConversationTrigger(Enum):
 
 
 @dataclass
-class ConversationMetadata:
-    trigger: ConversationTrigger
-    providers: list[ProviderType]
+class ConversationMetadata:    
     conversation_id: str
     github_user_id: str | None
     selected_repository: str | None
@@ -20,6 +18,8 @@ class ConversationMetadata:
     selected_branch: str | None = None
     title: str | None = None
     last_updated_at: datetime | None = None
+    trigger: ConversationTrigger | None = None
+    providers: list[ProviderType] | None = None
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     # Cost and token metrics
     accumulated_cost: float = 0.0
