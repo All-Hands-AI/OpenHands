@@ -23,7 +23,6 @@ from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm import LLM
 from openhands.mcp import fetch_mcp_tools_from_config
 from openhands.server.session.agent_session import AgentSession
-from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.settings import Settings
 from openhands.storage.files import FileStore
 
@@ -88,6 +87,7 @@ class Session:
         replay_json: str | None,
         mnemonic: str | None = None,
     ):
+        start_time = time.time()
         self.agent_session.event_stream.add_event(
             AgentStateChangedObservation('', AgentState.LOADING),
             EventSource.ENVIRONMENT,
@@ -125,10 +125,10 @@ class Session:
 
         llm = self._create_llm(agent_cls)
         agent_config = self.config.get_agent_config(agent_cls)
-
-        if settings.enable_default_condenser:
+        self.logger.info(f'Enabling default condenser: {agent_config.condenser}')
+        if settings.enable_default_condenser and agent_config.condenser.type == 'noop':
             default_condenser_config = LLMSummarizingCondenserConfig(
-                llm_config=llm.config, keep_first=3, max_size=80
+                llm_config=llm.config, keep_first=3, max_size=20
             )
 
             self.logger.info(f'Enabling default condenser: {default_condenser_config}')
@@ -152,10 +152,11 @@ class Session:
         git_provider_tokens = None
         selected_repository = None
         selected_branch = None
-        if isinstance(settings, ConversationInitData):
-            git_provider_tokens = settings.git_provider_tokens
-            selected_repository = settings.selected_repository
-            selected_branch = settings.selected_branch
+        # TODO FIXME: We don't use git or repositories in the agent session
+        # if isinstance(settings, ConversationInitData):
+        #     git_provider_tokens = settings.git_provider_tokens
+        #     selected_repository = settings.selected_repository
+        #     selected_branch = settings.selected_branch
 
         try:
             await self.agent_session.start(
@@ -172,6 +173,9 @@ class Session:
                 initial_message=initial_message,
                 replay_json=replay_json,
             )
+            end_time = time.time()
+            total_time = end_time - start_time
+            self.logger.debug(f'Total initialize_agent time: {total_time:.2f} seconds')
         except Exception as e:
             self.logger.exception(f'Error creating agent_session: {e}')
             err_class = e.__class__.__name__

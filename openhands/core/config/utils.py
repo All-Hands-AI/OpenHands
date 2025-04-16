@@ -228,6 +228,7 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
                 # Get the default agent config and assign the condenser config to it
                 default_agent_config = cfg.get_agent_config()
                 default_agent_config.condenser = condenser_mapping['condenser']
+                cfg.agents['agent'] = default_agent_config
                 logger.openhands_logger.debug(
                     'Default condenser configuration loaded from config toml and assigned to default agent'
                 )

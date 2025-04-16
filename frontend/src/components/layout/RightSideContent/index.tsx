@@ -9,6 +9,7 @@ import { useSelector } from "react-redux"
 import CodeView from "./CodeView"
 import EditorContent from "./EditorContent"
 import McpView from "./McpView"
+import { cn } from "#/utils/utils"
 import { STEP_STATUSES } from "./TaskProgress"
 import { cn } from "#/utils/utils"
 
@@ -83,6 +84,12 @@ const ThesisComputer = () => {
       setCurrentStep(newStep)
     }
   }, [computerList, totalSteps])
+
+  useEffect(() => {
+    if (computerList.length === 0) {
+      setCurrentStep(0)
+    }
+  }, [computerList])
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -160,7 +167,7 @@ const ThesisComputer = () => {
 
       <div className="bg-mercury-30 mb-3 flex h-[82%] w-full flex-1 flex-col rounded-2xl border border-neutral-1000">
         <div className="relative h-full w-full">
-          <div className="absolute h-full w-full p-4">
+          <div className="absolute h-full w-full overflow-auto p-4">
             {computerList.length > 0 &&
               computerList.map((computerItem, index) => {
                 if (index !== currentStep) return null

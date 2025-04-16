@@ -45,6 +45,7 @@ class Memory:
         event_stream: EventStream,
         sid: str,
         status_callback: Callable | None = None,
+        enable_microagents: bool = True,
     ):
         self.event_stream = event_stream
         self.sid = sid if sid else str(uuid.uuid4())
@@ -67,7 +68,9 @@ class Memory:
 
         # Load global microagents (Knowledge + Repo)
         # from typically OpenHands/microagents (i.e., the PUBLIC microagents)
-        self._load_global_microagents()
+        if enable_microagents:
+            logger.debug('Loading global microagents...')
+            self._load_global_microagents()
 
     def on_event(self, event: Event):
         """Handle an event from the event stream."""

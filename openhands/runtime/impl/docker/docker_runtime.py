@@ -1,6 +1,9 @@
 import os
 from functools import lru_cache
-from typing import Callable
+import random
+import re
+import time
+from typing import Callable, List, Set
 from uuid import UUID
 
 import docker
@@ -20,7 +23,7 @@ from openhands.runtime.builder import DockerRuntimeBuilder
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
-from openhands.runtime.impl.docker.containers import stop_all_containers
+from openhands.runtime.impl.docker.containers import get_used_ports, next_available_port, stop_all_containers
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils import find_available_tcp_port
 from openhands.runtime.utils.command import get_action_execution_server_startup_command
@@ -32,7 +35,7 @@ from openhands.utils.tenacity_stop import stop_if_should_exit
 
 CONTAINER_NAME_PREFIX = 'openhands-runtime-'
 
-EXECUTION_SERVER_PORT_RANGE = (30000, 39999)
+EXECUTION_SERVER_PORT_RANGE = (30000, 59999)
 VSCODE_PORT_RANGE = (40000, 49999)
 APP_PORT_RANGE_1 = (50000, 54999)
 APP_PORT_RANGE_2 = (55000, 59999)
@@ -134,7 +137,13 @@ class DockerRuntime(ActionExecutionClient):
     async def connect(self):
         self.send_status_message('STATUS$STARTING_RUNTIME')
         try:
+            start_time = time.time()
             await call_sync_from_async(self._attach_to_container)
+            end_time = time.time()
+            total_time = end_time - start_time
+            self.log(
+                'debug', f'Total _attach_to_container() time: {total_time:.2f} seconds'
+            )
         except docker.errors.NotFound as e:
             if self.attach_to_existing:
                 self.log(
@@ -160,7 +169,13 @@ class DockerRuntime(ActionExecutionClient):
             self.log(
                 'info', f'Starting runtime with image: {self.runtime_container_image}'
             )
+            start_time = time.time()
             await call_sync_from_async(self._init_container)
+            end_time = time.time()
+            total_time = end_time - start_time
+            self.log(
+                'debug', f'Total _init_container() time: {total_time:.2f} seconds'
+            )
             self.log(
                 'info',
                 f'Container started: {self.container_name}. VSCode URL: {self.vscode_url}',
@@ -175,13 +190,25 @@ class DockerRuntime(ActionExecutionClient):
             self.log('info', f'Waiting for client to become ready at {self.api_url}...')
             self.send_status_message('STATUS$WAITING_FOR_CLIENT')
 
+        start_time = time.time()
         await call_sync_from_async(self._wait_until_alive)
+        end_time = time.time()
+        total_time = end_time - start_time
+        self.log(
+            'debug', f'Total _wait_until_alive() time: {total_time:.2f} seconds'
+        )
 
         if not self.attach_to_existing:
             self.log('info', 'Runtime is ready.')
 
         if not self.attach_to_existing:
+            start_time = time.time()
             await call_sync_from_async(self.setup_initial_env)
+            end_time = time.time()
+            total_time = end_time - start_time
+            self.log(
+                'debug', f'Total setup_initial_env() time: {total_time:.2f} seconds'
+            )
 
         self.log(
             'debug',
@@ -203,18 +230,22 @@ class DockerRuntime(ActionExecutionClient):
             raise ex
 
     def _init_container(self):
+        start_time = time.time()
+        # we don't need to find available port. Just randomize it and try again if it's already in use.
+        # It's faster and simpler.
         self.log('debug', 'Preparing to start container...')
         self.send_status_message('STATUS$PREPARING_CONTAINER')
-        self._host_port = self._find_available_port(EXECUTION_SERVER_PORT_RANGE)
-        self._container_port = self._host_port
-        self._vscode_port = self._find_available_port(VSCODE_PORT_RANGE)
-        self._app_ports = [
-            self._find_available_port(APP_PORT_RANGE_1),
-            self._find_available_port(APP_PORT_RANGE_2),
-        ]
-        self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
-
         use_host_network = self.config.sandbox.use_host_network
+        # self._host_port = self._find_available_port(EXECUTION_SERVER_PORT_RANGE)
+        used_ports = get_used_ports(self.docker_client, EXECUTION_SERVER_PORT_RANGE[0], EXECUTION_SERVER_PORT_RANGE[1], use_host_network)
+        self._host_port = next_available_port(EXECUTION_SERVER_PORT_RANGE[0], EXECUTION_SERVER_PORT_RANGE[1], used_ports)
+        self._container_port = self._host_port
+        # TODO FIXME: we don't need app ports. This is used to expose web applications within the sandbox. We don't need it.
+        # self._app_ports = [
+        #     self._find_available_port(APP_PORT_RANGE_1),
+        #     self._find_available_port(APP_PORT_RANGE_2),
+        # ]
+        self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
         self.log('debug', f'use_host_network: {use_host_network}')
         network_mode: str | None = 'host' if use_host_network else None
 
@@ -230,21 +261,22 @@ class DockerRuntime(ActionExecutionClient):
                 ],
             }
 
-            if self.vscode_enabled:
-                port_mapping[f'{self._vscode_port}/tcp'] = [
-                    {
-                        'HostPort': str(self._vscode_port),
-                        'HostIp': self.config.sandbox.runtime_binding_address,
-                    }
-                ]
+            # if self.vscode_enabled:
+            #     port_mapping[f'{self._vscode_port}/tcp'] = [
+            #         {
+            #             'HostPort': str(self._vscode_port),
+            #             'HostIp': self.config.sandbox.runtime_binding_address,
+            #         }
+            #     ]
 
-            for port in self._app_ports:
-                port_mapping[f'{port}/tcp'] = [
-                    {
-                        'HostPort': str(port),
-                        'HostIp': self.config.sandbox.runtime_binding_address,
-                    }
-                ]
+            # TODO FIXME: we don't need app ports. This is used to expose web applications within the sandbox. We don't need it.
+            # for port in self._app_ports:
+            #     port_mapping[f'{port}/tcp'] = [
+            #         {
+            #             'HostPort': str(port),
+            #             'HostIp': self.config.sandbox.runtime_binding_address,
+            #         }
+            #     ]
         else:
             self.log(
                 'warn',
@@ -287,7 +319,7 @@ class DockerRuntime(ActionExecutionClient):
         else:
             logger.debug(
                 'Mount dir is not set, will not mount the workspace directory to the container'
-            )
+    )
             volumes = None
         self.log(
             'debug',
@@ -299,8 +331,8 @@ class DockerRuntime(ActionExecutionClient):
             plugins=self.plugins,
             app_config=self.config,
         )
-
         try:
+            self.log('warning', f'self._container_port: {self._container_port}')
             self.container = self.docker_client.containers.run(
                 self.runtime_container_image,
                 command=command,
@@ -322,15 +354,26 @@ class DockerRuntime(ActionExecutionClient):
             )
             self.log('debug', f'Container started. Server url: {self.api_url}')
             self.send_status_message('STATUS$CONTAINER_STARTED')
+            end_time = time.time()
+            total_time = end_time - start_time
+            self.log(
+                'debug', f'Total docker_client.containers.run() time: {total_time:.2f} seconds'
+            )
+            return
         except docker.errors.APIError as e:
             if '409' in str(e):
+                # port already allocated, try another port
+                self.log('warning', f'str(e): {str(e)}')
+                if "port is already allocated" in str(e) or "bind: address already in use" in str(e):
+                    return self._init_container()
+                
+                # for other cases, we need to remove the container and try again
                 self.log(
                     'warning',
                     f'Container {self.container_name} already exists. Removing...',
                 )
                 stop_all_containers(self.container_name)
                 return self._init_container()
-
             else:
                 self.log(
                     'error',
@@ -361,15 +404,16 @@ class DockerRuntime(ActionExecutionClient):
                 self._vscode_port = int(env_var.split('VSCODE_PORT=')[1])
 
         self._app_ports = []
-        exposed_ports = config.get('ExposedPorts')
-        if exposed_ports:
-            for exposed_port in exposed_ports.keys():
-                exposed_port = int(exposed_port.split('/tcp')[0])
-                if (
-                    exposed_port != self._host_port
-                    and exposed_port != self._vscode_port
-                ):
-                    self._app_ports.append(exposed_port)
+        # TODO FIXME: we don't need app ports. This is used to expose web applications within the sandbox. We don't need it.
+        # exposed_ports = config.get('ExposedPorts')
+        # if exposed_ports:
+        #     for exposed_port in exposed_ports.keys():
+        #         exposed_port = int(exposed_port.split('/tcp')[0])
+        #         if (
+        #             exposed_port != self._host_port
+        #             and exposed_port != self._vscode_port
+        #         ):
+        #             self._app_ports.append(exposed_port)
 
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
         self.log(

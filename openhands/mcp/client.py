@@ -8,7 +8,6 @@ from mcp.types import CallToolResult
 from pydantic import BaseModel, Field
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.core.message import TextContent
 from openhands.mcp.tool import BaseTool, MCPClientTool
 
 

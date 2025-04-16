@@ -3,3 +3,9 @@ config.toml
 .envrc
 .env
 .git
+frontend/
+openhands/tests/
+openhands/evaluation
+docs/
+*.md
+*.log
