@@ -7,6 +7,7 @@ import { ExpandableMessage } from "./expandable-message";
 import { useUserConversation } from "#/hooks/query/use-user-conversation";
 import { useConversation } from "#/context/conversation-context";
 import { ConversationTrigger } from "#/api/open-hands.types";
+import { I18nKey } from "#/i18n/declaration";
 
 interface MessagesProps {
   messages: Message[];
@@ -35,7 +36,7 @@ export const Messages: React.FC<MessagesProps> = React.memo(
             <ExpandableMessage
               type="action"
               message={message.content}
-              customHeader="Resolver Instructions"
+              id={I18nKey.CHAT$RESOLVER_INSTRUCTIONS}
             />
             {message.imageUrls && message.imageUrls.length > 0 && (
               <ImageCarousel size="small" images={message.imageUrls} />
