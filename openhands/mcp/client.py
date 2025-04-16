@@ -29,7 +29,7 @@ class MCPClient(BaseModel):
         sid: Optional[str] = None,
         mnemonic: Optional[str] = None,
         timeout: float = 5.0,
-        read_timeout: float = 20.0,  # 2 minutes instead of default 5 minutes
+        read_timeout: float = 45.0,
     ) -> None:
         """Connect to an MCP server using SSE transport.
 
