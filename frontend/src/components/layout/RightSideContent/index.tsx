@@ -11,7 +11,6 @@ import EditorContent from "./EditorContent"
 import McpView from "./McpView"
 import { cn } from "#/utils/utils"
 import { STEP_STATUSES } from "./TaskProgress"
-import { cn } from "#/utils/utils"
 
 const ThesisComputer = () => {
   const isViewDrawer = true
