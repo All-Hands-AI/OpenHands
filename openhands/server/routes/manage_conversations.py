@@ -110,7 +110,6 @@ async def _create_new_conversation(
     await conversation_store.save_metadata(
         ConversationMetadata(
             trigger=conversation_trigger,
-            providers=[provider for provider in git_provider_tokens] if git_provider_tokens else [],
             conversation_id=conversation_id,
             title=conversation_title,
             user_id=user_id,
