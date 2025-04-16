@@ -139,18 +139,18 @@ export function ExpandableMessage({
             )}
           >
             {translationId && i18n.exists(translationId) ? (
-                <Trans
-                  i18nKey={translationId}
-                  values={translationParams}
-                  components={{
-                    bold: <strong />,
-                    path: <PathComponent />,
-                    cmd: <MonoComponent />,
-                  }}
-                />
-              ) : (
-                message
-              )}
+              <Trans
+                i18nKey={translationId}
+                values={translationParams}
+                components={{
+                  bold: <strong />,
+                  path: <PathComponent />,
+                  cmd: <MonoComponent />,
+                }}
+              />
+            ) : (
+              message
+            )}
             <button
               type="button"
               onClick={() => setShowDetails(!showDetails)}
