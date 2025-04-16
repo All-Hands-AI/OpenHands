@@ -58,6 +58,7 @@ async def _create_new_conversation(
     image_urls: list[str] | None,
     replay_json: str | None,
     attach_convo_id: bool = False,
+    additional_agent_instructions: str | None = None
 ):
     logger.info(
         'Creating conversation',
@@ -89,6 +90,7 @@ async def _create_new_conversation(
     session_init_args['git_provider_tokens'] = git_provider_tokens
     session_init_args['selected_repository'] = selected_repository
     session_init_args['selected_branch'] = selected_branch
+    session_init_args['additional_agent_instructions'] = additional_agent_instructions
     conversation_init_data = ConversationInitData(**session_init_args)
     logger.info('Loading conversation store')
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id, None)

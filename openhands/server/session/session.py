@@ -144,6 +144,7 @@ class Session:
             git_provider_tokens = settings.git_provider_tokens
             selected_repository = settings.selected_repository
             selected_branch = settings.selected_branch
+            additional_agent_instructions = settings.additional_agent_instructions
 
         try:
             await self.agent_session.start(
