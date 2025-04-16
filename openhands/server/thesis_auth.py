@@ -34,6 +34,12 @@ def get_user_detail_from_thesis_auth_server(bearer_token: str) -> ThesisUser | N
     }
 
     response = requests.request("GET", url, headers=headers, data=payload)
+    if response.status_code != 200:
+        logger.error(f"Failed to get user detail: {response.status_code} - {response.text}")
+        raise HTTPException(
+            status_code=response.status_code,
+            detail=f"{response.json().get('error')}"
+        )
     user_data = response.json()['user']
     if not user_data:
         return None

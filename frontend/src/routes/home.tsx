@@ -87,7 +87,7 @@ function Home() {
         {(!isUserLoggedIn || (isUserLoggedIn && !needsInvitation)) && (
           <>
             <div className="w-full">
-              {/* {settings && (
+              {settings && (
                 <AgentSettingsDropdownInput
                   testId="agent-input-show"
                   name="agent-input"
@@ -103,7 +103,7 @@ function Home() {
                   showOptionalTag={false}
                   className="flex-row"
                 />
-              )} */}
+              )}
             </div>
             <div className="mt-8 w-full text-left text-[16px] font-semibold text-neutral-700 dark:text-tertiary-light">
               Try our use case
