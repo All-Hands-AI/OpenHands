@@ -53,7 +53,6 @@ from openhands.events.serialization.event import event_from_dict, event_to_dict
 from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
 from openhands.utils.shutdown_listener import sleep_if_should_continue
-from openhands.server.shared import config as toml_config
 
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false').lower() == 'true'
 RUN_WITH_BROWSING = os.environ.get('RUN_WITH_BROWSING', 'false').lower() == 'true'
@@ -211,14 +210,16 @@ def get_config(
         instance_id=instance['instance_id'],
     )
 
-    config = deepcopy(toml_config)
-    config.default_agent = metadata.agent_class
-    config.run_as_openhands = False
-    config.max_iterations = metadata.max_iterations
-    config.runtime = os.environ.get('RUNTIME', 'docker')
-    config.sandbox = sandbox_config
-    config.workspace_base = None
-    config.workspace_mount_path = None
+    config = AppConfig(
+        default_agent=metadata.agent_class,
+        run_as_openhands=False,
+        max_iterations=metadata.max_iterations,
+        runtime=os.environ.get('RUNTIME', 'docker'),
+        sandbox=sandbox_config,
+        # do not mount workspace
+        workspace_base=None,
+        workspace_mount_path=None,
+    )
 
     config.set_llm_config(
         update_llm_config_for_completions_logging(
