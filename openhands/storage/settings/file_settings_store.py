@@ -15,10 +15,11 @@ from openhands.utils.async_utils import call_sync_from_async
 class FileSettingsStore(SettingsStore):
     file_store: FileStore
     path: str = 'settings.json'
-
+    user_id: str | None = None
     async def load(self) -> Settings | None:
         try:
-            json_str = await call_sync_from_async(self.file_store.read, self.path)
+            effective_path = f'users/{self.user_id}/settings.json' if self.user_id else self.path
+            json_str = await call_sync_from_async(self.file_store.read, effective_path)
             kwargs = json.loads(json_str)
             settings = Settings(**kwargs)
             return settings
@@ -26,12 +27,13 @@ class FileSettingsStore(SettingsStore):
             return None
 
     async def store(self, settings: Settings) -> None:
+        effective_path = f'users/{self.user_id}/settings.json' if self.user_id else self.path
         json_str = settings.model_dump_json(context={'expose_secrets': True})
-        await call_sync_from_async(self.file_store.write, self.path, json_str)
+        await call_sync_from_async(self.file_store.write, effective_path, json_str)
 
     @classmethod
     async def get_instance(
         cls, config: AppConfig, user_id: str | None
     ) -> FileSettingsStore:
         file_store = get_file_store(config.file_store, config.file_store_path)
-        return FileSettingsStore(file_store)
+        return FileSettingsStore(file_store, 'settings.json', user_id)
