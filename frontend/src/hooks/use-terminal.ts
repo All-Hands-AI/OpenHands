@@ -74,26 +74,17 @@ export const useTerminal = ({
         const { content, type } = commands[i];
 
         if (type === "input") {
+          terminal.current.write("$ ");
           terminal.current.writeln(
             parseTerminalOutput(content.replaceAll("\n", "\r\n").trim()),
           );
         } else {
-          // Add a new line before and after output
           terminal.current.write(`\n`);
-
           terminal.current.writeln(
             parseTerminalOutput(content.replaceAll("\n", "\r\n").trim()),
           );
           terminal.current.write(`\n`);
         }
-      }
-
-      // Always ensure there's a prompt at the end
-      if (
-        commands.length > 0 &&
-        commands[commands.length - 1].type === "output"
-      ) {
-        terminal.current.write("$ ");
       }
 
       lastCommandIndex.current = commands.length;
