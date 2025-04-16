@@ -29,8 +29,6 @@ const createAxiosNotFoundErrorObject = () =>
     },
   );
 
-const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
-
 const RouterStub = createRoutesStub([
   {
     Component: MainApp,
@@ -169,6 +167,10 @@ describe("HomeScreen", () => {
   });
 
   describe("launch buttons", () => {
+    afterEach(() => {
+      vi.clearAllMocks();
+    });
+
     const setupLaunchButtons = async () => {
       const headerLaunchButton = screen.getByTestId("header-launch-button");
       const repoLaunchButton = screen.getByTestId("repo-launch-button");
@@ -264,6 +266,7 @@ describe("HomeScreen", () => {
 
 describe("Settings 404", () => {
   const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+  const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
 
   it("should open the settings modal if GET /settings fails with a 404", async () => {
     const error = createAxiosNotFoundErrorObject();
@@ -323,6 +326,7 @@ describe("Settings 404", () => {
 
 describe("Setup Payment modal", () => {
   const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+  const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
 
   afterEach(() => {
     vi.resetAllMocks();
