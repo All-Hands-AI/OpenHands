@@ -20,7 +20,7 @@ export const Messages: React.FC<MessagesProps> = React.memo(
 
     // Check if conversation metadata has trigger=resolver
     const isResolverTrigger =
-      conversation?.trigger === ConversationTrigger.CLOUD_RESOLVER;
+      conversation?.trigger === ConversationTrigger.RESOLVER;
 
     return messages.map((message, index) => {
       const shouldShowConfirmationButtons =
@@ -35,7 +35,7 @@ export const Messages: React.FC<MessagesProps> = React.memo(
             <ExpandableMessage
               type="action"
               message={message.content}
-              customHeader="Cloud Resolver Instructions"
+              customHeader="Resolver Instructions"
             />
             {message.imageUrls && message.imageUrls.length > 0 && (
               <ImageCarousel size="small" images={message.imageUrls} />

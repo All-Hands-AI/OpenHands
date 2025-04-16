@@ -71,7 +71,7 @@ export interface AuthenticateResponse {
 }
 
 export enum ConversationTrigger {
-  CLOUD_RESOLVER = "cloud_resolver",
+  RESOLVER = "resolver",
   GUI = "gui",
 }
 

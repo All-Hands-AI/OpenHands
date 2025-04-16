@@ -5,7 +5,7 @@ from openhands.integrations.service_types import ProviderType
 
 
 class ConversationTrigger(Enum):
-    CLOUD_RESOLVER = 'cloud_resolver'
+    RESOLVER = 'resolver'
     GUI = 'gui'
 
 
