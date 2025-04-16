@@ -30,7 +30,6 @@ export function Container({
       {labels && (
         <div
           className="flex text-xs !h-[36px] min-h-[36px]"
-          style={{ height: "36px" }}
         >
           {labels.map(({ label: l, to, icon, isBeta }) => (
             <NavTab key={to} to={to} label={l} icon={icon} isBeta={isBeta} />
@@ -40,7 +39,6 @@ export function Container({
       {!labels && label && (
         <div
           className="px-2 !h-[36px] min-h-[36px] border-b border-neutral-600 text-xs flex items-center"
-          style={{ height: "36px" }}
         >
           {label}
         </div>
