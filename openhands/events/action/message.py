@@ -44,7 +44,7 @@ class SystemMessageAction(Action):
 
     content: str
     tools: list[Any] | None = None
-    action: str = ActionType.SYSTEM
+    action: ActionType = ActionType.SYSTEM
 
     @property
     def message(self) -> str:
