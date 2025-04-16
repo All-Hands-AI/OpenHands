@@ -1,6 +1,7 @@
 import { GitRepository, GitUser } from "#/types/git"
 import { ApiSettings, PostApiSettings } from "#/types/settings"
 import { displayErrorToast } from "#/utils/custom-toast-handlers"
+import usePersistStore from "#/zutand-stores/persist-config/usePersistStore"
 import { openHands } from "./open-hands-axios"
 import {
   AuthenticateResponse,
@@ -221,8 +222,15 @@ class OpenHands {
    * Get the settings from the server or use the default settings if not found
    */
   static async getSettings(): Promise<ApiSettings> {
-    const { data } = await openHands.get<ApiSettings>("/api/settings")
-    return data
+    try {
+      const { data } = await openHands.get<ApiSettings>("/api/settings")
+      return data
+    } catch (error) {
+      if (error.response.status === 401) {
+        const { actions } = usePersistStore.getState()
+        actions.reset()
+      }
+    }
   }
 
   /**

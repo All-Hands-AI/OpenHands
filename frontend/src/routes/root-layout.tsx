@@ -22,7 +22,6 @@ import { useBalance } from "#/hooks/query/use-balance"
 import { SetupPaymentModal } from "#/components/features/payment/setup-payment-modal"
 import { displaySuccessToast } from "#/utils/custom-toast-handlers"
 import { useTheme } from "#/components/layout/theme-provider"
-import { useInvitationCode } from "#/hooks/use-invitation-code"
 
 export function ErrorBoundary() {
   const error = useRouteError()
@@ -65,7 +64,6 @@ export default function MainApp() {
   const { error, isFetching } = useBalance()
   const { migrateUserConsent } = useMigrateUserConsent()
   const { t } = useTranslation()
-  const { needsInvitation, refreshStatus } = useInvitationCode()
 
   const config = useConfig()
   const {
