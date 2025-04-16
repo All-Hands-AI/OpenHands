@@ -118,13 +118,19 @@ export default function MainApp() {
     }
   }, [error?.status, pathname, isFetching]);
 
-  const userIsAuthed = !!isAuthed && !authError;
+  // Check if we're on the TOS page
+  const isOnTosPage = pathname === "/tos";
+
+  // Only consider the user authenticated if we have a valid auth response
+  // or if we're on the TOS page (to prevent auth modal)
+  const userIsAuthed = (!!isAuthed && !authError) || isOnTosPage;
+
   // Don't show auth modal on TOS page to prevent infinite loop
   const renderAuthModal =
     !isFetchingAuth &&
     !userIsAuthed &&
     config.data?.APP_MODE === "saas" &&
-    pathname !== "/tos";
+    !isOnTosPage;
 
   // Handle redirection to last page after login
   usePostLoginRedirect(userIsAuthed);

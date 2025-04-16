@@ -18,6 +18,9 @@ export default function TOSPage() {
     queryClient.setQueryData(["config"], {
       APP_MODE: "saas",
       GITHUB_CLIENT_ID: null,
+      FEATURE_FLAGS: {
+        ENABLE_BILLING: false,
+      },
     });
 
     // Set default values for settings
@@ -26,11 +29,34 @@ export default function TOSPage() {
     // Set default values for authentication
     queryClient.setQueryData(["user", "authenticated"], true);
 
+    // Set default values for balance
+    queryClient.setQueryData(["user", "balance"], { credits: 0 });
+
+    // Prevent any API calls while on this page
+    const originalFetch = window.fetch;
+    window.fetch = function (input, init) {
+      // Allow only the accept_tos endpoint
+      if (typeof input === "string" && input.includes("/api/accept_tos")) {
+        return originalFetch(input, init);
+      }
+      // Silent block of fetch calls on TOS page
+      return Promise.resolve(
+        new Response(JSON.stringify({ blocked: true }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+      );
+    };
+
     return () => {
+      // Restore original fetch
+      window.fetch = originalFetch;
+
       // Clear the cache when leaving the TOS page
       queryClient.invalidateQueries({ queryKey: ["config"] });
       queryClient.invalidateQueries({ queryKey: ["settings"] });
       queryClient.invalidateQueries({ queryKey: ["user", "authenticated"] });
+      queryClient.invalidateQueries({ queryKey: ["user", "balance"] });
     };
   }, [queryClient]);
 
