@@ -541,10 +541,10 @@ class ConversationMemory:
 
         For new Anthropic API, we only need to mark the last user or tool message as cacheable.
         """
+        if len(messages) > 0 and messages[0].role == 'system':
+            messages[0].content[-1].cache_prompt = True
         # NOTE: this is only needed for anthropic
         for message in reversed(messages):
-            if message.role == 'system':
-                message.content[-1].cache_prompt = True
             if message.role in ('user', 'tool'):
                 message.content[
                     -1
