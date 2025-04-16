@@ -93,6 +93,7 @@ class ActionExecutionClient(Runtime):
             headless_mode,
             user_id,
             git_provider_tokens,
+            additional_agent_instructions
         )
 
     @abstractmethod
