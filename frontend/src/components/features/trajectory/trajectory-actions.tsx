@@ -29,7 +29,7 @@ export function TrajectoryActions({
   return (
     <>
       <div data-testid="feedback-actions" className="flex gap-1">
-        <TrajectoryActionButton
+        {/* <TrajectoryActionButton
           testId="positive-feedback"
           onClick={onPositiveFeedback}
           icon={<ThumbsUpIcon width={15} height={15} />}
@@ -40,7 +40,7 @@ export function TrajectoryActions({
           onClick={onNegativeFeedback}
           icon={<ThumbDownIcon width={15} height={15} />}
           tooltip={t(I18nKey.BUTTON$MARK_NOT_HELPFUL)}
-        />
+        /> */}
         <TrajectoryActionButton
           testId="export-trajectory"
           onClick={onExportTrajectory}
