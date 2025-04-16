@@ -295,7 +295,7 @@ export function ChatInterface() {
 
         {isWaitingForUserInput &&
           (!isShareRoute || replayStatus === ReplayStatus.COMPLETED) && (
-            <div className="-mt-3 mb-4 flex w-fit items-center justify-center gap-2 rounded-full bg-success-100 px-3 py-1">
+            <div className="-mt-3 mb-4 flex w-fit items-center justify-center gap-2 rounded-full bg-success-100 px-3 py-1 text-[14px]">
               <FaCheck />
               Thesis has completed the current task
             </div>
