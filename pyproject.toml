@@ -76,6 +76,7 @@ mcp = "1.6.0"
 python-json-logger = "^3.2.1"
 playwright = "^1.51.0"
 prompt-toolkit = "^3.0.50"
+mcp-proxy = "^0.5.1"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "0.11.5"
@@ -96,6 +97,7 @@ gevent = "^24.2.1"
 
 [tool.coverage.run]
 concurrency = ["gevent"]
+
 
 [tool.poetry.group.runtime.dependencies]
 jupyterlab = "*"
@@ -124,6 +126,7 @@ ignore = ["D1"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
 
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"
