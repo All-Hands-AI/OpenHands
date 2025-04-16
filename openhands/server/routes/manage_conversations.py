@@ -212,7 +212,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
         return JSONResponse(
             content={
                 'status': 'error',
-                'detail': str(e),
+                'detail': e.detail,
             },
             status_code=status.HTTP_400_BAD_REQUEST,
         )
