@@ -136,6 +136,7 @@ function AppContent() {
                 label: t(I18nKey.WORKSPACE$TERMINAL_TAB_LABEL),
                 to: "terminal",
                 icon: <TerminalIcon />,
+                tooltip: "The terminal is read-only to avoid user interference with agent's task. If you would like to make some manual modifications to the system, please launch the VSCode server from Workspace.",
               },
               { label: "Jupyter", to: "jupyter", icon: <JupyterIcon /> },
               {

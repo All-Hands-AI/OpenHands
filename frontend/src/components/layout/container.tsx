@@ -9,6 +9,7 @@ interface ContainerProps {
     to: string;
     icon?: React.ReactNode;
     isBeta?: boolean;
+    tooltip?: string;
   }[];
   children: React.ReactNode;
   className?: React.HTMLAttributes<HTMLDivElement>["className"];
@@ -29,8 +30,8 @@ export function Container({
     >
       {labels && (
         <div className="flex text-xs h-[36px]">
-          {labels.map(({ label: l, to, icon, isBeta }) => (
-            <NavTab key={to} to={to} label={l} icon={icon} isBeta={isBeta} />
+          {labels.map(({ label: l, to, icon, isBeta, tooltip }) => (
+            <NavTab key={to} to={to} label={l} icon={icon} isBeta={isBeta} tooltip={tooltip} />
           ))}
         </div>
       )}
