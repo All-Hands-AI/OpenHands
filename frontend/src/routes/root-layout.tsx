@@ -115,7 +115,10 @@ export default function MainApp() {
 
   const userIsAuthed = !!isAuthed && !authError;
   const renderAuthModal =
-    !isFetchingAuth && !userIsAuthed && config.data?.APP_MODE === "saas";
+    !isFetchingAuth &&
+    !userIsAuthed &&
+    config.data?.APP_MODE === "saas" &&
+    pathname !== "/tos";
 
   // Handle redirection to last page after login
   usePostLoginRedirect(userIsAuthed);
