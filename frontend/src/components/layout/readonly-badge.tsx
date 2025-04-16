@@ -10,7 +10,7 @@ export function ReadonlyBadge({ showTooltip = false }: ReadonlyBadgeProps) {
   const { t } = useTranslation();
 
   const badge = (
-    <span className="border rounded-md font-bold px-1 py-0.5 ml-1">
+    <span className="border rounded-md px-1 py-0.5 ml-1">
       {t(I18nKey.BADGE$READONLY)}
     </span>
   );
