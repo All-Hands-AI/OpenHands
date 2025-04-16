@@ -1,52 +1,23 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
 import { createRoutesStub } from "react-router";
 import { Provider } from "react-redux";
 import { setupStore } from "test-utils";
-import { AxiosError } from "axios";
 import HomeScreen from "#/routes/new-home";
 import { AuthProvider } from "#/context/auth-context";
 import * as GitService from "#/api/git";
 import { GitRepository } from "#/types/git";
-import OpenHands from "#/api/open-hands";
-import MainApp from "#/routes/root-layout";
-
-const createAxiosNotFoundErrorObject = () =>
-  new AxiosError(
-    "Request failed with status code 404",
-    "ERR_BAD_REQUEST",
-    undefined,
-    undefined,
-    {
-      status: 404,
-      statusText: "Not Found",
-      data: { message: "Settings not found" },
-      headers: {},
-      // @ts-expect-error - we only need the response object for this test
-      config: {},
-    },
-  );
 
 const RouterStub = createRoutesStub([
   {
-    Component: MainApp,
+    Component: HomeScreen,
     path: "/",
-    children: [
-      {
-        Component: HomeScreen,
-        path: "/",
-      },
-      {
-        Component: () => <div data-testid="conversation-screen" />,
-        path: "/conversations/:conversationId",
-      },
-      {
-        Component: () => <div data-testid="settings-screen" />,
-        path: "/settings",
-      },
-    ],
+  },
+  {
+    Component: () => <div data-testid="conversation-screen" />,
+    path: "/conversations/:conversationId",
   },
 ]);
 
@@ -167,10 +138,6 @@ describe("HomeScreen", () => {
   });
 
   describe("launch buttons", () => {
-    afterEach(() => {
-      vi.clearAllMocks();
-    });
-
     const setupLaunchButtons = async () => {
       const headerLaunchButton = screen.getByTestId("header-launch-button");
       const repoLaunchButton = screen.getByTestId("repo-launch-button");
@@ -261,94 +228,5 @@ describe("HomeScreen", () => {
         expect(button).toBeDisabled();
       });
     });
-  });
-});
-
-describe("Settings 404", () => {
-  const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
-  const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
-
-  it("should open the settings modal if GET /settings fails with a 404", async () => {
-    const error = createAxiosNotFoundErrorObject();
-    getSettingsSpy.mockRejectedValue(error);
-
-    renderHomeScreen();
-
-    const settingsModal = await screen.findByTestId("ai-config-modal");
-    expect(settingsModal).toBeInTheDocument();
-  });
-
-  it("should navigate to the settings screen when clicking the advanced settings button", async () => {
-    const error = createAxiosNotFoundErrorObject();
-    getSettingsSpy.mockRejectedValue(error);
-
-    const user = userEvent.setup();
-    renderHomeScreen();
-
-    const settingsScreen = screen.queryByTestId("settings-screen");
-    expect(settingsScreen).not.toBeInTheDocument();
-
-    const settingsModal = await screen.findByTestId("ai-config-modal");
-    expect(settingsModal).toBeInTheDocument();
-
-    const advancedSettingsButton = await screen.findByTestId(
-      "advanced-settings-link",
-    );
-    await user.click(advancedSettingsButton);
-
-    const settingsScreenAfter = await screen.findByTestId("settings-screen");
-    expect(settingsScreenAfter).toBeInTheDocument();
-
-    const settingsModalAfter = screen.queryByTestId("ai-config-modal");
-    expect(settingsModalAfter).not.toBeInTheDocument();
-  });
-
-  it("should not open the settings modal if GET /settings fails but is SaaS mode", async () => {
-    // @ts-expect-error - we only need APP_MODE for this test
-    getConfigSpy.mockResolvedValue({
-      APP_MODE: "saas",
-      FEATURE_FLAGS: {
-        ENABLE_BILLING: false,
-        HIDE_LLM_SETTINGS: false,
-      },
-    });
-    const error = createAxiosNotFoundErrorObject();
-    getSettingsSpy.mockRejectedValue(error);
-
-    renderHomeScreen();
-
-    // small hack to wait for the modal to not appear
-    await expect(
-      screen.findByTestId("ai-config-modal", {}, { timeout: 1000 }),
-    ).rejects.toThrow();
-  });
-});
-
-describe("Setup Payment modal", () => {
-  const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
-  const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
-
-  afterEach(() => {
-    vi.resetAllMocks();
-  });
-
-  it("should only render if SaaS mode and is new user", async () => {
-    // @ts-expect-error - we only need the APP_MODE for this test
-    getConfigSpy.mockResolvedValue({
-      APP_MODE: "saas",
-      FEATURE_FLAGS: {
-        ENABLE_BILLING: true,
-        HIDE_LLM_SETTINGS: false,
-      },
-    });
-    const error = createAxiosNotFoundErrorObject();
-    getSettingsSpy.mockRejectedValue(error);
-
-    renderHomeScreen();
-
-    const setupPaymentModal = await screen.findByTestId(
-      "proceed-to-stripe-button",
-    );
-    expect(setupPaymentModal).toBeInTheDocument();
   });
 });
