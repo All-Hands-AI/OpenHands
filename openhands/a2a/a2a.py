@@ -3,6 +3,8 @@ from openhands.a2a.client import A2AClient, A2ACardResolver
 from openhands.a2a.common.types import TaskState, Task, TaskStatusUpdateEvent
 from uuid import uuid4
 
+from openhands.core.message import TextContent
+
 class A2AAgent:
     def __init__(self, a2a_server_url: str, session: str = None, history: bool = False):
         self.session = session
@@ -35,7 +37,7 @@ class A2AAgent:
                 print(task_response.model_dump_json(include={"result": {"history": True}}))
 
     async def completeTask(self, streaming, taskId, sessionId, messages: list[str]):
-        parts = [{"type": "text", "text": message} for message in messages]
+        parts = [TextContent(type="text", text=message).serialize_model() for message in messages]
         payload = {
             "id": taskId,
             "sessionId": sessionId,
