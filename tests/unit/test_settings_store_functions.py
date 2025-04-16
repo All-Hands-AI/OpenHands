@@ -1,6 +1,7 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from pydantic import SecretStr
+from openhands.server.routes.settings import check_provider_tokens, store_llm_settings, store_provider_tokens
 
 # Mock classes for testing
 class MockProviderType:
@@ -58,75 +59,6 @@ async def validate_github_token(token):
         return ""
     return "Invalid token. Please make sure it is a valid github token."
 
-async def check_provider_tokens(request, settings):
-    """Copy of the check_provider_tokens function from settings.py"""
-    if settings.provider_tokens:
-        # Remove extraneous token types
-        provider_types = ["github", "gitlab"]  # Simplified for testing
-        
-        for token_type, token_value in settings.provider_tokens.items():
-            if token_type in provider_types and token_value:
-                # For testing, we'll only validate GitHub tokens
-                if token_type == "github":
-                    error = await validate_github_token(token_value)
-                    if error:
-                        return f"Invalid token. Please make sure it is a valid {token_type} token."
-    
-    return ""
-
-async def store_provider_tokens(request, settings):
-    """Copy of the store_provider_tokens function from settings.py"""
-    # Mock the settings store
-    settings_store = await get_settings_store(request)
-    existing_settings = await settings_store.load()
-    
-    if existing_settings:
-        if settings.provider_tokens:
-            if existing_settings.secrets_store:
-                # Get the provider values directly
-                existing_providers = ["github", "gitlab"]  # Hardcoded for testing
-
-                # Merge incoming settings store with the existing one
-                for provider, token_value in list(settings.provider_tokens.items()):
-                    if provider in existing_providers and (not token_value or token_value == ""):
-                        provider_type = MockProviderType(provider)
-                        # For testing, we'll just use a hardcoded token
-                        if provider == "github":
-                            settings.provider_tokens[provider] = "existing-token"
-        else:  # nothing passed in means keep current settings
-            provider_tokens = existing_settings.secrets_store.provider_tokens
-            settings.provider_tokens = {
-                provider.value: data.token.get_secret_value()
-                for provider, data in provider_tokens.items()
-                if data.token
-            }
-    
-    return settings
-
-async def store_llm_settings(request, settings):
-    """Copy of the store_llm_settings function from settings.py"""
-    # Mock the settings store
-    settings_store = await get_settings_store(request)
-    existing_settings = await settings_store.load()
-    
-    # Create a new settings object for testing
-    result = MockPOSTSettingsModel(
-        llm_model=settings.llm_model,
-        llm_api_key=settings.llm_api_key,
-        llm_base_url=settings.llm_base_url
-    )
-    
-    # Convert to Settings model and merge with existing settings
-    if existing_settings:
-        # Keep existing LLM settings if not provided
-        if result.llm_api_key is None:
-            result.llm_api_key = existing_settings.llm_api_key
-        if result.llm_model is None:
-            result.llm_model = existing_settings.llm_model
-        if result.llm_base_url is None:
-            result.llm_base_url = existing_settings.llm_base_url
-    
-    return result
 
 # Tests for check_provider_tokens
 @pytest.mark.asyncio
