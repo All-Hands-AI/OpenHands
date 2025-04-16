@@ -119,7 +119,7 @@ async def add_custom_secret(request: Request, delete_secret_name: str) -> JSONRe
         settings_store = await SettingsStoreImpl.get_instance(
             config, get_user_id(request)
         )
-        existing_settings = await settings_store.load()
+        existing_settings: Settings | None = await settings_store.load()
         custom_secrets = {}
         if existing_settings:
             for secret_name, secret_value in existing_settings.secrets_store.custom_secrets.items():
