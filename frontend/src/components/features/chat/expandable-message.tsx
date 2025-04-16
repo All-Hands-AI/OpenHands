@@ -30,6 +30,8 @@ interface ExpandableMessageProps {
   success?: boolean;
   observation?: PayloadAction<OpenHandsObservation>;
   action?: PayloadAction<OpenHandsAction>;
+  customHeader?: string;
+  initiallyExpanded?: boolean;
 }
 
 export function ExpandableMessage({
@@ -39,10 +41,12 @@ export function ExpandableMessage({
   success,
   observation,
   action,
+  customHeader,
+  initiallyExpanded = true,
 }: ExpandableMessageProps) {
   const { data: config } = useConfig();
   const { t, i18n } = useTranslation();
-  const [showDetails, setShowDetails] = useState(true);
+  const [showDetails, setShowDetails] = useState(initiallyExpanded);
   const [details, setDetails] = useState(message);
   const [translationId, setTranslationId] = useState<string | undefined>(id);
   const [translationParams, setTranslationParams] = useState<
@@ -93,7 +97,7 @@ export function ExpandableMessage({
       setDetails(message);
       setShowDetails(false);
     }
-  }, [id, message, observation, action, i18n.language]);
+  }, [id, message, observation, action, i18n.language, initiallyExpanded]);
 
   const statusIconClasses = "h-4 w-4 ml-2 inline";
 
@@ -137,19 +141,20 @@ export function ExpandableMessage({
               type === "error" ? "text-danger" : "text-neutral-300",
             )}
           >
-            {translationId && i18n.exists(translationId) ? (
-              <Trans
-                i18nKey={translationId}
-                values={translationParams}
-                components={{
-                  bold: <strong />,
-                  path: <PathComponent />,
-                  cmd: <MonoComponent />,
-                }}
-              />
-            ) : (
-              message
-            )}
+            {customHeader ||
+              (translationId && i18n.exists(translationId) ? (
+                <Trans
+                  i18nKey={translationId}
+                  values={translationParams}
+                  components={{
+                    bold: <strong />,
+                    path: <PathComponent />,
+                    cmd: <MonoComponent />,
+                  }}
+                />
+              ) : (
+                message
+              ))}
             <button
               type="button"
               onClick={() => setShowDetails(!showDetails)}
