@@ -86,10 +86,8 @@ async def get_address_by_network(network_id: str, request: Request) -> str:
             'content-type': 'application/json',
             'Authorization': f'{request.headers.get("Authorization")}'
         }
-        print("headers", headers)
 
         response = requests.request("GET", url, headers=headers, data=payload)
-        print("response", response.json())
         if network_id.lower() == 'solana':
             return response.json()['user']['solanaThesisAddress']
         elif network_id.lower() == 'evm':
