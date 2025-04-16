@@ -81,18 +81,14 @@ export const useTerminal = ({
             terminal.current.write("$ ");
           }
           terminal.current.writeln(
-            `\x1b[90m${parseTerminalOutput(content.replaceAll("\n", "\r\n").trim())}\x1b[0m`,
+            parseTerminalOutput(content.replaceAll("\n", "\r\n").trim()),
           );
         } else {
           terminal.current.writeln(
             parseTerminalOutput(content.replaceAll("\n", "\r\n").trim()),
           );
-          // Only add a new line and $ prompt after output if it's not the last command
-          if (i < commands.length - 1) {
-            terminal.current.write(`\n$ `);
-          } else {
-            terminal.current.write(`\n`);
-          }
+          // Only add a new line after output
+          terminal.current.write(`\n`);
         }
       }
 
