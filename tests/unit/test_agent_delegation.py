@@ -131,10 +131,11 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
 
     # Verify that a RecallObservation was added to the event stream
     events = list(mock_event_stream.get_events())
-    # With the refactored system message handling, we now have 5 events instead of 3
+
+    # SystemMessageAction, RecallAction, AgentChangeState, AgentDelegateAction, SystemMessageAction (for child)
     assert (
         mock_event_stream.get_latest_event_id() == 5
-    )  # System message, Microagents and AgentChangeState
+    )  
 
     # a RecallObservation and an AgentDelegateAction should be in the list
     assert any(isinstance(event, RecallObservation) for event in events)
