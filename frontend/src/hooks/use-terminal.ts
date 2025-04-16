@@ -52,7 +52,6 @@ export const useTerminal = ({
 
     if (ref.current) {
       initializeTerminal();
-      terminal.current.write("$ ");
     }
 
     return () => {
@@ -67,7 +66,6 @@ export const useTerminal = ({
     // For initial render, reset the terminal and start fresh
     if (lastCommandIndex.current === 0 && commands.length > 0) {
       terminal.current.clear();
-      terminal.current.write("$ ");
     }
 
     // Only process commands that haven't been rendered yet
@@ -76,24 +74,25 @@ export const useTerminal = ({
         const { content, type } = commands[i];
 
         if (type === "input") {
-          // For commands after the first one, we need to add a $ prompt
-          if (i > 0) {
-            terminal.current.write("$ ");
-          }
           terminal.current.writeln(
             parseTerminalOutput(content.replaceAll("\n", "\r\n").trim()),
           );
         } else {
+          // Add a new line before and after output
+          terminal.current.write(`\n`);
+
           terminal.current.writeln(
             parseTerminalOutput(content.replaceAll("\n", "\r\n").trim()),
           );
-          // Only add a new line after output
           terminal.current.write(`\n`);
         }
       }
 
       // Always ensure there's a prompt at the end
-      if (commands.length > 0 && commands[commands.length - 1].type === "output") {
+      if (
+        commands.length > 0 &&
+        commands[commands.length - 1].type === "output"
+      ) {
         terminal.current.write("$ ");
       }
 
