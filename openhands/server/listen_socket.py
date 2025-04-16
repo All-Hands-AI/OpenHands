@@ -153,7 +153,9 @@ async def connect(connection_id: str, environ):
             if mode == 'shared' and new_event_dict.get('source') == 'user':
                 new_event_dict['hidden_prompt'] = conversation_configs['hidden_prompt']
                 if conversation_configs['hidden_prompt']:
-                    new_event_dict['args']['content'] = 'The creator of this prompt has chosen to keep it private, so it cannot be viewed by others unless its privacy settings are changed.'
+                    content = 'The creator of this prompt has chosen to keep it private, so it cannot be viewed by others unless its privacy settings are changed.'
+                    new_event_dict['args']['content'] = content
+                    new_event_dict['message'] = content
             await sio.emit('oh_event', new_event_dict, to=connection_id)
     if agent_state_changed:
         await sio.emit('oh_event', event_to_dict(agent_state_changed), to=connection_id)
