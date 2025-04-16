@@ -71,7 +71,10 @@ export default function TOSPage() {
       if (response.status === 200) {
         // Get the last page from localStorage or default to root
         const lastPage = localStorage.getItem("openhandsLastPage") || "/";
-        navigate(lastPage);
+
+        // Instead of using navigate, do a full page reload to ensure
+        // all auth state is properly refreshed
+        window.location.href = lastPage;
       }
     } catch (error) {
       console.error("Failed to accept TOS:", error);
