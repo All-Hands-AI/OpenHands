@@ -362,8 +362,8 @@ function AccountSettings() {
               </div>
             </section>
           )}
-          <div className="my-7 h-[1px] w-full bg-neutral-1000 dark:bg-[#1B1C1A]" />
-          <section className="flex flex-col gap-6">
+          {/* <div className="my-7 h-[1px] w-full bg-neutral-1000 dark:bg-[#1B1C1A]" /> */}
+          {/* <section className="flex flex-col gap-6">
             <h3 className="text-[18px] font-semibold text-neutral-100 dark:text-[#EFEFEF]">
               Additional Settings
             </h3>
@@ -379,13 +379,13 @@ function AccountSettings() {
               isClearable={false}
             />
             <div className="flex flex-col gap-8 md:flex-row md:items-center">
-              {/* <SettingsSwitch
+              <SettingsSwitch
                 testId="enable-analytics-switch"
                 name="enable-analytics-switch"
                 defaultIsToggled={!!isAnalyticsEnabled}
               >
                 Enable analytics
-              </SettingsSwitch> */}
+              </SettingsSwitch>
               <SettingsSwitch
                 testId="enable-sound-notifications-switch"
                 name="enable-sound-notifications-switch"
@@ -394,7 +394,7 @@ function AccountSettings() {
                 Enable sound notifications
               </SettingsSwitch>
             </div>
-          </section>
+          </section> */}
         </div>
       </form>
       <footer className="flex w-full justify-end gap-4 rounded-b-xl border-t border-t-neutral-1000 bg-neutral-1100 px-3 py-2 dark:border-t-[#232521] dark:bg-[#080808] md:p-6 md:py-4">

@@ -92,7 +92,7 @@ class AppConfig(BaseModel):
     conversation_max_age_seconds: int = Field(default=864000)  # 10 days in seconds
     enable_default_condenser: bool = Field(default=True)
     max_concurrent_conversations: int = Field(
-        default=3
+        default=5
     )  # Maximum number of concurrent agent loops allowed per user
     # mcp: MCPConfig = Field(default_factory=MCPConfig)
     dict_mcp_config: dict[str, MCPConfig] = Field(default_factory=dict)

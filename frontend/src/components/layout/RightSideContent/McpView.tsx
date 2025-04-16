@@ -1,28 +1,32 @@
 import { Editor } from "@monaco-editor/react"
+import { useMemo } from "react"
 
 interface McpViewProps {
-  content: string
+  content: string | null | undefined | object
 }
 
 const McpView = ({ content }: McpViewProps) => {
-  const renderValue = () => {
-    let value
-    try {
-      const parsedContent =
-        typeof content === "string" ? JSON.parse(content) : content
-      value = parsedContent
-    } catch (error) {
-      value = content
+  const value = useMemo(() => {
+    if (typeof content !== "string") {
+      return String(content ?? "")
     }
-    return value
-  }
+
+    try {
+      const parsedContent = JSON.parse(content)
+      return typeof parsedContent === "string"
+        ? parsedContent
+        : JSON.stringify(parsedContent, null, 2)
+    } catch (error) {
+      return content
+    }
+  }, [content])
 
   return (
     <Editor
       height="100%"
       width="100%"
       language="markdown"
-      value={renderValue()}
+      value={value}
       options={{
         readOnly: true,
         domReadOnly: true,
