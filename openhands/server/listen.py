@@ -31,17 +31,10 @@ if (not origin_str) :
     origin_str="*"
 
 origins = [i for i in origin_str.split(",")]
-# print('origins', origins)
-# base_app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=origins,
-#     allow_credentials=True,
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-# )
-
+print('origins', origins)
 base_app.add_middleware(
-    LocalhostCORSMiddleware,
+    CORSMiddleware,
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
