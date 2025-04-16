@@ -4,11 +4,11 @@ from urllib.parse import urlparse
 from pydantic import BaseModel, Field, ValidationError
 
 
-class MCPSSEConfig(BaseModel):
-    """Configuration for MCP SSE (Server-Sent Events) settings.
+class MCPConfig(BaseModel):
+    """Configuration for MCP (Message Control Protocol) settings.
 
     Attributes:
-        mcp_servers: List of MCP server URLs.
+        mcp_servers: List of MCP SSE (Server-Sent Events) server URLs.
     """
 
     mcp_servers: List[str] = Field(default_factory=list)
@@ -30,18 +30,6 @@ class MCPSSEConfig(BaseModel):
             except Exception as e:
                 raise ValueError(f'Invalid URL {url}: {str(e)}')
 
-
-class MCPConfig(BaseModel):
-    """Configuration for MCP (Message Control Protocol) settings.
-
-    Attributes:
-        sse: SSE-specific configuration.
-    """
-
-    sse: MCPSSEConfig = Field(default_factory=MCPSSEConfig)
-
-    model_config = {'extra': 'forbid'}
-
     @classmethod
     def from_toml_section(cls, data: dict) -> dict[str, 'MCPConfig']:
         """
@@ -57,11 +45,10 @@ class MCPConfig(BaseModel):
 
         try:
             # Create SSE config if present
-            sse_config = MCPSSEConfig.model_validate(data)
-            sse_config.validate_servers()
-
+            mcp_config = MCPConfig.model_validate(data)
+            mcp_config.validate_servers()
             # Create the main MCP config
-            mcp_mapping['mcp'] = cls(sse=sse_config)
+            mcp_mapping['mcp'] = cls(mcp_servers=mcp_config.mcp_servers)
         except ValidationError as e:
             raise ValueError(f'Invalid MCP configuration: {e}')
 
