@@ -59,7 +59,9 @@ If you are starting a pull request (PR), please follow the template in `.github/
 
 These details may or may not be useful for your current task.
 
-### Action Handling:
+### Frontend
+
+#### Action Handling:
 - Actions are defined in `frontend/src/types/action-type.ts`
 - The `HANDLED_ACTIONS` array in `frontend/src/state/chat-slice.ts` determines which actions are displayed as collapsible UI elements
 - To add a new action type to the UI:
