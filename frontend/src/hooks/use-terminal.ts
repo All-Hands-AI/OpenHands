@@ -45,65 +45,63 @@ export const useTerminal = ({
     }
   };
 
+  // Initialize terminal and handle cleanup
   React.useEffect(() => {
     terminal.current = createTerminal();
     fitAddon.current = new FitAddon();
 
     if (ref.current) {
       initializeTerminal();
-
-      if (commands.length > 0) {
-        for (let i = 0; i < commands.length; i += 1) {
-          const { content, type } = commands[i];
-          
-          if (type === "command") {
-            terminal.current?.write("$ ");
-            terminal.current?.writeln(
-              `\x1b[90m${parseTerminalOutput(content.replaceAll("\n", "\r\n").trim())}\x1b[0m`,
-            );
-          } else {
-            terminal.current?.writeln(
-              parseTerminalOutput(content.replaceAll("\n", "\r\n").trim()),
-            );
-            terminal.current.write(`\n`);
-          }
-        }
-        lastCommandIndex.current = commands.length;
-      }
-
       terminal.current.write("$ ");
     }
 
     return () => {
       terminal.current?.dispose();
     };
-  }, [commands]);
+  }, []);
 
+  // Handle rendering of all commands (both initial and new ones)
   React.useEffect(() => {
-    /* Write commands to the terminal */
-    if (
-      terminal.current &&
-      commands.length > 0 &&
-      lastCommandIndex.current < commands.length
-    ) {
+    if (!terminal.current || !ref.current) return;
+
+    // For initial render, reset the terminal and start fresh
+    if (lastCommandIndex.current === 0 && commands.length > 0) {
+      terminal.current.clear();
+      terminal.current.write("$ ");
+    }
+
+    // Only process commands that haven't been rendered yet
+    if (lastCommandIndex.current < commands.length) {
       for (let i = lastCommandIndex.current; i < commands.length; i += 1) {
-        // eslint-disable-next-line prefer-const
-        let { content, type } = commands[i];
+        const { content, type } = commands[i];
 
         if (type === "command") {
-          terminal.current?.write("$ ");
-          terminal.current?.writeln(
+          // For commands after the first one, we need to add a $ prompt
+          if (i > 0) {
+            terminal.current.write("$ ");
+          }
+          terminal.current.writeln(
             `\x1b[90m${parseTerminalOutput(content.replaceAll("\n", "\r\n").trim())}\x1b[0m`,
           );
         } else {
-          terminal.current?.writeln(
+          terminal.current.writeln(
             parseTerminalOutput(content.replaceAll("\n", "\r\n").trim()),
           );
-          terminal.current.write(`\n$ `);
+          // Only add a new line and $ prompt after output if it's not the last command
+          if (i < commands.length - 1) {
+            terminal.current.write(`\n$ `);
+          } else {
+            terminal.current.write(`\n`);
+          }
         }
       }
 
-      lastCommandIndex.current = commands.length; // Update the position of the last command
+      // Always ensure there's a prompt at the end
+      if (commands.length > 0 && commands[commands.length - 1].type === "output") {
+        terminal.current.write("$ ");
+      }
+
+      lastCommandIndex.current = commands.length;
     }
   }, [commands]);
 
