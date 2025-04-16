@@ -229,15 +229,15 @@ class DockerRuntime(ActionExecutionClient):
             )
             raise ex
 
-    def _init_container(self):
+    def _init_container(self, known_used_ports: Set[int] = set()):
         start_time = time.time()
         # we don't need to find available port. Just randomize it and try again if it's already in use.
         # It's faster and simpler.
         self.log('debug', 'Preparing to start container...')
         self.send_status_message('STATUS$PREPARING_CONTAINER')
         use_host_network = self.config.sandbox.use_host_network
-        # self._host_port = self._find_available_port(EXECUTION_SERVER_PORT_RANGE)
         used_ports = get_used_ports(self.docker_client, EXECUTION_SERVER_PORT_RANGE[0], EXECUTION_SERVER_PORT_RANGE[1], use_host_network)
+        used_ports.update(known_used_ports)
         self._host_port = next_available_port(EXECUTION_SERVER_PORT_RANGE[0], EXECUTION_SERVER_PORT_RANGE[1], used_ports)
         self._container_port = self._host_port
         # TODO FIXME: we don't need app ports. This is used to expose web applications within the sandbox. We don't need it.
@@ -361,11 +361,12 @@ class DockerRuntime(ActionExecutionClient):
             )
             return
         except docker.errors.APIError as e:
+            if "port is already allocated" in str(e) or "bind: address already in use" in str(e):
+                used_ports.add(self._host_port)
+                return self._init_container(used_ports)
             if '409' in str(e):
                 # port already allocated, try another port
                 self.log('warning', f'str(e): {str(e)}')
-                if "port is already allocated" in str(e) or "bind: address already in use" in str(e):
-                    return self._init_container()
                 
                 # for other cases, we need to remove the container and try again
                 self.log(
