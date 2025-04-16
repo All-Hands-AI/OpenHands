@@ -291,9 +291,18 @@ class StandaloneConversationManager(ConversationManager):
                 #     oldest_conversation_id = conversations.pop().conversation_id
                 #     await self.close_session(oldest_conversation_id)
                 # Instead of closing the oldest conversation, raise an error
-                raise MaxConcurrentConversationsError(
-                    f"You have reached the maximum limit of {self.config.max_concurrent_conversations} concurrent conversations."
-                )
+                event_store = await self._get_event_store(sid, user_id, True)
+                if not event_store:
+                    logger.error(
+                        f'No event stream after starting agent loop: {sid}',
+                        extra={'session_id': sid},
+                    )
+                    raise RuntimeError(f'no_event_stream:{sid}')
+                return event_store
+    
+                # raise MaxConcurrentConversationsError(
+                #     f"You have reached the maximum limit of {self.config.max_concurrent_conversations} concurrent conversations."
+                # )
 
             session = Session(
                 sid=sid,
@@ -330,9 +339,17 @@ class StandaloneConversationManager(ConversationManager):
         return event_store
 
     async def _get_event_store(
-        self, sid: str, user_id: str | None
+        self, sid: str, user_id: str | None, is_reached_limit: bool = False
     ) -> EventStore | None:
         logger.info(f'_get_event_store:{sid}', extra={'session_id': sid})
+        # If the limit is reached, return an EventStore with the sid, file_store, user_id, and cur_id to return old events.
+        if is_reached_limit:
+            return EventStore(
+                sid,
+                self.file_store,
+                user_id,
+            )
+        
         session = self._local_agent_loops_by_sid.get(sid)
         if session:
             logger.info(f'found_local_agent_loop:{sid}', extra={'session_id': sid})

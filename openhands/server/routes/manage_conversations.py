@@ -67,6 +67,15 @@ async def _create_new_conversation(
         extra={'signal': 'create_conversation', 'user_id': user_id},
     )
 
+    running_conversations = await conversation_manager.get_running_agent_loops(
+            user_id
+        )
+    if len(running_conversations) >= config.max_concurrent_conversations:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"You have reached the maximum limit of {config.max_concurrent_conversations} concurrent conversations."
+        )
+
     logger.info('Loading settings')
     settings = await get_user_setting(user_id)
 
@@ -142,6 +151,7 @@ async def _create_new_conversation(
         user_id,
         initial_user_msg=initial_message_action,
         replay_json=replay_json,
+
     )
     logger.info(f'Finished initializing conversation {conversation_id}')
 
@@ -194,6 +204,15 @@ async def new_conversation(request: Request, data: InitSessionRequest):
                 'status': 'error',
                 'message': str(e),
                 'msg_id': 'STATUS$ERROR_LLM_AUTHENTICATION',
+            },
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+    
+    except Exception as e:
+        return JSONResponse(
+            content={
+                'status': 'error',
+                'detail': str(e),
             },
             status_code=status.HTTP_400_BAD_REQUEST,
         )
