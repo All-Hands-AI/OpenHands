@@ -277,7 +277,6 @@ async def test_run_controller_with_fatal_error(
     assert (
         error_observation.reason == 'AgentStuckInLoopError: Agent got stuck in a loop'
     )
-    # With the refactored system message handling, we now have 12 events instead of 11
     assert len(events) == 12
 
 
@@ -337,7 +336,6 @@ async def test_run_controller_stop_with_stuck(
         print(f'event {i}: {event_to_dict(event)}')
 
     assert state.iteration == 3
-    # With the refactored system message handling, we now have 12 events instead of 11
     assert len(events) == 12
     # check the eventstream have 4 pairs of repeated actions and observations
     # With the refactored system message handling, we need to adjust the range
