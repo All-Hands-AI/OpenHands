@@ -55,7 +55,12 @@ export function ExpandableMessage({
   });
 
   useEffect(() => {
-    if (id && i18n.exists(id)) {
+    // If we have a custom header, initially collapse the message
+    if (customHeader) {
+      setShowDetails(false);
+    }
+    // Otherwise, if we have a translation ID, process it
+    else if (id && i18n.exists(id)) {
       let processedObservation = observation;
       let processedAction = action;
 
@@ -95,7 +100,7 @@ export function ExpandableMessage({
       setDetails(message);
       setShowDetails(false);
     }
-  }, [id, message, observation, action, i18n.language]);
+  }, [id, message, observation, action, i18n.language, customHeader]);
 
   const statusIconClasses = "h-4 w-4 ml-2 inline";
 
