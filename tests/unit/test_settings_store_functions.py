@@ -101,11 +101,7 @@ async def test_store_llm_settings_new_settings():
 
         # Should return settings with the provided values
         assert result.llm_model == 'gpt-4'
-        # For SecretStr objects, we need to compare the secret value
-        if isinstance(result.llm_api_key, SecretStr):
-            assert result.llm_api_key.get_secret_value() == 'test-api-key'
-        else:
-            assert result.llm_api_key == 'test-api-key'
+        assert result.llm_api_key.get_secret_value() == 'test-api-key'
         assert result.llm_base_url == 'https://api.example.com'
 
 
@@ -139,11 +135,7 @@ async def test_store_llm_settings_update_existing():
 
         # Should return settings with the updated values
         assert result.llm_model == 'gpt-4'
-        # For SecretStr objects, we need to compare the secret value
-        if isinstance(result.llm_api_key, SecretStr):
-            assert result.llm_api_key.get_secret_value() == 'new-api-key'
-        else:
-            assert result.llm_api_key == 'new-api-key'
+        assert result.llm_api_key.get_secret_value() == 'new-api-key'
         assert result.llm_base_url == 'https://new.example.com'
 
 
@@ -176,10 +168,7 @@ async def test_store_llm_settings_partial_update():
         # Should return settings with updated model but keep other values
         assert result.llm_model == 'gpt-4'
         # For SecretStr objects, we need to compare the secret value
-        if isinstance(result.llm_api_key, SecretStr):
-            assert result.llm_api_key.get_secret_value() == 'existing-api-key'
-        else:
-            assert result.llm_api_key == 'existing-api-key'
+        assert result.llm_api_key.get_secret_value() == 'existing-api-key'
         assert result.llm_base_url == 'https://existing.example.com'
 
 
