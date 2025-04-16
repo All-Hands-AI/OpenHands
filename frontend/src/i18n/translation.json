@@ -361,21 +361,6 @@
         "fr": "En attente de la disponibilité du client...",
         "tr": "İstemcinin hazır olması bekleniyor..."
     },
-    "TERMINAL$TOOLTIP_READ_ONLY": {
-        "en": "Terminal is read-only to avoid interfering with agent's task. Use VSCode server for manual modifications.",
-        "ja": "エージェントのタスクを妨げないよう、ターミナルは読み取り専用です。手動での変更にはVSCodeサーバーをご利用ください。",
-        "zh-CN": "终端为只读模式，以避免干扰代理任务。如需手动修改，请使用VSCode服务器。",
-        "zh-TW": "終端機為唯讀模式，以避免干擾代理任務。如需手動修改，請使用VSCode伺服器。",
-        "ko-KR": "에이전트 작업을 방해하지 않도록 터미널은 읽기 전용입니다. 수동 수정은 VSCode 서버를 사용하세요.",
-        "no": "Terminalen er skrivebeskyttet for å unngå å forstyrre agentens oppgave. Bruk VSCode-serveren for manuelle endringer.",
-        "it": "Il terminale è in sola lettura per evitare interferenze con l'attività dell'agente. Usa il server VSCode per modifiche manuali.",
-        "pt": "O terminal é somente leitura para evitar interferir na tarefa do agente. Use o servidor VSCode para modificações manuais.",
-        "es": "El terminal es de solo lectura para evitar interferir con la tarea del agente. Use el servidor VSCode para modificaciones manuales.",
-        "ar": "الطرفية للقراءة فقط لتجنب التدخل في مهمة الوكيل. استخدم خادم VSCode للتعديلات اليدوية.",
-        "fr": "Le terminal est en lecture seule pour éviter d'interférer avec la tâche de l'agent. Utilisez le serveur VSCode pour les modifications manuelles.",
-        "tr": "Terminal, ajanın görevine müdahale etmemek için salt okunurdur. Manuel değişiklikler için VSCode sunucusunu kullanın.",
-        "de": "Das Terminal ist schreibgeschützt, um Eingriffe in die Aufgabe des Agenten zu vermeiden. Verwenden Sie den VSCode-Server für manuelle Änderungen."
-    },
     "CODE_EDITOR$FILE_SAVED_SUCCESSFULLY": {
         "en": "File saved successfully",
         "zh-CN": "文件保存成功",

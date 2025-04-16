@@ -1,18 +1,16 @@
 import { NavLink } from "react-router";
 import { cn } from "#/utils/utils";
 import { BetaBadge } from "./beta-badge";
-import { Tooltip } from "@heroui/react";
 
 interface NavTabProps {
   to: string;
   label: string | React.ReactNode;
   icon: React.ReactNode;
   isBeta?: boolean;
-  tooltip?: string;
 }
 
-export function NavTab({ to, label, icon, isBeta, tooltip }: NavTabProps) {
-  const navLink = (
+export function NavTab({ to, label, icon, isBeta }: NavTabProps) {
+  return (
     <NavLink
       end
       key={to}
@@ -32,17 +30,4 @@ export function NavTab({ to, label, icon, isBeta, tooltip }: NavTabProps) {
       )}
     </NavLink>
   );
-
-  if (tooltip) {
-    return (
-      <Tooltip 
-        content={<div className="max-w-xs">{tooltip}</div>} 
-        placement="bottom"
-      >
-        {navLink}
-      </Tooltip>
-    );
-  }
-
-  return navLink;
 }

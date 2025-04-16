@@ -136,7 +136,6 @@ function AppContent() {
                 label: t(I18nKey.WORKSPACE$TERMINAL_TAB_LABEL),
                 to: "terminal",
                 icon: <TerminalIcon />,
-                tooltip: t(I18nKey.TERMINAL$TOOLTIP_READ_ONLY),
               },
               { label: "Jupyter", to: "jupyter", icon: <JupyterIcon /> },
               {

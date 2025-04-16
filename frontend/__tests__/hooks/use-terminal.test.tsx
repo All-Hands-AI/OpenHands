@@ -33,7 +33,6 @@ describe("useTerminal", () => {
     onKey: vi.fn(),
     attachCustomKeyEventHandler: vi.fn(),
     dispose: vi.fn(),
-    clear: vi.fn(),
   }));
 
   beforeAll(() => {
