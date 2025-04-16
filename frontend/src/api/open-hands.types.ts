@@ -70,6 +70,11 @@ export interface AuthenticateResponse {
   error?: string;
 }
 
+export enum ConversationTrigger {
+  CLOUD_RESOLVER = "cloud_resolver",
+  GUI = "gui",
+}
+
 export interface Conversation {
   conversation_id: string;
   title: string;
@@ -77,10 +82,7 @@ export interface Conversation {
   last_updated_at: string;
   created_at: string;
   status: ProjectStatus;
-  metadata?: {
-    trigger?: string;
-    [key: string]: unknown;
-  };
+  trigger?: ConversationTrigger;
 }
 
 export interface ResultSet<T> {

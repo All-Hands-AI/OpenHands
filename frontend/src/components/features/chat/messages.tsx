@@ -6,6 +6,7 @@ import { ImageCarousel } from "../images/image-carousel";
 import { ExpandableMessage } from "./expandable-message";
 import { useUserConversation } from "#/hooks/query/use-user-conversation";
 import { useConversation } from "#/context/conversation-context";
+import { ConversationTrigger } from "#/api/open-hands.types";
 
 interface MessagesProps {
   messages: Message[];
@@ -18,7 +19,8 @@ export const Messages: React.FC<MessagesProps> = React.memo(
     const { data: conversation } = useUserConversation(conversationId || null);
 
     // Check if conversation metadata has trigger=resolver
-    const isResolverTrigger = conversation?.metadata?.trigger === "resolver";
+    const isResolverTrigger =
+      conversation?.trigger === ConversationTrigger.CLOUD_RESOLVER;
 
     return messages.map((message, index) => {
       const shouldShowConfirmationButtons =
