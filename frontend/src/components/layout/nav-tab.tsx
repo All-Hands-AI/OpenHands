@@ -35,7 +35,10 @@ export function NavTab({ to, label, icon, isBeta, tooltip }: NavTabProps) {
 
   if (tooltip) {
     return (
-      <Tooltip content={tooltip} placement="bottom">
+      <Tooltip 
+        content={<div className="max-w-xs">{tooltip}</div>} 
+        placement="bottom"
+      >
         {navLink}
       </Tooltip>
     );
