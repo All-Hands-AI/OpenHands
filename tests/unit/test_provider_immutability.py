@@ -12,6 +12,7 @@ from openhands.integrations.provider import (
 )
 from openhands.server.routes.settings import convert_to_settings
 from openhands.server.settings import POSTSettingsModel
+from openhands.storage.data_models.settings import Settings
 
 
 def test_provider_token_immutability():
