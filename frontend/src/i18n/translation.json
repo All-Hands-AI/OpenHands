@@ -571,7 +571,7 @@
         "fr": "Paramètres LLM",
         "tr": "LLM Ayarları"
     },
-    "SETTINGS$PROVIDER_SETTINGS": {
+    "SETTINGS$GIT_SETTINGS": {
         "en": "Git Settings",
         "ja": "Git設定",
         "zh-CN": "Git设置",
