@@ -23,7 +23,7 @@ const DEFAULT_TERMINAL_CONFIG: UseTerminalConfig = {
 };
 
 const renderCommand = (command: Command, terminal: Terminal) => {
-  const { content, type } = command;
+  const { content } = command;
 
   terminal.writeln(
     parseTerminalOutput(content.replaceAll("\n", "\r\n").trim()),
