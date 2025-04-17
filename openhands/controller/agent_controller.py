@@ -499,43 +499,16 @@ class AgentController:
 
         # this happens for runnable actions and microagent actions
         if self._pending_action and self._pending_action.id == observation.cause:
-            self.log(
-                'info',
-                f'Observation matches pending action: {type(observation).__name__} for {type(self._pending_action).__name__} (id={self._pending_action.id})',
-                extra={'msg_type': 'OBSERVATION_MATCHES_PENDING_ACTION'},
-            )
-            
             if self.state.agent_state == AgentState.AWAITING_USER_CONFIRMATION:
-                self.log(
-                    'info',
-                    f'Not clearing pending action because agent is awaiting user confirmation',
-                    extra={'msg_type': 'PENDING_ACTION_NOT_CLEARED_AWAITING_CONFIRMATION'},
-                )
                 return
                 
             self._pending_action = None
             
             if self.state.agent_state == AgentState.USER_CONFIRMED:
-                self.log(
-                    'info',
-                    f'Setting agent state to RUNNING after user confirmation',
-                    extra={'msg_type': 'STATE_CHANGE_AFTER_CONFIRMATION'},
-                )
                 await self.set_agent_state_to(AgentState.RUNNING)
             if self.state.agent_state == AgentState.USER_REJECTED:
-                self.log(
-                    'info',
-                    f'Setting agent state to AWAITING_USER_INPUT after user rejection',
-                    extra={'msg_type': 'STATE_CHANGE_AFTER_REJECTION'},
-                )
                 await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
             return
-        elif self._pending_action:
-            self.log(
-                'debug',
-                f'Observation does not match pending action: {type(observation).__name__} (cause={observation.cause}) vs {type(self._pending_action).__name__} (id={self._pending_action.id})',
-                extra={'msg_type': 'OBSERVATION_MISMATCH_PENDING_ACTION'},
-            )
         elif isinstance(observation, ErrorObservation):
             if self.state.agent_state == AgentState.ERROR:
                 self.state.metrics.merge(self.state.local_metrics)
