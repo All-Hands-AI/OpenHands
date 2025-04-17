@@ -68,6 +68,7 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization.event import event_to_trajectory, truncate_content
 from openhands.llm.llm import LLM
+from openhands.llm.metrics import Metrics, TokenUsage
 
 # note: RESUME is only available on web GUI
 TRAFFIC_CONTROL_REMINDER = (
@@ -1229,16 +1230,32 @@ class AgentController:
         Args:
             action: The action to attach metrics to
         """
-        metrics = self.agent.llm.metrics.copy()
+        # Get metrics from agent LLM
+        agent_metrics = self.agent.llm.metrics
 
-        # Include condenser metrics if they exist
+        # Get metrics from condenser LLM if it exists
+        condenser_metrics: TokenUsage | None = None
         if hasattr(self.agent, 'condenser') and hasattr(self.agent.condenser, 'llm'):
-            metrics.merge(self.agent.condenser.llm.metrics)
+            condenser_metrics = self.agent.condenser.llm.metrics
 
-        # Create a minimal metrics object with just what the frontend needs
-        metrics._token_usages = []
-        metrics._response_latencies = []
-        metrics._costs = []
+        # Create a new minimal metrics object with just what the frontend needs
+        metrics = Metrics(model_name=agent_metrics.model_name)
+
+        # Set accumulated cost (sum of agent and condenser costs)
+        metrics.accumulated_cost = agent_metrics.accumulated_cost
+        if condenser_metrics:
+            metrics.accumulated_cost += condenser_metrics.accumulated_cost
+
+        # Set accumulated token usage (sum of agent and condenser token usage)
+        # Use a deep copy to ensure we don't modify the original object
+        metrics._accumulated_token_usage = (
+            agent_metrics.accumulated_token_usage.model_copy(deep=True)
+        )
+        if condenser_metrics:
+            metrics._accumulated_token_usage = (
+                metrics._accumulated_token_usage
+                + condenser_metrics.accumulated_token_usage
+            )
 
         action.llm_metrics = metrics
 
