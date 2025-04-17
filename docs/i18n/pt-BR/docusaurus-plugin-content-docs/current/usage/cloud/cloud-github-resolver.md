@@ -7,7 +7,7 @@ O GitHub Cloud Resolver automatiza correções de código e fornece assistência
 ## Configuração
 
 O Resolvedor do GitHub na Nuvem está disponível automaticamente quando você
-[concede acesso ao repositório do OpenHands Cloud](./openhands-cloud.md#adding-repository-access).
+[concede acesso ao repositório do OpenHands Cloud](./openhands-cloud#adding-repository-access).
 
 ## Uso
 

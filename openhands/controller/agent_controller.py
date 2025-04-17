@@ -54,6 +54,7 @@ from openhands.events.action import (
     IPythonRunCellAction,
     MessageAction,
     NullAction,
+    SystemMessageAction,
 )
 from openhands.events.action.agent import CondensationAction, RecallAction
 from openhands.events.event import Event
@@ -66,7 +67,6 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization.event import event_to_trajectory, truncate_content
 from openhands.llm.llm import LLM
-from openhands.llm.metrics import Metrics, TokenUsage
 
 # note: RESUME is only available on web GUI
 TRAFFIC_CONTROL_REMINDER = (
@@ -162,6 +162,31 @@ class AgentController:
 
         # replay-related
         self._replay_manager = ReplayManager(replay_events)
+
+        # Add the system message to the event stream
+        self._add_system_message()
+
+    def _add_system_message(self):
+        for event in self.event_stream.get_events(start_id=self.state.start_id):
+            if isinstance(event, MessageAction) and event.source == EventSource.USER:
+                # FIXME: Remove this after 6/1/2025
+                # Do not try to add a system message if we first run into
+                # a user message -- this means the eventstream exits before
+                # SystemMessageAction is introduced.
+                # We expect *agent* to handle this case gracefully.
+                return
+
+            if isinstance(event, SystemMessageAction):
+                # Do not try to add the system message if it already exists
+                return
+
+        # Add the system message to the event stream
+        # This should be done for all agents, including delegates
+        system_message = self.agent.get_system_message()
+        logger.debug(f'System message got from agent: {system_message}')
+        if system_message:
+            self.event_stream.add_event(system_message, EventSource.AGENT)
+            logger.debug(f'System message added to event stream: {system_message}')
 
     async def close(self, set_stop_state=True) -> None:
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream.
@@ -1114,36 +1139,44 @@ class AgentController:
 
         To avoid performance issues with long conversations, we only keep:
         - accumulated_cost: The current total cost
-        - latest token_usage: Token statistics from the most recent API call
+        - accumulated_token_usage: Accumulated token statistics across all API calls
+
+        This includes metrics from both the agent's LLM and the condenser's LLM if it exists.
 
         Args:
             action: The action to attach metrics to
         """
-        metrics = Metrics(model_name=self.agent.llm.metrics.model_name)
-        metrics.accumulated_cost = self.agent.llm.metrics.accumulated_cost
-        if self.agent.llm.metrics.token_usages:
-            latest_usage = self.agent.llm.metrics.token_usages[-1]
-            metrics.add_token_usage(
-                prompt_tokens=latest_usage.prompt_tokens,
-                completion_tokens=latest_usage.completion_tokens,
-                cache_read_tokens=latest_usage.cache_read_tokens,
-                cache_write_tokens=latest_usage.cache_write_tokens,
-                response_id=latest_usage.response_id,
-            )
+        metrics = self.agent.llm.metrics.copy()
+
+        # Include condenser metrics if they exist
+        if hasattr(self.agent, 'condenser') and hasattr(self.agent.condenser, 'llm'):
+            metrics.merge(self.agent.condenser.llm.metrics)
+
+        # Create a minimal metrics object with just what the frontend needs
+        metrics._token_usages = []
+        metrics._response_latencies = []
+        metrics._costs = []
+
         action.llm_metrics = metrics
 
-        # Log the metrics information for frontend display
-        log_usage: TokenUsage | None = (
-            metrics.token_usages[-1] if metrics.token_usages else None
-        )
+        # Log the metrics information for debugging
+        # Get the latest usage directly from the agent's metrics
+        latest_usage = None
+        if self.agent.llm.metrics.token_usages:
+            latest_usage = self.agent.llm.metrics.token_usages[-1]
+
+        accumulated_usage = self.agent.llm.metrics.accumulated_token_usage
         self.log(
             'debug',
             f'Action metrics - accumulated_cost: {metrics.accumulated_cost}, '
-            f'tokens (prompt/completion/cache_read/cache_write): '
-            f'{log_usage.prompt_tokens if log_usage else 0}/'
-            f'{log_usage.completion_tokens if log_usage else 0}/'
-            f'{log_usage.cache_read_tokens if log_usage else 0}/'
-            f'{log_usage.cache_write_tokens if log_usage else 0}',
+            f'latest tokens (prompt/completion/cache_read/cache_write): '
+            f'{latest_usage.prompt_tokens if latest_usage else 0}/'
+            f'{latest_usage.completion_tokens if latest_usage else 0}/'
+            f'{latest_usage.cache_read_tokens if latest_usage else 0}/'
+            f'{latest_usage.cache_write_tokens if latest_usage else 0}, '
+            f'accumulated tokens (prompt/completion): '
+            f'{accumulated_usage.prompt_tokens}/'
+            f'{accumulated_usage.completion_tokens}',
             extra={'msg_type': 'METRICS'},
         )
 
