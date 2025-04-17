@@ -270,7 +270,6 @@ class CheckUserActivationMiddleware(BaseHTTPMiddleware):
                 status_code=403,
                 content={'detail': 'User account is not activated'},
             )
-
         return await call_next(request)
 
 
