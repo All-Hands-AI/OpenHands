@@ -99,6 +99,10 @@ class ActionExecutionClient(Runtime):
     def action_execution_server_url(self) -> str:
         pass
 
+    @property
+    def runtime_initialized(self) -> bool:
+        return self._runtime_initialized
+
     @retry(
         retry=retry_if_exception(_is_retryable_error),
         stop=stop_after_attempt(5) | stop_if_should_exit(),
@@ -225,7 +229,7 @@ class ActionExecutionClient(Runtime):
             )
 
     def get_vscode_token(self) -> str:
-        if self.vscode_enabled and self._runtime_initialized:
+        if self.vscode_enabled and self.runtime_initialized:
             if self._vscode_token is not None:  # cached value
                 return self._vscode_token
             response = self._send_action_server_request(
