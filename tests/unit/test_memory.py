@@ -11,7 +11,7 @@ from openhands.core.config import AppConfig
 from openhands.core.main import run_controller
 from openhands.core.schema.agent import AgentState
 from openhands.events.action.agent import RecallAction
-from openhands.events.action.message import MessageAction
+from openhands.events.action.message import MessageAction, SystemMessageAction
 from openhands.events.event import EventSource
 from openhands.events.observation.agent import (
     RecallObservation,
@@ -67,8 +67,6 @@ def mock_agent():
     agent.llm.config = AppConfig().get_llm_config()
 
     # Add a proper system message mock
-    from openhands.events.action.message import SystemMessageAction
-
     system_message = SystemMessageAction(content='Test system message')
     system_message._source = EventSource.AGENT
     system_message._id = -1  # Set invalid ID to avoid the ID check
@@ -78,7 +76,6 @@ def mock_agent():
 @pytest.mark.asyncio
 async def test_memory_on_event_exception_handling(memory, event_stream, mock_agent):
     """Test that exceptions in Memory.on_event are properly handled via status callback."""
-
     # Create a mock runtime
     runtime = MagicMock(spec=Runtime)
     runtime.event_stream = event_stream
@@ -108,7 +105,6 @@ async def test_memory_on_workspace_context_recall_exception_handling(
     memory, event_stream, mock_agent
 ):
     """Test that exceptions in Memory._on_workspace_context_recall are properly handled via status callback."""
-
     # Create a mock runtime
     runtime = MagicMock(spec=Runtime)
     runtime.event_stream = event_stream
@@ -270,9 +266,7 @@ REPOSITORY INSTRUCTIONS: This is a test repository.
 
 @pytest.mark.asyncio
 async def test_memory_with_agent_microagents():
-    """
-    Test that Memory processes microagent based on trigger words from agent messages.
-    """
+    """Test that Memory processes microagent based on trigger words from agent messages."""
     # Create a mock event stream
     event_stream = MagicMock(spec=EventStream)
 

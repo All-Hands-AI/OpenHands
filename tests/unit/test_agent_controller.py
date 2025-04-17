@@ -877,7 +877,7 @@ async def test_context_window_exceeded_error_handling(
 async def test_run_controller_with_context_window_exceeded_with_truncation(
     mock_agent, mock_runtime, mock_memory, test_event_stream
 ):
-    """Tests that the controller can make progress after handling context window exceeded errors, as long as enable_history_truncation is ON"""
+    """Tests that the controller can make progress after handling context window exceeded errors, as long as enable_history_truncation is ON."""
 
     class StepState:
         def __init__(self):
@@ -1236,6 +1236,12 @@ async def test_condenser_metrics_included():
     # Attach the condenser to the agent
     agent.condenser = condenser
 
+    # Mock the system message to avoid ID issues
+    system_message = SystemMessageAction(content='Test system message')
+    system_message._source = EventSource.AGENT
+    system_message._id = -1
+    agent.get_system_message.return_value = system_message
+
     # Mock agent step to return a CondensationAction
     action = CondensationAction(
         forgotten_events_start_id=1,
@@ -1296,10 +1302,10 @@ async def test_condenser_metrics_included():
 
 @pytest.mark.asyncio
 async def test_first_user_message_with_identical_content(test_event_stream, mock_agent):
-    """
-    Test that _first_user_message correctly identifies the first user message
-    even when multiple messages have identical content but different IDs.
-    Also verifies that the result is properly cached.
+    """Test that _first_user_message correctly identifies the first user message.
+
+    This test verifies that messages with identical content but different IDs are properly
+    distinguished, and that the result is correctly cached.
 
     The issue we're checking is that the comparison (action == self._first_user_message())
     should correctly differentiate between messages with the same content but different IDs.
