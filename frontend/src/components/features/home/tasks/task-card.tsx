@@ -23,13 +23,11 @@ export function TaskCard({ task }: TaskCardProps) {
     return selectedRepo;
   };
 
-  const handleLaunchConversation = () => {
-    const repo = getRepo(task.repo);
-    return createConversation({
-      selectedRepository: repo,
+  const handleLaunchConversation = () =>
+    createConversation({
+      selectedRepository: getRepo(task.repo),
       q: getPromptForQuery(task.task_type, task.issue_number, task.repo),
     });
-  };
 
   return (
     <li className="py-3 border-b border-[#717888] flex items-center pr-6">
