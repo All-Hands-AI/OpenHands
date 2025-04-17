@@ -442,10 +442,11 @@ def test_apply_prompt_caching(conversation_memory):
 
     conversation_memory.apply_prompt_caching(messages)
 
-    # Only the last user message should have cache_prompt=True
-    assert messages[0].content[0].cache_prompt is False
+    # System message is hard-coded to be cached always
+    assert messages[0].content[0].cache_prompt is True
     assert messages[1].content[0].cache_prompt is False
     assert messages[2].content[0].cache_prompt is False
+    # Only the last user message should have cache_prompt=True
     assert messages[3].content[0].cache_prompt is True
 
 

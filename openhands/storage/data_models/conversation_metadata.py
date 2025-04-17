@@ -1,9 +1,16 @@
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from enum import Enum
+from openhands.integrations.service_types import ProviderType
+
+
+class ConversationTrigger(Enum):
+    RESOLVER = 'resolver'
+    GUI = 'gui'
 
 
 @dataclass
-class ConversationMetadata:
+class ConversationMetadata:    
     conversation_id: str
     github_user_id: str | None
     selected_repository: str | None
@@ -11,6 +18,7 @@ class ConversationMetadata:
     selected_branch: str | None = None
     title: str | None = None
     last_updated_at: datetime | None = None
+    trigger: ConversationTrigger | None = None
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     # Cost and token metrics
     accumulated_cost: float = 0.0
