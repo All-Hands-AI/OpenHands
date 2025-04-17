@@ -4,6 +4,27 @@ import { afterEach } from "node:test";
 import { ReactNode } from "react";
 import { useTerminal } from "#/hooks/use-terminal";
 import { Command } from "#/state/command-slice";
+import { Provider } from "react-redux";
+import { configureStore } from "@reduxjs/toolkit";
+import { AgentState } from "#/types/agent-state";
+
+// Mock the WsClient context
+vi.mock("#/context/ws-client-provider", () => ({
+  useWsClient: () => ({
+    send: vi.fn(),
+    status: "CONNECTED",
+    isLoadingMessages: false,
+    events: [],
+  }),
+}));
+
+// Create a mock Redux store
+const createMockStore = () => configureStore({
+  reducer: {
+    agent: (state = { curAgentState: AgentState.RUNNING }, action) => state,
+    cmd: (state = { commands: [] }, action) => state,
+  },
+});
 
 interface TestTerminalComponentProps {
   commands: Command[];
@@ -21,7 +42,8 @@ interface WrapperProps {
 }
 
 function Wrapper({ children }: WrapperProps) {
-  return <div>{children}</div>;
+  const store = createMockStore();
+  return <Provider store={store}>{children}</Provider>;
 }
 
 describe("useTerminal", () => {
