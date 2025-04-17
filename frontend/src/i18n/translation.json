@@ -572,19 +572,19 @@
         "tr": "LLM Ayarları"
     },
     "SETTINGS$PROVIDER_SETTINGS": {
-        "en": "Provider Settings",
-        "ja": "プロバイダー設定",
-        "zh-CN": "提供商设置",
-        "zh-TW": "提供商設定",
-        "ko-KR": "제공자 설정",
-        "de": "Anbieter-Einstellungen",
-        "no": "Leverandørinnstillinger",
-        "it": "Impostazioni Provider",
-        "pt": "Configurações do Provedor",
-        "es": "Configuración del Proveedor",
-        "ar": "إعدادات المزود",
-        "fr": "Paramètres du Fournisseur",
-        "tr": "Sağlayıcı Ayarları"
+        "en": "Git Settings",
+        "ja": "Git設定",
+        "zh-CN": "Git设置",
+        "zh-TW": "Git設定",
+        "ko-KR": "Git 설정",
+        "de": "Git-Einstellungen",
+        "no": "Git-innstillinger",
+        "it": "Impostazioni Git",
+        "pt": "Configurações Git",
+        "es": "Configuración Git",
+        "ar": "إعدادات Git",
+        "fr": "Paramètres Git",
+        "tr": "Git Ayarları"
     },
     "SETTINGS$SOUND_NOTIFICATIONS": {
         "en": "Sound Notifications",
@@ -2515,7 +2515,6 @@
         "tr": "Ajan hız sınırına ulaştı",
         "ja": "エージェントがレート制限中"
     },
-
     "CHAT_INTERFACE$AGENT_PAUSED_MESSAGE": {
         "en": "Agent has paused.",
         "de": "Agent pausiert.",
