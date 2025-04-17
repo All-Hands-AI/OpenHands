@@ -28,21 +28,20 @@ def next_available_port(start: int, end: int, exclude: Set[int]) -> int:
                 return port
         raise ValueError("No valid ports available in range")
     
-def get_used_ports(docker_client: docker.DockerClient, start: int, end: int, use_host_network: bool) -> Set[int]:
+def get_used_ports(docker_client: docker.DockerClient, start: int, end: int) -> Set[int]:
     containers: List[Container] = docker_client.containers.list(all=True, sparse=True)
     used_ports: Set[int] = set()
     for container in containers:
         # Get command string, defaulting to empty string if not present
         # if use_host_network is false, the action_execution_server port is already mapped toPublicPort
-        if use_host_network:
-            docker_command = container.attrs.get("Command", "")
-            if isinstance(docker_command, str):  # Only process if it's a string
-                # find the exposed container port from the docker command
-                match = re.search(r'action_execution_server\s+(\d+)', docker_command)
-                if match:
-                    command_port = int(match.group(1))
-                    if start <= command_port <= end:
-                        used_ports.add(command_port)
+        docker_command = container.attrs.get("Command", "")
+        if isinstance(docker_command, str):  # Only process if it's a string
+            # find the exposed container port from the docker command
+            match = re.search(r'action_execution_server\s+(\d+)', docker_command)
+            if match:
+                command_port = int(match.group(1))
+                if start <= command_port <= end:
+                    used_ports.add(command_port)
             
         # Get ports list, defaulting to empty list if not present
         ports = container.attrs.get("Ports", [])
