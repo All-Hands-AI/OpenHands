@@ -190,7 +190,7 @@ class AllIssueResolver:
                     )
 
                     base_commit = (
-                        subprocess.check_output(   # noqa: ASYNC101
+                        subprocess.check_output(  # noqa: ASYNC101
                             ['git', 'rev-parse', 'HEAD'], cwd=repo_dir
                         )
                         .decode('utf-8')
