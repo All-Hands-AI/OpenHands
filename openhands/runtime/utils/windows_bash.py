@@ -9,6 +9,8 @@ import os
 import time
 import traceback
 from pathlib import Path
+from threading import Lock # Added Lock for thread safety with active_job
+from threading import RLock # Import RLock
 
 # Import logger early so it's available in the initialization blocks
 from openhands.core.logger import openhands_logger as logger
@@ -84,7 +86,9 @@ if clr_system_load_success:
         from System.Management.Automation.Runspaces import RunspaceFactory # Needed for runspace creation
         print("Successfully imported RunspaceFactory type from System.Management.Automation.Runspaces")
 
-        from System.Management.Automation import PSDataCollection # Import PSDataCollection for BeginInvoke
+        # Import types needed for Job management and state checking
+        from System.Management.Automation import PSDataCollection, JobState
+        print("Successfully imported PSDataCollection and JobState types from System.Management.Automation")
         
         from System import TimeSpan, Uri # Uri might be needed for some operations
         from System.Collections.ObjectModel import Collection
@@ -155,6 +159,11 @@ class WindowsPowershellSession:
         self.NO_CHANGE_TIMEOUT_SECONDS = no_change_timeout_seconds # Stored, but not fully used yet
         self.max_memory_mb = max_memory_mb # Stored, but not used.
 
+        # --- New members for job management ---
+        self.active_job = None # Stores the currently active PowerShell background job
+        self._job_lock = RLock() # Use RLock for reentrant locking
+        # ---
+
         # Create and open the persistent runspace
         try:
             # Consider InitialSessionState for more control (e.g., execution policy)
@@ -181,10 +190,10 @@ class WindowsPowershellSession:
             ps.Runspace = self.runspace
             ps.AddScript(f'Set-Location -Path "{self._cwd}"').Invoke()
             if ps.Streams.Error:
-                 errors = "\n".join([str(err) for err in ps.Streams.Error])
-                 logger.warning(f"Error setting initial CWD to '{self._cwd}': {errors}")
-                 # Confirm actual CWD if setting failed
-                 self._confirm_cwd()
+                errors = "\n".join([str(err) for err in ps.Streams.Error])
+                logger.warning(f"Error setting initial CWD to '{self._cwd}': {errors}")
+                # Confirm actual CWD if setting failed
+                self._confirm_cwd()
             else:
                 logger.debug(f"Successfully set initial runspace CWD to {self._cwd}")
                 # Optional: Confirm CWD even on success for robustness
@@ -215,17 +224,17 @@ class WindowsPowershellSession:
                     else:
                         logger.debug(f"Confirmed runspace CWD is {self._cwd}")
                 else:
-                     logger.error(f"Get-Location returned an invalid path: {actual_cwd}. Session CWD may be inaccurate.")
+                    logger.error(f"Get-Location returned an invalid path: {actual_cwd}. Session CWD may be inaccurate.")
             elif ps_confirm.Streams.Error:
-                 errors = "\n".join([str(err) for err in ps_confirm.Streams.Error])
-                 logger.error(f"Error confirming runspace CWD: {errors}")
+                errors = "\n".join([str(err) for err in ps_confirm.Streams.Error])
+                logger.error(f"Error confirming runspace CWD: {errors}")
             else:
-                  logger.error("Could not confirm runspace CWD (No result or error).")
+                logger.error("Could not confirm runspace CWD (No result or error).")
         except Exception as e:
             logger.error(f"Exception confirming CWD: {e}")
         finally:
-             if ps_confirm:
-                  ps_confirm.Dispose()
+            if ps_confirm:
+                ps_confirm.Dispose()
 
     @property
     def cwd(self) -> str:
@@ -237,289 +246,593 @@ class WindowsPowershellSession:
         # This method might be redundant now but kept for potential API compatibility.
         return self._initialized
 
+    def _run_ps_command(self, script: str, log_output: bool = True) -> list[System.Management.Automation.PSObject]:
+        """Helper to run a simple synchronous command in the runspace."""
+        ps = None
+        results = []
+        errors = []
+        try:
+            ps = PowerShell.Create()
+            ps.Runspace = self.runspace
+            ps.AddScript(script)
+            results = ps.Invoke()
+            if ps.Streams.Error:
+                errors = [str(e) for e in ps.Streams.Error]
+                if log_output:
+                    logger.error(f"Errors running script:\n{script}\n--- Errors:\n{errors}")
+        except Exception as e:
+            logger.error(f"Exception running script:\n{script}\n--- Exception:\n{e}")
+            logger.error(traceback.format_exc())
+            errors.append(f"Exception: {e}")
+        finally:
+            if ps:
+                ps.Dispose()
+        # You might want to return errors too, or raise exception
+        # For now, just return results, errors are logged
+        return results if results else []
+
+    def _get_job_object(self, job_id: int) -> System.Management.Automation.Job | None:
+        """Retrieves a job object by its ID."""
+        if job_id is None: return None
+        script = f"Get-Job -Id {job_id}"
+        results = self._run_ps_command(script, log_output=False) # Avoid excessive logging
+        if results and len(results) > 0:
+            # Need to ensure result is actually a Job object
+            # The result from Invoke is a PSObject wrapping the actual job.
+            # Return the BaseObject.
+            potential_job_wrapper = results[0]
+            try:
+                underlying_job = potential_job_wrapper.BaseObject
+                # Basic check for job-like properties before returning
+                _ = underlying_job.Id
+                _ = underlying_job.JobStateInfo.State
+                return underlying_job
+            except AttributeError:
+                logger.warning(f"_get_job_object: Retrieved object is not a valid job (missing properties on BaseObject). Wrapper: {potential_job_wrapper}, BaseObject: {getattr(potential_job_wrapper, 'BaseObject', 'N/A')}")
+                return None
+        # logger.warning(f"_get_job_object: Could not retrieve job object for ID: {job_id}") # Less verbose logging
+        return None
+
+    def _receive_job_output(self, job: System.Management.Automation.Job, keep: bool = False) -> tuple[str, list[str]]:
+        """Receives output and errors from a job."""
+        if not job: return "", []
+        logger.debug(f"_receive_job_output: Called for Job ID {job.Id}, Keep={keep}")
+        
+        output_parts = []
+        error_parts = []
+        
+        # Use PowerShell object directly associated with the job for Receive-Job
+        # This might be more reliable than creating a new PS instance each time.
+        # However, managing the lifetime of such a ps object is complex.
+        # Let's stick to running commands in the runspace for now.
+        
+        # === Try getting the error stream first ===
+        try:
+            # Ensure we have the latest job object reference
+            current_job_obj = self._get_job_object(job.Id)
+            logger.debug(f"_receive_job_output: Fetched current job object (State: {current_job_obj.JobStateInfo.State if current_job_obj else 'N/A'}) for direct error read.")
+            if current_job_obj and current_job_obj.Error:
+                error_records = current_job_obj.Error.ReadAll() # ReadAll consumes them
+                if error_records:
+                    error_parts.extend([str(e) for e in error_records])
+                    logger.debug(f"Retrieved {len(error_records)} error records directly from Job {job.Id} error stream.")
+        except Exception as read_err:
+            logger.error(f"Failed to read job error stream directly for Job {job.Id}: {read_err}")
+            error_parts.append(f"[Direct Error Stream Read Exception: {read_err}]")
+        # === Now run Receive-Job for the output stream ===
+
+        keep_switch = "-Keep" if keep else ""
+        script = f"Receive-Job -Job (Get-Job -Id {job.Id}) {keep_switch}"
+        logger.debug(f"_receive_job_output: Running script: {script}")
+        
+        ps_receive = None
+        try:
+            ps_receive = PowerShell.Create()
+            ps_receive.Runspace = self.runspace
+            ps_receive.AddScript(script)
+            
+            # Invoke and collect output
+            results = ps_receive.Invoke()
+            logger.debug(f"_receive_job_output: Receive-Job script returned {len(results) if results else 0} result items.")
+            if results:
+                output_parts = [str(r) for r in results]
+                logger.debug(f"_receive_job_output: Received output parts: {output_parts}")
+
+            # Collect errors from the Receive-Job command itself
+            if ps_receive.Streams.Error:
+                # These errors are about Receive-Job, not necessarily from the job's script
+                receive_job_errors = [str(e) for e in ps_receive.Streams.Error]
+                logger.warning(f"Errors during Receive-Job for Job ID {job.Id}: {receive_job_errors}")
+                # Should these be added to error_parts? Maybe distinguish them.
+                # For now, let's log them but not include in main error stream.
+
+            # How to get the job's actual error stream?
+            # Receive-Job typically forwards the job's output stream.
+            # Errors from the job might be in the job object itself or need specific retrieval.
+            # Let's check the job's error stream property if available after receiving.
+            # Re-fetch job object?
+            updated_job = self._get_job_object(job.Id)
+            if updated_job and updated_job.Error: # Accessing job's error stream data
+                # This might require the job object to store errors. Let's test this.
+                # This gets PSDataCollection[ErrorRecord]
+                try:
+                    # Consume the errors from the job's stream
+                    error_records = updated_job.Error.ReadAll() # ReadAll consumes them
+                    if error_records:
+                        error_parts.extend([str(e) for e in error_records])
+                        logger.debug(f"Retrieved {len(error_records)} error records from Job {job.Id} stream.")
+                except Exception as read_err:
+                    logger.error(f"Failed to read job error stream for Job {job.Id}: {read_err}")
+
+        except Exception as e:
+            logger.error(f"Exception during Receive-Job for Job ID {job.Id}: {e}")
+            logger.error(traceback.format_exc())
+            # Add this exception as an error?
+            error_parts.append(f"[Receive-Job Exception: {e}]")
+        finally:
+            if ps_receive:
+                ps_receive.Dispose()
+
+        final_combined_output = "\n".join(output_parts)
+        logger.debug(f"_receive_job_output: Returning combined output: '{final_combined_output}', errors: {error_parts}")
+        return final_combined_output, error_parts
+
+    def _stop_active_job(self, job_to_stop: System.Management.Automation.Job | None = None) -> CmdOutputObservation:
+        """Stops the active job, collects final output, and cleans up."""
+        with self._job_lock:
+            job = job_to_stop or self.active_job
+            if not job:
+                return ErrorObservation(content="No active job to stop.")
+
+            job_id = job.Id # Get ID before potentially losing reference
+            logger.info(f"Attempting to stop job ID: {job_id}")
+
+            # Attempt graceful stop first (simulates Ctrl+C if process handles it)
+            # Stop-Process might be better? Let's try Stop-Job first.
+            stop_script = f"Stop-Job -Job (Get-Job -Id {job_id})"
+            logger.debug(f"_stop_active_job: Running command: {stop_script}")
+            self._run_ps_command(stop_script)
+            logger.debug(f"_stop_active_job: Stop-Job command finished.")
+
+            # Immediately try receiving output after sending stop
+            # initial_stop_output, initial_stop_errors = self._receive_job_output(job, keep=True) # Keep just in case
+
+            # Wait a very short time for potential graceful shutdown and state update
+            # Allow process time to potentially print shutdown messages
+            logger.debug(f"_stop_active_job: Waiting {0.5}s after Stop-Job...")
+            time.sleep(0.5)
+            logger.debug(f"_stop_active_job: Wait finished.")
+
+            # Get final output and errors AFTER waiting - call only ONCE without -Keep
+            logger.debug(f"_stop_active_job: Calling _receive_job_output(keep=False) for final output.")
+            final_output, final_errors = self._receive_job_output(job, keep=False) # Consume the rest
+            logger.debug(f"_stop_active_job: Final output received: '{final_output}', errors: {final_errors}")
+
+            # Combine outputs
+            # combined_output = "\n".join(filter(None, [initial_stop_output, final_output]))
+            # combined_errors = initial_stop_errors + final_errors
+            # Use only the final call's results
+            combined_output = final_output
+            combined_errors = final_errors
+
+            # Check job state after stopping
+            final_job = self._get_job_object(job_id)
+            # Access state via JobStateInfo
+            logger.debug(f"_stop_active_job: Checking final job state (Job Object: {final_job})")
+            final_state = final_job.JobStateInfo.State if final_job else JobState.Failed # Assume failed if obj not found
+
+            logger.info(f"Job {job_id} final state after stop attempt: {final_state}")
+
+            # Clean up the job from PowerShell's repository
+            remove_script = f"Remove-Job -Job (Get-Job -Id {job_id})"
+            logger.debug(f"_stop_active_job: Running command: {remove_script}")
+            self._run_ps_command(remove_script)
+            logger.debug(f"_stop_active_job: Remove-Job command finished.")
+
+            # Clear the active job reference
+            if self.active_job and self.active_job.Id == job_id:
+                self.active_job = None
+
+            # Construct result
+            output_builder = [combined_output] if combined_output else []
+            if combined_errors:
+                output_builder.append("\n[ERROR STREAM]")
+                output_builder.extend(combined_errors)
+
+            exit_code = 0 if final_state == JobState.Stopped or final_state == JobState.Completed else 1
+            metadata = CmdOutputMetadata(exit_code=exit_code, working_dir=self._cwd)
+            metadata.suffix = f"\n[Command/Job stopped. Final State: {final_state}, Exit Code: {exit_code}, CWD: {metadata.working_dir}]"
+
+            return CmdOutputObservation(
+                content="\n".join(output_builder).strip(),
+                command="C-c", # Original command was C-c
+                metadata=metadata
+            )
+
+    def _check_active_job(self) -> CmdOutputObservation:
+        """Checks the active job for new output and status."""
+        with self._job_lock:
+            if not self.active_job:
+                return ErrorObservation(content="No active job to check.")
+
+            job_id = self.active_job.Id
+            logger.info(f"Checking active job ID: {job_id} for new output.")
+
+            # Get new output without removing it
+            new_output, new_errors = self._receive_job_output(self.active_job, keep=True)
+
+            # Check current job state
+            current_job = self._get_job_object(job_id)
+            # Access state via JobStateInfo
+            current_state = current_job.JobStateInfo.State if current_job else JobState.Failed
+
+            logger.info(f"Job {job_id} current state: {current_state}")
+
+            # If job finished, clear the active job reference and get final output
+            is_finished = current_state not in [JobState.Running, JobState.NotStarted]
+            if is_finished:
+                logger.info(f"Job {job_id} has finished. Collecting final output.")
+                final_output, final_errors = self._receive_job_output(self.active_job, keep=False) # Consume rest
+                new_output = "\n".join(filter(None, [new_output, final_output])) # Combine if needed
+                new_errors.extend(final_errors)
+                # Clean up job
+                remove_script = f"Remove-Job -Job (Get-Job -Id {job_id})"
+                self._run_ps_command(remove_script)
+                self.active_job = None
+
+            # Construct result
+            output_builder = [new_output] if new_output else []
+            if new_errors:
+                output_builder.append("\n[ERROR STREAM]")
+                output_builder.extend(new_errors)
+
+            exit_code = 0 # Default for check, actual exit code determined when job finishes
+            if is_finished:
+                exit_code = 0 if current_state == JobState.Completed else 1
+
+            metadata = CmdOutputMetadata(exit_code=exit_code, working_dir=self._cwd)
+            status_suffix = "Finished" if is_finished else "Running"
+            metadata.suffix = f"\n[Job Status: {status_suffix}. Current State: {current_state}, Exit Code: {exit_code}, CWD: {metadata.working_dir}]"
+            if is_finished:
+                metadata.suffix += " (Job Cleared)"
+
+            return CmdOutputObservation(
+                content="\n".join(output_builder).strip(),
+                command="", # Original command was ""
+                metadata=metadata
+            )
+
+    def _get_current_cwd(self) -> str:
+        """Gets the current working directory from the runspace."""
+        # Use helper to run Get-Location
+        results = self._run_ps_command("Get-Location")
+        if results and hasattr(results[0], 'Path'):
+            fetched_cwd = str(results[0].Path)
+            if os.path.isdir(fetched_cwd):
+                if fetched_cwd != self._cwd:
+                    logger.info(f"Session CWD updated based on Get-Location: {fetched_cwd}")
+                    self._cwd = fetched_cwd
+                return self._cwd
+            else:
+                logger.warning(f"Get-Location returned invalid path: {fetched_cwd}. Returning cached CWD: {self._cwd}")
+                return self._cwd
+        else:
+            logger.error(f"Could not determine CWD via Get-Location. Returning cached CWD: {self._cwd}")
+            return self._cwd
+
     def execute(self, action: CmdRunAction) -> CmdOutputObservation | ErrorObservation:
         """
-        Executes a command in the persistent PowerShell runspace.
+        Executes a command, potentially as a PowerShell background job for long-running tasks.
 
         Args:
-            action: The command execution action containing the command string and timeout.
+            action: The command execution action.
 
         Returns:
-            CmdOutputObservation with results or ErrorObservation on failure.
+            CmdOutputObservation or ErrorObservation.
         """
         if not self._initialized or self._closed:
             return ErrorObservation(content="PowerShell session is not initialized or has been closed.")
 
         command = action.command.strip()
-        # Use provided timeout, default to a reasonable value (e.g., 60 seconds)
-        # The original default was NO_CHANGE_TIMEOUT_SECONDS, which is complex here.
-        # Let's use a simpler overall timeout for now.
         timeout_seconds = action.timeout or 60 # Default to 60 seconds hard timeout
-        timeout_ms = int(timeout_seconds * 1000)
 
-        logger.info(f"Executing command (timeout={timeout_seconds}s): {command}")
+        logger.info(f"Received command: '{command}', Timeout: {timeout_seconds}s")
 
-        # Handle specific cases similar to the original bash implementation if needed
-        if command == "":
-             logger.warning("Received empty command string.")
-             # Return empty success, mirroring bash.py behavior for empty command
-             return CmdOutputObservation(content="", command="", metadata=CmdOutputMetadata(exit_code=0, working_dir=self._cwd))
+        with self._job_lock: # Ensure thread-safe access/modification of self.active_job
+            # --- Handle interaction with existing job ---
+            if self.active_job:
+                # Refresh job state before checking command
+                current_job_state = self._get_job_object(self.active_job.Id).JobStateInfo.State
+                if current_job_state not in [JobState.Running, JobState.NotStarted]:
+                    logger.info(f"Active job {self.active_job.Id} was finished ({current_job_state}) before receiving command '{command}'. Clearing job.")
+                    # Job finished on its own, clean it up before proceeding
+                    self._receive_job_output(self.active_job, keep=False) # Consume final output
+                    remove_script = f"Remove-Job -Job (Get-Job -Id {self.active_job.Id})"
+                    self._run_ps_command(remove_script)
+                    self.active_job = None
+                else:
+                    # Active job is still running
+                    if command == "":
+                        return self._check_active_job() # Returns observation
+                    elif command == "C-c":
+                        return self._stop_active_job() # Returns observation
+                    else:
+                        # Policy: Stop old job if new command received
+                        logger.warning(f"Received new command '{command}' while job {self.active_job.Id} was active. Stopping old job first.")
+                        # We need to release the lock to call _stop_active_job which acquires it
+                        # This is tricky. Let's stop it synchronously here.
+                        stop_script = f"Stop-Job -Job (Get-Job -Id {self.active_job.Id})"
+                        self._run_ps_command(stop_script)
+                        time.sleep(0.1) # Brief pause
+                        self._receive_job_output(self.active_job, keep=False) # Consume output
+                        remove_script = f"Remove-Job -Job (Get-Job -Id {self.active_job.Id})"
+                        self._run_ps_command(remove_script)
+                        logger.info(f"Old job {self.active_job.Id} stopped and removed.")
+                        self.active_job = None
+                        # Fall through to start the new command as a job
 
-        if command.startswith("C-"): # e.g., C-c, C-d
-            logger.warning(f"Received control character command: {command}. Not directly supported.")
-            return ErrorObservation(content=f"Control commands like {command} are not supported in PowerShell SDK mode.")
+            # --- If we reach here, there is no active job ---
+            if command == "": # Handle empty command when NO job is active
+                logger.warning("Received empty command string (no active job).")
+                return CmdOutputObservation(content="", command="", metadata=CmdOutputMetadata(exit_code=0, working_dir=self._get_current_cwd()))
 
-        ps = None
+            if command.startswith("C-"): # Handle C-* when NO job is active/relevant
+                logger.warning(f"Received control character command: {command}. Not supported when no job active.")
+                return ErrorObservation(content=f"Control commands like {command} are not supported or relevant when no job is active.")
+
+        # --- Start a new job (Lock is released after the 'with' block above) ---
+        ps_start = None
+        job = None
         output_builder = []
-        exit_code = 1 # Default to error exit code
-        final_cwd = self._cwd # Start with the current known CWD
-        error_message = None
+        all_errors = [] # Collect errors across monitoring
+        exit_code = 1 # Default error
         timed_out = False
+        job_start_failed = False
+        job_id = None # Keep track of the job ID
 
         try:
-            ps = PowerShell.Create()
-            ps.Runspace = self.runspace
+            ps_start = PowerShell.Create()
+            ps_start.Runspace = self.runspace
 
-            # Combine commands into a single script block
-            script_block = f'''
-{command}
-$LASTEXITCODE
-Get-Location
-'''
-            logger.debug(f"Executing combined script block:\n{script_block}")
-            ps.AddScript(script_block)
+            # Use Invoke-Command within Start-Job for better CWD context? Maybe not needed.
+            # Escape command for script block? Use single quotes if command has no single quotes.
+            # If command has single quotes, more complex escaping needed.
+            # For now, assume simple commands or test robustness.
+            # Consider potential injection if command is crafted maliciously.
+            escaped_command = command.replace("'", "''") # Basic single quote escaping
+            # Assign a name to the job for easier retrieval? Or just get the latest?
+            # Let's try getting the latest job ID
+            # Redirect stderr to stdout (2>&1) within the job's script block
+            start_job_script = f"Start-Job -ScriptBlock {{ Set-Location '{self._cwd}'; {escaped_command} 2>&1 }}"
 
-            # Prepare for asynchronous invocation
-            # output_collection = PSDataCollection[System.Management.Automation.PSObject]() # No longer needed here
-            async_result = ps.BeginInvoke() # Use overload without output collection argument
+            logger.info(f"Starting command as PowerShell job: {command}")
+            ps_start.AddScript(start_job_script)
+            start_results = ps_start.Invoke() # Run Start-Job
 
-            start_time = time.monotonic()
+            # Check for errors during Start-Job execution itself
+            if ps_start.Streams.Error:
+                errors = [str(e) for e in ps_start.Streams.Error]
+                logger.error(f"Errors during Start-Job execution: {errors}")
+                all_errors.extend(errors)
+                # Don't necessarily fail yet, maybe the job still started. Try Get-Job.
 
-            # Wait loop with timeout and shutdown check
-            while not async_result.IsCompleted:
-                if not should_continue():
-                     logger.warning("Shutdown signal received, attempting to stop PowerShell command.")
-                     ps.Stop()
-                     # Wait briefly for stop to potentially take effect
-                     async_result.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(2))
-                     error_message = "[Command execution cancelled due to shutdown signal]"
-                     # Even if stopped, we need EndInvoke to clean up, so don't break loop here?
-                     # Let the loop condition (IsCompleted) handle it after stop.
-                     # Break might prevent EndInvoke and proper stream reading.
+            # Now, try to get the latest job
+            ps_get = PowerShell.Create()
+            ps_get.Runspace = self.runspace
+            # Get the job that was just created. If multiple jobs run concurrently, this could be fragile.
+            # Maybe assign a unique name? Let's try getting the latest job ID first.
+            # Note: Relying on `$global:LASTEXITCODE` after Start-Job is unreliable for job success.
+            # We need to query the job state.
+            get_job_script = "Get-Job | Sort-Object -Property Id -Descending | Select-Object -First 1"
+            ps_get.AddScript(get_job_script)
+            get_results = ps_get.Invoke()
 
-                # Check hard timeout
-                elapsed_seconds = time.monotonic() - start_time
-                if elapsed_seconds > timeout_seconds:
-                    logger.warning(f"Command execution exceeded timeout ({timeout_seconds}s). Stopping.")
-                    ps.Stop()
-                    timed_out = True
-                    # Wait briefly after stopping before checking completion again or calling EndInvoke
-                    async_result.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(2))
-                    error_message = f"[Command timed out after {timeout_seconds:.1f} seconds and was stopped]"
-                    # EndInvoke must still be called even after Stop()
-                    # So don't break, let IsCompleted become true.
+            if ps_get.Streams.Error:
+                errors = [str(e) for e in ps_get.Streams.Error]
+                logger.error(f"Errors getting latest job: {errors}")
+                all_errors.extend(errors)
+                job_start_failed = True # Fail if we can't even get the job
 
-                # Wait briefly before checking again (e.g., 100ms)
-                # WaitOne returns true if the handle is signaled (completed), false if timeout expires
-                wait_completed = async_result.AsyncWaitHandle.WaitOne(TimeSpan.FromMilliseconds(100))
-                # if wait_completed: break # Exit loop if completed
+            if not job_start_failed and get_results and len(get_results) > 0:
+                potential_job = get_results[0] # This is likely a PSObject wrapper
+                # Check if it's a valid job object (duck typing)
+                # Previous check failed for PSRemotingJob, try direct access
+                # Access the BaseObject to get the underlying Job object
+                try:
+                    underlying_job = potential_job.BaseObject
+                    job_id_test = underlying_job.Id
+                    # Try accessing State via JobStateInfo property
+                    job_state_test = underlying_job.JobStateInfo.State
+                    # If access works, consider it a valid job object
+                    job = underlying_job # Use the BaseObject going forward
+                    job_id = job.Id # Store the ID
+                    with self._job_lock:
+                        self.active_job = job
+                    # Use the retrieved state for logging
+                    logger.info(f"Job retrieved successfully. Job ID: {job.Id}, State: {job_state_test}, Type: {type(job)}")
+                    # Check if the job immediately failed?
+                    # Compare against the JobState enum directly
+                    if job_state_test == JobState.Failed:
+                        logger.error(f"Job {job.Id} failed immediately after starting.")
+                        # Should we collect error info here?
+                        output_chunk, error_chunk = self._receive_job_output(job, keep=False)
+                        if output_chunk: output_builder.append(output_chunk)
+                        if error_chunk: all_errors.extend(error_chunk)
+                        job_start_failed = True # Treat immediate failure as startup failure
+                        # Clean up the failed job
+                        remove_script = f"Remove-Job -Job (Get-Job -Id {job.Id})"
+                        self._run_ps_command(remove_script)
+                        self.active_job = None # Clear active job
+                except AttributeError:
+                    # Log which attribute failed if possible
+                    logger.error(f"Get-Job returned an object without expected Id/State properties (via JobStateInfo) on its BaseObject: {potential_job}, BaseObject: {getattr(potential_job, 'BaseObject', 'N/A')}, Type: {type(potential_job)}")
+                    logger.error(traceback.format_exc()) # Log the full traceback for the attribute error
+                    all_errors.append("Get-Job did not return a valid Job object (missing properties on BaseObject).")
+                    job_start_failed = True
 
-            # --- Execution Finished (Normally, Timed Out, or Stopped) ---
-            logger.debug(f"Async invocation completed. State: {ps.InvocationStateInfo.State}")
+            elif not job_start_failed:
+                logger.error("Get-Job did not return any results.")
+                all_errors.append("Get-Job did not return any results.")
+                job_start_failed = True
 
-            # Always call EndInvoke to get results and clean up async operation
-            # This might block briefly if the command is still somehow running after stop
-            # It can also throw exceptions if the command itself had a terminating error.
-            results = None
-            pipeline_stopped_during_timeout = False
-            try:
-                 logger.debug("Calling EndInvoke...")
-                 results = ps.EndInvoke(async_result)
-                 logger.debug("EndInvoke completed.")
-            except Exception as end_invoke_ex:
-                 # Check if this exception is the expected one after a timeout-induced stop
-                 if timed_out and "PipelineStoppedException" in str(type(end_invoke_ex)):
-                      logger.warning(f"EndInvoke failed as expected after stopping due to timeout: {end_invoke_ex}")
-                      pipeline_stopped_during_timeout = True
-                      # Don't set error_message here, let the timed_out logic handle it
-                 else:
-                      # This often indicates a script error or that Stop() was forceful for other reasons
-                      logger.error(f"Error during EndInvoke: {end_invoke_ex}")
-                      if not error_message: # Prioritize timeout/cancellation messages
-                           error_message = f"[Error during command finalization: {end_invoke_ex}]"
-                 # Still try to read streams below
-                 results = None # Ensure results is None if EndInvoke failed
+        except Exception as start_ex:
+            logger.error(f"Exception during job start/retrieval: {start_ex}")
+            logger.error(traceback.format_exc())
+            all_errors.append(f"[Job Start/Get Exception: {start_ex}]")
+            job_start_failed = True
+        finally:
+            if ps_start:
+                ps_start.Dispose()
+            if 'ps_get' in locals() and ps_get: # Ensure ps_get is defined before disposing
+                ps_get.Dispose()
 
-            # Log raw results for debugging
-            if results is not None:
-                logger.debug(f"Raw results count: {results.Count}")
-                # Limiting logged items to avoid flooding logs if there are many results
-                items_to_log = min(results.Count, 10) 
-                for i in range(items_to_log):
-                    item = results[i]
-                    item_type = type(item) if item is not None else 'None'
-                    item_str = str(item) if item is not None else 'None'
-                    logger.debug(f"  Result[{i}]: Type={item_type}, Value='{item_str}'")
-                if results.Count > items_to_log:
-                     logger.debug(f"  ... (remaining {results.Count - items_to_log} results not logged)")
-            else:
-                logger.debug("Raw results object is None (EndInvoke likely failed)")
-
-            # Process output streams regardless of EndInvoke success
-
-            # 1. Output Stream (Results from EndInvoke)
-            if results is not None and results.Count > 0:
-                logger.debug(f"Processing {results.Count} result items.")
-                # Expected order: [Output1, Output2, ..., ExitCode, CwdInfo]
-                
-                # Extract CWD (last result)
-                cwd_item = results[results.Count - 1]
-                if cwd_item is not None:
-                    try:
-                        if hasattr(cwd_item, 'Path'):
-                            final_cwd = str(cwd_item.Path)
-                        else:
-                            final_cwd = str(cwd_item)
-                        
-                        if os.path.isdir(final_cwd):
-                            if final_cwd != self._cwd:
-                                logger.info(f"Working directory changed to: {final_cwd}")
-                                self._cwd = final_cwd
-                            else:
-                                logger.debug(f"Working directory remains: {self._cwd}")
-                        else:
-                            logger.warning(f"Command returned invalid CWD '{final_cwd}', keeping old CWD: {self._cwd}")
-                            final_cwd = self._cwd
-                    except Exception as cwd_ex:
-                        logger.warning(f"Could not parse CWD result: {cwd_item}, Error: {cwd_ex}. Keeping old CWD.")
-                        final_cwd = self._cwd
-                else:
-                     logger.warning("CWD result item was null. Keeping old CWD.")
-                     final_cwd = self._cwd
-
-                # Attempt to extract exit code (second to last result, if exists)
-                raw_exit_code_item = None
-                if results.Count >= 2:
-                    raw_exit_code_item = results[results.Count - 2]
-                    logger.debug(f"Raw exit code item: {raw_exit_code_item} (type: {type(raw_exit_code_item)}) ")
-                    # We still determine functional exit_code later based on streams/state
-                
-                # Process actual command output (everything before exit code and CWD)
-                num_output_items = max(0, results.Count - 2)
-                logger.debug(f"Expecting {num_output_items} output item(s).")
-                for i in range(num_output_items):
-                    if results[i] is not None:
-                        logger.debug(f"Processing output item {i}: type={type(results[i])}, value='{str(results[i])}'")
-                        output_builder.append(str(results[i]))
-                    else:
-                        logger.debug(f"Processing output item {i}: None")
-                        # Decide if we should append empty string or skip None outputs
-                        # output_builder.append("") # Optional: Append empty line for None
-
-            # Determine Functional Exit Code (based on streams, state, timeout, etc.)
-            if timed_out:
-                exit_code = -1 # Special code for timeout to indicate process was interrupted
-                logger.debug(f"Command timed out, setting exit code to -1")
-            else:
-                exit_code = 0 # Default to success unless errors found
-                if ps.Streams.Error.Count > 0 or ps.InvocationStateInfo.State == PSInvocationState.Failed or (error_message and not pipeline_stopped_during_timeout):
-                    exit_code = 1 # Indicate failure for non-timeout reasons
-                logger.debug(f"Determined functional exit code: {exit_code}")
-
-            # 2. Error Stream
-            if ps.Streams.Error and ps.Streams.Error.Count > 0:
-                logger.debug(f"Processing {ps.Streams.Error.Count} error stream record(s).") # Added debug log
-                if output_builder: output_builder.append("\n") # Separator
-                output_builder.append("[ERROR STREAM]")
-                for err_record in ps.Streams.Error:
-                    output_builder.append(str(err_record))
-                    # Also log errors prominently
-                    logger.error(f"PowerShell Error Record: {err_record}")
-
-            # 3. Other Streams (Optional, add if needed for debugging)
-            # Example: Verbose Stream
-            # if ps.Streams.Verbose and ps.Streams.Verbose.Count > 0:
-            #     if output_builder: output_builder.append("\n")
-            #     output_builder.append("[VERBOSE STREAM]")
-            #     for record in ps.Streams.Verbose: output_builder.append(str(record))
-
-            # Check final invocation state
-            if ps.InvocationStateInfo.State == PSInvocationState.Failed:
-                logger.error(f"PowerShell final invocation state is FAILED. Reason: {ps.InvocationStateInfo.Reason}")
-                if exit_code == 0: exit_code = 1 # Ensure failure is reported
-                if not error_message and ps.InvocationStateInfo.Reason:
-                     # Add failure reason if no other message (like timeout) exists
-                     error_message = f"[PowerShell invocation failed: {ps.InvocationStateInfo.Reason}]"
-
-            # Create metadata
-            metadata = CmdOutputMetadata(exit_code=exit_code, working_dir=self._cwd)
-            if timed_out:
-                # Match the suffix format expected by tests for timeout
-                suffix = (
-                    f"[The command timed out after {timeout_seconds:.1f} seconds. "
-                    f"You may wait longer to see additional output by sending empty command '', "
-                    f"send other commands to interact with the current process, "
-                    f"or send keys to interrupt/kill the command.]"
-                )
-                # Overwrite the simpler error message if timeout occurred
-                error_message = None # Clear specific error message as suffix handles it
-            elif error_message and "[Command execution cancelled due to shutdown signal]" in error_message:
-                 suffix = f"\n[Command execution cancelled due to shutdown signal. Exit code: {exit_code}, CWD: {self._cwd}]"
-                 error_message = None # Suffix handles it
-            else:
-                 # Standard completion suffix
-                 suffix = f"\n[Command completed with exit code {exit_code} in CWD: {self._cwd}]"
-            metadata.suffix = suffix
-
-            # Combine output and add any critical error messages NOT handled by suffix
-            logger.debug(f"Output builder contents before join: {output_builder}")
-            final_output = "\n".join(output_builder).strip()
-
-            # Append specific error messages *not* handled by suffix (like EndInvoke failures NOT due to timeout stop)
-            if error_message:
-                 final_output += f"\n{error_message}"
-            # Add PowerShell failure reason if applicable and not already covered
-            elif ps.InvocationStateInfo.State == PSInvocationState.Failed and not timed_out:
-                reason = ps.InvocationStateInfo.Reason
-                logger.error(f"PowerShell invocation failed: {reason}")
-                final_output += f"\n[PowerShell invocation failed: {reason}]"
-
-            logger.debug(f"Final output string: '{final_output}'")
-
-            logger.info(f"Command finished. ExitCode={exit_code}, CWD={self._cwd}")
-            # Use the determined exit code for the observation
-            # Note: Even if timed_out (exit_code = -1), we return CmdOutputObservation
-            # The consumer (e.g., agent) interprets exit_code -1.
-            return CmdOutputObservation(
-                content=final_output,
-                command=command,
-                metadata=metadata
+        if job_start_failed:
+            # Return error observation based on startup errors
+            return ErrorObservation(
+                content=f"Failed to start PowerShell job.\n[ERRORS]\n" + "\n".join(all_errors)
             )
 
-        except Exception as e:
-            logger.error(f"Unhandled exception during PowerShell command execution: {e}")
-            logger.error(traceback.format_exc())
-            # Try to include partial output if available
-            partial_output = "\n".join(output_builder).strip()
-            err_content = f"FATAL ERROR executing PowerShell command: {e}\nPartial Output (if any):\n{partial_output}"
-            # Return an ErrorObservation, using current CWD state
-            return ErrorObservation(content=err_content)
-        finally:
-            # Ensure the PowerShell object is disposed to release resources
-            if ps:
-                try:
-                    ps.Dispose()
-                except Exception as dispose_ex:
-                     logger.error(f"Exception disposing PowerShell object: {dispose_ex}")
+        # --- Monitor the Job ---
+        # We now have a self.active_job set
+        start_time = time.monotonic()
+        monitoring_loop_finished = False
+        shutdown_requested = False
+
+        while not monitoring_loop_finished:
+            if not should_continue():
+                logger.warning("Shutdown signal received during job monitoring.")
+                # Don't stop the job here, let the main loop handle shutdown logic if needed
+                # Just exit the monitoring loop.
+                shutdown_requested = True
+                monitoring_loop_finished = True
+                exit_code = -1 # Indicate external interruption
+                continue # Skip rest of loop
+
+            elapsed_seconds = time.monotonic() - start_time
+            if elapsed_seconds > timeout_seconds:
+                logger.warning(f"Command job monitoring exceeded timeout ({timeout_seconds}s). Leaving job running.")
+                timed_out = True
+                monitoring_loop_finished = True
+                exit_code = -1 # Indicate timeout occurred
+                continue # Skip rest of loop
+
+            # Check for output periodically
+            # Use the lock briefly to access self.active_job safely inside helper
+            current_job = self._get_job_object(job.Id) # Refresh job object outside lock
+            if not current_job:
+                logger.error(f"Job {job.Id} object disappeared during monitoring.")
+                all_errors.append("[Job object lost during monitoring]")
+                monitoring_loop_finished = True
+                exit_code = 1
+                continue
+
+            output_chunk, error_chunk = self._receive_job_output(current_job, keep=True)
+            if output_chunk:
+                output_builder.append(output_chunk)
+            if error_chunk:
+                all_errors.extend(error_chunk)
+                # Treat errors as output for observation? Append to builder?
+                # Let's keep them separate for now, maybe combine at the end.
+
+            # Check job state
+            # Access state via JobStateInfo
+            current_state = current_job.JobStateInfo.State
+            if current_state not in [JobState.Running, JobState.NotStarted]:
+                logger.info(f"Job {job.Id} finished monitoring loop with state: {current_state}")
+                monitoring_loop_finished = True
+                # Determine exit code based on final state later
+                continue # Exit loop
+
+            # Wait briefly
+            time.sleep(0.1) # Sleep 100ms
+
+        # --- Monitoring loop finished (Timeout, Shutdown, Job Complete/Failed) ---
+
+        # Gather final output if job finished normally during monitoring
+        final_job = self._get_job_object(job.Id) # Get final state
+        # Access state via JobStateInfo
+        final_state = final_job.JobStateInfo.State if final_job else JobState.Failed
+        job_finished_naturally = not timed_out and not shutdown_requested
+
+        if job_finished_naturally:
+            logger.info(f"Job {job.Id} finished naturally with state: {final_state}. Consuming final output.")
+            final_output_chunk, final_error_chunk = self._receive_job_output(final_job, keep=False)
+            if final_output_chunk: output_builder.append(final_output_chunk)
+            if final_error_chunk: all_errors.extend(final_error_chunk)
+
+            # Determine final exit code
+            exit_code = 0 if final_state == JobState.Completed else 1
+
+            # Clean up finished job
+            with self._job_lock: # Lock to clear active_job
+                remove_script = f"Remove-Job -Job (Get-Job -Id {job.Id})"
+                self._run_ps_command(remove_script)
+                if self.active_job and self.active_job.Id == job.Id:
+                    self.active_job = None
+                logger.info(f"Cleaned up finished job {job.Id}")
+
+        # If timed_out or shutdown_requested, self.active_job remains set. Exit code already set to -1.
+
+        # Get current CWD (might have changed if commands ran outside job?)
+        final_cwd = self._get_current_cwd()
+
+        # Construct metadata
+        metadata = CmdOutputMetadata(exit_code=exit_code, working_dir=final_cwd)
+        suffix = ""
+        if timed_out:
+            # Match the suffix format expected by tests for timeout
+            suffix = (
+                f"[The command timed out after {int(timeout_seconds)} seconds. "
+                f"You may wait longer to see additional output by sending empty command '', "
+                f"send other commands to interact with the current process, "
+                f"or send keys to interrupt/kill the command.]"
+            )
+        elif shutdown_requested:
+            suffix = f"\n[Command execution cancelled due to shutdown signal. Job {job.Id} may still be running. Exit code: {exit_code}, CWD: {final_cwd}]"
+        elif job_finished_naturally:
+            status = "Completed" if exit_code == 0 else f"Finished ({final_state})"
+            suffix = f"\n[Command completed via Job {job.Id}. Status: {status}, Exit Code: {exit_code}, CWD: {final_cwd}]"
+        else: # Should not happen? Fallback
+            suffix = f"\n[Command execution finished. State: {final_state}, Exit Code: {exit_code}, CWD: {final_cwd}]"
+        metadata.suffix = suffix
+
+        # Combine output and errors
+        final_output_str = "\n".join(output_builder).strip()
+        if all_errors:
+            final_output_str += "\n\n[ERROR STREAM]\n" + "\n".join(all_errors).strip()
+
+        return CmdOutputObservation(
+            content=final_output_str,
+            command=command,
+            metadata=metadata
+        )
 
     def close(self):
-        """Closes the PowerShell runspace and releases resources."""
+        """Closes the PowerShell runspace and releases resources, stopping any active job."""
         if self._closed:
             return
 
         logger.info("Closing PowerShell session runspace.")
+
+        # Stop and remove any active job before closing runspace
+        with self._job_lock:
+            if self.active_job:
+                logger.warning(f"Session closing with active job {self.active_job.Id}. Attempting to stop and remove.")
+                job_id = self.active_job.Id
+                try:
+                    stop_script = f"Stop-Job -Job (Get-Job -Id {job_id})"
+                    self._run_ps_command(stop_script) # Use helper before runspace closes
+                    time.sleep(0.1)
+                    remove_script = f"Remove-Job -Job (Get-Job -Id {job_id})"
+                    self._run_ps_command(remove_script)
+                    logger.info(f"Stopped and removed active job {job_id} during close.")
+                except Exception as e:
+                    logger.error(f"Error stopping/removing job {job_id} during close: {e}")
+                self.active_job = None
+
         if hasattr(self, 'runspace') and self.runspace:
             try:
+                # Check state using System.Management.Automation.Runspaces namespace
                 if self.runspace.RunspaceStateInfo.State == System.Management.Automation.Runspaces.RunspaceState.Opened:
                     self.runspace.Close()
                 self.runspace.Dispose()

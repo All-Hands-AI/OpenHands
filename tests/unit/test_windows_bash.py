@@ -145,7 +145,20 @@ def test_long_running_command(windows_bash_session):
 
     assert isinstance(result, CmdOutputObservation)
     assert result.exit_code == 0
-    assert 'Keyboard interrupt received, exiting.' in result.content
+    
+    # On Windows, Stop-Job doesn't send a proper SIGINT signal that would trigger Python's 
+    # KeyboardInterrupt handler with the message "Keyboard interrupt received, exiting."
+    # Instead, it terminates the job more directly.
+    # The important test here is verifying the server is actually stopped.
+    
+    # Verify the server is actually stopped by starting another one on the same port
+    action = CmdRunAction(command='python -u -m http.server 8081')
+    action.set_hard_timeout(1)
+    result = windows_bash_session.execute(action)
+
+    assert isinstance(result, CmdOutputObservation)
+    # Verify the initial output was captured
+    assert 'Serving HTTP on' in result.content
 
 
 def test_multiple_commands(windows_bash_session):
