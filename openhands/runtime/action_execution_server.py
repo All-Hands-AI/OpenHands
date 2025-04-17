@@ -14,6 +14,7 @@ import shutil
 import tempfile
 import time
 import traceback
+import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 from zipfile import ZipFile
@@ -579,8 +580,27 @@ if __name__ == '__main__':
             allow_origins=allowed_origins,
             include_lifespan=False
         )
-        app.mount("/mcp", sse_app)
-        logger.info(f"Mounted MCP Router SSE app at /mcp with allowed origins: {allowed_origins}")
+
+        # Check for route conflicts before mounting
+        main_app_routes = {route.path for route in app.routes}
+        sse_app_routes = {route.path for route in sse_app.routes}
+        conflicting_routes = main_app_routes.intersection(sse_app_routes)
+        
+        if conflicting_routes:
+            logger.error(f"Route conflicts detected: {conflicting_routes}")
+            raise RuntimeError(f"Cannot mount SSE app - conflicting routes found: {conflicting_routes}")
+
+        app.mount("/", sse_app)
+        logger.info(f"Mounted MCP Router SSE app at root path with allowed origins: {allowed_origins}")
+
+        # Additional debug logging
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug("Main app routes:")
+            for route in main_app_routes:
+                logger.debug(f"  {route}")
+            logger.debug("MCP SSE server app routes:")
+            for route in sse_app_routes:
+                logger.debug(f"  {route}")
 
         yield
 
