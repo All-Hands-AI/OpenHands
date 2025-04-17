@@ -68,6 +68,7 @@ async def resolve_issues(
     issue_type: str,
     repo_instruction: str | None,
     issue_numbers: list[int] | None,
+    base_domain: str = 'github.com',
 ) -> None:
     """Resolve multiple github or gitlab issues.
 
@@ -88,7 +89,7 @@ async def resolve_issues(
         issue_numbers: List of issue numbers to resolve.
     """
     issue_handler = issue_handler_factory(
-        issue_type, owner, repo, token, llm_config, platform
+        issue_type, owner, repo, token, llm_config, platform, username, base_domain
     )
 
     # Load dataset
@@ -332,6 +333,12 @@ def main() -> None:
         choices=['issue', 'pr'],
         help='Type of issue to resolve, either open issue or pr comments.',
     )
+    parser.add_argument(
+        '--base-domain',
+        type=str,
+        default='github.com',
+        help='Base domain for GitHub Enterprise (default: github.com)',
+    )
 
     my_args = parser.parse_args()
 
@@ -341,7 +348,6 @@ def main() -> None:
 
     if runtime_container_image is not None and base_container_image != '':
         raise ValueError('Cannot provide both runtime and base container images.')
-
 
     if runtime_container_image is None and base_container_image == '' and not my_args.is_experimental:
         runtime_container_image = (
@@ -357,7 +363,7 @@ def main() -> None:
     if not token:
         raise ValueError('Token is required.')
 
-    platform = identify_token(token, my_args.selected_repo)
+    platform = identify_token(token, my_args.selected_repo, my_args.base_domain)
     if platform == Platform.INVALID:
         raise ValueError('Token is invalid.')
 
@@ -413,6 +419,7 @@ def main() -> None:
             issue_type=issue_type,
             repo_instruction=repo_instruction,
             issue_numbers=issue_numbers,
+            base_domain=my_args.base_domain,
         )
     )
 
