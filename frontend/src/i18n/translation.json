@@ -5865,7 +5865,7 @@
         "tr": "Temel URL"
     },
     "GITHUB$CONNECT_TO_GITHUB": {
-        "en": "Connect to GitHub",
+        "en": "Log in with GitHub",
         "ja": "GitHubに接続",
         "zh-CN": "连接到GitHub",
         "zh-TW": "連接到GitHub",
@@ -5878,6 +5878,36 @@
         "ar": "الاتصال بـ GitHub",
         "fr": "Se connecter à GitHub",
         "tr": "GitHub'a bağlan"
+    },
+    "GITLAB$CONNECT_TO_GITLAB": {
+        "en": "Log in with GitLab",
+        "ja": "GitLabに接続",
+        "zh-CN": "连接到GitLab",
+        "zh-TW": "連接到GitLab",
+        "ko-KR": "GitLab에 연결",
+        "de": "Mit GitLab verbinden",
+        "no": "Koble til GitLab",
+        "it": "Connetti a GitLab",
+        "pt": "Conectar ao GitLab",
+        "es": "Conectar a GitLab",
+        "ar": "الاتصال بـ GitLab",
+        "fr": "Se connecter à GitLab",
+        "tr": "GitLab'a bağlan"
+    },
+    "AUTH$SIGN_IN_WITH_IDENTITY_PROVIDER": {
+        "en": "Log in to OpenHands",
+        "ja": "IDプロバイダーでサインイン",
+        "zh-CN": "使用您的身份提供商登录",
+        "zh-TW": "使用您的身份提供商登入",
+        "ko-KR": "ID 제공자로 로그인",
+        "no": "Logg inn med din identitetsleverandør",
+        "it": "Accedi con il tuo provider di identità",
+        "pt": "Entre com seu provedor de identidade",
+        "es": "Inicie sesión con su proveedor de identidad",
+        "ar": "تسجيل الدخول باستخدام مزود الهوية الخاص بك",
+        "fr": "Connectez-vous avec votre fournisseur d'identité",
+        "tr": "Kimlik sağlayıcınızla giriş yapın",
+        "de": "Melden Sie sich mit Ihrem Identitätsanbieter an"
     },
     "WAITLIST$JOIN_WAITLIST": {
         "en": "Join Waitlist",
