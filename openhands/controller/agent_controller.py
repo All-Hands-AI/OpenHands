@@ -1149,25 +1149,28 @@ class AgentController:
         """
         # Get metrics from agent LLM
         agent_metrics = self.agent.llm.metrics
-        
+
         # Get metrics from condenser LLM if it exists
         condenser_metrics = None
         if hasattr(self.agent, 'condenser') and hasattr(self.agent.condenser, 'llm'):
             condenser_metrics = self.agent.condenser.llm.metrics
-        
+
         # Create a new minimal metrics object with just what the frontend needs
         metrics = Metrics(model_name=agent_metrics.model_name)
-        
+
         # Set accumulated cost (sum of agent and condenser costs)
         metrics.accumulated_cost = agent_metrics.accumulated_cost
         if condenser_metrics:
             metrics.accumulated_cost += condenser_metrics.accumulated_cost
-            
+
         # Set accumulated token usage (sum of agent and condenser token usage)
         metrics._accumulated_token_usage = agent_metrics.accumulated_token_usage
         if condenser_metrics:
-            metrics._accumulated_token_usage = metrics._accumulated_token_usage + condenser_metrics.accumulated_token_usage
-            
+            metrics._accumulated_token_usage = (
+                metrics._accumulated_token_usage
+                + condenser_metrics.accumulated_token_usage
+            )
+
         # Keep these lists empty to reduce payload size
         metrics._token_usages = []
         metrics._response_latencies = []

@@ -31,7 +31,7 @@ describe("AuthModal", () => {
   it("should only enable the identity provider buttons if the tos checkbox is checked", async () => {
     const user = userEvent.setup();
     render(<AuthModal githubAuthUrl={null} appMode="saas" />);
-    
+
     const checkbox = screen.getByRole("checkbox");
     const githubButton = screen.getByRole("button", { name: "GITHUB$CONNECT_TO_GITHUB" });
     const gitlabButton = screen.getByRole("button", { name: "GITLAB$CONNECT_TO_GITLAB" });
