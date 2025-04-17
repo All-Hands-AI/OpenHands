@@ -6,10 +6,16 @@ from pathlib import Path
 from typing import List, Optional
 from uuid import uuid4
 
+import httpx
+import litellm
 import toml
 from prompt_toolkit import PromptSession, print_formatted_text
 from prompt_toolkit.application import Application
-from prompt_toolkit.completion import Completer, Completion
+from prompt_toolkit.completion import (
+    Completer,
+    Completion,
+    FuzzyWordCompleter,
+)
 from prompt_toolkit.formatted_text import HTML, FormattedText
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.layout.containers import HSplit, Window
@@ -19,6 +25,7 @@ from prompt_toolkit.patch_stdout import patch_stdout
 from prompt_toolkit.shortcuts import clear, print_container
 from prompt_toolkit.styles import Style
 from prompt_toolkit.widgets import Frame, TextArea
+from pydantic import SecretStr
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands import __version__
@@ -29,6 +36,9 @@ from openhands.core.config import (
     parse_arguments,
     setup_config_from_args,
 )
+from openhands.core.config.condenser_config import NoOpCondenserConfig
+from openhands.core.config.llm_config import LLMConfig
+from openhands.core.config.utils import OH_DEFAULT_AGENT
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.loop import run_agent_until_done
 from openhands.core.schema import AgentState
@@ -56,10 +66,16 @@ from openhands.events.observation import (
     FileReadObservation,
 )
 from openhands.io import read_task
+from openhands.llm import bedrock
 from openhands.llm.metrics import Metrics
 from openhands.mcp import fetch_mcp_tools_from_config
+from openhands.memory.condenser.impl.llm_summarizing_condenser import (
+    LLMSummarizingCondenserConfig,
+)
 from openhands.microagent.microagent import BaseMicroagent
 from openhands.runtime.base import Runtime
+from openhands.storage.data_models.settings import Settings
+from openhands.storage.settings.file_settings_store import FileSettingsStore
 
 # Color and styling constants
 COLOR_GOLD = '#FFD700'
@@ -78,6 +94,7 @@ COMMANDS = {
     '/init': 'Initialize a new repository',
     '/status': 'Display session details and usage metrics',
     '/new': 'Create a new session',
+    '/settings': 'Display and modify current settings',
 }
 
 REPO_MD_CREATE_PROMPT = """
@@ -405,6 +422,79 @@ def display_status(usage_metrics: UsageMetrics, session_id: str):
     display_usage_metrics(usage_metrics)
 
 
+def display_settings(config: AppConfig) -> int:
+    llm_config = config.get_llm_config()
+
+    advanced_llm_settings = True if llm_config.base_url else False
+
+    llm_settings_text_basic = f"""
+        LLM Provider: {llm_config.model}
+        LLM Model: {llm_config.model}
+        API Key: {llm_config.api_key}
+    """
+
+    llm_settings_text_advanced = f"""
+        Custom Model: {llm_config.model}
+        Base URL: {llm_config.base_url}
+        API Key: {llm_config.api_key}
+        Agent: {config.default_agent}
+        Confirmation Mode: Enabled
+        Memory Condensation: Enabled
+    """
+
+    additional_settings = """
+        Language: English
+    """
+
+    sections = HSplit(
+        [
+            # LLM Settings section
+            Window(
+                height=1,
+                content=FormattedTextControl(
+                    text=f"LLM Settings - {'Advanced' if advanced_llm_settings else 'Basic'}"
+                ),
+            ),
+            Window(
+                content=FormattedTextControl(
+                    text=llm_settings_text_advanced
+                    if advanced_llm_settings
+                    else llm_settings_text_basic
+                ),
+                style=f'fg:{COLOR_GREY}',
+            ),
+            # Additional Settings section
+            Window(height=1, content=FormattedTextControl(text='Additional Settings')),
+            Window(
+                content=FormattedTextControl(text=additional_settings),
+                style=f'fg:{COLOR_GREY}',
+            ),
+        ],
+        padding_char='-',
+        padding=1,
+    )
+
+    container = Frame(
+        sections,
+        title='Current Settings',
+        style=f'fg:{COLOR_GREY}',
+    )
+
+    print_formatted_text('')  # Add a newline
+    print_container(container)
+    print_formatted_text('')  # Add a newline
+
+    return cli_confirm(
+        'Do you want to modify settings?',
+        [
+            'Yes - Modify LLM Settings - Basic\n  (LLM Provider, LLM Model, API Key)',
+            'Yes - Modify LLM Settings - Advanced\n  (Custom Model, Base URL, API Key, Agent, Confirmation Mode, Memory Condensation)',
+            'Yes - Modify Additional Settings\n  (Language)',
+            'No - Dismiss',
+        ],
+    )
+
+
 async def read_prompt_input(multiline=False):
     try:
         if multiline:
@@ -469,9 +559,12 @@ async def init_repository(current_dir: str) -> bool:
             print_container(container)
             print_formatted_text('')  # Add a newline after the frame
 
-            init_repo = cli_confirm(
-                'Do you want to re-initialize?',
-                ['Yes, re-initialize', 'No, dismiss'],
+            init_repo = (
+                cli_confirm(
+                    'Do you want to re-initialize?',
+                    ['Yes, re-initialize', 'No, dismiss'],
+                )
+                == 0
             )
 
             if init_repo:
@@ -484,9 +577,12 @@ async def init_repository(current_dir: str) -> bool:
             '\nRepository instructions file will be created by exploring the repository.\n'
         )
 
-        init_repo = cli_confirm(
-            'Do you want to proceed?',
-            ['Yes, create', 'No, dismiss'],
+        init_repo = (
+            cli_confirm(
+                'Do you want to proceed?',
+                ['Yes, create', 'No, dismiss'],
+            )
+            == 0
         )
 
     return init_repo
@@ -502,7 +598,14 @@ def write_to_file(file_path, content):
         f.write(content)
 
 
-def cli_confirm(question: str = 'Are you sure?', choices: Optional[List[str]] = None):
+def cli_confirm(
+    question: str = 'Are you sure?', choices: Optional[List[str]] = None
+) -> int:
+    """
+    Display a confirmation prompt with the given question and choices.
+    Returns the index of the selected choice.
+    """
+
     if choices is None:
         choices = ['Yes', 'No']
     selected = [0]  # Using list to allow modification in closure
@@ -530,7 +633,7 @@ def cli_confirm(question: str = 'Are you sure?', choices: Optional[List[str]] = 
 
     @kb.add('enter')
     def _(event):
-        event.app.exit(result=selected[0] == 0)
+        event.app.exit(result=selected[0])
 
     style = Style.from_dict({'selected': COLOR_GOLD, 'unselected': ''})
 
@@ -640,7 +743,9 @@ def check_folder_security_agreement(current_dir):
         clear()
         print_container(security_frame)
 
-        confirm = cli_confirm('Do you wish to continue?', ['Yes, proceed', 'No, exit'])
+        confirm = (
+            cli_confirm('Do you wish to continue?', ['Yes, proceed', 'No, exit']) == 0
+        )
 
         if confirm:
             manage_openhands_file(current_dir, add_to_trusted=True)
@@ -676,6 +781,253 @@ async def cleanup_session(
         logger.error(f'Error during session cleanup: {e}')
 
 
+def get_litellm_models(config: AppConfig):
+    litellm_model_list = litellm.model_list + list(litellm.model_cost.keys())
+    litellm_model_list_without_bedrock = bedrock.remove_error_modelId(
+        litellm_model_list
+    )
+    # TODO: for bedrock, this is using the default config
+    llm_config: LLMConfig = config.get_llm_config()
+    bedrock_model_list = []
+    if (
+        llm_config.aws_region_name
+        and llm_config.aws_access_key_id
+        and llm_config.aws_secret_access_key
+    ):
+        bedrock_model_list = bedrock.list_foundation_models(
+            llm_config.aws_region_name,
+            llm_config.aws_access_key_id.get_secret_value(),
+            llm_config.aws_secret_access_key.get_secret_value(),
+        )
+    model_list = litellm_model_list_without_bedrock + bedrock_model_list
+    for llm_config in config.llms.values():
+        ollama_base_url = llm_config.ollama_base_url
+        if llm_config.model.startswith('ollama'):
+            if not ollama_base_url:
+                ollama_base_url = llm_config.base_url
+        if ollama_base_url:
+            ollama_url = ollama_base_url.strip('/') + '/api/tags'
+            try:
+                ollama_models_list = httpx.get(ollama_url, timeout=3).json()['models']
+                for model in ollama_models_list:
+                    model_list.append('ollama/' + model['name'])
+                break
+            except httpx.HTTPError as e:
+                logger.error(f'Error getting OLLAMA models: {e}')
+
+    return list(sorted(set(model_list)))
+
+
+VERIFIED_PROVIDERS = ['openai', 'azure', 'anthropic', 'deepseek']
+
+VERIFIED_OPENAI_MODELS = [
+    'gpt-4o',
+    'gpt-4o-mini',
+    'gpt-4-turbo',
+    'gpt-4',
+    'gpt-4-32k',
+    'o1-mini',
+    'o1',
+    'o3-mini',
+    'o3-mini-2025-01-31',
+]
+
+VERIFIED_ANTHROPIC_MODELS = [
+    'claude-2',
+    'claude-2.1',
+    'claude-3-5-sonnet-20240620',
+    'claude-3-5-sonnet-20241022',
+    'claude-3-5-haiku-20241022',
+    'claude-3-haiku-20240307',
+    'claude-3-opus-20240229',
+    'claude-3-sonnet-20240229',
+    'claude-3-7-sonnet-20250219',
+]
+
+
+def is_number(char):
+    return char.isdigit()
+
+
+def split_is_actually_version(split):
+    return len(split) > 1 and split[1] and split[1][0] and is_number(split[1][0])
+
+
+def extract_model_and_provider(model):
+    separator = '/'
+    split = model.split(separator)
+
+    if len(split) == 1:
+        # no "/" separator found, try with "."
+        separator = '.'
+        split = model.split(separator)
+        if split_is_actually_version(split):
+            split = [separator.join(split)]  # undo the split
+
+    if len(split) == 1:
+        # no "/" or "." separator found
+        if split[0] in VERIFIED_OPENAI_MODELS:
+            return {'provider': 'openai', 'model': split[0], 'separator': '/'}
+        if split[0] in VERIFIED_ANTHROPIC_MODELS:
+            return {'provider': 'anthropic', 'model': split[0], 'separator': '/'}
+        # return as model only
+        return {'provider': '', 'model': model, 'separator': ''}
+
+    provider = split[0]
+    model_id = separator.join(split[1:])
+    return {'provider': provider, 'model': model_id, 'separator': separator}
+
+
+def organize_models_and_providers(models):
+    result = {}
+
+    for model in models:
+        extracted = extract_model_and_provider(model)
+        separator = extracted['separator']
+        provider = extracted['provider']
+        model_id = extracted['model']
+
+        # Ignore "anthropic" providers with a separator of "."
+        # These are outdated and incompatible providers.
+        if provider == 'anthropic' and separator == '.':
+            continue
+
+        key = provider or 'other'
+        if key not in result:
+            result[key] = {'separator': separator, 'models': []}
+
+        result[key]['models'].append(model_id)
+
+    return result
+
+
+async def modify_llm_settings_basic(
+    config: AppConfig, settings_store: FileSettingsStore
+):
+    litellm_model_list = get_litellm_models(config)
+    organized_models = organize_models_and_providers(litellm_model_list)
+
+    provider_list = list(organized_models.keys())
+    verified_providers = [p for p in VERIFIED_PROVIDERS if p in provider_list]
+    provider_list = [p for p in provider_list if p not in verified_providers]
+    provider_list = verified_providers + provider_list
+
+    provider_completer = FuzzyWordCompleter(provider_list)
+    session = PromptSession()
+    provider = await session.prompt_async(
+        '(Step 1/3) Select LLM Provider: ',
+        completer=provider_completer,
+    )
+
+    model_list = organized_models[provider]['models']
+    if provider == 'openai':
+        model_list = [m for m in model_list if m not in VERIFIED_OPENAI_MODELS]
+        model_list = VERIFIED_OPENAI_MODELS + model_list
+    if provider == 'anthropic':
+        model_list = [m for m in model_list if m not in VERIFIED_ANTHROPIC_MODELS]
+        model_list = VERIFIED_ANTHROPIC_MODELS + model_list
+
+    model_completer = FuzzyWordCompleter(model_list)
+    model = await session.prompt_async(
+        '(Step 2/3) Select LLM Model: ',
+        completer=model_completer,
+    )
+
+    api_key = await session.prompt_async(
+        '(Step 3/3) Enter API Key: ',
+        is_password=True,
+    )
+
+    llm_config = config.get_llm_config()
+    llm_config.model = provider + organized_models[provider]['separator'] + model
+    llm_config.api_key = api_key
+    llm_config.base_url = None
+    config.set_llm_config(llm_config)
+
+    config.default_agent = OH_DEFAULT_AGENT
+    config.security.confirmation_mode = False
+
+    agent_config = config.get_agent_config(config.default_agent)
+    agent_config.condenser = NoOpCondenserConfig(type='noop')
+    config.set_agent_config(agent_config, config.default_agent)
+
+    settings = await settings_store.load()
+    if not settings:
+        settings = Settings()
+
+    settings.llm_model = provider + organized_models[provider]['separator'] + model
+    settings.llm_api_key = api_key
+    settings.llm_base_url = None
+    settings.agent = OH_DEFAULT_AGENT
+    settings.confirmation_mode = False
+    settings.enable_default_condenser = False
+
+    await settings_store.store(settings)
+
+    return True
+
+
+async def modify_llm_settings_advanced(
+    config: AppConfig, settings_store: FileSettingsStore
+) -> bool:
+    session = PromptSession()
+    custom_model = await session.prompt_async('(Step 1/6) Enter custom model: ')
+    base_url = await session.prompt_async('(Step 2/6) Enter base URL: ')
+    api_key = await session.prompt_async('(Step 3/6) Enter API key: ')
+
+    agent_completer = FuzzyWordCompleter(['CodeActAgent', 'TestAgent'])
+    agent = await session.prompt_async(
+        '(Step 4/6) Select agent (use Tab for completion): ', completer=agent_completer
+    )
+
+    enable_confirmation_mode = (
+        cli_confirm(
+            question='(Step 5/6) Enable Confirmation Mode?',
+            choices=['Enable', 'Disable'],
+        )
+        == 0
+    )
+
+    enable_memory_condensation = (
+        cli_confirm(
+            question='(Step 6/6) Enable Memory Condensation?',
+            choices=['Enable', 'Disable'],
+        )
+        == 0
+    )
+
+    llm_config = config.get_llm_config()
+    llm_config.model = custom_model
+    llm_config.base_url = base_url
+    llm_config.api_key = SecretStr(api_key)
+
+    config.default_agent = agent
+
+    config.security.confirmation_mode = enable_confirmation_mode
+
+    default_condenser_config = LLMSummarizingCondenserConfig(
+        llm_config=llm_config, keep_first=3, max_size=80
+    )
+    agent_config = config.get_agent_config(config.default_agent)
+    agent_config.condenser = default_condenser_config
+    config.set_agent_config(agent_config)
+
+    settings = await settings_store.load()
+    if not settings:
+        settings = Settings()
+
+    settings.llm_model = custom_model
+    settings.llm_api_key = SecretStr(api_key)
+    settings.llm_base_url = base_url
+    settings.agent = agent
+    settings.confirmation_mode = enable_confirmation_mode
+    settings.enable_default_condenser = enable_memory_condensation
+
+    await settings_store.store(settings)
+
+    return True
+
+
 async def main(loop: asyncio.AbstractEventLoop):
     """Runs the agent in CLI mode."""
 
@@ -689,6 +1041,33 @@ async def main(loop: asyncio.AbstractEventLoop):
 
     # Load config from toml and override with command line arguments
     config: AppConfig = setup_config_from_args(args)
+
+    # Load settings from Settings Store
+    # TODO: Make this generic?
+    settings_store = await FileSettingsStore.get_instance(config=config, user_id=None)
+    settings = await settings_store.load()
+
+    # Use settings from settings store if available and override with command line arguments
+    if settings:
+        config.default_agent = args.agent_cls if args.agent_cls else settings.agent
+        if not args.llm_config and settings.llm_model and settings.llm_api_key:
+            llm_config = config.get_llm_config()
+            llm_config.model = settings.llm_model
+            llm_config.api_key = settings.llm_api_key
+            llm_config.base_url = settings.llm_base_url
+            config.set_llm_config(llm_config)
+        config.security.confirmation_mode = (
+            settings.confirmation_mode if settings.confirmation_mode else False
+        )
+
+        # TODO: Make this generic?
+        llm_config = config.get_llm_config()
+        default_condenser_config = LLMSummarizingCondenserConfig(
+            llm_config=llm_config, keep_first=3, max_size=80
+        )
+        agent_config = config.get_agent_config(config.default_agent)
+        agent_config.condenser = default_condenser_config
+        config.set_agent_config(agent_config)
 
     # TODO: Set working directory from config or use current working directory?
     current_dir = config.workspace_base
@@ -773,6 +1152,28 @@ async def main(loop: asyncio.AbstractEventLoop):
 
                     display_shutdown_message(usage_metrics, sid)
                     return
+                elif next_message == '/settings':
+                    modify_settings = display_settings(config)
+
+                    if modify_settings == 0:
+                        new_session_requested = await modify_llm_settings_basic(
+                            config, settings_store
+                        )
+                    elif modify_settings == 1:
+                        new_session_requested = await modify_llm_settings_advanced(
+                            config, settings_store
+                        )
+                    elif modify_settings == 2:
+                        print_formatted_text('This feature is not available')
+
+                    if new_session_requested:
+                        event_stream.add_event(
+                            ChangeAgentStateAction(AgentState.STOPPED),
+                            EventSource.ENVIRONMENT,
+                        )
+                        return
+
+                    continue
 
                 action = MessageAction(content=next_message)
                 event_stream.add_event(action, EventSource.USER)
