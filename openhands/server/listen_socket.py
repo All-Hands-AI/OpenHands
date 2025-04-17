@@ -98,13 +98,14 @@ async def connect(connection_id: str, environ):
             payload = jwt.decode(jwt_token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
 
             user: ThesisUser | None = get_user_detail_from_thesis_auth_server('Bearer ' + jwt_token)
-            user_id = payload['user']['publicAddress']
-            # Fetch user record from database
             if not user:
                 logger.error(f'User not found in database: {user_id}')
                 raise ConnectionRefusedError('User not found')
-
-            if user.whitelisted != UserStatus.WHITELISTED:
+            
+            user_id = payload['user']['publicAddress']
+            
+            # TODO: If the user is not whitelisted and the run mode is DEV, skip the check
+            if user.whitelisted != UserStatus.WHITELISTED and os.getenv('RUN_MODE') != 'DEV':
                 logger.error(f'User not activated: {user_id}')
                 raise ConnectionRefusedError('User not activated')
 

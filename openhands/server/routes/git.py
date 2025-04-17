@@ -1,3 +1,4 @@
+import os
 from fastapi import APIRouter, Depends, status, Request
 from fastapi.responses import JSONResponse
 from pydantic import SecretStr
@@ -205,7 +206,15 @@ async def get_suggested_tasks(
 async def get_user_status(request: Request):
     """Get the current user's status (activated or non_activated)"""
     user = request.state.user
-    return {
-        'status': "activated" if user.whitelisted == UserStatus.WHITELISTED else "non_activated",
-        'activated': user.whitelisted == UserStatus.WHITELISTED
-    }
+
+    # TODO: If the run mode is DEV, return True to bypass the check
+    if os.getenv('RUN_MODE') == 'DEV':
+        return {
+            'status': "activated",
+            'activated': True
+        }
+    else:
+        return {
+            'status': "activated" if user.whitelisted == UserStatus.WHITELISTED else "non_activated",
+            'activated': user.whitelisted == UserStatus.WHITELISTED
+        }
