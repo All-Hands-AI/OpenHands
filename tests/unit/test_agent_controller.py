@@ -195,7 +195,7 @@ async def test_react_to_content_policy_violation(
     mock_status_callback.assert_called_once_with(
         'error',
         'STATUS$ERROR_LLM_CONTENT_POLICY_VIOLATION',
-        'STATUS$ERROR_LLM_CONTENT_POLICY_VIOLATION',
+        'ContentPolicyViolationError: litellm.BadRequestError: litellm.ContentPolicyViolationError: Output blocked by content filtering policy',
     )
 
     # Verify the state was updated correctly
@@ -264,10 +264,8 @@ async def test_run_controller_with_fatal_error(test_event_stream, mock_memory):
     error_observation = error_observations[0]
     assert state.iteration == 3
     assert state.agent_state == AgentState.ERROR
-    assert state.last_error == 'AgentStuckInLoopError: Agent got stuck in a loop'
-    assert (
-        error_observation.reason == 'AgentStuckInLoopError: Agent got stuck in a loop'
-    )
+    assert state.last_error == 'AgentStuckInLoopError'
+    assert error_observation.reason == 'AgentStuckInLoopError'
     assert len(events) == 11
 
 
@@ -344,7 +342,7 @@ async def test_run_controller_stop_with_stuck(test_event_stream, mock_memory):
     assert last_event['observation'] == 'agent_state_changed'
 
     assert state.agent_state == AgentState.ERROR
-    assert state.last_error == 'AgentStuckInLoopError: Agent got stuck in a loop'
+    assert state.last_error == 'AgentStuckInLoopError'
 
 
 @pytest.mark.asyncio
@@ -666,20 +664,14 @@ async def test_run_controller_max_iterations_has_metrics(
     )
     assert state.iteration == 3
     assert state.agent_state == AgentState.ERROR
-    assert (
-        state.last_error
-        == 'RuntimeError: Agent reached maximum iteration in headless mode. Current iteration: 3, max iteration: 3'
-    )
+    assert state.last_error == 'RuntimeError'
     error_observations = test_event_stream.get_matching_events(
         reverse=True, limit=1, event_types=(AgentStateChangedObservation)
     )
     assert len(error_observations) == 1
     error_observation = error_observations[0]
 
-    assert (
-        error_observation.reason
-        == 'RuntimeError: Agent reached maximum iteration in headless mode. Current iteration: 3, max iteration: 3'
-    )
+    assert error_observation.reason == 'RuntimeError'
 
     assert (
         state.metrics.accumulated_cost == 10.0 * 3
@@ -916,10 +908,7 @@ async def test_run_controller_with_context_window_exceeded_with_truncation(
     # expected reason
     assert state.iteration == 5
     assert state.agent_state == AgentState.ERROR
-    assert (
-        state.last_error
-        == 'RuntimeError: Agent reached maximum iteration in headless mode. Current iteration: 5, max iteration: 5'
-    )
+    assert state.last_error == 'RuntimeError'
 
     # Check that the context window exceeded error was raised during the run
     assert step_state.has_errored
@@ -992,20 +981,14 @@ async def test_run_controller_with_context_window_exceeded_without_truncation(
     # expected reason
     assert state.iteration == 2
     assert state.agent_state == AgentState.ERROR
-    assert (
-        state.last_error
-        == 'LLMContextWindowExceedError: Conversation history longer than LLM context window limit. Consider turning on enable_history_truncation config to avoid this error'
-    )
+    assert state.last_error == 'LLMContextWindowExceedError'
 
     error_observations = test_event_stream.get_matching_events(
         reverse=True, limit=1, event_types=(AgentStateChangedObservation)
     )
     assert len(error_observations) == 1
     error_observation = error_observations[0]
-    assert (
-        error_observation.reason
-        == 'LLMContextWindowExceedError: Conversation history longer than LLM context window limit. Consider turning on enable_history_truncation config to avoid this error'
-    )
+    assert error_observation.reason == 'LLMContextWindowExceedError'
 
     # Check that the context window exceeded error was raised during the run
     assert step_state.has_errored
