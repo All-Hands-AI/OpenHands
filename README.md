@@ -5,7 +5,6 @@
   <h1 align="center">OpenHands: Code Less, Make More</h1>
 </div>
 
-
 <div align="center">
   <a href="https://github.com/All-Hands-AI/OpenHands/graphs/contributors"><img src="https://img.shields.io/github/contributors/All-Hands-AI/OpenHands?style=for-the-badge&color=blue" alt="Contributors"></a>
   <a href="https://github.com/All-Hands-AI/OpenHands/stargazers"><img src="https://img.shields.io/github/stars/All-Hands-AI/OpenHands?style=for-the-badge&color=blue" alt="Stargazers"></a>
@@ -65,6 +64,18 @@ You'll find OpenHands running at [http://localhost:3000](http://localhost:3000)!
 Finally, you'll need a model provider and API key.
 [Anthropic's Claude 3.5 Sonnet](https://www.anthropic.com/api) (`anthropic/claude-3-5-sonnet-20241022`)
 works best, but you have [many options](https://docs.all-hands.dev/modules/usage/llms).
+
+## Local Development Environment Variables
+
+### RUN_MODE
+
+When developing locally, you can set the `RUN_MODE` environment variable to `DEV` to bypass the user whitelist check:
+
+```bash
+export RUN_MODE=DEV
+```
+
+This allows you to test and develop without needing invitation codes or whitelisted user accounts. This only works in development environments and should not be used in production.
 
 ---
 
