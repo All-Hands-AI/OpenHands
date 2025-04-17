@@ -77,10 +77,11 @@ class DockerRuntime(ActionExecutionClient):
         attach_to_existing: bool = False,
         headless_mode: bool = True,
     ):
-        if not DockerRuntime._shutdown_listener_id:
-            DockerRuntime._shutdown_listener_id = add_shutdown_listener(
-                lambda: stop_all_containers(CONTAINER_NAME_PREFIX)
-            )
+        # TODO FIXME: we don't need to close containers when BE shut down. Only users can close the containers by deleting the conversation.
+        # if not DockerRuntime._shutdown_listener_id:
+        #     DockerRuntime._shutdown_listener_id = add_shutdown_listener(
+        #         lambda: stop_all_containers(CONTAINER_NAME_PREFIX)
+        #     )
 
         self.config = config
         self._runtime_initialized: bool = False
