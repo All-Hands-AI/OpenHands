@@ -10,7 +10,7 @@ import toml
 from datasets import load_dataset
 
 import openhands.agenthub
-from evaluation.benchmarks.swe_bench.resource.constants import (
+from evaluation.benchmarks.swe_bench.resource.swt_bench_constants import (
     MAP_REPO_TO_TEST_FRAMEWORK_VERBOSE,
     MAP_REPO_TO_INSTALL,
     MAP_VERSION_TO_INSTALL

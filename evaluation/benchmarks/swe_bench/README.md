@@ -209,7 +209,7 @@ The two modes `swt` and `swt-ci` have the following effect:
 The evaluation of these results is done leveraging [the SWT-Bench evaluation harness](https://github.com/logic-star-ai/swt-bench/tree/master).
 
 #### Extracting results into SWT-Bench harness format
-In order to run evaluation of the obtained inference results in the SWT-Bench harness, we transform the results to a format that the SWT-Bench.
+In order to run evaluation of the obtained inference results in the SWT-Bench harness, we transform the results to a format that the SWT-Bench evaluation harness expects.
 
 ```bash
 python3 evaluation/benchmarks/swe_bench/scripts/swtbench/convert.py --prediction_file [output.jsonl] > [output_swt.jsonl]

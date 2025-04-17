@@ -5,7 +5,7 @@ import logging
 
 import unidiff
 
-from evaluation.benchmarks.swe_bench.resource.constants import MAP_VERSION_TO_INSTALL
+from evaluation.benchmarks.swe_bench.resource.swt_bench_constants import MAP_VERSION_TO_INSTALL
 
 _LOGGER = logging.getLogger(__name__)
 
