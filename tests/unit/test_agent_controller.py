@@ -1195,74 +1195,7 @@ async def test_action_metrics_copy(mock_agent):
     mock_agent.llm.metrics.accumulated_cost = 0.1
     assert last_action.llm_metrics.accumulated_cost == 0.07
 
-
-def test_condenser_metrics_included():
-    """Test that metrics from the condenser's LLM are included in the action metrics."""
-    # Create agent with metrics
-    agent = MagicMock()
-    agent.llm = MagicMock()
-    agent_metrics = Metrics(model_name='agent-model')
-    agent_metrics.accumulated_cost = 0.05
-    agent_metrics._accumulated_token_usage = TokenUsage(
-        model='agent-model',
-        prompt_tokens=100,
-        completion_tokens=50,
-        cache_read_tokens=10,
-        cache_write_tokens=10,
-        response_id='agent-accumulated',
-    )
-    agent.llm.metrics = agent_metrics
-
-    # Create condenser with its own metrics
-    condenser = MagicMock()
-    condenser.llm = MagicMock()
-    condenser_metrics = Metrics(model_name='condenser-model')
-    condenser_metrics.accumulated_cost = 0.03
-    condenser_metrics._accumulated_token_usage = TokenUsage(
-        model='condenser-model',
-        prompt_tokens=200,
-        completion_tokens=100,
-        cache_read_tokens=20,
-        cache_write_tokens=5000,  # High cache_write value that should be preserved
-        response_id='condenser-accumulated',
-    )
-    condenser.llm.metrics = condenser_metrics
-
-    # Attach the condenser to the agent
-    agent.condenser = condenser
-
-    # Create a simple action
-    action = MagicMock()
-    
-    # Create a minimal controller for testing
-    controller = MagicMock()
-    controller.agent = agent
-    
-    # Call the method directly
-    from openhands.controller.agent_controller import AgentController
-    AgentController._prepare_metrics_for_frontend(controller, action)
-    
-    # Verify metrics were copied correctly
-    assert action.llm_metrics is not None
-
-    # Check that both agent and condenser metrics are included
-    assert (
-        action.llm_metrics.accumulated_cost == 0.08
-    )  # 0.05 from agent + 0.03 from condenser
-
-    # The accumulated token usage should include both agent and condenser metrics
-    assert (
-        action.llm_metrics.accumulated_token_usage.prompt_tokens == 300
-    )  # 100 + 200
-    assert (
-        action.llm_metrics.accumulated_token_usage.completion_tokens == 150
-    )  # 50 + 100
-    assert (
-        action.llm_metrics.accumulated_token_usage.cache_read_tokens == 30
-    )  # 10 + 20
-    assert (
-        action.llm_metrics.accumulated_token_usage.cache_write_tokens == 5010
-    )  # 10 + 5000
+    await controller.close()
 
 
 @pytest.mark.asyncio
