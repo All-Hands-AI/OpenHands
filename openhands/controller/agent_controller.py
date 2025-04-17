@@ -430,15 +430,6 @@ class AgentController:
             self.state.history.append(event)
 
         if isinstance(event, Action):
-            # Log diagnostic info when a user message is received
-            if isinstance(event, MessageAction) and event.source == EventSource.USER:
-                self.log(
-                    'info',
-                    f'User message received: "{event.content[:50]}{"..." if len(event.content) > 50 else ""}"',
-                    extra={'msg_type': 'USER_MESSAGE_RECEIVED'},
-                )
-                self.log_diagnostic_info()
-                
             await self._handle_action(event)
         elif isinstance(event, Observation):
             await self._handle_observation(event)
@@ -458,7 +449,6 @@ class AgentController:
                 f'Not stepping agent after user message. Current state: {self.get_agent_state()}',
                 extra={'msg_type': 'NOT_STEPPING_AFTER_USER_MESSAGE'},
             )
-            self.log_diagnostic_info()
 
     async def _handle_action(self, action: Action) -> None:
         """Handles an Action from the agent or delegate."""
@@ -1322,39 +1312,6 @@ class AgentController:
             f'{accumulated_usage.completion_tokens}',
             extra={'msg_type': 'METRICS'},
         )
-
-    def log_diagnostic_info(self) -> None:
-        """Log detailed diagnostic information about the current state of the agent controller."""
-        pending_action_info = "None"
-        if self._pending_action_info is not None:
-            action, timestamp = self._pending_action_info
-            action_id = getattr(action, 'id', 'unknown')
-            action_type = type(action).__name__
-            elapsed_time = time.time() - timestamp
-            pending_action_info = f"{action_type}(id={action_id}, elapsed={elapsed_time:.2f}s)"
-        
-        self.log(
-            'info',
-            f'DIAGNOSTIC: Agent state={self.state.agent_state}, '
-            f'traffic_control={self.state.traffic_control_state}, '
-            f'iteration={self.state.iteration}/{self.state.max_iterations}, '
-            f'delegate_active={self.delegate is not None}, '
-            f'pending_action={pending_action_info}',
-            extra={'msg_type': 'DIAGNOSTIC_INFO'},
-        )
-        
-        # Log the last few events in history for context
-        history_size = min(5, len(self.state.history))
-        if history_size > 0:
-            recent_events = self.state.history[-history_size:]
-            for i, event in enumerate(recent_events):
-                event_type = type(event).__name__
-                event_id = getattr(event, 'id', 'unknown')
-                self.log(
-                    'info',
-                    f'DIAGNOSTIC: Recent event {i+1}/{history_size}: {event_type}(id={event_id})',
-                    extra={'msg_type': 'DIAGNOSTIC_RECENT_EVENT'},
-                )
 
     def __repr__(self):
         pending_action_info = "<none>"
