@@ -70,6 +70,8 @@ export interface AuthenticateResponse {
   error?: string;
 }
 
+export type ConversationTrigger = "resolver" | "gui";
+
 export interface Conversation {
   conversation_id: string;
   title: string;
@@ -77,6 +79,7 @@ export interface Conversation {
   last_updated_at: string;
   created_at: string;
   status: ProjectStatus;
+  trigger?: ConversationTrigger;
 }
 
 export interface ResultSet<T> {

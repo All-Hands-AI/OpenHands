@@ -1,5 +1,6 @@
 // this file generate by script, don't modify it manually!!!
 export enum I18nKey {
+  CHAT$RESOLVER_INSTRUCTIONS = "CHAT$RESOLVER_INSTRUCTIONS",
   SETTINGS$ADVANCED = "SETTINGS$ADVANCED",
   SETTINGS$BASE_URL = "SETTINGS$BASE_URL",
   SETTINGS$AGENT = "SETTINGS$AGENT",
