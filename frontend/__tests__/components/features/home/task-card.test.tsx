@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
 import { Provider } from "react-redux";
@@ -9,18 +9,54 @@ import { SuggestedTask } from "#/components/features/home/tasks/task.types";
 import OpenHands from "#/api/open-hands";
 import { AuthProvider } from "#/context/auth-context";
 import { TaskCard } from "#/components/features/home/tasks/task-card";
+import * as GitService from "#/api/git";
+import { GitRepository } from "#/types/git";
+import {
+  getFailingChecksPrompt,
+  getMergeConflictPrompt,
+  getOpenIssuePrompt,
+  getUnresolvedCommentsPrompt,
+} from "#/components/features/home/tasks/get-prompt-for-query";
 
-const MOCK_TASK: SuggestedTask = {
+const MOCK_TASK_1: SuggestedTask = {
   issue_number: 123,
   repo: "repo1",
   title: "Task 1",
   task_type: "MERGE_CONFLICTS",
 };
 
-const renderTaskCard = () => {
+const MOCK_TASK_2: SuggestedTask = {
+  issue_number: 456,
+  repo: "repo2",
+  title: "Task 2",
+  task_type: "FAILING_CHECKS",
+};
+
+const MOCK_TASK_3: SuggestedTask = {
+  issue_number: 789,
+  repo: "repo3",
+  title: "Task 3",
+  task_type: "UNRESOLVED_COMMENTS",
+};
+
+const MOCK_TASK_4: SuggestedTask = {
+  issue_number: 101112,
+  repo: "repo4",
+  title: "Task 4",
+  task_type: "OPEN_ISSUE",
+};
+
+const MOCK_RESPOSITORIES: GitRepository[] = [
+  { id: 1, full_name: "repo1", git_provider: "github" },
+  { id: 2, full_name: "repo2", git_provider: "github" },
+  { id: 3, full_name: "repo3", git_provider: "gitlab" },
+  { id: 4, full_name: "repo4", git_provider: "gitlab" },
+];
+
+const renderTaskCard = (task = MOCK_TASK_1) => {
   const RouterStub = createRoutesStub([
     {
-      Component: () => <TaskCard task={MOCK_TASK} />,
+      Component: () => <TaskCard task={task} />,
       path: "/",
     },
     {
@@ -59,6 +95,83 @@ describe("TaskCard", () => {
     await userEvent.click(launchButton);
 
     expect(createConversationSpy).toHaveBeenCalled();
+  });
+
+  describe("creating conversation prompts", () => {
+    beforeEach(() => {
+      const retrieveUserGitRepositoriesSpy = vi.spyOn(
+        GitService,
+        "retrieveUserGitRepositories",
+      );
+      retrieveUserGitRepositoriesSpy.mockResolvedValue({
+        data: MOCK_RESPOSITORIES,
+        nextPage: null,
+      });
+    });
+
+    it("should call create conversation with the merge conflict prompt", async () => {
+      const createConversationSpy = vi.spyOn(OpenHands, "createConversation");
+
+      renderTaskCard(MOCK_TASK_1);
+
+      const launchButton = screen.getByTestId("task-launch-button");
+      await userEvent.click(launchButton);
+
+      expect(createConversationSpy).toHaveBeenCalledWith(
+        MOCK_RESPOSITORIES[0],
+        getMergeConflictPrompt(MOCK_TASK_1.issue_number, MOCK_TASK_1.repo),
+        [],
+        undefined,
+      );
+    });
+
+    it("should call create conversation with the failing checks prompt", async () => {
+      const createConversationSpy = vi.spyOn(OpenHands, "createConversation");
+
+      renderTaskCard(MOCK_TASK_2);
+
+      const launchButton = screen.getByTestId("task-launch-button");
+      await userEvent.click(launchButton);
+
+      expect(createConversationSpy).toHaveBeenCalledWith(
+        MOCK_RESPOSITORIES[1],
+        getFailingChecksPrompt(MOCK_TASK_2.issue_number, MOCK_TASK_2.repo),
+        [],
+        undefined,
+      );
+    });
+
+    it("should call create conversation with the unresolved comments prompt", async () => {
+      const createConversationSpy = vi.spyOn(OpenHands, "createConversation");
+
+      renderTaskCard(MOCK_TASK_3);
+
+      const launchButton = screen.getByTestId("task-launch-button");
+      await userEvent.click(launchButton);
+
+      expect(createConversationSpy).toHaveBeenCalledWith(
+        MOCK_RESPOSITORIES[2],
+        getUnresolvedCommentsPrompt(MOCK_TASK_3.issue_number, MOCK_TASK_3.repo),
+        [],
+        undefined,
+      );
+    });
+
+    it("should call create conversation with the open issue prompt", async () => {
+      const createConversationSpy = vi.spyOn(OpenHands, "createConversation");
+
+      renderTaskCard(MOCK_TASK_4);
+
+      const launchButton = screen.getByTestId("task-launch-button");
+      await userEvent.click(launchButton);
+
+      expect(createConversationSpy).toHaveBeenCalledWith(
+        MOCK_RESPOSITORIES[3],
+        getOpenIssuePrompt(MOCK_TASK_4.issue_number, MOCK_TASK_4.repo),
+        [],
+        undefined,
+      );
+    });
   });
 
   it("should disable the launch button and update text content when creating a conversation", async () => {

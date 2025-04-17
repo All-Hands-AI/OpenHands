@@ -1,4 +1,4 @@
-type SuggestedTaskType =
+export type SuggestedTaskType =
   | "MERGE_CONFLICTS"
   | "FAILING_CHECKS"
   | "UNRESOLVED_COMMENTS"
