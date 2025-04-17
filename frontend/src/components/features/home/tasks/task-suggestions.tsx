@@ -4,7 +4,7 @@ import { useSuggestedTasks } from "#/hooks/query/use-suggested-tasks";
 import { TaskSuggestionsSkeleton } from "./task-suggestions-skeleton";
 import { useAuth } from "#/context/auth-context";
 import { cn } from "#/utils/utils";
-import { ConnectToProviderMessage } from "./connect-to-provider-message";
+import { ConnectToProviderMessage } from "../connect-to-provider-message";
 
 interface TaskSuggestionsProps {
   filterFor?: string | null;

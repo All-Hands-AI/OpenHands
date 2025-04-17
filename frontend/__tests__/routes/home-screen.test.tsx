@@ -230,16 +230,13 @@ describe("HomeScreen", () => {
     });
   });
 
-  it.todo(
-    "should hide the suggested tasks section if not authed with git(hub|lab)",
-    async () => {
-      renderHomeScreen(false);
+  it("should hide the suggested tasks section if not authed with git(hub|lab)", async () => {
+    renderHomeScreen(false);
 
-      const taskSuggestions = screen.queryByTestId("task-suggestions");
-      const repoConnector = screen.getByTestId("repo-connector");
+    const taskSuggestions = screen.queryByTestId("task-suggestions");
+    const repoConnector = screen.getByTestId("repo-connector");
 
-      expect(taskSuggestions).not.toBeInTheDocument();
-      expect(repoConnector).toBeInTheDocument();
-    },
-  );
+    expect(taskSuggestions).not.toBeInTheDocument();
+    expect(repoConnector).toBeInTheDocument();
+  });
 });

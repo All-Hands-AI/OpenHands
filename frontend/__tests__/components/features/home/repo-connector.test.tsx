@@ -11,22 +11,27 @@ import { GitRepository } from "#/types/git";
 import * as GitService from "#/api/git";
 import { RepoConnector } from "#/components/features/home/repo-connector";
 
-const renderRepoConnector = () => {
+const renderRepoConnector = (initialProvidersAreSet = true) => {
+  const mockRepoSelection = vi.fn();
   const RouterStub = createRoutesStub([
     {
-      Component: RepoConnector,
+      Component: () => <RepoConnector onRepoSelection={mockRepoSelection} />,
       path: "/",
     },
     {
       Component: () => <div data-testid="conversation-screen" />,
       path: "/conversations/:conversationId",
     },
+    {
+      Component: () => <div data-testid="settings-screen" />,
+      path: "/settings",
+    },
   ]);
 
   return render(<RouterStub />, {
     wrapper: ({ children }) => (
       <Provider store={setupStore()}>
-        <AuthProvider initialProvidersAreSet>
+        <AuthProvider initialProvidersAreSet={initialProvidersAreSet}>
           <QueryClientProvider client={new QueryClient()}>
             {children}
           </QueryClientProvider>
@@ -166,5 +171,32 @@ describe("RepoConnector", () => {
     await userEvent.click(launchButton);
     expect(launchButton).toBeDisabled();
     expect(launchButton).toHaveTextContent(/Loading.../i);
+  });
+
+  it("should not display a button to settings if the user is signed in with their git provider", async () => {
+    renderRepoConnector(true);
+    expect(
+      screen.queryByTestId("navigate-to-settings-button"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("should display a button to settings if the user needs to sign in with their git provider", async () => {
+    renderRepoConnector(false);
+
+    const goToSettingsButton = await screen.findByTestId(
+      "navigate-to-settings-button",
+    );
+    const dropdown = screen.queryByTestId("repo-dropdown");
+    const launchButton = screen.queryByTestId("repo-launch-button");
+    const providerLinks = screen.queryAllByText(/add git(hub|lab) repos/i);
+
+    expect(dropdown).not.toBeInTheDocument();
+    expect(launchButton).not.toBeInTheDocument();
+    expect(providerLinks.length).toBe(0);
+
+    expect(goToSettingsButton).toBeInTheDocument();
+
+    await userEvent.click(goToSettingsButton);
+    await screen.findByTestId("settings-screen");
   });
 });

@@ -2,8 +2,10 @@ import React from "react";
 import { HomeHeader } from "#/components/features/home/home-header";
 import { RepoConnector } from "#/components/features/home/repo-connector";
 import { TaskSuggestions } from "#/components/features/home/tasks/task-suggestions";
+import { useAuth } from "#/context/auth-context";
 
 function HomeScreen() {
+  const { providersAreSet } = useAuth();
   const [selectedRepoTitle, setSelectedRepoTitle] = React.useState<
     string | null
   >(null);
@@ -21,7 +23,7 @@ function HomeScreen() {
         <RepoConnector
           onRepoSelection={(title) => setSelectedRepoTitle(title)}
         />
-        <TaskSuggestions filterFor={selectedRepoTitle} />
+        {providersAreSet && <TaskSuggestions filterFor={selectedRepoTitle} />}
       </main>
     </div>
   );
