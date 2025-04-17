@@ -572,19 +572,19 @@
         "tr": "LLM Ayarları"
     },
     "SETTINGS$GITHUB_SETTINGS": {
-        "en": "GitHub Settings",
-        "ja": "GitHub設定",
-        "zh-CN": "GitHub设置",
-        "zh-TW": "GitHub設定",
-        "ko-KR": "GitHub 설정",
-        "de": "GitHub-Einstellungen",
-        "no": "GitHub-innstillinger",
-        "it": "Impostazioni GitHub",
-        "pt": "Configurações GitHub",
-        "es": "Configuración GitHub",
-        "ar": "إعدادات GitHub",
-        "fr": "Paramètres GitHub",
-        "tr": "GitHub Ayarları"
+        "en": "Provider Settings",
+        "ja": "プロバイダー設定",
+        "zh-CN": "提供商设置",
+        "zh-TW": "提供商設定",
+        "ko-KR": "제공자 설정",
+        "de": "Anbieter-Einstellungen",
+        "no": "Leverandørinnstillinger",
+        "it": "Impostazioni Provider",
+        "pt": "Configurações do Provedor",
+        "es": "Configuración del Proveedor",
+        "ar": "إعدادات المزود",
+        "fr": "Paramètres du Fournisseur",
+        "tr": "Sağlayıcı Ayarları"
     },
     "SETTINGS$SOUND_NOTIFICATIONS": {
         "en": "Sound Notifications",
