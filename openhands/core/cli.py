@@ -438,8 +438,8 @@ def display_settings(config: AppConfig) -> int:
         Base URL: {llm_config.base_url}
         API Key: {llm_config.api_key}
         Agent: {config.default_agent}
-        Confirmation Mode: Enabled
-        Memory Condensation: Enabled
+        Confirmation Mode: {'Enabled' if config.security.confirmation_mode else 'Disabled'}
+        Memory Condensation: {'Enabled' if config.enable_default_condenser else 'Disabled'}
     """
 
     additional_settings = """
@@ -946,9 +946,13 @@ async def modify_llm_settings_basic(
 
     config.default_agent = OH_DEFAULT_AGENT
     config.security.confirmation_mode = False
+    config.enable_default_condenser = True
 
     agent_config = config.get_agent_config(config.default_agent)
-    agent_config.condenser = NoOpCondenserConfig(type='noop')
+    agent_config.condenser = LLMSummarizingCondenserConfig(
+        llm_config=llm_config,
+        type='llm',
+    )
     config.set_agent_config(agent_config, config.default_agent)
 
     settings = await settings_store.load()
@@ -960,7 +964,7 @@ async def modify_llm_settings_basic(
     settings.llm_base_url = None
     settings.agent = OH_DEFAULT_AGENT
     settings.confirmation_mode = False
-    settings.enable_default_condenser = False
+    settings.enable_default_condenser = True
 
     await settings_store.store(settings)
 
@@ -1000,16 +1004,20 @@ async def modify_llm_settings_advanced(
     llm_config.model = custom_model
     llm_config.base_url = base_url
     llm_config.api_key = SecretStr(api_key)
+    config.set_llm_config(llm_config)
 
     config.default_agent = agent
 
     config.security.confirmation_mode = enable_confirmation_mode
 
-    default_condenser_config = LLMSummarizingCondenserConfig(
-        llm_config=llm_config, keep_first=3, max_size=80
-    )
     agent_config = config.get_agent_config(config.default_agent)
-    agent_config.condenser = default_condenser_config
+    if enable_memory_condensation:
+        agent_config.condenser = LLMSummarizingCondenserConfig(
+            llm_config=llm_config,
+            type='llm',
+        )
+    else:
+        agent_config.condenser = NoOpCondenserConfig(type='noop')
     config.set_agent_config(agent_config)
 
     settings = await settings_store.load()
@@ -1060,14 +1068,21 @@ async def main(loop: asyncio.AbstractEventLoop):
             settings.confirmation_mode if settings.confirmation_mode else False
         )
 
-        # TODO: Make this generic?
-        llm_config = config.get_llm_config()
-        default_condenser_config = LLMSummarizingCondenserConfig(
-            llm_config=llm_config, keep_first=3, max_size=80
-        )
-        agent_config = config.get_agent_config(config.default_agent)
-        agent_config.condenser = default_condenser_config
-        config.set_agent_config(agent_config)
+        if settings.enable_default_condenser:
+            # TODO: Make this generic?
+            llm_config = config.get_llm_config()
+            agent_config = config.get_agent_config(config.default_agent)
+            agent_config.condenser = LLMSummarizingCondenserConfig(
+                llm_config=llm_config,
+                type='llm',
+            )
+            config.set_agent_config(agent_config)
+            config.enable_default_condenser = True
+        else:
+            agent_config = config.get_agent_config(config.default_agent)
+            agent_config.condenser = NoOpCondenserConfig(type='noop')
+            config.set_agent_config(agent_config)
+            config.enable_default_condenser = False
 
     # TODO: Set working directory from config or use current working directory?
     current_dir = config.workspace_base
