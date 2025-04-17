@@ -1036,12 +1036,224 @@ async def modify_llm_settings_advanced(
     return True
 
 
+async def run_session(
+    loop: asyncio.AbstractEventLoop,
+    config: AppConfig,
+    settings_store: FileSettingsStore,
+    current_dir: str,
+    initial_user_action: Optional[Action] = None,
+) -> bool:
+    reload_microagents = False
+    new_session_requested = False
+
+    sid = str(uuid4())
+    is_loaded = asyncio.Event()
+
+    # Show OpenHands banner and session ID
+    display_banner(session_id=sid, is_loaded=is_loaded)
+
+    # Show Initialization loader
+    loop.run_in_executor(
+        None, display_initialization_animation, 'Initializing...', is_loaded
+    )
+
+    agent = create_agent(config)
+    mcp_tools = await fetch_mcp_tools_from_config(config.mcp)
+    agent.set_mcp_tools(mcp_tools)
+    runtime = create_runtime(
+        config,
+        sid=sid,
+        headless_mode=True,
+        agent=agent,
+    )
+
+    controller, _ = create_controller(agent, runtime, config)
+
+    event_stream = runtime.event_stream
+
+    usage_metrics = UsageMetrics()
+
+    async def prompt_for_next_task():
+        nonlocal reload_microagents, new_session_requested
+        while True:
+            next_message = await read_prompt_input(config.cli_multiline_input)
+
+            if not next_message.strip():
+                continue
+
+            if next_message == '/exit':
+                confirm_exit = (
+                    cli_confirm('\nTerminate session?', ['Yes, proceed', 'No, dismiss'])
+                    == 0
+                )
+
+                if not confirm_exit:
+                    continue
+
+                event_stream.add_event(
+                    ChangeAgentStateAction(AgentState.STOPPED),
+                    EventSource.ENVIRONMENT,
+                )
+                display_shutdown_message(usage_metrics, sid)
+                return
+            elif next_message == '/help':
+                display_help()
+                continue
+            elif next_message == '/init':
+                if config.runtime == 'local':
+                    init_repo = await init_repository(current_dir)
+                    if init_repo:
+                        event_stream.add_event(
+                            MessageAction(content=REPO_MD_CREATE_PROMPT),
+                            EventSource.USER,
+                        )
+                        reload_microagents = True
+                        return
+                else:
+                    print_formatted_text(
+                        '\nRepository initialization through the CLI is only supported for local runtime.\n'
+                    )
+                continue
+            elif next_message == '/status':
+                display_status(usage_metrics, sid)
+                continue
+            elif next_message == '/new':
+                new_session_requested = (
+                    cli_confirm(
+                        '\nCurrent session will be terminated and you will lose the conversation history.\n\nContinue?',
+                        ['Yes, proceed', 'No, dismiss'],
+                    )
+                    == 0
+                )
+
+                if not new_session_requested:
+                    continue
+
+                event_stream.add_event(
+                    ChangeAgentStateAction(AgentState.STOPPED),
+                    EventSource.ENVIRONMENT,
+                )
+
+                display_shutdown_message(usage_metrics, sid)
+                return
+            elif next_message == '/settings':
+                modify_settings = display_settings(config)
+
+                if modify_settings == 0:
+                    new_session_requested = await modify_llm_settings_basic(
+                        config, settings_store
+                    )
+                elif modify_settings == 1:
+                    new_session_requested = await modify_llm_settings_advanced(
+                        config, settings_store
+                    )
+                elif modify_settings == 2:
+                    print_formatted_text('This feature is not available')
+
+                if new_session_requested:
+                    event_stream.add_event(
+                        ChangeAgentStateAction(AgentState.STOPPED),
+                        EventSource.ENVIRONMENT,
+                    )
+                    display_shutdown_message(usage_metrics, sid)
+                    return
+
+                continue
+
+            action = MessageAction(content=next_message)
+            event_stream.add_event(action, EventSource.USER)
+            return
+
+    async def on_event_async(event: Event) -> None:
+        nonlocal reload_microagents
+        display_event(event, config)
+        update_usage_metrics(event, usage_metrics)
+
+        if isinstance(event, AgentStateChangedObservation):
+            if event.agent_state in [
+                AgentState.AWAITING_USER_INPUT,
+                AgentState.FINISHED,
+            ]:
+                # Reload microagents after initialization of repo.md
+                if reload_microagents:
+                    microagents: list[BaseMicroagent] = (
+                        runtime.get_microagents_from_selected_repo(None)
+                    )
+                    memory.load_user_workspace_microagents(microagents)
+                    reload_microagents = False
+                await prompt_for_next_task()
+
+            if event.agent_state == AgentState.AWAITING_USER_CONFIRMATION:
+                user_confirmed = await read_confirmation_input()
+                if user_confirmed:
+                    event_stream.add_event(
+                        ChangeAgentStateAction(AgentState.USER_CONFIRMED),
+                        EventSource.USER,
+                    )
+                else:
+                    event_stream.add_event(
+                        ChangeAgentStateAction(AgentState.USER_REJECTED),
+                        EventSource.USER,
+                    )
+
+    def on_event(event: Event) -> None:
+        loop.create_task(on_event_async(event))
+
+    event_stream.subscribe(EventStreamSubscriber.MAIN, on_event, str(uuid4()))
+
+    await runtime.connect()
+
+    # Initialize repository if needed
+    repo_directory = None
+    if config.sandbox.selected_repo:
+        repo_directory = initialize_repository_for_runtime(
+            runtime,
+            selected_repository=config.sandbox.selected_repo,
+        )
+
+    # when memory is created, it will load the microagents from the selected repository
+    memory = create_memory(
+        runtime=runtime,
+        event_stream=event_stream,
+        sid=sid,
+        selected_repository=config.sandbox.selected_repo,
+        repo_directory=repo_directory,
+    )
+
+    # Clear loading animation
+    is_loaded.set()
+
+    if not check_folder_security_agreement(current_dir):
+        # User rejected, exit application
+        return False
+
+    # Clear the terminal
+    clear()
+
+    # Show OpenHands banner and session ID
+    display_banner(session_id=sid, is_loaded=is_loaded)
+
+    # Show OpenHands welcome
+    display_welcome_message()
+
+    if initial_user_action:
+        # If there's an initial user action, enqueue it and do not prompt again
+        event_stream.add_event(initial_user_action, EventSource.USER)
+    else:
+        # Otherwise prompt for the user's first message right away
+        asyncio.create_task(prompt_for_next_task())
+
+    await run_agent_until_done(
+        controller, runtime, memory, [AgentState.STOPPED, AgentState.ERROR]
+    )
+
+    await cleanup_session(loop, agent, runtime, controller)
+
+    return new_session_requested
+
+
 async def main(loop: asyncio.AbstractEventLoop):
     """Runs the agent in CLI mode."""
-
-    reload_microagents = False
-
-    new_session_requested = False
 
     args = parse_arguments()
 
@@ -1090,197 +1302,6 @@ async def main(loop: asyncio.AbstractEventLoop):
     if not current_dir:
         raise ValueError('Workspace base directory not specified')
 
-    async def run_session(initial_user_action: Optional[Action] = None) -> bool:
-        nonlocal reload_microagents, new_session_requested
-        new_session_requested = False
-
-        sid = str(uuid4())
-        is_loaded = asyncio.Event()
-
-        # Show OpenHands banner and session ID
-        display_banner(session_id=sid, is_loaded=is_loaded)
-
-        # Show Initialization loader
-        loop.run_in_executor(
-            None, display_initialization_animation, 'Initializing...', is_loaded
-        )
-
-        agent = create_agent(config)
-        mcp_tools = await fetch_mcp_tools_from_config(config.mcp)
-        agent.set_mcp_tools(mcp_tools)
-        runtime = create_runtime(
-            config,
-            sid=sid,
-            headless_mode=True,
-            agent=agent,
-        )
-
-        controller, _ = create_controller(agent, runtime, config)
-
-        event_stream = runtime.event_stream
-
-        usage_metrics = UsageMetrics()
-
-        async def prompt_for_next_task():
-            nonlocal reload_microagents, new_session_requested
-            while True:
-                next_message = await read_prompt_input(config.cli_multiline_input)
-
-                if not next_message.strip():
-                    continue
-
-                if next_message == '/exit':
-                    event_stream.add_event(
-                        ChangeAgentStateAction(AgentState.STOPPED),
-                        EventSource.ENVIRONMENT,
-                    )
-                    display_shutdown_message(usage_metrics, sid)
-                    return
-                elif next_message == '/help':
-                    display_help()
-                    continue
-                elif next_message == '/init':
-                    if config.runtime == 'local':
-                        init_repo = await init_repository(current_dir)
-                        if init_repo:
-                            event_stream.add_event(
-                                MessageAction(content=REPO_MD_CREATE_PROMPT),
-                                EventSource.USER,
-                            )
-                            reload_microagents = True
-                            return
-                    else:
-                        print_formatted_text(
-                            '\nRepository initialization through the CLI is only supported for local runtime.\n'
-                        )
-                    continue
-                elif next_message == '/status':
-                    display_status(usage_metrics, sid)
-                    continue
-                elif next_message == '/new':
-                    new_session_requested = True
-
-                    event_stream.add_event(
-                        ChangeAgentStateAction(AgentState.STOPPED),
-                        EventSource.ENVIRONMENT,
-                    )
-
-                    display_shutdown_message(usage_metrics, sid)
-                    return
-                elif next_message == '/settings':
-                    modify_settings = display_settings(config)
-
-                    if modify_settings == 0:
-                        new_session_requested = await modify_llm_settings_basic(
-                            config, settings_store
-                        )
-                    elif modify_settings == 1:
-                        new_session_requested = await modify_llm_settings_advanced(
-                            config, settings_store
-                        )
-                    elif modify_settings == 2:
-                        print_formatted_text('This feature is not available')
-
-                    if new_session_requested:
-                        event_stream.add_event(
-                            ChangeAgentStateAction(AgentState.STOPPED),
-                            EventSource.ENVIRONMENT,
-                        )
-                        return
-
-                    continue
-
-                action = MessageAction(content=next_message)
-                event_stream.add_event(action, EventSource.USER)
-                return
-
-        async def on_event_async(event: Event) -> None:
-            nonlocal reload_microagents
-            display_event(event, config)
-            update_usage_metrics(event, usage_metrics)
-
-            if isinstance(event, AgentStateChangedObservation):
-                if event.agent_state in [
-                    AgentState.AWAITING_USER_INPUT,
-                    AgentState.FINISHED,
-                ]:
-                    # Reload microagents after initialization of repo.md
-                    if reload_microagents:
-                        microagents: list[BaseMicroagent] = (
-                            runtime.get_microagents_from_selected_repo(None)
-                        )
-                        memory.load_user_workspace_microagents(microagents)
-                        reload_microagents = False
-                    await prompt_for_next_task()
-
-                if event.agent_state == AgentState.AWAITING_USER_CONFIRMATION:
-                    user_confirmed = await read_confirmation_input()
-                    if user_confirmed:
-                        event_stream.add_event(
-                            ChangeAgentStateAction(AgentState.USER_CONFIRMED),
-                            EventSource.USER,
-                        )
-                    else:
-                        event_stream.add_event(
-                            ChangeAgentStateAction(AgentState.USER_REJECTED),
-                            EventSource.USER,
-                        )
-
-        def on_event(event: Event) -> None:
-            loop.create_task(on_event_async(event))
-
-        event_stream.subscribe(EventStreamSubscriber.MAIN, on_event, str(uuid4()))
-
-        await runtime.connect()
-
-        # Initialize repository if needed
-        repo_directory = None
-        if config.sandbox.selected_repo:
-            repo_directory = initialize_repository_for_runtime(
-                runtime,
-                selected_repository=config.sandbox.selected_repo,
-            )
-
-        # when memory is created, it will load the microagents from the selected repository
-        memory = create_memory(
-            runtime=runtime,
-            event_stream=event_stream,
-            sid=sid,
-            selected_repository=config.sandbox.selected_repo,
-            repo_directory=repo_directory,
-        )
-
-        # Clear loading animation
-        is_loaded.set()
-
-        if not check_folder_security_agreement(current_dir):
-            # User rejected, exit application
-            return False
-
-        # Clear the terminal
-        clear()
-
-        # Show OpenHands banner and session ID
-        display_banner(session_id=sid, is_loaded=is_loaded)
-
-        # Show OpenHands welcome
-        display_welcome_message()
-
-        if initial_user_action:
-            # If there's an initial user action, enqueue it and do not prompt again
-            event_stream.add_event(initial_user_action, EventSource.USER)
-        else:
-            # Otherwise prompt for the user's first message right away
-            asyncio.create_task(prompt_for_next_task())
-
-        await run_agent_until_done(
-            controller, runtime, memory, [AgentState.STOPPED, AgentState.ERROR]
-        )
-
-        await cleanup_session(loop, agent, runtime, controller)
-
-        return new_session_requested
-
     # Read task from file, CLI args, or stdin
     task_str = read_task(args, config.cli_multiline_input)
 
@@ -1288,11 +1309,15 @@ async def main(loop: asyncio.AbstractEventLoop):
     initial_user_action = MessageAction(content=task_str) if task_str else None
 
     # Run the first session
-    new_session_requested = await run_session(initial_user_action)
+    new_session_requested = await run_session(
+        loop, config, settings_store, current_dir, initial_user_action
+    )
 
     # If a new session was requested, run it
     while new_session_requested:
-        new_session_requested = await run_session()
+        new_session_requested = await run_session(
+            loop, config, settings_store, current_dir, None
+        )
 
 
 if __name__ == '__main__':
