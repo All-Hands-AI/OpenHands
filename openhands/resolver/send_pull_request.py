@@ -36,7 +36,7 @@ def apply_patch(repo_dir: str, patch: str) -> None:
     diffs = parse_patch(patch)
     for diff in diffs:
         if not diff.header.new_path:
-            print('Warning: Could not determine file to patch')
+            logger.warning('Could not determine file to patch')
             continue
 
         # Remove both "a/" and "b/" prefixes from paths
@@ -56,7 +56,7 @@ def apply_patch(repo_dir: str, patch: str) -> None:
             assert old_path is not None
             if os.path.exists(old_path):
                 os.remove(old_path)
-                print(f'Deleted file: {old_path}')
+                logger.info(f'Deleted file: {old_path}')
             continue
 
         # Handle file rename
@@ -106,7 +106,7 @@ def apply_patch(repo_dir: str, patch: str) -> None:
             split_content = []
 
         if diff.changes is None:
-            print(f'Warning: No changes to apply for {old_path}')
+            logger.warning(f'No changes to apply for {old_path}')
             continue
 
         new_content = apply_diff(diff, split_content)
@@ -119,7 +119,7 @@ def apply_patch(repo_dir: str, patch: str) -> None:
             for line in new_content:
                 print(line, file=f)
 
-    print('Patch applied successfully')
+    logger.info('Patch applied successfully')
 
 
 def initialize_repo(
@@ -143,7 +143,7 @@ def initialize_repo(
         shutil.rmtree(dest_dir)
 
     shutil.copytree(src_dir, dest_dir)
-    print(f'Copied repository to {dest_dir}')
+    logger.info(f'Copied repository to {dest_dir}')
 
     # Checkout the base commit if provided
     if base_commit:
@@ -154,7 +154,7 @@ def initialize_repo(
             text=True,
         )
         if result.returncode != 0:
-            print(f'Error checking out commit: {result.stderr}')
+            logger.info(f'Error checking out commit: {result.stderr}')
             raise RuntimeError('Failed to check out commit')
 
     return dest_dir
@@ -185,14 +185,14 @@ def make_commit(repo_dir: str, issue: Issue, issue_type: str) -> None:
             shell=True,
             check=True,
         )
-        print('Git user configured as openhands')
+        logger.info('Git user configured as openhands')
 
     # Add all changes to the git index
     result = subprocess.run(
         f'git -C {repo_dir} add .', shell=True, capture_output=True, text=True
     )
     if result.returncode != 0:
-        print(f'Error adding files: {result.stderr}')
+        logger.error(f'Error adding files: {result.stderr}')
         raise RuntimeError('Failed to add files to git')
 
     # Check the status of the git index
@@ -205,7 +205,9 @@ def make_commit(repo_dir: str, issue: Issue, issue_type: str) -> None:
 
     # If there are no changes, raise an error
     if not status_result.stdout.strip():
-        print(f'No changes to commit for issue #{issue.number}. Skipping commit.')
+        logger.error(
+            f'No changes to commit for issue #{issue.number}. Skipping commit.'
+        )
         raise RuntimeError('ERROR: Openhands failed to make code changes.')
 
     # Prepare the commit message
@@ -233,6 +235,7 @@ def send_pull_request(
     target_branch: str | None = None,
     reviewer: str | None = None,
     pr_title: str | None = None,
+    base_domain: str | None = None,
 ) -> str:
     """Send a pull request to a GitHub or Gitlab repository.
 
@@ -248,18 +251,25 @@ def send_pull_request(
         target_branch: The target branch to create the pull request against (defaults to repository default branch)
         reviewer: The GitHub or Gitlab username of the reviewer to assign
         pr_title: Custom title for the pull request (optional)
+        base_domain: The base domain for the git server (defaults to "github.com" for GitHub and "gitlab.com" for GitLab)
     """
     if pr_type not in ['branch', 'draft', 'ready']:
         raise ValueError(f'Invalid pr_type: {pr_type}')
 
+    # Determine default base_domain based on platform
+    if base_domain is None:
+        base_domain = 'github.com' if platform == Platform.GITHUB else 'gitlab.com'
+
     handler = None
     if platform == Platform.GITHUB:
         handler = ServiceContextIssue(
-            GithubIssueHandler(issue.owner, issue.repo, token, username), None
+            GithubIssueHandler(issue.owner, issue.repo, token, username, base_domain),
+            None,
         )
     else:  # platform == Platform.GITLAB
         handler = ServiceContextIssue(
-            GitlabIssueHandler(issue.owner, issue.repo, token, username), None
+            GitlabIssueHandler(issue.owner, issue.repo, token, username, base_domain),
+            None,
         )
 
     # Create a new branch with a unique name
@@ -269,7 +279,7 @@ def send_pull_request(
     )
 
     # Get the default branch or use specified target branch
-    print('Getting base branch...')
+    logger.info('Getting base branch...')
     if target_branch:
         base_branch = target_branch
         exists = handler.branch_exists(branch_name=target_branch)
@@ -277,17 +287,17 @@ def send_pull_request(
             raise ValueError(f'Target branch {target_branch} does not exist')
     else:
         base_branch = handler.get_default_branch_name()
-    print(f'Base branch: {base_branch}')
+    logger.info(f'Base branch: {base_branch}')
 
     # Create and checkout the new branch
-    print('Creating new branch...')
+    logger.info('Creating new branch...')
     result = subprocess.run(
         ['git', '-C', patch_dir, 'checkout', '-b', branch_name],
         capture_output=True,
         text=True,
     )
     if result.returncode != 0:
-        print(f'Error creating new branch: {result.stderr}')
+        logger.error(f'Error creating new branch: {result.stderr}')
         raise RuntimeError(
             f'Failed to create a new branch {branch_name} in {patch_dir}:'
         )
@@ -297,7 +307,7 @@ def send_pull_request(
 
     handler._strategy.set_owner(push_owner)
 
-    print('Pushing changes...')
+    logger.info('Pushing changes...')
     push_url = handler.get_clone_url()
     result = subprocess.run(
         ['git', '-C', patch_dir, 'push', push_url, branch_name],
@@ -305,7 +315,7 @@ def send_pull_request(
         text=True,
     )
     if result.returncode != 0:
-        print(f'Error pushing changes: {result.stderr}')
+        logger.error(f'Error pushing changes: {result.stderr}')
         raise RuntimeError('Failed to push changes to the remote repository')
 
     # Prepare the PR data: title and body
@@ -317,6 +327,12 @@ def send_pull_request(
         pr_body += f'\n\n{additional_message}'
     pr_body += '\n\nAutomatic fix generated by [OpenHands](https://github.com/All-Hands-AI/OpenHands/) 🙌'
 
+    # For cross repo pull request, we need to send head parameter like fork_owner:branch as per git documentation here : https://docs.github.com/en/rest/pulls/pulls?apiVersion=2022-11-28#create-a-pull-request
+    # head parameter usage : The name of the branch where your changes are implemented. For cross-repository pull requests in the same network, namespace head with a user like this: username:branch.
+    if fork_owner and platform == Platform.GITHUB:
+        head_branch = f'{fork_owner}:{branch_name}'
+    else:
+        head_branch = branch_name
     # If we are not sending a PR, we can finish early and return the
     # URL for the user to open a PR manually
     if pr_type == 'branch':
@@ -326,7 +342,7 @@ def send_pull_request(
         data = {
             'title': final_pr_title,
             ('body' if platform == Platform.GITHUB else 'description'): pr_body,
-            ('head' if platform == Platform.GITHUB else 'source_branch'): branch_name,
+            ('head' if platform == Platform.GITHUB else 'source_branch'): head_branch,
             ('base' if platform == Platform.GITHUB else 'target_branch'): base_branch,
             'draft': pr_type == 'draft',
         }
@@ -334,13 +350,12 @@ def send_pull_request(
         pr_data = handler.create_pull_request(data)
         url = pr_data['html_url']
 
-        print(pr_data)
         # Request review if a reviewer was specified
         if reviewer and pr_type != 'branch':
             number = pr_data['number']
             handler.request_reviewers(reviewer, number)
 
-    print(
+    logger.info(
         f'{pr_type} created: {url}\n\n--- Title: {final_pr_title}\n\n--- Body:\n{pr_body}'
     )
 
@@ -356,6 +371,7 @@ def update_existing_pull_request(
     llm_config: LLMConfig,
     comment_message: str | None = None,
     additional_message: str | None = None,
+    base_domain: str | None = None,
 ) -> str:
     """Update an existing pull request with the new patches.
 
@@ -368,17 +384,24 @@ def update_existing_pull_request(
         llm_config: The LLM configuration to use for summarizing changes.
         comment_message: The main message to post as a comment on the PR.
         additional_message: The additional messages to post as a comment on the PR in json list format.
+        base_domain: The base domain for the git server (defaults to "github.com" for GitHub and "gitlab.com" for GitLab)
     """
     # Set up headers and base URL for GitHub or GitLab API
+
+    # Determine default base_domain based on platform
+    if base_domain is None:
+        base_domain = 'github.com' if platform == Platform.GITHUB else 'gitlab.com'
 
     handler = None
     if platform == Platform.GITHUB:
         handler = ServiceContextIssue(
-            GithubIssueHandler(issue.owner, issue.repo, token, username), llm_config
+            GithubIssueHandler(issue.owner, issue.repo, token, username, base_domain),
+            llm_config,
         )
     else:  # platform == Platform.GITLAB
         handler = ServiceContextIssue(
-            GitlabIssueHandler(issue.owner, issue.repo, token, username), llm_config
+            GitlabIssueHandler(issue.owner, issue.repo, token, username, base_domain),
+            llm_config,
         )
 
     branch_name = issue.head_branch
@@ -393,11 +416,11 @@ def update_existing_pull_request(
     # Push the changes to the existing branch
     result = subprocess.run(push_command, shell=True, capture_output=True, text=True)
     if result.returncode != 0:
-        print(f'Error pushing changes: {result.stderr}')
+        logger.error(f'Error pushing changes: {result.stderr}')
         raise RuntimeError('Failed to push changes to the remote repository')
 
     pr_url = handler.get_pull_url(issue.number)
-    print(f'Updated pull request {pr_url} with new patches.')
+    logger.info(f'Updated pull request {pr_url} with new patches.')
 
     # Generate a summary of all comment success indicators for PR message
     if not comment_message and additional_message:
@@ -461,9 +484,13 @@ def process_single_issue(
     target_branch: str | None = None,
     reviewer: str | None = None,
     pr_title: str | None = None,
+    base_domain: str | None = None,
 ) -> None:
+    # Determine default base_domain based on platform
+    if base_domain is None:
+        base_domain = 'github.com' if platform == Platform.GITHUB else 'gitlab.com'
     if not resolver_output.success and not send_on_failure:
-        print(
+        logger.info(
             f'Issue {resolver_output.issue.number} was not successfully resolved. Skipping PR creation.'
         )
         return
@@ -500,6 +527,7 @@ def process_single_issue(
             patch_dir=patched_repo_dir,
             additional_message=resolver_output.result_explanation,
             llm_config=llm_config,
+            base_domain=base_domain,
         )
     else:
         send_pull_request(
@@ -514,6 +542,7 @@ def process_single_issue(
             target_branch=target_branch,
             reviewer=reviewer,
             pr_title=pr_title,
+            base_domain=base_domain,
         )
 
 
@@ -525,11 +554,15 @@ def process_all_successful_issues(
     pr_type: str,
     llm_config: LLMConfig,
     fork_owner: str | None,
+    base_domain: str | None = None,
 ) -> None:
+    # Determine default base_domain based on platform
+    if base_domain is None:
+        base_domain = 'github.com' if platform == Platform.GITHUB else 'gitlab.com'
     output_path = os.path.join(output_dir, 'output.jsonl')
     for resolver_output in load_all_resolver_outputs(output_path):
         if resolver_output.success:
-            print(f'Processing issue {resolver_output.issue.number}')
+            logger.info(f'Processing issue {resolver_output.issue.number}')
             process_single_issue(
                 output_dir,
                 resolver_output,
@@ -541,6 +574,9 @@ def process_all_successful_issues(
                 fork_owner,
                 False,
                 None,
+                None,
+                None,
+                base_domain,
             )
 
 
@@ -626,6 +662,12 @@ def main() -> None:
         help='Custom title for the pull request',
         default=None,
     )
+    parser.add_argument(
+        '--base-domain',
+        type=str,
+        default=None,
+        help='Base domain for the git server (defaults to "github.com" for GitHub and "gitlab.com" for GitLab)',
+    )
     my_args = parser.parse_args()
 
     token = my_args.token or os.getenv('GITHUB_TOKEN') or os.getenv('GITLAB_TOKEN')
@@ -635,7 +677,7 @@ def main() -> None:
         )
     username = my_args.username if my_args.username else os.getenv('GIT_USERNAME')
 
-    platform = identify_token(token)
+    platform = identify_token(token, None, my_args.base_domain)
     if platform == Platform.INVALID:
         raise ValueError('Token is invalid.')
 
@@ -660,6 +702,7 @@ def main() -> None:
             my_args.pr_type,
             llm_config,
             my_args.fork_owner,
+            my_args.base_domain,
         )
     else:
         if not my_args.issue_number.isdigit():
@@ -682,6 +725,7 @@ def main() -> None:
             my_args.target_branch,
             my_args.reviewer,
             my_args.pr_title,
+            my_args.base_domain,
         )
 
 

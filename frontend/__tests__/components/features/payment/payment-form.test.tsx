@@ -20,11 +20,15 @@ describe("PaymentForm", () => {
     });
 
   beforeEach(() => {
-    // useBalance hook will return the balance only if the APP_MODE is "saas"
+    // useBalance hook will return the balance only if the APP_MODE is "saas" and the billing feature is enabled
     getConfigSpy.mockResolvedValue({
       APP_MODE: "saas",
       GITHUB_CLIENT_ID: "123",
       POSTHOG_CLIENT_KEY: "456",
+      FEATURE_FLAGS: {
+        ENABLE_BILLING: true,
+        HIDE_LLM_SETTINGS: false,
+      },
     });
   });
 
@@ -59,7 +63,7 @@ describe("PaymentForm", () => {
     const topUpInput = await screen.findByTestId("top-up-input");
     await user.type(topUpInput, "50.12");
 
-    const topUpButton = screen.getByText("Add credit");
+    const topUpButton = screen.getByText("PAYMENT$ADD_CREDIT");
     await user.click(topUpButton);
 
     expect(createCheckoutSessionSpy).toHaveBeenCalledWith(50.12);
@@ -72,7 +76,7 @@ describe("PaymentForm", () => {
     const topUpInput = await screen.findByTestId("top-up-input");
     await user.type(topUpInput, "50.125456");
 
-    const topUpButton = screen.getByText("Add credit");
+    const topUpButton = screen.getByText("PAYMENT$ADD_CREDIT");
     await user.click(topUpButton);
 
     expect(createCheckoutSessionSpy).toHaveBeenCalledWith(50.13);
@@ -82,7 +86,7 @@ describe("PaymentForm", () => {
     const user = userEvent.setup();
     renderPaymentForm();
 
-    const topUpButton = screen.getByText("Add credit");
+    const topUpButton = screen.getByText("PAYMENT$ADD_CREDIT");
     expect(topUpButton).toBeDisabled();
 
     const topUpInput = await screen.findByTestId("top-up-input");
@@ -98,7 +102,7 @@ describe("PaymentForm", () => {
     const topUpInput = await screen.findByTestId("top-up-input");
     await user.type(topUpInput, "50.12");
 
-    const topUpButton = screen.getByText("Add credit");
+    const topUpButton = screen.getByText("PAYMENT$ADD_CREDIT");
     await user.click(topUpButton);
 
     expect(topUpButton).toBeDisabled();
@@ -112,7 +116,7 @@ describe("PaymentForm", () => {
       const topUpInput = await screen.findByTestId("top-up-input");
       await user.type(topUpInput, "-50.12");
 
-      const topUpButton = screen.getByText("Add credit");
+      const topUpButton = screen.getByText("PAYMENT$ADD_CREDIT");
       await user.click(topUpButton);
 
       expect(createCheckoutSessionSpy).not.toHaveBeenCalled();
@@ -125,7 +129,7 @@ describe("PaymentForm", () => {
       const topUpInput = await screen.findByTestId("top-up-input");
       await user.type(topUpInput, "     ");
 
-      const topUpButton = screen.getByText("Add credit");
+      const topUpButton = screen.getByText("PAYMENT$ADD_CREDIT");
       await user.click(topUpButton);
 
       expect(createCheckoutSessionSpy).not.toHaveBeenCalled();
@@ -138,7 +142,7 @@ describe("PaymentForm", () => {
       const topUpInput = await screen.findByTestId("top-up-input");
       await user.type(topUpInput, "abc");
 
-      const topUpButton = screen.getByText("Add credit");
+      const topUpButton = screen.getByText("PAYMENT$ADD_CREDIT");
       await user.click(topUpButton);
 
       expect(createCheckoutSessionSpy).not.toHaveBeenCalled();
@@ -151,7 +155,7 @@ describe("PaymentForm", () => {
       const topUpInput = await screen.findByTestId("top-up-input");
       await user.type(topUpInput, "9"); // test assumes the minimum is 10
 
-      const topUpButton = screen.getByText("Add credit");
+      const topUpButton = screen.getByText("PAYMENT$ADD_CREDIT");
       await user.click(topUpButton);
 
       expect(createCheckoutSessionSpy).not.toHaveBeenCalled();

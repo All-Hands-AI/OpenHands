@@ -44,14 +44,14 @@ sudo apt-get install -y \
 1. Find the latest Swift version for Debian:
 
    Go to the [Swift.org download page](https://www.swift.org/download/) to find the latest Swift version compatible with Debian 12 (Bookworm).
-   
+
    Look for a tarball named something like `swift-<VERSION>-RELEASE-debian12.tar.gz` (e.g., `swift-6.0.3-RELEASE-debian12.tar.gz`).
-   
+
    The URL pattern is typically:
    ```
    https://download.swift.org/swift-<VERSION>-release/debian12/swift-<VERSION>-RELEASE/swift-<VERSION>-RELEASE-debian12.tar.gz
    ```
-   
+
    Where `<VERSION>` is the Swift version number (e.g., `6.0.3`).
 
 2. Download the Swift binary for Debian 12:

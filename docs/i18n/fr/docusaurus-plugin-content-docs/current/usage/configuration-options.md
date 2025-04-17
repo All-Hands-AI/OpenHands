@@ -11,41 +11,39 @@ la priorité.
 
 # Table des matières
 
-1. [Configuration de base](#configuration-de-base)
-   - [Clés API](#clés-api)
-   - [Espace de travail](#espace-de-travail)
-   - [Débogage et journalisation](#débogage-et-journalisation)
-   - [Gestion des sessions](#gestion-des-sessions)
-   - [Trajectoires](#trajectoires)
-   - [Stockage de fichiers](#stockage-de-fichiers)
-   - [Gestion des tâches](#gestion-des-tâches)
-   - [Configuration du bac à sable](#configuration-du-bac-à-sable)
-   - [Divers](#divers)
-2. [Configuration LLM](#configuration-llm)
-   - [Informations d'identification AWS](#informations-didentification-aws)
-   - [Configuration de l'API](#configuration-de-lapi)
-   - [Fournisseur LLM personnalisé](#fournisseur-llm-personnalisé)
+1. [Configuration de base](#core-configuration)
+   - [Clés API](#api-keys)
+   - [Espace de travail](#workspace)
+   - [Débogage et journalisation](#debugging-and-logging)
+   - [Trajectoires](#trajectories)
+   - [Stockage de fichiers](#file-store)
+   - [Gestion des tâches](#task-management)
+   - [Configuration du bac à sable](#sandbox-configuration)
+   - [Divers](#miscellaneous)
+2. [Configuration LLM](#llm-configuration)
+   - [Informations d'identification AWS](#aws-credentials)
+   - [Configuration de l'API](#api-configuration)
+   - [Fournisseur LLM personnalisé](#custom-llm-provider)
    - [Embeddings](#embeddings)
-   - [Gestion des messages](#gestion-des-messages)
-   - [Sélection du modèle](#sélection-du-modèle)
-   - [Nouvelles tentatives](#nouvelles-tentatives)
-   - [Options avancées](#options-avancées)
-3. [Configuration de l'agent](#configuration-de-lagent)
-   - [Configuration du micro-agent](#configuration-du-micro-agent)
-   - [Configuration de la mémoire](#configuration-de-la-mémoire)
-   - [Configuration LLM](#configuration-llm-2)
-   - [Configuration de l'espace d'action](#configuration-de-lespace-daction)
-   - [Utilisation du micro-agent](#utilisation-du-micro-agent)
-4. [Configuration du bac à sable](#configuration-du-bac-à-sable-2)
-   - [Exécution](#exécution)
-   - [Image de conteneur](#image-de-conteneur)
-   - [Mise en réseau](#mise-en-réseau)
-   - [Linting et plugins](#linting-et-plugins)
-   - [Dépendances et environnement](#dépendances-et-environnement)
-   - [Évaluation](#évaluation)
-5. [Configuration de sécurité](#configuration-de-sécurité)
-   - [Mode de confirmation](#mode-de-confirmation)
-   - [Analyseur de sécurité](#analyseur-de-sécurité)
+   - [Gestion des messages](#message-handling)
+   - [Sélection du modèle](#model-selection)
+   - [Nouvelles tentatives](#retrying)
+   - [Options avancées](#advanced-options)
+3. [Configuration de l'agent](#agent-configuration)
+   - [Configuration de la mémoire](#memory-configuration)
+   - [Configuration LLM](#llm-configuration-1)
+   - [Configuration de l'espace d'action](#actionspace-configuration)
+   - [Utilisation du micro-agent](#microagent-usage)
+4. [Configuration du bac à sable](#sandbox-configuration-1)
+   - [Exécution](#execution)
+   - [Image de conteneur](#container-image)
+   - [Mise en réseau](#networking)
+   - [Linting et plugins](#linting-and-plugins)
+   - [Dépendances et environnement](#dependencies-and-environment)
+   - [Évaluation](#evaluation)
+5. [Configuration de sécurité](#security-configuration)
+   - [Mode de confirmation](#confirmation-mode)
+   - [Analyseur de sécurité](#security-analyzer)
 
 ---
 
@@ -333,12 +331,6 @@ Pour les configurations de développement, vous pouvez également définir des c
 
 Les options de configuration de l'agent sont définies dans les sections `[agent]` et `[agent.<agent_name>]` du fichier `config.toml`.
 
-**Configuration du micro-agent**
-- `micro_agent_name`
-  - Type : `str`
-  - Valeur par défaut : `""`
-  - Description : Nom du micro-agent à utiliser pour cet agent
-
 **Configuration de la mémoire**
 - `memory_enabled`
   - Type : `bool`
@@ -362,12 +354,12 @@ Les options de configuration de l'agent sont définies dans les sections `[agent
   - Valeur par défaut : `true`
   - Description : Si l'appel de fonction est activé
 
-- `codeact_enable_browsing`
+- `enable_browsing`
   - Type : `bool`
   - Valeur par défaut : `false`
   - Description : Si le délégué de navigation est activé dans l'espace d'action (fonctionne uniquement avec l'appel de fonction)
 
-- `codeact_enable_llm_editor`
+- `enable_llm_editor`
   - Type : `bool`
   - Valeur par défaut : `false`
   - Description : Si l'éditeur LLM est activé dans l'espace d'action (fonctionne uniquement avec l'appel de fonction)

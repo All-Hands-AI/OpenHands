@@ -34,7 +34,6 @@ from openhands.utils.async_utils import call_async_from_sync
 
 FAKE_RESPONSES = {
     'CodeActAgent': fake_user_response,
-    'DelegatorAgent': fake_user_response,
     'VisualBrowsingAgent': fake_user_response,
 }
 
@@ -63,9 +62,9 @@ def get_config(
         )
     )
     agent_config = AgentConfig(
-        codeact_enable_jupyter=True,
-        codeact_enable_browsing=True,
-        codeact_enable_llm_editor=False,
+        enable_jupyter=True,
+        enable_browsing=True,
+        enable_llm_editor=False,
     )
     config.set_agent_config(agent_config)
     return config

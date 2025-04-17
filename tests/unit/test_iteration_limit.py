@@ -16,11 +16,24 @@ class DummyAgent:
         self.llm = type(
             'DummyLLM',
             (),
-            {'metrics': Metrics()},
+            {
+                'metrics': Metrics(),
+                'config': type('DummyConfig', (), {'max_message_chars': 10000})(),
+            },
         )()
 
     def reset(self):
         pass
+
+    def get_system_message(self):
+        # Return a proper SystemMessageAction for the refactored system message handling
+        from openhands.events.action.message import SystemMessageAction
+        from openhands.events.event import EventSource
+
+        system_message = SystemMessageAction(content='This is a dummy system message')
+        system_message._source = EventSource.AGENT
+        system_message._id = -1  # Set invalid ID to avoid the ID check
+        return system_message
 
 
 @pytest.mark.asyncio

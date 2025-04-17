@@ -1,6 +1,6 @@
 ---
-name: Feature Request
-about: Suggest an idea for OpenHands features
+name: Feature Request or Enhancement
+about: Suggest an idea for an OpenHands feature or enhancement
 title: ''
 labels: 'enhancement'
 assignees: ''
@@ -9,10 +9,9 @@ assignees: ''
 
 **What problem or use case are you trying to solve?**
 
-**Describe the UX of the solution you'd like**
-
-**Do you have thoughts on the technical implementation?**
-
-**Describe alternatives you've considered**
+**Describe the UX or technical implementation you have in mind**
 
 **Additional context**
+
+
+### If you find this feature request or enhancement useful, make sure to add a 👍 to the issue

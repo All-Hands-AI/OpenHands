@@ -25,17 +25,19 @@ export function HomepageHeader() {
           padding: '0rem 0rem 1rem'
         }}>
         <p style={{ margin: '0' }}>
-          Use AI to tackle the toil in your backlog. Our agents have all the same tools as a human developer: they can modify code, run commands, browse the web,
-          call APIs, and yes-even copy code snippets from StackOverflow.
+          <Translate>
+            Use AI to tackle the toil in your backlog. Our agents have all the same tools as a human developer: they can modify code, run commands, browse the web,
+            call APIs, and yes-even copy code snippets from StackOverflow.
+          </Translate>
           <br/>
-          <Link to="https://docs.all-hands.dev/modules/usage/installation"
+          <Link to="/modules/usage/installation"
             style={{
               textDecoration: 'underline',
               display: 'inline-block',
               marginTop: '0.5rem'
             }}
           >
-            Get started with OpenHands.
+            <Translate>Get started with OpenHands.</Translate>
           </Link>
         </p>
       </div>
@@ -46,7 +48,7 @@ export function HomepageHeader() {
           <a href="https://codecov.io/github/All-Hands-AI/OpenHands?branch=main"><img alt="CodeCov" src="https://img.shields.io/codecov/c/github/All-Hands-AI/OpenHands?style=for-the-badge&color=blue" /></a>
           <a href="https://github.com/All-Hands-AI/OpenHands/blob/main/LICENSE"><img src="https://img.shields.io/github/license/All-Hands-AI/OpenHands?style=for-the-badge&color=blue" alt="MIT License" /></a>
           <br/>
-          <a href="https://join.slack.com/t/openhands-ai/shared_invite/zt-2ypg5jweb-d~6hObZDbXi_HEL8PDrbHg"><img src="https://img.shields.io/badge/Slack-Join%20Us-red?logo=slack&logoColor=white&style=for-the-badge" alt="Join our Slack community" /></a>
+          <a href="https://join.slack.com/t/openhands-ai/shared_invite/zt-2ngejmfw6-9gW4APWOC9XUp1n~SiQ6iw"><img src="https://img.shields.io/badge/Slack-Join%20Us-red?logo=slack&logoColor=white&style=for-the-badge" alt="Join our Slack community" /></a>
           <a href="https://discord.gg/ESHStjSjD4"><img src="https://img.shields.io/badge/Discord-Join%20Us-purple?logo=discord&logoColor=white&style=for-the-badge" alt="Join our Discord community" /></a>
           <a href="https://github.com/All-Hands-AI/OpenHands/blob/main/CREDITS.md"><img src="https://img.shields.io/badge/Project-Credits-blue?style=for-the-badge&color=FFE165&logo=github&logoColor=white" alt="Credits" /></a>
           <br/>

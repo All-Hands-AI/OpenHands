@@ -121,13 +121,13 @@ Note: OpenHands works best with powerful models like Anthropic's Claude or OpenA
 The resolver can automatically attempt to fix a single issue in your repository using the following command:
 
 ```bash
-python -m openhands.resolver.resolve_issue --repo [OWNER]/[REPO] --issue-number [NUMBER]
+python -m openhands.resolver.resolve_issue --selected-repo [OWNER]/[REPO] --issue-number [NUMBER]
 ```
 
 For instance, if you want to resolve issue #100 in this repo, you would run:
 
 ```bash
-python -m openhands.resolver.resolve_issue --repo all-hands-ai/openhands --issue-number 100
+python -m openhands.resolver.resolve_issue --selected-repo all-hands-ai/openhands --issue-number 100
 ```
 
 The output will be written to the `output/` directory.
@@ -135,19 +135,19 @@ The output will be written to the `output/` directory.
 If you've installed the package from source using poetry, you can use:
 
 ```bash
-poetry run python openhands/resolver/resolve_issue.py --repo all-hands-ai/openhands --issue-number 100
+poetry run python openhands/resolver/resolve_issue.py --selected-repo all-hands-ai/openhands --issue-number 100
 ```
 
 For resolving multiple issues at once (e.g., in a batch process), you can use the `resolve_all_issues` command:
 
 ```bash
-python -m openhands.resolver.resolve_all_issues --repo [OWNER]/[REPO] --issue-numbers [NUMBERS]
+python -m openhands.resolver.resolve_all_issues --selected-repo [OWNER]/[REPO] --issue-numbers [NUMBERS]
 ```
 
 For example:
 
 ```bash
-python -m openhands.resolver.resolve_all_issues --repo all-hands-ai/openhands --issue-numbers 100,101,102
+python -m openhands.resolver.resolve_all_issues --selected-repo all-hands-ai/openhands --issue-numbers 100,101,102
 ```
 
 ## Responding to PR Comments

@@ -10,41 +10,39 @@
 
 # 目录
 
-1. [核心配置](#核心配置)
+1. [核心配置](#core-configuration)
    - [API Keys](#api-keys)
-   - [工作区](#工作区)
-   - [调试和日志记录](#调试和日志记录)
-   - [会话管理](#会话管理)
-   - [轨迹](#轨迹)
-   - [文件存储](#文件存储)
-   - [任务管理](#任务管理)
-   - [沙箱配置](#沙箱配置)
-   - [其他](#其他)
-2. [LLM 配置](#llm-配置)
-   - [AWS 凭证](#aws-凭证)
-   - [API 配置](#api-配置)
-   - [自定义 LLM Provider](#自定义-llm-provider)
+   - [工作区](#workspace)
+   - [调试和日志记录](#debugging-and-logging)
+   - [轨迹](#trajectories)
+   - [文件存储](#file-store)
+   - [任务管理](#task-management)
+   - [沙箱配置](#sandbox-configuration)
+   - [其他](#miscellaneous)
+2. [LLM 配置](#llm-configuration)
+   - [AWS 凭证](#aws-credentials)
+   - [API 配置](#api-configuration)
+   - [自定义 LLM Provider](#custom-llm-provider)
    - [Embeddings](#embeddings)
-   - [消息处理](#消息处理)
-   - [模型选择](#模型选择)
-   - [重试](#重试)
-   - [高级选项](#高级选项)
-3. [Agent 配置](#agent-配置)
-   - [Microagent 配置](#microagent-配置)
-   - [内存配置](#内存配置)
-   - [LLM 配置](#llm-配置-2)
-   - [ActionSpace 配置](#actionspace-配置)
-   - [Microagent 使用](#microagent-使用)
-4. [沙箱配置](#沙箱配置-2)
-   - [执行](#执行)
-   - [容器镜像](#容器镜像)
-   - [网络](#网络)
-   - [Linting 和插件](#linting-和插件)
-   - [依赖和环境](#依赖和环境)
-   - [评估](#评估)
-5. [安全配置](#安全配置)
-   - [确认模式](#确认模式)
-   - [安全分析器](#安全分析器)
+   - [消息处理](#message-handling)
+   - [模型选择](#model-selection)
+   - [重试](#retrying)
+   - [高级选项](#advanced-options)
+3. [Agent 配置](#agent-configuration)
+   - [内存配置](#memory-configuration)
+   - [LLM 配置](#llm-configuration-1)
+   - [ActionSpace 配置](#actionspace-configuration)
+   - [Microagent 使用](#microagent-usage)
+4. [沙箱配置](#sandbox-configuration-1)
+   - [执行](#execution)
+   - [容器镜像](#container-image)
+   - [网络](#networking)
+   - [Linting 和插件](#linting-and-plugins)
+   - [依赖和环境](#dependencies-and-environment)
+   - [评估](#evaluation)
+5. [安全配置](#security-configuration)
+   - [确认模式](#confirmation-mode)
+   - [安全分析器](#security-analyzer)
 
 ---
 
@@ -328,12 +326,6 @@ LLM(大语言模型)配置选项在 `config.toml` 文件的 `[llm]` 部分中定
 
 Agent 配置选项在 `config.toml` 文件的 `[agent]` 和 `[agent.<agent_name>]` 部分中定义。
 
-**Microagent 配置**
-- `micro_agent_name`
-  - 类型: `str`
-  - 默认值: `""`
-  - 描述: 用于此 agent 的 micro agent 名称
-
 **内存配置**
 - `memory_enabled`
   - 类型: `bool`
@@ -357,17 +349,17 @@ Agent 配置选项在 `config.toml` 文件的 `[agent]` 和 `[agent.<agent_name>
   - 默认值: `true`
   - 描述: 是否启用函数调用
 
-- `codeact_enable_browsing`
+- `enable_browsing`
   - 类型: `bool`
   - 默认值: `false`
   - 描述: 是否在 action space 中启用浏览代理(仅适用于函数调用)
 
-- `codeact_enable_llm_editor`
+- `enable_llm_editor`
   - 类型: `bool`
   - 默认值: `false`
   - 描述: 是否在 action space 中启用 LLM 编辑器(仅适用于函数调用)
 
-- `codeact_enable_jupyter`
+- `enable_jupyter`
   - 类型: `bool`
   - 默认值: `false`
   - 描述: 是否在 action space 中启用 Jupyter
