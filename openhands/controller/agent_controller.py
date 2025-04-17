@@ -87,7 +87,6 @@ class AgentController:
     parent: 'AgentController | None' = None
     delegate: 'AgentController | None' = None
     _pending_action_info: Tuple[Action, float] | None = None  # (action, timestamp)
-    _pending_action_timeout: float = 60.0  # 1 minute timeout
     _closed: bool = False
     filter_out: ClassVar[tuple[type[Event], ...]] = (
         NullAction,
@@ -903,10 +902,10 @@ class AgentController:
 
     @property
     def _pending_action(self) -> Action | None:
-        """Get the current pending action, checking for timeout.
+        """Get the current pending action with time tracking.
 
         Returns:
-            Action | None: The current pending action, or None if there isn't one or it has timed out.
+            Action | None: The current pending action, or None if there isn't one.
         """
         if self._pending_action_info is None:
             return None
@@ -915,18 +914,15 @@ class AgentController:
         current_time = time.time()
         elapsed_time = current_time - timestamp
 
-        # Check if the pending action has timed out
-        if elapsed_time > self._pending_action_timeout:
+        # Log if the pending action has been active for a long time (but don't clear it)
+        if elapsed_time > 60.0:  # 1 minute - just for logging purposes
             action_id = getattr(action, 'id', 'unknown')
             action_type = type(action).__name__
             self.log(
                 'warning',
-                f'Pending action timed out after {elapsed_time:.2f}s: {action_type} (id={action_id})',
+                f'Pending action active for {elapsed_time:.2f}s: {action_type} (id={action_id})',
                 extra={'msg_type': 'PENDING_ACTION_TIMEOUT'},
             )
-            # Clear the timed-out pending action
-            self._pending_action_info = None
-            return None
 
         return action
 
