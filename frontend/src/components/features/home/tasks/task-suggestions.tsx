@@ -1,5 +1,4 @@
 import { TaskGroup } from "./task-group";
-import { NoSuggestedTasksMessage } from "./no-suggested-tasks-message";
 import { useSuggestedTasks } from "#/hooks/query/use-suggested-tasks";
 import { TaskSuggestionsSkeleton } from "./task-suggestions-skeleton";
 import { useAuth } from "#/context/auth-context";
@@ -18,17 +17,19 @@ export function TaskSuggestions({ filterFor }: TaskSuggestionsProps) {
     ? tasks?.filter((task) => task.title === filterFor)
     : tasks;
 
+  const hasSuggestedTasks = suggestedTasks && suggestedTasks.length > 0;
+
   return (
     <section
       data-testid="task-suggestions"
-      className={cn("flex flex-col w-full", !suggestedTasks && "gap-4")}
+      className={cn("flex flex-col w-full", !hasSuggestedTasks && "gap-6")}
     >
       <h2 className="heading">Suggested Tasks</h2>
 
       <div className="flex flex-col gap-6 overflow-y-auto">
         {!providersAreSet && <ConnectToProviderMessage />}
         {isLoading && <TaskSuggestionsSkeleton />}
-        {suggestedTasks?.length === 0 && <NoSuggestedTasksMessage />}
+        {!hasSuggestedTasks && <p>No tasks available</p>}
         {suggestedTasks?.map((taskGroup, index) => (
           <TaskGroup
             key={index}
