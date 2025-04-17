@@ -236,8 +236,7 @@ class DockerRuntime(ActionExecutionClient):
         # It's faster and simpler.
         self.log('debug', 'Preparing to start container...')
         self.send_status_message('STATUS$PREPARING_CONTAINER')
-        use_host_network = self.config.sandbox.use_host_network
-        used_ports = get_used_ports(self.docker_client, EXECUTION_SERVER_PORT_RANGE[0], EXECUTION_SERVER_PORT_RANGE[1], use_host_network)
+        used_ports = get_used_ports(self.docker_client, EXECUTION_SERVER_PORT_RANGE[0], EXECUTION_SERVER_PORT_RANGE[1])
         used_ports.update(known_used_ports)
         self._host_port = next_available_port(EXECUTION_SERVER_PORT_RANGE[0], EXECUTION_SERVER_PORT_RANGE[1], used_ports)
         self._container_port = self._host_port
@@ -246,6 +245,7 @@ class DockerRuntime(ActionExecutionClient):
         #     self._find_available_port(APP_PORT_RANGE_1),
         #     self._find_available_port(APP_PORT_RANGE_2),
         # ]
+        use_host_network = self.config.sandbox.use_host_network
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
         self.log('debug', f'use_host_network: {use_host_network}')
         network_mode: str | None = 'host' if use_host_network else None
