@@ -6,8 +6,6 @@ from pathlib import Path
 from typing import List, Optional
 from uuid import uuid4
 
-import httpx
-import litellm
 import toml
 from prompt_toolkit import PromptSession, print_formatted_text
 from prompt_toolkit.application import Application
@@ -37,7 +35,6 @@ from openhands.core.config import (
     setup_config_from_args,
 )
 from openhands.core.config.condenser_config import NoOpCondenserConfig
-from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.utils import OH_DEFAULT_AGENT
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.loop import run_agent_until_done
@@ -66,7 +63,6 @@ from openhands.events.observation import (
     FileReadObservation,
 )
 from openhands.io import read_task
-from openhands.llm import bedrock
 from openhands.llm.metrics import Metrics
 from openhands.mcp import fetch_mcp_tools_from_config
 from openhands.memory.condenser.impl.llm_summarizing_condenser import (
@@ -76,6 +72,7 @@ from openhands.microagent.microagent import BaseMicroagent
 from openhands.runtime.base import Runtime
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.settings.file_settings_store import FileSettingsStore
+from openhands.utils.llm import get_supported_llm_models
 
 # Color and styling constants
 COLOR_GOLD = '#FFD700'
@@ -781,43 +778,6 @@ async def cleanup_session(
         logger.error(f'Error during session cleanup: {e}')
 
 
-def get_litellm_models(config: AppConfig):
-    litellm_model_list = litellm.model_list + list(litellm.model_cost.keys())
-    litellm_model_list_without_bedrock = bedrock.remove_error_modelId(
-        litellm_model_list
-    )
-    # TODO: for bedrock, this is using the default config
-    llm_config: LLMConfig = config.get_llm_config()
-    bedrock_model_list = []
-    if (
-        llm_config.aws_region_name
-        and llm_config.aws_access_key_id
-        and llm_config.aws_secret_access_key
-    ):
-        bedrock_model_list = bedrock.list_foundation_models(
-            llm_config.aws_region_name,
-            llm_config.aws_access_key_id.get_secret_value(),
-            llm_config.aws_secret_access_key.get_secret_value(),
-        )
-    model_list = litellm_model_list_without_bedrock + bedrock_model_list
-    for llm_config in config.llms.values():
-        ollama_base_url = llm_config.ollama_base_url
-        if llm_config.model.startswith('ollama'):
-            if not ollama_base_url:
-                ollama_base_url = llm_config.base_url
-        if ollama_base_url:
-            ollama_url = ollama_base_url.strip('/') + '/api/tags'
-            try:
-                ollama_models_list = httpx.get(ollama_url, timeout=3).json()['models']
-                for model in ollama_models_list:
-                    model_list.append('ollama/' + model['name'])
-                break
-            except httpx.HTTPError as e:
-                logger.error(f'Error getting OLLAMA models: {e}')
-
-    return list(sorted(set(model_list)))
-
-
 VERIFIED_PROVIDERS = ['openai', 'azure', 'anthropic', 'deepseek']
 
 VERIFIED_OPENAI_MODELS = [
@@ -904,8 +864,8 @@ def organize_models_and_providers(models):
 async def modify_llm_settings_basic(
     config: AppConfig, settings_store: FileSettingsStore
 ):
-    litellm_model_list = get_litellm_models(config)
-    organized_models = organize_models_and_providers(litellm_model_list)
+    model_list = get_supported_llm_models(config)
+    organized_models = organize_models_and_providers(model_list)
 
     provider_list = list(organized_models.keys())
     verified_providers = [p for p in VERIFIED_PROVIDERS if p in provider_list]
