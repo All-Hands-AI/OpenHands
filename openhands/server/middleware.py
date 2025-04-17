@@ -232,11 +232,11 @@ class CheckUserActivationMiddleware(BaseHTTPMiddleware):
             '/api/options/use-cases/conversations',
             '/api/invitation/',
             '/api/user/status',
+            '/api/invitation/validate',
         ]
 
         self.public_path_patterns = [
             '/api/options/use-cases/conversations/',
-            '/api/invitation/validate/',
         ]
 
     async def dispatch(self, request: Request, call_next):
