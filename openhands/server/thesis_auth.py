@@ -30,7 +30,7 @@ async def get_user_detail_from_thesis_auth_server(bearer_token: str) -> ThesisUs
     }
 
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
+        async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.get(url, headers=headers)
     except httpx.RequestError as exc:
         logger.error(f"Request error while getting user detail: {exc}")
@@ -59,7 +59,7 @@ async def add_invite_code_to_user(code: str, bearer_token: str) ->  dict | None:
     }
 
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
+        async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.post(url, headers=headers, json=payload)
 
         if response.status_code != 200:
@@ -99,7 +99,7 @@ async def handle_thesis_auth_request(
     }
 
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
+        async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.request(
                 method=method.upper(),
                 url=url,
