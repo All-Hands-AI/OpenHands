@@ -1,5 +1,6 @@
 // this file generate by script, don't modify it manually!!!
 export enum I18nKey {
+  TERMINAL$TOOLTIP_READ_ONLY = "TERMINAL$TOOLTIP_READ_ONLY",
   SETTINGS$ADVANCED = "SETTINGS$ADVANCED",
   SETTINGS$BASE_URL = "SETTINGS$BASE_URL",
   SETTINGS$AGENT = "SETTINGS$AGENT",
