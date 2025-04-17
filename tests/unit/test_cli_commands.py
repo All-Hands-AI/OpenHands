@@ -7,7 +7,7 @@ from prompt_toolkit.application import create_app_session
 from prompt_toolkit.input import create_pipe_input
 from prompt_toolkit.output import create_output
 
-from openhands.core.cli import main
+from openhands.core.cli import main, run_session
 from openhands.core.config import AppConfig
 from openhands.core.schema import AgentState
 from openhands.events.action import ChangeAgentStateAction, MessageAction
@@ -63,6 +63,7 @@ def mock_agent():
         mock_agent_instance.config.disabled_microagents = []
         mock_agent_instance.sandbox_plugins = []
         mock_agent_instance.prompt_manager = AsyncMock()
+        mock_agent_instance.set_mcp_tools = Mock(return_value=None)
         mock_create_agent.return_value = mock_agent_instance
         yield mock_agent_instance
 
@@ -197,7 +198,8 @@ async def test_exit_command(
 ):
     buffer = StringIO()
 
-    with patch('openhands.core.cli.manage_openhands_file', return_value=True):
+    with patch('openhands.core.cli.manage_openhands_file', return_value=True), \
+        patch('openhands.core.cli.cli_confirm', return_value=0):
         with patch(
             'openhands.core.cli.check_folder_security_agreement', return_value=True
         ):
@@ -205,7 +207,7 @@ async def test_exit_command(
                 # First prompt call returns /exit
                 mock_prompt.side_effect = ['/exit']
 
-                with patch('openhands.core.cli.shutdown') as mock_shutdown:
+                with patch('openhands.core.cli.display_shutdown_message') as mock_shutdown:
                     with create_app_session(
                         input=create_pipe_input(), output=create_output(stdout=buffer)
                     ):
@@ -366,3 +368,64 @@ async def test_init_command_non_local_runtime(
                             and 'Please explore this repository' in event.content
                         ]
                         assert len(message_events) == 0
+
+
+@pytest.mark.asyncio
+async def test_new_command(
+    mock_runtime, mock_controller, mock_config, mock_agent, mock_memory, mock_read_task
+):
+    buffer = StringIO()
+
+    with patch('openhands.core.cli.manage_openhands_file', return_value=True), \
+         patch('openhands.core.cli.check_folder_security_agreement', return_value=True), \
+         patch('openhands.core.cli.read_prompt_input') as mock_prompt, \
+         patch('openhands.core.cli.cli_confirm', return_value=0), \
+         patch('openhands.core.cli.display_shutdown_message') as mock_shutdown, \
+         patch('openhands.core.cli.clear'), \
+         patch('openhands.core.cli.create_runtime', return_value=mock_runtime), \
+         patch('openhands.core.cli.create_controller', return_value=(mock_controller, None)):
+
+        # First prompt call returns /new, second returns /exit
+        mock_prompt.side_effect = ['/new', '/exit']
+
+        with create_app_session(
+            input=create_pipe_input(), output=create_output(stdout=buffer)
+        ):
+            mock_controller.status_callback = None
+
+            main_task = asyncio.create_task(main(asyncio.get_event_loop()))
+
+            # Simulate agent ready state twice (once for initial start, once after /new)
+            agent_ready_event = AgentStateChangedObservation(
+                agent_state=AgentState.AWAITING_USER_INPUT,
+                content='Agent is ready for user input',
+            )
+            mock_runtime.event_stream.add_event(agent_ready_event, EventSource.AGENT)
+            # Add a small delay to allow the first loop iteration to process /new
+            await asyncio.sleep(0.1)
+            mock_runtime.event_stream.add_event(agent_ready_event, EventSource.AGENT)
+
+            # Let the main loop run (should process /new then /exit)
+            await asyncio.sleep(0.2)
+
+            try:
+                await asyncio.wait_for(main_task, timeout=0.5)
+            except asyncio.TimeoutError:
+                main_task.cancel()
+                try:
+                    await main_task
+                except asyncio.CancelledError:
+                    pass
+
+            # Verify that two STOPPED state change events were sent (one for /new, one for /exit)
+            state_change_events = [
+                event
+                for event, source in mock_runtime.event_stream.events
+                if isinstance(event, ChangeAgentStateAction)
+                and event.agent_state == AgentState.STOPPED
+                and source == EventSource.ENVIRONMENT
+            ]
+            assert len(state_change_events) == 2, f"Expected 2 STOPPED events, got {len(state_change_events)}"
+
+            # Verify shutdown message was called twice
+            assert mock_shutdown.call_count == 2, f"Expected shutdown message twice, called {mock_shutdown.call_count} times"

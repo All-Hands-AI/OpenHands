@@ -132,7 +132,7 @@ async def test_cli_startup_folder_security_confirmation_agree(
         'openhands.core.cli.manage_openhands_file', return_value=False
     ) as mock_manage_openhands_file:
         with patch(
-            'openhands.core.cli.cli_confirm', return_value=True
+            'openhands.core.cli.cli_confirm', return_value=0
         ) as mock_cli_confirm:
             with create_app_session(
                 input=create_pipe_input(), output=create_output(stdout=buffer)
@@ -170,7 +170,8 @@ async def test_cli_startup_folder_security_confirmation_agree(
 
                 # Confirmation prompt
                 mock_manage_openhands_file.assert_any_call('/test')
-                mock_cli_confirm.assert_called_once_with(
+                # Check the first call was for security confirmation
+                mock_cli_confirm.assert_any_call(
                     'Do you wish to continue?', ['Yes, proceed', 'No, exit']
                 )
                 mock_manage_openhands_file.assert_any_call('/test', add_to_trusted=True)
@@ -194,7 +195,7 @@ async def test_cli_startup_folder_security_confirmation_disagree(
         'openhands.core.cli.manage_openhands_file', return_value=False
     ) as mock_manage_openhands_file:
         with patch(
-            'openhands.core.cli.cli_confirm', return_value=False
+            'openhands.core.cli.cli_confirm', return_value=1
         ) as mock_cli_confirm:
             with create_app_session(
                 input=create_pipe_input(), output=create_output(stdout=buffer)
@@ -232,7 +233,8 @@ async def test_cli_startup_folder_security_confirmation_disagree(
 
                 # Confirmation prompt
                 mock_manage_openhands_file.assert_called_once_with('/test')
-                mock_cli_confirm.assert_called_once_with(
+                # Check the first call was for security confirmation
+                mock_cli_confirm.assert_any_call(
                     'Do you wish to continue?', ['Yes, proceed', 'No, exit']
                 )
 
@@ -253,7 +255,7 @@ async def test_cli_startup_trusted_folder(
 
     with patch('openhands.core.cli.manage_openhands_file', return_value=True):
         with patch(
-            'openhands.core.cli.cli_confirm', return_value=True
+            'openhands.core.cli.cli_confirm', return_value=0
         ) as mock_cli_confirm:
             with create_app_session(
                 input=create_pipe_input(), output=create_output(stdout=buffer)
@@ -289,8 +291,10 @@ async def test_cli_startup_trusted_folder(
                     not in output
                 )
 
-                # Confirmation prompt should not be shown
-                mock_cli_confirm.assert_not_called()
+                # Confirmation prompt should be only shown for the /exit command which will get triggered at the end
+                mock_cli_confirm.assert_called_once_with(
+                    '\nTerminate session?', ['Yes, proceed', 'No, dismiss']
+                )
 
                 # Session initialization
                 assert 'Initialized session' in output
