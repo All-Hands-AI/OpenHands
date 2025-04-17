@@ -15,12 +15,19 @@ class ConversationModule:
                 (Conversation.c.user_id == user_id)
             )
             existing_record = await database.fetch_one(query)
-            return existing_record.published if existing_record else False
+
+            return {
+                'is_published': existing_record.published if existing_record else False,
+                'hidden_prompt': existing_record.configs.get('hidden_prompt', True) if existing_record else True
+            }
         except Exception as e:
             logger.error(f'Error getting conversation visibility: {str(e)}')
-            return False
+            return {
+                'is_published': False,
+                'hidden_prompt': False
+            }
 
-    async def _update_conversation_visibility(self, conversation_id: str, is_published: bool, user_id: str):
+    async def _update_conversation_visibility(self, conversation_id: str, is_published: bool, user_id: str, configs: dict):
         try:
             query = Conversation.select().where(
                 (Conversation.c.conversation_id == conversation_id) &
@@ -35,14 +42,15 @@ class ConversationModule:
                         (Conversation.c.conversation_id == conversation_id) &
                         (Conversation.c.user_id == user_id)
                     )
-                    .values(published=is_published)
+                    .values(published=is_published, configs=configs)
                 )
             else:
                 await database.execute(
                     Conversation.insert().values(
                         conversation_id=conversation_id,
                         user_id=user_id,
-                        published=is_published
+                        published=is_published,
+                        configs=configs
                     )
                 )
             return True
@@ -62,10 +70,7 @@ class ConversationModule:
             if not existing_record.published:
                 return 'Conversation not published', None
             user_id = existing_record.user_id
-            # user = get_user_detail_from_thesis_auth_server(user_id)
-            # if not user:
-            #     return 'User not found', None
-            return None, {'user_id': user_id}
+            return None, {'user_id': user_id, 'hidden_prompt': existing_record.configs.get('hidden_prompt', True)}
         except Exception as e:
             logger.error(f'Error getting conversation visibility by id: {str(e)}')
             return 'Error getting conversation visibility by id', None
