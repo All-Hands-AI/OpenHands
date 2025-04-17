@@ -67,6 +67,7 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization.event import event_to_trajectory, truncate_content
 from openhands.llm.llm import LLM
+from openhands.llm.metrics import Metrics
 
 # note: RESUME is only available on web GUI
 TRAFFIC_CONTROL_REMINDER = (
@@ -1155,7 +1156,6 @@ class AgentController:
             condenser_metrics = self.agent.condenser.llm.metrics
         
         # Create a new minimal metrics object with just what the frontend needs
-        from openhands.llm.metrics import Metrics
         metrics = Metrics(model_name=agent_metrics.model_name)
         
         # Set accumulated cost (sum of agent and condenser costs)
