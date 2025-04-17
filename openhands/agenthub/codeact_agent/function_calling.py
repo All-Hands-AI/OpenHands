@@ -160,12 +160,18 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                     if 'view_range' in other_kwargs:
                         # Remove view_range from other_kwargs since it is not needed for FileEditAction
                         other_kwargs.pop('view_range')
-                    action = FileEditAction(
-                        path=path,
-                        command=command,
-                        impl_source=FileEditSource.OH_ACI,
-                        **other_kwargs,
-                    )
+                    try:
+                        action = FileEditAction(
+                            path=path,
+                            command=command,
+                            impl_source=FileEditSource.OH_ACI,
+                            **other_kwargs,
+                        )
+                    except TypeError as e:
+                        raise FunctionCallValidationError(
+                            f'Failed to create FileEditAction: {e}. '
+                            f'Please check the arguments.'
+                        ) from e
             # ================================================
             # AgentThinkAction
             # ================================================
