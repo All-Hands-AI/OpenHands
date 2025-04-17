@@ -44,6 +44,15 @@ def mock_parent_agent():
     agent.llm.metrics = Metrics()
     agent.llm.config = LLMConfig()
     agent.config = AgentConfig()
+
+    # Add a proper system message mock
+    from openhands.events.action.message import SystemMessageAction
+
+    system_message = SystemMessageAction(content='Test system message')
+    system_message._source = EventSource.AGENT
+    system_message._id = -1  # Set invalid ID to avoid the ID check
+    agent.get_system_message.return_value = system_message
+
     return agent
 
 
@@ -56,6 +65,15 @@ def mock_child_agent():
     agent.llm.metrics = Metrics()
     agent.llm.config = LLMConfig()
     agent.config = AgentConfig()
+
+    # Add a proper system message mock
+    from openhands.events.action.message import SystemMessageAction
+
+    system_message = SystemMessageAction(content='Test system message')
+    system_message._source = EventSource.AGENT
+    system_message._id = -1  # Set invalid ID to avoid the ID check
+    agent.get_system_message.return_value = system_message
+
     return agent
 
 
@@ -113,9 +131,9 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
 
     # Verify that a RecallObservation was added to the event stream
     events = list(mock_event_stream.get_events())
-    assert (
-        mock_event_stream.get_latest_event_id() == 3
-    )  # Microagents and AgentChangeState
+
+    # SystemMessageAction, RecallAction, AgentChangeState, AgentDelegateAction, SystemMessageAction (for child)
+    assert mock_event_stream.get_latest_event_id() == 5
 
     # a RecallObservation and an AgentDelegateAction should be in the list
     assert any(isinstance(event, RecallObservation) for event in events)
