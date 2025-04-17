@@ -121,7 +121,7 @@ export const useTerminal = ({
       if (commands.length > 0) {
         for (let i = 0; i < commands.length; i += 1) {
           if (commands[i].type === "input") {
-            terminal.current.write('$ ');
+            terminal.current.write("$ ");
           }
           renderCommand(commands[i], terminal.current);
         }
@@ -141,7 +141,7 @@ export const useTerminal = ({
       commands.length > 0 &&
       lastCommandIndex.current < commands.length
     ) {
-      let lastCommandType = '';
+      let lastCommandType = "";
       for (let i = lastCommandIndex.current; i < commands.length; i += 1) {
         lastCommandType = commands[i].type;
         renderCommand(commands[i], terminal.current);
