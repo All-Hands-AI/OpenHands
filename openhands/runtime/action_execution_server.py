@@ -66,8 +66,10 @@ from openhands.runtime.utils.memory_monitor import MemoryMonitor
 from openhands.runtime.utils.runtime_init import init_user_and_working_directory
 from openhands.runtime.utils.system_stats import get_system_stats
 from openhands.utils.async_utils import call_sync_from_async, wait_all
-from mcpm.router.router import MCPRouter
+from mcpm.router.router import MCPRouter, logger as mcp_router_logger
 
+# Set MCP router logger to the same level as the main logger
+mcp_router_logger.setLevel(logger.getEffectiveLevel())
 
 class ActionRequest(BaseModel):
     action: dict
