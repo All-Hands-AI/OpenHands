@@ -17,28 +17,28 @@ export function HomeHeader() {
     isPending || isSuccess || isCreatingConversationElsewhere;
 
   return (
-    <header className="flex justify-between items-end">
-      <section className="flex flex-col gap-5">
-        <AllHandsLogo />
-        <h1 className="heading">Let&apos;s Start Building!</h1>
-        <p className="text-sm max-w-[424px]">
-          OpenHands makes it easy to build and maintain software using AI-driven
-          development.
-        </p>
-      </section>
+    <header className="flex flex-col gap-5">
+      <AllHandsLogo />
 
-      <section className="flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <h1 className="heading">Let&apos;s Start Building!</h1>
         <BrandButton
           testId="header-launch-button"
           variant="primary"
           type="button"
-          className="w-full"
           onClick={() => createConversation({})}
           isDisabled={isCreatingConversation}
         >
           {!isCreatingConversation && "Launch from Scratch"}
           {isCreatingConversation && "Loading..."}
         </BrandButton>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <p className="text-sm max-w-[424px]">
+          OpenHands makes it easy to build and maintain software using AI-driven
+          development.
+        </p>
         <p className="text-sm">
           Not sure how to start?{" "}
           <a
@@ -50,7 +50,7 @@ export function HomeHeader() {
             Read this
           </a>
         </p>
-      </section>
+      </div>
     </header>
   );
 }
