@@ -94,10 +94,9 @@ class ActionExecutionClient(Runtime):
             git_provider_tokens,
         )
 
-    @abstractmethod
     @property
     def action_execution_server_url(self) -> str:
-        pass
+        raise NotImplementedError("Action execution server URL is not implemented")
 
     @property
     def runtime_initialized(self) -> bool:
