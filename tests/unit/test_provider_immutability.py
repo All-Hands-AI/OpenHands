@@ -11,7 +11,7 @@ from openhands.integrations.provider import (
     SecretStore,
 )
 from openhands.server.routes.settings import convert_to_settings
-from openhands.server.settings import POSTSettingsModel, Settings
+from openhands.server.settings import POSTSettingsModel
 
 
 def test_provider_token_immutability():

@@ -8,7 +8,8 @@ from openhands.core.config.sandbox_config import SandboxConfig
 from openhands.core.config.security_config import SecurityConfig
 from openhands.integrations.provider import ProviderToken, ProviderType, SecretStore
 from openhands.server.routes.settings import convert_to_settings
-from openhands.server.settings import POSTSettingsModel, Settings
+from openhands.server.settings import POSTSettingsModel
+from openhands.storage.data_models.settings import Settings
 
 
 def test_settings_from_config():
