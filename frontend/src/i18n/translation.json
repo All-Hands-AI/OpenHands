@@ -571,20 +571,20 @@
         "fr": "Paramètres LLM",
         "tr": "LLM Ayarları"
     },
-    "SETTINGS$GITHUB_SETTINGS": {
-        "en": "GitHub Settings",
-        "ja": "GitHub設定",
-        "zh-CN": "GitHub设置",
-        "zh-TW": "GitHub設定",
-        "ko-KR": "GitHub 설정",
-        "de": "GitHub-Einstellungen",
-        "no": "GitHub-innstillinger",
-        "it": "Impostazioni GitHub",
-        "pt": "Configurações GitHub",
-        "es": "Configuración GitHub",
-        "ar": "إعدادات GitHub",
-        "fr": "Paramètres GitHub",
-        "tr": "GitHub Ayarları"
+    "SETTINGS$GIT_SETTINGS": {
+        "en": "Git Settings",
+        "ja": "Git設定",
+        "zh-CN": "Git设置",
+        "zh-TW": "Git設定",
+        "ko-KR": "Git 설정",
+        "de": "Git-Einstellungen",
+        "no": "Git-innstillinger",
+        "it": "Impostazioni Git",
+        "pt": "Configurações Git",
+        "es": "Configuración Git",
+        "ar": "إعدادات Git",
+        "fr": "Paramètres Git",
+        "tr": "Git Ayarları"
     },
     "SETTINGS$SOUND_NOTIFICATIONS": {
         "en": "Sound Notifications",
@@ -2515,7 +2515,6 @@
         "tr": "Ajan hız sınırına ulaştı",
         "ja": "エージェントがレート制限中"
     },
-
     "CHAT_INTERFACE$AGENT_PAUSED_MESSAGE": {
         "en": "Agent has paused.",
         "de": "Agent pausiert.",
