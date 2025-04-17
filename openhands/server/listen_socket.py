@@ -98,7 +98,7 @@ async def connect(connection_id: str, environ):
             # Verify and decode JWT token
             payload = jwt.decode(jwt_token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
 
-            user: ThesisUser | None = get_user_detail_from_thesis_auth_server('Bearer ' + jwt_token)
+            user: ThesisUser | None = await get_user_detail_from_thesis_auth_server('Bearer ' + jwt_token)
             if not user:
                 logger.error(f'User not found in database: {user_id}')
                 raise ConnectionRefusedError('User not found')

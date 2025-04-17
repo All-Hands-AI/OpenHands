@@ -18,7 +18,6 @@ from openhands.server import shared
 from openhands.server.auth import get_user_id
 from openhands.server.thesis_auth import get_user_detail_from_thesis_auth_server, ThesisUser, UserStatus
 from openhands.server.routes.auth import JWT_SECRET
-from openhands.server.thesis_auth import get_user_detail_from_thesis_auth_server
 from openhands.server.types import SessionMiddlewareInterface
 from openhands.server.modules.conversation import conversation_module
 
