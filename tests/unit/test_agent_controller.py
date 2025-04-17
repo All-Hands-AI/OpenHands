@@ -1201,7 +1201,7 @@ async def test_action_metrics_copy(mock_agent):
 @pytest.mark.asyncio
 async def test_condenser_metrics_included(mock_agent, test_event_stream):
     """Test that metrics from the condenser's LLM are included in the action metrics."""
-    
+
     # Set up agent metrics
     agent_metrics = Metrics(model_name='agent-model')
     agent_metrics.accumulated_cost = 0.05
