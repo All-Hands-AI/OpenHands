@@ -68,7 +68,8 @@ def _get_swebench_workspace_dir_name(instance: pd.Series) -> str:
 
 def get_instruction(instance: pd.Series, metadata: EvalMetadata) -> MessageAction:
     workspace_dir_name = _get_swebench_workspace_dir_name(instance)
-    instruction = f"""
+    if ('claude') in metadata.llm_config.model:
+        instruction = f"""
 <uploaded_files>
 /workspace/{workspace_dir_name}
 </uploaded_files>
@@ -134,6 +135,54 @@ Phase 7. VERIFICATION: Test your implementation thoroughly.
    8.3 If any tests fail, revise your implementation until all tests pass
 
 Be thorough in your exploration, testing, and reasoning. It's fine if your thinking process is lengthy - quality and completeness are more important than brevity.
+"""
+    else:
+        instruction = f"""
+# Task: Fix Issue in Python Repository
+
+## Repository Context
+You are provided with a Python code repository that contains an issue requiring your attention. The repository is located in a sandboxed environment, and you have access to the codebase to implement the necessary changes.
+The code repository is located at: `/workspace/{workspace_dir_name}`
+(This path is provided for context; use file system tools to confirm paths before access).
+
+## Goal
+Your goal is to fix the issue described in the **Issue Description** section below. Implement the necessary changes to **non-test files only** within the repository, ensuring that **all relevant tests pass** after your changes.
+
+## Key Requirements & Constraints
+
+1.  **Understand the problem** very well: it is a bug report, and you know humans don't always write good descriptions. Explore the codebase to understand the related code and the problem in depth. It is possible that the solution needs to be a bit more extensive than just the stated text. Don't exagerate though: don't do unrelated refactoring, but also don't interpret the description too strictly.
+2.  **Focus on the issues:** Implement the fix focusing on non-test files related to the issue.
+2.  **Environment Ready:** The Python environment is pre-configured with all dependencies. Do not install packages.
+3.  **Mandatory Testing Procedure:**
+    *   **Create Test to Reproduce the Issue:** *Before* implementing any fix, you MUST create a *new test* (separate from existing tests) that specifically reproduces the issue.
+            * Take existing tests as example to understand the testing format/structure.
+            * Enhance this test with edge cases.
+            * Run this test to confirm reproduction.
+    *   **Verify Fix:** After implementing the fix, run your test again to verify the issue is resolved.
+    *   **Identify ALL Relevant Tests:** You MUST perform a **dedicated search and analysis** to identify **all** existing unit tests potentially affected by your changes. This includes:
+        *   Tests in the same module/directory as the changed files (e.g., `tests/` subdirectories).
+        *   Tests explicitly importing or using the modified code/classes/functions.
+        *   Tests mentioned in the issue description or related documentation.
+        *   Tests covering functionalities that *depend on* the modified code (analyze callers/dependencies if necessary).
+        **If you cannot confidently identify a specific subset, you MUST identify and plan to run the entire test suite for the modified application or module(s). State your identified test scope clearly.**
+    *   **Run Identified Relevant Tests:** You MUST execute the **complete set** of relevant existing unit tests you identified in the previous step. Ensure you are running the *correct and comprehensive set* of tests. You MUST NOT modify these existing tests.
+    *   **Final Check & Verification:** Before finishing, ensure **all** identified relevant existing tests pass. **Explicitly confirm that you have considered potential omissions in your test selection and believe the executed tests comprehensively cover the impact of your changes.** Failing to identify and run the *complete* relevant set constitutes a failure. If any identified tests fail, revise your fix. Passing all relevant tests is the primary measure of success.
+4.  **Defensive Programming:** Actively practice defensive programming: anticipate and handle potential edge cases, unexpected inputs, and different ways the affected code might be called **to ensure the fix works reliably and allows relevant tests to pass.** Analyze the potential impact on other parts of the codebase.
+5.  **Final Review:** Compare your solution against the original issue and the base commit ({instance["base_commit"]}) to ensure completeness and test passage.
+
+## General Workflow Guidance
+
+*   Prioritize understanding the problem, exploring the code, planning your fix, implementing it carefully using the required diff format, and **thoroughly testing** according to the **Mandatory Testing Procedure**.
+*   Consider trade-offs between different solutions. The goal is a **robust change that makes the relevant tests pass.** Quality, correctness, and reliability are key.
+*   Actively practice defensive programming: anticipate and handle potential edge cases, unexpected inputs, and different ways the affected code might be called **to ensure the fix works reliably and allows relevant tests to pass.** Analyze the potential impact on other parts of the codebase.
+
+*   IMPORTANT: Your solution will be tested by additional hidden tests, so do not assume the task is complete just because visible tests pass! Refine the solution until you are confident that it is robust and comprehensive according to the **Defensive Programming** requirement.
+
+## Final Note
+Be thorough in your exploration, testing, and reasoning. It's fine if your thinking process is lengthy - quality and completeness are more important than brevity.
+
+## Issue Description
+{instance.problem_statement}
 """
 
     if RUN_WITH_BROWSING:
@@ -228,6 +277,7 @@ def get_config(
         enable_jupyter=False,
         enable_browsing=RUN_WITH_BROWSING,
         enable_llm_editor=False,
+        enable_llm_diff=True,
         condenser=metadata.condenser_config,
         enable_prompt_extensions=False,
     )
@@ -270,6 +320,17 @@ def initialize_runtime(
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert_and_raise(obs.exit_code == 0, f'Failed to export USER: {str(obs)}')
 
+    # Set DEBUG environment variable
+    action = CmdRunAction(command="echo 'export DEBUG=1' >> ~/.bashrc")
+    action.set_hard_timeout(600)
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert_and_raise(
+        obs.exit_code == 0,
+        f'Failed to export DEBUG=1: {str(obs)}',
+    )
+    
     # inject the init script
     script_dir = os.path.dirname(__file__)
 

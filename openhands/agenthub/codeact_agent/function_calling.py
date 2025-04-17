@@ -14,8 +14,11 @@ from openhands.agenthub.codeact_agent.tools import (
     BrowserTool,
     FinishTool,
     IPythonTool,
+    ListDirectoryTool,
     LLMBasedFileEditTool,
     ThinkTool,
+    UndoEditTool,
+    ViewFileTool,
     WebReadTool,
     create_cmd_run_tool,
     create_str_replace_editor_tool,
@@ -38,6 +41,11 @@ from openhands.events.action import (
     IPythonRunCellAction,
     MessageAction,
 )
+from openhands.agenthub.codeact_agent.llm_diff_parser import (
+    parse_llm_response_for_diffs,
+)
+from openhands.core.config import AgentConfig
+from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.mcp import McpAction
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.tool import ToolCallMetadata
@@ -55,22 +63,84 @@ def combine_thought(action: Action, thought: str) -> Action:
     return action
 
 
-def response_to_actions(response: ModelResponse) -> list[Action]:
-    actions: list[Action] = []
+def response_to_actions(response: ModelResponse, is_llm_diff_enabled: bool = False) -> list[Action]:
+    """
+    Parses the LLM response and converts it into a list of OpenHands Actions.
+
+    Args:
+        response: The ModelResponse from the LLM.
+        is_llm_diff_enabled: If True, will attempt to parse diff blocks from message
+                             content if no tool calls exist. Defaults to False.
+
+    Returns:
+        A list of Action objects.
+    """
+    all_actions: list[Action] = []
+    parsed_llm_diff_actions: list[Action] = []
+    tool_call_actions: list[Action] = []
+    thought_from_diff: str | None = None
+    thought_from_tool_content: str | None = None
+    message_content: str = ''
+    diff_parse_error: Exception | None = None
+
     assert len(response.choices) == 1, 'Only one choice is supported for now'
     choice = response.choices[0]
     assistant_msg = choice.message
-    if hasattr(assistant_msg, 'tool_calls') and assistant_msg.tool_calls:
-        # Check if there's assistant_msg.content. If so, add it to the thought
-        thought = ''
-        if isinstance(assistant_msg.content, str):
-            thought = assistant_msg.content
-        elif isinstance(assistant_msg.content, list):
-            for msg in assistant_msg.content:
-                if msg['type'] == 'text':
-                    thought += msg['text']
 
-        # Process each tool call to OpenHands action
+    # 1. Extract message content
+    if isinstance(assistant_msg.content, str):
+        message_content = assistant_msg.content
+    elif isinstance(assistant_msg.content, list):
+        for msg in assistant_msg.content:
+            if msg['type'] == 'text':
+                message_content += msg['text']
+
+    # 2. Try parsing diff blocks if enabled and content exists
+    if is_llm_diff_enabled and message_content:
+        logger.debug('LLM Diff mode enabled, attempting to parse response content.')
+        try:
+            # TODO: Pass valid_fnames if available from context/summary?
+            parsed_blocks, first_block_start_idx, last_block_end_idx = parse_llm_response_for_diffs(message_content)
+            if parsed_blocks:
+                logger.info(f'Parsed {len(parsed_blocks)} diff blocks from LLM response.')
+                # Extract thought based on the start index
+                if first_block_start_idx != -1:
+                    thought_from_diff = message_content[:first_block_start_idx].strip()
+                else:
+                    logger.warning("Could not determine start index of the first diff block. Using empty thought.")
+                    # thought_from_diff remains None
+
+                for i, (filename, search, replace) in enumerate(parsed_blocks):
+                    action = FileEditAction(
+                        path=filename,
+                        search=search,
+                        replace=replace,
+                        impl_source=FileEditSource.LLM_DIFF,
+                    )
+                    parsed_llm_diff_actions.append(action)
+
+        except ValueError as e:
+            logger.error(f'Error parsing LLM diff blocks: {e}')
+            diff_parse_error = e # Store error for potential later use
+        except Exception as e:
+             logger.error(f'Unexpected error during LLM diff parsing: {e}', exc_info=True)
+             diff_parse_error = e # Store error
+
+    # 3. Process tool calls if they exist
+    if hasattr(assistant_msg, 'tool_calls') and assistant_msg.tool_calls:
+        # If we haven't extracted thought from diff blocks yet, extract it now from content
+        # This happens if diff parsing was disabled, failed, or found no blocks
+        if thought_from_diff is None and not parsed_llm_diff_actions:
+             if isinstance(assistant_msg.content, str):
+                 thought_from_tool_content = assistant_msg.content.strip() # Use the raw content as thought
+             elif isinstance(assistant_msg.content, list):
+                 temp_thought = ''
+                 for msg in assistant_msg.content:
+                     if msg['type'] == 'text':
+                         temp_thought += msg['text']
+                 thought_from_tool_content = temp_thought.strip()
+
+        # Process each tool call
         for i, tool_call in enumerate(assistant_msg.tool_calls):
             action: Action
             logger.debug(f'Tool call in function_calling.py: {tool_call}')
@@ -168,8 +238,41 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                         path=path,
                         command=command,
                         impl_source=FileEditSource.OH_ACI,
-                        **other_kwargs,
+                    **other_kwargs,
+                )
+            # ================================================
+            # New Utility Tools (Routing to OH_ACI)
+            # ================================================
+            elif tool_call.function.name == ViewFileTool['function']['name']:
+                if 'path' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "path" in tool call {tool_call.function.name}'
                     )
+                action = FileReadAction(
+                    path=arguments['path'],
+                    impl_source=FileReadSource.OH_ACI,
+                    view_range=arguments.get('view_range', None),
+                )
+            elif tool_call.function.name == ListDirectoryTool['function']['name']:
+                if 'path' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "path" in tool call {tool_call.function.name}'
+                    )
+                action = FileReadAction(
+                    path=arguments['path'],
+                    impl_source=FileReadSource.OH_ACI,
+                    # view_range is not applicable for directories
+                )
+            elif tool_call.function.name == UndoEditTool['function']['name']:
+                if 'path' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "path" in tool call {tool_call.function.name}'
+                    )
+                action = FileEditAction(
+                    path=arguments['path'],
+                    command='undo_edit',
+                    impl_source=FileEditSource.OH_ACI,
+                )
             # ================================================
             # AgentThinkAction
             # ================================================
@@ -209,9 +312,6 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                     f'Tool {tool_call.function.name} is not registered. (arguments: {arguments}). Please check the tool name and retry with an existing tool.'
                 )
 
-            # We only add thought to the first action
-            if i == 0:
-                action = combine_thought(action, thought)
             # Add metadata for tool calling
             action.tool_call_metadata = ToolCallMetadata(
                 tool_call_id=tool_call.id,
@@ -219,32 +319,73 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                 model_response=response,
                 total_calls_in_response=len(assistant_msg.tool_calls),
             )
-            actions.append(action)
-    else:
-        actions.append(
-            MessageAction(
-                content=str(assistant_msg.content) if assistant_msg.content else '',
-                wait_for_response=True,
-            )
-        )
+            tool_call_actions.append(action)
 
-    # Add response id to actions
-    # This will ensure we can match both actions without tool calls (e.g. MessageAction)
-    # and actions with tool calls (e.g. CmdRunAction, IPythonRunCellAction, etc.)
-    # with the token usage data
-    for action in actions:
+    # 4. Combine actions: diffs first, then tool calls
+    all_actions.extend(parsed_llm_diff_actions)
+    all_actions.extend(tool_call_actions)
+
+    # 5. Handle the case where no actions were generated
+    if not all_actions:
+        # If there was a diff parsing error, report it
+        if diff_parse_error:
+             all_actions.append(
+                 MessageAction(
+                     content=message_content + f'\n\n[Error parsing diff blocks: {diff_parse_error}]',
+                     wait_for_response=True,
+                 )
+             )
+        # Otherwise, treat as a regular message if content exists
+        elif message_content:
+            all_actions.append(
+                MessageAction(
+                    content=message_content,
+                    wait_for_response=True,
+                )
+            )
+        # If no actions AND no content, add a default Think action
+        else:
+            logger.warning(f"No actions generated and no message content for response: {response.id}")
+            all_actions.append(AgentThinkAction(thought="[No actionable content or tool calls found in response]"))
+
+
+    # 6. Determine contextual thought and apply to the first non-AgentThinkAction
+    contextual_thought = thought_from_diff if thought_from_diff is not None else thought_from_tool_content
+    thought_applied = False
+    if contextual_thought:
+        for i, action in enumerate(all_actions):
+            if not isinstance(action, AgentThinkAction):
+                all_actions[i] = combine_thought(action, contextual_thought)
+                thought_applied = True
+                break # Apply thought only to the first eligible action
+
+    # 7. Add response id to all actions
+    for action in all_actions:
         action.response_id = response.id
 
-    assert len(actions) >= 1
-    return actions
+    # 8. Final check (ensure at least one action exists)
+    if not all_actions:
+         # This case should ideally be handled by step 5, but as a safeguard:
+         logger.error(f"CRITICAL: No actions generated for response {response.id} after all checks.")
+         all_actions.append(AgentThinkAction(thought="[Critical Error: Failed to generate any action]"))
+         if all_actions[0]: all_actions[0].response_id = response.id
 
+
+    return all_actions
+
+
+from openhands.core.config import AgentConfig
 
 def get_tools(
-    enable_browsing: bool = False,
-    enable_llm_editor: bool = False,
-    enable_jupyter: bool = False,
+    config: AgentConfig,
     llm: LLM | None = None,
 ) -> list[ChatCompletionToolParam]:
+    # Extract flags from config
+    enable_browsing = config.enable_browsing
+    enable_llm_editor = config.enable_llm_editor
+    enable_llm_diff = config.enable_llm_diff
+    enable_jupyter = config.enable_jupyter
+
     SIMPLIFIED_TOOL_DESCRIPTION_LLM_SUBSTRS = ['gpt-', 'o3', 'o1']
 
     use_simplified_tool_desc = False
@@ -264,12 +405,28 @@ def get_tools(
         tools.append(BrowserTool)
     if enable_jupyter:
         tools.append(IPythonTool)
-    if enable_llm_editor:
+
+    # Determine which editor tool(s) and utility tools to add based on config
+    if enable_llm_diff:
+        # Use LLM Diff mode:
+        #  - LLM generates diffs in text, only non-edit tools available
+        #  - No UndoEditTool
+        tools.append(ViewFileTool)
+        tools.append(ListDirectoryTool)
+        # NO EDITING TOOLS (LLMBasedFileEditTool, str_replace_editor)
+        # NO UndoEditTool
+    elif enable_llm_editor:
+        # Use LLM-based editor tool + separate utils (NO Undo)
         tools.append(LLMBasedFileEditTool)
+        tools.append(ViewFileTool)
+        tools.append(ListDirectoryTool)
+        # No UndoEditTool here
     else:
+        # Fallback to the complete str_replace_editor (includes view, list, undo)
         tools.append(
             create_str_replace_editor_tool(
                 use_simplified_description=use_simplified_tool_desc
             )
         )
+
     return tools
