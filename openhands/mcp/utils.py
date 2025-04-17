@@ -1,4 +1,7 @@
 import json
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from openhands.controller.agent import Agent
 
 from openhands.core.config.mcp_config import MCPConfig
 from openhands.core.logger import openhands_logger as logger
@@ -6,7 +9,6 @@ from openhands.events.action.mcp import McpAction
 from openhands.events.observation.mcp import MCPObservation
 from openhands.events.observation.observation import Observation
 from openhands.mcp.client import MCPClient
-from openhands.controller.agent import Agent
 from openhands.runtime.base import Runtime
 from openhands.runtime.impl.action_execution.action_execution_client import ActionExecutionClient
 
@@ -137,7 +139,7 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: McpAction) -> Obse
     return MCPObservation(content=f'MCP result:{response.model_dump(mode="json")}')
 
 
-async def add_mcp_tools_to_agent(agent: Agent, runtime: Runtime, mcp_config: MCPConfig):
+async def add_mcp_tools_to_agent(agent: "Agent", runtime: Runtime, mcp_config: MCPConfig):
     """
     Add MCP tools to an agent.
     """
