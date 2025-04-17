@@ -1,6 +1,8 @@
 import { ConnectToProviderMessage } from "./connect-to-provider-message";
 import { useAuth } from "#/context/auth-context";
 import { RepositorySelectionForm } from "./repo-selection-form";
+import { useConfig } from "#/hooks/query/use-config";
+import { RepoProviderLinks } from "./repo-provider-links";
 
 interface RepoConnectorProps {
   onRepoSelection: (repoTitle: string | null) => void;
@@ -8,6 +10,9 @@ interface RepoConnectorProps {
 
 export function RepoConnector({ onRepoSelection }: RepoConnectorProps) {
   const { providersAreSet } = useAuth();
+  const { data: config } = useConfig();
+
+  const isSaaS = config?.APP_MODE === "saas";
 
   return (
     <section
@@ -20,6 +25,8 @@ export function RepoConnector({ onRepoSelection }: RepoConnectorProps) {
       {providersAreSet && (
         <RepositorySelectionForm onRepoSelection={onRepoSelection} />
       )}
+
+      {isSaaS && providersAreSet && <RepoProviderLinks />}
     </section>
   );
 }

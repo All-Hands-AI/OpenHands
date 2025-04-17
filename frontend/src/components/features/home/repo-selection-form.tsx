@@ -1,12 +1,10 @@
 import React from "react";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
-import { useConfig } from "#/hooks/query/use-config";
 import { useUserRepositories } from "#/hooks/query/use-user-repositories";
 import { useIsCreatingConversation } from "#/hooks/use-is-creating-conversation";
 import { GitRepository } from "#/types/git";
 import { BrandButton } from "../settings/brand-button";
 import { SettingsDropdownInput } from "../settings/settings-dropdown-input";
-import { RepoProviderLinks } from "./repo-provider-links";
 
 interface RepositorySelectionFormProps {
   onRepoSelection: (repoTitle: string | null) => void;
@@ -17,7 +15,6 @@ export function RepositorySelectionForm({
 }: RepositorySelectionFormProps) {
   const [selectedRepository, setSelectedRepository] =
     React.useState<GitRepository | null>(null);
-  const { data: config } = useConfig();
   const { data: repositories } = useUserRepositories();
   const {
     mutate: createConversation,
@@ -31,7 +28,6 @@ export function RepositorySelectionForm({
   const isCreatingConversation =
     isPending || isSuccess || isCreatingConversationElsewhere;
 
-  const isSaaS = config?.APP_MODE === "saas";
   const repositoriesList = repositories?.pages.flatMap((page) => page.data);
   const repositoriesItems = repositoriesList?.map((repo) => ({
     key: repo.id,
@@ -76,8 +72,6 @@ export function RepositorySelectionForm({
         {!isCreatingConversation && "Launch"}
         {isCreatingConversation && "Loading..."}
       </BrandButton>
-
-      {isSaaS && <RepoProviderLinks />}
     </>
   );
 }
