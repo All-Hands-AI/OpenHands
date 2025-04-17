@@ -328,10 +328,10 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
                 content={'detail': 'Missing or invalid authorization header'},
             )
 
-        token = auth_header.split(' ')[1]
+        # token = auth_header.split(' ')[1]
         try:
-            payload = jwt.decode(token, JWT_SECRET, algorithms=['HS256'])
-            user_id = payload['user']['publicAddress']
+            # payload = jwt.decode(token, JWT_SECRET, algorithms=['HS256'])
+            # user_id = payload['user']['publicAddress']
 
             user: ThesisUser | None = await get_user_detail_from_thesis_auth_server(request.headers.get('Authorization'))
             if not user:
@@ -339,6 +339,7 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
                     status_code=404,
                     content={'detail': 'User not found'},
                 )
+            user_id = user.publicAddress
             # Only set user in request.state if all checks pass
             request.state.user_id = user_id
             request.state.user = user
