@@ -31,11 +31,10 @@ const renderCommand = (command: Command, terminal: Terminal) => {
       parseTerminalOutput(content.replaceAll("\n", "\r\n").trim()),
     );
   } else {
-    terminal.write(`\n`);
+    // Don't add extra newlines for output, just write the content
     terminal.writeln(
       parseTerminalOutput(content.replaceAll("\n", "\r\n").trim()),
     );
-    terminal.write(`\n`);
   }
 };
 
@@ -106,7 +105,11 @@ export const useTerminal = ({
 
   const handleEnter = (command: string) => {
     terminal.current?.write("\r\n");
+    // Don't write the command again as it will be added to the commands array
+    // and rendered by the useEffect that watches commands
     send(getTerminalCommand(command));
+    // Don't add the prompt here as it will be added when the command is processed
+    // and the commands array is updated
   };
 
   const handleBackspace = (command: string) => {
@@ -149,8 +152,13 @@ export const useTerminal = ({
         renderCommand(commands[i], terminal.current);
       }
       lastCommandIndex.current = commands.length;
+      
+      // Add the prompt after rendering commands if not disabled
+      if (!disabled) {
+        terminal.current.write("$ ");
+      }
     }
-  }, [commands]);
+  }, [commands, disabled]);
 
   React.useEffect(() => {
     let resizeObserver: ResizeObserver | null = null;
