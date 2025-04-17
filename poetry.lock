@@ -496,18 +496,18 @@ files = [
 
 [[package]]
 name = "boto3"
-version = "1.37.34"
+version = "1.37.35"
 description = "The AWS SDK for Python"
 optional = false
 python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "boto3-1.37.34-py3-none-any.whl", hash = "sha256:586bfa72a00601c04067f9adcbb08ecaf63b05b7d731103f33cb2ce0d6950b1b"},
-    {file = "boto3-1.37.34.tar.gz", hash = "sha256:94ca07328474db3fa605eb99b011512caa73f7161740d365a1f00cfebfb6dd90"},
+    {file = "boto3-1.37.35-py3-none-any.whl", hash = "sha256:5a90d674830adbaf86456d6b27a18f5f11378277da5286511fa860d2e7b14261"},
+    {file = "boto3-1.37.35.tar.gz", hash = "sha256:751ed599c8fd9ca24896edcd6620e8a32b3db1b68efea3a90126312240e668a2"},
 ]
 
 [package.dependencies]
-botocore = ">=1.37.34,<1.38.0"
+botocore = ">=1.37.35,<1.38.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.11.0,<0.12.0"
 
@@ -516,14 +516,14 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "boto3-stubs"
-version = "1.37.34"
-description = "Type annotations for boto3 1.37.34 generated with mypy-boto3-builder 8.10.1"
+version = "1.37.35"
+description = "Type annotations for boto3 1.37.35 generated with mypy-boto3-builder 8.10.1"
 optional = false
 python-versions = ">=3.8"
 groups = ["evaluation"]
 files = [
-    {file = "boto3_stubs-1.37.34-py3-none-any.whl", hash = "sha256:298c639dfd5c00756c0dea8b51276c9b7720ccbc97bc78159520620999f4060e"},
-    {file = "boto3_stubs-1.37.34.tar.gz", hash = "sha256:e79b3535663417d3fb4f65bf16a005ce1b426eb377b23605e3c1194d791c95be"},
+    {file = "boto3_stubs-1.37.35-py3-none-any.whl", hash = "sha256:bf0a781a1cd582114126fca95c0d905f5541b2a8dc42e074be1aebac6711b896"},
+    {file = "boto3_stubs-1.37.35.tar.gz", hash = "sha256:3900c806c2c668804f1713e6efd566a06c99bffcc8e3709e9822a9dec681923f"},
 ]
 
 [package.dependencies]
@@ -579,7 +579,7 @@ bedrock-data-automation-runtime = ["mypy-boto3-bedrock-data-automation-runtime (
 bedrock-runtime = ["mypy-boto3-bedrock-runtime (>=1.37.0,<1.38.0)"]
 billing = ["mypy-boto3-billing (>=1.37.0,<1.38.0)"]
 billingconductor = ["mypy-boto3-billingconductor (>=1.37.0,<1.38.0)"]
-boto3 = ["boto3 (==1.37.34)"]
+boto3 = ["boto3 (==1.37.35)"]
 braket = ["mypy-boto3-braket (>=1.37.0,<1.38.0)"]
 budgets = ["mypy-boto3-budgets (>=1.37.0,<1.38.0)"]
 ce = ["mypy-boto3-ce (>=1.37.0,<1.38.0)"]
@@ -943,14 +943,14 @@ xray = ["mypy-boto3-xray (>=1.37.0,<1.38.0)"]
 
 [[package]]
 name = "botocore"
-version = "1.37.34"
+version = "1.37.35"
 description = "Low-level, data-driven core of boto 3."
 optional = false
 python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "botocore-1.37.34-py3-none-any.whl", hash = "sha256:bd9af0db1097befd2028ba8525e32cacc04f26ccb9dbd5d48d6ecd05bc16c27a"},
-    {file = "botocore-1.37.34.tar.gz", hash = "sha256:2909b6dbf9c90347c71a6fa0364acee522d6a7664f13d6f7996c9dd1b1f46fac"},
+    {file = "botocore-1.37.35-py3-none-any.whl", hash = "sha256:50839212e90650d0b0fa6b8f7514876bf802f6164f2775f3abcd4d53c98bb73c"},
+    {file = "botocore-1.37.35.tar.gz", hash = "sha256:197a9bf8251c45b9d882c405ec0d0ab40c10e2d2a55ee66960185daec4beb6ec"},
 ]
 
 [package.dependencies]
@@ -2754,14 +2754,14 @@ tool = ["click (>=6.0.0)"]
 
 [[package]]
 name = "google-cloud-aiplatform"
-version = "1.88.0"
+version = "1.89.0"
 description = "Vertex AI API client library"
 optional = false
 python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "google_cloud_aiplatform-1.88.0-py2.py3-none-any.whl", hash = "sha256:7d632577b758021a1306e2c6d3e837e41da635b651776041d4a54cdbbf63f6f1"},
-    {file = "google_cloud_aiplatform-1.88.0.tar.gz", hash = "sha256:07a06549f97a98e4d67d193ec225c581415f142b6a1d3aa4270187d429045d52"},
+    {file = "google_cloud_aiplatform-1.89.0-py2.py3-none-any.whl", hash = "sha256:b4e532058c87f71f8f4265b9de760f9765388b07f6d16e0c2a0a2275428580e7"},
+    {file = "google_cloud_aiplatform-1.89.0.tar.gz", hash = "sha256:bb84c489ea14a9658a38d400e35108740a7663c9ceb2414e892c0c502cb5c050"},
 ]
 
 [package.dependencies]
@@ -2773,7 +2773,7 @@ google-cloud-resource-manager = ">=1.3.3,<3.0.0"
 google-cloud-storage = ">=1.32.0,<3.0.0"
 packaging = ">=14.3"
 proto-plus = ">=1.22.3,<2.0.0"
-protobuf = ">=3.20.2,<4.21.0 || >4.21.0,<4.21.1 || >4.21.1,<4.21.2 || >4.21.2,<4.21.3 || >4.21.3,<4.21.4 || >4.21.4,<4.21.5 || >4.21.5,<6.0.0"
+protobuf = ">=3.20.2,<4.21.0 || >4.21.0,<4.21.1 || >4.21.1,<4.21.2 || >4.21.2,<4.21.3 || >4.21.3,<4.21.4 || >4.21.4,<4.21.5 || >4.21.5,<7.0.0"
 pydantic = "<3"
 shapely = "<3.0.0"
 typing-extensions = "*"
@@ -2946,13 +2946,13 @@ testing = ["pytest"]
 
 [[package]]
 name = "google-generativeai"
-version = "0.8.4"
+version = "0.8.5"
 description = "Google Generative AI High level API client library and tools."
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "google_generativeai-0.8.4-py3-none-any.whl", hash = "sha256:e987b33ea6decde1e69191ddcaec6ef974458864d243de7191db50c21a7c5b82"},
+    {file = "google_generativeai-0.8.5-py3-none-any.whl", hash = "sha256:22b420817fb263f8ed520b33285f45976d5b21e904da32b80d4fd20c055123a2"},
 ]
 
 [package.dependencies]
@@ -4429,14 +4429,14 @@ types-tqdm = "*"
 
 [[package]]
 name = "litellm"
-version = "1.66.1"
+version = "1.66.2"
 description = "Library to easily interface with LLM API providers"
 optional = false
 python-versions = "!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*,>=3.8"
 groups = ["main"]
 files = [
-    {file = "litellm-1.66.1-py3-none-any.whl", hash = "sha256:1f601fea3f086c1d2d91be60b9db115082a2f3a697e4e0def72f8b9c777c7232"},
-    {file = "litellm-1.66.1.tar.gz", hash = "sha256:98f7add913e5eae2131dd412ee27532d9a309defd9dbb64f6c6c42ea8a2af068"},
+    {file = "litellm-1.66.2-py3-none-any.whl", hash = "sha256:8bcf68a0f155b89eca83000bfa68550de843c894666ca02b5bf78b71b14ba9a7"},
+    {file = "litellm-1.66.2.tar.gz", hash = "sha256:2d3c24c7b10dcb59596b5bbb4f46200dcdb91032b313f4b53cc070b83a4f547d"},
 ]
 
 [package.dependencies]
@@ -4454,7 +4454,7 @@ tokenizers = "*"
 
 [package.extras]
 extra-proxy = ["azure-identity (>=1.15.0,<2.0.0)", "azure-keyvault-secrets (>=4.8.0,<5.0.0)", "google-cloud-kms (>=2.21.3,<3.0.0)", "prisma (==0.11.0)", "redisvl (>=0.4.1,<0.5.0) ; python_version >= \"3.9\" and python_version < \"3.14\"", "resend (>=0.8.0,<0.9.0)"]
-proxy = ["PyJWT (>=2.8.0,<3.0.0)", "apscheduler (>=3.10.4,<4.0.0)", "backoff", "boto3 (==1.34.34)", "cryptography (>=43.0.1,<44.0.0)", "fastapi (>=0.115.5,<0.116.0)", "fastapi-sso (>=0.16.0,<0.17.0)", "gunicorn (>=23.0.0,<24.0.0)", "litellm-proxy-extras (==0.1.7)", "mcp (==1.5.0) ; python_version >= \"3.10\"", "orjson (>=3.9.7,<4.0.0)", "pynacl (>=1.5.0,<2.0.0)", "python-multipart (>=0.0.18,<0.0.19)", "pyyaml (>=6.0.1,<7.0.0)", "rq", "uvicorn (>=0.29.0,<0.30.0)", "uvloop (>=0.21.0,<0.22.0)", "websockets (>=13.1.0,<14.0.0)"]
+proxy = ["PyJWT (>=2.8.0,<3.0.0)", "apscheduler (>=3.10.4,<4.0.0)", "backoff", "boto3 (==1.34.34)", "cryptography (>=43.0.1,<44.0.0)", "fastapi (>=0.115.5,<0.116.0)", "fastapi-sso (>=0.16.0,<0.17.0)", "gunicorn (>=23.0.0,<24.0.0)", "litellm-proxy-extras (==0.1.9)", "mcp (==1.5.0) ; python_version >= \"3.10\"", "orjson (>=3.9.7,<4.0.0)", "pynacl (>=1.5.0,<2.0.0)", "python-multipart (>=0.0.18,<0.0.19)", "pyyaml (>=6.0.1,<7.0.0)", "rq", "uvicorn (>=0.29.0,<0.30.0)", "uvloop (>=0.21.0,<0.22.0)", "websockets (>=13.1.0,<14.0.0)"]
 
 [[package]]
 name = "lxml"
@@ -4899,14 +4899,14 @@ files = [
 
 [[package]]
 name = "modal"
-version = "0.74.0"
+version = "0.74.8"
 description = "Python client library for Modal"
 optional = false
 python-versions = ">=3.9"
 groups = ["main", "evaluation"]
 files = [
-    {file = "modal-0.74.0-py3-none-any.whl", hash = "sha256:a764f62f1c939101bb76cf5f5cb50f9644dde40d081afaa47c405dd480baaca3"},
-    {file = "modal-0.74.0.tar.gz", hash = "sha256:4c3750ad9f7f7bb0fd57a03272e6b6d4f029c25e4e799365497ed8a6ac38ebe0"},
+    {file = "modal-0.74.8-py3-none-any.whl", hash = "sha256:221824d133fdc225e0cf39b39c95bc819f716e0202b9f4b7161cd92ebfe8261d"},
+    {file = "modal-0.74.8.tar.gz", hash = "sha256:aa9a34fe1e67a424106227ca58d3a5af820143887cd123e7d125d7306827b7c6"},
 ]
 
 [package.dependencies]
@@ -5623,14 +5623,14 @@ signedtoken = ["cryptography (>=3.0.0)", "pyjwt (>=2.0.0,<3)"]
 
 [[package]]
 name = "openai"
-version = "1.74.0"
+version = "1.75.0"
 description = "The official Python library for the openai API"
 optional = false
 python-versions = ">=3.8"
 groups = ["main", "evaluation", "test"]
 files = [
-    {file = "openai-1.74.0-py3-none-any.whl", hash = "sha256:aff3e0f9fb209836382ec112778667027f4fd6ae38bdb2334bc9e173598b092a"},
-    {file = "openai-1.74.0.tar.gz", hash = "sha256:592c25b8747a7cad33a841958f5eb859a785caea9ee22b9e4f4a2ec062236526"},
+    {file = "openai-1.75.0-py3-none-any.whl", hash = "sha256:fe6f932d2ded3b429ff67cc9ad118c71327db32eb9d32dd723de3acfca337125"},
+    {file = "openai-1.75.0.tar.gz", hash = "sha256:fb3ea907efbdb1bcfd0c44507ad9c961afd7dce3147292b54505ecfd17be8fd1"},
 ]
 
 [package.dependencies]
@@ -7964,42 +7964,42 @@ pyasn1 = ">=0.1.3"
 
 [[package]]
 name = "ruff"
-version = "0.11.5"
+version = "0.11.6"
 description = "An extremely fast Python linter and code formatter, written in Rust."
 optional = false
 python-versions = ">=3.7"
 groups = ["dev", "evaluation"]
 files = [
-    {file = "ruff-0.11.5-py3-none-linux_armv6l.whl", hash = "sha256:2561294e108eb648e50f210671cc56aee590fb6167b594144401532138c66c7b"},
-    {file = "ruff-0.11.5-py3-none-macosx_10_12_x86_64.whl", hash = "sha256:ac12884b9e005c12d0bd121f56ccf8033e1614f736f766c118ad60780882a077"},
-    {file = "ruff-0.11.5-py3-none-macosx_11_0_arm64.whl", hash = "sha256:4bfd80a6ec559a5eeb96c33f832418bf0fb96752de0539905cf7b0cc1d31d779"},
-    {file = "ruff-0.11.5-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:0947c0a1afa75dcb5db4b34b070ec2bccee869d40e6cc8ab25aca11a7d527794"},
-    {file = "ruff-0.11.5-py3-none-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:ad871ff74b5ec9caa66cb725b85d4ef89b53f8170f47c3406e32ef040400b038"},
-    {file = "ruff-0.11.5-py3-none-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:e6cf918390cfe46d240732d4d72fa6e18e528ca1f60e318a10835cf2fa3dc19f"},
-    {file = "ruff-0.11.5-py3-none-manylinux_2_17_ppc64.manylinux2014_ppc64.whl", hash = "sha256:56145ee1478582f61c08f21076dc59153310d606ad663acc00ea3ab5b2125f82"},
-    {file = "ruff-0.11.5-py3-none-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:e5f66f8f1e8c9fc594cbd66fbc5f246a8d91f916cb9667e80208663ec3728304"},
-    {file = "ruff-0.11.5-py3-none-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:80b4df4d335a80315ab9afc81ed1cff62be112bd165e162b5eed8ac55bfc8470"},
-    {file = "ruff-0.11.5-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:3068befab73620b8a0cc2431bd46b3cd619bc17d6f7695a3e1bb166b652c382a"},
-    {file = "ruff-0.11.5-py3-none-musllinux_1_2_aarch64.whl", hash = "sha256:f5da2e710a9641828e09aa98b92c9ebbc60518fdf3921241326ca3e8f8e55b8b"},
-    {file = "ruff-0.11.5-py3-none-musllinux_1_2_armv7l.whl", hash = "sha256:ef39f19cb8ec98cbc762344921e216f3857a06c47412030374fffd413fb8fd3a"},
-    {file = "ruff-0.11.5-py3-none-musllinux_1_2_i686.whl", hash = "sha256:b2a7cedf47244f431fd11aa5a7e2806dda2e0c365873bda7834e8f7d785ae159"},
-    {file = "ruff-0.11.5-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:81be52e7519f3d1a0beadcf8e974715b2dfc808ae8ec729ecfc79bddf8dbb783"},
-    {file = "ruff-0.11.5-py3-none-win32.whl", hash = "sha256:e268da7b40f56e3eca571508a7e567e794f9bfcc0f412c4b607931d3af9c4afe"},
-    {file = "ruff-0.11.5-py3-none-win_amd64.whl", hash = "sha256:6c6dc38af3cfe2863213ea25b6dc616d679205732dc0fb673356c2d69608f800"},
-    {file = "ruff-0.11.5-py3-none-win_arm64.whl", hash = "sha256:67e241b4314f4eacf14a601d586026a962f4002a475aa702c69980a38087aa4e"},
-    {file = "ruff-0.11.5.tar.gz", hash = "sha256:cae2e2439cb88853e421901ec040a758960b576126dab520fa08e9de431d1bef"},
+    {file = "ruff-0.11.6-py3-none-linux_armv6l.whl", hash = "sha256:d84dcbe74cf9356d1bdb4a78cf74fd47c740bf7bdeb7529068f69b08272239a1"},
+    {file = "ruff-0.11.6-py3-none-macosx_10_12_x86_64.whl", hash = "sha256:9bc583628e1096148011a5d51ff3c836f51899e61112e03e5f2b1573a9b726de"},
+    {file = "ruff-0.11.6-py3-none-macosx_11_0_arm64.whl", hash = "sha256:f2959049faeb5ba5e3b378709e9d1bf0cab06528b306b9dd6ebd2a312127964a"},
+    {file = "ruff-0.11.6-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:63c5d4e30d9d0de7fedbfb3e9e20d134b73a30c1e74b596f40f0629d5c28a193"},
+    {file = "ruff-0.11.6-py3-none-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:26a4b9a4e1439f7d0a091c6763a100cef8fbdc10d68593df6f3cfa5abdd9246e"},
+    {file = "ruff-0.11.6-py3-none-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:b5edf270223dd622218256569636dc3e708c2cb989242262fe378609eccf1308"},
+    {file = "ruff-0.11.6-py3-none-manylinux_2_17_ppc64.manylinux2014_ppc64.whl", hash = "sha256:f55844e818206a9dd31ff27f91385afb538067e2dc0beb05f82c293ab84f7d55"},
+    {file = "ruff-0.11.6-py3-none-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:1d8f782286c5ff562e4e00344f954b9320026d8e3fae2ba9e6948443fafd9ffc"},
+    {file = "ruff-0.11.6-py3-none-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:01c63ba219514271cee955cd0adc26a4083df1956d57847978383b0e50ffd7d2"},
+    {file = "ruff-0.11.6-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:15adac20ef2ca296dd3d8e2bedc6202ea6de81c091a74661c3666e5c4c223ff6"},
+    {file = "ruff-0.11.6-py3-none-musllinux_1_2_aarch64.whl", hash = "sha256:4dd6b09e98144ad7aec026f5588e493c65057d1b387dd937d7787baa531d9bc2"},
+    {file = "ruff-0.11.6-py3-none-musllinux_1_2_armv7l.whl", hash = "sha256:45b2e1d6c0eed89c248d024ea95074d0e09988d8e7b1dad8d3ab9a67017a5b03"},
+    {file = "ruff-0.11.6-py3-none-musllinux_1_2_i686.whl", hash = "sha256:bd40de4115b2ec4850302f1a1d8067f42e70b4990b68838ccb9ccd9f110c5e8b"},
+    {file = "ruff-0.11.6-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:77cda2dfbac1ab73aef5e514c4cbfc4ec1fbef4b84a44c736cc26f61b3814cd9"},
+    {file = "ruff-0.11.6-py3-none-win32.whl", hash = "sha256:5151a871554be3036cd6e51d0ec6eef56334d74dfe1702de717a995ee3d5b287"},
+    {file = "ruff-0.11.6-py3-none-win_amd64.whl", hash = "sha256:cce85721d09c51f3b782c331b0abd07e9d7d5f775840379c640606d3159cae0e"},
+    {file = "ruff-0.11.6-py3-none-win_arm64.whl", hash = "sha256:3567ba0d07fb170b1b48d944715e3294b77f5b7679e8ba258199a250383ccb79"},
+    {file = "ruff-0.11.6.tar.gz", hash = "sha256:bec8bcc3ac228a45ccc811e45f7eb61b950dbf4cf31a67fa89352574b01c7d79"},
 ]
 
 [[package]]
 name = "runloop-api-client"
-version = "0.29.0"
+version = "0.30.0"
 description = "The official Python library for the runloop API"
 optional = false
 python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "runloop_api_client-0.29.0-py3-none-any.whl", hash = "sha256:c11715c089e62d336c76ac7aacc619e829b211a11104734b699cba6033443396"},
-    {file = "runloop_api_client-0.29.0.tar.gz", hash = "sha256:577fecc1e06c613916587544ca57f30a4ef71b6f801c74c7d7329942a70ccccf"},
+    {file = "runloop_api_client-0.30.0-py3-none-any.whl", hash = "sha256:5e922399bdd0f67c6e19c212d06203640580a50c3fc8760eef0eea6dd5259ee4"},
+    {file = "runloop_api_client-0.30.0.tar.gz", hash = "sha256:9211d9961d9aa2372d7f5ecd36c8197a72bfd1227d145caa9c710b8302e50e66"},
 ]
 
 [package.dependencies]
@@ -10270,4 +10270,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "95d36a97800f1c91a81b02f8c9462031839a929d9b93fde0008f2dbd415a7a82"
+content-hash = "b825cca526fb2f5291e8a8d29be62e414e59569cfcc5c9dae99420ab942c4e33"
