@@ -1165,7 +1165,9 @@ class AgentController:
 
         # Set accumulated token usage (sum of agent and condenser token usage)
         # Use a deep copy to ensure we don't modify the original object
-        metrics._accumulated_token_usage = agent_metrics.accumulated_token_usage.model_copy(deep=True)
+        metrics._accumulated_token_usage = (
+            agent_metrics.accumulated_token_usage.model_copy(deep=True)
+        )
         if condenser_metrics:
             metrics._accumulated_token_usage = (
                 metrics._accumulated_token_usage
