@@ -251,12 +251,10 @@ class CheckUserActivationMiddleware(BaseHTTPMiddleware):
                     return await call_next(request)
 
         if '/api/conversations/' in request.url.path:
-            # path_parts = request.url.path.split('/')
 
-            # conversation_index = path_parts.index('conversations')
-
-            if request.state.sid and request.state.user_id:
-                return await call_next(request)
+            if request.state and hasattr(request.state, 'user_id') and hasattr(request.state, 'sid'):
+                if request.state.user_id and request.state.sid:
+                    return await call_next(request)
 
         user_id = get_user_id(request)
         logger.info(f"Checking user activation for {user_id}")
