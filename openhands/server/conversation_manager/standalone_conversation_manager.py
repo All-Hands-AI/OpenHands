@@ -32,6 +32,11 @@ _CLEANUP_INTERVAL = 15
 UPDATED_AT_CALLBACK_ID = 'updated_at_callback_id'
 
 
+class MaxConcurrentConversationsError(Exception):
+    """Raised when a user attempts to exceed their maximum allowed concurrent conversations."""
+    pass
+
+
 @dataclass
 class StandaloneConversationManager(ConversationManager):
     """Manages conversations in standalone mode (single server instance)."""
@@ -124,16 +129,22 @@ class StandaloneConversationManager(ConversationManager):
         )
         await self.sio.enter_room(connection_id, ROOM_KEY.format(sid=sid))
         self._local_connection_id_to_session_id[connection_id] = sid
-        event_stream = await self.maybe_start_agent_loop(
-            sid, settings, user_id, github_user_id=github_user_id, mnemonic=mnemonic
-        )
-        if not event_stream:
-            logger.error(
-                f'No event stream after joining conversation: {sid}',
-                extra={'session_id': sid},
+        try:
+            event_stream = await self.maybe_start_agent_loop(
+                sid, settings, user_id, github_user_id=github_user_id, mnemonic=mnemonic
             )
-            raise RuntimeError(f'no_event_stream:{sid}')
-        return event_stream
+            if not event_stream:
+                logger.error(
+                    f'No event stream after joining conversation: {sid}',
+                    extra={'session_id': sid},
+                )
+                raise RuntimeError(f'no_event_stream:{sid}')
+            return event_stream
+        except MaxConcurrentConversationsError as e:
+            # Send an error event to the client
+            error_message = str(e)
+            # raise ConnectionRefusedError(error_message)
+            return error_message
 
     async def detach_from_conversation(self, conversation: Conversation):
         sid = conversation.sid
@@ -269,16 +280,29 @@ class StandaloneConversationManager(ConversationManager):
                     'too_many_sessions_for:{user_id}',
                     extra={'session_id': sid, 'user_id': user_id},
                 )
-                # Get the conversations sorted (oldest first)
-                conversation_store = await self._get_conversation_store(
-                    user_id, github_user_id
-                )
-                conversations = await conversation_store.get_all_metadata(response_ids)
-                conversations.sort(key=_last_updated_at_key, reverse=True)
+                # # Get the conversations sorted (oldest first)
+                # conversation_store = await self._get_conversation_store(
+                #     user_id, github_user_id
+                # )
+                # conversations = await conversation_store.get_all_metadata(response_ids)
+                # conversations.sort(key=_last_updated_at_key, reverse=True)
 
-                while len(conversations) >= self.config.max_concurrent_conversations:
-                    oldest_conversation_id = conversations.pop().conversation_id
-                    await self.close_session(oldest_conversation_id)
+                # while len(conversations) >= self.config.max_concurrent_conversations:
+                #     oldest_conversation_id = conversations.pop().conversation_id
+                #     await self.close_session(oldest_conversation_id)
+                # Instead of closing the oldest conversation, raise an error
+                event_store = await self._get_event_store(sid, user_id, True)
+                if not event_store:
+                    logger.error(
+                        f'No event stream after starting agent loop: {sid}',
+                        extra={'session_id': sid},
+                    )
+                    raise RuntimeError(f'no_event_stream:{sid}')
+                return event_store
+    
+                # raise MaxConcurrentConversationsError(
+                #     f"You have reached the maximum limit of {self.config.max_concurrent_conversations} concurrent conversations."
+                # )
 
             session = Session(
                 sid=sid,
@@ -315,9 +339,17 @@ class StandaloneConversationManager(ConversationManager):
         return event_store
 
     async def _get_event_store(
-        self, sid: str, user_id: str | None
+        self, sid: str, user_id: str | None, is_reached_limit: bool = False
     ) -> EventStore | None:
         logger.info(f'_get_event_store:{sid}', extra={'session_id': sid})
+        # If the limit is reached, return an EventStore with the sid, file_store, user_id, and cur_id to return old events.
+        if is_reached_limit:
+            return EventStore(
+                sid,
+                self.file_store,
+                user_id,
+            )
+        
         session = self._local_agent_loops_by_sid.get(sid)
         if session:
             logger.info(f'found_local_agent_loop:{sid}', extra={'session_id': sid})

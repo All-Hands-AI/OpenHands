@@ -34,6 +34,12 @@ def get_user_detail_from_thesis_auth_server(bearer_token: str) -> ThesisUser | N
     }
 
     response = requests.request("GET", url, headers=headers, data=payload)
+    if response.status_code != 200:
+        logger.error(f"Failed to get user detail: {response.status_code} - {response.text}")
+        raise HTTPException(
+            status_code=response.status_code,
+            detail=f"{response.json().get('error')}"
+        )
     user_data = response.json()['user']
     if not user_data:
         return None
@@ -63,5 +69,5 @@ def add_invite_code_to_user(code: str, bearer_token: str) -> dict | None:
         logger.error(f"Unexpected error while adding invite code: {str(e)}")
         raise HTTPException(
             status_code=500,
-            detail=f"{str(e)}"
+            detail=f"{e.detail}"
         ) 

@@ -424,7 +424,7 @@ class LLM(RetryMixin, DebugMixin):
                 base_url = 'http://' + base_url
 
             response = httpx.get(
-                f'{base_url}/v1/model/info',
+                f'{base_url}v1/model/info',
                 headers={
                     'Authorization': f'Bearer {self.config.api_key.get_secret_value() if self.config.api_key else None}'
                 },

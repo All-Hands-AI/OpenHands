@@ -52,6 +52,16 @@ class InitSessionRequest(BaseModel):
     replay_json: str | None = None
 
 
+class ChangeVisibilityRequest(BaseModel):
+    is_published: bool = True
+    hidden_prompt: bool = True
+
+
+class ConversationVisibility(BaseModel):
+    is_published: bool
+    hidden_prompt: bool
+
+
 async def _create_new_conversation(
     user_id: str | None,
     git_provider_tokens: PROVIDER_TOKEN_TYPE | None,
@@ -67,22 +77,14 @@ async def _create_new_conversation(
         extra={'signal': 'create_conversation', 'user_id': user_id},
     )
 
-    # Check if user already has a running conversation and total conversation limit
-    if user_id:
-        # Get all conversations for the user
-        conversation_store = await ConversationStoreImpl.get_instance(
-            config, user_id, None
+    running_conversations = await conversation_manager.get_running_agent_loops(
+            user_id
         )
-        conversation_metadata_result_set = await conversation_store.search(
-            None, limit=10
-        )  # Get more than 5 to check limit
-        user_conversations = conversation_metadata_result_set.results
-
-        if len(user_conversations) >= 5:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail='You have reached the maximum limit of 5 conversations. Please delete some existing conversations before creating a new one.',
-            )
+    if len(running_conversations) >= config.max_concurrent_conversations:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"You have reached the maximum limit of {config.max_concurrent_conversations} concurrent conversations."
+        )
 
     logger.info('Loading settings')
     settings = await get_user_setting(user_id)
@@ -159,6 +161,7 @@ async def _create_new_conversation(
         user_id,
         initial_user_msg=initial_message_action,
         replay_json=replay_json,
+
     )
     logger.info(f'Finished initializing conversation {conversation_id}')
 
@@ -211,6 +214,15 @@ async def new_conversation(request: Request, data: InitSessionRequest):
                 'status': 'error',
                 'message': str(e),
                 'msg_id': 'STATUS$ERROR_LLM_AUTHENTICATION',
+            },
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+    
+    except Exception as e:
+        return JSONResponse(
+            content={
+                'status': 'error',
+                'detail': e.detail,
             },
             status_code=status.HTTP_400_BAD_REQUEST,
         )
@@ -406,19 +418,16 @@ async def delete_conversation(
 async def change_visibility(
     conversation_id: str,
     request: Request,
-    is_published: bool = Body(embed=True),
+    data: ChangeVisibilityRequest,
 ) -> bool:
     user_id = get_user_id(request)
-    # conversation_store = await ConversationStoreImpl.get_instance(
-    #     config, user_id, get_github_user_id(request)
-    # )
-    # metadata = await conversation_store.get_metadata(conversation_id)
-    # if not metadata:
-    #     return False
-    return await conversation_module._update_conversation_visibility(conversation_id, is_published, str(user_id))
+    return await conversation_module._update_conversation_visibility(
+        conversation_id, data.is_published, str(user_id),
+        {'hidden_prompt': data.hidden_prompt}
+    )
 
 
-@app.get('/conversations/{conversation_id}/visibility')
+@app.get('/conversations/{conversation_id}/visibility', response_model=ConversationVisibility)
 async def get_conversation_visibility(
     conversation_id: str,
     request: Request,

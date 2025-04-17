@@ -81,18 +81,12 @@ async def signup(request: SignupRequest) -> SignupResponse:
 @app.get('/address-by-network/{network_id}')
 async def get_address_by_network(network_id: str, request: Request) -> str:
     try:
-        url = f"{os.getenv('THESIS_AUTH_SERVER_URL')}/api/users/detail"
-        payload = {}
-        headers = {
-            'content-type': 'application/json',
-            'Authorization': f'{request.headers.get("Authorization")}'
-        }
+        user = request.state.user
 
-        response = requests.request("GET", url, headers=headers, data=payload)
         if network_id.lower() == 'solana':
-            return response.json()['user']['solanaThesisAddress']
+            return user.solanaThesisAddress
         elif network_id.lower() == 'evm':
-            return response.json()['user']['ethThesisAddress']
+            return user.ethThesisAddress
         else:
             raise HTTPException(status_code=400, detail='Invalid network id')
     except Exception as e:

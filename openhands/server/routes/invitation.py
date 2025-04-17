@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, HTTPException
 from openhands.server.auth import get_user_id
 from openhands.server.thesis_auth import add_invite_code_to_user
 from openhands.core.logger import openhands_logger as logger
@@ -16,10 +16,13 @@ async def validate_invitation_code(code: str, request: Request) -> dict:
 
     A user can only validate one invitation code.
     """
-    user_id = get_user_id(request)
-    # The middleware already checked whitelist status
-    add_invite_code_to_user(code, request.headers.get("Authorization"))
-    return {
-        "valid": True,
-        "reason": "Invitation code activated successfully"
-    }
+    try:
+        # The middleware already checked whitelist status
+        add_invite_code_to_user(code, request.headers.get("Authorization"))
+        return {
+            "valid": True,
+            "reason": "Invitation code activated successfully"
+        }
+    except Exception as e:
+        logger.error(f"Error validating invitation code: {e}")
+        raise HTTPException(status_code=500, detail=e.detail)

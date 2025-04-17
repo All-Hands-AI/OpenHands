@@ -55,7 +55,7 @@ async def connect(connection_id: str, environ):
 
     user_id = None
     mnemonic = None
-
+    conversation_configs = None
     if not conversation_id:
         logger.error('No conversation_id in query params')
         raise ConnectionRefusedError('No conversation_id in query params')
@@ -67,6 +67,7 @@ async def connect(connection_id: str, environ):
             raise ConnectionRefusedError(error)
         else:
             user_id = str(info['user_id'])
+            conversation_configs = info
     else:
         # Get JWT token from query params
         jwt_token = query_params.get('auth', [None])[0]
@@ -98,13 +99,14 @@ async def connect(connection_id: str, environ):
             payload = jwt.decode(jwt_token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
 
             user: ThesisUser | None = get_user_detail_from_thesis_auth_server('Bearer ' + jwt_token)
-            user_id = payload['user']['publicAddress']
-            # Fetch user record from database
             if not user:
                 logger.error(f'User not found in database: {user_id}')
                 raise ConnectionRefusedError('User not found')
-
-            if user.whitelisted != UserStatus.WHITELISTED:
+            
+            user_id = payload['user']['publicAddress']
+            
+            # TODO: If the user is not whitelisted and the run mode is DEV, skip the check
+            if user.whitelisted != UserStatus.WHITELISTED and os.getenv('RUN_MODE') != 'DEV':
                 logger.error(f'User not activated: {user_id}')
                 raise ConnectionRefusedError('User not activated')
 
@@ -148,7 +150,14 @@ async def connect(connection_id: str, environ):
             agent_state_changed = event
         else:
             event_dict = event_to_dict(event)
-            await sio.emit('oh_event', {**event_dict, 'initialize_conversation': True}, to=connection_id)
+            new_event_dict = {**event_dict, 'initialize_conversation': True}
+            if mode == 'shared' and new_event_dict.get('source') == 'user':
+                new_event_dict['hidden_prompt'] = conversation_configs['hidden_prompt']
+                if conversation_configs['hidden_prompt']:
+                    content = 'The creator of this prompt has chosen to keep it private, so it cannot be viewed by others unless its privacy settings are changed.'
+                    new_event_dict['args']['content'] = content
+                    new_event_dict['message'] = content
+            await sio.emit('oh_event', new_event_dict, to=connection_id)
     if agent_state_changed:
         await sio.emit('oh_event', event_to_dict(agent_state_changed), to=connection_id)
     logger.info(f'Finished replaying event stream for conversation {conversation_id}')
