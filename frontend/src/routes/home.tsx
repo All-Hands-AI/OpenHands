@@ -22,7 +22,7 @@ function HomeScreen() {
 
       <hr className="border-[#717888]" />
 
-      <main className="flex justify-between overflow-y-auto">
+      <main className="flex justify-between gap-4">
         <RepoConnector
           onRepoSelection={(title) => setSelectedRepoTitle(title)}
         />
