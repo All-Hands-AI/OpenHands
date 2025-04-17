@@ -18,6 +18,8 @@ class A2AListRemoteAgentsObservation(Observation):
 class A2ASendTaskObservation(Observation):
     """This data class represents the result of a A2A Send Task operation."""
 
+    is_completed: bool = False
+    num_tasks: int = 0
     observation: str = ObservationType.A2A_SEND_TASK
 
     @property

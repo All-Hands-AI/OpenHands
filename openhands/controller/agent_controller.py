@@ -65,6 +65,7 @@ from openhands.events.observation import (
     NullObservation,
     Observation,
 )
+from openhands.events.observation.a2a import A2ASendTaskObservation
 from openhands.events.serialization.event import event_to_trajectory, truncate_content
 from openhands.llm.llm import LLM
 from openhands.llm.metrics import Metrics
@@ -339,6 +340,8 @@ class AgentController:
             if isinstance(event, AgentStateChangedObservation) or isinstance(
                 event, NullObservation
             ):
+                return False
+            if isinstance(event, A2ASendTaskObservation) and not event.is_completed:
                 return False
             return True
         return False

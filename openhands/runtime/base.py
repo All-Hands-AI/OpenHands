@@ -578,6 +578,8 @@ class Runtime(FileEditRuntimeMixin):
             yield A2AListRemoteAgentsObservation(content=json.dumps(list_agent))
         elif isinstance(action, A2ASendTaskAction):
             async for task_response in self.a2a_manager.send_task(action.agent_name, action.task_message, self.sid):
+                if task_response is None or task_response.result is None:
+                    continue
                 yield A2ASendTaskObservation(content=task_response.result.model_dump_json())
 
     # ====================================================================
