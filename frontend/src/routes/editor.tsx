@@ -16,8 +16,13 @@ function EditorScreen() {
   const { t } = useTranslation();
   const { data: gitChanges, isSuccess, isError, error } = useGetGitChanges();
 
+  // Check if the error message contains "git repository" which would indicate it's not a git repo
   const isNotGitRepoError =
-    error && retrieveAxiosErrorMessage(error) === "Not a git repository";
+    error &&
+    (retrieveAxiosErrorMessage(error)
+      .toLowerCase()
+      .includes("git repository") ||
+      retrieveAxiosErrorMessage(error).toLowerCase().includes("git repo"));
 
   return (
     <main className="h-full overflow-y-scroll px-4 py-3 gap-3 flex flex-col">
