@@ -20,6 +20,7 @@ from openhands.server.thesis_auth import get_user_detail_from_thesis_auth_server
 from openhands.server.routes.auth import JWT_SECRET
 from openhands.server.thesis_auth import get_user_detail_from_thesis_auth_server
 from openhands.server.types import SessionMiddlewareInterface
+from openhands.server.modules.conversation import conversation_module
 
 
 class LocalhostCORSMiddleware(CORSMiddleware):
@@ -249,6 +250,14 @@ class CheckUserActivationMiddleware(BaseHTTPMiddleware):
                 if remaining and '/' not in remaining:
                     return await call_next(request)
 
+        if '/api/conversations/' in request.url.path:
+            # path_parts = request.url.path.split('/')
+
+            # conversation_index = path_parts.index('conversations')
+
+            if request.state.sid and request.state.user_id:
+                return await call_next(request)
+
         user_id = get_user_id(request)
         logger.info(f"Checking user activation for {user_id}")
         if not user_id:
@@ -300,6 +309,19 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
             if request.url.path.startswith(pattern):
                 remaining = request.url.path[len(pattern):]
                 if remaining and '/' not in remaining:
+                    return await call_next(request)
+        if '/api/conversations/' in request.url.path:
+            path_parts = request.url.path.split('/')
+
+            conversation_index = path_parts.index('conversations')
+            if len(path_parts) > conversation_index + 1:
+                conversation_id = path_parts[conversation_index + 1]
+                # Check if the conversation is public
+                error, visibility_info = await conversation_module._get_conversation_visibility_info(conversation_id)
+                print(f'error: {error}, conversation_id: {conversation_id}, JWT Middleware')
+                if not error:
+                    request.state.sid = conversation_id
+                    request.state.user_id = visibility_info['user_id']
                     return await call_next(request)
 
         auth_header = request.headers.get('Authorization')
