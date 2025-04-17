@@ -26,7 +26,7 @@ export function TaskSuggestions({ filterFor }: TaskSuggestionsProps) {
     >
       <h2 className="heading">Suggested Tasks</h2>
 
-      <div className="flex flex-col gap-6 overflow-y-auto">
+      <div className="flex flex-col gap-6">
         {!providersAreSet && <ConnectToProviderMessage />}
         {isLoading && <TaskSuggestionsSkeleton />}
         {!hasSuggestedTasks && <p>No tasks available</p>}

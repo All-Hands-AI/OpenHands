@@ -16,7 +16,7 @@ function HomeScreen() {
   return (
     <div
       data-testid="home-screen"
-      className="bg-base-secondary h-full flex flex-col rounded-xl px-[42px] pt-[42px] gap-8"
+      className="bg-base-secondary h-full flex flex-col rounded-xl px-[42px] pt-[42px] gap-8 overflow-y-auto"
     >
       <HomeHeader />
 
