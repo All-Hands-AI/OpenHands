@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Any, List, Tuple, Union
+from typing import Any, List, Union
 
 from openhands.controller.state.state import State
 from openhands.core.config.condenser_config import LLMAgentCacheCondenserConfig
@@ -10,6 +9,8 @@ from openhands.core.message import Message, TextContent
 from openhands.core.schema.action import ActionType
 from openhands.events.action.agent import CondensationAction
 from openhands.events.event import Event, EventSource
+from openhands.events.observation.agent import AgentCondensationObservation
+from openhands.events.serialization.event import truncate_content
 from openhands.memory.condenser.condenser import Condensation, View
 from openhands.memory.condenser.impl.caching_condenser import CachingCondenser
 
@@ -19,20 +20,27 @@ class LLMAgentCacheCondenser(CachingCondenser):
         self,
         max_size: int = 100,
         trigger_word: str = 'CONDENSE!',
+        max_event_length: int = 10_000,
     ):
         """Initialize the condenser.
         Args:
             max_size: Maximum number of events before condensation is triggered
             trigger_word: Word that triggers condensation when found in user messages
+            max_event_length: Maximum length of event representations to be passed to the LLM
         """
         self.max_size = max_size
         self.trigger_word = trigger_word
+        self.max_event_length = max_event_length
         super().__init__()
+
+    def _truncate(self, content: str) -> str:
+        """Truncate the content to fit within the specified maximum event length."""
+        return truncate_content(content, max_chars=self.max_event_length)
 
     def createCondensationPrompt(
         self, events: List[Event], state: State, base_messages: List[Message]
     ) -> Message:
-        """Create the prompt for condensation.
+        """Create the prompt for condensation using a similar approach to LLMSummarizingCondenser.
         This method is required by the CachingCondenser abstract base class.
         Args:
             events: The events to condense
@@ -41,37 +49,79 @@ class LLMAgentCacheCondenser(CachingCondenser):
         Returns:
             The message with condensation instructions
         """
-        nextMessageNumber = len(base_messages)
+        # Find the most recent condensation event if it exists
+        summary_event = None
+        for event in reversed(events):
+            if isinstance(event, AgentCondensationObservation):
+                summary_event = event
+                break
 
-        # Create the condensation instructions
-        condensation_instructions = f"""
-I need you to condense our conversation history to make it more efficient. Please:
+        # Create the condensation instructions similar to LLMSummarizingCondenser
+        prompt = """You are maintaining a context-aware state summary for an interactive agent. You will be given a list of events corresponding to actions taken by the agent, and the most recent previous summary if one exists. Track:
 
-1. Identify which previous messages can be removed without losing important context
-2. You have two options for condensing the conversation:
+USER_CONTEXT: (Preserve essential user requirements, goals, and clarifications in concise form)
 
-    Option A - Keep specific messages:
-    For each message you decide to keep, respond with "KEEP: [message number]"
+COMPLETED: (Tasks completed so far, with brief results)
+PENDING: (Tasks that still need to be done)
+CURRENT_STATE: (Current variables, data structures, or relevant state)
 
-    Option B - Rewrite a range of messages:
-    You can replace a sequence of messages with a single summary using:
+For code-specific tasks, also include:
+CODE_STATE: {File paths, function signatures, data structures}
+TESTS: {Failing cases, error messages, outputs}
+CHANGES: {Code edits, variable updates}
+DEPS: {Dependencies, imports, external calls}
+VERSION_CONTROL_STATUS: {Repository state, current branch, PR status, commit history}
 
-    REWRITE [start-message-number] TO [end-message-number] WITH:
-    [new-content]
-    END-REWRITE
+PRIORITIZE:
+1. Adapt tracking format to match the actual task type
+2. Capture key user requirements and goals
+3. Distinguish between completed and pending tasks
+4. Keep all sections concise and relevant
 
-    This will replace all messages from start to end (inclusive) with a single message containing the new content.
+SKIP: Tracking irrelevant details for the current task type
 
-3. Refer to messages by their number (0-{nextMessageNumber - 1})
-4. You must keep at least one user message
-5. Always keep the system prompt (message 0) if it exists
+Example formats:
 
-Respond ONLY with KEEP and REWRITE commands, nothing else.
-"""
+For code tasks:
+USER_CONTEXT: Fix FITS card float representation issue
+COMPLETED: Modified mod_float() in card.py, all tests passing
+PENDING: Create PR, update documentation
+CODE_STATE: mod_float() in card.py updated
+TESTS: test_format() passed
+CHANGES: str(val) replaces f"{val:.16G}"
+DEPS: None modified
+VERSION_CONTROL_STATUS: Branch: fix-float-precision, Latest commit: a1b2c3d
+
+For other tasks:
+USER_CONTEXT: Write 20 haikus based on coin flip results
+COMPLETED: 15 haikus written for results [T,H,T,H,T,H,T,T,H,T,H,T,H,T,H]
+PENDING: 5 more haikus needed
+CURRENT_STATE: Last flip: Heads, Haiku count: 15/20"""
+
+        prompt += '\n\n'
+
+        # Add the previous summary if it exists
+        if summary_event and hasattr(summary_event, 'message') and summary_event.message:
+            summary_event_content = self._truncate(summary_event.message)
+            prompt += f'<PREVIOUS SUMMARY>\n{summary_event_content}\n</PREVIOUS SUMMARY>\n\n'
+
+        # Add events to be summarized
+        # We'll identify events that should be summarized - these are events that aren't
+        # part of the most recent conversation (we'll keep the last few events)
+        events_to_keep = min(20, len(events) // 4)  # Keep approximately 25% of recent events
+        events_to_summarize = events[:-events_to_keep] if events_to_keep > 0 else events
+
+        for event in events_to_summarize:
+            if not isinstance(event, AgentCondensationObservation):  # Don't summarize previous summaries
+                event_content = self._truncate(str(event))
+                prompt += f'<EVENT id={event.id}>\n{event_content}\n</EVENT>\n'
+
+        prompt += '\nNow summarize the events using the rules above.'
+
         # Create a message with the condensation instructions
         return Message(
             role='user',
-            content=[TextContent(text=condensation_instructions)],
+            content=[TextContent(text=prompt)],
         )
 
     def processResponse(
@@ -83,18 +133,54 @@ Respond ONLY with KEEP and REWRITE commands, nothing else.
             events: The events that were condensed
             state: The current state
             response: The LLM response
+            messages: The messages that were in the prompt
         Returns:
             A Condensation or View object
         """
-        # Parse the response to extract rewrite commands and keep indices
-        rewrite_commands, keep_message_indices = self._parse_condensation_response(
-            response
-        )
+        # Extract the summary from the response
+        summary = response.choices[0].message.content
 
-        # Condense the events
-        return self._condense_events(
-            events, messages, rewrite_commands, keep_message_indices
-        )
+        # Log the response for debugging
+        self.add_metadata('response', response.model_dump())
+
+        # Identify events to be forgotten
+        # We'll keep approximately 25% of the most recent events
+        events_to_keep = min(20, len(events) // 4)
+        events_to_forget = events[:-events_to_keep] if events_to_keep > 0 else []
+
+        # Filter out any condensation events from the list of events to forget
+        events_to_forget = [
+            event for event in events_to_forget 
+            if not isinstance(event, AgentCondensationObservation)
+        ]
+
+        # Make sure we're not forgetting all user messages
+        user_events = [
+            event for event in events 
+            if hasattr(event, 'source') and event.source == EventSource.USER
+        ]
+        
+        # If we would forget all user messages, keep at least one
+        if user_events and all(event in events_to_forget for event in user_events):
+            # Keep the most recent user message
+            for event in reversed(user_events):
+                if event in events_to_forget:
+                    events_to_forget.remove(event)
+                    break
+
+        # If we have events to forget, create a condensation
+        if events_to_forget:
+            forgotten_event_ids = [event.id for event in events_to_forget]
+            
+            return Condensation(
+                action=CondensationAction(
+                    forgotten_event_ids=forgotten_event_ids,
+                    summary=summary
+                )
+            )
+        else:
+            # If we don't have any events to forget, just return the original view
+            return View.from_events(events)
 
     def should_condense(self, view: View) -> bool:
         """Determine if the view should be condensed.
@@ -147,147 +233,15 @@ Respond ONLY with KEEP and REWRITE commands, nothing else.
 
         return False
 
-    def _parse_condensation_response(
-        self, response: Any
-    ) -> Tuple[List[RewriteCommand], List[int]]:
-        # Parse the response to get the list of messages to keep and any REWRITE commands
-        keep_message_indices = []
-        rewrite_commands = []
-        rewrite_start = None
-        rewrite_end = None
-        rewrite_content: List[str] = []
-
-        response_text = response.choices[0].message.content or ''
-
-        lines = response_text.strip().split('\n')
-        i = 0
-        while i < len(lines):
-            line = lines[i].strip()
-
-            # Process KEEP commands
-            if line.startswith('KEEP:'):
-                try:
-                    index = int(line.replace('KEEP:', '').strip())
-                    keep_message_indices.append(index)
-                except ValueError:
-                    pass
-                i += 1
-
-            # Process REWRITE commands
-            elif line.startswith('REWRITE ') and ' TO ' in line and ' WITH:' in line:
-                try:
-                    # Extract the start and end event IDs from the line
-                    command_parts = line.split(' WITH:')[0].strip()
-                    range_parts = command_parts.replace('REWRITE ', '').split(' TO ')
-                    rewrite_start = int(range_parts[0].strip())
-                    rewrite_end = int(range_parts[1].strip())
-
-                    # Collect content until END-REWRITE
-                    rewrite_content = []
-                    i += 1  # Move to the next line after the REWRITE command
-
-                    while i < len(lines) and lines[i].strip() != 'END-REWRITE':
-                        rewrite_content.append(lines[i])
-                        i += 1
-
-                    if i < len(lines) and lines[i].strip() == 'END-REWRITE':
-                        # Found the end marker, create the rewrite command
-                        rewrite_commands.append(
-                            RewriteCommand(
-                                start=rewrite_start,
-                                end=rewrite_end,
-                                content='\n'.join(rewrite_content),
-                            )
-                        )
-
-                    # Skip the END-REWRITE line
-                    i += 1
-
-                except (ValueError, IndexError) as e:
-                    logger.info(
-                        f"Error parsing line '{line}': {e}. Skipping this line."
-                    )
-                    i += 1
-            else:
-                # Skip any other lines
-                i += 1
-
-        return rewrite_commands, keep_message_indices
-
-    def _condense_events(
-        self,
-        events: List[Event],
-        messages: List[Message],
-        rewrite_commands: List[RewriteCommand],
-        keep_message_indices: List[int],
-    ) -> Union[Condensation, View]:
-        """Condense events based on LLM's response.
-
-        Args:
-            events: The original list of events.
-            messages: The list of messages derived from events.
-            rewrite_commands: List of rewrite commands from the LLM.
-            keep_message_indices: Indices of messages to keep.
-
-        Returns:
-            A Condensation or View object.
-        """
-        # If no indices or rewrite commands are provided, keep all events
-        if not keep_message_indices and not rewrite_commands:
-            return View.from_events(events)
-
-        keep_events = []
-
-        # Add events that were not sent to the LLM (i.e., events without a corresponding `_event` in messages)
-        for event in events:
-            if not any(message._event == event for message in messages):
-                if event.id == Event.INVALID_ID:
-                    raise ValueError(f'Event {event} had an invalid id.')
-                keep_events.append(event)
-
-        # Add the events to keep based on the LLM's response
-        for index in keep_message_indices:
-            try:
-                message = messages[index]
-                if message._event:
-                    keep_events.append(message._event)
-            except IndexError:
-                pass
-
-        if rewrite_commands:
-            summary = '\n'.join([rewrite.content for rewrite in rewrite_commands])
-        else:
-            summary = None
-            # if we have no summary, make sure we keep at least one user message
-            if not any(event.source == EventSource.USER for event in keep_events):
-                for event in events:
-                    if event.source == EventSource.USER:
-                        keep_events.append(event)
-                        break
-
-        # Create a list of event IDs to forget
-        forgotten_event_ids = [event.id for event in events if event not in keep_events]
-        # Create and return the condensation action
-        return Condensation(
-            action=CondensationAction(
-                forgotten_event_ids=forgotten_event_ids, summary=summary
-            )
-        )
-
     @classmethod
     def from_config(
         cls, config: LLMAgentCacheCondenserConfig
     ) -> LLMAgentCacheCondenser:
-        return LLMAgentCacheCondenser(**config.model_dump(exclude=['type']))
-
-
-@dataclass
-class RewriteCommand:
-    """Represents a rewrite command parsed from the LLM response."""
-
-    start: int
-    end: int
-    content: str
+        return LLMAgentCacheCondenser(
+            max_size=config.max_size,
+            trigger_word=config.trigger_word,
+            max_event_length=config.max_event_length,
+        )
 
 
 LLMAgentCacheCondenser.register_config(LLMAgentCacheCondenserConfig)

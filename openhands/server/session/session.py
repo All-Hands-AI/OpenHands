@@ -8,6 +8,7 @@ import socketio
 from openhands.controller.agent import Agent
 from openhands.core.config import AppConfig
 from openhands.core.config.condenser_config import (
+    LLMAgentCacheCondenserConfig,
     LLMSummarizingCondenserConfig,
     StructuredSummaryCondenserConfig,
 )
@@ -128,20 +129,13 @@ class Session:
         agent_config = self.config.get_agent_config(agent_cls)
 
         if settings.enable_default_condenser:
-            # If function-calling is active we can use the structured summary
-            # condenser for more reliable summaries.
-            if llm.is_function_calling_active():
-                default_condenser_config = StructuredSummaryCondenserConfig(
-                    llm_config=llm.config, keep_first=3, max_size=80
-                )
-
-            # Otherwise, we'll fall back to the unstructured summary condenser.
-            # This is a good default but struggles more than the structured
-            # summary condenser with long messages.
-            else:
-                default_condenser_config = LLMSummarizingCondenserConfig(
-                    llm_config=llm.config, keep_first=3, max_size=80
-                )
+            # Use LLMAgentCacheCondenser as the default condenser
+            default_condenser_config = LLMAgentCacheCondenserConfig(
+                type='agentcache',
+                max_size=80,  # Default max size
+                trigger_word='CONDENSE!',  # Default trigger word
+                max_event_length=10_000,  # Default max event length
+            )
 
             self.logger.info(f'Enabling default condenser: {default_condenser_config}')
             agent_config.condenser = default_condenser_config

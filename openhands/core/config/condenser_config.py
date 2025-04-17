@@ -69,6 +69,10 @@ class LLMAgentCacheCondenserConfig(BaseModel):
         default='CONDENSE!',
         description='Word that triggers condensation when found in user messages.',
     )
+    max_event_length: int = Field(
+        default=10_000,
+        description='Maximum length of the event representations to be passed to the LLM.',
+    )
 
     model_config = {'extra': 'forbid'}
 
