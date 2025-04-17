@@ -1,8 +1,9 @@
 import asyncio
 import copy
 import os
+import time
 import traceback
-from typing import Callable, ClassVar, Type
+from typing import Callable, ClassVar, Optional, Type, Tuple
 
 import litellm  # noqa
 from litellm.exceptions import (  # noqa
@@ -85,7 +86,8 @@ class AgentController:
     agent_configs: dict[str, AgentConfig]
     parent: 'AgentController | None' = None
     delegate: 'AgentController | None' = None
-    _pending_action: Action | None = None
+    _pending_action_info: Tuple[Action, float] | None = None  # (action, timestamp)
+    _pending_action_timeout: float = 60.0  # 1 minute timeout
     _closed: bool = False
     filter_out: ClassVar[tuple[type[Event], ...]] = (
         NullAction,
@@ -308,21 +310,51 @@ class AgentController:
         """
         # it might be the delegate's day in the sun
         if self.delegate is not None:
+            self.log(
+                'debug',
+                f'Not stepping because delegate is active: {type(event).__name__}',
+                extra={'msg_type': 'SHOULD_STEP_DELEGATE_ACTIVE'},
+            )
             return False
 
         if isinstance(event, Action):
             if isinstance(event, MessageAction) and event.source == EventSource.USER:
+                self.log(
+                    'debug',
+                    f'Should step: User message received',
+                    extra={'msg_type': 'SHOULD_STEP_USER_MESSAGE'},
+                )
                 return True
             if (
                 isinstance(event, MessageAction)
                 and self.get_agent_state() != AgentState.AWAITING_USER_INPUT
             ):
                 # TODO: this is fragile, but how else to check if eligible?
+                self.log(
+                    'debug',
+                    f'Should step: Message action while not awaiting user input',
+                    extra={'msg_type': 'SHOULD_STEP_MESSAGE_NOT_AWAITING'},
+                )
                 return True
             if isinstance(event, AgentDelegateAction):
+                self.log(
+                    'debug',
+                    f'Should step: Agent delegate action',
+                    extra={'msg_type': 'SHOULD_STEP_DELEGATE_ACTION'},
+                )
                 return True
             if isinstance(event, CondensationAction):
+                self.log(
+                    'debug',
+                    f'Should step: Condensation action',
+                    extra={'msg_type': 'SHOULD_STEP_CONDENSATION'},
+                )
                 return True
+            self.log(
+                'debug',
+                f'Should not step: Action type not eligible: {type(event).__name__}',
+                extra={'msg_type': 'SHOULD_NOT_STEP_ACTION_TYPE'},
+            )
             return False
         if isinstance(event, Observation):
             if (
@@ -331,12 +363,32 @@ class AgentController:
                 and event.cause
                 > 0  # NullObservation has cause > 0 (RecallAction), not 0 (user message)
             ):
+                self.log(
+                    'debug',
+                    f'Should step: NullObservation with cause > 0',
+                    extra={'msg_type': 'SHOULD_STEP_NULL_OBS_RECALL'},
+                )
                 return True
             if isinstance(event, AgentStateChangedObservation) or isinstance(
                 event, NullObservation
             ):
+                self.log(
+                    'debug',
+                    f'Should not step: AgentStateChangedObservation or NullObservation',
+                    extra={'msg_type': 'SHOULD_NOT_STEP_STATE_OR_NULL'},
+                )
                 return False
+            self.log(
+                'debug',
+                f'Should step: Observation type: {type(event).__name__}',
+                extra={'msg_type': 'SHOULD_STEP_OBSERVATION'},
+            )
             return True
+        self.log(
+            'debug',
+            f'Should not step: Unknown event type: {type(event).__name__}',
+            extra={'msg_type': 'SHOULD_NOT_STEP_UNKNOWN'},
+        )
         return False
 
     def on_event(self, event: Event) -> None:
@@ -378,12 +430,35 @@ class AgentController:
             self.state.history.append(event)
 
         if isinstance(event, Action):
+            # Log diagnostic info when a user message is received
+            if isinstance(event, MessageAction) and event.source == EventSource.USER:
+                self.log(
+                    'info',
+                    f'User message received: "{event.content[:50]}{"..." if len(event.content) > 50 else ""}"',
+                    extra={'msg_type': 'USER_MESSAGE_RECEIVED'},
+                )
+                self.log_diagnostic_info()
+                
             await self._handle_action(event)
         elif isinstance(event, Observation):
             await self._handle_observation(event)
 
-        if self.should_step(event):
+        should_step = self.should_step(event)
+        if should_step:
+            self.log(
+                'info',
+                f'Stepping agent after event: {type(event).__name__}',
+                extra={'msg_type': 'STEPPING_AGENT'},
+            )
             self.step()
+        elif isinstance(event, MessageAction) and event.source == EventSource.USER:
+            # If we received a user message but aren't stepping, log why
+            self.log(
+                'warning',
+                f'Not stepping agent after user message. Current state: {self.get_agent_state()}',
+                extra={'msg_type': 'NOT_STEPPING_AFTER_USER_MESSAGE'},
+            )
+            self.log_diagnostic_info()
 
     async def _handle_action(self, action: Action) -> None:
         """Handles an Action from the agent or delegate."""
@@ -434,14 +509,43 @@ class AgentController:
 
         # this happens for runnable actions and microagent actions
         if self._pending_action and self._pending_action.id == observation.cause:
+            self.log(
+                'info',
+                f'Observation matches pending action: {type(observation).__name__} for {type(self._pending_action).__name__} (id={self._pending_action.id})',
+                extra={'msg_type': 'OBSERVATION_MATCHES_PENDING_ACTION'},
+            )
+            
             if self.state.agent_state == AgentState.AWAITING_USER_CONFIRMATION:
+                self.log(
+                    'info',
+                    f'Not clearing pending action because agent is awaiting user confirmation',
+                    extra={'msg_type': 'PENDING_ACTION_NOT_CLEARED_AWAITING_CONFIRMATION'},
+                )
                 return
+                
             self._pending_action = None
+            
             if self.state.agent_state == AgentState.USER_CONFIRMED:
+                self.log(
+                    'info',
+                    f'Setting agent state to RUNNING after user confirmation',
+                    extra={'msg_type': 'STATE_CHANGE_AFTER_CONFIRMATION'},
+                )
                 await self.set_agent_state_to(AgentState.RUNNING)
             if self.state.agent_state == AgentState.USER_REJECTED:
+                self.log(
+                    'info',
+                    f'Setting agent state to AWAITING_USER_INPUT after user rejection',
+                    extra={'msg_type': 'STATE_CHANGE_AFTER_REJECTION'},
+                )
                 await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
             return
+        elif self._pending_action:
+            self.log(
+                'debug',
+                f'Observation does not match pending action: {type(observation).__name__} (cause={observation.cause}) vs {type(self._pending_action).__name__} (id={self._pending_action.id})',
+                extra={'msg_type': 'OBSERVATION_MISMATCH_PENDING_ACTION'},
+            )
         elif isinstance(observation, ErrorObservation):
             if self.state.agent_state == AgentState.ERROR:
                 self.state.metrics.merge(self.state.local_metrics)
@@ -717,9 +821,21 @@ class AgentController:
     async def _step(self) -> None:
         """Executes a single step of the parent or delegate agent. Detects stuck agents and limits on the number of iterations and the task budget."""
         if self.get_agent_state() != AgentState.RUNNING:
+            self.log(
+                'info',
+                f'Agent not stepping because state is {self.get_agent_state()} (not RUNNING)',
+                extra={'msg_type': 'STEP_BLOCKED_STATE'},
+            )
             return
 
         if self._pending_action:
+            action_id = getattr(self._pending_action, 'id', 'unknown')
+            action_type = type(self._pending_action).__name__
+            self.log(
+                'info',
+                f'Agent not stepping because of pending action: {action_type} (id={action_id})',
+                extra={'msg_type': 'STEP_BLOCKED_PENDING_ACTION'},
+            )
             return
 
         self.log(
@@ -872,6 +988,64 @@ class AgentController:
             stop_step = True
         return stop_step
 
+    @property
+    def _pending_action(self) -> Action | None:
+        """Get the current pending action, checking for timeout.
+        
+        Returns:
+            Action | None: The current pending action, or None if there isn't one or it has timed out.
+        """
+        if self._pending_action_info is None:
+            return None
+            
+        action, timestamp = self._pending_action_info
+        current_time = time.time()
+        elapsed_time = current_time - timestamp
+        
+        # Check if the pending action has timed out
+        if elapsed_time > self._pending_action_timeout:
+            action_id = getattr(action, 'id', 'unknown')
+            action_type = type(action).__name__
+            self.log(
+                'warning',
+                f'Pending action timed out after {elapsed_time:.2f}s: {action_type} (id={action_id})',
+                extra={'msg_type': 'PENDING_ACTION_TIMEOUT'},
+            )
+            # Clear the timed-out pending action
+            self._pending_action_info = None
+            return None
+            
+        return action
+        
+    @_pending_action.setter
+    def _pending_action(self, action: Action | None) -> None:
+        """Set or clear the pending action with timestamp and logging.
+        
+        Args:
+            action: The action to set as pending, or None to clear.
+        """
+        if action is None:
+            if self._pending_action_info is not None:
+                prev_action, timestamp = self._pending_action_info
+                action_id = getattr(prev_action, 'id', 'unknown')
+                action_type = type(prev_action).__name__
+                elapsed_time = time.time() - timestamp
+                self.log(
+                    'info',
+                    f'Cleared pending action after {elapsed_time:.2f}s: {action_type} (id={action_id})',
+                    extra={'msg_type': 'PENDING_ACTION_CLEARED'},
+                )
+            self._pending_action_info = None
+        else:
+            action_id = getattr(action, 'id', 'unknown')
+            action_type = type(action).__name__
+            self.log(
+                'info',
+                f'Set pending action: {action_type} (id={action_id})',
+                extra={'msg_type': 'PENDING_ACTION_SET'},
+            )
+            self._pending_action_info = (action, time.time())
+    
     def get_state(self) -> State:
         """Returns the current running state object.
 
@@ -1149,14 +1323,55 @@ class AgentController:
             extra={'msg_type': 'METRICS'},
         )
 
+    def log_diagnostic_info(self) -> None:
+        """Log detailed diagnostic information about the current state of the agent controller."""
+        pending_action_info = "None"
+        if self._pending_action_info is not None:
+            action, timestamp = self._pending_action_info
+            action_id = getattr(action, 'id', 'unknown')
+            action_type = type(action).__name__
+            elapsed_time = time.time() - timestamp
+            pending_action_info = f"{action_type}(id={action_id}, elapsed={elapsed_time:.2f}s)"
+        
+        self.log(
+            'info',
+            f'DIAGNOSTIC: Agent state={self.state.agent_state}, '
+            f'traffic_control={self.state.traffic_control_state}, '
+            f'iteration={self.state.iteration}/{self.state.max_iterations}, '
+            f'delegate_active={self.delegate is not None}, '
+            f'pending_action={pending_action_info}',
+            extra={'msg_type': 'DIAGNOSTIC_INFO'},
+        )
+        
+        # Log the last few events in history for context
+        history_size = min(5, len(self.state.history))
+        if history_size > 0:
+            recent_events = self.state.history[-history_size:]
+            for i, event in enumerate(recent_events):
+                event_type = type(event).__name__
+                event_id = getattr(event, 'id', 'unknown')
+                self.log(
+                    'info',
+                    f'DIAGNOSTIC: Recent event {i+1}/{history_size}: {event_type}(id={event_id})',
+                    extra={'msg_type': 'DIAGNOSTIC_RECENT_EVENT'},
+                )
+
     def __repr__(self):
+        pending_action_info = "<none>"
+        if hasattr(self, "_pending_action_info") and self._pending_action_info is not None:
+            action, timestamp = self._pending_action_info
+            action_id = getattr(action, 'id', 'unknown')
+            action_type = type(action).__name__
+            elapsed_time = time.time() - timestamp
+            pending_action_info = f"{action_type}(id={action_id}, elapsed={elapsed_time:.2f}s)"
+            
         return (
             f'AgentController(id={getattr(self, "id", "<uninitialized>")}, '
             f'agent={getattr(self, "agent", "<uninitialized>")!r}, '
             f'event_stream={getattr(self, "event_stream", "<uninitialized>")!r}, '
             f'state={getattr(self, "state", "<uninitialized>")!r}, '
             f'delegate={getattr(self, "delegate", "<uninitialized>")!r}, '
-            f'_pending_action={getattr(self, "_pending_action", "<uninitialized>")!r})'
+            f'_pending_action={pending_action_info})'
         )
 
     def _is_awaiting_observation(self):
