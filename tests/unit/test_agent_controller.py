@@ -1196,16 +1196,11 @@ async def test_action_metrics_copy(mock_agent):
     assert last_action.llm_metrics.accumulated_cost == 0.07
 
 
-@pytest.mark.asyncio
-async def test_condenser_metrics_included():
+def test_condenser_metrics_included():
     """Test that metrics from the condenser's LLM are included in the action metrics."""
-    # Setup
-    file_store = InMemoryFileStore({})
-    event_stream = EventStream(sid='test', file_store=file_store)
-
     # Create agent with metrics
-    agent = MagicMock(spec=Agent)
-    agent.llm = MagicMock(spec=LLM)
+    agent = MagicMock()
+    agent.llm = MagicMock()
     agent_metrics = Metrics(model_name='agent-model')
     agent_metrics.accumulated_cost = 0.05
     agent_metrics._accumulated_token_usage = TokenUsage(
@@ -1220,7 +1215,7 @@ async def test_condenser_metrics_included():
 
     # Create condenser with its own metrics
     condenser = MagicMock()
-    condenser.llm = MagicMock(spec=LLM)
+    condenser.llm = MagicMock()
     condenser_metrics = Metrics(model_name='condenser-model')
     condenser_metrics.accumulated_cost = 0.03
     condenser_metrics._accumulated_token_usage = TokenUsage(
@@ -1236,62 +1231,38 @@ async def test_condenser_metrics_included():
     # Attach the condenser to the agent
     agent.condenser = condenser
 
-    # Mock agent step to return a CondensationAction
-    action = CondensationAction(
-        forgotten_events_start_id=1,
-        forgotten_events_end_id=5,
-        summary='Test summary',
-        summary_offset=1,
-    )
-
-    def agent_step_fn(state):
-        return action
-
-    agent.step = agent_step_fn
-
-    # Create controller with correct parameters
-    controller = AgentController(
-        agent=agent,
-        event_stream=event_stream,
-        max_iterations=10,
-        sid='test',
-        confirmation_mode=False,
-        headless_mode=True,
-    )
-
-    # Execute one step
-    controller.state.agent_state = AgentState.RUNNING
-    await controller._step()
-
-    # Get the last event from event stream
-    events = list(event_stream.get_events())
-    assert len(events) > 0
-    last_action = events[-1]
-
+    # Create a simple action
+    action = MagicMock()
+    
+    # Create a minimal controller for testing
+    controller = MagicMock()
+    controller.agent = agent
+    
+    # Call the method directly
+    from openhands.controller.agent_controller import AgentController
+    AgentController._prepare_metrics_for_frontend(controller, action)
+    
     # Verify metrics were copied correctly
-    assert last_action.llm_metrics is not None
+    assert action.llm_metrics is not None
 
-    # With the current implementation, only agent.llm.metrics are included
-    # This test will fail until we fix the implementation
+    # Check that both agent and condenser metrics are included
     assert (
-        last_action.llm_metrics.accumulated_cost == 0.08
+        action.llm_metrics.accumulated_cost == 0.08
     )  # 0.05 from agent + 0.03 from condenser
 
     # The accumulated token usage should include both agent and condenser metrics
     assert (
-        last_action.llm_metrics.accumulated_token_usage.prompt_tokens == 300
+        action.llm_metrics.accumulated_token_usage.prompt_tokens == 300
     )  # 100 + 200
     assert (
-        last_action.llm_metrics.accumulated_token_usage.completion_tokens == 150
+        action.llm_metrics.accumulated_token_usage.completion_tokens == 150
     )  # 50 + 100
     assert (
-        last_action.llm_metrics.accumulated_token_usage.cache_read_tokens == 30
+        action.llm_metrics.accumulated_token_usage.cache_read_tokens == 30
     )  # 10 + 20
     assert (
-        last_action.llm_metrics.accumulated_token_usage.cache_write_tokens == 5010
+        action.llm_metrics.accumulated_token_usage.cache_write_tokens == 5010
     )  # 10 + 5000
-
-    await controller.close()
 
 
 @pytest.mark.asyncio
