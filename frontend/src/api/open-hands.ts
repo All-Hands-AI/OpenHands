@@ -8,6 +8,8 @@ import {
   Conversation,
   ResultSet,
   GetTrajectoryResponse,
+  GitChangeDiff,
+  GitChange,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
 import { ApiSettings, PostApiSettings } from "#/types/settings";
@@ -285,6 +287,26 @@ class OpenHands {
   static async acceptTOS(): Promise<boolean> {
     const response = await openHands.post("/api/accept_tos");
     return response.status === 200;
+  }
+  
+  static async getGitChanges(conversationId: string): Promise<GitChange[]> {
+    const { data } = await openHands.get<GitChange[]>(
+      `/api/conversations/${conversationId}/git/changes`,
+    );
+    return data;
+  }
+
+  static async getGitChangeDiff(
+    conversationId: string,
+    path: string,
+  ): Promise<GitChangeDiff> {
+    const { data } = await openHands.get<GitChangeDiff>(
+      `/api/conversations/${conversationId}/git/diff`,
+      {
+        params: { path },
+      },
+    );
+    return data;
   }
 }
 

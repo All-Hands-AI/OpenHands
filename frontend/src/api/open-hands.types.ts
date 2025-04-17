@@ -83,3 +83,15 @@ export interface ResultSet<T> {
   results: T[];
   next_page_id: string | null;
 }
+
+export type GitChangeStatus = "M" | "A" | "D" | "R" | "U";
+
+export interface GitChange {
+  status: GitChangeStatus;
+  path: string;
+}
+
+export interface GitChangeDiff {
+  modified: string;
+  original: string;
+}
