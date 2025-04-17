@@ -310,51 +310,21 @@ class AgentController:
         """
         # it might be the delegate's day in the sun
         if self.delegate is not None:
-            self.log(
-                'debug',
-                f'Not stepping because delegate is active: {type(event).__name__}',
-                extra={'msg_type': 'SHOULD_STEP_DELEGATE_ACTIVE'},
-            )
             return False
 
         if isinstance(event, Action):
             if isinstance(event, MessageAction) and event.source == EventSource.USER:
-                self.log(
-                    'debug',
-                    f'Should step: User message received',
-                    extra={'msg_type': 'SHOULD_STEP_USER_MESSAGE'},
-                )
                 return True
             if (
                 isinstance(event, MessageAction)
                 and self.get_agent_state() != AgentState.AWAITING_USER_INPUT
             ):
                 # TODO: this is fragile, but how else to check if eligible?
-                self.log(
-                    'debug',
-                    f'Should step: Message action while not awaiting user input',
-                    extra={'msg_type': 'SHOULD_STEP_MESSAGE_NOT_AWAITING'},
-                )
                 return True
             if isinstance(event, AgentDelegateAction):
-                self.log(
-                    'debug',
-                    f'Should step: Agent delegate action',
-                    extra={'msg_type': 'SHOULD_STEP_DELEGATE_ACTION'},
-                )
                 return True
             if isinstance(event, CondensationAction):
-                self.log(
-                    'debug',
-                    f'Should step: Condensation action',
-                    extra={'msg_type': 'SHOULD_STEP_CONDENSATION'},
-                )
                 return True
-            self.log(
-                'debug',
-                f'Should not step: Action type not eligible: {type(event).__name__}',
-                extra={'msg_type': 'SHOULD_NOT_STEP_ACTION_TYPE'},
-            )
             return False
         if isinstance(event, Observation):
             if (
@@ -363,32 +333,12 @@ class AgentController:
                 and event.cause
                 > 0  # NullObservation has cause > 0 (RecallAction), not 0 (user message)
             ):
-                self.log(
-                    'debug',
-                    f'Should step: NullObservation with cause > 0',
-                    extra={'msg_type': 'SHOULD_STEP_NULL_OBS_RECALL'},
-                )
                 return True
             if isinstance(event, AgentStateChangedObservation) or isinstance(
                 event, NullObservation
             ):
-                self.log(
-                    'debug',
-                    f'Should not step: AgentStateChangedObservation or NullObservation',
-                    extra={'msg_type': 'SHOULD_NOT_STEP_STATE_OR_NULL'},
-                )
                 return False
-            self.log(
-                'debug',
-                f'Should step: Observation type: {type(event).__name__}',
-                extra={'msg_type': 'SHOULD_STEP_OBSERVATION'},
-            )
             return True
-        self.log(
-            'debug',
-            f'Should not step: Unknown event type: {type(event).__name__}',
-            extra={'msg_type': 'SHOULD_NOT_STEP_UNKNOWN'},
-        )
         return False
 
     def on_event(self, event: Event) -> None:
