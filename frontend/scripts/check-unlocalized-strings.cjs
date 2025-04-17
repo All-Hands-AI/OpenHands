@@ -275,8 +275,8 @@ function isCommonDevelopmentString(str) {
 
   // HTML tags and attributes
   if (
-    /^<[a-z0-9]+>.*<\/[a-z0-9]+>$/.test(str) ||
-    /^<[a-z0-9]+ [^>]+\/>$/.test(str)
+    /^<[a-z0-9]+(?:\s[^>]*)?>.*<\/[a-z0-9]+>$/i.test(str) ||
+    /^<[a-z0-9]+ [^>]+\/>$/i.test(str)
   ) {
     return true;
   }
