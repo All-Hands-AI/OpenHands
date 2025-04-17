@@ -85,17 +85,6 @@ def create_runtime(
     return runtime
 
 
-def initialize_repository_for_runtime(
-    runtime: Runtime,
-    selected_repository: str | None = None,
-    github_token: SecretStr | None = None,
-) -> str | None:
-    """
-    Deprecated: Use clone_or_init_repo instead.
-    This function is kept for backward compatibility.
-    """
-    return clone_or_init_repo(runtime, selected_repository, github_token)
-
 
 def clone_or_init_repo(
     runtime: Runtime,
