@@ -21,8 +21,8 @@ Todos os microagentes usam arquivos markdown com frontmatter YAML que possuem in
 ```
 ---
 name: <Nome do microagente>
-type: <Tipo do MicroAgent>
-version: <Versão do MicroAgent>
+type: <Tipo do Microagent>
+version: <Versão do Microagent>
 agent: <O tipo de agente (normalmente CodeActAgent)>
 triggers:
 - <Palavras-chave opcionais que acionam o microagente. Se os gatilhos forem removidos, ele sempre será incluído>

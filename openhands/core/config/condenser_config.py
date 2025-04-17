@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Literal, cast
 
 from pydantic import BaseModel, Field, ValidationError
@@ -153,6 +155,21 @@ class StructuredSummaryCondenserConfig(BaseModel):
     model_config = {'extra': 'forbid'}
 
 
+class CondenserPipelineConfig(BaseModel):
+    """Configuration for the CondenserPipeline.
+
+    Not currently supported by the TOML or ENV_VAR configuration strategies.
+    """
+
+    type: Literal['pipeline'] = Field('pipeline')
+    condensers: list[CondenserConfig] = Field(
+        default_factory=list,
+        description='List of condenser configurations to be used in the pipeline.',
+    )
+
+    model_config = {'extra': 'forbid'}
+
+
 # Type alias for convenience
 CondenserConfig = (
     NoOpCondenserConfig
@@ -163,6 +180,7 @@ CondenserConfig = (
     | AmortizedForgettingCondenserConfig
     | LLMAttentionCondenserConfig
     | StructuredSummaryCondenserConfig
+    | CondenserPipelineConfig
 )
 
 

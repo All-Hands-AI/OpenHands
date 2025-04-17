@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 from pydantic import SecretStr
-from openhands.server.shared import server_config
+
 from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
@@ -16,7 +16,7 @@ from openhands.integrations.service_types import (
     User,
 )
 from openhands.server.auth import get_access_token, get_provider_tokens
-from openhands.server.types import AppMode
+from openhands.server.shared import server_config
 
 app = APIRouter(prefix='/api/user')
 
@@ -33,7 +33,9 @@ async def get_user_repositories(
         )
 
         try:
-            repos: list[Repository] = await client.get_repositories(sort, server_config.app_mode)
+            repos: list[Repository] = await client.get_repositories(
+                sort, server_config.app_mode
+            )
             return repos
 
         except AuthenticationError as e:

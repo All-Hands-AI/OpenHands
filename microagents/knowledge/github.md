@@ -25,6 +25,7 @@ Here are some instructions for pushing, but ONLY do this if the user asks you to
 * Use the main branch as the base branch, unless the user requests otherwise
 * After opening or updating a pull request, send the user a short message with a link to the pull request.
 * Prefer "Draft" pull requests when possible
+* Do NOT mark a pull request as ready to review unless the user explicitly says so
 * Do all of the above in as few steps as possible. E.g. you could open a PR with one step by running the following bash commands:
 ```bash
 git remote -v && git branch # to find the current org, repo and branch

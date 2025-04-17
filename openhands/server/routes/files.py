@@ -21,9 +21,19 @@ from openhands.events.observation import (
     FileReadObservation,
 )
 from openhands.runtime.base import Runtime
+from openhands.server.auth import get_github_user_id, get_user_id
+from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.file_config import (
     FILES_TO_IGNORE,
 )
+from openhands.server.shared import (
+    ConversationStoreImpl,
+    config,
+    conversation_manager,
+)
+from openhands.storage.conversation.conversation_store import ConversationStore
+from openhands.storage.data_models.conversation_metadata import ConversationMetadata
+from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.utils.async_utils import call_sync_from_async
 
 app = APIRouter(prefix='/api/conversations/{conversation_id}')
@@ -135,6 +145,13 @@ async def select_file(file: str, request: Request):
         return {'code': content}
     elif isinstance(observation, ErrorObservation):
         logger.error(f'Error opening file {file}: {observation}')
+
+        if 'ERROR_BINARY_FILE' in observation.message:
+            return JSONResponse(
+                status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+                content={'error': f'Unable to open binary file: {file}'},
+            )
+
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={'error': f'Error opening file: {observation}'},
@@ -167,3 +184,101 @@ def zip_current_workspace(request: Request):
             status_code=500,
             detail='Failed to zip workspace',
         )
+
+
+@app.get('/git/changes')
+async def git_changes(request: Request, conversation_id: str):
+    runtime: Runtime = request.state.conversation.runtime
+    conversation_store = await ConversationStoreImpl.get_instance(
+        config, get_user_id(request), get_github_user_id(request)
+    )
+
+    cwd = await get_cwd(
+        conversation_store,
+        conversation_id,
+        runtime.config.workspace_mount_path_in_sandbox,
+    )
+    logger.info(f'Getting git changes in {cwd}')
+
+    try:
+        changes = await call_sync_from_async(runtime.get_git_changes, cwd)
+        return changes
+    except AgentRuntimeUnavailableError as e:
+        logger.error(f'Runtime unavailable: {e}')
+        return JSONResponse(
+            status_code=500,
+            content={'error': f'Error getting changes: {e}'},
+        )
+    except Exception as e:
+        logger.error(f'Error getting changes: {e}')
+        return JSONResponse(
+            status_code=500,
+            content={'error': str(e)},
+        )
+
+
+@app.get('/git/diff')
+async def git_diff(request: Request, path: str, conversation_id: str):
+    runtime: Runtime = request.state.conversation.runtime
+    conversation_store = await ConversationStoreImpl.get_instance(
+        config, get_user_id(request), get_github_user_id(request)
+    )
+
+    cwd = await get_cwd(
+        conversation_store,
+        conversation_id,
+        runtime.config.workspace_mount_path_in_sandbox,
+    )
+
+    try:
+        diff = await call_sync_from_async(runtime.get_git_diff, path, cwd)
+        return diff
+    except AgentRuntimeUnavailableError as e:
+        logger.error(f'Error getting diff: {e}')
+        return JSONResponse(
+            status_code=500,
+            content={'error': f'Error getting diff: {e}'},
+        )
+
+
+async def get_cwd(
+    conversation_store: ConversationStore,
+    conversation_id: str,
+    workspace_mount_path_in_sandbox: str,
+):
+    metadata = await conversation_store.get_metadata(conversation_id)
+    is_running = await conversation_manager.is_agent_loop_running(conversation_id)
+    conversation_info = await _get_conversation_info(metadata, is_running)
+
+    cwd = workspace_mount_path_in_sandbox
+    if conversation_info and conversation_info.selected_repository:
+        repo_dir = conversation_info.selected_repository.split('/')[-1]
+        cwd = os.path.join(cwd, repo_dir)
+
+    return cwd
+
+
+async def _get_conversation_info(
+    conversation: ConversationMetadata,
+    is_running: bool,
+) -> ConversationInfo | None:
+    try:
+        title = conversation.title
+        if not title:
+            title = f'Conversation {conversation.conversation_id[:5]}'
+        return ConversationInfo(
+            conversation_id=conversation.conversation_id,
+            title=title,
+            last_updated_at=conversation.last_updated_at,
+            created_at=conversation.created_at,
+            selected_repository=conversation.selected_repository,
+            status=ConversationStatus.RUNNING
+            if is_running
+            else ConversationStatus.STOPPED,
+        )
+    except Exception as e:
+        logger.error(
+            f'Error loading conversation {conversation.conversation_id}: {str(e)}',
+            extra={'session_id': conversation.conversation_id},
+        )
+        return None
