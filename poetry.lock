@@ -4926,7 +4926,7 @@ watchfiles = ">=1.0.4"
 type = "git"
 url = "https://github.com/xingyaoww/mcpm.sh.git"
 reference = "xw/router-no-profile"
-resolved_reference = "2b3e24d11ebb409fea8ba7d3df56984c279aa8fa"
+resolved_reference = "146f2dd0621d8c683b5ad0bf5f87a7af07f1c496"
 
 [[package]]
 name = "mdurl"
