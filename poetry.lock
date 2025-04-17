@@ -4925,8 +4925,8 @@ watchfiles = ">=1.0.4"
 [package.source]
 type = "git"
 url = "https://github.com/xingyaoww/mcpm.sh.git"
-reference = "xw/router-no-profile"
-resolved_reference = "146f2dd0621d8c683b5ad0bf5f87a7af07f1c496"
+reference = "HEAD"
+resolved_reference = "8980481b6da189cf39c297a727e4540ad853d0f2"
 
 [[package]]
 name = "mdurl"
@@ -10435,4 +10435,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "e0cd8e87c14c30543ffdd84ad01df48f3e68d48d5567353adc540a3a5daabba8"
+content-hash = "ae225cfa87909c44f691ba003baf350106e13b0fb0a576de5856cb08f71ef6c3"
