@@ -1171,11 +1171,6 @@ class AgentController:
                 + condenser_metrics.accumulated_token_usage
             )
 
-        # Keep these lists empty to reduce payload size
-        metrics._token_usages = []
-        metrics._response_latencies = []
-        metrics._costs = []
-
         action.llm_metrics = metrics
 
         # Log the metrics information for debugging
