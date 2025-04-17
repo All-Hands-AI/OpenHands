@@ -11,7 +11,7 @@ from openhands.core.config import AppConfig
 from openhands.core.main import run_controller
 from openhands.core.schema.agent import AgentState
 from openhands.events.action.agent import RecallAction
-from openhands.events.action.message import MessageAction
+from openhands.events.action.message import MessageAction, SystemMessageAction
 from openhands.events.event import EventSource
 from openhands.events.observation.agent import (
     RecallObservation,
@@ -23,7 +23,6 @@ from openhands.llm.metrics import Metrics
 from openhands.memory.memory import Memory
 from openhands.runtime.base import Runtime
 from openhands.storage.memory import InMemoryFileStore
-from openhands.events.action.message import SystemMessageAction
 
 
 @pytest.fixture
