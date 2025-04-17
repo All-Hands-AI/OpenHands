@@ -2,12 +2,17 @@ from fastapi import APIRouter, Request, HTTPException
 from openhands.server.auth import get_user_id
 from openhands.server.thesis_auth import add_invite_code_to_user
 from openhands.core.logger import openhands_logger as logger
+from pydantic import BaseModel
 
 app = APIRouter(prefix='/api/invitation')
 
 
-@app.post("/validate/{code}", response_model=dict)
-async def validate_invitation_code(code: str, request: Request) -> dict:
+class InvitationCode(BaseModel):
+    code: str
+
+
+@app.post("/validate", response_model=dict)
+async def validate_invitation_code(invitation: InvitationCode, request: Request) -> dict:
     """Validate an invitation code and update user status.
 
     This endpoint validates an invitation code and if valid:
@@ -18,11 +23,11 @@ async def validate_invitation_code(code: str, request: Request) -> dict:
     """
     try:
         # The middleware already checked whitelist status
-        add_invite_code_to_user(code, request.headers.get("Authorization"))
+        add_invite_code_to_user(invitation.code, request.headers.get("Authorization"))
         return {
             "valid": True,
             "reason": "Invitation code activated successfully"
         }
     except Exception as e:
         logger.error(f"Error validating invitation code: {e}")
-        raise HTTPException(status_code=500, detail=e.detail)
+        raise HTTPException(status_code=400, detail=e.detail)
