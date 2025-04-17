@@ -78,8 +78,8 @@ async def _create_new_conversation(
     )
 
     running_conversations = await conversation_manager.get_running_agent_loops(
-            user_id
-        )
+        user_id
+    )
     if len(running_conversations) >= config.max_concurrent_conversations:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -217,7 +217,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
             },
             status_code=status.HTTP_400_BAD_REQUEST,
         )
-    
+
     except Exception as e:
         return JSONResponse(
             content={
@@ -421,6 +421,12 @@ async def change_visibility(
     data: ChangeVisibilityRequest,
 ) -> bool:
     user_id = get_user_id(request)
+    conversation_store = await ConversationStoreImpl.get_instance(
+        config, user_id, get_github_user_id(request)
+    )
+    metadata = await conversation_store.get_metadata(conversation_id)
+    if not metadata:
+        return False
     return await conversation_module._update_conversation_visibility(
         conversation_id, data.is_published, str(user_id),
         {'hidden_prompt': data.hidden_prompt}
