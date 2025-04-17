@@ -62,7 +62,19 @@ Environment variables > config.toml variables > default variables
 **Note on Alternative Models:**
 See [our documentation](https://docs.all-hands.dev/modules/usage/llms) for recommended models.
 
-### 4. Running the application
+### 4. Development Environment Variables
+
+#### RUN_MODE
+
+When developing locally, you can set the `RUN_MODE` environment variable to `DEV` to bypass the user whitelist/invitation code check:
+
+```bash
+export RUN_MODE=DEV
+```
+
+This allows you to test and develop without needing invitation codes or whitelisted user accounts. This should only be used in development environments.
+
+### 5. Running the application
 
 First, check if .env exists and create it from the example if needed, then start the PostgreSQL container:
 
