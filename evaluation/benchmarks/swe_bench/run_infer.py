@@ -172,7 +172,6 @@ Your goal is to fix the issue described in the **Issue Description** section bel
 
 ## General Workflow Guidance
 
-*   Follow the **Problem Solving Workflow** outlined before.
 *   Prioritize understanding the problem, exploring the code, planning your fix, implementing it carefully using the required diff format, and **thoroughly testing** according to the **Mandatory Testing Procedure**.
 *   Consider trade-offs between different solutions. The goal is a **robust change that makes the relevant tests pass.** Quality, correctness, and reliability are key.
 *   Actively practice defensive programming: anticipate and handle potential edge cases, unexpected inputs, and different ways the affected code might be called **to ensure the fix works reliably and allows relevant tests to pass.** Analyze the potential impact on other parts of the codebase.
