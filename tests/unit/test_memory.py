@@ -71,8 +71,10 @@ def mock_agent():
 
     system_message = SystemMessageAction(content='Test system message')
     system_message._source = EventSource.AGENT
-    system_message._id = -1  # Set invalid ID to avoid the ID check
+    # Don't set the ID here, as it will be set by the event stream
     agent.get_system_message.return_value = system_message
+    
+    return agent
 
 
 @pytest.mark.asyncio
