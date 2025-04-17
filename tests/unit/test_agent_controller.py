@@ -1235,7 +1235,7 @@ async def test_condenser_metrics_included():
 
     # Attach the condenser to the agent
     agent.condenser = condenser
-    
+
     # Mock the system message to avoid ID issues
     system_message = SystemMessageAction(content='Test system message')
     system_message._source = EventSource.AGENT
@@ -1303,10 +1303,10 @@ async def test_condenser_metrics_included():
 @pytest.mark.asyncio
 async def test_first_user_message_with_identical_content(test_event_stream, mock_agent):
     """Test that _first_user_message correctly identifies the first user message.
-    
+
     This test verifies that messages with identical content but different IDs are properly
     distinguished, and that the result is correctly cached.
-    
+
     The issue we're checking is that the comparison (action == self._first_user_message())
     should correctly differentiate between messages with the same content but different IDs.
     """
