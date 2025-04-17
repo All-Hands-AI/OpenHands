@@ -381,7 +381,7 @@ def display_usage_metrics(usage_metrics: UsageMetrics):
 
     # Construct the summary text with aligned columns
     summary_lines = [
-        f'{label:<{max_label_width}} {value:>{max_value_width}}'
+        f'{label:<{max_label_width}} {value:<{max_value_width}}'
         for label, value in labels_and_values
     ]
     summary_text = '\n'.join(summary_lines)
@@ -421,73 +421,85 @@ def display_status(usage_metrics: UsageMetrics, session_id: str):
 
 def display_settings(config: AppConfig) -> int:
     llm_config = config.get_llm_config()
-
     advanced_llm_settings = True if llm_config.base_url else False
 
-    llm_settings_text_basic = f"""
-        LLM Provider: {llm_config.model}
-        LLM Model: {llm_config.model}
-        API Key: {llm_config.api_key}
-    """
+    # Prepare labels and values based on settings
+    labels_and_values = []
+    if not advanced_llm_settings:
+        # Attempt to determine provider, fallback if not directly available
+        provider = getattr(
+            llm_config,
+            'provider',
+            llm_config.model.split('/')[0] if '/' in llm_config.model else 'Unknown',
+        )
+        labels_and_values.extend(
+            [
+                ('   LLM Provider', str(provider)),
+                ('   LLM Model', str(llm_config.model)),
+                ('   API Key', '********' if llm_config.api_key else 'Not Set'),
+            ]
+        )
+    else:
+        labels_and_values.extend(
+            [
+                ('   Custom Model', str(llm_config.model)),
+                ('   Base URL', str(llm_config.base_url)),
+                ('   API Key', '********' if llm_config.api_key else 'Not Set'),
+            ]
+        )
 
-    llm_settings_text_advanced = f"""
-        Custom Model: {llm_config.model}
-        Base URL: {llm_config.base_url}
-        API Key: {llm_config.api_key}
-        Agent: {config.default_agent}
-        Confirmation Mode: {'Enabled' if config.security.confirmation_mode else 'Disabled'}
-        Memory Condensation: {'Enabled' if config.enable_default_condenser else 'Disabled'}
-    """
-
-    additional_settings = """
-        Language: English
-    """
-
-    sections = HSplit(
+    # Common settings
+    labels_and_values.extend(
         [
-            # LLM Settings section
-            Window(
-                height=1,
-                content=FormattedTextControl(
-                    text=f"LLM Settings - {'Advanced' if advanced_llm_settings else 'Basic'}"
-                ),
+            ('   Agent', str(config.default_agent)),
+            (
+                '   Confirmation Mode',
+                'Enabled' if config.security.confirmation_mode else 'Disabled',
             ),
-            Window(
-                content=FormattedTextControl(
-                    text=llm_settings_text_advanced
-                    if advanced_llm_settings
-                    else llm_settings_text_basic
-                ),
-                style=f'fg:{COLOR_GREY}',
+            (
+                '   Memory Condensation',
+                'Enabled' if config.enable_default_condenser else 'Disabled',
             ),
-            # Additional Settings section
-            Window(height=1, content=FormattedTextControl(text='Additional Settings')),
-            Window(
-                content=FormattedTextControl(text=additional_settings),
-                style=f'fg:{COLOR_GREY}',
-            ),
-        ],
-        padding_char='-',
-        padding=1,
+            ('   Language', 'English'),
+        ]
     )
 
+    # Calculate max widths for alignment
+    # Ensure values are strings for len() calculation
+    str_labels_and_values = [(label, str(value)) for label, value in labels_and_values]
+    max_label_width = (
+        max(len(label) for label, _ in str_labels_and_values)
+        if str_labels_and_values
+        else 0
+    )
+
+    # Construct the summary text with aligned columns
+    settings_lines = [
+        f'{label+":":<{max_label_width+1}} {value:<}'  # Changed value alignment to left (<)
+        for label, value in str_labels_and_values
+    ]
+    settings_text = '\n'.join(settings_lines)
+
     container = Frame(
-        sections,
+        TextArea(
+            text=settings_text,
+            read_only=True,
+            style=COLOR_GREY,
+            wrap_lines=True,
+        ),
         title='Current Settings',
         style=f'fg:{COLOR_GREY}',
     )
 
-    print_formatted_text('')  # Add a newline
     print_container(container)
-    print_formatted_text('')  # Add a newline
 
     return cli_confirm(
-        'Do you want to modify settings?',
+        'Which settings would you like to modify?',
         [
-            'Yes - Modify LLM Settings - Basic\n  (LLM Provider, LLM Model, API Key)',
-            'Yes - Modify LLM Settings - Advanced\n  (Custom Model, Base URL, API Key, Agent, Confirmation Mode, Memory Condensation)',
-            'Yes - Modify Additional Settings\n  (Language)',
-            'No - Dismiss',
+            'LLM Settings - Basic',
+            'LLM Settings - Advanced',
+            'Additional Settings',  # Keeping this option for now
+            'No, dismiss',
         ],
     )
 
@@ -893,10 +905,18 @@ async def modify_llm_settings_basic(
         completer=model_completer,
     )
 
-    api_key = await session.prompt_async(
-        '(Step 3/3) Enter API Key: ',
-        is_password=True,
+    api_key = await session.prompt_async('(Step 3/3) Enter API Key: ')
+
+    save_settings = (
+        cli_confirm(
+            '\nSave new settings? Current session will be terminated!',
+            ['Yes, proceed', 'No, dismiss'],
+        )
+        == 0
     )
+
+    if not save_settings:
+        return False
 
     llm_config = config.get_llm_config()
     llm_config.model = provider + organized_models[provider]['separator'] + model
@@ -946,7 +966,7 @@ async def modify_llm_settings_advanced(
 
     enable_confirmation_mode = (
         cli_confirm(
-            question='(Step 5/6) Enable Confirmation Mode?',
+            question='(Step 5/6) Confirmation Mode:',
             choices=['Enable', 'Disable'],
         )
         == 0
@@ -954,11 +974,22 @@ async def modify_llm_settings_advanced(
 
     enable_memory_condensation = (
         cli_confirm(
-            question='(Step 6/6) Enable Memory Condensation?',
+            question='(Step 6/6) Memory Condensation:',
             choices=['Enable', 'Disable'],
         )
         == 0
     )
+
+    save_settings = (
+        cli_confirm(
+            '\nSave new settings? Current session will be terminated!',
+            ['Yes, proceed', 'No, dismiss'],
+        )
+        == 0
+    )
+
+    if not save_settings:
+        return False
 
     llm_config = config.get_llm_config()
     llm_config.model = custom_model
