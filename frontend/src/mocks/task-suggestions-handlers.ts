@@ -33,37 +33,37 @@ const TASKS_2: SuggestedTask[] = [
     issue_number: 305,
     title: "Refactor user service",
     repo: "octocat/earth",
-    task_type: "OPEN_PR",
+    task_type: "FAILING_CHECKS",
   },
   {
     issue_number: 312,
     title: "Fix styling bug",
     repo: "octocat/earth",
-    task_type: "OPEN_PR",
+    task_type: "FAILING_CHECKS",
   },
   {
     issue_number: 327,
     title: "Add unit tests",
     repo: "octocat/earth",
-    task_type: "OPEN_PR",
+    task_type: "FAILING_CHECKS",
   },
   {
     issue_number: 331,
     title: "Implement dark mode",
     repo: "octocat/earth",
-    task_type: "OPEN_PR",
+    task_type: "FAILING_CHECKS",
   },
   {
     issue_number: 345,
     title: "Optimize build process",
     repo: "octocat/earth",
-    task_type: "OPEN_PR",
+    task_type: "FAILING_CHECKS",
   },
   {
     issue_number: 352,
     title: "Update dependencies",
     repo: "octocat/earth",
-    task_type: "OPEN_PR",
+    task_type: "FAILING_CHECKS",
   },
 ];
 

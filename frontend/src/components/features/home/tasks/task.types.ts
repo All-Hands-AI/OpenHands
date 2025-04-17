@@ -2,8 +2,7 @@ export type SuggestedTaskType =
   | "MERGE_CONFLICTS"
   | "FAILING_CHECKS"
   | "UNRESOLVED_COMMENTS"
-  | "OPEN_ISSUE"
-  | "OPEN_PR";
+  | "OPEN_ISSUE";
 
 export interface SuggestedTask {
   issue_number: number;

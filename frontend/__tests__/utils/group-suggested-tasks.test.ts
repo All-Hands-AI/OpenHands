@@ -34,7 +34,7 @@ const rawTasks: SuggestedTask[] = [
     issue_number: 5,
     repo: "repo3",
     title: "Task 5",
-    task_type: "OPEN_PR",
+    task_type: "FAILING_CHECKS",
   },
 ];
 
@@ -80,7 +80,7 @@ const groupedTasks: SuggestedTaskGroup[] = [
         issue_number: 5,
         repo: "repo3",
         title: "Task 5",
-        task_type: "OPEN_PR",
+        task_type: "FAILING_CHECKS",
       },
     ],
   },

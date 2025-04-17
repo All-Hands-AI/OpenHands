@@ -5,6 +5,13 @@ import { cn } from "#/utils/utils";
 import { useUserRepositories } from "#/hooks/query/use-user-repositories";
 import { getPromptForQuery } from "./get-prompt-for-query";
 
+const TASK_TYPE_MAP: Record<SuggestedTask["task_type"], string> = {
+  FAILING_CHECKS: "Fix failing checks",
+  MERGE_CONFLICTS: "Resolve merge conflicts",
+  OPEN_ISSUE: "Open issue",
+  UNRESOLVED_COMMENTS: "Resolve unresolved comments",
+};
+
 interface TaskCardProps {
   task: SuggestedTask;
 }
@@ -42,7 +49,7 @@ export function TaskCard({ task }: TaskCardProps) {
       <span data-testid="task-id">#{task.issue_number}</span>
 
       <div className="w-full pl-8">
-        <p className="font-semibold">{task.task_type}</p>
+        <p className="font-semibold">{TASK_TYPE_MAP[task.task_type]}</p>
         <p>{task.title}</p>
       </div>
 
