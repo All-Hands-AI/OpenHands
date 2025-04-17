@@ -334,7 +334,7 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
             payload = jwt.decode(token, JWT_SECRET, algorithms=['HS256'])
             user_id = payload['user']['publicAddress']
 
-            user: ThesisUser | None = get_user_detail_from_thesis_auth_server(request.headers.get('Authorization'))
+            user: ThesisUser | None = await get_user_detail_from_thesis_auth_server(request.headers.get('Authorization'))
             if not user:
                 return JSONResponse(
                     status_code=404,
