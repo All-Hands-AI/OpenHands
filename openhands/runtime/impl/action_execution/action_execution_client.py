@@ -36,6 +36,7 @@ from openhands.events.observation import (
     Observation,
     UserRejectObservation,
 )
+from openhands.core.config.mcp_config import MCPConfig
 from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
@@ -328,13 +329,24 @@ class ActionExecutionClient(Runtime):
     def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
         return self.send_action_for_execution(action)
 
+    def get_updated_mcp_config(self) -> MCPConfig:
+        # Add the runtime as another MCP server
+        updated_mcp_config = self.config.mcp.model_copy()
+        updated_mcp_config.mcp_servers.append(self.action_execution_server_url.rstrip('/') + '/sse')
+        self.log(
+            'debug',
+            f'Updated MCP config by adding runtime as another server: {updated_mcp_config}'
+        )
+        return updated_mcp_config
+
     async def call_tool_mcp(self, action: McpAction) -> Observation:
         if self.mcp_clients is None:
+            updated_mcp_config = self.get_updated_mcp_config()
             self.log(
                 'debug',
-                f'Creating MCP clients with servers: {self.config.mcp.mcp_servers}',
+                f'Creating MCP clients with servers: {updated_mcp_config.mcp_servers}',
             )
-            self.mcp_clients = await create_mcp_clients(self.config.mcp.mcp_servers)
+            self.mcp_clients = await create_mcp_clients(updated_mcp_config.mcp_servers)
         return await call_tool_mcp_handler(self.mcp_clients, action)
 
     async def aclose(self) -> None:
