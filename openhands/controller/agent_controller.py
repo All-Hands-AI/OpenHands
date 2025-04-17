@@ -67,7 +67,7 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization.event import event_to_trajectory, truncate_content
 from openhands.llm.llm import LLM
-from openhands.llm.metrics import Metrics
+from openhands.llm.metrics import Metrics, TokenUsage
 
 # note: RESUME is only available on web GUI
 TRAFFIC_CONTROL_REMINDER = (
@@ -1151,7 +1151,7 @@ class AgentController:
         agent_metrics = self.agent.llm.metrics
 
         # Get metrics from condenser LLM if it exists
-        condenser_metrics = None
+        condenser_metrics: TokenUsage | None = None
         if hasattr(self.agent, 'condenser') and hasattr(self.agent.condenser, 'llm'):
             condenser_metrics = self.agent.condenser.llm.metrics
 
@@ -1165,9 +1165,7 @@ class AgentController:
 
         # Set accumulated token usage (sum of agent and condenser token usage)
         # Use a deep copy to ensure we don't modify the original object
-        metrics._accumulated_token_usage = copy.deepcopy(
-            agent_metrics.accumulated_token_usage
-        )
+        metrics._accumulated_token_usage = agent_metrics.accumulated_token_usage.model_copy(deep=True)
         if condenser_metrics:
             metrics._accumulated_token_usage = (
                 metrics._accumulated_token_usage
