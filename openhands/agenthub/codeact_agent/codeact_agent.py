@@ -11,6 +11,7 @@ from openhands.events.action import (
     Action,
     AgentFinishAction,
 )
+from openhands.events.action.message import SystemMessageAction
 from openhands.events.event import Event
 from openhands.llm.llm import LLM
 from openhands.memory.condenser import Condenser
@@ -62,21 +63,21 @@ class CodeActAgent(Agent):
 
         Parameters:
         - llm (LLM): The llm to be used by this agent
+        - config (AgentConfig): The configuration for this agent
         """
         super().__init__(llm, config)
         self.pending_actions: deque[Action] = deque()
         self.reset()
 
-        # Retrieve the enabled tools
-        self.tools = codeact_function_calling.get_tools(
-            codeact_enable_browsing=self.config.codeact_enable_browsing,
-            codeact_enable_jupyter=self.config.codeact_enable_jupyter,
-            codeact_enable_llm_editor=self.config.codeact_enable_llm_editor,
+        built_in_tools = codeact_function_calling.get_tools(
+            enable_browsing=self.config.enable_browsing,
+            enable_jupyter=self.config.enable_jupyter,
+            enable_llm_editor=self.config.enable_llm_editor,
             llm=self.llm,
         )
-        logger.debug(
-            f"TOOLS loaded for CodeActAgent: {', '.join([tool.get('function').get('name') for tool in self.tools])}"
-        )
+
+        self.tools = built_in_tools
+
         self.prompt_manager = PromptManager(
             prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
         )
@@ -137,10 +138,23 @@ class CodeActAgent(Agent):
             'messages': self.llm.format_messages_for_llm(messages),
         }
         params['tools'] = self.tools
+
+        if self.mcp_tools:
+            # Only add tools with unique names
+            existing_names = {tool['function']['name'] for tool in params['tools']}
+            unique_mcp_tools = [
+                tool
+                for tool in self.mcp_tools
+                if tool['function']['name'] not in existing_names
+            ]
+            params['tools'] += unique_mcp_tools
+
         # log to litellm proxy if possible
         params['extra_body'] = {'metadata': state.to_llm_metadata(agent_name=self.name)}
         response = self.llm.completion(**params)
+        logger.debug(f'Response from LLM: {response}')
         actions = codeact_function_calling.response_to_actions(response)
+        logger.debug(f'Actions after response_to_actions: {actions}')
         for action in actions:
             self.pending_actions.append(action)
         return self.pending_actions.popleft()
@@ -153,8 +167,8 @@ class CodeActAgent(Agent):
         message flow and function-calling scenarios.
 
         The method performs the following steps:
-        1. Initializes with system prompt and optional initial user message
-        2. Processes events (Actions and Observations) into messages
+        1. Checks for SystemMessageAction in events, adds one if missing (legacy support)
+        2. Processes events (Actions and Observations) into messages, including SystemMessageAction
         3. Handles tool calls and their responses in function-calling mode
         4. Manages message role alternation (user/assistant/tool)
         5. Applies caching for specific LLM providers (e.g., Anthropic)
@@ -165,8 +179,7 @@ class CodeActAgent(Agent):
 
         Returns:
             list[Message]: A list of formatted messages ready for LLM consumption, including:
-                - System message with prompt
-                - Initial user message (if configured)
+                - System message with prompt (from SystemMessageAction)
                 - Action messages (from both user and assistant)
                 - Observation messages (including tool responses)
                 - Environment reminders (in non-function-calling mode)
@@ -180,15 +193,32 @@ class CodeActAgent(Agent):
         if not self.prompt_manager:
             raise Exception('Prompt Manager not instantiated.')
 
-        # Use ConversationMemory to process initial messages
-        messages = self.conversation_memory.process_initial_messages(
-            with_caching=self.llm.is_caching_prompt_active()
+        # Check if there's a SystemMessageAction in the events
+        has_system_message = any(
+            isinstance(event, SystemMessageAction) for event in events
         )
 
-        # Use ConversationMemory to process events
+        # Legacy behavior: If no SystemMessageAction is found, add one
+        if not has_system_message:
+            logger.warning(
+                f'[{self.name}] No SystemMessageAction found in events. '
+                'Adding one for backward compatibility. '
+                'This is deprecated behavior and will be removed in a future version.'
+            )
+            system_message = self.get_system_message()
+            if system_message:
+                # Create a copy and insert at the beginning of the list
+                processed_events = list(events)
+                processed_events.insert(0, system_message)
+                logger.debug(
+                    f'[{self.name}] Added SystemMessageAction for backward compatibility'
+                )
+        else:
+            processed_events = events
+
+        # Use ConversationMemory to process events (including SystemMessageAction)
         messages = self.conversation_memory.process_events(
-            condensed_history=events,
-            initial_messages=messages,
+            condensed_history=processed_events,
             max_message_chars=self.llm.config.max_message_chars,
             vision_is_active=self.llm.vision_is_active(),
         )

@@ -14,7 +14,7 @@ the GitLab API.
 You can use `curl` with the `GITLAB_TOKEN` to interact with GitLab's API.
 ALWAYS use the GitLab API for operations instead of a web browser.
 
-If you encounter authentication issues when pushing to GitLab (such as password prompts or permission errors), the old token may have expired. In such case, update the remote URL to include the current token: `git remote set-url origin https://${GITLAB_TOKEN}@gitlab.com/username/repo.git`
+If you encounter authentication issues when pushing to GitLab (such as password prompts or permission errors), the old token may have expired. In such case, update the remote URL to include the current token: `git remote set-url origin https://oauth2:${GITLAB_TOKEN}@gitlab.com/username/repo.git`
 
 Here are some instructions for pushing, but ONLY do this if the user asks you to:
 * NEVER push directly to the `main` or `master` branch
@@ -30,6 +30,6 @@ Here are some instructions for pushing, but ONLY do this if the user asks you to
 git remote -v && git branch # to find the current org, repo and branch
 git checkout -b create-widget && git add . && git commit -m "Create widget" && git push -u origin create-widget
 curl -X POST "https://gitlab.com/api/v4/projects/$PROJECT_ID/merge_requests" \
-    -H "PRIVATE-TOKEN: $GITLAB_TOKEN" \
+    -H "Authorization: Bearer $GITLAB_TOKEN" \
     -d '{"source_branch": "create-widget", "target_branch": "openhands-workspace", "title": "Create widget"}'
 ```
