@@ -31,11 +31,11 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.core.loop import run_agent_until_done
 from openhands.core.schema import AgentState
 from openhands.core.setup import (
+    clone_or_init_repo,
     create_agent,
     create_controller,
     create_memory,
     create_runtime,
-    initialize_repository_for_runtime,
 )
 from openhands.events import EventSource, EventStreamSubscriber
 from openhands.events.action import (
@@ -767,11 +767,10 @@ async def main(loop: asyncio.AbstractEventLoop):
 
     # Initialize repository if needed
     repo_directory = None
-    if config.sandbox.selected_repo:
-        repo_directory = initialize_repository_for_runtime(
-            runtime,
-            selected_repository=config.sandbox.selected_repo,
-        )
+    repo_directory = clone_or_init_repo(
+        runtime,
+        selected_repository=config.sandbox.selected_repo,
+    )
 
     # when memory is created, it will load the microagents from the selected repository
     memory = create_memory(
