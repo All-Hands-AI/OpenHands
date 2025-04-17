@@ -7,7 +7,7 @@ from mcp.client.sse import sse_client
 from pydantic import BaseModel, Field
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.mcp.tool import BaseTool, MCPClientTool
+from openhands.mcp.tool import MCPClientTool
 
 
 class MCPClient(BaseModel):
@@ -18,8 +18,8 @@ class MCPClient(BaseModel):
     session: Optional[ClientSession] = None
     exit_stack: AsyncExitStack = AsyncExitStack()
     description: str = 'MCP client tools for server interaction'
-    tools: List[BaseTool] = Field(default_factory=list)
-    tool_map: Dict[str, BaseTool] = Field(default_factory=dict)
+    tools: List[MCPClientTool] = Field(default_factory=list)
+    tool_map: Dict[str, MCPClientTool] = Field(default_factory=dict)
 
     class Config:
         arbitrary_types_allowed = True

@@ -154,10 +154,10 @@ async def add_mcp_tools_to_agent(agent: "Agent", runtime: Runtime, mcp_config: M
     # Fetch the MCP tools
     mcp_tools = await fetch_mcp_tools_from_config(updated_mcp_config)
 
-    logger.info(f"Loaded {len(mcp_tools)} MCP tools: {[tool['name'] for tool in mcp_tools]}")    
+    logger.info(f"Loaded {len(mcp_tools)} MCP tools: {[tool['function']['name'] for tool in mcp_tools]}")    
     if mcp_config.selected_tool_names:
-        mcp_tools = [tool for tool in mcp_tools if tool['name'] in mcp_config.selected_tool_names]
-        logger.info(f"Selected {len(mcp_tools)} MCP tools based on .selected_tool_names in config: {[tool['name'] for tool in mcp_tools]}")
+        mcp_tools = [tool for tool in mcp_tools if tool['function']['name'] in mcp_config.selected_tool_names]
+        logger.info(f"Selected {len(mcp_tools)} MCP tools based on .selected_tool_names in config: {[tool['function']['name'] for tool in mcp_tools]}")
 
     # Set the MCP tools on the agent
     agent.set_mcp_tools(mcp_tools)

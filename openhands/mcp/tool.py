@@ -5,34 +5,24 @@ from mcp import ClientSession
 from mcp.types import CallToolResult, TextContent, Tool
 
 
-class BaseTool(ABC, Tool):
-    @classmethod
-    def postfix(cls) -> str:
-        return '_mcp_tool_call'
+class MCPClientTool(Tool):
+    """Represents a tool proxy that can be called on the MCP server from the client side."""
+
+    session: Optional[ClientSession] = None
 
     class Config:
         arbitrary_types_allowed = True
-
-    @abstractmethod
-    async def execute(self, **kwargs) -> CallToolResult:
-        """Execute the tool with given parameters."""
 
     def to_param(self) -> Dict:
         """Convert tool to function call format."""
         return {
             'type': 'function',
             'function': {
-                'name': self.name + self.postfix(),
+                'name': self.name,
                 'description': self.description,
                 'parameters': self.inputSchema,
             },
         }
-
-
-class MCPClientTool(BaseTool):
-    """Represents a tool proxy that can be called on the MCP server from the client side."""
-
-    session: Optional[ClientSession] = None
 
     async def execute(self, **kwargs) -> CallToolResult:
         """Execute the tool by making a remote call to the MCP server."""
