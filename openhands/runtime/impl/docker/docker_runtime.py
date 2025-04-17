@@ -86,7 +86,6 @@ class DockerRuntime(ActionExecutionClient):
             )
 
         self.config = config
-        self._runtime_initialized: bool = False
         self.status_callback = status_callback
 
         self._host_port = -1
