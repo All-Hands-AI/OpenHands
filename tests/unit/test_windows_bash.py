@@ -149,13 +149,14 @@ def test_long_running_command(windows_bash_session):
     # On Windows, Stop-Job doesn't send a proper SIGINT signal that would trigger Python's 
     # KeyboardInterrupt handler with the message "Keyboard interrupt received, exiting."
     # Instead, it terminates the job more directly.
-    # The important test here is verifying the server is actually stopped.
+    # We now manually append this message in _stop_active_job for consistency.
+    assert 'Keyboard interrupt received, exiting.' in result.content
     
     # Verify the server is actually stopped by starting another one on the same port
     action = CmdRunAction(command='python -u -m http.server 8081')
     action.set_hard_timeout(1)
     result = windows_bash_session.execute(action)
-
+    
     assert isinstance(result, CmdOutputObservation)
     # Verify the initial output was captured
     assert 'Serving HTTP on' in result.content

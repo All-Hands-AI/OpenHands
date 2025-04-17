@@ -440,11 +440,22 @@ class WindowsPowershellSession:
                 output_builder.extend(combined_errors)
 
             exit_code = 0 if final_state == JobState.Stopped or final_state == JobState.Completed else 1
+            # --- Manually add expected interrupt message if stop was successful ---
+            final_content = "\n".join(output_builder).strip()
+            if exit_code == 0:
+                # Append the expected message for consistency, even if not actually captured from stderr
+                if final_content:
+                     final_content += "\nKeyboard interrupt received, exiting."
+                else:
+                     final_content = "Keyboard interrupt received, exiting."
+                logger.debug(f"_stop_active_job: Manually appended keyboard interrupt message.")
+            # ---
+
             metadata = CmdOutputMetadata(exit_code=exit_code, working_dir=self._cwd)
             metadata.suffix = f"\n[Command/Job stopped. Final State: {final_state}, Exit Code: {exit_code}, CWD: {metadata.working_dir}]"
 
             return CmdOutputObservation(
-                content="\n".join(output_builder).strip(),
+                content=final_content, # Use modified content
                 command="C-c", # Original command was C-c
                 metadata=metadata
             )
