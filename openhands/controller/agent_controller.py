@@ -3,7 +3,7 @@ import copy
 import os
 import time
 import traceback
-from typing import Callable, ClassVar, Optional, Type, Tuple
+from typing import Callable, ClassVar, Tuple, Type
 
 import litellm  # noqa
 from litellm.exceptions import (  # noqa
@@ -451,9 +451,9 @@ class AgentController:
         if self._pending_action and self._pending_action.id == observation.cause:
             if self.state.agent_state == AgentState.AWAITING_USER_CONFIRMATION:
                 return
-                
+
             self._pending_action = None
-            
+
             if self.state.agent_state == AgentState.USER_CONFIRMED:
                 await self.set_agent_state_to(AgentState.RUNNING)
             if self.state.agent_state == AgentState.USER_REJECTED:
@@ -904,17 +904,17 @@ class AgentController:
     @property
     def _pending_action(self) -> Action | None:
         """Get the current pending action, checking for timeout.
-        
+
         Returns:
             Action | None: The current pending action, or None if there isn't one or it has timed out.
         """
         if self._pending_action_info is None:
             return None
-            
+
         action, timestamp = self._pending_action_info
         current_time = time.time()
         elapsed_time = current_time - timestamp
-        
+
         # Check if the pending action has timed out
         if elapsed_time > self._pending_action_timeout:
             action_id = getattr(action, 'id', 'unknown')
@@ -927,13 +927,13 @@ class AgentController:
             # Clear the timed-out pending action
             self._pending_action_info = None
             return None
-            
+
         return action
-        
+
     @_pending_action.setter
     def _pending_action(self, action: Action | None) -> None:
         """Set or clear the pending action with timestamp and logging.
-        
+
         Args:
             action: The action to set as pending, or None to clear.
         """
@@ -958,7 +958,7 @@ class AgentController:
                 extra={'msg_type': 'PENDING_ACTION_SET'},
             )
             self._pending_action_info = (action, time.time())
-    
+
     def get_state(self) -> State:
         """Returns the current running state object.
 
@@ -1237,14 +1237,19 @@ class AgentController:
         )
 
     def __repr__(self):
-        pending_action_info = "<none>"
-        if hasattr(self, "_pending_action_info") and self._pending_action_info is not None:
+        pending_action_info = '<none>'
+        if (
+            hasattr(self, '_pending_action_info')
+            and self._pending_action_info is not None
+        ):
             action, timestamp = self._pending_action_info
             action_id = getattr(action, 'id', 'unknown')
             action_type = type(action).__name__
             elapsed_time = time.time() - timestamp
-            pending_action_info = f"{action_type}(id={action_id}, elapsed={elapsed_time:.2f}s)"
-            
+            pending_action_info = (
+                f'{action_type}(id={action_id}, elapsed={elapsed_time:.2f}s)'
+            )
+
         return (
             f'AgentController(id={getattr(self, "id", "<uninitialized>")}, '
             f'agent={getattr(self, "agent", "<uninitialized>")!r}, '
