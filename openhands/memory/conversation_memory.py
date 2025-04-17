@@ -2,6 +2,8 @@ from typing import Generator
 
 from litellm import ModelResponse
 
+from openhands.a2a.common.types import Artifact
+from openhands.a2a.utils import convert_parts
 from openhands.core.config.agent_config import AgentConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import ImageContent, Message, TextContent
@@ -34,7 +36,7 @@ from openhands.events.observation import (
     PlanObservation,
     UserRejectObservation,
 )
-from openhands.events.observation.a2a import A2AListRemoteAgentsObservation, A2ASendTaskObservation
+from openhands.events.observation.a2a import A2AListRemoteAgentsObservation,  A2ASendTaskUpdateObservation, A2ASendTaskArtifactObservation
 from openhands.events.observation.agent import (
     MicroagentKnowledge,
     RecallObservation,
@@ -550,8 +552,14 @@ class ConversationMemory:
         elif isinstance(obs, A2AListRemoteAgentsObservation):
             text = truncate_content(obs.content, max_message_chars)
             message = Message(role='user', content=[TextContent(text=text)])
-        elif isinstance(obs, A2ASendTaskObservation):
-            text = truncate_content(obs.content, max_message_chars)
+        elif isinstance(obs, A2ASendTaskUpdateObservation):
+            return []
+        elif isinstance(obs, A2ASendTaskArtifactObservation):
+            artifact = Artifact(**obs.task_artifact_event['artifact'])
+            parts = artifact.parts
+            converted_parts = convert_parts(parts)
+            text = '\n'.join(converted_parts)
+            logger.info(f'A2ASendTaskArtifactObservation: {text}')
             message = Message(role='user', content=[TextContent(text=text)])
         else:
             # If an observation message is not returned, it will cause an error

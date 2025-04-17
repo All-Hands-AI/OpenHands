@@ -97,14 +97,6 @@ class TaskStatusUpdateEvent(BaseModel):
     final: bool = False
     metadata: dict[str, Any] | None = None
 
-    def model_dump(self, **kwargs):
-        return {
-            "id": self.id,
-            "status": self.status.model_dump(),
-            "final": self.final,
-            "metadata": self.metadata
-        }
-
 
 class TaskArtifactUpdateEvent(BaseModel):
     id: str

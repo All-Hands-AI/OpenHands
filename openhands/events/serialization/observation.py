@@ -2,7 +2,7 @@ import copy
 from typing import Any
 
 from openhands.events.event import RecallType
-from openhands.events.observation.a2a import A2AListRemoteAgentsObservation, A2ASendTaskObservation
+from openhands.events.observation.a2a import A2AListRemoteAgentsObservation, A2ASendTaskArtifactObservation, A2ASendTaskUpdateObservation, A2ASendTaskResponseObservation
 from openhands.events.observation.agent import (
     AgentCondensationObservation,
     AgentStateChangedObservation,
@@ -57,7 +57,9 @@ observations = (
     BrowserMCPObservation,
     PlanObservation,
     A2AListRemoteAgentsObservation,
-    A2ASendTaskObservation,
+    A2ASendTaskUpdateObservation,
+    A2ASendTaskArtifactObservation,
+    A2ASendTaskResponseObservation,
 )
 
 OBSERVATION_TYPE_TO_CLASS = {

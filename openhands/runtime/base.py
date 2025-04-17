@@ -16,6 +16,7 @@ from zipfile import ZipFile
 import httpx
 
 from openhands.a2a.A2AManager import A2AManager
+from openhands.a2a.common.types import Task, TaskArtifactUpdateEvent, TaskStatusUpdateEvent
 from openhands.core.config import AppConfig, SandboxConfig
 from openhands.core.exceptions import AgentRuntimeDisconnectedError
 from openhands.core.logger import openhands_logger as logger
@@ -43,7 +44,7 @@ from openhands.events.observation import (
     Observation,
     UserRejectObservation,
 )
-from openhands.events.observation.a2a import A2AListRemoteAgentsObservation, A2ASendTaskObservation
+from openhands.events.observation.a2a import A2AListRemoteAgentsObservation, A2ASendTaskArtifactObservation, A2ASendTaskResponseObservation, A2ASendTaskUpdateObservation
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
@@ -580,8 +581,25 @@ class Runtime(FileEditRuntimeMixin):
             async for task_response in self.a2a_manager.send_task(action.agent_name, action.task_message, self.sid):
                 if task_response is None or task_response.result is None:
                     continue
-                yield A2ASendTaskObservation(content=task_response.result.model_dump_json())
-
+                result = task_response.result
+                logger.info(f'Task response: {result}')
+                if isinstance(result, TaskStatusUpdateEvent):
+                    yield A2ASendTaskUpdateObservation(
+                           task_update_event=result, 
+                           content=result.model_dump_json()
+                    )
+                elif isinstance(result, TaskArtifactUpdateEvent):
+                    yield A2ASendTaskArtifactObservation(
+                           task_artifact_event=result, 
+                           content=result.model_dump_json()
+                    )
+                elif isinstance(result, Task):
+                    yield A2ASendTaskResponseObservation(
+                           task=result,
+                           content=result.model_dump_json()
+                    )
+                else:
+                    raise RuntimeError(f'Unknown task response: {result}')
     # ====================================================================
     # File operations
     # ====================================================================

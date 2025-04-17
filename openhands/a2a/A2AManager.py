@@ -67,7 +67,6 @@ class A2AManager(ABC):
             
         card = self.list_remote_agent_cards[agent_name]
         client = A2AClient(card)
-        
         request: TaskSendParams = TaskSendParams(
             id=str(uuid.uuid4()),
             sessionId=sid,

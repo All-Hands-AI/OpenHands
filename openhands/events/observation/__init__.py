@@ -25,7 +25,12 @@ from openhands.events.observation.observation import Observation
 from openhands.events.observation.planner_mcp import PlanObservation
 from openhands.events.observation.reject import UserRejectObservation
 from openhands.events.observation.success import SuccessObservation
-from openhands.events.observation.a2a import A2AListRemoteAgentsObservation, A2ASendTaskObservation
+from openhands.events.observation.a2a import (
+    A2AListRemoteAgentsObservation, 
+    A2ASendTaskArtifactObservation, 
+    A2ASendTaskUpdateObservation, 
+    A2ASendTaskResponseObservation
+)
 
 __all__ = [
     'Observation',
@@ -50,5 +55,7 @@ __all__ = [
     'BrowserMCPObservation',
     'PlanObservation',
     'A2AListRemoteAgentsObservation',
-    'A2ASendTaskObservation',
+    'A2ASendTaskArtifactObservation', 
+    'A2ASendTaskUpdateObservation',
+    'A2ASendTaskResponseObservation',
 ]

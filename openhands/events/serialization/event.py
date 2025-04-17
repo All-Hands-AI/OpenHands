@@ -50,6 +50,25 @@ DELETE_FROM_TRAJECTORY_EXTRAS_AND_SCREENSHOTS = DELETE_FROM_TRAJECTORY_EXTRAS | 
 }
 
 
+def _convert_dict_to_pydantic(data: dict, model_class: type[BaseModel]) -> BaseModel:
+    """Convert a dictionary to a Pydantic model, handling nested dictionaries recursively."""
+    if not isinstance(data, dict):
+        return data
+    
+    for key, value in data.items():
+        if isinstance(value, dict):
+            # Try to find the corresponding field type in the model
+            field = model_class.model_fields.get(key)
+            if field and hasattr(field.annotation, '__origin__') and issubclass(field.annotation.__origin__, BaseModel):
+                data[key] = _convert_dict_to_pydantic(value, field.annotation.__origin__)
+            elif field and isinstance(field.annotation, type) and issubclass(field.annotation, BaseModel):
+                data[key] = _convert_dict_to_pydantic(value, field.annotation)
+        elif isinstance(value, list):
+            data[key] = [_convert_dict_to_pydantic(item, model_class) if isinstance(item, dict) else item for item in value]
+    
+    return model_class(**data)
+
+
 def event_from_dict(data: dict[str, Any]) -> 'Event':
     evt: Event
     if 'action' in data:
@@ -58,6 +77,7 @@ def event_from_dict(data: dict[str, Any]) -> 'Event':
         evt = observation_from_dict(data)
     else:
         raise ValueError(f'Unknown event type: {data}')
+    
     for key in UNDERSCORE_KEYS:
         if key in data:
             value = data[key]
@@ -80,19 +100,31 @@ def event_from_dict(data: dict[str, Any]) -> 'Event':
                     metrics.token_usages = [
                         TokenUsage(**usage) for usage in value.get('token_usages', [])
                     ]
-                    # Set accumulated token usage if available
                     if 'accumulated_token_usage' in value:
                         metrics._accumulated_token_usage = TokenUsage(
                             **value.get('accumulated_token_usage', {})
                         )
                 value = metrics
             setattr(evt, '_' + key, value)
+    
+    # Handle nested BaseModel objects in the event's properties
+    if hasattr(evt, 'nested') and isinstance(evt.nested, dict):
+        # Try to find the corresponding model class from the event's type hints
+        from typing import get_type_hints
+        type_hints = get_type_hints(type(evt))
+        if 'nested' in type_hints and isinstance(type_hints['nested'], type) and issubclass(type_hints['nested'], BaseModel):
+            evt.nested = _convert_dict_to_pydantic(evt.nested, type_hints['nested'])
+    
     return evt
 
 
-def _convert_pydantic_to_dict(obj: BaseModel | dict) -> dict:
+def _convert_pydantic_to_dict(obj: BaseModel | dict | list | Any) -> dict | list | Any:
     if isinstance(obj, BaseModel):
         return obj.model_dump()
+    elif isinstance(obj, dict):
+        return {k: _convert_pydantic_to_dict(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [_convert_pydantic_to_dict(item) for item in obj]
     return obj
 
 

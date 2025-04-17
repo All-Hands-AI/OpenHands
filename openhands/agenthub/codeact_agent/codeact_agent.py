@@ -1,7 +1,7 @@
 import os
 from collections import deque
 
-from openhands.a2a.tools import ListRemoteAgents, SendTask
+from openhands.a2a.tool import ListRemoteAgents, SendTask
 import openhands.agenthub.codeact_agent.function_calling as codeact_function_calling
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
