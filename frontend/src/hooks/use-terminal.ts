@@ -144,9 +144,7 @@ export const useTerminal = ({
       let lastCommandType = '';
       for (let i = lastCommandIndex.current; i < commands.length; i += 1) {
         lastCommandType = commands[i].type;
-        if (commands[i].type === "output") {
-          renderCommand(commands[i], terminal.current);
-        }
+        renderCommand(commands[i], terminal.current);
       }
       lastCommandIndex.current = commands.length;
       if (lastCommandType === "output") {
