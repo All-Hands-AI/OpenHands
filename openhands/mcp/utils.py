@@ -10,7 +10,6 @@ from openhands.events.observation.mcp import MCPObservation
 from openhands.events.observation.observation import Observation
 from openhands.mcp.client import MCPClient
 from openhands.runtime.base import Runtime
-from openhands.runtime.impl.action_execution.action_execution_client import ActionExecutionClient
 
 def convert_mcp_clients_to_tools(mcp_clients: list[MCPClient] | None) -> list[dict]:
     """
@@ -143,6 +142,7 @@ async def add_mcp_tools_to_agent(agent: "Agent", runtime: Runtime, mcp_config: M
     """
     Add MCP tools to an agent.
     """
+    from openhands.runtime.impl.action_execution.action_execution_client import ActionExecutionClient  # inline import to avoid circular import
     assert isinstance(runtime, ActionExecutionClient), "Runtime must be an instance of ActionExecutionClient"
     assert runtime.runtime_initialized, "Runtime must be initialized before adding MCP tools"
 
