@@ -21,11 +21,11 @@ const RouterStub = createRoutesStub([
   },
 ]);
 
-const renderHomeScreen = () =>
+const renderHomeScreen = (initialProvidersAreSet = true) =>
   render(<RouterStub />, {
     wrapper: ({ children }) => (
       <Provider store={setupStore()}>
-        <AuthProvider initialProvidersAreSet>
+        <AuthProvider initialProvidersAreSet={initialProvidersAreSet}>
           <QueryClientProvider client={new QueryClient()}>
             {children}
           </QueryClientProvider>
@@ -229,4 +229,17 @@ describe("HomeScreen", () => {
       });
     });
   });
+
+  it.todo(
+    "should hide the suggested tasks section if not authed with git(hub|lab)",
+    async () => {
+      renderHomeScreen(false);
+
+      const taskSuggestions = screen.queryByTestId("task-suggestions");
+      const repoConnector = screen.getByTestId("repo-connector");
+
+      expect(taskSuggestions).not.toBeInTheDocument();
+      expect(repoConnector).toBeInTheDocument();
+    },
+  );
 });
