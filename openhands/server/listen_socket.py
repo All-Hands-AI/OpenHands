@@ -105,10 +105,9 @@ async def connect(connection_id: str, environ):
             user_id = payload['user']['publicAddress']
             
             # TODO: If the user is not whitelisted and the run mode is DEV, skip the check
-            if user.whitelisted != UserStatus.WHITELISTED:
-                if os.getenv('RUN_MODE') != 'DEV':
-                    logger.error(f'User not activated: {user_id}')
-                    raise ConnectionRefusedError('User not activated')
+            if user.whitelisted != UserStatus.WHITELISTED and os.getenv('RUN_MODE') != 'DEV':
+                logger.error(f'User not activated: {user_id}')
+                raise ConnectionRefusedError('User not activated')
 
             mnemonic = user.mnemonic
         except jwt.ExpiredSignatureError:
