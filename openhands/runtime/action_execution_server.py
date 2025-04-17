@@ -65,6 +65,7 @@ from openhands.runtime.utils.memory_monitor import MemoryMonitor
 from openhands.runtime.utils.runtime_init import init_user_and_working_directory
 from openhands.runtime.utils.system_stats import get_system_stats
 from openhands.utils.async_utils import call_sync_from_async, wait_all
+from mcpm.router.router import MCPRouter
 
 
 class ActionRequest(BaseModel):
@@ -552,10 +553,12 @@ if __name__ == '__main__':
             plugins_to_load.append(ALL_PLUGINS[plugin]())  # type: ignore
 
     client: ActionExecutor | None = None
+    mcp_router: MCPRouter | None = None
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
-        global client
+        global client, mcp_router
+        logger.info('Initializing ActionExecutor...')
         client = ActionExecutor(
             plugins_to_load,
             work_dir=args.working_dir,
@@ -564,9 +567,44 @@ if __name__ == '__main__':
             browsergym_eval_env=args.browsergym_eval_env,
         )
         await client.ainit()
+        logger.info('ActionExecutor initialized.')
+
+        # Initialize and mount MCP Router
+        logger.info('Initializing MCP Router...')
+        mcp_router = MCPRouter(
+            profile_path=os.path.join(os.path.dirname(__file__), "mcp", "config.json")
+        )
+        allowed_origins = ["*"]
+        sse_app = await mcp_router.get_sse_server_app(
+            allow_origins=allowed_origins,
+            include_lifespan=False
+        )
+        app.mount("/mcp", sse_app)
+        logger.info(f"Mounted MCP Router SSE app at /mcp with allowed origins: {allowed_origins}")
+
         yield
+
         # Clean up & release the resources
-        client.close()
+        logger.info("Shutting down MCP Router...")
+        if mcp_router:
+            try:
+                await mcp_router.shutdown()
+                logger.info("MCP Router shutdown successfully.")
+            except Exception as e:
+                logger.error(f"Error shutting down MCP Router: {e}", exc_info=True)
+        else:
+            logger.info("MCP Router instance not found for shutdown.")
+
+        logger.info("Closing ActionExecutor...")
+        if client:
+            try:
+                client.close()
+                logger.info("ActionExecutor closed successfully.")
+            except Exception as e:
+                logger.error(f"Error closing ActionExecutor: {e}", exc_info=True)
+        else:
+            logger.info("ActionExecutor instance not found for closing.")
+        logger.info("Shutdown complete.")
 
     app = FastAPI(lifespan=lifespan)
 
