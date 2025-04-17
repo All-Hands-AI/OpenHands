@@ -96,7 +96,7 @@ Phase 1. READING: read the problem and reword it in clearer terms
 Phase 2. RUNNING: install and run the tests on the repository
    2.1 Follow the readme
    2.2 Install the environment and anything needed
-   2.2 Iterate and figure out how to run the tests 
+   2.2 Iterate and figure out how to run the tests
 
 Phase 3. EXPLORATION: find the files that are related to the problem and possible solutions
    3.1 Use `grep` to search for relevant methods, classes, keywords and error messages.
@@ -225,9 +225,9 @@ def get_config(
         )
     )
     agent_config = AgentConfig(
-        codeact_enable_jupyter=False,
-        codeact_enable_browsing=RUN_WITH_BROWSING,
-        codeact_enable_llm_editor=False,
+        enable_jupyter=False,
+        enable_browsing=RUN_WITH_BROWSING,
+        enable_llm_editor=False,
         condenser=metadata.condenser_config,
         enable_prompt_extensions=False,
     )
@@ -238,6 +238,7 @@ def get_config(
 def initialize_runtime(
     runtime: Runtime,
     instance: pd.Series,  # this argument is not required
+    metadata: EvalMetadata,
 ):
     """Initialize the runtime for the agent.
 
@@ -577,7 +578,7 @@ def process_instance(
     call_async_from_sync(runtime.connect)
 
     try:
-        initialize_runtime(runtime, instance)
+        initialize_runtime(runtime, instance, metadata)
 
         message_action = get_instruction(instance, metadata)
 
@@ -863,7 +864,7 @@ if __name__ == '__main__':
                     # Also make sure git_patch is not empty - otherwise we fall back to previous attempt (empty patch is worse than anything else)
                     if (
                         instance['instance_id'] not in added_instance_ids
-                        and instance['test_result']['git_patch'].strip()
+                        and instance['test_result'].get('git_patch', '').strip()
                     ):
                         fout.write(line)
                         added_instance_ids.add(instance['instance_id'])

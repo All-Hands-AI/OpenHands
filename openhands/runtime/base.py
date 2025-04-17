@@ -14,7 +14,6 @@ from typing import Callable, cast
 from zipfile import ZipFile
 
 import httpx
-from pydantic import SecretStr
 
 from openhands.core.config import AppConfig, SandboxConfig
 from openhands.core.exceptions import AgentRuntimeDisconnectedError
@@ -59,6 +58,7 @@ from openhands.runtime.plugins import (
     VSCodeRequirement,
 )
 from openhands.runtime.utils.edit import FileEditRuntimeMixin
+from openhands.runtime.utils.git_handler import CommandResult, GitHandler
 from openhands.utils.async_utils import (
     GENERAL_TIMEOUT,
     call_async_from_sync,
@@ -112,6 +112,9 @@ class Runtime(FileEditRuntimeMixin):
         user_id: str | None = None,
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
     ):
+        self.git_handler = GitHandler(
+            execute_shell_fn=self._execute_shell_fn_git_handler
+        )
         self.sid = sid
         self.event_stream = event_stream
         self.event_stream.subscribe(
@@ -151,14 +154,11 @@ class Runtime(FileEditRuntimeMixin):
 
         # Load mixins
         FileEditRuntimeMixin.__init__(
-            self, enable_llm_editor=config.get_agent_config().codeact_enable_llm_editor
+            self, enable_llm_editor=config.get_agent_config().enable_llm_editor
         )
 
         self.user_id = user_id
         self.git_provider_tokens = git_provider_tokens
-
-        # TODO: remove once done debugging expired github token
-        self.prev_token: SecretStr | None = None
 
     def setup_initial_env(self) -> None:
         if self.attach_to_existing:
@@ -257,30 +257,13 @@ class Runtime(FileEditRuntimeMixin):
         if not providers_called:
             return
 
-        logger.info(f'Fetching latest github token for runtime: {self.sid}')
+        logger.info(f'Fetching latest provider tokens for runtime: {self.sid}')
         env_vars = await self.provider_handler.get_env_vars(
             providers=providers_called, expose_secrets=False, get_latest=True
         )
 
-        # This statement is to debug expired github tokens, and will be removed later
-        if ProviderType.GITHUB not in env_vars:
-            logger.error(f'Failed to refresh github token for runtime: {self.sid}')
-            return
-
         if len(env_vars) == 0:
             return
-
-        raw_token = env_vars[ProviderType.GITHUB].get_secret_value()
-        if not self.prev_token:
-            logger.info(
-                f'Setting github token in runtime: {self.sid}\nToken value: {raw_token[0:5]}; length: {len(raw_token)}'
-            )
-        elif self.prev_token.get_secret_value() != raw_token:
-            logger.info(
-                f'Setting new github token in runtime {self.sid}\nToken value: {raw_token[0:5]}; length: {len(raw_token)}'
-            )
-
-        self.prev_token = SecretStr(raw_token)
 
         try:
             await self.provider_handler.set_event_stream_secrets(
@@ -605,6 +588,35 @@ class Runtime(FileEditRuntimeMixin):
     @property
     def web_hosts(self) -> dict[str, int]:
         return {}
+
+    # ====================================================================
+    # Git
+    # ====================================================================
+
+    def _execute_shell_fn_git_handler(
+        self, command: str, cwd: str | None
+    ) -> CommandResult:
+        """
+        This function is used by the GitHandler to execute shell commands.
+        """
+        obs = self.run(CmdRunAction(command=command, is_static=True, cwd=cwd))
+        exit_code = 0
+        content = ''
+
+        if hasattr(obs, 'exit_code'):
+            exit_code = obs.exit_code
+        if hasattr(obs, 'content'):
+            content = obs.content
+
+        return CommandResult(content=content, exit_code=exit_code)
+
+    def get_git_changes(self, cwd: str) -> list[dict[str, str]]:
+        self.git_handler.set_cwd(cwd)
+        return self.git_handler.get_git_changes()
+
+    def get_git_diff(self, file_path: str, cwd: str) -> dict[str, str]:
+        self.git_handler.set_cwd(cwd)
+        return self.git_handler.get_git_diff(file_path)
 
     @property
     def additional_agent_instructions(self) -> str:

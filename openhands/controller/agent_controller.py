@@ -54,6 +54,7 @@ from openhands.events.action import (
     IPythonRunCellAction,
     MessageAction,
     NullAction,
+    SystemMessageAction,
 )
 from openhands.events.action.agent import CondensationAction, RecallAction
 from openhands.events.event import Event
@@ -162,6 +163,31 @@ class AgentController:
 
         # replay-related
         self._replay_manager = ReplayManager(replay_events)
+
+        # Add the system message to the event stream
+        self._add_system_message()
+
+    def _add_system_message(self):
+        for event in self.event_stream.get_events(start_id=self.state.start_id):
+            if isinstance(event, MessageAction) and event.source == EventSource.USER:
+                # FIXME: Remove this after 6/1/2025
+                # Do not try to add a system message if we first run into
+                # a user message -- this means the eventstream exits before
+                # SystemMessageAction is introduced.
+                # We expect *agent* to handle this case gracefully.
+                return
+
+            if isinstance(event, SystemMessageAction):
+                # Do not try to add the system message if it already exists
+                return
+
+        # Add the system message to the event stream
+        # This should be done for all agents, including delegates
+        system_message = self.agent.get_system_message()
+        logger.debug(f'System message got from agent: {system_message}')
+        if system_message:
+            self.event_stream.add_event(system_message, EventSource.AGENT)
+            logger.debug(f'System message added to event stream: {system_message}')
 
     async def close(self, set_stop_state=True) -> None:
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream.
