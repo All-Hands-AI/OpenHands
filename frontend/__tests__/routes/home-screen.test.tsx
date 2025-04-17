@@ -6,7 +6,7 @@ import { createRoutesStub } from "react-router";
 import { Provider } from "react-redux";
 import { setupStore } from "test-utils";
 import { AxiosError } from "axios";
-import HomeScreen from "#/routes/new-home";
+import HomeScreen from "#/routes/home";
 import { AuthProvider } from "#/context/auth-context";
 import * as GitService from "#/api/git";
 import { GitRepository } from "#/types/git";

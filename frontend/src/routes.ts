@@ -7,7 +7,7 @@ import {
 
 export default [
   layout("routes/root-layout.tsx", [
-    index("routes/new-home.tsx"),
+    index("routes/home.tsx"),
     route("settings", "routes/settings.tsx", [
       index("routes/account-settings.tsx"),
       route("billing", "routes/billing.tsx"),
