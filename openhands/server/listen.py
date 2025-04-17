@@ -22,7 +22,9 @@ base_app.mount(
 base_app.middleware('http')(AttachConversationMiddleware(base_app))
 
 # Add middleware to the base app - need to be added before the other middlewares
-base_app.add_middleware(CheckUserActivationMiddleware)
+
+# TODO: If the run mode is DEV, skip the check
+os.getenv('RUN_MODE') != 'DEV' and base_app.add_middleware(CheckUserActivationMiddleware)
 base_app.add_middleware(JWTAuthMiddleware)
 
 
