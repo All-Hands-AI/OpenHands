@@ -618,10 +618,11 @@ def check_folder_security_agreement(current_dir):
                     f'{current_dir}\n\n'
                     'OpenHands may read and execute files in this folder with your permission.'
                 ),
-                style='#ffffff',
+                style=COLOR_GREY,
                 read_only=True,
                 wrap_lines=True,
-            )
+            ),
+            style=f'fg:{COLOR_GREY}',
         )
 
         clear()
@@ -786,9 +787,6 @@ async def main(loop: asyncio.AbstractEventLoop):
 
     if not check_folder_security_agreement(current_dir):
         # User rejected, exit application
-        event_stream.add_event(
-            ChangeAgentStateAction(AgentState.STOPPED), EventSource.ENVIRONMENT
-        )
         return
 
     # Clear the terminal

@@ -1,9 +1,19 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
-import { render } from "@testing-library/react";
 import { afterEach } from "node:test";
-import { ReactNode } from "react";
 import { useTerminal } from "#/hooks/use-terminal";
 import { Command } from "#/state/command-slice";
+import { AgentState } from "#/types/agent-state";
+import { renderWithProviders } from "../../test-utils";
+
+// Mock the WsClient context
+vi.mock("#/context/ws-client-provider", () => ({
+  useWsClient: () => ({
+    send: vi.fn(),
+    status: "CONNECTED",
+    isLoadingMessages: false,
+    events: [],
+  }),
+}));
 
 interface TestTerminalComponentProps {
   commands: Command[];
@@ -14,14 +24,6 @@ function TestTerminalComponent({
 }: TestTerminalComponentProps) {
   const ref = useTerminal({ commands });
   return <div ref={ref} />;
-}
-
-interface WrapperProps {
-  children: ReactNode;
-}
-
-function Wrapper({ children }: WrapperProps) {
-  return <div>{children}</div>;
 }
 
 describe("useTerminal", () => {
@@ -55,8 +57,11 @@ describe("useTerminal", () => {
   });
 
   it("should render", () => {
-    render(<TestTerminalComponent commands={[]} />, {
-      wrapper: Wrapper,
+    renderWithProviders(<TestTerminalComponent commands={[]} />, {
+      preloadedState: {
+        agent: { curAgentState: AgentState.RUNNING },
+        cmd: { commands: [] },
+      },
     });
   });
 
@@ -66,8 +71,11 @@ describe("useTerminal", () => {
       { content: "hello", type: "output" },
     ];
 
-    render(<TestTerminalComponent commands={commands} />, {
-      wrapper: Wrapper,
+    renderWithProviders(<TestTerminalComponent commands={commands} />, {
+      preloadedState: {
+        agent: { curAgentState: AgentState.RUNNING },
+        cmd: { commands },
+      },
     });
 
     expect(mockTerminal.writeln).toHaveBeenNthCalledWith(1, "echo hello");
@@ -86,12 +94,15 @@ describe("useTerminal", () => {
       { content: secret, type: "output" },
     ];
 
-    render(
+    renderWithProviders(
       <TestTerminalComponent
         commands={commands}
       />,
       {
-        wrapper: Wrapper,
+        preloadedState: {
+          agent: { curAgentState: AgentState.RUNNING },
+          cmd: { commands },
+        },
       },
     );
 
