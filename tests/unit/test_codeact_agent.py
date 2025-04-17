@@ -80,9 +80,9 @@ def test_step_with_pending_actions(agent: CodeActAgent):
 
 def test_get_tools_default():
     tools = get_tools(
-        codeact_enable_jupyter=True,
-        codeact_enable_llm_editor=True,
-        codeact_enable_browsing=True,
+        enable_jupyter=True,
+        enable_llm_editor=True,
+        enable_browsing=True,
     )
     assert len(tools) > 0
 
@@ -97,9 +97,9 @@ def test_get_tools_default():
 def test_get_tools_with_options():
     # Test with all options enabled
     tools = get_tools(
-        codeact_enable_browsing=True,
-        codeact_enable_jupyter=True,
-        codeact_enable_llm_editor=True,
+        enable_browsing=True,
+        enable_jupyter=True,
+        enable_llm_editor=True,
     )
     tool_names = [tool['function']['name'] for tool in tools]
     assert 'browser' in tool_names
@@ -108,9 +108,9 @@ def test_get_tools_with_options():
 
     # Test with all options disabled
     tools = get_tools(
-        codeact_enable_browsing=False,
-        codeact_enable_jupyter=False,
-        codeact_enable_llm_editor=False,
+        enable_browsing=False,
+        enable_jupyter=False,
+        enable_llm_editor=False,
     )
     tool_names = [tool['function']['name'] for tool in tools]
     assert 'browser' not in tool_names
@@ -324,21 +324,21 @@ def test_mismatched_tool_call_events(mock_state: State):
     # 2. The action message, and
     # 3. The observation message
     mock_state.history = [action, observation]
-    messages = agent._get_messages(mock_state)
+    messages = agent._get_messages(mock_state.history)
     assert len(messages) == 3
 
     # The same should hold if the events are presented out-of-order
     mock_state.history = [observation, action]
-    messages = agent._get_messages(mock_state)
+    messages = agent._get_messages(mock_state.history)
     assert len(messages) == 3
 
     # If only one of the two events is present, then we should just get the system message
     mock_state.history = [action]
-    messages = agent._get_messages(mock_state)
+    messages = agent._get_messages(mock_state.history)
     assert len(messages) == 1
 
     mock_state.history = [observation]
-    messages = agent._get_messages(mock_state)
+    messages = agent._get_messages(mock_state.history)
     assert len(messages) == 1
 
 

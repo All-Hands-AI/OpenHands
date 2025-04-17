@@ -4,8 +4,14 @@ import OpenHands from "#/api/open-hands";
 import { PostSettings, PostApiSettings } from "#/types/settings";
 import { useSettings } from "../query/use-settings";
 
-const saveSettingsMutationFn = async (settings: Partial<PostSettings>) => {
-  const resetLlmApiKey = settings.LLM_API_KEY === "";
+const saveSettingsMutationFn = async (
+  settings: Partial<PostSettings> | null,
+) => {
+  // If settings is null, we're resetting
+  if (settings === null) {
+    await OpenHands.resetSettings();
+    return;
+  }
 
   const apiSettings: Partial<PostApiSettings> = {
     llm_model: settings.LLM_MODEL,
@@ -14,15 +20,15 @@ const saveSettingsMutationFn = async (settings: Partial<PostSettings>) => {
     language: settings.LANGUAGE || DEFAULT_SETTINGS.LANGUAGE,
     confirmation_mode: settings.CONFIRMATION_MODE,
     security_analyzer: settings.SECURITY_ANALYZER,
-    llm_api_key: resetLlmApiKey
-      ? ""
-      : settings.LLM_API_KEY?.trim() || undefined,
+    llm_api_key:
+      settings.llm_api_key === ""
+        ? ""
+        : settings.llm_api_key?.trim() || undefined,
     remote_runtime_resource_factor: settings.REMOTE_RUNTIME_RESOURCE_FACTOR,
-    provider_tokens: settings.provider_tokens,
-    unset_github_token: settings.unset_github_token,
     enable_default_condenser: settings.ENABLE_DEFAULT_CONDENSER,
     enable_sound_notifications: settings.ENABLE_SOUND_NOTIFICATIONS,
     user_consents_to_analytics: settings.user_consents_to_analytics,
+    provider_tokens: settings.provider_tokens,
   };
 
   await OpenHands.saveSettings(apiSettings);
@@ -33,20 +39,13 @@ export const useSaveSettings = () => {
   const { data: currentSettings } = useSettings();
 
   return useMutation({
-    mutationFn: async (settings: Partial<PostSettings>) => {
-      const newSettings = { ...currentSettings, ...settings };
-
-      // Temp hack for reset logic
-      if (
-        settings.LLM_API_KEY === undefined &&
-        settings.LLM_BASE_URL === undefined &&
-        settings.LLM_MODEL === undefined
-      ) {
-        delete newSettings.LLM_API_KEY;
-        delete newSettings.LLM_BASE_URL;
-        delete newSettings.LLM_MODEL;
+    mutationFn: async (settings: Partial<PostSettings> | null) => {
+      if (settings === null) {
+        await saveSettingsMutationFn(null);
+        return;
       }
 
+      const newSettings = { ...currentSettings, ...settings };
       await saveSettingsMutationFn(newSettings);
     },
     onSuccess: async () => {

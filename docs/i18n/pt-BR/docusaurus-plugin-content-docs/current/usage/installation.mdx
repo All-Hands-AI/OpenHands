@@ -1,0 +1,104 @@
+# Executando OpenHands
+
+## Requisitos do Sistema
+
+- MacOS com [suporte ao Docker Desktop](https://docs.docker.com/desktop/setup/install/mac-install/#system-requirements)
+- Linux
+- Windows com [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) e [suporte ao Docker Desktop](https://docs.docker.com/desktop/setup/install/windows-install/#system-requirements)
+
+É recomendado um sistema com um processador moderno e um mínimo de **4GB de RAM** para executar o OpenHands.
+
+## Pré-requisitos
+
+<details>
+  <summary>MacOS</summary>
+
+  **Docker Desktop**
+
+  1. [Instale o Docker Desktop no Mac](https://docs.docker.com/desktop/setup/install/mac-install).
+  2. Abra o Docker Desktop, vá em `Settings > Advanced` e certifique-se de que `Allow the default Docker socket to be used` esteja habilitado.
+</details>
+
+<details>
+  <summary>Linux</summary>
+
+  :::note
+  Testado com Ubuntu 22.04.
+  :::
+
+  **Docker Desktop**
+
+  1. [Instale o Docker Desktop no Linux](https://docs.docker.com/desktop/setup/install/linux/).
+
+</details>
+
+<details>
+  <summary>Windows</summary>
+
+  **WSL**
+
+  1. [Instale o WSL](https://learn.microsoft.com/en-us/windows/wsl/install).
+  2. Execute `wsl --version` no powershell e confirme `Default Version: 2`.
+
+  **Docker Desktop**
+
+  1. [Instale o Docker Desktop no Windows](https://docs.docker.com/desktop/setup/install/windows-install).
+  2. Abra o Docker Desktop, vá em `Settings` e confirme o seguinte:
+  - General: `Use the WSL 2 based engine` está habilitado.
+  - Resources > WSL Integration: `Enable integration with my default WSL distro` está habilitado.
+
+  :::note
+  O comando docker abaixo para iniciar o aplicativo deve ser executado dentro do terminal WSL.
+  :::
+
+</details>
+
+## Inicie o Aplicativo
+
+A maneira mais fácil de executar o OpenHands é no Docker.
+
+```bash
+docker pull docker.all-hands.dev/all-hands-ai/runtime:0.33-nikolaik
+
+docker run -it --rm --pull=always \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.33-nikolaik \
+    -e LOG_ALL_EVENTS=true \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    -v ~/.openhands-state:/.openhands-state \
+    -p 3000:3000 \
+    --add-host host.docker.internal:host-gateway \
+    --name openhands-app \
+    docker.all-hands.dev/all-hands-ai/openhands:0.33
+```
+
+Você encontrará o OpenHands em execução em http://localhost:3000!
+
+Você também pode [conectar o OpenHands ao seu sistema de arquivos local](https://docs.all-hands.dev/modules/usage/runtimes#connecting-to-your-filesystem),
+executar o OpenHands em um [modo headless programável](https://docs.all-hands.dev/modules/usage/how-to/headless-mode),
+interagir com ele através de uma [CLI amigável](https://docs.all-hands.dev/modules/usage/how-to/cli-mode),
+ou executá-lo em issues marcadas com [uma ação do GitHub](https://docs.all-hands.dev/modules/usage/how-to/github-action).
+
+## Configuração
+
+Ao iniciar o OpenHands, você verá uma página de Configurações. Você **deve** selecionar um `LLM Provider` e `LLM Model` e inserir uma `API Key` correspondente.
+Estes podem ser alterados a qualquer momento selecionando o botão `Settings` (ícone de engrenagem) na interface do usuário.
+
+Se o modelo necessário não existir na lista, você pode ativar as opções `Advanced` e inseri-lo manualmente com o prefixo correto
+na caixa de texto `Custom Model`.
+As opções `Advanced` também permitem que você especifique uma `Base URL`, se necessário.
+
+Agora você está pronto para [começar com o OpenHands](./getting-started).
+
+## Versões
+
+O [comando docker acima](./installation#start-the-app) baixa a versão estável mais recente do OpenHands. Você também tem outras opções:
+- Para uma versão específica, substitua $VERSION em `openhands:$VERSION` e `runtime:$VERSION`, com o número da versão.
+Usamos SemVer, então `0.9` apontará automaticamente para a versão mais recente `0.9.x`, e `0` apontará para a versão mais recente `0.x.x`.
+- Para a versão de desenvolvimento mais atualizada, substitua $VERSION em `openhands:$VERSION` e `runtime:$VERSION`, por `main`.
+Esta versão é instável e é recomendada apenas para fins de teste ou desenvolvimento.
+
+Você pode escolher a tag que melhor se adapta às suas necessidades com base nos requisitos de estabilidade e recursos desejados.
+
+Para o fluxo de trabalho de desenvolvimento, consulte [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
+
+Está tendo problemas? Confira nosso [Guia de Solução de Problemas](https://docs.all-hands.dev/modules/usage/troubleshooting).

@@ -322,24 +322,30 @@ def issue_handler_factory(
     llm_config: LLMConfig,
     platform: Platform,
     username: str | None = None,
+    base_domain: str | None = None,
 ) -> ServiceContextIssue | ServiceContextPR:
+    # Determine default base_domain based on platform
+    if base_domain is None:
+        base_domain = 'github.com' if platform == Platform.GITHUB else 'gitlab.com'
     if issue_type == 'issue':
         if platform == Platform.GITHUB:
             return ServiceContextIssue(
-                GithubIssueHandler(owner, repo, token, username), llm_config
+                GithubIssueHandler(owner, repo, token, username, base_domain),
+                llm_config,
             )
         else:  # platform == Platform.GITLAB
             return ServiceContextIssue(
-                GitlabIssueHandler(owner, repo, token, username), llm_config
+                GitlabIssueHandler(owner, repo, token, username, base_domain),
+                llm_config,
             )
     elif issue_type == 'pr':
         if platform == Platform.GITHUB:
             return ServiceContextPR(
-                GithubPRHandler(owner, repo, token, username), llm_config
+                GithubPRHandler(owner, repo, token, username, base_domain), llm_config
             )
         else:  # platform == Platform.GITLAB
             return ServiceContextPR(
-                GitlabPRHandler(owner, repo, token, username), llm_config
+                GitlabPRHandler(owner, repo, token, username, base_domain), llm_config
             )
     else:
         raise ValueError(f'Invalid issue type: {issue_type}')
@@ -361,6 +367,7 @@ async def resolve_issue(
     issue_number: int,
     comment_id: int | None,
     reset_logger: bool = False,
+    base_domain: str | None = None,
 ) -> None:
     """Resolve a single issue.
 
@@ -379,11 +386,15 @@ async def resolve_issue(
         repo_instruction: Repository instruction to use.
         issue_number: Issue number to resolve.
         comment_id: Optional ID of a specific comment to focus on.
-
         reset_logger: Whether to reset the logger for multiprocessing.
+        base_domain: The base domain for the git server (defaults to "github.com" for GitHub and "gitlab.com" for GitLab)
     """
+    # Determine default base_domain based on platform
+    if base_domain is None:
+        base_domain = 'github.com' if platform == Platform.GITHUB else 'gitlab.com'
+
     issue_handler = issue_handler_factory(
-        issue_type, owner, repo, token, llm_config, platform, username
+        issue_type, owner, repo, token, llm_config, platform, username, base_domain
     )
 
     # Load dataset
@@ -429,7 +440,7 @@ async def resolve_issue(
     # checkout the repo
     repo_dir = os.path.join(output_dir, 'repo')
     if not os.path.exists(repo_dir):
-        checkout_output = subprocess.check_output(
+        checkout_output = subprocess.check_output(  # noqa: ASYNC101
             [
                 'git',
                 'clone',
@@ -442,7 +453,7 @@ async def resolve_issue(
 
     # get the commit id of current repo for reproducibility
     base_commit = (
-        subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo_dir)
+        subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo_dir)  # noqa: ASYNC101
         .decode('utf-8')
         .strip()
     )
@@ -452,7 +463,7 @@ async def resolve_issue(
         # Check for .openhands_instructions file in the workspace directory
         openhands_instructions_path = os.path.join(repo_dir, '.openhands_instructions')
         if os.path.exists(openhands_instructions_path):
-            with open(openhands_instructions_path, 'r') as f:
+            with open(openhands_instructions_path, 'r') as f:  # noqa: ASYNC101
                 repo_instruction = f.read()
 
     # OUTPUT FILE
@@ -461,7 +472,7 @@ async def resolve_issue(
 
     # Check if this issue was already processed
     if os.path.exists(output_file):
-        with open(output_file, 'r') as f:
+        with open(output_file, 'r') as f:  # noqa: ASYNC101
             for line in f:
                 data = ResolverOutput.model_validate_json(line)
                 if data.issue.number == issue_number:
@@ -470,7 +481,7 @@ async def resolve_issue(
                     )
                     return
 
-    output_fp = open(output_file, 'a')
+    output_fp = open(output_file, 'a')  # noqa: ASYNC101
 
     logger.info(
         f'Resolving issue {issue_number} with Agent {AGENT_CLASS}, model {model_name}, max iterations {max_iterations}.'
@@ -489,20 +500,20 @@ async def resolve_issue(
 
             # Fetch the branch first to ensure it exists locally
             fetch_cmd = ['git', 'fetch', 'origin', branch_to_use]
-            subprocess.check_output(
+            subprocess.check_output(  # noqa: ASYNC101
                 fetch_cmd,
                 cwd=repo_dir,
             )
 
             # Checkout the branch
             checkout_cmd = ['git', 'checkout', branch_to_use]
-            subprocess.check_output(
+            subprocess.check_output(  # noqa: ASYNC101
                 checkout_cmd,
                 cwd=repo_dir,
             )
 
             base_commit = (
-                subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo_dir)
+                subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo_dir)  # noqa: ASYNC101
                 .decode('utf-8')
                 .strip()
             )
@@ -629,6 +640,12 @@ def main() -> None:
         type=lambda x: x.lower() == 'true',
         help='Whether to run in experimental mode.',
     )
+    parser.add_argument(
+        '--base-domain',
+        type=str,
+        default=None,
+        help='Base domain for the git server (defaults to "github.com" for GitHub and "gitlab.com" for GitLab)',
+    )
 
     my_args = parser.parse_args()
 
@@ -651,16 +668,25 @@ def main() -> None:
     if not token:
         raise ValueError('Token is required.')
 
-    platform = identify_token(token, my_args.selected_repo)
+    platform = identify_token(token, my_args.selected_repo, my_args.base_domain)
     if platform == Platform.INVALID:
         raise ValueError('Token is invalid.')
 
     api_key = my_args.llm_api_key or os.environ['LLM_API_KEY']
+    model = my_args.llm_model or os.environ['LLM_MODEL']
+    base_url = my_args.llm_base_url or os.environ.get('LLM_BASE_URL', None)
+    api_version = os.environ.get('LLM_API_VERSION', None)
+
+    # Create LLMConfig instance
     llm_config = LLMConfig(
-        model=my_args.llm_model or os.environ['LLM_MODEL'],
+        model=model,
         api_key=SecretStr(api_key) if api_key else None,
-        base_url=my_args.llm_base_url or os.environ.get('LLM_BASE_URL', None),
+        base_url=base_url,
     )
+
+    # Only set api_version if it was explicitly provided, otherwise let LLMConfig handle it
+    if api_version is not None:
+        llm_config.api_version = api_version
 
     repo_instruction = None
     if my_args.repo_instruction_file:
@@ -699,6 +725,7 @@ def main() -> None:
             repo_instruction=repo_instruction,
             issue_number=my_args.issue_number,
             comment_id=my_args.comment_id,
+            base_domain=my_args.base_domain,
         )
     )
 

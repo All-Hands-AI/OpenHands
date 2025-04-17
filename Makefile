@@ -133,20 +133,29 @@ install-python-dependencies:
 		export HNSWLIB_NO_NATIVE=1; \
 		poetry run pip install chroma-hnswlib; \
 	fi
-	@poetry install
-	@if [ -f "/etc/manjaro-release" ]; then \
-		echo "$(BLUE)Detected Manjaro Linux. Installing Playwright dependencies...$(RESET)"; \
-		poetry run pip install playwright; \
-		poetry run playwright install chromium; \
+	@if [ -n "${POETRY_GROUP}" ]; then \
+		echo "Installing only POETRY_GROUP=${POETRY_GROUP}"; \
+		poetry install --only $${POETRY_GROUP}; \
 	else \
-		if [ ! -f cache/playwright_chromium_is_installed.txt ]; then \
-			echo "Running playwright install --with-deps chromium..."; \
-			poetry run playwright install --with-deps chromium; \
-			mkdir -p cache; \
-			touch cache/playwright_chromium_is_installed.txt; \
+		poetry install; \
+	fi
+	@if [ "${INSTALL_PLAYWRIGHT}" != "false" ] && [ "${INSTALL_PLAYWRIGHT}" != "0" ]; then \
+		if [ -f "/etc/manjaro-release" ]; then \
+			echo "$(BLUE)Detected Manjaro Linux. Installing Playwright dependencies...$(RESET)"; \
+			poetry run pip install playwright; \
+			poetry run playwright install chromium; \
 		else \
-			echo "Setup already done. Skipping playwright installation."; \
+			if [ ! -f cache/playwright_chromium_is_installed.txt ]; then \
+				echo "Running playwright install --with-deps chromium..."; \
+				poetry run playwright install --with-deps chromium; \
+				mkdir -p cache; \
+				touch cache/playwright_chromium_is_installed.txt; \
+			else \
+				echo "Setup already done. Skipping playwright installation."; \
+			fi \
 		fi \
+	else \
+		echo "Skipping Playwright installation (INSTALL_PLAYWRIGHT=${INSTALL_PLAYWRIGHT})."; \
 	fi
 	@echo "$(GREEN)Python dependencies installed successfully.$(RESET)"
 
@@ -185,7 +194,7 @@ test:
 
 build-frontend:
 	@echo "$(YELLOW)Building frontend...$(RESET)"
-	@cd frontend && npm run build
+	@cd frontend && npm run prepare && npm run build
 
 # Start backend
 start-backend:
@@ -195,7 +204,14 @@ start-backend:
 # Start frontend
 start-frontend:
 	@echo "$(YELLOW)Starting frontend...$(RESET)"
-	@cd frontend && VITE_BACKEND_HOST=$(BACKEND_HOST_PORT) VITE_FRONTEND_PORT=$(FRONTEND_PORT) npm run dev -- --port $(FRONTEND_PORT) --host $(BACKEND_HOST)
+	@cd frontend && \
+	if grep -qi microsoft /proc/version 2>/dev/null; then \
+		echo "Detected WSL environment. Using 'dev_wsl'"; \
+		SCRIPT=dev_wsl; \
+	else \
+		SCRIPT=dev; \
+	fi; \
+	VITE_BACKEND_HOST=$(BACKEND_HOST_PORT) VITE_FRONTEND_PORT=$(FRONTEND_PORT) npm run $$SCRIPT -- --port $(FRONTEND_PORT) --host $(BACKEND_HOST)
 
 # Common setup for running the app (non-callable)
 _run_setup:
@@ -231,12 +247,6 @@ docker-run:
 		docker compose up $(OPTIONS); \
 	fi
 
-# Run the app (WSL mode)
-run-wsl:
-	@echo "$(YELLOW)Running the app in WSL mode...$(RESET)"
-	@$(MAKE) -s _run_setup
-	@cd frontend && echo "$(BLUE)Starting frontend with npm (WSL mode)...$(RESET)" && npm run dev_wsl -- --port $(FRONTEND_PORT)
-	@echo "$(GREEN)Application started successfully in WSL mode.$(RESET)"
 
 # Setup config.toml
 setup-config:

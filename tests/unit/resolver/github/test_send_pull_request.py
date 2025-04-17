@@ -1,6 +1,6 @@
 import os
 import tempfile
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import ANY, MagicMock, call, patch
 
 import pytest
 
@@ -243,7 +243,7 @@ def test_initialize_repo(mock_output_dir):
 
 
 @patch('openhands.resolver.interfaces.github.GithubIssueHandler.reply_to_comment')
-@patch('requests.post')
+@patch('httpx.post')
 @patch('subprocess.run')
 @patch('openhands.resolver.send_pull_request.LLM')
 def test_update_existing_pull_request(
@@ -346,8 +346,8 @@ def test_update_existing_pull_request(
     ],
 )
 @patch('subprocess.run')
-@patch('requests.post')
-@patch('requests.get')
+@patch('httpx.post')
+@patch('httpx.get')
 def test_send_pull_request(
     mock_get,
     mock_post,
@@ -441,8 +441,8 @@ def test_send_pull_request(
 
 
 @patch('subprocess.run')
-@patch('requests.post')
-@patch('requests.get')
+@patch('httpx.post')
+@patch('httpx.get')
 def test_send_pull_request_with_reviewer(
     mock_get, mock_post, mock_run, mock_issue, mock_output_dir, mock_llm_config
 ):
@@ -505,8 +505,8 @@ def test_send_pull_request_with_reviewer(
 
 
 @patch('subprocess.run')
-@patch('requests.post')
-@patch('requests.get')
+@patch('httpx.post')
+@patch('httpx.get')
 def test_send_pull_request_target_branch_with_fork(
     mock_get, mock_post, mock_run, mock_issue, mock_output_dir
 ):
@@ -558,7 +558,7 @@ def test_send_pull_request_target_branch_with_fork(
     post_data = mock_post.call_args[1]['json']
     assert post_data['base'] == target_branch  # PR should target the specified branch
     assert (
-        post_data['head'] == 'openhands-fix-issue-42'
+        post_data['head'] == 'fork-owner:openhands-fix-issue-42'
     )  # Branch name should be standard
 
     # Check that push was to fork
@@ -569,8 +569,8 @@ def test_send_pull_request_target_branch_with_fork(
 
 
 @patch('subprocess.run')
-@patch('requests.post')
-@patch('requests.get')
+@patch('httpx.post')
+@patch('httpx.get')
 def test_send_pull_request_target_branch_with_additional_message(
     mock_get, mock_post, mock_run, mock_issue, mock_output_dir
 ):
@@ -618,7 +618,7 @@ def test_send_pull_request_target_branch_with_additional_message(
     assert 'This pull request fixes #42' in post_data['body']
 
 
-@patch('requests.get')
+@patch('httpx.get')
 def test_send_pull_request_invalid_target_branch(
     mock_get, mock_issue, mock_output_dir, mock_llm_config
 ):
@@ -650,8 +650,8 @@ def test_send_pull_request_invalid_target_branch(
 
 
 @patch('subprocess.run')
-@patch('requests.post')
-@patch('requests.get')
+@patch('httpx.post')
+@patch('httpx.get')
 def test_send_pull_request_git_push_failure(
     mock_get, mock_post, mock_run, mock_issue, mock_output_dir, mock_llm_config
 ):
@@ -709,8 +709,8 @@ def test_send_pull_request_git_push_failure(
 
 
 @patch('subprocess.run')
-@patch('requests.post')
-@patch('requests.get')
+@patch('httpx.post')
+@patch('httpx.get')
 def test_send_pull_request_permission_error(
     mock_get, mock_post, mock_run, mock_issue, mock_output_dir, mock_llm_config
 ):
@@ -744,7 +744,7 @@ def test_send_pull_request_permission_error(
     mock_post.assert_called_once()
 
 
-@patch('requests.post')
+@patch('httpx.post')
 def test_reply_to_comment(mock_post, mock_issue):
     # Arrange: set up the test data
     token = 'test_token'
@@ -884,6 +884,7 @@ def test_process_single_pr_update(
         patch_dir=f'{mock_output_dir}/patches/pr_1',
         additional_message='[Test success 1]',
         llm_config=mock_llm_config,
+        base_domain='github.com',
     )
 
 
@@ -965,6 +966,7 @@ def test_process_single_issue(
         target_branch=None,
         reviewer=None,
         pr_title=None,
+        base_domain='github.com',
     )
 
 
@@ -1126,6 +1128,9 @@ def test_process_all_successful_issues(
                 None,
                 False,
                 None,
+                None,
+                None,
+                'github.com',
             ),
             call(
                 'output_dir',
@@ -1138,6 +1143,9 @@ def test_process_all_successful_issues(
                 None,
                 False,
                 None,
+                None,
+                None,
+                'github.com',
             ),
         ]
     )
@@ -1145,7 +1153,7 @@ def test_process_all_successful_issues(
     # Add more assertions as needed to verify the behavior of the function
 
 
-@patch('requests.get')
+@patch('httpx.get')
 @patch('subprocess.run')
 def test_send_pull_request_branch_naming(
     mock_run, mock_get, mock_issue, mock_output_dir, mock_llm_config
@@ -1260,7 +1268,7 @@ def test_main(
     # Run main function
     main()
 
-    mock_identify_token.assert_called_with('mock_token')
+    mock_identify_token.assert_called_with('mock_token', None, ANY)
 
     llm_config = LLMConfig(
         model=mock_args.llm_model,
@@ -1282,6 +1290,7 @@ def test_main(
         mock_args.target_branch,
         mock_args.reviewer,
         mock_args.pr_title,
+        ANY,
     )
 
     # Other assertions
@@ -1301,6 +1310,7 @@ def test_main(
         'draft',
         llm_config,
         None,
+        ANY,
     )
 
     # Test for invalid issue number

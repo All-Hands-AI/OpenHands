@@ -8,9 +8,10 @@ import socketio
 from openhands.controller.agent import Agent
 from openhands.core.config import AppConfig
 from openhands.core.config.condenser_config import (
+    BrowserOutputCondenserConfig,
+    CondenserPipelineConfig,
     LLMSummarizingCondenserConfig,
 )
-from openhands.core.const.guide_url import TROUBLESHOOTING_URL
 from openhands.core.logger import OpenHandsLoggerAdapter
 from openhands.core.schema import AgentState
 from openhands.events.action import MessageAction, NullAction
@@ -24,6 +25,7 @@ from openhands.events.observation.error import ErrorObservation
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm import LLM
+from openhands.mcp import fetch_mcp_tools_from_config
 from openhands.server.session.agent_session import AgentSession
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.settings import Settings
@@ -84,7 +86,10 @@ class Session:
         await self.agent_session.close()
 
     async def initialize_agent(
-        self, settings: Settings, initial_message: MessageAction | None
+        self,
+        settings: Settings,
+        initial_message: MessageAction | None,
+        replay_json: str | None,
     ):
         self.agent_session.event_stream.add_event(
             AgentStateChangedObservation('', AgentState.LOADING),
@@ -125,13 +130,26 @@ class Session:
         agent_config = self.config.get_agent_config(agent_cls)
 
         if settings.enable_default_condenser:
-            default_condenser_config = LLMSummarizingCondenserConfig(
-                llm_config=llm.config, keep_first=3, max_size=40
+            # Default condenser chains a condenser that limits browser the total
+            # size of browser observations with a condenser that limits the size
+            # of the view given to the LLM. The order matters: with the browser
+            # output first, the summarizer will only see the most recent browser
+            # output, which should keep the summarization cost down.
+            default_condenser_config = CondenserPipelineConfig(
+                condensers=[
+                    BrowserOutputCondenserConfig(),
+                    LLMSummarizingCondenserConfig(
+                        llm_config=llm.config, keep_first=3, max_size=80
+                    ),
+                ]
             )
+
             self.logger.info(f'Enabling default condenser: {default_condenser_config}')
             agent_config.condenser = default_condenser_config
 
+        mcp_tools = await fetch_mcp_tools_from_config(self.config.mcp)
         agent = Agent.get_cls(agent_cls)(llm, agent_config)
+        agent.set_mcp_tools(mcp_tools)
 
         git_provider_tokens = None
         selected_repository = None
@@ -154,20 +172,21 @@ class Session:
                 selected_repository=selected_repository,
                 selected_branch=selected_branch,
                 initial_message=initial_message,
+                replay_json=replay_json,
             )
         except Exception as e:
             self.logger.exception(f'Error creating agent_session: {e}')
-            await self.send_error(
-                f'Error creating agent_session. Please check Docker is running and visit `{TROUBLESHOOTING_URL}` for more debugging information..'
-            )
+            err_class = e.__class__.__name__
+            await self.send_error(f'Failed to create agent session: {err_class}')
             return
 
     def _create_llm(self, agent_cls: str | None) -> LLM:
         """
         Initialize LLM, extracted for testing.
         """
+        agent_name = agent_cls if agent_cls is not None else 'agent'
         return LLM(
-            config=self.config.get_llm_config_from_agent(agent_cls),
+            config=self.config.get_llm_config_from_agent(agent_name),
             retry_listener=self._notify_on_llm_retry,
         )
 

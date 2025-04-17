@@ -43,6 +43,7 @@ class LLMConfig(BaseModel):
         custom_tokenizer: A custom tokenizer to use for token counting.
         native_tool_calling: Whether to use native tool calling if supported by the model. Can be True, False, or not set.
         reasoning_effort: The effort to put into reasoning. This is a string that can be one of 'low', 'medium', 'high', or 'none'. Exclusive for o1 models.
+        seed: The seed to use for the LLM.
     """
 
     model: str = Field(default='claude-3-7-sonnet-20250219')
@@ -82,6 +83,7 @@ class LLMConfig(BaseModel):
     custom_tokenizer: str | None = Field(default=None)
     native_tool_calling: bool | None = Field(default=None)
     reasoning_effort: str | None = Field(default='high')
+    seed: int | None = Field(default=None)
 
     model_config = {'extra': 'forbid'}
 
@@ -149,7 +151,7 @@ class LLMConfig(BaseModel):
 
         return llm_mapping
 
-    def model_post_init(self, __context: Any):
+    def model_post_init(self, __context: Any) -> None:
         """Post-initialization hook to assign OpenRouter-related variables to environment variables.
 
         This ensures that these values are accessible to litellm at runtime.
@@ -162,8 +164,8 @@ class LLMConfig(BaseModel):
         if self.openrouter_app_name:
             os.environ['OR_APP_NAME'] = self.openrouter_app_name
 
-        # Assign an API version for Azure models
-        # While it doesn't seem required, the format supported by the API without version seems old and will likely break.
-        # Azure issue: https://github.com/All-Hands-AI/OpenHands/issues/6777
+        # Set an API version by default for Azure models
+        # Required for newer models.
+        # Azure issue: https://github.com/All-Hands-AI/OpenHands/issues/7755
         if self.model.startswith('azure') and self.api_version is None:
-            self.api_version = '2024-08-01-preview'
+            self.api_version = '2024-12-01-preview'

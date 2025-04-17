@@ -87,13 +87,10 @@ export function handleActionMessage(message: ActionMessage) {
   }
 
   // Update metrics if available
-  if (
-    message.llm_metrics ||
-    message.tool_call_metadata?.model_response?.usage
-  ) {
+  if (message.llm_metrics) {
     const metrics = {
       cost: message.llm_metrics?.accumulated_cost ?? null,
-      usage: message.tool_call_metadata?.model_response?.usage ?? null,
+      usage: message.llm_metrics?.accumulated_token_usage ?? null,
     };
     store.dispatch(setMetrics(metrics));
   }
@@ -107,7 +104,12 @@ export function handleActionMessage(message: ActionMessage) {
   }
 
   if (message.source === "agent") {
-    if (message.args && message.args.thought) {
+    // Only add thought as a message if it's not a "think" action
+    if (
+      message.args &&
+      message.args.thought &&
+      message.action !== ActionType.THINK
+    ) {
       store.dispatch(addAssistantMessage(message.args.thought));
     }
     // Need to convert ActionMessage to RejectAction

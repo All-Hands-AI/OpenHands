@@ -1,6 +1,7 @@
 import React from "react";
 import { useSelector } from "react-redux";
 import posthog from "posthog-js";
+import { useTranslation } from "react-i18next";
 import { formatTimeDelta } from "#/utils/format-time-delta";
 import { ConversationRepoLink } from "./conversation-repo-link";
 import {
@@ -12,12 +13,13 @@ import { ConversationCardContextMenu } from "./conversation-card-context-menu";
 import { cn } from "#/utils/utils";
 import { BaseModal } from "../../shared/modals/base-modal/base-modal";
 import { RootState } from "#/store";
+import { I18nKey } from "#/i18n/declaration";
 
 interface ConversationCardProps {
   onClick?: () => void;
   onDelete?: () => void;
   onChangeTitle?: (title: string) => void;
-  showDisplayCostOption?: boolean;
+  showOptions?: boolean;
   isActive?: boolean;
   title: string;
   selectedRepository: string | null;
@@ -34,7 +36,7 @@ export function ConversationCard({
   onClick,
   onDelete,
   onChangeTitle,
-  showDisplayCostOption,
+  showOptions,
   isActive,
   title,
   selectedRepository,
@@ -46,6 +48,7 @@ export function ConversationCard({
   variant = "default",
   conversationId,
 }: ConversationCardProps) {
+  const { t } = useTranslation();
   const [contextMenuVisible, setContextMenuVisible] = React.useState(false);
   const [titleMode, setTitleMode] = React.useState<"view" | "edit">("view");
   const [metricsModalVisible, setMetricsModalVisible] = React.useState(false);
@@ -132,7 +135,7 @@ export function ConversationCard({
     }
   }, [titleMode]);
 
-  const hasContextMenu = !!(onDelete || onChangeTitle || showDisplayCostOption);
+  const hasContextMenu = !!(onDelete || onChangeTitle || showOptions);
   const timeBetweenUpdateAndCreation = createdAt
     ? new Date(lastUpdatedAt).getTime() - new Date(createdAt).getTime()
     : 0;
@@ -179,31 +182,35 @@ export function ConversationCard({
             )}
           </div>
 
-          <div className="flex items-center gap-2 relative">
+          <div className="flex items-center">
             <ConversationStateIndicator status={status} />
             {hasContextMenu && (
-              <EllipsisButton
-                onClick={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  setContextMenuVisible((prev) => !prev);
-                }}
-              />
+              <div className="pl-2">
+                <EllipsisButton
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    setContextMenuVisible((prev) => !prev);
+                  }}
+                />
+              </div>
             )}
-            {contextMenuVisible && (
-              <ConversationCardContextMenu
-                onClose={() => setContextMenuVisible(false)}
-                onDelete={onDelete && handleDelete}
-                onEdit={onChangeTitle && handleEdit}
-                onDownloadViaVSCode={
-                  conversationId ? handleDownloadViaVSCode : undefined
-                }
-                onDisplayCost={
-                  showDisplayCostOption ? handleDisplayCost : undefined
-                }
-                position={variant === "compact" ? "top" : "bottom"}
-              />
-            )}
+            <div className="relative">
+              {contextMenuVisible && (
+                <ConversationCardContextMenu
+                  onClose={() => setContextMenuVisible(false)}
+                  onDelete={onDelete && handleDelete}
+                  onEdit={onChangeTitle && handleEdit}
+                  onDownloadViaVSCode={
+                    conversationId && showOptions
+                      ? handleDownloadViaVSCode
+                      : undefined
+                  }
+                  onDisplayCost={showOptions ? handleDisplayCost : undefined}
+                  position={variant === "compact" ? "top" : "bottom"}
+                />
+              )}
+            </div>
           </div>
         </div>
 
@@ -216,14 +223,18 @@ export function ConversationCard({
             <ConversationRepoLink selectedRepository={selectedRepository} />
           )}
           <p className="text-xs text-neutral-400">
-            <span>Created </span>
+            <span>{t(I18nKey.CONVERSATION$CREATED)} </span>
             <time>
-              {formatTimeDelta(new Date(createdAt || lastUpdatedAt))} ago
+              {formatTimeDelta(new Date(createdAt || lastUpdatedAt))}{" "}
+              {t(I18nKey.CONVERSATION$AGO)}
             </time>
             {showUpdateTime && (
               <>
-                <span>, updated </span>
-                <time>{formatTimeDelta(new Date(lastUpdatedAt))} ago</time>
+                <span>{t(I18nKey.CONVERSATION$UPDATED)} </span>
+                <time>
+                  {formatTimeDelta(new Date(lastUpdatedAt))}{" "}
+                  {t(I18nKey.CONVERSATION$AGO)}
+                </time>
               </>
             )}
           </p>
@@ -233,25 +244,74 @@ export function ConversationCard({
       <BaseModal
         isOpen={metricsModalVisible}
         onOpenChange={setMetricsModalVisible}
-        title="Metrics Information"
+        title={t(I18nKey.CONVERSATION$METRICS_INFO)}
         testID="metrics-modal"
       >
-        <div className="space-y-2">
-          {metrics?.cost !== null && (
-            <p>Total Cost: ${metrics.cost.toFixed(4)}</p>
+        <div className="space-y-4">
+          {(metrics?.cost !== null || metrics?.usage !== null) && (
+            <div className="rounded-md p-3">
+              <div className="grid gap-3">
+                {metrics?.cost !== null && (
+                  <div className="flex justify-between items-center border-b border-neutral-700 pb-2">
+                    <span className="text-lg font-semibold">
+                      {t(I18nKey.CONVERSATION$TOTAL_COST)}
+                    </span>
+                    <span className="font-semibold">
+                      ${metrics.cost.toFixed(4)}
+                    </span>
+                  </div>
+                )}
+
+                {metrics?.usage !== null && (
+                  <>
+                    <div className="flex justify-between items-center pb-2">
+                      <span>{t(I18nKey.CONVERSATION$INPUT)}:</span>
+                      <span className="font-semibold">
+                        {metrics.usage.prompt_tokens.toLocaleString()}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 pl-4 text-sm">
+                      <span className="text-neutral-400">Cache Hit:</span>
+                      <span className="text-right">
+                        {metrics.usage.cache_read_tokens.toLocaleString()}
+                      </span>
+                      <span className="text-neutral-400">Cache Write:</span>
+                      <span className="text-right">
+                        {metrics.usage.cache_write_tokens.toLocaleString()}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between items-center border-b border-neutral-700 pb-2">
+                      <span>{t(I18nKey.CONVERSATION$OUTPUT)}:</span>
+                      <span className="font-semibold">
+                        {metrics.usage.completion_tokens.toLocaleString()}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between items-center pt-1">
+                      <span className="font-semibold">
+                        {t(I18nKey.CONVERSATION$TOTAL)}:
+                      </span>
+                      <span className="font-bold">
+                        {(
+                          metrics.usage.prompt_tokens +
+                          metrics.usage.completion_tokens
+                        ).toLocaleString()}
+                      </span>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
           )}
-          {metrics?.usage !== null && (
-            <>
-              <p>Tokens Used:</p>
-              <ul className="list-inside space-y-1 ml-2">
-                <li>- Input: {metrics.usage.prompt_tokens}</li>
-                <li>- Output: {metrics.usage.completion_tokens}</li>
-                <li>- Total: {metrics.usage.total_tokens}</li>
-              </ul>
-            </>
-          )}
+
           {!metrics?.cost && !metrics?.usage && (
-            <p className="text-neutral-400">No metrics data available</p>
+            <div className="rounded-md p-4 text-center">
+              <p className="text-neutral-400">
+                {t(I18nKey.CONVERSATION$NO_METRICS)}
+              </p>
+            </div>
           )}
         </div>
       </BaseModal>
