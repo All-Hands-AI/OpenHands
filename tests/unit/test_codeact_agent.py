@@ -26,6 +26,7 @@ from openhands.events.action import (
     CmdRunAction,
     MessageAction,
 )
+from openhands.events.action.message import SystemMessageAction
 from openhands.events.event import EventSource
 from openhands.events.observation.commands import (
     CmdOutputObservation,
@@ -288,8 +289,11 @@ def test_correct_tool_description_loaded_based_on_model_name(mock_state: State):
     assert any(len(tool['function']['description']) > 1024 for tool in agent.tools)
 
 
-def test_mismatched_tool_call_events(mock_state: State):
-    """Tests that the agent can convert mismatched tool call events (i.e., an observation with no corresponding action) into messages."""
+def test_mismatched_tool_call_events_and_auto_add_system_message(mock_state: State):
+    """Tests that the agent can convert mismatched tool call events (i.e., an observation with no corresponding action) into messages.
+
+    This also tests that the system message is automatically added to the event stream if SystemMessageAction is not present.
+    """
     agent = CodeActAgent(llm=LLM(LLMConfig()), config=AgentConfig())
 
     tool_call_metadata = Mock(
@@ -320,26 +324,35 @@ def test_mismatched_tool_call_events(mock_state: State):
     observation.tool_call_metadata = tool_call_metadata
 
     # When both events are provided, the agent should get three messages:
-    # 1. The system message,
-    # 2. The action message, and
+    # 1. The system message (added automatically for backward compatibility)
+    # 2. The action message
     # 3. The observation message
     mock_state.history = [action, observation]
     messages = agent._get_messages(mock_state.history)
     assert len(messages) == 3
+    assert messages[0].role == 'system'  # First message should be the system message
+    assert messages[1].role == 'assistant'  # Second message should be the action
+    assert messages[2].role == 'tool'  # Third message should be the observation
 
     # The same should hold if the events are presented out-of-order
     mock_state.history = [observation, action]
     messages = agent._get_messages(mock_state.history)
     assert len(messages) == 3
+    assert messages[0].role == 'system'  # First message should be the system message
 
     # If only one of the two events is present, then we should just get the system message
+    # plus any valid message from the event
     mock_state.history = [action]
     messages = agent._get_messages(mock_state.history)
-    assert len(messages) == 1
+    assert (
+        len(messages) == 1
+    )  # Only system message, action is waiting for its observation
+    assert messages[0].role == 'system'
 
     mock_state.history = [observation]
     messages = agent._get_messages(mock_state.history)
-    assert len(messages) == 1
+    assert len(messages) == 1  # Only system message, observation has no matching action
+    assert messages[0].role == 'system'
 
 
 def test_enhance_messages_adds_newlines_between_consecutive_user_messages(
@@ -397,3 +410,18 @@ def test_enhance_messages_adds_newlines_between_consecutive_user_messages(
     # Fifth message only has ImageContent, no TextContent to modify
     assert len(enhanced_messages[5].content) == 1
     assert isinstance(enhanced_messages[5].content[0], ImageContent)
+
+
+def test_get_system_message():
+    """Test that the Agent.get_system_message method returns a SystemMessageAction."""
+    # Create a mock agent
+    agent = CodeActAgent(llm=LLM(LLMConfig()), config=AgentConfig())
+
+    result = agent.get_system_message()
+
+    # Check that the system message was created correctly
+    assert isinstance(result, SystemMessageAction)
+    assert 'You are OpenHands agent' in result.content
+    assert len(result.tools) > 0
+    assert any(tool['function']['name'] == 'execute_bash' for tool in result.tools)
+    assert result._source == EventSource.AGENT
