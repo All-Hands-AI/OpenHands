@@ -87,6 +87,33 @@ python-json-logger = "^3.2.1"
 playwright = "^1.51.0"
 prompt-toolkit = "^3.0.50"
 traceloop-sdk = "0.24.0"
+opentelemetry-distro = "<0.53b1"
+opentelemetry-instrumentation-asyncio = "0.46b0"
+opentelemetry-instrumentation-aws-lambda = "0.46b0"
+opentelemetry-instrumentation-dbapi = "0.46b0"
+opentelemetry-instrumentation-logging = "0.46b0"
+opentelemetry-instrumentation-sqlite3 = "0.46b0"
+opentelemetry-instrumentation-threading = "0.46b0"
+opentelemetry-instrumentation-urllib = "0.46b0"
+opentelemetry-instrumentation-wsgi = "0.46b0"
+opentelemetry-instrumentation-aiohttp-client = "0.46b0"
+opentelemetry-instrumentation-aiohttp-server = "0.46b0"
+opentelemetry-instrumentation-asgi = "0.46b0"
+opentelemetry-instrumentation-asyncpg = "0.46b0"
+opentelemetry-instrumentation-boto3sqs = "0.46b0"
+opentelemetry-instrumentation-botocore = "0.46b0"
+opentelemetry-instrumentation-fastapi = "0.46b0"
+opentelemetry-instrumentation-flask = "0.46b0"
+opentelemetry-instrumentation-grpc = "0.46b0"
+opentelemetry-instrumentation-httpx = "0.46b0"
+opentelemetry-instrumentation-jinja2 = "0.46b0"
+opentelemetry-instrumentation-redis = "0.46b0"
+opentelemetry-instrumentation-requests = "0.46b0"
+opentelemetry-instrumentation-sqlalchemy = "0.46b0"
+opentelemetry-instrumentation-system-metrics = "0.46b0"
+opentelemetry-instrumentation-tornado = "0.46b0"
+opentelemetry-instrumentation-tortoiseorm = "0.46b0"
+opentelemetry-instrumentation-urllib3 = "0.46b0"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "0.11.5"
@@ -107,6 +134,7 @@ gevent = "^24.2.1"
 
 [tool.coverage.run]
 concurrency = ["gevent"]
+
 
 [tool.poetry.group.runtime.dependencies]
 jupyterlab = "*"
@@ -135,6 +163,7 @@ ignore = ["D1"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
 
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"
