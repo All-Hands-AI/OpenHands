@@ -6,7 +6,9 @@ from openhands.events.action.mcp import McpAction
 from openhands.events.observation.mcp import MCPObservation
 from openhands.events.observation.observation import Observation
 from openhands.mcp.client import MCPClient
-
+from openhands.controller.agent import Agent
+from openhands.runtime.base import Runtime
+from openhands.runtime.impl.action_execution.action_execution_client import ActionExecutionClient
 
 def convert_mcp_clients_to_tools(mcp_clients: list[MCPClient] | None) -> list[dict]:
     """
@@ -133,3 +135,27 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: McpAction) -> Obse
     logger.debug(f'MCP response: {response}')
 
     return MCPObservation(content=f'MCP result:{response.model_dump(mode="json")}')
+
+
+async def add_mcp_tools_to_agent(agent: Agent, runtime: Runtime, mcp_config: MCPConfig):
+    """
+    Add MCP tools to an agent.
+    """
+    assert isinstance(runtime, ActionExecutionClient), "Runtime must be an instance of ActionExecutionClient"
+    assert runtime.runtime_initialized, "Runtime must be initialized before adding MCP tools"
+
+    # Add the runtime as another MCP server
+    updated_mcp_config = mcp_config.model_copy()
+    updated_mcp_config.mcp_servers.append(runtime.action_execution_server_url)
+    logger.debug(f'Updated MCP config using runtime API: {updated_mcp_config}')
+
+    # Fetch the MCP tools
+    mcp_tools = await fetch_mcp_tools_from_config(updated_mcp_config)
+
+    logger.info(f"Loaded {len(mcp_tools)} MCP tools: {[tool['name'] for tool in mcp_tools]}")    
+    if mcp_config.selected_tool_names:
+        mcp_tools = [tool for tool in mcp_tools if tool['name'] in mcp_config.selected_tool_names]
+        logger.info(f"Selected {len(mcp_tools)} MCP tools based on .selected_tool_names in config: {[tool['name'] for tool in mcp_tools]}")
+
+    # Set the MCP tools on the agent
+    agent.set_mcp_tools(mcp_tools)
