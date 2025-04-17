@@ -1,3 +1,4 @@
+import asyncio
 from contextlib import AsyncExitStack
 from typing import Dict, List, Optional
 
@@ -36,17 +37,29 @@ class MCPClient(BaseModel):
             await self.disconnect()
 
         try:
-            streams_context = sse_client(
-                url=server_url,
-            )
-            streams = await self.exit_stack.enter_async_context(streams_context)
-            self.session = await self.exit_stack.enter_async_context(
-                ClientSession(*streams)
-            )
+            # Use asyncio.wait_for to enforce the timeout
+            async def connect_with_timeout():
+                streams_context = sse_client(
+                    url=server_url,
+                    timeout=timeout,  # Pass the timeout to sse_client
+                )
+                streams = await self.exit_stack.enter_async_context(streams_context)
+                self.session = await self.exit_stack.enter_async_context(
+                    ClientSession(*streams)
+                )
+                await self._initialize_and_list_tools()
 
-            await self._initialize_and_list_tools()
+            # Apply timeout to the entire connection process
+            await asyncio.wait_for(connect_with_timeout(), timeout=timeout)
+        except asyncio.TimeoutError:
+            logger.error(
+                f'Connection to {server_url} timed out after {timeout} seconds'
+            )
+            await self.disconnect()  # Clean up resources
+            raise  # Re-raise the TimeoutError
         except Exception as e:
             logger.error(f'Error connecting to {server_url}: {str(e)}')
+            await self.disconnect()  # Clean up resources
             raise
 
     async def _initialize_and_list_tools(self) -> None:

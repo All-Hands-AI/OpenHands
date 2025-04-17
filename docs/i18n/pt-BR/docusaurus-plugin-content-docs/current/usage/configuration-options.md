@@ -292,17 +292,17 @@ As opções de configuração do agente são definidas nas seções `[agent]` e 
   - Padrão: `true`
   - Descrição: Se a chamada de função está habilitada
 
-- `codeact_enable_browsing`
+- `enable_browsing`
   - Tipo: `bool`
   - Padrão: `false`
   - Descrição: Se o delegado de navegação está habilitado no espaço de ação (funciona apenas com chamada de função)
 
-- `codeact_enable_llm_editor`
+- `enable_llm_editor`
   - Tipo: `bool`
   - Padrão: `false`
   - Descrição: Se o editor LLM está habilitado no espaço de ação (funciona apenas com chamada de função)
 
-- `codeact_enable_jupyter`
+- `enable_jupyter`
   - Tipo: `bool`
   - Padrão: `false`
   - Descrição: Se o Jupyter está habilitado no espaço de ação

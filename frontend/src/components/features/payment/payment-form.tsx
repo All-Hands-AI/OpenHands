@@ -23,8 +23,8 @@ export function PaymentForm() {
     if (amount?.trim()) {
       if (!amountIsValid(amount)) return;
 
-      const float = parseFloat(amount);
-      addBalance({ amount: Number(float.toFixed(2)) });
+      const intValue = parseInt(amount, 10);
+      addBalance({ amount: intValue });
     }
 
     setButtonIsDisabled(true);
@@ -65,10 +65,13 @@ export function PaymentForm() {
           testId="top-up-input"
           name="top-up-input"
           onChange={handleTopUpInputChange}
-          type="text"
+          type="number"
           label={t(I18nKey.PAYMENT$ADD_FUNDS)}
           placeholder="Specify an amount in USD to add - min $10"
           className="w-[680px]"
+          min={10}
+          max={25000}
+          step={1}
         />
 
         <div className="flex items-center w-[680px] gap-2">
