@@ -26,16 +26,11 @@ const renderCommand = (command: Command, terminal: Terminal) => {
   const { content, type } = command;
 
   if (type === "input") {
-    terminal.write("$ ");
-    terminal.writeln(
-      parseTerminalOutput(content.replaceAll("\n", "\r\n").trim()),
-    );
-  } else {
-    // Don't add extra newlines for output, just write the content
-    terminal.writeln(
-      parseTerminalOutput(content.replaceAll("\n", "\r\n").trim()),
-    );
+    terminal.write('$ ');
   }
+  terminal.writeln(
+    parseTerminalOutput(content.replaceAll("\n", "\r\n").trim()),
+  );
 };
 
 // Create a persistent reference that survives component unmounts
@@ -131,9 +126,8 @@ export const useTerminal = ({
           renderCommand(commands[i], terminal.current);
         }
         lastCommandIndex.current = commands.length;
-      } else {
-        terminal.current.write("$ ");
       }
+      terminal.current.write("$ ");
     }
 
     return () => {
@@ -142,19 +136,20 @@ export const useTerminal = ({
   }, []);
 
   React.useEffect(() => {
-    // Render new commands when they are added to the commands array
     if (
       terminal.current &&
       commands.length > 0 &&
       lastCommandIndex.current < commands.length
     ) {
+      let lastCommandType = '';
       for (let i = lastCommandIndex.current; i < commands.length; i += 1) {
-        renderCommand(commands[i], terminal.current);
+        lastCommandType = commands[i].type;
+        if (commands[i].type === "output") {
+          renderCommand(commands[i], terminal.current);
+        }
       }
       lastCommandIndex.current = commands.length;
-      
-      // Add the prompt after rendering commands if not disabled
-      if (!disabled) {
+      if (lastCommandType === "output") {
         terminal.current.write("$ ");
       }
     }
