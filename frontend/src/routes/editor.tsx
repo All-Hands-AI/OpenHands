@@ -4,6 +4,9 @@ import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message"
 import { useGetGitChanges } from "#/hooks/query/use-get-git-changes";
 import { I18nKey } from "#/i18n/declaration";
 
+// Error message patterns
+const GIT_REPO_ERROR_PATTERN = /not a git repository/i;
+
 function StatusMessage({ children }: React.PropsWithChildren) {
   return (
     <div className="w-full h-full flex items-center text-center justify-center text-2xl text-tertiary-light">
@@ -17,7 +20,7 @@ function EditorScreen() {
   const { data: gitChanges, isSuccess, isError, error } = useGetGitChanges();
 
   const isNotGitRepoError =
-    error && retrieveAxiosErrorMessage(error) === "Not a git repository";
+    error && GIT_REPO_ERROR_PATTERN.test(retrieveAxiosErrorMessage(error));
 
   return (
     <main className="h-full overflow-y-scroll px-4 py-3 gap-3 flex flex-col">
