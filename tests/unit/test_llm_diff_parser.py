@@ -348,7 +348,11 @@ print("Newly created")
 ```
 """
     expected_edits = [
-        ('existing_file.py', '# Old line\nprint("Old")\n', '# New line\nprint("New")\n'),
+        (
+            'existing_file.py',
+            '# Old line\nprint("Old")\n',
+            '# New line\nprint("New")\n',
+        ),
         ('new_file.py', '', '# New file content\nprint("Newly created")\n'),
     ]
     start_idx_expected = content.find('```python\nexisting_file.py')
@@ -391,8 +395,16 @@ b = 'world'
 ```
 """
     expected_edits = [
-        ('file_a.py', '# Original line in file A\na = 1\n', '# Modified line in file A\na = 2\n'),
-        ('file_b.py', "# Original line in file B\nb = 'hello'\n", "# Modified line in file B\nb = 'world'\n"),
+        (
+            'file_a.py',
+            '# Original line in file A\na = 1\n',
+            '# Modified line in file A\na = 2\n',
+        ),
+        (
+            'file_b.py',
+            "# Original line in file B\nb = 'hello'\n",
+            "# Modified line in file B\nb = 'world'\n",
+        ),
     ]
     start_idx_expected = content.find('```python\nfile_a.py')
     end_idx_expected = (

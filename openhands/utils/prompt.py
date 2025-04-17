@@ -141,7 +141,7 @@ class PromptManager:
 2.  **Focus on the issues:** Implement the fix focusing on non-test files related to the issue.
 2.  **Environment Ready:** The Python environment is pre-configured with all dependencies. Do not install packages.
 3.  **Mandatory Testing Procedure:**
-    *   **Create Test to Reproduce the Issue:** *Before* implementing any fix, you MUST create a *new test* (separate from existing tests) that specifically reproduces the issue. 
+    *   **Create Test to Reproduce the Issue:** *Before* implementing any fix, you MUST create a *new test* (separate from existing tests) that specifically reproduces the issue.
             * Take existing tests as example to understand the testing format/structure.
             * Enhance this test with edge cases.
             * Run this test to confirm reproduction.
@@ -170,5 +170,5 @@ Be thorough in your exploration, testing, and reasoning. It's fine if your think
 
 ---
 """
-            reminder_text +=f"ENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>."
+            reminder_text += f'ENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>.'
             latest_user_message.content.append(TextContent(text=reminder_text))
