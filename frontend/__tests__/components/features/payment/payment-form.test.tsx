@@ -171,7 +171,7 @@ describe("PaymentForm", () => {
       const topUpInput = await screen.findByTestId("top-up-input");
       await user.type(topUpInput, "50.5");
 
-      const topUpButton = screen.getByText("Add credit");
+      const topUpButton = screen.getByText("PAYMENT$ADD_CREDIT");
       await user.click(topUpButton);
 
       expect(createCheckoutSessionSpy).not.toHaveBeenCalled();
