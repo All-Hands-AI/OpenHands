@@ -14,10 +14,7 @@ from tqdm import tqdm
 from openhands.core.config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.resolver.interfaces.issue import Issue
-from openhands.resolver.resolve_issue import (
-    issue_handler_factory,
-    process_issue,
-)
+from openhands.resolver.resolve_issue import IssueResolver
 from openhands.resolver.resolver_output import ResolverOutput
 from openhands.resolver.utils import (
     Platform,
@@ -25,208 +22,215 @@ from openhands.resolver.utils import (
 )
 
 
-def cleanup() -> None:
-    logger.info('Cleaning up child processes...')
-    for process in mp.active_children():
-        logger.info(f'Terminating child process: {process.name}')
-        process.terminate()
-        process.join()
+class AllIssueResolver:
+    def __init__(self):
+        self.issue_resolver = IssueResolver()
 
+    def cleanup(self) -> None:
+        logger.info('Cleaning up child processes...')
+        for process in mp.active_children():
+            logger.info(f'Terminating child process: {process.name}')
+            process.terminate()
+            process.join()
 
-# This function tracks the progress AND write the output to a JSONL file
-async def update_progress(
-    output: Awaitable[ResolverOutput], output_fp: TextIO, pbar: tqdm
-) -> None:
-    resolved_output = await output
-    pbar.update(1)
-    pbar.set_description(f'issue {resolved_output.issue.number}')
-    pbar.set_postfix_str(
-        f'Test Result: {resolved_output.metrics.get("test_result", "N/A") if resolved_output.metrics else "N/A"}'
-    )
-    logger.info(
-        f'Finished issue {resolved_output.issue.number}: {resolved_output.metrics.get("test_result", "N/A") if resolved_output.metrics else "N/A"}'
-    )
-    output_fp.write(resolved_output.model_dump_json() + '\n')
-    output_fp.flush()
-
-
-async def resolve_issues(
-    owner: str,
-    repo: str,
-    token: str,
-    username: str,
-    platform: Platform,
-    max_iterations: int,
-    limit_issues: int | None,
-    num_workers: int,
-    output_dir: str,
-    llm_config: LLMConfig,
-    runtime_container_image: str,
-    prompt_template: str,
-    issue_type: str,
-    repo_instruction: str | None,
-    issue_numbers: list[int] | None,
-    base_domain: str = 'github.com',
-) -> None:
-    """Resolve multiple github or gitlab issues.
-
-    Args:
-        owner: Github or Gitlab owner of the repo.
-        repo: Github or Gitlab repository to resolve issues in form of `owner/repo`.
-        token: Github or Gitlab token to access the repository.
-        username: Github or Gitlab username to access the repository.
-        max_iterations: Maximum number of iterations to run.
-        limit_issues: Limit the number of issues to resolve.
-        num_workers: Number of workers to use for parallel processing.
-        output_dir: Output directory to write the results.
-        llm_config: Configuration for the language model.
-        runtime_container_image: Container image to use.
-        prompt_template: Prompt template to use.
-        issue_type: Type of issue to resolve (issue or pr).
-        repo_instruction: Repository instruction to use.
-        issue_numbers: List of issue numbers to resolve.
-    """
-    issue_handler = issue_handler_factory(
-        issue_type, owner, repo, token, llm_config, platform, username, base_domain
-    )
-
-    # Load dataset
-    issues: list[Issue] = issue_handler.get_converted_issues(
-        issue_numbers=issue_numbers
-    )
-
-    if limit_issues is not None:
-        issues = issues[:limit_issues]
-        logger.info(f'Limiting resolving to first {limit_issues} issues.')
-
-    # TEST METADATA
-    model_name = llm_config.model.split('/')[-1]
-
-    pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
-    pathlib.Path(os.path.join(output_dir, 'infer_logs')).mkdir(
-        parents=True, exist_ok=True
-    )
-    logger.info(f'Using output directory: {output_dir}')
-
-    # checkout the repo
-    repo_dir = os.path.join(output_dir, 'repo')
-    if not os.path.exists(repo_dir):
-        checkout_output = subprocess.check_output(  # noqa: ASYNC101
-            [
-                'git',
-                'clone',
-                issue_handler.get_clone_url(),
-                f'{output_dir}/repo',
-            ]
-        ).decode('utf-8')
-        if 'fatal' in checkout_output:
-            raise RuntimeError(f'Failed to clone repository: {checkout_output}')
-
-    # get the commit id of current repo for reproducibility
-    base_commit = (
-        subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo_dir)  # noqa: ASYNC101
-        .decode('utf-8')
-        .strip()
-    )
-    logger.info(f'Base commit: {base_commit}')
-
-    if repo_instruction is None:
-        # Check for .openhands_instructions file in the workspace directory
-        openhands_instructions_path = os.path.join(repo_dir, '.openhands_instructions')
-        if os.path.exists(openhands_instructions_path):
-            with open(openhands_instructions_path, 'r') as f:  # noqa: ASYNC101
-                repo_instruction = f.read()
-
-    # OUTPUT FILE
-    output_file = os.path.join(output_dir, 'output.jsonl')
-    logger.info(f'Writing output to {output_file}')
-    finished_numbers = set()
-    if os.path.exists(output_file):
-        with open(output_file, 'r') as f:  # noqa: ASYNC101
-            for line in f:
-                data = ResolverOutput.model_validate_json(line)
-                finished_numbers.add(data.issue.number)
-        logger.warning(
-            f'Output file {output_file} already exists. Loaded {len(finished_numbers)} finished issues.'
+    # This function tracks the progress AND write the output to a JSONL file
+    async def update_progress(
+        self, output: Awaitable[ResolverOutput], output_fp: TextIO, pbar: tqdm
+    ) -> None:
+        resolved_output = await output
+        pbar.update(1)
+        pbar.set_description(f'issue {resolved_output.issue.number}')
+        pbar.set_postfix_str(
+            f'Test Result: {resolved_output.metrics.get("test_result", "N/A") if resolved_output.metrics else "N/A"}'
         )
-    output_fp = open(output_file, 'a')  # noqa: ASYNC101
+        logger.info(
+            f'Finished issue {resolved_output.issue.number}: {resolved_output.metrics.get("test_result", "N/A") if resolved_output.metrics else "N/A"}'
+        )
+        output_fp.write(resolved_output.model_dump_json() + '\n')
+        output_fp.flush()
 
-    logger.info(
-        f'Resolving issues with model {model_name}, max iterations {max_iterations}.'
-    )
+    async def resolve_issues(
+        self,
+        owner: str,
+        repo: str,
+        token: str,
+        username: str,
+        platform: Platform,
+        max_iterations: int,
+        limit_issues: int | None,
+        num_workers: int,
+        output_dir: str,
+        llm_config: LLMConfig,
+        runtime_container_image: str,
+        prompt_template: str,
+        issue_type: str,
+        repo_instruction: str | None,
+        issue_numbers: list[int] | None,
+        base_domain: str = 'github.com',
+    ) -> None:
+        """Resolve multiple github or gitlab issues.
 
-    # =============================================
-    # filter out finished issues
-    new_issues = []
-    for issue in issues:
-        if issue.number in finished_numbers:
-            logger.info(f'Skipping issue {issue.number} as it is already finished.')
-            continue
-        new_issues.append(issue)
-    logger.info(
-        f'Finished issues: {len(finished_numbers)}, Remaining issues: {len(issues)}'
-    )
-    # =============================================
+        Args:
+            owner: Github or Gitlab owner of the repo.
+            repo: Github or Gitlab repository to resolve issues in form of `owner/repo`.
+            token: Github or Gitlab token to access the repository.
+            username: Github or Gitlab username to access the repository.
+            max_iterations: Maximum number of iterations to run.
+            limit_issues: Limit the number of issues to resolve.
+            num_workers: Number of workers to use for parallel processing.
+            output_dir: Output directory to write the results.
+            llm_config: Configuration for the language model.
+            runtime_container_image: Container image to use.
+            prompt_template: Prompt template to use.
+            issue_type: Type of issue to resolve (issue or pr).
+            repo_instruction: Repository instruction to use.
+            issue_numbers: List of issue numbers to resolve.
+        """
+        issue_handler = self.issue_resolver.issue_handler_factory(
+            issue_type, owner, repo, token, llm_config, platform, username, base_domain
+        )
 
-    pbar = tqdm(total=len(issues))
+        # Load dataset
+        issues: list[Issue] = issue_handler.get_converted_issues(
+            issue_numbers=issue_numbers
+        )
 
-    # This sets the multi-processing
-    logger.info(f'Using {num_workers} workers.')
+        if limit_issues is not None:
+            issues = issues[:limit_issues]
+            logger.info(f'Limiting resolving to first {limit_issues} issues.')
 
-    try:
-        tasks = []
-        for issue in issues:
-            # checkout to pr branch
-            if issue_type == 'pr':
-                logger.info(
-                    f'Checking out to PR branch {issue.head_branch} for issue {issue.number}'
-                )
+        # TEST METADATA
+        model_name = llm_config.model.split('/')[-1]
 
-                subprocess.check_output(  # noqa: ASYNC101
-                    ['git', 'checkout', f'{issue.head_branch}'],
-                    cwd=repo_dir,
-                )
+        pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
+        pathlib.Path(os.path.join(output_dir, 'infer_logs')).mkdir(
+            parents=True, exist_ok=True
+        )
+        logger.info(f'Using output directory: {output_dir}')
 
-                base_commit = (
-                    subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo_dir)  # noqa: ASYNC101
-                    .decode('utf-8')
-                    .strip()
-                )
+        # checkout the repo
+        repo_dir = os.path.join(output_dir, 'repo')
+        if not os.path.exists(repo_dir):
+            checkout_output = subprocess.check_output(  # noqa: ASYNC101
+                [
+                    'git',
+                    'clone',
+                    issue_handler.get_clone_url(),
+                    f'{output_dir}/repo',
+                ]
+            ).decode('utf-8')
+            if 'fatal' in checkout_output:
+                raise RuntimeError(f'Failed to clone repository: {checkout_output}')
 
-            task = update_progress(
-                process_issue(
-                    issue,
-                    platform,
-                    base_commit,
-                    max_iterations,
-                    llm_config,
-                    output_dir,
-                    runtime_container_image,
-                    prompt_template,
-                    issue_handler,
-                    repo_instruction,
-                    bool(num_workers > 1),
-                ),
-                output_fp,
-                pbar,
+        # get the commit id of current repo for reproducibility
+        base_commit = (
+            subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo_dir)  # noqa: ASYNC101
+            .decode('utf-8')
+            .strip()
+        )
+        logger.info(f'Base commit: {base_commit}')
+
+        if repo_instruction is None:
+            # Check for .openhands_instructions file in the workspace directory
+            openhands_instructions_path = os.path.join(
+                repo_dir, '.openhands_instructions'
             )
-            tasks.append(task)
+            if os.path.exists(openhands_instructions_path):
+                with open(openhands_instructions_path, 'r') as f:  # noqa: ASYNC101
+                    repo_instruction = f.read()
 
-        # Use asyncio.gather with a semaphore to limit concurrency
-        sem = asyncio.Semaphore(num_workers)
+        # OUTPUT FILE
+        output_file = os.path.join(output_dir, 'output.jsonl')
+        logger.info(f'Writing output to {output_file}')
+        finished_numbers = set()
+        if os.path.exists(output_file):
+            with open(output_file, 'r') as f:  # noqa: ASYNC101
+                for line in f:
+                    data = ResolverOutput.model_validate_json(line)
+                    finished_numbers.add(data.issue.number)
+            logger.warning(
+                f'Output file {output_file} already exists. Loaded {len(finished_numbers)} finished issues.'
+            )
+        output_fp = open(output_file, 'a')  # noqa: ASYNC101
 
-        async def run_with_semaphore(task: Awaitable[Any]) -> Any:
-            async with sem:
-                return await task
+        logger.info(
+            f'Resolving issues with model {model_name}, max iterations {max_iterations}.'
+        )
 
-        await asyncio.gather(*[run_with_semaphore(task) for task in tasks])
+        # =============================================
+        # filter out finished issues
+        new_issues = []
+        for issue in issues:
+            if issue.number in finished_numbers:
+                logger.info(f'Skipping issue {issue.number} as it is already finished.')
+                continue
+            new_issues.append(issue)
+        logger.info(
+            f'Finished issues: {len(finished_numbers)}, Remaining issues: {len(issues)}'
+        )
+        # =============================================
 
-    except KeyboardInterrupt:
-        logger.info('KeyboardInterrupt received. Cleaning up...')
-        cleanup()
+        pbar = tqdm(total=len(issues))
 
-    output_fp.close()
-    logger.info('Finished.')
+        # This sets the multi-processing
+        logger.info(f'Using {num_workers} workers.')
+
+        try:
+            tasks = []
+            for issue in issues:
+                # checkout to pr branch
+                if issue_type == 'pr':
+                    logger.info(
+                        f'Checking out to PR branch {issue.head_branch} for issue {issue.number}'
+                    )
+
+                    subprocess.check_output(  # noqa: ASYNC101
+                        ['git', 'checkout', f'{issue.head_branch}'],
+                        cwd=repo_dir,
+                    )
+
+                    base_commit = (
+                        subprocess.check_output(
+                            ['git', 'rev-parse', 'HEAD'], cwd=repo_dir
+                        )  # noqa: ASYNC101
+                        .decode('utf-8')
+                        .strip()
+                    )
+
+                task = self.update_progress(
+                    self.issue_resolver.process_issue(
+                        issue,
+                        platform,
+                        base_commit,
+                        max_iterations,
+                        llm_config,
+                        output_dir,
+                        runtime_container_image,
+                        prompt_template,
+                        issue_handler,
+                        repo_instruction,
+                        bool(num_workers > 1),
+                    ),
+                    output_fp,
+                    pbar,
+                )
+                tasks.append(task)
+
+            # Use asyncio.gather with a semaphore to limit concurrency
+            sem = asyncio.Semaphore(num_workers)
+
+            async def run_with_semaphore(task: Awaitable[Any]) -> Any:
+                async with sem:
+                    return await task
+
+            await asyncio.gather(*[run_with_semaphore(task) for task in tasks])
+
+        except KeyboardInterrupt:
+            logger.info('KeyboardInterrupt received. Cleaning up...')
+            self.cleanup()
+
+        output_fp.close()
+        logger.info('Finished.')
 
 
 def main() -> None:
@@ -384,8 +388,10 @@ def main() -> None:
     with open(prompt_file, 'r') as f:
         prompt_template = f.read()
 
+    all_issue_resolver = AllIssueResolver()
+
     asyncio.run(
-        resolve_issues(
+        all_issue_resolver.resolve_issues(
             owner=owner,
             repo=repo,
             token=token,
