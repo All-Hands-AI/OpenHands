@@ -70,10 +70,7 @@ export interface AuthenticateResponse {
   error?: string;
 }
 
-export enum ConversationTrigger {
-  RESOLVER = "resolver",
-  GUI = "gui",
-}
+export type ConversationTrigger = "resolver" | "gui";
 
 export interface Conversation {
   conversation_id: string;

@@ -6,7 +6,6 @@ import { ImageCarousel } from "../images/image-carousel";
 import { ExpandableMessage } from "./expandable-message";
 import { useUserConversation } from "#/hooks/query/use-user-conversation";
 import { useConversation } from "#/context/conversation-context";
-import { ConversationTrigger } from "#/api/open-hands.types";
 import { I18nKey } from "#/i18n/declaration";
 
 interface MessagesProps {
@@ -20,8 +19,7 @@ export const Messages: React.FC<MessagesProps> = React.memo(
     const { data: conversation } = useUserConversation(conversationId || null);
 
     // Check if conversation metadata has trigger=resolver
-    const isResolverTrigger =
-      conversation?.trigger === ConversationTrigger.RESOLVER;
+    const isResolverTrigger = conversation?.trigger === "resolver";
 
     return messages.map((message, index) => {
       const shouldShowConfirmationButtons =
@@ -29,8 +27,11 @@ export const Messages: React.FC<MessagesProps> = React.memo(
         message.sender === "assistant" &&
         isAwaitingUserConfirmation;
 
+      const isFirstUserMessageWithResolverTrigger =
+        index === 0 && message.sender === "user" && isResolverTrigger;
+
       // Special case: First user message with resolver trigger
-      if (index === 0 && message.sender === "user" && isResolverTrigger) {
+      if (isFirstUserMessageWithResolverTrigger) {
         return (
           <div key={index}>
             <ExpandableMessage
