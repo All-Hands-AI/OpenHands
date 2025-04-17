@@ -97,7 +97,6 @@ class Settings(BaseModel):
             llm_api_key=llm_config.api_key,
             llm_base_url=llm_config.base_url,
             remote_runtime_resource_factor=app_config.sandbox.remote_runtime_resource_factor,
-            provider_tokens={},
         )
         return settings
 
@@ -107,12 +106,7 @@ class POSTSettingsModel(Settings):
     Settings for POST requests
     """
 
-    # Override provider_tokens to accept string tokens from frontend
     provider_tokens: dict[str, str] = {}
-
-    @field_serializer('provider_tokens')
-    def provider_tokens_serializer(self, provider_tokens: dict[str, str]):
-        return provider_tokens
 
 
 class GETSettingsModel(Settings):
