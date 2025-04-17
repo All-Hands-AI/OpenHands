@@ -106,7 +106,7 @@ export function FileDiffViewer({ path, type }: FileDiffViewerProps) {
     statusIcon = <span>{status}</span>;
   } else {
     const StatusIcon = status; // now it's recognized as a component
-    statusIcon = <StatusIcon className="text-primary w-5 h-5" />;
+    statusIcon = <StatusIcon className="w-5 h-5" />;
   }
 
   const isFetchingData = isLoading || isRefetching;

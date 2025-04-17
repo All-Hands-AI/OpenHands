@@ -130,12 +130,12 @@ function AppContent() {
             labels={[
               {
                 label: "Changes",
-                to: "editor",
+                to: "",
                 icon: <DiGit className="w-6 h-6" />,
               },
               {
                 label: t(I18nKey.WORKSPACE$TITLE),
-                to: "",
+                to: "workspace",
                 icon: <CodeIcon />,
               },
               {
