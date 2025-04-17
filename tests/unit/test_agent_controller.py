@@ -1237,8 +1237,9 @@ async def test_condenser_metrics_included():
     agent.condenser = condenser
     
     # Mock the system message to avoid ID issues
-    from openhands.events.action.message import SystemMessageAction
     system_message = SystemMessageAction(content='Test system message')
+    system_message._source = EventSource.AGENT
+    system_message._id = -1
     agent.get_system_message.return_value = system_message
 
     # Mock agent step to return a CondensationAction

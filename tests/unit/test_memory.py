@@ -23,6 +23,7 @@ from openhands.llm.metrics import Metrics
 from openhands.memory.memory import Memory
 from openhands.runtime.base import Runtime
 from openhands.storage.memory import InMemoryFileStore
+from openhands.events.action.message import SystemMessageAction
 
 
 @pytest.fixture
@@ -67,14 +68,10 @@ def mock_agent():
     agent.llm.config = AppConfig().get_llm_config()
 
     # Add a proper system message mock
-    from openhands.events.action.message import SystemMessageAction
-
     system_message = SystemMessageAction(content='Test system message')
     system_message._source = EventSource.AGENT
-    # Don't set the ID here, as it will be set by the event stream
+    system_message._id = -1  # Set invalid ID to avoid the ID check
     agent.get_system_message.return_value = system_message
-    
-    return agent
 
 
 @pytest.mark.asyncio
