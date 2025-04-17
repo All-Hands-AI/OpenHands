@@ -4,6 +4,7 @@ import { Outlet } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
 import { FaServer } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
+import { DiGit } from "react-icons/di";
 import { I18nKey } from "#/i18n/declaration";
 import {
   ConversationProvider,
@@ -15,7 +16,8 @@ import { clearTerminal } from "#/state/command-slice";
 import { useEffectOnce } from "#/hooks/use-effect-once";
 import CodeIcon from "#/icons/code.svg?react";
 import GlobeIcon from "#/icons/globe.svg?react";
-import ListIcon from "#/icons/list-type-number.svg?react";
+import JupyterIcon from "#/icons/jupyter.svg?react";
+import TerminalIcon from "#/icons/terminal.svg?react";
 import { clearJupyter } from "#/state/jupyter-slice";
 import { FilesProvider } from "#/context/files";
 import { ChatInterface } from "../components/features/chat/chat-interface";
@@ -31,7 +33,6 @@ import Security from "#/components/shared/modals/security/security";
 import { useEndSession } from "#/hooks/use-end-session";
 import { useUserConversation } from "#/hooks/query/use-user-conversation";
 import { ServedAppLabel } from "#/components/layout/served-app-label";
-import { TerminalStatusLabel } from "#/components/features/terminal/terminal-status-label";
 import { useSettings } from "#/hooks/query/use-settings";
 import { clearFiles, clearInitialPrompt } from "#/state/initial-query-slice";
 import { RootState } from "#/store";
@@ -56,17 +57,6 @@ function AppContent() {
   useDocumentTitleFromState();
 
   const [width, setWidth] = React.useState(window.innerWidth);
-
-  const secrets = React.useMemo(
-    // secrets to filter go here
-    () => [].filter((secret) => secret !== null),
-    [],
-  );
-
-  const Terminal = React.useMemo(
-    () => React.lazy(() => import("#/components/features/terminal/terminal")),
-    [],
-  );
 
   React.useEffect(() => {
     if (isFetched && !conversation) {
@@ -135,56 +125,45 @@ function AppContent() {
         secondClassName="flex flex-col overflow-hidden"
         firstChild={<ChatInterface />}
         secondChild={
-          <ResizablePanel
-            orientation={Orientation.VERTICAL}
-            className="grow h-full min-h-0 min-w-0"
-            initialSize={500}
-            firstClassName="rounded-xl overflow-hidden border border-neutral-600"
-            secondClassName="flex flex-col overflow-hidden"
-            firstChild={
-              <Container
-                className="h-full"
-                labels={[
-                  {
-                    label: t(I18nKey.WORKSPACE$TITLE),
-                    to: "",
-                    icon: <CodeIcon />,
-                  },
-                  { label: "Jupyter", to: "jupyter", icon: <ListIcon /> },
-                  {
-                    label: <ServedAppLabel />,
-                    to: "served",
-                    icon: <FaServer />,
-                  },
-                  {
-                    label: (
-                      <div className="flex items-center gap-1">
-                        {t(I18nKey.BROWSER$TITLE)}
-                      </div>
-                    ),
-                    to: "browser",
-                    icon: <GlobeIcon />,
-                  },
-                ]}
-              >
-                <FilesProvider>
-                  <Outlet />
-                </FilesProvider>
-              </Container>
-            }
-            secondChild={
-              <Container
-                className="h-full overflow-scroll"
-                label={<TerminalStatusLabel />}
-              >
-                {/* Terminal uses some API that is not compatible in a server-environment. For this reason, we lazy load it to ensure
-                 * that it loads only in the client-side. */}
-                <React.Suspense fallback={<div className="h-full" />}>
-                  <Terminal secrets={secrets} />
-                </React.Suspense>
-              </Container>
-            }
-          />
+          <Container
+            className="h-full w-full"
+            labels={[
+              {
+                label: "Changes",
+                to: "",
+                icon: <DiGit className="w-6 h-6" />,
+              },
+              {
+                label: t(I18nKey.WORKSPACE$TITLE),
+                to: "workspace",
+                icon: <CodeIcon />,
+              },
+              {
+                label: t(I18nKey.WORKSPACE$TERMINAL_TAB_LABEL),
+                to: "terminal",
+                icon: <TerminalIcon />,
+              },
+              { label: "Jupyter", to: "jupyter", icon: <JupyterIcon /> },
+              {
+                label: <ServedAppLabel />,
+                to: "served",
+                icon: <FaServer />,
+              },
+              {
+                label: (
+                  <div className="flex items-center gap-1">
+                    {t(I18nKey.BROWSER$TITLE)}
+                  </div>
+                ),
+                to: "browser",
+                icon: <GlobeIcon />,
+              },
+            ]}
+          >
+            <FilesProvider>
+              <Outlet />
+            </FilesProvider>
+          </Container>
         }
       />
     );

@@ -58,14 +58,26 @@ def prompt_dir(tmp_path):
     return tmp_path
 
 
-@pytest.mark.asyncio
-async def test_memory_on_event_exception_handling(memory, event_stream):
-    """Test that exceptions in Memory.on_event are properly handled via status callback."""
+@pytest.fixture
+def mock_agent():
     # Create a dummy agent for the controller
     agent = MagicMock(spec=Agent)
     agent.llm = MagicMock(spec=LLM)
     agent.llm.metrics = Metrics()
     agent.llm.config = AppConfig().get_llm_config()
+
+    # Add a proper system message mock
+    from openhands.events.action.message import SystemMessageAction
+
+    system_message = SystemMessageAction(content='Test system message')
+    system_message._source = EventSource.AGENT
+    system_message._id = -1  # Set invalid ID to avoid the ID check
+    agent.get_system_message.return_value = system_message
+
+
+@pytest.mark.asyncio
+async def test_memory_on_event_exception_handling(memory, event_stream, mock_agent):
+    """Test that exceptions in Memory.on_event are properly handled via status callback."""
 
     # Create a mock runtime
     runtime = MagicMock(spec=Runtime)
@@ -80,7 +92,7 @@ async def test_memory_on_event_exception_handling(memory, event_stream):
             initial_user_action=MessageAction(content='Test message'),
             runtime=runtime,
             sid='test',
-            agent=agent,
+            agent=mock_agent,
             fake_user_response_fn=lambda _: 'repeat',
             memory=memory,
         )
@@ -93,15 +105,9 @@ async def test_memory_on_event_exception_handling(memory, event_stream):
 
 @pytest.mark.asyncio
 async def test_memory_on_workspace_context_recall_exception_handling(
-    memory, event_stream
+    memory, event_stream, mock_agent
 ):
     """Test that exceptions in Memory._on_workspace_context_recall are properly handled via status callback."""
-
-    # Create a dummy agent for the controller
-    agent = MagicMock(spec=Agent)
-    agent.llm = MagicMock(spec=LLM)
-    agent.llm.metrics = Metrics()
-    agent.llm.config = AppConfig().get_llm_config()
 
     # Create a mock runtime
     runtime = MagicMock(spec=Runtime)
@@ -118,7 +124,7 @@ async def test_memory_on_workspace_context_recall_exception_handling(
             initial_user_action=MessageAction(content='Test message'),
             runtime=runtime,
             sid='test',
-            agent=agent,
+            agent=mock_agent,
             fake_user_response_fn=lambda _: 'repeat',
             memory=memory,
         )
