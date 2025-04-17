@@ -1,4 +1,3 @@
-import json
 import os
 from datetime import datetime
 
@@ -9,7 +8,6 @@ from eth_account.messages import encode_defunct
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 from web3 import Web3
-from openhands.core.logger import openhands_logger as logger
 
 app = APIRouter(prefix='/api/auth')
 
@@ -59,13 +57,8 @@ def verify_ethereum_signature(public_address: str, signature: str) -> bool:
 async def signup(request: SignupRequest) -> SignupResponse:
     """Sign up with Ethereum wallet."""
     url = f"{os.getenv('THESIS_AUTH_SERVER_URL')}/api/users/login"
-    payload = {
-        "signature": request.signature,
-        "publicAddress": request.publicAddress
-    }
-    headers = {
-        'Content-Type': 'application/json'
-    }
+    payload = {'signature': request.signature, 'publicAddress': request.publicAddress}
+    headers = {'Content-Type': 'application/json'}
 
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
@@ -74,24 +67,24 @@ async def signup(request: SignupRequest) -> SignupResponse:
         if response.status_code >= 400:
             raise HTTPException(
                 status_code=response.status_code,
-                detail=response.json().get("error", "Authentication failed")
+                detail=response.json().get('error', 'Authentication failed'),
             )
 
         res_json = response.json()
 
         return SignupResponse(
-            token=res_json["token"],
+            token=res_json['token'],
             user={
-                "id": res_json["user"]["publicAddress"],
-                "publicAddress": res_json["user"]["publicAddress"]
-            }
+                'id': res_json['user']['publicAddress'],
+                'publicAddress': res_json['user']['publicAddress'],
+            },
         )
 
     except httpx.RequestError as exc:
-        raise HTTPException(status_code=500, detail=f"Connection error: {str(exc)}")
+        raise HTTPException(status_code=500, detail=f'Connection error: {str(exc)}')
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error signing up: {str(e)}")
+        raise HTTPException(status_code=500, detail=f'Error signing up: {str(e)}')
 
 
 @app.get('/address-by-network/{network_id}')
@@ -106,7 +99,7 @@ async def get_address_by_network(network_id: str, request: Request) -> str:
         else:
             raise HTTPException(status_code=400, detail='Invalid network id')
     except Exception as e:
-        print("error", e)
+        print('error', e)
         raise HTTPException(
             status_code=500, detail=f'Error generating address: {str(e)}'
         )

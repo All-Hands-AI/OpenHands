@@ -4,7 +4,6 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Body, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from openhands.server.db import database
 
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
@@ -25,7 +24,7 @@ from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.data_models.conversation_info_result_set import (
     ConversationInfoResultSet,
 )
-from openhands.server.models import Conversation
+from openhands.server.modules import conversation_module
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.shared import (
     ConversationStoreImpl,
@@ -40,7 +39,7 @@ from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.utils.async_utils import wait_all
 from openhands.utils.conversation_summary import generate_conversation_title
 from openhands.utils.get_user_setting import get_user_setting
-from openhands.server.modules import conversation_module
+
 app = APIRouter(prefix='/api')
 
 
@@ -77,13 +76,11 @@ async def _create_new_conversation(
         extra={'signal': 'create_conversation', 'user_id': user_id},
     )
 
-    running_conversations = await conversation_manager.get_running_agent_loops(
-        user_id
-    )
+    running_conversations = await conversation_manager.get_running_agent_loops(user_id)
     if len(running_conversations) >= config.max_concurrent_conversations:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"You have reached the maximum limit of {config.max_concurrent_conversations} concurrent conversations."
+            detail=f'You have reached the maximum limit of {config.max_concurrent_conversations} concurrent conversations.',
         )
 
     logger.info('Loading settings')
@@ -161,7 +158,6 @@ async def _create_new_conversation(
         user_id,
         initial_user_msg=initial_message_action,
         replay_json=replay_json,
-
     )
     logger.info(f'Finished initializing conversation {conversation_id}')
 
@@ -222,7 +218,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
         return JSONResponse(
             content={
                 'status': 'error',
-                'detail': e.detail,
+                'detail': str(e.detail) if hasattr(e, 'detail') else str(e),
             },
             status_code=status.HTTP_400_BAD_REQUEST,
         )
@@ -428,18 +424,24 @@ async def change_visibility(
     if not metadata:
         return False
     return await conversation_module._update_conversation_visibility(
-        conversation_id, data.is_published, str(user_id),
-        {'hidden_prompt': data.hidden_prompt}
+        conversation_id,
+        data.is_published,
+        str(user_id),
+        {'hidden_prompt': data.hidden_prompt},
     )
 
 
-@app.get('/conversations/{conversation_id}/visibility', response_model=ConversationVisibility)
+@app.get(
+    '/conversations/{conversation_id}/visibility', response_model=ConversationVisibility
+)
 async def get_conversation_visibility(
     conversation_id: str,
     request: Request,
 ) -> bool:
     user_id = get_user_id(request)
-    return await conversation_module._get_conversation_visibility(conversation_id, str(user_id))
+    return await conversation_module._get_conversation_visibility(
+        conversation_id, str(user_id)
+    )
 
 
 async def _get_conversation_info(

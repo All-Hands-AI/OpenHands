@@ -13,6 +13,7 @@ from openhands.memory.condenser.condenser import (
     View,
 )
 
+
 class LLMSummarizingCondenser(RollingCondenser):
     """A condenser that summarizes forgotten events.
 

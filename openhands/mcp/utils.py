@@ -162,9 +162,7 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: McpAction) -> Obse
             # Handle the case where the response is not empty
             return planner_mcp_plan(action, response)
 
-        return MCPObservation(
-            content=f'{response.content[0].text}'
-        )
+        return MCPObservation(content=f'{response.content[0].text}')
     except Exception as e:
         logger.error(f'Error calling tool {action.name}: {e}')
         return ErrorObservation(f'MCP {action.name} failed: {e}')

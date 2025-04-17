@@ -2,6 +2,7 @@ import json
 from datetime import datetime
 
 from json_repair import repair_json
+from litellm import PromptTokensDetails
 from litellm.types.utils import ModelResponse
 
 from openhands.core.exceptions import LLMResponseError
@@ -24,6 +25,8 @@ class OpenHandsJSONEncoder(json.JSONEncoder):
         if isinstance(obj, ModelResponse):
             return obj.model_dump()
         if isinstance(obj, CmdOutputMetadata):
+            return obj.model_dump()
+        if isinstance(obj, PromptTokensDetails):
             return obj.model_dump()
         return super().default(obj)
 

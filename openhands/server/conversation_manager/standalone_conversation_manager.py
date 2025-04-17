@@ -34,6 +34,7 @@ UPDATED_AT_CALLBACK_ID = 'updated_at_callback_id'
 
 class MaxConcurrentConversationsError(Exception):
     """Raised when a user attempts to exceed their maximum allowed concurrent conversations."""
+
     pass
 
 
@@ -299,7 +300,7 @@ class StandaloneConversationManager(ConversationManager):
                     )
                     raise RuntimeError(f'no_event_stream:{sid}')
                 return event_store
-    
+
                 # raise MaxConcurrentConversationsError(
                 #     f"You have reached the maximum limit of {self.config.max_concurrent_conversations} concurrent conversations."
                 # )
@@ -349,7 +350,7 @@ class StandaloneConversationManager(ConversationManager):
                 self.file_store,
                 user_id,
             )
-        
+
         session = self._local_agent_loops_by_sid.get(sid)
         if session:
             logger.info(f'found_local_agent_loop:{sid}', extra={'session_id': sid})

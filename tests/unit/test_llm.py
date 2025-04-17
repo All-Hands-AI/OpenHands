@@ -175,8 +175,16 @@ def test_llm_init_with_metrics():
 @patch('openhands.llm.llm.litellm_completion')
 @patch('time.time')
 def test_response_latency_tracking(mock_time, mock_litellm_completion):
-    # Mock time.time() to return controlled values
-    mock_time.side_effect = [1000.0, 1002.5]  # Start time, end time (2.5s difference)
+    # Mock time.time() to return controlled values - using a function instead of a list
+    # so it doesn't run out of values
+    start_time = 1000.0
+    end_time = 1002.5
+    second_start_time = 1005.0
+    second_end_time = 1004.0  # Time going backwards to test boundary case
+
+    # Define a function that will provide time values in the correct sequence
+    time_sequence = [start_time, end_time, second_start_time, second_end_time]
+    mock_time.side_effect = lambda: time_sequence.pop(0) if time_sequence else 2000.0
 
     # Mock the completion response with a specific ID
     mock_response = {
@@ -204,7 +212,7 @@ def test_response_latency_tracking(mock_time, mock_litellm_completion):
     assert response['choices'][0]['message']['content'] == 'Test response'
 
     # To make sure the metrics fail gracefully, set the start/end time to go backwards.
-    mock_time.side_effect = [1000.0, 999.0]
+    # (the second_start_time and second_end_time will be used here)
     llm.completion(messages=[{'role': 'user', 'content': 'Hello!'}])
 
     # There should now be 2 latencies, the last of which has the value clipped to 0

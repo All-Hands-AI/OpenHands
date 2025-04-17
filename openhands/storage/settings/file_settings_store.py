@@ -16,9 +16,13 @@ class FileSettingsStore(SettingsStore):
     file_store: FileStore
     path: str = 'settings.json'
     user_id: str | None = None
-    async def load(self) -> Settings | None:
+
+    async def load(self, _user_id: str | None = None) -> Settings | None:
+        final_user_id = _user_id or self.user_id
         try:
-            effective_path = f'users/{self.user_id}/settings.json' if self.user_id else self.path
+            effective_path = (
+                f'users/{final_user_id}/settings.json' if final_user_id else self.path
+            )
             json_str = await call_sync_from_async(self.file_store.read, effective_path)
             kwargs = json.loads(json_str)
             settings = Settings(**kwargs)
@@ -26,8 +30,11 @@ class FileSettingsStore(SettingsStore):
         except FileNotFoundError:
             return None
 
-    async def store(self, settings: Settings) -> None:
-        effective_path = f'users/{self.user_id}/settings.json' if self.user_id else self.path
+    async def store(self, settings: Settings, _user_id: str | None = None) -> None:
+        final_user_id = _user_id or self.user_id
+        effective_path = (
+            f'users/{final_user_id}/settings.json' if final_user_id else self.path
+        )
         json_str = settings.model_dump_json(context={'expose_secrets': True})
         await call_sync_from_async(self.file_store.write, effective_path, json_str)
 

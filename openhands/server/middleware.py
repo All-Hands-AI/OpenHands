@@ -5,21 +5,23 @@ from typing import Callable
 from urllib.parse import urlparse
 
 import jwt
-from fastapi import Request, status, HTTPException
+from fastapi import Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request as StarletteRequest
 from starlette.types import ASGIApp
-from sqlalchemy import select
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.server import shared
 from openhands.server.auth import get_user_id
-from openhands.server.thesis_auth import get_user_detail_from_thesis_auth_server, ThesisUser, UserStatus
-from openhands.server.routes.auth import JWT_SECRET
-from openhands.server.types import SessionMiddlewareInterface
 from openhands.server.modules.conversation import conversation_module
+from openhands.server.thesis_auth import (
+    ThesisUser,
+    UserStatus,
+    get_user_detail_from_thesis_auth_server,
+)
+from openhands.server.types import SessionMiddlewareInterface
 
 
 class LocalhostCORSMiddleware(CORSMiddleware):
@@ -244,19 +246,22 @@ class CheckUserActivationMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
         for pattern in self.public_path_patterns:
             if request.url.path.startswith(pattern):
-                remaining = request.url.path[len(pattern):]
-                logger.info(f"Remaining path: {remaining}")
+                remaining = request.url.path[len(pattern) :]
+                logger.info(f'Remaining path: {remaining}')
                 if remaining and '/' not in remaining:
                     return await call_next(request)
 
         if '/api/conversations/' in request.url.path:
-
-            if request.state and hasattr(request.state, 'user_id') and hasattr(request.state, 'sid'):
+            if (
+                request.state
+                and hasattr(request.state, 'user_id')
+                and hasattr(request.state, 'sid')
+            ):
                 if request.state.user_id and request.state.sid:
                     return await call_next(request)
 
         user_id = get_user_id(request)
-        logger.info(f"Checking user activation for {user_id}")
+        logger.info(f'Checking user activation for {user_id}')
         if not user_id:
             return JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -304,7 +309,7 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
 
         for pattern in self.public_path_patterns:
             if request.url.path.startswith(pattern):
-                remaining = request.url.path[len(pattern):]
+                remaining = request.url.path[len(pattern) :]
                 if remaining and '/' not in remaining:
                     return await call_next(request)
         if '/api/conversations/' in request.url.path:
@@ -314,8 +319,15 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
             if len(path_parts) > conversation_index + 1:
                 conversation_id = path_parts[conversation_index + 1]
                 # Check if the conversation is public
-                error, visibility_info = await conversation_module._get_conversation_visibility_info(conversation_id)
-                print(f'error: {error}, conversation_id: {conversation_id}, JWT Middleware')
+                (
+                    error,
+                    visibility_info,
+                ) = await conversation_module._get_conversation_visibility_info(
+                    conversation_id
+                )
+                print(
+                    f'error: {error}, conversation_id: {conversation_id}, JWT Middleware'
+                )
                 if not error:
                     request.state.sid = conversation_id
                     request.state.user_id = visibility_info['user_id']
@@ -333,7 +345,9 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
             # payload = jwt.decode(token, JWT_SECRET, algorithms=['HS256'])
             # user_id = payload['user']['publicAddress']
 
-            user: ThesisUser | None = await get_user_detail_from_thesis_auth_server(request.headers.get('Authorization'))
+            user: ThesisUser | None = await get_user_detail_from_thesis_auth_server(
+                request.headers.get('Authorization')
+            )
             if not user:
                 return JSONResponse(
                     status_code=404,

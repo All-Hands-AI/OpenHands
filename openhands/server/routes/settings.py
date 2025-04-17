@@ -156,7 +156,6 @@ async def store_settings(
     request: Request,
     settings: POSTSettingsModel,
 ) -> JSONResponse:
-    
     # Check provider tokens are valid
     if settings.provider_tokens:
         # Remove extraneous token types
@@ -235,7 +234,7 @@ async def store_settings(
             config.sandbox.remote_runtime_resource_factor = (
                 settings.remote_runtime_resource_factor
             )
-            
+
         settings = convert_to_settings(settings)
         await settings_store.store(settings)
         return JSONResponse(

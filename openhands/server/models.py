@@ -1,6 +1,4 @@
-import uuid
-from sqlalchemy import Boolean, Column, DateTime, Integer, String, Table, Enum, ForeignKey, JSON
-from sqlalchemy.sql import func
+from sqlalchemy import JSON, Boolean, Column, Integer, String, Table
 
 from .db import metadata
 
@@ -30,7 +28,9 @@ from .db import metadata
 Conversation = Table(
     'conversations',
     metadata,
-    Column('id', Integer, primary_key=True, autoincrement=True),  # Thay đổi String thành Integer và thêm autoincrement
+    Column(
+        'id', Integer, primary_key=True, autoincrement=True
+    ),  # Thay đổi String thành Integer và thêm autoincrement
     Column('user_id', String, nullable=False),
     Column('conversation_id', String, nullable=False),
     Column('published', Boolean, nullable=False),
