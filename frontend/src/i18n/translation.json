@@ -271,7 +271,7 @@
         "tr": "Ayarlar",
         "de": "Einstellungen"
     },
-    "PROJECT$START_NEW": {
+    "CONVERSATION$START_NEW": {
         "en": "Start new conversation",
         "ja": "新規会話を開始",
         "zh-CN": "开始新对话",
@@ -285,21 +285,6 @@
         "fr": "Démarrer une nouvelle conversation",
         "tr": "Yeni sohbet başlat",
         "de": "Neue Unterhaltung starten"
-    },
-    "PROJECT$NEW": {
-        "en": "New Project",
-        "ja": "新規プロジェクト",
-        "zh-CN": "新项目",
-        "zh-TW": "新專案",
-        "ko-KR": "새 프로젝트",
-        "no": "Nytt prosjekt",
-        "it": "Nuovo progetto",
-        "pt": "Novo projeto",
-        "es": "Nuevo proyecto",
-        "ar": "مشروع جديد",
-        "fr": "Nouveau projet",
-        "tr": "Yeni proje",
-        "de": "Neues Projekt"
     },
     "ACCOUNT_SETTINGS$TITLE": {
         "en": "Account Settings",
