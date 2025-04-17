@@ -349,17 +349,17 @@ Agent 配置选项在 `config.toml` 文件的 `[agent]` 和 `[agent.<agent_name>
   - 默认值: `true`
   - 描述: 是否启用函数调用
 
-- `codeact_enable_browsing`
+- `enable_browsing`
   - 类型: `bool`
   - 默认值: `false`
   - 描述: 是否在 action space 中启用浏览代理(仅适用于函数调用)
 
-- `codeact_enable_llm_editor`
+- `enable_llm_editor`
   - 类型: `bool`
   - 默认值: `false`
   - 描述: 是否在 action space 中启用 LLM 编辑器(仅适用于函数调用)
 
-- `codeact_enable_jupyter`
+- `enable_jupyter`
   - 类型: `bool`
   - 默认值: `false`
   - 描述: 是否在 action space 中启用 Jupyter

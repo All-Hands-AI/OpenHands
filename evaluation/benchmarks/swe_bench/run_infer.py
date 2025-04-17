@@ -225,9 +225,9 @@ def get_config(
         )
     )
     agent_config = AgentConfig(
-        codeact_enable_jupyter=False,
-        codeact_enable_browsing=RUN_WITH_BROWSING,
-        codeact_enable_llm_editor=False,
+        enable_jupyter=False,
+        enable_browsing=RUN_WITH_BROWSING,
+        enable_llm_editor=False,
         condenser=metadata.condenser_config,
         enable_prompt_extensions=False,
     )
@@ -864,7 +864,7 @@ if __name__ == '__main__':
                     # Also make sure git_patch is not empty - otherwise we fall back to previous attempt (empty patch is worse than anything else)
                     if (
                         instance['instance_id'] not in added_instance_ids
-                        and instance['test_result']['git_patch'].strip()
+                        and instance['test_result'].get('git_patch', '').strip()
                     ):
                         fout.write(line)
                         added_instance_ids.add(instance['instance_id'])
