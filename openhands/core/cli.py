@@ -900,7 +900,7 @@ async def modify_llm_settings_basic(
 
     llm_config = config.get_llm_config()
     llm_config.model = provider + organized_models[provider]['separator'] + model
-    llm_config.api_key = api_key
+    llm_config.api_key = SecretStr(api_key)
     llm_config.base_url = None
     config.set_llm_config(llm_config)
 
@@ -920,7 +920,7 @@ async def modify_llm_settings_basic(
         settings = Settings()
 
     settings.llm_model = provider + organized_models[provider]['separator'] + model
-    settings.llm_api_key = api_key
+    settings.llm_api_key = SecretStr(api_key)
     settings.llm_base_url = None
     settings.agent = OH_DEFAULT_AGENT
     settings.confirmation_mode = False
