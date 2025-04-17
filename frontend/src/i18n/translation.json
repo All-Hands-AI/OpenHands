@@ -571,7 +571,7 @@
         "fr": "Paramètres LLM",
         "tr": "LLM Ayarları"
     },
-    "SETTINGS$GITHUB_SETTINGS": {
+    "SETTINGS$PROVIDER_SETTINGS": {
         "en": "Provider Settings",
         "ja": "プロバイダー設定",
         "zh-CN": "提供商设置",
