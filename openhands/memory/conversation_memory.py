@@ -135,10 +135,10 @@ class ConversationMemory:
         # Apply final filtering so that the messages in context don't have unmatched tool calls
         # and tool responses, for example
         messages = list(ConversationMemory._filter_unmatched_tool_calls(messages))
-        
+
         # Apply final formatting
         messages = self._apply_user_message_formatting(messages)
-        
+
         return messages
 
     def _apply_user_message_formatting(self, messages: list[Message]) -> list[Message]:
@@ -155,7 +155,7 @@ class ConversationMemory:
                         content_item.text = '\n\n' + content_item.text
                         break
             formatted_messages.append(msg)
-            prev_role = msg.role # Update prev_role after processing each message
+            prev_role = msg.role  # Update prev_role after processing each message
         return formatted_messages
 
     def _process_action(
@@ -681,7 +681,7 @@ class ConversationMemory:
                 # Any other case is kept
                 yield message
 
-    def _ensure_system_message(self, events: list[Event]) -> None:  
+    def _ensure_system_message(self, events: list[Event]) -> None:
         """Checks if a SystemMessageAction exists and adds one if not (for legacy compatibility)."""
         # Check if there's a SystemMessageAction in the events
         has_system_message = any(
