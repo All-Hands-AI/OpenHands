@@ -5,7 +5,7 @@ from conftest import (
     _load_runtime,
 )
 
-from openhands.agenthub.codeact_agent.function_calling import (
+from openhands.agenthub.readonly_agent.function_calling import (
     glob_to_cmdrun,
     grep_to_cmdrun,
 )
