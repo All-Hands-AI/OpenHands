@@ -69,7 +69,6 @@ class CodeActAgent(Agent):
         self.pending_actions: deque[Action] = deque()
         self.reset()
 
-        # Retrieve the enabled tools
         built_in_tools = codeact_function_calling.get_tools(
             enable_browsing=self.config.enable_browsing,
             enable_jupyter=self.config.enable_jupyter,
