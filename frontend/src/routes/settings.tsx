@@ -8,7 +8,7 @@ import { I18nKey } from "#/i18n/declaration";
 function SettingsScreen() {
   const { t } = useTranslation();
   const { data: config } = useConfig();
-  const isSaas = config?.APP_MODE === "saas" || true;
+  const isSaas = config?.APP_MODE === "saas";
 
   return (
     <main
