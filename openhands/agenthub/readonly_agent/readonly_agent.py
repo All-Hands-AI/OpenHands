@@ -47,10 +47,7 @@ class ReadOnlyAgent(CodeActAgent):
         
         # Override the tools to only include read-only tools
         # Get the read-only tools from our own function_calling module
-        self.tools = readonly_function_calling.get_tools(
-            enable_browsing=self.config.enable_browsing,
-            llm=self.llm,
-        )
+        self.tools = readonly_function_calling.get_tools()
         
         # Set up our own prompt manager
         self.prompt_manager = PromptManager(
