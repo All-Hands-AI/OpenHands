@@ -12,6 +12,9 @@
   * Modify files
   * Upload and download files
 
+### Terminal
+- A space for OpenHands and users to run terminal commands.
+
 ### Jupyter
 - Shows all Python commands that were executed by OpenHands.
 - Particularly handy when using OpenHands to perform data visualization tasks.
@@ -23,6 +26,3 @@
 ### Browser
 - Used by OpenHands to browse websites.
 - The browser is non-interactive.
-
-### Terminal
-- A space for OpenHands and users to run terminal commands.
