@@ -1,8 +1,8 @@
 import os
-from fastapi import APIRouter, Depends, status, Request
+
+from fastapi import APIRouter, Depends, Request, status
 from fastapi.responses import JSONResponse
 from pydantic import SecretStr
-from openhands.server.thesis_auth import UserStatus
 from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
@@ -18,6 +18,7 @@ from openhands.integrations.service_types import (
 )
 from openhands.server.auth import get_access_token, get_provider_tokens
 from openhands.server.shared import server_config
+from openhands.server.thesis_auth import UserStatus
 
 app = APIRouter(prefix='/api/user')
 
@@ -206,12 +207,11 @@ async def get_user_status(request: Request):
 
     # TODO: If the run mode is DEV, return True to bypass the check
     if os.getenv('RUN_MODE') == 'DEV':
-        return {
-            'status': "activated",
-            'activated': True
-        }
+        return {'status': 'activated', 'activated': True}
     else:
         return {
-            'status': "activated" if user.whitelisted == UserStatus.WHITELISTED else "non_activated",
-            'activated': user.whitelisted == UserStatus.WHITELISTED
+            'status': 'activated'
+            if user.whitelisted == UserStatus.WHITELISTED
+            else 'non_activated',
+            'activated': user.whitelisted == UserStatus.WHITELISTED,
         }

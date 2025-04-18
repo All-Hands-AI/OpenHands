@@ -37,8 +37,10 @@ from openhands.llm.fn_call_converter import (
 from openhands.llm.metrics import Metrics
 from openhands.llm.retry_mixin import RetryMixin
 
-# if os.getenv('TRACELOOP_BASE_URL'):
-#     Traceloop.init(disable_batch=True)
+if os.getenv('TRACELOOP_BASE_URL'):
+    Traceloop.init(
+        disable_batch=True, app_name=os.getenv('OTEL_SERVICE_NAME', 'openhands')
+    )
 
 __all__ = ['LLM']
 

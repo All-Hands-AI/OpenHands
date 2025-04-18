@@ -116,7 +116,7 @@ class FutureTradingAgent(Agent):
                 if tool['function']['name'] not in existing_names
             ]
             params['tools'] += unique_mcp_tools
-            
+
         # log to litellm proxy if possible
         params['extra_body'] = {'metadata': state.to_llm_metadata(agent_name=self.name)}
         response = self.llm.completion(**params)

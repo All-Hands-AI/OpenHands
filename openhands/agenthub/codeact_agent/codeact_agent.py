@@ -90,7 +90,8 @@ class CodeActAgent(Agent):
 
         # Create a ConversationMemory instance
         self.conversation_memory = ConversationMemory(self.config, self.prompt_manager)
-        logger.info(f'Condenser config: {self.config.condenser.llm_config}')
+        if 'llm_config' in self.config.condenser:
+            logger.info(f'Condenser config: {self.config.condenser.llm_config}')
         self.condenser = Condenser.from_config(self.config.condenser)
         logger.info(f'Using condenser: {type(self.condenser)}')
 

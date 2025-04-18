@@ -15,7 +15,7 @@ from starlette.types import ASGIApp
 from openhands.core.logger import openhands_logger as logger
 from openhands.server import shared
 from openhands.server.auth import get_user_id
-from openhands.server.routes.auth import JWT_SECRET
+from openhands.server.modules.conversation import conversation_module
 from openhands.server.thesis_auth import (
     ThesisUser,
     UserStatus,
@@ -234,11 +234,11 @@ class CheckUserActivationMiddleware(BaseHTTPMiddleware):
             '/api/options/use-cases/conversations',
             '/api/invitation/',
             '/api/user/status',
+            '/api/invitation/validate',
         ]
 
         self.public_path_patterns = [
             '/api/options/use-cases/conversations/',
-            '/api/invitation/validate/',
         ]
 
     async def dispatch(self, request: Request, call_next):
@@ -249,6 +249,15 @@ class CheckUserActivationMiddleware(BaseHTTPMiddleware):
                 remaining = request.url.path[len(pattern) :]
                 logger.info(f'Remaining path: {remaining}')
                 if remaining and '/' not in remaining:
+                    return await call_next(request)
+
+        if '/api/conversations/' in request.url.path:
+            if (
+                request.state
+                and hasattr(request.state, 'user_id')
+                and hasattr(request.state, 'sid')
+            ):
+                if request.state.user_id and request.state.sid:
                     return await call_next(request)
 
         user_id = get_user_id(request)
@@ -272,7 +281,6 @@ class CheckUserActivationMiddleware(BaseHTTPMiddleware):
                 status_code=403,
                 content={'detail': 'User account is not activated'},
             )
-
         return await call_next(request)
 
 
@@ -304,6 +312,26 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
                 remaining = request.url.path[len(pattern) :]
                 if remaining and '/' not in remaining:
                     return await call_next(request)
+        if '/api/conversations/' in request.url.path:
+            path_parts = request.url.path.split('/')
+
+            conversation_index = path_parts.index('conversations')
+            if len(path_parts) > conversation_index + 1:
+                conversation_id = path_parts[conversation_index + 1]
+                # Check if the conversation is public
+                (
+                    error,
+                    visibility_info,
+                ) = await conversation_module._get_conversation_visibility_info(
+                    conversation_id
+                )
+                print(
+                    f'error: {error}, conversation_id: {conversation_id}, JWT Middleware'
+                )
+                if not error:
+                    request.state.sid = conversation_id
+                    request.state.user_id = visibility_info['user_id']
+                    return await call_next(request)
 
         auth_header = request.headers.get('Authorization')
         if not auth_header or not auth_header.startswith('Bearer '):
@@ -312,12 +340,12 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
                 content={'detail': 'Missing or invalid authorization header'},
             )
 
-        token = auth_header.split(' ')[1]
+        # token = auth_header.split(' ')[1]
         try:
-            payload = jwt.decode(token, JWT_SECRET, algorithms=['HS256'])
-            user_id = payload['user']['publicAddress']
+            # payload = jwt.decode(token, JWT_SECRET, algorithms=['HS256'])
+            # user_id = payload['user']['publicAddress']
 
-            user: ThesisUser | None = get_user_detail_from_thesis_auth_server(
+            user: ThesisUser | None = await get_user_detail_from_thesis_auth_server(
                 request.headers.get('Authorization')
             )
             if not user:
@@ -325,6 +353,7 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
                     status_code=404,
                     content={'detail': 'User not found'},
                 )
+            user_id = user.publicAddress
             # Only set user in request.state if all checks pass
             request.state.user_id = user_id
             request.state.user = user

@@ -29,6 +29,52 @@ async def test_load_nonexistent_data(file_settings_store):
 
 
 @pytest.mark.asyncio
+async def test_store_and_load_data_via_user_id_constructor(mock_file_store):
+    # Test data
+    user_id = '0xd8b8e45f7b49f7e894c967f05b51d5acd4b81cc1'
+    file_settings_store = FileSettingsStore(mock_file_store, user_id=user_id)
+    init_data = Settings(
+        language='python',
+        agent='test-agent',
+        max_iterations=100,
+        security_analyzer='default',
+        confirmation_mode=True,
+        llm_model='test-model',
+        llm_api_key='test-key',
+        llm_base_url='https://test.com',
+    )
+
+    # Store data
+    await file_settings_store.store(init_data)
+
+    # Verify store called with correct JSON
+    expected_json = init_data.model_dump_json(context={'expose_secrets': True})
+    file_settings_store.file_store.write.assert_called_once_with(
+        f'users/{user_id}/settings.json', expected_json
+    )
+
+    # Setup mock for load
+    file_settings_store.file_store.read.return_value = expected_json
+
+    # Load and verify data
+    loaded_data = await file_settings_store.load(user_id)
+    assert loaded_data is not None
+    assert loaded_data.language == init_data.language
+    assert loaded_data.agent == init_data.agent
+    assert loaded_data.max_iterations == init_data.max_iterations
+    assert loaded_data.security_analyzer == init_data.security_analyzer
+    assert loaded_data.confirmation_mode == init_data.confirmation_mode
+    assert loaded_data.llm_model == init_data.llm_model
+    assert loaded_data.llm_api_key
+    assert init_data.llm_api_key
+    assert (
+        loaded_data.llm_api_key.get_secret_value()
+        == init_data.llm_api_key.get_secret_value()
+    )
+    assert loaded_data.llm_base_url == init_data.llm_base_url
+
+
+@pytest.mark.asyncio
 async def test_store_and_load_data(file_settings_store):
     # Test data
     user_id = '0xd8b8e45f7b49f7e894c967f05b51d5acd4b81cc1'
@@ -49,7 +95,7 @@ async def test_store_and_load_data(file_settings_store):
     # Verify store called with correct JSON
     expected_json = init_data.model_dump_json(context={'expose_secrets': True})
     file_settings_store.file_store.write.assert_called_once_with(
-         f'{user_id}/settings.json', expected_json
+        f'users/{user_id}/settings.json', expected_json
     )
 
     # Setup mock for load

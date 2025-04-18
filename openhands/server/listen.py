@@ -53,3 +53,14 @@ base_app.add_middleware(
 base_app.middleware('http')(ProviderTokenMiddleware(base_app))
 
 app = socketio.ASGIApp(sio, other_asgi_app=base_app)
+
+if os.getenv('OTEL_EXPORTER_OTLP_ENDPOINT'):
+    from opentelemetry.instrumentation.asyncio import AsyncioInstrumentor
+    from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+    from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
+    from opentelemetry.instrumentation.threading import ThreadingInstrumentor
+
+    FastAPIInstrumentor.instrument_app(base_app)
+    AsyncioInstrumentor().instrument()
+    HTTPXClientInstrumentor().instrument()
+    ThreadingInstrumentor().instrument()

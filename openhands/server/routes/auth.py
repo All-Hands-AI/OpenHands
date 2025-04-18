@@ -1,9 +1,8 @@
-import json
 import os
 from datetime import datetime
 
 # timedelta
-import requests
+import httpx
 import jwt
 from eth_account.messages import encode_defunct
 from fastapi import APIRouter, HTTPException, Request
@@ -58,21 +57,33 @@ def verify_ethereum_signature(public_address: str, signature: str) -> bool:
 @app.post('/signup', response_model=SignupResponse)
 async def signup(request: SignupRequest) -> SignupResponse:
     """Sign up with Ethereum wallet."""
+    url = f"{os.getenv('THESIS_AUTH_SERVER_URL')}/api/users/login"
+    payload = {'signature': request.signature, 'publicAddress': request.publicAddress}
+    headers = {'Content-Type': 'application/json'}
+
     try:
-        url = f"{os.getenv('THESIS_AUTH_SERVER_URL')}/api/users/login"
-        payload = json.dumps({
-            "signature": request.signature,
-            "publicAddress": request.publicAddress
-        })
-        headers = {
-            'Content-Type': 'application/json'
-        }
-        response = requests.request("POST", url, headers=headers, data=payload)
-        resJson = response.json()
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.post(url, headers=headers, json=payload)
+
+        if response.status_code >= 400:
+            raise HTTPException(
+                status_code=response.status_code,
+                detail=response.json().get('error', 'Authentication failed'),
+            )
+
+        res_json = response.json()
+
         return SignupResponse(
-            token=resJson['token'],
-            user={'id': resJson['user']['publicAddress'], 'publicAddress': resJson['user']['publicAddress']},
+            token=res_json['token'],
+            user={
+                'id': res_json['user']['publicAddress'],
+                'publicAddress': res_json['user']['publicAddress'],
+            },
         )
+
+    except httpx.RequestError as exc:
+        raise HTTPException(status_code=500, detail=f'Connection error: {str(exc)}')
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f'Error signing up: {str(e)}')
 
@@ -89,7 +100,7 @@ async def get_address_by_network(network_id: str, request: Request) -> str:
         else:
             raise HTTPException(status_code=400, detail='Invalid network id')
     except Exception as e:
-        print("error", e)
+        print('error', e)
         raise HTTPException(
             status_code=500, detail=f'Error generating address: {str(e)}'
         )

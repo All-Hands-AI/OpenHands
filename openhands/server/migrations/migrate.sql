@@ -7,14 +7,14 @@ CREATE TABLE IF NOT EXISTS conversations (
 );
 
 -- Check if configs column exists, if not add it
-DO $$ 
+DO $$
 BEGIN
     IF NOT EXISTS (
-        SELECT FROM information_schema.columns 
-        WHERE table_name = 'conversations' 
+        SELECT FROM information_schema.columns
+        WHERE table_name = 'conversations'
         AND column_name = 'configs'
     ) THEN
-        ALTER TABLE conversations 
+        ALTER TABLE conversations
         ADD COLUMN configs JSONB NOT NULL DEFAULT '{}';
     END IF;
 END

@@ -1,6 +1,6 @@
 import os
-from functools import lru_cache
 import time
+from functools import lru_cache
 from typing import Callable, Set
 from uuid import UUID
 
@@ -22,14 +22,17 @@ from openhands.runtime.builder import DockerRuntimeBuilder
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
-from openhands.runtime.impl.docker.containers import get_used_ports, next_available_port, stop_all_containers
+from openhands.runtime.impl.docker.containers import (
+    get_used_ports,
+    next_available_port,
+    stop_all_containers,
+)
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils import find_available_tcp_port
 from openhands.runtime.utils.command import get_action_execution_server_startup_command
 from openhands.runtime.utils.log_streamer import LogStreamer
 from openhands.runtime.utils.runtime_build import build_runtime_image
 from openhands.utils.async_utils import call_sync_from_async
-from openhands.utils.shutdown_listener import add_shutdown_listener
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
 CONTAINER_NAME_PREFIX = 'openhands-runtime-'
@@ -77,10 +80,11 @@ class DockerRuntime(ActionExecutionClient):
         headless_mode: bool = True,
         a2a_manager: A2AManager | None = None,
     ):
-        if not DockerRuntime._shutdown_listener_id:
-            DockerRuntime._shutdown_listener_id = add_shutdown_listener(
-                lambda: stop_all_containers(CONTAINER_NAME_PREFIX)
-            )
+        # TODO FIXME: we don't need to close containers when BE shut down. Only users can close the containers by deleting the conversation.
+        # if not DockerRuntime._shutdown_listener_id:
+        #     DockerRuntime._shutdown_listener_id = add_shutdown_listener(
+        #         lambda: stop_all_containers(CONTAINER_NAME_PREFIX)
+        #     )
 
         self.config = config
         self._runtime_initialized: bool = False
@@ -174,9 +178,7 @@ class DockerRuntime(ActionExecutionClient):
             await call_sync_from_async(self._init_container)
             end_time = time.time()
             total_time = end_time - start_time
-            self.log(
-                'debug', f'Total _init_container() time: {total_time:.2f} seconds'
-            )
+            self.log('debug', f'Total _init_container() time: {total_time:.2f} seconds')
             self.log(
                 'info',
                 f'Container started: {self.container_name}. VSCode URL: {self.vscode_url}',
@@ -195,9 +197,7 @@ class DockerRuntime(ActionExecutionClient):
         await call_sync_from_async(self._wait_until_alive)
         end_time = time.time()
         total_time = end_time - start_time
-        self.log(
-            'debug', f'Total _wait_until_alive() time: {total_time:.2f} seconds'
-        )
+        self.log('debug', f'Total _wait_until_alive() time: {total_time:.2f} seconds')
 
         if not self.attach_to_existing:
             self.log('info', 'Runtime is ready.')
@@ -236,16 +236,22 @@ class DockerRuntime(ActionExecutionClient):
         # It's faster and simpler.
         self.log('debug', 'Preparing to start container...')
         self.send_status_message('STATUS$PREPARING_CONTAINER')
-        use_host_network = self.config.sandbox.use_host_network
-        used_ports = get_used_ports(self.docker_client, EXECUTION_SERVER_PORT_RANGE[0], EXECUTION_SERVER_PORT_RANGE[1], use_host_network)
+        used_ports = get_used_ports(
+            self.docker_client,
+            EXECUTION_SERVER_PORT_RANGE[0],
+            EXECUTION_SERVER_PORT_RANGE[1],
+        )
         used_ports.update(known_used_ports)
-        self._host_port = next_available_port(EXECUTION_SERVER_PORT_RANGE[0], EXECUTION_SERVER_PORT_RANGE[1], used_ports)
+        self._host_port = next_available_port(
+            EXECUTION_SERVER_PORT_RANGE[0], EXECUTION_SERVER_PORT_RANGE[1], used_ports
+        )
         self._container_port = self._host_port
         # TODO FIXME: we don't need app ports. This is used to expose web applications within the sandbox. We don't need it.
         # self._app_ports = [
         #     self._find_available_port(APP_PORT_RANGE_1),
         #     self._find_available_port(APP_PORT_RANGE_2),
         # ]
+        use_host_network = self.config.sandbox.use_host_network
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
         self.log('debug', f'use_host_network: {use_host_network}')
         network_mode: str | None = 'host' if use_host_network else None
@@ -320,7 +326,7 @@ class DockerRuntime(ActionExecutionClient):
         else:
             logger.debug(
                 'Mount dir is not set, will not mount the workspace directory to the container'
-    )
+            )
             volumes = None
         self.log(
             'debug',
@@ -358,17 +364,20 @@ class DockerRuntime(ActionExecutionClient):
             end_time = time.time()
             total_time = end_time - start_time
             self.log(
-                'debug', f'Total docker_client.containers.run() time: {total_time:.2f} seconds'
+                'debug',
+                f'Total docker_client.containers.run() time: {total_time:.2f} seconds',
             )
             return
         except docker.errors.APIError as e:
-            if "port is already allocated" in str(e) or "bind: address already in use" in str(e):
+            if 'port is already allocated' in str(
+                e
+            ) or 'bind: address already in use' in str(e):
                 used_ports.add(self._host_port)
                 return self._init_container(used_ports)
             if '409' in str(e):
                 # port already allocated, try another port
                 self.log('warning', f'str(e): {str(e)}')
-                
+
                 # for other cases, we need to remove the container and try again
                 self.log(
                     'warning',

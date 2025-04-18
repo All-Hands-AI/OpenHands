@@ -100,10 +100,12 @@ async def connect(connection_id: str, environ):
                 raise ConnectionRefusedError('Authentication required')
 
         try:
+            if jwt_token is None:
+                raise jwt.InvalidTokenError('No JWT token provided')
             # Verify and decode JWT token
             payload = jwt.decode(jwt_token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
 
-            user: ThesisUser | None = get_user_detail_from_thesis_auth_server(
+            user: ThesisUser | None = await get_user_detail_from_thesis_auth_server(
                 'Bearer ' + jwt_token
             )
             if not user:
@@ -161,7 +163,11 @@ async def connect(connection_id: str, environ):
         else:
             event_dict = event_to_dict(event)
             new_event_dict = {**event_dict, 'initialize_conversation': True}
-            if mode == 'shared' and new_event_dict.get('source') == 'user':
+            if (
+                mode == 'shared'
+                and new_event_dict.get('source') == 'user'
+                and conversation_configs is not None
+            ):
                 new_event_dict['hidden_prompt'] = conversation_configs['hidden_prompt']
                 if conversation_configs['hidden_prompt']:
                     content = 'The creator of this prompt has chosen to keep it private, so it cannot be viewed by others unless its privacy settings are changed.'

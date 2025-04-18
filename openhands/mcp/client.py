@@ -52,7 +52,7 @@ class MCPClient(BaseModel):
             k: v for k, v in {'sid': sid, 'mnemonic': mnemonic}.items() if v is not None
         }
         without_mnemonic = {k: v for k, v in headers.items() if k != 'mnemonic'}
-        self._server_params = {
+        self._server_params: dict = {
             'url': server_url,
             'headers': headers if self.name == 'browser_mcp' else without_mnemonic,
             'timeout': timeout,
@@ -127,9 +127,10 @@ class MCPClient(BaseModel):
 
         try:
             # Check if we need to reconnect
+            read_timeout: float = self._server_params['sse_read_timeout']
             tool_result = await asyncio.wait_for(
                 self.execute_call_tool(tool_name=tool_name, args=args),
-                self._server_params['sse_read_timeout'] + 1.0,
+                read_timeout + 1.0,  # noqa: E226
             )
             return tool_result
         except Exception as e:
@@ -146,7 +147,7 @@ class MCPClient(BaseModel):
         finally:
             await self.close_session()
 
-    async def execute_call_tool(self, tool_name: str, args: Dict) -> None:
+    async def execute_call_tool(self, tool_name: str, args: Dict):
         async with sse_client(**self._server_params) as (read, write):
             async with ClientSession(read, write) as session:
                 self.session = session

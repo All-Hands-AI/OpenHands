@@ -24,6 +24,7 @@ from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.data_models.conversation_info_result_set import (
     ConversationInfoResultSet,
 )
+from openhands.server.modules import conversation_module
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.shared import (
     ConversationStoreImpl,
@@ -38,7 +39,7 @@ from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.utils.async_utils import wait_all
 from openhands.utils.conversation_summary import generate_conversation_title
 from openhands.utils.get_user_setting import get_user_setting
-from openhands.server.modules import conversation_module
+
 app = APIRouter(prefix='/api')
 
 
@@ -75,13 +76,11 @@ async def _create_new_conversation(
         extra={'signal': 'create_conversation', 'user_id': user_id},
     )
 
-    running_conversations = await conversation_manager.get_running_agent_loops(
-            user_id
-        )
+    running_conversations = await conversation_manager.get_running_agent_loops(user_id)
     if len(running_conversations) >= config.max_concurrent_conversations:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"You have reached the maximum limit of {config.max_concurrent_conversations} concurrent conversations."
+            detail=f'You have reached the maximum limit of {config.max_concurrent_conversations} concurrent conversations.',
         )
 
     logger.info('Loading settings')
@@ -159,7 +158,6 @@ async def _create_new_conversation(
         user_id,
         initial_user_msg=initial_message_action,
         replay_json=replay_json,
-
     )
     logger.info(f'Finished initializing conversation {conversation_id}')
 
@@ -215,12 +213,12 @@ async def new_conversation(request: Request, data: InitSessionRequest):
             },
             status_code=status.HTTP_400_BAD_REQUEST,
         )
-    
+
     except Exception as e:
         return JSONResponse(
             content={
                 'status': 'error',
-                'detail': e.detail,
+                'detail': str(e.detail) if hasattr(e, 'detail') else str(e),
             },
             status_code=status.HTTP_400_BAD_REQUEST,
         )
@@ -293,7 +291,7 @@ def get_default_conversation_title(conversation_id: str) -> str:
     Returns:
         A default title string
     """
-    return f'Conversation {conversation_id[:5]}'
+    return f'Research {conversation_id[:5]}'
 
 
 async def auto_generate_title(conversation_id: str, user_id: str | None) -> str:
@@ -419,19 +417,31 @@ async def change_visibility(
     data: ChangeVisibilityRequest,
 ) -> bool:
     user_id = get_user_id(request)
+    conversation_store = await ConversationStoreImpl.get_instance(
+        config, user_id, get_github_user_id(request)
+    )
+    metadata = await conversation_store.get_metadata(conversation_id)
+    if not metadata:
+        return False
     return await conversation_module._update_conversation_visibility(
-        conversation_id, data.is_published, str(user_id),
-        {'hidden_prompt': data.hidden_prompt}
+        conversation_id,
+        data.is_published,
+        str(user_id),
+        {'hidden_prompt': data.hidden_prompt},
     )
 
 
-@app.get('/conversations/{conversation_id}/visibility', response_model=ConversationVisibility)
+@app.get(
+    '/conversations/{conversation_id}/visibility', response_model=ConversationVisibility
+)
 async def get_conversation_visibility(
     conversation_id: str,
     request: Request,
 ) -> bool:
     user_id = get_user_id(request)
-    return await conversation_module._get_conversation_visibility(conversation_id, str(user_id))
+    return await conversation_module._get_conversation_visibility(
+        conversation_id, str(user_id)
+    )
 
 
 async def _get_conversation_info(
