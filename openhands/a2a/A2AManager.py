@@ -33,19 +33,21 @@ class A2AManager(ABC):
         if not self.list_remote_agent_servers:
             return
 
-        async def fetch_card(server_url: str) -> AgentCard:
+        async def fetch_card(server_url: str) -> AgentCard | None:
             async with A2ACardResolver(server_url) as resolver:
                 try:
                     return await resolver.get_agent_card()
                 except (A2AClientHTTPError, A2AClientJSONError) as e:
-                    print(f'Failed to fetch agent card from {server_url}: {str(e)}')
+                    logger.error(
+                        f'Failed to fetch agent card from {server_url}: {str(e)}'
+                    )
                     return None
 
         tasks = [fetch_card(server) for server in self.list_remote_agent_servers]
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
         for card in results:
-            if card is not None:
+            if isinstance(card, AgentCard):
                 logger.info(f'Registered remote agent card: {card.name}')
                 self.list_remote_agent_cards[card.name] = card
 

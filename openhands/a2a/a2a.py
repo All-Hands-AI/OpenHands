@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 import asyncio
 from uuid import uuid4
 

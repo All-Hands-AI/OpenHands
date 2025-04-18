@@ -50,7 +50,7 @@ DELETE_FROM_TRAJECTORY_EXTRAS_AND_SCREENSHOTS = DELETE_FROM_TRAJECTORY_EXTRAS | 
 }
 
 
-def _convert_dict_to_pydantic(data: dict, model_class: type[BaseModel]) -> BaseModel:
+def _convert_dict_to_pydantic(data: dict | Any, model_class: type[BaseModel]) -> BaseModel:
     """Convert a dictionary to a Pydantic model, handling nested dictionaries recursively."""
     if not isinstance(data, dict):
         return data
