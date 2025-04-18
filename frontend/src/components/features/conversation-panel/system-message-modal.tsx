@@ -5,23 +5,26 @@ import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import { ModalBody } from "#/components/shared/modals/modal-body";
 import { cn } from "#/utils/utils";
 import { ChevronDown, ChevronRight } from "lucide-react";
-import { JsonView } from 'react-json-view-lite';
-import 'react-json-view-lite/dist/index.css';
+import ReactJson from 'react-json-view';
 
-// Custom JSON viewer styles that match our application theme
-const customJsonStyles = {
-  container: "bg-transparent",
-  basicChildStyle: "text-gray-300 text-sm leading-relaxed",
-  stringValue: "text-green-400 font-medium",
-  numberValue: "text-blue-400 font-medium",
-  booleanValue: "text-yellow-400 font-medium",
-  nullValue: "text-red-400 font-medium",
-  keyStyle: "text-primary font-semibold mr-2",
-  arrowStyle: "text-gray-400 mr-1",
-  // Add more spacing for better readability
-  itemMargin: "my-2",
-  // Increase indentation for better hierarchy visualization
-  indentSize: 24,
+// Custom JSON viewer theme that matches our application theme
+const jsonViewTheme = {
+  base00: "transparent", // background
+  base01: "#2d2d2d", // lighter background
+  base02: "#4e4e4e", // selection background
+  base03: "#6c6c6c", // comments, invisibles
+  base04: "#969896", // dark foreground
+  base05: "#d9d9d9", // default foreground
+  base06: "#e8e8e8", // light foreground
+  base07: "#ffffff", // light background
+  base08: "#ff5370", // variables, red
+  base09: "#f78c6c", // integers, orange
+  base0A: "#ffcb6b", // booleans, yellow
+  base0B: "#c3e88d", // strings, green
+  base0C: "#89ddff", // support, cyan
+  base0D: "#82aaff", // functions, blue
+  base0E: "#c792ea", // keywords, purple
+  base0F: "#ff5370", // deprecated, red
 };
 
 interface SystemMessageModalProps {
@@ -171,10 +174,19 @@ export function SystemMessageModal({
                               <div className="mt-3">
                                 <h4 className="text-sm font-semibold text-gray-300">{t("SYSTEM_MESSAGE_MODAL$PARAMETERS")}</h4>
                                 <div className="text-sm mt-2 p-4 bg-gray-900 rounded-md overflow-auto border border-gray-700 text-gray-300 max-h-[400px] shadow-inner">
-                                  <JsonView 
-                                    data={parameters}
-                                    style={customJsonStyles}
-                                    shouldExpandNode={() => true}
+                                  <ReactJson 
+                                    src={parameters}
+                                    theme={jsonViewTheme}
+                                    name={false}
+                                    displayDataTypes={false}
+                                    collapsed={1}
+                                    enableClipboard={false}
+                                    style={{
+                                      fontSize: '14px',
+                                      lineHeight: '1.5',
+                                      fontFamily: 'monospace',
+                                      backgroundColor: 'transparent',
+                                    }}
                                   />
                                 </div>
                               </div>
