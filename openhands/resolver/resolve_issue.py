@@ -48,6 +48,8 @@ AGENT_CLASS = 'CodeActAgent'
 
 
 class IssueResolver:
+    GITLAB_CI = os.getenv('GITLAB_CI') == 'true'
+
     def __init__(
         self,
         owner: str,
@@ -59,15 +61,15 @@ class IssueResolver:
         output_dir: str,
         llm_config: LLMConfig,
         runtime_container_image: str | None = None,
-        prompt_template: str = "",
-        issue_type: str = "issue",
+        prompt_template: str = '',
+        issue_type: str = 'issue',
         repo_instruction: str | None = None,
         issue_number: int | None = None,
         comment_id: int | None = None,
         base_domain: str | None = None,
     ) -> None:
         """Initialize the IssueResolver with the given parameters.
-        
+
         Args:
             owner: Owner of the repo.
             repo: Repository name.
@@ -138,7 +140,7 @@ class IssueResolver:
     async def complete_runtime(
         self,
         runtime: Runtime,
-        base_commit: str = "",
+        base_commit: str,
     ) -> dict[str, Any]:
         """Complete the runtime for the agent.
 
@@ -176,7 +178,7 @@ class IssueResolver:
         if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
             raise RuntimeError(f'Failed to set git config. Observation: {obs}')
 
-        if self.platform == Platform.GITLAB and os.getenv('GITLAB_CI') == 'true':
+        if self.platform == Platform.GITLAB and self.GITLAB_CI:
             action = CmdRunAction(command='sudo git add -A')
         else:
             action = CmdRunAction(command='git add -A')
@@ -217,8 +219,8 @@ class IssueResolver:
     async def process_issue(
         self,
         issue: Issue,
-        base_commit: str = "",
-        issue_handler: ServiceContextIssue | ServiceContextPR | None = None,
+        base_commit: str,
+        issue_handler: ServiceContextIssue | ServiceContextPR,
         reset_logger: bool = False,
     ) -> ResolverOutput:
         # Setup the logger properly, so you can run multi-processing to parallelize processing
@@ -228,8 +230,7 @@ class IssueResolver:
         else:
             logger.info(f'Starting fixing issue {issue.number}.')
 
-        if issue_handler is None:
-            issue_handler = self.issue_handler_factory()
+        issue_handler = self.issue_handler_factory()
 
         workspace_base = os.path.join(
             self.output_dir, 'workspace', f'{issue_handler.issue_type}_{issue.number}'
@@ -381,27 +382,37 @@ class IssueResolver:
         # Determine default base_domain based on platform
         base_domain = self.base_domain
         if base_domain is None:
-            base_domain = 'github.com' if self.platform == Platform.GITHUB else 'gitlab.com'
+            base_domain = (
+                'github.com' if self.platform == Platform.GITHUB else 'gitlab.com'
+            )
         if self.issue_type == 'issue':
             if self.platform == Platform.GITHUB:
                 return ServiceContextIssue(
-                    GithubIssueHandler(self.owner, self.repo, self.token, self.username, base_domain),
+                    GithubIssueHandler(
+                        self.owner, self.repo, self.token, self.username, base_domain
+                    ),
                     self.llm_config,
                 )
             else:  # self.platform == Platform.GITLAB
                 return ServiceContextIssue(
-                    GitlabIssueHandler(self.owner, self.repo, self.token, self.username, base_domain),
+                    GitlabIssueHandler(
+                        self.owner, self.repo, self.token, self.username, base_domain
+                    ),
                     self.llm_config,
                 )
         elif self.issue_type == 'pr':
             if self.platform == Platform.GITHUB:
                 return ServiceContextPR(
-                    GithubPRHandler(self.owner, self.repo, self.token, self.username, base_domain),
+                    GithubPRHandler(
+                        self.owner, self.repo, self.token, self.username, base_domain
+                    ),
                     self.llm_config,
                 )
             else:  # self.platform == Platform.GITLAB
                 return ServiceContextPR(
-                    GitlabPRHandler(self.owner, self.repo, self.token, self.username, base_domain),
+                    GitlabPRHandler(
+                        self.owner, self.repo, self.token, self.username, base_domain
+                    ),
                     self.llm_config,
                 )
         else:
@@ -417,8 +428,17 @@ class IssueResolver:
             reset_logger: Whether to reset the logger for multiprocessing.
         """
         # Validate required parameters
-        if not self.owner or not self.repo or not self.token or not self.username or self.platform is None or self.llm_config is None or not self.issue_type or self.issue_number is None:
-            raise ValueError("Missing required parameters for resolving an issue")
+        if (
+            not self.owner
+            or not self.repo
+            or not self.token
+            or not self.username
+            or self.platform is None
+            or self.llm_config is None
+            or not self.issue_type
+            or self.issue_number is None
+        ):
+            raise ValueError('Missing required parameters for resolving an issue')
 
         issue_handler = self.issue_handler_factory()
 
