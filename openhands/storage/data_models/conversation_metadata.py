@@ -10,7 +10,7 @@ class ConversationTrigger(Enum):
 
 
 @dataclass
-class ConversationMetadata:    
+class ConversationMetadata:
     conversation_id: str
     github_user_id: str | None
     # Accepting str for `selected_repository` for backward compatibility

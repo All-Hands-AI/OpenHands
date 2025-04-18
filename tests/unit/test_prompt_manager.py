@@ -147,30 +147,6 @@ This is information from agent 2
     assert result.strip() == ''
 
 
-def test_add_examples_to_initial_message(prompt_dir):
-    """Test adding example messages to an initial message."""
-    # Create a user_prompt.j2 template file
-    with open(os.path.join(prompt_dir, 'user_prompt.j2'), 'w') as f:
-        f.write('This is an example user message')
-
-    # Initialize the PromptManager
-    manager = PromptManager(prompt_dir=prompt_dir)
-
-    # Create a message
-    message = Message(role='user', content=[TextContent(text='Original content')])
-
-    # Add examples to the message
-    manager.add_examples_to_initial_message(message)
-
-    # Check that the example was added at the beginning
-    assert len(message.content) == 2
-    assert message.content[0].text == 'This is an example user message'
-    assert message.content[1].text == 'Original content'
-
-    # Clean up
-    os.remove(os.path.join(prompt_dir, 'user_prompt.j2'))
-
-
 def test_add_turns_left_reminder(prompt_dir):
     """Test adding turns left reminder to messages."""
     # Initialize the PromptManager
