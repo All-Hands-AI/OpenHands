@@ -4,8 +4,11 @@ from itertools import islice
 
 from jinja2 import Template
 
+from openhands.a2a.common.types import Artifact
+from openhands.a2a.utils import convert_parts
 from openhands.controller.state.state import State
 from openhands.core.message import Message, TextContent
+from openhands.events.observation.a2a import A2ASendTaskArtifactObservation
 from openhands.events.observation.agent import MicroagentKnowledge
 
 
@@ -43,6 +46,7 @@ class PromptManager:
         self.user_template: Template = self._load_template('user_prompt')
         self.additional_info_template: Template = self._load_template('additional_info')
         self.microagent_info_template: Template = self._load_template('microagent_info')
+        self.a2a_info_template: Template = self._load_template('a2a_info')
 
     def _load_template(self, template_name: str) -> Template:
         if self.prompt_dir is None:
@@ -56,7 +60,9 @@ class PromptManager:
 
     def get_system_message(self, **kwargs) -> str:
         # **kwargs is used to pass additional context to the system prompt, such as current date, ...
-        return self.system_template.render(**kwargs).strip()
+        if 'agent_infos' in kwargs:
+            return self.system_template.render(agent_infos=kwargs['agent_infos']).strip()
+        return self.system_template.render().strip()
 
     def get_example_user_message(self) -> str:
         """This is the initial user message provided to the agent
@@ -104,6 +110,24 @@ class PromptManager:
         """
         return self.microagent_info_template.render(
             triggered_agents=triggered_agents
+        ).strip()
+    
+    def build_a2a_info(
+            self,
+            agent_artifact_observation: A2ASendTaskArtifactObservation,
+    ) -> str:
+        """Renders the a2a info template with the triggered agents."""
+
+        artifact = Artifact(**agent_artifact_observation.task_artifact_event['artifact'])
+        parts = artifact.parts
+        converted_parts = convert_parts(parts)
+        text = '\n'.join(converted_parts)
+        art_obs = {
+            'agent_name': agent_artifact_observation.agent_name,
+            'content': text
+        }
+        return self.a2a_info_template.render(
+            agent_artifact_observation=art_obs
         ).strip()
 
     def add_turns_left_reminder(self, messages: list[Message], state: State) -> None:

@@ -1,6 +1,7 @@
 import os
 from collections import deque
 
+from openhands.a2a.A2AManager import A2AManager
 from openhands.a2a.tool import ListRemoteAgents, SendTask
 import openhands.agenthub.codeact_agent.function_calling as codeact_function_calling
 from openhands.controller.agent import Agent
@@ -204,10 +205,11 @@ class CodeActAgent(Agent):
         """
         if not self.prompt_manager:
             raise Exception('Prompt Manager not instantiated.')
-
+        agent_infos = self.a2a_manager.list_remote_agents() if self.a2a_manager else None
         # Use ConversationMemory to process initial messages
         messages = self.conversation_memory.process_initial_messages(
-            with_caching=self.llm.is_caching_prompt_active()
+            with_caching=self.llm.is_caching_prompt_active(),
+            agent_infos=agent_infos
         )
 
         # Use ConversationMemory to process events

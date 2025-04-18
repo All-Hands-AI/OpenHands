@@ -147,14 +147,14 @@ class ConversationMemory:
         messages = list(ConversationMemory._filter_unmatched_tool_calls(messages))
         return messages
 
-    def process_initial_messages(self, with_caching: bool = False) -> list[Message]:
+    def process_initial_messages(self, with_caching: bool = False, **kwargs) -> list[Message]:
         """Create the initial messages for the conversation."""
         return [
             Message(
                 role='system',
                 content=[
                     TextContent(
-                        text=self.prompt_manager.get_system_message(),
+                        text=self.prompt_manager.get_system_message(**kwargs),
                         cache_prompt=with_caching,
                     )
                 ],
@@ -562,11 +562,7 @@ class ConversationMemory:
         elif isinstance(obs, A2ASendTaskUpdateObservation):
             return []
         elif isinstance(obs, A2ASendTaskArtifactObservation):
-            artifact = Artifact(**obs.task_artifact_event['artifact'])
-            parts = artifact.parts
-            converted_parts = convert_parts(parts)
-            text = '\n'.join(converted_parts)
-            logger.info(f'A2ASendTaskArtifactObservation: {text}')
+            text = self.prompt_manager.build_a2a_info(obs)
             message = Message(role='user', content=[TextContent(text=text)])
         else:
             # If an observation message is not returned, it will cause an error

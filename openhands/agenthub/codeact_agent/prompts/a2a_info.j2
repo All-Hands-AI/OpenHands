@@ -1,0 +1,6 @@
+{% if agent_artifact_observation %}
+<EXTRA_INFO>
+The following information has been included based on a send task operation to {{ agent_artifact_observation.agent_name }} agent.
+{{ agent_artifact_observation.content }}
+</EXTRA_INFO>
+{% endif %}
