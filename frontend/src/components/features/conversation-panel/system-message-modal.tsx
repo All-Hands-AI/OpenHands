@@ -69,7 +69,7 @@ export function SystemMessageModal({
           </div>
 
           <div className="w-full">
-            <div className="flex border-b mb-4">
+            <div className="flex border-b mb-2">
               <button
                 type="button"
                 className={cn(
@@ -157,16 +157,7 @@ export function SystemMessageModal({
             </div>
           </div>
 
-          <div className="w-full mt-6 flex justify-end">
-            <BrandButton
-              type="button"
-              variant="secondary"
-              onClick={onClose}
-              className="px-6"
-            >
-              {t(I18nKey.BUTTON$CLOSE)}
-            </BrandButton>
-          </div>
+
         </ModalBody>
       </ModalBackdrop>
     )
