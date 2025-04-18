@@ -1,8 +1,6 @@
-from dataclasses import dataclass, field
-from datetime import datetime
-from typing import Any, List, Literal
+from dataclasses import dataclass
 
-from openhands.a2a.common.types import Part, TaskArtifactUpdateEvent, TaskState, TaskStatusUpdateEvent, Task 
+from openhands.a2a.common.types import TaskArtifactUpdateEvent, TaskStatusUpdateEvent, Task 
 from openhands.core.schema import ObservationType
 from openhands.events.observation.observation import Observation
 

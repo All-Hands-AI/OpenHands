@@ -21,7 +21,10 @@ from openhands.events.action import (
     IPythonRunCellAction,
     MessageAction,
 )
-from openhands.events.action.a2a_action import A2AListRemoteAgentsAction, A2ASendTaskAction
+from openhands.events.action.a2a_action import (
+    A2AListRemoteAgentsAction,
+    A2ASendTaskAction,
+)
 from openhands.events.action.mcp import McpAction
 from openhands.events.event import Event, RecallType
 from openhands.events.observation import (
@@ -36,7 +39,11 @@ from openhands.events.observation import (
     PlanObservation,
     UserRejectObservation,
 )
-from openhands.events.observation.a2a import A2AListRemoteAgentsObservation,  A2ASendTaskUpdateObservation, A2ASendTaskArtifactObservation
+from openhands.events.observation.a2a import (
+    A2AListRemoteAgentsObservation,
+    A2ASendTaskArtifactObservation,
+    A2ASendTaskUpdateObservation,
+)
 from openhands.events.observation.agent import (
     MicroagentKnowledge,
     RecallObservation,

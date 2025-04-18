@@ -1,19 +1,20 @@
-import socketio
 import os
+
+import socketio
+from fastapi.middleware.cors import CORSMiddleware
+
 from openhands.server.app import app as base_app
 from openhands.server.listen_socket import sio
 from openhands.server.middleware import (
     AttachConversationMiddleware,
     CacheControlMiddleware,
+    CheckUserActivationMiddleware,
     InMemoryRateLimiter,
     JWTAuthMiddleware,
-    LocalhostCORSMiddleware,
     ProviderTokenMiddleware,
     RateLimitMiddleware,
-    CheckUserActivationMiddleware,
 )
 from openhands.server.static import SPAStaticFiles
-from fastapi.middleware.cors import CORSMiddleware
 
 base_app.mount(
     '/', SPAStaticFiles(directory='./frontend/build', html=True), name='dist'
@@ -24,22 +25,24 @@ base_app.middleware('http')(AttachConversationMiddleware(base_app))
 # Add middleware to the base app - need to be added before the other middlewares
 
 # TODO: If the run mode is DEV, skip the check
-os.getenv('RUN_MODE') != 'DEV' and base_app.add_middleware(CheckUserActivationMiddleware)
+os.getenv('RUN_MODE') != 'DEV' and base_app.add_middleware(
+    CheckUserActivationMiddleware
+)
 base_app.add_middleware(JWTAuthMiddleware)
 
 
-origin_str=os.getenv('ALLOW_ORIGIN')
-if (not origin_str) : 
-    origin_str="*"
+origin_str = os.getenv('ALLOW_ORIGIN')
+if not origin_str:
+    origin_str = '*'
 
-origins = [i for i in origin_str.split(",")]
+origins = [i for i in origin_str.split(',')]
 print('origins', origins)
 base_app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=['*'],
+    allow_headers=['*'],
 )
 
 base_app.add_middleware(CacheControlMiddleware)

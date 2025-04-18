@@ -1,10 +1,7 @@
-import select
 from openhands.server.models import Conversation
 from openhands.server.db import database
 from openhands.core.logger import openhands_logger as logger
-from sqlalchemy import select
 
-from openhands.server.thesis_auth import get_user_detail_from_thesis_auth_server
 
 
 class ConversationModule:

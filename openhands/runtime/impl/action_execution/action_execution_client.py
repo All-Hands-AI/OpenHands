@@ -3,7 +3,7 @@ import tempfile
 import threading
 from abc import abstractmethod
 from pathlib import Path
-from typing import Any, AsyncGenerator
+from typing import Any
 from zipfile import ZipFile
 
 import httpcore
@@ -27,7 +27,6 @@ from openhands.events.action import (
     FileWriteAction,
     IPythonRunCellAction,
 )
-from openhands.events.action.a2a_action import A2AListRemoteAgentsAction, A2ASendTaskAction
 from openhands.events.action.action import Action
 from openhands.events.action.files import FileEditSource
 from openhands.events.action.mcp import McpAction

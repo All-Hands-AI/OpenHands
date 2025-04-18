@@ -2,8 +2,7 @@ import os
 from fastapi import APIRouter, Depends, status, Request
 from fastapi.responses import JSONResponse
 from pydantic import SecretStr
-from sqlalchemy import select
-from openhands.server.thesis_auth import get_user_detail_from_thesis_auth_server, ThesisUser, UserStatus
+from openhands.server.thesis_auth import UserStatus
 from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
@@ -17,10 +16,8 @@ from openhands.integrations.service_types import (
     UnknownException,
     User,
 )
-from openhands.server.auth import get_access_token, get_provider_tokens, get_user_id
+from openhands.server.auth import get_access_token, get_provider_tokens
 from openhands.server.shared import server_config
-from openhands.server.db import database
-from openhands.server.thesis_auth import ThesisUser, UserStatus
 
 app = APIRouter(prefix='/api/user')
 

@@ -174,8 +174,12 @@ install-pre-commit-hooks:
 	@echo "$(GREEN)Pre-commit hooks installed successfully.$(RESET)"
 
 lint-backend:
-	@echo "$(YELLOW)Running linters...$(RESET)"
+	@echo "$(YELLOW)Running linters (showing only errors)...$(RESET)"
 	@poetry run pre-commit run --files openhands/**/* agenthub/**/* evaluation/**/* --show-diff-on-failure --config $(PRE_COMMIT_CONFIG_PATH)
+
+lint-backend-errors:
+	@echo "$(YELLOW)Running linters (showing only errors)...$(RESET)"
+	@poetry run ruff check --fix --select F --config dev_config/python/ruff.toml openhands/**/* agenthub/**/* evaluation/**/*
 
 lint-frontend:
 	@echo "$(YELLOW)Running linters for frontend...$(RESET)"

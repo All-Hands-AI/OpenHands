@@ -4,7 +4,6 @@ from urllib.parse import parse_qs
 
 import jwt
 from socketio.exceptions import ConnectionRefusedError
-from sqlalchemy import select
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
@@ -21,6 +20,7 @@ from openhands.events.observation.agent import (
 from openhands.events.serialization import event_to_dict
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderToken
 from openhands.integrations.service_types import ProviderType
+from openhands.server.modules import conversation_module
 from openhands.server.routes.auth import JWT_ALGORITHM, JWT_SECRET
 from openhands.server.shared import (
     ConversationStoreImpl,
@@ -28,9 +28,12 @@ from openhands.server.shared import (
     conversation_manager,
     sio,
 )
-from openhands.server.thesis_auth import get_user_detail_from_thesis_auth_server, ThesisUser, UserStatus
+from openhands.server.thesis_auth import (
+    ThesisUser,
+    UserStatus,
+    get_user_detail_from_thesis_auth_server,
+)
 from openhands.utils.get_user_setting import get_user_setting
-from openhands.server.modules import conversation_module
 
 
 def create_provider_tokens_object(
@@ -62,7 +65,9 @@ async def connect(connection_id: str, environ):
     mode = query_params.get('mode', [None])[0]
     # check if conversation_id is shared
     if mode == 'shared':
-        error, info = await conversation_module._get_conversation_visibility_info(conversation_id)
+        error, info = await conversation_module._get_conversation_visibility_info(
+            conversation_id
+        )
         if error:
             raise ConnectionRefusedError(error)
         else:
@@ -98,15 +103,20 @@ async def connect(connection_id: str, environ):
             # Verify and decode JWT token
             payload = jwt.decode(jwt_token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
 
-            user: ThesisUser | None = get_user_detail_from_thesis_auth_server('Bearer ' + jwt_token)
+            user: ThesisUser | None = get_user_detail_from_thesis_auth_server(
+                'Bearer ' + jwt_token
+            )
             if not user:
                 logger.error(f'User not found in database: {user_id}')
                 raise ConnectionRefusedError('User not found')
-            
+
             user_id = payload['user']['publicAddress']
-            
+
             # TODO: If the user is not whitelisted and the run mode is DEV, skip the check
-            if user.whitelisted != UserStatus.WHITELISTED and os.getenv('RUN_MODE') != 'DEV':
+            if (
+                user.whitelisted != UserStatus.WHITELISTED
+                and os.getenv('RUN_MODE') != 'DEV'
+            ):
                 logger.error(f'User not activated: {user_id}')
                 raise ConnectionRefusedError('User not activated')
 

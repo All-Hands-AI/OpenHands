@@ -23,7 +23,6 @@ from litellm.exceptions import (
 from litellm.types.utils import CostPerToken, ModelResponse, Usage
 from litellm.utils import create_pretrained_tokenizer
 from opentelemetry import trace
-from traceloop.sdk import Traceloop
 from traceloop.sdk.decorators import workflow
 
 from openhands.core.exceptions import LLMNoResponseError

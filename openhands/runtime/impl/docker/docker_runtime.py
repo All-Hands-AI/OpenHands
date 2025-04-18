@@ -1,9 +1,7 @@
 import os
 from functools import lru_cache
-import random
-import re
 import time
-from typing import Callable, List, Set
+from typing import Callable, Set
 from uuid import UUID
 
 import docker

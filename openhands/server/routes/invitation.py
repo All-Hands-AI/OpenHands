@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Request, HTTPException
-from openhands.server.auth import get_user_id
 from openhands.server.thesis_auth import add_invite_code_to_user
 from openhands.core.logger import openhands_logger as logger
 

@@ -1,5 +1,4 @@
 import asyncio
-from contextlib import AsyncExitStack
 from typing import Dict, List, Optional
 
 from mcp import ClientSession
@@ -8,7 +7,7 @@ from mcp.types import CallToolResult
 from pydantic import BaseModel, Field
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.mcp.tool import BaseTool, MCPClientTool
+from openhands.mcp.tool import MCPClientTool
 
 
 class MCPClient(BaseModel):
@@ -64,9 +63,7 @@ class MCPClient(BaseModel):
 
         try:
             async with sse_client(**self._server_params) as (read, write):
-                async with ClientSession(
-                    read, write
-                ) as session:
+                async with ClientSession(read, write) as session:
                     self.session = session
                     await self._connect_sse()
                     await self._initialize_and_list_tools()
@@ -131,17 +128,19 @@ class MCPClient(BaseModel):
         try:
             # Check if we need to reconnect
             tool_result = await asyncio.wait_for(
-                self.execute_call_tool(tool_name=tool_name, args=args), 
-                self._server_params['sse_read_timeout'] + 1.0
+                self.execute_call_tool(tool_name=tool_name, args=args),
+                self._server_params['sse_read_timeout'] + 1.0,
             )
             return tool_result
         except Exception as e:
             logger.error(f'Tool call to {tool_name} failed: {str(e)}')
             return CallToolResult(
-                content=[{
-                    'text': f'Tool call to {tool_name} failed: {str(e)}',
-                    'type': 'text'
-                }],
+                content=[
+                    {
+                        'text': f'Tool call to {tool_name} failed: {str(e)}',
+                        'type': 'text',
+                    }
+                ],
                 isError=True,
             )
         finally:
@@ -149,9 +148,7 @@ class MCPClient(BaseModel):
 
     async def execute_call_tool(self, tool_name: str, args: Dict) -> None:
         async with sse_client(**self._server_params) as (read, write):
-            async with ClientSession(
-                read, write
-            ) as session:
+            async with ClientSession(read, write) as session:
                 self.session = session
                 if not self.session:
                     raise RuntimeError(
@@ -161,7 +158,9 @@ class MCPClient(BaseModel):
                 await self.session.initialize()
                 tool_result = await self.tool_map[tool_name].execute(**args)
                 if tool_result.isError:
-                    logger.error(f'Tool call to {tool_name} failed: {tool_result.content}')
+                    logger.error(
+                        f'Tool call to {tool_name} failed: {tool_result.content}'
+                    )
                 return tool_result
 
     async def close_session(self) -> None:

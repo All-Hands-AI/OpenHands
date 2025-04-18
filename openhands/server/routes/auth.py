@@ -9,7 +9,6 @@ from eth_account.messages import encode_defunct
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 from web3 import Web3
-from openhands.core.logger import openhands_logger as logger
 
 app = APIRouter(prefix='/api/auth')
 

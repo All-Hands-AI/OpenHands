@@ -11,7 +11,6 @@ from fastapi import (
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands import __version__
-from openhands.server.db import database
 from openhands.server.backend_pre_start import init
 from openhands.server.db import database, engine
 from openhands.server.initial_data import init as init_initial_data

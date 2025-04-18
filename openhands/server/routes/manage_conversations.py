@@ -4,7 +4,6 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Body, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from openhands.server.db import database
 
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
@@ -25,7 +24,6 @@ from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.data_models.conversation_info_result_set import (
     ConversationInfoResultSet,
 )
-from openhands.server.models import Conversation
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.shared import (
     ConversationStoreImpl,
