@@ -50,15 +50,15 @@ AGENT_CLASS = 'CodeActAgent'
 class IssueResolver:
     def __init__(
         self,
-        owner: str = "",
-        repo: str = "",
-        token: str = "",
-        username: str = "",
-        platform: Platform | None = None,
+        owner: str,
+        repo: str,
+        token: str,
+        username: str,
+        platform: Platform,
+        max_iterations: int,
+        output_dir: str,
+        llm_config: LLMConfig,
         runtime_container_image: str | None = None,
-        max_iterations: int = 50,
-        output_dir: str = "output",
-        llm_config: LLMConfig | None = None,
         prompt_template: str = "",
         issue_type: str = "issue",
         repo_instruction: str | None = None,
@@ -104,19 +104,12 @@ class IssueResolver:
     def initialize_runtime(
         self,
         runtime: Runtime,
-        platform: Platform | None = None,
     ) -> None:
         """Initialize the runtime for the agent.
 
         This function is called before the runtime is used to run the agent.
         Currently it does nothing.
         """
-        # Use instance variables if parameters are not provided
-        platform = platform if platform is not None else self.platform
-        
-        # Validate required parameters
-        if platform is None:
-            raise ValueError("Missing required parameter 'platform' for initializing runtime")
         logger.info('-' * 30)
         logger.info('BEGIN Runtime Completion Fn')
         logger.info('-' * 30)
@@ -129,7 +122,7 @@ class IssueResolver:
         if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
             raise RuntimeError(f'Failed to change directory to /workspace.\n{obs}')
 
-        if platform == Platform.GITLAB and os.getenv('GITLAB_CI') == 'true':
+        if self.platform == Platform.GITLAB and os.getenv('GITLAB_CI') == 'true':
             action = CmdRunAction(command='sudo chown -R 1001:0 /workspace/*')
             logger.info(action, extra={'msg_type': 'ACTION'})
             obs = runtime.run_action(action)
@@ -145,8 +138,7 @@ class IssueResolver:
     async def complete_runtime(
         self,
         runtime: Runtime,
-        base_commit: str,
-        platform: Platform | None = None,
+        base_commit: str = "",
     ) -> dict[str, Any]:
         """Complete the runtime for the agent.
 
@@ -154,12 +146,6 @@ class IssueResolver:
         If you need to do something in the sandbox to get the correctness metric after
         the agent has run, modify this function.
         """
-        # Use instance variables if parameters are not provided
-        platform = platform if platform is not None else self.platform
-        
-        # Validate required parameters
-        if platform is None:
-            raise ValueError("Missing required parameter 'platform' for completing runtime")
         logger.info('-' * 30)
         logger.info('BEGIN Runtime Completion Fn')
         logger.info('-' * 30)
@@ -190,7 +176,7 @@ class IssueResolver:
         if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
             raise RuntimeError(f'Failed to set git config. Observation: {obs}')
 
-        if platform == Platform.GITLAB and os.getenv('GITLAB_CI') == 'true':
+        if self.platform == Platform.GITLAB and os.getenv('GITLAB_CI') == 'true':
             action = CmdRunAction(command='sudo git add -A')
         else:
             action = CmdRunAction(command='git add -A')
@@ -231,38 +217,22 @@ class IssueResolver:
     async def process_issue(
         self,
         issue: Issue,
-        platform: Platform | None = None,
         base_commit: str = "",
-        max_iterations: int | None = None,
-        llm_config: LLMConfig | None = None,
-        output_dir: str | None = None,
-        runtime_container_image: str | None = None,
-        prompt_template: str | None = None,
         issue_handler: ServiceContextIssue | ServiceContextPR | None = None,
-        repo_instruction: str | None = None,
         reset_logger: bool = False,
     ) -> ResolverOutput:
-        # Use instance variables if parameters are not provided
-        platform = platform if platform is not None else self.platform
-        max_iterations = max_iterations if max_iterations is not None else self.max_iterations
-        llm_config = llm_config if llm_config is not None else self.llm_config
-        output_dir = output_dir if output_dir is not None else self.output_dir
-        runtime_container_image = runtime_container_image if runtime_container_image is not None else self.runtime_container_image
-        prompt_template = prompt_template if prompt_template is not None else self.prompt_template
-        repo_instruction = repo_instruction if repo_instruction is not None else self.repo_instruction
-        
-        # Validate required parameters
-        if platform is None or llm_config is None or not output_dir or not prompt_template:
-            raise ValueError("Missing required parameters for processing an issue")
         # Setup the logger properly, so you can run multi-processing to parallelize processing
         if reset_logger:
-            log_dir = os.path.join(output_dir, 'infer_logs')
+            log_dir = os.path.join(self.output_dir, 'infer_logs')
             reset_logger_for_multiprocessing(logger, str(issue.number), log_dir)
         else:
             logger.info(f'Starting fixing issue {issue.number}.')
 
+        if issue_handler is None:
+            issue_handler = self.issue_handler_factory()
+
         workspace_base = os.path.join(
-            output_dir, 'workspace', f'{issue_handler.issue_type}_{issue.number}'
+            self.output_dir, 'workspace', f'{issue_handler.issue_type}_{issue.number}'
         )
 
         # Get the absolute path of the workspace base
@@ -270,13 +240,13 @@ class IssueResolver:
         # write the repo to the workspace
         if os.path.exists(workspace_base):
             shutil.rmtree(workspace_base)
-        shutil.copytree(os.path.join(output_dir, 'repo'), workspace_base)
+        shutil.copytree(os.path.join(self.output_dir, 'repo'), workspace_base)
 
         # This code looks unnecessary because these are default values in the config class
         # they're set by default if nothing else overrides them
         # FIXME we should remove them here
         sandbox_config = SandboxConfig(
-            runtime_container_image=runtime_container_image,
+            runtime_container_image=self.runtime_container_image,
             enable_auto_lint=False,
             use_host_network=False,
             # large enough timeout, since some testcases take very long to run
@@ -295,14 +265,14 @@ class IssueResolver:
             default_agent='CodeActAgent',
             runtime='docker',
             max_budget_per_task=4,
-            max_iterations=max_iterations,
+            max_iterations=self.max_iterations,
             sandbox=sandbox_config,
             # do not mount workspace
             workspace_base=workspace_base,
             workspace_mount_path=workspace_base,
             agents={'CodeActAgent': AgentConfig(disabled_microagents=['github'])},
         )
-        config.set_llm_config(llm_config)
+        config.set_llm_config(self.llm_config)
 
         runtime = create_runtime(config)
         await runtime.connect()
@@ -314,10 +284,10 @@ class IssueResolver:
             EventStreamSubscriber.MAIN, on_event, str(uuid4())
         )
 
-        self.initialize_runtime(runtime, platform)
+        self.initialize_runtime(runtime)
 
         instruction, images_urls = issue_handler.get_instruction(
-            issue, prompt_template, repo_instruction
+            issue, self.prompt_template, self.repo_instruction
         )
         # Here's how you can run the agent (similar to the `main` function) and get the final task state
         action = MessageAction(content=instruction, image_urls=images_urls)
@@ -337,7 +307,7 @@ class IssueResolver:
             last_error: str | None = error_msg
 
         # Get git patch
-        return_val = await self.complete_runtime(runtime, base_commit, platform)
+        return_val = await self.complete_runtime(runtime, base_commit)
         git_patch = return_val['git_patch']
         logger.info(
             f'Got git diff for instance {issue.number}:\n--------\n{git_patch}\n--------'
@@ -402,174 +372,105 @@ class IssueResolver:
 
     def issue_handler_factory(
         self,
-        issue_type: str | None = None,
-        owner: str | None = None,
-        repo: str | None = None,
-        token: str | None = None,
-        llm_config: LLMConfig | None = None,
-        platform: Platform | None = None,
-        username: str | None = None,
-        base_domain: str | None = None,
     ) -> ServiceContextIssue | ServiceContextPR:
-        # Use instance variables if parameters are not provided
-        issue_type = issue_type if issue_type is not None else self.issue_type
-        owner = owner if owner is not None else self.owner
-        repo = repo if repo is not None else self.repo
-        token = token if token is not None else self.token
-        llm_config = llm_config if llm_config is not None else self.llm_config
-        platform = platform if platform is not None else self.platform
-        username = username if username is not None else self.username
-        base_domain = base_domain if base_domain is not None else self.base_domain
-        
-        # Validate required parameters
-        if not issue_type or not owner or not repo or not token or llm_config is None or platform is None:
-            raise ValueError("Missing required parameters for issue handler factory")
-            
+        """Create an issue handler based on the issue type.
+
+        Returns:
+            An issue handler based on the issue type.
+        """
         # Determine default base_domain based on platform
+        base_domain = self.base_domain
         if base_domain is None:
-            base_domain = 'github.com' if platform == Platform.GITHUB else 'gitlab.com'
-        if issue_type == 'issue':
-            if platform == Platform.GITHUB:
+            base_domain = 'github.com' if self.platform == Platform.GITHUB else 'gitlab.com'
+        if self.issue_type == 'issue':
+            if self.platform == Platform.GITHUB:
                 return ServiceContextIssue(
-                    GithubIssueHandler(owner, repo, token, username, base_domain),
-                    llm_config,
+                    GithubIssueHandler(self.owner, self.repo, self.token, self.username, base_domain),
+                    self.llm_config,
                 )
-            else:  # platform == Platform.GITLAB
+            else:  # self.platform == Platform.GITLAB
                 return ServiceContextIssue(
-                    GitlabIssueHandler(owner, repo, token, username, base_domain),
-                    llm_config,
+                    GitlabIssueHandler(self.owner, self.repo, self.token, self.username, base_domain),
+                    self.llm_config,
                 )
-        elif issue_type == 'pr':
-            if platform == Platform.GITHUB:
+        elif self.issue_type == 'pr':
+            if self.platform == Platform.GITHUB:
                 return ServiceContextPR(
-                    GithubPRHandler(owner, repo, token, username, base_domain),
-                    llm_config,
+                    GithubPRHandler(self.owner, self.repo, self.token, self.username, base_domain),
+                    self.llm_config,
                 )
-            else:  # platform == Platform.GITLAB
+            else:  # self.platform == Platform.GITLAB
                 return ServiceContextPR(
-                    GitlabPRHandler(owner, repo, token, username, base_domain),
-                    llm_config,
+                    GitlabPRHandler(self.owner, self.repo, self.token, self.username, base_domain),
+                    self.llm_config,
                 )
         else:
-            raise ValueError(f'Invalid issue type: {issue_type}')
+            raise ValueError(f'Invalid issue type: {self.issue_type}')
 
     async def resolve_issue(
         self,
-        owner: str | None = None,
-        repo: str | None = None,
-        token: str | None = None,
-        username: str | None = None,
-        platform: Platform | None = None,
-        max_iterations: int | None = None,
-        output_dir: str | None = None,
-        llm_config: LLMConfig | None = None,
-        runtime_container_image: str | None = None,
-        prompt_template: str | None = None,
-        issue_type: str | None = None,
-        repo_instruction: str | None = None,
-        issue_number: int | None = None,
-        comment_id: int | None = None,
         reset_logger: bool = False,
-        base_domain: str | None = None,
     ) -> None:
-        """Resolve a single issue.
+        """Resolve a single issue using the instance variables set in the constructor.
 
         Args:
-            owner: owner of the repo. If None, uses the value from constructor.
-            repo: repository name. If None, uses the value from constructor.
-            token: token to access the repository. If None, uses the value from constructor.
-            username: username to access the repository. If None, uses the value from constructor.
-            platform: platform of the repository. If None, uses the value from constructor.
-            max_iterations: Maximum number of iterations to run. If None, uses the value from constructor.
-            output_dir: Output directory to write the results. If None, uses the value from constructor.
-            llm_config: Configuration for the language model. If None, uses the value from constructor.
-            runtime_container_image: Container image to use. If None, uses the value from constructor.
-            prompt_template: Prompt template to use. If None, uses the value from constructor.
-            issue_type: Type of issue to resolve (issue or pr). If None, uses the value from constructor.
-            repo_instruction: Repository instruction to use. If None, uses the value from constructor.
-            issue_number: Issue number to resolve. If None, uses the value from constructor.
-            comment_id: Optional ID of a specific comment to focus on. If None, uses the value from constructor.
             reset_logger: Whether to reset the logger for multiprocessing.
-            base_domain: The base domain for the git server. If None, uses the value from constructor.
         """
-        # Use instance variables if parameters are not provided
-        owner = owner if owner is not None else self.owner
-        repo = repo if repo is not None else self.repo
-        token = token if token is not None else self.token
-        username = username if username is not None else self.username
-        platform = platform if platform is not None else self.platform
-        max_iterations = max_iterations if max_iterations is not None else self.max_iterations
-        output_dir = output_dir if output_dir is not None else self.output_dir
-        llm_config = llm_config if llm_config is not None else self.llm_config
-        runtime_container_image = runtime_container_image if runtime_container_image is not None else self.runtime_container_image
-        prompt_template = prompt_template if prompt_template is not None else self.prompt_template
-        issue_type = issue_type if issue_type is not None else self.issue_type
-        repo_instruction = repo_instruction if repo_instruction is not None else self.repo_instruction
-        issue_number = issue_number if issue_number is not None else self.issue_number
-        comment_id = comment_id if comment_id is not None else self.comment_id
-        base_domain = base_domain if base_domain is not None else self.base_domain
-
         # Validate required parameters
-        if not owner or not repo or not token or not username or platform is None or llm_config is None or not issue_type or issue_number is None:
+        if not self.owner or not self.repo or not self.token or not self.username or self.platform is None or self.llm_config is None or not self.issue_type or self.issue_number is None:
             raise ValueError("Missing required parameters for resolving an issue")
 
-        # Determine default base_domain based on platform
-        if base_domain is None:
-            base_domain = 'github.com' if platform == Platform.GITHUB else 'gitlab.com'
-
-        issue_handler = self.issue_handler_factory(
-            issue_type, owner, repo, token, llm_config, platform, username, base_domain
-        )
+        issue_handler = self.issue_handler_factory()
 
         # Load dataset
         issues: list[Issue] = issue_handler.get_converted_issues(
-            issue_numbers=[issue_number], comment_id=comment_id
+            issue_numbers=[self.issue_number], comment_id=self.comment_id
         )
 
         if not issues:
             raise ValueError(
-                f'No issues found for issue number {issue_number}. Please verify that:\n'
-                f'1. The issue/PR #{issue_number} exists in the repository {owner}/{repo}\n'
+                f'No issues found for issue number {self.issue_number}. Please verify that:\n'
+                f'1. The issue/PR #{self.issue_number} exists in the repository {self.owner}/{self.repo}\n'
                 f'2. You have the correct permissions to access it\n'
                 f'3. The repository name is spelled correctly'
             )
 
         issue = issues[0]
 
-        if comment_id is not None:
+        if self.comment_id is not None:
             if (
-                issue_type == 'pr'
+                self.issue_type == 'pr'
                 and not issue.review_comments
                 and not issue.review_threads
                 and not issue.thread_comments
             ):
                 raise ValueError(
-                    f'Comment ID {comment_id} did not have a match for issue {issue.number}'
+                    f'Comment ID {self.comment_id} did not have a match for issue {issue.number}'
                 )
 
-            if issue_type == 'issue' and not issue.thread_comments:
+            if self.issue_type == 'issue' and not issue.thread_comments:
                 raise ValueError(
-                    f'Comment ID {comment_id} did not have a match for issue {issue.number}'
+                    f'Comment ID {self.comment_id} did not have a match for issue {issue.number}'
                 )
 
         # TEST METADATA
-        model_name = llm_config.model.split('/')[-1]
+        model_name = self.llm_config.model.split('/')[-1]
 
-        pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
-        pathlib.Path(os.path.join(output_dir, 'infer_logs')).mkdir(
+        pathlib.Path(self.output_dir).mkdir(parents=True, exist_ok=True)
+        pathlib.Path(os.path.join(self.output_dir, 'infer_logs')).mkdir(
             parents=True, exist_ok=True
         )
-        logger.info(f'Using output directory: {output_dir}')
+        logger.info(f'Using output directory: {self.output_dir}')
 
         # checkout the repo
-        repo_dir = os.path.join(output_dir, 'repo')
+        repo_dir = os.path.join(self.output_dir, 'repo')
         if not os.path.exists(repo_dir):
             checkout_output = subprocess.check_output(  # noqa: ASYNC101
                 [
                     'git',
                     'clone',
                     issue_handler.get_clone_url(),
-                    f'{output_dir}/repo',
+                    f'{self.output_dir}/repo',
                 ]
             ).decode('utf-8')
             if 'fatal' in checkout_output:
@@ -583,17 +484,17 @@ class IssueResolver:
         )
         logger.info(f'Base commit: {base_commit}')
 
-        if repo_instruction is None:
+        if self.repo_instruction is None:
             # Check for .openhands_instructions file in the workspace directory
             openhands_instructions_path = os.path.join(
                 repo_dir, '.openhands_instructions'
             )
             if os.path.exists(openhands_instructions_path):
                 with open(openhands_instructions_path, 'r') as f:  # noqa: ASYNC101
-                    repo_instruction = f.read()
+                    self.repo_instruction = f.read()
 
         # OUTPUT FILE
-        output_file = os.path.join(output_dir, 'output.jsonl')
+        output_file = os.path.join(self.output_dir, 'output.jsonl')
         logger.info(f'Writing output to {output_file}')
 
         # Check if this issue was already processed
@@ -601,21 +502,21 @@ class IssueResolver:
             with open(output_file, 'r') as f:  # noqa: ASYNC101
                 for line in f:
                     data = ResolverOutput.model_validate_json(line)
-                    if data.issue.number == issue_number:
+                    if data.issue.number == self.issue_number:
                         logger.warning(
-                            f'Issue {issue_number} was already processed. Skipping.'
+                            f'Issue {self.issue_number} was already processed. Skipping.'
                         )
                         return
 
         output_fp = open(output_file, 'a')  # noqa: ASYNC101
 
         logger.info(
-            f'Resolving issue {issue_number} with Agent {AGENT_CLASS}, model {model_name}, max iterations {max_iterations}.'
+            f'Resolving issue {self.issue_number} with Agent {AGENT_CLASS}, model {model_name}, max iterations {self.max_iterations}.'
         )
 
         try:
             # checkout to pr branch if needed
-            if issue_type == 'pr':
+            if self.issue_type == 'pr':
                 branch_to_use = issue.head_branch
                 logger.info(
                     f'Checking out to PR branch {branch_to_use} for issue {issue.number}'
@@ -646,15 +547,8 @@ class IssueResolver:
 
             output = await self.process_issue(
                 issue,
-                platform,
                 base_commit,
-                max_iterations,
-                llm_config,
-                output_dir,
-                runtime_container_image,
-                prompt_template,
                 issue_handler,
-                repo_instruction,
                 reset_logger,
             )
             output_fp.write(output.model_dump_json() + '\n')
