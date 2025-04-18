@@ -6,6 +6,7 @@ import { ModalBody } from "#/components/shared/modals/modal-body";
 import { BrandButton } from "../settings/brand-button";
 import { I18nKey } from "#/i18n/declaration";
 import { cn } from "#/utils/utils";
+import { ChevronDown, ChevronRight } from "lucide-react";
 
 interface SystemMessageModalProps {
   isOpen: boolean;
@@ -18,6 +19,13 @@ interface SystemMessageModalProps {
   } | null;
 }
 
+interface ToolItem {
+  name: string;
+  description: string;
+  isOpen: boolean;
+  parameters?: Record<string, unknown>;
+}
+
 export function SystemMessageModal({
   isOpen,
   onClose,
@@ -25,18 +33,26 @@ export function SystemMessageModal({
 }: SystemMessageModalProps) {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<"system" | "tools">("system");
+  const [expandedTools, setExpandedTools] = useState<Record<number, boolean>>({});
 
   if (!systemMessage) {
     return null;
   }
+  
+  const toggleTool = (index: number) => {
+    setExpandedTools(prev => ({
+      ...prev,
+      [index]: !prev[index]
+    }));
+  };
 
   return (
     isOpen && (
       <ModalBackdrop onClose={onClose}>
-        <ModalBody className="max-w-4xl max-h-[80vh] flex flex-col items-start">
+        <ModalBody className="max-w-6xl max-h-[80vh] flex flex-col items-start">
           <div className="flex flex-col gap-2 w-full">
             <BaseModalTitle title="Agent Tools & Metadata" />
-            <div className="flex flex-col gap-2 p-3 bg-gray-800 rounded-md mb-4">
+            <div className="flex flex-col gap-2 mb-4">
               {systemMessage.agent_class && (
                 <div className="text-sm">
                   <span className="font-semibold text-gray-300">Agent Class:</span>{" "}
@@ -82,7 +98,7 @@ export function SystemMessageModal({
               )}
             </div>
 
-            <div className="h-[50vh] overflow-auto rounded-md border border-gray-700 bg-gray-900">
+            <div className="h-[60vh] overflow-auto rounded-md border border-gray-700 bg-gray-900">
               {activeTab === "system" && (
                 <div className="p-4 whitespace-pre-wrap font-mono text-sm">
                   {systemMessage.content}
@@ -91,22 +107,45 @@ export function SystemMessageModal({
 
               {activeTab === "tools" && systemMessage.tools && systemMessage.tools.length > 0 && (
                 <div className="p-4 space-y-4">
-                  {systemMessage.tools.map((tool, index) => (
-                    <div key={index} className="border rounded-md p-4 bg-gray-800 border-gray-700">
-                      <h3 className="font-bold text-primary">{String(tool.name || "")}</h3>
-                      <p className="text-sm whitespace-pre-wrap mt-1 text-gray-300">
-                        {String(tool.description || "")}
-                      </p>
-                      {tool.parameters ? (
-                        <div className="mt-3">
-                          <h4 className="text-sm font-semibold text-gray-300">Parameters:</h4>
-                          <pre className="text-xs mt-1 p-3 bg-gray-900 rounded-md overflow-auto border border-gray-700 text-gray-300">
-                            {JSON.stringify(tool.parameters, null, 2)}
-                          </pre>
-                        </div>
-                      ) : null}
-                    </div>
-                  ))}
+                  {systemMessage.tools.map((tool, index) => {
+                    // Extract function data from the nested structure
+                    const functionData = tool.function || tool;
+                    const name = functionData.name || (tool.type === "function" && tool.function?.name) || "";
+                    const description = functionData.description || (tool.type === "function" && tool.function?.description) || "";
+                    const parameters = functionData.parameters || (tool.type === "function" && tool.function?.parameters) || null;
+                    
+                    const isExpanded = expandedTools[index] || false;
+                    
+                    return (
+                      <div key={index} className="border rounded-md bg-gray-800 border-gray-700 overflow-hidden">
+                        <button 
+                          onClick={() => toggleTool(index)}
+                          className="w-full p-4 text-left flex items-center justify-between hover:bg-gray-700 transition-colors"
+                        >
+                          <h3 className="font-bold text-primary">{String(name)}</h3>
+                          <span className="text-gray-300">
+                            {isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+                          </span>
+                        </button>
+                        
+                        {isExpanded && (
+                          <div className="px-4 pb-4 pt-1">
+                            <p className="text-sm whitespace-pre-wrap text-gray-300">
+                              {String(description)}
+                            </p>
+                            {parameters && (
+                              <div className="mt-3">
+                                <h4 className="text-sm font-semibold text-gray-300">Parameters:</h4>
+                                <pre className="text-xs mt-1 p-3 bg-gray-900 rounded-md overflow-auto border border-gray-700 text-gray-300">
+                                  {JSON.stringify(parameters, null, 2)}
+                                </pre>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
               

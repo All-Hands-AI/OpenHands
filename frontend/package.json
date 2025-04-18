@@ -28,6 +28,7 @@
     "i18next-http-backend": "^3.0.2",
     "isbot": "^5.1.25",
     "jose": "^6.0.10",
+    "lucide-react": "^0.501.0",
     "monaco-editor": "^0.52.2",
     "posthog-js": "^1.236.2",
     "react": "^19.1.0",
