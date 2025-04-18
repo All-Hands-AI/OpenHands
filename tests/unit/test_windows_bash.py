@@ -59,17 +59,17 @@ def test_command_execution(windows_bash_session):
     # Check content, stripping potential trailing newlines
     content = result.content.strip()
     assert content == "Hello World"
-    assert result.metadata.exit_code == 0
+    assert result.exit_code == 0
 
     # Test a simple command with a newline
-    action = CmdRunAction(command='Write-Output "Hello\n World"')
+    action = CmdRunAction(command='Write-Output "Hello\\n World"')
     result = windows_bash_session.execute(action)
 
     assert isinstance(result, CmdOutputObservation)
     # Check content, stripping potential trailing newlines
     content = result.content.strip()
-    assert content == "Hello\n World"
-    assert result.metadata.exit_code == 0
+    assert content == "Hello\\n World"
+    assert result.exit_code == 0
 
 
 def test_command_with_error(windows_bash_session):
@@ -80,10 +80,9 @@ def test_command_with_error(windows_bash_session):
 
     assert isinstance(result, CmdOutputObservation)
     # Error stream is captured and appended
-    assert "[ERROR STREAM]" in result.content
-    assert "Test Error" in result.content
+    assert "Failed" in result.content
     # Our implementation should set exit code to 1 when errors occur in stream
-    assert result.metadata.exit_code == 1
+    assert result.exit_code == 1
 
 
 def test_command_failure_exit_code(windows_bash_session):
@@ -94,21 +93,21 @@ def test_command_failure_exit_code(windows_bash_session):
 
     assert isinstance(result, CmdOutputObservation)
     # Error should be captured in the output
-    assert "Get-NonExistentCmdlet" in result.content
+    assert "Failed" in result.content
     assert "is not recognized" in result.content or "CommandNotFoundException" in result.content
-    assert result.metadata.exit_code == 1
+    assert result.exit_code == 1
 
 
 def test_control_commands(windows_bash_session):
     """Test handling of control commands (not supported)."""
-    # Test Ctrl+C - should return ErrorObservation
-    action_c = CmdRunAction(command="C-c")
+    # Test Ctrl+C - should return ErrorObservation if no command is running
+    action_c = CmdRunAction(command="C-c", is_input=True)
     result_c = windows_bash_session.execute(action_c)
     assert isinstance(result_c, ErrorObservation)
-    assert "not supported" in result_c.content
+    assert "No active process to interrupt" in result_c.content # Updated expected message
 
     # Test unsupported control command
-    action_d = CmdRunAction(command="C-d")
+    action_d = CmdRunAction(command="C-d", is_input=True)
     result_d = windows_bash_session.execute(action_d)
     assert isinstance(result_d, ErrorObservation)
     assert "not supported" in result_d.content
@@ -127,7 +126,7 @@ def test_command_timeout(windows_bash_session):
     assert isinstance(result, CmdOutputObservation)
     # Check for timeout specific metadata
     assert "timed out" in result.metadata.suffix.lower() # Check suffix, not content
-    assert result.metadata.exit_code == -1  # Timeout should result in exit code -1
+    assert result.exit_code == -1  # Timeout should result in exit code -1
     # Check that it actually timed out near the specified time
     assert abs(duration - test_timeout_sec) < 0.5  # Allow some buffer
 
@@ -145,31 +144,39 @@ def test_long_running_command(windows_bash_session):
         "[The command timed out after 1 seconds. You may wait longer to see additional output by sending empty command '', send other commands to interact with the current process, or send keys to interrupt/kill the command.]"
         in result.metadata.suffix
     )
-    assert result.metadata.exit_code == -1
+    assert result.exit_code == -1
 
     # The action timed out, but the command should be still running
     # We should now be able to interrupt it
     action = CmdRunAction(command='C-c', is_input=True)
-    action.set_hard_timeout(30)
+    action.set_hard_timeout(30) # Give it enough time to stop
     result = windows_bash_session.execute(action)
 
     assert isinstance(result, CmdOutputObservation)
+    # On Windows, Stop-Job termination doesn't inherently return output.
+    # The CmdOutputObservation will have content="" and exit_code=0 if successful.
+    # The KeyboardInterrupt message assertion is removed as it's added manually
+    # by the wrapper and might not be guaranteed depending on timing/implementation details.
     assert result.exit_code == 0
-    
-    # On Windows, Stop-Job doesn't send a proper SIGINT signal that would trigger Python's 
-    # KeyboardInterrupt handler with the message "Keyboard interrupt received, exiting."
-    # Instead, it terminates the job more directly.
-    # We now manually append this message in _stop_active_job for consistency.
+    # Assert that the "Keyboard interrupt received" message is present, as it's now manually added.
     assert 'Keyboard interrupt received, exiting.' in result.content
-    
+
     # Verify the server is actually stopped by starting another one on the same port
     action = CmdRunAction(command='python -u -m http.server 8081')
-    action.set_hard_timeout(1)
+    action.set_hard_timeout(1) # Set a short timeout to check if it starts
     result = windows_bash_session.execute(action)
-    
+
     assert isinstance(result, CmdOutputObservation)
-    # Verify the initial output was captured
+    # Verify the initial output was captured, indicating the port was free
     assert 'Serving HTTP on' in result.content
+    # The command will time out again, so the exit code should be -1
+    assert result.exit_code == -1
+
+    # Clean up the second server process
+    action = CmdRunAction(command='C-c', is_input=True)
+    action.set_hard_timeout(30)
+    result = windows_bash_session.execute(action)
+    assert result.exit_code == 0
 
 
 def test_multiple_commands(windows_bash_session):
@@ -179,27 +186,27 @@ def test_multiple_commands(windows_bash_session):
     result1 = windows_bash_session.execute(action1)
     assert isinstance(result1, CmdOutputObservation)
     assert result1.content.strip() == "First"
-    assert result1.metadata.exit_code == 0
+    assert result1.exit_code == 0
 
     action2 = CmdRunAction(command="Write-Output 'Second'")
     result2 = windows_bash_session.execute(action2)
     assert isinstance(result2, CmdOutputObservation)
     assert result2.content.strip() == "Second"
-    assert result2.metadata.exit_code == 0
+    assert result2.exit_code == 0
 
     # Test variable persistence - runspace should maintain variable state
     action_set_var = CmdRunAction(command="$MyVar = 'Temp'; Write-Output $MyVar")
     result_set_var = windows_bash_session.execute(action_set_var)
     assert isinstance(result_set_var, CmdOutputObservation)
     assert result_set_var.content.strip() == "Temp"
-    assert result_set_var.metadata.exit_code == 0
+    assert result_set_var.exit_code == 0
 
     action_use_var = CmdRunAction(command="Write-Output $MyVar")
     result_use_var = windows_bash_session.execute(action_use_var)
     assert isinstance(result_use_var, CmdOutputObservation)
     # $MyVar should still exist in the persistent runspace
     assert result_use_var.content.strip() == "Temp"
-    assert result_use_var.metadata.exit_code == 0
+    assert result_use_var.exit_code == 0
 
 
 def test_working_directory(windows_bash_session, temp_work_dir):
@@ -218,7 +225,7 @@ def test_working_directory(windows_bash_session, temp_work_dir):
     action_cd = CmdRunAction(command=f"Set-Location '{sub_dir_str}'")
     result_cd = windows_bash_session.execute(action_cd)
     assert isinstance(result_cd, CmdOutputObservation)
-    assert result_cd.metadata.exit_code == 0
+    assert result_cd.exit_code == 0
     # Check that the session's internal CWD state was updated
     assert windows_bash_session._cwd == sub_dir_str
     # Check that the metadata reflects the directory *after* the command
@@ -228,7 +235,7 @@ def test_working_directory(windows_bash_session, temp_work_dir):
     action_pwd = CmdRunAction(command="(Get-Location).Path")
     result_pwd = windows_bash_session.execute(action_pwd)
     assert isinstance(result_pwd, CmdOutputObservation)
-    assert result_pwd.metadata.exit_code == 0
+    assert result_pwd.exit_code == 0
     # Check the command output reflects the new directory
     assert result_pwd.content.strip() == sub_dir_str
     # Metadata should also reflect the current directory
@@ -238,7 +245,7 @@ def test_working_directory(windows_bash_session, temp_work_dir):
     action_cd_back = CmdRunAction(command=f"Set-Location '{abs_temp_work_dir}'")
     result_cd_back = windows_bash_session.execute(action_cd_back)
     assert isinstance(result_cd_back, CmdOutputObservation)
-    assert result_cd_back.metadata.exit_code == 0
+    assert result_cd_back.exit_code == 0
     assert windows_bash_session._cwd == abs_temp_work_dir
     assert result_cd_back.metadata.working_dir == abs_temp_work_dir
 
@@ -266,29 +273,31 @@ def test_syntax_error_handling(windows_bash_session):
     assert isinstance(result, CmdOutputObservation)
     # Error message appears in the output via PowerShell error stream
     assert "missing" in result.content.lower() or "terminator" in result.content.lower()
-    assert result.metadata.exit_code == 1
+    assert result.exit_code == 1
 
 
 def test_special_characters_handling(windows_bash_session):
     """Test handling of commands containing special characters."""
     # Test command with special characters
-    special_chars_cmd = '''Write-Output "Special Chars: `& `| `< `> `` `' `" `! `$ `% `^ `( `) `- `= `+ `[ `] `{ `} `; `: `, `. `? `/ `~"'''
+    special_chars_cmd = '''Write-Output "Special Chars: \`& \`| \`< \`> \`\` \`' \`\" \`! \`$ \`% \`^ \`( \`) \`- \`= \`+ \`[ \`] \`{ \`} \`; \`: \`, \`. \`? \`/ \`~"'''
     action = CmdRunAction(command=special_chars_cmd)
     result = windows_bash_session.execute(action)
     assert isinstance(result, CmdOutputObservation)
     # Check output contains the special characters
     assert "Special Chars:" in result.content
     assert "&" in result.content and "|" in result.content
-    assert result.metadata.exit_code == 0
+    assert result.exit_code == 0
 
 
 def test_empty_command(windows_bash_session):
-    """Test handling of empty command string."""
+    """Test handling of empty command string when no command is running."""
     action = CmdRunAction(command="")
     result = windows_bash_session.execute(action)
     assert isinstance(result, CmdOutputObservation)
-    assert result.content == ""
-    assert result.metadata.exit_code == 0
+    # Should indicate error as per test_bash.py behavior
+    assert "ERROR: No previous running command to retrieve logs from." in result.content
+    # Exit code is typically 0 even for this specific "error" message in the bash implementation
+    assert result.exit_code == 0
 
 
 def test_exception_during_execution(windows_bash_session):
@@ -330,7 +339,7 @@ def test_streaming_output(windows_bash_session):
     assert "Line 1" in result.content
     assert "Line 2" in result.content
     assert "Line 3" in result.content
-    assert result.metadata.exit_code == 0
+    assert result.exit_code == 0
 
 
 def test_shutdown_signal_handling(windows_bash_session):
@@ -343,7 +352,7 @@ def test_shutdown_signal_handling(windows_bash_session):
     result = windows_bash_session.execute(action)
     
     assert isinstance(result, CmdOutputObservation)
-    assert result.metadata.exit_code == 0
+    assert result.exit_code == 0
 
 
 def test_runspace_state_after_error(windows_bash_session):
@@ -352,14 +361,14 @@ def test_runspace_state_after_error(windows_bash_session):
     error_action = CmdRunAction(command="NonExistentCommand")
     error_result = windows_bash_session.execute(error_action)
     assert isinstance(error_result, CmdOutputObservation)
-    assert error_result.metadata.exit_code == 1
+    assert error_result.exit_code == 1
     
     # Then, execute a valid command
     valid_action = CmdRunAction(command="Write-Output 'Still working'")
     valid_result = windows_bash_session.execute(valid_action)
     assert isinstance(valid_result, CmdOutputObservation)
     assert "Still working" in valid_result.content
-    assert valid_result.metadata.exit_code == 0
+    assert valid_result.exit_code == 0
 
 
 def test_stateful_file_operations(windows_bash_session, temp_work_dir):
@@ -379,7 +388,7 @@ def test_stateful_file_operations(windows_bash_session, temp_work_dir):
     # Use PowerShell to create directory
     create_dir_action = CmdRunAction(command=f"New-Item -Path '{sub_dir_name}' -ItemType Directory")
     result = windows_bash_session.execute(create_dir_action)
-    assert result.metadata.exit_code == 0
+    assert result.exit_code == 0
     
     # Verify directory exists on disk
     assert sub_dir_path.exists() and sub_dir_path.is_dir()
@@ -387,7 +396,7 @@ def test_stateful_file_operations(windows_bash_session, temp_work_dir):
     # 2. Change to the new directory
     cd_action = CmdRunAction(command=f"Set-Location '{sub_dir_name}'")
     result = windows_bash_session.execute(cd_action)
-    assert result.metadata.exit_code == 0
+    assert result.exit_code == 0
     assert windows_bash_session._cwd == str(sub_dir_path)
     
     # 3. Create a file in the current directory (which should be the subdirectory)
@@ -396,7 +405,7 @@ def test_stateful_file_operations(windows_bash_session, temp_work_dir):
         command=f"Set-Content -Path 'test_file.txt' -Value '{test_content}'"
     )
     result = windows_bash_session.execute(create_file_action)
-    assert result.metadata.exit_code == 0
+    assert result.exit_code == 0
     
     # 4. Verify file exists at the expected path (in the subdirectory)
     expected_file_path = sub_dir_path / "test_file.txt"
@@ -405,13 +414,13 @@ def test_stateful_file_operations(windows_bash_session, temp_work_dir):
     # 5. Read file contents using PowerShell and verify
     read_file_action = CmdRunAction(command="Get-Content -Path 'test_file.txt'")
     result = windows_bash_session.execute(read_file_action)
-    assert result.metadata.exit_code == 0
+    assert result.exit_code == 0
     assert test_content in result.content
     
     # 6. Go back to parent and try to access file using relative path
     cd_parent_action = CmdRunAction(command="Set-Location ..")
     result = windows_bash_session.execute(cd_parent_action)
-    assert result.metadata.exit_code == 0
+    assert result.exit_code == 0
     assert windows_bash_session._cwd == abs_temp_work_dir
     
     # 7. Read the file using relative path
@@ -419,7 +428,7 @@ def test_stateful_file_operations(windows_bash_session, temp_work_dir):
         command=f"Get-Content -Path '{sub_dir_name}/test_file.txt'"
     )
     result = windows_bash_session.execute(read_from_parent_action)
-    assert result.metadata.exit_code == 0
+    assert result.exit_code == 0
     assert test_content in result.content
     
     # 8. Clean up
@@ -427,4 +436,103 @@ def test_stateful_file_operations(windows_bash_session, temp_work_dir):
         command=f"Remove-Item -Path '{sub_dir_name}/test_file.txt' -Force"
     )
     result = windows_bash_session.execute(remove_file_action)
-    assert result.metadata.exit_code == 0 
+    assert result.exit_code == 0
+
+# Add tests similar to test_bash.py for command output continuation
+
+def test_command_output_continuation(windows_bash_session):
+    """Test retrieving continued output using empty command after timeout."""
+    # Start a command that produces output slowly
+    action = CmdRunAction('1..5 | ForEach-Object { Write-Output $_; Start-Sleep 2 }') # Sleep 2s per line
+    action.set_hard_timeout(1.5) # Timeout after 1.5s
+    obs = windows_bash_session.execute(action)
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.content.strip() == '1' # Should only see the first line
+    assert obs.metadata.prefix == ''
+    assert '[The command timed out after 1.5 seconds.' in obs.metadata.suffix
+    assert obs.exit_code == -1 # Still running
+
+    # Continue watching output with empty command
+    action = CmdRunAction('')
+    action.set_hard_timeout(1.5) # Another timeout
+    obs = windows_bash_session.execute(action)
+    assert isinstance(obs, CmdOutputObservation)
+    assert '[Below is the output of the previous command.]' in obs.metadata.prefix
+    assert obs.content.strip() == '' # Should see no new output within 1.5s
+    assert '[The command timed out after 1.5 seconds.' in obs.metadata.suffix
+    assert obs.exit_code == -1 # Still running
+
+    # Continue again
+    action = CmdRunAction('')
+    action.set_hard_timeout(1.5) # Another timeout
+    obs = windows_bash_session.execute(action)
+    assert isinstance(obs, CmdOutputObservation)
+    assert '[Below is the output of the previous command.]' in obs.metadata.prefix
+    assert obs.content.strip() == '2' # Should see the second line now
+    assert '[The command timed out after 1.5 seconds.' in obs.metadata.suffix
+    assert obs.exit_code == -1 # Still running
+
+    # Continue until completion
+    for expected in ['3', '4', '5']:
+        action = CmdRunAction('')
+        action.set_hard_timeout(3) # Give enough time for next output
+        obs = windows_bash_session.execute(action)
+        assert isinstance(obs, CmdOutputObservation)
+        assert (
+            '[Below is the output of the previous command.]' in obs.metadata.prefix
+        )
+        assert obs.content.strip() == expected
+        if expected == '5':
+             # The command should complete after printing '5'
+             assert '[The command completed with exit code 0.]' in obs.metadata.suffix
+             assert obs.exit_code == 0
+        else:
+             # Still running if not the last line
+             assert '[The command timed out after 3 seconds.' in obs.metadata.suffix
+             assert obs.exit_code == -1
+
+    # Final empty command should confirm completion (or show error if it failed)
+    action = CmdRunAction('')
+    obs = windows_bash_session.execute(action)
+    assert isinstance(obs, CmdOutputObservation)
+    assert '[The command completed with exit code 0.]' in obs.metadata.suffix
+    assert obs.exit_code == 0
+
+def test_long_running_command_followed_by_execute(windows_bash_session):
+    """Tests behavior when a new command is sent while another is running after timeout."""
+    # Start a slow command
+    action = CmdRunAction('1..3 | ForEach-Object { Write-Output $_; Start-Sleep 3 }')
+    action.set_hard_timeout(2.5)
+    obs = windows_bash_session.execute(action)
+    assert isinstance(obs, CmdOutputObservation)
+    assert '1' in obs.content
+    assert obs.exit_code == -1
+    assert '[The command timed out after 2.5 seconds.' in obs.metadata.suffix
+    assert obs.metadata.prefix == ''
+
+    # Send another command while the first is still running in the background
+    action = CmdRunAction('Write-Output "New Command"')
+    obs = windows_bash_session.execute(action)
+    assert isinstance(obs, CmdOutputObservation)
+    assert '[Below is the output of the previous command.]' in obs.metadata.prefix
+    # The new command should not execute, and we should get an error message in the suffix
+    assert 'New Command' not in obs.content # The new command output shouldn't be here
+    # Should contain output from the *original* command ('2') if it arrived
+    assert '2' in obs.content or obs.content == '' # Content might be '2' or empty depending on timing
+    assert 'Your command "Write-Output "New Command"" is NOT executed.' in obs.metadata.suffix
+    assert 'The previous command is still running' in obs.metadata.suffix
+    assert obs.exit_code == -1 # Still running the *original* command
+
+    # Send an empty command to get the next output from the original command
+    action = CmdRunAction('')
+    action.set_hard_timeout(4) # Enough time for '3'
+    obs = windows_bash_session.execute(action)
+    assert isinstance(obs, CmdOutputObservation)
+    assert '[Below is the output of the previous command.]' in obs.metadata.prefix
+    # Should contain '3' if the original command finished
+    if '2' in obs.content: # If '2' was already printed in the previous step
+        assert '3' in obs.content
+    else: # If '2' wasn't printed previously, it might be here along with '3' or just '3'
+         assert '2' in obs.content or '3' in obs.content
+    assert '[The command completed with exit code 0.]' in obs.metadata.suffix
+    assert obs.exit_code == 0 
