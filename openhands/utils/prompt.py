@@ -69,14 +69,6 @@ class PromptManager:
 
         return self.user_template.render().strip()
 
-    def add_examples_to_initial_message(self, message: Message) -> None:
-        """Add example_message to the first user message."""
-        example_message = self.get_example_user_message() or None
-
-        # Insert it at the start of the TextContent list
-        if example_message:
-            message.content.insert(0, TextContent(text=example_message))
-
     def build_workspace_context(
         self,
         repository_info: RepositoryInfo | None,

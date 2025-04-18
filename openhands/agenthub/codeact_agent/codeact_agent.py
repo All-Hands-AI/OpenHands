@@ -200,32 +200,7 @@ class CodeActAgent(Agent):
             vision_is_active=self.llm.vision_is_active(),
         )
 
-        # Add agent-specific examples to the initial user message
-        messages = self._add_initial_user_prompt_examples(messages)
-
         if self.llm.is_caching_prompt_active():
             self.conversation_memory.apply_prompt_caching(messages)
 
-        return messages
-
-    def _add_initial_user_prompt_examples(self, messages: list[Message]) -> list[Message]:
-        """Adds examples from the user_prompt.j2 template to the initial user message.
-
-        Args:
-            messages (list[Message]): The list of messages, where the first user message will be modified.
-
-        Returns:
-            list[Message]: The enhanced list of messages
-        """
-        assert self.prompt_manager, 'Prompt Manager not instantiated.'
-
-        # Find the first user message and add examples to it
-        for msg in messages:
-            if msg.role == 'user':
-                # compose the first user message with examples
-                self.prompt_manager.add_examples_to_initial_message(msg)
-                # Only modify the *first* user message found
-                break
-
-        # Return the potentially modified list of messages
         return messages
