@@ -1,23 +1,31 @@
 from unittest.mock import Mock
+from typing import Union
 
 import pytest
 from litellm import ChatCompletionMessageToolCall
 
 from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
+from openhands.agenthub.readonly_agent.readonly_agent import ReadOnlyAgent
 from openhands.agenthub.codeact_agent.function_calling import (
-    get_tools,
-    response_to_actions,
+    get_tools as codeact_get_tools,
+    response_to_actions as codeact_response_to_actions,
+)
+from openhands.agenthub.readonly_agent.function_calling import (
+    get_tools as readonly_get_tools,
+    response_to_actions as readonly_response_to_actions,
 )
 from openhands.agenthub.codeact_agent.tools import (
     BrowserTool,
-    GlobTool,
-    GrepTool,
     IPythonTool,
     LLMBasedFileEditTool,
     ThinkTool,
     WebReadTool,
     create_cmd_run_tool,
     create_str_replace_editor_tool,
+)
+from openhands.agenthub.readonly_agent.tools import (
+    GlobTool,
+    GrepTool,
 )
 from openhands.agenthub.codeact_agent.tools.browser import (
     _BROWSER_DESCRIPTION,
@@ -40,10 +48,19 @@ from openhands.events.tool import ToolCallMetadata
 from openhands.llm.llm import LLM
 
 
+@pytest.fixture(params=['CodeActAgent', 'ReadOnlyAgent'])
+def agent_class(request):
+    if request.param == 'CodeActAgent':
+        return CodeActAgent
+    else:
+        from openhands.agenthub.readonly_agent.readonly_agent import ReadOnlyAgent
+        return ReadOnlyAgent
+
+
 @pytest.fixture
-def agent() -> CodeActAgent:
+def agent(agent_class) -> Union[CodeActAgent, ReadOnlyAgent]:
     config = AgentConfig()
-    agent = CodeActAgent(llm=LLM(LLMConfig()), config=config)
+    agent = agent_class(llm=LLM(LLMConfig()), config=config)
     agent.llm = Mock()
     agent.llm.config = Mock()
     agent.llm.config.max_message_chars = 1000
@@ -59,7 +76,7 @@ def mock_state() -> State:
     return state
 
 
-def test_reset(agent: CodeActAgent):
+def test_reset(agent):
     # Add some state
     action = MessageAction(content='test')
     action._source = EventSource.AGENT
@@ -72,7 +89,7 @@ def test_reset(agent: CodeActAgent):
     assert len(agent.pending_actions) == 0
 
 
-def test_step_with_pending_actions(agent: CodeActAgent):
+def test_step_with_pending_actions(agent):
     # Add a pending action
     pending_action = MessageAction(content='test')
     pending_action._source = EventSource.AGENT
@@ -84,8 +101,8 @@ def test_step_with_pending_actions(agent: CodeActAgent):
     assert len(agent.pending_actions) == 0
 
 
-def test_get_tools_default():
-    tools = get_tools(
+def test_codeact_get_tools_default():
+    tools = codeact_get_tools(
         enable_jupyter=True,
         enable_llm_editor=True,
         enable_browsing=True,
@@ -99,10 +116,24 @@ def test_get_tools_default():
     assert 'edit_file' in tool_names
     assert 'web_read' in tool_names
 
+def test_readonly_get_tools_default():
+    tools = readonly_get_tools()
+    assert len(tools) > 0
 
-def test_get_tools_with_options():
+    # Check required tools are present
+    tool_names = [tool['function']['name'] for tool in tools]
+    assert 'execute_bash' not in tool_names
+    assert 'execute_ipython_cell' not in tool_names
+    assert 'edit_file' not in tool_names
+    assert 'web_read' in tool_names
+    assert 'grep' in tool_names
+    assert 'glob' in tool_names
+    assert 'think' in tool_names
+
+
+def test_codeact_get_tools_with_options():
     # Test with all options enabled
-    tools = get_tools(
+    tools = codeact_get_tools(
         enable_browsing=True,
         enable_jupyter=True,
         enable_llm_editor=True,
@@ -113,7 +144,7 @@ def test_get_tools_with_options():
     assert 'edit_file' in tool_names
 
     # Test with all options disabled
-    tools = get_tools(
+    tools = codeact_get_tools(
         enable_browsing=False,
         enable_jupyter=False,
         enable_llm_editor=False,
@@ -230,7 +261,9 @@ def test_response_to_actions_invalid_tool():
     mock_response.choices[0].message.tool_calls[0].function.arguments = '{}'
 
     with pytest.raises(FunctionCallNotExistsError):
-        response_to_actions(mock_response)
+        codeact_response_to_actions(mock_response)
+    with pytest.raises(FunctionCallNotExistsError):
+        readonly_response_to_actions(mock_response)
 
 
 def test_step_with_no_pending_actions(mock_state: State):
@@ -271,7 +304,8 @@ def test_step_with_no_pending_actions(mock_state: State):
     assert action.content == 'Task completed'
 
 
-def test_correct_tool_description_loaded_based_on_model_name(mock_state: State):
+@pytest.mark.parametrize('agent_type', ['CodeActAgent', 'ReadOnlyAgent'])
+def test_correct_tool_description_loaded_based_on_model_name(agent_type, mock_state: State):
     """Tests that the simplified tool descriptions are loaded for specific models."""
     o3_mock_config = Mock()
     o3_mock_config.model = 'mock_o3_model'
@@ -279,7 +313,14 @@ def test_correct_tool_description_loaded_based_on_model_name(mock_state: State):
     llm = Mock()
     llm.config = o3_mock_config
 
-    agent = CodeActAgent(llm=llm, config=AgentConfig())
+    if agent_type == 'CodeActAgent':
+        from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
+        agent_class = CodeActAgent
+    else:
+        from openhands.agenthub.readonly_agent.readonly_agent import ReadOnlyAgent
+        agent_class = ReadOnlyAgent
+
+    agent = agent_class(llm=llm, config=AgentConfig())
     for tool in agent.tools:
         # Assert all descriptions have less than 1024 characters
         assert len(tool['function']['description']) < 1024
@@ -288,17 +329,18 @@ def test_correct_tool_description_loaded_based_on_model_name(mock_state: State):
     sonnet_mock_config.model = 'mock_sonnet_model'
 
     llm.config = sonnet_mock_config
-    agent = CodeActAgent(llm=llm, config=AgentConfig())
+    agent = agent_class(llm=llm, config=AgentConfig())
     # Assert existence of the detailed tool descriptions that are longer than 1024 characters
-    assert any(len(tool['function']['description']) > 1024 for tool in agent.tools)
+    if agent_type == 'CodeActAgent':
+        # This only holds for CodeActAgent
+        assert any(len(tool['function']['description']) > 1024 for tool in agent.tools)
 
 
-def test_mismatched_tool_call_events_and_auto_add_system_message(mock_state: State):
+def test_mismatched_tool_call_events_and_auto_add_system_message(agent, mock_state: State):
     """Tests that the agent can convert mismatched tool call events (i.e., an observation with no corresponding action) into messages.
 
     This also tests that the system message is automatically added to the event stream if SystemMessageAction is not present.
     """
-    agent = CodeActAgent(llm=LLM(LLMConfig()), config=AgentConfig())
 
     tool_call_metadata = Mock(
         spec=ToolCallMetadata,
