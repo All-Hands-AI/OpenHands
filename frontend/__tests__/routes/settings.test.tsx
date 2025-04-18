@@ -17,7 +17,7 @@ const toggleAdvancedSettings = async (user: UserEvent) => {
   await user.click(advancedSwitch);
 };
 
-const mock_provider_tokens_are_set: Record<Provider, boolean> = {
+const MOCK_PROVIDER_TOKENS_ARE_SET: Record<Provider, boolean> = {
   github: true,
   gitlab: false,
 };
@@ -65,10 +65,26 @@ describe("Settings Screen", () => {
 
     await waitFor(() => {
       // Use queryAllByText to handle multiple elements with the same text
-      expect(screen.queryAllByText("SETTINGS$LLM_SETTINGS")).not.toHaveLength(0);
+      expect(screen.queryAllByText("SETTINGS$LLM_SETTINGS")).not.toHaveLength(
+        0,
+      );
       screen.getByText("ACCOUNT_SETTINGS$ADDITIONAL_SETTINGS");
       screen.getByText("BUTTON$RESET_TO_DEFAULTS");
       screen.getByText("BUTTON$SAVE");
+    });
+  });
+
+  it("should render the navbar", async () => {
+    const sections = ["llm", "github", "application", "secrets"];
+
+    renderSettingsScreen();
+
+    const navbar = await screen.findByTestId("settings-navbar");
+    sections.forEach((section) => {
+      const sectionElement = within(navbar).getByText(section, {
+        exact: false, // case insensitive
+      });
+      expect(sectionElement).toBeInTheDocument();
     });
   });
 
@@ -120,7 +136,7 @@ describe("Settings Screen", () => {
     it("should set '<hidden>' placeholder if the GitHub token is set", async () => {
       getSettingsSpy.mockResolvedValue({
         ...MOCK_DEFAULT_USER_SETTINGS,
-        provider_tokens_set: mock_provider_tokens_are_set,
+        provider_tokens_set: MOCK_PROVIDER_TOKENS_ARE_SET,
       });
 
       renderSettingsScreen();
@@ -134,7 +150,7 @@ describe("Settings Screen", () => {
     it("should render an indicator if the GitHub token is set", async () => {
       getSettingsSpy.mockResolvedValue({
         ...MOCK_DEFAULT_USER_SETTINGS,
-        provider_tokens_set: mock_provider_tokens_are_set,
+        provider_tokens_set: MOCK_PROVIDER_TOKENS_ARE_SET,
       });
 
       renderSettingsScreen();
