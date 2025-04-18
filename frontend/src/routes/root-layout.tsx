@@ -118,18 +118,23 @@ export default function MainApp() {
   return (
     <div
       data-testid="root-layout"
-      className="bg-base p-3 h-screen md:min-w-[1024px] overflow-x-hidden flex flex-col md:flex-row gap-3"
+      className="bg-base p-3 h-screen md:min-w-[1024px] flex flex-col md:flex-row gap-3"
     >
       <Sidebar />
 
       <div
         id="root-outlet"
-        className="h-[calc(100%-50px)] md:h-full w-full relative"
+        className="h-[calc(100%-50px)] md:h-full w-full relative overflow-auto"
       >
         <Outlet />
       </div>
 
-      {renderAuthModal && <AuthModal githubAuthUrl={gitHubAuthUrl} />}
+      {renderAuthModal && (
+        <AuthModal
+          githubAuthUrl={gitHubAuthUrl}
+          appMode={config.data?.APP_MODE}
+        />
+      )}
       {config.data?.APP_MODE === "oss" && consentFormIsOpen && (
         <AnalyticsConsentFormModal
           onClose={() => {
