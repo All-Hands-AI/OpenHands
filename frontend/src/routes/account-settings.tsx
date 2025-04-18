@@ -124,7 +124,7 @@ function AccountSettings() {
       formData.get("enable-memory-condenser-switch")?.toString() === "on";
     const enableSoundNotifications =
       formData.get("enable-sound-notifications-switch")?.toString() === "on";
-    const llmBaseUrl = formData.get("base-url-input")?.toString() || "";
+    const llmBaseUrl = formData.get("base-url-input")?.toString().trim() || "";
     const inputApiKey = formData.get("llm-api-key-input")?.toString() || "";
     const llmApiKey =
       inputApiKey === "" && isLLMKeySet
@@ -379,7 +379,7 @@ function AccountSettings() {
 
           <section className="flex flex-col gap-6">
             <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">
-              {t(I18nKey.SETTINGS$GITHUB_SETTINGS)}
+              {t(I18nKey.SETTINGS$GIT_SETTINGS)}
             </h2>
             {isSaas && hasAppSlug && (
               <Link

@@ -100,7 +100,6 @@ class GitHubService(GitService):
             email=response.get('email'),
         )
 
-
     async def _fetch_paginated_repos(
         self, url: str, params: dict, max_repos: int, extract_key: str | None = None
     ) -> list[dict]:
@@ -204,7 +203,7 @@ class GitHubService(GitService):
         }
 
         response, _ = await self._fetch_data(url, params)
-        repos = response.get('items', [])
+        repo_items = response.get('items', [])
 
         repos = [
             Repository(
@@ -213,7 +212,7 @@ class GitHubService(GitService):
                 stargazers_count=repo.get('stargazers_count'),
                 git_provider=ProviderType.GITHUB,
             )
-            for repo in repos
+            for repo in repo_items
         ]
 
         return repos
@@ -238,7 +237,7 @@ class GitHubService(GitService):
                         f"GraphQL query error: {json.dumps(result['errors'])}"
                     )
 
-                return result
+                return dict(result)
 
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 401:
@@ -313,7 +312,7 @@ class GitHubService(GitService):
             for pr in data['pullRequests']['nodes']:
                 repo_name = pr['repository']['nameWithOwner']
 
-                # Always add open PRs
+                # Start with default task type
                 task_type = TaskType.OPEN_PR
 
                 # Check for specific states
@@ -334,14 +333,16 @@ class GitHubService(GitService):
                 ):
                     task_type = TaskType.UNRESOLVED_COMMENTS
 
-                tasks.append(
-                    SuggestedTask(
-                        task_type=task_type,
-                        repo=repo_name,
-                        issue_number=pr['number'],
-                        title=pr['title'],
+                # Only add the task if it's not OPEN_PR
+                if task_type != TaskType.OPEN_PR:
+                    tasks.append(
+                        SuggestedTask(
+                            task_type=task_type,
+                            repo=repo_name,
+                            issue_number=pr['number'],
+                            title=pr['title'],
+                        )
                     )
-                )
 
             # Process issues
             for issue in data['issues']['nodes']:
