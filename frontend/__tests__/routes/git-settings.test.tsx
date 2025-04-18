@@ -243,4 +243,30 @@ describe("Form submission", () => {
       }),
     );
   });
+
+  it("should disable the button if there is no input", async () => {
+    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    getConfigSpy.mockResolvedValue(VALID_OSS_CONFIG);
+
+    renderGitSettingsScreen();
+
+    const submit = await screen.findByTestId("submit-button");
+    expect(submit).toBeDisabled();
+
+    const githubInput = await screen.findByTestId("github-token-input");
+    await userEvent.type(githubInput, "test-token");
+
+    expect(submit).not.toBeDisabled();
+
+    await userEvent.clear(githubInput);
+    expect(submit).toBeDisabled();
+
+    const gitlabInput = await screen.findByTestId("gitlab-token-input");
+    await userEvent.type(gitlabInput, "test-token");
+
+    expect(submit).not.toBeDisabled();
+
+    await userEvent.clear(gitlabInput);
+    expect(submit).toBeDisabled();
+  });
 });

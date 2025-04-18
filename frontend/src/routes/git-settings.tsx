@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import React from "react";
 import { SettingsInput } from "#/components/features/settings/settings-input";
 import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 import { useConfig } from "#/hooks/query/use-config";
@@ -13,6 +14,11 @@ function GitSettingsScreen() {
   const { mutate: saveSettings } = useSaveSettings();
   const { data: settings } = useSettings();
   const { data: config } = useConfig();
+
+  const [githubTokenInputHasValue, setGithubTokenInputHasValue] =
+    React.useState(false);
+  const [gitlabTokenInputHasValue, setGitlabTokenInputHasValue] =
+    React.useState(false);
 
   const isSaas = config?.APP_MODE === "saas";
   const isGitHubTokenSet = settings?.PROVIDER_TOKENS_SET.github;
@@ -40,6 +46,9 @@ function GitSettingsScreen() {
         <>
           <SettingsInput
             testId="github-token-input"
+            onChange={(value) => {
+              setGithubTokenInputHasValue(!!value);
+            }}
             name="github-token-input"
             label={t(I18nKey.GITHUB$TOKEN_LABEL)}
             type="password"
@@ -55,6 +64,9 @@ function GitSettingsScreen() {
         <>
           <SettingsInput
             testId="gitlab-token-input"
+            onChange={(value) => {
+              setGitlabTokenInputHasValue(!!value);
+            }}
             name="gitlab-token-input"
             label={t(I18nKey.GITLAB$TOKEN_LABEL)}
             type="password"
@@ -66,8 +78,13 @@ function GitSettingsScreen() {
         </>
       )}
 
-      <BrandButton testId="submit-button" type="submit" variant="primary">
-        Submit
+      <BrandButton
+        testId="submit-button"
+        type="submit"
+        variant="primary"
+        isDisabled={!githubTokenInputHasValue && !gitlabTokenInputHasValue}
+      >
+        Save Changes
       </BrandButton>
     </form>
   );
