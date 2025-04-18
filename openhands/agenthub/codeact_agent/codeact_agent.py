@@ -200,45 +200,32 @@ class CodeActAgent(Agent):
             vision_is_active=self.llm.vision_is_active(),
         )
 
-        messages = self._enhance_messages(messages)
+        # Add agent-specific examples to the initial user message
+        messages = self._add_initial_user_prompt_examples(messages)
 
         if self.llm.is_caching_prompt_active():
             self.conversation_memory.apply_prompt_caching(messages)
 
         return messages
 
-    def _enhance_messages(self, messages: list[Message]) -> list[Message]:
-        """Enhances the user message with additional context based on keywords matched.
+    def _add_initial_user_prompt_examples(self, messages: list[Message]) -> list[Message]:
+        """Adds examples from the user_prompt.j2 template to the initial user message.
 
         Args:
-            messages (list[Message]): The list of messages to enhance
+            messages (list[Message]): The list of messages, where the first user message will be modified.
 
         Returns:
             list[Message]: The enhanced list of messages
         """
         assert self.prompt_manager, 'Prompt Manager not instantiated.'
 
-        results: list[Message] = []
-        is_first_message_handled = False
-        prev_role = None
-
+        # Find the first user message and add examples to it
         for msg in messages:
-            if msg.role == 'user' and not is_first_message_handled:
-                is_first_message_handled = True
+            if msg.role == 'user':
                 # compose the first user message with examples
                 self.prompt_manager.add_examples_to_initial_message(msg)
+                # Only modify the *first* user message found
+                break
 
-            elif msg.role == 'user':
-                # Add double newline between consecutive user messages
-                if prev_role == 'user' and len(msg.content) > 0:
-                    # Find the first TextContent in the message to add newlines
-                    for content_item in msg.content:
-                        if isinstance(content_item, TextContent):
-                            # If the previous message was also from a user, prepend two newlines to ensure separation
-                            content_item.text = '\n\n' + content_item.text
-                            break
-
-            results.append(msg)
-            prev_role = msg.role
-
-        return results
+        # Return the potentially modified list of messages
+        return messages

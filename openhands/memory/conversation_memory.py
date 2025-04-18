@@ -131,8 +131,32 @@ class ConversationMemory:
                 pending_tool_call_action_messages.pop(response_id)
 
             messages += messages_to_add
+
+        # Apply final filtering so that the messages in context don't have unmatched tool calls
+        # and tool responses, for example
         messages = list(ConversationMemory._filter_unmatched_tool_calls(messages))
+        
+        # Apply final formatting
+        messages = self._apply_user_message_formatting(messages)
+        
         return messages
+
+    def _apply_user_message_formatting(self, messages: list[Message]) -> list[Message]:
+        """Applies formatting rules, such as adding newlines between consecutive user messages."""
+        formatted_messages = []
+        prev_role = None
+        for msg in messages:
+            # Add double newline between consecutive user messages
+            if msg.role == 'user' and prev_role == 'user' and len(msg.content) > 0:
+                # Find the first TextContent in the message to add newlines
+                for content_item in msg.content:
+                    if isinstance(content_item, TextContent):
+                        # Prepend two newlines to ensure visual separation
+                        content_item.text = '\n\n' + content_item.text
+                        break
+            formatted_messages.append(msg)
+            prev_role = msg.role # Update prev_role after processing each message
+        return formatted_messages
 
     def _process_action(
         self,
