@@ -1,0 +1,196 @@
+import { render, screen, waitFor } from "@testing-library/react";
+import { createRoutesStub } from "react-router";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import GitSettingsScreen from "#/routes/git-settings";
+import OpenHands from "#/api/open-hands";
+import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
+import { AuthProvider } from "#/context/auth-context";
+
+const queryClient = new QueryClient();
+
+const GitSettingsRouterStub = createRoutesStub([
+  {
+    Component: GitSettingsScreen,
+    path: "/settings/github",
+  },
+]);
+
+const renderGitSettingsScreen = () => {
+  const { rerender, ...rest } = render(
+    <GitSettingsRouterStub initialEntries={["/settings/github"]} />,
+    {
+      wrapper: ({ children }) => (
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>{children}</AuthProvider>
+        </QueryClientProvider>
+      ),
+    },
+  );
+
+  const rerenderGitSettingsScreen = () =>
+    rerender(
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <GitSettingsRouterStub initialEntries={["/settings/github"]} />
+        </AuthProvider>
+      </QueryClientProvider>,
+    );
+
+  return {
+    ...rest,
+    rerender: rerenderGitSettingsScreen,
+  };
+};
+
+describe("Git Settings", () => {
+  beforeEach(() => {
+    // Since we don't recreate the query client on every test, we need to
+    // reset the query client before each test to avoid state leaks
+    // between tests.
+    queryClient.invalidateQueries();
+  });
+
+  it("should render", async () => {
+    renderGitSettingsScreen();
+    await screen.findByTestId("git-settings-screen");
+  });
+
+  it("should render the inputs if OSS mode", async () => {
+    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    getConfigSpy.mockResolvedValue({
+      APP_MODE: "oss",
+      GITHUB_CLIENT_ID: "123",
+      POSTHOG_CLIENT_KEY: "456",
+      FEATURE_FLAGS: {
+        ENABLE_BILLING: false,
+        HIDE_LLM_SETTINGS: false,
+      },
+    });
+
+    const { rerender } = renderGitSettingsScreen();
+
+    await screen.findByTestId("github-token-input");
+    await screen.findByTestId("github-token-help-anchor");
+
+    getConfigSpy.mockResolvedValue({
+      APP_MODE: "saas",
+      GITHUB_CLIENT_ID: "123",
+      POSTHOG_CLIENT_KEY: "456",
+      FEATURE_FLAGS: {
+        ENABLE_BILLING: false,
+        HIDE_LLM_SETTINGS: false,
+      },
+    });
+    queryClient.invalidateQueries();
+    rerender();
+
+    await waitFor(() => {
+      expect(
+        screen.queryByTestId("github-token-input"),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId("github-token-help-anchor"),
+      ).not.toBeInTheDocument();
+    });
+  });
+
+  it("should set '<hidden>' placeholder if the GitHub token is set", async () => {
+    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    getConfigSpy.mockResolvedValue({
+      APP_MODE: "oss",
+      GITHUB_CLIENT_ID: "123",
+      POSTHOG_CLIENT_KEY: "456",
+      FEATURE_FLAGS: {
+        ENABLE_BILLING: false,
+        HIDE_LLM_SETTINGS: false,
+      },
+    });
+    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+    getSettingsSpy.mockResolvedValue({
+      ...MOCK_DEFAULT_USER_SETTINGS,
+      provider_tokens_set: {
+        github: false,
+        gitlab: false,
+      },
+    });
+
+    const { rerender } = renderGitSettingsScreen();
+
+    await waitFor(() => {
+      const input = screen.getByTestId("github-token-input");
+      expect(input).toHaveProperty("placeholder", "");
+    });
+
+    getSettingsSpy.mockResolvedValue({
+      ...MOCK_DEFAULT_USER_SETTINGS,
+      provider_tokens_set: {
+        github: true,
+        gitlab: false,
+      },
+    });
+    queryClient.invalidateQueries();
+
+    rerender();
+
+    await waitFor(() => {
+      const input = screen.getByTestId("github-token-input");
+      expect(input).toHaveProperty("placeholder", "<hidden>");
+    });
+  });
+
+  it("should render the 'Configure GitHub Repositories' button if SaaS mode and app slug exists", async () => {
+    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    getConfigSpy.mockResolvedValue({
+      APP_MODE: "oss",
+      GITHUB_CLIENT_ID: "123",
+      POSTHOG_CLIENT_KEY: "456",
+      FEATURE_FLAGS: {
+        ENABLE_BILLING: false,
+        HIDE_LLM_SETTINGS: false,
+      },
+    });
+
+    const { rerender } = renderGitSettingsScreen();
+
+    let button = screen.queryByTestId("configure-github-repositories-button");
+    expect(button).not.toBeInTheDocument();
+
+    getConfigSpy.mockResolvedValue({
+      APP_MODE: "saas",
+      GITHUB_CLIENT_ID: "123",
+      POSTHOG_CLIENT_KEY: "456",
+      FEATURE_FLAGS: {
+        ENABLE_BILLING: false,
+        HIDE_LLM_SETTINGS: false,
+      },
+    });
+    queryClient.invalidateQueries();
+    rerender();
+
+    await waitFor(() => {
+      // wait until queries are resolved
+      expect(queryClient.isFetching()).toBe(0);
+      button = screen.queryByTestId("configure-github-repositories-button");
+      expect(button).not.toBeInTheDocument();
+    });
+
+    getConfigSpy.mockResolvedValue({
+      APP_MODE: "saas",
+      GITHUB_CLIENT_ID: "123",
+      POSTHOG_CLIENT_KEY: "456",
+      APP_SLUG: "test-slug",
+      FEATURE_FLAGS: {
+        ENABLE_BILLING: false,
+        HIDE_LLM_SETTINGS: false,
+      },
+    });
+    queryClient.invalidateQueries();
+    rerender();
+
+    await waitFor(() => {
+      button = screen.getByTestId("configure-github-repositories-button");
+      expect(button).toBeInTheDocument();
+    });
+  });
+});
