@@ -180,7 +180,7 @@ def create_memory(
         )
         memory.load_user_workspace_microagents(microagents)
 
-        if repo_directory:
+        if selected_respository and repo_directory:
             # If we have a repo_directory but no selected_repository, it means we initialized a new repo
             repo_name = selected_repository or 'local-repository'
             memory.set_repository_info(repo_name, repo_directory)
