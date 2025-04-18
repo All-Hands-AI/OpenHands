@@ -2,163 +2,95 @@ Here's a running example of how to perform a task with the provided tools.
 
 --------------------- START OF EXAMPLE ---------------------
 
-USER: Create a list of numbers from 1 to 10, and display them in a web page at port 5000.
+USER: I need to find all TypeScript files in the project and then search for files that contain React components.
 
-A: Sure! Let me first check the current directory:
-<function=execute_bash>
-<parameter=command>
-pwd && ls
-</parameter>
+A: I'll help you find TypeScript files and React components. Let's break this down into steps:
+
+1. First, let's use the glob tool to find all TypeScript files:
+<function=glob>
+<parameter=pattern>**/*.{ts,tsx}</parameter>
 </function>
 
-USER: EXECUTION RESULT of [execute_bash]:
-/workspace
-openhands@runtime:~/workspace$
+USER: EXECUTION RESULT of [glob]:
+Below are the execution results of the glob command: rg --files . -g **/*.{ts,tsx} --sortr=modified | head -n 100
 
-A: There is no `app.py` file in the current directory. Let me create a Python file `app.py`:
-<function=str_replace_editor>
-<parameter=command>create</parameter>
-<parameter=path>/workspace/app.py</parameter>
-<parameter=file_text>
-from flask import Flask
-app = Flask(__name__)
+src/components/Header.tsx
+src/components/Button.tsx
+src/pages/Home.tsx
+src/utils/types.ts
+src/App.tsx
+src/index.tsx
 
-@app.route('/')
-def index():
-    numbers = list(range(1, 11))
-    return '<table>' + ''.join([f'<tr><td>{i}</td></tr>' for i in numbers]) + '</table>'
-
-if __name__ == '__main__':
-    app.run(port=5000)
-</parameter>
+A: Great! Now let's search for files that likely contain React components by looking for patterns like "export" followed by "function" or "class":
+<function=grep>
+<parameter=pattern>export\s+(default\s+)?(function|class)</parameter>
+<parameter=include>*.{ts,tsx}</parameter>
 </function>
 
-USER: EXECUTION RESULT of [str_replace_editor]:
-File created successfully at: /workspace/app.py
+USER: EXECUTION RESULT of [grep]:
+Below are the execution results of the search command: rg -li export\s+(default\s+)?(function|class) --sortr=modified --glob *.{ts,tsx} .
 
-A: I have created a Python file `app.py` that will display a list of numbers from 1 to 10 when you run it. Let me run the Python file for you:
-<function=execute_bash>
-<parameter=command>
-python3 app.py > server.log 2>&1 &
-</parameter>
+src/components/Header.tsx
+src/components/Button.tsx
+src/pages/Home.tsx
+src/App.tsx
+
+A: Let's examine one of these components to confirm it's a React component. I'll look at the Header component:
+<function=view>
+<parameter=path>src/components/Header.tsx</parameter>
 </function>
 
-USER: EXECUTION RESULT of [execute_bash]:
-[1] 121
-[1]+  Exit 1                  python3 app.py > server.log 2>&1
+USER: EXECUTION RESULT of [view]:
+     1  import React from 'react';
+     2  
+     3  interface HeaderProps {
+     4    title: string;
+     5    subtitle?: string;
+     6  }
+     7  
+     8  export function Header({ title, subtitle }: HeaderProps) {
+     9    return (
+    10      <header className="app-header">
+    11        <h1>{title}</h1>
+    12        {subtitle && <h2>{subtitle}</h2>}
+    13      </header>
+    14    );
+    15  }
 
-A: Looks like the server is running with PID 121 then crashed. Let me check the server log:
-<function=execute_bash>
-<parameter=command>
-cat server.log
-</parameter>
+A: Let me also check the Button component to see its implementation:
+<function=view>
+<parameter=path>src/components/Button.tsx</parameter>
 </function>
 
-USER: EXECUTION RESULT of [execute_bash]:
-Traceback (most recent call last):
-  File "/workspace/app.py", line 2, in <module>
-    from flask import Flask
-ModuleNotFoundError: No module named 'flask'
+USER: EXECUTION RESULT of [view]:
+     1  import React from 'react';
+     2  
+     3  interface ButtonProps {
+     4    onClick: () => void;
+     5    children: React.ReactNode;
+     6    variant?: 'primary' | 'secondary';
+     7  }
+     8  
+     9  export default function Button({ onClick, children, variant = 'primary' }: ButtonProps) {
+    10    return (
+    11      <button 
+    12        className={`btn btn-${variant}`}
+    13        onClick={onClick}
+    14      >
+    15        {children}
+    16      </button>
+    17    );
+    18  }
 
-A: Looks like the server crashed because the `flask` module is not installed. Let me install the `flask` module for you:
-<function=execute_bash>
-<parameter=command>
-pip3 install flask
-</parameter>
-</function>
+A: I've found several React components in the project. Here's a summary:
 
-USER: EXECUTION RESULT of [execute_bash]:
-Defaulting to user installation because normal site-packages is not writeable
-Collecting flask
-  Using cached flask-3.0.3-py3-none-any.whl (101 kB)
-Collecting blinker>=1.6.2
-  Using cached blinker-1.7.0-py3-none-any.whl (13 kB)
-Collecting Werkzeug>=3.0.0
-  Using cached werkzeug-3.0.2-py3-none-any.whl (226 kB)
-Collecting click>=8.1.3
-  Using cached click-8.1.7-py3-none-any.whl (97 kB)
-Collecting itsdangerous>=2.1.2
-  Using cached itsdangerous-2.2.0-py3-none-any.whl (16 kB)
-Requirement already satisfied: Jinja2>=3.1.2 in /home/openhands/.local/lib/python3.10/site-packages (from flask) (3.1.3)
-Requirement already satisfied: MarkupSafe>=2.0 in /home/openhands/.local/lib/python3.10/site-packages (from Jinja2>=3.1.2->flask) (2.1.5)
-Installing collected packages: Werkzeug, itsdangerous, click, blinker, flask
-Successfully installed Werkzeug-3.0.2 blinker-1.7.0 click-8.1.7 flask-3.0.3 itsdangerous-2.2.0
+1. Found TypeScript files using glob pattern `**/*.{ts,tsx}`
+2. Identified potential React components using grep pattern `export\s+(default\s+)?(function|class)`
+3. Confirmed two components:
+   - `Header.tsx`: A function component that renders a header with title and optional subtitle
+   - `Button.tsx`: A reusable button component with primary/secondary variants
 
-A: The `flask` module is installed successfully. Let me run the Python file again:
-<function=execute_bash>
-<parameter=command>
-python3 app.py > server.log 2>&1 &
-</parameter>
-</function>
-
-USER: EXECUTION RESULT of [execute_bash]:
-[1] 124
-
-A:
-Let me check the server log again:
-<function=execute_bash>
-<parameter=command>
-cat server.log
-</parameter>
-</function>
-
-USER: EXECUTION RESULT of [execute_bash]:
-* Serving Flask app 'app'
- * Debug mode: off
-WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
- * Running on http://127.0.0.1:5000
-Press CTRL+C to quit
-
-A:
-The server is running on port 5000 with PID 124. You can access the list of numbers by visiting http://127.0.0.1:5000. If you have any further questions, feel free to ask!
-
-USER: Now kill the server, make it display the numbers in a table format.
-
-A:
-Sure! Let me stop the server first:
-<function=execute_bash>
-<parameter=command>
-kill 124
-</parameter>
-</function>
-
-USER: EXECUTION RESULT of [execute_bash]:
-[1]+  Terminated              python3 app.py > server.log 2>&1
-
-A:
-Now let me display the numbers in a table format:
-<function=str_replace_editor>
-<parameter=command>str_replace</parameter>
-<parameter=path>/workspace/app.py</parameter>
-<parameter=old_str>return '<table>' + ''.join([f'<tr><td>{i}</td></tr>' for i in numbers]) + '</table>'</parameter>
-<parameter=new_str>return '<table>' + ''.join([f'<tr><td>{i}</td></tr>' for i in numbers]) + '</table>'</parameter>
-</function>
-
-USER: EXECUTION RESULT of [str_replace_editor]:
-The file /workspace/app.py has been edited. Here's the result of running `cat -n` on a snippet of /workspace/app.py:
-     3
-     4  @app.route('/')
-     5  def index():
-     6      numbers = list(range(1, 11))
-     7      return '<table>' + ''.join([f'<tr><td>{i}</td></tr>' for i in numbers]) + '</table>'
-     8
-     9  if __name__ == '__main__':
-    10      app.run(port=5000)
-Review the changes and make sure they are as expected. Edit the file again if necessary.
-
-A:
-Running the updated file:
-<function=execute_bash>
-<parameter=command>
-python3 app.py > server.log 2>&1 &
-</parameter>
-</function>
-
-USER: EXECUTION RESULT of [execute_bash]:
-[1] 126
-
-A:
-The server is running on port 5000 with PID 126. You can access the list of numbers in a table format by visiting http://127.0.0.1:5000. Let me know if you have any further requests!
+Would you like me to examine any other components or search for specific features within these components?
 <function=finish>
 </function>
 
