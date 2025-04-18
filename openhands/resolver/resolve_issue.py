@@ -48,16 +48,75 @@ AGENT_CLASS = 'CodeActAgent'
 
 
 class IssueResolver:
+    def __init__(
+        self,
+        owner: str = "",
+        repo: str = "",
+        token: str = "",
+        username: str = "",
+        platform: Platform | None = None,
+        runtime_container_image: str | None = None,
+        max_iterations: int = 50,
+        output_dir: str = "output",
+        llm_config: LLMConfig | None = None,
+        prompt_template: str = "",
+        issue_type: str = "issue",
+        repo_instruction: str | None = None,
+        issue_number: int | None = None,
+        comment_id: int | None = None,
+        base_domain: str | None = None,
+    ) -> None:
+        """Initialize the IssueResolver with the given parameters.
+        
+        Args:
+            owner: Owner of the repo.
+            repo: Repository name.
+            token: Token to access the repository.
+            username: Username to access the repository.
+            platform: Platform of the repository.
+            runtime_container_image: Container image to use.
+            max_iterations: Maximum number of iterations to run.
+            output_dir: Output directory to write the results.
+            llm_config: Configuration for the language model.
+            prompt_template: Prompt template to use.
+            issue_type: Type of issue to resolve (issue or pr).
+            repo_instruction: Repository instruction to use.
+            issue_number: Issue number to resolve.
+            comment_id: Optional ID of a specific comment to focus on.
+            base_domain: The base domain for the git server.
+        """
+        self.owner = owner
+        self.repo = repo
+        self.token = token
+        self.username = username
+        self.platform = platform
+        self.runtime_container_image = runtime_container_image
+        self.max_iterations = max_iterations
+        self.output_dir = output_dir
+        self.llm_config = llm_config
+        self.prompt_template = prompt_template
+        self.issue_type = issue_type
+        self.repo_instruction = repo_instruction
+        self.issue_number = issue_number
+        self.comment_id = comment_id
+        self.base_domain = base_domain
+
     def initialize_runtime(
         self,
         runtime: Runtime,
-        platform: Platform,
+        platform: Platform | None = None,
     ) -> None:
         """Initialize the runtime for the agent.
 
         This function is called before the runtime is used to run the agent.
         Currently it does nothing.
         """
+        # Use instance variables if parameters are not provided
+        platform = platform if platform is not None else self.platform
+        
+        # Validate required parameters
+        if platform is None:
+            raise ValueError("Missing required parameter 'platform' for initializing runtime")
         logger.info('-' * 30)
         logger.info('BEGIN Runtime Completion Fn')
         logger.info('-' * 30)
@@ -87,7 +146,7 @@ class IssueResolver:
         self,
         runtime: Runtime,
         base_commit: str,
-        platform: Platform,
+        platform: Platform | None = None,
     ) -> dict[str, Any]:
         """Complete the runtime for the agent.
 
@@ -95,6 +154,12 @@ class IssueResolver:
         If you need to do something in the sandbox to get the correctness metric after
         the agent has run, modify this function.
         """
+        # Use instance variables if parameters are not provided
+        platform = platform if platform is not None else self.platform
+        
+        # Validate required parameters
+        if platform is None:
+            raise ValueError("Missing required parameter 'platform' for completing runtime")
         logger.info('-' * 30)
         logger.info('BEGIN Runtime Completion Fn')
         logger.info('-' * 30)
@@ -166,17 +231,29 @@ class IssueResolver:
     async def process_issue(
         self,
         issue: Issue,
-        platform: Platform,
-        base_commit: str,
-        max_iterations: int,
-        llm_config: LLMConfig,
-        output_dir: str,
-        runtime_container_image: str | None,
-        prompt_template: str,
-        issue_handler: ServiceContextIssue | ServiceContextPR,
+        platform: Platform | None = None,
+        base_commit: str = "",
+        max_iterations: int | None = None,
+        llm_config: LLMConfig | None = None,
+        output_dir: str | None = None,
+        runtime_container_image: str | None = None,
+        prompt_template: str | None = None,
+        issue_handler: ServiceContextIssue | ServiceContextPR | None = None,
         repo_instruction: str | None = None,
         reset_logger: bool = False,
     ) -> ResolverOutput:
+        # Use instance variables if parameters are not provided
+        platform = platform if platform is not None else self.platform
+        max_iterations = max_iterations if max_iterations is not None else self.max_iterations
+        llm_config = llm_config if llm_config is not None else self.llm_config
+        output_dir = output_dir if output_dir is not None else self.output_dir
+        runtime_container_image = runtime_container_image if runtime_container_image is not None else self.runtime_container_image
+        prompt_template = prompt_template if prompt_template is not None else self.prompt_template
+        repo_instruction = repo_instruction if repo_instruction is not None else self.repo_instruction
+        
+        # Validate required parameters
+        if platform is None or llm_config is None or not output_dir or not prompt_template:
+            raise ValueError("Missing required parameters for processing an issue")
         # Setup the logger properly, so you can run multi-processing to parallelize processing
         if reset_logger:
             log_dir = os.path.join(output_dir, 'infer_logs')
@@ -325,15 +402,29 @@ class IssueResolver:
 
     def issue_handler_factory(
         self,
-        issue_type: str,
-        owner: str,
-        repo: str,
-        token: str,
-        llm_config: LLMConfig,
-        platform: Platform,
+        issue_type: str | None = None,
+        owner: str | None = None,
+        repo: str | None = None,
+        token: str | None = None,
+        llm_config: LLMConfig | None = None,
+        platform: Platform | None = None,
         username: str | None = None,
         base_domain: str | None = None,
     ) -> ServiceContextIssue | ServiceContextPR:
+        # Use instance variables if parameters are not provided
+        issue_type = issue_type if issue_type is not None else self.issue_type
+        owner = owner if owner is not None else self.owner
+        repo = repo if repo is not None else self.repo
+        token = token if token is not None else self.token
+        llm_config = llm_config if llm_config is not None else self.llm_config
+        platform = platform if platform is not None else self.platform
+        username = username if username is not None else self.username
+        base_domain = base_domain if base_domain is not None else self.base_domain
+        
+        # Validate required parameters
+        if not issue_type or not owner or not repo or not token or llm_config is None or platform is None:
+            raise ValueError("Missing required parameters for issue handler factory")
+            
         # Determine default base_domain based on platform
         if base_domain is None:
             base_domain = 'github.com' if platform == Platform.GITHUB else 'gitlab.com'
@@ -364,43 +455,64 @@ class IssueResolver:
 
     async def resolve_issue(
         self,
-        owner: str,
-        repo: str,
-        token: str,
-        username: str,
-        platform: Platform,
-        max_iterations: int,
-        output_dir: str,
-        llm_config: LLMConfig,
-        runtime_container_image: str | None,
-        prompt_template: str,
-        issue_type: str,
-        repo_instruction: str | None,
-        issue_number: int,
-        comment_id: int | None,
+        owner: str | None = None,
+        repo: str | None = None,
+        token: str | None = None,
+        username: str | None = None,
+        platform: Platform | None = None,
+        max_iterations: int | None = None,
+        output_dir: str | None = None,
+        llm_config: LLMConfig | None = None,
+        runtime_container_image: str | None = None,
+        prompt_template: str | None = None,
+        issue_type: str | None = None,
+        repo_instruction: str | None = None,
+        issue_number: int | None = None,
+        comment_id: int | None = None,
         reset_logger: bool = False,
         base_domain: str | None = None,
     ) -> None:
         """Resolve a single issue.
 
         Args:
-            owner: owner of the repo.
-            repo: repository to resolve issues in form of `owner/repo`.
-            token: token to access the repository.
-            username: username to access the repository.
-            platform: platform of the repository.
-            max_iterations: Maximum number of iterations to run.
-            output_dir: Output directory to write the results.
-            llm_config: Configuration for the language model.
-            runtime_container_image: Container image to use.
-            prompt_template: Prompt template to use.
-            issue_type: Type of issue to resolve (issue or pr).
-            repo_instruction: Repository instruction to use.
-            issue_number: Issue number to resolve.
-            comment_id: Optional ID of a specific comment to focus on.
+            owner: owner of the repo. If None, uses the value from constructor.
+            repo: repository name. If None, uses the value from constructor.
+            token: token to access the repository. If None, uses the value from constructor.
+            username: username to access the repository. If None, uses the value from constructor.
+            platform: platform of the repository. If None, uses the value from constructor.
+            max_iterations: Maximum number of iterations to run. If None, uses the value from constructor.
+            output_dir: Output directory to write the results. If None, uses the value from constructor.
+            llm_config: Configuration for the language model. If None, uses the value from constructor.
+            runtime_container_image: Container image to use. If None, uses the value from constructor.
+            prompt_template: Prompt template to use. If None, uses the value from constructor.
+            issue_type: Type of issue to resolve (issue or pr). If None, uses the value from constructor.
+            repo_instruction: Repository instruction to use. If None, uses the value from constructor.
+            issue_number: Issue number to resolve. If None, uses the value from constructor.
+            comment_id: Optional ID of a specific comment to focus on. If None, uses the value from constructor.
             reset_logger: Whether to reset the logger for multiprocessing.
-            base_domain: The base domain for the git server (defaults to "github.com" for GitHub and "gitlab.com" for GitLab)
+            base_domain: The base domain for the git server. If None, uses the value from constructor.
         """
+        # Use instance variables if parameters are not provided
+        owner = owner if owner is not None else self.owner
+        repo = repo if repo is not None else self.repo
+        token = token if token is not None else self.token
+        username = username if username is not None else self.username
+        platform = platform if platform is not None else self.platform
+        max_iterations = max_iterations if max_iterations is not None else self.max_iterations
+        output_dir = output_dir if output_dir is not None else self.output_dir
+        llm_config = llm_config if llm_config is not None else self.llm_config
+        runtime_container_image = runtime_container_image if runtime_container_image is not None else self.runtime_container_image
+        prompt_template = prompt_template if prompt_template is not None else self.prompt_template
+        issue_type = issue_type if issue_type is not None else self.issue_type
+        repo_instruction = repo_instruction if repo_instruction is not None else self.repo_instruction
+        issue_number = issue_number if issue_number is not None else self.issue_number
+        comment_id = comment_id if comment_id is not None else self.comment_id
+        base_domain = base_domain if base_domain is not None else self.base_domain
+
+        # Validate required parameters
+        if not owner or not repo or not token or not username or platform is None or llm_config is None or not issue_type or issue_number is None:
+            raise ValueError("Missing required parameters for resolving an issue")
+
         # Determine default base_domain based on platform
         if base_domain is None:
             base_domain = 'github.com' if platform == Platform.GITHUB else 'gitlab.com'
@@ -723,26 +835,24 @@ def main() -> None:
     with open(prompt_file, 'r') as f:
         prompt_template = f.read()
 
-    issue_resolver = IssueResolver()
-    asyncio.run(
-        issue_resolver.resolve_issue(
-            owner=owner,
-            repo=repo,
-            token=token,
-            username=username,
-            platform=platform,
-            runtime_container_image=runtime_container_image,
-            max_iterations=my_args.max_iterations,
-            output_dir=my_args.output_dir,
-            llm_config=llm_config,
-            prompt_template=prompt_template,
-            issue_type=issue_type,
-            repo_instruction=repo_instruction,
-            issue_number=my_args.issue_number,
-            comment_id=my_args.comment_id,
-            base_domain=my_args.base_domain,
-        )
+    issue_resolver = IssueResolver(
+        owner=owner,
+        repo=repo,
+        token=token,
+        username=username,
+        platform=platform,
+        runtime_container_image=runtime_container_image,
+        max_iterations=my_args.max_iterations,
+        output_dir=my_args.output_dir,
+        llm_config=llm_config,
+        prompt_template=prompt_template,
+        issue_type=issue_type,
+        repo_instruction=repo_instruction,
+        issue_number=my_args.issue_number,
+        comment_id=my_args.comment_id,
+        base_domain=my_args.base_domain,
     )
+    asyncio.run(issue_resolver.resolve_issue())
 
 
 if __name__ == '__main__':
