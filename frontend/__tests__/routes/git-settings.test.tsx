@@ -2,6 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { createRoutesStub } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import userEvent from "@testing-library/user-event";
 import GitSettingsScreen from "#/routes/git-settings";
 import OpenHands from "#/api/open-hands";
 import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
@@ -64,14 +65,14 @@ const renderGitSettingsScreen = () => {
   };
 };
 
-describe("Git Settings", () => {
-  beforeEach(() => {
-    // Since we don't recreate the query client on every test, we need to
-    // reset the query client before each test to avoid state leaks
-    // between tests.
-    queryClient.invalidateQueries();
-  });
+beforeEach(() => {
+  // Since we don't recreate the query client on every test, we need to
+  // reset the query client before each test to avoid state leaks
+  // between tests.
+  queryClient.invalidateQueries();
+});
 
+describe("Content", () => {
   it("should render", async () => {
     renderGitSettingsScreen();
     await screen.findByTestId("git-settings-screen");
@@ -86,6 +87,9 @@ describe("Git Settings", () => {
     await screen.findByTestId("github-token-input");
     await screen.findByTestId("github-token-help-anchor");
 
+    await screen.findByTestId("gitlab-token-input");
+    await screen.findByTestId("gitlab-token-help-anchor");
+
     getConfigSpy.mockResolvedValue(VALID_SAAS_CONFIG);
     queryClient.invalidateQueries();
     rerender();
@@ -96,6 +100,13 @@ describe("Git Settings", () => {
       ).not.toBeInTheDocument();
       expect(
         screen.queryByTestId("github-token-help-anchor"),
+      ).not.toBeInTheDocument();
+
+      expect(
+        screen.queryByTestId("gitlab-token-input"),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId("gitlab-token-help-anchor"),
       ).not.toBeInTheDocument();
     });
   });
@@ -116,15 +127,18 @@ describe("Git Settings", () => {
     const { rerender } = renderGitSettingsScreen();
 
     await waitFor(() => {
-      const input = screen.getByTestId("github-token-input");
-      expect(input).toHaveProperty("placeholder", "");
+      const githubInput = screen.getByTestId("github-token-input");
+      expect(githubInput).toHaveProperty("placeholder", "");
+
+      const gitlabInput = screen.getByTestId("gitlab-token-input");
+      expect(gitlabInput).toHaveProperty("placeholder", "");
     });
 
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
       provider_tokens_set: {
         github: true,
-        gitlab: false,
+        gitlab: true,
       },
     });
     queryClient.invalidateQueries();
@@ -132,8 +146,30 @@ describe("Git Settings", () => {
     rerender();
 
     await waitFor(() => {
-      const input = screen.getByTestId("github-token-input");
-      expect(input).toHaveProperty("placeholder", "<hidden>");
+      const githubInput = screen.getByTestId("github-token-input");
+      expect(githubInput).toHaveProperty("placeholder", "<hidden>");
+
+      const gitlabInput = screen.getByTestId("gitlab-token-input");
+      expect(gitlabInput).toHaveProperty("placeholder", "<hidden>");
+    });
+
+    getSettingsSpy.mockResolvedValue({
+      ...MOCK_DEFAULT_USER_SETTINGS,
+      provider_tokens_set: {
+        github: false,
+        gitlab: true,
+      },
+    });
+    queryClient.invalidateQueries();
+
+    rerender();
+
+    await waitFor(() => {
+      const githubInput = screen.getByTestId("github-token-input");
+      expect(githubInput).toHaveProperty("placeholder", "");
+
+      const gitlabInput = screen.getByTestId("gitlab-token-input");
+      expect(gitlabInput).toHaveProperty("placeholder", "<hidden>");
     });
   });
 
@@ -168,5 +204,43 @@ describe("Git Settings", () => {
       button = screen.getByTestId("configure-github-repositories-button");
       expect(button).toBeInTheDocument();
     });
+  });
+});
+
+describe("Form submission", () => {
+  it("should save the GitHub token", async () => {
+    const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    getConfigSpy.mockResolvedValue(VALID_OSS_CONFIG);
+
+    renderGitSettingsScreen();
+
+    const githubInput = await screen.findByTestId("github-token-input");
+    const submit = await screen.findByTestId("submit-button");
+
+    await userEvent.type(githubInput, "test-token");
+    await userEvent.click(submit);
+
+    expect(saveSettingsSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        provider_tokens: {
+          github: "test-token",
+          gitlab: "",
+        },
+      }),
+    );
+
+    const gitlabInput = await screen.findByTestId("gitlab-token-input");
+    await userEvent.type(gitlabInput, "test-token");
+    await userEvent.click(submit);
+
+    expect(saveSettingsSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        provider_tokens: {
+          github: "",
+          gitlab: "test-token",
+        },
+      }),
+    );
   });
 });
