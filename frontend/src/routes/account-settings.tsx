@@ -8,7 +8,6 @@ import { KeyStatusIcon } from "#/components/features/settings/key-status-icon";
 import { SettingsDropdownInput } from "#/components/features/settings/settings-dropdown-input";
 import { SettingsInput } from "#/components/features/settings/settings-input";
 import { SettingsSwitch } from "#/components/features/settings/settings-switch";
-import { ApiKeysManager } from "#/components/features/settings/api-keys-manager";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import { ModelSelector } from "#/components/shared/modals/settings/model-selector";
@@ -489,11 +488,7 @@ function AccountSettings() {
             )}
           </section>
 
-          {isSaas && (
-            <section className="flex flex-col gap-6">
-              <ApiKeysManager />
-            </section>
-          )}
+
 
           <section className="flex flex-col gap-6">
             <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">

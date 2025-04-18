@@ -21,31 +21,30 @@ function SettingsScreen() {
         <h1 className="text-sm leading-6">{t(I18nKey.SETTINGS$TITLE)}</h1>
       </header>
 
-      {isSaas && billingIsEnabled && (
-        <nav
-          data-testid="settings-navbar"
-          className="flex items-end gap-12 px-11 border-b border-tertiary"
-        >
-          {[
-            { to: "/settings", text: "Account" },
-            { to: "/settings/billing", text: "Credits" },
-          ].map(({ to, text }) => (
-            <NavLink
-              end
-              key={to}
-              to={to}
-              className={({ isActive }) =>
-                cn(
-                  "border-b-2 border-transparent py-2.5",
-                  isActive && "border-primary",
-                )
-              }
-            >
-              <ul className="text-[#F9FBFE] text-sm">{text}</ul>
-            </NavLink>
-          ))}
-        </nav>
-      )}
+      <nav
+        data-testid="settings-navbar"
+        className="flex items-end gap-12 px-11 border-b border-tertiary"
+      >
+        {[
+          { to: "/settings", text: "Account" },
+          { to: "/settings/api-keys", text: "API Keys" },
+          ...(isSaas && billingIsEnabled ? [{ to: "/settings/billing", text: "Credits" }] : []),
+        ].map(({ to, text }) => (
+          <NavLink
+            end
+            key={to}
+            to={to}
+            className={({ isActive }) =>
+              cn(
+                "border-b-2 border-transparent py-2.5",
+                isActive && "border-primary",
+              )
+            }
+          >
+            <ul className="text-[#F9FBFE] text-sm">{text}</ul>
+          </NavLink>
+        ))}
+      </nav>
 
       <div className="flex flex-col grow overflow-auto">
         <Outlet />
