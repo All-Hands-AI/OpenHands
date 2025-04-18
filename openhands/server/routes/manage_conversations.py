@@ -114,9 +114,7 @@ async def _create_new_conversation(
             title=conversation_title,
             user_id=user_id,
             github_user_id=None,
-            selected_repository=selected_repository.full_name
-            if selected_repository
-            else selected_repository,
+            selected_repository=selected_repository,
             selected_branch=selected_branch,
         )
     )

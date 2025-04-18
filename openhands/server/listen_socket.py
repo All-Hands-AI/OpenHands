@@ -1,3 +1,4 @@
+from importlib import metadata
 from types import MappingProxyType
 from urllib.parse import parse_qs
 
@@ -16,10 +17,11 @@ from openhands.events.observation.agent import (
     AgentStateChangedObservation,
 )
 from openhands.events.serialization import event_to_dict
-from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderToken
+from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderToken, SecretStore
 from openhands.integrations.service_types import ProviderType
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.shared import (
+    ConversationStoreImpl,
     SettingsStoreImpl,
     config,
     conversation_manager,
@@ -32,11 +34,17 @@ from openhands.storage.conversation.conversation_validator import (
 
 def create_provider_tokens_object(
     providers_set: list[ProviderType],
+    secrets_store: SecretStore,
 ) -> PROVIDER_TOKEN_TYPE:
     provider_information = {}
 
+    existing_tokens = secrets_store.provider_tokens
+
     for provider in providers_set:
-        provider_information[provider] = ProviderToken(token=None, user_id=None)
+        if provider in existing_tokens:
+            provider_information[provider] = existing_tokens[provider]
+        else:
+            provider_information[provider] = ProviderToken(token=None, user_id=None)
 
     return MappingProxyType(provider_information)
 
@@ -76,8 +84,25 @@ async def connect(connection_id: str, environ):
         session_init_args = {**settings.__dict__, **session_init_args}
 
     session_init_args['git_provider_tokens'] = create_provider_tokens_object(
-        providers_set
+        providers_set,
+        getattr(settings, 'secrets_store', SecretStore()),
     )
+
+    conversation_store = await ConversationStoreImpl.get_instance(config, user_id, None)
+    metadata = await conversation_store.get_metadata(conversation_id)
+    if metadata.selected_repository:
+        if isinstance(metadata.selected_repository, str):
+            # Accepting str for `selected_repository` for backward compatibility
+            # See also: https://github.com/All-Hands-AI/OpenHands/issues/7286
+            logger.info(
+                f"Legacy metadata format detected for conversation {conversation_id}. "
+                "Repository information will not be available."
+            )
+            session_init_args['selected_repository'] = None
+        else:
+            session_init_args['selected_repository'] = metadata.selected_repository
+    session_init_args['selected_branch'] = metadata.selected_branch
+
     conversation_init_data = ConversationInitData(**session_init_args)
 
     event_stream = await conversation_manager.join_conversation(
