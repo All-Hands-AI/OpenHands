@@ -2,8 +2,13 @@
 import pytest
 
 from openhands.agenthub.codeact_agent.llm_diff_parser import (
+    DiffBlock,
+    LLMMalformedActionError,
+    find_filename,  # Import if you add tests for this
     parse_llm_response_for_diffs,
+    strip_filename,  # Import if you add tests for this
 )
+
 
 # Test cases for parse_llm_response_for_diffs
 
@@ -21,24 +26,17 @@ print("Hello, World!")
 ```
 Some text after.
 """
-    expected_edits = [
-        ('path/to/file.py', 'print("Hello")\n', 'print("Hello, World!")\n')
+    expected_blocks = [
+        DiffBlock(
+            filename='path/to/file.py',
+            search='print("Hello")\n',
+            replace='print("Hello, World!")\n',
+        )
     ]
-    # Calculate expected indices (approximate, depends on exact line endings/spacing)
-    # Start index should be at '```python'
-    # End index should be after the final '```'
-    start_idx_expected = content.find('```python')
-    end_idx_expected = (
-        content.find('>>>>>>> REPLACE') + len('>>>>>>> REPLACE\n```\n') - 1
-    )  # Approx end
 
-    edits, start_idx, end_idx = parse_llm_response_for_diffs(content)
+    blocks = parse_llm_response_for_diffs(content)
 
-    assert edits == expected_edits
-    assert start_idx == start_idx_expected
-    # End index check might be fragile due to spacing, let's check it's after start
-    assert end_idx > start_idx
-    # assert end_idx == end_idx_expected
+    assert blocks == expected_blocks
 
 
 def test_parse_multiple_valid_blocks():
@@ -63,23 +61,14 @@ new js line
 >>>>>>> REPLACE
 ```
 """
-    expected = [
-        ('file1.py', 'old line 1\n', 'new line 1\n'),
-        ('file2.js', 'old js line\n', 'new js line\n'),
+    expected_blocks = [
+        DiffBlock(filename='file1.py', search='old line 1\n', replace='new line 1\n'),
+        DiffBlock(filename='file2.js', search='old js line\n', replace='new js line\n'),
     ]
-    start_idx_expected = content.find('```python')
-    end_idx_expected = (
-        content.find('>>>>>>> REPLACE\n```', content.find('file2.js'))
-        + len('>>>>>>> REPLACE\n```\n')
-        - 1
-    )  # Approx end of second block
 
-    edits, start_idx, end_idx = parse_llm_response_for_diffs(content)
+    blocks = parse_llm_response_for_diffs(content)
 
-    assert edits == expected
-    assert start_idx == start_idx_expected
-    assert end_idx > start_idx  # Check end is after start
-    # assert end_idx == end_idx_expected
+    assert blocks == expected_blocks
 
 
 def test_parse_empty_search_block():
@@ -94,18 +83,17 @@ print("Created!")
 >>>>>>> REPLACE
 ```
 """
-    expected_edits = [('new_file.py', '', '# This is a new file\nprint("Created!")\n')]
-    start_idx_expected = content.find('```python')
-    end_idx_expected = (
-        content.find('>>>>>>> REPLACE\n```') + len('>>>>>>> REPLACE\n```\n') - 1
-    )
+    expected_blocks = [
+        DiffBlock(
+            filename='new_file.py',
+            search='',
+            replace='# This is a new file\nprint("Created!")\n',
+        )
+    ]
 
-    edits, start_idx, end_idx = parse_llm_response_for_diffs(content)
+    blocks = parse_llm_response_for_diffs(content)
 
-    assert edits == expected_edits
-    assert start_idx == start_idx_expected
-    assert end_idx > start_idx
-    # assert end_idx == end_idx_expected
+    assert blocks == expected_blocks
 
 
 def test_parse_empty_replace_block():
@@ -120,31 +108,26 @@ print("Delete me")
 >>>>>>> REPLACE
 ```
 """
-    expected_edits = [('file_to_edit.py', '# Line to delete\nprint("Delete me")\n', '')]
-    start_idx_expected = content.find('```python')
-    end_idx_expected = (
-        content.find('>>>>>>> REPLACE\n```') + len('>>>>>>> REPLACE\n```\n') - 1
-    )
+    expected_blocks = [
+        DiffBlock(
+            filename='file_to_edit.py',
+            search='# Line to delete\nprint("Delete me")\n',
+            replace='',
+        )
+    ]
 
-    edits, start_idx, end_idx = parse_llm_response_for_diffs(content)
+    blocks = parse_llm_response_for_diffs(content)
 
-    assert edits == expected_edits
-    assert start_idx == start_idx_expected
-    assert end_idx > start_idx
-    # assert end_idx == end_idx_expected
+    assert blocks == expected_blocks
 
 
 def test_parse_no_blocks():
     content = 'This is just a regular message without any diff blocks.'
-    expected_edits = []
-    expected_start_idx = -1
-    expected_end_idx = -1
+    expected_blocks = []
 
-    edits, start_idx, end_idx = parse_llm_response_for_diffs(content)
+    blocks = parse_llm_response_for_diffs(content)
 
-    assert edits == expected_edits
-    assert start_idx == expected_start_idx
-    assert end_idx == expected_end_idx
+    assert blocks == expected_blocks
 
 
 def test_parse_malformed_missing_divider():
@@ -158,7 +141,8 @@ new content
 >>>>>>> REPLACE
 ```
 """
-    with pytest.raises(ValueError, match='Expected `=======`'):
+    # The implementation raises LLMMalformedActionError for parsing issues
+    with pytest.raises(LLMMalformedActionError, match='Expected `=======`'):
         parse_llm_response_for_diffs(content)
 
 
@@ -173,7 +157,8 @@ new content
 # Missing replace marker
 ```
 """
-    with pytest.raises(ValueError, match='Expected `>>>>>>> REPLACE`'):
+    # The implementation raises LLMMalformedActionError for parsing issues
+    with pytest.raises(LLMMalformedActionError, match='Expected `>>>>>>> REPLACE`'):
         parse_llm_response_for_diffs(content)
 
 
@@ -197,21 +182,14 @@ new content2
 >>>>>>> REPLACE
 ```
 """
-    expected = [
-        ('file1.py', 'content1\n', 'new content1\n'),
-        ('file1.py', 'content2\n', 'new content2\n'),
+    expected_blocks = [
+        DiffBlock(filename='file1.py', search='content1\n', replace='new content1\n'),
+        DiffBlock(filename='file1.py', search='content2\n', replace='new content2\n'),
     ]
-    start_idx_expected = content.find('```python\nfile1.py')
-    end_idx_expected = (
-        content.rfind('>>>>>>> REPLACE\n```') + len('>>>>>>> REPLACE\n```\n') - 1
-    )
 
-    edits, start_idx, end_idx = parse_llm_response_for_diffs(content)
+    blocks = parse_llm_response_for_diffs(content)
 
-    assert edits == expected
-    assert start_idx == start_idx_expected
-    assert end_idx > start_idx
-    # assert end_idx == end_idx_expected
+    assert blocks == expected_blocks
 
 
 def test_parse_valid_fnames_exact_match():
@@ -226,20 +204,11 @@ new
 ```
 """
     valid_fnames = ['src/app.py', 'src/utils.py']
-    expected_edits = [('src/app.py', 'old\n', 'new\n')]
-    start_idx_expected = content.find('```python')
-    end_idx_expected = (
-        content.find('>>>>>>> REPLACE\n```') + len('>>>>>>> REPLACE\n```\n') - 1
-    )
+    expected_blocks = [DiffBlock(filename='src/app.py', search='old\n', replace='new\n')]
 
-    edits, start_idx, end_idx = parse_llm_response_for_diffs(
-        content, valid_fnames=valid_fnames
-    )
+    blocks = parse_llm_response_for_diffs(content, valid_fnames=valid_fnames)
 
-    assert edits == expected_edits
-    assert start_idx == start_idx_expected
-    assert end_idx > start_idx
-    # assert end_idx == end_idx_expected
+    assert blocks == expected_blocks
 
 
 def test_parse_valid_fnames_fuzzy_match():
@@ -254,36 +223,60 @@ new
 ```
 """
     valid_fnames = ['src/app.py', 'src/utils.py']
-    expected_edits = [
-        ('src/app.py', 'old\n', 'new\n')
+    expected_blocks = [
+        DiffBlock(filename='src/app.py', search='old\n', replace='new\n')
     ]  # Expects fuzzy match to correct filename
-    start_idx_expected = content.find('```python')
-    end_idx_expected = (
-        content.find('>>>>>>> REPLACE\n```') + len('>>>>>>> REPLACE\n```\n') - 1
-    )
 
-    edits, start_idx, end_idx = parse_llm_response_for_diffs(
-        content, valid_fnames=valid_fnames
-    )
+    blocks = parse_llm_response_for_diffs(content, valid_fnames=valid_fnames)
 
-    assert edits == expected_edits
-    assert start_idx == start_idx_expected
-    assert end_idx > start_idx
-    # assert end_idx == end_idx_expected
+    assert blocks == expected_blocks
 
 
-def test_parse_missing_filename_error():
+def test_parse_missing_filename_error_if_search_not_empty():
+    # If search is not empty, a filename MUST be present or inferrable
     content = """
 ```python
 <<<<<<< SEARCH
-old
+old content requires a filename
 =======
 new
 >>>>>>> REPLACE
 ```
 """
-    with pytest.raises(ValueError, match='Bad/missing filename'):
+    with pytest.raises(LLMMalformedActionError, match='Bad/missing filename'):
         parse_llm_response_for_diffs(content)
+
+
+def test_parse_missing_filename_ok_if_search_empty_but_no_filename_line():
+    # If search is empty (new file), but no filename line is found *at all* before the block, it's an error
+    content = """
+```python
+<<<<<<< SEARCH
+=======
+new file content
+>>>>>>> REPLACE
+```
+"""
+    with pytest.raises(LLMMalformedActionError, match='Could not determine filename for new file block'):
+        parse_llm_response_for_diffs(content)
+
+
+def test_parse_missing_filename_ok_if_search_empty_and_filename_line_present():
+    # If search is empty (new file), and a filename line *is* present, it should work
+    content = """
+new_file.py
+```python
+<<<<<<< SEARCH
+=======
+new file content
+>>>>>>> REPLACE
+```
+"""
+    expected_blocks = [
+        DiffBlock(filename='new_file.py', search='', replace='new file content\n')
+    ]
+    blocks = parse_llm_response_for_diffs(content)
+    assert blocks == expected_blocks
 
 
 def test_parse_two_new_files():
@@ -307,21 +300,22 @@ This is plain text.
 >>>>>>> REPLACE
 ```
 """
-    expected_edits = [
-        ('new_file_1.py', '', '# Content for file 1\nprint("File 1")\n'),
-        ('new_file_2.txt', '', 'Content for file 2.\nThis is plain text.\n'),
+    expected_blocks = [
+        DiffBlock(
+            filename='new_file_1.py',
+            search='',
+            replace='# Content for file 1\nprint("File 1")\n',
+        ),
+        DiffBlock(
+            filename='new_file_2.txt',
+            search='',
+            replace='Content for file 2.\nThis is plain text.\n',
+        ),
     ]
-    start_idx_expected = content.find('```python')
-    end_idx_expected = (
-        content.rfind('>>>>>>> REPLACE\n```') + len('>>>>>>> REPLACE\n```\n') - 1
-    )
 
-    edits, start_idx, end_idx = parse_llm_response_for_diffs(content)
+    blocks = parse_llm_response_for_diffs(content)
 
-    assert edits == expected_edits
-    assert start_idx == start_idx_expected
-    assert end_idx > start_idx
-    # assert end_idx == end_idx_expected
+    assert blocks == expected_blocks
 
 
 def test_parse_one_edit_one_new_file():
@@ -347,25 +341,22 @@ print("Newly created")
 >>>>>>> REPLACE
 ```
 """
-    expected_edits = [
-        (
-            'existing_file.py',
-            '# Old line\nprint("Old")\n',
-            '# New line\nprint("New")\n',
+    expected_blocks = [
+        DiffBlock(
+            filename='existing_file.py',
+            search='# Old line\nprint("Old")\n',
+            replace='# New line\nprint("New")\n',
         ),
-        ('new_file.py', '', '# New file content\nprint("Newly created")\n'),
+        DiffBlock(
+            filename='new_file.py',
+            search='',
+            replace='# New file content\nprint("Newly created")\n',
+        ),
     ]
-    start_idx_expected = content.find('```python\nexisting_file.py')
-    end_idx_expected = (
-        content.rfind('>>>>>>> REPLACE\n```') + len('>>>>>>> REPLACE\n```\n') - 1
-    )
 
-    edits, start_idx, end_idx = parse_llm_response_for_diffs(content)
+    blocks = parse_llm_response_for_diffs(content)
 
-    assert edits == expected_edits
-    assert start_idx == start_idx_expected
-    assert end_idx > start_idx
-    # assert end_idx == end_idx_expected
+    assert blocks == expected_blocks
 
 
 def test_parse_two_edits_different_files_explicit():
@@ -394,26 +385,242 @@ b = 'world'
 >>>>>>> REPLACE
 ```
 """
-    expected_edits = [
-        (
-            'file_a.py',
-            '# Original line in file A\na = 1\n',
-            '# Modified line in file A\na = 2\n',
+    expected_blocks = [
+        DiffBlock(
+            filename='file_a.py',
+            search='# Original line in file A\na = 1\n',
+            replace='# Modified line in file A\na = 2\n',
         ),
-        (
-            'file_b.py',
-            "# Original line in file B\nb = 'hello'\n",
-            "# Modified line in file B\nb = 'world'\n",
+        DiffBlock(
+            filename='file_b.py',
+            search="# Original line in file B\nb = 'hello'\n",
+            replace="# Modified line in file B\nb = 'world'\n",
         ),
     ]
-    start_idx_expected = content.find('```python\nfile_a.py')
-    end_idx_expected = (
-        content.rfind('>>>>>>> REPLACE\n```') + len('>>>>>>> REPLACE\n```\n') - 1
-    )
 
-    edits, start_idx, end_idx = parse_llm_response_for_diffs(content)
+    blocks = parse_llm_response_for_diffs(content)
 
-    assert edits == expected_edits
-    assert start_idx == start_idx_expected
-    assert end_idx > start_idx
-    # assert end_idx == end_idx_expected
+    assert blocks == expected_blocks
+
+
+def test_parse_block_without_closing_fence():
+    content = """
+```python
+path/to/file.py
+<<<<<<< SEARCH
+print("Hello")
+=======
+print("Hello, World!")
+>>>>>>> REPLACE
+Some text after, no closing fence."""
+    expected_blocks = [
+        DiffBlock(
+            filename='path/to/file.py',
+            search='print("Hello")\n',
+            replace='print("Hello, World!")\n',
+        )
+    ]
+    blocks = parse_llm_response_for_diffs(content)
+    assert blocks == expected_blocks
+
+
+def test_parse_block_with_extra_content_after_replace():
+    # Content after REPLACE but before closing fence should be ignored by parser
+    content = """
+```python
+path/to/file.py
+<<<<<<< SEARCH
+print("Hello")
+=======
+print("Hello, World!")
+>>>>>>> REPLACE
+This should be ignored.
+```
+More text."""
+    expected_blocks = [
+        DiffBlock(
+            filename='path/to/file.py',
+            search='print("Hello")\n',
+            replace='print("Hello, World!")\n',
+        )
+    ]
+    blocks = parse_llm_response_for_diffs(content)
+    assert blocks == expected_blocks
+
+
+def test_parse_malformed_unexpected_divider():
+    content = """
+```python
+file.py
+<<<<<<< SEARCH
+old content
+=======
+new content
+========= UNEXPECTED DIVIDER
+>>>>>>> REPLACE
+```
+"""
+    with pytest.raises(LLMMalformedActionError, match='Unexpected `=======`'):
+        parse_llm_response_for_diffs(content)
+
+
+def test_find_filename_simple():
+    lines = ['file.py', '```python']
+    assert find_filename(lines) == 'file.py'
+
+
+def test_find_filename_with_path():
+    lines = ['src/core/file.py', '```python']
+    assert find_filename(lines) == 'src/core/file.py'
+
+
+def test_find_filename_strip_chars():
+    lines = ['*`src/app.py`*', '```python']
+    assert find_filename(lines) == 'src/app.py'
+
+
+def test_find_filename_strip_colon():
+    lines = ['File: src/app.py:', '```python']
+    assert find_filename(lines) == 'src/app.py' # Assuming strip_filename handles 'File: ' prefix
+
+
+def test_find_filename_no_filename():
+    lines = ['Just some text', '```python']
+    assert find_filename(lines) is None
+
+
+def test_find_filename_too_far():
+    lines = ['file.py', 'another line', 'yet another', '```python'] # file.py is too far back
+    assert find_filename(lines) is None
+
+
+def test_find_filename_valid_fnames_exact():
+    lines = ['app.py', '```python']
+    valid = ['src/app.py', 'app.py']
+    assert find_filename(lines, valid_fnames=valid) == 'app.py'
+
+
+def test_find_filename_valid_fnames_fuzzy():
+    lines = ['appz.py', '```python']
+    valid = ['src/app.py', 'app.py']
+    assert find_filename(lines, valid_fnames=valid) == 'app.py'
+
+
+def test_find_filename_valid_fnames_no_match():
+    lines = ['other.py', '```python']
+    valid = ['src/app.py', 'app.py']
+    # Should still return the best guess if no valid match
+    assert find_filename(lines, valid_fnames=valid) == 'other.py'
+
+
+def test_strip_filename_basic():
+    assert strip_filename(" file.py ") == "file.py"
+    assert strip_filename("`file.py`") == "file.py"
+    assert strip_filename("*file.py*") == "file.py"
+    assert strip_filename("file.py:") == "file.py"
+    assert strip_filename("# file.py") == "file.py"
+    assert strip_filename("`*# file.py:*` ") == "file.py"
+
+
+def test_strip_filename_no_strip():
+    assert strip_filename("file.py") == "file.py"
+
+
+def test_strip_filename_none():
+    assert strip_filename(" ") is None
+    assert strip_filename("```") is None
+    assert strip_filename("...") is None
+
+
+def test_parse_with_different_fence():
+    content = """
+~~~markdown
+path/to/file.md
+<<<<<<< SEARCH
+Old text
+=======
+New text
+>>>>>>> REPLACE
+~~~
+"""
+    expected_blocks = [
+        DiffBlock(filename='path/to/file.md', search='Old text\n', replace='New text\n')
+    ]
+    blocks = parse_llm_response_for_diffs(content, fence=('~~~', '~~~'))
+    assert blocks == expected_blocks
+
+
+def test_parse_whitespace_handling():
+    # Tests if leading/trailing whitespace inside blocks is preserved
+    content = """
+```python
+file_with_whitespace.py
+<<<<<<< SEARCH
+    leading whitespace
+trailing whitespace    
+=======
+    new leading whitespace
+new trailing whitespace    
+>>>>>>> REPLACE
+```
+"""
+    expected_blocks = [
+        DiffBlock(
+            filename='file_with_whitespace.py',
+            search='    leading whitespace\ntrailing whitespace    \n',
+            replace='    new leading whitespace\nnew trailing whitespace    \n',
+        )
+    ]
+    blocks = parse_llm_response_for_diffs(content)
+    assert blocks == expected_blocks
+
+
+def test_parse_consecutive_blocks():
+    # Tests parsing blocks immediately following each other
+    content = """
+```python
+file_a.py
+<<<<<<< SEARCH
+block 1 search
+=======
+block 1 replace
+>>>>>>> REPLACE
+```
+```python
+file_b.py
+<<<<<<< SEARCH
+block 2 search
+=======
+block 2 replace
+>>>>>>> REPLACE
+```
+"""
+    expected_blocks = [
+        DiffBlock(filename='file_a.py', search='block 1 search\n', replace='block 1 replace\n'),
+        DiffBlock(filename='file_b.py', search='block 2 search\n', replace='block 2 replace\n'),
+    ]
+    blocks = parse_llm_response_for_diffs(content)
+    assert blocks == expected_blocks
+
+
+def test_parse_filename_like_text_in_search():
+    # Tests that text resembling a filename inside SEARCH doesn't confuse the parser
+    content = """
+```python
+real_file.py
+<<<<<<< SEARCH
+This line contains fake_file.py
+=======
+This is the replacement.
+>>>>>>> REPLACE
+```
+"""
+    expected_blocks = [
+        DiffBlock(
+            filename='real_file.py',
+            search='This line contains fake_file.py\n',
+            replace='This is the replacement.\n',
+        )
+    ]
+    blocks = parse_llm_response_for_diffs(content)
+    assert blocks == expected_blocks
