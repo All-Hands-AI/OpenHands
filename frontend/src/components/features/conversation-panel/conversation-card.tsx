@@ -216,7 +216,11 @@ export function ConversationCard({
                       : undefined
                   }
                   onDisplayCost={showOptions ? handleDisplayCost : undefined}
-                  onShowAgentTools={showOptions && systemMessage ? handleShowAgentTools : undefined}
+                  onShowAgentTools={
+                    showOptions && systemMessage
+                      ? handleShowAgentTools
+                      : undefined
+                  }
                   position={variant === "compact" ? "top" : "bottom"}
                 />
               )}
