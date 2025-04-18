@@ -20,6 +20,7 @@ from openhands.events.action import (
     MessageAction,
 )
 from openhands.events.action.mcp import McpAction
+from openhands.events.action.message import SystemMessageAction
 from openhands.events.event import Event, RecallType
 from openhands.events.observation import (
     AgentCondensationObservation,
@@ -53,7 +54,6 @@ class ConversationMemory:
     def process_events(
         self,
         condensed_history: list[Event],
-        initial_messages: list[Message],
         max_message_chars: int | None = None,
         vision_is_active: bool = False,
     ) -> list[Message]:
@@ -63,7 +63,6 @@ class ConversationMemory:
 
         Args:
             condensed_history: The condensed history of events to convert
-            initial_messages: The initial messages to include in the conversation
             max_message_chars: The maximum number of characters in the content of an event included
                 in the prompt to the LLM. Larger observations are truncated.
             vision_is_active: Whether vision is active in the LLM. If True, image URLs will be included.
@@ -74,8 +73,8 @@ class ConversationMemory:
         # log visual browsing status
         logger.debug(f'Visual browsing: {self.agent_config.enable_som_visual_browsing}')
 
-        # Process special events first (system prompts, etc.)
-        messages = initial_messages
+        # Initialize empty messages list
+        messages = []
 
         # Process regular events
         pending_tool_call_action_messages: dict[str, Message] = {}
@@ -131,20 +130,6 @@ class ConversationMemory:
             messages += messages_to_add
         messages = list(ConversationMemory._filter_unmatched_tool_calls(messages))
         return messages
-
-    def process_initial_messages(self, with_caching: bool = False) -> list[Message]:
-        """Create the initial messages for the conversation."""
-        return [
-            Message(
-                role='system',
-                content=[
-                    TextContent(
-                        text=self.prompt_manager.get_system_message(),
-                        cache_prompt=with_caching,
-                    )
-                ],
-            )
-        ]
 
     def _process_action(
         self,
@@ -273,6 +258,16 @@ class ConversationMemory:
                 Message(
                     role='user',  # Always user for CmdRunAction
                     content=content,
+                )
+            ]
+        elif isinstance(action, SystemMessageAction):
+            # Convert SystemMessageAction to a system message
+            return [
+                Message(
+                    role='system',
+                    content=[TextContent(text=action.content)],
+                    # Include tools if function calling is enabled
+                    tool_calls=None,
                 )
             ]
         return []
@@ -546,6 +541,8 @@ class ConversationMemory:
 
         For new Anthropic API, we only need to mark the last user or tool message as cacheable.
         """
+        if len(messages) > 0 and messages[0].role == 'system':
+            messages[0].content[-1].cache_prompt = True
         # NOTE: this is only needed for anthropic
         for message in reversed(messages):
             if message.role in ('user', 'tool'):
