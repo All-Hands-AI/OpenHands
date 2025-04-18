@@ -126,6 +126,8 @@ class CodeActAgent(Agent):
         return tools
 
 
+        self.response_to_actions_fn = codeact_function_calling.response_to_actions
+
     def reset(self) -> None:
         """Resets the CodeAct Agent."""
         super().reset()
@@ -191,7 +193,7 @@ class CodeActAgent(Agent):
         params['extra_body'] = {'metadata': state.to_llm_metadata(agent_name=self.name)}
         response = self.llm.completion(**params)
         logger.debug(f'Response from LLM: {response}')
-        actions = codeact_function_calling.response_to_actions(response)
+        actions = self.response_to_actions_fn(response)
         logger.debug(f'Actions after response_to_actions: {actions}')
         for action in actions:
             self.pending_actions.append(action)

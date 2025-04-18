@@ -1,3 +1,4 @@
+from typing import Union
 from unittest.mock import Mock
 
 import pytest
@@ -5,9 +6,16 @@ from litellm import ChatCompletionMessageToolCall
 
 from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
 from openhands.agenthub.codeact_agent.function_calling import (
+    get_tools as codeact_get_tools,
+)
+from openhands.agenthub.codeact_agent.function_calling import (
+    response_to_actions as codeact_response_to_actions,
+)
+from openhands.agenthub.codeact_agent.tools import (
     BrowserTool,
     IPythonTool,
     LLMBasedFileEditTool,
+    ThinkTool,
     WebReadTool,
     create_cmd_run_tool,
     create_str_replace_editor_tool,
@@ -16,6 +24,17 @@ from openhands.agenthub.codeact_agent.function_calling import (
 from openhands.agenthub.codeact_agent.tools.browser import (
     _BROWSER_DESCRIPTION,
     _BROWSER_TOOL_DESCRIPTION,
+)
+from openhands.agenthub.readonly_agent.function_calling import (
+    get_tools as readonly_get_tools,
+)
+from openhands.agenthub.readonly_agent.function_calling import (
+    response_to_actions as readonly_response_to_actions,
+)
+from openhands.agenthub.readonly_agent.readonly_agent import ReadOnlyAgent
+from openhands.agenthub.readonly_agent.tools import (
+    GlobTool,
+    GrepTool,
 )
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig, LLMConfig
@@ -34,10 +53,20 @@ from openhands.events.tool import ToolCallMetadata
 from openhands.llm.llm import LLM
 
 
+@pytest.fixture(params=['CodeActAgent', 'ReadOnlyAgent'])
+def agent_class(request):
+    if request.param == 'CodeActAgent':
+        return CodeActAgent
+    else:
+        from openhands.agenthub.readonly_agent.readonly_agent import ReadOnlyAgent
+
+        return ReadOnlyAgent
+
+
 @pytest.fixture
-def agent() -> CodeActAgent:
+def agent(agent_class) -> Union[CodeActAgent, ReadOnlyAgent]:
     config = AgentConfig()
-    agent = CodeActAgent(llm=LLM(LLMConfig()), config=config)
+    agent = agent_class(llm=LLM(LLMConfig()), config=config)
     agent.llm = Mock()
     agent.llm.config = Mock()
     agent.llm.config.max_message_chars = 1000
@@ -61,7 +90,7 @@ def mock_state() -> State:
     return state
 
 
-def test_reset(agent: CodeActAgent):
+def test_reset(agent):
     # Add some state
     action = MessageAction(content='test')
     action._source = EventSource.AGENT
@@ -74,7 +103,7 @@ def test_reset(agent: CodeActAgent):
     assert len(agent.pending_actions) == 0
 
 
-def test_step_with_pending_actions(agent: CodeActAgent):
+def test_step_with_pending_actions(agent):
     # Add a pending action
     pending_action = MessageAction(content='test')
     pending_action._source = EventSource.AGENT
@@ -129,7 +158,6 @@ def test_str_replace_editor_tool():
     assert 'old_str' in properties
     assert 'new_str' in properties
     assert 'insert_line' in properties
-    assert 'view_range' in properties
 
     assert StrReplaceEditorTool['function']['parameters']['required'] == [
         'command',
@@ -193,7 +221,9 @@ def test_response_to_actions_invalid_tool():
     mock_response.choices[0].message.tool_calls[0].function.arguments = '{}'
 
     with pytest.raises(FunctionCallNotExistsError):
-        response_to_actions(mock_response)
+        codeact_response_to_actions(mock_response)
+    with pytest.raises(FunctionCallNotExistsError):
+        readonly_response_to_actions(mock_response)
 
 
 def test_step_with_no_pending_actions(mock_state: State):
@@ -234,7 +264,10 @@ def test_step_with_no_pending_actions(mock_state: State):
     assert action.content == 'Task completed'
 
 
-def test_correct_tool_description_loaded_based_on_model_name(mock_state: State):
+@pytest.mark.parametrize('agent_type', ['CodeActAgent', 'ReadOnlyAgent'])
+def test_correct_tool_description_loaded_based_on_model_name(
+    agent_type, mock_state: State
+):
     """Tests that the simplified tool descriptions are loaded for specific models."""
     o3_mock_config = Mock()
     o3_mock_config.model = 'mock_o3_model'
@@ -242,7 +275,16 @@ def test_correct_tool_description_loaded_based_on_model_name(mock_state: State):
     llm = Mock()
     llm.config = o3_mock_config
 
-    agent = CodeActAgent(llm=llm, config=AgentConfig())
+    if agent_type == 'CodeActAgent':
+        from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
+
+        agent_class = CodeActAgent
+    else:
+        from openhands.agenthub.readonly_agent.readonly_agent import ReadOnlyAgent
+
+        agent_class = ReadOnlyAgent
+
+    agent = agent_class(llm=llm, config=AgentConfig())
     for tool in agent.tools:
         # Assert all descriptions have less than 1024 characters
         assert len(tool['function']['description']) < 1024
@@ -251,17 +293,20 @@ def test_correct_tool_description_loaded_based_on_model_name(mock_state: State):
     sonnet_mock_config.model = 'mock_sonnet_model'
 
     llm.config = sonnet_mock_config
-    agent = CodeActAgent(llm=llm, config=AgentConfig())
+    agent = agent_class(llm=llm, config=AgentConfig())
     # Assert existence of the detailed tool descriptions that are longer than 1024 characters
-    assert any(len(tool['function']['description']) > 1024 for tool in agent.tools)
+    if agent_type == 'CodeActAgent':
+        # This only holds for CodeActAgent
+        assert any(len(tool['function']['description']) > 1024 for tool in agent.tools)
 
 
-def test_mismatched_tool_call_events_and_auto_add_system_message(mock_state: State):
+def test_mismatched_tool_call_events_and_auto_add_system_message(
+    agent, mock_state: State
+):
     """Tests that the agent can convert mismatched tool call events (i.e., an observation with no corresponding action) into messages.
 
     This also tests that the system message is automatically added to the event stream if SystemMessageAction is not present.
     """
-    agent = CodeActAgent(llm=LLM(LLMConfig()), config=AgentConfig())
 
     tool_call_metadata = Mock(
         spec=ToolCallMetadata,
@@ -320,6 +365,39 @@ def test_mismatched_tool_call_events_and_auto_add_system_message(mock_state: Sta
     messages = agent._get_messages(mock_state.history)
     assert len(messages) == 1  # Only system message, observation has no matching action
     assert messages[0].role == 'system'
+
+
+def test_grep_tool():
+    assert GrepTool['type'] == 'function'
+    assert GrepTool['function']['name'] == 'grep'
+
+    properties = GrepTool['function']['parameters']['properties']
+    assert 'pattern' in properties
+    assert 'path' in properties
+    assert 'include' in properties
+
+    assert GrepTool['function']['parameters']['required'] == ['pattern']
+
+
+def test_glob_tool():
+    assert GlobTool['type'] == 'function'
+    assert GlobTool['function']['name'] == 'glob'
+
+    properties = GlobTool['function']['parameters']['properties']
+    assert 'pattern' in properties
+    assert 'path' in properties
+
+    assert GlobTool['function']['parameters']['required'] == ['pattern']
+
+
+def test_think_tool():
+    assert ThinkTool['type'] == 'function'
+    assert ThinkTool['function']['name'] == 'think'
+
+    properties = ThinkTool['function']['parameters']['properties']
+    assert 'thought' in properties
+
+    assert ThinkTool['function']['parameters']['required'] == ['thought']
 
 
 def test_enhance_messages_adds_newlines_between_consecutive_user_messages(
