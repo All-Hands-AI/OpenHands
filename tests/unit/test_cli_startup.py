@@ -80,6 +80,7 @@ def mock_config():
         with patch('openhands.core.cli.setup_config_from_args') as mock_setup_config:
             mock_config = AppConfig()
             mock_config.cli_multiline_input = False
+            mock_config.runtime = 'local'
             mock_config.security = Mock()
             mock_config.security.confirmation_mode = False
             mock_config.sandbox = Mock()
@@ -151,15 +152,6 @@ async def test_cli_startup_folder_security_confirmation_agree(
                 buffer.seek(0)
                 output = buffer.read()
 
-                # ASCII art banner
-                assert '___' in output
-
-                # Version information
-                assert 'OpenHands CLI v' in output
-
-                # Session initialization
-                assert 'Initializing session' in output
-
                 # Folder security confirmation
                 assert 'Do you trust the files in this folder?' in output
                 assert '/test' in output
@@ -176,6 +168,15 @@ async def test_cli_startup_folder_security_confirmation_agree(
                 )
                 mock_manage_openhands_file.assert_any_call('/test', add_to_trusted=True)
 
+                # Runtime initialization message
+                assert '⚙️ Keeping it grounded: local startup sequence initiated...' in output
+
+                # ASCII art banner
+                assert '___' in output
+
+                # Version information
+                assert 'OpenHands CLI v' in output
+                
                 # Session initialization complete
                 assert 'Initialized session' in output
 
@@ -214,15 +215,6 @@ async def test_cli_startup_folder_security_confirmation_disagree(
                 buffer.seek(0)
                 output = buffer.read()
 
-                # ASCII art banner
-                assert '___' in output
-
-                # Version information
-                assert 'OpenHands CLI v' in output
-
-                # Session initialization
-                assert 'Initializing session' in output
-
                 # Folder security confirmation
                 assert 'Do you trust the files in this folder?' in output
                 assert '/test' in output
@@ -237,6 +229,15 @@ async def test_cli_startup_folder_security_confirmation_disagree(
                 mock_cli_confirm.assert_any_call(
                     'Do you wish to continue?', ['Yes, proceed', 'No, exit']
                 )
+
+                # Runtime initialization message
+                assert '⚙️ Keeping it grounded: local startup sequence initiated...' not in output
+
+                # ASCII art banner
+                assert '___' not in output
+
+                # Version information
+                assert 'OpenHands CLI v' not in output
 
                 # Session initialization complete
                 assert 'Initialized session' not in output
@@ -274,15 +275,6 @@ async def test_cli_startup_trusted_folder(
                 buffer.seek(0)
                 output = buffer.read()
 
-                # ASCII art banner
-                assert '___' in output
-
-                # Version information
-                assert 'OpenHands CLI v' in output
-
-                # Session initialization
-                assert 'Initializing session' in output
-
                 # Folder security confirmation should not be shown
                 assert 'Do you trust the files in this folder?' not in output
                 assert '/test' not in output
@@ -295,6 +287,15 @@ async def test_cli_startup_trusted_folder(
                 mock_cli_confirm.assert_called_once_with(
                     '\nTerminate session?', ['Yes, proceed', 'No, dismiss']
                 )
+
+                # Runtime initialization message
+                assert '⚙️ Keeping it grounded: local startup sequence initiated...' in output
+
+                # ASCII art banner
+                assert '___' in output
+
+                # Version information
+                assert 'OpenHands CLI v' in output
 
                 # Session initialization
                 assert 'Initialized session' in output

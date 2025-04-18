@@ -370,7 +370,7 @@ async def test_init_command_non_local_runtime(
 
 
 @pytest.mark.asyncio
-async def test_new_command(
+async def test_new_command_with_user_confirmation(
     mock_runtime, mock_controller, mock_config, mock_agent, mock_memory, mock_read_task
 ):
     buffer = StringIO()
@@ -428,6 +428,58 @@ async def test_new_command(
 
             # Verify shutdown message was called twice
             assert mock_shutdown.call_count == 2, f"Expected shutdown message twice, called {mock_shutdown.call_count} times"
+
+@pytest.mark.asyncio
+async def test_new_command_with_user_reject(
+    mock_runtime, mock_controller, mock_config, mock_agent, mock_memory, mock_read_task
+):
+    buffer = StringIO()
+
+    with patch('openhands.core.cli.manage_openhands_file', return_value=True), \
+         patch('openhands.core.cli.check_folder_security_agreement', return_value=True), \
+         patch('openhands.core.cli.read_prompt_input') as mock_prompt, \
+         patch('openhands.core.cli.cli_confirm', return_value=1), \
+         patch('openhands.core.cli.clear'), \
+         patch('openhands.core.cli.create_runtime', return_value=mock_runtime), \
+         patch('openhands.core.cli.create_controller', return_value=(mock_controller, None)):
+
+        mock_prompt.side_effect = ['/new']
+
+        with create_app_session(
+            input=create_pipe_input(), output=create_output(stdout=buffer)
+        ):
+            mock_controller.status_callback = None
+
+            main_task = asyncio.create_task(main(asyncio.get_event_loop()))
+
+            agent_ready_event = AgentStateChangedObservation(
+                agent_state=AgentState.AWAITING_USER_INPUT,
+                content='Agent is ready for user input',
+            )
+            mock_runtime.event_stream.add_event(agent_ready_event, EventSource.AGENT)
+            # Add a small delay to allow the first loop iteration to process /new
+     
+            # Let the main loop run
+            await asyncio.sleep(0.2)
+
+            try:
+                await asyncio.wait_for(main_task, timeout=0.5)
+            except asyncio.TimeoutError:
+                main_task.cancel()
+                try:
+                    await main_task
+                except asyncio.CancelledError:
+                    pass
+
+            # Verify that no STOPPED state change events were sent
+            state_change_events = [
+                event
+                for event, source in mock_runtime.event_stream.events
+                if isinstance(event, ChangeAgentStateAction)
+                and event.agent_state == AgentState.STOPPED
+                and source == EventSource.ENVIRONMENT
+            ]
+            assert len(state_change_events) == 0, f"Expected 0 STOPPED events, got {len(state_change_events)}"
 
 
 @pytest.mark.asyncio
@@ -553,8 +605,9 @@ async def test_settings_command_basic_llm_settings(
          patch('openhands.core.cli.read_prompt_input') as mock_prompt, \
          patch('openhands.core.cli.display_shutdown_message'), \
          patch('openhands.core.cli.display_settings', return_value=0), \
-        patch('prompt_toolkit.PromptSession.prompt_async') as mock_prompt_async, \
-        patch('openhands.core.cli.cli_confirm', return_value=0) as mock_cli_confirm:
+         patch('openhands.storage.settings.file_settings_store.FileSettingsStore.store') as mock_store, \
+         patch('prompt_toolkit.PromptSession.prompt_async') as mock_prompt_async, \
+         patch('openhands.core.cli.cli_confirm', return_value=0) as mock_cli_confirm:
         
         # First prompt call returns /settings, second returns /exit
         mock_prompt.side_effect = ['/settings', '/exit']
@@ -610,8 +663,9 @@ async def test_settings_command_advanced_llm_settings(
          patch('openhands.core.cli.read_prompt_input') as mock_prompt, \
          patch('openhands.core.cli.display_shutdown_message'), \
          patch('openhands.core.cli.display_settings', return_value=1), \
-        patch('prompt_toolkit.PromptSession.prompt_async') as mock_prompt_async, \
-        patch('openhands.core.cli.cli_confirm', return_value=0) as mock_cli_confirm:
+         patch('openhands.storage.settings.file_settings_store.FileSettingsStore.store') as mock_store, \
+         patch('prompt_toolkit.PromptSession.prompt_async') as mock_prompt_async, \
+         patch('openhands.core.cli.cli_confirm', return_value=0) as mock_cli_confirm:
         
         # First prompt call returns /settings, second returns /exit
         mock_prompt.side_effect = ['/settings', '/exit']

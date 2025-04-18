@@ -308,6 +308,23 @@ def display_help():
     )
 
 
+def display_runtime_initialization_message(runtime: str):
+    print_formatted_text('')
+    if runtime == 'local':
+        print_formatted_text(
+            HTML(
+                '<grey>⚙️ Keeping it grounded: local startup sequence initiated...</grey>'
+            )
+        )
+    elif runtime == 'docker':
+        print_formatted_text(
+            HTML(
+                '<grey>🐳 All hands on deck! Preparing Docker launch sequence...</grey>'
+            )
+        )
+    print_formatted_text('')
+
+
 def display_banner(session_id: str, is_loaded: asyncio.Event):
     print_formatted_text(
         HTML(r"""<gold>
@@ -396,11 +413,13 @@ def display_usage_metrics(usage_metrics: UsageMetrics):
         title='Usage Metrics',
         style=f'fg:{COLOR_GREY}',
     )
+    print_formatted_text('')
     print_container(container)
     print_formatted_text('')  # Add a newline after the frame
 
 
 def display_shutdown_message(usage_metrics: UsageMetrics, session_id: str):
+    print_formatted_text(HTML('<grey>Closing current session...</grey>'))
     display_usage_metrics(usage_metrics)
     print_formatted_text(HTML(f'<grey>Closed session {session_id}</grey>\n'))
 
@@ -415,7 +434,6 @@ def display_status(usage_metrics: UsageMetrics, session_id: str):
     print_formatted_text('')  # Add a newline
     print_formatted_text(HTML(f'<grey>Session ID: {session_id}</grey>'))
     print_formatted_text(HTML(f'<grey>Session Duration: {duration_str}</grey>'))
-    print_formatted_text('')  # Add a newline
     display_usage_metrics(usage_metrics)
 
 
@@ -523,9 +541,7 @@ async def read_prompt_input(multiline=False):
                     '> ',
                 )
         return message
-    except KeyboardInterrupt:
-        return '/exit'
-    except EOFError:
+    except (KeyboardInterrupt, EOFError):
         return '/exit'
 
 
@@ -736,9 +752,9 @@ def check_folder_security_agreement(current_dir):
         security_frame = Frame(
             TextArea(
                 text=(
-                    f'Do you trust the files in this folder?\n\n'
-                    f'{current_dir}\n\n'
-                    'OpenHands may read and execute files in this folder with your permission.'
+                    f' Do you trust the files in this folder?\n\n'
+                    f'   {current_dir}\n\n'
+                    ' OpenHands may read and execute files in this folder with your permission.'
                 ),
                 style=COLOR_GREY,
                 read_only=True,
@@ -749,6 +765,7 @@ def check_folder_security_agreement(current_dir):
 
         clear()
         print_container(security_frame)
+        print_formatted_text('')
 
         confirm = (
             cli_confirm('Do you wish to continue?', ['Yes, proceed', 'No, exit']) == 0
@@ -913,7 +930,9 @@ async def modify_llm_settings_basic(
         )
 
         if provider not in organized_models:
-            print(f'Invalid provider selected: {provider}')
+            print_formatted_text(
+                HTML(f'\n<grey>Invalid provider selected: {provider}</grey>\n')
+            )
             return False
 
         model_list = organized_models[provider]['models']
@@ -931,7 +950,11 @@ async def modify_llm_settings_basic(
         )
 
         if model not in organized_models[provider]['models']:
-            print(f'Invalid model selected: {model} for provider {provider}')
+            print_formatted_text(
+                HTML(
+                    f'\n<grey>Invalid model selected: {model} for provider {provider}</grey>\n'
+                )
+            )
             return False
 
         session.completer = None  # Reset completer for password prompt
@@ -942,12 +965,11 @@ async def modify_llm_settings_basic(
         KeyboardInterrupt,
         EOFError,
     ):
-        print_formatted_text('Operation cancelled by user.')
         return False  # Return False on exception
 
+    # TODO: check for empty string inputs?
     # Handle case where a prompt might return None unexpectedly
     if provider is None or model is None or api_key is None:
-        print_formatted_text('Operation incomplete.')
         return False
 
     save_settings = (
@@ -991,8 +1013,6 @@ async def modify_llm_settings_basic(
 
     await settings_store.store(settings)
 
-    print_formatted_text('Settings saved successfully.')
-
     return True
 
 
@@ -1019,7 +1039,9 @@ async def modify_llm_settings_advanced(
         )
 
         if agent not in agent_list:
-            print_formatted_text(f'\nInvalid agent selected: {agent}')
+            print_formatted_text(
+                HTML(f'\n<grey>Invalid agent selected: {agent}</grey>\n')
+            )
             return False
 
         enable_confirmation_mode = (
@@ -1043,12 +1065,11 @@ async def modify_llm_settings_advanced(
         KeyboardInterrupt,
         EOFError,
     ):
-        print_formatted_text('Operation cancelled by user.')
         return False  # Return False on exception
 
+    # TODO: check for empty string inputs?
     # Handle case where a prompt might return None unexpectedly
     if custom_model is None or base_url is None or api_key is None or agent is None:
-        print_formatted_text('Operation incomplete.')
         return False
 
     save_settings = (
@@ -1095,8 +1116,6 @@ async def modify_llm_settings_advanced(
 
     await settings_store.store(settings)
 
-    print_formatted_text('Settings saved successfully.')
-
     return True
 
 
@@ -1113,8 +1132,8 @@ async def run_session(
     sid = str(uuid4())
     is_loaded = asyncio.Event()
 
-    # Show OpenHands banner and session ID
-    display_banner(session_id=sid, is_loaded=is_loaded)
+    # Show runtime initialization message
+    display_runtime_initialization_message(config.runtime)
 
     # Show Initialization loader
     loop.run_in_executor(
@@ -1285,10 +1304,6 @@ async def run_session(
     # Clear loading animation
     is_loaded.set()
 
-    if not check_folder_security_agreement(current_dir):
-        # User rejected, exit application
-        return False
-
     # Clear the terminal
     clear()
 
@@ -1363,6 +1378,10 @@ async def main(loop: asyncio.AbstractEventLoop):
 
     if not current_dir:
         raise ValueError('Workspace base directory not specified')
+
+    if not check_folder_security_agreement(current_dir):
+        # User rejected, exit application
+        return
 
     # Read task from file, CLI args, or stdin
     task_str = read_task(args, config.cli_multiline_input)
