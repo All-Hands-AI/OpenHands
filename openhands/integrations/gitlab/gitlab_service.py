@@ -225,6 +225,7 @@ class GitLabService(GitService):
                 full_name=repo.get('path_with_namespace'),
                 stargazers_count=repo.get('star_count'),
                 git_provider=ProviderType.GITLAB,
+                is_public = repo.get('visibility') == 'public'
             )
             for repo in all_repos
         ]
