@@ -475,13 +475,13 @@ async def test_settings_command_display_basic_settings(
             output = buffer.read()
 
             # Verify display_settings content
-            assert 'Current Settings' in output
+            assert 'Settings' in output
             assert 'LLM Provider' in output
             assert 'LLM Model' in output
             assert 'API Key' in output
 
             # Verify setting modification options
-            mock_cli_confirm.assert_any_call('Which settings would you like to modify?', ['LLM Settings - Basic', 'LLM Settings - Advanced', 'Additional Settings', 'No, dismiss'])
+            mock_cli_confirm.assert_any_call('Which settings would you like to modify?', ['Basic', 'Advanced', 'Go back'])
 
 
 @pytest.mark.asyncio
@@ -530,7 +530,7 @@ async def test_settings_command_display_advanced_settings(
             output = buffer.read()
 
             # Verify display_settings content
-            assert 'Current Settings' in output
+            assert 'Settings' in output
             assert 'Custom Model' in output
             assert 'Base URL' in output
             assert 'API Key' in output
@@ -539,7 +539,7 @@ async def test_settings_command_display_advanced_settings(
             assert 'Memory Condensation' in output
 
             # Verify setting modification options
-            mock_cli_confirm.assert_any_call('Which settings would you like to modify?', ['LLM Settings - Basic', 'LLM Settings - Advanced', 'Additional Settings', 'No, dismiss'])
+            mock_cli_confirm.assert_any_call('Which settings would you like to modify?', ['Basic', 'Advanced', 'Go back'])
 
 
 @pytest.mark.asyncio
@@ -591,8 +591,8 @@ async def test_settings_command_basic_llm_settings(
             output = buffer.read()
 
             # Verify prompts for basic llm settings
-            mock_prompt_async.assert_any_call('(Step 1/3) Select LLM Provider: ', completer=ANY)
-            mock_prompt_async.assert_any_call('(Step 2/3) Select LLM Model: ', completer=ANY)
+            mock_prompt_async.assert_any_call('(Step 1/3) Select LLM Provider (use Tab for completion): ', completer=ANY)
+            mock_prompt_async.assert_any_call('(Step 2/3) Select LLM Model (use Tab for completion): ', completer=ANY)
             mock_prompt_async.assert_any_call('(Step 3/3) Enter API Key: ')
 
             # Verify save settings confirmation
@@ -648,59 +648,12 @@ async def test_settings_command_advanced_llm_settings(
             output = buffer.read()
 
             # Verify prompts for advanced llm settings
-            mock_prompt_async.assert_any_call('(Step 1/6) Enter custom model: ')
-            mock_prompt_async.assert_any_call('(Step 2/6) Enter base URL: ')
-            mock_prompt_async.assert_any_call('(Step 3/6) Enter API key: ')
-            mock_prompt_async.assert_any_call('(Step 4/6) Select agent (use Tab for completion): ', completer=ANY)
+            mock_prompt_async.assert_any_call('(Step 1/6) Custom Model: ')
+            mock_prompt_async.assert_any_call('(Step 2/6) Base URL: ')
+            mock_prompt_async.assert_any_call('(Step 3/6) API Key: ')
+            mock_prompt_async.assert_any_call('(Step 4/6) Agent (use Tab for completion): ', completer=ANY)
             mock_cli_confirm.assert_any_call(question='(Step 5/6) Confirmation Mode:', choices=['Enable', 'Disable'])
             mock_cli_confirm.assert_any_call(question='(Step 6/6) Memory Condensation:', choices=['Enable', 'Disable'])
 
             # Verify save settings confirmation
             mock_cli_confirm.assert_any_call('\nSave new settings? Current session will be terminated!', ['Yes, proceed', 'No, dismiss'])
-
-
-@pytest.mark.asyncio
-async def test_settings_command_additional_settings(
-    mock_runtime, mock_controller, mock_config, mock_agent, mock_memory, mock_read_task
-):
-    buffer = StringIO()
-
-    with patch('openhands.core.cli.manage_openhands_file', return_value=True), \
-         patch('openhands.core.cli.check_folder_security_agreement', return_value=True), \
-         patch('openhands.core.cli.read_prompt_input') as mock_prompt, \
-         patch('openhands.core.cli.display_shutdown_message'), \
-         patch('openhands.core.cli.display_settings', return_value=2):
-        
-        # First prompt call returns /settings, second returns /exit
-        mock_prompt.side_effect = ['/settings', '/exit']
-
-        with create_app_session(
-            input=create_pipe_input(), output=create_output(stdout=buffer)
-        ):
-            mock_controller.status_callback = None
-
-            main_task = asyncio.create_task(main(asyncio.get_event_loop()))
-
-            agent_ready_event = AgentStateChangedObservation(
-                agent_state=AgentState.AWAITING_USER_INPUT,
-                content='Agent is ready for user input',
-            )
-            mock_runtime.event_stream.add_event(
-                agent_ready_event, EventSource.AGENT
-            )
-
-            await asyncio.sleep(0.1)
-
-            try:
-                await asyncio.wait_for(main_task, timeout=0.5)
-            except asyncio.TimeoutError:
-                main_task.cancel()
-                try:
-                    await main_task
-                except asyncio.CancelledError:
-                    pass
-
-            buffer.seek(0)
-            output = buffer.read()
-
-            assert 'This feature is not available' in output

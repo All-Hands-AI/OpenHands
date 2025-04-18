@@ -460,7 +460,6 @@ def display_settings(config: AppConfig) -> int:
                 '   Memory Condensation',
                 'Enabled' if config.enable_default_condenser else 'Disabled',
             ),
-            ('   Language', 'English'),
         ]
     )
 
@@ -487,7 +486,7 @@ def display_settings(config: AppConfig) -> int:
             style=COLOR_GREY,
             wrap_lines=True,
         ),
-        title='Current Settings',
+        title='Settings',
         style=f'fg:{COLOR_GREY}',
     )
 
@@ -496,10 +495,9 @@ def display_settings(config: AppConfig) -> int:
     return cli_confirm(
         'Which settings would you like to modify?',
         [
-            'LLM Settings - Basic',
-            'LLM Settings - Advanced',
-            'Additional Settings',  # Keeping this option for now
-            'No, dismiss',
+            'Basic',
+            'Advanced',
+            'Go back',
         ],
     )
 
@@ -873,9 +871,26 @@ def organize_models_and_providers(models):
     return result
 
 
+class UserCancelledError(Exception):
+    """Raised when the user cancels an operation via key binding."""
+
+    pass
+
+
+def kb_cancel():
+    """Custom key bindings to handle ESC as a user cancellation."""
+    bindings = KeyBindings()
+
+    @bindings.add('escape')
+    def _(event):
+        event.app.exit(exception=UserCancelledError, style='class:aborting')
+
+    return bindings
+
+
 async def modify_llm_settings_basic(
     config: AppConfig, settings_store: FileSettingsStore
-):
+) -> bool:
     model_list = get_supported_llm_models(config)
     organized_models = organize_models_and_providers(model_list)
 
@@ -885,27 +900,55 @@ async def modify_llm_settings_basic(
     provider_list = verified_providers + provider_list
 
     provider_completer = FuzzyWordCompleter(provider_list)
-    session = PromptSession()
-    provider = await session.prompt_async(
-        '(Step 1/3) Select LLM Provider: ',
-        completer=provider_completer,
-    )
+    session = PromptSession(key_bindings=kb_cancel())
 
-    model_list = organized_models[provider]['models']
-    if provider == 'openai':
-        model_list = [m for m in model_list if m not in VERIFIED_OPENAI_MODELS]
-        model_list = VERIFIED_OPENAI_MODELS + model_list
-    if provider == 'anthropic':
-        model_list = [m for m in model_list if m not in VERIFIED_ANTHROPIC_MODELS]
-        model_list = VERIFIED_ANTHROPIC_MODELS + model_list
+    provider = None
+    model = None
+    api_key = None
 
-    model_completer = FuzzyWordCompleter(model_list)
-    model = await session.prompt_async(
-        '(Step 2/3) Select LLM Model: ',
-        completer=model_completer,
-    )
+    try:
+        provider = await session.prompt_async(
+            '(Step 1/3) Select LLM Provider (use Tab for completion): ',
+            completer=provider_completer,
+        )
 
-    api_key = await session.prompt_async('(Step 3/3) Enter API Key: ')
+        if provider not in organized_models:
+            print(f'Invalid provider selected: {provider}')
+            return False
+
+        model_list = organized_models[provider]['models']
+        if provider == 'openai':
+            model_list = [m for m in model_list if m not in VERIFIED_OPENAI_MODELS]
+            model_list = VERIFIED_OPENAI_MODELS + model_list
+        if provider == 'anthropic':
+            model_list = [m for m in model_list if m not in VERIFIED_ANTHROPIC_MODELS]
+            model_list = VERIFIED_ANTHROPIC_MODELS + model_list
+
+        model_completer = FuzzyWordCompleter(model_list)
+        model = await session.prompt_async(
+            '(Step 2/3) Select LLM Model (use Tab for completion): ',
+            completer=model_completer,
+        )
+
+        if model not in organized_models[provider]['models']:
+            print(f'Invalid model selected: {model} for provider {provider}')
+            return False
+
+        session.completer = None  # Reset completer for password prompt
+        api_key = await session.prompt_async('(Step 3/3) Enter API Key: ')
+
+    except (
+        UserCancelledError,
+        KeyboardInterrupt,
+        EOFError,
+    ):
+        print_formatted_text('Operation cancelled by user.')
+        return False  # Return False on exception
+
+    # Handle case where a prompt might return None unexpectedly
+    if provider is None or model is None or api_key is None:
+        print_formatted_text('Operation incomplete.')
+        return False
 
     save_settings = (
         cli_confirm(
@@ -948,37 +991,65 @@ async def modify_llm_settings_basic(
 
     await settings_store.store(settings)
 
+    print_formatted_text('Settings saved successfully.')
+
     return True
 
 
 async def modify_llm_settings_advanced(
     config: AppConfig, settings_store: FileSettingsStore
 ) -> bool:
-    session = PromptSession()
-    custom_model = await session.prompt_async('(Step 1/6) Enter custom model: ')
-    base_url = await session.prompt_async('(Step 2/6) Enter base URL: ')
-    api_key = await session.prompt_async('(Step 3/6) Enter API key: ')
+    session = PromptSession(key_bindings=kb_cancel())
 
-    agent_completer = FuzzyWordCompleter(['CodeActAgent', 'TestAgent'])
-    agent = await session.prompt_async(
-        '(Step 4/6) Select agent (use Tab for completion): ', completer=agent_completer
-    )
+    custom_model = None
+    base_url = None
+    api_key = None
+    agent = None
 
-    enable_confirmation_mode = (
-        cli_confirm(
-            question='(Step 5/6) Confirmation Mode:',
-            choices=['Enable', 'Disable'],
+    try:
+        custom_model = await session.prompt_async('(Step 1/6) Custom Model: ')
+        base_url = await session.prompt_async('(Step 2/6) Base URL: ')
+        api_key = await session.prompt_async('(Step 3/6) API Key: ')
+
+        # TODO: Make agent list dynamic or load from config
+        agent_list = ['CodeActAgent', 'TestAgent']
+        agent_completer = FuzzyWordCompleter(agent_list)
+        agent = await session.prompt_async(
+            '(Step 4/6) Agent (use Tab for completion): ', completer=agent_completer
         )
-        == 0
-    )
 
-    enable_memory_condensation = (
-        cli_confirm(
-            question='(Step 6/6) Memory Condensation:',
-            choices=['Enable', 'Disable'],
+        if agent not in agent_list:
+            print_formatted_text(f'\nInvalid agent selected: {agent}')
+            return False
+
+        enable_confirmation_mode = (
+            cli_confirm(
+                question='(Step 5/6) Confirmation Mode:',
+                choices=['Enable', 'Disable'],
+            )
+            == 0
         )
-        == 0
-    )
+
+        enable_memory_condensation = (
+            cli_confirm(
+                question='(Step 6/6) Memory Condensation:',
+                choices=['Enable', 'Disable'],
+            )
+            == 0
+        )
+
+    except (
+        UserCancelledError,
+        KeyboardInterrupt,
+        EOFError,
+    ):
+        print_formatted_text('Operation cancelled by user.')
+        return False  # Return False on exception
+
+    # Handle case where a prompt might return None unexpectedly
+    if custom_model is None or base_url is None or api_key is None or agent is None:
+        print_formatted_text('Operation incomplete.')
+        return False
 
     save_settings = (
         cli_confirm(
@@ -1023,6 +1094,8 @@ async def modify_llm_settings_advanced(
     settings.enable_default_condenser = enable_memory_condensation
 
     await settings_store.store(settings)
+
+    print_formatted_text('Settings saved successfully.')
 
     return True
 
@@ -1138,8 +1211,6 @@ async def run_session(
                     new_session_requested = await modify_llm_settings_advanced(
                         config, settings_store
                     )
-                elif modify_settings == 2:
-                    print_formatted_text('This feature is not available')
 
                 if new_session_requested:
                     event_stream.add_event(
