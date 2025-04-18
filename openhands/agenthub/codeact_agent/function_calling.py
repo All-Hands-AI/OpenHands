@@ -169,11 +169,11 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                 action = IPythonRunCellAction(code=arguments['code'])
 
             # ================================================
-            # AgentDelegateAction (for ReadOnly Agent)
+            # AgentDelegateAction (for Browsing Agent)
             # ================================================
             elif tool_call.function.name == 'delegate_to_browsing_agent':
                 action = AgentDelegateAction(
-                    agent='ReadOnlyAgent',
+                    agent='BrowsingAgent',
                     inputs=arguments,
                 )
 
