@@ -3,6 +3,7 @@ import os
 import httpx
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
+
 from openhands.core.logger import openhands_logger as logger
 
 app = APIRouter(prefix='/api/auth')

@@ -1,6 +1,7 @@
 import os
-from enum import IntEnum
 import time
+from enum import IntEnum
+
 import httpx
 from fastapi import HTTPException
 from pydantic import BaseModel
@@ -28,7 +29,7 @@ class ThesisUser(BaseModel):
 thesis_auth_client = httpx.AsyncClient(
     timeout=30.0,
     base_url=os.getenv('THESIS_AUTH_SERVER_URL'),
-    headers={'Content-Type': 'application/json'}
+    headers={'Content-Type': 'application/json'},
 )
 
 
@@ -47,7 +48,7 @@ async def get_user_detail_from_thesis_auth_server(
             ethThesisAddress='0x25bE302C3954b4DF9F67AFD6BfDD8c39f4Dc98Dc',
         )
 
-    url = f"/api/users/detail"
+    url = '/api/users/detail'
     headers = {'Content-Type': 'application/json', 'Authorization': bearer_token}
     try:
         start_time = time.time()
@@ -74,7 +75,7 @@ async def get_user_detail_from_thesis_auth_server(
 
 
 async def add_invite_code_to_user(code: str, bearer_token: str) -> dict | None:
-    url = f"/api/users/add-invite-code"
+    url = '/api/users/add-invite-code'
     payload = {'code': code}
     headers = {'Content-Type': 'application/json', 'Authorization': bearer_token}
 
