@@ -14,6 +14,7 @@ from pydantic import (
 )
 from pydantic.json import pydantic_encoder
 
+from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.action import Action
 from openhands.events.action.commands import CmdRunAction
 from openhands.events.stream import EventStream
@@ -199,8 +200,8 @@ class ProviderHandler:
                 service = self._get_service(provider)
                 service_repos = await service.get_repositories(sort, app_mode)
                 all_repos.extend(service_repos)
-            except Exception:
-                continue
+            except Exception as e:
+                logger.warning(f'Error fetching repos from {provider}: {e}')
 
         return all_repos
 

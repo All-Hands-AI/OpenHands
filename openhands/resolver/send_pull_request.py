@@ -585,6 +585,12 @@ def main() -> None:
         description='Send a pull request to Github or Gitlab.'
     )
     parser.add_argument(
+        '--selected-repo',
+        type=str,
+        default=None,
+        help='repository to send pull request in form of `owner/repo`.',
+    )
+    parser.add_argument(
         '--token',
         type=str,
         default=None,
@@ -677,7 +683,7 @@ def main() -> None:
         )
     username = my_args.username if my_args.username else os.getenv('GIT_USERNAME')
 
-    platform = identify_token(token, None, my_args.base_domain)
+    platform = identify_token(token, my_args.selected_repo, my_args.base_domain)
     if platform == Platform.INVALID:
         raise ValueError('Token is invalid.')
 
