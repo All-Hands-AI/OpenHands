@@ -1,7 +1,6 @@
 import difflib
 import re
-from pathlib import Path
-from typing import List, Tuple
+from dataclasses import dataclass
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.exceptions import LLMMalformedActionError
@@ -19,7 +18,15 @@ DEFAULT_FENCE = ('```', '```')
 TRIPLE_BACKTICKS = '```'
 
 
-def strip_filename(filename: str, fence: Tuple[str, str] = DEFAULT_FENCE) -> str | None:
+@dataclass
+class DiffBlock:
+    """Represents a parsed SEARCH/REPLACE diff block."""
+    filename: str
+    search: str
+    replace: str
+
+
+def strip_filename(filename: str, fence: tuple[str, str] = DEFAULT_FENCE) -> str | None:
     """Strips potential wrapping characters from a filename line."""
     filename = filename.strip()
 
@@ -40,9 +47,9 @@ def strip_filename(filename: str, fence: Tuple[str, str] = DEFAULT_FENCE) -> str
 
 
 def find_filename(
-    lines: List[str],
-    fence: Tuple[str, str] = DEFAULT_FENCE,
-    valid_fnames: List[str] | None = None,
+    lines: list[str],
+    fence: tuple[str, str] = DEFAULT_FENCE,
+    valid_fnames: list[str] | None = None,
 ) -> str | None:
     """
     Searches preceding lines for a filename, handling potential fences.
@@ -98,34 +105,28 @@ def find_filename(
 
 def parse_llm_response_for_diffs(
     content: str,
-    fence: Tuple[str, str] = DEFAULT_FENCE,
-    valid_fnames: List[str] | None = None,
-) -> Tuple[List[Tuple[str, str, str]], int, int]:
+    fence: tuple[str, str] = DEFAULT_FENCE,
+    valid_fnames: list[str] | None = None,
+) -> list[DiffBlock]:
     """
-    Parses LLM response content to find fenced diff blocks and their boundaries.
-    
+    Parses LLM response content to find fenced diff blocks.
+
     Args:
         content: The LLM response string.
-        fence: Tuple of opening and closing fence markers (e.g., ('```', '```')).
+        fence: tuple of opening and closing fence markers (e.g., ('```', '```')).
         valid_fnames: Optional list of valid filenames in the context for better matching.
 
     Returns:
-        A tuple containing:
-        - A list of parsed blocks: [(filename, search_block, replace_block), ...]
-        - The start character index of the first block's opening fence (-1 if no blocks).
-        - The end character index of the last block's closing fence (-1 if no blocks).
+        A list of DiffBlock objects representing the parsed blocks.
 
     Raises:
         LLMMalformedActionError: If malformed blocks are detected.
     """
     logger.info(f'Parsing LLM response for diffs:\n{content}')
 
-    edits: List[Tuple[str, str, str]] = []
+    edits: list[DiffBlock] = []
     lines = content.splitlines(keepends=True)
     i = 0
-    current_char_index = 0
-    first_block_start_index = -1
-    last_block_end_index = -1
     current_filename = None
 
     head_pattern = re.compile(HEAD)
@@ -147,31 +148,20 @@ def parse_llm_response_for_diffs(
             block_start_line_index = i
             try:
                 # Look backwards for filename and opening fence
-                block_fence_index = -1
-                # Search back for the opening fence line
-                temp_i = i - 1
                 fence_line_index = -1
-                fence_line_char_start = -1
-                temp_char_index = current_char_index - line_len # Start searching from char before current line
-                while temp_i >= max(0, i - 4): # Look back up to 3 lines + current line's start
+                temp_i = i - 1
+                while temp_i >= max(0, i - 4): # Look back up to 3 lines
                     prev_line = lines[temp_i]
-                    prev_line_len = len(prev_line)
-                    # Calculate the start index of the line we are about to check
-                    start_of_prev_line = temp_char_index - prev_line_len
                     if fence_pattern.match(prev_line.strip()):
                         fence_line_index = temp_i
-                        # Store char index *at the start* of the fence line
-                        block_fence_index = start_of_prev_line
                         break
-                    # Update the index to be before this line for the next iteration
-                    temp_char_index = start_of_prev_line
                     temp_i -= 1
 
                 # If fence found, look for filename between fence and head
                 filename = None
                 if fence_line_index != -1:
                      filename_lines = lines[fence_line_index + 1 : block_start_line_index]
-                     # Pass lines in original order for find_filename now
+                     # Pass lines in original order for find_filename
                      filename = find_filename(filename_lines, fence, valid_fnames)
 
                 # Fallback / Contextual filename inference
@@ -181,14 +171,13 @@ def parse_llm_response_for_diffs(
                         filename = current_filename
                     else:
                         # Raise error if no filename found and no fence/context
-                        if block_fence_index == -1:
+                        if fence_line_index == -1:
                              raise LLMMalformedActionError(missing_filename_err)
                         else:
                              # If we found a fence but no filename, maybe it's a new file?
                              # Let the parser continue, but filename remains None for now.
                              # It might get inferred later or fail if search block isn't empty.
-                             pass
-
+                             pass # Filename remains None for now
 
                 # If filename is still None after checks, raise error before proceeding
                 # unless it's potentially a new file block (empty search)
@@ -201,44 +190,32 @@ def parse_llm_response_for_diffs(
                 # --- Start parsing block content ---
                 original_text_lines = []
                 i += 1 # Move past HEAD line
-                current_char_index += line_len # Advance past HEAD line
                 while i < len(lines) and not divider_pattern.match(lines[i].strip()):
                     original_text_lines.append(lines[i])
-                    current_char_index += len(lines[i])
                     i += 1
 
                 if i >= len(lines) or not divider_pattern.match(lines[i].strip()):
                     raise LLMMalformedActionError(f'Expected `{DIVIDER_ERR}` after SEARCH block for {current_filename or "unknown file"}')
 
-                divider_line_len = len(lines[i])
                 i += 1 # Move past DIVIDER line
-                current_char_index += divider_line_len
 
                 updated_text_lines = []
                 while i < len(lines) and not updated_pattern.match(lines[i].strip()):
                     if divider_pattern.match(lines[i].strip()): # Error: unexpected divider
                          raise LLMMalformedActionError(f'Unexpected `{DIVIDER_ERR}` inside REPLACE block for {current_filename or "unknown file"}')
                     updated_text_lines.append(lines[i])
-                    current_char_index += len(lines[i])
                     i += 1
 
                 if i >= len(lines) or not updated_pattern.match(lines[i].strip()):
                     raise LLMMalformedActionError(f'Expected `{UPDATED_ERR}` after REPLACE block for {current_filename or "unknown file"}')
 
-                replace_marker_line_len = len(lines[i])
                 i += 1 # Move past REPLACE marker line
-                current_char_index += replace_marker_line_len
 
-                # Check for closing fence
-                block_end_index = -1
+                # Check for closing fence (and move past it if found)
                 if i < len(lines) and lines[i].strip() == fence[1]:
-                    block_end_index = current_char_index + len(lines[i])
                     i += 1 # Move past closing fence
-                    current_char_index += len(lines[i-1]) # Add length of closing fence line
                 else:
-                    # Allow blocks without closing fence for flexibility, but log warning?
-                    # Or raise error? Let's allow for now, end index is after REPLACE marker.
-                    block_end_index = current_char_index
+                    # Allow blocks without closing fence for flexibility
                     pass # Stay on the line after REPLACE marker
 
                 # Successfully parsed a block
@@ -249,28 +226,18 @@ def parse_llm_response_for_diffs(
                 if filename is None:
                     if original_text.strip():
                         raise LLMMalformedActionError("SEARCH block must be empty when creating a new file (filename was missing before block).")
-                    # If search is empty, assume filename was intended to be the one before fence
-                    # This requires re-searching, maybe simpler to enforce filename presence?
-                    # For now, let's require filename to be present or inferred earlier.
-                    # If we reach here with filename=None, it's an error unless handled above.
-                    # Re-checking logic:
+                    # Re-attempt filename finding if it was a new file block
                     if fence_line_index != -1:
                          filename_lines = lines[fence_line_index + 1 : block_start_line_index]
                          filename = find_filename(filename_lines, fence, valid_fnames)
                     if filename is None:
+                         # If still None after re-check, it's an error
                          raise LLMMalformedActionError("Could not determine filename for new file block.")
 
+                # Create and add the DiffBlock object
+                edits.append(DiffBlock(filename=filename, search=original_text, replace=updated_text))
 
-                edits.append((filename, original_text, updated_text))
-
-                # Update first/last block indices
-                if first_block_start_index == -1 and block_fence_index != -1:
-                    first_block_start_index = block_fence_index
-                if block_end_index != -1:
-                    last_block_end_index = block_end_index
-
-                continue
-
+                continue # Continue to the next line
 
             except (ValueError, LLMMalformedActionError) as e:
                 # Add context to the error message
@@ -278,12 +245,15 @@ def parse_llm_response_for_diffs(
                 # Ensure we get the original message, whether it's ValueError or LLMMalformedActionError
                 original_message = e.args[0] if e.args else str(e)
                 err_context = f"Error parsing block #{processed_marker} for file '{current_filename or 'unknown'}': {original_message}"
-                # Re-raise as LLMMalformedActionError, preserving the original exception type if needed for debugging?
-                # No, the goal is to *always* raise LLMMalformedActionError from this parser.
+                # Add context to the error message
+                processed_marker = len(edits) + 1 # Block number being processed
+                # Ensure we get the original message, whether it's ValueError or LLMMalformedActionError
+                original_message = e.args[0] if e.args else str(e)
+                err_context = f"Error parsing block #{processed_marker} for file '{current_filename or 'unknown'}': {original_message}"
+                # Re-raise as LLMMalformedActionError
                 raise LLMMalformedActionError(err_context) from e
 
-        # If not a HEAD line, just advance char index and line index
-        current_char_index += line_len
+        # If not a HEAD line, just advance line index
         i += 1
 
-    return edits, first_block_start_index, last_block_end_index
+    return edits

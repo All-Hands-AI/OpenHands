@@ -42,6 +42,7 @@ from openhands.events.action import (
     MessageAction,
 )
 from openhands.agenthub.codeact_agent.llm_diff_parser import (
+    DiffBlock,
     parse_llm_response_for_diffs,
 )
 from openhands.core.config import AgentConfig
@@ -78,8 +79,6 @@ def response_to_actions(response: ModelResponse, is_llm_diff_enabled: bool = Fal
     all_actions: list[Action] = []
     parsed_llm_diff_actions: list[Action] = []
     tool_call_actions: list[Action] = []
-    thought_from_diff: str | None = None
-    thought_from_tool_content: str | None = None
     message_content: str = ''
     diff_parse_error: Exception | None = None
 
@@ -99,22 +98,17 @@ def response_to_actions(response: ModelResponse, is_llm_diff_enabled: bool = Fal
     if is_llm_diff_enabled and message_content:
         logger.debug('LLM Diff mode enabled, attempting to parse response content.')
         try:
-            # TODO: Pass valid_fnames if available from context/summary?
-            parsed_blocks, first_block_start_idx, last_block_end_idx = parse_llm_response_for_diffs(message_content)
-            if parsed_blocks:
-                logger.info(f'Parsed {len(parsed_blocks)} diff blocks from LLM response.')
-                # Extract thought based on the start index
-                if first_block_start_idx != -1:
-                    thought_from_diff = message_content[:first_block_start_idx].strip()
-                else:
-                    logger.warning("Could not determine start index of the first diff block. Using empty thought.")
-                    # thought_from_diff remains None
+            # Call the updated parser, expecting list[DiffBlock]
+            parsed_blocks: list[DiffBlock] = parse_llm_response_for_diffs(message_content)
 
-                for i, (filename, search, replace) in enumerate(parsed_blocks):
+            if parsed_blocks: # Check if the list is not empty
+                logger.info(f'Parsed {len(parsed_blocks)} diff blocks from LLM response.')
+                # Create FileEditActions from the DiffBlock objects
+                for block in parsed_blocks:
                     action = FileEditAction(
-                        path=filename,
-                        search=search,
-                        replace=replace,
+                        path=block.filename,
+                        search=block.search,
+                        replace=block.replace,
                         impl_source=FileEditSource.LLM_DIFF,
                     )
                     parsed_llm_diff_actions.append(action)
@@ -127,18 +121,8 @@ def response_to_actions(response: ModelResponse, is_llm_diff_enabled: bool = Fal
              diff_parse_error = e # Store error
 
     # 3. Process tool calls if they exist
-    if hasattr(assistant_msg, 'tool_calls') and assistant_msg.tool_calls:
-        # If we haven't extracted thought from diff blocks yet, extract it now from content
-        # This happens if diff parsing was disabled, failed, or found no blocks
-        if thought_from_diff is None and not parsed_llm_diff_actions:
-             if isinstance(assistant_msg.content, str):
-                 thought_from_tool_content = assistant_msg.content.strip() # Use the raw content as thought
-             elif isinstance(assistant_msg.content, list):
-                 temp_thought = ''
-                 for msg in assistant_msg.content:
-                     if msg['type'] == 'text':
-                         temp_thought += msg['text']
-                 thought_from_tool_content = temp_thought.strip()
+    tool_calls_exist = hasattr(assistant_msg, 'tool_calls') and assistant_msg.tool_calls
+    if tool_calls_exist:
 
         # Process each tool call
         for i, tool_call in enumerate(assistant_msg.tool_calls):
@@ -321,17 +305,17 @@ def response_to_actions(response: ModelResponse, is_llm_diff_enabled: bool = Fal
             )
             tool_call_actions.append(action)
 
-    # 4. Combine actions: diffs first, then tool calls
+    # 4. Combine actions: diffs first (if any), then tool calls (if any)
     all_actions.extend(parsed_llm_diff_actions)
     all_actions.extend(tool_call_actions)
 
-    # 5. Handle the case where no actions were generated
+    # 5. Handle the case where no actions were generated (neither diffs nor tool calls)
     if not all_actions:
-        # If there was a diff parsing error, report it
+        # If there was a diff parsing error, report it (even if no blocks were parsed)
         if diff_parse_error:
              all_actions.append(
                  MessageAction(
-                     content=message_content + f'\n\n[Error parsing diff blocks: {diff_parse_error}]',
+                     content=f'[Error parsing diff blocks: {diff_parse_error}]\nOriginal Content:\n{message_content}',
                      wait_for_response=True,
                  )
              )
@@ -348,16 +332,15 @@ def response_to_actions(response: ModelResponse, is_llm_diff_enabled: bool = Fal
             logger.warning(f"No actions generated and no message content for response: {response.id}")
             all_actions.append(AgentThinkAction(thought="[No actionable content or tool calls found in response]"))
 
-
-    # 6. Determine contextual thought and apply to the first non-AgentThinkAction
-    contextual_thought = thought_from_diff if thought_from_diff is not None else thought_from_tool_content
-    thought_applied = False
-    if contextual_thought:
-        for i, action in enumerate(all_actions):
-            if not isinstance(action, AgentThinkAction):
-                all_actions[i] = combine_thought(action, contextual_thought)
-                thought_applied = True
-                break # Apply thought only to the first eligible action
+    # If actions *were* generated, determine and apply thought
+    else:
+        # 6. Determine contextual thought and apply to the first non-AgentThinkAction
+        contextual_thought = message_content.strip() if message_content else None
+        if contextual_thought:
+            for i, action in enumerate(all_actions):
+                if not isinstance(action, AgentThinkAction):
+                    all_actions[i] = combine_thought(action, contextual_thought)
+                    break # Apply thought only to the first eligible action
 
     # 7. Add response id to all actions
     for action in all_actions:
@@ -367,6 +350,7 @@ def response_to_actions(response: ModelResponse, is_llm_diff_enabled: bool = Fal
     if not all_actions:
          # This case should ideally be handled by step 5, but as a safeguard:
          logger.error(f"CRITICAL: No actions generated for response {response.id} after all checks.")
+         # Create a default Think action if somehow we ended up with no actions
          all_actions.append(AgentThinkAction(thought="[Critical Error: Failed to generate any action]"))
          if all_actions[0]: all_actions[0].response_id = response.id
 
