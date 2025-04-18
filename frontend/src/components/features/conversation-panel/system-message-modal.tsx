@@ -71,17 +71,17 @@ export function SystemMessageModal({
         <ModalBackdrop onClose={onClose}>
           <ModalBody width="medium" className="max-h-[80vh] flex flex-col items-start">
           <div className="flex flex-col gap-6 w-full">
-            <BaseModalTitle title={t("SYSTEM_MESSAGE_MODAL$TITLE")} />
+            <BaseModalTitle title={"Agent Tools & Metadata"} />
             <div className="flex flex-col gap-2">
               {systemMessage.agent_class && (
                 <div className="text-sm">
-                  <span className="font-semibold text-gray-300">{t("SYSTEM_MESSAGE_MODAL$AGENT_CLASS")}</span>{" "}
+                  <span className="font-semibold text-gray-300">{"Agent Class:"}</span>{" "}
                   <span className="font-medium text-primary">{systemMessage.agent_class}</span>
                 </div>
               )}
               {systemMessage.openhands_version && (
                 <div className="text-sm">
-                  <span className="font-semibold text-gray-300">{t("SYSTEM_MESSAGE_MODAL$OPENHANDS_VERSION")}</span>{" "}
+                  <span className="font-semibold text-gray-300">{"OpenHands Version:"}</span>{" "}
                   <span className="text-gray-100 text-primary">{systemMessage.openhands_version}</span>
                 </div>
               )}
@@ -100,7 +100,7 @@ export function SystemMessageModal({
                 )}
                 onClick={() => setActiveTab("system")}
               >
-                {t("SYSTEM_MESSAGE_MODAL$SYSTEM_MESSAGE_TAB")}
+                {"System Message"}
               </button>
               {systemMessage.tools && systemMessage.tools.length > 0 && (
                 <button
@@ -113,7 +113,7 @@ export function SystemMessageModal({
                   )}
                   onClick={() => setActiveTab("tools")}
                 >
-                  {t("SYSTEM_MESSAGE_MODAL$TOOLS_TAB")}
+                  {"Available Tools"}
                 </button>
               )}
             </div>
@@ -158,7 +158,7 @@ export function SystemMessageModal({
                             {/* Parameters section */}
                             {parameters && (
                               <div className="mt-3">
-                                <h4 className="text-sm font-semibold text-gray-300">{t("SYSTEM_MESSAGE_MODAL$PARAMETERS")}</h4>
+                                <h4 className="text-sm font-semibold text-gray-300">{"Parameters:"}</h4>
                                 <div className="text-xs mt-1 p-3 bg-gray-900 rounded-md overflow-auto border border-gray-700 text-gray-300">
                                   <JsonView 
                                     data={parameters}
@@ -177,7 +177,7 @@ export function SystemMessageModal({
               
               {activeTab === "tools" && (!systemMessage.tools || systemMessage.tools.length === 0) && (
                 <div className="flex items-center justify-center h-full p-4">
-                  <p className="text-gray-400">{t("SYSTEM_MESSAGE_MODAL$NO_TOOLS")}</p>
+                  <p className="text-gray-400">{"No tools available for this agent"}</p>
                 </div>
               )}
             </div>
