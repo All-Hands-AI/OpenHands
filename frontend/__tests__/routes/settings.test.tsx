@@ -10,16 +10,10 @@ import * as AdvancedSettingsUtlls from "#/utils/has-advanced-settings-set";
 import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
 import * as ConsentHandlers from "#/utils/handle-capture-consent";
 import AccountSettings from "#/routes/account-settings";
-import { Provider } from "#/types/settings";
 
 const toggleAdvancedSettings = async (user: UserEvent) => {
   const advancedSwitch = await screen.findByTestId("advanced-settings-switch");
   await user.click(advancedSwitch);
-};
-
-const MOCK_PROVIDER_TOKENS_ARE_SET: Record<Provider, boolean> = {
-  github: true,
-  gitlab: false,
 };
 
 describe("Settings Screen", () => {
@@ -105,151 +99,9 @@ describe("Settings Screen", () => {
       renderSettingsScreen();
 
       await waitFor(() => {
-        screen.getByTestId("github-token-input");
-        screen.getByTestId("github-token-help-anchor");
         screen.getByTestId("language-input");
         screen.getByTestId("enable-analytics-switch");
       });
-    });
-
-    // TODO: Set a better unset indicator
-    it.skip("should render an indicator if the GitHub token is not set", async () => {
-      getSettingsSpy.mockResolvedValue({
-        ...MOCK_DEFAULT_USER_SETTINGS,
-      });
-
-      renderSettingsScreen();
-
-      await waitFor(() => {
-        const input = screen.getByTestId("github-token-input");
-        const inputParent = input.parentElement;
-
-        if (inputParent) {
-          const badge = within(inputParent).getByTestId("unset-indicator");
-          expect(badge).toBeInTheDocument();
-        } else {
-          throw new Error("GitHub token input parent not found");
-        }
-      });
-    });
-
-    it("should set '<hidden>' placeholder if the GitHub token is set", async () => {
-      getSettingsSpy.mockResolvedValue({
-        ...MOCK_DEFAULT_USER_SETTINGS,
-        provider_tokens_set: MOCK_PROVIDER_TOKENS_ARE_SET,
-      });
-
-      renderSettingsScreen();
-
-      await waitFor(() => {
-        const input = screen.getByTestId("github-token-input");
-        expect(input).toHaveProperty("placeholder", "<hidden>");
-      });
-    });
-
-    it("should render an indicator if the GitHub token is set", async () => {
-      getSettingsSpy.mockResolvedValue({
-        ...MOCK_DEFAULT_USER_SETTINGS,
-        provider_tokens_set: MOCK_PROVIDER_TOKENS_ARE_SET,
-      });
-
-      renderSettingsScreen();
-
-      const input = await screen.findByTestId("github-token-input");
-      const inputParent = input.parentElement;
-
-      if (inputParent) {
-        const badge = await within(inputParent).findByTestId("set-indicator");
-        expect(badge).toBeInTheDocument();
-      } else {
-        throw new Error("GitHub token input parent not found");
-      }
-    });
-
-    // Tests for DISCONNECT_FROM_GITHUB button removed as the button is no longer included in main
-
-    it("should not render the 'Configure GitHub Repositories' button if OSS mode", async () => {
-      getConfigSpy.mockResolvedValue({
-        APP_MODE: "oss",
-        GITHUB_CLIENT_ID: "123",
-        POSTHOG_CLIENT_KEY: "456",
-        FEATURE_FLAGS: {
-          ENABLE_BILLING: false,
-          HIDE_LLM_SETTINGS: false,
-        },
-      });
-
-      renderSettingsScreen();
-
-      const button = screen.queryByText("GITHUB$CONFIGURE_REPOS");
-      expect(button).not.toBeInTheDocument();
-    });
-
-    it("should render the 'Configure GitHub Repositories' button if SaaS mode and app slug exists", async () => {
-      getConfigSpy.mockResolvedValue({
-        APP_MODE: "saas",
-        GITHUB_CLIENT_ID: "123",
-        POSTHOG_CLIENT_KEY: "456",
-        APP_SLUG: "test-app",
-        FEATURE_FLAGS: {
-          ENABLE_BILLING: false,
-          HIDE_LLM_SETTINGS: false,
-        },
-      });
-
-      renderSettingsScreen();
-      await screen.findByText("GITHUB$CONFIGURE_REPOS");
-    });
-
-    it("should not render the GitHub token input if SaaS mode", async () => {
-      getConfigSpy.mockResolvedValue({
-        APP_MODE: "saas",
-        GITHUB_CLIENT_ID: "123",
-        POSTHOG_CLIENT_KEY: "456",
-        FEATURE_FLAGS: {
-          ENABLE_BILLING: false,
-          HIDE_LLM_SETTINGS: false,
-        },
-      });
-
-      renderSettingsScreen();
-
-      await waitFor(() => {
-        const input = screen.queryByTestId("github-token-input");
-        const helpAnchor = screen.queryByTestId("github-token-help-anchor");
-
-        expect(input).not.toBeInTheDocument();
-        expect(helpAnchor).not.toBeInTheDocument();
-      });
-    });
-
-    it.skip("should not reset LLM Provider and Model if GitHub token is invalid", async () => {
-      const user = userEvent.setup();
-      getSettingsSpy.mockResolvedValue({
-        ...MOCK_DEFAULT_USER_SETTINGS,
-        llm_model: "anthropic/claude-3-5-sonnet-20241022",
-      });
-      saveSettingsSpy.mockRejectedValueOnce(new Error("Invalid GitHub token"));
-
-      renderSettingsScreen();
-
-      let llmProviderInput = await screen.findByTestId("llm-provider-input");
-      let llmModelInput = await screen.findByTestId("llm-model-input");
-
-      expect(llmProviderInput).toHaveValue("Anthropic");
-      expect(llmModelInput).toHaveValue("claude-3-5-sonnet-20241022");
-
-      const input = await screen.findByTestId("github-token-input");
-      await user.type(input, "invalid-token");
-
-      const saveButton = screen.getByText("BUTTON$SAVE");
-      await user.click(saveButton);
-
-      llmProviderInput = await screen.findByTestId("llm-provider-input");
-      llmModelInput = await screen.findByTestId("llm-model-input");
-
-      expect(llmProviderInput).toHaveValue("Anthropic");
-      expect(llmModelInput).toHaveValue("claude-3-5-sonnet-20241022");
     });
 
     test("enabling advanced, enabling confirmation mode, and then disabling + enabling advanced should not render the security analyzer input", async () => {
