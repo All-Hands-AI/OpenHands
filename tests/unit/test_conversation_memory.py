@@ -800,7 +800,7 @@ def test_process_events_with_microagent_observation_deduplication(conversation_m
     )
 
     # Verify that only the first occurrence of content for each agent is included
-    assert len(messages) == 2 # with system message
+    assert len(messages) == 2  # with system message
 
     # First microagent should include all agents since they appear here first
     assert 'Image best practices v1' in messages[1].content[0].text
@@ -873,7 +873,9 @@ def test_process_events_with_microagent_observation_deduplication_empty(
     )
 
     # Verify that empty RecallObservations are handled gracefully
-    assert len(messages) == 1  # an empty microagent is not added to Messages, only system message is found
+    assert (
+        len(messages) == 1
+    )  # an empty microagent is not added to Messages, only system message is found
     assert messages[0].role == 'system'
 
 
