@@ -135,7 +135,6 @@ class StandaloneConversationManager(ConversationManager):
             )
             raise RuntimeError(f'no_event_stream:{sid}')
         return event_stream
-        
 
     async def detach_from_conversation(self, conversation: Conversation):
         sid = conversation.sid
