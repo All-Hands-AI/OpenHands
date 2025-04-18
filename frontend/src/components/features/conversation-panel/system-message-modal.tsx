@@ -18,6 +18,10 @@ const customJsonStyles = {
   nullValue: "text-red-400",
   keyStyle: "text-primary font-semibold",
   arrowStyle: "text-gray-400",
+  // Add more spacing for better readability
+  itemMargin: "my-1",
+  // Increase indentation for better hierarchy visualization
+  indentSize: 20,
 };
 
 interface SystemMessageModalProps {
@@ -120,7 +124,7 @@ export function SystemMessageModal({
 
             <div className="h-[60vh] overflow-auto rounded-md border border-gray-700 bg-gray-900">
               {activeTab === "system" && (
-                <div className="p-4 whitespace-pre-wrap font-mono text-sm">
+                <div className="p-5 whitespace-pre-wrap font-mono text-sm leading-relaxed bg-gray-900 text-gray-300">
                   {systemMessage.content}
                 </div>
               )}
@@ -143,7 +147,12 @@ export function SystemMessageModal({
                           onClick={() => toggleTool(index)}
                           className="w-full p-4 text-left flex items-center justify-between hover:bg-gray-700 transition-colors"
                         >
-                          <h3 className="font-bold text-primary">{String(name)}</h3>
+                          <div className="flex items-center">
+                            <span className="inline-block w-6 h-6 mr-2 rounded-full bg-primary/20 flex items-center justify-center">
+                              <span className="text-primary text-xs font-bold">{index + 1}</span>
+                            </span>
+                            <h3 className="font-bold text-primary">{String(name)}</h3>
+                          </div>
                           <span className="text-gray-300">
                             {isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
                           </span>
@@ -151,18 +160,21 @@ export function SystemMessageModal({
                         
                         {isExpanded && (
                           <div className="px-4 pb-4 pt-1">
-                            <p className="text-sm whitespace-pre-wrap text-gray-300">
-                              {String(description)}
-                            </p>
+                            <div className="mt-2 mb-4 p-3 bg-gray-800/50 rounded-md border border-gray-700/50">
+                              <p className="text-sm whitespace-pre-wrap text-gray-300 leading-relaxed">
+                                {String(description)}
+                              </p>
+                            </div>
                             
                             {/* Parameters section */}
                             {parameters && (
                               <div className="mt-3">
                                 <h4 className="text-sm font-semibold text-gray-300">{t("SYSTEM_MESSAGE_MODAL$PARAMETERS")}</h4>
-                                <div className="text-xs mt-1 p-3 bg-gray-900 rounded-md overflow-auto border border-gray-700 text-gray-300">
+                                <div className="text-sm mt-2 p-4 bg-gray-900 rounded-md overflow-auto border border-gray-700 text-gray-300 max-h-[300px]">
                                   <JsonView 
                                     data={parameters}
                                     style={customJsonStyles}
+                                    shouldExpandNode={() => true}
                                   />
                                 </div>
                               </div>
