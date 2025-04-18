@@ -6,6 +6,7 @@ import { BrandButton } from "#/components/features/settings/brand-button";
 import { useLogout } from "#/hooks/mutation/use-logout";
 import { GitHubTokenInput } from "#/components/features/settings/git-settings/github-token-input";
 import { GitLabTokenInput } from "#/components/features/settings/git-settings/gitlab-token-input";
+import { ConfigureGitHubRepositoriesAnchor } from "#/components/features/settings/git-settings/configure-github-repositories-anchor";
 
 function GitSettingsScreen() {
   const { mutate: saveSettings } = useSaveSettings();
@@ -50,7 +51,7 @@ function GitSettingsScreen() {
       className="flex flex-col h-full justify-between"
     >
       {isSaas && config.APP_SLUG && (
-        <div data-testid="configure-github-repositories-button" />
+        <ConfigureGitHubRepositoriesAnchor slug={config.APP_SLUG} />
       )}
 
       {!isSaas && (
