@@ -23,8 +23,77 @@ from openhands.resolver.utils import (
 
 
 class AllIssueResolver:
-    def __init__(self):
-        self.issue_resolver = IssueResolver()
+    def __init__(
+        self,
+        owner: str,
+        repo: str,
+        token: str,
+        username: str,
+        platform: Platform,
+        max_iterations: int,
+        limit_issues: int | None,
+        num_workers: int,
+        output_dir: str,
+        llm_config: LLMConfig,
+        runtime_container_image: str,
+        prompt_template: str,
+        issue_type: str,
+        repo_instruction: str | None = None,
+        issue_numbers: list[int] | None = None,
+        base_domain: str = 'github.com',
+    ) -> None:
+        """Initialize the AllIssueResolver with the given parameters.
+
+        Args:
+            owner: Github or Gitlab owner of the repo.
+            repo: Github or Gitlab repository to resolve issues in form of `owner/repo`.
+            token: Github or Gitlab token to access the repository.
+            username: Github or Gitlab username to access the repository.
+            platform: Platform to use (GitHub or GitLab).
+            max_iterations: Maximum number of iterations to run.
+            limit_issues: Limit the number of issues to resolve.
+            num_workers: Number of workers to use for parallel processing.
+            output_dir: Output directory to write the results.
+            llm_config: Configuration for the language model.
+            runtime_container_image: Container image to use.
+            prompt_template: Prompt template to use.
+            issue_type: Type of issue to resolve (issue or pr).
+            repo_instruction: Repository instruction to use.
+            issue_numbers: List of issue numbers to resolve.
+            base_domain: Base domain for GitHub Enterprise (default: github.com).
+        """
+        self.owner = owner
+        self.repo = repo
+        self.token = token
+        self.username = username
+        self.platform = platform
+        self.max_iterations = max_iterations
+        self.limit_issues = limit_issues
+        self.num_workers = num_workers
+        self.output_dir = output_dir
+        self.llm_config = llm_config
+        self.runtime_container_image = runtime_container_image
+        self.prompt_template = prompt_template
+        self.issue_type = issue_type
+        self.repo_instruction = repo_instruction
+        self.issue_numbers = issue_numbers
+        self.base_domain = base_domain
+        
+        self.issue_resolver = IssueResolver(
+            owner=self.owner,
+            repo=self.repo,
+            token=self.token,
+            username=self.username,
+            platform=self.platform,
+            max_iterations=self.max_iterations,
+            output_dir=self.output_dir,
+            llm_config=self.llm_config,
+            runtime_container_image=self.runtime_container_image,
+            prompt_template=self.prompt_template,
+            issue_type=self.issue_type,
+            repo_instruction=self.repo_instruction,
+            base_domain=self.base_domain,
+        )
 
     def cleanup(self) -> None:
         logger.info('Cleaning up child processes...')
@@ -49,74 +118,37 @@ class AllIssueResolver:
         output_fp.write(resolved_output.model_dump_json() + '\n')
         output_fp.flush()
 
-    async def resolve_issues(
-        self,
-        owner: str,
-        repo: str,
-        token: str,
-        username: str,
-        platform: Platform,
-        max_iterations: int,
-        limit_issues: int | None,
-        num_workers: int,
-        output_dir: str,
-        llm_config: LLMConfig,
-        runtime_container_image: str,
-        prompt_template: str,
-        issue_type: str,
-        repo_instruction: str | None,
-        issue_numbers: list[int] | None,
-        base_domain: str = 'github.com',
-    ) -> None:
-        """Resolve multiple github or gitlab issues.
-
-        Args:
-            owner: Github or Gitlab owner of the repo.
-            repo: Github or Gitlab repository to resolve issues in form of `owner/repo`.
-            token: Github or Gitlab token to access the repository.
-            username: Github or Gitlab username to access the repository.
-            max_iterations: Maximum number of iterations to run.
-            limit_issues: Limit the number of issues to resolve.
-            num_workers: Number of workers to use for parallel processing.
-            output_dir: Output directory to write the results.
-            llm_config: Configuration for the language model.
-            runtime_container_image: Container image to use.
-            prompt_template: Prompt template to use.
-            issue_type: Type of issue to resolve (issue or pr).
-            repo_instruction: Repository instruction to use.
-            issue_numbers: List of issue numbers to resolve.
-        """
-        issue_handler = self.issue_resolver.issue_handler_factory(
-            issue_type, owner, repo, token, llm_config, platform, username, base_domain
-        )
+    async def resolve_issues(self) -> None:
+        """Resolve multiple github or gitlab issues using the instance variables."""
+        issue_handler = self.issue_resolver.issue_handler_factory()
 
         # Load dataset
         issues: list[Issue] = issue_handler.get_converted_issues(
-            issue_numbers=issue_numbers
+            issue_numbers=self.issue_numbers
         )
 
-        if limit_issues is not None:
-            issues = issues[:limit_issues]
-            logger.info(f'Limiting resolving to first {limit_issues} issues.')
+        if self.limit_issues is not None:
+            issues = issues[:self.limit_issues]
+            logger.info(f'Limiting resolving to first {self.limit_issues} issues.')
 
         # TEST METADATA
-        model_name = llm_config.model.split('/')[-1]
+        model_name = self.llm_config.model.split('/')[-1]
 
-        pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
-        pathlib.Path(os.path.join(output_dir, 'infer_logs')).mkdir(
+        pathlib.Path(self.output_dir).mkdir(parents=True, exist_ok=True)
+        pathlib.Path(os.path.join(self.output_dir, 'infer_logs')).mkdir(
             parents=True, exist_ok=True
         )
-        logger.info(f'Using output directory: {output_dir}')
+        logger.info(f'Using output directory: {self.output_dir}')
 
         # checkout the repo
-        repo_dir = os.path.join(output_dir, 'repo')
+        repo_dir = os.path.join(self.output_dir, 'repo')
         if not os.path.exists(repo_dir):
             checkout_output = subprocess.check_output(  # noqa: ASYNC101
                 [
                     'git',
                     'clone',
                     issue_handler.get_clone_url(),
-                    f'{output_dir}/repo',
+                    f'{self.output_dir}/repo',
                 ]
             ).decode('utf-8')
             if 'fatal' in checkout_output:
@@ -130,17 +162,17 @@ class AllIssueResolver:
         )
         logger.info(f'Base commit: {base_commit}')
 
-        if repo_instruction is None:
+        if self.repo_instruction is None:
             # Check for .openhands_instructions file in the workspace directory
             openhands_instructions_path = os.path.join(
                 repo_dir, '.openhands_instructions'
             )
             if os.path.exists(openhands_instructions_path):
                 with open(openhands_instructions_path, 'r') as f:  # noqa: ASYNC101
-                    repo_instruction = f.read()
+                    self.repo_instruction = f.read()
 
         # OUTPUT FILE
-        output_file = os.path.join(output_dir, 'output.jsonl')
+        output_file = os.path.join(self.output_dir, 'output.jsonl')
         logger.info(f'Writing output to {output_file}')
         finished_numbers = set()
         if os.path.exists(output_file):
@@ -154,7 +186,7 @@ class AllIssueResolver:
         output_fp = open(output_file, 'a')  # noqa: ASYNC101
 
         logger.info(
-            f'Resolving issues with model {model_name}, max iterations {max_iterations}.'
+            f'Resolving issues with model {model_name}, max iterations {self.max_iterations}.'
         )
 
         # =============================================
@@ -173,13 +205,13 @@ class AllIssueResolver:
         pbar = tqdm(total=len(issues))
 
         # This sets the multi-processing
-        logger.info(f'Using {num_workers} workers.')
+        logger.info(f'Using {self.num_workers} workers.')
 
         try:
             tasks = []
             for issue in issues:
                 # checkout to pr branch
-                if issue_type == 'pr':
+                if self.issue_type == 'pr':
                     logger.info(
                         f'Checking out to PR branch {issue.head_branch} for issue {issue.number}'
                     )
@@ -200,16 +232,9 @@ class AllIssueResolver:
                 task = self.update_progress(
                     self.issue_resolver.process_issue(
                         issue,
-                        platform,
                         base_commit,
-                        max_iterations,
-                        llm_config,
-                        output_dir,
-                        runtime_container_image,
-                        prompt_template,
                         issue_handler,
-                        repo_instruction,
-                        bool(num_workers > 1),
+                        bool(self.num_workers > 1),
                     ),
                     output_fp,
                     pbar,
@@ -217,7 +242,7 @@ class AllIssueResolver:
                 tasks.append(task)
 
             # Use asyncio.gather with a semaphore to limit concurrency
-            sem = asyncio.Semaphore(num_workers)
+            sem = asyncio.Semaphore(self.num_workers)
 
             async def run_with_semaphore(task: Awaitable[Any]) -> Any:
                 async with sem:
@@ -388,28 +413,26 @@ def main() -> None:
     with open(prompt_file, 'r') as f:
         prompt_template = f.read()
 
-    all_issue_resolver = AllIssueResolver()
-
-    asyncio.run(
-        all_issue_resolver.resolve_issues(
-            owner=owner,
-            repo=repo,
-            token=token,
-            username=username,
-            platform=platform,
-            runtime_container_image=runtime_container_image,
-            max_iterations=my_args.max_iterations,
-            limit_issues=my_args.limit_issues,
-            num_workers=my_args.num_workers,
-            output_dir=my_args.output_dir,
-            llm_config=llm_config,
-            prompt_template=prompt_template,
-            issue_type=issue_type,
-            repo_instruction=repo_instruction,
-            issue_numbers=issue_numbers,
-            base_domain=my_args.base_domain,
-        )
+    all_issue_resolver = AllIssueResolver(
+        owner=owner,
+        repo=repo,
+        token=token,
+        username=username,
+        platform=platform,
+        runtime_container_image=runtime_container_image,
+        max_iterations=my_args.max_iterations,
+        limit_issues=my_args.limit_issues,
+        num_workers=my_args.num_workers,
+        output_dir=my_args.output_dir,
+        llm_config=llm_config,
+        prompt_template=prompt_template,
+        issue_type=issue_type,
+        repo_instruction=repo_instruction,
+        issue_numbers=issue_numbers,
+        base_domain=my_args.base_domain,
     )
+
+    asyncio.run(all_issue_resolver.resolve_issues())
 
 
 if __name__ == '__main__':
