@@ -87,7 +87,6 @@ class AgentDelegateAction(Action):
     agent: str
     inputs: dict
     thought: str = ''
-    agent_config_override: dict | None = None
     action: str = ActionType.DELEGATE
 
     @property
