@@ -1,8 +1,10 @@
 import React from "react";
-// import { useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import { BaseModalTitle } from "#/components/shared/modals/confirmation-modals/base-modal";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import { ModalBody } from "#/components/shared/modals/modal-body";
+import { BrandButton } from "../settings/brand-button";
+import { I18nKey } from "#/i18n/declaration";
 
 interface SystemMessageModalProps {
   isOpen: boolean;
@@ -20,7 +22,7 @@ export function SystemMessageModal({
   onClose,
   systemMessage,
 }: SystemMessageModalProps) {
-  // const { t } = useTranslation();
+  const { t } = useTranslation();
 
   if (!systemMessage) {
     return null;
@@ -28,8 +30,8 @@ export function SystemMessageModal({
 
   return (
     isOpen && (
-      <ModalBackdrop onClose={onClose}>
-        <ModalBody className="max-w-4xl max-h-[80vh] flex flex-col items-start">
+      <ModalBackdrop onClick={onClose}>
+        <ModalBody className="max-w-4xl max-h-[80vh] flex flex-col items-start" onClick={(e) => e.stopPropagation()}>
           <div className="flex flex-col gap-2 w-full">
             <BaseModalTitle title="Agent Tools & Metadata" />
             <div className="flex flex-col gap-1">
@@ -87,6 +89,17 @@ export function SystemMessageModal({
                 </div>
               </div>
             )}
+          </div>
+          
+          <div className="w-full mt-4">
+            <BrandButton
+              type="button"
+              variant="secondary"
+              onClick={onClose}
+              className="w-full"
+            >
+              {t(I18nKey.BUTTON$CLOSE)}
+            </BrandButton>
           </div>
         </ModalBody>
       </ModalBackdrop>
