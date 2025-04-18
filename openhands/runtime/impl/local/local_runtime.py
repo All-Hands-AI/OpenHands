@@ -207,8 +207,9 @@ class LocalRuntime(ActionExecutionClient):
         env['OPENHANDS_REPO_PATH'] = code_repo_path
         env['LOCAL_RUNTIME_MODE'] = '1'
         # run poetry show -v | head -n 1 | awk '{print $2}'
+        # Using asyncio.create_subprocess_exec would be better, but requires significant refactoring
         poetry_venvs_path = (
-            subprocess.check_output(
+            subprocess.check_output(  # noqa: ASYNC101
                 ['poetry', 'show', '-v'],
                 env=env,
                 cwd=code_repo_path,
@@ -223,7 +224,8 @@ class LocalRuntime(ActionExecutionClient):
         logger.debug(f'POETRY_VIRTUALENVS_PATH: {poetry_venvs_path}')
 
         check_dependencies(code_repo_path, poetry_venvs_path)
-        self.server_process = subprocess.Popen(
+        # Using asyncio.create_subprocess_exec would be better, but requires significant refactoring
+        self.server_process = subprocess.Popen(  # noqa: ASYNC101
             cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
