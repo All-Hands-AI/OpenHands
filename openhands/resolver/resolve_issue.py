@@ -124,7 +124,7 @@ class IssueResolver:
         if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
             raise RuntimeError(f'Failed to change directory to /workspace.\n{obs}')
 
-        if self.platform == Platform.GITLAB and os.getenv('GITLAB_CI') == 'true':
+        if self.platform == Platform.GITLAB and self.GITLAB_CI:
             action = CmdRunAction(command='sudo chown -R 1001:0 /workspace/*')
             logger.info(action, extra={'msg_type': 'ACTION'})
             obs = runtime.run_action(action)
@@ -254,7 +254,7 @@ class IssueResolver:
             timeout=300,
         )
 
-        if os.getenv('GITLAB_CI') == 'true':
+        if self.GITLAB_CI:
             sandbox_config.local_runtime_url = os.getenv(
                 'LOCAL_RUNTIME_URL', 'http://localhost'
             )
