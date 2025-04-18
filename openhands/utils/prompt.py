@@ -57,10 +57,10 @@ class PromptManager:
         return self.system_template.render().strip()
 
     def get_example_user_message(self) -> str:
-        """This is the initial user message provided to the agent
+        """This is an initial user message that can be provided to the agent
         before *actual* user instructions are provided.
 
-        It is used to provide a demonstration of how the agent
+        It can be used to provide a demonstration of how the agent
         should behave in order to solve the user's task. And it may
         optionally contain some additional context about the user's task.
         These additional context will convert the current generic agent
