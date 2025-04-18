@@ -11,11 +11,11 @@ import {
   RecallObservation,
 } from "#/types/core/observations";
 
-type SliceState = { 
+type SliceState = {
   messages: Message[];
   systemMessage: {
     content: string;
-    tools: any[] | null;
+    tools: Array<Record<string, unknown>> | null;
     openhands_version: string | null;
     agent_class: string | null;
   } | null;
@@ -110,7 +110,7 @@ export const chatSlice = createSlice({
       }
       const translationID = `ACTION_MESSAGE$${actionID.toUpperCase()}`;
       let text = "";
-      
+
       if (actionID === "system") {
         // Store the system message in the state
         state.systemMessage = {
@@ -121,7 +121,8 @@ export const chatSlice = createSlice({
         };
         // Don't add a message for system actions
         return;
-      } else if (actionID === "run") {
+      }
+      if (actionID === "run") {
         text = `Command:\n\`${action.payload.args.command}\``;
       } else if (actionID === "run_ipython") {
         text = `\`\`\`\n${action.payload.args.code}\n\`\`\``;
@@ -331,6 +332,7 @@ export const {
 } = chatSlice.actions;
 
 // Selectors
-export const selectSystemMessage = (state: { chat: SliceState }) => state.chat.systemMessage;
+export const selectSystemMessage = (state: { chat: SliceState }) =>
+  state.chat.systemMessage;
 
 export default chatSlice.reducer;

@@ -1,20 +1,15 @@
 import React from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "#/components/ui/dialog";
-import { ScrollArea } from "#/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "#/components/ui/tabs";
+// import { useTranslation } from "react-i18next";
+import { BaseModalTitle } from "#/components/shared/modals/confirmation-modals/base-modal";
+import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
+import { ModalBody } from "#/components/shared/modals/modal-body";
 
 interface SystemMessageModalProps {
   isOpen: boolean;
   onClose: () => void;
   systemMessage: {
     content: string;
-    tools: any[] | null;
+    tools: Array<Record<string, unknown>> | null;
     openhands_version: string | null;
     agent_class: string | null;
   } | null;
@@ -25,72 +20,76 @@ export function SystemMessageModal({
   onClose,
   systemMessage,
 }: SystemMessageModalProps) {
+  // const { t } = useTranslation();
+
   if (!systemMessage) {
     return null;
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[80vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle>Agent Tools & Metadata</DialogTitle>
-          <DialogDescription>
+    isOpen && (
+      <ModalBackdrop onClose={onClose}>
+        <ModalBody className="max-w-4xl max-h-[80vh] flex flex-col items-start">
+          <div className="flex flex-col gap-2 w-full">
+            <BaseModalTitle title="Agent Tools & Metadata" />
             <div className="flex flex-col gap-1">
               {systemMessage.agent_class && (
-                <div className="text-sm text-muted-foreground">
-                  Agent Class: {systemMessage.agent_class}
+                <div className="text-sm">
+                  <strong>Agent Class:</strong> {systemMessage.agent_class}
                 </div>
               )}
               {systemMessage.openhands_version && (
-                <div className="text-sm text-muted-foreground">
-                  OpenHands Version: {systemMessage.openhands_version}
+                <div className="text-sm">
+                  <strong>OpenHands Version:</strong>{" "}
+                  {systemMessage.openhands_version}
                 </div>
               )}
             </div>
-          </DialogDescription>
-        </DialogHeader>
-        <Tabs defaultValue="system" className="flex-1 flex flex-col">
-          <TabsList>
-            <TabsTrigger value="system">System Message</TabsTrigger>
-            <TabsTrigger value="tools">Available Tools</TabsTrigger>
-          </TabsList>
-          <TabsContent value="system" className="flex-1">
-            <ScrollArea className="h-[50vh]">
+          </div>
+
+          <div className="w-full mt-4">
+            <div className="flex border-b mb-4">
+              <button
+                type="button"
+                className="px-4 py-2 font-medium border-b-2 border-primary"
+                onClick={() => {}}
+              >
+                System Message
+              </button>
+            </div>
+
+            <div className="max-h-[50vh] overflow-auto">
               <div className="p-4 whitespace-pre-wrap font-mono text-sm">
                 {systemMessage.content}
               </div>
-            </ScrollArea>
-          </TabsContent>
-          <TabsContent value="tools" className="flex-1">
-            <ScrollArea className="h-[50vh]">
-              {systemMessage.tools && systemMessage.tools.length > 0 ? (
-                <div className="p-4 space-y-4">
+            </div>
+
+            {systemMessage.tools && systemMessage.tools.length > 0 && (
+              <div className="mt-6">
+                <h3 className="font-medium mb-2">Available Tools:</h3>
+                <div className="space-y-4">
                   {systemMessage.tools.map((tool, index) => (
                     <div key={index} className="border rounded-md p-4">
-                      <h3 className="font-bold">{tool.name}</h3>
-                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                        {tool.description}
+                      <h3 className="font-bold">{String(tool.name || "")}</h3>
+                      <p className="text-sm whitespace-pre-wrap">
+                        {String(tool.description || "")}
                       </p>
-                      {tool.parameters && (
+                      {tool.parameters ? (
                         <div className="mt-2">
                           <h4 className="text-sm font-semibold">Parameters:</h4>
-                          <pre className="text-xs mt-1 p-2 bg-muted rounded-md overflow-auto">
+                          <pre className="text-xs mt-1 p-2 bg-gray-100 dark:bg-gray-800 rounded-md overflow-auto">
                             {JSON.stringify(tool.parameters, null, 2)}
                           </pre>
                         </div>
-                      )}
+                      ) : null}
                     </div>
                   ))}
                 </div>
-              ) : (
-                <div className="p-4 text-center text-muted-foreground">
-                  No tools available
-                </div>
-              )}
-            </ScrollArea>
-          </TabsContent>
-        </Tabs>
-      </DialogContent>
-    </Dialog>
+              </div>
+            )}
+          </div>
+        </ModalBody>
+      </ModalBackdrop>
+    )
   );
 }

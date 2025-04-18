@@ -13,7 +13,7 @@ export interface SystemMessageAction extends OpenHandsActionEvent<"system"> {
   source: "agent";
   args: {
     content: string;
-    tools: any[] | null;
+    tools: Array<Record<string, unknown>> | null;
     openhands_version: string | null;
     agent_class: string | null;
   };
