@@ -1,4 +1,4 @@
-import { redirect, useSearchParams } from "react-router";
+import { useSearchParams } from "react-router";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { PaymentForm } from "#/components/features/payment/payment-form";

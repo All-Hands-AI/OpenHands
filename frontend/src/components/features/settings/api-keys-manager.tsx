@@ -283,9 +283,7 @@ export function ApiKeysManager() {
             <h3 className="text-xl font-bold">
               {t(I18nKey.SETTINGS$API_KEY_CREATED)}
             </h3>
-            <p className="text-sm">
-              {t(I18nKey.SETTINGS$API_KEY_WARNING)}
-            </p>
+            <p className="text-sm">{t(I18nKey.SETTINGS$API_KEY_WARNING)}</p>
             <div className="bg-base-tertiary p-4 rounded-md font-mono text-sm break-all">
               {newlyCreatedKey.key}
             </div>

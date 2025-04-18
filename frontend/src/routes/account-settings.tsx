@@ -488,8 +488,6 @@ function AccountSettings() {
             )}
           </section>
 
-
-
           <section className="flex flex-col gap-6">
             <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">
               {t(I18nKey.ACCOUNT_SETTINGS$ADDITIONAL_SETTINGS)}
