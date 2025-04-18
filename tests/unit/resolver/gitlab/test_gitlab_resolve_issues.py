@@ -18,11 +18,7 @@ from openhands.resolver.interfaces.issue_definitions import (
     ServiceContextIssue,
     ServiceContextPR,
 )
-from openhands.resolver.resolve_issue import (
-    complete_runtime,
-    initialize_runtime,
-    process_issue,
-)
+from openhands.resolver.resolve_issue import IssueResolver
 from openhands.resolver.resolver_output import ResolverOutput
 from openhands.resolver.utils import Platform
 
@@ -355,7 +351,21 @@ async def test_complete_runtime():
         create_cmd_output(exit_code=0, content='git diff content', command='git apply'),
     ]
 
-    result = await complete_runtime(mock_runtime, 'base_commit_hash', Platform.GITLAB)
+    resolver = IssueResolver(
+        owner="test-owner",
+        repo="test-repo",
+        token="test-token",
+        username="test-username",
+        platform=Platform.GITLAB,
+        max_iterations=10,
+        output_dir="/tmp",
+        llm_config=MagicMock(),
+        runtime_container_image="test-image",
+        prompt_template="test-template",
+        issue_type="issue",
+    )
+    
+    result = await resolver.complete_runtime(mock_runtime, 'base_commit_hash')
 
     assert result == {'git_patch': 'git diff content'}
     assert mock_runtime.run_action.call_count == 5
@@ -466,31 +476,38 @@ async def test_process_issue(mock_output_dir, mock_prompt_template):
             patch(
                 'openhands.resolver.resolve_issue.create_runtime', mock_create_runtime
             ),
-            patch(
-                'openhands.resolver.resolve_issue.initialize_runtime',
-                mock_initialize_runtime,
+            patch.object(
+                IssueResolver, 'initialize_runtime', mock_initialize_runtime
             ),
             patch(
                 'openhands.resolver.resolve_issue.run_controller', mock_run_controller
             ),
-            patch(
-                'openhands.resolver.resolve_issue.complete_runtime',
-                mock_complete_runtime,
+            patch.object(
+                IssueResolver, 'complete_runtime', mock_complete_runtime
             ),
             patch('openhands.resolver.resolve_issue.logger'),
         ):
+            # Create resolver instance
+            resolver = IssueResolver(
+                owner="test-owner",
+                repo="test-repo",
+                token="test-token",
+                username="test-username",
+                platform=Platform.GITLAB,
+                max_iterations=max_iterations,
+                output_dir=mock_output_dir,
+                llm_config=llm_config,
+                runtime_container_image=runtime_container_image,
+                prompt_template=mock_prompt_template,
+                issue_type=handler_instance.issue_type,
+                repo_instruction=repo_instruction,
+            )
+            
             # Call the function
-            result = await process_issue(
+            result = await resolver.process_issue(
                 issue,
-                Platform.GITLAB,
                 base_commit,
-                max_iterations,
-                llm_config,
-                mock_output_dir,
-                runtime_container_image,
-                mock_prompt_template,
                 handler_instance,
-                repo_instruction,
                 reset_logger=False,
             )
 
