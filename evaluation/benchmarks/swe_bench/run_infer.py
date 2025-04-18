@@ -10,17 +10,17 @@ import toml
 from datasets import load_dataset
 
 import openhands.agenthub
-from evaluation.benchmarks.swe_bench.resource.swt_bench_constants import (
-    MAP_REPO_TO_TEST_FRAMEWORK_VERBOSE,
-    MAP_REPO_TO_INSTALL,
-    MAP_VERSION_TO_INSTALL
-)
 from evaluation.benchmarks.swe_bench.binary_patch_utils import (
     remove_binary_diffs,
     remove_binary_files_from_git,
 )
 from evaluation.benchmarks.swe_bench.resource.mapping import (
     get_instance_resource_factor,
+)
+from evaluation.benchmarks.swe_bench.resource.swt_bench_constants import (
+    MAP_REPO_TO_INSTALL,
+    MAP_REPO_TO_TEST_FRAMEWORK_VERBOSE,
+    MAP_VERSION_TO_INSTALL,
 )
 from evaluation.utils.shared import (
     EvalException,
@@ -60,7 +60,7 @@ from openhands.utils.shutdown_listener import sleep_if_should_continue
 
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false').lower() == 'true'
 RUN_WITH_BROWSING = os.environ.get('RUN_WITH_BROWSING', 'false').lower() == 'true'
-BenchMode = Literal["swe", "swt", "swt-ci"]
+BenchMode = Literal['swe', 'swt', 'swt-ci']
 
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
@@ -74,9 +74,13 @@ def _get_swebench_workspace_dir_name(instance: pd.Series) -> str:
 
 def get_instruction(instance: pd.Series, metadata: EvalMetadata) -> MessageAction:
     workspace_dir_name = _get_swebench_workspace_dir_name(instance)
-    mode = metadata.details["mode"]
+    mode = metadata.details['mode']
     if mode.startswith('swt'):
-        test_instructions = f"The following command can be used to run the tests: `{list(MAP_REPO_TO_TEST_FRAMEWORK_VERBOSE[instance.repo].values())[0]}`. Make sure they fail in the expected way.\n" if mode.endswith("ci") else ""
+        test_instructions = (
+            f'The following command can be used to run the tests: `{list(MAP_REPO_TO_TEST_FRAMEWORK_VERBOSE[instance.repo].values())[0]}`. Make sure they fail in the expected way.\n'
+            if mode.endswith('ci')
+            else ''
+        )
         instruction = f"""\
 <uploaded_files>
 /workspace/{workspace_dir_name}
@@ -387,20 +391,22 @@ def initialize_runtime(
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert_and_raise(obs.exit_code == 0, f'Failed to remove git remotes: {str(obs)}')
 
-    if metadata.details["mode"] == "swt-ci":
+    if metadata.details['mode'] == 'swt-ci':
         # set up repo
         setup_commands = []
-        if instance["repo"] in MAP_REPO_TO_INSTALL:
-            setup_commands.append(MAP_REPO_TO_INSTALL[instance["repo"]])
+        if instance['repo'] in MAP_REPO_TO_INSTALL:
+            setup_commands.append(MAP_REPO_TO_INSTALL[instance['repo']])
 
         # Run pre-install set up if provided
-        install = MAP_VERSION_TO_INSTALL.get(instance['repo'], {}).get(instance['version'], [])
-        if "pre_install" in install:
-            for pre_install in install["pre_install"]:
+        install = MAP_VERSION_TO_INSTALL.get(instance['repo'], {}).get(
+            instance['version'], []
+        )
+        if 'pre_install' in install:
+            for pre_install in install['pre_install']:
                 setup_commands.append(pre_install)
 
-        if "install" in install:
-            setup_commands.append(install["install"])
+        if 'install' in install:
+            setup_commands.append(install['install'])
 
         for command in setup_commands:
             action = CmdRunAction(command=command)
@@ -408,7 +414,6 @@ def initialize_runtime(
             logger.info(action, extra={'msg_type': 'ACTION'})
             obs = runtime.run_action(action)
             logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-
 
     if 'multimodal' not in metadata.dataset.lower():
         # Only for non-multimodal datasets, we need to activate the testbed environment for Python
@@ -775,7 +780,7 @@ if __name__ == '__main__':
     if llm_config is None:
         raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')
 
-    details = {"mode": args.mode}
+    details = {'mode': args.mode}
     _agent_cls = openhands.agenthub.Agent.get_cls(args.agent_cls)
 
     dataset_descrption = (
