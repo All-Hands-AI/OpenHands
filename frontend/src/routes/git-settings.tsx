@@ -1,13 +1,22 @@
+import { useTranslation } from "react-i18next";
+import { SettingsInput } from "#/components/features/settings/settings-input";
 import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 import { useConfig } from "#/hooks/query/use-config";
 import { useSettings } from "#/hooks/query/use-settings";
+import { I18nKey } from "#/i18n/declaration";
+import { BrandButton } from "#/components/features/settings/brand-button";
+import { GitHubTokenHelpAnchor } from "#/components/features/settings/git-settings/github-token-help-anchor";
+import { GitLabTokenHelpAnchor } from "#/components/features/settings/git-settings/gitlab-token-help-anchor";
 
 function GitSettingsScreen() {
+  const { t } = useTranslation();
   const { mutate: saveSettings } = useSaveSettings();
   const { data: settings } = useSettings();
   const { data: config } = useConfig();
 
   const isSaas = config?.APP_MODE === "saas";
+  const isGitHubTokenSet = settings?.PROVIDER_TOKENS_SET.github;
+  const isGitLabTokenSet = settings?.PROVIDER_TOKENS_SET.gitlab;
 
   const formAction = async (formData: FormData) => {
     const githubToken = formData.get("github-token-input")?.toString() || "";
@@ -29,29 +38,37 @@ function GitSettingsScreen() {
 
       {!isSaas && (
         <>
-          <input
-            data-testid="github-token-input"
+          <SettingsInput
+            testId="github-token-input"
             name="github-token-input"
-            placeholder={settings?.PROVIDER_TOKENS_SET.github ? "<hidden>" : ""}
+            label={t(I18nKey.GITHUB$TOKEN_LABEL)}
+            type="password"
+            className="w-[680px]"
+            placeholder={isGitHubTokenSet ? "<hidden>" : ""}
           />
-          <div data-testid="github-token-help-anchor" />
+
+          <GitHubTokenHelpAnchor />
         </>
       )}
 
       {!isSaas && (
         <>
-          <input
-            data-testid="gitlab-token-input"
+          <SettingsInput
+            testId="gitlab-token-input"
             name="gitlab-token-input"
-            placeholder={settings?.PROVIDER_TOKENS_SET.gitlab ? "<hidden>" : ""}
+            label={t(I18nKey.GITLAB$TOKEN_LABEL)}
+            type="password"
+            className="w-[680px]"
+            placeholder={isGitLabTokenSet ? "<hidden>" : ""}
           />
-          <div data-testid="gitlab-token-help-anchor" />
+
+          <GitLabTokenHelpAnchor />
         </>
       )}
 
-      <button data-testid="submit-button" type="submit">
+      <BrandButton testId="submit-button" type="submit" variant="primary">
         Submit
-      </button>
+      </BrandButton>
     </form>
   );
 }
