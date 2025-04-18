@@ -4869,6 +4869,21 @@
         "es": "Pensando",
         "tr": "Düşünüyor"
     },
+    "ACTION_MESSAGE$SYSTEM": {
+        "en": "System Message",
+        "zh-CN": "系统消息",
+        "zh-TW": "系統訊息",
+        "ko-KR": "시스템 메시지",
+        "ja": "システムメッセージ",
+        "no": "Systemmelding",
+        "ar": "رسالة النظام",
+        "de": "Systemnachricht",
+        "fr": "Message Système",
+        "it": "Messaggio di Sistema",
+        "pt": "Mensagem do Sistema",
+        "es": "Mensaje del Sistema",
+        "tr": "Sistem Mesajı"
+    },
     "OBSERVATION_MESSAGE$RUN": {
         "en": "Ran <cmd>{{observation.payload.extras.command}}</cmd>",
         "zh-CN": "运行 <cmd>{{observation.payload.extras.command}}</cmd>",
