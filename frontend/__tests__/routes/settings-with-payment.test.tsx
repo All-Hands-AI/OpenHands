@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createRoutesStub } from "react-router";
@@ -30,7 +30,7 @@ describe("Settings Billing", () => {
     vi.clearAllMocks();
   });
 
-  it("should not render the navbar if OSS mode", async () => {
+  it("should not render the credits tab if OSS mode", async () => {
     getConfigSpy.mockResolvedValue({
       APP_MODE: "oss",
       GITHUB_CLIENT_ID: "123",
@@ -43,13 +43,30 @@ describe("Settings Billing", () => {
 
     renderSettingsScreen();
 
-    await waitFor(() => {
-      const navbar = screen.queryByTestId("settings-navbar");
-      expect(navbar).not.toBeInTheDocument();
-    });
+    const navbar = await screen.findByTestId("settings-navbar");
+    const credits = within(navbar).queryByText("Credits");
+    expect(credits).not.toBeInTheDocument();
   });
 
-  it("should render the navbar if SaaS mode", async () => {
+  it("should not render the credits tab if SaaS mode and billing is disabled", async () => {
+    getConfigSpy.mockResolvedValue({
+      APP_MODE: "saas",
+      GITHUB_CLIENT_ID: "123",
+      POSTHOG_CLIENT_KEY: "456",
+      FEATURE_FLAGS: {
+        ENABLE_BILLING: false,
+        HIDE_LLM_SETTINGS: false,
+      },
+    });
+
+    renderSettingsScreen();
+
+    const navbar = await screen.findByTestId("settings-navbar");
+    const credits = within(navbar).queryByText("Credits");
+    expect(credits).not.toBeInTheDocument();
+  });
+
+  it("should render the credits tab if SaaS mode and billing is enabled", async () => {
     getConfigSpy.mockResolvedValue({
       APP_MODE: "saas",
       GITHUB_CLIENT_ID: "123",
@@ -62,11 +79,8 @@ describe("Settings Billing", () => {
 
     renderSettingsScreen();
 
-    await waitFor(() => {
-      const navbar = screen.getByTestId("settings-navbar");
-      within(navbar).getByText("Account");
-      within(navbar).getByText("Credits");
-    });
+    const navbar = await screen.findByTestId("settings-navbar");
+    within(navbar).getByText("Credits");
   });
 
   it("should render the billing settings if clicking the credits item", async () => {

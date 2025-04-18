@@ -1,5 +1,4 @@
 import React from "react";
-import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import { BrandButton } from "#/components/features/settings/brand-button";
@@ -15,7 +14,6 @@ import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 import { useAIConfigOptions } from "#/hooks/query/use-ai-config-options";
 import { useConfig } from "#/hooks/query/use-config";
 import { useSettings } from "#/hooks/query/use-settings";
-import { useAppLogout } from "#/hooks/use-app-logout";
 import { AvailableLanguages } from "#/i18n";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import { handleCaptureConsent } from "#/utils/handle-capture-consent";
@@ -27,8 +25,6 @@ import {
   displayErrorToast,
   displaySuccessToast,
 } from "#/utils/custom-toast-handlers";
-import { ProviderOptions } from "#/types/settings";
-import { useAuth } from "#/context/auth-context";
 
 // Define REMOTE_RUNTIME_OPTIONS for testing
 const REMOTE_RUNTIME_OPTIONS = [
@@ -52,8 +48,6 @@ function AccountSettings() {
     isSuccess: isSuccessfulResources,
   } = useAIConfigOptions();
   const { mutate: saveSettings } = useSaveSettings();
-  const { handleLogout } = useAppLogout();
-  const { providerTokensSet, providersAreSet } = useAuth();
 
   const isFetching = isFetchingSettings || isFetchingResources;
   const isSuccess = isSuccessfulSettings && isSuccessfulResources;
@@ -77,11 +71,6 @@ function AccountSettings() {
     return false;
   };
 
-  const hasAppSlug = !!config?.APP_SLUG;
-  const isGitHubTokenSet =
-    providerTokensSet.includes(ProviderOptions.github) || false;
-  const isGitLabTokenSet =
-    providerTokensSet.includes(ProviderOptions.gitlab) || false;
   const isLLMKeySet = settings?.LLM_API_KEY_SET;
   const isAnalyticsEnabled = settings?.USER_CONSENTS_TO_ANALYTICS;
   const isAdvancedSettingsSet = determineWhetherToToggleAdvancedSettings();
@@ -131,8 +120,6 @@ function AccountSettings() {
         ? undefined // don't update if it's already set and input is empty
         : inputApiKey; // otherwise use the input value
 
-    const githubToken = formData.get("github-token-input")?.toString();
-    const gitlabToken = formData.get("gitlab-token-input")?.toString();
     // we don't want the user to be able to modify these settings in SaaS
     const finalLlmModel = shouldHandleSpecialSaasCase
       ? undefined
@@ -143,13 +130,6 @@ function AccountSettings() {
     const finalLlmApiKey = shouldHandleSpecialSaasCase ? undefined : llmApiKey;
 
     const newSettings = {
-      provider_tokens:
-        githubToken || gitlabToken
-          ? {
-              github: githubToken || "",
-              gitlab: gitlabToken || "",
-            }
-          : undefined,
       LANGUAGE: languageValue,
       user_consents_to_analytics: userConsentsToAnalytics,
       ENABLE_DEFAULT_CONDENSER: enableMemoryCondenser,
@@ -376,117 +356,6 @@ function AccountSettings() {
               )}
             </section>
           )}
-
-          <section className="flex flex-col gap-6">
-            <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">
-              {t(I18nKey.SETTINGS$GIT_SETTINGS)}
-            </h2>
-            {isSaas && hasAppSlug && (
-              <Link
-                to={`https://github.com/apps/${config.APP_SLUG}/installations/new`}
-                target="_blank"
-                rel="noreferrer noopener"
-              >
-                <BrandButton type="button" variant="secondary">
-                  {t(I18nKey.GITHUB$CONFIGURE_REPOS)}
-                </BrandButton>
-              </Link>
-            )}
-            {!isSaas && (
-              <>
-                <SettingsInput
-                  testId="github-token-input"
-                  name="github-token-input"
-                  label={t(I18nKey.GITHUB$TOKEN_LABEL)}
-                  type="password"
-                  className="w-[680px]"
-                  startContent={
-                    isGitHubTokenSet && (
-                      <KeyStatusIcon isSet={!!isGitHubTokenSet} />
-                    )
-                  }
-                  placeholder={isGitHubTokenSet ? "<hidden>" : ""}
-                />
-                <p data-testid="github-token-help-anchor" className="text-xs">
-                  {" "}
-                  {t(I18nKey.GITHUB$GET_TOKEN)}{" "}
-                  <b>
-                    {" "}
-                    <a
-                      href="https://github.com/settings/tokens/new?description=openhands-app&scopes=repo,user,workflow"
-                      target="_blank"
-                      className="underline underline-offset-2"
-                      rel="noopener noreferrer"
-                    >
-                      GitHub
-                    </a>{" "}
-                  </b>
-                  {t(I18nKey.COMMON$HERE)}{" "}
-                  <b>
-                    <a
-                      href="https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token"
-                      target="_blank"
-                      className="underline underline-offset-2"
-                      rel="noopener noreferrer"
-                    >
-                      {t(I18nKey.COMMON$CLICK_FOR_INSTRUCTIONS)}
-                    </a>
-                  </b>
-                  .
-                </p>
-
-                <SettingsInput
-                  testId="gitlab-token-input"
-                  name="gitlab-token-input"
-                  label={t(I18nKey.GITLAB$TOKEN_LABEL)}
-                  type="password"
-                  className="w-[680px]"
-                  startContent={
-                    isGitLabTokenSet && (
-                      <KeyStatusIcon isSet={!!isGitLabTokenSet} />
-                    )
-                  }
-                  placeholder={isGitHubTokenSet ? "<hidden>" : ""}
-                />
-
-                <p data-testid="gitlab-token-help-anchor" className="text-xs">
-                  {" "}
-                  {t(I18nKey.GITLAB$GET_TOKEN)}{" "}
-                  <b>
-                    {" "}
-                    <a
-                      href="https://gitlab.com/-/user_settings/personal_access_tokens?name=openhands-app&scopes=api,read_user,read_repository,write_repository"
-                      target="_blank"
-                      className="underline underline-offset-2"
-                      rel="noopener noreferrer"
-                    >
-                      GitLab
-                    </a>{" "}
-                  </b>
-                  {t(I18nKey.GITLAB$OR_SEE)}{" "}
-                  <b>
-                    <a
-                      href="https://docs.gitlab.com/user/profile/personal_access_tokens/"
-                      target="_blank"
-                      className="underline underline-offset-2"
-                      rel="noopener noreferrer"
-                    >
-                      {t(I18nKey.COMMON$DOCUMENTATION)}
-                    </a>
-                  </b>
-                  .
-                </p>
-                <BrandButton
-                  type="button"
-                  variant="secondary"
-                  onClick={handleLogout}
-                  isDisabled={!providersAreSet}
-                >
-                  Disconnect Tokens
-                </BrandButton>
-              </>
-            )}
-          </section>
 
           <section className="flex flex-col gap-6">
             <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">
