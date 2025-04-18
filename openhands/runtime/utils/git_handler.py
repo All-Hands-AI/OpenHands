@@ -153,18 +153,15 @@ class GitHandler:
             else []
         )
 
-    def get_git_changes(self) -> list[dict[str, str]]:
+    def get_git_changes(self) -> list[dict[str, str]] | None:
         """
         Retrieves the list of changed files in the Git repository.
 
         Returns:
-            list[dict[str, str]]: A list of dictionaries containing file paths and statuses.
-
-        Raises:
-            RuntimeError: If the directory is not a Git repository.
+            list[dict[str, str]] | None: A list of dictionaries containing file paths and statuses. None if not a git repository.
         """
         if not self._is_git_repo():
-            raise RuntimeError('Not a git repository')
+            return None
 
         changes_list = self._get_changed_files()
         result = parse_git_changes(changes_list)

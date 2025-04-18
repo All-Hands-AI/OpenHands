@@ -610,7 +610,7 @@ class Runtime(FileEditRuntimeMixin):
 
         return CommandResult(content=content, exit_code=exit_code)
 
-    def get_git_changes(self, cwd: str) -> list[dict[str, str]]:
+    def get_git_changes(self, cwd: str) -> list[dict[str, str]] | None:
         self.git_handler.set_cwd(cwd)
         return self.git_handler.get_git_changes()
 
