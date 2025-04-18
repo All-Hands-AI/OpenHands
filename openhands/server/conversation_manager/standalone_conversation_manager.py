@@ -257,49 +257,10 @@ class StandaloneConversationManager(ConversationManager):
         github_user_id: str | None = None,
     ) -> EventStore:
         logger.info(f'maybe_start_agent_loop:{sid}', extra={'session_id': sid})
-        session: Session | None = None
         if not await self.is_agent_loop_running(sid):
-            logger.info(f'start_agent_loop:{sid}', extra={'session_id': sid})
-
-            response_ids = await self.get_running_agent_loops(user_id)
-            if len(response_ids) >= self.config.max_concurrent_conversations:
-                logger.info(
-                    'too_many_sessions_for:{user_id}',
-                    extra={'session_id': sid, 'user_id': user_id},
-                )
-                # Get the conversations sorted (oldest first)
-                conversation_store = await self._get_conversation_store(
-                    user_id, github_user_id
-                )
-                conversations = await conversation_store.get_all_metadata(response_ids)
-                conversations.sort(key=_last_updated_at_key, reverse=True)
-
-                while len(conversations) >= self.config.max_concurrent_conversations:
-                    oldest_conversation_id = conversations.pop().conversation_id
-                    await self.close_session(oldest_conversation_id)
-
-            session = Session(
-                sid=sid,
-                file_store=self.file_store,
-                config=self.config,
-                sio=self.sio,
-                user_id=user_id,
+            await self._start_agent_loop(
+                sid, settings, user_id, initial_user_msg, replay_json, github_user_id
             )
-            self._local_agent_loops_by_sid[sid] = session
-            asyncio.create_task(
-                session.initialize_agent(settings, initial_user_msg, replay_json)
-            )
-            # This does not get added when resuming an existing conversation
-            try:
-                session.agent_session.event_stream.subscribe(
-                    EventStreamSubscriber.SERVER,
-                    self._create_conversation_update_callback(
-                        user_id, github_user_id, sid
-                    ),
-                    UPDATED_AT_CALLBACK_ID,
-                )
-            except ValueError:
-                pass  # Already subscribed - take no action
 
         event_store = await self._get_event_store(sid, user_id)
         if not event_store:
@@ -309,6 +270,56 @@ class StandaloneConversationManager(ConversationManager):
             )
             raise RuntimeError(f'no_event_stream:{sid}')
         return event_store
+
+    async def _start_agent_loop(
+        self,
+        sid: str,
+        settings: Settings,
+        user_id: str | None,
+        initial_user_msg: MessageAction | None = None,
+        replay_json: str | None = None,
+        github_user_id: str | None = None,
+    ) -> Session:
+        logger.info(f'starting_agent_loop:{sid}', extra={'session_id': sid})
+
+        response_ids = await self.get_running_agent_loops(user_id)
+        if len(response_ids) >= self.config.max_concurrent_conversations:
+            logger.info(
+                'too_many_sessions_for:{user_id}',
+                extra={'session_id': sid, 'user_id': user_id},
+            )
+            # Get the conversations sorted (oldest first)
+            conversation_store = await self._get_conversation_store(
+                user_id, github_user_id
+            )
+            conversations = await conversation_store.get_all_metadata(response_ids)
+            conversations.sort(key=_last_updated_at_key, reverse=True)
+
+            while len(conversations) >= self.config.max_concurrent_conversations:
+                oldest_conversation_id = conversations.pop().conversation_id
+                await self.close_session(oldest_conversation_id)
+
+        session = Session(
+            sid=sid,
+            file_store=self.file_store,
+            config=self.config,
+            sio=self.sio,
+            user_id=user_id,
+        )
+        self._local_agent_loops_by_sid[sid] = session
+        asyncio.create_task(
+            session.initialize_agent(settings, initial_user_msg, replay_json)
+        )
+        # This does not get added when resuming an existing conversation
+        try:
+            session.agent_session.event_stream.subscribe(
+                EventStreamSubscriber.SERVER,
+                self._create_conversation_update_callback(user_id, github_user_id, sid),
+                UPDATED_AT_CALLBACK_ID,
+            )
+        except ValueError:
+            pass  # Already subscribed - take no action
+        return session
 
     async def _get_event_store(
         self, sid: str, user_id: str | None

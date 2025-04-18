@@ -1,7 +1,7 @@
 # Custom Sandbox
 
 :::note
-This guide is for users that would like to use their own custom Docker image for the runtime. For example 
+This guide is for users that would like to use their own custom Docker image for the runtime. For example
 with certain tools or programming languages pre-installed.
 :::
 
