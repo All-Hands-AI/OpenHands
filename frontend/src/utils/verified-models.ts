@@ -24,7 +24,7 @@ export const VERIFIED_OPENAI_MODELS = [
   "o3-mini",
   "o3-mini-2025-01-31",
   "o4-mini",
-  "o4-mini-2025-04-16"
+  "o4-mini-2025-04-16",
 ];
 
 // LiteLLM does not return the compatible Anthropic models with the provider, so we list them here to set them ourselves
