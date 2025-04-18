@@ -73,6 +73,9 @@ class CodeActAgent(Agent):
             enable_browsing=self.config.enable_browsing,
             enable_jupyter=self.config.enable_jupyter,
             enable_llm_editor=self.config.enable_llm_editor,
+            enable_cmd=self.config.enable_cmd,
+            enable_think=self.config.enable_think,
+            enable_finish=self.config.enable_finish,
             llm=self.llm,
         )
 
