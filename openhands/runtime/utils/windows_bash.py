@@ -759,19 +759,22 @@ class WindowsPowershellSession:
 
         # --- Monitoring loop finished (Timeout, Shutdown, Job Complete/Failed) ---
 
-        # Gather final output if job finished normally during monitoring
+        # Gather final state (output was already gathered during the loop with keep=True)
         final_job = self._get_job_object(job.Id) # Get final state
         # Access state via JobStateInfo
         final_state = final_job.JobStateInfo.State if final_job else JobState.Failed
         job_finished_naturally = not timed_out and not shutdown_requested
 
         if job_finished_naturally:
-            logger.info(f"Job {job.Id} finished naturally with state: {final_state}. Consuming final output.")
-            final_output_chunk, final_error_chunk = self._receive_job_output(final_job, keep=False)
-            if final_output_chunk: output_builder.append(final_output_chunk)
+            logger.info(f"Job {job.Id} finished naturally with state: {final_state}. Clearing final output buffer.")
+
+            # Call receive_job_output one last time with keep=False to clear the job's output buffer,
+            # but DO NOT append the standard output result to output_builder as it was collected during the loop.
+            _, final_error_chunk = self._receive_job_output(final_job, keep=False)
+            # Collect any final errors reported when clearing buffer.
             if final_error_chunk: all_errors.extend(final_error_chunk)
 
-            # Determine final exit code
+            # Determine final exit code based on the state when the loop finished
             exit_code = 0 if final_state == JobState.Completed else 1
 
             # Clean up finished job
@@ -785,11 +788,19 @@ class WindowsPowershellSession:
         # If timed_out or shutdown_requested, self.active_job remains set. Exit code already set to -1.
 
         # Get current CWD (might have changed if commands ran outside job?)
-        final_cwd = self._get_current_cwd()
+        current_cwd = self._get_current_cwd() # Get CWD after potential job activity
 
-        # Construct metadata
-        metadata = CmdOutputMetadata(exit_code=exit_code, working_dir=final_cwd)
-        suffix = ""
+        # Combine output and errors for final observation
+        final_output = "\n".join(output_builder)
+        if all_errors:
+            final_output += "\n[ERROR STREAM]\n" + "\n".join(all_errors)
+            # If there were errors in the stream, ensure exit code reflects failure
+            # unless it was already set to -1 (timeout/shutdown)
+            if exit_code == 0:
+                exit_code = 1
+
+        # Create metadata
+        metadata = CmdOutputMetadata(exit_code=exit_code, working_dir=current_cwd)
         if timed_out:
             # Match the suffix format expected by tests for timeout
             suffix = (
@@ -799,21 +810,16 @@ class WindowsPowershellSession:
                 f"or send keys to interrupt/kill the command.]"
             )
         elif shutdown_requested:
-            suffix = f"\n[Command execution cancelled due to shutdown signal. Job {job.Id} may still be running. Exit code: {exit_code}, CWD: {final_cwd}]"
+            suffix = f"\n[Command execution cancelled due to shutdown signal. Job {job.Id} may still be running. Exit code: {exit_code}, CWD: {current_cwd}]"
         elif job_finished_naturally:
             status = "Completed" if exit_code == 0 else f"Finished ({final_state})"
-            suffix = f"\n[Command completed via Job {job.Id}. Status: {status}, Exit Code: {exit_code}, CWD: {final_cwd}]"
+            suffix = f"\n[Command completed via Job {job.Id}. Status: {status}, Exit Code: {exit_code}, CWD: {current_cwd}]"
         else: # Should not happen? Fallback
-            suffix = f"\n[Command execution finished. State: {final_state}, Exit Code: {exit_code}, CWD: {final_cwd}]"
+            suffix = f"\n[Command execution finished. State: {final_state}, Exit Code: {exit_code}, CWD: {current_cwd}]"
         metadata.suffix = suffix
 
-        # Combine output and errors
-        final_output_str = "\n".join(output_builder).strip()
-        if all_errors:
-            final_output_str += "\n\n[ERROR STREAM]\n" + "\n".join(all_errors).strip()
-
         return CmdOutputObservation(
-            content=final_output_str,
+            content=final_output,
             command=command,
             metadata=metadata
         )

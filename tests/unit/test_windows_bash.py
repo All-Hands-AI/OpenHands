@@ -52,13 +52,23 @@ def test_initialization(windows_bash_session, temp_work_dir):
 def test_command_execution(windows_bash_session):
     """Test basic command execution."""
     # Test a simple command
-    action = CmdRunAction(command="Write-Output 'Hello World'")
+    action = CmdRunAction(command='Write-Output "Hello World"')
     result = windows_bash_session.execute(action)
 
     assert isinstance(result, CmdOutputObservation)
     # Check content, stripping potential trailing newlines
     content = result.content.strip()
     assert content == "Hello World"
+    assert result.metadata.exit_code == 0
+
+    # Test a simple command with a newline
+    action = CmdRunAction(command='Write-Output "Hello\n World"')
+    result = windows_bash_session.execute(action)
+
+    assert isinstance(result, CmdOutputObservation)
+    # Check content, stripping potential trailing newlines
+    content = result.content.strip()
+    assert content == "Hello\n World"
     assert result.metadata.exit_code == 0
 
 
