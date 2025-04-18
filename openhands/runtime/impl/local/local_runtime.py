@@ -174,7 +174,8 @@ class LocalRuntime(ActionExecutionClient):
             headless_mode,
         )
 
-    def _get_action_execution_server_host(self):
+    @property
+    def action_execution_server_url(self):
         return self.api_url
 
     async def connect(self):
@@ -206,19 +207,31 @@ class LocalRuntime(ActionExecutionClient):
         env['PYTHONPATH'] = f'{code_repo_path}:$PYTHONPATH'
         env['OPENHANDS_REPO_PATH'] = code_repo_path
         env['LOCAL_RUNTIME_MODE'] = '1'
+        # Extract the poetry venv by parsing output of a shell command
+        # Equivalent to:
         # run poetry show -v | head -n 1 | awk '{print $2}'
-        poetry_venvs_path = (
+        poetry_show_first_line = (
             subprocess.check_output(
                 ['poetry', 'show', '-v'],
                 env=env,
                 cwd=code_repo_path,
                 text=True,
+                # Redirect stderr to stdout
+                # Needed since there might be a message on stderr like
+                # "Skipping virtualenv creation, as specified in config file."
+                # which will cause the command to fail
+                stderr=subprocess.STDOUT, 
                 shell=False,
             )
             .splitlines()[0]
-            .split(':')[1]
-            .strip()
         )
+        if not poetry_show_first_line.lower().startswith('found:'):
+            raise RuntimeError(
+                "Cannot find poetry venv path. Please check your poetry installation."
+                f"First line of poetry show -v: {poetry_show_first_line}"
+            )
+        # Split off the 'Found:' part
+        poetry_venvs_path = poetry_show_first_line.split(':')[1].strip()
         env['POETRY_VIRTUALENVS_PATH'] = poetry_venvs_path
         logger.debug(f'POETRY_VIRTUALENVS_PATH: {poetry_venvs_path}')
 
@@ -292,7 +305,7 @@ class LocalRuntime(ActionExecutionClient):
 
     async def execute_action(self, action: Action) -> Observation:
         """Execute an action by sending it to the server."""
-        if not self._runtime_initialized:
+        if not self.runtime_initialized:
             raise AgentRuntimeDisconnectedError('Runtime not initialized')
 
         if self.server_process is None or self.server_process.poll() is not None:
