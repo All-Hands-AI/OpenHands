@@ -28,8 +28,10 @@ async def signup(request: SignupRequest) -> SignupResponse:
     url = f"{os.getenv('THESIS_AUTH_SERVER_URL')}/api/users/login"
     payload = {'signature': request.signature, 'publicAddress': request.publicAddress}
     headers = {'Content-Type': 'application/json'}
-
-    return SignupResponse(
+    
+    # TODO: bypass auth server for dev mode
+    if os.getenv('RUN_MODE') == 'DEV':
+        return SignupResponse(
             token='jwt_token',
             user={
                 'id': '0x25bE302C3954b4DF9F67AFD6BfDD8c39f4Dc98Dc',
