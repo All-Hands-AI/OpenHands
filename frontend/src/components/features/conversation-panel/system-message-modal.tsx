@@ -5,7 +5,7 @@ import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import { ModalBody } from "#/components/shared/modals/modal-body";
 import { cn } from "#/utils/utils";
 import { ChevronDown, ChevronRight } from "lucide-react";
-import ReactJson from 'react-json-view';
+import ReactJsonView from '@microlink/react-json-view';
 
 // Custom JSON viewer theme that matches our application theme
 const jsonViewTheme = {
@@ -174,19 +174,9 @@ export function SystemMessageModal({
                               <div className="mt-3">
                                 <h4 className="text-sm font-semibold text-gray-300">{t("SYSTEM_MESSAGE_MODAL$PARAMETERS")}</h4>
                                 <div className="text-sm mt-2 p-4 bg-gray-900 rounded-md overflow-auto border border-gray-700 text-gray-300 max-h-[400px] shadow-inner">
-                                  <ReactJson 
+                                  <ReactJsonView 
                                     src={parameters}
                                     theme={jsonViewTheme}
-                                    name={false}
-                                    displayDataTypes={false}
-                                    collapsed={1}
-                                    enableClipboard={false}
-                                    style={{
-                                      fontSize: '14px',
-                                      lineHeight: '1.5',
-                                      fontFamily: 'monospace',
-                                      backgroundColor: 'transparent',
-                                    }}
                                   />
                                 </div>
                               </div>
