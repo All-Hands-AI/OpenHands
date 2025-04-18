@@ -54,6 +54,8 @@ class ReadOnlyAgent(CodeActAgent):
             prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
         )
 
+        self.response_to_actions_fn = readonly_function_calling.response_to_actions
+
         logger.debug(
             f"TOOLS loaded for ReadOnlyAgent: {', '.join([tool.get('function').get('name') for tool in self.tools])}"
         )
