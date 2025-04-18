@@ -7,6 +7,10 @@ from openhands.core.logger import openhands_logger as logger
 
 app = APIRouter(prefix='/api/auth')
 
+# JWT settings
+JWT_SECRET = os.getenv('JWT_SECRET')
+JWT_ALGORITHM = 'HS256'
+
 
 class SignupRequest(BaseModel):
     publicAddress: str
