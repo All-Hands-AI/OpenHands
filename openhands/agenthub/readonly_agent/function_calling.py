@@ -11,20 +11,19 @@ from litellm import (
     ModelResponse,
 )
 
+from openhands.agenthub.codeact_agent.function_calling import (
+    combine_thought,
+)
+from openhands.agenthub.codeact_agent.tools import (
+    FinishTool,
+    ThinkTool,
+    WebReadTool,
+)
 from openhands.agenthub.readonly_agent.tools import (
     GlobTool,
     GrepTool,
     ViewTool,
 )
-from openhands.agenthub.codeact_agent.tools import (
-    FinishTool,
-    WebReadTool,
-    ThinkTool,
-)
-from openhands.agenthub.codeact_agent.function_calling import (
-    combine_thought,
-)
-
 from openhands.core.exceptions import (
     FunctionCallNotExistsError,
     FunctionCallValidationError,
@@ -32,22 +31,16 @@ from openhands.core.exceptions import (
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     Action,
-    AgentDelegateAction,
     AgentFinishAction,
     AgentThinkAction,
-    BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
-    FileEditAction,
     FileReadAction,
-    IPythonRunCellAction,
     MessageAction,
 )
-from openhands.events.action.mcp import McpAction
-from openhands.events.event import FileEditSource, FileReadSource
+from openhands.events.event import FileReadSource
 from openhands.events.tool import ToolCallMetadata
-from openhands.llm import LLM
-from openhands.mcp import MCPClientTool
+
 
 def grep_to_cmdrun(
     pattern: str, path: str | None = None, include: str | None = None
@@ -135,7 +128,6 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                     f'Failed to parse tool call arguments: {tool_call.function.arguments}'
                 ) from e
 
-
             # ================================================
             # AgentFinishAction
             # ================================================
@@ -164,7 +156,6 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
             # ================================================
             elif tool_call.function.name == ThinkTool['function']['name']:
                 action = AgentThinkAction(thought=arguments.get('thought', ''))
-
 
             # ================================================
             # GrepTool (file content search)

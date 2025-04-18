@@ -42,12 +42,12 @@ A: Let's examine one of these components to confirm it's a React component. I'll
 
 USER: EXECUTION RESULT of [view]:
      1  import React from 'react';
-     2  
+     2
      3  interface HeaderProps {
      4    title: string;
      5    subtitle?: string;
      6  }
-     7  
+     7
      8  export function Header({ title, subtitle }: HeaderProps) {
      9    return (
     10      <header className="app-header">
@@ -64,16 +64,16 @@ A: Let me also check the Button component to see its implementation:
 
 USER: EXECUTION RESULT of [view]:
      1  import React from 'react';
-     2  
+     2
      3  interface ButtonProps {
      4    onClick: () => void;
      5    children: React.ReactNode;
      6    variant?: 'primary' | 'secondary';
      7  }
-     8  
+     8
      9  export default function Button({ onClick, children, variant = 'primary' }: ButtonProps) {
     10    return (
-    11      <button 
+    11      <button
     12        className={`btn btn-${variant}`}
     13        onClick={onClick}
     14      >

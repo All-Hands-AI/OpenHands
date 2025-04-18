@@ -1,18 +1,15 @@
-from unittest.mock import Mock
 from typing import Union
+from unittest.mock import Mock
 
 import pytest
 from litellm import ChatCompletionMessageToolCall
 
 from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
-from openhands.agenthub.readonly_agent.readonly_agent import ReadOnlyAgent
 from openhands.agenthub.codeact_agent.function_calling import (
     get_tools as codeact_get_tools,
-    response_to_actions as codeact_response_to_actions,
 )
-from openhands.agenthub.readonly_agent.function_calling import (
-    get_tools as readonly_get_tools,
-    response_to_actions as readonly_response_to_actions,
+from openhands.agenthub.codeact_agent.function_calling import (
+    response_to_actions as codeact_response_to_actions,
 )
 from openhands.agenthub.codeact_agent.tools import (
     BrowserTool,
@@ -23,13 +20,20 @@ from openhands.agenthub.codeact_agent.tools import (
     create_cmd_run_tool,
     create_str_replace_editor_tool,
 )
-from openhands.agenthub.readonly_agent.tools import (
-    GlobTool,
-    GrepTool,
-)
 from openhands.agenthub.codeact_agent.tools.browser import (
     _BROWSER_DESCRIPTION,
     _BROWSER_TOOL_DESCRIPTION,
+)
+from openhands.agenthub.readonly_agent.function_calling import (
+    get_tools as readonly_get_tools,
+)
+from openhands.agenthub.readonly_agent.function_calling import (
+    response_to_actions as readonly_response_to_actions,
+)
+from openhands.agenthub.readonly_agent.readonly_agent import ReadOnlyAgent
+from openhands.agenthub.readonly_agent.tools import (
+    GlobTool,
+    GrepTool,
 )
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig, LLMConfig
@@ -54,6 +58,7 @@ def agent_class(request):
         return CodeActAgent
     else:
         from openhands.agenthub.readonly_agent.readonly_agent import ReadOnlyAgent
+
         return ReadOnlyAgent
 
 
@@ -115,6 +120,7 @@ def test_codeact_get_tools_default():
     assert 'execute_ipython_cell' in tool_names
     assert 'edit_file' in tool_names
     assert 'web_read' in tool_names
+
 
 def test_readonly_get_tools_default():
     tools = readonly_get_tools()
@@ -305,7 +311,9 @@ def test_step_with_no_pending_actions(mock_state: State):
 
 
 @pytest.mark.parametrize('agent_type', ['CodeActAgent', 'ReadOnlyAgent'])
-def test_correct_tool_description_loaded_based_on_model_name(agent_type, mock_state: State):
+def test_correct_tool_description_loaded_based_on_model_name(
+    agent_type, mock_state: State
+):
     """Tests that the simplified tool descriptions are loaded for specific models."""
     o3_mock_config = Mock()
     o3_mock_config.model = 'mock_o3_model'
@@ -315,9 +323,11 @@ def test_correct_tool_description_loaded_based_on_model_name(agent_type, mock_st
 
     if agent_type == 'CodeActAgent':
         from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
+
         agent_class = CodeActAgent
     else:
         from openhands.agenthub.readonly_agent.readonly_agent import ReadOnlyAgent
+
         agent_class = ReadOnlyAgent
 
     agent = agent_class(llm=llm, config=AgentConfig())
@@ -336,7 +346,9 @@ def test_correct_tool_description_loaded_based_on_model_name(agent_type, mock_st
         assert any(len(tool['function']['description']) > 1024 for tool in agent.tools)
 
 
-def test_mismatched_tool_call_events_and_auto_add_system_message(agent, mock_state: State):
+def test_mismatched_tool_call_events_and_auto_add_system_message(
+    agent, mock_state: State
+):
     """Tests that the agent can convert mismatched tool call events (i.e., an observation with no corresponding action) into messages.
 
     This also tests that the system message is automatically added to the event stream if SystemMessageAction is not present.

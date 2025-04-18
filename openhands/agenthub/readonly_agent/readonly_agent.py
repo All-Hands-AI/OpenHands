@@ -3,14 +3,13 @@ ReadOnlyAgent - A specialized version of CodeActAgent that only uses read-only t
 """
 
 import os
-from collections import deque
 
 from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
-from openhands.agenthub.readonly_agent import function_calling as readonly_function_calling
-from openhands.events.action import Action
+from openhands.agenthub.readonly_agent import (
+    function_calling as readonly_function_calling,
+)
 from openhands.core.config import AgentConfig
 from openhands.core.logger import openhands_logger as logger
-from openhands.core.message import Message, TextContent, ContentType
 from openhands.llm.llm import LLM
 from openhands.utils.prompt import PromptManager
 
@@ -44,11 +43,11 @@ class ReadOnlyAgent(CodeActAgent):
         """
         # Initialize the CodeActAgent class but we'll override some of its behavior
         super().__init__(llm, config)
-        
+
         # Override the tools to only include read-only tools
         # Get the read-only tools from our own function_calling module
         self.tools = readonly_function_calling.get_tools()
-        
+
         # Set up our own prompt manager
         self.prompt_manager = PromptManager(
             prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
@@ -66,4 +65,6 @@ class ReadOnlyAgent(CodeActAgent):
         Args:
         - mcp_tools (list[dict]): The list of MCP tools.
         """
-        logger.warning("ReadOnlyAgent does not support MCP tools. MCP tools will be ignored by the agent.")
+        logger.warning(
+            'ReadOnlyAgent does not support MCP tools. MCP tools will be ignored by the agent.'
+        )
