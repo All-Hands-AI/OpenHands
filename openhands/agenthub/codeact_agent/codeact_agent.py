@@ -193,32 +193,9 @@ class CodeActAgent(Agent):
         if not self.prompt_manager:
             raise Exception('Prompt Manager not instantiated.')
 
-        # Check if there's a SystemMessageAction in the events
-        has_system_message = any(
-            isinstance(event, SystemMessageAction) for event in events
-        )
-
-        # Legacy behavior: If no SystemMessageAction is found, add one
-        if not has_system_message:
-            logger.warning(
-                f'[{self.name}] No SystemMessageAction found in events. '
-                'Adding one for backward compatibility. '
-                'This is deprecated behavior and will be removed in a future version.'
-            )
-            system_message = self.get_system_message()
-            if system_message:
-                # Create a copy and insert at the beginning of the list
-                processed_events = list(events)
-                processed_events.insert(0, system_message)
-                logger.debug(
-                    f'[{self.name}] Added SystemMessageAction for backward compatibility'
-                )
-        else:
-            processed_events = events
-
         # Use ConversationMemory to process events (including SystemMessageAction)
         messages = self.conversation_memory.process_events(
-            condensed_history=processed_events,
+            condensed_history=events,
             max_message_chars=self.llm.config.max_message_chars,
             vision_is_active=self.llm.vision_is_active(),
         )

@@ -70,6 +70,9 @@ class ConversationMemory:
 
         events = condensed_history
 
+        # Ensure the system message exists (handles legacy cases)
+        self._ensure_system_message(events)
+
         # log visual browsing status
         logger.debug(f'Visual browsing: {self.agent_config.enable_som_visual_browsing}')
 
@@ -653,3 +656,25 @@ class ConversationMemory:
             else:
                 # Any other case is kept
                 yield message
+
+    def _ensure_system_message(self, events: list[Event]) -> None:  
+        """Checks if a SystemMessageAction exists and adds one if not (for legacy compatibility)."""
+        # Check if there's a SystemMessageAction in the events
+        has_system_message = any(
+            isinstance(event, SystemMessageAction) for event in events
+        )
+
+        # Legacy behavior: If no SystemMessageAction is found, add one
+        if not has_system_message:
+            logger.debug(
+                '[ConversationMemory] No SystemMessageAction found in events. '
+                'Adding one for backward compatibility. '
+            )
+            system_prompt = self.prompt_manager.get_system_message()
+            if system_prompt:
+                system_message = SystemMessageAction(content=system_prompt)
+                # Insert the system message directly at the beginning of the events list
+                events.insert(0, system_message)
+                logger.debug(
+                    '[ConversationMemory] Added SystemMessageAction for backward compatibility'
+                )
