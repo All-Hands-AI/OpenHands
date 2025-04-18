@@ -85,7 +85,7 @@ REASONING_EFFORT_SUPPORTED_MODELS = [
     'o3-mini-2025-01-31',
     'o3-mini',
     'o4-mini',
-    'o4-mini-2025-04-16'
+    'o4-mini-2025-04-16',
 ]
 
 MODELS_WITHOUT_STOP_WORDS = [
