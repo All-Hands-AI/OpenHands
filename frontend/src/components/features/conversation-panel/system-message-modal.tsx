@@ -3,131 +3,10 @@ import { useTranslation } from "react-i18next";
 import { BaseModalTitle } from "#/components/shared/modals/confirmation-modals/base-modal";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import { ModalBody } from "#/components/shared/modals/modal-body";
-import { BrandButton } from "../settings/brand-button";
-import { I18nKey } from "#/i18n/declaration";
 import { cn } from "#/utils/utils";
 import { ChevronDown, ChevronRight } from "lucide-react";
-// Custom JSON Viewer Component
-interface JsonViewerProps {
-  data: Record<string, unknown> | null;
-  shouldExpandNode?: (keyPath: string, level: number) => boolean;
-}
-
-function JsonView({ data, shouldExpandNode }: JsonViewerProps) {
-  const [expandedKeys, setExpandedKeys] = useState<Record<string, boolean>>({});
-
-  if (!data) return null;
-
-  const toggleExpand = (key: string) => {
-    setExpandedKeys(prev => ({
-      ...prev,
-      [key]: !prev[key]
-    }));
-  };
-
-  const renderValue = (value: unknown, path: string, depth = 0): React.ReactNode => {
-    const indent = "  ".repeat(depth);
-    
-    if (value === null) {
-      return <span className="text-red-400">null</span>;
-    }
-    
-    if (typeof value === "boolean") {
-      return <span className="text-purple-400">{String(value)}</span>;
-    }
-    
-    if (typeof value === "number") {
-      return <span className="text-blue-400">{value}</span>;
-    }
-    
-    if (typeof value === "string") {
-      return <span className="text-green-400">"{value}"</span>;
-    }
-    
-    if (Array.isArray(value)) {
-      const isExpanded = expandedKeys[path] !== false;
-      
-      if (value.length === 0) {
-        return <span>[]</span>;
-      }
-      
-      return (
-        <div>
-          <span 
-            className="cursor-pointer" 
-            onClick={() => toggleExpand(path)}
-          >
-            {isExpanded ? (
-              <ChevronDown className="inline-block w-4 h-4 mr-1 text-gray-400" />
-            ) : (
-              <ChevronRight className="inline-block w-4 h-4 mr-1 text-gray-400" />
-            )}
-            [
-          </span>
-          
-          {isExpanded && (
-            <div className="ml-4">
-              {value.map((item, index) => (
-                <div key={`${path}.${index}`}>
-                  {renderValue(item, `${path}.${index}`, depth + 1)}
-                  {index < value.length - 1 && <span>,</span>}
-                </div>
-              ))}
-            </div>
-          )}
-          
-          <span>]</span>
-        </div>
-      );
-    }
-    
-    if (typeof value === "object") {
-      const isExpanded = expandedKeys[path] !== false;
-      const entries = Object.entries(value as Record<string, unknown>);
-      
-      if (entries.length === 0) {
-        return <span>{"{}"}</span>;
-      }
-      
-      return (
-        <div>
-          <span 
-            className="cursor-pointer" 
-            onClick={() => toggleExpand(path)}
-          >
-            {isExpanded ? (
-              <ChevronDown className="inline-block w-4 h-4 mr-1 text-gray-400" />
-            ) : (
-              <ChevronRight className="inline-block w-4 h-4 mr-1 text-gray-400" />
-            )}
-            {"{"}
-          </span>
-          
-          {isExpanded && (
-            <div className="ml-4">
-              {entries.map(([key, val], index) => (
-                <div key={`${path}.${key}`} className="hover:bg-gray-800 rounded">
-                  <span className="text-yellow-400 font-semibold">"{key}"</span>: {renderValue(val, `${path}.${key}`, depth + 1)}
-                  {index < entries.length - 1 && <span>,</span>}
-                </div>
-              ))}
-            </div>
-          )}
-          
-          <span>{"}"}</span>
-        </div>
-      );
-    }
-    
-    return <span>{String(value)}</span>;
-  };
-
-  return (
-    <div className="font-mono text-sm overflow-auto">
-      {renderValue(data, "root")}
-    </div>
-  );
-}
+import { JsonView, darkStyles } from 'react-json-view-lite';
+import 'react-json-view-lite/dist/index.css';
 
 interface SystemMessageModalProps {
   isOpen: boolean;
@@ -236,8 +115,23 @@ export function SystemMessageModal({
 
             <div className="h-[60vh] overflow-auto rounded-md border border-gray-700 bg-gray-900">
               {activeTab === "system" && (
-                <div className="p-4 whitespace-pre-wrap font-mono text-sm">
-                  {systemMessage.content}
+                <div className="p-4">
+                  <div className="mb-4">
+                    <h4 className="text-sm font-semibold text-gray-300 mb-2">System Message Content:</h4>
+                    <div className="whitespace-pre-wrap font-mono text-sm p-3 bg-gray-800 rounded-md border border-gray-700">
+                      {systemMessage.content}
+                    </div>
+                  </div>
+                  
+                  <div className="mt-6">
+                    <h4 className="text-sm font-semibold text-gray-300 mb-2">Full System Message Data:</h4>
+                    <div className="p-3 bg-gray-800 rounded-md overflow-auto border border-gray-700 max-h-[300px]">
+                      <JsonView 
+                        data={systemMessage} 
+                        style={darkStyles}
+                      />
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -270,18 +164,32 @@ export function SystemMessageModal({
                             <p className="text-sm whitespace-pre-wrap text-gray-300">
                               {String(description)}
                             </p>
+                            
+                            {/* Parameters section */}
                             {parameters && (
                               <div className="mt-3">
                                 <h4 className="text-sm font-semibold text-gray-300">Parameters:</h4>
                                 <div className="text-xs mt-1 p-3 bg-gray-900 rounded-md overflow-auto border border-gray-700 text-gray-300">
                                   <JsonView 
                                     data={parameters} 
-                                    shouldExpandNode={(keyPath, level) => level < 2} 
-                                    style={jsonViewStyles}
+                                    style={darkStyles}
                                   />
                                 </div>
                               </div>
                             )}
+                            
+                            {/* Full tool data section */}
+                            <div className="mt-4">
+                              <div className="flex items-center justify-between">
+                                <h4 className="text-sm font-semibold text-gray-300">Full Tool Definition:</h4>
+                              </div>
+                              <div className="text-xs mt-1 p-3 bg-gray-900 rounded-md overflow-auto border border-gray-700 text-gray-300 max-h-[300px]">
+                                <JsonView 
+                                  data={tool} 
+                                  style={darkStyles}
+                                />
+                              </div>
+                            </div>
                           </div>
                         )}
                       </div>
