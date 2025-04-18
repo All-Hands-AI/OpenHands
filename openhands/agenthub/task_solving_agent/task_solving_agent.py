@@ -120,36 +120,3 @@ class TaskSolvingAgent(CodeActAgent):
         for action in actions:
             self.pending_actions.append(action)
         return self.pending_actions.popleft()
-
-    def _get_messages(self, events: list[Event]) -> list[Message]:
-        """Constructs the message history for the LLM conversation.
-
-        Args:
-            events: The list of events to convert to messages
-
-        Returns:
-            list[Message]: A list of formatted messages ready for LLM consumption
-        """
-        if not self.prompt_manager:
-            raise Exception('Prompt Manager not instantiated.')
-
-        # Use ConversationMemory to process initial messages with datetime
-        messages = self.conversation_memory.process_initial_messages(
-            with_caching=self.llm.is_caching_prompt_active(),
-            current_datetime=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        )
-
-        # Use the rest of the parent class implementation
-        messages = self.conversation_memory.process_events(
-            condensed_history=events,
-            initial_messages=messages,
-            max_message_chars=self.llm.config.max_message_chars,
-            vision_is_active=self.llm.vision_is_active(),
-        )
-
-        messages = self._enhance_messages(messages)
-
-        if self.llm.is_caching_prompt_active():
-            self.conversation_memory.apply_prompt_caching(messages)
-
-        return messages

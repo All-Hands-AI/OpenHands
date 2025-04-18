@@ -23,7 +23,7 @@ from openhands.events.action.files import (
     FileWriteAction,
 )
 from openhands.events.action.mcp import McpAction
-from openhands.events.action.message import MessageAction
+from openhands.events.action.message import MessageAction, SystemMessageAction
 from openhands.events.action.plan import (
     CreatePlanAction,
     AssignTaskAction,
@@ -46,6 +46,7 @@ actions = (
     RecallAction,
     ChangeAgentStateAction,
     MessageAction,
+    SystemMessageAction,
     CondensationAction,
     McpAction,
     CreatePlanAction,
