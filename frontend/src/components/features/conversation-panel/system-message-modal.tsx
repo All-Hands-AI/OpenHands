@@ -58,6 +58,20 @@ interface ToolItem {
   parameters?: Record<string, unknown>;
 }
 
+interface FunctionData {
+  name?: string;
+  description?: string;
+  parameters?: Record<string, unknown>;
+}
+
+interface ToolData {
+  type?: string;
+  function?: FunctionData;
+  name?: string;
+  description?: string;
+  parameters?: Record<string, unknown>;
+}
+
 export function SystemMessageModal({
   isOpen,
   onClose,
@@ -143,10 +157,11 @@ export function SystemMessageModal({
                 <div className="p-4 space-y-4">
                   {systemMessage.tools.map((tool, index) => {
                     // Extract function data from the nested structure
-                    const functionData = tool.function || tool;
-                    const name = functionData.name || (tool.type === "function" && tool.function?.name) || "";
-                    const description = functionData.description || (tool.type === "function" && tool.function?.description) || "";
-                    const parameters = functionData.parameters || (tool.type === "function" && tool.function?.parameters) || null;
+                    const toolData = tool as ToolData;
+                    const functionData = toolData.function || toolData;
+                    const name = functionData.name || (toolData.type === "function" && toolData.function?.name) || "";
+                    const description = functionData.description || (toolData.type === "function" && toolData.function?.description) || "";
+                    const parameters = functionData.parameters || (toolData.type === "function" && toolData.function?.parameters) || null;
                     
                     const isExpanded = expandedTools[index] || false;
                     
