@@ -92,7 +92,7 @@ pytest-xdist = "*"
 openai = "*"
 pandas = "*"
 reportlab = "*"
-gevent = "^24.2.1"
+gevent = ">=24.2.1,<26.0.0"
 
 [tool.coverage.run]
 concurrency = ["gevent"]
