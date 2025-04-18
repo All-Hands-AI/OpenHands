@@ -7,64 +7,127 @@ import { BrandButton } from "../settings/brand-button";
 import { I18nKey } from "#/i18n/declaration";
 import { cn } from "#/utils/utils";
 import { ChevronDown, ChevronRight } from "lucide-react";
-import { JsonView } from 'react-json-view-lite';
+// Custom JSON Viewer Component
+interface JsonViewerProps {
+  data: Record<string, unknown> | null;
+  shouldExpandNode?: (keyPath: string, level: number) => boolean;
+}
 
-// Custom styles for JSON viewer
-const jsonViewStyles = {
-  container: "react-json-view-container",
-  basicChildStyle: "text-gray-300",
-  nullValue: "text-red-400",
-  stringValue: "text-green-400",
-  numberValue: "text-blue-400",
-  booleanValue: "text-yellow-400",
-  keyStyle: "text-primary font-semibold",
-};
+function JsonView({ data, shouldExpandNode }: JsonViewerProps) {
+  const [expandedKeys, setExpandedKeys] = useState<Record<string, boolean>>({});
 
-// Add custom CSS for JSON viewer
-const jsonViewerCSS = `
-  /* Base styles from react-json-view-lite */
-  .react-json-view-container {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    padding: 0;
-    margin: 0;
-    font-family: monospace;
-  }
-  .react-json-view-container .pair {
-    padding: 2px 0;
-    display: flex;
-    align-items: flex-start;
-  }
-  .react-json-view-container .pair:hover {
-    background-color: rgba(255, 255, 255, 0.05);
-    border-radius: 4px;
-  }
-  .react-json-view-container .collapseIcon {
-    color: #9ca3af;
-    margin-right: 4px;
-    cursor: pointer;
-    display: inline-block;
-    text-align: center;
-    width: 1em;
-  }
-  .react-json-view-container .collapseIcon:hover {
-    color: #f3f4f6;
-  }
-  .react-json-view-container .content {
-    margin-left: 0.5em;
-  }
-  .react-json-view-container .label {
-    margin-right: 0.5em;
-  }
-  .react-json-view-container .value {
-    display: inline-block;
-  }
-  .react-json-view-container .nonClickable {
-    cursor: default;
-  }
-`;
+  if (!data) return null;
+
+  const toggleExpand = (key: string) => {
+    setExpandedKeys(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+  };
+
+  const renderValue = (value: unknown, path: string, depth = 0): React.ReactNode => {
+    const indent = "  ".repeat(depth);
+    
+    if (value === null) {
+      return <span className="text-red-400">null</span>;
+    }
+    
+    if (typeof value === "boolean") {
+      return <span className="text-purple-400">{String(value)}</span>;
+    }
+    
+    if (typeof value === "number") {
+      return <span className="text-blue-400">{value}</span>;
+    }
+    
+    if (typeof value === "string") {
+      return <span className="text-green-400">"{value}"</span>;
+    }
+    
+    if (Array.isArray(value)) {
+      const isExpanded = expandedKeys[path] !== false;
+      
+      if (value.length === 0) {
+        return <span>[]</span>;
+      }
+      
+      return (
+        <div>
+          <span 
+            className="cursor-pointer" 
+            onClick={() => toggleExpand(path)}
+          >
+            {isExpanded ? (
+              <ChevronDown className="inline-block w-4 h-4 mr-1 text-gray-400" />
+            ) : (
+              <ChevronRight className="inline-block w-4 h-4 mr-1 text-gray-400" />
+            )}
+            [
+          </span>
+          
+          {isExpanded && (
+            <div className="ml-4">
+              {value.map((item, index) => (
+                <div key={`${path}.${index}`}>
+                  {renderValue(item, `${path}.${index}`, depth + 1)}
+                  {index < value.length - 1 && <span>,</span>}
+                </div>
+              ))}
+            </div>
+          )}
+          
+          <span>]</span>
+        </div>
+      );
+    }
+    
+    if (typeof value === "object") {
+      const isExpanded = expandedKeys[path] !== false;
+      const entries = Object.entries(value as Record<string, unknown>);
+      
+      if (entries.length === 0) {
+        return <span>{"{}"}</span>;
+      }
+      
+      return (
+        <div>
+          <span 
+            className="cursor-pointer" 
+            onClick={() => toggleExpand(path)}
+          >
+            {isExpanded ? (
+              <ChevronDown className="inline-block w-4 h-4 mr-1 text-gray-400" />
+            ) : (
+              <ChevronRight className="inline-block w-4 h-4 mr-1 text-gray-400" />
+            )}
+            {"{"}
+          </span>
+          
+          {isExpanded && (
+            <div className="ml-4">
+              {entries.map(([key, val], index) => (
+                <div key={`${path}.${key}`} className="hover:bg-gray-800 rounded">
+                  <span className="text-yellow-400 font-semibold">"{key}"</span>: {renderValue(val, `${path}.${key}`, depth + 1)}
+                  {index < entries.length - 1 && <span>,</span>}
+                </div>
+              ))}
+            </div>
+          )}
+          
+          <span>{"}"}</span>
+        </div>
+      );
+    }
+    
+    return <span>{String(value)}</span>;
+  };
+
+  return (
+    <div className="font-mono text-sm overflow-auto">
+      {renderValue(data, "root")}
+    </div>
+  );
+}
 
 interface SystemMessageModalProps {
   isOpen: boolean;
@@ -121,7 +184,6 @@ export function SystemMessageModal({
   return (
     isOpen && (
       <>
-        <style>{jsonViewerCSS}</style>
         <ModalBackdrop onClose={onClose}>
           <ModalBody width="medium" className="max-h-[80vh] flex flex-col items-start">
           <div className="flex flex-col gap-6 w-full">
