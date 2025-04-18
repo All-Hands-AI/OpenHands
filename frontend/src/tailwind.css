@@ -1,0 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.button-base {
+  @apply bg-tertiary border border-neutral-600 rounded;
+}
