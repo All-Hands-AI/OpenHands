@@ -94,9 +94,13 @@ class ActionExecutionClient(Runtime):
             git_provider_tokens,
         )
 
-    @abstractmethod
-    def _get_action_execution_server_host(self) -> str:
-        pass
+    @property
+    def action_execution_server_url(self) -> str:
+        raise NotImplementedError("Action execution server URL is not implemented")
+
+    @property
+    def runtime_initialized(self) -> bool:
+        return self._runtime_initialized
 
     @retry(
         retry=retry_if_exception(_is_retryable_error),
@@ -127,7 +131,7 @@ class ActionExecutionClient(Runtime):
     def check_if_alive(self) -> None:
         response = self._send_action_server_request(
             'GET',
-            f'{self._get_action_execution_server_host()}/alive',
+            f'{self.action_execution_server_url}/alive',
             timeout=5,
         )
         assert response.is_closed
@@ -145,7 +149,7 @@ class ActionExecutionClient(Runtime):
 
             response = self._send_action_server_request(
                 'POST',
-                f'{self._get_action_execution_server_host()}/list_files',
+                f'{self.action_execution_server_url}/list_files',
                 json=data,
                 timeout=10,
             )
@@ -163,7 +167,7 @@ class ActionExecutionClient(Runtime):
             params = {'path': path}
             with self.session.stream(
                 'GET',
-                f'{self._get_action_execution_server_host()}/download_files',
+                f'{self.action_execution_server_url}/download_files',
                 params=params,
                 timeout=30,
             ) as response:
@@ -207,7 +211,7 @@ class ActionExecutionClient(Runtime):
 
             response = self._send_action_server_request(
                 'POST',
-                f'{self._get_action_execution_server_host()}/upload_file',
+                f'{self.action_execution_server_url}/upload_file',
                 files=upload_data,
                 params=params,
                 timeout=300,
@@ -224,12 +228,12 @@ class ActionExecutionClient(Runtime):
             )
 
     def get_vscode_token(self) -> str:
-        if self.vscode_enabled and self._runtime_initialized:
+        if self.vscode_enabled and self.runtime_initialized:
             if self._vscode_token is not None:  # cached value
                 return self._vscode_token
             response = self._send_action_server_request(
                 'GET',
-                f'{self._get_action_execution_server_host()}/vscode/connection_token',
+                f'{self.action_execution_server_url}/vscode/connection_token',
                 timeout=10,
             )
             response_json = response.json()
@@ -288,7 +292,7 @@ class ActionExecutionClient(Runtime):
                 }
                 response = self._send_action_server_request(
                     'POST',
-                    f'{self._get_action_execution_server_host()}/execute_action',
+                    f'{self.action_execution_server_url}/execute_action',
                     json=execution_action_body,
                     # wait a few more seconds to get the timeout error from client side
                     timeout=action.timeout + 5,

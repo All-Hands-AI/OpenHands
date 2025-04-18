@@ -877,7 +877,7 @@ async def test_context_window_exceeded_error_handling(
 async def test_run_controller_with_context_window_exceeded_with_truncation(
     mock_agent, mock_runtime, mock_memory, test_event_stream
 ):
-    """Tests that the controller can make progress after handling context window exceeded errors, as long as enable_history_truncation is ON"""
+    """Tests that the controller can make progress after handling context window exceeded errors, as long as enable_history_truncation is ON."""
 
     class StepState:
         def __init__(self):
@@ -1195,17 +1195,14 @@ async def test_action_metrics_copy(mock_agent):
     mock_agent.llm.metrics.accumulated_cost = 0.1
     assert last_action.llm_metrics.accumulated_cost == 0.07
 
+    await controller.close()
+
 
 @pytest.mark.asyncio
-async def test_condenser_metrics_included():
+async def test_condenser_metrics_included(mock_agent, test_event_stream):
     """Test that metrics from the condenser's LLM are included in the action metrics."""
-    # Setup
-    file_store = InMemoryFileStore({})
-    event_stream = EventStream(sid='test', file_store=file_store)
 
-    # Create agent with metrics
-    agent = MagicMock(spec=Agent)
-    agent.llm = MagicMock(spec=LLM)
+    # Set up agent metrics
     agent_metrics = Metrics(model_name='agent-model')
     agent_metrics.accumulated_cost = 0.05
     agent_metrics._accumulated_token_usage = TokenUsage(
@@ -1216,7 +1213,8 @@ async def test_condenser_metrics_included():
         cache_write_tokens=10,
         response_id='agent-accumulated',
     )
-    agent.llm.metrics = agent_metrics
+    mock_agent.llm.metrics = agent_metrics
+    mock_agent.name = 'TestAgent'
 
     # Create condenser with its own metrics
     condenser = MagicMock()
@@ -1233,26 +1231,27 @@ async def test_condenser_metrics_included():
     )
     condenser.llm.metrics = condenser_metrics
 
-    # Attach the condenser to the agent
-    agent.condenser = condenser
+    # Attach the condenser to the mock_agent
+    mock_agent.condenser = condenser
 
-    # Mock agent step to return a CondensationAction
+    # Create a real CondensationAction
     action = CondensationAction(
         forgotten_events_start_id=1,
         forgotten_events_end_id=5,
         summary='Test summary',
         summary_offset=1,
     )
+    action._source = EventSource.AGENT  # Required for event_stream.add_event
 
     def agent_step_fn(state):
         return action
 
-    agent.step = agent_step_fn
+    mock_agent.step = agent_step_fn
 
     # Create controller with correct parameters
     controller = AgentController(
-        agent=agent,
-        event_stream=event_stream,
+        agent=mock_agent,
+        event_stream=test_event_stream,
         max_iterations=10,
         sid='test',
         confirmation_mode=False,
@@ -1264,15 +1263,14 @@ async def test_condenser_metrics_included():
     await controller._step()
 
     # Get the last event from event stream
-    events = list(event_stream.get_events())
+    events = list(test_event_stream.get_events())
     assert len(events) > 0
     last_action = events[-1]
 
     # Verify metrics were copied correctly
     assert last_action.llm_metrics is not None
 
-    # With the current implementation, only agent.llm.metrics are included
-    # This test will fail until we fix the implementation
+    # Verify that both agent and condenser metrics are included
     assert (
         last_action.llm_metrics.accumulated_cost == 0.08
     )  # 0.05 from agent + 0.03 from condenser
@@ -1296,10 +1294,10 @@ async def test_condenser_metrics_included():
 
 @pytest.mark.asyncio
 async def test_first_user_message_with_identical_content(test_event_stream, mock_agent):
-    """
-    Test that _first_user_message correctly identifies the first user message
-    even when multiple messages have identical content but different IDs.
-    Also verifies that the result is properly cached.
+    """Test that _first_user_message correctly identifies the first user message.
+
+    This test verifies that messages with identical content but different IDs are properly
+    distinguished, and that the result is correctly cached.
 
     The issue we're checking is that the comparison (action == self._first_user_message())
     should correctly differentiate between messages with the same content but different IDs.
