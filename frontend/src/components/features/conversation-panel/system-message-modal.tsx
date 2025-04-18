@@ -50,9 +50,9 @@ export function SystemMessageModal({
     isOpen && (
       <ModalBackdrop onClose={onClose}>
         <ModalBody width="medium" className="max-h-[80vh] flex flex-col items-start">
-          <div className="flex flex-col gap-2 w-full">
+          <div className="flex flex-col gap-6 w-full">
             <BaseModalTitle title="Agent Tools & Metadata" />
-            <div className="flex flex-col gap-2 mb-4">
+            <div className="flex flex-col gap-2">
               {systemMessage.agent_class && (
                 <div className="text-sm">
                   <span className="font-semibold text-gray-300">Agent Class:</span>{" "}
@@ -62,7 +62,7 @@ export function SystemMessageModal({
               {systemMessage.openhands_version && (
                 <div className="text-sm">
                   <span className="font-semibold text-gray-300">OpenHands Version:</span>{" "}
-                  <span className="text-gray-100">{systemMessage.openhands_version}</span>
+                  <span className="text-gray-100 text-primary">{systemMessage.openhands_version}</span>
                 </div>
               )}
             </div>
