@@ -56,7 +56,7 @@ describe("App", () => {
       last_updated_at: "",
       created_at: "",
       title: "",
-      selected_repository: "",
+      selected_repository: null,
       status: "STOPPED",
     });
     const { rerender } = renderWithProviders(

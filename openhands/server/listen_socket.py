@@ -1,5 +1,5 @@
-from importlib import metadata
 from types import MappingProxyType
+from typing import cast
 from urllib.parse import parse_qs
 
 from socketio.exceptions import ConnectionRefusedError
@@ -17,7 +17,11 @@ from openhands.events.observation.agent import (
     AgentStateChangedObservation,
 )
 from openhands.events.serialization import event_to_dict
-from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderToken, SecretStore
+from openhands.integrations.provider import (
+    PROVIDER_TOKEN_TYPE,
+    ProviderToken,
+    SecretStore,
+)
 from openhands.integrations.service_types import ProviderType
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.shared import (
@@ -83,9 +87,10 @@ async def connect(connection_id: str, environ):
     if settings:
         session_init_args = {**settings.__dict__, **session_init_args}
 
+    secrets_store = cast(SecretStore, getattr(settings, 'secrets_store', SecretStore()))
     session_init_args['git_provider_tokens'] = create_provider_tokens_object(
         providers_set,
-        getattr(settings, 'secrets_store', SecretStore()),
+        secrets_store,
     )
 
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id, None)
@@ -95,8 +100,8 @@ async def connect(connection_id: str, environ):
             # Accepting str for `selected_repository` for backward compatibility
             # See also: https://github.com/All-Hands-AI/OpenHands/issues/7286
             logger.info(
-                f"Legacy metadata format detected for conversation {conversation_id}. "
-                "Repository information will not be available."
+                f'Legacy metadata format detected for conversation {conversation_id}. '
+                'Repository information will not be available.'
             )
             session_init_args['selected_repository'] = None
         else:

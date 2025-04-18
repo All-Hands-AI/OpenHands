@@ -13,6 +13,7 @@ import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "test-utils";
 import { formatTimeDelta } from "#/utils/format-time-delta";
 import { ConversationCard } from "#/components/features/conversation-panel/conversation-card";
+import { ProviderType } from "#/api/open-hands.types";
 import { clickOnEditButton } from "./utils";
 
 // We'll use the actual i18next implementation but override the translation function
@@ -87,6 +88,12 @@ describe("ConversationCard", () => {
   });
 
   it("should render the selectedRepository if available", () => {
+    const mockRepository = {
+      id: 1,
+      full_name: "org/selectedRepository",
+      git_provider: ProviderType.GITHUB
+    };
+
     const { rerender } = renderWithProviders(
       <ConversationCard
         onDelete={onDelete}
@@ -108,7 +115,7 @@ describe("ConversationCard", () => {
         onChangeTitle={onChangeTitle}
         isActive
         title="Conversation 1"
-        selectedRepository="org/selectedRepository"
+        selectedRepository={mockRepository}
         lastUpdatedAt="2021-10-01T12:00:00Z"
       />,
     );
@@ -167,13 +174,19 @@ describe("ConversationCard", () => {
 
   test("clicking the selectedRepository should not trigger the onClick handler", async () => {
     const user = userEvent.setup();
+    const mockRepository = {
+      id: 1,
+      full_name: "org/selectedRepository",
+      git_provider: ProviderType.GITHUB
+    };
+
     renderWithProviders(
       <ConversationCard
         onDelete={onDelete}
         isActive
         onChangeTitle={onChangeTitle}
         title="Conversation 1"
-        selectedRepository="org/selectedRepository"
+        selectedRepository={mockRepository}
         lastUpdatedAt="2021-10-01T12:00:00Z"
       />,
     );
