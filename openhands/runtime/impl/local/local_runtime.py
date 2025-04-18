@@ -174,7 +174,8 @@ class LocalRuntime(ActionExecutionClient):
             headless_mode,
         )
 
-    def _get_action_execution_server_host(self):
+    @property
+    def action_execution_server_url(self):
         return self.api_url
 
     async def connect(self):
@@ -207,9 +208,8 @@ class LocalRuntime(ActionExecutionClient):
         env['OPENHANDS_REPO_PATH'] = code_repo_path
         env['LOCAL_RUNTIME_MODE'] = '1'
         # run poetry show -v | head -n 1 | awk '{print $2}'
-        # Using asyncio.create_subprocess_exec would be better, but requires significant refactoring
         poetry_venvs_path = (
-            subprocess.check_output(  # noqa: ASYNC101
+            subprocess.check_output(
                 ['poetry', 'show', '-v'],
                 env=env,
                 cwd=code_repo_path,
@@ -224,8 +224,7 @@ class LocalRuntime(ActionExecutionClient):
         logger.debug(f'POETRY_VIRTUALENVS_PATH: {poetry_venvs_path}')
 
         check_dependencies(code_repo_path, poetry_venvs_path)
-        # Using asyncio.create_subprocess_exec would be better, but requires significant refactoring
-        self.server_process = subprocess.Popen(  # noqa: ASYNC101
+        self.server_process = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
@@ -294,7 +293,7 @@ class LocalRuntime(ActionExecutionClient):
 
     async def execute_action(self, action: Action) -> Observation:
         """Execute an action by sending it to the server."""
-        if not self._runtime_initialized:
+        if not self.runtime_initialized:
             raise AgentRuntimeDisconnectedError('Runtime not initialized')
 
         if self.server_process is None or self.server_process.poll() is not None:

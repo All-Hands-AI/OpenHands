@@ -86,8 +86,7 @@ async def read_file(
         )
 
     try:
-        # Using aiofiles would be better, but requires significant refactoring
-        with open(whole_path, 'r', encoding='utf-8') as file:  # noqa: ASYNC101
+        with open(whole_path, 'r', encoding='utf-8') as file:
             lines = read_lines(file.readlines(), start, end)
     except FileNotFoundError:
         return ErrorObservation(f'File not found: {path}')
@@ -128,8 +127,7 @@ async def write_file(
             os.makedirs(os.path.dirname(whole_path))
         mode = 'w' if not os.path.exists(whole_path) else 'r+'
         try:
-            # Using aiofiles would be better, but requires significant refactoring
-            with open(whole_path, mode, encoding='utf-8') as file:  # noqa: ASYNC101
+            with open(whole_path, mode, encoding='utf-8') as file:
                 if mode != 'w':
                     all_lines = file.readlines()
                     new_file = insert_lines(insert, all_lines, start, end)

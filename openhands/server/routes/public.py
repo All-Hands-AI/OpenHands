@@ -60,8 +60,7 @@ async def get_litellm_models() -> list[str]:
         if ollama_base_url:
             ollama_url = ollama_base_url.strip('/') + '/api/tags'
             try:
-                # Using httpx.AsyncClient would be better, but requires significant refactoring
-                ollama_models_list = httpx.get(ollama_url, timeout=3).json()['models']  # noqa: ASYNC100
+                ollama_models_list = httpx.get(ollama_url, timeout=3).json()['models']
                 for model in ollama_models_list:
                     model_list.append('ollama/' + model['name'])
                 break
