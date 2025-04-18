@@ -34,7 +34,6 @@ class A2ASendTaskAction(Action):
     @property
     def message(self) -> str:
         return f"""I am sending a task to the remote agent {self.agent_name} with: \n 
-            sid: \n {self.sid} \n 
             task_message: \n {self.task_message} \n 
           """
     
