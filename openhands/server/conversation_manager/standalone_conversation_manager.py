@@ -32,12 +32,6 @@ _CLEANUP_INTERVAL = 15
 UPDATED_AT_CALLBACK_ID = 'updated_at_callback_id'
 
 
-class MaxConcurrentConversationsError(Exception):
-    """Raised when a user attempts to exceed their maximum allowed concurrent conversations."""
-
-    pass
-
-
 @dataclass
 class StandaloneConversationManager(ConversationManager):
     """Manages conversations in standalone mode (single server instance)."""
@@ -130,22 +124,18 @@ class StandaloneConversationManager(ConversationManager):
         )
         await self.sio.enter_room(connection_id, ROOM_KEY.format(sid=sid))
         self._local_connection_id_to_session_id[connection_id] = sid
-        try:
-            event_stream = await self.maybe_start_agent_loop(
-                sid, settings, user_id, github_user_id=github_user_id, mnemonic=mnemonic
+
+        event_stream = await self.maybe_start_agent_loop(
+            sid, settings, user_id, github_user_id=github_user_id, mnemonic=mnemonic
+        )
+        if not event_stream:
+            logger.error(
+                f'No event stream after joining conversation: {sid}',
+                extra={'session_id': sid},
             )
-            if not event_stream:
-                logger.error(
-                    f'No event stream after joining conversation: {sid}',
-                    extra={'session_id': sid},
-                )
-                raise RuntimeError(f'no_event_stream:{sid}')
-            return event_stream
-        except MaxConcurrentConversationsError as e:
-            # Send an error event to the client
-            error_message = str(e)
-            # raise ConnectionRefusedError(error_message)
-            return error_message
+            raise RuntimeError(f'no_event_stream:{sid}')
+        return event_stream
+        
 
     async def detach_from_conversation(self, conversation: Conversation):
         sid = conversation.sid
@@ -300,10 +290,6 @@ class StandaloneConversationManager(ConversationManager):
                     )
                     raise RuntimeError(f'no_event_stream:{sid}')
                 return event_store
-
-                # raise MaxConcurrentConversationsError(
-                #     f"You have reached the maximum limit of {self.config.max_concurrent_conversations} concurrent conversations."
-                # )
 
             session = Session(
                 sid=sid,

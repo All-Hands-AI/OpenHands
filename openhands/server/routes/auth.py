@@ -1,25 +1,11 @@
 import os
-from datetime import datetime
 
-# timedelta
 import httpx
-import jwt
-from eth_account.messages import encode_defunct
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
-from web3 import Web3
+from openhands.core.logger import openhands_logger as logger
 
 app = APIRouter(prefix='/api/auth')
-
-
-# TODO: implement get nonce for signing message later
-# Message that users will sign with their wallet
-AUTH_MESSAGE = 'Sign to confirm account access to Thesis'
-
-# JWT settings
-JWT_SECRET = os.getenv('JWT_SECRET')
-
-JWT_ALGORITHM = 'HS256'
 
 
 class SignupRequest(BaseModel):
@@ -30,27 +16,6 @@ class SignupRequest(BaseModel):
 class SignupResponse(BaseModel):
     token: str
     user: dict
-
-
-def create_jwt_token(user_id: str) -> str:
-    """Create a JWT token for the user."""
-    payload = {
-        'sub': user_id,
-        'iat': datetime.utcnow(),
-    }
-
-    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
-
-
-def verify_ethereum_signature(public_address: str, signature: str) -> bool:
-    """Verify that the signature was signed by the public address."""
-    try:
-        w3 = Web3()
-        message = encode_defunct(text=AUTH_MESSAGE)
-        recovered_address = w3.eth.account.recover_message(message, signature=signature)
-        return recovered_address.lower() == public_address.lower()
-    except Exception:
-        return False
 
 
 @app.post('/signup', response_model=SignupResponse)
@@ -84,6 +49,7 @@ async def signup(request: SignupRequest) -> SignupResponse:
         raise HTTPException(status_code=500, detail=f'Connection error: {str(exc)}')
 
     except Exception as e:
+        logger.error(f'Error signing up: {str(e)}')
         raise HTTPException(status_code=500, detail=f'Error signing up: {str(e)}')
 
 
