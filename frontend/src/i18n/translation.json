@@ -6222,8 +6222,7 @@
         "fr": "En attente du démarrage de l'exécution...",
         "tr": "Çalışma zamanının başlamasını bekliyor...",
         "de": "Warten auf den Start der Laufzeit..."
-    }
-}
+    },
     "SYSTEM_MESSAGE_MODAL$TITLE": {
         "en": "Agent Tools & Metadata",
         "zh-CN": "代理工具和元数据",
@@ -6328,4 +6327,5 @@
         "pt": "Nenhuma ferramenta disponível para este agente",
         "es": "No hay herramientas disponibles para este agente",
         "tr": "Bu ajan için kullanılabilir araç yok"
-    },
+    }
+}
