@@ -49,7 +49,7 @@ export function SystemMessageModal({
   return (
     isOpen && (
       <ModalBackdrop onClose={onClose}>
-        <ModalBody className="max-w-6xl max-h-[80vh] flex flex-col items-start">
+        <ModalBody width="medium" className="max-h-[80vh] flex flex-col items-start">
           <div className="flex flex-col gap-2 w-full">
             <BaseModalTitle title="Agent Tools & Metadata" />
             <div className="flex flex-col gap-2 mb-4">
