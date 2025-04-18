@@ -12,9 +12,16 @@ from openhands.resolver.utils import extract_issue_references
 
 
 class GithubIssueHandler(IssueHandlerInterface):
-    def __init__(self, owner: str, repo: str, token: str, username: str | None = None, base_domain: str = "github.com"):
+    def __init__(
+        self,
+        owner: str,
+        repo: str,
+        token: str,
+        username: str | None = None,
+        base_domain: str = 'github.com',
+    ):
         """Initialize a GitHub issue handler.
-        
+
         Args:
             owner: The owner of the repository
             repo: The name of the repository
@@ -42,7 +49,7 @@ class GithubIssueHandler(IssueHandlerInterface):
         }
 
     def get_base_url(self) -> str:
-        if self.base_domain == "github.com":
+        if self.base_domain == 'github.com':
             return f'https://api.github.com/repos/{self.owner}/{self.repo}'
         else:
             return f'https://{self.base_domain}/api/v3/repos/{self.owner}/{self.repo}'
@@ -65,10 +72,10 @@ class GithubIssueHandler(IssueHandlerInterface):
         return f'https://{username_and_token}@{self.base_domain}/{self.owner}/{self.repo}.git'
 
     def get_graphql_url(self) -> str:
-        if self.base_domain == "github.com":
+        if self.base_domain == 'github.com':
             return 'https://api.github.com/graphql'
         else:
-            return f'https://{self.base_domain}/api/v3/graphql'
+            return f'https://{self.base_domain}/api/graphql'
 
     def get_compare_url(self, branch_name: str) -> str:
         return f'https://{self.base_domain}/{self.owner}/{self.repo}/compare/{branch_name}?expand=1'
@@ -302,9 +309,16 @@ class GithubIssueHandler(IssueHandlerInterface):
 
 
 class GithubPRHandler(GithubIssueHandler):
-    def __init__(self, owner: str, repo: str, token: str, username: str | None = None, base_domain: str = "github.com"):
+    def __init__(
+        self,
+        owner: str,
+        repo: str,
+        token: str,
+        username: str | None = None,
+        base_domain: str = 'github.com',
+    ):
         """Initialize a GitHub PR handler.
-        
+
         Args:
             owner: The owner of the repository
             repo: The name of the repository
@@ -313,8 +327,10 @@ class GithubPRHandler(GithubIssueHandler):
             base_domain: The domain for GitHub Enterprise (default: "github.com")
         """
         super().__init__(owner, repo, token, username, base_domain)
-        if self.base_domain == "github.com":
-            self.download_url = f'https://api.github.com/repos/{self.owner}/{self.repo}/pulls'
+        if self.base_domain == 'github.com':
+            self.download_url = (
+                f'https://api.github.com/repos/{self.owner}/{self.repo}/pulls'
+            )
         else:
             self.download_url = f'https://{self.base_domain}/api/v3/repos/{self.owner}/{self.repo}/pulls'
 
@@ -470,7 +486,7 @@ class GithubPRHandler(GithubIssueHandler):
         self, pr_number: int, comment_id: int | None = None
     ) -> list[str] | None:
         """Download comments for a specific pull request from Github."""
-        if self.base_domain == "github.com":
+        if self.base_domain == 'github.com':
             url = f'https://api.github.com/repos/{self.owner}/{self.repo}/issues/{pr_number}/comments'
         else:
             url = f'https://{self.base_domain}/api/v3/repos/{self.owner}/{self.repo}/issues/{pr_number}/comments'
@@ -542,7 +558,7 @@ class GithubPRHandler(GithubIssueHandler):
 
         for issue_number in unique_issue_references:
             try:
-                if self.base_domain == "github.com":
+                if self.base_domain == 'github.com':
                     url = f'https://api.github.com/repos/{self.owner}/{self.repo}/issues/{issue_number}'
                 else:
                     url = f'https://{self.base_domain}/api/v3/repos/{self.owner}/{self.repo}/issues/{issue_number}'
