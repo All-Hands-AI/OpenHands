@@ -3834,7 +3834,7 @@
         "en": "Delete API Key"
     },
     "SETTINGS$DELETE_API_KEY_CONFIRMATION": {
-        "en": "Are you sure you want to delete the API key \"{name}\"? This action cannot be undone."
+        "en": "Are you sure you want to delete the API key \"{{name}}\"? This action cannot be undone."
     },
     "SETTINGS$NO_API_KEYS": {
         "en": "You don't have any API keys yet. Create one to get started."

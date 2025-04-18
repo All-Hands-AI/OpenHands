@@ -58,6 +58,7 @@ export function ApiKeysManager() {
     try {
       setIsCreating(true);
       const newKey = await ApiKeysClient.createApiKey(newKeyName);
+
       setNewlyCreatedKey(newKey);
       setCreateModalOpen(false);
       setShowNewKeyModal(true);
@@ -155,16 +156,15 @@ export function ApiKeysManager() {
                       {formatDate(key.last_used_at)}
                     </td>
                     <td className="p-3 text-right">
-                      <BrandButton
-                        type="button"
-                        variant="danger"
+                      <button
+                        className="underline"
                         onClick={() => {
                           setKeyToDelete(key);
                           setDeleteModalOpen(true);
                         }}
                       >
                         {t(I18nKey.BUTTON$DELETE)}
-                      </BrandButton>
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -283,7 +283,7 @@ export function ApiKeysManager() {
             <h3 className="text-xl font-bold">
               {t(I18nKey.SETTINGS$API_KEY_CREATED)}
             </h3>
-            <p className="text-sm text-yellow-400 font-bold">
+            <p className="text-sm">
               {t(I18nKey.SETTINGS$API_KEY_WARNING)}
             </p>
             <div className="bg-base-tertiary p-4 rounded-md font-mono text-sm break-all">
@@ -293,7 +293,6 @@ export function ApiKeysManager() {
               <BrandButton
                 type="button"
                 variant="primary"
-                className="grow"
                 onClick={() => {
                   navigator.clipboard.writeText(newlyCreatedKey.key);
                   displaySuccessToast(t(I18nKey.SETTINGS$API_KEY_COPIED));
@@ -304,7 +303,6 @@ export function ApiKeysManager() {
               <BrandButton
                 type="button"
                 variant="secondary"
-                className="grow"
                 onClick={() => {
                   setShowNewKeyModal(false);
                   setNewlyCreatedKey(null);
