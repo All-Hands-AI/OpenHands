@@ -75,7 +75,7 @@ describe("Settings Screen", () => {
   });
 
   it("should render the navbar", async () => {
-    const sections = ["llm", "github", "application", "secrets"];
+    const sections = ["llm", "git", "application", "secrets"];
 
     renderSettingsScreen();
 

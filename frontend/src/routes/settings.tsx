@@ -14,7 +14,7 @@ function SettingsScreen() {
 
   const navItems = [
     { to: "/settings", text: "LLM" },
-    { to: "/settings/github", text: "GitHub" },
+    { to: "/settings/git", text: "Git" },
     { to: "/settings/app", text: "Application" },
     { to: "/settings/secrets", text: "Secrets" },
     // Only show Credits tab if the app is in SaaS mode
