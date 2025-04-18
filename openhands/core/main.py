@@ -17,12 +17,12 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.core.loop import run_agent_until_done
 from openhands.core.schema import AgentState
 from openhands.core.setup import (
-    clone_or_init_repo,
     create_agent,
     create_controller,
     create_memory,
     create_runtime,
     generate_sid,
+    initialize_repository_for_runtime,
 )
 from openhands.events import EventSource, EventStreamSubscriber
 from openhands.events.action import MessageAction, NullAction
@@ -112,10 +112,11 @@ async def run_controller(
         call_async_from_sync(runtime.connect)
 
         # Initialize repository if needed
-        repo_directory = clone_or_init_repo(
-            runtime,
-            selected_repository=config.sandbox.selected_repo,
-        )
+        if config.sandbox.selected_repo:
+            repo_directory = initialize_repository_for_runtime(
+                runtime,
+                selected_repository=config.sandbox.selected_repo,
+            )
 
     event_stream = runtime.event_stream
 

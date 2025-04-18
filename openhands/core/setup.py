@@ -14,7 +14,6 @@ from openhands.core.config import (
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
-from openhands.events.action import CmdRunAction
 from openhands.events.event import Event
 from openhands.integrations.provider import ProviderToken, ProviderType, SecretStore
 from openhands.llm.llm import LLM
@@ -85,14 +84,12 @@ def create_runtime(
     return runtime
 
 
-def clone_or_init_repo(
+def initialize_repository_for_runtime(
     runtime: Runtime,
     selected_repository: str | None = None,
     github_token: SecretStr | None = None,
 ) -> str | None:
     """Initialize the repository for the runtime.
-    If a repository is selected, it will be cloned.
-    If no repository is selected, a new git repository will be initialized in the workspace.
 
     Args:
         runtime: The runtime to initialize the repository for.
@@ -100,7 +97,7 @@ def clone_or_init_repo(
         github_token: (optional) The GitHub token to use.
 
     Returns:
-        The repository directory path if a repository was cloned or initialized, None otherwise.
+        The repository directory path if a repository was cloned, None otherwise.
     """
     # clone selected repository if provided
     github_token = (
@@ -118,29 +115,16 @@ def clone_or_init_repo(
     )
     provider_tokens = secret_store.provider_tokens if secret_store else None
 
-    repo_directory = None
-    if selected_repository and provider_tokens:
-        logger.debug(f'Selected repository {selected_repository}.')
-        repo_directory = call_async_from_sync(
-            runtime.clone_repo,
-            GENERAL_TIMEOUT,
-            provider_tokens,
-            selected_repository,
-            None,
-        )
-        # Run setup script if it exists
-        runtime.maybe_run_setup_script()
-    else:
-        # Initialize a new git repository in the workspace directory
-        logger.debug(
-            'No repository selected. Initializing a new git repository in the workspace.'
-        )
-        workspace_dir = runtime.config.workspace_mount_path_in_sandbox
-        action = CmdRunAction(
-            command=f'cd {workspace_dir} && git init',
-        )
-        runtime.run_action(action)
-        repo_directory = workspace_dir
+    logger.debug(f'Selected repository {selected_repository}.')
+    repo_directory = call_async_from_sync(
+        runtime.clone_or_init_repo,
+        GENERAL_TIMEOUT,
+        provider_tokens,
+        selected_repository,
+        None,
+    )
+    # Run setup script if it exists
+    runtime.maybe_run_setup_script()
 
     return repo_directory
 

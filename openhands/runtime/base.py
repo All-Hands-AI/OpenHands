@@ -309,13 +309,28 @@ class Runtime(FileEditRuntimeMixin):
             return
         self.event_stream.add_event(observation, source)  # type: ignore[arg-type]
 
-    async def clone_repo(
+    async def clone_or_init_repo(
         self,
-        git_provider_tokens: PROVIDER_TOKEN_TYPE,
-        selected_repository: str | Repository,
+        git_provider_tokens: PROVIDER_TOKEN_TYPE | None,
+        selected_repository: str | Repository | None,
         selected_branch: str | None,
         repository_provider: ProviderType = ProviderType.GITHUB,
     ) -> str:
+        if not selected_repository:
+            if self.config.workspace_base:
+                logger.info(
+                    'In workspace mount mode, not initializing a new git repository.'
+                )
+                return ''
+            logger.debug(
+                'No repository selected. Initializing a new git repository in the workspace.'
+            )
+            action = CmdRunAction(
+                command='git init',
+            )
+            self.run_action(action)
+            return ''
+
         provider_domains = {
             ProviderType.GITHUB: 'github.com',
             ProviderType.GITLAB: 'gitlab.com',
@@ -327,9 +342,11 @@ class Runtime(FileEditRuntimeMixin):
             else selected_repository.git_provider
         )
 
+        if not git_provider_tokens:
+            raise RuntimeError('Need git provider tokens to clone repo')
         git_token = git_provider_tokens[chosen_provider].token
         if not git_token:
-            raise RuntimeError('Require valid git token to clone repo')
+            raise RuntimeError('Need a valid git token to clone repo')
 
         domain = provider_domains[chosen_provider]
         repository = (
