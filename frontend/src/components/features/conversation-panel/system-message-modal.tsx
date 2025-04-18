@@ -19,13 +19,6 @@ interface SystemMessageModalProps {
   } | null;
 }
 
-interface ToolItem {
-  name: string;
-  description: string;
-  isOpen: boolean;
-  parameters?: Record<string, unknown>;
-}
-
 interface FunctionData {
   name?: string;
   description?: string;
@@ -115,23 +108,8 @@ export function SystemMessageModal({
 
             <div className="h-[60vh] overflow-auto rounded-md border border-gray-700 bg-gray-900">
               {activeTab === "system" && (
-                <div className="p-4">
-                  <div className="mb-4">
-                    <h4 className="text-sm font-semibold text-gray-300 mb-2">System Message Content:</h4>
-                    <div className="whitespace-pre-wrap font-mono text-sm p-3 bg-gray-800 rounded-md border border-gray-700">
-                      {systemMessage.content}
-                    </div>
-                  </div>
-                  
-                  <div className="mt-6">
-                    <h4 className="text-sm font-semibold text-gray-300 mb-2">Full System Message Data:</h4>
-                    <div className="p-3 bg-gray-800 rounded-md overflow-auto border border-gray-700 max-h-[300px]">
-                      <JsonView 
-                        data={systemMessage} 
-                        style={darkStyles}
-                      />
-                    </div>
-                  </div>
+                <div className="p-4 whitespace-pre-wrap font-mono text-sm">
+                  {systemMessage.content}
                 </div>
               )}
 
@@ -171,25 +149,12 @@ export function SystemMessageModal({
                                 <h4 className="text-sm font-semibold text-gray-300">Parameters:</h4>
                                 <div className="text-xs mt-1 p-3 bg-gray-900 rounded-md overflow-auto border border-gray-700 text-gray-300">
                                   <JsonView 
-                                    data={parameters} 
+                                    data={parameters}
                                     style={darkStyles}
                                   />
                                 </div>
                               </div>
                             )}
-                            
-                            {/* Full tool data section */}
-                            <div className="mt-4">
-                              <div className="flex items-center justify-between">
-                                <h4 className="text-sm font-semibold text-gray-300">Full Tool Definition:</h4>
-                              </div>
-                              <div className="text-xs mt-1 p-3 bg-gray-900 rounded-md overflow-auto border border-gray-700 text-gray-300 max-h-[300px]">
-                                <JsonView 
-                                  data={tool} 
-                                  style={darkStyles}
-                                />
-                              </div>
-                            </div>
                           </div>
                         )}
                       </div>
