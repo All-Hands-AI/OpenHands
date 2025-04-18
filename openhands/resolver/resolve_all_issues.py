@@ -78,7 +78,7 @@ class AllIssueResolver:
         self.repo_instruction = repo_instruction
         self.issue_numbers = issue_numbers
         self.base_domain = base_domain
-        
+
         self.issue_resolver = IssueResolver(
             owner=self.owner,
             repo=self.repo,
@@ -128,7 +128,7 @@ class AllIssueResolver:
         )
 
         if self.limit_issues is not None:
-            issues = issues[:self.limit_issues]
+            issues = issues[: self.limit_issues]
             logger.info(f'Limiting resolving to first {self.limit_issues} issues.')
 
         # TEST METADATA
