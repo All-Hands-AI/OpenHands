@@ -5,19 +5,22 @@ function GitSettingsScreen() {
   const { data: settings } = useSettings();
   const { data: config } = useConfig();
 
+  const isSaas = config?.APP_MODE === "saas";
+
   return (
     <div data-testid="git-settings-screen">
-      {config?.APP_MODE === "saas" && config.APP_SLUG && (
+      {isSaas && config.APP_SLUG && (
         <div data-testid="configure-github-repositories-button" />
       )}
-      {config?.APP_MODE === "oss" && (
-        <input
-          data-testid="github-token-input"
-          placeholder={settings?.PROVIDER_TOKENS_SET.github ? "<hidden>" : ""}
-        />
-      )}
-      {config?.APP_MODE === "oss" && (
-        <div data-testid="github-token-help-anchor" />
+
+      {!isSaas && (
+        <>
+          <input
+            data-testid="github-token-input"
+            placeholder={settings?.PROVIDER_TOKENS_SET.github ? "<hidden>" : ""}
+          />
+          <div data-testid="github-token-help-anchor" />
+        </>
       )}
     </div>
   );

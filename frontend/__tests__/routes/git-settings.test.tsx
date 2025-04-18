@@ -6,6 +6,27 @@ import GitSettingsScreen from "#/routes/git-settings";
 import OpenHands from "#/api/open-hands";
 import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
 import { AuthProvider } from "#/context/auth-context";
+import { GetConfigResponse } from "#/api/open-hands.types";
+
+const VALID_OSS_CONFIG: GetConfigResponse = {
+  APP_MODE: "oss",
+  GITHUB_CLIENT_ID: "123",
+  POSTHOG_CLIENT_KEY: "456",
+  FEATURE_FLAGS: {
+    ENABLE_BILLING: false,
+    HIDE_LLM_SETTINGS: false,
+  },
+};
+
+const VALID_SAAS_CONFIG: GetConfigResponse = {
+  APP_MODE: "saas",
+  GITHUB_CLIENT_ID: "123",
+  POSTHOG_CLIENT_KEY: "456",
+  FEATURE_FLAGS: {
+    ENABLE_BILLING: false,
+    HIDE_LLM_SETTINGS: false,
+  },
+};
 
 const queryClient = new QueryClient();
 
@@ -58,30 +79,14 @@ describe("Git Settings", () => {
 
   it("should render the inputs if OSS mode", async () => {
     const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
-    getConfigSpy.mockResolvedValue({
-      APP_MODE: "oss",
-      GITHUB_CLIENT_ID: "123",
-      POSTHOG_CLIENT_KEY: "456",
-      FEATURE_FLAGS: {
-        ENABLE_BILLING: false,
-        HIDE_LLM_SETTINGS: false,
-      },
-    });
+    getConfigSpy.mockResolvedValue(VALID_OSS_CONFIG);
 
     const { rerender } = renderGitSettingsScreen();
 
     await screen.findByTestId("github-token-input");
     await screen.findByTestId("github-token-help-anchor");
 
-    getConfigSpy.mockResolvedValue({
-      APP_MODE: "saas",
-      GITHUB_CLIENT_ID: "123",
-      POSTHOG_CLIENT_KEY: "456",
-      FEATURE_FLAGS: {
-        ENABLE_BILLING: false,
-        HIDE_LLM_SETTINGS: false,
-      },
-    });
+    getConfigSpy.mockResolvedValue(VALID_SAAS_CONFIG);
     queryClient.invalidateQueries();
     rerender();
 
@@ -97,16 +102,9 @@ describe("Git Settings", () => {
 
   it("should set '<hidden>' placeholder if the GitHub token is set", async () => {
     const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
-    getConfigSpy.mockResolvedValue({
-      APP_MODE: "oss",
-      GITHUB_CLIENT_ID: "123",
-      POSTHOG_CLIENT_KEY: "456",
-      FEATURE_FLAGS: {
-        ENABLE_BILLING: false,
-        HIDE_LLM_SETTINGS: false,
-      },
-    });
     const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+
+    getConfigSpy.mockResolvedValue(VALID_OSS_CONFIG);
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
       provider_tokens_set: {
@@ -141,30 +139,14 @@ describe("Git Settings", () => {
 
   it("should render the 'Configure GitHub Repositories' button if SaaS mode and app slug exists", async () => {
     const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
-    getConfigSpy.mockResolvedValue({
-      APP_MODE: "oss",
-      GITHUB_CLIENT_ID: "123",
-      POSTHOG_CLIENT_KEY: "456",
-      FEATURE_FLAGS: {
-        ENABLE_BILLING: false,
-        HIDE_LLM_SETTINGS: false,
-      },
-    });
+    getConfigSpy.mockResolvedValue(VALID_OSS_CONFIG);
 
     const { rerender } = renderGitSettingsScreen();
 
     let button = screen.queryByTestId("configure-github-repositories-button");
     expect(button).not.toBeInTheDocument();
 
-    getConfigSpy.mockResolvedValue({
-      APP_MODE: "saas",
-      GITHUB_CLIENT_ID: "123",
-      POSTHOG_CLIENT_KEY: "456",
-      FEATURE_FLAGS: {
-        ENABLE_BILLING: false,
-        HIDE_LLM_SETTINGS: false,
-      },
-    });
+    getConfigSpy.mockResolvedValue(VALID_SAAS_CONFIG);
     queryClient.invalidateQueries();
     rerender();
 
@@ -176,14 +158,8 @@ describe("Git Settings", () => {
     });
 
     getConfigSpy.mockResolvedValue({
-      APP_MODE: "saas",
-      GITHUB_CLIENT_ID: "123",
-      POSTHOG_CLIENT_KEY: "456",
+      ...VALID_SAAS_CONFIG,
       APP_SLUG: "test-slug",
-      FEATURE_FLAGS: {
-        ENABLE_BILLING: false,
-        HIDE_LLM_SETTINGS: false,
-      },
     });
     queryClient.invalidateQueries();
     rerender();
