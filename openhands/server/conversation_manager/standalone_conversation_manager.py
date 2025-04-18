@@ -258,7 +258,9 @@ class StandaloneConversationManager(ConversationManager):
     ) -> EventStore:
         logger.info(f'maybe_start_agent_loop:{sid}', extra={'session_id': sid})
         if not await self.is_agent_loop_running(sid):
-            await self._start_agent_loop(sid, settings, user_id, initial_user_msg, replay_json, github_user_id)
+            await self._start_agent_loop(
+                sid, settings, user_id, initial_user_msg, replay_json, github_user_id
+            )
 
         event_store = await self._get_event_store(sid, user_id)
         if not event_store:
@@ -312,9 +314,7 @@ class StandaloneConversationManager(ConversationManager):
         try:
             session.agent_session.event_stream.subscribe(
                 EventStreamSubscriber.SERVER,
-                self._create_conversation_update_callback(
-                    user_id, github_user_id, sid
-                ),
+                self._create_conversation_update_callback(user_id, github_user_id, sid),
                 UPDATED_AT_CALLBACK_ID,
             )
         except ValueError:

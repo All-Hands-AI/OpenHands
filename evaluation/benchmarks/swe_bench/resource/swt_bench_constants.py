@@ -837,4 +837,6 @@ MAP_REPO_TO_TEST_FRAMEWORK_VERBOSE = {
         k: 'bin/test -C --verbose' for k in MAP_VERSION_TO_INSTALL_SYMPY.keys()
     },
 }
-MAP_REPO_TO_TEST_FRAMEWORK_VERBOSE['django/django']['1.9'] = './tests/runtests.py --verbosity 2'
+MAP_REPO_TO_TEST_FRAMEWORK_VERBOSE['django/django']['1.9'] = (
+    './tests/runtests.py --verbosity 2'
+)
