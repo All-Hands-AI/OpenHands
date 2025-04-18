@@ -8,7 +8,6 @@ import { I18nKey } from "#/i18n/declaration";
 import { cn } from "#/utils/utils";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { JsonView } from 'react-json-view-lite';
-import 'react-json-view-lite/dist/index.css';
 
 // Custom styles for JSON viewer
 const jsonViewStyles = {
@@ -23,8 +22,20 @@ const jsonViewStyles = {
 
 // Add custom CSS for JSON viewer
 const jsonViewerCSS = `
+  /* Base styles from react-json-view-lite */
+  .react-json-view-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    padding: 0;
+    margin: 0;
+    font-family: monospace;
+  }
   .react-json-view-container .pair {
     padding: 2px 0;
+    display: flex;
+    align-items: flex-start;
   }
   .react-json-view-container .pair:hover {
     background-color: rgba(255, 255, 255, 0.05);
@@ -34,9 +45,24 @@ const jsonViewerCSS = `
     color: #9ca3af;
     margin-right: 4px;
     cursor: pointer;
+    display: inline-block;
+    text-align: center;
+    width: 1em;
   }
   .react-json-view-container .collapseIcon:hover {
     color: #f3f4f6;
+  }
+  .react-json-view-container .content {
+    margin-left: 0.5em;
+  }
+  .react-json-view-container .label {
+    margin-right: 0.5em;
+  }
+  .react-json-view-container .value {
+    display: inline-block;
+  }
+  .react-json-view-container .nonClickable {
+    cursor: default;
   }
 `;
 
