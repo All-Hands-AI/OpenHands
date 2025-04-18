@@ -7,6 +7,38 @@ import { BrandButton } from "../settings/brand-button";
 import { I18nKey } from "#/i18n/declaration";
 import { cn } from "#/utils/utils";
 import { ChevronDown, ChevronRight } from "lucide-react";
+import { JsonView } from 'react-json-view-lite';
+import 'react-json-view-lite/dist/index.css';
+
+// Custom styles for JSON viewer
+const jsonViewStyles = {
+  container: "react-json-view-container",
+  basicChildStyle: "text-gray-300",
+  nullValue: "text-red-400",
+  stringValue: "text-green-400",
+  numberValue: "text-blue-400",
+  booleanValue: "text-yellow-400",
+  keyStyle: "text-primary font-semibold",
+};
+
+// Add custom CSS for JSON viewer
+const jsonViewerCSS = `
+  .react-json-view-container .pair {
+    padding: 2px 0;
+  }
+  .react-json-view-container .pair:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+  }
+  .react-json-view-container .collapseIcon {
+    color: #9ca3af;
+    margin-right: 4px;
+    cursor: pointer;
+  }
+  .react-json-view-container .collapseIcon:hover {
+    color: #f3f4f6;
+  }
+`;
 
 interface SystemMessageModalProps {
   isOpen: boolean;
@@ -48,8 +80,10 @@ export function SystemMessageModal({
 
   return (
     isOpen && (
-      <ModalBackdrop onClose={onClose}>
-        <ModalBody width="medium" className="max-h-[80vh] flex flex-col items-start">
+      <>
+        <style>{jsonViewerCSS}</style>
+        <ModalBackdrop onClose={onClose}>
+          <ModalBody width="medium" className="max-h-[80vh] flex flex-col items-start">
           <div className="flex flex-col gap-6 w-full">
             <BaseModalTitle title="Agent Tools & Metadata" />
             <div className="flex flex-col gap-2">
@@ -136,9 +170,13 @@ export function SystemMessageModal({
                             {parameters && (
                               <div className="mt-3">
                                 <h4 className="text-sm font-semibold text-gray-300">Parameters:</h4>
-                                <pre className="text-xs mt-1 p-3 bg-gray-900 rounded-md overflow-auto border border-gray-700 text-gray-300">
-                                  {JSON.stringify(parameters, null, 2)}
-                                </pre>
+                                <div className="text-xs mt-1 p-3 bg-gray-900 rounded-md overflow-auto border border-gray-700 text-gray-300">
+                                  <JsonView 
+                                    data={parameters} 
+                                    shouldExpandNode={(keyPath, level) => level < 2} 
+                                    style={jsonViewStyles}
+                                  />
+                                </div>
                               </div>
                             )}
                           </div>
@@ -160,6 +198,7 @@ export function SystemMessageModal({
 
         </ModalBody>
       </ModalBackdrop>
+      </>
     )
   );
 }
