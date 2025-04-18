@@ -1,18 +1,13 @@
-import { useTranslation } from "react-i18next";
 import React from "react";
-import { SettingsInput } from "#/components/features/settings/settings-input";
 import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 import { useConfig } from "#/hooks/query/use-config";
 import { useSettings } from "#/hooks/query/use-settings";
-import { I18nKey } from "#/i18n/declaration";
 import { BrandButton } from "#/components/features/settings/brand-button";
-import { GitHubTokenHelpAnchor } from "#/components/features/settings/git-settings/github-token-help-anchor";
-import { GitLabTokenHelpAnchor } from "#/components/features/settings/git-settings/gitlab-token-help-anchor";
 import { useLogout } from "#/hooks/mutation/use-logout";
+import { GitHubTokenInput } from "#/components/features/settings/git-settings/github-token-input";
+import { GitLabTokenInput } from "#/components/features/settings/git-settings/gitlab-token-input";
 
 function GitSettingsScreen() {
-  const { t } = useTranslation();
-
   const { mutate: saveSettings } = useSaveSettings();
   const { mutate: disconnectGitTokens } = useLogout();
 
@@ -25,8 +20,8 @@ function GitSettingsScreen() {
     React.useState(false);
 
   const isSaas = config?.APP_MODE === "saas";
-  const isGitHubTokenSet = settings?.PROVIDER_TOKENS_SET.github;
-  const isGitLabTokenSet = settings?.PROVIDER_TOKENS_SET.gitlab;
+  const isGitHubTokenSet = !!settings?.PROVIDER_TOKENS_SET.github;
+  const isGitLabTokenSet = !!settings?.PROVIDER_TOKENS_SET.gitlab;
 
   const formAction = async (formData: FormData) => {
     const disconnectButtonClicked =
@@ -60,37 +55,21 @@ function GitSettingsScreen() {
 
       {!isSaas && (
         <div className="px-11 py-9 flex flex-col gap-12">
-          <div className="flex flex-col gap-6">
-            <SettingsInput
-              testId="github-token-input"
-              onChange={(value) => {
-                setGithubTokenInputHasValue(!!value);
-              }}
-              name="github-token-input"
-              label={t(I18nKey.GITHUB$TOKEN_LABEL)}
-              type="password"
-              className="w-[680px]"
-              placeholder={isGitHubTokenSet ? "<hidden>" : ""}
-            />
+          <GitHubTokenInput
+            name="github-token-input"
+            isGitHubTokenSet={isGitHubTokenSet}
+            onChange={(value) => {
+              setGithubTokenInputHasValue(!!value);
+            }}
+          />
 
-            <GitHubTokenHelpAnchor />
-          </div>
-
-          <div className="flex flex-col gap-6">
-            <SettingsInput
-              testId="gitlab-token-input"
-              onChange={(value) => {
-                setGitlabTokenInputHasValue(!!value);
-              }}
-              name="gitlab-token-input"
-              label={t(I18nKey.GITLAB$TOKEN_LABEL)}
-              type="password"
-              className="w-[680px]"
-              placeholder={isGitLabTokenSet ? "<hidden>" : ""}
-            />
-
-            <GitLabTokenHelpAnchor />
-          </div>
+          <GitLabTokenInput
+            name="gitlab-token-input"
+            isGitLabTokenSet={isGitLabTokenSet}
+            onChange={(value) => {
+              setGitlabTokenInputHasValue(!!value);
+            }}
+          />
         </div>
       )}
 
