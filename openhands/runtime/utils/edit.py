@@ -49,7 +49,14 @@ def _extract_code(string: str) -> str | None:
     matches = re.findall(pattern, string, re.DOTALL)
     if not matches:
         return None
-    return str(matches[0])
+
+    content = str(matches[0])  # Remove "\n        " from start and end
+    if content.startswith('\n        '):
+        content = content[9:]  # len('\n        ') = 9
+    if content.endswith('\n        '):
+        content = content[:-9]  # len('\n        ') = 9
+
+    return content
 
 
 def get_new_file_contents(
