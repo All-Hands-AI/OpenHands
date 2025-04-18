@@ -30,8 +30,8 @@ export function SystemMessageModal({
 
   return (
     isOpen && (
-      <ModalBackdrop onClick={onClose}>
-        <ModalBody className="max-w-4xl max-h-[80vh] flex flex-col items-start" onClick={(e) => e.stopPropagation()}>
+      <ModalBackdrop onClose={onClose}>
+        <ModalBody className="max-w-4xl max-h-[80vh] flex flex-col items-start">
           <div className="flex flex-col gap-2 w-full">
             <BaseModalTitle title="Agent Tools & Metadata" />
             <div className="flex flex-col gap-1">
@@ -90,7 +90,7 @@ export function SystemMessageModal({
               </div>
             )}
           </div>
-          
+
           <div className="w-full mt-4">
             <BrandButton
               type="button"
