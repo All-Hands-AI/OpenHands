@@ -200,9 +200,10 @@ def test_str_replace_multi_line_with_tabs(temp_dir, runtime_cls, run_as_openhand
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         test_file = os.path.join(config.workspace_mount_path_in_sandbox, 'test.txt')
-        action = FileWriteAction(
-            content='def test():\n\tprint("Hello, World!")',
+        action = FileEditAction(
+            command='create',
             path=test_file,
+            file_text='def test():\n\tprint("Hello, World!")',
         )
         runtime.run_action(action)
 
@@ -220,7 +221,6 @@ def test_str_replace_multi_line_with_tabs(temp_dir, runtime_cls, run_as_openhand
             == f"""The file {test_file} has been edited. Here's the result of running `cat -n` on a snippet of {test_file}:
      1\tdef test():
      2\t{'\t'.expandtabs()}print("Hello, Universe!")
-     3\t
 Review the changes and make sure they are as expected. Edit the file again if necessary."""
         )
 

@@ -38,12 +38,12 @@ def convert_mcp_clients_to_tools(mcp_clients: list[MCPClient] | None) -> list[di
 
 
 async def create_mcp_clients(
-    sse_mcp_server: list[str],
+    mcp_servers: list[str],
 ) -> list[MCPClient]:
     mcp_clients: list[MCPClient] = []
     # Initialize SSE connections
-    if sse_mcp_server:
-        for server_url in sse_mcp_server:
+    if mcp_servers:
+        for server_url in mcp_servers:
             logger.info(
                 f'Initializing MCP agent for {server_url} with SSE connection...'
             )
@@ -78,11 +78,11 @@ async def fetch_mcp_tools_from_config(mcp_config: MCPConfig) -> list[dict]:
     try:
         logger.debug(f'Creating MCP clients with config: {mcp_config}')
         mcp_clients = await create_mcp_clients(
-            mcp_config.sse.mcp_servers,
+            mcp_config.mcp_servers,
         )
 
         if not mcp_clients:
-            logger.warning('No MCP clients were successfully connected')
+            logger.debug('No MCP clients were successfully connected')
             return []
 
         mcp_tools = convert_mcp_clients_to_tools(mcp_clients)

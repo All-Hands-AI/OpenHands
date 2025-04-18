@@ -47,8 +47,12 @@ async def connect(connection_id: str, environ):
     query_params = parse_qs(environ.get('QUERY_STRING', ''))
     latest_event_id = int(query_params.get('latest_event_id', [-1])[0])
     conversation_id = query_params.get('conversation_id', [None])[0]
-    providers_raw: list[str] = query_params.get('providers_set', [])
-    providers_set: list[ProviderType] = [ProviderType(p) for p in providers_raw]
+    raw_list = query_params.get('providers_set', [])
+    providers_list = []
+    for item in raw_list:
+        providers_list.extend(item.split(',') if isinstance(item, str) else [])
+    providers_list = [p for p in providers_list if p]
+    providers_set = [ProviderType(p) for p in providers_list]
 
     if not conversation_id:
         logger.error('No conversation_id in query params')
