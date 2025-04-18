@@ -168,7 +168,7 @@ export function WsClientProvider({
             conversationId,
           ]);
           const clonedRepositoryDirectory =
-            cachedConversaton?.selected_repository?.split("/").pop();
+            cachedConversaton?.selected_repository?.full_name.split("/").pop();
 
           let fileToInvalidate = event.args.path.replace("/workspace/", "");
           if (clonedRepositoryDirectory) {

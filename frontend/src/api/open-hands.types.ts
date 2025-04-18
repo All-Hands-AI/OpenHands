@@ -70,12 +70,26 @@ export interface AuthenticateResponse {
   error?: string;
 }
 
+export enum ProviderType {
+  GITHUB = "github",
+  GITLAB = "gitlab",
+}
+
+export interface Repository {
+  id: number;
+  full_name: string;
+  git_provider: ProviderType;
+  stargazers_count?: number;
+  link_header?: string;
+  pushed_at?: string; // ISO 8601 format date string
+}
+
 export type ConversationTrigger = "resolver" | "gui";
 
 export interface Conversation {
   conversation_id: string;
   title: string;
-  selected_repository: string | null;
+  selected_repository: Repository | null;
   last_updated_at: string;
   created_at: string;
   status: ProjectStatus;
