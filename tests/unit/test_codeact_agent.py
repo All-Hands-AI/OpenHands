@@ -361,9 +361,6 @@ def test_enhance_messages_adds_newlines_between_consecutive_user_messages(
     """Test that _enhance_messages adds newlines between consecutive user messages."""
     # Set up the prompt manager
     agent.prompt_manager = Mock()
-    agent.prompt_manager.add_examples_to_initial_message = Mock()
-    agent.prompt_manager.add_info_to_initial_message = Mock()
-    agent.prompt_manager.enhance_message = Mock()
 
     # Create consecutive user messages with various content types
     messages = [
@@ -393,7 +390,9 @@ def test_enhance_messages_adds_newlines_between_consecutive_user_messages(
     ]
 
     # Call _enhance_messages
-    enhanced_messages = agent._enhance_messages(messages)
+    enhanced_messages = agent.conversation_memory._apply_user_message_formatting(
+        messages
+    )
 
     # Verify newlines were added correctly
     assert enhanced_messages[1].content[0].text.startswith('\n\n')
