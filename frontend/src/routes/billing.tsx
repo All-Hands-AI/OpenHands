@@ -10,12 +10,6 @@ import {
 } from "#/utils/custom-toast-handlers";
 import { I18nKey } from "#/i18n/declaration";
 
-export const clientLoader = async () => {
-  const config = queryClient.getQueryData<GetConfigResponse>(["config"]);
-
-  return null;
-};
-
 function BillingSettingsScreen() {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();

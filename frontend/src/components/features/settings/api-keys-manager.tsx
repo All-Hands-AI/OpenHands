@@ -157,6 +157,7 @@ export function ApiKeysManager() {
                     </td>
                     <td className="p-3 text-right">
                       <button
+                        type="button"
                         className="underline"
                         onClick={() => {
                           setKeyToDelete(key);
