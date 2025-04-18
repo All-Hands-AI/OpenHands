@@ -57,6 +57,7 @@ from openhands.io import read_task
 from openhands.llm.metrics import Metrics
 from openhands.mcp import fetch_mcp_tools_from_config
 from openhands.microagent.microagent import BaseMicroagent
+from openhands.mcp import add_mcp_tools_to_agent
 
 # Color and styling constants
 COLOR_GOLD = '#FFD700'
@@ -674,8 +675,6 @@ async def main(loop: asyncio.AbstractEventLoop):
     )
 
     agent = create_agent(config)
-    mcp_tools = await fetch_mcp_tools_from_config(config.mcp)
-    agent.set_mcp_tools(mcp_tools)
     runtime = create_runtime(
         config,
         sid=sid,
@@ -764,6 +763,7 @@ async def main(loop: asyncio.AbstractEventLoop):
     event_stream.subscribe(EventStreamSubscriber.MAIN, on_event, str(uuid4()))
 
     await runtime.connect()
+    await add_mcp_tools_to_agent(agent, runtime, config.mcp)
 
     # Initialize repository if needed
     repo_directory = None

@@ -1,4 +1,7 @@
 import json
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from openhands.controller.agent import Agent
 
 from openhands.core.config.mcp_config import MCPConfig
 from openhands.core.logger import openhands_logger as logger
@@ -6,7 +9,7 @@ from openhands.events.action.mcp import McpAction
 from openhands.events.observation.mcp import MCPObservation
 from openhands.events.observation.observation import Observation
 from openhands.mcp.client import MCPClient
-
+from openhands.runtime.base import Runtime
 
 def convert_mcp_clients_to_tools(mcp_clients: list[MCPClient] | None) -> list[dict]:
     """
@@ -133,3 +136,25 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: McpAction) -> Obse
     logger.debug(f'MCP response: {response}')
 
     return MCPObservation(content=f'MCP result:{response.model_dump(mode="json")}')
+
+
+async def add_mcp_tools_to_agent(agent: "Agent", runtime: Runtime, mcp_config: MCPConfig):
+    """
+    Add MCP tools to an agent.
+    """
+    from openhands.runtime.impl.action_execution.action_execution_client import ActionExecutionClient  # inline import to avoid circular import
+    assert isinstance(runtime, ActionExecutionClient), "Runtime must be an instance of ActionExecutionClient"
+    assert runtime.runtime_initialized, "Runtime must be initialized before adding MCP tools"
+
+    # Add the runtime as another MCP server
+    updated_mcp_config = runtime.get_updated_mcp_config()
+    # Fetch the MCP tools
+    mcp_tools = await fetch_mcp_tools_from_config(updated_mcp_config)
+
+    logger.info(f"Loaded {len(mcp_tools)} MCP tools: {[tool['function']['name'] for tool in mcp_tools]}")    
+    if mcp_config.selected_tool_names:
+        mcp_tools = [tool for tool in mcp_tools if tool['function']['name'] in mcp_config.selected_tool_names]
+        logger.info(f"Selected {len(mcp_tools)} MCP tools based on .selected_tool_names in config: {[tool['function']['name'] for tool in mcp_tools]}")
+
+    # Set the MCP tools on the agent
+    agent.set_mcp_tools(mcp_tools)

@@ -14,6 +14,7 @@ import shutil
 import tempfile
 import time
 import traceback
+import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 from zipfile import ZipFile
@@ -66,7 +67,10 @@ from openhands.runtime.utils.memory_monitor import MemoryMonitor
 from openhands.runtime.utils.runtime_init import init_user_and_working_directory
 from openhands.runtime.utils.system_stats import get_system_stats
 from openhands.utils.async_utils import call_sync_from_async, wait_all
+from mcpm.router.router import MCPRouter, logger as mcp_router_logger
 
+# Set MCP router logger to the same level as the main logger
+mcp_router_logger.setLevel(logger.getEffectiveLevel())
 
 class ActionRequest(BaseModel):
     action: dict
@@ -563,10 +567,12 @@ if __name__ == '__main__':
             plugins_to_load.append(ALL_PLUGINS[plugin]())  # type: ignore
 
     client: ActionExecutor | None = None
+    mcp_router: MCPRouter | None = None
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
-        global client
+        global client, mcp_router
+        logger.info('Initializing ActionExecutor...')
         client = ActionExecutor(
             plugins_to_load,
             work_dir=args.working_dir,
@@ -575,9 +581,63 @@ if __name__ == '__main__':
             browsergym_eval_env=args.browsergym_eval_env,
         )
         await client.ainit()
+        logger.info('ActionExecutor initialized.')
+
+        # Initialize and mount MCP Router
+        logger.info('Initializing MCP Router...')
+        mcp_router = MCPRouter(
+            profile_path=os.path.join(os.path.dirname(__file__), "mcp", "config.json")
+        )
+        allowed_origins = ["*"]
+        sse_app = await mcp_router.get_sse_server_app(
+            allow_origins=allowed_origins,
+            include_lifespan=False
+        )
+
+        # Check for route conflicts before mounting
+        main_app_routes = {route.path for route in app.routes}
+        sse_app_routes = {route.path for route in sse_app.routes}
+        conflicting_routes = main_app_routes.intersection(sse_app_routes)
+        
+        if conflicting_routes:
+            logger.error(f"Route conflicts detected: {conflicting_routes}")
+            raise RuntimeError(f"Cannot mount SSE app - conflicting routes found: {conflicting_routes}")
+
+        app.mount("/", sse_app)
+        logger.info(f"Mounted MCP Router SSE app at root path with allowed origins: {allowed_origins}")
+
+        # Additional debug logging
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug("Main app routes:")
+            for route in main_app_routes:
+                logger.debug(f"  {route}")
+            logger.debug("MCP SSE server app routes:")
+            for route in sse_app_routes:
+                logger.debug(f"  {route}")
+
         yield
+
         # Clean up & release the resources
-        client.close()
+        logger.info("Shutting down MCP Router...")
+        if mcp_router:
+            try:
+                await mcp_router.shutdown()
+                logger.info("MCP Router shutdown successfully.")
+            except Exception as e:
+                logger.error(f"Error shutting down MCP Router: {e}", exc_info=True)
+        else:
+            logger.info("MCP Router instance not found for shutdown.")
+
+        logger.info("Closing ActionExecutor...")
+        if client:
+            try:
+                client.close()
+                logger.info("ActionExecutor closed successfully.")
+            except Exception as e:
+                logger.error(f"Error closing ActionExecutor: {e}", exc_info=True)
+        else:
+            logger.info("ActionExecutor instance not found for closing.")
+        logger.info("Shutdown complete.")
 
     app = FastAPI(lifespan=lifespan)
 

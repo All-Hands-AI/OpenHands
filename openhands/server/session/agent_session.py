@@ -27,7 +27,7 @@ from openhands.security import SecurityAnalyzer, options
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import EXECUTOR, call_sync_from_async
 from openhands.utils.shutdown_listener import should_continue
-
+from openhands.mcp import add_mcp_tools_to_agent
 WAIT_TIME_BEFORE_CLOSE = 90
 WAIT_TIME_BEFORE_CLOSE_INTERVAL = 5
 
@@ -148,6 +148,10 @@ class AgentSession:
             repo_directory = None
             if self.runtime and runtime_connected and selected_repository:
                 repo_directory = selected_repository.full_name.split('/')[-1]
+
+            if self.runtime and runtime_connected:
+                await add_mcp_tools_to_agent(agent, self.runtime, config.mcp)
+
             self.memory = await self._create_memory(
                 selected_repository=selected_repository,
                 repo_directory=repo_directory,

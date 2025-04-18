@@ -12,6 +12,7 @@ class MCPConfig(BaseModel):
     """
 
     mcp_servers: List[str] = Field(default_factory=list)
+    selected_tool_names: List[str] = Field(default_factory=list)
 
     model_config = {'extra': 'forbid'}
 

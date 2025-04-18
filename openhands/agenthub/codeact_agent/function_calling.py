@@ -55,7 +55,10 @@ def combine_thought(action: Action, thought: str) -> Action:
     return action
 
 
-def response_to_actions(response: ModelResponse) -> list[Action]:
+def response_to_actions(
+    response: ModelResponse,
+    mcp_tools: dict[str, ChatCompletionToolParam]
+) -> list[Action]:
     actions: list[Action] = []
     assert len(response.choices) == 1, 'Only one choice is supported for now'
     choice = response.choices[0]
@@ -199,9 +202,9 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
             # ================================================
             # McpAction (MCP)
             # ================================================
-            elif tool_call.function.name.endswith(MCPClientTool.postfix()):
+            elif tool_call.function.name in mcp_tools:
                 action = McpAction(
-                    name=tool_call.function.name.rstrip(MCPClientTool.postfix()),
+                    name=tool_call.function.name,
                     arguments=tool_call.function.arguments,
                 )
             else:
