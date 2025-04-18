@@ -11,17 +11,17 @@ import 'react-json-view-lite/dist/index.css';
 // Custom JSON viewer styles that match our application theme
 const customJsonStyles = {
   container: "bg-transparent",
-  basicChildStyle: "text-gray-300",
-  stringValue: "text-green-400",
-  numberValue: "text-blue-400",
-  booleanValue: "text-yellow-400",
-  nullValue: "text-red-400",
-  keyStyle: "text-primary font-semibold",
-  arrowStyle: "text-gray-400",
+  basicChildStyle: "text-gray-300 text-sm leading-relaxed",
+  stringValue: "text-green-400 font-medium",
+  numberValue: "text-blue-400 font-medium",
+  booleanValue: "text-yellow-400 font-medium",
+  nullValue: "text-red-400 font-medium",
+  keyStyle: "text-primary font-semibold mr-2",
+  arrowStyle: "text-gray-400 mr-1",
   // Add more spacing for better readability
-  itemMargin: "my-1",
+  itemMargin: "my-2",
   // Increase indentation for better hierarchy visualization
-  indentSize: 20,
+  indentSize: 24,
 };
 
 interface SystemMessageModalProps {
@@ -124,7 +124,7 @@ export function SystemMessageModal({
 
             <div className="h-[60vh] overflow-auto rounded-md border border-gray-700 bg-gray-900">
               {activeTab === "system" && (
-                <div className="p-5 whitespace-pre-wrap font-mono text-sm leading-relaxed bg-gray-900 text-gray-300">
+                <div className="p-6 whitespace-pre-wrap font-mono text-sm leading-relaxed bg-gray-900 text-gray-300 shadow-inner">
                   {systemMessage.content}
                 </div>
               )}
@@ -160,7 +160,7 @@ export function SystemMessageModal({
                         
                         {isExpanded && (
                           <div className="px-4 pb-4 pt-1">
-                            <div className="mt-2 mb-4 p-3 bg-gray-800/50 rounded-md border border-gray-700/50">
+                            <div className="mt-2 mb-4 p-4 bg-gray-800/50 rounded-md border border-gray-700/50 shadow-inner">
                               <p className="text-sm whitespace-pre-wrap text-gray-300 leading-relaxed">
                                 {String(description)}
                               </p>
@@ -170,7 +170,7 @@ export function SystemMessageModal({
                             {parameters && (
                               <div className="mt-3">
                                 <h4 className="text-sm font-semibold text-gray-300">{t("SYSTEM_MESSAGE_MODAL$PARAMETERS")}</h4>
-                                <div className="text-sm mt-2 p-4 bg-gray-900 rounded-md overflow-auto border border-gray-700 text-gray-300 max-h-[300px]">
+                                <div className="text-sm mt-2 p-4 bg-gray-900 rounded-md overflow-auto border border-gray-700 text-gray-300 max-h-[400px] shadow-inner">
                                   <JsonView 
                                     data={parameters}
                                     style={customJsonStyles}
