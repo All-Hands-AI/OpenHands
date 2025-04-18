@@ -21,7 +21,7 @@ class Platform(Enum):
 
 
 def identify_token(
-    token: str, selected_repo: str | None = None, base_domain: str = 'github.com'
+    token: str, selected_repo: str | None = None, base_domain: str | None = 'github.com'
 ) -> Platform:
     """
     Identifies whether a token belongs to GitHub or GitLab.
@@ -37,7 +37,7 @@ def identify_token(
              "Invalid" if the token is not recognized by either.
     """
     # Determine GitHub API base URL based on domain
-    if base_domain == 'github.com':
+    if base_domain is None or base_domain == 'github.com':
         github_api_base = 'https://api.github.com'
     else:
         github_api_base = f'https://{base_domain}/api/v3'
