@@ -102,8 +102,6 @@ async def connect(connection_id: str, environ):
         try:
             if jwt_token is None:
                 raise jwt.InvalidTokenError('No JWT token provided')
-            # Verify and decode JWT token
-            payload = jwt.decode(jwt_token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
 
             user: ThesisUser | None = await get_user_detail_from_thesis_auth_server(
                 'Bearer ' + jwt_token
@@ -112,7 +110,7 @@ async def connect(connection_id: str, environ):
                 logger.error(f'User not found in database: {user_id}')
                 raise ConnectionRefusedError('User not found')
 
-            user_id = payload['user']['publicAddress']
+            user_id = user.publicAddress
 
             # TODO: If the user is not whitelisted and the run mode is DEV, skip the check
             if (
