@@ -3,6 +3,7 @@ import copy
 import json
 import os
 import tempfile
+from copy import deepcopy
 from typing import Any, Literal
 
 import pandas as pd
@@ -250,6 +251,7 @@ def get_config(
         workspace_base=None,
         workspace_mount_path=None,
     )
+
     config.set_llm_config(
         update_llm_config_for_completions_logging(
             metadata.llm_config, metadata.eval_output_dir, instance['instance_id']
@@ -660,8 +662,11 @@ def process_instance(
             f'Got git diff for instance {instance.instance_id}:\n--------\n{git_patch}\n--------'
         )
     finally:
+        logger.info('Cleaning up runtime...')
         runtime.close()
     # ==========================================
+
+    logger.info('Runtime closed.')
 
     # ======= Attempt to evaluate the agent's edits =======
     # we use eval_infer.sh to evaluate the agent's edits, not here
@@ -695,6 +700,11 @@ def process_instance(
         metrics=metrics,
         error=state.last_error if state and state.last_error else None,
     )
+
+    logger.info(
+        f'Finished evaluation for instance {instance.instance_id} with error: {output.error}'
+    )
+
     return output
 
 

@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Type
+from datetime import datetime
 
 if TYPE_CHECKING:
     from openhands.controller.state.state import State
@@ -62,7 +63,7 @@ class Agent(ABC):
                 )
                 return None
 
-            system_message = self.prompt_manager.get_system_message()
+            system_message = self.prompt_manager.get_system_message(current_datetime=datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
             # Get tools if available
             tools = getattr(self, 'tools', None)

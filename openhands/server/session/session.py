@@ -2,6 +2,7 @@ import asyncio
 import time
 from copy import deepcopy
 from logging import LoggerAdapter
+from typing import Type, Union
 
 import socketio
 
@@ -59,12 +60,14 @@ class Session:
         self.last_active_ts = int(time.time())
         self.file_store = file_store
         self.logger = OpenHandsLoggerAdapter(extra={'session_id': sid})
+
         self.agent_session = AgentSession(
             sid,
             file_store,
             status_callback=self.queue_status_message,
             user_id=user_id,
         )
+
         self.agent_session.event_stream.subscribe(
             EventStreamSubscriber.SERVER, self.on_event, self.sid
         )
@@ -95,7 +98,17 @@ class Session:
             AgentStateChangedObservation('', AgentState.LOADING),
             EventSource.ENVIRONMENT,
         )
-        agent_cls = settings.agent or self.config.default_agent
+
+        if not self.config.enable_planning:
+            agent_cls = settings.agent or self.config.default_agent
+        else:
+            agent_cls = (
+                settings.task_solving_agent or self.config.default_task_solving_agent
+            )
+            planning_agent_cls = (
+                settings.planning_agent or self.config.default_planning_agent
+            )
+
         self.config.security.confirmation_mode = (
             self.config.security.confirmation_mode
             if settings.confirmation_mode is None
@@ -128,6 +141,7 @@ class Session:
 
         llm = self._create_llm(agent_cls)
         agent_config = self.config.get_agent_config(agent_cls)
+        # print(f'{agent_cls} agent_config: {agent_config.model_dump_json(indent=2)}')
 
         if settings.enable_default_condenser:
             # Default condenser chains a condenser that limits browser the total
@@ -151,6 +165,27 @@ class Session:
         agent = Agent.get_cls(agent_cls)(llm, agent_config)
         agent.set_mcp_tools(mcp_tools)
 
+        # Set planning agent if planning mode is enabled
+        planning_agent = None
+        if self.config.enable_planning:
+            planning_agent_config = self.config.get_agent_config(planning_agent_cls)
+            # print(f'{planning_agent_cls} planning_agent_config: {planning_agent_config.model_dump_json(indent=2)}')
+
+            if settings.enable_default_condenser:
+                default_condenser_config = LLMSummarizingCondenserConfig(
+                    llm_config=llm.config, keep_first=3, max_size=80
+                )
+
+                self.logger.info(
+                    f'Enabling default condenser for planning agent: {default_condenser_config}'
+                )
+                planning_agent_config.condenser = default_condenser_config
+
+            planning_agent = Agent.get_cls(planning_agent_cls)(
+                llm, planning_agent_config
+            )
+            planning_agent.set_mcp_tools(mcp_tools)
+
         git_provider_tokens = None
         selected_repository = None
         selected_branch = None
@@ -164,6 +199,7 @@ class Session:
                 runtime_name=self.config.runtime,
                 config=self.config,
                 agent=agent,
+                planning_agent=planning_agent,
                 max_iterations=max_iterations,
                 max_budget_per_task=self.config.max_budget_per_task,
                 agent_to_llm_config=self.config.get_agent_to_llm_config_map(),

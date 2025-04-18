@@ -36,6 +36,22 @@ The core configuration options are defined in the `[core]` section of the `confi
   - Default: `"/tmp/cache"`
   - Description: Cache directory path
 
+### Planning Configuration
+- `enable_planning`
+  - Type: `bool`
+  - Default: `false`
+  - Description: Enables or disables the planning feature that helps agents decompose and manage complex tasks
+
+- `default_planning_agent`
+  - Type: `str`
+  - Default: `PlanningAgent`
+  - Description: The agent responsible for planning and coordinating subtasks
+
+- `default_task_solving_agent`
+  - Type: `str`
+  - Default: `TaskSolvingAgent`
+  - Description: The agent that executes subtasks assigned by the planning agent. Typically CodeActAgent for programming tasks or TaskSolvingAgent for general tasks.
+
 ### Debugging and Logging
 - `debug`
   - Type: `bool`

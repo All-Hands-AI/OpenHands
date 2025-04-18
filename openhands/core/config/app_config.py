@@ -6,6 +6,8 @@ from openhands.core import logger
 from openhands.core.config.agent_config import AgentConfig
 from openhands.core.config.config_utils import (
     OH_DEFAULT_AGENT,
+    OH_DEFAULT_PLANNING_AGENT,
+    OH_DEFAULT_TASK_SOLVING_AGENT,
     OH_MAX_ITERATIONS,
     model_defaults_to_dict,
 )
@@ -20,6 +22,10 @@ class AppConfig(BaseModel):
     """Configuration for the app.
 
     Attributes:
+        enable_planning: Whether to enable planning.
+        default_planning_agent: Name of the default planning agent.
+        default_task_solving_agent: Name of the default task solving agent.
+
         llms: Dictionary mapping LLM names to their configurations.
             The default configuration is stored under the 'llm' key.
         agents: Dictionary mapping agent names to their configurations.
@@ -50,6 +56,10 @@ class AppConfig(BaseModel):
             input is read line by line. When enabled, input continues until /exit command.
         mcp: MCP configuration settings.
     """
+    # planning config
+    enable_planning: bool = Field(default=False)
+    default_planning_agent: str = Field(default=OH_DEFAULT_PLANNING_AGENT)
+    default_task_solving_agent: str = Field(default=OH_DEFAULT_TASK_SOLVING_AGENT)
 
     llms: dict[str, LLMConfig] = Field(default_factory=dict)
     agents: dict[str, AgentConfig] = Field(default_factory=dict)

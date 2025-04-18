@@ -1,4 +1,5 @@
 from typing import Generator
+import json
 
 from litellm import ModelResponse
 
@@ -18,6 +19,8 @@ from openhands.events.action import (
     FileReadAction,
     IPythonRunCellAction,
     MessageAction,
+    AssignTaskAction,
+    CreatePlanAction
 )
 from openhands.events.action.mcp import McpAction
 from openhands.events.action.message import SystemMessageAction
@@ -42,6 +45,7 @@ from openhands.events.observation.mcp import MCPObservation
 from openhands.events.observation.observation import Observation
 from openhands.events.serialization.event import truncate_content
 from openhands.utils.prompt import PromptManager, RepositoryInfo, RuntimeInfo
+from openhands.controller.state.plan import Plan
 
 
 class ConversationMemory:
@@ -260,6 +264,39 @@ class ConversationMemory:
                     content=content,
                 )
             ]
+        elif isinstance(action, AssignTaskAction):
+            return [Message(role='user', content=[TextContent(text=action.message)])]
+
+        elif isinstance(action, CreatePlanAction):
+            tool_metadata = action.tool_call_metadata
+            assert tool_metadata is not None, (
+                'Tool call metadata should NOT be None when function calling is enabled. Action: '
+                + str(action)
+            )
+
+            model_response: ModelResponse = tool_metadata.model_response
+            assistant_msg = getattr(model_response.choices[0], 'message')
+            content = assistant_msg.content or ''
+
+            args = eval(assistant_msg.tool_calls[0].function.arguments)
+            if 'command' in args:
+                del args['command']
+
+            plan = Plan(**args)
+
+            return [
+                Message(
+                    role='assistant',  # type: ignore[arg-type]
+                    content=[
+                        TextContent(
+                            text=(
+                                content + '\n' + json.dumps(plan.to_dict(), indent=2)
+                            ).strip()
+                        )
+                    ],
+                )
+            ]
+        
         elif isinstance(action, SystemMessageAction):
             # Convert SystemMessageAction to a system message
             return [
@@ -381,11 +418,14 @@ class ConversationMemory:
                 )
                 logger.debug('Vision disabled for browsing, showing text')
         elif isinstance(obs, AgentDelegateObservation):
+            content = "\n\n".join(list(obs.outputs.values()))
             text = truncate_content(
-                obs.outputs['content'] if 'content' in obs.outputs else '',
+                content,
                 max_message_chars,
             )
-            message = Message(role='user', content=[TextContent(text=text)])
+            role = obs.source.value if obs.source else 'user'
+            role = 'assistant' if role == 'agent' else 'user'
+            message = Message(role=role, content=[TextContent(text=text)])
         elif isinstance(obs, AgentThinkObservation):
             text = truncate_content(obs.content, max_message_chars)
             message = Message(role='user', content=[TextContent(text=text)])
