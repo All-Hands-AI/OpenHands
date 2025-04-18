@@ -181,7 +181,6 @@ def create_memory(
         memory.load_user_workspace_microagents(microagents)
 
         if selected_respository and repo_directory:
-            repo_name = selected_repository or 'local-repository'
             memory.set_repository_info(selected_repository, repo_directory)
 
     return memory
