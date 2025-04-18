@@ -1151,6 +1151,7 @@ def test_main(
     mock_args.target_branch = None
     mock_args.reviewer = None
     mock_args.pr_title = None
+    mock_args.selected_repo = None
     mock_parser.return_value.parse_args.return_value = mock_args
 
     # Setup environment variables
