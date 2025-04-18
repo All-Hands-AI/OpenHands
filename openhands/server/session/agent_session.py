@@ -82,6 +82,7 @@ class AgentSession:
         agent: Agent,
         max_iterations: int,
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
+        gitlab_base_url: str | None = None,
         max_budget_per_task: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
@@ -122,6 +123,7 @@ class AgentSession:
                 git_provider_tokens=git_provider_tokens,
                 selected_repository=selected_repository,
                 selected_branch=selected_branch,
+                gitlab_base_url=gitlab_base_url,
             )
 
             if replay_json:
@@ -154,7 +156,9 @@ class AgentSession:
             )
 
             if git_provider_tokens:
-                provider_handler = ProviderHandler(provider_tokens=git_provider_tokens)
+                provider_handler = ProviderHandler(
+                    provider_tokens=git_provider_tokens, gitlab_base_url=gitlab_base_url
+                )
                 await provider_handler.set_event_stream_secrets(self.event_stream)
 
             if not self._closed:
@@ -260,6 +264,7 @@ class AgentSession:
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
         selected_repository: Repository | None = None,
         selected_branch: str | None = None,
+        gitlab_base_url: str | None = None,
     ) -> bool:
         """Creates a runtime instance
 
@@ -293,7 +298,8 @@ class AgentSession:
         else:
             provider_handler = ProviderHandler(
                 provider_tokens=git_provider_tokens
-                or cast(PROVIDER_TOKEN_TYPE, MappingProxyType({}))
+                or cast(PROVIDER_TOKEN_TYPE, MappingProxyType({})),
+                gitlab_base_url=gitlab_base_url,
             )
             env_vars = await provider_handler.get_env_vars(expose_secrets=True)
 
@@ -325,7 +331,10 @@ class AgentSession:
 
         if selected_repository and git_provider_tokens:
             await self.runtime.clone_repo(
-                git_provider_tokens, selected_repository, selected_branch
+                git_provider_tokens,
+                selected_repository,
+                selected_branch,
+                gitlab_base_url=gitlab_base_url,
             )
             await call_sync_from_async(self.runtime.maybe_run_setup_script)
 

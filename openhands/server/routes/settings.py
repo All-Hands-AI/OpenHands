@@ -146,7 +146,7 @@ async def check_provider_tokens(request: Request, settings: POSTSettingsModel) -
         for token_type, token_value in settings.provider_tokens.items():
             if token_value:
                 confirmed_token_type = await validate_provider_token(
-                    SecretStr(token_value)
+                    SecretStr(token_value), gitlab_base_url=settings.gitlab_base_url
                 )
                 if not confirmed_token_type or confirmed_token_type.value != token_type:
                     return f'Invalid token. Please make sure it is a valid {token_type} token.'

@@ -15,7 +15,8 @@ from openhands.integrations.service_types import (
     UnknownException,
     User,
 )
-from openhands.server.auth import get_access_token, get_provider_tokens
+
+from openhands.server.auth import get_access_token, get_provider_tokens, get_gitlab_base_url
 from openhands.server.shared import server_config
 
 app = APIRouter(prefix='/api/user')
@@ -26,10 +27,13 @@ async def get_user_repositories(
     sort: str = 'pushed',
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     access_token: SecretStr | None = Depends(get_access_token),
+    gitlab_base_url: str | None = Depends(get_gitlab_base_url),
 ):
     if provider_tokens:
         client = ProviderHandler(
-            provider_tokens=provider_tokens, external_auth_token=access_token
+            provider_tokens=provider_tokens,
+            external_auth_token=access_token,
+            gitlab_base_url=gitlab_base_url,
         )
 
         try:
@@ -60,10 +64,13 @@ async def get_user_repositories(
 async def get_user(
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     access_token: SecretStr | None = Depends(get_access_token),
+    gitlab_base_url: str | None = Depends(get_gitlab_base_url),
 ):
     if provider_tokens:
         client = ProviderHandler(
-            provider_tokens=provider_tokens, external_auth_token=access_token
+            provider_tokens=provider_tokens,
+            external_auth_token=access_token,
+            gitlab_base_url=gitlab_base_url,
         )
 
         try:
@@ -129,10 +136,13 @@ async def search_repositories(
     order: str = 'desc',
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     access_token: SecretStr | None = Depends(get_access_token),
+    gitlab_base_url: str | None = Depends(get_gitlab_base_url),
 ):
     if provider_tokens:
         client = ProviderHandler(
-            provider_tokens=provider_tokens, external_auth_token=access_token
+            provider_tokens=provider_tokens,
+            external_auth_token=access_token,
+            gitlab_base_url=gitlab_base_url,
         )
         try:
             repos: list[Repository] = await client.search_repositories(

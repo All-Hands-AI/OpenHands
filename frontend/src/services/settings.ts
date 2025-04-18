@@ -19,6 +19,7 @@ export const DEFAULT_SETTINGS: Settings = {
     github: "",
     gitlab: "",
   },
+  GITLAB_BASE_URL: "https://gitlab.com",
   IS_NEW_USER: true,
 };
 
