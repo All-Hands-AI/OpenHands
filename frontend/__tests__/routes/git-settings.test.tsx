@@ -269,4 +269,62 @@ describe("Form submission", () => {
     await userEvent.clear(gitlabInput);
     expect(submit).toBeDisabled();
   });
+
+  it("should enable a disconnect tokens button if there is at least one token set", async () => {
+    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+
+    getConfigSpy.mockResolvedValue(VALID_OSS_CONFIG);
+    getSettingsSpy.mockResolvedValue({
+      ...MOCK_DEFAULT_USER_SETTINGS,
+      provider_tokens_set: {
+        github: true,
+        gitlab: false,
+      },
+    });
+
+    renderGitSettingsScreen();
+
+    let disconnectButton = await screen.findByTestId(
+      "disconnect-tokens-button",
+    );
+    expect(disconnectButton).not.toBeDisabled();
+
+    getSettingsSpy.mockResolvedValue({
+      ...MOCK_DEFAULT_USER_SETTINGS,
+      provider_tokens_set: {
+        github: false,
+        gitlab: false,
+      },
+    });
+    queryClient.invalidateQueries();
+
+    disconnectButton = await screen.findByTestId("disconnect-tokens-button");
+    await waitFor(() => expect(disconnectButton).toBeDisabled());
+  });
+
+  it("should call logout when pressing the disconnect tokens button", async () => {
+    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    const logoutSpy = vi.spyOn(OpenHands, "logout");
+    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+
+    getConfigSpy.mockResolvedValue(VALID_OSS_CONFIG);
+    getSettingsSpy.mockResolvedValue({
+      ...MOCK_DEFAULT_USER_SETTINGS,
+      provider_tokens_set: {
+        github: true,
+        gitlab: false,
+      },
+    });
+
+    renderGitSettingsScreen();
+
+    const disconnectButton = await screen.findByTestId(
+      "disconnect-tokens-button",
+    );
+    await waitFor(() => expect(disconnectButton).not.toBeDisabled());
+    await userEvent.click(disconnectButton);
+
+    expect(logoutSpy).toHaveBeenCalled();
+  });
 });

@@ -8,10 +8,14 @@ import { I18nKey } from "#/i18n/declaration";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { GitHubTokenHelpAnchor } from "#/components/features/settings/git-settings/github-token-help-anchor";
 import { GitLabTokenHelpAnchor } from "#/components/features/settings/git-settings/gitlab-token-help-anchor";
+import { useLogout } from "#/hooks/mutation/use-logout";
 
 function GitSettingsScreen() {
   const { t } = useTranslation();
+
   const { mutate: saveSettings } = useSaveSettings();
+  const { mutate: disconnectGitTokens } = useLogout();
+
   const { data: settings } = useSettings();
   const { data: config } = useConfig();
 
@@ -25,6 +29,14 @@ function GitSettingsScreen() {
   const isGitLabTokenSet = settings?.PROVIDER_TOKENS_SET.gitlab;
 
   const formAction = async (formData: FormData) => {
+    const disconnectButtonClicked =
+      formData.get("disconnect-tokens-button") !== null;
+
+    if (disconnectButtonClicked) {
+      disconnectGitTokens();
+      return;
+    }
+
     const githubToken = formData.get("github-token-input")?.toString() || "";
     const gitlabToken = formData.get("gitlab-token-input")?.toString() || "";
 
@@ -77,6 +89,16 @@ function GitSettingsScreen() {
           <GitLabTokenHelpAnchor />
         </>
       )}
+
+      <BrandButton
+        testId="disconnect-tokens-button"
+        name="disconnect-tokens-button"
+        type="submit"
+        variant="secondary"
+        isDisabled={!isGitHubTokenSet && !isGitLabTokenSet}
+      >
+        Disconnect Tokens
+      </BrandButton>
 
       <BrandButton
         testId="submit-button"
