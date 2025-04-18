@@ -103,9 +103,6 @@ export function ApiKeysManager() {
     <>
       <div className="flex flex-col gap-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">
-            {t(I18nKey.SETTINGS$API_KEYS)}
-          </h2>
           <BrandButton
             type="button"
             variant="primary"
@@ -122,11 +119,6 @@ export function ApiKeysManager() {
         {isLoading && (
           <div className="flex justify-center p-4">
             <LoadingSpinner size="large" />
-          </div>
-        )}
-        {!isLoading && Array.isArray(apiKeys) && apiKeys.length === 0 && (
-          <div className="text-center p-4 border border-tertiary rounded-md">
-            {t(I18nKey.SETTINGS$NO_API_KEYS)}
           </div>
         )}
         {!isLoading && Array.isArray(apiKeys) && apiKeys.length > 0 && (

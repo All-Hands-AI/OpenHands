@@ -13,10 +13,6 @@ import { I18nKey } from "#/i18n/declaration";
 export const clientLoader = async () => {
   const config = queryClient.getQueryData<GetConfigResponse>(["config"]);
 
-  if (config?.APP_MODE !== "saas" || !config.FEATURE_FLAGS.ENABLE_BILLING) {
-    return redirect("/settings");
-  }
-
   return null;
 };
 

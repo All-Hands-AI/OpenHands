@@ -40,10 +40,6 @@ export function PaymentForm() {
       data-testid="billing-settings"
       className="flex flex-col gap-6 px-11 py-9"
     >
-      <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">
-        {t(I18nKey.PAYMENT$MANAGE_CREDITS)}
-      </h2>
-
       <div
         className={cn(
           "flex items-center justify-between w-[680px] bg-[#7F7445] rounded px-3 py-2",
