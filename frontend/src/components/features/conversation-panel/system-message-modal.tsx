@@ -36,17 +36,17 @@ export function SystemMessageModal({
         <ModalBody className="max-w-4xl max-h-[80vh] flex flex-col items-start">
           <div className="flex flex-col gap-2 w-full">
             <BaseModalTitle title="Agent Tools & Metadata" />
-            <div className="flex flex-col gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-md mb-4">
+            <div className="flex flex-col gap-2 p-3 bg-gray-800 rounded-md mb-4">
               {systemMessage.agent_class && (
                 <div className="text-sm">
-                  <span className="font-semibold text-gray-700 dark:text-gray-300">Agent Class:</span>{" "}
+                  <span className="font-semibold text-gray-300">Agent Class:</span>{" "}
                   <span className="font-medium text-primary">{systemMessage.agent_class}</span>
                 </div>
               )}
               {systemMessage.openhands_version && (
                 <div className="text-sm">
-                  <span className="font-semibold text-gray-700 dark:text-gray-300">OpenHands Version:</span>{" "}
-                  <span>{systemMessage.openhands_version}</span>
+                  <span className="font-semibold text-gray-300">OpenHands Version:</span>{" "}
+                  <span className="text-gray-100">{systemMessage.openhands_version}</span>
                 </div>
               )}
             </div>
@@ -82,27 +82,25 @@ export function SystemMessageModal({
               )}
             </div>
 
-            {activeTab === "system" && (
-              <div className="max-h-[50vh] overflow-auto rounded-md border border-gray-200 dark:border-gray-700">
+            <div className="h-[50vh] overflow-auto rounded-md border border-gray-700 bg-gray-900">
+              {activeTab === "system" && (
                 <div className="p-4 whitespace-pre-wrap font-mono text-sm">
                   {systemMessage.content}
                 </div>
-              </div>
-            )}
+              )}
 
-            {activeTab === "tools" && systemMessage.tools && systemMessage.tools.length > 0 && (
-              <div className="max-h-[50vh] overflow-auto">
-                <div className="space-y-4">
+              {activeTab === "tools" && systemMessage.tools && systemMessage.tools.length > 0 && (
+                <div className="p-4 space-y-4">
                   {systemMessage.tools.map((tool, index) => (
-                    <div key={index} className="border rounded-md p-4 bg-gray-50 dark:bg-gray-800">
+                    <div key={index} className="border rounded-md p-4 bg-gray-800 border-gray-700">
                       <h3 className="font-bold text-primary">{String(tool.name || "")}</h3>
-                      <p className="text-sm whitespace-pre-wrap mt-1">
+                      <p className="text-sm whitespace-pre-wrap mt-1 text-gray-300">
                         {String(tool.description || "")}
                       </p>
                       {tool.parameters ? (
                         <div className="mt-3">
-                          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Parameters:</h4>
-                          <pre className="text-xs mt-1 p-3 bg-gray-100 dark:bg-gray-900 rounded-md overflow-auto border border-gray-200 dark:border-gray-700">
+                          <h4 className="text-sm font-semibold text-gray-300">Parameters:</h4>
+                          <pre className="text-xs mt-1 p-3 bg-gray-900 rounded-md overflow-auto border border-gray-700 text-gray-300">
                             {JSON.stringify(tool.parameters, null, 2)}
                           </pre>
                         </div>
@@ -110,8 +108,14 @@ export function SystemMessageModal({
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
+              )}
+              
+              {activeTab === "tools" && (!systemMessage.tools || systemMessage.tools.length === 0) && (
+                <div className="flex items-center justify-center h-full p-4">
+                  <p className="text-gray-400">No tools available for this agent</p>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="w-full mt-6 flex justify-end">
