@@ -93,7 +93,8 @@ class RemoteRuntime(ActionExecutionClient):
         message = f'[runtime session_id={self.sid} runtime_id={self.runtime_id or "unknown"}] {message}'
         getattr(logger, level)(message, stacklevel=2)
 
-    def _get_action_execution_server_host(self):
+    @property
+    def action_execution_server_url(self):
         return self.runtime_url
 
     async def connect(self):
@@ -474,3 +475,4 @@ class RemoteRuntime(ActionExecutionClient):
 
     def _stop_if_closed(self, retry_state: tenacity.RetryCallState) -> bool:
         return self._runtime_closed
+    

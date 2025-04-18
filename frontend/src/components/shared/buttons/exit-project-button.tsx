@@ -9,7 +9,7 @@ interface ExitProjectButtonProps {
 
 export function ExitProjectButton({ onClick }: ExitProjectButtonProps) {
   const { t } = useTranslation();
-  const startNewProject = t(I18nKey.PROJECT$START_NEW);
+  const startNewProject = t(I18nKey.CONVERSATION$START_NEW);
   return (
     <TooltipButton
       tooltip={startNewProject}
