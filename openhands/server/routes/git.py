@@ -88,10 +88,6 @@ async def get_user(
     )
 
 
-@app.get('/installations', response_model=list[int])
-async def get_github_installation_ids(
-    provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
-    access_token: SecretStr | None = Depends(get_access_token),
 @app.get('/search/repositories', response_model=list[Repository])
 async def search_repositories(
     query: str,
