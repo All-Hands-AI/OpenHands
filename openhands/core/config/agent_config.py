@@ -22,9 +22,6 @@ class AgentConfig(BaseModel):
     """
 
     llm_config: str | None = Field(default=None)
-    micro_agent_name: str | None = Field(default=None)
-    memory_enabled: bool = Field(default=False)
-    memory_max_threads: int = Field(default=3)
     enable_browsing: bool = Field(default=True)
     enable_llm_editor: bool = Field(default=False)
     enable_jupyter: bool = Field(default=True)
