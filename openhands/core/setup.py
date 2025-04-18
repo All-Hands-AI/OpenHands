@@ -180,7 +180,7 @@ def create_memory(
         )
         memory.load_user_workspace_microagents(microagents)
 
-        if selected_respository and repo_directory:
+        if selected_repository and repo_directory:
             memory.set_repository_info(selected_repository, repo_directory)
 
     return memory
