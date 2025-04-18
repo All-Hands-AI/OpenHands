@@ -173,6 +173,8 @@ def run_solver(
         os.makedirs(screenshots_dir, exist_ok=True)
         for image_id, obs in enumerate(state.history):
             if isinstance(obs, BrowserOutputObservation):
+                if obs.screenshot is None:
+                    continue
                 image_data = base64.b64decode(
                     obs.screenshot.replace('data:image/png;base64,', '')
                 )
@@ -200,6 +202,12 @@ def run_solver(
 def run_evaluator(
     runtime: Runtime, env_llm_config: LLMConfig, trajectory_path: str, result_path: str
 ):
+    # HACK: this allows us to use the anthropic API for evaluator LLM.
+    if 'sde-add-wiki-page' in trajectory_path:
+        command = 'python_default -m pip install -U litellm'
+        action = CmdRunAction(command=command)
+        obs = runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     command = (
         f'LITELLM_API_KEY={env_llm_config.api_key.get_secret_value() if env_llm_config.api_key else None} '
         f'LITELLM_BASE_URL={env_llm_config.base_url} '

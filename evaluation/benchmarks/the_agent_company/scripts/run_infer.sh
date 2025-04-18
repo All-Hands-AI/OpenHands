@@ -126,7 +126,9 @@ echo "Using tasks No. $start_line to $end_line (inclusive) out of 1-175 tasks"
 
 # Create a temporary file with just the desired range
 temp_file="tasks_${START_PERCENTILE}_${END_PERCENTILE}.md"
+echo $end_line
 sed -n "${start_line},${end_line}p" tasks.md > "$temp_file"
+echo "" >> "$temp_file"
 
 cnt=0
 while IFS= read -r task_image; do
@@ -142,32 +144,35 @@ while IFS= read -r task_image; do
         echo "Skipping $task_name - evaluation file already exists"
         continue
     fi
-    if (( cnt % 2 != 0 )); then
-        docker pull $task_image
-
-        # Build the Python command
-        COMMAND="/home/adityasoni9998/miniconda3/envs/openhands/bin/poetry run python evaluation/benchmarks/the_agent_company/run_infer.py \
-                --agent-llm-config \"$AGENT_LLM_CONFIG\" \
-                --env-llm-config \"$ENV_LLM_CONFIG\" \
-                --outputs-path \"$OUTPUTS_PATH\" \
-                --server-hostname \"$SERVER_HOSTNAME\" \
-                --task-image-name \"$task_image\""
-
-        # Add agent-config if it's defined
-        if [ -n "$AGENT_CONFIG" ]; then
-            COMMAND="$COMMAND --agent-config $AGENT_CONFIG"
-        fi
-
-        export PYTHONPATH=evaluation/benchmarks/the_agent_company:$PYTHONPATH && \
-            eval "$COMMAND"
-        # Prune unused images and volumes
-        docker image rm "$task_image"
-        docker images "ghcr.io/all-hands-ai/runtime" -q | xargs -r docker rmi -f
-        docker volume prune -f
-        docker system prune -f
+    # if (( cnt % 2 == 0 )); then
+    if [[ "$task_name" == *"sde-debug-crashed-server"* ]]; then
+        continue
     fi
+    docker pull $task_image
+
+    # Build the Python command
+    COMMAND="/home/ubuntu/miniconda3/envs/openhands/bin/poetry run python evaluation/benchmarks/the_agent_company/run_infer.py \
+            --agent-llm-config \"$AGENT_LLM_CONFIG\" \
+            --env-llm-config \"$ENV_LLM_CONFIG\" \
+            --outputs-path \"$OUTPUTS_PATH\" \
+            --server-hostname \"$SERVER_HOSTNAME\" \
+            --task-image-name \"$task_image\""
+
+    # Add agent-config if it's defined
+    if [ -n "$AGENT_CONFIG" ]; then
+        COMMAND="$COMMAND --agent-config $AGENT_CONFIG"
+    fi
+
+    export PYTHONPATH=evaluation/benchmarks/the_agent_company:$PYTHONPATH && \
+        eval "$COMMAND"
+    # Prune unused images and volumes
+    # docker image rm "$task_image"
+    # docker images "ghcr.io/all-hands-ai/runtime" -q | xargs -r docker rmi -f
+    # docker volume prune -f
+    # docker system prune -f
+    # fi
 done < "$temp_file"
 
-rm tasks.md "$temp_file"
+# rm tasks.md "$temp_file"
 
 echo "All evaluation completed successfully!"
