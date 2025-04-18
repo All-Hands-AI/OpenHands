@@ -29,6 +29,14 @@ async def signup(request: SignupRequest) -> SignupResponse:
     payload = {'signature': request.signature, 'publicAddress': request.publicAddress}
     headers = {'Content-Type': 'application/json'}
 
+    return SignupResponse(
+            token='jwt_token',
+            user={
+                'id': '0x25bE302C3954b4DF9F67AFD6BfDD8c39f4Dc98Dc',
+                'publicAddress': '0x25bE302C3954b4DF9F67AFD6BfDD8c39f4Dc98Dc',
+        },
+    )
+
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
             response = await client.post(url, headers=headers, json=payload)

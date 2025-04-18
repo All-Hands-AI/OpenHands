@@ -28,6 +28,17 @@ class ThesisUser(BaseModel):
 async def get_user_detail_from_thesis_auth_server(
     bearer_token: str,
 ) -> ThesisUser | None:
+    
+    # TODO: bypass auth server for dev mode
+    return ThesisUser(
+        status=UserStatus.ACTIVE,
+        whitelisted=1,
+        publicAddress='0x25bE302C3954b4DF9F67AFD6BfDD8c39f4Dc98Dc',
+        mnemonic='test test test test test test test test test test test junk',
+        solanaThesisAddress='0x25bE302C3954b4DF9F67AFD6BfDD8c39f4Dc98Dc',
+        ethThesisAddress='0x25bE302C3954b4DF9F67AFD6BfDD8c39f4Dc98Dc',
+    )
+
     url = f"{os.getenv('THESIS_AUTH_SERVER_URL')}/api/users/detail"
     headers = {'Content-Type': 'application/json', 'Authorization': bearer_token}
 
