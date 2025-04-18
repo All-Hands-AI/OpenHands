@@ -49,65 +49,71 @@ function GitSettingsScreen() {
   };
 
   return (
-    <form data-testid="git-settings-screen" action={formAction}>
+    <form
+      data-testid="git-settings-screen"
+      action={formAction}
+      className="flex flex-col h-full justify-between"
+    >
       {isSaas && config.APP_SLUG && (
         <div data-testid="configure-github-repositories-button" />
       )}
 
       {!isSaas && (
-        <>
-          <SettingsInput
-            testId="github-token-input"
-            onChange={(value) => {
-              setGithubTokenInputHasValue(!!value);
-            }}
-            name="github-token-input"
-            label={t(I18nKey.GITHUB$TOKEN_LABEL)}
-            type="password"
-            className="w-[680px]"
-            placeholder={isGitHubTokenSet ? "<hidden>" : ""}
-          />
+        <div className="px-11 py-9 flex flex-col gap-12">
+          <div className="flex flex-col gap-6">
+            <SettingsInput
+              testId="github-token-input"
+              onChange={(value) => {
+                setGithubTokenInputHasValue(!!value);
+              }}
+              name="github-token-input"
+              label={t(I18nKey.GITHUB$TOKEN_LABEL)}
+              type="password"
+              className="w-[680px]"
+              placeholder={isGitHubTokenSet ? "<hidden>" : ""}
+            />
 
-          <GitHubTokenHelpAnchor />
-        </>
+            <GitHubTokenHelpAnchor />
+          </div>
+
+          <div className="flex flex-col gap-6">
+            <SettingsInput
+              testId="gitlab-token-input"
+              onChange={(value) => {
+                setGitlabTokenInputHasValue(!!value);
+              }}
+              name="gitlab-token-input"
+              label={t(I18nKey.GITLAB$TOKEN_LABEL)}
+              type="password"
+              className="w-[680px]"
+              placeholder={isGitLabTokenSet ? "<hidden>" : ""}
+            />
+
+            <GitLabTokenHelpAnchor />
+          </div>
+        </div>
       )}
 
-      {!isSaas && (
-        <>
-          <SettingsInput
-            testId="gitlab-token-input"
-            onChange={(value) => {
-              setGitlabTokenInputHasValue(!!value);
-            }}
-            name="gitlab-token-input"
-            label={t(I18nKey.GITLAB$TOKEN_LABEL)}
-            type="password"
-            className="w-[680px]"
-            placeholder={isGitLabTokenSet ? "<hidden>" : ""}
-          />
+      <div className="flex gap-6 p-6 justify-end border-t border-t-tertiary">
+        <BrandButton
+          testId="disconnect-tokens-button"
+          name="disconnect-tokens-button"
+          type="submit"
+          variant="secondary"
+          isDisabled={!isGitHubTokenSet && !isGitLabTokenSet}
+        >
+          Disconnect Tokens
+        </BrandButton>
 
-          <GitLabTokenHelpAnchor />
-        </>
-      )}
-
-      <BrandButton
-        testId="disconnect-tokens-button"
-        name="disconnect-tokens-button"
-        type="submit"
-        variant="secondary"
-        isDisabled={!isGitHubTokenSet && !isGitLabTokenSet}
-      >
-        Disconnect Tokens
-      </BrandButton>
-
-      <BrandButton
-        testId="submit-button"
-        type="submit"
-        variant="primary"
-        isDisabled={!githubTokenInputHasValue && !gitlabTokenInputHasValue}
-      >
-        Save Changes
-      </BrandButton>
+        <BrandButton
+          testId="submit-button"
+          type="submit"
+          variant="primary"
+          isDisabled={!githubTokenInputHasValue && !gitlabTokenInputHasValue}
+        >
+          Save Changes
+        </BrandButton>
+      </div>
     </form>
   );
 }
