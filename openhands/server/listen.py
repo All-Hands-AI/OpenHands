@@ -16,10 +16,6 @@ from openhands.server.middleware import (
 )
 from openhands.server.static import SPAStaticFiles
 
-base_app.mount(
-    '/', SPAStaticFiles(directory='./frontend/build', html=True), name='dist'
-)
-
 base_app.middleware('http')(AttachConversationMiddleware(base_app))
 
 # Add middleware to the base app - need to be added before the other middlewares
