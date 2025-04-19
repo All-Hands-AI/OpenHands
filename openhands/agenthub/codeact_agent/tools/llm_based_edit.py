@@ -10,6 +10,8 @@ _FILE_EDIT_DESCRIPTION = """Edit a file in plain-text format.
 * To append to a file, set both `start` and `end` to `-1`.
 * If the file doesn't exist, a new file will be created with the provided content.
 * IMPORTANT: Make sure you include all the required indentations for each line of code in the draft, otherwise the editted code will be incorrectly indented.
+* IMPORTANT: Begin the draft with an informative comment. The first line of the draft should always be a comment
+* IMPORTANT: NEVER include or make references to lines from outside the `start` and `end` range in the draft.
 
 **Example 1: general edit for short files**
 For example, given an existing file `/path/to/file.py` that looks like this:
