@@ -6,9 +6,6 @@ from litellm import ChatCompletionMessageToolCall
 
 from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
 from openhands.agenthub.codeact_agent.function_calling import (
-    get_tools as codeact_get_tools,
-)
-from openhands.agenthub.codeact_agent.function_calling import (
     response_to_actions as codeact_response_to_actions,
 )
 from openhands.agenthub.codeact_agent.tools import (
@@ -19,14 +16,10 @@ from openhands.agenthub.codeact_agent.tools import (
     WebReadTool,
     create_cmd_run_tool,
     create_str_replace_editor_tool,
-    response_to_actions,
 )
 from openhands.agenthub.codeact_agent.tools.browser import (
     _BROWSER_DESCRIPTION,
     _BROWSER_TOOL_DESCRIPTION,
-)
-from openhands.agenthub.readonly_agent.function_calling import (
-    get_tools as readonly_get_tools,
 )
 from openhands.agenthub.readonly_agent.function_calling import (
     response_to_actions as readonly_response_to_actions,
@@ -72,10 +65,13 @@ def agent(agent_class) -> Union[CodeActAgent, ReadOnlyAgent]:
     agent.llm.config.max_message_chars = 1000
     return agent
 
+
 def test_agent_with_default_config_has_default_tools(agent: CodeActAgent):
     assert len(agent.tools) > 0
     assert any(tool['function']['name'] == 'execute_bash' for tool in agent.tools)
-    assert any(tool['function']['name'] == 'execute_ipython_cell' for tool in agent.tools)
+    assert any(
+        tool['function']['name'] == 'execute_ipython_cell' for tool in agent.tools
+    )
     assert any(tool['function']['name'] == 'edit_file' for tool in agent.tools)
     assert any(tool['function']['name'] == 'web_read' for tool in agent.tools)
     assert any(tool['function']['name'] == 'browser' for tool in agent.tools)

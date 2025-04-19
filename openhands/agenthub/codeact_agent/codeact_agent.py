@@ -9,7 +9,9 @@ from openhands.agenthub.codeact_agent.tools.browser import BrowserTool
 from openhands.agenthub.codeact_agent.tools.finish import FinishTool
 from openhands.agenthub.codeact_agent.tools.ipython import IPythonTool
 from openhands.agenthub.codeact_agent.tools.llm_based_edit import LLMBasedFileEditTool
-from openhands.agenthub.codeact_agent.tools.str_replace_editor import create_str_replace_editor_tool
+from openhands.agenthub.codeact_agent.tools.str_replace_editor import (
+    create_str_replace_editor_tool,
+)
 from openhands.agenthub.codeact_agent.tools.think import ThinkTool
 from openhands.agenthub.codeact_agent.tools.web_read import WebReadTool
 from openhands.controller.agent import Agent
@@ -91,8 +93,9 @@ class CodeActAgent(Agent):
 
         self.condenser = Condenser.from_config(self.config.condenser)
         logger.debug(f'Using condenser: {type(self.condenser)}')
-        
-    
+
+        self.response_to_actions_fn = codeact_function_calling.response_to_actions
+
     def _get_tools(self) -> list[ChatCompletionToolParam]:
         SIMPLIFIED_TOOL_DESCRIPTION_LLM_SUBSTRS = ['gpt-', 'o3', 'o1']
 
@@ -105,7 +108,9 @@ class CodeActAgent(Agent):
 
         tools = []
         if self.config.enable_cmd:
-            tools.append(create_cmd_run_tool(use_simplified_description=use_simplified_tool_desc))
+            tools.append(
+                create_cmd_run_tool(use_simplified_description=use_simplified_tool_desc)
+            )
         if self.config.enable_think:
             tools.append(ThinkTool)
         if self.config.enable_finish:
@@ -125,8 +130,6 @@ class CodeActAgent(Agent):
             )
         return tools
 
-
-        self.response_to_actions_fn = codeact_function_calling.response_to_actions
 
     def reset(self) -> None:
         """Resets the CodeAct Agent."""

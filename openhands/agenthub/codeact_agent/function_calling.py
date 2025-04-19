@@ -40,7 +40,6 @@ from openhands.events.action import (
 from openhands.events.action.mcp import McpAction
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.tool import ToolCallMetadata
-from openhands.llm import LLM
 from openhands.mcp import MCPClientTool
 
 
