@@ -51,9 +51,10 @@ class ReadOnlyAgent(CodeActAgent):
         # Set up our own prompt manager
         self.prompt_manager = PromptManager(
             prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
+            config=self.config,
         )
 
-        self.response_to_actions_fn = readonly_function_calling.response_to_actions
+        self.response_to_actions_fn = readonly_function_calling.response_to_actions  # type: ignore [assignment]
 
         logger.debug(
             f"TOOLS loaded for ReadOnlyAgent: {', '.join([tool.get('function').get('name') for tool in self.tools])}"

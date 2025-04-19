@@ -9,7 +9,6 @@ from openhands.agenthub.codeact_agent.llm_diff_parser import (
     strip_filename,  # Import if you add tests for this
 )
 
-
 # Test cases for parse_llm_response_for_diffs
 
 
@@ -204,7 +203,9 @@ new
 ```
 """
     valid_fnames = ['src/app.py', 'src/utils.py']
-    expected_blocks = [DiffBlock(filename='src/app.py', search='old\n', replace='new\n')]
+    expected_blocks = [
+        DiffBlock(filename='src/app.py', search='old\n', replace='new\n')
+    ]
 
     blocks = parse_llm_response_for_diffs(content, valid_fnames=valid_fnames)
 
@@ -257,7 +258,9 @@ new file content
 >>>>>>> REPLACE
 ```
 """
-    with pytest.raises(LLMMalformedActionError, match='Could not determine filename for new file block'):
+    with pytest.raises(
+        LLMMalformedActionError, match='Could not determine filename for new file block'
+    ):
         parse_llm_response_for_diffs(content)
 
 
@@ -481,7 +484,9 @@ def test_find_filename_strip_chars():
 
 def test_find_filename_strip_colon():
     lines = ['File: src/app.py:', '```python']
-    assert find_filename(lines) == 'src/app.py' # Assuming strip_filename handles 'File: ' prefix
+    assert (
+        find_filename(lines) == 'src/app.py'
+    )  # Assuming strip_filename handles 'File: ' prefix
 
 
 def test_find_filename_no_filename():
@@ -490,7 +495,12 @@ def test_find_filename_no_filename():
 
 
 def test_find_filename_too_far():
-    lines = ['file.py', 'another line', 'yet another', '```python'] # file.py is too far back
+    lines = [
+        'file.py',
+        'another line',
+        'yet another',
+        '```python',
+    ]  # file.py is too far back
     assert find_filename(lines) is None
 
 
@@ -514,22 +524,22 @@ def test_find_filename_valid_fnames_no_match():
 
 
 def test_strip_filename_basic():
-    assert strip_filename(" file.py ") == "file.py"
-    assert strip_filename("`file.py`") == "file.py"
-    assert strip_filename("*file.py*") == "file.py"
-    assert strip_filename("file.py:") == "file.py"
-    assert strip_filename("# file.py") == "file.py"
-    assert strip_filename("`*# file.py:*` ") == "file.py"
+    assert strip_filename(' file.py ') == 'file.py'
+    assert strip_filename('`file.py`') == 'file.py'
+    assert strip_filename('*file.py*') == 'file.py'
+    assert strip_filename('file.py:') == 'file.py'
+    assert strip_filename('# file.py') == 'file.py'
+    assert strip_filename('`*# file.py:*` ') == 'file.py'
 
 
 def test_strip_filename_no_strip():
-    assert strip_filename("file.py") == "file.py"
+    assert strip_filename('file.py') == 'file.py'
 
 
 def test_strip_filename_none():
-    assert strip_filename(" ") is None
-    assert strip_filename("```") is None
-    assert strip_filename("...") is None
+    assert strip_filename(' ') is None
+    assert strip_filename('```') is None
+    assert strip_filename('...') is None
 
 
 def test_parse_with_different_fence():
@@ -557,10 +567,10 @@ def test_parse_whitespace_handling():
 file_with_whitespace.py
 <<<<<<< SEARCH
     leading whitespace
-trailing whitespace    
+trailing whitespace
 =======
     new leading whitespace
-new trailing whitespace    
+new trailing whitespace
 >>>>>>> REPLACE
 ```
 """
@@ -596,8 +606,12 @@ block 2 replace
 ```
 """
     expected_blocks = [
-        DiffBlock(filename='file_a.py', search='block 1 search\n', replace='block 1 replace\n'),
-        DiffBlock(filename='file_b.py', search='block 2 search\n', replace='block 2 replace\n'),
+        DiffBlock(
+            filename='file_a.py', search='block 1 search\n', replace='block 1 replace\n'
+        ),
+        DiffBlock(
+            filename='file_b.py', search='block 2 search\n', replace='block 2 replace\n'
+        ),
     ]
     blocks = parse_llm_response_for_diffs(content)
     assert blocks == expected_blocks

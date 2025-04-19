@@ -10,6 +10,10 @@ from litellm import (
     ModelResponse,
 )
 
+from openhands.agenthub.codeact_agent.llm_diff_parser import (
+    DiffBlock,
+    parse_llm_response_for_diffs,
+)
 from openhands.agenthub.codeact_agent.tools import (
     BrowserTool,
     FinishTool,
@@ -23,6 +27,7 @@ from openhands.agenthub.codeact_agent.tools import (
     create_cmd_run_tool,
     create_str_replace_editor_tool,
 )
+from openhands.core.config import AgentConfig
 from openhands.core.exceptions import (
     FunctionCallNotExistsError,
     FunctionCallValidationError,
@@ -41,12 +46,6 @@ from openhands.events.action import (
     IPythonRunCellAction,
     MessageAction,
 )
-from openhands.agenthub.codeact_agent.llm_diff_parser import (
-    DiffBlock,
-    parse_llm_response_for_diffs,
-)
-from openhands.core.config import AgentConfig
-from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.mcp import McpAction
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.tool import ToolCallMetadata
@@ -64,7 +63,9 @@ def combine_thought(action: Action, thought: str) -> Action:
     return action
 
 
-def response_to_actions(response: ModelResponse, is_llm_diff_enabled: bool = False) -> list[Action]:
+def response_to_actions(
+    response: ModelResponse, is_llm_diff_enabled: bool = False
+) -> list[Action]:
     """
     Parses the LLM response and converts it into a list of OpenHands Actions.
 
@@ -81,6 +82,7 @@ def response_to_actions(response: ModelResponse, is_llm_diff_enabled: bool = Fal
     tool_call_actions: list[Action] = []
     message_content: str = ''
     diff_parse_error: Exception | None = None
+    action: Action
 
     assert len(response.choices) == 1, 'Only one choice is supported for now'
     choice = response.choices[0]
@@ -99,10 +101,14 @@ def response_to_actions(response: ModelResponse, is_llm_diff_enabled: bool = Fal
         logger.debug('LLM Diff mode enabled, attempting to parse response content.')
         try:
             # Call the updated parser, expecting list[DiffBlock]
-            parsed_blocks: list[DiffBlock] = parse_llm_response_for_diffs(message_content)
+            parsed_blocks: list[DiffBlock] = parse_llm_response_for_diffs(
+                message_content
+            )
 
-            if parsed_blocks: # Check if the list is not empty
-                logger.info(f'Parsed {len(parsed_blocks)} diff blocks from LLM response.')
+            if parsed_blocks:  # Check if the list is not empty
+                logger.info(
+                    f'Parsed {len(parsed_blocks)} diff blocks from LLM response.'
+                )
                 # Create FileEditActions from the DiffBlock objects
                 for block in parsed_blocks:
                     action = FileEditAction(
@@ -115,18 +121,18 @@ def response_to_actions(response: ModelResponse, is_llm_diff_enabled: bool = Fal
 
         except ValueError as e:
             logger.error(f'Error parsing LLM diff blocks: {e}')
-            diff_parse_error = e # Store error for potential later use
+            diff_parse_error = e  # Store error for potential later use
         except Exception as e:
-             logger.error(f'Unexpected error during LLM diff parsing: {e}', exc_info=True)
-             diff_parse_error = e # Store error
+            logger.error(
+                f'Unexpected error during LLM diff parsing: {e}', exc_info=True
+            )
+            diff_parse_error = e  # Store error
 
     # 3. Process tool calls if they exist
     tool_calls_exist = hasattr(assistant_msg, 'tool_calls') and assistant_msg.tool_calls
     if tool_calls_exist:
-
         # Process each tool call
         for i, tool_call in enumerate(assistant_msg.tool_calls):
-            action: Action
             logger.debug(f'Tool call in function_calling.py: {tool_call}')
             try:
                 arguments = json.loads(tool_call.function.arguments)
@@ -222,8 +228,8 @@ def response_to_actions(response: ModelResponse, is_llm_diff_enabled: bool = Fal
                         path=path,
                         command=command,
                         impl_source=FileEditSource.OH_ACI,
-                    **other_kwargs,
-                )
+                        **other_kwargs,
+                    )
             # ================================================
             # New Utility Tools (Routing to OH_ACI)
             # ================================================
@@ -313,12 +319,12 @@ def response_to_actions(response: ModelResponse, is_llm_diff_enabled: bool = Fal
     if not all_actions:
         # If there was a diff parsing error, report it (even if no blocks were parsed)
         if diff_parse_error:
-             all_actions.append(
-                 MessageAction(
-                     content=f'[Error parsing diff blocks: {diff_parse_error}]\nOriginal Content:\n{message_content}',
-                     wait_for_response=True,
-                 )
-             )
+            all_actions.append(
+                MessageAction(
+                    content=f'[Error parsing diff blocks: {diff_parse_error}]\nOriginal Content:\n{message_content}',
+                    wait_for_response=True,
+                )
+            )
         # Otherwise, treat as a regular message if content exists
         elif message_content:
             all_actions.append(
@@ -329,8 +335,14 @@ def response_to_actions(response: ModelResponse, is_llm_diff_enabled: bool = Fal
             )
         # If no actions AND no content, add a default Think action
         else:
-            logger.warning(f"No actions generated and no message content for response: {response.id}")
-            all_actions.append(AgentThinkAction(thought="[No actionable content or tool calls found in response]"))
+            logger.warning(
+                f'No actions generated and no message content for response: {response.id}'
+            )
+            all_actions.append(
+                AgentThinkAction(
+                    thought='[No actionable content or tool calls found in response]'
+                )
+            )
 
     # If actions *were* generated, determine and apply thought
     else:
@@ -340,7 +352,7 @@ def response_to_actions(response: ModelResponse, is_llm_diff_enabled: bool = Fal
             for i, action in enumerate(all_actions):
                 if not isinstance(action, AgentThinkAction):
                     all_actions[i] = combine_thought(action, contextual_thought)
-                    break # Apply thought only to the first eligible action
+                    break  # Apply thought only to the first eligible action
 
     # 7. Add response id to all actions
     for action in all_actions:
@@ -348,17 +360,19 @@ def response_to_actions(response: ModelResponse, is_llm_diff_enabled: bool = Fal
 
     # 8. Final check (ensure at least one action exists)
     if not all_actions:
-         # This case should ideally be handled by step 5, but as a safeguard:
-         logger.error(f"CRITICAL: No actions generated for response {response.id} after all checks.")
-         # Create a default Think action if somehow we ended up with no actions
-         all_actions.append(AgentThinkAction(thought="[Critical Error: Failed to generate any action]"))
-         if all_actions[0]: all_actions[0].response_id = response.id
-
+        # This case should ideally be handled by step 5, but as a safeguard:
+        logger.error(
+            f'CRITICAL: No actions generated for response {response.id} after all checks.'
+        )
+        # Create a default Think action if somehow we ended up with no actions
+        all_actions.append(
+            AgentThinkAction(thought='[Critical Error: Failed to generate any action]')
+        )
+        if all_actions[0]:
+            all_actions[0].response_id = response.id
 
     return all_actions
 
-
-from openhands.core.config import AgentConfig
 
 def get_tools(
     config: AgentConfig,

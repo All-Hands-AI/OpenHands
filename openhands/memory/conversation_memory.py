@@ -571,24 +571,6 @@ class ConversationMemory:
             # when the LLM tries to return the next message
             raise ValueError(f'Unknown observation type: {type(obs)}')
 
-        # Handle observations following LLM_DIFF edits: format as user message, not tool response
-        if (
-            events
-            and current_index > 0
-            and isinstance(events[current_index - 1], FileEditAction)
-            and events[current_index - 1].impl_source == FileEditSource.LLM_DIFF
-        ):
-            if isinstance(obs, FileEditObservation):
-                # Use str(obs) which calls visualize_diff internally
-                obs_text = truncate_content(str(obs), max_message_chars)
-                return [Message(role='user', content=[TextContent(text=obs_text)])]
-            elif isinstance(obs, ErrorObservation):
-                # Also format errors following LLM_DIFF as user messages
-                error_text = truncate_content(obs.content, max_message_chars)
-                error_text += '\n[Error occurred during LLM_DIFF edit application]'
-                return [Message(role='user', content=[TextContent(text=error_text)])]
-            # Else: Fall through if it's some other observation type unexpectedly following LLM_DIFF
-
         # Update the message as tool response properly (for non-LLM_DIFF observations with metadata)
         if (tool_call_metadata := getattr(obs, 'tool_call_metadata', None)) is not None:
             tool_call_id_to_message[tool_call_metadata.tool_call_id] = Message(
