@@ -84,6 +84,10 @@ def handle_action_deprecated_args(args: dict[str, Any]) -> dict[str, Any]:
                 'command'
             )  # "view" will be translated to FileReadAction which doesn't have a command argument
 
+    # Handle is_static field for CmdRunAction
+    if 'is_static' in args and args['is_static'] is None:
+        args.pop('is_static')  # Remove is_static if it's None to use the default value
+
     return args
 
 

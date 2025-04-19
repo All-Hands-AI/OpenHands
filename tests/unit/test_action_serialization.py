@@ -224,6 +224,41 @@ def test_cmd_run_action_legacy_serialization():
     assert event_dict['args']['is_input'] is False
 
 
+def test_cmd_run_action_is_static_serialization():
+    # Test with is_static=None
+    original_action_dict = {
+        'action': 'run',
+        'args': {
+            'blocking': False,
+            'command': 'echo "Hello world"',
+            'thought': '',
+            'hidden': False,
+            'confirmation_state': ActionConfirmationStatus.CONFIRMED,
+            'is_static': None,
+            'cwd': None,
+        },
+    }
+    event = event_from_dict(original_action_dict)
+    assert isinstance(event, Action)
+    assert isinstance(event, CmdRunAction)
+    assert event.command == 'echo "Hello world"'
+    assert event.is_static is False  # Default value from class definition
+
+    event_dict = event_to_dict(event)
+    assert event_dict['args']['is_static'] is False  # Should use default value
+
+    # Test with is_static=True
+    original_action_dict['args']['is_static'] = True
+    event = event_from_dict(original_action_dict)
+    assert isinstance(event, Action)
+    assert isinstance(event, CmdRunAction)
+    assert event.command == 'echo "Hello world"'
+    assert event.is_static is True
+
+    event_dict = event_to_dict(event)
+    assert event_dict['args']['is_static'] is True
+
+
 def test_file_llm_based_edit_action_legacy_serialization():
     original_action_dict = {
         'action': 'edit',
