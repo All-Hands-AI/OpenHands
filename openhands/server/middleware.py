@@ -207,3 +207,18 @@ class ProviderTokenMiddleware(SessionMiddlewareInterface):
                 request.state.provider_tokens = None
 
         return await call_next(request)
+
+
+class MonitoringMiddleware(BaseHTTPMiddleware):
+    """
+    Middleware to attach the monitoring listener to the request state.
+    """
+
+    async def dispatch(self, request: Request, call_next: Callable):
+        # Attach the monitoring listener to the request state
+        request.state.monitoring_listener = shared.monitoring_listener
+
+        # Continue processing the request
+        response = await call_next(request)
+
+        return response

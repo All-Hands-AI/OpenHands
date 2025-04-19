@@ -167,9 +167,10 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     replay_json = data.replay_json
 
     try:
+        user_id = get_user_id(request)
         # Create conversation with initial message
         conversation_id = await _create_new_conversation(
-            get_user_id(request),
+            user_id,
             provider_tokens,
             selected_repository,
             selected_branch,
@@ -177,6 +178,20 @@ async def new_conversation(request: Request, data: InitSessionRequest):
             image_urls,
             replay_json,
         )
+
+        # Track conversation creation in analytics
+        try:
+            # The UserAnalytics class will check for user consent internally
+            await request.state.monitoring_listener.on_create_conversation(
+                user_id=user_id,
+                conversation_id=conversation_id,
+                has_initial_message=bool(initial_user_msg),
+                has_repository=bool(selected_repository),
+                has_images=bool(image_urls),
+            )
+        except Exception as e:
+            # Don't let analytics failures affect the application
+            logger.error(f'Error tracking conversation creation analytics: {e}')
 
         return JSONResponse(
             content={'status': 'ok', 'conversation_id': conversation_id}
