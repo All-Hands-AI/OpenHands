@@ -2,7 +2,7 @@ from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChun
 
 _FILE_EDIT_DESCRIPTION = """Edit a file in plain-text format.
 * The assistant can edit files by specifying the file path and providing a draft of the new file content.
-* The draft content doesn't need to be exactly the same as the existing file; the assistant may skip unchanged lines using the specific indicator `// ... existing code ...` to indicate unchanged sections.
+* The draft content doesn't need to be exactly the same as the existing file; the assistant may skip unchanged lines using commments like `# ... existing code ...` to indicate unchanged sections.
 * IMPORTANT: For large files (e.g., > 300 lines), specify the range of lines to edit using `start` and `end` (1-indexed, inclusive). The range should be smaller than 300 lines.
 * -1 indicates the last line of the file when used as the `start` or `end` value.
 * Keep atleast one unchanged line before the changed section and after the changed section wherever possible.
@@ -10,7 +10,7 @@ _FILE_EDIT_DESCRIPTION = """Edit a file in plain-text format.
 * To append to a file, set both `start` and `end` to `-1`.
 * If the file doesn't exist, a new file will be created with the provided content.
 * IMPORTANT: Make sure you include all the required indentations for each line of code in the draft, otherwise the editted code will be incorrectly indented.
-* IMPORTANT: Begin the draft with an informative comment. The first line of the draft should always be a comment
+* IMPORTANT: Make sure that the first line of the draft is also properly indented and has the required whitespaces.
 * IMPORTANT: NEVER include or make references to lines from outside the `start` and `end` range in the draft.
 
 **Example 1: general edit for short files**
@@ -41,7 +41,7 @@ path="/path/to/file.txt" start=1 end=-1
 content=```
 class MyClass:
     def __init__(self):
-        // ... existing code ...
+        # ... existing code ...
         self.y = 2
 
 print(MyClass().y)
@@ -97,9 +97,8 @@ The assistant wants to edit the file to look like this:
 (2000 more lines below)
 
 The assistant may produce an edit action like this:
-path="/path/to/file.txt" start=1001 end=1008
+path="/path/to/file.txt" start=1002 end=1008
 content=```
-class MyClass:
     def __init__(self):
         # no changes before
         self.y = 2
