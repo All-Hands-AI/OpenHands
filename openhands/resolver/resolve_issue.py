@@ -278,13 +278,10 @@ class IssueResolver:
         runtime = create_runtime(config)
         await runtime.connect()
 
-        # Define a standalone function to avoid closure issues with event handling
-        # This prevents the "dictionary changed size during iteration" error
-        subscription_id = str(uuid4())
-        
         def on_event(evt: Event) -> None:
             logger.info(evt)
-        
+
+        subscription_id = str(uuid4())
         # Subscribe to the event stream with a unique ID
         runtime.event_stream.subscribe(
             EventStreamSubscriber.MAIN, on_event, subscription_id
@@ -318,8 +315,7 @@ class IssueResolver:
         logger.info(
             f'Got git diff for instance {issue.number}:\n--------\n{git_patch}\n--------'
         )
-        
-        # Clean up the event subscription to prevent memory leaks and callback issues
+
         runtime.event_stream.unsubscribe(EventStreamSubscriber.MAIN, subscription_id)
 
         # Serialize histories and set defaults for failed state
