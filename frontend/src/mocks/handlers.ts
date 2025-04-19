@@ -6,7 +6,7 @@ import {
 } from "#/api/open-hands.types";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import { STRIPE_BILLING_HANDLERS } from "./billing-handlers";
-import { ApiSettings, PostApiSettings } from "#/types/settings";
+import { ApiSettings, PostApiSettings, Provider } from "#/types/settings";
 import { FILE_SERVICE_HANDLERS } from "./file-service-handlers";
 import { GitUser } from "#/types/git";
 
@@ -46,7 +46,11 @@ const conversations: Conversation[] = [
   {
     conversation_id: "2",
     title: "Repo Testing",
-    selected_repository: "octocat/hello-world",
+    selected_repository: {
+      id: 1,
+      full_name: "octocat/hello-world",
+      git_provider: "github" as Provider,
+    },
     // 2 days ago
     last_updated_at: new Date(
       Date.now() - 2 * 24 * 60 * 60 * 1000,
@@ -57,7 +61,11 @@ const conversations: Conversation[] = [
   {
     conversation_id: "3",
     title: "Another Project",
-    selected_repository: "octocat/earth",
+    selected_repository: {
+      id: 2,
+      full_name: "octocat/earth",
+      git_provider: "github" as Provider,
+    },
     // 5 days ago
     last_updated_at: new Date(
       Date.now() - 5 * 24 * 60 * 60 * 1000,

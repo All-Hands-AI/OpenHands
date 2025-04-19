@@ -16,10 +16,14 @@ from openhands.events.observation.agent import (
     AgentStateChangedObservation,
 )
 from openhands.events.serialization import event_to_dict
-from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderToken
+from openhands.integrations.provider import (
+    PROVIDER_TOKEN_TYPE,
+    ProviderToken,
+)
 from openhands.integrations.service_types import ProviderType
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.shared import (
+    ConversationStoreImpl,
     SettingsStoreImpl,
     config,
     conversation_manager,
@@ -78,6 +82,22 @@ async def connect(connection_id: str, environ):
     session_init_args['git_provider_tokens'] = create_provider_tokens_object(
         providers_set
     )
+
+    conversation_store = await ConversationStoreImpl.get_instance(config, user_id, None)
+    metadata = await conversation_store.get_metadata(conversation_id)
+    if metadata.selected_repository:
+        if isinstance(metadata.selected_repository, str):
+            # Accepting str for `selected_repository` for backward compatibility
+            # See also: https://github.com/All-Hands-AI/OpenHands/issues/7286
+            logger.info(
+                f'Legacy metadata format detected for conversation {conversation_id}. '
+                'Repository information will not be available.'
+            )
+            session_init_args['selected_repository'] = None
+        else:
+            session_init_args['selected_repository'] = metadata.selected_repository
+    session_init_args['selected_branch'] = metadata.selected_branch
+
     conversation_init_data = ConversationInitData(**session_init_args)
 
     event_stream = await conversation_manager.join_conversation(
