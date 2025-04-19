@@ -1,4 +1,19 @@
 {
+    "CHAT$RESOLVER_INSTRUCTIONS": {
+        "en": "Resolver Instructions",
+        "ja": "リゾルバの指示",
+        "zh-CN": "解析器指令",
+        "zh-TW": "解析器指令",
+        "ko-KR": "리졸버 지침",
+        "no": "Resolver-instruksjoner",
+        "it": "Istruzioni del resolver",
+        "pt": "Instruções do resolvedor",
+        "es": "Instrucciones del resolvedor",
+        "ar": "تعليمات المحلل",
+        "fr": "Instructions du résolveur",
+        "tr": "Çözümleyici Talimatları",
+        "de": "Resolver-Anweisungen"
+    },
     "SETTINGS$ADVANCED": {
         "en": "Advanced",
         "ja": "詳細設定",
@@ -271,35 +286,20 @@
         "tr": "Ayarlar",
         "de": "Einstellungen"
     },
-    "PROJECT$START_NEW": {
-        "en": "Start new project",
-        "ja": "新規プロジェクトを開始",
-        "zh-CN": "开始新项目",
-        "zh-TW": "開始新專案",
-        "ko-KR": "새 프로젝트 시작",
-        "no": "Start nytt prosjekt",
-        "it": "Avvia nuovo progetto",
-        "pt": "Iniciar novo projeto",
-        "es": "Iniciar nuevo proyecto",
-        "ar": "بدء مشروع جديد",
-        "fr": "Démarrer un nouveau projet",
-        "tr": "Yeni proje başlat",
-        "de": "Neues Projekt starten"
-    },
-    "PROJECT$NEW": {
-        "en": "New Project",
-        "ja": "新規プロジェクト",
-        "zh-CN": "新项目",
-        "zh-TW": "新專案",
-        "ko-KR": "새 프로젝트",
-        "no": "Nytt prosjekt",
-        "it": "Nuovo progetto",
-        "pt": "Novo projeto",
-        "es": "Nuevo proyecto",
-        "ar": "مشروع جديد",
-        "fr": "Nouveau projet",
-        "tr": "Yeni proje",
-        "de": "Neues Projekt"
+    "CONVERSATION$START_NEW": {
+        "en": "Start new conversation",
+        "ja": "新規会話を開始",
+        "zh-CN": "开始新对话",
+        "zh-TW": "開始新對話",
+        "ko-KR": "새 대화 시작",
+        "no": "Start ny samtale",
+        "it": "Avvia nuova conversazione",
+        "pt": "Iniciar nova conversa",
+        "es": "Iniciar nueva conversación",
+        "ar": "بدء محادثة جديدة",
+        "fr": "Démarrer une nouvelle conversation",
+        "tr": "Yeni sohbet başlat",
+        "de": "Neue Unterhaltung starten"
     },
     "ACCOUNT_SETTINGS$TITLE": {
         "en": "Account Settings",
@@ -586,20 +586,20 @@
         "fr": "Paramètres LLM",
         "tr": "LLM Ayarları"
     },
-    "SETTINGS$GITHUB_SETTINGS": {
-        "en": "GitHub Settings",
-        "ja": "GitHub設定",
-        "zh-CN": "GitHub设置",
-        "zh-TW": "GitHub設定",
-        "ko-KR": "GitHub 설정",
-        "de": "GitHub-Einstellungen",
-        "no": "GitHub-innstillinger",
-        "it": "Impostazioni GitHub",
-        "pt": "Configurações GitHub",
-        "es": "Configuración GitHub",
-        "ar": "إعدادات GitHub",
-        "fr": "Paramètres GitHub",
-        "tr": "GitHub Ayarları"
+    "SETTINGS$GIT_SETTINGS": {
+        "en": "Git Settings",
+        "ja": "Git設定",
+        "zh-CN": "Git设置",
+        "zh-TW": "Git設定",
+        "ko-KR": "Git 설정",
+        "de": "Git-Einstellungen",
+        "no": "Git-innstillinger",
+        "it": "Impostazioni Git",
+        "pt": "Configurações Git",
+        "es": "Configuración Git",
+        "ar": "إعدادات Git",
+        "fr": "Paramètres Git",
+        "tr": "Git Ayarları"
     },
     "SETTINGS$SOUND_NOTIFICATIONS": {
         "en": "Sound Notifications",
@@ -2530,7 +2530,6 @@
         "tr": "Ajan hız sınırına ulaştı",
         "ja": "エージェントがレート制限中"
     },
-
     "CHAT_INTERFACE$AGENT_PAUSED_MESSAGE": {
         "en": "Agent has paused.",
         "de": "Agent pausiert.",
@@ -5880,7 +5879,7 @@
         "tr": "Temel URL"
     },
     "GITHUB$CONNECT_TO_GITHUB": {
-        "en": "Connect to GitHub",
+        "en": "Log in with GitHub",
         "ja": "GitHubに接続",
         "zh-CN": "连接到GitHub",
         "zh-TW": "連接到GitHub",
@@ -5893,6 +5892,36 @@
         "ar": "الاتصال بـ GitHub",
         "fr": "Se connecter à GitHub",
         "tr": "GitHub'a bağlan"
+    },
+    "GITLAB$CONNECT_TO_GITLAB": {
+        "en": "Log in with GitLab",
+        "ja": "GitLabに接続",
+        "zh-CN": "连接到GitLab",
+        "zh-TW": "連接到GitLab",
+        "ko-KR": "GitLab에 연결",
+        "de": "Mit GitLab verbinden",
+        "no": "Koble til GitLab",
+        "it": "Connetti a GitLab",
+        "pt": "Conectar ao GitLab",
+        "es": "Conectar a GitLab",
+        "ar": "الاتصال بـ GitLab",
+        "fr": "Se connecter à GitLab",
+        "tr": "GitLab'a bağlan"
+    },
+    "AUTH$SIGN_IN_WITH_IDENTITY_PROVIDER": {
+        "en": "Log in to OpenHands",
+        "ja": "IDプロバイダーでサインイン",
+        "zh-CN": "使用您的身份提供商登录",
+        "zh-TW": "使用您的身份提供商登入",
+        "ko-KR": "ID 제공자로 로그인",
+        "no": "Logg inn med din identitetsleverandør",
+        "it": "Accedi con il tuo provider di identità",
+        "pt": "Entre com seu provedor de identidade",
+        "es": "Inicie sesión con su proveedor de identidad",
+        "ar": "تسجيل الدخول باستخدام مزود الهوية الخاص بك",
+        "fr": "Connectez-vous avec votre fournisseur d'identité",
+        "tr": "Kimlik sağlayıcınızla giriş yapın",
+        "de": "Melden Sie sich mit Ihrem Identitätsanbieter an"
     },
     "WAITLIST$JOIN_WAITLIST": {
         "en": "Join Waitlist",
@@ -6088,5 +6117,95 @@
         "fr": "documentation",
         "tr": "belgelendirme",
         "de": "Dokumentation"
+    },
+    "DIFF_VIEWER$LOADING": {
+        "en": "Loading...",
+        "ja": "読み込み中...",
+        "zh-CN": "加载中...",
+        "zh-TW": "加載中...",
+        "ko-KR": "로딩 중...",
+        "no": "Laster inn...",
+        "it": "Caricamento in corso...",
+        "pt": "Carregando...",
+        "es": "Cargando...",
+        "ar": "جار التحميل...",
+        "fr": "Chargement...",
+        "tr": "Yükleniyor...",
+        "de": "Wird geladen..."
+    },
+    "DIFF_VIEWER$GETTING_LATEST_CHANGES": {
+        "en": "Getting latest changes...",
+        "ja": "最新の変更を取得中...",
+        "zh-CN": "获取最新更改中...",
+        "zh-TW": "獲取最新更改中...",
+        "ko-KR": "최신 변경 사항 가져오는 중...",
+        "no": "Henter de nyeste endringene...",
+        "it": "Ottenendo le ultime modifiche...",
+        "pt": "Obtendo as últimas alterações...",
+        "es": "Obteniendo los últimos cambios...",
+        "ar": "جارٍ الحصول على أحدث التغييرات...",
+        "fr": "Obtention des dernières modifications...",
+        "tr": "Son değişiklikleri alıyor...",
+        "de": "Aktuellste Änderungen abrufen..."
+    },
+    "DIFF_VIEWER$NOT_A_GIT_REPO": {
+        "en": "Your current workspace is not a git repository.",
+        "ja": "現在のワークスペースはgitリポジトリではありません。",
+        "zh-CN": "您当前的工作区不是git存储库。",
+        "zh-TW": "您當前的工作區不是git存儲庫。",
+        "ko-KR": "현재 작업 공간은 git 리포지토리가 아닙니다.",
+        "no": "Nåværende arbeidsområde er ikke et git-repositorium.",
+        "it": "L'area di lavoro corrente non è un repository git.",
+        "pt": "Seu espaço de trabalho atual não é um repositório git.",
+        "es": "Su espacio de trabajo actual no es un repositorio git.",
+        "ar": "مساحة العمل الحالية الخاصة بك ليست مستودع git.",
+        "fr": "Votre espace de travail actuel n'est pas un dépôt git.",
+        "tr": "Mevcut çalışma alanınız bir git deposu değil.",
+        "de": "Ihr aktueller Arbeitsbereich ist kein git-Repository."
+    },
+    "DIFF_VIEWER$ASK_OH": {
+        "en": "Ask OpenHands to initialize a git repo to activate this UI.",
+        "ja": "このUIを有効にするために、OpenHandsにgitリポジトリを初期化するよう依頼します。",
+        "zh-CN": "请OpenHands初始化git存储库以激活此UI。",
+        "zh-TW": "請OpenHands初始化git存儲庫以啟用此UI。",
+        "ko-KR": "이 UI를 활성화하려면 OpenHands에 git 리포지토리를 초기화하도록 요청하세요.",
+        "no": "Be OpenHands om å initialisere et git-repositorium for å aktivere dette brukergrensesnittet.",
+        "it": "Chiedi a OpenHands di inizializzare un repository git per attivare questa interfaccia utente.",
+        "pt": "Peça ao OpenHands para inicializar um repositório git para ativar esta interface.",
+        "es": "Pida a OpenHands que inicialice un repositorio git para activar esta interfaz.",
+        "ar": "اطلب من OpenHands تهيئة مستودع git لتنشيط واجهة المستخدم هذه.",
+        "fr": "Demandez à OpenHands d'initialiser un dépôt git pour activer cette interface utilisateur.",
+        "tr": "Bu UI'yi etkinleştirmek için OpenHands'tan bir git deposunu başlatmasını isteyin.",
+        "de": "Bitten Sie OpenHands, ein git-Repository zu initialisieren, um diese Benutzeroberfläche zu aktivieren."
+    },
+    "DIFF_VIEWER$NO_CHANGES": {
+        "en": "OpenHands hasn't made any changes yet...",
+        "ja": "OpenHandsはまだ変更を加えていません...",
+        "zh-CN": "OpenHands尚未进行任何更改...",
+        "zh-TW": "OpenHands尚未進行任何更改...",
+        "ko-KR": "OpenHands는 아직 변경하지 않았습니다...",
+        "no": "OpenHands har ikke gjort noen endringer ennå...",
+        "it": "OpenHands non ha ancora apportato modifiche...",
+        "pt": "O OpenHands ainda não fez nenhuma alteração...",
+        "es": "OpenHands aún no ha realizado ningún cambio...",
+        "ar": "لم يقم OpenHands بإجراء أي تغييرات بعد ...",
+        "fr": "OpenHands n'a pas encore apporté de modifications ...",
+        "tr": "OpenHands henüz herhangi bir değişiklik yapmadı ...",
+        "de": "OpenHands hat noch keine Änderungen vorgenommen..."
+    },
+    "DIFF_VIEWER$WAITING_FOR_RUNTIME": {
+        "en": "Waiting for runtime to start...",
+        "ja": "ランタイムの起動を待っています...",
+        "zh-CN": "等待运行时启动...",
+        "zh-TW": "等待運行時啟動...",
+        "ko-KR": "런타임 시작 대기 중...",
+        "no": "Venter på at kjøretid skal starte...",
+        "it": "In attesa dell'avvio del runtime...",
+        "pt": "Aguardando o tempo de execução para iniciar...",
+        "es": "Esperando a que se inicie el tiempo de ejecución...",
+        "ar": "في انتظار بدء وقت التشغيل...",
+        "fr": "En attente du démarrage de l'exécution...",
+        "tr": "Çalışma zamanının başlamasını bekliyor...",
+        "de": "Warten auf den Start der Laufzeit..."
     }
 }

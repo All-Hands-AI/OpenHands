@@ -179,6 +179,7 @@ class GitHubService(GitService):
                 full_name=repo.get('full_name'),
                 stargazers_count=repo.get('stargazers_count'),
                 git_provider=ProviderType.GITHUB,
+                is_public=not repo.get('private', True)
             )
             for repo in all_repos
         ]
@@ -312,7 +313,7 @@ class GitHubService(GitService):
             for pr in data['pullRequests']['nodes']:
                 repo_name = pr['repository']['nameWithOwner']
 
-                # Always add open PRs
+                # Start with default task type
                 task_type = TaskType.OPEN_PR
 
                 # Check for specific states
@@ -333,14 +334,16 @@ class GitHubService(GitService):
                 ):
                     task_type = TaskType.UNRESOLVED_COMMENTS
 
-                tasks.append(
-                    SuggestedTask(
-                        task_type=task_type,
-                        repo=repo_name,
-                        issue_number=pr['number'],
-                        title=pr['title'],
+                # Only add the task if it's not OPEN_PR
+                if task_type != TaskType.OPEN_PR:
+                    tasks.append(
+                        SuggestedTask(
+                            task_type=task_type,
+                            repo=repo_name,
+                            issue_number=pr['number'],
+                            title=pr['title'],
+                        )
                     )
-                )
 
             # Process issues
             for issue in data['issues']['nodes']:
