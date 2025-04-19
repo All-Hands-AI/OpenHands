@@ -147,14 +147,14 @@ class ConversationMemory:
         messages = list(ConversationMemory._filter_unmatched_tool_calls(messages))
         return messages
 
-    def process_initial_messages(self, with_caching: bool = False, **kwargs) -> list[Message]:
+    def process_initial_messages(self, with_caching: bool = False, agent_infos=list | None) -> list[Message]:
         """Create the initial messages for the conversation."""
         return [
             Message(
                 role='system',
                 content=[
                     TextContent(
-                        text=self.prompt_manager.get_system_message(**kwargs),
+                        text=self.prompt_manager.get_system_message(agent_infos=agent_infos),
                         cache_prompt=with_caching,
                     )
                 ],

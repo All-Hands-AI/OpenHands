@@ -58,10 +58,10 @@ class PromptManager:
         with open(template_path, 'r') as file:
             return Template(file.read())
 
-    def get_system_message(self, **kwargs) -> str:
+    def get_system_message(self, agent_infos: list | None = None) -> str:
         # **kwargs is used to pass additional context to the system prompt, such as current date, ...
-        if 'agent_infos' in kwargs:
-            return self.system_template.render(agent_infos=kwargs['agent_infos']).strip()
+        if agent_infos:
+            return self.system_template.render(agent_infos=agent_infos).strip()
         return self.system_template.render().strip()
 
     def get_example_user_message(self) -> str:
