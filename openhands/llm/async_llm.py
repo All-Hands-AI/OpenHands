@@ -20,6 +20,9 @@ class AsyncLLM(LLM):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
+        if self.config.use_critic:
+            raise NotImplementedError('critic is not supported for async LLM')
+
         self._async_completion = partial(
             self._call_acompletion,
             model=self.config.model,
@@ -97,7 +100,7 @@ class AsyncLLM(LLM):
                 self.log_response(message_back)
 
                 # log costs and tokens used
-                self._post_completion(resp)
+                self._update_metrics_for_single_completion(resp)
 
                 # We do not support streaming in this method, thus return resp
                 return resp
