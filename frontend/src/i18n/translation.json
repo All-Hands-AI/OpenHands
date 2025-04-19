@@ -1,4 +1,19 @@
 {
+    "CHAT$RESOLVER_INSTRUCTIONS": {
+        "en": "Resolver Instructions",
+        "ja": "リゾルバの指示",
+        "zh-CN": "解析器指令",
+        "zh-TW": "解析器指令",
+        "ko-KR": "리졸버 지침",
+        "no": "Resolver-instruksjoner",
+        "it": "Istruzioni del resolver",
+        "pt": "Instruções do resolvedor",
+        "es": "Instrucciones del resolvedor",
+        "ar": "تعليمات المحلل",
+        "fr": "Instructions du résolveur",
+        "tr": "Çözümleyici Talimatları",
+        "de": "Resolver-Anweisungen"
+    },
     "SETTINGS$ADVANCED": {
         "en": "Advanced",
         "ja": "詳細設定",
@@ -571,20 +586,20 @@
         "fr": "Paramètres LLM",
         "tr": "LLM Ayarları"
     },
-    "SETTINGS$GITHUB_SETTINGS": {
-        "en": "GitHub Settings",
-        "ja": "GitHub設定",
-        "zh-CN": "GitHub设置",
-        "zh-TW": "GitHub設定",
-        "ko-KR": "GitHub 설정",
-        "de": "GitHub-Einstellungen",
-        "no": "GitHub-innstillinger",
-        "it": "Impostazioni GitHub",
-        "pt": "Configurações GitHub",
-        "es": "Configuración GitHub",
-        "ar": "إعدادات GitHub",
-        "fr": "Paramètres GitHub",
-        "tr": "GitHub Ayarları"
+    "SETTINGS$GIT_SETTINGS": {
+        "en": "Git Settings",
+        "ja": "Git設定",
+        "zh-CN": "Git设置",
+        "zh-TW": "Git設定",
+        "ko-KR": "Git 설정",
+        "de": "Git-Einstellungen",
+        "no": "Git-innstillinger",
+        "it": "Impostazioni Git",
+        "pt": "Configurações Git",
+        "es": "Configuración Git",
+        "ar": "إعدادات Git",
+        "fr": "Paramètres Git",
+        "tr": "Git Ayarları"
     },
     "SETTINGS$SOUND_NOTIFICATIONS": {
         "en": "Sound Notifications",
@@ -2515,7 +2530,6 @@
         "tr": "Ajan hız sınırına ulaştı",
         "ja": "エージェントがレート制限中"
     },
-
     "CHAT_INTERFACE$AGENT_PAUSED_MESSAGE": {
         "en": "Agent has paused.",
         "de": "Agent pausiert.",
@@ -5865,7 +5879,7 @@
         "tr": "Temel URL"
     },
     "GITHUB$CONNECT_TO_GITHUB": {
-        "en": "Connect to GitHub",
+        "en": "Log in with GitHub",
         "ja": "GitHubに接続",
         "zh-CN": "连接到GitHub",
         "zh-TW": "連接到GitHub",
@@ -5878,6 +5892,36 @@
         "ar": "الاتصال بـ GitHub",
         "fr": "Se connecter à GitHub",
         "tr": "GitHub'a bağlan"
+    },
+    "GITLAB$CONNECT_TO_GITLAB": {
+        "en": "Log in with GitLab",
+        "ja": "GitLabに接続",
+        "zh-CN": "连接到GitLab",
+        "zh-TW": "連接到GitLab",
+        "ko-KR": "GitLab에 연결",
+        "de": "Mit GitLab verbinden",
+        "no": "Koble til GitLab",
+        "it": "Connetti a GitLab",
+        "pt": "Conectar ao GitLab",
+        "es": "Conectar a GitLab",
+        "ar": "الاتصال بـ GitLab",
+        "fr": "Se connecter à GitLab",
+        "tr": "GitLab'a bağlan"
+    },
+    "AUTH$SIGN_IN_WITH_IDENTITY_PROVIDER": {
+        "en": "Log in to OpenHands",
+        "ja": "IDプロバイダーでサインイン",
+        "zh-CN": "使用您的身份提供商登录",
+        "zh-TW": "使用您的身份提供商登入",
+        "ko-KR": "ID 제공자로 로그인",
+        "no": "Logg inn med din identitetsleverandør",
+        "it": "Accedi con il tuo provider di identità",
+        "pt": "Entre com seu provedor de identidade",
+        "es": "Inicie sesión con su proveedor de identidad",
+        "ar": "تسجيل الدخول باستخدام مزود الهوية الخاص بك",
+        "fr": "Connectez-vous avec votre fournisseur d'identité",
+        "tr": "Kimlik sağlayıcınızla giriş yapın",
+        "de": "Melden Sie sich mit Ihrem Identitätsanbieter an"
     },
     "WAITLIST$JOIN_WAITLIST": {
         "en": "Join Waitlist",
@@ -6148,5 +6192,20 @@
         "fr": "OpenHands n'a pas encore apporté de modifications ...",
         "tr": "OpenHands henüz herhangi bir değişiklik yapmadı ...",
         "de": "OpenHands hat noch keine Änderungen vorgenommen..."
+    },
+    "DIFF_VIEWER$WAITING_FOR_RUNTIME": {
+        "en": "Waiting for runtime to start...",
+        "ja": "ランタイムの起動を待っています...",
+        "zh-CN": "等待运行时启动...",
+        "zh-TW": "等待運行時啟動...",
+        "ko-KR": "런타임 시작 대기 중...",
+        "no": "Venter på at kjøretid skal starte...",
+        "it": "In attesa dell'avvio del runtime...",
+        "pt": "Aguardando o tempo de execução para iniciar...",
+        "es": "Esperando a que se inicie el tiempo de ejecución...",
+        "ar": "في انتظار بدء وقت التشغيل...",
+        "fr": "En attente du démarrage de l'exécution...",
+        "tr": "Çalışma zamanının başlamasını bekliyor...",
+        "de": "Warten auf den Start der Laufzeit..."
     }
 }

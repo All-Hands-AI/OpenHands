@@ -92,10 +92,11 @@ pytest-xdist = "*"
 openai = "*"
 pandas = "*"
 reportlab = "*"
-gevent = "^24.2.1"
+gevent = ">=24.2.1,<26.0.0"
 
 [tool.coverage.run]
 concurrency = ["gevent"]
+
 
 [tool.poetry.group.runtime.dependencies]
 jupyterlab = "*"
@@ -124,6 +125,7 @@ ignore = ["D1"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
 
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"

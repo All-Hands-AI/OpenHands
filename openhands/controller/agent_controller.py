@@ -1,8 +1,9 @@
 import asyncio
 import copy
 import os
+import time
 import traceback
-from typing import Callable, ClassVar, Type
+from typing import Callable, ClassVar, Tuple, Type
 
 import litellm  # noqa
 from litellm.exceptions import (  # noqa
@@ -67,7 +68,7 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization.event import event_to_trajectory, truncate_content
 from openhands.llm.llm import LLM
-from openhands.llm.metrics import Metrics
+from openhands.llm.metrics import Metrics, TokenUsage
 
 # note: RESUME is only available on web GUI
 TRAFFIC_CONTROL_REMINDER = (
@@ -86,7 +87,7 @@ class AgentController:
     agent_configs: dict[str, AgentConfig]
     parent: 'AgentController | None' = None
     delegate: 'AgentController | None' = None
-    _pending_action: Action | None = None
+    _pending_action_info: Tuple[Action, float] | None = None  # (action, timestamp)
     _closed: bool = False
     filter_out: ClassVar[tuple[type[Event], ...]] = (
         NullAction,
@@ -408,8 +409,21 @@ class AgentController:
         elif isinstance(event, Observation):
             await self._handle_observation(event)
 
-        if self.should_step(event):
+        should_step = self.should_step(event)
+        if should_step:
+            self.log(
+                'info',
+                f'Stepping agent after event: {type(event).__name__}',
+                extra={'msg_type': 'STEPPING_AGENT'},
+            )
             self.step()
+        elif isinstance(event, MessageAction) and event.source == EventSource.USER:
+            # If we received a user message but aren't stepping, log why
+            self.log(
+                'warning',
+                f'Not stepping agent after user message. Current state: {self.get_agent_state()}',
+                extra={'msg_type': 'NOT_STEPPING_AFTER_USER_MESSAGE'},
+            )
 
     async def _handle_action(self, action: Action) -> None:
         """Handles an Action from the agent or delegate."""
@@ -462,7 +476,9 @@ class AgentController:
         if self._pending_action and self._pending_action.id == observation.cause:
             if self.state.agent_state == AgentState.AWAITING_USER_CONFIRMATION:
                 return
+
             self._pending_action = None
+
             if self.state.agent_state == AgentState.USER_CONFIRMED:
                 await self.set_agent_state_to(AgentState.RUNNING)
             if self.state.agent_state == AgentState.USER_REJECTED:
@@ -743,9 +759,21 @@ class AgentController:
     async def _step(self) -> None:
         """Executes a single step of the parent or delegate agent. Detects stuck agents and limits on the number of iterations and the task budget."""
         if self.get_agent_state() != AgentState.RUNNING:
+            self.log(
+                'info',
+                f'Agent not stepping because state is {self.get_agent_state()} (not RUNNING)',
+                extra={'msg_type': 'STEP_BLOCKED_STATE'},
+            )
             return
 
         if self._pending_action:
+            action_id = getattr(self._pending_action, 'id', 'unknown')
+            action_type = type(self._pending_action).__name__
+            self.log(
+                'info',
+                f'Agent not stepping because of pending action: {action_type} (id={action_id})',
+                extra={'msg_type': 'STEP_BLOCKED_PENDING_ACTION'},
+            )
             return
 
         self.log(
@@ -897,6 +925,61 @@ class AgentController:
                 await self._react_to_exception(e)
             stop_step = True
         return stop_step
+
+    @property
+    def _pending_action(self) -> Action | None:
+        """Get the current pending action with time tracking.
+
+        Returns:
+            Action | None: The current pending action, or None if there isn't one.
+        """
+        if self._pending_action_info is None:
+            return None
+
+        action, timestamp = self._pending_action_info
+        current_time = time.time()
+        elapsed_time = current_time - timestamp
+
+        # Log if the pending action has been active for a long time (but don't clear it)
+        if elapsed_time > 60.0:  # 1 minute - just for logging purposes
+            action_id = getattr(action, 'id', 'unknown')
+            action_type = type(action).__name__
+            self.log(
+                'warning',
+                f'Pending action active for {elapsed_time:.2f}s: {action_type} (id={action_id})',
+                extra={'msg_type': 'PENDING_ACTION_TIMEOUT'},
+            )
+
+        return action
+
+    @_pending_action.setter
+    def _pending_action(self, action: Action | None) -> None:
+        """Set or clear the pending action with timestamp and logging.
+
+        Args:
+            action: The action to set as pending, or None to clear.
+        """
+        if action is None:
+            if self._pending_action_info is not None:
+                prev_action, timestamp = self._pending_action_info
+                action_id = getattr(prev_action, 'id', 'unknown')
+                action_type = type(prev_action).__name__
+                elapsed_time = time.time() - timestamp
+                self.log(
+                    'info',
+                    f'Cleared pending action after {elapsed_time:.2f}s: {action_type} (id={action_id})',
+                    extra={'msg_type': 'PENDING_ACTION_CLEARED'},
+                )
+            self._pending_action_info = None
+        else:
+            action_id = getattr(action, 'id', 'unknown')
+            action_type = type(action).__name__
+            self.log(
+                'info',
+                f'Set pending action: {action_type} (id={action_id})',
+                extra={'msg_type': 'PENDING_ACTION_SET'},
+            )
+            self._pending_action_info = (action, time.time())
 
     def get_state(self) -> State:
         """Returns the current running state object.
@@ -1142,15 +1225,37 @@ class AgentController:
         - accumulated_cost: The current total cost
         - accumulated_token_usage: Accumulated token statistics across all API calls
 
+        This includes metrics from both the agent's LLM and the condenser's LLM if it exists.
+
         Args:
             action: The action to attach metrics to
         """
-        # Create a minimal metrics object with just what the frontend needs
-        metrics = Metrics(model_name=self.agent.llm.metrics.model_name)
-        metrics.accumulated_cost = self.agent.llm.metrics.accumulated_cost
+        # Get metrics from agent LLM
+        agent_metrics = self.agent.llm.metrics
+
+        # Get metrics from condenser LLM if it exists
+        condenser_metrics: TokenUsage | None = None
+        if hasattr(self.agent, 'condenser') and hasattr(self.agent.condenser, 'llm'):
+            condenser_metrics = self.agent.condenser.llm.metrics
+
+        # Create a new minimal metrics object with just what the frontend needs
+        metrics = Metrics(model_name=agent_metrics.model_name)
+
+        # Set accumulated cost (sum of agent and condenser costs)
+        metrics.accumulated_cost = agent_metrics.accumulated_cost
+        if condenser_metrics:
+            metrics.accumulated_cost += condenser_metrics.accumulated_cost
+
+        # Set accumulated token usage (sum of agent and condenser token usage)
+        # Use a deep copy to ensure we don't modify the original object
         metrics._accumulated_token_usage = (
-            self.agent.llm.metrics.accumulated_token_usage
+            agent_metrics.accumulated_token_usage.model_copy(deep=True)
         )
+        if condenser_metrics:
+            metrics._accumulated_token_usage = (
+                metrics._accumulated_token_usage
+                + condenser_metrics.accumulated_token_usage
+            )
 
         action.llm_metrics = metrics
 
@@ -1176,13 +1281,26 @@ class AgentController:
         )
 
     def __repr__(self):
+        pending_action_info = '<none>'
+        if (
+            hasattr(self, '_pending_action_info')
+            and self._pending_action_info is not None
+        ):
+            action, timestamp = self._pending_action_info
+            action_id = getattr(action, 'id', 'unknown')
+            action_type = type(action).__name__
+            elapsed_time = time.time() - timestamp
+            pending_action_info = (
+                f'{action_type}(id={action_id}, elapsed={elapsed_time:.2f}s)'
+            )
+
         return (
             f'AgentController(id={getattr(self, "id", "<uninitialized>")}, '
             f'agent={getattr(self, "agent", "<uninitialized>")!r}, '
             f'event_stream={getattr(self, "event_stream", "<uninitialized>")!r}, '
             f'state={getattr(self, "state", "<uninitialized>")!r}, '
             f'delegate={getattr(self, "delegate", "<uninitialized>")!r}, '
-            f'_pending_action={getattr(self, "_pending_action", "<uninitialized>")!r})'
+            f'_pending_action={pending_action_info})'
         )
 
     def _is_awaiting_observation(self):
