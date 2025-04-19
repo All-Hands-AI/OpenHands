@@ -1,5 +1,4 @@
 from types import MappingProxyType
-from typing import cast
 from urllib.parse import parse_qs
 
 from socketio.exceptions import ConnectionRefusedError
@@ -20,7 +19,6 @@ from openhands.events.serialization import event_to_dict
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
     ProviderToken,
-    SecretStore,
 )
 from openhands.integrations.service_types import ProviderType
 from openhands.server.session.conversation_init_data import ConversationInitData
@@ -38,17 +36,11 @@ from openhands.storage.conversation.conversation_validator import (
 
 def create_provider_tokens_object(
     providers_set: list[ProviderType],
-    secrets_store: SecretStore,
 ) -> PROVIDER_TOKEN_TYPE:
     provider_information = {}
 
-    existing_tokens = secrets_store.provider_tokens
-
     for provider in providers_set:
-        if provider in existing_tokens:
-            provider_information[provider] = existing_tokens[provider]
-        else:
-            provider_information[provider] = ProviderToken(token=None, user_id=None)
+        provider_information[provider] = ProviderToken(token=None, user_id=None)
 
     return MappingProxyType(provider_information)
 
@@ -87,10 +79,8 @@ async def connect(connection_id: str, environ):
     if settings:
         session_init_args = {**settings.__dict__, **session_init_args}
 
-    secrets_store = cast(SecretStore, getattr(settings, 'secrets_store', SecretStore()))
     session_init_args['git_provider_tokens'] = create_provider_tokens_object(
-        providers_set,
-        secrets_store,
+        providers_set
     )
 
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id, None)

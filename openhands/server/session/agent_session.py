@@ -17,6 +17,7 @@ from openhands.events.action import ChangeAgentStateAction, MessageAction
 from openhands.events.event import Event, EventSource
 from openhands.events.stream import EventStream
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderHandler
+from openhands.integrations.provider import ProviderType
 from openhands.integrations.service_types import Repository
 from openhands.memory.memory import Memory
 from openhands.microagent.microagent import BaseMicroagent
@@ -30,6 +31,17 @@ from openhands.utils.shutdown_listener import should_continue
 
 WAIT_TIME_BEFORE_CLOSE = 90
 WAIT_TIME_BEFORE_CLOSE_INTERVAL = 5
+
+
+def _provider_tokens_are_empty(provider_tokens: PROVIDER_TOKEN_TYPE | None) -> bool:
+    if provider_tokens is None:
+        return True
+
+    for pt in provider_tokens.values():
+        if not (pt.token is None and pt.user_id is None):
+            return False
+
+    return True
 
 
 class AgentSession:
@@ -323,9 +335,17 @@ class AgentSession:
                 )
             return False
 
-        if selected_repository and git_provider_tokens:
+        if selected_repository and not _provider_tokens_are_empty(git_provider_tokens):
+            if isinstance(selected_repository, str):
+                # Accepting str for `selected_repository` for backward compatibility
+                # See also: https://github.com/All-Hands-AI/OpenHands/issues/7286
+                provider = ProviderType.GITHUB  # Default provider for legacy format
+            else:
+                provider = selected_repository.git_provider
+
+            assert git_provider_tokens is not None  # for typehint consistency
             await self.runtime.clone_repo(
-                git_provider_tokens, selected_repository, selected_branch
+                git_provider_tokens, selected_repository, selected_branch, provider
             )
             await call_sync_from_async(self.runtime.maybe_run_setup_script)
 
