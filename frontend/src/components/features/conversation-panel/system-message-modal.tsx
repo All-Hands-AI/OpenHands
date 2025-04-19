@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { ChevronDown, ChevronRight } from "lucide-react";
+import ReactJsonView from "@microlink/react-json-view";
 import { BaseModalTitle } from "#/components/shared/modals/confirmation-modals/base-modal";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import { ModalBody } from "#/components/shared/modals/modal-body";
 import { cn } from "#/utils/utils";
-import { ChevronDown, ChevronRight } from "lucide-react";
-import ReactJsonView from '@microlink/react-json-view';
 
 // Custom JSON viewer theme that matches our application theme
 const jsonViewTheme = {
@@ -59,37 +59,49 @@ export function SystemMessageModal({
 }: SystemMessageModalProps) {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<"system" | "tools">("system");
-  const [expandedTools, setExpandedTools] = useState<Record<number, boolean>>({});
+  const [expandedTools, setExpandedTools] = useState<Record<number, boolean>>(
+    {},
+  );
 
   if (!systemMessage) {
     return null;
   }
-  
+
   const toggleTool = (index: number) => {
-    setExpandedTools(prev => ({
+    setExpandedTools((prev) => ({
       ...prev,
-      [index]: !prev[index]
+      [index]: !prev[index],
     }));
   };
 
   return (
     isOpen && (
-      <>
-        <ModalBackdrop onClose={onClose}>
-          <ModalBody width="medium" className="max-h-[80vh] flex flex-col items-start">
+      <ModalBackdrop onClose={onClose}>
+        <ModalBody
+          width="medium"
+          className="max-h-[80vh] flex flex-col items-start"
+        >
           <div className="flex flex-col gap-6 w-full">
             <BaseModalTitle title={t("SYSTEM_MESSAGE_MODAL$TITLE")} />
             <div className="flex flex-col gap-2">
               {systemMessage.agent_class && (
                 <div className="text-sm">
-                  <span className="font-semibold text-gray-300">{t("SYSTEM_MESSAGE_MODAL$AGENT_CLASS")}</span>{" "}
-                  <span className="font-medium text-primary">{systemMessage.agent_class}</span>
+                  <span className="font-semibold text-gray-300">
+                    {t("SYSTEM_MESSAGE_MODAL$AGENT_CLASS")}
+                  </span>{" "}
+                  <span className="font-medium text-primary">
+                    {systemMessage.agent_class}
+                  </span>
                 </div>
               )}
               {systemMessage.openhands_version && (
                 <div className="text-sm">
-                  <span className="font-semibold text-gray-300">{t("SYSTEM_MESSAGE_MODAL$OPENHANDS_VERSION")}</span>{" "}
-                  <span className="text-gray-100 text-primary">{systemMessage.openhands_version}</span>
+                  <span className="font-semibold text-gray-300">
+                    {t("SYSTEM_MESSAGE_MODAL$OPENHANDS_VERSION")}
+                  </span>{" "}
+                  <span className="text-gray-100 text-primary">
+                    {systemMessage.openhands_version}
+                  </span>
                 </div>
               )}
             </div>
@@ -101,9 +113,9 @@ export function SystemMessageModal({
                 type="button"
                 className={cn(
                   "px-4 py-2 font-medium border-b-2 transition-colors",
-                  activeTab === "system" 
-                    ? "border-primary text-primary" 
-                    : "border-transparent hover:text-gray-700 dark:hover:text-gray-300"
+                  activeTab === "system"
+                    ? "border-primary text-primary"
+                    : "border-transparent hover:text-gray-700 dark:hover:text-gray-300",
                 )}
                 onClick={() => setActiveTab("system")}
               >
@@ -114,9 +126,9 @@ export function SystemMessageModal({
                   type="button"
                   className={cn(
                     "px-4 py-2 font-medium border-b-2 transition-colors",
-                    activeTab === "tools" 
-                      ? "border-primary text-primary" 
-                      : "border-transparent hover:text-gray-700 dark:hover:text-gray-300"
+                    activeTab === "tools"
+                      ? "border-primary text-primary"
+                      : "border-transparent hover:text-gray-700 dark:hover:text-gray-300",
                   )}
                   onClick={() => setActiveTab("tools")}
                 >
@@ -132,75 +144,103 @@ export function SystemMessageModal({
                 </div>
               )}
 
-              {activeTab === "tools" && systemMessage.tools && systemMessage.tools.length > 0 && (
-                <div className="p-4 space-y-4">
-                  {systemMessage.tools.map((tool, index) => {
-                    // Extract function data from the nested structure
-                    const toolData = tool as ToolData;
-                    const functionData = toolData.function || toolData;
-                    const name = functionData.name || (toolData.type === "function" && toolData.function?.name) || "";
-                    const description = functionData.description || (toolData.type === "function" && toolData.function?.description) || "";
-                    const parameters = functionData.parameters || (toolData.type === "function" && toolData.function?.parameters) || null;
-                    
-                    const isExpanded = expandedTools[index] || false;
-                    
-                    return (
-                      <div key={index} className="border rounded-md bg-gray-800 border-gray-700 overflow-hidden">
-                        <button 
-                          onClick={() => toggleTool(index)}
-                          className="w-full p-4 text-left flex items-center justify-between hover:bg-gray-700 transition-colors"
+              {activeTab === "tools" &&
+                systemMessage.tools &&
+                systemMessage.tools.length > 0 && (
+                  <div className="p-4 space-y-4">
+                    {systemMessage.tools.map((tool, index) => {
+                      // Extract function data from the nested structure
+                      const toolData = tool as ToolData;
+                      const functionData = toolData.function || toolData;
+                      const name =
+                        functionData.name ||
+                        (toolData.type === "function" &&
+                          toolData.function?.name) ||
+                        "";
+                      const description =
+                        functionData.description ||
+                        (toolData.type === "function" &&
+                          toolData.function?.description) ||
+                        "";
+                      const parameters =
+                        functionData.parameters ||
+                        (toolData.type === "function" &&
+                          toolData.function?.parameters) ||
+                        null;
+
+                      const isExpanded = expandedTools[index] || false;
+
+                      return (
+                        <div
+                          key={index}
+                          className="border rounded-md bg-gray-800 border-gray-700 overflow-hidden"
                         >
-                          <div className="flex items-center">
-                            <span className="inline-block w-6 h-6 mr-2 rounded-full bg-primary/20 flex items-center justify-center">
-                              <span className="text-primary text-xs font-bold">{index + 1}</span>
-                            </span>
-                            <h3 className="font-bold text-primary">{String(name)}</h3>
-                          </div>
-                          <span className="text-gray-300">
-                            {isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
-                          </span>
-                        </button>
-                        
-                        {isExpanded && (
-                          <div className="px-4 pb-4 pt-1">
-                            <div className="mt-2 mb-4 p-4 bg-gray-800/50 rounded-md border border-gray-700/50 shadow-inner">
-                              <p className="text-sm whitespace-pre-wrap text-gray-300 leading-relaxed">
-                                {String(description)}
-                              </p>
+                          <button
+                            type="button"
+                            onClick={() => toggleTool(index)}
+                            className="w-full p-4 text-left flex items-center justify-between hover:bg-gray-700 transition-colors"
+                          >
+                            <div className="flex items-center">
+                              <span className="inline-block w-6 h-6 mr-2 rounded-full bg-primary/20 flex items-center justify-center">
+                                <span className="text-primary text-xs font-bold">
+                                  {index + 1}
+                                </span>
+                              </span>
+                              <h3 className="font-bold text-primary">
+                                {String(name)}
+                              </h3>
                             </div>
-                            
-                            {/* Parameters section */}
-                            {parameters && (
-                              <div className="mt-3">
-                                <h4 className="text-sm font-semibold text-gray-300">{t("SYSTEM_MESSAGE_MODAL$PARAMETERS")}</h4>
-                                <div className="text-sm mt-2 p-4 bg-gray-900 rounded-md overflow-auto border border-gray-700 text-gray-300 max-h-[400px] shadow-inner">
-                                  <ReactJsonView 
-                                    src={parameters}
-                                    theme={jsonViewTheme}
-                                  />
-                                </div>
+                            <span className="text-gray-300">
+                              {isExpanded ? (
+                                <ChevronDown size={18} />
+                              ) : (
+                                <ChevronRight size={18} />
+                              )}
+                            </span>
+                          </button>
+
+                          {isExpanded && (
+                            <div className="px-4 pb-4 pt-1">
+                              <div className="mt-2 mb-4 p-4 bg-gray-800/50 rounded-md border border-gray-700/50 shadow-inner">
+                                <p className="text-sm whitespace-pre-wrap text-gray-300 leading-relaxed">
+                                  {String(description)}
+                                </p>
                               </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-              
-              {activeTab === "tools" && (!systemMessage.tools || systemMessage.tools.length === 0) && (
-                <div className="flex items-center justify-center h-full p-4">
-                  <p className="text-gray-400">{t("SYSTEM_MESSAGE_MODAL$NO_TOOLS")}</p>
-                </div>
-              )}
+
+                              {/* Parameters section */}
+                              {parameters && (
+                                <div className="mt-3">
+                                  <h4 className="text-sm font-semibold text-gray-300">
+                                    {t("SYSTEM_MESSAGE_MODAL$PARAMETERS")}
+                                  </h4>
+                                  <div className="text-sm mt-2 p-4 bg-gray-900 rounded-md overflow-auto border border-gray-700 text-gray-300 max-h-[400px] shadow-inner">
+                                    <ReactJsonView
+                                      src={parameters}
+                                      theme={jsonViewTheme}
+                                    />
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+              {activeTab === "tools" &&
+                (!systemMessage.tools || systemMessage.tools.length === 0) && (
+                  <div className="flex items-center justify-center h-full p-4">
+                    <p className="text-gray-400">
+                      {t("SYSTEM_MESSAGE_MODAL$NO_TOOLS")}
+                    </p>
+                  </div>
+                )}
             </div>
           </div>
-
-
         </ModalBody>
       </ModalBackdrop>
-      </>
     )
   );
 }

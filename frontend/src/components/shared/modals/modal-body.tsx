@@ -10,7 +10,12 @@ interface ModalBodyProps {
   width?: ModalWidth;
 }
 
-export function ModalBody({ testID, children, className, width = "small" }: ModalBodyProps) {
+export function ModalBody({
+  testID,
+  children,
+  className,
+  width = "small",
+}: ModalBodyProps) {
   return (
     <div
       data-testid={testID}
