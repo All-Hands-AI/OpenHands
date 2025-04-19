@@ -35,8 +35,8 @@ A useful feature is the ability to connect to your local filesystem. To mount yo
 Be careful! There's nothing stopping the OpenHands agent from deleting or modifying
 any files that are mounted into its workspace.
 
-This setup can cause some issues with file permissions (hence the `SANDBOX_USER_ID` variable)
-but seems to work well on most systems.
+The `-e SANDBOX_USER_ID=$(id -u)` is passed to the Docker command to ensure the sandbox user matches the host user’s
+permissions. This prevents the agent from creating root-owned files in the mounted workspace.
 
 ## Hardened Docker Installation
 

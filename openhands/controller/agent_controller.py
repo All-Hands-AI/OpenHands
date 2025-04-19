@@ -66,7 +66,7 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization.event import event_to_trajectory, truncate_content
 from openhands.llm.llm import LLM
-from openhands.llm.metrics import Metrics, TokenUsage
+from openhands.llm.metrics import Metrics
 
 # note: RESUME is only available on web GUI
 TRAFFIC_CONTROL_REMINDER = (
@@ -1114,36 +1114,38 @@ class AgentController:
 
         To avoid performance issues with long conversations, we only keep:
         - accumulated_cost: The current total cost
-        - latest token_usage: Token statistics from the most recent API call
+        - accumulated_token_usage: Accumulated token statistics across all API calls
 
         Args:
             action: The action to attach metrics to
         """
+        # Create a minimal metrics object with just what the frontend needs
         metrics = Metrics(model_name=self.agent.llm.metrics.model_name)
         metrics.accumulated_cost = self.agent.llm.metrics.accumulated_cost
-        if self.agent.llm.metrics.token_usages:
-            latest_usage = self.agent.llm.metrics.token_usages[-1]
-            metrics.add_token_usage(
-                prompt_tokens=latest_usage.prompt_tokens,
-                completion_tokens=latest_usage.completion_tokens,
-                cache_read_tokens=latest_usage.cache_read_tokens,
-                cache_write_tokens=latest_usage.cache_write_tokens,
-                response_id=latest_usage.response_id,
-            )
+        metrics._accumulated_token_usage = (
+            self.agent.llm.metrics.accumulated_token_usage
+        )
+
         action.llm_metrics = metrics
 
-        # Log the metrics information for frontend display
-        log_usage: TokenUsage | None = (
-            metrics.token_usages[-1] if metrics.token_usages else None
-        )
+        # Log the metrics information for debugging
+        # Get the latest usage directly from the agent's metrics
+        latest_usage = None
+        if self.agent.llm.metrics.token_usages:
+            latest_usage = self.agent.llm.metrics.token_usages[-1]
+
+        accumulated_usage = self.agent.llm.metrics.accumulated_token_usage
         self.log(
             'debug',
             f'Action metrics - accumulated_cost: {metrics.accumulated_cost}, '
-            f'tokens (prompt/completion/cache_read/cache_write): '
-            f'{log_usage.prompt_tokens if log_usage else 0}/'
-            f'{log_usage.completion_tokens if log_usage else 0}/'
-            f'{log_usage.cache_read_tokens if log_usage else 0}/'
-            f'{log_usage.cache_write_tokens if log_usage else 0}',
+            f'latest tokens (prompt/completion/cache_read/cache_write): '
+            f'{latest_usage.prompt_tokens if latest_usage else 0}/'
+            f'{latest_usage.completion_tokens if latest_usage else 0}/'
+            f'{latest_usage.cache_read_tokens if latest_usage else 0}/'
+            f'{latest_usage.cache_write_tokens if latest_usage else 0}, '
+            f'accumulated tokens (prompt/completion): '
+            f'{accumulated_usage.prompt_tokens}/'
+            f'{accumulated_usage.completion_tokens}',
             extra={'msg_type': 'METRICS'},
         )
 

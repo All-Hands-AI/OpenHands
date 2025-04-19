@@ -70,6 +70,7 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     'o3-mini-2025-01-31',
     'o3-mini',
     'gemini-2.5-pro',
+    'gpt-4.1',
 ]
 
 REASONING_EFFORT_SUPPORTED_MODELS = [
