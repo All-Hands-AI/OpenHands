@@ -79,10 +79,7 @@ class CodeActAgent(Agent):
         super().__init__(llm, config)
         self.pending_actions: deque[Action] = deque()
         self.reset()
-
-        built_in_tools = self._get_tools()
-
-        self.tools = built_in_tools
+        self.tools = self._get_tools()
 
         self.prompt_manager = PromptManager(
             prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
@@ -129,7 +126,6 @@ class CodeActAgent(Agent):
                 )
             )
         return tools
-
 
     def reset(self) -> None:
         """Resets the CodeAct Agent."""
