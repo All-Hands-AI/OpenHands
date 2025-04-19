@@ -1,4 +1,4 @@
-import { redirect, useSearchParams } from "react-router";
+import { useSearchParams } from "react-router";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { PaymentForm } from "#/components/features/payment/payment-form";
@@ -9,16 +9,6 @@ import {
   displaySuccessToast,
 } from "#/utils/custom-toast-handlers";
 import { I18nKey } from "#/i18n/declaration";
-
-export const clientLoader = async () => {
-  const config = queryClient.getQueryData<GetConfigResponse>(["config"]);
-
-  if (config?.APP_MODE !== "saas" || !config.FEATURE_FLAGS.ENABLE_BILLING) {
-    return redirect("/settings");
-  }
-
-  return null;
-};
 
 function BillingSettingsScreen() {
   const { t } = useTranslation();

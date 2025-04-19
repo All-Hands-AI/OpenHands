@@ -7,6 +7,7 @@ interface SettingsInputProps {
   label: string;
   type: React.HTMLInputTypeAttribute;
   defaultValue?: string;
+  value?: string;
   placeholder?: string;
   showOptionalTag?: boolean;
   isDisabled?: boolean;
@@ -24,6 +25,7 @@ export function SettingsInput({
   label,
   type,
   defaultValue,
+  value,
   placeholder,
   showOptionalTag,
   isDisabled,
@@ -43,11 +45,12 @@ export function SettingsInput({
       </div>
       <input
         data-testid={testId}
-        onChange={(e) => onChange?.(e.target.value)}
+        onChange={(e) => onChange && onChange(e.target.value)}
         name={name}
         disabled={isDisabled}
         type={type}
         defaultValue={defaultValue}
+        value={value}
         placeholder={placeholder}
         min={min}
         max={max}
