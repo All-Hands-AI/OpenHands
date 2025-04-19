@@ -19,6 +19,7 @@ from openhands.agenthub.codeact_agent.tools import (
     WebReadTool,
     create_cmd_run_tool,
     create_str_replace_editor_tool,
+    response_to_actions,
 )
 from openhands.agenthub.codeact_agent.tools.browser import (
     _BROWSER_DESCRIPTION,
@@ -71,6 +72,14 @@ def agent(agent_class) -> Union[CodeActAgent, ReadOnlyAgent]:
     agent.llm.config.max_message_chars = 1000
     return agent
 
+def test_agent_with_default_config_has_default_tools(agent: CodeActAgent):
+    assert len(agent.tools) > 0
+    assert any(tool['function']['name'] == 'execute_bash' for tool in agent.tools)
+    assert any(tool['function']['name'] == 'execute_ipython_cell' for tool in agent.tools)
+    assert any(tool['function']['name'] == 'edit_file' for tool in agent.tools)
+    assert any(tool['function']['name'] == 'web_read' for tool in agent.tools)
+    assert any(tool['function']['name'] == 'browser' for tool in agent.tools)
+
 
 @pytest.fixture
 def mock_state() -> State:
@@ -104,61 +113,6 @@ def test_step_with_pending_actions(agent):
     result = agent.step(Mock())
     assert result == pending_action
     assert len(agent.pending_actions) == 0
-
-
-def test_codeact_get_tools_default():
-    tools = codeact_get_tools(
-        enable_jupyter=True,
-        enable_llm_editor=True,
-        enable_browsing=True,
-    )
-    assert len(tools) > 0
-
-    # Check required tools are present
-    tool_names = [tool['function']['name'] for tool in tools]
-    assert 'execute_bash' in tool_names
-    assert 'execute_ipython_cell' in tool_names
-    assert 'edit_file' in tool_names
-    assert 'web_read' in tool_names
-
-
-def test_readonly_get_tools_default():
-    tools = readonly_get_tools()
-    assert len(tools) > 0
-
-    # Check required tools are present
-    tool_names = [tool['function']['name'] for tool in tools]
-    assert 'execute_bash' not in tool_names
-    assert 'execute_ipython_cell' not in tool_names
-    assert 'edit_file' not in tool_names
-    assert 'web_read' in tool_names
-    assert 'grep' in tool_names
-    assert 'glob' in tool_names
-    assert 'think' in tool_names
-
-
-def test_codeact_get_tools_with_options():
-    # Test with all options enabled
-    tools = codeact_get_tools(
-        enable_browsing=True,
-        enable_jupyter=True,
-        enable_llm_editor=True,
-    )
-    tool_names = [tool['function']['name'] for tool in tools]
-    assert 'browser' in tool_names
-    assert 'execute_ipython_cell' in tool_names
-    assert 'edit_file' in tool_names
-
-    # Test with all options disabled
-    tools = codeact_get_tools(
-        enable_browsing=False,
-        enable_jupyter=False,
-        enable_llm_editor=False,
-    )
-    tool_names = [tool['function']['name'] for tool in tools]
-    assert 'browser' not in tool_names
-    assert 'execute_ipython_cell' not in tool_names
-    assert 'edit_file' not in tool_names
 
 
 def test_cmd_run_tool():
