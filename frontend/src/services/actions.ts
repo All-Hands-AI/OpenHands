@@ -19,6 +19,7 @@ import {
 } from "#/types/message";
 import { handleObservationMessage } from "./observations";
 import { appendInput } from "#/state/command-slice";
+import { showCostThresholdToast } from "#/components/shared/cost-threshold-toast";
 
 const messageActions = {
   [ActionType.BROWSE]: (message: ActionMessage) => {
@@ -131,6 +132,12 @@ export function handleStatusMessage(message: StatusMessage) {
         ...message,
       }),
     );
+  } else if (
+    message.type === "warning" &&
+    message.id === "STATUS$COST_THRESHOLD_REACHED"
+  ) {
+    // Show the cost threshold toast for user approval
+    showCostThresholdToast(message.message);
   } else if (message.type === "error") {
     trackError({
       message: message.message,
