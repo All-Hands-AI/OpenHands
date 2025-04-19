@@ -1,4 +1,5 @@
 import { ProjectStatus } from "#/components/features/conversation-panel/conversation-state-indicator";
+import { Provider } from "#/types/settings";
 
 export interface ErrorResponse {
   error: string;
@@ -70,15 +71,10 @@ export interface AuthenticateResponse {
   error?: string;
 }
 
-export enum ProviderType {
-  GITHUB = "github",
-  GITLAB = "gitlab",
-}
-
 export interface Repository {
   id: number;
   full_name: string;
-  git_provider: ProviderType;
+  git_provider: Provider;
   stargazers_count?: number;
   link_header?: string;
   pushed_at?: string; // ISO 8601 format date string

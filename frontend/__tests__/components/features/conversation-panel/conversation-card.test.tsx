@@ -13,7 +13,7 @@ import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "test-utils";
 import { formatTimeDelta } from "#/utils/format-time-delta";
 import { ConversationCard } from "#/components/features/conversation-panel/conversation-card";
-import { ProviderType } from "#/api/open-hands.types";
+import { Provider } from "#/types/settings";
 import { clickOnEditButton } from "./utils";
 
 // We'll use the actual i18next implementation but override the translation function
@@ -91,7 +91,7 @@ describe("ConversationCard", () => {
     const mockRepository = {
       id: 1,
       full_name: "org/selectedRepository",
-      git_provider: ProviderType.GITHUB
+      git_provider: "github" as Provider
     };
 
     const { rerender } = renderWithProviders(
@@ -177,7 +177,7 @@ describe("ConversationCard", () => {
     const mockRepository = {
       id: 1,
       full_name: "org/selectedRepository",
-      git_provider: ProviderType.GITHUB
+      git_provider: "github" as Provider
     };
 
     renderWithProviders(
