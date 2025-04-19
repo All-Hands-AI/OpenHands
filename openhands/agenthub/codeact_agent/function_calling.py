@@ -6,7 +6,6 @@ This is similar to the functionality of `CodeActResponseParser`.
 import json
 
 from litellm import (
-    ChatCompletionToolParam,
     ModelResponse,
 )
 
@@ -237,44 +236,3 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
 
     assert len(actions) >= 1
     return actions
-
-
-def get_tools(
-    enable_browsing: bool = False,
-    enable_llm_editor: bool = False,
-    enable_jupyter: bool = False,
-    enable_cmd: bool = True,
-    enable_think: bool = True,
-    enable_finish: bool = True,
-    llm: LLM | None = None,
-) -> list[ChatCompletionToolParam]:
-    SIMPLIFIED_TOOL_DESCRIPTION_LLM_SUBSTRS = ['gpt-', 'o3', 'o1']
-
-    use_simplified_tool_desc = False
-    if llm is not None:
-        use_simplified_tool_desc = any(
-            model_substr in llm.config.model
-            for model_substr in SIMPLIFIED_TOOL_DESCRIPTION_LLM_SUBSTRS
-        )
-
-    tools = []
-    if enable_cmd:
-        tools.append(create_cmd_run_tool(use_simplified_description=use_simplified_tool_desc))
-    if enable_think:
-        tools.append(ThinkTool)
-    if enable_finish:
-        tools.append(FinishTool)
-    if enable_browsing:
-        tools.append(WebReadTool)
-        tools.append(BrowserTool)
-    if enable_jupyter:
-        tools.append(IPythonTool)
-    if enable_llm_editor:
-        tools.append(LLMBasedFileEditTool)
-    else:
-        tools.append(
-            create_str_replace_editor_tool(
-                use_simplified_description=use_simplified_tool_desc
-            )
-        )
-    return tools
