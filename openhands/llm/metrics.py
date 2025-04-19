@@ -1,3 +1,4 @@
+import copy
 import time
 
 from pydantic import BaseModel, Field
@@ -199,6 +200,10 @@ class Metrics:
         for key, value in metrics.items():
             logs += f'{key}: {value}\n'
         return logs
+
+    def copy(self) -> 'Metrics':
+        """Create a deep copy of the Metrics object."""
+        return copy.deepcopy(self)
 
     def __repr__(self) -> str:
         return f'Metrics({self.get()}'
