@@ -66,15 +66,17 @@ def agent(agent_class) -> Union[CodeActAgent, ReadOnlyAgent]:
     return agent
 
 
-def test_agent_with_default_config_has_default_tools(agent: CodeActAgent):
-    assert len(agent.tools) > 0
-    assert any(tool['function']['name'] == 'execute_bash' for tool in agent.tools)
+def test_agent_with_default_config_has_default_tools():
+    config = AgentConfig()
+    codeact_agent = CodeActAgent(llm=LLM(LLMConfig()), config=config)
+    assert len(codeact_agent.tools) > 0
+    assert any(tool['function']['name'] == 'execute_bash' for tool in codeact_agent.tools)
     assert any(
-        tool['function']['name'] == 'execute_ipython_cell' for tool in agent.tools
+        tool['function']['name'] == 'execute_ipython_cell' for tool in codeact_agent.tools
     )
-    assert any(tool['function']['name'] == 'edit_file' for tool in agent.tools)
-    assert any(tool['function']['name'] == 'web_read' for tool in agent.tools)
-    assert any(tool['function']['name'] == 'browser' for tool in agent.tools)
+    assert any(tool['function']['name'] == 'edit_file' for tool in codeact_agent.tools)
+    assert any(tool['function']['name'] == 'web_read' for tool in codeact_agent.tools)
+    assert any(tool['function']['name'] == 'browser' for tool in codeact_agent.tools)
 
 
 @pytest.fixture
