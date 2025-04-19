@@ -38,7 +38,7 @@ i18n.use(initReactI18next).init({
   },
 });
 
-const setupStore = (preloadedState?: Partial<RootState>): AppStore =>
+export const setupStore = (preloadedState?: Partial<RootState>): AppStore =>
   configureStore({
     reducer: rootReducer,
     preloadedState,
