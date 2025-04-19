@@ -5,6 +5,9 @@ enum ActionType {
   // Represents a message from the user or agent.
   MESSAGE = "message",
 
+  // Represents a system message for an agent, including the system prompt and available tools.
+  SYSTEM = "system",
+
   // Reads the contents of a file.
   READ = "read",
 

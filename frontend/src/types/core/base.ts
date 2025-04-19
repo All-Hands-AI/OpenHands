@@ -1,5 +1,6 @@
 export type OpenHandsEventType =
   | "message"
+  | "system"
   | "agent_state_changed"
   | "run"
   | "read"
