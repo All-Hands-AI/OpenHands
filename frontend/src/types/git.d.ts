@@ -22,6 +22,7 @@ interface GitRepository {
   is_public: boolean;
   stargazers_count?: number;
   link_header?: string;
+  pushed_at?: string;
 }
 
 interface GitHubCommit {
