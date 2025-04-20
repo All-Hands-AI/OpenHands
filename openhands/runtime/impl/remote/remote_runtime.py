@@ -475,4 +475,3 @@ class RemoteRuntime(ActionExecutionClient):
 
     def _stop_if_closed(self, retry_state: tenacity.RetryCallState) -> bool:
         return self._runtime_closed
-    
