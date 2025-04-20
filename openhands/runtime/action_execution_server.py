@@ -611,6 +611,12 @@ if __name__ == '__main__':
 
     @app.middleware('http')
     async def authenticate_requests(request: Request, call_next):
+        # Skip authentication for localhost requests
+        client_host = request.client.host if request.client else None
+        if client_host in ['127.0.0.1', 'localhost', '::1']:
+            return await call_next(request)
+        
+        # Continue with authentication for non-localhost requests
         if request.url.path != '/alive' and request.url.path != '/server_info':
             try:
                 verify_api_key(request.headers.get('X-Session-API-Key'))
