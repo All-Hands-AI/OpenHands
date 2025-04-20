@@ -77,16 +77,28 @@ def test_initialize_runtime():
         ),
     ]
 
-    resolver = IssueResolver(
-        owner='test-owner',
-        repo='test-repo',
-        token='test-token',
-        username='test-user',
-        platform=Platform.GITHUB,
-        max_iterations=5,
-        output_dir='/tmp',
-        llm_config=LLMConfig(model='test', api_key='test'),
-    )
+    # Create a mock Namespace object with the required attributes
+    mock_args = MagicMock()
+    mock_args.selected_repo = 'test-owner/test-repo'
+    mock_args.token = 'test-token'
+    mock_args.username = 'test-user'
+    mock_args.max_iterations = 5
+    mock_args.output_dir = '/tmp'
+    mock_args.llm_model = 'test'
+    mock_args.llm_api_key = 'test'
+    mock_args.llm_base_url = None
+    mock_args.base_domain = None
+    mock_args.runtime_container_image = None
+    mock_args.is_experimental = False
+    mock_args.issue_number = None
+    mock_args.comment_id = None
+    mock_args.repo_instruction_file = None
+    mock_args.issue_type = 'issue'
+    mock_args.prompt_file = None
+    
+    # Mock the identify_token function to return GitHub platform
+    with patch('openhands.resolver.resolve_issue.identify_token', return_value=Platform.GITHUB):
+        resolver = IssueResolver(mock_args)
     
     resolver.initialize_runtime(mock_runtime)
 
@@ -104,18 +116,28 @@ async def test_resolve_issue_no_issues_found():
     mock_handler = MagicMock()
     mock_handler.get_converted_issues.return_value = []  # Return empty list
 
-    # Create a resolver instance
-    resolver = IssueResolver(
-        owner='test-owner',
-        repo='test-repo',
-        token='test-token',
-        username='test-user',
-        platform=Platform.GITHUB,
-        max_iterations=5,
-        output_dir='/tmp',
-        llm_config=LLMConfig(model='test', api_key='test'),
-        issue_number=5432,
-    )
+    # Create a mock Namespace object with the required attributes
+    mock_args = MagicMock()
+    mock_args.selected_repo = 'test-owner/test-repo'
+    mock_args.token = 'test-token'
+    mock_args.username = 'test-user'
+    mock_args.max_iterations = 5
+    mock_args.output_dir = '/tmp'
+    mock_args.llm_model = 'test'
+    mock_args.llm_api_key = 'test'
+    mock_args.llm_base_url = None
+    mock_args.base_domain = None
+    mock_args.runtime_container_image = None
+    mock_args.is_experimental = False
+    mock_args.issue_number = 5432
+    mock_args.comment_id = None
+    mock_args.repo_instruction_file = None
+    mock_args.issue_type = 'issue'
+    mock_args.prompt_file = None
+    
+    # Create a resolver instance with mocked identify_token
+    with patch('openhands.resolver.resolve_issue.identify_token', return_value=Platform.GITHUB):
+        resolver = IssueResolver(mock_args)
     
     # Mock the issue_handler_factory method
     resolver.issue_handler_factory = MagicMock(return_value=mock_handler)
@@ -322,16 +344,28 @@ async def test_complete_runtime():
         create_cmd_output(exit_code=0, content='git diff content', command='git diff --no-color --cached base_commit_hash'),
     ]
 
-    resolver = IssueResolver(
-        owner='test-owner',
-        repo='test-repo',
-        token='test-token',
-        username='test-user',
-        platform=Platform.GITHUB,
-        max_iterations=5,
-        output_dir='/tmp',
-        llm_config=LLMConfig(model='test', api_key='test'),
-    )
+    # Create a mock Namespace object with the required attributes
+    mock_args = MagicMock()
+    mock_args.selected_repo = 'test-owner/test-repo'
+    mock_args.token = 'test-token'
+    mock_args.username = 'test-user'
+    mock_args.max_iterations = 5
+    mock_args.output_dir = '/tmp'
+    mock_args.llm_model = 'test'
+    mock_args.llm_api_key = 'test'
+    mock_args.llm_base_url = None
+    mock_args.base_domain = None
+    mock_args.runtime_container_image = None
+    mock_args.is_experimental = False
+    mock_args.issue_number = None
+    mock_args.comment_id = None
+    mock_args.repo_instruction_file = None
+    mock_args.issue_type = 'issue'
+    mock_args.prompt_file = None
+    
+    # Create a resolver instance with mocked identify_token
+    with patch('openhands.resolver.resolve_issue.identify_token', return_value=Platform.GITHUB):
+        resolver = IssueResolver(mock_args)
 
     result = await resolver.complete_runtime(mock_runtime, 'base_commit_hash')
 
@@ -387,20 +421,32 @@ async def test_process_issue(mock_output_dir, mock_prompt_template):
     ]
 
     for test_case in test_cases:
-        # Create a resolver instance
-        resolver = IssueResolver(
-            owner='test-owner',
-            repo='test-repo',
-            token='test-token',
-            username='test-user',
-            platform=Platform.GITHUB,
-            max_iterations=max_iterations,
-            output_dir=mock_output_dir,
-            llm_config=llm_config,
-            runtime_container_image=runtime_container_image,
-            prompt_template=mock_prompt_template,
-            repo_instruction=repo_instruction,
-        )
+        # Create a mock Namespace object with the required attributes
+        mock_args = MagicMock()
+        mock_args.selected_repo = 'test-owner/test-repo'
+        mock_args.token = 'test-token'
+        mock_args.username = 'test-user'
+        mock_args.max_iterations = max_iterations
+        mock_args.output_dir = mock_output_dir
+        mock_args.llm_model = 'gpt-4'
+        mock_args.llm_api_key = 'test_api_key'
+        mock_args.llm_base_url = None
+        mock_args.base_domain = None
+        mock_args.runtime_container_image = runtime_container_image
+        mock_args.is_experimental = False
+        mock_args.issue_number = None
+        mock_args.comment_id = None
+        mock_args.repo_instruction_file = None
+        mock_args.issue_type = 'pr' if test_case.get('is_pr', False) else 'issue'
+        mock_args.prompt_file = None
+        
+        # Create a resolver instance with mocked identify_token
+        with patch('openhands.resolver.resolve_issue.identify_token', return_value=Platform.GITHUB):
+            resolver = IssueResolver(mock_args)
+        
+        # Set the prompt template and repo instruction directly
+        resolver.prompt_template = mock_prompt_template
+        resolver.repo_instruction = repo_instruction
         
         # Mock the handler
         handler_instance = MagicMock()
