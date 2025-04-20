@@ -15,11 +15,7 @@ from openhands.integrations.service_types import (
     UnknownException,
     User,
 )
-from openhands.server.auth import (
-    get_access_token, 
-    get_provider_tokens, 
-    get_user_id
-)
+from openhands.server.auth import get_access_token, get_provider_tokens, get_user_id
 from openhands.server.shared import server_config
 
 app = APIRouter(prefix='/api/user')
@@ -30,13 +26,13 @@ async def get_user_repositories(
     sort: str = 'pushed',
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     access_token: SecretStr | None = Depends(get_access_token),
-    user_id: str | None = Depends(get_user_id)
+    user_id: str | None = Depends(get_user_id),
 ):
     if provider_tokens:
         client = ProviderHandler(
-            provider_tokens=provider_tokens, 
+            provider_tokens=provider_tokens,
             external_auth_token=access_token,
-            external_auth_id=user_id
+            external_auth_id=user_id,
         )
 
         try:
