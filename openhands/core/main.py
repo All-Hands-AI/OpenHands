@@ -19,7 +19,6 @@ from openhands.core.schema import AgentState
 from openhands.core.setup import (
     create_agent,
     create_controller,
-    create_planning_controller,
     create_memory,
     create_runtime,
     generate_sid,
@@ -100,6 +99,7 @@ async def run_controller(
             'Agent is already provided, cannot create a planning controller.'
         )
 
+    planning_agent = None
     if agent is None: 
         if not config.enable_planning:
             agent = create_agent(config)
@@ -154,8 +154,6 @@ async def run_controller(
         )
 
     controller, initial_state = create_controller(
-        agent, runtime, config, replay_events=replay_events
-    ) if not config.enable_planning else create_planning_controller(
         agent, planning_agent, runtime, config, replay_events=replay_events
     )
 
