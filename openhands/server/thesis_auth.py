@@ -36,7 +36,6 @@ thesis_auth_client = httpx.AsyncClient(
 async def get_user_detail_from_thesis_auth_server(
     bearer_token: str,
 ) -> ThesisUser | None:
-
     # TODO: bypass auth server for dev mode
     if os.getenv('RUN_MODE') == 'DEV':
         return ThesisUser(
@@ -107,7 +106,7 @@ async def handle_thesis_auth_request(
     payload: dict | None = None,
     params: dict | None = None,
 ) -> dict:
-    url = f"{endpoint}"
+    url = f'{endpoint}'
     headers = {'Content-Type': 'application/json', 'Authorization': bearer_token}
 
     try:
