@@ -13,8 +13,8 @@ from openhands.router.cost_saving.prompt import (
 
 set_default_backend(
     RuntimeEndpoint(
-        base_url='https://torcixhjd7j0pg.r21.modal.host',
-        api_key='minhnguyet',
+        base_url='https://onuug1q6jd24ou.r21.modal.host',
+        api_key='ht-test-key',
     )
 )
 
@@ -37,7 +37,7 @@ def score_trajectory(s, trajectory, **kwargs):
 
 class ThresholdBasedCostSavingRouter(BaseRouter):
     WEAK_MODEL_CONFIG = 'weak_model'
-    CPT_THRESHOLD = 0.26894142136999516
+    CPT_THRESHOLD = 0.4073334000459302
 
     def __init__(
         self,

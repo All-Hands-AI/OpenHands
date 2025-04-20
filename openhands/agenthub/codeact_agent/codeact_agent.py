@@ -20,6 +20,9 @@ from openhands.router import (
     BaseRouter,
     ThresholdBasedCostSavingRouter,
 )
+
+# CostSavingRouter,
+# RandomRouter,
 from openhands.runtime.plugins import (
     AgentSkillsRequirement,
     JupyterRequirement,
@@ -104,6 +107,13 @@ class CodeActAgent(Agent):
                 routing_llms=routing_llms or dict(),
                 model_routing_config=model_routing_config,
             )
+
+        # FIXME: remove this
+        self.routing_llms = (
+            [routing_llm for routing_llm in routing_llms.values()]
+            if routing_llms
+            else []
+        )
 
     def reset(self) -> None:
         """Resets the CodeAct Agent."""
