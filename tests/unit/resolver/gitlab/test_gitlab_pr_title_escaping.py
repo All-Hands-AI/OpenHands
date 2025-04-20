@@ -3,10 +3,10 @@ import subprocess
 import tempfile
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.resolver.interfaces.issue import Issue
-from openhands.resolver.send_pull_request import make_commit
 from openhands.integrations.service_types import ProviderType
-from openhands.resolver.send_pull_request import send_pull_request
+from openhands.resolver.interfaces.issue import Issue
+from openhands.resolver.send_pull_request import make_commit, send_pull_request
+
 
 def test_commit_message_with_quotes():
     # Create a temporary directory and initialize git repo

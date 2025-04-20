@@ -11,6 +11,7 @@ from openhands.events.observation import (
     CmdOutputObservation,
     NullObservation,
 )
+from openhands.integrations.service_types import ProviderType
 from openhands.llm.llm import LLM
 from openhands.resolver.interfaces.gitlab import GitlabIssueHandler, GitlabPRHandler
 from openhands.resolver.interfaces.issue import Issue, ReviewThread
@@ -24,7 +25,7 @@ from openhands.resolver.resolve_issue import (
     process_issue,
 )
 from openhands.resolver.resolver_output import ResolverOutput
-from openhands.integrations.service_types import ProviderType
+
 
 @pytest.fixture
 def mock_output_dir():
@@ -354,7 +355,9 @@ async def test_complete_runtime():
         create_cmd_output(exit_code=0, content='git diff content', command='git apply'),
     ]
 
-    result = await complete_runtime(mock_runtime, 'base_commit_hash', ProviderType.GITLAB)
+    result = await complete_runtime(
+        mock_runtime, 'base_commit_hash', ProviderType.GITLAB
+    )
 
     assert result == {'git_patch': 'git diff content'}
     assert mock_runtime.run_action.call_count == 5
