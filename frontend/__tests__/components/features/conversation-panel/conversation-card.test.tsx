@@ -91,7 +91,8 @@ describe("ConversationCard", () => {
     const mockRepository = {
       id: 1,
       full_name: "org/selectedRepository",
-      git_provider: "github" as Provider
+      git_provider: "github" as Provider,
+      is_public: true
     };
 
     const { rerender } = renderWithProviders(
@@ -177,7 +178,8 @@ describe("ConversationCard", () => {
     const mockRepository = {
       id: 1,
       full_name: "org/selectedRepository",
-      git_provider: "github" as Provider
+      git_provider: "github" as Provider,
+      is_public: true
     };
 
     renderWithProviders(

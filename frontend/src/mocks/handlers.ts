@@ -50,6 +50,7 @@ const conversations: Conversation[] = [
       id: 1,
       full_name: "octocat/hello-world",
       git_provider: "github" as Provider,
+      is_public: true,
     },
     // 2 days ago
     last_updated_at: new Date(
@@ -65,6 +66,7 @@ const conversations: Conversation[] = [
       id: 2,
       full_name: "octocat/earth",
       git_provider: "github" as Provider,
+      is_public: true,
     },
     // 5 days ago
     last_updated_at: new Date(
@@ -116,8 +118,18 @@ export const handlers = [
   ...openHandsHandlers,
   http.get("/api/user/repositories", () =>
     HttpResponse.json([
-      { id: 1, full_name: "octocat/hello-world" },
-      { id: 2, full_name: "octocat/earth" },
+      {
+        id: 1,
+        full_name: "octocat/hello-world",
+        git_provider: "github" as Provider,
+        is_public: true,
+      },
+      {
+        id: 2,
+        full_name: "octocat/earth",
+        git_provider: "github" as Provider,
+        is_public: true,
+      },
     ]),
   ),
   http.get("/api/user/info", () => {

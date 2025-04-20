@@ -1,7 +1,7 @@
-import { Repository } from "#/api/open-hands.types";
+import { GitRepository } from "#/types/git";
 
 interface ConversationRepoLinkProps {
-  selectedRepository: Repository;
+  selectedRepository: GitRepository;
 }
 
 export function ConversationRepoLink({

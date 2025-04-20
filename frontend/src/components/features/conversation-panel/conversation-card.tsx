@@ -4,7 +4,7 @@ import posthog from "posthog-js";
 import { useTranslation } from "react-i18next";
 import { formatTimeDelta } from "#/utils/format-time-delta";
 import { ConversationRepoLink } from "./conversation-repo-link";
-import { Repository } from "#/api/open-hands.types";
+import { GitRepository } from "#/types/git";
 import {
   ProjectStatus,
   ConversationStateIndicator,
@@ -23,7 +23,7 @@ interface ConversationCardProps {
   showOptions?: boolean;
   isActive?: boolean;
   title: string;
-  selectedRepository: Repository | null;
+  selectedRepository: GitRepository | null;
   lastUpdatedAt: string; // ISO 8601
   createdAt?: string; // ISO 8601
   status?: ProjectStatus;
