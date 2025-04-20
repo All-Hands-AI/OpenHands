@@ -32,6 +32,8 @@ from openhands.server.thesis_auth import (
     UserStatus,
     get_user_detail_from_thesis_auth_server,
 )
+from openhands.storage.conversation.conversation_store import ConversationStore
+from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.utils.get_user_setting import get_user_setting
 
 
@@ -58,6 +60,8 @@ async def connect(connection_id: str, environ):
     user_id = None
     mnemonic = None
     conversation_configs = None
+    conversation_metadata_result_set: ConversationMetadata | None = None
+    conversation_store: ConversationStore | None = None
     if not conversation_id:
         logger.error('No conversation_id in query params')
         raise ConnectionRefusedError('No conversation_id in query params')
@@ -120,7 +124,10 @@ async def connect(connection_id: str, environ):
                 raise ConnectionRefusedError('User not activated')
 
             # TODO: if the user is whitelisted, check if the conversation is belong to the user
-            if conversation_metadata_result_set.user_id != user_id:
+            if (
+                conversation_metadata_result_set
+                and conversation_metadata_result_set.user_id != user_id
+            ):
                 logger.error(f'Conversation not belong to the user: {conversation_id}')
                 raise ConnectionRefusedError('This research isn’t available to you.')
 
