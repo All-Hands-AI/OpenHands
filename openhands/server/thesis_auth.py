@@ -1,4 +1,5 @@
 import os
+import time
 from enum import IntEnum
 
 import httpx
@@ -25,15 +26,34 @@ class ThesisUser(BaseModel):
     # Add other fields as needed
 
 
+thesis_auth_client = httpx.AsyncClient(
+    timeout=30.0,
+    base_url=os.getenv('THESIS_AUTH_SERVER_URL'),
+    headers={'Content-Type': 'application/json'},
+)
+
+
 async def get_user_detail_from_thesis_auth_server(
     bearer_token: str,
 ) -> ThesisUser | None:
-    url = f"{os.getenv('THESIS_AUTH_SERVER_URL')}/api/users/detail"
-    headers = {'Content-Type': 'application/json', 'Authorization': bearer_token}
+    # TODO: bypass auth server for dev mode
+    if os.getenv('RUN_MODE') == 'DEV':
+        return ThesisUser(
+            status=UserStatus.ACTIVE,
+            whitelisted=1,
+            publicAddress='0x25bE302C3954b4DF9F67AFD6BfDD8c39f4Dc98Dc',
+            mnemonic='test test test test test test test test test test test junk',
+            solanaThesisAddress='0x25bE302C3954b4DF9F67AFD6BfDD8c39f4Dc98Dc',
+            ethThesisAddress='0x25bE302C3954b4DF9F67AFD6BfDD8c39f4Dc98Dc',
+        )
 
+    url = '/api/users/detail'
+    headers = {'Content-Type': 'application/json', 'Authorization': bearer_token}
     try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.get(url, headers=headers)
+        start_time = time.time()
+        response = await thesis_auth_client.get(url, headers=headers)
+        end_time = time.time()
+        logger.info(f'Time taken to get user detail: {end_time - start_time} seconds')
     except httpx.RequestError as exc:
         logger.error(f'Request error while getting user detail: {exc}')
         raise HTTPException(status_code=500, detail='Unable to reach auth server')
@@ -46,7 +66,6 @@ async def get_user_detail_from_thesis_auth_server(
             status_code=response.status_code,
             detail=response.json().get('error', 'Unknown error'),
         )
-
     user_data = response.json().get('user')
     if not user_data:
         return None
@@ -55,14 +74,12 @@ async def get_user_detail_from_thesis_auth_server(
 
 
 async def add_invite_code_to_user(code: str, bearer_token: str) -> dict | None:
-    url = f"{os.getenv('THESIS_AUTH_SERVER_URL')}/api/users/add-invite-code"
+    url = '/api/users/add-invite-code'
     payload = {'code': code}
     headers = {'Content-Type': 'application/json', 'Authorization': bearer_token}
 
     try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.post(url, headers=headers, json=payload)
-
+        response = await thesis_auth_client.post(url, headers=headers, json=payload)
         if response.status_code != 200:
             logger.error(
                 f'Failed to add invite code: {response.status_code} - {response.text}'
@@ -89,18 +106,17 @@ async def handle_thesis_auth_request(
     payload: dict | None = None,
     params: dict | None = None,
 ) -> dict:
-    url = f"{os.getenv('THESIS_AUTH_SERVER_URL')}{endpoint}"
+    url = f'{endpoint}'
     headers = {'Content-Type': 'application/json', 'Authorization': bearer_token}
 
     try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.request(
-                method=method.upper(),
-                url=url,
-                headers=headers,
-                json=payload,  # use json= instead of data=
-                params=params,
-            )
+        response = await thesis_auth_client.request(
+            method=method.upper(),
+            url=url,
+            headers=headers,
+            json=payload,  # use json= instead of data=
+            params=params,
+        )
 
         if response.status_code >= 400:
             logger.error(

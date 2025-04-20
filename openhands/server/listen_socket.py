@@ -21,7 +21,6 @@ from openhands.events.serialization import event_to_dict
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderToken
 from openhands.integrations.service_types import ProviderType
 from openhands.server.modules import conversation_module
-from openhands.server.routes.auth import JWT_ALGORITHM, JWT_SECRET
 from openhands.server.shared import (
     ConversationStoreImpl,
     config,
@@ -33,6 +32,8 @@ from openhands.server.thesis_auth import (
     UserStatus,
     get_user_detail_from_thesis_auth_server,
 )
+from openhands.storage.conversation.conversation_store import ConversationStore
+from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.utils.get_user_setting import get_user_setting
 
 
@@ -59,6 +60,8 @@ async def connect(connection_id: str, environ):
     user_id = None
     mnemonic = None
     conversation_configs = None
+    conversation_metadata_result_set: ConversationMetadata | None = None
+    conversation_store: ConversationStore | None = None
     if not conversation_id:
         logger.error('No conversation_id in query params')
         raise ConnectionRefusedError('No conversation_id in query params')
@@ -102,8 +105,6 @@ async def connect(connection_id: str, environ):
         try:
             if jwt_token is None:
                 raise jwt.InvalidTokenError('No JWT token provided')
-            # Verify and decode JWT token
-            payload = jwt.decode(jwt_token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
 
             user: ThesisUser | None = await get_user_detail_from_thesis_auth_server(
                 'Bearer ' + jwt_token
@@ -112,7 +113,7 @@ async def connect(connection_id: str, environ):
                 logger.error(f'User not found in database: {user_id}')
                 raise ConnectionRefusedError('User not found')
 
-            user_id = payload['user']['publicAddress']
+            user_id = user.publicAddress
 
             # TODO: If the user is not whitelisted and the run mode is DEV, skip the check
             if (
@@ -121,6 +122,14 @@ async def connect(connection_id: str, environ):
             ):
                 logger.error(f'User not activated: {user_id}')
                 raise ConnectionRefusedError('User not activated')
+
+            # TODO: if the user is whitelisted, check if the conversation is belong to the user
+            if (
+                conversation_metadata_result_set
+                and conversation_metadata_result_set.user_id != user_id
+            ):
+                logger.error(f'Conversation not belong to the user: {conversation_id}')
+                raise ConnectionRefusedError('This research isn’t available to you.')
 
             mnemonic = user.mnemonic
         except jwt.ExpiredSignatureError:

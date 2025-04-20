@@ -1,25 +1,15 @@
 import os
-from datetime import datetime
 
-# timedelta
 import httpx
-import jwt
-from eth_account.messages import encode_defunct
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
-from web3 import Web3
+
+from openhands.core.logger import openhands_logger as logger
 
 app = APIRouter(prefix='/api/auth')
 
-
-# TODO: implement get nonce for signing message later
-# Message that users will sign with their wallet
-AUTH_MESSAGE = 'Sign to confirm account access to Thesis'
-
 # JWT settings
 JWT_SECRET = os.getenv('JWT_SECRET')
-# JWT_SECRET = 'your-secret-key-for-demo-lp-mcp'
-
 JWT_ALGORITHM = 'HS256'
 
 
@@ -33,33 +23,22 @@ class SignupResponse(BaseModel):
     user: dict
 
 
-def create_jwt_token(user_id: str) -> str:
-    """Create a JWT token for the user."""
-    payload = {
-        'sub': user_id,
-        'iat': datetime.utcnow(),
-    }
-
-    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
-
-
-def verify_ethereum_signature(public_address: str, signature: str) -> bool:
-    """Verify that the signature was signed by the public address."""
-    try:
-        w3 = Web3()
-        message = encode_defunct(text=AUTH_MESSAGE)
-        recovered_address = w3.eth.account.recover_message(message, signature=signature)
-        return recovered_address.lower() == public_address.lower()
-    except Exception:
-        return False
-
-
 @app.post('/signup', response_model=SignupResponse)
 async def signup(request: SignupRequest) -> SignupResponse:
     """Sign up with Ethereum wallet."""
     url = f"{os.getenv('THESIS_AUTH_SERVER_URL')}/api/users/login"
     payload = {'signature': request.signature, 'publicAddress': request.publicAddress}
     headers = {'Content-Type': 'application/json'}
+
+    # TODO: bypass auth server for dev mode
+    if os.getenv('RUN_MODE') == 'DEV':
+        return SignupResponse(
+            token='jwt_token',
+            user={
+                'id': '0x25bE302C3954b4DF9F67AFD6BfDD8c39f4Dc98Dc',
+                'publicAddress': '0x25bE302C3954b4DF9F67AFD6BfDD8c39f4Dc98Dc',
+            },
+        )
 
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
@@ -85,6 +64,7 @@ async def signup(request: SignupRequest) -> SignupResponse:
         raise HTTPException(status_code=500, detail=f'Connection error: {str(exc)}')
 
     except Exception as e:
+        logger.error(f'Error signing up: {str(e)}')
         raise HTTPException(status_code=500, detail=f'Error signing up: {str(e)}')
 
 

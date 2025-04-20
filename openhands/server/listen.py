@@ -14,11 +14,6 @@ from openhands.server.middleware import (
     ProviderTokenMiddleware,
     RateLimitMiddleware,
 )
-from openhands.server.static import SPAStaticFiles
-
-base_app.mount(
-    '/', SPAStaticFiles(directory='./frontend/build', html=True), name='dist'
-)
 
 base_app.middleware('http')(AttachConversationMiddleware(base_app))
 
@@ -48,7 +43,7 @@ base_app.add_middleware(
 base_app.add_middleware(CacheControlMiddleware)
 base_app.add_middleware(
     RateLimitMiddleware,
-    rate_limiter=InMemoryRateLimiter(requests=10, seconds=1),
+    rate_limiter=InMemoryRateLimiter(requests=1000, seconds=1),
 )
 base_app.middleware('http')(ProviderTokenMiddleware(base_app))
 
@@ -59,8 +54,14 @@ if os.getenv('OTEL_EXPORTER_OTLP_ENDPOINT'):
     from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
     from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
     from opentelemetry.instrumentation.threading import ThreadingInstrumentor
+    from traceloop.sdk import Traceloop
 
     FastAPIInstrumentor.instrument_app(base_app)
     AsyncioInstrumentor().instrument()
     HTTPXClientInstrumentor().instrument()
     ThreadingInstrumentor().instrument()
+
+if os.getenv('TRACELOOP_BASE_URL'):
+    Traceloop.init(
+        disable_batch=False, app_name=os.getenv('OTEL_SERVICE_NAME', 'openhands')
+    )
