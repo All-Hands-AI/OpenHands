@@ -122,7 +122,7 @@ async def connect(connection_id: str, environ):
             # TODO: if the user is whitelisted, check if the conversation is belong to the user
             if conversation_metadata_result_set.user_id != user_id:
                 logger.error(f'Conversation not belong to the user: {conversation_id}')
-                raise ConnectionRefusedError('Conversation not belong to the user')
+                raise ConnectionRefusedError('This research isn’t available to you.')
 
             mnemonic = user.mnemonic
         except jwt.ExpiredSignatureError:
