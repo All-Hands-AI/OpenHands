@@ -13,9 +13,10 @@ class ConversationTrigger(Enum):
 class ConversationMetadata:
     conversation_id: str
     github_user_id: str | None
-    # Accepting str for `selected_repository` for backward compatibility
+    # Legacy string representation of repository, kept for backward compatibility
     # See also: https://github.com/All-Hands-AI/OpenHands/issues/7286
-    selected_repository: Repository | str | None
+    selected_repository: str | None = None
+    selected_repository_model: Repository | None = None
     user_id: str | None = None
     selected_branch: str | None = None
     title: str | None = None

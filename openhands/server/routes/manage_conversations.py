@@ -117,7 +117,7 @@ async def _create_new_conversation(
             title=conversation_title,
             user_id=user_id,
             github_user_id=None,
-            selected_repository=selected_repository,
+            selected_repository_model=selected_repository,
             selected_branch=selected_branch,
         )
     )
@@ -397,6 +397,7 @@ async def _get_conversation_info(
             last_updated_at=conversation.last_updated_at,
             created_at=conversation.created_at,
             selected_repository=conversation.selected_repository,
+            selected_repository_model=conversation.selected_repository_model,
             status=(
                 ConversationStatus.RUNNING if is_running else ConversationStatus.STOPPED
             ),

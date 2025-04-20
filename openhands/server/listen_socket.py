@@ -85,17 +85,7 @@ async def connect(connection_id: str, environ):
 
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id, None)
     metadata = await conversation_store.get_metadata(conversation_id)
-    if metadata.selected_repository:
-        if isinstance(metadata.selected_repository, str):
-            # Accepting str for `selected_repository` for backward compatibility
-            # See also: https://github.com/All-Hands-AI/OpenHands/issues/7286
-            logger.info(
-                f'Legacy metadata format detected for conversation {conversation_id}. '
-                'Repository information will not be available.'
-            )
-            session_init_args['selected_repository'] = None
-        else:
-            session_init_args['selected_repository'] = metadata.selected_repository
+    session_init_args['selected_repository'] = metadata.selected_repository_model
     session_init_args['selected_branch'] = metadata.selected_branch
 
     conversation_init_data = ConversationInitData(**session_init_args)
