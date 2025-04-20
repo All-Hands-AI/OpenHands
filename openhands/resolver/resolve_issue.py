@@ -261,6 +261,9 @@ class IssueResolver:
         logger.info('-' * 30)
         return {'git_patch': git_patch}
 
+    def on_event(self, evt: Event) -> None:
+        logger.info(evt)
+
     async def process_issue(
         self,
         issue: Issue,
@@ -323,13 +326,10 @@ class IssueResolver:
         runtime = create_runtime(config)
         await runtime.connect()
 
-        def on_event(evt: Event) -> None:
-            logger.info(evt)
-
         subscription_id = str(uuid4())
         # Subscribe to the event stream with a unique ID
         runtime.event_stream.subscribe(
-            EventStreamSubscriber.MAIN, on_event, subscription_id
+            EventStreamSubscriber.MAIN, self.on_event, subscription_id
         )
 
         self.initialize_runtime(runtime)
