@@ -77,9 +77,12 @@ class GitLabService(GitService):
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 401:
                 raise AuthenticationError('Invalid GitLab token')
+            
+            logger.warning(f'Status error on GL API: {e}')
             raise UnknownException('Unknown error')
 
-        except httpx.HTTPError:
+        except httpx.HTTPError as e:
+            logger.warning(f'HTTP error on GL API: {e}')
             raise UnknownException('Unknown error')
         
     async def execute_graphql_query(
@@ -225,6 +228,7 @@ class GitLabService(GitService):
                 full_name=repo.get('path_with_namespace'),
                 stargazers_count=repo.get('star_count'),
                 git_provider=ProviderType.GITLAB,
+                is_public = repo.get('visibility') == 'public'
             )
             for repo in all_repos
         ]
