@@ -361,8 +361,6 @@ class IssueResolver:
             f'Got git diff for instance {issue.number}:\n--------\n{git_patch}\n--------'
         )
 
-        runtime.event_stream.unsubscribe(EventStreamSubscriber.MAIN, subscription_id)
-
         # Serialize histories and set defaults for failed state
         if state is None:
             histories = []
