@@ -1,5 +1,5 @@
 # flake8: noqa: E501
-
+import argparse
 import asyncio
 import dataclasses
 import json
@@ -7,6 +7,7 @@ import os
 import pathlib
 import shutil
 import subprocess
+from argparse import Namespace
 from typing import Any
 from uuid import uuid4
 
@@ -50,27 +51,10 @@ AGENT_CLASS = 'CodeActAgent'
 class IssueResolver:
     GITLAB_CI = os.getenv('GITLAB_CI') == 'true'
 
-    def __init__(
-        self,
-        owner: str,
-        repo: str,
-        token: str,
-        username: str,
-        platform: Platform,
-        max_iterations: int,
-        output_dir: str,
-        llm_config: LLMConfig,
-        runtime_container_image: str | None = None,
-        prompt_template: str = '',
-        issue_type: str = 'issue',
-        repo_instruction: str | None = None,
-        issue_number: int | None = None,
-        comment_id: int | None = None,
-        base_domain: str | None = None,
-    ) -> None:
+    def __init__(self, my_args: Namespace) -> None:
         """Initialize the IssueResolver with the given parameters.
 
-        Args:
+        Params initialized:
             owner: Owner of the repo.
             repo: Repository name.
             token: Token to access the repository.
@@ -87,21 +71,82 @@ class IssueResolver:
             comment_id: Optional ID of a specific comment to focus on.
             base_domain: The base domain for the git server.
         """
+
+        runtime_container_image = my_args.runtime_container_image
+        if runtime_container_image is None and not my_args.is_experimental:
+            runtime_container_image = (
+                f'ghcr.io/all-hands-ai/runtime:{openhands.__version__}-nikolaik'
+            )
+
+        parts = my_args.selected_repo.rsplit('/', 1)
+        if len(parts) < 2:
+            raise ValueError('Invalid repository format. Expected owner/repo')
+        owner, repo = parts
+
+        token = my_args.token or os.getenv('GITHUB_TOKEN') or os.getenv('GITLAB_TOKEN')
+        username = my_args.username if my_args.username else os.getenv('GIT_USERNAME')
+        if not username:
+            raise ValueError('Username is required.')
+
+        if not token:
+            raise ValueError('Token is required.')
+
+        platform = identify_token(token, my_args.selected_repo, my_args.base_domain)
+        if platform == Platform.INVALID:
+            raise ValueError('Token is invalid.')
+
+        api_key = my_args.llm_api_key or os.environ['LLM_API_KEY']
+        model = my_args.llm_model or os.environ['LLM_MODEL']
+        base_url = my_args.llm_base_url or os.environ.get('LLM_BASE_URL', None)
+        api_version = os.environ.get('LLM_API_VERSION', None)
+
+        # Create LLMConfig instance
+        llm_config = LLMConfig(
+            model=model,
+            api_key=SecretStr(api_key) if api_key else None,
+            base_url=base_url,
+        )
+
+        # Only set api_version if it was explicitly provided, otherwise let LLMConfig handle it
+        if api_version is not None:
+            llm_config.api_version = api_version
+
+        repo_instruction = None
+        if my_args.repo_instruction_file:
+            with open(my_args.repo_instruction_file, 'r') as f:
+                repo_instruction = f.read()
+
+        issue_type = my_args.issue_type
+
+        # Read the prompt template
+        prompt_file = my_args.prompt_file
+        if prompt_file is None:
+            if issue_type == 'issue':
+                prompt_file = os.path.join(
+                    os.path.dirname(__file__), 'prompts/resolve/basic-with-tests.jinja'
+                )
+            else:
+                prompt_file = os.path.join(
+                    os.path.dirname(__file__), 'prompts/resolve/basic-followup.jinja'
+                )
+        with open(prompt_file, 'r') as f:
+            prompt_template = f.read()
+
         self.owner = owner
         self.repo = repo
         self.token = token
         self.username = username
         self.platform = platform
         self.runtime_container_image = runtime_container_image
-        self.max_iterations = max_iterations
-        self.output_dir = output_dir
+        self.max_iterations = my_args.max_iterations
+        self.output_dir = my_args.output_dir
         self.llm_config = llm_config
         self.prompt_template = prompt_template
         self.issue_type = issue_type
         self.repo_instruction = repo_instruction
-        self.issue_number = issue_number
-        self.comment_id = comment_id
-        self.base_domain = base_domain
+        self.issue_number = my_args.issue_number
+        self.comment_id = my_args.comment_id
+        self.base_domain = my_args.base_domain
 
     def initialize_runtime(
         self,
@@ -584,8 +629,6 @@ class IssueResolver:
 
 
 def main() -> None:
-    import argparse
-
     def int_or_none(value: str) -> int | None:
         if value.lower() == 'none':
             return None
@@ -692,84 +735,7 @@ def main() -> None:
     )
 
     my_args = parser.parse_args()
-
-    runtime_container_image = my_args.runtime_container_image
-    if runtime_container_image is None and not my_args.is_experimental:
-        runtime_container_image = (
-            f'ghcr.io/all-hands-ai/runtime:{openhands.__version__}-nikolaik'
-        )
-
-    parts = my_args.selected_repo.rsplit('/', 1)
-    if len(parts) < 2:
-        raise ValueError('Invalid repository format. Expected owner/repo')
-    owner, repo = parts
-
-    token = my_args.token or os.getenv('GITHUB_TOKEN') or os.getenv('GITLAB_TOKEN')
-    username = my_args.username if my_args.username else os.getenv('GIT_USERNAME')
-    if not username:
-        raise ValueError('Username is required.')
-
-    if not token:
-        raise ValueError('Token is required.')
-
-    platform = identify_token(token, my_args.selected_repo, my_args.base_domain)
-    if platform == Platform.INVALID:
-        raise ValueError('Token is invalid.')
-
-    api_key = my_args.llm_api_key or os.environ['LLM_API_KEY']
-    model = my_args.llm_model or os.environ['LLM_MODEL']
-    base_url = my_args.llm_base_url or os.environ.get('LLM_BASE_URL', None)
-    api_version = os.environ.get('LLM_API_VERSION', None)
-
-    # Create LLMConfig instance
-    llm_config = LLMConfig(
-        model=model,
-        api_key=SecretStr(api_key) if api_key else None,
-        base_url=base_url,
-    )
-
-    # Only set api_version if it was explicitly provided, otherwise let LLMConfig handle it
-    if api_version is not None:
-        llm_config.api_version = api_version
-
-    repo_instruction = None
-    if my_args.repo_instruction_file:
-        with open(my_args.repo_instruction_file, 'r') as f:
-            repo_instruction = f.read()
-
-    issue_type = my_args.issue_type
-
-    # Read the prompt template
-    prompt_file = my_args.prompt_file
-    if prompt_file is None:
-        if issue_type == 'issue':
-            prompt_file = os.path.join(
-                os.path.dirname(__file__), 'prompts/resolve/basic-with-tests.jinja'
-            )
-        else:
-            prompt_file = os.path.join(
-                os.path.dirname(__file__), 'prompts/resolve/basic-followup.jinja'
-            )
-    with open(prompt_file, 'r') as f:
-        prompt_template = f.read()
-
-    issue_resolver = IssueResolver(
-        owner=owner,
-        repo=repo,
-        token=token,
-        username=username,
-        platform=platform,
-        runtime_container_image=runtime_container_image,
-        max_iterations=my_args.max_iterations,
-        output_dir=my_args.output_dir,
-        llm_config=llm_config,
-        prompt_template=prompt_template,
-        issue_type=issue_type,
-        repo_instruction=repo_instruction,
-        issue_number=my_args.issue_number,
-        comment_id=my_args.comment_id,
-        base_domain=my_args.base_domain,
-    )
+    issue_resolver = IssueResolver(my_args)
     asyncio.run(issue_resolver.resolve_issue())
 
 

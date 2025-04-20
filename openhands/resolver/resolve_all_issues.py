@@ -6,94 +6,31 @@ import multiprocessing as mp
 import os
 import pathlib
 import subprocess
+from argparse import Namespace
 from typing import Any, Awaitable, TextIO
 
-from pydantic import SecretStr
 from tqdm import tqdm
 
-from openhands.core.config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.resolver.interfaces.issue import Issue
 from openhands.resolver.resolve_issue import IssueResolver
 from openhands.resolver.resolver_output import ResolverOutput
-from openhands.resolver.utils import (
-    Platform,
-    identify_token,
-)
 
 
-class AllIssueResolver:
-    def __init__(
-        self,
-        owner: str,
-        repo: str,
-        token: str,
-        username: str,
-        platform: Platform,
-        max_iterations: int,
-        limit_issues: int | None,
-        num_workers: int,
-        output_dir: str,
-        llm_config: LLMConfig,
-        runtime_container_image: str,
-        prompt_template: str,
-        issue_type: str,
-        repo_instruction: str | None = None,
-        issue_numbers: list[int] | None = None,
-        base_domain: str = 'github.com',
-    ) -> None:
-        """Initialize the AllIssueResolver with the given parameters.
+class AllIssueResolver(IssueResolver):
+    def __init__(self, my_args: Namespace) -> None:
+        """Initialize the AllIssueResolver with the given parameters."""
 
-        Args:
-            owner: Github or Gitlab owner of the repo.
-            repo: Github or Gitlab repository to resolve issues in form of `owner/repo`.
-            token: Github or Gitlab token to access the repository.
-            username: Github or Gitlab username to access the repository.
-            platform: Platform to use (GitHub or GitLab).
-            max_iterations: Maximum number of iterations to run.
-            limit_issues: Limit the number of issues to resolve.
-            num_workers: Number of workers to use for parallel processing.
-            output_dir: Output directory to write the results.
-            llm_config: Configuration for the language model.
-            runtime_container_image: Container image to use.
-            prompt_template: Prompt template to use.
-            issue_type: Type of issue to resolve (issue or pr).
-            repo_instruction: Repository instruction to use.
-            issue_numbers: List of issue numbers to resolve.
-            base_domain: Base domain for GitHub Enterprise (default: github.com).
-        """
-        self.owner = owner
-        self.repo = repo
-        self.token = token
-        self.username = username
-        self.platform = platform
-        self.max_iterations = max_iterations
-        self.limit_issues = limit_issues
-        self.num_workers = num_workers
-        self.output_dir = output_dir
-        self.llm_config = llm_config
-        self.runtime_container_image = runtime_container_image
-        self.prompt_template = prompt_template
-        self.issue_type = issue_type
-        self.repo_instruction = repo_instruction
+        self.my_args = my_args
+
+        super().__init__(my_args)
+        issue_numbers = None
+        if my_args.issue_numbers:
+            issue_numbers = [int(number) for number in my_args.issue_numbers.split(',')]
+
         self.issue_numbers = issue_numbers
-        self.base_domain = base_domain
-
-        self.issue_resolver = IssueResolver(
-            owner=self.owner,
-            repo=self.repo,
-            token=self.token,
-            username=self.username,
-            platform=self.platform,
-            max_iterations=self.max_iterations,
-            output_dir=self.output_dir,
-            llm_config=self.llm_config,
-            runtime_container_image=self.runtime_container_image,
-            prompt_template=self.prompt_template,
-            issue_type=self.issue_type,
-            repo_instruction=self.repo_instruction,
-            base_domain=self.base_domain,
-        )
+        self.num_workers = my_args.num_workers
+        self.limit_issues = my_args.limit_issues
 
     def cleanup(self) -> None:
         logger.info('Cleaning up child processes...')
@@ -120,7 +57,7 @@ class AllIssueResolver:
 
     async def resolve_issues(self) -> None:
         """Resolve multiple github or gitlab issues using the instance variables."""
-        issue_handler = self.issue_resolver.issue_handler_factory()
+        issue_handler = self.issue_handler_factory()
 
         # Load dataset
         issues: list[Issue] = issue_handler.get_converted_issues(
@@ -229,8 +166,9 @@ class AllIssueResolver:
                         .strip()
                     )
 
+                issue_resolver = IssueResolver(self.my_args)
                 task = self.update_progress(
-                    self.issue_resolver.process_issue(
+                    issue_resolver.process_issue(
                         issue,
                         base_commit,
                         issue_handler,
@@ -361,76 +299,7 @@ def main() -> None:
     )
 
     my_args = parser.parse_args()
-
-    runtime_container_image = my_args.runtime_container_image
-    if runtime_container_image is None:
-        runtime_container_image = 'ghcr.io/all-hands-ai/runtime:0.33.0-nikolaik'
-
-    owner, repo = my_args.selected_repo.split('/')
-    token = my_args.token or os.getenv('GITHUB_TOKEN') or os.getenv('GITLAB_TOKEN')
-    username = my_args.username if my_args.username else os.getenv('GIT_USERNAME')
-    if not username:
-        raise ValueError('Username is required.')
-
-    if not token:
-        raise ValueError('Token is required.')
-
-    platform = identify_token(token, my_args.selected_repo, my_args.base_domain)
-    if platform == Platform.INVALID:
-        raise ValueError('Token is invalid.')
-
-    api_key = my_args.llm_api_key or os.environ['LLM_API_KEY']
-
-    llm_config = LLMConfig(
-        model=my_args.llm_model or os.environ['LLM_MODEL'],
-        api_key=SecretStr(api_key) if api_key else None,
-        base_url=my_args.llm_base_url or os.environ.get('LLM_BASE_URL', None),
-        api_version=os.environ.get('LLM_API_VERSION', None),
-    )
-
-    repo_instruction = None
-    if my_args.repo_instruction_file:
-        with open(my_args.repo_instruction_file, 'r') as f:
-            repo_instruction = f.read()
-
-    issue_numbers = None
-    if my_args.issue_numbers:
-        issue_numbers = [int(number) for number in my_args.issue_numbers.split(',')]
-
-    issue_type = my_args.issue_type
-
-    # Read the prompt template
-    prompt_file = my_args.prompt_file
-    if prompt_file is None:
-        if issue_type == 'issue':
-            prompt_file = os.path.join(
-                os.path.dirname(__file__), 'prompts/resolve/basic-with-tests.jinja'
-            )
-        else:
-            prompt_file = os.path.join(
-                os.path.dirname(__file__), 'prompts/resolve/basic-followup.jinja'
-            )
-    with open(prompt_file, 'r') as f:
-        prompt_template = f.read()
-
-    all_issue_resolver = AllIssueResolver(
-        owner=owner,
-        repo=repo,
-        token=token,
-        username=username,
-        platform=platform,
-        runtime_container_image=runtime_container_image,
-        max_iterations=my_args.max_iterations,
-        limit_issues=my_args.limit_issues,
-        num_workers=my_args.num_workers,
-        output_dir=my_args.output_dir,
-        llm_config=llm_config,
-        prompt_template=prompt_template,
-        issue_type=issue_type,
-        repo_instruction=repo_instruction,
-        issue_numbers=issue_numbers,
-        base_domain=my_args.base_domain,
-    )
+    all_issue_resolver = AllIssueResolver(my_args)
 
     asyncio.run(all_issue_resolver.resolve_issues())
 
