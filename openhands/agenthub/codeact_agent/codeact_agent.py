@@ -1,7 +1,21 @@
 import os
 from collections import deque
 
+from litellm import ChatCompletionToolParam
+
 import openhands.agenthub.codeact_agent.function_calling as codeact_function_calling
+from openhands.agenthub.codeact_agent.tools.bash import create_cmd_run_tool
+from openhands.agenthub.codeact_agent.tools.browser import BrowserTool
+from openhands.agenthub.codeact_agent.tools.finish import FinishTool
+from openhands.agenthub.codeact_agent.tools.ipython import IPythonTool
+from openhands.agenthub.codeact_agent.tools.list_directory import ListDirectoryTool
+from openhands.agenthub.codeact_agent.tools.llm_based_edit import LLMBasedFileEditTool
+from openhands.agenthub.codeact_agent.tools.str_replace_editor import (
+    create_str_replace_editor_tool,
+)
+from openhands.agenthub.codeact_agent.tools.think import ThinkTool
+from openhands.agenthub.codeact_agent.tools.view_file import ViewFileTool
+from openhands.agenthub.codeact_agent.tools.web_read import WebReadTool
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
@@ -67,15 +81,7 @@ class CodeActAgent(Agent):
         super().__init__(llm, config)
         self.pending_actions: deque[Action] = deque()
         self.reset()
-
-        # Retrieve the enabled tools based on the agent config
-        built_in_tools = codeact_function_calling.get_tools(
-            config=self.config,
-            llm=self.llm,
-        )
-
-        self.tools = built_in_tools
-
+        self.tools = self._get_tools()
 
         self.prompt_manager = PromptManager(
             prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
@@ -89,6 +95,56 @@ class CodeActAgent(Agent):
         logger.debug(f'Using condenser: {type(self.condenser)}')
 
         self.response_to_actions_fn = codeact_function_calling.response_to_actions
+
+    def _get_tools(self) -> list[ChatCompletionToolParam]:
+        SIMPLIFIED_TOOL_DESCRIPTION_LLM_SUBSTRS = ['gpt-', 'o3', 'o1']
+
+        use_simplified_tool_desc = False
+        if self.llm is not None:
+            use_simplified_tool_desc = any(
+                model_substr in self.llm.config.model
+                for model_substr in SIMPLIFIED_TOOL_DESCRIPTION_LLM_SUBSTRS
+            )
+
+        tools = []
+        if self.config.enable_cmd:
+            tools.append(
+                create_cmd_run_tool(use_simplified_description=use_simplified_tool_desc)
+            )
+        if self.config.enable_think:
+            tools.append(ThinkTool)
+        if self.config.enable_finish:
+            tools.append(FinishTool)
+        if self.config.enable_browsing:
+            tools.append(WebReadTool)
+            tools.append(BrowserTool)
+        if self.config.enable_jupyter:
+            tools.append(IPythonTool)
+
+        # Determine which editor tool(s) and utility tools to add based on config
+        if self.config.enable_llm_diff:
+            # Use LLM Diff mode:
+            #  - LLM generates diffs in text, only non-edit tools available
+            #  - No UndoEditTool
+            tools.append(ViewFileTool)
+            tools.append(ListDirectoryTool)
+        # NO EDITING TOOLS (LLMBasedFileEditTool, str_replace_editor)
+        # NO UndoEditTool
+        elif self.config.enable_llm_editor:
+            # Use LLM-based editor tool + separate utils (NO Undo)
+            tools.append(LLMBasedFileEditTool)
+            tools.append(ViewFileTool)
+            tools.append(ListDirectoryTool)
+            # No UndoEditTool here
+        elif self.config.enable_editor:
+            # Fallback to the complete str_replace_editor (includes view, list, undo)
+            tools.append(
+                create_str_replace_editor_tool(
+                    use_simplified_description=use_simplified_tool_desc
+                )
+            )
+
+        return tools
 
     def reset(self) -> None:
         """Resets the CodeAct Agent."""
@@ -156,7 +212,9 @@ class CodeActAgent(Agent):
         response = self.llm.completion(**params)
         logger.debug(f'Response from LLM: {response}')
         # Pass whether we should parse the message.content
-        actions = self.response_to_actions_fn(response, is_llm_diff_enabled=self.config.enable_llm_diff)
+        actions = self.response_to_actions_fn(
+            response, is_llm_diff_enabled=self.config.enable_llm_diff
+        )
         logger.debug(f'Actions after response_to_actions: {actions}')
         for action in actions:
             self.pending_actions.append(action)

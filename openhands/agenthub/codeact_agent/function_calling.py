@@ -6,7 +6,6 @@ This is similar to the functionality of `CodeActResponseParser`.
 import json
 
 from litellm import (
-    ChatCompletionToolParam,
     ModelResponse,
 )
 
@@ -27,7 +26,6 @@ from openhands.agenthub.codeact_agent.tools import (
     create_cmd_run_tool,
     create_str_replace_editor_tool,
 )
-from openhands.core.config import AgentConfig
 from openhands.core.exceptions import (
     FunctionCallNotExistsError,
     FunctionCallValidationError,
@@ -49,7 +47,6 @@ from openhands.events.action import (
 from openhands.events.action.mcp import McpAction
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.tool import ToolCallMetadata
-from openhands.llm import LLM
 from openhands.mcp import MCPClientTool
 
 
@@ -372,59 +369,3 @@ def response_to_actions(
             all_actions[0].response_id = response.id
 
     return all_actions
-
-
-def get_tools(
-    config: AgentConfig,
-    llm: LLM | None = None,
-) -> list[ChatCompletionToolParam]:
-    # Extract flags from config
-    enable_browsing = config.enable_browsing
-    enable_llm_editor = config.enable_llm_editor
-    enable_llm_diff = config.enable_llm_diff
-    enable_jupyter = config.enable_jupyter
-
-    SIMPLIFIED_TOOL_DESCRIPTION_LLM_SUBSTRS = ['gpt-', 'o3', 'o1']
-
-    use_simplified_tool_desc = False
-    if llm is not None:
-        use_simplified_tool_desc = any(
-            model_substr in llm.config.model
-            for model_substr in SIMPLIFIED_TOOL_DESCRIPTION_LLM_SUBSTRS
-        )
-
-    tools = [
-        create_cmd_run_tool(use_simplified_description=use_simplified_tool_desc),
-        ThinkTool,
-        FinishTool,
-    ]
-    if enable_browsing:
-        tools.append(WebReadTool)
-        tools.append(BrowserTool)
-    if enable_jupyter:
-        tools.append(IPythonTool)
-
-    # Determine which editor tool(s) and utility tools to add based on config
-    if enable_llm_diff:
-        # Use LLM Diff mode:
-        #  - LLM generates diffs in text, only non-edit tools available
-        #  - No UndoEditTool
-        tools.append(ViewFileTool)
-        tools.append(ListDirectoryTool)
-        # NO EDITING TOOLS (LLMBasedFileEditTool, str_replace_editor)
-        # NO UndoEditTool
-    elif enable_llm_editor:
-        # Use LLM-based editor tool + separate utils (NO Undo)
-        tools.append(LLMBasedFileEditTool)
-        tools.append(ViewFileTool)
-        tools.append(ListDirectoryTool)
-        # No UndoEditTool here
-    else:
-        # Fallback to the complete str_replace_editor (includes view, list, undo)
-        tools.append(
-            create_str_replace_editor_tool(
-                use_simplified_description=use_simplified_tool_desc
-            )
-        )
-
-    return tools

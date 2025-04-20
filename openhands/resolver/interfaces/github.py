@@ -75,7 +75,7 @@ class GithubIssueHandler(IssueHandlerInterface):
         if self.base_domain == 'github.com':
             return 'https://api.github.com/graphql'
         else:
-            return f'https://{self.base_domain}/api/v3/graphql'
+            return f'https://{self.base_domain}/api/graphql'
 
     def get_compare_url(self, branch_name: str) -> str:
         return f'https://{self.base_domain}/{self.owner}/{self.repo}/compare/{branch_name}?expand=1'
