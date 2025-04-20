@@ -5,6 +5,7 @@ from unittest.mock import ANY, MagicMock, call, patch
 import pytest
 
 from openhands.core.config import LLMConfig
+from openhands.integrations.service_types import ProviderType
 from openhands.resolver.interfaces.github import GithubIssueHandler
 from openhands.resolver.interfaces.issue import ReviewThread
 from openhands.resolver.resolver_output import Issue, ResolverOutput
@@ -18,7 +19,6 @@ from openhands.resolver.send_pull_request import (
     send_pull_request,
     update_existing_pull_request,
 )
-from openhands.integrations.service_types import ProviderType
 
 
 @pytest.fixture
@@ -1321,7 +1321,9 @@ def test_main(
 
     # Test for invalid token
     mock_args.issue_number = '42'  # Reset to valid issue number
-    mock_getenv.side_effect = lambda key, default=None: None  # Return None for all env vars
+    mock_getenv.side_effect = (
+        lambda key, default=None: None
+    )  # Return None for all env vars
     with pytest.raises(ValueError, match='token is not set'):
         main()
 
