@@ -1320,7 +1320,9 @@ def test_main(
         main()
 
     # Test for invalid token
-    with pytest.raises(ValueError, match='Token is invalid.'):
+    mock_args.issue_number = '42'  # Reset to valid issue number
+    mock_getenv.side_effect = lambda key, default=None: None  # Return None for all env vars
+    with pytest.raises(ValueError, match='token is not set'):
         main()
 
 
