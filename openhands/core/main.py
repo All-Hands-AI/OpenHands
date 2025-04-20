@@ -100,14 +100,16 @@ async def run_controller(
         )
 
     planning_agent = None
-    if agent is None: 
+    if agent is None:
         if not config.enable_planning:
             agent = create_agent(config)
             mcp_tools = await fetch_mcp_tools_from_config(config.mcp)
             agent.set_mcp_tools(mcp_tools)
         else:
             agent = create_agent(config, agent_name=config.default_task_solving_agent)
-            planning_agent = create_agent(config, agent_name=config.default_planning_agent)
+            planning_agent = create_agent(
+                config, agent_name=config.default_planning_agent
+            )
 
             mcp_tools = await fetch_mcp_tools_from_config(config.mcp)
 
@@ -156,8 +158,6 @@ async def run_controller(
     controller, initial_state = create_controller(
         agent, planning_agent, runtime, config, replay_events=replay_events
     )
-
-    hi
 
     assert isinstance(
         initial_user_action, Action

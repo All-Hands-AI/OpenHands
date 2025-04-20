@@ -1,6 +1,6 @@
 import asyncio
 
-from openhands.controller import AgentController, PlanningController
+from openhands.controller import AgentController
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema import AgentState
 from openhands.memory.memory import Memory
@@ -8,7 +8,7 @@ from openhands.runtime.base import Runtime
 
 
 async def run_agent_until_done(
-    controller: AgentController | PlanningController,
+    controller: AgentController,
     runtime: Runtime,
     memory: Memory,
     end_states: list[AgentState],

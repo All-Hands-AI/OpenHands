@@ -1,11 +1,10 @@
 import os
-from datetime import datetime
 
 import openhands.agenthub.planning_agent.function_calling as planning_function_calling
+from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
 from openhands.core.logger import openhands_logger as logger
-from openhands.core.message import Message
 from openhands.events.action import (
     Action,
     AgentFinishAction,
@@ -14,7 +13,7 @@ from openhands.events.event import Event
 from openhands.llm.llm import LLM
 from openhands.memory.condenser.condenser import Condensation, View
 from openhands.memory.conversation_memory import ConversationMemory
-from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
+from openhands.utils.prompt import PromptManager
 
 
 class PlanningAgent(CodeActAgent):
@@ -35,7 +34,7 @@ class PlanningAgent(CodeActAgent):
         - config (AgentConfig): The configuration for this agent
         """
         super().__init__(llm, config)
-        
+
         # Override tools with planning-specific tools
         built_in_tools = planning_function_calling.get_tools(
             enable_browsing=self.config.enable_browsing,
@@ -44,15 +43,14 @@ class PlanningAgent(CodeActAgent):
             llm=self.llm,
         )
         self.tools = built_in_tools
-        
+
         # Override prompt_manager to use planning-specific prompts
-        self.prompt_manager = self.prompt_manager.__class__(
+        self.prompt_manager = PromptManager(
             prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
         )
 
         # Override the conversation memory to use planning-specific prompts
         self.conversation_memory = ConversationMemory(self.config, self.prompt_manager)
-
 
     def step(self, state: State) -> Action:
         """Performs one step using the CodeAct Agent.
@@ -110,7 +108,6 @@ class PlanningAgent(CodeActAgent):
             ]
             params['tools'] += unique_mcp_tools
 
-
         # log to litellm proxy if possible
         params['extra_body'] = {'metadata': state.to_llm_metadata(agent_name=self.name)}
         response = self.llm.completion(**params)
@@ -120,36 +117,3 @@ class PlanningAgent(CodeActAgent):
         for action in actions:
             self.pending_actions.append(action)
         return self.pending_actions.popleft()
-
-    def _get_messages(self, events: list[Event]) -> list[Message]:
-        """Constructs the message history for the LLM conversation.
-
-        Args:
-            events: The list of events to convert to messages
-
-        Returns:
-            list[Message]: A list of formatted messages ready for LLM consumption
-        """
-        if not self.prompt_manager:
-            raise Exception('Prompt Manager not instantiated.')
-
-        # Use ConversationMemory to process initial messages with datetime
-        messages = self.conversation_memory.process_initial_messages(
-            with_caching=self.llm.is_caching_prompt_active(),
-            current_datetime=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        )
-
-        # Use the rest of the parent class implementation
-        messages = self.conversation_memory.process_events(
-            condensed_history=events,
-            initial_messages=messages,
-            max_message_chars=self.llm.config.max_message_chars,
-            vision_is_active=self.llm.vision_is_active(),
-        )
-
-        messages = self._enhance_messages(messages)
-
-        if self.llm.is_caching_prompt_active():
-            self.conversation_memory.apply_prompt_caching(messages)
-
-        return messages

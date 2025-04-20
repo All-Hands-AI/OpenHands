@@ -1,11 +1,10 @@
 import os
-from datetime import datetime
 
 import openhands.agenthub.task_solving_agent.function_calling as task_solving_function_calling
+from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
 from openhands.core.logger import openhands_logger as logger
-from openhands.core.message import Message
 from openhands.events.action import (
     Action,
     AgentFinishAction,
@@ -14,7 +13,7 @@ from openhands.events.event import Event
 from openhands.llm.llm import LLM
 from openhands.memory.condenser.condenser import Condensation, View
 from openhands.memory.conversation_memory import ConversationMemory
-from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
+from openhands.utils.prompt import PromptManager
 
 
 class TaskSolvingAgent(CodeActAgent):
@@ -35,7 +34,7 @@ class TaskSolvingAgent(CodeActAgent):
         - config (AgentConfig): The configuration for this agent
         """
         super().__init__(llm, config)
-        
+
         # Override tools with task-solving-specific tools
         built_in_tools = task_solving_function_calling.get_tools(
             enable_browsing=self.config.enable_browsing,
@@ -44,15 +43,14 @@ class TaskSolvingAgent(CodeActAgent):
             llm=self.llm,
         )
         self.tools = built_in_tools
-        
+
         # Override prompt_manager to use task-solving-specific prompts
-        self.prompt_manager = self.prompt_manager.__class__(
+        self.prompt_manager = PromptManager(
             prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
         )
 
         # Override the conversation memory to use task-solving-specific prompts
         self.conversation_memory = ConversationMemory(self.config, self.prompt_manager)
-
 
     def step(self, state: State) -> Action:
         """Performs one step using the CodeAct Agent.
@@ -109,7 +107,6 @@ class TaskSolvingAgent(CodeActAgent):
                 if tool['function']['name'] not in existing_names
             ]
             params['tools'] += unique_mcp_tools
-
 
         # log to litellm proxy if possible
         params['extra_body'] = {'metadata': state.to_llm_metadata(agent_name=self.name)}

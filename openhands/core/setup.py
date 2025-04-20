@@ -6,7 +6,7 @@ from typing import Callable, Tuple, Type
 from pydantic import SecretStr
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
-from openhands.controller import AgentController, PlanningController
+from openhands.controller import AgentController
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import (
@@ -171,7 +171,7 @@ def create_memory(
     return memory
 
 
-def create_agent(config: AppConfig, agent_name: str = None) -> Agent:
+def create_agent(config: AppConfig, agent_name: str = '') -> Agent:
     agent_name = agent_name or config.default_agent
     agent_cls: Type[Agent] = Agent.get_cls(agent_name)
     agent_config = config.get_agent_config(agent_name)
