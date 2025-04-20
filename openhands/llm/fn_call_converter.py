@@ -486,7 +486,7 @@ def convert_fncall_messages_to_non_fncall_messages(
     messages: list[dict],
     tools: list[ChatCompletionToolParam],
     add_in_context_learning_example: bool = True,
-    use_llm_edit: bool = True,
+    use_llm_edit: bool = False,
 ) -> list[dict]:
     """Convert function calling messages to non-function calling messages."""
     messages = copy.deepcopy(messages)
@@ -768,7 +768,7 @@ def _fix_stopword(content: str) -> str:
 def convert_non_fncall_messages_to_fncall_messages(
     messages: list[dict],
     tools: list[ChatCompletionToolParam],
-    use_llm_edit: bool = True,
+    use_llm_edit: bool = False,
 ) -> list[dict]:
     """Convert non-function calling messages back to function calling messages."""
     messages = copy.deepcopy(messages)
