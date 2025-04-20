@@ -224,13 +224,24 @@ class LLM(RetryMixin, DebugMixin):
             original_fncall_messages = copy.deepcopy(messages)
             mock_fncall_tools = None
             # if the agent or caller has defined tools, and we mock via prompting, convert the messages
+
+            custom_in_context_learning_example = self.config.in_context_learning_example
+            if (
+                'openhands-lm' not in self.config.model
+                and custom_in_context_learning_example is None
+            ):
+                # backwards compatibility
+                add_in_context_learning_example = True
+            else:
+                # user has provided an explicit example, not adding default one
+                add_in_context_learning_example = False
+
             if mock_function_calling and 'tools' in kwargs:
                 messages = convert_fncall_messages_to_non_fncall_messages(
                     messages,
                     kwargs['tools'],
-                    add_in_context_learning_example=bool(
-                        'openhands-lm' not in self.config.model
-                    ),
+                    add_default_in_context_learning_example=add_in_context_learning_example,
+                    custom_in_context_learning_example=self.config.in_context_learning_example,
                 )
                 kwargs['messages'] = messages
 

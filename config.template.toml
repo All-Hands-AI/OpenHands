@@ -148,6 +148,15 @@ api_key = ""
 # Model to use. (For Headless / CLI only -  In Web this is overridden by Session Init)
 model = "gpt-4o"
 
+# You can provide a custom example for in context learning, useful when customizing tools
+# For backwards compatibility, not setting this field will lead to default in-context learning examples being used
+# which may fail if you have disabled the default tools.
+# In that case, you should set custom_in_context_learning_example to fix this.
+# Note that you can just set it to an empty string, which is enough for the default example to not be activated
+# SPECIAL CASE: if using openhands models, the default in context learning examples will never be used
+# in_context_learning_example=""
+
+
 # Number of retries to attempt when an operation fails with the LLM.
 # Increase this value to allow more attempts before giving up
 #num_retries = 8
