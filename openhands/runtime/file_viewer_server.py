@@ -75,17 +75,7 @@ def create_app() -> FastAPI:
 
     return app
 
-
-def find_available_port(start_port=8000, max_port=9000):
-    """Find an available port in the given range."""
-    for port in range(start_port, max_port):
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            if s.connect_ex(('127.0.0.1', port)) != 0:
-                return port
-    raise RuntimeError(f'No available ports found in range {start_port}-{max_port}')
-
-
-def start_file_viewer_server(port=None) -> Tuple[str, threading.Thread]:
+def start_file_viewer_server(port: int) -> Tuple[str, threading.Thread]:
     """Start the file viewer server on the specified port or find an available one.
 
     Args:
@@ -94,12 +84,12 @@ def start_file_viewer_server(port=None) -> Tuple[str, threading.Thread]:
     Returns:
         Tuple[str, threading.Thread]: The server URL and the thread object.
     """
-    if port is None:
-        port = find_available_port()
 
     # Save the server URL to a file
     server_url = f'http://localhost:{port}'
-    with open('/tmp/oh-server-url', 'w') as f:
+    port_path = '/tmp/oh-server-url'
+    os.makedirs(os.path.dirname(port_path), exist_ok=True)
+    with open(port_path, 'w') as f:
         f.write(server_url)
 
     logger.info(f'File viewer server URL saved to /tmp/oh-server-url: {server_url}')
@@ -117,7 +107,7 @@ def start_file_viewer_server(port=None) -> Tuple[str, threading.Thread]:
 
 
 if __name__ == '__main__':
-    url, thread = start_file_viewer_server()
+    url, thread = start_file_viewer_server(port=8000)
     # Keep the main thread running
     try:
         thread.join()

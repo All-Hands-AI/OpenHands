@@ -68,6 +68,7 @@ from openhands.runtime.utils.files import insert_lines, read_lines
 from openhands.runtime.utils.memory_monitor import MemoryMonitor
 from openhands.runtime.utils.runtime_init import init_user_and_working_directory
 from openhands.runtime.utils.system_stats import get_system_stats
+from openhands.runtime.utils import find_available_tcp_port
 from openhands.utils.async_utils import call_sync_from_async, wait_all
 
 
@@ -536,11 +537,6 @@ class ActionExecutor:
 if __name__ == '__main__':
     logger.warning('Starting Action Execution Server')
 
-    # Start the file viewer server in a separate thread
-    logger.info('Starting file viewer server')
-    server_url, _ = start_file_viewer_server()
-    logger.info(f'File viewer server started at {server_url}')
-
     parser = argparse.ArgumentParser()
     parser.add_argument('port', type=int, help='Port to listen on')
     parser.add_argument('--working-dir', type=str, help='Working directory')
@@ -559,10 +555,12 @@ if __name__ == '__main__':
     # example: python client.py 8000 --working-dir /workspace --plugins JupyterRequirement
     args = parser.parse_args()
 
-    port_path = '/tmp/oh-server-url'
-    os.makedirs(os.path.dirname(port_path), exist_ok=True)
-    with open(port_path, 'w') as f:
-        f.write(f'http://127.0.0.1:{args.port}')
+
+    # Start the file viewer server in a separate thread
+    logger.info('Starting file viewer server')
+    _file_viewer_port = find_available_tcp_port(min_port=args.port + 1, max_port=args.port + 10000)
+    server_url, _ = start_file_viewer_server(port=_file_viewer_port)
+    logger.info(f'File viewer server started at {server_url}')
 
     plugins_to_load: list[Plugin] = []
     if args.plugins:
