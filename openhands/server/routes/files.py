@@ -256,9 +256,11 @@ async def get_cwd(
     conversation_info = await _get_conversation_info(metadata, is_running)
 
     cwd = workspace_mount_path_in_sandbox
-    if conversation_info and conversation_info.selected_repository:
-        repo_dir = conversation_info.selected_repository.split('/')[-1]
-        cwd = os.path.join(cwd, repo_dir)
+    if conversation_info:
+        repo_full_name = conversation_info.get_selected_repository_full_name()
+        if repo_full_name is not None:
+            repo_dir = repo_full_name.split('/')[-1]
+            cwd = os.path.join(cwd, repo_dir)
 
     return cwd
 

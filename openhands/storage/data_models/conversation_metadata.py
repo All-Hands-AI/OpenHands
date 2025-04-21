@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
+from openhands.integrations.service_types import ProviderType, Repository
 
 
 class ConversationTrigger(Enum):
@@ -12,7 +13,10 @@ class ConversationTrigger(Enum):
 class ConversationMetadata:
     conversation_id: str
     github_user_id: str | None
-    selected_repository: str | None
+    # Legacy string representation of repository, kept for backward compatibility
+    # See also: https://github.com/All-Hands-AI/OpenHands/issues/7286
+    selected_repository: str | None = None
+    selected_repository_model: Repository | None = None
     user_id: str | None = None
     selected_branch: str | None = None
     title: str | None = None
