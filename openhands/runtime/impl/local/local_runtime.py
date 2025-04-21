@@ -214,10 +214,6 @@ class LocalRuntime(ActionExecutionClient):
         python_bin_path = os.path.dirname(interpreter_path)
         env_root_path = os.path.dirname(python_bin_path)
 
-        # Set POETRY_VIRTUALENVS_PATH for Jupyter plugin
-        env['POETRY_VIRTUALENVS_PATH'] = env_root_path
-        logger.debug(f'Derived POETRY_VIRTUALENVS_PATH: {env_root_path}')
-
         # Prepend the interpreter's bin directory to PATH for subprocesses
         env['PATH'] = f'{python_bin_path}{os.pathsep}{env.get("PATH", "")}'
         logger.debug(f'Updated PATH for subprocesses: {env["PATH"]}')
