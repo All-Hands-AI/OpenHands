@@ -428,6 +428,7 @@ async def change_visibility(
         data.is_published,
         str(user_id),
         {'hidden_prompt': data.hidden_prompt},
+        metadata.title,
     )
 
 
