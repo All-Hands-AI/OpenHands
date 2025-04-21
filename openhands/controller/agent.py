@@ -69,7 +69,7 @@ class Agent(ABC):
             tools = getattr(self, 'tools', None)
 
             system_message_action = SystemMessageAction(
-                content=system_message, tools=tools
+                content=system_message, tools=tools, agent_class=self.name
             )
             # Set the source attribute
             system_message_action._source = EventSource.AGENT  # type: ignore

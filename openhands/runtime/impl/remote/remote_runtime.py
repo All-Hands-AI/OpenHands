@@ -194,7 +194,10 @@ class RemoteRuntime(ActionExecutionClient):
             'debug',
             f'Runtime image repo: {os.environ["OH_RUNTIME_RUNTIME_IMAGE_REPO"]}',
         )
-
+        if self.config.sandbox.base_container_image is None:
+            raise ValueError(
+                'base_container_image is required to build the runtime image. '
+            )
         if self.config.sandbox.runtime_extra_deps:
             self.log(
                 'debug',
@@ -475,4 +478,3 @@ class RemoteRuntime(ActionExecutionClient):
 
     def _stop_if_closed(self, retry_state: tenacity.RetryCallState) -> bool:
         return self._runtime_closed
-    

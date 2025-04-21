@@ -33,7 +33,10 @@ from openhands.server.shared import (
     file_store,
 )
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
-from openhands.storage.data_models.conversation_metadata import ConversationMetadata, ConversationTrigger
+from openhands.storage.data_models.conversation_metadata import (
+    ConversationMetadata,
+    ConversationTrigger,
+)
 from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.utils.async_utils import wait_all
 from openhands.utils.conversation_summary import generate_conversation_title
@@ -58,7 +61,7 @@ async def _create_new_conversation(
     image_urls: list[str] | None,
     replay_json: str | None,
     conversation_trigger: ConversationTrigger = ConversationTrigger.GUI,
-    attach_convo_id: bool = False
+    attach_convo_id: bool = False,
 ):
     logger.info(
         'Creating conversation',
