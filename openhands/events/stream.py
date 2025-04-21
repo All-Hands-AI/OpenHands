@@ -139,6 +139,8 @@ class EventStream(EventStore):
                 f'Callback ID on subscriber {subscriber_id} already exists: {callback_id}'
             )
 
+        logger.info(f'subscribing {subscriber_id} {callback_id}')
+
         self._subscribers[subscriber_id][callback_id] = callback
         self._thread_pools[subscriber_id][callback_id] = pool
 
@@ -152,6 +154,8 @@ class EventStream(EventStore):
         if callback_id not in self._subscribers[subscriber_id]:
             logger.warning(f'Callback not found during unsubscribe: {callback_id}')
             return
+
+        logger.info(f'unsubscribing {subscriber_id} {callback_id}')
 
         self._clean_up_subscriber(subscriber_id, callback_id)
 
@@ -232,6 +236,7 @@ class EventStream(EventStore):
             # pass each event to each callback in order
             for key in sorted(self._subscribers.keys()):
                 callbacks = self._subscribers[key]
+                logger.info(f'Process callbacks {callbacks}')
                 for callback_id in callbacks:
                     callback = callbacks[callback_id]
                     pool = self._thread_pools[key][callback_id]
