@@ -159,6 +159,7 @@ export const handlers = [
     return HttpResponse.json(settings);
   }),
   http.post("/api/settings", async ({ request }) => {
+    await delay();
     const body = await request.json();
 
     if (body) {

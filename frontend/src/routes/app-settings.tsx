@@ -17,7 +17,8 @@ import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message"
 
 function AppSettingsScreen() {
   const { t } = useTranslation();
-  const { mutate: saveSettings } = useSaveSettings();
+
+  const { mutate: saveSettings, isPending } = useSaveSettings();
   const { data: settings } = useSettings();
 
   const [languageInputHasChanged, setLanguageInputHasChanged] =
@@ -88,7 +89,7 @@ function AppSettingsScreen() {
     );
   };
 
-  const submitButtonIsDisabled =
+  const formIsClean =
     !languageInputHasChanged &&
     !analyticsSwitchHasChanged &&
     !soundNotificationsSwitchHasChanged;
@@ -132,9 +133,10 @@ function AppSettingsScreen() {
           testId="submit-button"
           variant="primary"
           type="submit"
-          isDisabled={submitButtonIsDisabled}
+          isDisabled={isPending || formIsClean}
         >
-          Save Changes
+          {!isPending && "Save Changes"}
+          {isPending && "Saving..."}
         </BrandButton>
       </div>
     </form>

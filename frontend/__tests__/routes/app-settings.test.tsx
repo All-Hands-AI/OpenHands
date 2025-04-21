@@ -173,7 +173,9 @@ describe("Form submission", () => {
     await userEvent.click(analytics);
     await userEvent.click(submit);
 
-    expect(handleCaptureConsentsSpy).toHaveBeenCalledWith(true);
+    await waitFor(() =>
+      expect(handleCaptureConsentsSpy).toHaveBeenCalledWith(true),
+    );
   });
 
   it("should call handleCaptureConsents with false when the analytics switch is toggled", async () => {
@@ -196,7 +198,35 @@ describe("Form submission", () => {
     await userEvent.click(analytics);
     await userEvent.click(submit);
 
-    expect(handleCaptureConsentsSpy).toHaveBeenCalledWith(false);
+    await waitFor(() =>
+      expect(handleCaptureConsentsSpy).toHaveBeenCalledWith(false),
+    );
+  });
+
+  it("should disable the button when submitting changes", async () => {
+    const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+    getSettingsSpy.mockResolvedValue(MOCK_DEFAULT_USER_SETTINGS);
+
+    renderAppSettingsScreen();
+
+    const submit = await screen.findByTestId("submit-button");
+    expect(submit).toBeDisabled();
+
+    const sound = await screen.findByTestId(
+      "enable-sound-notifications-switch",
+    );
+    await userEvent.click(sound);
+    expect(submit).not.toBeDisabled();
+
+    // submit the form
+    await userEvent.click(submit);
+    expect(saveSettingsSpy).toHaveBeenCalled();
+
+    expect(submit).toHaveTextContent("Saving...");
+    expect(submit).toBeDisabled();
+
+    await waitFor(() => expect(submit).toHaveTextContent("Save"));
   });
 
   it("should disable the button after submitting changes", async () => {
@@ -219,7 +249,7 @@ describe("Form submission", () => {
     await userEvent.click(submit);
     expect(saveSettingsSpy).toHaveBeenCalled();
 
-    expect(submit).toBeDisabled();
+    await waitFor(() => expect(submit).toBeDisabled());
   });
 });
 
@@ -246,7 +276,7 @@ describe("Status toasts", () => {
     await userEvent.click(submit);
 
     expect(saveSettingsSpy).toHaveBeenCalled();
-    expect(displaySuccessToastSpy).toHaveBeenCalled();
+    await waitFor(() => expect(displaySuccessToastSpy).toHaveBeenCalled());
   });
 
   it("should call displayErrorToast when the settings fail to save", async () => {

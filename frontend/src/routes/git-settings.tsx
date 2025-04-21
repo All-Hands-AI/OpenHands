@@ -18,7 +18,7 @@ import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message"
 function GitSettingsScreen() {
   const { t } = useTranslation();
 
-  const { mutate: saveSettings } = useSaveSettings();
+  const { mutate: saveSettings, isPending } = useSaveSettings();
   const { mutate: disconnectGitTokens } = useLogout();
 
   const { data: settings } = useSettings();
@@ -68,6 +68,8 @@ function GitSettingsScreen() {
     );
   };
 
+  const formIsClean = !githubTokenInputHasValue && !gitlabTokenInputHasValue;
+
   return (
     <form
       data-testid="git-settings-screen"
@@ -113,9 +115,10 @@ function GitSettingsScreen() {
           testId="submit-button"
           type="submit"
           variant="primary"
-          isDisabled={!githubTokenInputHasValue && !gitlabTokenInputHasValue}
+          isDisabled={isPending || formIsClean}
         >
-          Save Changes
+          {!isPending && "Save Changes"}
+          {isPending && "Saving..."}
         </BrandButton>
       </div>
     </form>

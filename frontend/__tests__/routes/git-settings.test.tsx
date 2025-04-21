@@ -329,6 +329,30 @@ describe("Form submission", () => {
     expect(logoutSpy).toHaveBeenCalled();
   });
 
+  it("should disable the button when submitting changes", async () => {
+    const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    getConfigSpy.mockResolvedValue(VALID_OSS_CONFIG);
+
+    renderGitSettingsScreen();
+
+    const submit = await screen.findByTestId("submit-button");
+    expect(submit).toBeDisabled();
+
+    const githubInput = await screen.findByTestId("github-token-input");
+    await userEvent.type(githubInput, "test-token");
+    expect(submit).not.toBeDisabled();
+
+    // submit the form
+    await userEvent.click(submit);
+    expect(saveSettingsSpy).toHaveBeenCalled();
+
+    expect(submit).toHaveTextContent("Saving...");
+    expect(submit).toBeDisabled();
+
+    await waitFor(() => expect(submit).toHaveTextContent("Save"));
+  });
+
   it("should disable the button after submitting changes", async () => {
     const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
     const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
@@ -347,7 +371,7 @@ describe("Form submission", () => {
     await userEvent.click(submit);
     expect(saveSettingsSpy).toHaveBeenCalled();
 
-    expect(submit).toBeDisabled();
+    await waitFor(() => expect(submit).toBeDisabled());
 
     const gitlabInput = await screen.findByTestId("gitlab-token-input");
     await userEvent.type(gitlabInput, "test-token");
@@ -357,7 +381,7 @@ describe("Form submission", () => {
     await userEvent.click(submit);
     expect(saveSettingsSpy).toHaveBeenCalled();
 
-    expect(submit).toBeDisabled();
+    await waitFor(() => expect(submit).toBeDisabled());
   });
 });
 
@@ -382,7 +406,7 @@ describe("Status toasts", () => {
     await userEvent.click(submit);
 
     expect(saveSettingsSpy).toHaveBeenCalled();
-    expect(displaySuccessToastSpy).toHaveBeenCalled();
+    await waitFor(() => expect(displaySuccessToastSpy).toHaveBeenCalled());
   });
 
   it("should call displayErrorToast when the settings fail to save", async () => {
