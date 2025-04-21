@@ -207,28 +207,31 @@ class LocalRuntime(ActionExecutionClient):
         env['PYTHONPATH'] = f'{code_repo_path}:$PYTHONPATH'
         env['OPENHANDS_REPO_PATH'] = code_repo_path
         env['LOCAL_RUNTIME_MODE'] = '1'
-        # Extract the poetry venv by parsing output of a shell command
-        # Equivalent to:
-        # run poetry show -v | head -n 1 | awk '{print $2}'
-        poetry_show_first_line = subprocess.check_output(  # noqa: ASYNC101
-            ['poetry', 'show', '-v'],
-            env=env,
-            cwd=code_repo_path,
-            text=True,
-            # Redirect stderr to stdout
-            # Needed since there might be a message on stderr like
-            # "Skipping virtualenv creation, as specified in config file."
-            # which will cause the command to fail
-            stderr=subprocess.STDOUT,
-            shell=False,
-        ).splitlines()[0]
-        if not poetry_show_first_line.lower().startswith('found:'):
-            raise RuntimeError(
-                'Cannot find poetry venv path. Please check your poetry installation.'
-                f'First line of poetry show -v: {poetry_show_first_line}'
+        # Get the poetry venv path using 'poetry env info --path'
+        try:
+            poetry_venvs_path = subprocess.check_output(  # noqa: ASYNC101
+                ['poetry', 'env', 'info', '--path'],
+                env=env,
+                cwd=code_repo_path,
+                text=True,
+                stderr=subprocess.PIPE,
+                shell=False,
+            ).strip()
+            # Verify it's a valid path (basic check)
+            if not os.path.isdir(poetry_venvs_path):
+                raise ValueError(f"'{poetry_venvs_path}' is not a valid directory.")
+        except (subprocess.CalledProcessError, FileNotFoundError, ValueError) as e:
+            # Attempt to fall back to environment variable if set
+            poetry_venvs_path = env.get('POETRY_VIRTUALENVS_PATH', '')
+            if not poetry_venvs_path or not os.path.isdir(poetry_venvs_path):
+                raise RuntimeError(
+                    'Cannot find poetry venv path using `poetry env info --path` or POETRY_VIRTUALENVS_PATH env var. '
+                    'Please check your poetry installation and ensure a virtual environment exists.'
+                ) from e
+            logger.warning(
+                f'Using fallback POETRY_VIRTUALENVS_PATH: {poetry_venvs_path}'
             )
-        # Split off the 'Found:' part
-        poetry_venvs_path = poetry_show_first_line.split(':')[1].strip()
+
         env['POETRY_VIRTUALENVS_PATH'] = poetry_venvs_path
         logger.debug(f'POETRY_VIRTUALENVS_PATH: {poetry_venvs_path}')
 
