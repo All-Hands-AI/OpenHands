@@ -13,6 +13,7 @@ from prompt_toolkit.styles import Style
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands.core.cli_display import COLOR_GOLD, COMMANDS, DEFAULT_STYLE
 
+
 class CommandCompleter(Completer):
     """Custom completer for commands."""
 

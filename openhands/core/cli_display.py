@@ -60,17 +60,9 @@ class UsageMetrics:
 def display_runtime_initialization_message(runtime: str):
     print_formatted_text('')
     if runtime == 'local':
-        print_formatted_text(
-            HTML(
-                '<grey>⚙️ Keeping it grounded: local startup sequence initiated...</grey>'
-            )
-        )
+        print_formatted_text(HTML('<grey>⚙️ Starting local runtime...</grey>'))
     elif runtime == 'docker':
-        print_formatted_text(
-            HTML(
-                '<grey>🐳 All hands on deck! Preparing Docker launch sequence...</grey>'
-            )
-        )
+        print_formatted_text(HTML('<grey>🐳 Starting Docker runtime...</grey>'))
     print_formatted_text('')
 
 
@@ -402,25 +394,38 @@ def display_usage_metrics(usage_metrics: UsageMetrics):
         title='Usage Metrics',
         style=f'fg:{COLOR_GREY}',
     )
-    print_formatted_text('')
+
     print_container(container)
-    print_formatted_text('')  # Add a newline after the frame
+
+
+def get_session_duration(session_init_time: float) -> str:
+    current_time = time.time()
+    session_duration = current_time - session_init_time
+    hours, remainder = divmod(session_duration, 3600)
+    minutes, seconds = divmod(remainder, 60)
+
+    return f'{int(hours)}h {int(minutes)}m {int(seconds)}s'
 
 
 def display_shutdown_message(usage_metrics: UsageMetrics, session_id: str):
+    duration_str = get_session_duration(usage_metrics.session_init_time)
+
     print_formatted_text(HTML('<grey>Closing current session...</grey>'))
+    print_formatted_text('')
     display_usage_metrics(usage_metrics)
-    print_formatted_text(HTML(f'<grey>Closed session {session_id}</grey>\n'))
+    print_formatted_text('')
+    print_formatted_text(HTML(f'<grey>Session duration: {duration_str}</grey>'))
+    print_formatted_text('')
+    print_formatted_text(HTML(f'<grey>Closed session {session_id}</grey>'))
+    print_formatted_text('')
 
 
 def display_status(usage_metrics: UsageMetrics, session_id: str):
-    current_time = time.time()
-    session_duration = current_time - usage_metrics.session_init_time
-    hours, remainder = divmod(session_duration, 3600)
-    minutes, seconds = divmod(remainder, 60)
-    duration_str = f'{int(hours)}h {int(minutes)}m {int(seconds)}s'
+    duration_str = get_session_duration(usage_metrics.session_init_time)
 
-    print_formatted_text('')  # Add a newline
+    print_formatted_text('')
     print_formatted_text(HTML(f'<grey>Session ID: {session_id}</grey>'))
-    print_formatted_text(HTML(f'<grey>Session Duration: {duration_str}</grey>'))
+    print_formatted_text(HTML(f'<grey>Uptime:     {duration_str}</grey>'))
+    print_formatted_text('')
     display_usage_metrics(usage_metrics)
+    print_formatted_text('')
