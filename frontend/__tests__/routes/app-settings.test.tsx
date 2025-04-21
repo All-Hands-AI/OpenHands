@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
 import AppSettingsScreen from "#/routes/app-settings";
@@ -7,6 +7,7 @@ import OpenHands from "#/api/open-hands";
 import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
 import { AuthProvider } from "#/context/auth-context";
 import { AvailableLanguages } from "#/i18n";
+import * as CaptureConsent from "#/utils/handle-capture-consent";
 
 const renderAppSettingsScreen = () =>
   render(<AppSettingsScreen />, {
@@ -69,6 +70,10 @@ describe("Content", () => {
 });
 
 describe("Form submission", () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
   it("should submit the form with the correct values", async () => {
     const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
     const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
@@ -147,6 +152,72 @@ describe("Form submission", () => {
     expect(submit).not.toBeDisabled();
 
     await userEvent.click(sound);
+    expect(submit).toBeDisabled();
+  });
+
+  it("should call handleCaptureConsents with true when the analytics switch is toggled", async () => {
+    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+    getSettingsSpy.mockResolvedValue(MOCK_DEFAULT_USER_SETTINGS);
+
+    const handleCaptureConsentsSpy = vi.spyOn(
+      CaptureConsent,
+      "handleCaptureConsent",
+    );
+
+    renderAppSettingsScreen();
+
+    const analytics = await screen.findByTestId("enable-analytics-switch");
+    const submit = await screen.findByTestId("submit-button");
+
+    await userEvent.click(analytics);
+    await userEvent.click(submit);
+
+    expect(handleCaptureConsentsSpy).toHaveBeenCalledWith(true);
+  });
+
+  it("should call handleCaptureConsents with false when the analytics switch is toggled", async () => {
+    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+    getSettingsSpy.mockResolvedValue({
+      ...MOCK_DEFAULT_USER_SETTINGS,
+      user_consents_to_analytics: true,
+    });
+
+    const handleCaptureConsentsSpy = vi.spyOn(
+      CaptureConsent,
+      "handleCaptureConsent",
+    );
+
+    renderAppSettingsScreen();
+
+    const analytics = await screen.findByTestId("enable-analytics-switch");
+    const submit = await screen.findByTestId("submit-button");
+
+    await userEvent.click(analytics);
+    await userEvent.click(submit);
+
+    expect(handleCaptureConsentsSpy).toHaveBeenCalledWith(false);
+  });
+
+  it("should disable the button after submitting changes", async () => {
+    const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+    getSettingsSpy.mockResolvedValue(MOCK_DEFAULT_USER_SETTINGS);
+
+    renderAppSettingsScreen();
+
+    const submit = await screen.findByTestId("submit-button");
+    expect(submit).toBeDisabled();
+
+    const sound = await screen.findByTestId(
+      "enable-sound-notifications-switch",
+    );
+    await userEvent.click(sound);
+    expect(submit).not.toBeDisabled();
+
+    // submit the form
+    await userEvent.click(submit);
+    expect(saveSettingsSpy).toHaveBeenCalled();
+
     expect(submit).toBeDisabled();
   });
 });

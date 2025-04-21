@@ -8,6 +8,7 @@ import { BrandButton } from "#/components/features/settings/brand-button";
 import { SettingsSwitch } from "#/components/features/settings/settings-switch";
 import { I18nKey } from "#/i18n/declaration";
 import { LanguageInput } from "#/components/features/settings/app-settings/language-input";
+import { handleCaptureConsent } from "#/utils/handle-capture-consent";
 
 function AppSettingsScreen() {
   const { t } = useTranslation();
@@ -35,11 +36,21 @@ function AppSettingsScreen() {
     const enableSoundNotifications =
       formData.get("enable-sound-notifications-switch")?.toString() === "on";
 
-    saveSettings({
-      LANGUAGE: language,
-      user_consents_to_analytics: enableAnalytics,
-      ENABLE_SOUND_NOTIFICATIONS: enableSoundNotifications,
-    });
+    saveSettings(
+      {
+        LANGUAGE: language,
+        user_consents_to_analytics: enableAnalytics,
+        ENABLE_SOUND_NOTIFICATIONS: enableSoundNotifications,
+      },
+      {
+        onSuccess: () => {
+          handleCaptureConsent(enableAnalytics);
+          setLanguageInputHasChanged(false);
+          setAnalyticsSwitchHasChanged(false);
+          setSoundNotificationsSwitchHasChanged(false);
+        },
+      },
+    );
   };
 
   const checkIfLanguageInputHasChanged = (value: string) => {
