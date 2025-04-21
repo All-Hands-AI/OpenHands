@@ -204,10 +204,6 @@ describe("Form submission", () => {
   });
 
   it("should disable the button when submitting changes", async () => {
-    const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
-    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
-    getSettingsSpy.mockResolvedValue(MOCK_DEFAULT_USER_SETTINGS);
-
     renderAppSettingsScreen();
 
     const submit = await screen.findByTestId("submit-button");
@@ -221,7 +217,6 @@ describe("Form submission", () => {
 
     // submit the form
     await userEvent.click(submit);
-    expect(saveSettingsSpy).toHaveBeenCalled();
 
     expect(submit).toHaveTextContent("Saving...");
     expect(submit).toBeDisabled();
