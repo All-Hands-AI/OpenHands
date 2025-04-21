@@ -66,27 +66,21 @@ class GitHubService(GitService):
             async with httpx.AsyncClient() as client:
                 github_headers = await self._get_github_headers()
 
-                if method.lower() == 'post':
-                    response = await client.post(
-                        url, headers=github_headers, json=params
-                    )
-                else:
-                    response = await client.get(
-                        url, headers=github_headers, params=params
-                    )
+                # Helper function to make the appropriate request based on method
+                async def make_request(headers):
+                    if method.lower() == 'post':
+                        return await client.post(url, headers=headers, json=params)
+                    else:
+                        return await client.get(url, headers=headers, params=params)
 
+                # Make initial request
+                response = await make_request(github_headers)
+
+                # Handle token refresh if needed
                 if self.refresh and self._has_token_expired(response.status_code):
                     await self.get_latest_token()
                     github_headers = await self._get_github_headers()
-
-                    if method.lower() == 'post':
-                        response = await client.post(
-                            url, headers=github_headers, json=params
-                        )
-                    else:
-                        response = await client.get(
-                            url, headers=github_headers, params=params
-                        )
+                    response = await make_request(github_headers)
 
                 response.raise_for_status()
                 headers = {}

@@ -66,27 +66,21 @@ class GitLabService(GitService):
             async with httpx.AsyncClient() as client:
                 gitlab_headers = await self._get_gitlab_headers()
 
-                if method.lower() == 'post':
-                    response = await client.post(
-                        url, headers=gitlab_headers, json=params
-                    )
-                else:
-                    response = await client.get(
-                        url, headers=gitlab_headers, params=params
-                    )
+                # Helper function to make the appropriate request based on method
+                async def make_request(headers):
+                    if method.lower() == 'post':
+                        return await client.post(url, headers=headers, json=params)
+                    else:
+                        return await client.get(url, headers=headers, params=params)
 
+                # Make initial request
+                response = await make_request(gitlab_headers)
+
+                # Handle token refresh if needed
                 if self.refresh and self._has_token_expired(response.status_code):
                     await self.get_latest_token()
                     gitlab_headers = await self._get_gitlab_headers()
-
-                    if method.lower() == 'post':
-                        response = await client.post(
-                            url, headers=gitlab_headers, json=params
-                        )
-                    else:
-                        response = await client.get(
-                            url, headers=gitlab_headers, params=params
-                        )
+                    response = await make_request(gitlab_headers)
 
                 response.raise_for_status()
                 headers = {}
