@@ -235,6 +235,7 @@ class CheckUserActivationMiddleware(BaseHTTPMiddleware):
             '/api/invitation/',
             '/api/user/status',
             '/api/invitation/validate',
+            '/api/usecases',
         ]
 
         self.public_path_patterns = [
@@ -246,7 +247,7 @@ class CheckUserActivationMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
         for pattern in self.public_path_patterns:
             if request.url.path.startswith(pattern):
-                remaining = request.url.path[len(pattern) :]
+                remaining = request.url.path[len(pattern):]
                 logger.info(f'Remaining path: {remaining}')
                 if remaining and '/' not in remaining:
                     return await call_next(request)
@@ -297,6 +298,7 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
             '/api/options/security-analyzers',
             '/api/options/use-cases',
             '/api/options/use-cases/conversations',
+            '/api/usecases',
         ]
 
         self.public_path_patterns = [
@@ -309,7 +311,7 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
 
         for pattern in self.public_path_patterns:
             if request.url.path.startswith(pattern):
-                remaining = request.url.path[len(pattern) :]
+                remaining = request.url.path[len(pattern):]
                 if remaining and '/' not in remaining:
                     return await call_next(request)
         if '/api/conversations/' in request.url.path:
