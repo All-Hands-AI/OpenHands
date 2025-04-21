@@ -57,6 +57,7 @@ from openhands.io import read_task
 from openhands.llm.metrics import Metrics
 from openhands.mcp import fetch_mcp_tools_from_config
 from openhands.microagent.microagent import BaseMicroagent
+from openhands.controller.agent import Agent
 
 # Color and styling constants
 COLOR_GOLD = '#FFD700'
@@ -673,14 +674,18 @@ async def main(loop: asyncio.AbstractEventLoop):
         None, display_initialization_animation, 'Initializing...', is_loaded
     )
 
+    # get agent cls
+    agent_cls = config.default_agent
+
     planning_agent = None
-    if not config.enable_planning:
+    # Check if the agent class has planning capabilities
+    if not Agent.get_cls(agent_cls).planning_capabilities:
         agent = create_agent(config)
         mcp_tools = await fetch_mcp_tools_from_config(config.mcp)
         agent.set_mcp_tools(mcp_tools)
     else:
         agent = create_agent(config, agent_name=config.default_task_solving_agent)
-        planning_agent = create_agent(config, agent_name=config.default_planning_agent)
+        planning_agent = create_agent(config, agent_name=config.default_agent)
 
         mcp_tools = await fetch_mcp_tools_from_config(config.mcp)
 

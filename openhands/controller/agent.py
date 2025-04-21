@@ -29,6 +29,7 @@ class Agent(ABC):
     It tracks the execution status and maintains a history of interactions.
     """
 
+    planning_capabilities: bool = False
     _registry: dict[str, Type['Agent']] = {}
     sandbox_plugins: list[PluginRequirement] = []
 

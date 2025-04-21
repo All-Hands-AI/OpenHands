@@ -94,10 +94,6 @@ async def run_controller(
     """
     sid = sid or generate_sid(config)
 
-    if agent is not None and config.enable_planning:
-        raise ValueError(
-            'Agent is already provided, cannot create a planning controller.'
-        )
 
     planning_agent = None
     if agent is None:

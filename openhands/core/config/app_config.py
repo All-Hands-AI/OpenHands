@@ -6,7 +6,6 @@ from openhands.core import logger
 from openhands.core.config.agent_config import AgentConfig
 from openhands.core.config.config_utils import (
     OH_DEFAULT_AGENT,
-    OH_DEFAULT_PLANNING_AGENT,
     OH_DEFAULT_TASK_SOLVING_AGENT,
     OH_MAX_ITERATIONS,
     model_defaults_to_dict,
@@ -57,8 +56,6 @@ class AppConfig(BaseModel):
         mcp: MCP configuration settings.
     """
     # planning config
-    enable_planning: bool = Field(default=False)
-    default_planning_agent: str = Field(default=OH_DEFAULT_PLANNING_AGENT)
     default_task_solving_agent: str = Field(default=OH_DEFAULT_TASK_SOLVING_AGENT)
 
     llms: dict[str, LLMConfig] = Field(default_factory=dict)

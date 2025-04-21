@@ -21,6 +21,7 @@ class PlanningAgent(CodeActAgent):
     """
     This Agent wraps the CodeAct agent with planning tools.
     """
+    planning_capabilities: bool = True
 
     def __init__(
         self,
@@ -35,14 +36,23 @@ class PlanningAgent(CodeActAgent):
         """
         super().__init__(llm, config)
 
-        # Override tools with planning-specific tools
-        built_in_tools = planning_function_calling.get_tools(
-            enable_browsing=self.config.enable_browsing,
-            enable_jupyter=self.config.enable_jupyter,
-            enable_llm_editor=self.config.enable_llm_editor,
-            llm=self.llm,
-        )
-        self.tools = built_in_tools
+        # Get codeact tools
+        self.tools = self._get_tools()
+
+        # Specilized tools for planning
+        specilized_tools = planning_function_calling.get_tools()
+
+        # Override tools with the same name
+        for specialized_tool in specilized_tools:
+            is_found = False
+            for i, tool in enumerate(self.tools):
+                if tool['function']['name'] == specialized_tool['function']['name']:
+                    self.tools[i] = specialized_tool
+                    is_found = True
+                    break
+            if not is_found:
+                self.tools.append(specialized_tool)
+
 
         # Override prompt_manager to use planning-specific prompts
         self.prompt_manager = PromptManager(

@@ -40,6 +40,7 @@ class Session:
     sio: socketio.AsyncServer | None
     last_active_ts: int = 0
     is_alive: bool = True
+    enable_planning: bool = False
     agent_session: AgentSession
     loop: asyncio.AbstractEventLoop
     config: AppConfig
@@ -99,14 +100,17 @@ class Session:
             EventSource.ENVIRONMENT,
         )
 
-        if not self.config.enable_planning:
-            agent_cls = settings.agent or self.config.default_agent
-        else:
+        agent_cls = settings.agent or self.config.default_agent
+
+        # Check if the agent class has planning capabilities
+        if Agent.get_cls(agent_cls).planning_capabilities:
+            # if the agent class has planning capabilities, enable planning
+            self.enable_planning = True
+
+        if self.enable_planning:
+            planning_agent_cls = agent_cls
             agent_cls = (
                 settings.task_solving_agent or self.config.default_task_solving_agent
-            )
-            planning_agent_cls = (
-                settings.planning_agent or self.config.default_planning_agent
             )
 
         self.config.security.confirmation_mode = (
@@ -167,7 +171,7 @@ class Session:
 
         # Set planning agent if planning mode is enabled
         planning_agent = None
-        if self.config.enable_planning:
+        if self.enable_planning:
             planning_agent_config = self.config.get_agent_config(planning_agent_cls)
             # print(f'{planning_agent_cls} planning_agent_config: {planning_agent_config.model_dump_json(indent=2)}')
 

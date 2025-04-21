@@ -10,7 +10,7 @@ from litellm import (
     ModelResponse,
 )
 
-from openhands.agenthub.planning_agent.tools import (
+from openhands.agenthub.codeact_agent.tools import (
     BrowserTool,
     FinishTool,
     IPythonTool,
@@ -19,6 +19,8 @@ from openhands.agenthub.planning_agent.tools import (
     WebReadTool,
     create_cmd_run_tool,
     create_str_replace_editor_tool,
+)
+from openhands.agenthub.planning_agent.tools import (
     PlanningTool
 )
 from openhands.core.exceptions import (
@@ -251,38 +253,5 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
     return actions
 
 
-def get_tools(
-    enable_browsing: bool = False,
-    enable_llm_editor: bool = False,
-    enable_jupyter: bool = False,
-    llm: LLM | None = None,
-) -> list[ChatCompletionToolParam]:
-    SIMPLIFIED_TOOL_DESCRIPTION_LLM_SUBSTRS = ['gpt-', 'o3', 'o1']
-
-    use_simplified_tool_desc = False
-    if llm is not None:
-        use_simplified_tool_desc = any(
-            model_substr in llm.config.model
-            for model_substr in SIMPLIFIED_TOOL_DESCRIPTION_LLM_SUBSTRS
-        )
-
-    tools = [
-        PlanningTool,
-        create_cmd_run_tool(use_simplified_description=use_simplified_tool_desc),
-        ThinkTool,
-        FinishTool,
-    ]
-    if enable_browsing:
-        tools.append(WebReadTool)
-        tools.append(BrowserTool)
-    if enable_jupyter:
-        tools.append(IPythonTool)
-    if enable_llm_editor:
-        tools.append(LLMBasedFileEditTool)
-    else:
-        tools.append(
-            create_str_replace_editor_tool(
-                use_simplified_description=use_simplified_tool_desc
-            )
-        )
-    return tools
+def get_tools() -> list[ChatCompletionToolParam]:
+    return [PlanningTool]
