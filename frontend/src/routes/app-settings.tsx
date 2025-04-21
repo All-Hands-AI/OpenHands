@@ -1,15 +1,25 @@
+import { SettingsDropdownInput } from "#/components/features/settings/settings-dropdown-input";
 import { useSettings } from "#/hooks/query/use-settings";
 import { AvailableLanguages } from "#/i18n";
 
 function AppSettingsScreen() {
   const { data: settings } = useSettings();
-  const language = AvailableLanguages.find(
-    (lang) => lang.value === settings?.LANGUAGE,
-  )?.label;
 
   return (
     <div data-testid="app-settings-screen">
-      <input data-testid="language-input" defaultValue={language} />
+      {settings && (
+        <SettingsDropdownInput
+          testId="language-input"
+          items={AvailableLanguages.map((l) => ({
+            key: l.value,
+            label: l.label,
+          }))}
+          defaultSelectedKey={settings?.LANGUAGE}
+          name="language-input"
+          label="Language"
+          isClearable={false}
+        />
+      )}
 
       {settings && (
         <input

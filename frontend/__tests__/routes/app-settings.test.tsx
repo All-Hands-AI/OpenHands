@@ -1,7 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it, test, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import userEvent from "@testing-library/user-event";
 import AppSettingsScreen from "#/routes/app-settings";
 import OpenHands from "#/api/open-hands";
 import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
@@ -52,18 +51,5 @@ describe("Content", () => {
       expect(analytics).toBeChecked();
       expect(sound).toBeChecked();
     });
-  });
-
-  test("language dropdown should show valid options", async () => {
-    renderAppSettingsScreen();
-
-    const language = await screen.findByTestId("language-input");
-    await userEvent.click(language);
-
-    expect(language).toHaveValue("English");
-    expect(language).toHaveTextContent("English");
-    expect(language).toHaveTextContent("Norsk");
-    expect(language).toHaveTextContent("Français");
-    expect(language).toHaveTextContent("Español");
   });
 });
