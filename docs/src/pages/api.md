@@ -7,6 +7,45 @@ description: OpenHands API Reference
 
 Welcome to the OpenHands API Reference. This documentation provides details about the available API endpoints, request parameters, and response formats.
 
+## Interactive API Documentation
+
+We provide an interactive API documentation using Swagger UI, which allows you to explore and test the API endpoints:
+
+<div className="container">
+  <div className="row">
+    <div className="col col--6">
+      <div className="card margin-bottom--lg">
+        <div className="card__header">
+          <h3>Swagger UI</h3>
+        </div>
+        <div className="card__body">
+          <p>
+            Interactive API documentation with Swagger UI. Explore and test API endpoints directly in your browser.
+          </p>
+        </div>
+        <div className="card__footer">
+          <a className="button button--primary button--block" href="/swagger-ui/">Open Swagger UI</a>
+        </div>
+      </div>
+    </div>
+    <div className="col col--6">
+      <div className="card margin-bottom--lg">
+        <div className="card__header">
+          <h3>OpenAPI Specification</h3>
+        </div>
+        <div className="card__body">
+          <p>
+            Download the raw OpenAPI specification file for use with other tools like Postman.
+          </p>
+        </div>
+        <div className="card__footer">
+          <a className="button button--secondary button--block" href="/openapi.json">Download OpenAPI Spec</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 ## Base URLs
 
 The API is available at the following base URLs:
@@ -18,7 +57,7 @@ The API is available at the following base URLs:
 
 Authentication details will be provided in a future update.
 
-## API Endpoints
+## API Endpoints Overview
 
 The API provides various endpoints for interacting with OpenHands. Below are some of the key endpoints:
 
@@ -102,6 +141,4 @@ GET /api/conversations/{conversation_id}/git/diff
 
 Get git diff for a specific file.
 
-## OpenAPI Specification
-
-The complete OpenAPI specification is available [here](/openapi.json).
+For a complete list of endpoints and detailed documentation, please use the [Swagger UI](/swagger-ui/) interface.
