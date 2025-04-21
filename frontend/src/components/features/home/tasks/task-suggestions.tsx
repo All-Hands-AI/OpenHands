@@ -29,7 +29,7 @@ export function TaskSuggestions({ filterFor }: TaskSuggestionsProps) {
       <div className="flex flex-col gap-6">
         {!providersAreSet && <ConnectToProviderMessage />}
         {isLoading && <TaskSuggestionsSkeleton />}
-        {!hasSuggestedTasks && <p>No tasks available</p>}
+        {!hasSuggestedTasks && !isLoading && <p>No tasks available</p>}
         {suggestedTasks?.map((taskGroup, index) => (
           <TaskGroup
             key={index}

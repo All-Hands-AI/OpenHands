@@ -4,6 +4,7 @@ import { useCreateConversation } from "#/hooks/mutation/use-create-conversation"
 import { cn } from "#/utils/utils";
 import { useUserRepositories } from "#/hooks/query/use-user-repositories";
 import { getPromptForQuery } from "./get-prompt-for-query";
+import { TaskIssueNumber } from "./task-issue-number";
 
 const TASK_TYPE_MAP: Record<SuggestedTask["task_type"], string> = {
   FAILING_CHECKS: "Fix failing checks",
@@ -44,9 +45,12 @@ export function TaskCard({ task }: TaskCardProps) {
     });
   };
 
+  const hrefType = task.task_type === "OPEN_ISSUE" ? "issues" : "pull";
+  const href = `https://github.com/${task.repo}/${hrefType}/${task.issue_number}`;
+
   return (
     <li className="py-3 border-b border-[#717888] flex items-center pr-6">
-      <span data-testid="task-id">#{task.issue_number}</span>
+      <TaskIssueNumber issueNumber={task.issue_number} href={href} />
 
       <div className="w-full pl-8">
         <p className="font-semibold">{TASK_TYPE_MAP[task.task_type]}</p>
