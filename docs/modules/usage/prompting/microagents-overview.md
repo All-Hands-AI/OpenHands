@@ -1,31 +1,30 @@
 # Microagents Overview
 
-Microagents are specialized prompts that enhance OpenHands with domain-specific knowledge, repository-specific context
-and task-specific workflows. They help by providing expert guidance, automating common tasks, and ensuring
-consistent practices across projects.
+Microagents are specialized prompts that enhance OpenHands with domain-specific knowledge. 
+They provide expert guidance, automate common tasks, and ensure consistent practices across projects.
 
-## Microagent Categories
+## Microagent Types
 
-Currently OpenHands supports two categories of microagents:
+Currently OpenHands supports the following types of microagents:
 
-- [Repository-specific Microagents](./microagents-repo): Repository-specific context and guidelines for OpenHands.
-- [Public Microagents](./microagents-public): General guidelines triggered by keywords for all OpenHands users.
+- [General Repository Microagents](./microagents-repo): General guidelines for OpenHands about the repository.
+- [Keyword-Triggered Microagents](./microagents-keyword): Guidelines activated by specific keywords in prompts.
 
-A microagent is classified as repository-specific or public depending on its location:
+Each repository can customize OpenHands' behavior by creating a `.openhands/microagents/` directory in the 
+repository's root and placing `<microagent_name>.md` files in this directory.
 
-- Repository-specific microagents are located in a repository's `.openhands/microagents/` directory
-- Public microagents are located in the official OpenHands repository inside the `/microagents` folder
+:::note
+Keep in mind that loaded microagents take up space in the context window. It's crucial to strike a balance between 
+the additional context provided by microagents and the instructions provided in the user's inputs.
+:::
 
-When OpenHands works with a repository, it:
+Example of how a repository's microagents might look like:
 
-1. Loads **repository-specific** microagents from `.openhands/microagents/` if present in the repository.
-2. Loads **public knowledge** microagents triggered by keywords in conversations
-3. Loads **public tasks** microagents when explicitly requested by the user
-
-You can check out the existing public microagents at the [official OpenHands repository](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/).
-
-## Microagent Format
-
-All microagents use markdown files with YAML frontmatter that have special instructions to help OpenHands activate them.
-
-Check out the [syntax documentation](./microagents-syntax) for a comprehensive guide on how to configure your microagents.
+```
+some-repository/
+└── .openhands/
+    └── microagents/
+        └── repo.md            # General repository guidelines
+        └── trigger_this.md    # Microagent triggered by specific keywords
+        └── trigger_that.md    # Microagent triggered by specific keywords
+```

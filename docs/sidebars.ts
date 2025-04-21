@@ -66,18 +66,18 @@ const sidebars: SidebarsConfig = {
             },
             {
               type: 'doc',
-              label: 'Repository-specific',
+              label: 'General Repository Microagents',
               id: 'usage/prompting/microagents-repo',
             },
             {
               type: 'doc',
-              label: 'Public',
-              id: 'usage/prompting/microagents-public',
+              label: 'Keyword-Triggered Microagents',
+              id: 'usage/prompting/microagents-keyword',
             },
             {
               type: 'doc',
-              label: 'Syntax',
-              id: 'usage/prompting/microagents-syntax',
+              label: 'Global Microagents',
+              id: 'usage/prompting/microagents-public',
             },
           ],
         },
