@@ -18,13 +18,10 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from zipfile import ZipFile
 
-# Import the file viewer server
-from openhands.runtime.file_viewer_server import start_file_viewer_server
-
 from binaryornot.check import is_binary
 from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.security import APIKeyHeader
 from openhands_aci.editor.editor import OHEditor
 from openhands_aci.editor.exceptions import ToolError
@@ -60,11 +57,13 @@ from openhands.events.observation import (
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.runtime.browser import browse
 from openhands.runtime.browser.browser_env import BrowserEnv
+
+# Import the file viewer server
+# File viewer functionality moved to openhands/runtime/file_viewer_server.py
+from openhands.runtime.file_viewer_server import start_file_viewer_server
 from openhands.runtime.plugins import ALL_PLUGINS, JupyterPlugin, Plugin, VSCodePlugin
 from openhands.runtime.utils.async_bash import AsyncBashSession
 from openhands.runtime.utils.bash import BashSession
-# File viewer functionality moved to openhands/runtime/file_viewer_server.py
-from openhands.runtime.file_viewer_server import start_file_viewer_server
 from openhands.runtime.utils.files import insert_lines, read_lines
 from openhands.runtime.utils.memory_monitor import MemoryMonitor
 from openhands.runtime.utils.runtime_init import init_user_and_working_directory
@@ -536,12 +535,12 @@ class ActionExecutor:
 
 if __name__ == '__main__':
     logger.warning('Starting Action Execution Server')
-    
+
     # Start the file viewer server in a separate thread
-    logger.info("Starting file viewer server")
+    logger.info('Starting file viewer server')
     server_url, _ = start_file_viewer_server()
-    logger.info(f"File viewer server started at {server_url}")
-    
+    logger.info(f'File viewer server started at {server_url}')
+
     parser = argparse.ArgumentParser()
     parser.add_argument('port', type=int, help='Port to listen on')
     parser.add_argument('--working-dir', type=str, help='Working directory')

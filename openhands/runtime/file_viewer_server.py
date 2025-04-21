@@ -18,7 +18,7 @@ from openhands.runtime.utils.file_viewer import generate_file_viewer_html
 
 def create_app() -> FastAPI:
     """Create the FastAPI application."""
-    app = FastAPI(title="File Viewer Server")
+    app = FastAPI(title='File Viewer Server')
 
     @app.get('/view')
     async def view_file(path: str, request: Request):
@@ -75,44 +75,44 @@ def find_available_port(start_port=8000, max_port=9000):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             if s.connect_ex(('127.0.0.1', port)) != 0:
                 return port
-    raise RuntimeError(f"No available ports found in range {start_port}-{max_port}")
+    raise RuntimeError(f'No available ports found in range {start_port}-{max_port}')
 
 
 def start_file_viewer_server(port=None) -> Tuple[str, threading.Thread]:
     """Start the file viewer server on the specified port or find an available one.
-    
+
     Args:
         port (int, optional): The port to bind to. If None, an available port will be found.
-        
+
     Returns:
         Tuple[str, threading.Thread]: The server URL and the thread object.
     """
     if port is None:
         port = find_available_port()
-    
+
     # Save the server URL to a file
-    server_url = f"http://localhost:{port}"
-    with open("/tmp/oh-server-url", "w") as f:
+    server_url = f'http://localhost:{port}'
+    with open('/tmp/oh-server-url', 'w') as f:
         f.write(server_url)
-    
-    logger.info(f"File viewer server URL saved to /tmp/oh-server-url: {server_url}")
-    logger.info(f"Starting file viewer server on port {port}")
-    
+
+    logger.info(f'File viewer server URL saved to /tmp/oh-server-url: {server_url}')
+    logger.info(f'Starting file viewer server on port {port}')
+
     app = create_app()
-    config = Config(app=app, host="127.0.0.1", port=port, log_level="error")
+    config = Config(app=app, host='127.0.0.1', port=port, log_level='error')
     server = Server(config=config)
-    
+
     # Run the server in a new thread
     thread = threading.Thread(target=server.run, daemon=True)
     thread.start()
-    
+
     return server_url, thread
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     url, thread = start_file_viewer_server()
     # Keep the main thread running
     try:
         thread.join()
     except KeyboardInterrupt:
-        logger.info("Server stopped")
+        logger.info('Server stopped')
