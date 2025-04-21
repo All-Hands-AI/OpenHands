@@ -1031,8 +1031,7 @@ async def modify_llm_settings_advanced(
         base_url = await session.prompt_async('(Step 2/6) Base URL: ')
         api_key = await session.prompt_async('(Step 3/6) API Key: ')
 
-        # TODO: Make agent list dynamic or load from config
-        agent_list = ['CodeActAgent', 'TestAgent']
+        agent_list = Agent.list_agents()
         agent_completer = FuzzyWordCompleter(agent_list)
         agent = await session.prompt_async(
             '(Step 4/6) Agent (use Tab for completion): ', completer=agent_completer
