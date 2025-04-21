@@ -14,8 +14,8 @@ Each repository can customize OpenHands' behavior by creating a `.openhands/micr
 repository's root and placing `<microagent_name>.md` files in this directory.
 
 :::note
-Keep in mind that loaded microagents take up space in the context window. It's crucial to strike a balance between 
-the additional context provided by microagents and the instructions provided in the user's inputs.
+Keep in mind that loaded microagents take up space in the context window. 
+The microagents alongside the user messages inform OpenHands about the task and the environment.
 :::
 
 Example of how a repository's microagents might look like:
