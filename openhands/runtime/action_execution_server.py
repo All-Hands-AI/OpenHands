@@ -615,7 +615,7 @@ if __name__ == '__main__':
         client_host = request.client.host if request.client else None
         if client_host in ['127.0.0.1', 'localhost', '::1']:
             return await call_next(request)
-        
+
         # Continue with authentication for non-localhost requests
         if request.url.path != '/alive' and request.url.path != '/server_info':
             try:
