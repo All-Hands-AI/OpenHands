@@ -48,7 +48,7 @@ export function PaymentForm() {
       >
         <div className="flex items-center gap-2">
           <MoneyIcon width={22} height={14} />
-          <span>Balance</span>
+          <span>{t(I18nKey.PAYMENT$MANAGE_CREDITS)}</span>
         </div>
         {!isLoading && (
           <span data-testid="user-balance">${Number(balance).toFixed(2)}</span>
