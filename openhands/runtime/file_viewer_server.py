@@ -18,8 +18,13 @@ from openhands.runtime.utils.file_viewer import generate_file_viewer_html
 
 def create_app() -> FastAPI:
     """Create the FastAPI application."""
-    app = FastAPI(title='File Viewer Server')
-
+    app = FastAPI(title='File Viewer Server', openapi_url=None, docs_url=None, redoc_url=None)
+    
+    @app.get('/')
+    async def root():
+        """Root endpoint to check if the server is running."""
+        return {"status": "File viewer server is running"}
+        
     @app.get('/view')
     async def view_file(path: str, request: Request):
         """View a file using an embedded viewer.
