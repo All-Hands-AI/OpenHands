@@ -114,7 +114,7 @@ export function SystemMessageModal({
                 className={cn(
                   "px-4 py-2 font-medium border-b-2 transition-colors",
                   activeTab === "system"
-                    ? "border-primary text-primary"
+                    ? "border-primary text-gray-100"
                     : "border-transparent hover:text-gray-700 dark:hover:text-gray-300",
                 )}
                 onClick={() => setActiveTab("system")}
@@ -127,7 +127,7 @@ export function SystemMessageModal({
                   className={cn(
                     "px-4 py-2 font-medium border-b-2 transition-colors",
                     activeTab === "tools"
-                      ? "border-primary text-primary"
+                      ? "border-primary text-gray-100"
                       : "border-transparent hover:text-gray-700 dark:hover:text-gray-300",
                   )}
                   onClick={() => setActiveTab("tools")}
@@ -137,9 +137,9 @@ export function SystemMessageModal({
               )}
             </div>
 
-            <div className="h-[60vh] overflow-auto rounded-md border border-gray-700 bg-gray-900">
+            <div className="h-[60vh] overflow-auto rounded-md">
               {activeTab === "system" && (
-                <div className="p-6 whitespace-pre-wrap font-mono text-sm leading-relaxed bg-gray-900 text-gray-300 shadow-inner">
+                <div className="p-6 whitespace-pre-wrap font-mono text-sm leading-relaxed text-gray-300 shadow-inner">
                   {systemMessage.content}
                 </div>
               )}
@@ -171,22 +171,14 @@ export function SystemMessageModal({
                       const isExpanded = expandedTools[index] || false;
 
                       return (
-                        <div
-                          key={index}
-                          className="border rounded-md bg-gray-800 border-gray-700 overflow-hidden"
-                        >
+                        <div key={index} className="rounded-md overflow-hidden">
                           <button
                             type="button"
                             onClick={() => toggleTool(index)}
                             className="w-full p-4 text-left flex items-center justify-between hover:bg-gray-700 transition-colors"
                           >
                             <div className="flex items-center">
-                              <span className="inline-block w-6 h-6 mr-2 rounded-full bg-primary/20 flex items-center justify-center">
-                                <span className="text-primary text-xs font-bold">
-                                  {index + 1}
-                                </span>
-                              </span>
-                              <h3 className="font-bold text-primary">
+                              <h3 className="font-bold text-gray-100">
                                 {String(name)}
                               </h3>
                             </div>
@@ -201,7 +193,7 @@ export function SystemMessageModal({
 
                           {isExpanded && (
                             <div className="px-4 pb-4 pt-1">
-                              <div className="mt-2 mb-4 p-4 bg-gray-800/50 rounded-md border border-gray-700/50 shadow-inner">
+                              <div className="mt-2 mb-4 p-4 shadow-inner">
                                 <p className="text-sm whitespace-pre-wrap text-gray-300 leading-relaxed">
                                   {String(description)}
                                 </p>
@@ -213,7 +205,7 @@ export function SystemMessageModal({
                                   <h4 className="text-sm font-semibold text-gray-300">
                                     {t("SYSTEM_MESSAGE_MODAL$PARAMETERS")}
                                   </h4>
-                                  <div className="text-sm mt-2 p-4 bg-gray-900 rounded-md overflow-auto border border-gray-700 text-gray-300 max-h-[400px] shadow-inner">
+                                  <div className="text-sm mt-2 p-4 bg-gray-900 rounded-md overflow-auto text-gray-300 max-h-[400px] shadow-inner">
                                     <ReactJsonView
                                       src={parameters}
                                       theme={jsonViewTheme}
