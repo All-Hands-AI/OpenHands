@@ -1,6 +1,5 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { SettingsDropdownInput } from "#/components/features/settings/settings-dropdown-input";
 import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 import { useSettings } from "#/hooks/query/use-settings";
 import { AvailableLanguages } from "#/i18n";
@@ -8,6 +7,7 @@ import { DEFAULT_SETTINGS } from "#/services/settings";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { SettingsSwitch } from "#/components/features/settings/settings-switch";
 import { I18nKey } from "#/i18n/declaration";
+import { LanguageInput } from "#/components/features/settings/app-settings/language-input";
 
 function AppSettingsScreen() {
   const { t } = useTranslation();
@@ -78,17 +78,10 @@ function AppSettingsScreen() {
     >
       {settings && (
         <div className="px-11 py-9 flex flex-col gap-6">
-          <SettingsDropdownInput
-            testId="language-input"
-            onChange={checkIfLanguageInputHasChanged}
-            label={t(I18nKey.SETTINGS$LANGUAGE)}
-            items={AvailableLanguages.map((l) => ({
-              key: l.value,
-              label: l.label,
-            }))}
-            defaultSelectedKey={settings.LANGUAGE}
+          <LanguageInput
             name="language-input"
-            isClearable={false}
+            defaultKey={settings.LANGUAGE}
+            onChange={checkIfLanguageInputHasChanged}
           />
 
           <SettingsSwitch
