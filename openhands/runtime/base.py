@@ -129,7 +129,7 @@ class Runtime(FileEditRuntimeMixin):
 
         self.status_callback = status_callback
         self.attach_to_existing = attach_to_existing
-        
+
         # Flag to track if setup.sh has completed
         self._setup_script_completed = True  # Default to True if no setup script exists
 
@@ -387,7 +387,7 @@ class Runtime(FileEditRuntimeMixin):
         read_obs = self.read(FileReadAction(path=setup_script))
         if isinstance(read_obs, ErrorObservation):
             return
-            
+
         # Set flag to indicate setup.sh is running
         self._setup_script_completed = False
         self.log('info', 'Running setup.sh script')
@@ -403,7 +403,7 @@ class Runtime(FileEditRuntimeMixin):
             self.log('error', f'Setup script failed: {obs.content}')
         else:
             self.log('info', 'Setup script completed successfully')
-        
+
         # Set a flag to indicate that setup.sh has completed
         self._setup_script_completed = True
 
@@ -494,7 +494,7 @@ class Runtime(FileEditRuntimeMixin):
         # Check if this is a command from the agent (not from setup.sh itself)
         # and if setup.sh is still running
         if (
-            isinstance(action, CmdRunAction) 
+            isinstance(action, CmdRunAction)
             and not getattr(action, 'is_static', False)  # Not an internal command
             and not self._setup_script_completed  # Setup script is still running
         ):
@@ -502,7 +502,7 @@ class Runtime(FileEditRuntimeMixin):
             return ErrorObservation(
                 'Cannot execute commands until setup.sh has completed. Please wait.'
             )
-            
+
         if not action.runnable:
             if isinstance(action, AgentThinkAction):
                 return AgentThinkObservation('Your thought has been logged.')
