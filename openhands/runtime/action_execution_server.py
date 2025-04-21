@@ -849,8 +849,5 @@ if __name__ == '__main__':
             logger.error(f'Error listing files: {e}')
             return []
 
-    # The /view endpoint has been moved to a separate server
-    # See openhands/runtime/file_viewer_server.py
-
     logger.debug(f'Starting action execution API on port {args.port}')
     run(app, host='0.0.0.0', port=args.port)
