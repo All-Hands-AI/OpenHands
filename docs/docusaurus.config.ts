@@ -16,7 +16,7 @@ const config: Config = {
   projectName: 'OpenHands',
   trailingSlash: false,
 
-  onBrokenLinks: 'warn',
+  onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
 
   // Even if you don't use internationalization, you can use this field to set
@@ -77,7 +77,7 @@ const config: Config = {
           label: 'User Guides',
         },
         {
-          to: '/api/',
+          href: 'https://docs.all-hands.dev/swagger-ui/', // FIXME: this should be a relative path, but docusarus steals the click
           label: 'API',
           position: 'left',
         },
