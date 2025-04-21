@@ -60,18 +60,33 @@ class GitHubService(GitService):
         return self.token
 
     async def _fetch_data(
-        self, url: str, params: dict | None = None
+        self, url: str, params: dict | None = None, method: str = 'get'
     ) -> tuple[Any, dict]:
         try:
             async with httpx.AsyncClient() as client:
                 github_headers = await self._get_github_headers()
-                response = await client.get(url, headers=github_headers, params=params)
-                if self.refresh and self._has_token_expired(response.status_code):
-                    await self.get_latest_token()
-                    github_headers = await self._get_github_headers()
+
+                if method.lower() == 'post':
+                    response = await client.post(
+                        url, headers=github_headers, json=params
+                    )
+                else:
                     response = await client.get(
                         url, headers=github_headers, params=params
                     )
+
+                if self.refresh and self._has_token_expired(response.status_code):
+                    await self.get_latest_token()
+                    github_headers = await self._get_github_headers()
+
+                    if method.lower() == 'post':
+                        response = await client.post(
+                            url, headers=github_headers, json=params
+                        )
+                    else:
+                        response = await client.get(
+                            url, headers=github_headers, params=params
+                        )
 
                 response.raise_for_status()
                 headers = {}
